@@ -366,7 +366,6 @@ namespace BoSSS.Foundation.Grid.Classic
                             Cell Cl2 = adaptedCells2[i2];
                             Debug.Assert(Cl1.GlobalID != Cl2.GlobalID);
 
-
                             int conCount1;
                             if (Cl1.CellFaceTags == null)
                             {

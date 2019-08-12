@@ -789,8 +789,8 @@ namespace FSI_Solver
         private void ModelCoefficientOfRestitution(double stokesNumber, out double coefficientOfRestitution)
         {
             coefficientOfRestitution = m_CoefficientOfRestitution;
-            if (stokesNumber < 9 && stokesNumber != 0)// the Stokes number is zero in case of a dry simulation (no fluid)
-                coefficientOfRestitution = 0;
+            //if (stokesNumber < 9 && stokesNumber != 0)// the Stokes number is zero in case of a dry simulation (no fluid)
+            //    coefficientOfRestitution = 0;
         }
 
         /// <summary>

@@ -375,7 +375,7 @@ namespace BoSSS.Application.FSI_Solver
             return C;
         }
 
-        public static FSI_Control WetParticleCollision(int k = 3, double DensityFactor = 1e3)
+        public static FSI_Control WetParticleCollision(int k = 2, double DensityFactor = 1e3)
         {
             FSI_Control C = new FSI_Control();
 
@@ -385,8 +385,8 @@ namespace BoSSS.Application.FSI_Solver
 
             // basic database options
             // =============================
-            C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\WetParticleCollision";
-            C.savetodb = false;
+            C.DbPath = @"C:\Users\deussen\localBoSSSDatabases\WetParticleCollision";
+            C.savetodb = true;
             C.saveperiod = 1;
             C.ProjectName = "ParticleUnderGravity";
             C.ProjectDescription = "Active";
@@ -444,7 +444,7 @@ namespace BoSSS.Application.FSI_Solver
             // Mesh refinement
             // =============================
             C.AdaptiveMeshRefinement = true;
-            C.RefinementLevel = 25;
+            C.RefinementLevel = 2;
 
 
             // Boundary conditions
@@ -518,7 +518,7 @@ namespace BoSSS.Application.FSI_Solver
 
             // Coupling Properties
             // =============================
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
             C.max_iterations_fully_coupled = 100000;
 

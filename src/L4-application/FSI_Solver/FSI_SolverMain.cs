@@ -76,6 +76,11 @@ namespace BoSSS.Application.FSI_Solver
             }
         }
 
+        /// <summary>
+        /// saves the vector Guid for the sample points 
+        /// </summary>
+        TextWriter LogPhysicalData;
+
         static int counter = 0;
 
         public static void AgglomerationFailDebugPlot(DGField[] f)
@@ -711,8 +716,8 @@ namespace BoSSS.Application.FSI_Solver
             // Define an array with the respective cell colors
             // =======================================================
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            CellColor = ((FSI_Control)Control).AdaptiveMeshRefinement ? InitializeColoring(J, GridData, ((FSI_Control)Control).AdaptiveMeshRefinement) : CellColor ?? InitializeColoring(J, GridData, ((FSI_Control)Control).AdaptiveMeshRefinement);
-            //CellColor = CellColor == null ? InitializeColoring(J, GridData, ((FSI_Control)Control).AdaptiveMeshRefinement) : LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")]; 
+            //CellColor = ((FSI_Control)Control).AdaptiveMeshRefinement ? InitializeColoring(J, GridData, ((FSI_Control)Control).AdaptiveMeshRefinement) : CellColor ?? InitializeColoring(J, GridData, ((FSI_Control)Control).AdaptiveMeshRefinement);
+            CellColor = CellColor == null ? InitializeColoring(J, GridData, ((FSI_Control)Control).AdaptiveMeshRefinement) : LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")]; 
 
             // =======================================================
             // Step 2
@@ -1108,6 +1113,13 @@ namespace BoSSS.Application.FSI_Solver
                     }
                     else if (((FSI_Control)this.Control).Timestepper_LevelSetHandling != LevelSetHandling.Coupled_Iterative)
                     {
+                        if (phystime == 0) {
+                            if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
+                                LogPhysicalData = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
+                                string firstline = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}\t{11}\t{12}\t{13}", "#Particle", "#Time", "Position X", "Position Y", "Angle", "Transl. Velocity X", "Transl. Velocity Y", "Rot. Velocity", "Force X", "Force Y", "Angular Momentum", "Transl. Acceleration X", "Transl. Acceleration Y", "Rot. Acceleration");
+                                LogPhysicalData.WriteLine(firstline);
+                            }
+                        }
                         IterationCounter = 0;
                         double posResidual_splitting = 1e12;
                         while (posResidual_splitting > ((FSI_Control)Control).ForceAndTorque_ConvergenceCriterion)
@@ -1139,21 +1151,14 @@ namespace BoSSS.Application.FSI_Solver
                             LsTrk.IncreaseHistoryLength(1);
                             LsTrk.PushStacks();
                         }
-                        /*
-                        if (phystime == 0) {
-                            if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty) && iteration_counter == 0) {
-                                Log_DragAndLift = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
-                                string firstline = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", "#Timestep", "#Time", "P0_PosX", "P0_PosY", "P0_angle", "P0_VelX", "P0_VelY", "xPosition", "TotalKineticEnergy", "TotalMomentum");
-                                Log_DragAndLift.WriteLine(firstline);
+                        if ((base.MPIRank == 0) && (LogPhysicalData != null)) {
+                            for(int p = 0; p < m_Particles.Count(); p++) {
+                                string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", p, phystime, m_Particles[p].position[0][0], m_Particles[p].position[0][1], m_Particles[p].angle[0], m_Particles[p].translationalVelocity[0][0], m_Particles[p].translationalVelocity[0][1], m_Particles[p].rotationalVelocity[0], m_Particles[p].hydrodynamicForces[0][0], m_Particles[p].hydrodynamicForces[0][1], m_Particles[p].hydrodynamicTorque[0], m_Particles[p].translationalAcceleration[0][0], m_Particles[p].translationalAcceleration[0][1], m_Particles[p].rotationalAcceleration[0]);
+                                LogPhysicalData.WriteLine(line);
 
-                                if (m_Particles.Count > 1) {
-                                    Log_DragAndLift_P1 = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData_P1", CurrentSessionInfo.ID);
-                                    string firstline_P1 = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", "#Timestep", "#Time", "P1_PosX", "P1_PosY", "P1_angle", "P1_VelX", "P1_VelY", "xPosition", "TotalKineticEnergy", "TotalMomentum");
-                                    Log_DragAndLift_P1.WriteLine(firstline_P1);
-                                }
+                                LogPhysicalData.Flush();
                             }
                         }
-                        */
                     }
                     else
                     {
@@ -1561,14 +1566,17 @@ namespace BoSSS.Application.FSI_Solver
 
         protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid)
         {
-            //Debugger.Launch();
             if (((FSI_Control)Control).AdaptiveMeshRefinement)
             {
+                int refinementLevel = ((FSI_Control)this.Control).RefinementLevel;
                 CellMask CutCells = LsTrk.Regions.GetCutCellMask();
                 CellMask CutCellNeighbors = LsTrk.Regions.GetNearFieldMask(1);
                 CutCells = CutCells.Union(CutCellNeighbors);
+                List<Tuple<int, CellMask>> AllCellsWithMaxRefineLevel = new List<Tuple<int, CellMask>>();
+                AllCellsWithMaxRefineLevel.Add(new Tuple<int, CellMask>(refinementLevel, CutCells));
+               
 
-                bool AnyChange = GridRefinementController.ComputeGridChange((GridData)GridData, CutCells, ((FSI_Control)this.Control).RefinementLevel, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                bool AnyChange = GridRefinementController.ComputeGridChange((GridData)GridData, AllCellsWithMaxRefineLevel, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
                 int oldJ = this.GridData.CellPartitioning.TotalLength;
