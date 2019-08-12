@@ -346,8 +346,8 @@ namespace BoSSS.Foundation.Grid
             if (DesiredLevelNeigh <= 0)
                 return;
 
-            foreach (int jNeigh in globalNeighbourship[globalCellIndex])
-            {
+            for (int j = 0; j < globalNeighbourship[globalCellIndex].Length; j++) {
+                int jNeigh = globalNeighbourship[globalCellIndex][j];
                 if (currentLevel < DesiredLevelNeigh && DesiredLevel[jNeigh] < DesiredLevelNeigh)
                 {
                     DesiredLevel[jNeigh] = DesiredLevelNeigh;
@@ -533,10 +533,6 @@ namespace BoSSS.Foundation.Grid
                             Debug.Assert(CoarseningCluster[jC] == null);
                             CoarseningCluster[jC] = CC;
                         }
-                    }
-                    else
-                    {
-                        //Console.WriteLine("Not ok to coarsen.");
                     }
                 }
             }
