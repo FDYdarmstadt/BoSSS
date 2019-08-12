@@ -706,6 +706,7 @@ namespace BoSSS.Application.Rheology {
                 if (this.Control.OperatorMatrixAnalysis == true) {
 
                     OpAnalysisBase myAnalysis = new OpAnalysisBase(DelComputeOperatorMatrix, CurrentSolution.Mapping, CurrentSolution.Mapping.Fields.ToArray(), null, phystime);
+                    //myAnalysis.VarGroup = new int[] { 0};
                     myAnalysis.Analyse();
                 }
 

@@ -44,7 +44,7 @@ namespace BoSSS.Application.Rheology
         /// <summary>
         /// Channel Flow
         /// </summary>
-        static public RheologyControl Channel(string path = @"C:\Users\kikker\AnnesBoSSSdb\Channel", int degree = 2, int GridLevel = 3)
+        static public RheologyControl Channel(string path = @"C:\Users\kikker\AnnesBoSSSdb\Channel", int degree = 2, int GridLevel = 5)
         {
             RheologyControl C = new RheologyControl();
 
@@ -59,7 +59,7 @@ namespace BoSSS.Application.Rheology
             C.LinearSolver.MaxSolverIterations = 30;
             C.LinearSolver.MinSolverIterations = 3;
             C.LinearSolver.ConvergenceCriterion = 1E-10;
-            C.dt = 0.1;
+            C.dt = 1e6;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
@@ -80,7 +80,7 @@ namespace BoSSS.Application.Rheology
             //C.WhichWall = "Wall_Cylinder";
 
             //Debugging and Solver Analysis
-            C.OperatorMatrixAnalysis = false;
+            C.OperatorMatrixAnalysis = true;
             C.SkipSolveAndEvaluateResidual = false;
             C.SetInitialConditions = true;
             C.SetInitialPressure = true;
@@ -91,7 +91,7 @@ namespace BoSSS.Application.Rheology
             C.GravityY = (X, t) => 0;
 
             //Physical Params
-            C.Stokes = false;
+            C.Stokes = true;
             C.FixedStreamwisePeriodicBC = false;
             C.beta = 0.59;
             C.Reynolds = 1;
