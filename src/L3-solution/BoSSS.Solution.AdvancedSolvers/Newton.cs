@@ -312,7 +312,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     x = xinit.CloneAs();
                     r.AccV(-1, dirder(SolutionVec, currentX, x, f0));
                 }
-
+               // Precond = null;
                 if (Precond != null) {
                     var temp2 = r.CloneAs();
                     r.ClearEntries();

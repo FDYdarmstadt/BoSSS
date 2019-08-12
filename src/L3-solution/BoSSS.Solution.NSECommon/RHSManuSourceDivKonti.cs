@@ -37,19 +37,19 @@ namespace BoSSS.Solution.NSECommon {
         PhysicsMode physicsMode;
         double phystime;
         bool unsteady;
-        SinglePhaseField ThermodynamicPressure;
+
 
 
         /// <summary>
         /// Ctor.
         /// </summary>
-        public RHSManuSourceDivKonti(double Reynolds, double[] MolarMasses, PhysicsMode physicsMode, double phystime, bool unsteady, SinglePhaseField ThermodynamicPressure) {
+        public RHSManuSourceDivKonti(double Reynolds, double[] MolarMasses, PhysicsMode physicsMode, double phystime, bool unsteady) {
             this.ReynoldsNumber = Reynolds;
             this.MolarMasses = MolarMasses;
             this.physicsMode = physicsMode;
             this.phystime = phystime;
             this.unsteady = unsteady;
-            this.ThermodynamicPressure = ThermodynamicPressure;
+
         }
 
         /// <summary>
@@ -72,8 +72,8 @@ namespace BoSSS.Solution.NSECommon {
             double x_ = x[0];
             double y_ = x[1];
             double t_ = phystime;
-            double p0 = ThermodynamicPressure.GetMeanValue(3);
-            //Console.WriteLine(p0);
+            double p0 = 1.0;// ThermodynamicPressure.GetMeanValue(3);
+
             double M1 = MolarMasses[0]; double M2 = MolarMasses[1]; double M3 = MolarMasses[2]; double M4 = MolarMasses[3];
             double alpha1 = 0.3;
             double alpha2 = 0.6;
@@ -85,27 +85,66 @@ namespace BoSSS.Solution.NSECommon {
             if (unsteady) {
                 switch (physicsMode) {
                     case PhysicsMode.LowMach:
-                        man1 = -1 * (p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * x_ * y_ * Math.Sin(x_ * y_ * t_) - p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Cos(x_ * t_) * y_ * t_ * Math.Sin(x_ * y_ * t_) + p0 / Math.Cos(x_ * y_ * t_) * t_ * Math.Sin(x_ * t_) - p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Cos(y_ * t_) * x_ * t_ * Math.Sin(x_ * y_ * t_) + p0 / Math.Cos(x_ * y_ * t_) * t_ * Math.Sin(y_ * t_));
+                        double dRhodt = p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * x_ * y_ * Math.Sin(x_ * y_ * t_);
+                        double dRhoUdx = -p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Cos(x_ * t_) * y_ * t_ * Math.Sin(x_ * y_ * t_) + p0 / Math.Cos(x_ * y_ * t_) * t_ * Math.Sin(x_ * t_);
+                        double dRhoVdy = -p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Cos(y_ * t_) * x_ * t_ * Math.Sin(x_ * y_ * t_) + p0 / Math.Cos(x_ * y_ * t_) * t_ * Math.Sin(y_ * t_);
+                        man1 = -1 * (dRhodt + dRhoUdx + dRhoVdy);
                         break;
                     case PhysicsMode.Combustion:
-                        man1 = 0.0; //TODO
-                        break;
+                        throw new NotImplementedException("TODO");
                     default:
                         throw new NotImplementedException("should not happen");
                 }
             }
             else {
                 switch (physicsMode) {
-                    case PhysicsMode.LowMach:
-                        man1 = -1 * (-p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) * Math.Cos(x_) * y_ * Math.Sin(x_ * y_) + p0 / Math.Cos(x_ * y_) * Math.Sin(x_) - p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) * Math.Cos(y_) * x_ * Math.Sin(x_ * y_) + p0 / Math.Cos(x_ * y_) * Math.Sin(y_));// conti, momentum and energy
+                    case PhysicsMode.LowMach:                    
+
+                        double dRhodt = 0;
+                        double dRhoUdx = -p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) * Math.Cos(x_) * y_ * Math.Sin(x_ * y_) + p0 / Math.Cos(x_ * y_) * Math.Sin(x_);
+                        double dRhoVdy = -p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) * Math.Cos(y_) * x_ * Math.Sin(x_ * y_) + p0 / Math.Cos(x_ * y_) * Math.Sin(y_);
+                        man1 = -1 * (dRhodt + dRhoUdx + dRhoVdy);
                         break;
                     case PhysicsMode.Combustion:
-                        man1 = -1 * (-p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * Math.Cos(x_) * y_ * Math.Sin(x_ * y_) + p0 / Math.Cos(x_ * y_) * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4, -0.2e1) * Math.Cos(x_) * (-alpha1 * y_ * Math.Sin(x_ * y_) / M1 - alpha2 * y_ * Math.Sin(x_ * y_) / M2 - alpha3 * y_ * Math.Sin(x_ * y_) / M3 + (alpha1 * y_ * Math.Sin(x_ * y_) + alpha2 * y_ * Math.Sin(x_ * y_) + alpha3 * y_ * Math.Sin(x_ * y_)) / M4) + p0 / Math.Cos(x_ * y_) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * Math.Sin(x_) - p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * Math.Cos(y_) * x_ * Math.Sin(x_ * y_) + p0 / Math.Cos(x_ * y_) * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4, -0.2e1) * Math.Cos(y_) * (-alpha1 * x_ * Math.Sin(x_ * y_) / M1 - alpha2 * x_ * Math.Sin(x_ * y_) / M2 - alpha3 * x_ * Math.Sin(x_ * y_) / M3 + (alpha1 * x_ * Math.Sin(x_ * y_) + alpha2 * x_ * Math.Sin(x_ * y_) + alpha3 * x_ * Math.Sin(x_ * y_)) / M4) + p0 / Math.Cos(x_ * y_) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * Math.Sin(y_)); // conti, momentum, energy and species   
-                        break;
+                        throw new NotImplementedException("TODO");
                     default:
                         throw new NotImplementedException("should not happen");
                 }
             }
+
+
+
+            //if (unsteady) {
+            //    switch (physicsMode) {
+            //        case PhysicsMode.LowMach:
+            //            man1 = -1 * (p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * x_ * y_ * Math.Sin(x_ * y_ * t_) - p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Cos(x_ * t_) * y_ * t_ * Math.Sin(x_ * y_ * t_) + p0 / Math.Cos(x_ * y_ * t_) * t_ * Math.Sin(x_ * t_) - p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Cos(y_ * t_) * x_ * t_ * Math.Sin(x_ * y_ * t_) + p0 / Math.Cos(x_ * y_ * t_) * t_ * Math.Sin(y_ * t_));
+            //            break;
+            //        case PhysicsMode.Combustion:
+            //            man1 = 0.0; //TODO
+            //            break;
+            //        default:
+            //            throw new NotImplementedException("should not happen");
+            //    }
+            //}
+            //else {
+            //    switch (physicsMode) {
+            //        case PhysicsMode.LowMach:
+            //            man1 = -1 * (-p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) * Math.Cos(x_) * y_ * Math.Sin(x_ * y_) + p0 / Math.Cos(x_ * y_) * Math.Sin(x_) - p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) * Math.Cos(y_) * x_ * Math.Sin(x_ * y_) + p0 / Math.Cos(x_ * y_) * Math.Sin(y_));// conti, momentum and energy
+            //            break;
+            //        case PhysicsMode.Combustion:
+            //            man1 = -1 * (-p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * Math.Cos(x_) * y_ * Math.Sin(x_ * y_) + p0 / Math.Cos(x_ * y_) * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4, -0.2e1) * Math.Cos(x_) * (-alpha1 * y_ * Math.Sin(x_ * y_) / M1 - alpha2 * y_ * Math.Sin(x_ * y_) / M2 - alpha3 * y_ * Math.Sin(x_ * y_) / M3 + (alpha1 * y_ * Math.Sin(x_ * y_) + alpha2 * y_ * Math.Sin(x_ * y_) + alpha3 * y_ * Math.Sin(x_ * y_)) / M4) + p0 / Math.Cos(x_ * y_) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * Math.Sin(x_) - p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * Math.Cos(y_) * x_ * Math.Sin(x_ * y_) + p0 / Math.Cos(x_ * y_) * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4, -0.2e1) * Math.Cos(y_) * (-alpha1 * x_ * Math.Sin(x_ * y_) / M1 - alpha2 * x_ * Math.Sin(x_ * y_) / M2 - alpha3 * x_ * Math.Sin(x_ * y_) / M3 + (alpha1 * x_ * Math.Sin(x_ * y_) + alpha2 * x_ * Math.Sin(x_ * y_) + alpha3 * x_ * Math.Sin(x_ * y_)) / M4) + p0 / Math.Cos(x_ * y_) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * Math.Sin(y_)); // conti, momentum, energy and species   
+            //            break;
+            //        default:
+            //            throw new NotImplementedException("should not happen");
+            //    }
+            //}
+
+
+
+
+
+
+
             return man1;
         }
     }
