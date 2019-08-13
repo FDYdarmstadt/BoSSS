@@ -121,11 +121,20 @@ namespace BoSSS.Application.Rheology
             T__in[0, 1] = _uA[1]; // stress_XY
             T__in[1, 1] = _uA[2]; // stress_YY
 
-            T_out[0, 0] = StressFunction[inp.EdgeTag,0,0](inp.X, inp.time); // stress_XX
-            T_out[1, 0] = StressFunction[inp.EdgeTag, 1, 0](inp.X, inp.time); // stress_XY
-            T_out[0, 1] = StressFunction[inp.EdgeTag, 0, 1](inp.X, inp.time); // stress_XY
-            T_out[1, 1] = StressFunction[inp.EdgeTag, 1, 1](inp.X, inp.time); // stress_YY
-
+            if (m_BcMap.EdgeTag2Type[inp.EdgeTag] == IncompressibleBcType.Wall)
+            {
+                T_out[0, 0] = T__in[0, 0]; // stress_XX
+                T_out[1, 0] = T__in[1, 0]; // stress_XY
+                T_out[0, 1] = T__in[0, 1]; // stress_XY
+                T_out[1, 1] = T__in[1, 1]; // stress_YY
+            }
+            else
+            {
+                T_out[0, 0] = StressFunction[inp.EdgeTag, 0, 0](inp.X, inp.time); // stress_XX
+                T_out[1, 0] = StressFunction[inp.EdgeTag, 1, 0](inp.X, inp.time); // stress_XY
+                T_out[0, 1] = StressFunction[inp.EdgeTag, 0, 1](inp.X, inp.time); // stress_XY
+                T_out[1, 1] = StressFunction[inp.EdgeTag, 1, 1](inp.X, inp.time); // stress_YY
+            }
             S__in[ComponentRow, ComponentCol] = _vA;
 
             double flxIn = MyCellBoundaryForm(Normale, T__in, T_out, S__in, inp.Parameters_IN, inp.Parameters_IN, false, 0);

@@ -540,12 +540,6 @@ namespace BoSSS.Application.Rheology {
                     LevelSetHandling lsh = LevelSetHandling.None;
 
 
-                    SpatialOperatorType SpatialOp = SpatialOperatorType.LinearTimeDependent;
-
-                    if (!this.Control.Stokes) {
-                        SpatialOp = SpatialOperatorType.Nonlinear;
-                    }
-
                     int bdfOrder;
                     if (this.Control.Timestepper_Scheme == RheologyControl.TimesteppingScheme.CrankNicolson)
                         bdfOrder = -1;
@@ -566,7 +560,7 @@ namespace BoSSS.Application.Rheology {
                         bdfOrder,
                         lsh,
                         MassMatrixShapeandDependence.IsTimeDependent,
-                        SpatialOp,
+                        SpatialOperatorType.Nonlinear,
                         MassScale,
                         this.MultigridOperatorConfig, base.MultigridSequence,
                         this.FluidSpecies, 1, // no hmf order required.
@@ -710,7 +704,10 @@ namespace BoSSS.Application.Rheology {
             using (new FuncTrace()) {
 
                 if (this.Control.OperatorMatrixAnalysis == true) {
-                    SpatialOperatorAnalysis.SpatialOperatorMatrixAnalysis(false, this.Control.AnalysisLevel);
+
+                    OpAnalysisBase myAnalysis = new OpAnalysisBase(DelComputeOperatorMatrix, CurrentSolution.Mapping, CurrentSolution.Mapping.Fields.ToArray(), null, phystime);
+                    //myAnalysis.VarGroup = new int[] { 0};
+                    myAnalysis.Analyse();
                 }
 
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
@@ -956,7 +953,7 @@ namespace BoSSS.Application.Rheology {
 
 
         /// <summary>
-        /// Computation of operator matrix to be used by DelComputeOperatorMatrix, the SpatialOperatorAnalysis and sone unit tests(<see cref="m_BDF_Timestepper"/>).
+        /// Computation of operator matrix to be used by DelComputeOperatorMatrix, the SpatialOperatorAnalysis and some unit tests(<see cref="m_BDF_Timestepper"/>).
         /// </summary>
         public void AssembleMatrix(out BlockMsrMatrix OpMatrix, out double[] OpAffine, DGField[] CurrentState, bool Linearization) {
 
