@@ -458,8 +458,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
                     Debug.Assert(c2 == old2NewGlobalId.Count);
                 }
-                byte[,] Edg321e2Face = newGrid.GridData.Edges.FaceIndices;
-                int[,] Edge1232Cell = newGrid.GridData.Edges.CellIndices;
                 return newGrid;
             }
         }

@@ -386,7 +386,7 @@ namespace BoSSS.Application.FSI_Solver
             // basic database options
             // =============================
             C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\WetParticleCollision";
-            C.savetodb = true;
+            C.savetodb = false;
             C.saveperiod = 1;
             C.ProjectName = "ParticleUnderGravity";
             C.ProjectDescription = "Active";
