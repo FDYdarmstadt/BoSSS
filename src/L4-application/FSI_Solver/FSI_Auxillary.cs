@@ -33,6 +33,110 @@ namespace FSI_Solver
     class FSI_Auxillary 
     {
         /// <summary>
+        /// This method saves the list value at list position "0" to the next position.
+        /// Use this method for onedimensional vars.
+        /// </summary>
+        /// <param name="variable">
+        /// Name of the list.
+        /// </param>
+        internal void SaveValueOfLastTimestep(List<double> variable)
+        {
+            variable.Insert(0, new double());
+            variable[0] = 0;
+            variable.RemoveAt(variable.Count - 1);
+        }
+
+        /// <summary>
+        /// This method saves the list value at list position "0" to the next position.
+        /// Use this method for multidimensional vars.
+        /// </summary>
+        /// <param name="variable">
+        /// Name of the list.
+        /// </param>
+        internal void SaveMultidimValueOfLastTimestep(List<double[]> variable)
+        {
+            int Dim = variable[0].Length;
+            variable.Insert(0, new double[Dim]);
+            for (int d = 0; d < Dim; d++)
+            {
+                variable[0][d] = 0;
+            }
+            variable.RemoveAt(variable.Count - 1);
+        }
+
+        internal void TestArithmeticException(double[,] variable, string variableName)
+        {
+            ThrowIsNaNException(variable, variableName);
+            ThrowIsInfinityException(variable, variableName);
+        }
+
+        internal void TestArithmeticException(double[] variable, string variableName)
+        {
+            ThrowIsNaNException(variable, variableName);
+            ThrowIsInfinityException(variable, variableName);
+        }
+
+        internal void TestArithmeticException(double variable, string variableName)
+        {
+            ThrowIsNaNException(variable, variableName);
+            ThrowIsInfinityException(variable, variableName);
+        }
+
+        internal void ThrowIsNaNException(double[,] variable, string variableName)
+        {
+            for (int i = 0; i < variable.GetLength(0); i++)
+            {
+                for (int j = 0; j < variable.GetLength(1); j++)
+                {
+                    if (double.IsNaN(variable[i, j]))
+                        throw new ArithmeticException("Error during update of " + variableName + ", value is NaN.");
+                }
+            }
+        }
+
+        internal void ThrowIsNaNException(double[] variable, string variableName)
+        {
+            for (int i = 0; i < variable.Length; i++)
+            {
+                if (double.IsNaN(variable[i]))
+                    throw new ArithmeticException("Error during update of " + variableName + ", value is NaN.");
+            }
+        }
+
+        internal void ThrowIsNaNException(double variable, string variableName)
+        {
+            if (double.IsNaN(variable))
+                throw new ArithmeticException("Error during update of " + variableName + ", value is NaN.");
+        }
+
+        internal void ThrowIsInfinityException(double[,] variable, string variableName)
+        {
+            for (int i = 0; i < variable.GetLength(0); i++)
+            {
+                for (int j = 0; j < variable.GetLength(1); j++)
+                {
+                    if (double.IsInfinity(variable[i, j]))
+                        throw new ArithmeticException("Error during update of " + variableName + ", value is infinity.");
+                }
+            }
+        }
+
+        internal void ThrowIsInfinityException(double[] variable, string variableName)
+        {
+            for (int i = 0; i < variable.Length; i++)
+            {
+                if (double.IsInfinity(variable[i]))
+                    throw new ArithmeticException("Error during update of " + variableName + ", value is infinity.");
+            }
+        }
+
+        internal void ThrowIsInfinityException(double variable, string variableName)
+        {
+            if (double.IsInfinity(variable))
+                throw new ArithmeticException("Error during update of " + variableName + ", value is infinity.");
+        }
+
+        /// <summary>
         /// Calculate componentwise sum of two vectors.
         /// </summary>
         /// <param name="Vector0">
@@ -64,6 +168,7 @@ namespace FSI_Solver
             {
                 ResultVector[d] = Vector0[d] + Vector1[d];
             }
+            TestArithmeticException(ResultVector, "result of vector summation");
             return ResultVector;
         }
 
@@ -75,10 +180,6 @@ namespace FSI_Solver
         /// <param name="Vector1"></param>
         internal double[] VectorDiff(double[] Vector0, double[] Vector1)
         {
-            if (double.IsNaN(Vector0[0]) || double.IsNaN(Vector0[1]))
-                throw new ArithmeticException("1Error trying to calculate Vector0 Value:  " + Vector0[0] + " Vector0 " + Vector0[1]);
-            if (double.IsNaN(Vector1[0]) || double.IsNaN(Vector1[1]))
-                throw new ArithmeticException("1Error trying to calculate Vector1 Value:  " + Vector1[0] + " Vector1 " + Vector1[1]);
             int Dim = Vector0 != null ? Vector0.Length : Vector1.Length;
             if (Vector0 == null)
             {
@@ -88,10 +189,6 @@ namespace FSI_Solver
                     Vector0[d] = 0;
                 }
             }
-            if (double.IsNaN(Vector0[0]) || double.IsNaN(Vector0[1]))
-                throw new ArithmeticException("12Error trying to calculate Vector0 Value:  " + Vector0[0] + " Vector0 " + Vector0[1]);
-            if (double.IsNaN(Vector1[0]) || double.IsNaN(Vector1[1]))
-                throw new ArithmeticException("12Error trying to calculate Vector1 Value:  " + Vector1[0] + " Vector1 " + Vector1[1]);
             if (Vector1 == null)
             {
                 Vector1 = Vector0.CloneAs();
@@ -100,10 +197,6 @@ namespace FSI_Solver
                     Vector1[d] = 0;
                 }
             }
-            if (double.IsNaN(Vector0[0]) || double.IsNaN(Vector0[1]))
-                throw new ArithmeticException("13Error trying to calculate Vector0 Value:  " + Vector0[0] + " Vector0 " + Vector0[1]);
-            if (double.IsNaN(Vector1[0]) || double.IsNaN(Vector1[1]))
-                throw new ArithmeticException("13Error trying to calculate Vector1 Value:  " + Vector1[0] + " Vector1 " + Vector1[1]);
             double[] ResultVector = new double[Dim];
             if (Vector0.Length != Vector1.Length)
                 throw new ArithmeticException("Mismatch in vector dimension");
@@ -111,8 +204,7 @@ namespace FSI_Solver
             {
                 ResultVector[d] = Vector0[d] - Vector1[d];
             }
-            if (double.IsNaN(ResultVector[0]) || double.IsNaN(ResultVector[1]))
-                throw new ArithmeticException("Error trying to calculate ResultVector Value:  " + ResultVector[0] + " ResultVector " + ResultVector[1]);
+            TestArithmeticException(ResultVector, "result of vector difference");
             return ResultVector;
         }
 
@@ -132,6 +224,7 @@ namespace FSI_Solver
             {
                 DotProduct += Vector0[d] * Vector1[d];
             }
+            TestArithmeticException(DotProduct, "dot product of two vectors");
             return DotProduct;
         }
 
@@ -255,7 +348,14 @@ namespace FSI_Solver
 
         }
 
-        int[] LeftSearch(List<int> SortedList, int StartIndex)
+        /// <summary>
+        /// Search for left neighbours
+        /// </summary>
+        /// <param name="SortedList">
+        /// A sorted list of all elements
+        /// </param>
+        /// <param name="StartIndex"></param>
+        private int[] LeftSearch(List<int> SortedList, int StartIndex)
         {
             List<int> temp = new List<int> { StartIndex };
             while (temp.Last() + 1 < SortedList.Count() && SortedList[temp.Last() + 1] == SortedList[temp.Last()])
@@ -265,7 +365,14 @@ namespace FSI_Solver
             return temp.ToArray();
         }
 
-        int[] RightSearch(List<int> SortedList, int StartIndex)
+        /// <summary>
+        /// Search for right neighbours
+        /// </summary>
+        /// <param name="SortedList">
+        /// A sorted list of all elements
+        /// </param>
+        /// <param name="StartIndex"></param>
+        private int[] RightSearch(List<int> SortedList, int StartIndex)
         {
             List<int> temp = new List<int> { StartIndex };
             while (temp.Last() - 1 > 0 && SortedList[temp.Last() - 1] == SortedList[temp.Last()])
@@ -275,6 +382,12 @@ namespace FSI_Solver
             return temp.ToArray();
         }
 
+        /// <summary>
+        /// MPI exchange of the damping tensors
+        /// </summary>
+        /// <param name="Particles">
+        /// A list of all particles
+        /// </param>
         internal void ExchangeDampingTensors(List<Particle> Particles)
         {
             int NoOfParticles = Particles.Count;
@@ -287,7 +400,7 @@ namespace FSI_Solver
                 {
                     for (int j = 0; j < 3; j++)
                     {
-                        StateBuffer[NoOfVars * NoOfVars * p + i + NoOfVars * j] = P.AddedDampingTensor[i, j];
+                        StateBuffer[NoOfVars * NoOfVars * p + i + NoOfVars * j] = P.addedDampingTensor[i, j];
                     }
                 }
 
@@ -300,183 +413,272 @@ namespace FSI_Solver
                 {
                     for (int j = 0; j < 3; j++)
                     {
-                        P.AddedDampingTensor[i, j] = GlobalStateBuffer[NoOfVars * NoOfVars * p + i + NoOfVars * j];
+                        P.addedDampingTensor[i, j] = GlobalStateBuffer[NoOfVars * NoOfVars * p + i + NoOfVars * j];
                     }
                 }
             }
         }
 
-        internal void CalculateParticleVelocity(List<Particle> Particles, double dt, bool FullyCoupled, int IterationCounter, bool IncludeHydrodynamics = true)
+        /// <summary>
+        /// Calls the calculation of the Acceleration and the velocity
+        /// </summary>
+        /// <param name="Particles">
+        /// A list of all particles
+        /// </param>
+        /// <param name="dt">
+        /// The time step
+        /// </param>
+        /// <param name="FullyCoupled">
+        /// Do you use FSI_Fully_Coupled?
+        /// </param>
+        /// <param name="IterationCounter">
+        /// No of iterations
+        /// </param>
+        /// <param name="IncludeHydrodynamics"></param>
+        internal void CalculateParticleVelocity(List<Particle> Particles, double dt, bool FullyCoupled, int IterationCounter, int TimestepInt, bool IncludeHydrodynamics = true)
         {
-
             foreach (Particle p in Particles)
             {
                 p.iteration_counter_P = IterationCounter;
                 if (IterationCounter == 0 && FullyCoupled)
                 {
-                    if (p.neglectAddedDamping == false)
+                    Console.WriteLine("Predicting forces for the next timestep...");
+                    if (p.UseAddedDamping)
                     {
                         p.UpdateDampingTensors();
                         //ExchangeDampingTensors(Particles);
                     }
-                    p.PredictForceAndTorque();
-                    //p.PredictAcceleration();
+                    p.PredictForceAndTorque(TimestepInt);
                 }
-                else
-                {
-                    p.CalculateAcceleration(dt, FullyCoupled, IncludeHydrodynamics);
-                }
-                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                p.CalculateAcceleration(dt, FullyCoupled, IncludeHydrodynamics);
                 p.UpdateParticleVelocity(dt);
             }
         }
 
+        /// <summary>
+        /// Calls the calculation of position
+        /// </summary>
+        /// <param name="Particles">
+        /// A list of all particles
+        /// </param>
+        /// <param name="dt">
+        /// The time step
+        /// </param>
         internal void CalculateParticlePosition(List<Particle> Particles, double dt)
         {
-            foreach (Particle p in Particles)
+            for (int p = 0; p < Particles.Count(); p++)
             {
-                p.UpdateParticlePositionAndAngle(dt);
+                Particle CurrentParticle = Particles[p];
+                CurrentParticle.CalculateParticlePosition(dt);
+                CurrentParticle.CalculateParticleAngle(dt);
+                CurrentParticle.CollisionTimestep = 0;
             }
         }
-        internal void CalculateParticleAccelerationAndDamping(Particle Particle, int IterationCounter, double dt, bool LieSplittingFullyCoupled) {
 
-            if (IterationCounter == 0 && LieSplittingFullyCoupled) {
-                if (Particle.neglectAddedDamping == false) {
-                    Particle.UpdateDampingTensors();
-                    //ExchangeDampingTensors(Particles);
-                }
-                Particle.PredictAcceleration();
-            } else {
-                Particle.CalculateAcceleration(dt, LieSplittingFullyCoupled, true);
-            }
-
-        }
-
-        internal void CalculateParticleResidual(List<Particle> Particles, double[] ForcesOldSquared, double TorqueOldSquared, int IterationCounter, int MaximumIterations, out double Residual, out int _IterationCounter)
+        /// <summary>
+        /// Residual for fully coupled system
+        /// </summary>
+        /// <param name="Particles">
+        /// A list of all particles
+        /// </param>
+        /// <param name="IterationCounter_In"></param>
+        /// <param name="MaximumIterations"></param>
+        /// <param name="Residual"></param>
+        /// <param name="IterationCounter_Out"> </param>
+        internal void CalculateParticleResidual(List<Particle> Particles, int IterationCounter_In, int MaximumIterations, out double Residual, out int IterationCounter_Out)
         {
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            if (IterationCounter == 0)
+            if (IterationCounter_In == 0)
                 Residual = 1e12;
             else
             {
                 double[] ForcesNewSquared = new double[2];
                 double TorqueNewSquared = new double();
+                Residual = 0;
                 foreach (Particle p in Particles)
                 {
+                    p.ForceTorqueResidual = Math.Sqrt((p.forcesPrevIteration[0] - p.hydrodynamicForces[0][0]).Pow2() + (p.forcesPrevIteration[1] - p.hydrodynamicForces[0][1]).Pow2() + (p.torquePrevIteration - p.hydrodynamicTorque[0]).Pow2());
                     for (int d = 0; d < 2; d++)
-                        ForcesNewSquared[d] += p.HydrodynamicForces[0][d].Pow2();
-                    TorqueNewSquared += p.HydrodynamicTorque[0].Pow2();
+                        ForcesNewSquared[d] += p.hydrodynamicForces[0][d].Pow2();
+                    TorqueNewSquared += p.hydrodynamicTorque[0].Pow2();
+                    Residual += p.ForceTorqueResidual;
                 }
-                Residual = Math.Sqrt((Math.Sqrt(ForcesNewSquared[0]) - Math.Sqrt(ForcesOldSquared[0])).Pow2() + (Math.Sqrt(ForcesNewSquared[1]) - Math.Sqrt(ForcesOldSquared[1])).Pow2() + (Math.Sqrt(TorqueNewSquared) - Math.Sqrt(TorqueOldSquared)).Pow2());
             }
-            //int PrintIteration = IterationCounter + 1;
-            if (IterationCounter != 0)
+            Residual /= Particles.Count();
+            if (IterationCounter_In != 0)
             {
                 Console.WriteLine();
                 Console.WriteLine("Forces and torque residual: " + Residual);
                 Console.WriteLine("=======================================================");
                 Console.WriteLine();
             }
-            if (IterationCounter > MaximumIterations)
-                throw new ApplicationException("No convergence in coupled iterative solver, number of iterations: " + IterationCounter);
-            _IterationCounter = IterationCounter + 1;
+            if (IterationCounter_In > MaximumIterations)
+                throw new ApplicationException("No convergence in coupled iterative solver, number of iterations: " + IterationCounter_In);
+            IterationCounter_Out = IterationCounter_In + 1;
         }
 
-        internal void CalculateParticleResidual_Velocity(List<Particle> Particles, double[] VelocityOldSquared, double RotationalVelocityOldSquared, int IterationCounter, int MaximumIterations, out double Residual, out int _IterationCounter)
+        /// <summary>
+        /// Residual for fully coupled system
+        /// </summary>
+        /// <param name="Particles">
+        /// A list of all particles
+        /// </param>
+        /// <param name="FluidViscosity"></param>
+        /// <param name="phystime"></param>
+        /// <param name="TimestepInt"></param>
+        /// <param name="IterationCounter"> </param>
+        /// /// <param name="Finalresult"></param>
+        /// <param name="MPIangularVelocity"></param>
+        /// <param name="Force"></param>
+        internal void PrintResultToConsole(List<Particle> Particles, double phystime, int IterationCounter, out double MPIangularVelocity, out double[] Force)
         {
-            if (IterationCounter == 0)
-                Residual = 1e12;
-            else
+            if (Particles.Count() == 0)
             {
-                double[] VelocityNewSquared = new double[2];
-                double RotationalVelocityNewSquared = new double();
-                foreach (Particle p in Particles)
-                {
-                    for (int d = 0; d < 2; d++)
-                        VelocityNewSquared[d] += p.TranslationalVelocity[0][d].Pow2();
-                    RotationalVelocityNewSquared += p.RotationalVelocity[0].Pow2();
-                }
-                Residual = Math.Sqrt((Math.Sqrt(VelocityNewSquared[0]) - Math.Sqrt(VelocityOldSquared[0])).Pow2() + (Math.Sqrt(VelocityNewSquared[1]) - Math.Sqrt(VelocityOldSquared[1])).Pow2() + (Math.Sqrt(RotationalVelocityNewSquared) - Math.Sqrt(RotationalVelocityOldSquared)).Pow2());
+                MPIangularVelocity = 0;
+                Force = new double[1];
+                return;
             }
-            int PrintIteration = IterationCounter + 1;
-            Console.WriteLine("Fully coupled system, number of iterations:  " + PrintIteration);
-            Console.WriteLine("Velocity residual: " + Residual);
-            Console.WriteLine();
-            if (IterationCounter > MaximumIterations)
-                throw new ApplicationException("no convergence in coupled iterative solver, number of iterations: " + IterationCounter);
-            _IterationCounter = IterationCounter + 1;
-        }
-
-        internal void PrintResultToConsole(List<Particle> Particles, double FluidViscosity, double phystime, double dt, int TimestepInt, int IterationCounter, bool Finalresult, out double MPIangularVelocity, out double[] force)
-        {
             double[] TranslationalMomentum = new double[2] { 0, 0 };
             double RotationalMomentum = 0;
             double[] totalKE = new double[3] { 0, 0, 0 };
-            double[] ParticleReynoldsNumber = new double[Particles.Count()];
-            foreach (Particle p in Particles)
+
+            for (int p = 0; p < Particles.Count(); p++) 
             {
-                double[] SingleParticleMomentum = p.CalculateParticleMomentum();
-                double[] SingleParticleKineticEnergy = p.CalculateParticleKineticEnergy();
+                Particle CurrentParticle = Particles[p];
+                double[] SingleParticleMomentum = CurrentParticle.CalculateParticleMomentum();
+                double[] SingleParticleKineticEnergy = CurrentParticle.CalculateParticleKineticEnergy();
                 TranslationalMomentum[0] += SingleParticleMomentum[0];
                 TranslationalMomentum[1] += SingleParticleMomentum[1];
                 RotationalMomentum += SingleParticleMomentum[SingleParticleMomentum.Length - 1];
                 totalKE[0] += SingleParticleKineticEnergy[0];
                 totalKE[1] += SingleParticleKineticEnergy[1];
                 totalKE[2] += SingleParticleKineticEnergy[SingleParticleMomentum.Length - 1];
-                ParticleReynoldsNumber[Particles.IndexOf(p)] = p.ComputeParticleRe(FluidViscosity);
             }
 
-            Console.WriteLine("Total momentum in system:  " + Math.Sqrt(TranslationalMomentum[0].Pow2() + TranslationalMomentum[1].Pow2()));
-            Console.WriteLine("Total kinetic energy in system:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
+            Force = Particles[0].hydrodynamicForces[0];
+            MPIangularVelocity = Particles[0].rotationalVelocity[0];
 
-            force = Particles[0].HydrodynamicForces[0];
-            MPIangularVelocity = Particles[0].RotationalVelocity[0];
+            StringBuilder OutputBuilder = new StringBuilder();
 
-            /*
-            if ((base.MPIRank == 0) && (Log_DragAndLift != null)) {
-                double drag = force[0];
-                double lift = force[1];
-                //string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", TimestepNo, phystime, m_Particles[0].positionAtIteration[0][0], m_Particles[0].positionAtIteration[0][1], m_Particles[0].particleAnglePerIteration[0], m_Particles[0].transVelocityAtIteration[0][0], m_Particles[0].transVelocityAtIteration[0][1], 0.0, (totalKE[0] + totalKE[1] + totalKE[2]), Math.Sqrt(TranslationalMomentum[0].Pow2() + TranslationalMomentum[1].Pow2()));
-                string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}", phystime, m_Particles[0].Position[0][0], m_Particles[0].Position[0][1], m_Particles[0].Angle[0], m_Particles[0].TranslationalVelocity[0][0], m_Particles[0].TranslationalVelocity[0][1], 0.0, (totalKE[0] + totalKE[1] + totalKE[2]), Math.Sqrt(TranslationalMomentum[0].Pow2() + TranslationalMomentum[1].Pow2()));
-                Log_DragAndLift.WriteLine(line);
-                Log_DragAndLift.Flush();
-            }
-            */
+            OutputBuilder.AppendLine("Total kinetic energy in system:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
+            OutputBuilder.AppendLine("Total momentum in system:  " + Math.Sqrt(TranslationalMomentum[0].Pow2() + TranslationalMomentum[1].Pow2()));
+            OutputBuilder.AppendLine("Total kinetic energy in system:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
             for (int p = 0; p < Particles.Count(); p++)
             {
-                Particle CurrentP = Particles[p];
-                int PrintP = p + 1;
-                Console.WriteLine("=======================================================");
-                if (Finalresult)
-                    Console.WriteLine("Final status report for timestep #" + TimestepInt + ", particle #" + PrintP + ", Time: " + phystime);
-                else
-                    Console.WriteLine("Status report particle #" + PrintP + ", Time: " + phystime + ", Iteration #" + IterationCounter);
-                Console.WriteLine("-------------------------------------------------------");
-                Console.WriteLine("Drag Force:   {0}", CurrentP.HydrodynamicForces[0][0]);
-                Console.WriteLine("Lift Force:   {0}", CurrentP.HydrodynamicForces[0][1]);
-                Console.WriteLine("Torqe:   {0}", CurrentP.HydrodynamicTorque[0]);
-                Console.WriteLine("Transl VelocityX:   {0}", CurrentP.TranslationalVelocity[0][0]);
-                Console.WriteLine("Transl VelocityY:   {0}", CurrentP.TranslationalVelocity[0][1]);
-                Console.WriteLine("Angular Velocity:   {0}", CurrentP.RotationalVelocity[0]);
-                if (Finalresult)
+                Particle CurrentParticle = Particles[p];
+                // only print particles with some action
+                if(CurrentParticle.IncludeTranslation || CurrentParticle.IncludeRotation)
                 {
-                    Console.WriteLine("X-position:   {0}", CurrentP.Position[0][0]);
-                    Console.WriteLine("Y-position:   {0}", CurrentP.Position[0][1]);
-                    Console.WriteLine("Angle:   {0}", CurrentP.Angle[0]);
-                    Console.WriteLine();
-                    Console.WriteLine("Particle Reynolds number: " + ParticleReynoldsNumber[p]);
-                    Console.WriteLine();
-                    Console.WriteLine("=======================================================");
-                    Console.WriteLine();
+                    int PrintP = p + 1;
+                    OutputBuilder.AppendLine("=======================================================");
+                    OutputBuilder.AppendLine("Status report particle #" + PrintP + ", Time: " + phystime + ", Iteration #" + IterationCounter);
+                    if (CurrentParticle.Collided)
+                        OutputBuilder.AppendLine("The particle is collided");
+                    OutputBuilder.AppendLine("-------------------------------------------------------");
+                    OutputBuilder.AppendLine("Drag Force: " + CurrentParticle.hydrodynamicForces[0][0]);
+                    OutputBuilder.AppendLine("Lift Force: " + CurrentParticle.hydrodynamicForces[0][1]);
+                    OutputBuilder.AppendLine("Torqe: " + CurrentParticle.hydrodynamicTorque[0]);
+                    OutputBuilder.AppendLine("Transl VelocityX: " + CurrentParticle.translationalVelocity[0][0]);
+                    OutputBuilder.AppendLine("Transl VelocityY: " + CurrentParticle.translationalVelocity[0][1]);
+                    OutputBuilder.AppendLine("Angular Velocity: " + CurrentParticle.rotationalVelocity[0]);
                 }
             }
+            Console.WriteLine(OutputBuilder.ToString());
         }
 
-        internal void SaveOldParticleState(List<Particle> Particles, int IterationCounter, int SpatialDim, double ForceTorqueConvergenceCriterion, bool IsFullyCoupled, out double[] ForcesOldSquared, out double TorqueOldSquared)
+        /// <summary>
+        /// Residual for fully coupled system
+        /// </summary>
+        /// <param name="Particles">
+        /// A list of all particles
+        /// </param>
+        /// <param name="FluidViscosity"></param>
+        /// <param name="phystime"></param>
+        /// <param name="TimestepInt"></param>
+        /// <param name="IterationCounter"> </param>
+        /// /// <param name="Finalresult"></param>
+        /// <param name="MPIangularVelocity"></param>
+        /// <param name="Force"></param>
+        internal void PrintResultToConsole(List<Particle> Particles, double FluidViscosity, double FluidDensity, double phystime, int TimestepInt, out double MPIangularVelocity, out double[] Force)
         {
-            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            ForcesOldSquared = new double[SpatialDim];
-            TorqueOldSquared = 0;
+            if (Particles.Count() == 0)
+            {
+                MPIangularVelocity = 0;
+                Force = new double[1];
+                return;
+            }
+            double[] TranslationalMomentum = new double[2] { 0, 0 };
+            double RotationalMomentum = 0;
+            double[] totalKE = new double[3] { 0, 0, 0 };
+            double[] ParticleReynoldsNumber = new double[Particles.Count()];
+            double[] ParticleStokesNumber = new double[Particles.Count()];
+
+            for (int p = 0; p < Particles.Count(); p++)
+            {
+                Particle CurrentParticle = Particles[p];
+                double[] SingleParticleMomentum = CurrentParticle.CalculateParticleMomentum();
+                double[] SingleParticleKineticEnergy = CurrentParticle.CalculateParticleKineticEnergy();
+                TranslationalMomentum[0] += SingleParticleMomentum[0];
+                TranslationalMomentum[1] += SingleParticleMomentum[1];
+                RotationalMomentum += SingleParticleMomentum[SingleParticleMomentum.Length - 1];
+                totalKE[0] += SingleParticleKineticEnergy[0];
+                totalKE[1] += SingleParticleKineticEnergy[1];
+                totalKE[2] += SingleParticleKineticEnergy[SingleParticleMomentum.Length - 1];
+                ParticleReynoldsNumber[Particles.IndexOf(CurrentParticle)] = CurrentParticle.ComputeParticleRe(FluidViscosity);
+                ParticleStokesNumber[Particles.IndexOf(CurrentParticle)] = CurrentParticle.ComputeParticleSt(FluidViscosity, FluidDensity);
+            }
+
+            Force = Particles[0].hydrodynamicForces[0];
+            MPIangularVelocity = Particles[0].rotationalVelocity[0];
+
+            StringBuilder OutputBuilder = new StringBuilder();
+
+            OutputBuilder.AppendLine("Total kinetic energy in system:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
+            OutputBuilder.AppendLine("Total momentum in system:  " + Math.Sqrt(TranslationalMomentum[0].Pow2() + TranslationalMomentum[1].Pow2()));
+            OutputBuilder.AppendLine("Total kinetic energy in system:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
+            for (int p = 0; p < Particles.Count(); p++)
+            {
+                Particle CurrentParticle = Particles[p];
+                // only print particles with some action
+                if (CurrentParticle.IncludeTranslation || CurrentParticle.IncludeRotation)
+                {
+                    int PrintP = p + 1;
+                    OutputBuilder.AppendLine("=======================================================");
+                    OutputBuilder.AppendLine("Final status report for timestep #" + TimestepInt + ", particle #" + PrintP + ", Time: " + phystime);
+                    if (CurrentParticle.Collided)
+                        OutputBuilder.AppendLine("The particle is collided");
+                    OutputBuilder.AppendLine("-------------------------------------------------------");
+                    OutputBuilder.AppendLine("Drag Force: " + CurrentParticle.hydrodynamicForces[0][0]);
+                    OutputBuilder.AppendLine("Lift Force: " + CurrentParticle.hydrodynamicForces[0][1]);
+                    OutputBuilder.AppendLine("Torqe: " + CurrentParticle.hydrodynamicTorque[0]);
+                    OutputBuilder.AppendLine("Transl VelocityX: " + CurrentParticle.translationalVelocity[0][0]);
+                    OutputBuilder.AppendLine("Transl VelocityY: " + CurrentParticle.translationalVelocity[0][1]);
+                    OutputBuilder.AppendLine("Angular Velocity: " + CurrentParticle.rotationalVelocity[0]);
+                    OutputBuilder.AppendLine("X-position: " + CurrentParticle.position[0][0]);
+                    OutputBuilder.AppendLine("Y-position: " + CurrentParticle.position[0][1]);
+                    OutputBuilder.AppendLine("Angle: " + CurrentParticle.angle[0]);
+                    OutputBuilder.AppendLine();
+                    OutputBuilder.AppendLine("Particle Reynolds number: " + ParticleReynoldsNumber[p]);
+                    OutputBuilder.AppendLine("Particle Stokes number: " + ParticleStokesNumber[p]);
+                    OutputBuilder.AppendLine();
+                    OutputBuilder.AppendLine("=======================================================");
+                    OutputBuilder.AppendLine();
+                }
+            }
+            Console.WriteLine(OutputBuilder.ToString());
+        }
+
+        /// <summary>
+        /// Does what it say
+        /// </summary>
+        /// <param name="Particles">
+        /// A list of all particles
+        /// </param>
+        /// <param name="IterationCounter"></param>
+        /// <param name="ForceTorqueConvergenceCriterion"></param>
+        /// /// <param name="IsFullyCoupled"></param>
+        internal void SaveOldParticleState(List<Particle> Particles, int IterationCounter, double ForceTorqueConvergenceCriterion, bool IsFullyCoupled)
+        {
             foreach (Particle p in Particles)
             {
                 p.iteration_counter_P = IterationCounter;
@@ -484,49 +686,30 @@ namespace FSI_Solver
                 // ============================================================================
                 if (IterationCounter == 0 && IsFullyCoupled == false)
                 {
-                    p.Aux.SaveMultidimValueOfLastTimestep(p.HydrodynamicForces);
-                    p.Aux.SaveValueOfLastTimestep(p.HydrodynamicTorque);
+                    p.Aux.SaveMultidimValueOfLastTimestep(p.hydrodynamicForces);
+                    p.Aux.SaveValueOfLastTimestep(p.hydrodynamicTorque);
                 }
                 // Save status for residual
                 // ========================
-                p.ForceAndTorque_convergence = ForceTorqueConvergenceCriterion;
-                ForcesOldSquared[0] += p.HydrodynamicForces[0][0].Pow2();
-                ForcesOldSquared[1] += p.HydrodynamicForces[0][1].Pow2();
-                TorqueOldSquared += p.HydrodynamicTorque[0].Pow2();
-                p.ForcesPrevIteration[0] = p.HydrodynamicForces[0][0];
-                p.ForcesPrevIteration[1] = p.HydrodynamicForces[0][1];
-                p.TorquePrevIteration = p.HydrodynamicTorque[0];
+                p.forceAndTorque_convergence = ForceTorqueConvergenceCriterion;
+                p.forcesPrevIteration[0] = p.hydrodynamicForces[0][0];
+                p.forcesPrevIteration[1] = p.hydrodynamicForces[0][1];
+                p.torquePrevIteration = p.hydrodynamicTorque[0];
             }
         }
 
-        internal void SaveOldParticleState_Velocity(List<Particle> Particles, int IterationCounter, int SpatialDim, double ForceTorqueConvergenceCriterion, bool IsFullyCoupled, out double[] VelocityOldSquared, out double RotationalVelocityOldSquared)
-        {
-            VelocityOldSquared = new double[SpatialDim];
-            RotationalVelocityOldSquared = 0;
-            foreach (Particle p in Particles)
-            {
-                p.iteration_counter_P = IterationCounter;
-                // Save the old hydrondynamic forces, only necessary if no iteration is applied
-                // ============================================================================
-                if (IterationCounter == 0 && IsFullyCoupled == false)
-                {
-                    p.Aux.SaveMultidimValueOfLastTimestep(p.HydrodynamicForces);
-                    p.Aux.SaveValueOfLastTimestep(p.HydrodynamicTorque);
-                }
-                // Save status for residual
-                // ========================
-                p.ForceAndTorque_convergence = ForceTorqueConvergenceCriterion;
-                VelocityOldSquared[0] += p.TranslationalVelocity[0][0].Pow2();
-                VelocityOldSquared[1] += p.TranslationalVelocity[0][1].Pow2();
-                RotationalVelocityOldSquared += p.RotationalVelocity[0].Pow2();
-                p.ForcesPrevIteration[0] = p.HydrodynamicForces[0][0];
-                p.ForcesPrevIteration[1] = p.HydrodynamicForces[0][1];
-                p.TorquePrevIteration = p.HydrodynamicTorque[0];
-            }
-        }
-
-        // Initial check: is the motion state of the particles equal on all MPI processors?
-        // ================================================================================
+        /// <summary>
+        /// Check consistency of particle properties on all MPI-processes
+        /// </summary>
+        /// <param name="Particles">
+        /// A list of all particles
+        /// </param>
+        /// <param name="GridData">
+        /// IGridData
+        /// </param>
+        /// <param name="MPISize">
+        /// No of processes
+        /// </param>
         internal void ParticleState_MPICheck(List<Particle> Particles, IGridData GridData, int MPISize)
         {
             int D = GridData.SpatialDimension;
@@ -548,29 +731,29 @@ namespace FSI_Solver
                     var P = Particles[p];
 
                     // scalar values
-                    CheckSend[p * NoOfVars + 0] = P.Angle[0];
-                    CheckSend[p * NoOfVars + 1] = P.Angle[1];
-                    CheckSend[p * NoOfVars + 2] = P.RotationalVelocity[0];
+                    CheckSend[p * NoOfVars + 0] = P.angle[0];
+                    CheckSend[p * NoOfVars + 1] = P.angle[1];
+                    CheckSend[p * NoOfVars + 2] = P.rotationalVelocity[0];
                     //CheckSend[iP*NoOfVars + 2] = P.Area_P;
-                    CheckSend[p * NoOfVars + 3] = P.ClearSmallValues ? 1.0 : 0.0;
-                    CheckSend[p * NoOfVars + 4] = P.ForceAndTorque_convergence;
+                    CheckSend[p * NoOfVars + 3] = P.clearSmallValues ? 1.0 : 0.0;
+                    CheckSend[p * NoOfVars + 4] = P.forceAndTorque_convergence;
                     CheckSend[p * NoOfVars + 5] = P.Mass_P;
                     CheckSend[p * NoOfVars + 6] = P.particleDensity;
-                    CheckSend[p * NoOfVars + 7] = P.AddedDampingTensor[0,0];
+                    CheckSend[p * NoOfVars + 7] = P.addedDampingTensor[0,0];
                     // todo: add more values here that might be relevant for the particle state;
 
                     // vector values
                     for (int d = 0; d < D; d++)
                     {
                         int Offset = 10;
-                        CheckSend[p * NoOfVars + Offset + 0 * D + d] = P.Position[0][d];
-                        CheckSend[p * NoOfVars + Offset + 1 * D + d] = P.Position[1][d];
-                        CheckSend[p * NoOfVars + Offset + 2 * D + d] = P.TranslationalAcceleration[0][d];
-                        CheckSend[p * NoOfVars + Offset + 3 * D + d] = P.TranslationalAcceleration[1][d];
-                        CheckSend[p * NoOfVars + Offset + 4 * D + d] = P.TranslationalVelocity[0][d];
-                        CheckSend[p * NoOfVars + Offset + 5 * D + d] = P.TranslationalVelocity[1][d];
-                        CheckSend[p * NoOfVars + Offset + 6 * D + d] = P.HydrodynamicForces[0][d];
-                        CheckSend[p * NoOfVars + Offset + 7 * D + d] = P.HydrodynamicForces[1][d];
+                        CheckSend[p * NoOfVars + Offset + 0 * D + d] = P.position[0][d];
+                        CheckSend[p * NoOfVars + Offset + 1 * D + d] = P.position[1][d];
+                        CheckSend[p * NoOfVars + Offset + 2 * D + d] = P.translationalAcceleration[0][d];
+                        CheckSend[p * NoOfVars + Offset + 3 * D + d] = P.translationalAcceleration[1][d];
+                        CheckSend[p * NoOfVars + Offset + 4 * D + d] = P.translationalVelocity[0][d];
+                        CheckSend[p * NoOfVars + Offset + 5 * D + d] = P.translationalVelocity[1][d];
+                        CheckSend[p * NoOfVars + Offset + 6 * D + d] = P.hydrodynamicForces[0][d];
+                        CheckSend[p * NoOfVars + Offset + 7 * D + d] = P.hydrodynamicForces[1][d];
                         // todo: add more vector values here that might be relevant for the particle state;
                     }
                 }

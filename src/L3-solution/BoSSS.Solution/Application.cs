@@ -1162,7 +1162,7 @@ namespace BoSSS.Solution {
 
         /// <summary>
         /// Multigrid levels, sorted from fine to coarse, i.e. the 0-th entry contains the finest grid.
-        /// The number of levels is controlled by <see cref="Control.AppControl.NoOfMultigridLevels"/>.
+        /// The number of levels is controlled by <see cref="Control.LinearSolverConfig.NoOfMultigridLevels"/>.
         /// </summary>
         public AggregationGridData[] MultigridSequence {
             get;
@@ -1737,7 +1737,8 @@ namespace BoSSS.Solution {
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                 int i = i0.MajorNumber;
-                this.MpiRedistributeAndMeshAdapt(i, physTime);
+                for(int s = 0; s < this.Control.AMR_startUpSweeps; s++)
+                    this.MpiRedistributeAndMeshAdapt(i, physTime);
 
                 for (i = i0.MajorNumber + 1; (i <= i0.MajorNumber + (long)NoOfTimesteps) && EndTime - physTime > 1.0E-10 && !TerminationKey; i++) {
                     tr.Info("performing timestep " + i + ", physical time = " + physTime);

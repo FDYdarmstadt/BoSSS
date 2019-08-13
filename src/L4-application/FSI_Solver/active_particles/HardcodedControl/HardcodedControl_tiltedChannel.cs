@@ -130,14 +130,13 @@ namespace BoSSS.Application.FSI_Solver
                 C.Particles.Add(new Particle_Ellipsoid(new double[] { 5.0, 0.0 }, startAngl: 10)
                 {
                     particleDensity = 0,
-                    ActiveParticle = true,
                     ActiveStress = stressM,
                     thickness_P = 0.6 * BaseSize,
                     length_P = 1.5 * BaseSize,
-                    AddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
+                    useAddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
                     underrelaxation_factor = 0.5,// underrelaxation with [factor * 10^exponent]
-                    ClearSmallValues = true,
-                    neglectAddedDamping = false
+                    clearSmallValues = true,
+                    UseAddedDamping = true
                 });
             }
             //Define level-set
@@ -317,13 +316,12 @@ namespace BoSSS.Application.FSI_Solver
                 C.Particles.Add(new Particle_Ellipsoid(new double[] { -10, 0.0 }, startAngl: 10)
                 {
                     particleDensity = 2,//pg/(mum^3)
-                    ActiveParticle = true,
                     ActiveStress = stressM,
                     thickness_P = 0.4 * BaseSize,
                     length_P = 2 * BaseSize,
-                    AddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
+                    useAddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
                     underrelaxation_factor = 5,// underrelaxation with [factor * 10^exponent]
-                    ClearSmallValues = true
+                    clearSmallValues = true
                 });
             }
             //Define level-set

@@ -49,6 +49,22 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// Method overload of CloneAs() for double[]. 
+        /// Required for Mono runtime in the scope of the BoSSSpad.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public static double[] CloneAs(this double[] obj)
+        {
+            if (obj == null)
+            {
+                throw new ArgumentException("Object must not be null", "obj");
+            }
+
+            return (double[])obj.Clone();
+        }
+
+        /// <summary>
         /// Clones as or default.
         /// </summary>
         /// <typeparam name="T">

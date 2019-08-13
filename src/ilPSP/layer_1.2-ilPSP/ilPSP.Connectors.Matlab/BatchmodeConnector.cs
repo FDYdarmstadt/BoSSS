@@ -208,7 +208,7 @@ namespace ilPSP.Connectors.Matlab {
                             if (MatlabExecuteable == null) {
                                 MatlabExecuteable = get_program_path("octave-cli.exe");
                                 if (MatlabExecuteable == null)
-                                    throw new ApplicationException("Unable to find 'matlab.exe' in your PATH environment; please provide path to 'matlab.exe'.");
+                                    throw new ApplicationException("Unable to find 'octave-cli.exe' in your PATH environment; please provide path to 'matlab.exe'.");
                             }
 
                             psi.FileName = MatlabExecuteable;
@@ -583,14 +583,16 @@ namespace ilPSP.Connectors.Matlab {
             if (Rank == 0) {
                 var p = Path.Combine(WorkingDirectory.FullName, LOGFILE);
 
-                if (PrintOutput) {
-                    var stdout = new StreamReader(p);
-                    string line = stdout.ReadLine();
-                    while (line != null) {
-                        Console.WriteLine(line);
-                        line = stdout.ReadLine();
-                    }
-                    stdout.Dispose();
+                if (PrintOutput && File.Exists(p)) {
+                    //var stdout = new StreamReader(p);
+                    //string line = stdout.ReadLine();
+                    //while (line != null) {
+                    //    Console.WriteLine(line);
+                    //    line = stdout.ReadLine();
+                    //}
+                    //stdout.Dispose();
+                    var text = File.ReadAllText(p);
+                    Console.WriteLine(text);
                 }
 
                 CreatedFiles.Add(p);

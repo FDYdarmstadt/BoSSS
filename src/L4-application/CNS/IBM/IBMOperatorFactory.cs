@@ -48,7 +48,7 @@ namespace CNS.IBM {
             IGridData gridData,
             CNSFieldSet workingSet,
             ISpeciesMap speciesMap,
-            BoundaryConditionMap boundaryMap)
+            CompressibleBoundaryCondMap boundaryMap)
             : base(control, gridData, workingSet, speciesMap, boundaryMap) {
 
             this.immersedBoundaryFluxBuilders.Add(new BoundaryConditionSourceFluxBuilder(

@@ -152,6 +152,15 @@ namespace BoSSS.Solution.NSECommon {
                     break;
                 case PhysicsMode.LowMach:
                 case PhysicsMode.Multiphase:
+                    double densityIn = (EoS.GetDensity(inp.Parameters_IN[0]));
+                    double densityOut = (EoS.GetDensity(inp.Parameters_OUT[0]));
+
+                    if (double.IsNaN(densityIn) || double.IsInfinity(densityIn))
+                        throw new NotFiniteNumberException();
+
+                    if (double.IsNaN(densityOut) || double.IsInfinity(densityOut))
+                        throw new NotFiniteNumberException();
+
                     res = 0.5 * (EoS.GetDensity(inp.Parameters_IN[0]) * Uin[0] + EoS.GetDensity(inp.Parameters_OUT[0]) * Uout[0]) * inp.Normale[Component];
                     break;
                 case PhysicsMode.Combustion:

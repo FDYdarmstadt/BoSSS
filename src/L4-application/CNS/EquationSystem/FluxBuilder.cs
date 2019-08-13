@@ -37,7 +37,7 @@ namespace CNS.EquationSystem {
         /// The boundary mapping which is required for the construction of the
         /// specific fluxes
         /// </summary>
-        protected readonly BoundaryConditionMap boundaryMap;
+        protected readonly CompressibleBoundaryCondMap boundaryMap;
 
         /// <summary>
         /// </summary>
@@ -55,7 +55,7 @@ namespace CNS.EquationSystem {
         /// The species mapping which is required to determine the active
         /// equation of state upon evaluation of the fluxes.
         /// </param>
-        protected FluxBuilder(CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap) {
+        protected FluxBuilder(CNSControl control, CompressibleBoundaryCondMap boundaryMap, ISpeciesMap speciesMap) {
             this.control = control;
             this.boundaryMap = boundaryMap;
             this.speciesMap = speciesMap;

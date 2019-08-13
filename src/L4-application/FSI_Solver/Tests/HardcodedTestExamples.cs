@@ -169,7 +169,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
 
-        public static FSI_Control ParticleInShearFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0) {
+        public static FSI_Control Test_ParticleInShearFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0) {
             FSI_Control C = new FSI_Control();
 
             const double BaseSize = 1.0;
@@ -302,7 +302,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Testing of particle/wall interactions using a single particle
         /// </summary>
-        public static FSI_Control SingleDryParticleAgainstWall(string _DbPath = null, bool MeshRefine = true) {
+        public static FSI_Control Test_SingleDryParticleAgainstWall(string _DbPath = null, bool MeshRefine = true) {
             FSI_Control C = new FSI_Control();
 
             // basic database options
@@ -361,15 +361,15 @@ namespace BoSSS.Application.FSI_Solver {
                 particleDensity = 1.0,
                 radius_P = 0.1,
             });
-            C.Particles[0].TranslationalVelocity[0][0] = +1;
-            C.Particles[0].TranslationalVelocity[0][1] = -1;
-            C.Particles[0].RotationalVelocity[0] = 0;
+            C.Particles[0].translationalVelocity[0][0] = +1;
+            C.Particles[0].translationalVelocity[0][1] = -1;
+            C.Particles[0].rotationalVelocity[0] = 0;
             C.pureDryCollisions = true;
             C.collisionModel = FSI_Control.CollisionModel.MomentumConservation;
 
             double V = 0;
             foreach (var p in C.Particles) {
-                V = Math.Max(V, p.TranslationalVelocity[0].L2Norm());
+                V = Math.Max(V, p.translationalVelocity[0].L2Norm());
             }
 
             if (V <= 0)
@@ -417,7 +417,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Testing of particle/wall interactions using a single particle
         /// </summary>
-        public static FSI_Control DryParticleCollision(string _DbPath = null, bool MeshRefine = false) {
+        public static FSI_Control Test_DryParticleCollision(string _DbPath = null, bool MeshRefine = false) {
             FSI_Control C = new FSI_Control();
 
             // basic database options
@@ -481,23 +481,23 @@ namespace BoSSS.Application.FSI_Solver {
                 particleDensity = 1.0,
                 radius_P = 0.15
             });
-            C.Particles[0].TranslationalVelocity[0][0] = +1;
-            C.Particles[0].TranslationalVelocity[0][1] = 0;
-            C.Particles[0].RotationalVelocity[0] = 0;
+            C.Particles[0].translationalVelocity[0][0] = +1;
+            C.Particles[0].translationalVelocity[0][1] = 0;
+            C.Particles[0].rotationalVelocity[0] = 0;
 
             C.Particles.Add(new Particle_Sphere(new double[] { +0.6, -0.1 }, startAngl: 90.0) {
                 particleDensity = 1.0,
                 radius_P = 0.15
             });
-            C.Particles[1].TranslationalVelocity[0][0] = -1;
-            C.Particles[1].TranslationalVelocity[0][1] = 0;
-            C.Particles[1].RotationalVelocity[0] = 0;
+            C.Particles[1].translationalVelocity[0][0] = -1;
+            C.Particles[1].translationalVelocity[0][1] = 0;
+            C.Particles[1].rotationalVelocity[0] = 0;
             
             C.collisionModel = FSI_Control.CollisionModel.MomentumConservation;
 
             double V = 0;
             foreach (var p in C.Particles) {
-                V = Math.Max(V, p.TranslationalVelocity[0].L2Norm());
+                V = Math.Max(V, p.translationalVelocity[0].L2Norm());
             }
 
             if (V <= 0)
@@ -545,7 +545,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Testing particle bouncing
         /// </summary>
-        public static FSI_Control DryParticleBounce(string _DbPath = null)
+        public static FSI_Control Test_DryParticleBounce(string _DbPath = null)
         {
             FSI_Control C = new FSI_Control();
 
@@ -653,7 +653,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control StickyTrap(string _DbPath = null, int k = 2, double VelXBase = 0.0, double angle = 0.0)
+        public static FSI_Control Test_StickyTrap(string _DbPath = null, int k = 2, double VelXBase = 0.0, double angle = 0.0)
         {
             FSI_Control C = new FSI_Control();
 
@@ -754,10 +754,6 @@ namespace BoSSS.Application.FSI_Solver {
                 radius_P = 0.18,
                 particleDensity = 4,
                 GravityVertical = -9.81,
-                AddaptiveUnderrelaxation = true,
-                underrelaxation_factor = 9,// underrelaxation with [factor * 10^exponent]
-                ClearSmallValues = true,
-                neglectAddedDamping = false,
                 IncludeRotation = false
             });
 
@@ -910,14 +906,13 @@ namespace BoSSS.Application.FSI_Solver {
                 C.Particles.Add(new Particle_Ellipsoid(new double[] { 0.0, 0.0 }, startAngl: 0)
                 {
                     particleDensity = 1,
-                    ActiveParticle = true,
                     ActiveStress = 1e5,
                     thickness_P = 0.4,
                     length_P = 1,
-                    AddaptiveUnderrelaxation = true,
+                    useAddaptiveUnderrelaxation = true,
                     underrelaxation_factor = 1,// underrelaxation with [factor * 10^exponent]
-                    ClearSmallValues = true,
-                    neglectAddedDamping = false,
+                    clearSmallValues = true,
+                    UseAddedDamping = true,
                     IncludeRotation = false,
                     IncludeTranslation = true
                 });
@@ -1081,10 +1076,10 @@ namespace BoSSS.Application.FSI_Solver {
                     particleDensity = 1,
                     radius_P = 0.5,
                     GravityVertical = 0,
-                    AddaptiveUnderrelaxation = true,
+                    useAddaptiveUnderrelaxation = true,
                     underrelaxation_factor = 9,// underrelaxation with [factor * 10^exponent]
-                    ClearSmallValues = true,
-                    neglectAddedDamping = false,
+                    clearSmallValues = true,
+                    UseAddedDamping = true,
                 });
             }
             //Define level-set

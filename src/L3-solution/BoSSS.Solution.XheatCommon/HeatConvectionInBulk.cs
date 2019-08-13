@@ -209,7 +209,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         public override IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat(VariableNames.VelocityVector(m_SpatialDimension), (new string[] { "VelocityX_Mean", "VelocityY_Mean", "VelocityZ_Mean" }).GetSubVector(0, m_SpatialDimension));
+                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_SpatialDimension), VariableNames.Velocity0MeanVector(m_SpatialDimension));
             }
         }
 

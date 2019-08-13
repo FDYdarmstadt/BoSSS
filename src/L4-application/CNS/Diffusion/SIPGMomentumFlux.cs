@@ -43,7 +43,7 @@ namespace CNS.Diffusion {
         /// <param name="gridData"><see cref="SIPGFlux.gridData"/></param>
         /// <param name="component"><see cref="SIPGFlux.Component"/></param>
         /// <param name="cellMetricFunc"><see cref="SIPGFlux"/></param>
-        public SIPGMomentumFlux(CNSControl config, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData, int component, Func<MultidimensionalArray> cellMetricFunc)
+        public SIPGMomentumFlux(CNSControl config, CompressibleBoundaryCondMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData, int component, Func<MultidimensionalArray> cellMetricFunc)
             : base(config, boundaryMap, speciesMap, gridData, cellMetricFunc) {
             if (component < 1 || component > CompressibleEnvironment.NumberOfDimensions) {
                 throw new ArgumentOutOfRangeException("component");

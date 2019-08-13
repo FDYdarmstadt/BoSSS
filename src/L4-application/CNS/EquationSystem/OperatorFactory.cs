@@ -95,7 +95,7 @@ namespace CNS.EquationSystem {
             IGridData gridData,
             CNSFieldSet workingSet,
             ISpeciesMap speciesMap,
-            BoundaryConditionMap boundaryMap) {
+            CompressibleBoundaryCondMap boundaryMap) {
 
             bool hasConvection = control.ActiveOperators.HasFlag(Operators.Convection);
             bool hasDiffusion = control.ActiveOperators.HasFlag(Operators.Diffusion);

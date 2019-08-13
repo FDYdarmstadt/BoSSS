@@ -81,8 +81,10 @@ namespace ilPSP {
 
                 int N = _BlockLen[iBlock];
 
-                base.IsInLocalRange(i0Block);
-                base.IsInLocalRange(Math.Max(i0Block, i0Block + N - 1));
+                if (!base.IsInLocalRange(i0Block))
+                    throw new ArgumentException("Block i0 out of local range");
+                if (!base.IsInLocalRange(Math.Max(i0Block, i0Block + N - 1)))
+                    throw new ArgumentException("Block end out of local range");
 
                 int iEBlock;
                 if( iBlock < NoOfBlocks - 1) {
@@ -244,7 +246,15 @@ namespace ilPSP {
                 this.m_BlockType = null;
             }
             int J = _BlockType.Length;
-
+#if DEBUG
+            {
+                var fbMin = FrameBlockSize.MPIMin(MpiComm);
+                var fbMax = FrameBlockSize.MPIMax(MpiComm);
+                if(fbMin != FrameBlockSize || fbMin != FrameBlockSize) {
+                    throw new ApplicationException("MPI bug: different FrameBlockSize among processors.");
+                }
+            }
+#endif
             if (FrameBlockSize == 0) {
                 throw new ArgumentException();
             } else if (FrameBlockSize < 0) {

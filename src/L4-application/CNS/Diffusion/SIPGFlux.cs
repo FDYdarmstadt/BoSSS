@@ -125,7 +125,7 @@ namespace CNS.Diffusion {
         /// <param name="speciesMap">Mapping that determines the active species in some point</param>
         /// <param name="gridData"></param>
         /// <param name="cellMetric"></param>
-        public SIPGFlux(CNSControl config, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData, Func<MultidimensionalArray> cellMetric) {
+        public SIPGFlux(CNSControl config, CompressibleBoundaryCondMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData, Func<MultidimensionalArray> cellMetric) {
             this.config = config;
             this.boundaryMap = boundaryMap;
             this.speciesMap = speciesMap;

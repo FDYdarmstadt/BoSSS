@@ -69,9 +69,9 @@ namespace BoSSS.Application.Matrix_MPItest {
                     foreach (bool b in new bool[] { false }) {
                         foreach (bool c in new bool[] { false }) {
 
-                            SubMatrixTest(x, p, b, c);
+                            //SubMatrixTest(x, p, b, c);
                             MultiplyTest(x, p, b, c);
-                            SpMVTest(x, p, b, c);
+                            //SpMVTest(x, p, b, c);
                             counter++;
 
                         }
@@ -82,8 +82,8 @@ namespace BoSSS.Application.Matrix_MPItest {
 
 
             //BoSSS.Application.Matrix_MPItest.AllUpTest.MultiplyTest(XDGusage.none, 3, true, false);
-            //MultiplyTest(XDGusage.none, 1, false, false);
-            SubMatrixTest(XDGusage.none, 2, false, false);
+            MultiplyTest(XDGusage.none, 2, false, false);
+            //SubMatrixTest(XDGusage.none, 2, false, false);
             //MultiplyTest(XDGusage.none, 2, false, false);
             //SpMVTest(XDGusage.none, 2, false, false);
 
@@ -260,6 +260,7 @@ namespace BoSSS.Application.Matrix_MPItest {
                     MatlabRef.Cmd("err2221 = norm(refM22xM21 - M22xM21, inf);");
 
                     MatlabRef.Cmd("CheckRes = [err1112, err2221, 0, 0];");
+                    MatlabRef.Cmd("CheckRes");
                     MatlabRef.GetMatrix(CheckRes, "CheckRes");
 
                     MatlabRef.Execute();

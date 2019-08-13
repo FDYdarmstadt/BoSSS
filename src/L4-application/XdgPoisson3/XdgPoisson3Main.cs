@@ -41,6 +41,7 @@ using NUnit.Framework;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Grid.Aggregation;
 using ilPSP.Tracing;
+using Code = BoSSS.Solution.Control.LinearSolverConfig.Code;
 
 namespace BoSSS.Application.XdgPoisson3 {
 
@@ -51,6 +52,10 @@ namespace BoSSS.Application.XdgPoisson3 {
         static void Main(string[] args) {
             BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
             //BatchmodeConnector.MatlabExecuteable = "D:\\cygwin\\bin\\bash.exe";
+
+            //BoSSS.Application.XdgPoisson3.Tests.TestFixtureSetUp();
+            //BoSSS.Application.XdgPoisson3.Tests.SolverTest(Code.exp_softpcg_mg);
+            //Assert.IsTrue(false, "remove me");
 
             BoSSS.Solution.Application<XdgPoisson3Control>._Main(args, false, delegate () {
                 return new XdgPoisson3Main();
@@ -212,7 +217,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
                 int order = this.u.Basis.Degree * 2;
 
-                XSpatialOperator Op = new XSpatialOperator(1, 1, (A, B, C) => order, "u", "c1");
+                XSpatialOperatorMk2 Op = new XSpatialOperatorMk2(1, 1, (A, B, C) => order, this.LsTrk.SpeciesIdS.ToArray(), "u", "c1");
                 var lengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)GridData).Cells.PenaltyLengthScales;
                 var lap = new XLaplace_Bulk(this.LsTrk, penalty_multiplyer * penalty_base, "u", this.Control.xLaplaceBCs, 1.0, MU_A, MU_B, lengthScales, this.Control.ViscosityMode);
                 Op.EquationComponents["c1"].Add(lap);      // Bulk form
@@ -239,11 +244,19 @@ namespace BoSSS.Application.XdgPoisson3 {
                     M = new BlockMsrMatrix(map, map);
                     b = new double[M.RowPartitioning.LocalLength];
 
-                    Op.ComputeMatrixEx(LsTrk,
-                        map, null, map,
-                        M, b, false, 0.0, true,
-                        agg.CellLengthScales, null, null, //out massFact,
-                        this.LsTrk.SpeciesIdS.ToArray());
+                    //Op.ComputeMatrixEx(LsTrk,
+                    //    map, null, map,
+                    //    M, b, false, 0.0, true,
+                    //    agg.CellLengthScales, null, null, //out massFact,
+                    //    this.LsTrk.SpeciesIdS.ToArray());
+                    XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(this.LsTrk, map, null, map, this.LsTrk.SpeciesIdS.ToArray());
+
+                    foreach (var s in this.LsTrk.SpeciesIdS)
+                        mtxBuilder.SpeciesOperatorCoefficients[s].CellLengthScales = agg.CellLengthScales[s];
+
+                    mtxBuilder.time = 0.0;
+                    mtxBuilder.MPITtransceive = true;
+                    mtxBuilder.ComputeMatrix(M, b);
                 }
                 // compare with linear evaluation
                 // ==============================

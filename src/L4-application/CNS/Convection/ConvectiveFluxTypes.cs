@@ -86,7 +86,7 @@ namespace CNS.Convection {
         /// An instance of a flux builder that builds fluxes
         /// corresponding to the given <paramref name="flux"/>.
         /// </returns>
-        public static FluxBuilder GetBuilder(this ConvectiveFluxTypes flux, CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap) {
+        public static FluxBuilder GetBuilder(this ConvectiveFluxTypes flux, CNSControl control, CompressibleBoundaryCondMap boundaryMap, ISpeciesMap speciesMap) {
             switch (flux) {
                 case ConvectiveFluxTypes.Rusanov:
                     return new RusanovFluxBuilder(control, boundaryMap, speciesMap);

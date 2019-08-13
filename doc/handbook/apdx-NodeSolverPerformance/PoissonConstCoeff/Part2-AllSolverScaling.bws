@@ -1,28 +1,5 @@
 restart
 **************
-
-  BoSSSpad C# interpreter
-  _______________________
-
-Databases loaded:
-List of 11 instances of IDatabaseInfo {
-  0: { Session Count = 0; Grid Count = 34; Path = C:\BoSSS_DB }
-  1: { Session Count = 144; Grid Count = 6; Path = C:\tmp\fk_temp_db }
-  2: { Session Count = 0; Grid Count = 6; Path = P:\Performance_DB }
-  3: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
-  4: { Session Count = 112; Grid Count = 6; Path = E:\Performance_oldLibs_DB }
-  5: { Session Count = 0; Grid Count = 4; Path = E:\db_2delete }
-  6: { Session Count = 192; Grid Count = 12; Path = E:\XdgPerformance }
-  7: { Session Count = 112; Grid Count = 136; Path = E:\bosss_db_performance }
-  8: { Session Count = 19; Grid Count = 3; Path = F:\test_db }
-  9: { Session Count = 144; Grid Count = 139; Path = Z:\weber\Performance_Kram\bosss_db_performance }
-  10: { Session Count = 200; Grid Count = 6; Path = E:\Performance_newLibs_DB }
-}
-
- Console ready for input. Type 'help' for help.
-
-==============
-**************
 ==============
 string WFlowName = "SIP_SingleNodePerformance_0";
 WorkflowMgm.Init(WFlowName);
@@ -50,7 +27,7 @@ var SessTab       = TableExtensions.LoadFromFile(FilePath);
 ==============
 SessTab.GetColumnNames();
 **************
-List of 76 instances of String {
+List of 80 instances of String {
   0: SessionName
   1: DGdegree:T
   2: DGdegree:Tex
@@ -77,56 +54,60 @@ List of 76 instances of String {
   23: savetodb
   24: logFileDirectory
   25: Paramstudy_ContinueOnError
-  26: LinearSolver.MaxKrylovDim
-  27: LinearSolver.MaxSolverIterations
-  28: LinearSolver.MinSolverIterations
-  29: LinearSolver.ConvergenceCriterion
-  30: LinearSolver.SolverCode
-  31: LinearSolver.NoOfMultigridLevels
-  32: LinearSolver.exp_localPrec_muA
-  33: LinearSolver.exp_localPrec_Min_dt
-  34: LinearSolver.TargetBlockSize
-  35: NonLinearSolver.PrecondSolver.MaxKrylovDim
-  36: NonLinearSolver.PrecondSolver.MaxSolverIterations
-  37: NonLinearSolver.PrecondSolver.MinSolverIterations
-  38: NonLinearSolver.PrecondSolver.ConvergenceCriterion
-  39: NonLinearSolver.PrecondSolver.SolverCode
-  40: NonLinearSolver.PrecondSolver.NoOfMultigridLevels
-  41: NonLinearSolver.PrecondSolver.exp_localPrec_muA
-  42: NonLinearSolver.PrecondSolver.exp_localPrec_Min_dt
-  43: NonLinearSolver.PrecondSolver.TargetBlockSize
-  44: NonLinearSolver.MaxSolverIterations
-  45: NonLinearSolver.MinSolverIterations
-  46: NonLinearSolver.ConvergenceCriterion
-  47: NonLinearSolver.UnderRelax
-  48: NonLinearSolver.SolverCode
-  49: DynamicLoadBalancing_RedistributeAtStartup
-  50: DynamicLoadBalancing_Period
-  51: DynamicLoadBalancing_ImbalanceThreshold
-  52: DynamicLoadBalancing_On
-  53: AdaptiveMeshRefinement
-  54: CutCellQuadratureType
-  55: ContinueOnIoError
-  56: Grid:NoOfCells
-  57: Grid:hMax
-  58: Grid:hMin
-  59: UsedNoOfMultigridLevels
-  60: MtxBlkSz
-  61: NNZMtx
-  62: NNZblk
-  63: MtxMB
-  64: minSolRunT
-  65: maxSolRunT
-  66: Conv
-  67: NoIter
-  68: NoOfCells
-  69: DOFs
-  70: BlockSize
-  71: RegularTerminated
-  72: SipMatrixAssembly_time
-  73: Aggregation_basis_init_time
-  74: Solver_Init_time
-  75: Solver_Run_time
+  26: LinearSolver.verbose
+  27: LinearSolver.MaxKrylovDim
+  28: LinearSolver.MaxSolverIterations
+  29: LinearSolver.MinSolverIterations
+  30: LinearSolver.ConvergenceCriterion
+  31: LinearSolver.SolverCode
+  32: LinearSolver.NoOfMultigridLevels
+  33: LinearSolver.exp_localPrec_muA
+  34: LinearSolver.exp_localPrec_Min_dt
+  35: LinearSolver.TargetBlockSize
+  36: NonLinearSolver.verbose
+  37: NonLinearSolver.PrecondSolver.verbose
+  38: NonLinearSolver.PrecondSolver.MaxKrylovDim
+  39: NonLinearSolver.PrecondSolver.MaxSolverIterations
+  40: NonLinearSolver.PrecondSolver.MinSolverIterations
+  41: NonLinearSolver.PrecondSolver.ConvergenceCriterion
+  42: NonLinearSolver.PrecondSolver.SolverCode
+  43: NonLinearSolver.PrecondSolver.NoOfMultigridLevels
+  44: NonLinearSolver.PrecondSolver.exp_localPrec_muA
+  45: NonLinearSolver.PrecondSolver.exp_localPrec_Min_dt
+  46: NonLinearSolver.PrecondSolver.TargetBlockSize
+  47: NonLinearSolver.MaxSolverIterations
+  48: NonLinearSolver.MinSolverIterations
+  49: NonLinearSolver.ConvergenceCriterion
+  50: NonLinearSolver.UnderRelax
+  51: NonLinearSolver.SolverCode
+  52: DynamicLoadBalancing_RedistributeAtStartup
+  53: DynamicLoadBalancing_Period
+  54: DynamicLoadBalancing_ImbalanceThreshold
+  55: DynamicLoadBalancing_On
+  56: AdaptiveMeshRefinement
+  57: CutCellQuadratureType
+  58: ContinueOnIoError
+  59: Grid:NoOfCells
+  60: Grid:hMax
+  61: Grid:hMin
+  62: UsedNoOfMultigridLevels
+  63: MtxBlkSz
+  64: NNZMtx
+  65: NNZblk
+  66: MtxMB
+  67: minSolRunT
+  68: maxSolRunT
+  69: Conv
+  70: NoIter
+  71: NoOfCells
+  72: DOFs
+  73: BlockSize
+  74: maxMultigridlvl
+  75: RegularTerminated
+  76: SipMatrixAssembly_time
+  77: Aggregation_basis_init_time
+  78: Solver_Init_time
+  79: Solver_Run_time
 }
 ==============
 var SubTab_1 = SessTab.ExtractColumns("SessionName","DGdegree:T", "Grid:NoOfCells", "LinearSolver.SolverCode", "DOFs", "minSolRunT", "maxSolRunT", "NoIter", "RegularTerminated", "Conv","SipMatrixAssembly_time","Aggregation_basis_init_time","Solver_Init_time","Solver_Run_time","BlockSize");
@@ -143,153 +124,26 @@ var SubTab = SubTab_2.ExtractColumns("SessionName","DGdegree:T", "Grid:NoOfCells
 ==============
 SubTab.Print();
 **************
-    SessionName                                                   DGdegree:T Grid:NoOfCells LinearSolver.SolverCode DOFs    minSolRunT   maxSolRunT   NoIter 
-0:  PoissonConstCoeff_J2560_k5_exp_softpcg_mg                     5          2560           42                      143360  344.121727   344.121727   53     
-1:  PoissonConstCoeff_J320_k5_exp_softpcg_mg                      5          320            42                      17920   20.578554    20.578554    47     
-2:  PoissonConstCoeff_J40_k5_exp_softpcg_mg                       5          40             42                      2240    1.0420923    1.0420923    5      
-3:  PoissonConstCoeff_J20480_k3_exp_softpcg_mg                    3          20480          42                      409600  383.3659385  383.3659385  55     
-4:  PoissonConstCoeff_J2560_k3_exp_softpcg_mg                     3          2560           42                      51200   22.1801145   22.1801145   48     
-5:  PoissonConstCoeff_J320_k3_exp_softpcg_mg                      3          320            42                      6400    1.2762808    1.2762808    5      
-6:  PoissonConstCoeff_J40_k3_exp_softpcg_mg                       3          40             42                      800     0.4121277    0.4121277    5      
-7:  PoissonConstCoeff_J163840_k2_exp_softpcg_mg                   2          163840         42                      1638400 662.836025   662.836025   43     
-8:  PoissonConstCoeff_J20480_k2_exp_softpcg_mg                    2          20480          42                      204800  74.7504545   74.7504545   45     
-9:  PoissonConstCoeff_J2560_k2_exp_softpcg_mg                     2          2560           42                      25600   7.8007765    7.8007765    53     
-10: PoissonConstCoeff_J320_k2_exp_softpcg_mg                      2          320            42                      3200    0.603772     0.603772     5      
-11: PoissonConstCoeff_J40_k2_exp_softpcg_mg                       2          40             42                      400     0.3909079    0.3909079    5      
-12: PoissonConstCoeff_J2560_k5_exp_softpcg_schwarz_directcoarse   5          2560           44                      143360  883.4780154  883.4780154  19     
-13: PoissonConstCoeff_J320_k5_exp_softpcg_schwarz_directcoarse    5          320            44                      17920   36.8502552   36.8502552   11     
-14: PoissonConstCoeff_J40_k5_exp_softpcg_schwarz_directcoarse     5          40             44                      2240    1.7592764    1.7592764    5      
-15: PoissonConstCoeff_J20480_k3_exp_softpcg_schwarz_directcoarse  3          20480          44                      409600  1173.8560738 1173.8560738 23     
-16: PoissonConstCoeff_J2560_k3_exp_softpcg_schwarz_directcoarse   3          2560           44                      51200   65.455485    65.455485    13     
-17: PoissonConstCoeff_J320_k3_exp_softpcg_schwarz_directcoarse    3          320            44                      6400    2.3520518    2.3520518    5      
-18: PoissonConstCoeff_J40_k3_exp_softpcg_schwarz_directcoarse     3          40             44                      800     0.6258266    0.6258266    5      
-19: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse 2          163840         44                      1638400 3695.0171414 3695.0171414 31     
-20: PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz_directcoarse  2          20480          44                      204800  369.6726581  369.6726581  29     
-21: PoissonConstCoeff_J2560_k2_exp_softpcg_schwarz_directcoarse   2          2560           44                      25600   20.6302302   20.6302302   18     
-22: PoissonConstCoeff_J320_k2_exp_softpcg_schwarz_directcoarse    2          320            44                      3200    0.8978939    0.8978939    5      
-23: PoissonConstCoeff_J40_k2_exp_softpcg_schwarz_directcoarse     2          40             44                      400     0.4721976    0.4721976    5      
-24: PoissonConstCoeff_J2560_k5_classic_mumps                      5          2560           1                       143360  81.1514151   81.1514151   1      
-25: PoissonConstCoeff_J320_k5_classic_mumps                       5          320            1                       17920   3.2356921    3.2356921    1      
-26: PoissonConstCoeff_J40_k5_classic_mumps                        5          40             1                       2240    0.1821689    0.1821689    1      
-27: PoissonConstCoeff_J20480_k3_classic_mumps                     3          20480          1                       409600  222.2209464  222.2209464  1      
-28: PoissonConstCoeff_J2560_k3_classic_mumps                      3          2560           1                       51200   6.6368278    6.6368278    1      
-29: PoissonConstCoeff_J320_k3_classic_mumps                       3          320            1                       6400    0.3483395    0.3483395    1      
-30: PoissonConstCoeff_J40_k3_classic_mumps                        3          40             1                       800     0.0425573    0.0425573    1      
-31: PoissonConstCoeff_J20480_k2_classic_mumps                     2          20480          1                       204800  44.3187346   44.3187346   1      
-32: PoissonConstCoeff_J2560_k2_classic_mumps                      2          2560           1                       25600   1.4318843    1.4318843    1      
-33: PoissonConstCoeff_J320_k2_classic_mumps                       2          320            1                       3200    0.0903527    0.0903527    1      
-34: PoissonConstCoeff_J40_k2_classic_mumps                        2          40             1                       400     0.0275176    0.0275176    1      
-35: PoissonConstCoeff_J2560_k5_exp_softpcg_mg                     5          2560           42                      143360  344.121727   344.121727   53     
-36: PoissonConstCoeff_J320_k5_exp_softpcg_mg                      5          320            42                      17920   20.578554    20.578554    47     
-37: PoissonConstCoeff_J40_k5_exp_softpcg_mg                       5          40             42                      2240    1.0420923    1.0420923    5      
-38: PoissonConstCoeff_J20480_k3_exp_softpcg_mg                    3          20480          42                      409600  383.3659385  383.3659385  55     
-39: PoissonConstCoeff_J2560_k3_exp_softpcg_mg                     3          2560           42                      51200   22.1801145   22.1801145   48     
-40: PoissonConstCoeff_J320_k3_exp_softpcg_mg                      3          320            42                      6400    1.2762808    1.2762808    5      
-41: PoissonConstCoeff_J40_k3_exp_softpcg_mg                       3          40             42                      800     0.4121277    0.4121277    5      
-42: PoissonConstCoeff_J163840_k2_exp_softpcg_mg                   2          163840         42                      1638400 662.836025   662.836025   43     
-43: PoissonConstCoeff_J20480_k2_exp_softpcg_mg                    2          20480          42                      204800  74.7504545   74.7504545   45     
-44: PoissonConstCoeff_J2560_k2_exp_softpcg_mg                     2          2560           42                      25600   7.8007765    7.8007765    53     
-45: PoissonConstCoeff_J320_k2_exp_softpcg_mg                      2          320            42                      3200    0.603772     0.603772     5      
-46: PoissonConstCoeff_J40_k2_exp_softpcg_mg                       2          40             42                      400     0.3909079    0.3909079    5      
-47: PoissonConstCoeff_J2560_k5_exp_softpcg_schwarz_directcoarse   5          2560           44                      143360  883.4780154  883.4780154  19     
-48: PoissonConstCoeff_J320_k5_exp_softpcg_schwarz_directcoarse    5          320            44                      17920   36.8502552   36.8502552   11     
-49: PoissonConstCoeff_J40_k5_exp_softpcg_schwarz_directcoarse     5          40             44                      2240    1.7592764    1.7592764    5      
-50: PoissonConstCoeff_J20480_k3_exp_softpcg_schwarz_directcoarse  3          20480          44                      409600  1173.8560738 1173.8560738 23     
-51: PoissonConstCoeff_J2560_k3_exp_softpcg_schwarz_directcoarse   3          2560           44                      51200   65.455485    65.455485    13     
-52: PoissonConstCoeff_J320_k3_exp_softpcg_schwarz_directcoarse    3          320            44                      6400    2.3520518    2.3520518    5      
-53: PoissonConstCoeff_J40_k3_exp_softpcg_schwarz_directcoarse     3          40             44                      800     0.6258266    0.6258266    5      
-54: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse 2          163840         44                      1638400 3695.0171414 3695.0171414 31     
-55: PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz_directcoarse  2          20480          44                      204800  369.6726581  369.6726581  29     
-56: PoissonConstCoeff_J2560_k2_exp_softpcg_schwarz_directcoarse   2          2560           44                      25600   20.6302302   20.6302302   18     
-57: PoissonConstCoeff_J320_k2_exp_softpcg_schwarz_directcoarse    2          320            44                      3200    0.8978939    0.8978939    5      
-58: PoissonConstCoeff_J40_k2_exp_softpcg_schwarz_directcoarse     2          40             44                      400     0.4721976    0.4721976    5      
-59: PoissonConstCoeff_J2560_k5_classic_mumps                      5          2560           1                       143360  81.1514151   81.1514151   1      
-60: PoissonConstCoeff_J320_k5_classic_mumps                       5          320            1                       17920   3.2356921    3.2356921    1      
-61: PoissonConstCoeff_J40_k5_classic_mumps                        5          40             1                       2240    0.1821689    0.1821689    1      
-62: PoissonConstCoeff_J20480_k3_classic_mumps                     3          20480          1                       409600  222.2209464  222.2209464  1      
-63: PoissonConstCoeff_J2560_k3_classic_mumps                      3          2560           1                       51200   6.6368278    6.6368278    1      
-64: PoissonConstCoeff_J320_k3_classic_mumps                       3          320            1                       6400    0.3483395    0.3483395    1      
-65: PoissonConstCoeff_J40_k3_classic_mumps                        3          40             1                       800     0.0425573    0.0425573    1      
-66: PoissonConstCoeff_J20480_k2_classic_mumps                     2          20480          1                       204800  44.3187346   44.3187346   1      
-67: PoissonConstCoeff_J2560_k2_classic_mumps                      2          2560           1                       25600   1.4318843    1.4318843    1      
-68: PoissonConstCoeff_J320_k2_classic_mumps                       2          320            1                       3200    0.0903527    0.0903527    1      
-69: PoissonConstCoeff_J40_k2_classic_mumps                        2          40             1                       400     0.0275176    0.0275176    1      
+    SessionName                                                     DGdegree:T Grid:NoOfCells LinearSolver.SolverCode DOFs    minSolRunT    maxSolRunT    NoIter 
+0:  PoissonConstCoeff_J20480_k2_classic_mumps_1                     2          20480          1                       204800  122.4512579   122.4512579   1      
+1:  PoissonConstCoeff_J20480_k2_exp_softpcg_mg_2                    2          20480          42                      204800  124.9530279   124.9530279   44     
+2:  PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz_directcoarse_1  2          20480          44                      204800  286.9949845   286.9949845   5      
+3:  PoissonConstCoeff_J20480_k2_exp_softpcg_mg_4                    2          20480          42                      204800  121.6572022   121.6572022   44     
+4:  PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz_directcoarse_4  2          20480          44                      204800  807.7566881   807.7566881   17     
+5:  PoissonConstCoeff_J20480_k2_exp_softpcg_mg_1                    2          20480          42                      204800  289.3189869   289.3189869   5      
+6:  PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz_directcoarse_2  2          20480          44                      204800  1007.1664985  1007.1664985  17     
+7:  PoissonConstCoeff_J163840_k2_exp_softpcg_mg_1                   2          163840         42                      1638400 1267.7870369  1267.7870369  40     
+8:  PoissonConstCoeff_J163840_k2_exp_softpcg_mg_2                   2          163840         42                      1638400 1441.2931192  1441.2931192  41     
+9:  PoissonConstCoeff_J163840_k2_exp_softpcg_mg_4                   2          163840         42                      1638400 2001.520484   2001.520484   87     
+10: PoissonConstCoeff_J163840_k2_classic_mumps_1                    2          163840         1                       1638400 4980.6094286  4980.6094286  1      
+11: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse_4 2          163840         44                      1638400 43836.3262862 43836.3262862 16     
+12: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse_1 2          163840         44                      1638400 18001.6300445 18001.6300445 5      
+13: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse_2 2          163840         44                      1638400 48037.9727554 48037.9727554 16     
 ==============
 //Extract to excel-File
 SubTab_2.Print();
 //SubTab_2.ToCSVFile(WFlowName);
 **************
-    SessionName                                                   DGdegree:T Grid:NoOfCells LinearSolver.SolverCode DOFs    minSolRunT   maxSolRunT   NoIter RegularTerminated Conv SipMatrixAssembly_time Aggregation_basis_init_time Solver_Init_time Solver_Run_time BlockSize 
-0:  PoissonConstCoeff_J2560_k5_exp_softpcg_mg                     5          2560           42                      143360  344.121727   344.121727   53     True              1    16.3820991             13.8949742                  33.7317858       310.3542833     56        
-1:  PoissonConstCoeff_J320_k5_exp_softpcg_mg                      5          320            42                      17920   20.578554    20.578554    47     True              1    2.4053354              1.7961679                   3.5245473        17.0215154      56        
-2:  PoissonConstCoeff_J40_k5_exp_softpcg_mg                       5          40             42                      2240    1.0420923    1.0420923    5      True              1    0.6504721              0.2757243                   0.4186568        0.5912829       56        
-3:  PoissonConstCoeff_J20480_k3_exp_softpcg_mg                    3          20480          42                      409600  383.3659385  383.3659385  55     True              1    12.9468412             11.1578929                  25.2254906       358.0953793     20        
-4:  PoissonConstCoeff_J2560_k3_exp_softpcg_mg                     3          2560           42                      51200   22.1801145   22.1801145   48     True              1    1.9512177              1.0467363                   2.6781933        19.4687105      20        
-5:  PoissonConstCoeff_J320_k3_exp_softpcg_mg                      3          320            42                      6400    1.2762808    1.2762808    5      True              1    0.6353381              0.1634087                   0.3449009        0.8978198       20        
-6:  PoissonConstCoeff_J40_k3_exp_softpcg_mg                       3          40             42                      800     0.4121277    0.4121277    5      True              1    0.4149924              0.054085                    0.1332778        0.2472013       20        
-7:  PoissonConstCoeff_J163840_k2_exp_softpcg_mg                   2          163840         42                      1638400 662.836025   662.836025   43     True              1    37.5061714             228.0619783                 61.0394517       601.7025743     10        
-8:  PoissonConstCoeff_J20480_k2_exp_softpcg_mg                    2          20480          42                      204800  74.7504545   74.7504545   45     True              1    5.1045992              5.6209702                   6.7831655        67.9263287      10        
-9:  PoissonConstCoeff_J2560_k2_exp_softpcg_mg                     2          2560           42                      25600   7.8007765    7.8007765    53     True              1    0.9984881              0.3675128                   0.7831576        6.9836862       10        
-10: PoissonConstCoeff_J320_k2_exp_softpcg_mg                      2          320            42                      3200    0.603772     0.603772     5      True              1    0.472968               0.0737205                   0.1762594        0.3960691       10        
-11: PoissonConstCoeff_J40_k2_exp_softpcg_mg                       2          40             42                      400     0.3909079    0.3909079    5      True              1    0.3942099              0.0395395                   0.1128329        0.2472105       10        
-12: PoissonConstCoeff_J2560_k5_exp_softpcg_schwarz_directcoarse   5          2560           44                      143360  883.4780154  883.4780154  19     True              1    16.315704              13.8476845                  31.4741018       851.9706625     56        
-13: PoissonConstCoeff_J320_k5_exp_softpcg_schwarz_directcoarse    5          320            44                      17920   36.8502552   36.8502552   11     True              1    2.393585               1.7954887                   3.6849217        33.1350118      56        
-14: PoissonConstCoeff_J40_k5_exp_softpcg_schwarz_directcoarse     5          40             44                      2240    1.7592764    1.7592764    5      True              1    0.6590793              0.274193                    0.5487256        1.1808412       56        
-15: PoissonConstCoeff_J20480_k3_exp_softpcg_schwarz_directcoarse  3          20480          44                      409600  1173.8560738 1173.8560738 23     True              1    12.8388631             11.0822117                  27.8834068       1145.9292784    20        
-16: PoissonConstCoeff_J2560_k3_exp_softpcg_schwarz_directcoarse   3          2560           44                      51200   65.455485    65.455485    13     True              1    1.9643965              1.0386793                   3.124231         62.2988662      20        
-17: PoissonConstCoeff_J320_k3_exp_softpcg_schwarz_directcoarse    3          320            44                      6400    2.3520518    2.3520518    5      True              1    0.5903971              0.1629514                   0.5078994        1.8139949       20        
-18: PoissonConstCoeff_J40_k3_exp_softpcg_schwarz_directcoarse     3          40             44                      800     0.6258266    0.6258266    5      True              1    0.4142662              0.0541845                   0.2079315        0.3884084       20        
-19: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse 2          163840         44                      1638400 3695.0171414 3695.0171414 31     True              1    37.8321342             228.1394993                 157.4524467      3537.4696214    10        
-20: PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz_directcoarse  2          20480          44                      204800  369.6726581  369.6726581  29     True              1    5.0194096              5.6443998                   9.0248841        360.6097087     10        
-21: PoissonConstCoeff_J2560_k2_exp_softpcg_schwarz_directcoarse   2          2560           44                      25600   20.6302302   20.6302302   18     True              1    0.9710374              0.3699786                   1.0122379        19.586441       10        
-22: PoissonConstCoeff_J320_k2_exp_softpcg_schwarz_directcoarse    2          320            44                      3200    0.8978939    0.8978939    5      True              1    0.4628072              0.0765573                   0.2604887        0.607273        10        
-23: PoissonConstCoeff_J40_k2_exp_softpcg_schwarz_directcoarse     2          40             44                      400     0.4721976    0.4721976    5      True              1    0.396249               0.0401236                   0.1758981        0.2669047       10        
-24: PoissonConstCoeff_J2560_k5_classic_mumps                      5          2560           1                       143360  81.1514151   81.1514151   1      True              1    16.3223782             0                           0                0               56        
-25: PoissonConstCoeff_J320_k5_classic_mumps                       5          320            1                       17920   3.2356921    3.2356921    1      True              1    2.4136963              0                           0                0               56        
-26: PoissonConstCoeff_J40_k5_classic_mumps                        5          40             1                       2240    0.1821689    0.1821689    1      True              1    0.6554503              0                           0                0               56        
-27: PoissonConstCoeff_J20480_k3_classic_mumps                     3          20480          1                       409600  222.2209464  222.2209464  1      True              1    12.9863599             0                           0                0               20        
-28: PoissonConstCoeff_J2560_k3_classic_mumps                      3          2560           1                       51200   6.6368278    6.6368278    1      True              1    1.9533255              0                           0                0               20        
-29: PoissonConstCoeff_J320_k3_classic_mumps                       3          320            1                       6400    0.3483395    0.3483395    1      True              1    0.5870209              0                           0                0               20        
-30: PoissonConstCoeff_J40_k3_classic_mumps                        3          40             1                       800     0.0425573    0.0425573    1      True              1    0.4153402              0                           0                0               20        
-31: PoissonConstCoeff_J20480_k2_classic_mumps                     2          20480          1                       204800  44.3187346   44.3187346   1      True              1    5.1143808              0                           0                0               10        
-32: PoissonConstCoeff_J2560_k2_classic_mumps                      2          2560           1                       25600   1.4318843    1.4318843    1      True              1    0.9801338              0                           0                0               10        
-33: PoissonConstCoeff_J320_k2_classic_mumps                       2          320            1                       3200    0.0903527    0.0903527    1      True              1    0.4740134              0                           0                0               10        
-34: PoissonConstCoeff_J40_k2_classic_mumps                        2          40             1                       400     0.0275176    0.0275176    1      True              1    0.4367048              0                           0                0               10        
-35: PoissonConstCoeff_J2560_k5_exp_softpcg_mg                     5          2560           42                      143360  344.121727   344.121727   53     True              1    16.3820991             13.8949742                  33.7317858       310.3542833     56        
-36: PoissonConstCoeff_J320_k5_exp_softpcg_mg                      5          320            42                      17920   20.578554    20.578554    47     True              1    2.4053354              1.7961679                   3.5245473        17.0215154      56        
-37: PoissonConstCoeff_J40_k5_exp_softpcg_mg                       5          40             42                      2240    1.0420923    1.0420923    5      True              1    0.6504721              0.2757243                   0.4186568        0.5912829       56        
-38: PoissonConstCoeff_J20480_k3_exp_softpcg_mg                    3          20480          42                      409600  383.3659385  383.3659385  55     True              1    12.9468412             11.1578929                  25.2254906       358.0953793     20        
-39: PoissonConstCoeff_J2560_k3_exp_softpcg_mg                     3          2560           42                      51200   22.1801145   22.1801145   48     True              1    1.9512177              1.0467363                   2.6781933        19.4687105      20        
-40: PoissonConstCoeff_J320_k3_exp_softpcg_mg                      3          320            42                      6400    1.2762808    1.2762808    5      True              1    0.6353381              0.1634087                   0.3449009        0.8978198       20        
-41: PoissonConstCoeff_J40_k3_exp_softpcg_mg                       3          40             42                      800     0.4121277    0.4121277    5      True              1    0.4149924              0.054085                    0.1332778        0.2472013       20        
-42: PoissonConstCoeff_J163840_k2_exp_softpcg_mg                   2          163840         42                      1638400 662.836025   662.836025   43     True              1    37.5061714             228.0619783                 61.0394517       601.7025743     10        
-43: PoissonConstCoeff_J20480_k2_exp_softpcg_mg                    2          20480          42                      204800  74.7504545   74.7504545   45     True              1    5.1045992              5.6209702                   6.7831655        67.9263287      10        
-44: PoissonConstCoeff_J2560_k2_exp_softpcg_mg                     2          2560           42                      25600   7.8007765    7.8007765    53     True              1    0.9984881              0.3675128                   0.7831576        6.9836862       10        
-45: PoissonConstCoeff_J320_k2_exp_softpcg_mg                      2          320            42                      3200    0.603772     0.603772     5      True              1    0.472968               0.0737205                   0.1762594        0.3960691       10        
-46: PoissonConstCoeff_J40_k2_exp_softpcg_mg                       2          40             42                      400     0.3909079    0.3909079    5      True              1    0.3942099              0.0395395                   0.1128329        0.2472105       10        
-47: PoissonConstCoeff_J2560_k5_exp_softpcg_schwarz_directcoarse   5          2560           44                      143360  883.4780154  883.4780154  19     True              1    16.315704              13.8476845                  31.4741018       851.9706625     56        
-48: PoissonConstCoeff_J320_k5_exp_softpcg_schwarz_directcoarse    5          320            44                      17920   36.8502552   36.8502552   11     True              1    2.393585               1.7954887                   3.6849217        33.1350118      56        
-49: PoissonConstCoeff_J40_k5_exp_softpcg_schwarz_directcoarse     5          40             44                      2240    1.7592764    1.7592764    5      True              1    0.6590793              0.274193                    0.5487256        1.1808412       56        
-50: PoissonConstCoeff_J20480_k3_exp_softpcg_schwarz_directcoarse  3          20480          44                      409600  1173.8560738 1173.8560738 23     True              1    12.8388631             11.0822117                  27.8834068       1145.9292784    20        
-51: PoissonConstCoeff_J2560_k3_exp_softpcg_schwarz_directcoarse   3          2560           44                      51200   65.455485    65.455485    13     True              1    1.9643965              1.0386793                   3.124231         62.2988662      20        
-52: PoissonConstCoeff_J320_k3_exp_softpcg_schwarz_directcoarse    3          320            44                      6400    2.3520518    2.3520518    5      True              1    0.5903971              0.1629514                   0.5078994        1.8139949       20        
-53: PoissonConstCoeff_J40_k3_exp_softpcg_schwarz_directcoarse     3          40             44                      800     0.6258266    0.6258266    5      True              1    0.4142662              0.0541845                   0.2079315        0.3884084       20        
-54: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse 2          163840         44                      1638400 3695.0171414 3695.0171414 31     True              1    37.8321342             228.1394993                 157.4524467      3537.4696214    10        
-55: PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz_directcoarse  2          20480          44                      204800  369.6726581  369.6726581  29     True              1    5.0194096              5.6443998                   9.0248841        360.6097087     10        
-56: PoissonConstCoeff_J2560_k2_exp_softpcg_schwarz_directcoarse   2          2560           44                      25600   20.6302302   20.6302302   18     True              1    0.9710374              0.3699786                   1.0122379        19.586441       10        
-57: PoissonConstCoeff_J320_k2_exp_softpcg_schwarz_directcoarse    2          320            44                      3200    0.8978939    0.8978939    5      True              1    0.4628072              0.0765573                   0.2604887        0.607273        10        
-58: PoissonConstCoeff_J40_k2_exp_softpcg_schwarz_directcoarse     2          40             44                      400     0.4721976    0.4721976    5      True              1    0.396249               0.0401236                   0.1758981        0.2669047       10        
-59: PoissonConstCoeff_J2560_k5_classic_mumps                      5          2560           1                       143360  81.1514151   81.1514151   1      True              1    16.3223782             0                           0                0               56        
-60: PoissonConstCoeff_J320_k5_classic_mumps                       5          320            1                       17920   3.2356921    3.2356921    1      True              1    2.4136963              0                           0                0               56        
-61: PoissonConstCoeff_J40_k5_classic_mumps                        5          40             1                       2240    0.1821689    0.1821689    1      True              1    0.6554503              0                           0                0               56        
-62: PoissonConstCoeff_J20480_k3_classic_mumps                     3          20480          1                       409600  222.2209464  222.2209464  1      True              1    12.9863599             0                           0                0               20        
-63: PoissonConstCoeff_J2560_k3_classic_mumps                      3          2560           1                       51200   6.6368278    6.6368278    1      True              1    1.9533255              0                           0                0               20        
-64: PoissonConstCoeff_J320_k3_classic_mumps                       3          320            1                       6400    0.3483395    0.3483395    1      True              1    0.5870209              0                           0                0               20        
-65: PoissonConstCoeff_J40_k3_classic_mumps                        3          40             1                       800     0.0425573    0.0425573    1      True              1    0.4153402              0                           0                0               20        
-66: PoissonConstCoeff_J20480_k2_classic_mumps                     2          20480          1                       204800  44.3187346   44.3187346   1      True              1    5.1143808              0                           0                0               10        
-67: PoissonConstCoeff_J2560_k2_classic_mumps                      2          2560           1                       25600   1.4318843    1.4318843    1      True              1    0.9801338              0                           0                0               10        
-68: PoissonConstCoeff_J320_k2_classic_mumps                       2          320            1                       3200    0.0903527    0.0903527    1      True              1    0.4740134              0                           0                0               10        
-69: PoissonConstCoeff_J40_k2_classic_mumps                        2          40             1                       400     0.0275176    0.0275176    1      True              1    0.4367048              0                           0                0               10        
 ==============
 **************
 ==============
@@ -298,8 +152,6 @@ SubTab_2.Print();
 **************
 ==============
 **************
-Incomplete statement - missing closing parentheses?.
-
 ==============
 //extract all Degrees and put them into array
 int rowcount          = SubTab.Rows.Count;
@@ -325,10 +177,8 @@ for(int i=0;i<tmp.Length;i++){
 }
 DGdegrees;
 **************
-List of 3 instances of Int32 {
+List of 1 instances of Int32 {
   0: 2
-  1: 3
-  2: 5
 }
 ==============
 **************
@@ -364,7 +214,7 @@ for(int iCol = 0; iCol < columns; iCol++) {
         tmpDG = DGdegrees[pDegree];
     
     //Create Graphs
-    multiplots[iRow,iCol] = SubTab.ToPlot("DOFs", "NoIter", // column for x- and y
+    multiplots[iRow,iCol] = SubTab.ToPlot("DOFs", "minSolRunT", // column for x- and y
        delegate (int iTabRow, 
                  IDictionary<string, object> Row, 
                  out string Nmn, 
@@ -490,79 +340,10 @@ for(int iCol = 0; iCol < columns; iCol++) {
 //multiplots.AddDummyPlotsForLegend(3,0);
 multiplots.PlotNow()
 **************
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: classic_mumps
-name is: classic_mumps
-name is: classic_mumps
 name is: classic_mumps
 name is: exp_softpcg_mg
+name is: exp_softpcg_schwarz_directcoarse
 name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: classic_mumps
-name is: classic_mumps
-name is: classic_mumps
-name is: classic_mumps
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: classic_mumps
-name is: classic_mumps
-name is: classic_mumps
-name is: classic_mumps
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: classic_mumps
-name is: classic_mumps
-name is: classic_mumps
-name is: classic_mumps
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: classic_mumps
-name is: classic_mumps
-name is: classic_mumps
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: classic_mumps
-name is: classic_mumps
-name is: classic_mumps
-Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
-set key inside top left Left reverse 
-System.Drawing.Bitmap
 ==============
 LastError;
 **************
@@ -573,109 +354,22 @@ LastError;
 ==============
 var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
 **************
-Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
-set key inside top left Left reverse 
-
+Using gnuplot: G:\BoSSS-BIN\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 ==============
 //CL.SaveTo(Path.Combine(CurrentDocDir, "ConstCoeffPoissonScaling.tex"));
 **************
 ==============
 CL.PlotNow();
 **************
-System.ComponentModel.Win32Exception occurred: Das System kann die angegebene Datei nicht finden. Type 'LastError' for details.
+Unable to convert to png, 'magick.exe' exited with: -1073740791
 
 ==============
 LastError
 **************
-System.ComponentModel.Win32Exception (0x80004005): Das System kann die angegebene Datei nicht finden
-   bei System.Diagnostics.Process.StartWithShellExecuteEx(ProcessStartInfo startInfo)
-   bei BoSSS.Application.BoSSSpad.GnuplotExtensions.CairolatexContainer.Preview(Boolean trimPage, Int32 dpi) in C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\GnuplotExtensions.cs:Zeile 325.
-   bei <InteractiveExpressionClass>.Host(Object& $retval)
-   bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
-   bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 322.
 ==============
 CL.WriteMinimalCompileableExample(
    Path.Combine(CurrentDocDir, "plots", "MainConstCoeffPoissonScaling.tex"),
    "ConstCoeffPoissonScaling.tex");
 **************
 ==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
+

@@ -679,11 +679,27 @@ namespace ilPSP.Utils {
         }
 
         /// <summary>
+        /// accumulation of subvectors
+        /// </summary>
+        static public void AccV<T, V>(this T acc, double alpha, V b, int offset_acc = 0, int offset_b = 0, int inc_acc = 1, int inc_b = 1, int N = -1)
+            where T : IList<double>
+            where V : IList<double> // 
+        {
+            if(N < 0)
+                N = b.Count;
+            for (int i = 0; i < N; i++) {
+                acc[i * inc_acc + offset_acc] += alpha * b[i * inc_b + offset_b];
+            }
+        }
+
+
+        /// <summary>
         /// L2-distance
         /// </summary>
         static public double L2Dist<TX, TY>(this TX a, TY b)
             where TX : IList<double>
-            where TY : IList<double> {
+            where TY : IList<double> //
+        {
             return Math.Sqrt(L2DistPow2(a, b));
         }
 
@@ -818,7 +834,8 @@ namespace ilPSP.Utils {
         _DDOT ddot;
         _DNRM2 dnrm2;
         _DSWAP dswap;
-        _DGEMM dgemm;        
+        _DGEMM dgemm;
+        _DGEMV dgemv;
         _DAXPY daxpy;
         _DSCAL dscal;
 #pragma warning restore       649
@@ -851,6 +868,23 @@ namespace ilPSP.Utils {
         public unsafe _DGEMM DGEMM {
             get { return dgemm; }
         }
+
+
+        /// <summary> FORTRAN BLAS routine </summary>
+        public unsafe delegate void _DGEMV(ref int TRANSA,
+                                           ref int M, ref int N,
+                                           ref double ALPHA,
+                                           double* A, ref int LDA,
+                                           double* X, ref int INCX,
+                                           ref double BETA,
+                                           double* Y, ref int INCY);
+
+
+        /// <summary> FORTRAN BLAS routine </summary>
+        public unsafe _DGEMV DGEMV {
+            get { return dgemv; }
+        }
+
 
         /// <summary> FORTRAN BLAS routine </summary>
         public unsafe delegate void _DAXPY(ref int N,
@@ -997,6 +1031,28 @@ namespace ilPSP.Utils {
                              B, ref LDB,
                              ref BETA,
                              C, ref LDC);
+            }
+        }
+
+        /// <summary>
+        /// native blas in C-stype
+        /// (matrices are still in FORTRAN order)
+        /// </summary>
+        unsafe static public void dgemv(int TRANSA, 
+                                        int M, int N, 
+                                        double ALPHA,
+                                        double* A, int LDA,
+                                        double* X, int INCX,
+                                        double BETA,
+                                        double* Y, int INCY) {
+            unsafe {
+                m_BLAS.DGEMV(ref TRANSA,
+                             ref M, ref N, 
+                             ref ALPHA,
+                             A, ref LDA,
+                             X, ref INCX,
+                             ref BETA,
+                             Y, ref INCY);
             }
         }
 

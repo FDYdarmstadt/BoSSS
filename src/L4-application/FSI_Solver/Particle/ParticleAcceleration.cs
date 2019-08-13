@@ -18,20 +18,27 @@ namespace BoSSS.Application.FSI_Solver
 {
     class ParticleAcceleration
     {
-        internal double[,] CalculateCoefficients(double[,] AddedDampingTensor, double ParticleMass, double InertialMoment, double Timestep, double AddedDampingCoefficient = 1)
+        public ParticleAcceleration() { }
+
+        private void GetMassMatrix(double ParticleMass, double InertialMoment, out double[,] MassMatrix)
         {
-            double[,] temp = new double[3, 3];
-            double[,] MassMatrix = new double[3, 3];
+            MassMatrix = new double[3, 3];
             MassMatrix[0, 0] = MassMatrix[1, 1] = ParticleMass;
             MassMatrix[2, 2] = InertialMoment;
+        }
+
+        internal double[,] CalculateCoefficientMatrix(double[,] AddedDampingTensor, double ParticleMass, double InertialMoment, double Timestep, double AddedDampingCoefficient)
+        {
+            double[,] CoefficientMatrix = new double[3, 3];
+            GetMassMatrix(ParticleMass, InertialMoment, out double[,] MassMatrix);
             for (int i = 0; i < 3; i++)
             {
                 for (int j = 0; j < 3; j++)
                 {
-                    temp[i, j] = MassMatrix[i, j] + Timestep * AddedDampingCoefficient * AddedDampingTensor[i, j];
+                    CoefficientMatrix[i, j] = MassMatrix[i, j] + Timestep * AddedDampingCoefficient * AddedDampingTensor[i, j];
                 }
             }
-            return temp;
+            return CoefficientMatrix;
         }
 
         internal double CalculateDenominator(double[,] CoefficientMatrix)

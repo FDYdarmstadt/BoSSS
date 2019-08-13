@@ -517,55 +517,187 @@ namespace ilPSP {
         /// </param>
         /// <param name="transpose">true for transpose multiplication</param>
         /// <param name="M">the matrix</param>
-        static public void gemv<MatrixType, VectorType1, VectorType2>(this MatrixType M, double xScaling, VectorType1 x, double yScaling, VectorType2 y, bool transpose = false)
+        static public void GEMV<MatrixType, VectorType1, VectorType2>(this MatrixType M, double xScaling, VectorType1 x, double yScaling, VectorType2 y, bool transpose = false)
             where MatrixType : IMatrix
             where VectorType1 : IList<double>
-            where VectorType2 : IList<double> {
-            //
-
-            // Make sure $x is "cloned" if it is also the target of the
-            // operation
-            IList<double> xCopy = x;
-            if (ReferenceEquals(x, y)) {
-                xCopy = x.ToList();
-            }
-
+            where VectorType2 : IList<double> //
+        {
             int m_NoOfCols = M.NoOfCols, m_NoOfRows = M.NoOfRows;
-
             if (!transpose) {
                 if (m_NoOfCols != x.Count)
                     throw new ArgumentException("Length of vector x must be equal to number of columns.");
                 if (m_NoOfRows != y.Count)
                     throw new ArgumentException("Length of vector y must be equal to number of rows.");
-
-
-                for (int i = 0; i < m_NoOfRows; i++) {
-                    double yi = 0;
-
-                    for (int j = 0; j < m_NoOfCols; j++)
-                        yi += M[i, j] * xCopy[j];
-
-                    y[i] = y[i] * yScaling + yi * xScaling;
-                }
-
             } else {
                 if (m_NoOfRows != x.Count)
                     throw new ArgumentException("Length of vector x must be equal to number of rows (transpose matrix multiply was selected!).");
                 if (m_NoOfCols != y.Count)
                     throw new ArgumentException("Length of vector y must be equal to number of columns (transpose matrix multiply was selected!).");
+            }
+            if (m_NoOfCols == 0 || m_NoOfRows == 0)
+                return;
+            if (ReferenceEquals(x, y))
+                throw new ArgumentException("in-place matrix-vector product is not supported");
 
 
-                for (int i = 0; i < m_NoOfCols; i++) {
-                    double yi = 0;
+            if (typeof(MatrixType) == typeof(MultidimensionalArray) && m_NoOfRows >= 2 && m_NoOfCols >= 2) {
+                // +++++++++++++++++
+                // optimized version
+                // +++++++++++++++++
 
-                    for (int j = 0; j < m_NoOfRows; j++)
-                        yi += M[j, i] * xCopy[j];
+                MultidimensionalArray mdaM = M as MultidimensionalArray;
+                if (mdaM.Dimension != 2)
+                    throw new ArgumentException("Multidimensional Array must have 2 dimensions to be a matrix.");
 
-                    y[i] = y[i] * yScaling + yi * xScaling;
+                int off = mdaM.Index(0, 0);
+                int LD = mdaM.Index(1, 0) - off; // leading dimension
+                int SD = mdaM.Index(0, 1) - off; // small dimension
+
+                double[] _x;
+                if (typeof(VectorType1) == typeof(double[]))
+                    _x = x as double[];
+                else
+                    _x = x.ToArray();
+
+
+                if (SD == 1 && m_NoOfCols * m_NoOfRows >= 32) {
+                    // ++++++++++++++++
+                    // BLAS can be used
+                    // ++++++++++++++++
+
+
+                    double[] _y;
+                    bool backCopy = false;
+                    if (typeof(VectorType1) == typeof(double[]))
+                        _y = y as double[];
+                    else {
+                        _y = y.ToArray();
+                        backCopy = true;
+                    }
+
+                    unsafe {
+                        fixed (double* _pmdaM = mdaM.Storage, px = _x, py = _y) {
+                            double* pmdaM = _pmdaM + off;
+
+                            BLAS.dgemv(transpose ? 'N' : 'T', m_NoOfCols, m_NoOfRows, xScaling, pmdaM, LD, px, 1, yScaling, py, 1);
+
+                        }
+                    }
+
+                    if (backCopy) {
+                        int I = _y.Length;
+                        for (int i = 0; i < I; i++) {
+                            y[i] = _y[i];
+                        }
+                    }
+
+                } else {
+                    // ++++++++++++++++++++++++++++++++++++++++++++
+                    // use internal implementation
+                    // (either because very small or spread matrix)
+                    // ++++++++++++++++++++++++++++++++++++++++++++
+
+                    unsafe {
+                        fixed (double* _pmdaM = mdaM.Storage, _px = _x) {
+
+                            
+                            if (!transpose) {
+                                double* pmdaM = _pmdaM + off;
+                                for (int i = 0; i < m_NoOfRows; i++) {
+                                    double yi = 0;
+                                    double* px = _px;
+
+                                    for (int j = 0; j < m_NoOfCols; j++) {
+                                        yi += *pmdaM * *px;
+                                        px++;
+                                        pmdaM += SD;
+                                    }
+
+                                    y[i] = y[i] * yScaling + yi * xScaling;
+                                }
+
+                            } else {
+
+                                
+                                for (int i = 0; i < m_NoOfCols; i++) {
+                                    double* pmdaM = _pmdaM + off + i*SD;
+                                    double* px = _px;
+                                    double yi = 0;
+
+                                    for (int j = 0; j < m_NoOfRows; j++) {
+                                        yi += *pmdaM * *px;
+                                        px++;
+                                        pmdaM += LD;
+                                    }
+                                    y[i] = y[i] * yScaling + yi * xScaling;
+                                }
+                                
+                            }
+                        }
+                    }
+                }
+            } else {
+                // +++++++++++++++++
+                // Reference version
+                // +++++++++++++++++
+
+                if (!transpose) {
+                    
+                    for (int i = 0; i < m_NoOfRows; i++) {
+                        double yi = 0;
+
+                        for (int j = 0; j < m_NoOfCols; j++)
+                            yi += M[i, j] * x[j];
+
+                        y[i] = y[i] * yScaling + yi * xScaling;
+                    }
+
+                } else {
+                    
+                    for (int i = 0; i < m_NoOfCols; i++) {
+                        double yi = 0;
+
+                        for (int j = 0; j < m_NoOfRows; j++)
+                            yi += M[j, i] * x[j];
+
+                        y[i] = y[i] * yScaling + yi * xScaling;
+                    }
                 }
             }
-
         }
+
+        /// <summary>
+        /// alias for <see cref="GEMM{Matrix2, Matrix3}(Matrix2, Matrix3)"/>
+        /// </summary>
+        static public MultidimensionalArray MatMatMul<Matrix2, Matrix3>(this Matrix2 A, Matrix3 B)
+            where Matrix2 : IMatrix
+            where Matrix3 : IMatrix //    
+        {
+            return A.GEMM(B);
+        }
+
+        /// <summary>
+        /// Alias for <see cref="GEMV"/>
+        /// </summary>
+        static public void MatVecMul<MatrixType, VectorType1, VectorType2>(this MatrixType M, double xScaling, VectorType1 x, double yScaling, VectorType2 y, bool transpose = false)
+            where MatrixType : IMatrix
+            where VectorType1 : IList<double>
+            where VectorType2 : IList<double> //
+        {
+            M.GEMV(xScaling, x, yScaling, y, transpose);
+        }
+        
+        /// <summary>
+        /// Alias for <see cref="GEMV"/>
+        /// </summary>
+        static public void MatVecMulInplace<MatrixType, VectorType1>(this MatrixType M, double xScaling, VectorType1 x, bool transpose = false)
+            where MatrixType : IMatrix
+            where VectorType1 : IList<double> //
+        {
+            double[] xc = x.ToArray();
+            M.GEMV(xScaling, xc, 0.0, x, transpose);
+        }
+
 
         /// <summary>
         /// General matrix/matrix multiplication:
@@ -1045,6 +1177,7 @@ namespace ilPSP {
         /// <remarks>
         /// on exit, Diag(<paramref name="Diag"/>)*<paramref name="B"/>^T*<paramref name="Mtx"/>*<paramref name="B"/> = EYE;
         /// </remarks>
+        /// <param name="Mtx">input; remains unchanged</param>
         /// <param name="B">output; will be overwritten</param>
         /// <param name="Diag">
         /// output; can be null, if just a Choleski factorization is required -- in that case,
@@ -1614,7 +1747,7 @@ namespace ilPSP {
         /// Least-squares-solve (LAPACK function DGELSY) with multiple right-hand-side vectors.
         /// </summary>
         /// <param name="Mtx">
-        /// The matrix, size \f$ M \times N \f$, i.e. \f$ M \f$ is the number of equations anf \f$ N \f$ the number of unknowns. </param>
+        /// The matrix, size \f$ M \times N \f$, i.e. \f$ M \f$ is the number of equations and \f$ N \f$ the number of unknowns. </param>
         /// <param name="B">
         /// Input for the right-hand-side, size is \f$  M  \times L \f$,
         /// i.e. \f$ L \f$ is the number of right-hand-sides.
@@ -1708,6 +1841,8 @@ namespace ilPSP {
             TempBuffer.FreeTempBuffer(i1);
         }
 
+        static public Stopwatch DGETRF_stopwatch;// = new Stopwatch();
+
         /// <summary>
         /// Solves the linear equation system:
         /// 
@@ -1737,8 +1872,12 @@ namespace ilPSP {
                     CopyToUnsafeBuffer(M, this_Entries, true);
 
                     int info;
+                    if (DGETRF_stopwatch != null)
+                        DGETRF_stopwatch.Start();
                     LAPACK.F77_LAPACK.DGETRF(ref L, ref L, this_Entries, ref L, ipiv, out info);
-                    if(info != 0) {
+                    if (DGETRF_stopwatch != null)
+                        DGETRF_stopwatch.Stop();
+                    if (info != 0) {
                         TempBuffer.FreeTempBuffer(i0);
                         string infostring;
                         if (info < 0) {
@@ -1761,6 +1900,113 @@ namespace ilPSP {
                     }
                 }
                 TempBuffer.FreeTempBuffer(i0);
+            }
+        }
+
+        /// <summary>
+        /// computes a LU-Factorization of <paramref name="M"/> and stores it in-place, using LAPACK function DGETRF
+        /// </summary>
+        /// <param name="M">(input, output) General quadratic, non-singular matrix; on exit, the LU-factorization</param>
+        /// <param name="_ipiv">(output, allocated by caller) pivot indices, as computed by LAPACK</param>
+        static public void FactorizeLU<T>(this T M, int[] _ipiv) where T : IMatrix {
+            if (M.NoOfRows != M.NoOfCols)
+                throw new ApplicationException("Cannot solve nonquadratic matrix.");
+            if (_ipiv.Length != M.NoOfCols)
+                throw new ArgumentException("length of ipiv must be equal to number of columns");
+            unsafe {
+
+                int L = M.NoOfCols;
+                double[] _this_Entries = TempBuffer.GetTempBuffer(out int i0, L * L);
+
+
+                fixed (int* ipiv = _ipiv) {
+                    fixed (double* this_Entries = _this_Entries) {
+
+                        CopyToUnsafeBuffer(M, this_Entries, true);
+
+                        int info;
+                        if (DGETRF_stopwatch != null)
+                            DGETRF_stopwatch.Start();
+                        LAPACK.F77_LAPACK.DGETRF(ref L, ref L, this_Entries, ref L, ipiv, out info);
+                        if (DGETRF_stopwatch != null)
+                            DGETRF_stopwatch.Stop();
+
+                        if (info != 0) {
+                            TempBuffer.FreeTempBuffer(i0);
+                            string infostring;
+                            if (info < 0) {
+                                infostring = String.Format("the {0}-th argument had an illegal value", info);
+                            } else {
+                                infostring = "U(" + info + @""",""" + info +
+                                    ") is exactly zero. The factorization \n has been completed, but the factor U is exactly \n singular, and division by zero will occur if it is used \n to solve a system of equations.";
+                            }
+
+                            throw new ArithmeticException("LAPACK dgetrf info: " + infostring);
+                        }
+
+
+                        CopyFromUnsafeBuffer(M, this_Entries, true);
+                    }
+                }
+
+                TempBuffer.FreeTempBuffer(i0);
+            }
+        }
+
+
+        /// <summary>
+        /// Performs the backward substitution which has been obtained through <see cref="FactorizeLU{T}(T, int[])"/>
+        /// </summary>
+        static public void BacksubsLU<T>(this T M, int[] _ipiv, double[] x, double[] b) 
+            where T : IMatrix //
+        {
+            if (M.NoOfRows != M.NoOfCols)
+                throw new ApplicationException("Cannot solve non-quadratic matrix.");
+            if (_ipiv.Length != M.NoOfCols)
+                throw new ArgumentException("length of ipiv must be equal to number of columns");
+            if (x.Length != M.NoOfCols)
+                throw new ArgumentException("length of x must be equal to number of columns");
+            if (b.Length != M.NoOfRows)
+                throw new ArgumentException("length of b must be equal to number of rows");
+
+            int L = M.NoOfCols;
+            unsafe {
+                int iBuf;
+                double[] _this_Entries;
+                int BufOffset;
+                if (M is MultidimensionalArray) {
+                    var Mda = (M as MultidimensionalArray);
+                    _this_Entries = Mda.Storage;
+                    iBuf = -1;
+                    BufOffset = Mda.Index(0, 0);
+                } else {
+                    _this_Entries = TempBuffer.GetTempBuffer(out iBuf, L * L);
+                    BufOffset = 0;
+                }
+
+                Array.Copy(b, x, x.Length);
+
+                fixed (int* ipiv = _ipiv) {
+                    fixed (double* __this_Entries = _this_Entries) {
+
+                        double* this_Entries = __this_Entries + BufOffset;
+                        if(iBuf >= 0)
+                            CopyFromUnsafeBuffer(M, this_Entries, true);
+
+                        char transp = 'N';
+                        int eins = 1;
+                        LAPACK.F77_LAPACK.DGETRS(ref transp, ref L, ref eins, this_Entries, ref L, ipiv, x, ref L, out int info);
+                        if (info != 0) {
+                            if(iBuf >= 0)
+                                TempBuffer.FreeTempBuffer(iBuf);
+                            throw new ArithmeticException("LAPACK dgetrs info: " + info);
+                        }
+
+                    }
+                }
+
+                if (iBuf >= 0)
+                    TempBuffer.FreeTempBuffer(iBuf);
             }
         }
 
@@ -2123,8 +2369,6 @@ namespace ilPSP {
         /// <summary>
         /// multiplies row <paramref name="i"/> by a factor <paramref name="alpha"/>;
         /// </summary>
-        /// <param name="i"></param>
-        /// <param name="alpha"></param>
         static public void RowScale<T>(this T M, int i, double alpha) where T : IMatrix {
             M.CheckRowAndCol(i, 0);
             for (int l = 0; l < M.NoOfCols; l++)
@@ -2134,8 +2378,6 @@ namespace ilPSP {
         /// <summary>
         /// multiplies column <paramref name="i"/> by a factor <paramref name="alpha"/>;
         /// </summary>
-        /// <param name="i"></param>
-        /// <param name="alpha"></param>
         static public void ColScale<T>(this T M, int i, double alpha) where T : IMatrix {
             M.CheckRowAndCol(0, i);
             for (int l = 0; l < M.NoOfRows; l++)
@@ -2146,9 +2388,6 @@ namespace ilPSP {
         /// accumulates row <paramref name="iSrc"/> times
         /// <paramref name="alpha"/> to row <paramref name="iDst"/>;
         /// </summary>
-        /// <param name="iSrc"></param>
-        /// <param name="iDst"></param>
-        /// <param name="alpha"></param>
         static public void RowAdd<T>(this T M, int iSrc, int iDst, double alpha) where T : IMatrix {
             M.CheckRowAndCol(iDst, 0);
             M.CheckRowAndCol(iSrc, 0);
@@ -2170,8 +2409,6 @@ namespace ilPSP {
         /// <summary>
         /// throws an exception if either column or row index are our of range
         /// </summary>
-        /// <param name="i">row index</param>
-        /// <param name="j">column index</param>
         static private void CheckRowAndCol<T>(this T M, int i, int j) where T : IMatrix {
             if (i < 0 || i >= M.NoOfRows)
                 throw new IndexOutOfRangeException("row index out of range");

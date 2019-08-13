@@ -78,7 +78,7 @@ namespace BoSSS.Application.FSI_Solver {
         public static void TestFlowRotationalCoupling() {
             using (FSI_SolverMain p = new FSI_SolverMain()) {
 
-                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.ParticleInShearFlow(k: 1);
+                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.Test_ParticleInShearFlow(k: 1);
                 //ctrl.ImmediatePlotPeriod = 1;
                 //ctrl.SuperSampling = 2;
                 p.Init(ctrl);
@@ -103,7 +103,7 @@ namespace BoSSS.Application.FSI_Solver {
         public static void SingleDryParticleAgainstWall([Values(false, true)]  bool MeshRefine) { 
             using (FSI_SolverMain p = new FSI_SolverMain()) {
 
-                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.SingleDryParticleAgainstWall(MeshRefine:MeshRefine);
+                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.Test_SingleDryParticleAgainstWall(MeshRefine:MeshRefine);
                 p.Init(ctrl);
                 p.RunSolverMode();
 
@@ -114,7 +114,7 @@ namespace BoSSS.Application.FSI_Solver {
                 else
                     Dest_Should = new Vector(-0.0552265430761048, 0.751640173282737); 
 
-                Vector Dest_Is = new Vector(p.Particles[0].Position[0]);
+                Vector Dest_Is = new Vector(p.Particles[0].position[0]);
 
                 double dist = (Dest_Should - Dest_Is).L2Norm();
 
@@ -130,14 +130,14 @@ namespace BoSSS.Application.FSI_Solver {
             using (FSI_SolverMain p = new FSI_SolverMain())
             {
 
-                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.DryParticleBounce();
+                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.Test_DryParticleBounce();
                 p.Init(ctrl);
                 p.RunSolverMode();
 
                 Vector Dest_Should;
                 Dest_Should = new Vector(0.0, 0.7995941200205);
 
-                Vector Dest_Is = new Vector(p.Particles[0].Position[0]);
+                Vector Dest_Is = new Vector(p.Particles[0].position[0]);
 
                 double dist = (Dest_Should - Dest_Is).L2Norm();
 
@@ -154,7 +154,7 @@ namespace BoSSS.Application.FSI_Solver {
             using (FSI_SolverMain p = new FSI_SolverMain())
             {
 
-                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.StickyTrap();
+                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.Test_StickyTrap();
                 p.Init(ctrl);
                 p.RunSolverMode();
 
@@ -162,8 +162,8 @@ namespace BoSSS.Application.FSI_Solver {
                 Dest_Should = new Vector(0.0, 0.075);
                 double VelY_Should = 0;
 
-                Vector Dest_Is = new Vector(p.Particles[0].Position[0]);
-                double VelY_Is = p.Particles[0].TranslationalVelocity[0][0];
+                Vector Dest_Is = new Vector(p.Particles[0].position[0]);
+                double VelY_Is = p.Particles[0].translationalVelocity[0][0];
 
                 double dist = (Dest_Should - Dest_Is).L2Norm();
                 double Vel_Div = Math.Abs(VelY_Should - VelY_Is);
@@ -185,9 +185,9 @@ namespace BoSSS.Application.FSI_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double ForcesSoll = 11129.7411681657;
+                double ForcesSoll = 30251.7764996821;
 
-                double Forces = p.Particles[0].HydrodynamicForces[0][0];
+                double Forces = p.Particles[0].hydrodynamicForces[0][0];
 
                 double DiffForces = Math.Abs(ForcesSoll - Forces); 
 
@@ -204,9 +204,9 @@ namespace BoSSS.Application.FSI_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double ForcesSoll = 12.471222692466;
+                double ForcesSoll = 5.62199895597732;
 
-                double Forces = p.Particles[0].HydrodynamicForces[0][0];
+                double Forces = p.Particles[0].hydrodynamicForces[0][0];
 
                 double DiffForces = Math.Abs(ForcesSoll - Forces);
 
