@@ -45,9 +45,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             get;
         }
 
-        private int dimension;
+        private readonly int dimension;
 
-        private string ArgumentName;
+        private readonly string ArgumentName;
 
         public OptimizedLaplacianArtificialViscosityFlux(GridData gridData, double order, int dimension, string ArgumentVarName) {
             this.dimension = dimension;
@@ -177,14 +177,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         /// this is a general issue and has to be tackle in a global manner.
         /// Currently, we do not have any better idea.
         /// </summary>
-        /// <param name="efp"></param>
-        /// <param name="Uin"></param>
-        /// <param name="Uout"></param>
-        /// <param name="GradUin"></param>
-        /// <param name="GradUout"></param>
-        /// <param name="fin"></param>
-        /// <param name="fot"></param>
-        /// <param name="penalties"></param>
         public void InternalEdgeForXDG(EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout, MultidimensionalArray fin, MultidimensionalArray fot, double[] penalties) {
             int NumOfNodes = fin.GetLength(1); // no of nodes per cell
             int NumOfCells = efp.Len;
