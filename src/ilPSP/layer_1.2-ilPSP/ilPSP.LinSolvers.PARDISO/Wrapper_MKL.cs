@@ -86,7 +86,7 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// </summary>
         public unsafe delegate int _pardiso(void* pt, int* maxfct, int* mnum, int* mtype,
                                             int* phase, int* n,
-                                            double* a, int* ia, int* ja,
+                                            void* a, int* ia, int* ja,
                                             int* perm, int* nrhs, int* iparm,
                                             int* msglvl, double* b, double* x,
                                             int* error);

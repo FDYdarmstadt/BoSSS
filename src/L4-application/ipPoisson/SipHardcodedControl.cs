@@ -231,8 +231,12 @@ namespace BoSSS.Application.SipPoisson {
             R.ExactSolution_provided = true;
             R.LinearSolver.NoOfMultigridLevels = int.MaxValue;
             R.LinearSolver.SolverCode = solver_name;
-            //R.TargetBlockSize = 100;
+            // exp_Kcycle_schwarz
+            // exp_gmres_levelpmg
 
+#if DEBUG
+            R.LinearSolver.TargetBlockSize = 100;
+#endif
 
 
             R.GridFunc = delegate () {

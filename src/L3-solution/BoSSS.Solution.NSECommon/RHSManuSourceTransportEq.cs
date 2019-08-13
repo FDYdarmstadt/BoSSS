@@ -119,8 +119,8 @@ namespace BoSSS.Solution.NSECommon {
 
             double x_ = x[0];
             double y_ = x[1];
-            double t_ = 0.0;
-            double p0 = ThermodynamicPressure.GetMeanValue(3);
+            double t_ = phystime;
+            double p0 = 1.0;
 
             double M1 = MolarMasses[0]; double M2 = MolarMasses[1]; double M3 = MolarMasses[2]; double M4 = MolarMasses[3];
             double alpha1 = 0.3;
@@ -128,7 +128,7 @@ namespace BoSSS.Solution.NSECommon {
             double alpha3 = 0.1;
             double[] Coefficients = new double[] { alpha1, alpha2, alpha3 };
 
-            bool unsteady = false;
+
             double ConvectionTerm;
             double ReactionRate;
             double SourceTerm;
@@ -145,11 +145,7 @@ namespace BoSSS.Solution.NSECommon {
                         unsteadyTerm = 0.0; // 0.0 is the correct MS... ((p0/T)*T)' = (p0)' = 0.0
                         break;
                     case PhysicsMode.Combustion:
-                        ConvectionTerm = 0.0;//TODO
-
-                        ReactionRate = 0.0;//TODO
-
-                        break;
+                        throw new NotImplementedException("TODO");
                     default:
                         throw new NotImplementedException("wrong switch");
                 }

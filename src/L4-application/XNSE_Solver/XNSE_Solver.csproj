@@ -85,7 +85,7 @@
     <Compile Include="PreCond\ApproxPredictor.cs" />
     <Compile Include="Tests\BcTest_PressureOutlet.cs" />
     <Compile Include="Tests\ChannelTest.cs" />
-    <Compile Include="Control.cs" />
+    <Compile Include="XNSE_Control.cs" />
     <Compile Include="HardcodedControl.cs" />
     <Compile Include="Tests\ITest.cs" />
     <Compile Include="Tests\MovingDropletTest.cs" />
@@ -95,7 +95,10 @@
     <Compile Include="Tests\TranspiratingChannelTest.cs" />
     <Compile Include="Tests\UnitTest.cs" />
     <Compile Include="Tests\ViscosityJumpTest.cs" />
+    <Compile Include="XNSE_OperatorConfiguration.cs" />
     <Compile Include="XNSE_SolverMain.cs" />
+    <Compile Include="XNSFE_OperatorComponents.cs" />
+    <Compile Include="XNSFE_OperatorFactory.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">

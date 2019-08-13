@@ -72,7 +72,7 @@ namespace BoSSS.Solution {
 
             //This is a hack to get DOFperCell in every Multigridlevel
 
-            precondsolver = GenerateLinear_body(m_lc, m_nc, ts_MGS, ts_MultigridOperatorConfig, true);
+            precondsolver = GenerateLinear_body(m_nc.PrecondSolver, m_nc, ts_MGS, ts_MultigridOperatorConfig, true);
             linsolver = GenerateLinear_body(m_lc, m_nc, ts_MGS, ts_MultigridOperatorConfig);
             Debug.Assert(linsolver != null);
             Debug.Assert(precondsolver != null);
@@ -230,8 +230,8 @@ namespace BoSSS.Solution {
             // the linear solvers:
             // +++++++++++++++++++++++++++++++++++++++++++++
 
-            if (lc == null)
-                throw new ArgumentNullException();
+            //if (lc == null)
+            //    throw new ArgumentNullException();
 
             ISolverSmootherTemplate templinearSolve = null;
 
@@ -606,8 +606,19 @@ namespace BoSSS.Solution {
                 case LinearSolverConfig.Code.exp_gmres_levelpmg:
                     templinearSolve = new SoftGMRES() {
                         m_Tolerance = lc.ConvergenceCriterion,
-                        Precond = new LevelPmg()
+                        m_MaxIterations = lc.MaxSolverIterations,
+                        Precond = new LevelPmg() { UseHiOrderSmoothing = true }
                     };
+
+
+                    //templinearSolve = new OrthonormalizationScheme() {
+                    //    Tolerance = lc.ConvergenceCriterion,
+                    //    MaxIter = lc.MaxSolverIterations,
+                    //    PrecondS = new ISolverSmootherTemplate[] {
+                    //        new LevelPmg() { UseHiOrderSmoothing = true }
+                    //        //new BlockJacobi() { NoOfIterations = 1, omega = 0.5 }
+                    //    }
+                    //};
                     break;
 
                 //testing area, please wear a helmet ...
@@ -1131,10 +1142,6 @@ namespace BoSSS.Solution {
         /// <summary>
         /// experimental. Is connected to Decomposed MG OrthoScheme. Can be deleted if not used anymore ...
         /// </summary>
-        /// <param name="MGlevels"></param>
-        /// <param name="lc"></param>
-        /// <param name="coarseSolver"></param>
-        /// <returns></returns>
         private ISolverSmootherTemplate BareMGSquence(int MGlevels, ISolverSmootherTemplate coarseSolver, ISolverSmootherTemplate smoother=null)
         {
             ISolverSmootherTemplate solver;
@@ -1571,7 +1578,8 @@ namespace BoSSS.Solution {
                             NoOfPartsPerProcess = NoOfBlocks
                         },
                         Overlap = 2, // overlap seems to help; more overlap seems to help more
-                        EnableOverlapScaling = true
+                        EnableOverlapScaling = true,
+                        UsePMGinBlocks = false
                     };
 
                     

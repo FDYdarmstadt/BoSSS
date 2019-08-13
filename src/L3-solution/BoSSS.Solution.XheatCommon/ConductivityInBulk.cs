@@ -74,7 +74,7 @@ namespace BoSSS.Solution.XheatCommon {
         void SetBndfunction(string S) {
             int D = base.m_D;
             base.tempFunction = this.m_bcMap.bndFunction[VariableNames.Temperature + "#" + S];
-            base.fluxFunction = this.m_bcMap.bndFunction["HeatFlux#" + S];
+            base.fluxFunction = D.ForLoop(d => m_bcMap.bndFunction[VariableNames.HeatFluxVectorComponent(d) + "#" + S]);
         }
 
         protected override double Conductivity(double[] Parameters) {
@@ -108,11 +108,13 @@ namespace BoSSS.Solution.XheatCommon {
         /// </summary>
         protected Func<double[], double, double>[] tempFunction;
 
+
         /// <summary>
-        /// flux boundary values; <br/>
-        ///  - 1st index: edge tag
+        /// Dirichlet boundary values; <br/>
+        ///  - 1st index: spatial dimension <br/>
+        ///  - 2nd index: edge tag
         /// </summary>
-        protected Func<double[], double, double>[] fluxFunction;
+        protected Func<double[], double, double>[][] fluxFunction;
 
 
         public swipConductivity(double _penaltyBase, int D, ThermalBoundaryCondMap bcmap) {
@@ -121,7 +123,7 @@ namespace BoSSS.Solution.XheatCommon {
             this.m_D = D;
 
             tempFunction = bcmap.bndFunction[VariableNames.Temperature];
-            fluxFunction = bcmap.bndFunction["HeatFlux"];
+            fluxFunction = D.ForLoop(d => bcmap.bndFunction[VariableNames.HeatFluxVectorComponent(d)]);
             EdgeTag2Type = bcmap.EdgeTag2Type;
         }
 
@@ -221,11 +223,10 @@ namespace BoSSS.Solution.XheatCommon {
                     }
                 case ThermalBcType.ConstantHeatFlux: {
 
-                        double g_D = this.g_Flux(inp.X, inp.time, inp.EdgeTag);
-
                         for(int d = 0; d < inp.D; d++) {
-                            double nd = inp.Normale[d];
-                            Acc += g_D * (_vA) * nd;
+                            double g_D = this.g_Flux(inp.X, inp.time, d, inp.EdgeTag);
+
+                            Acc += g_D * (_vA) * inp.Normale[d];
                             //Acc += (kA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;
                         }
                         Acc *= this.m_alpha;
@@ -271,9 +272,9 @@ namespace BoSSS.Solution.XheatCommon {
         /// <summary>
         /// Neumann boundary value;
         /// </summary>
-        double g_Flux(double[] X, double time, int EdgeTag) {
+        double g_Flux(double[] X, double time, int d, int EdgeTag) {
             if(this.g_Flux_Override == null) {
-                Func<double[], double, double> boundVel = this.fluxFunction[EdgeTag];
+                Func<double[], double, double> boundVel = this.fluxFunction[d][EdgeTag];
                 double ret = boundVel(X, time);
 
                 return ret;

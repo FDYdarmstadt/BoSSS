@@ -679,11 +679,27 @@ namespace ilPSP.Utils {
         }
 
         /// <summary>
+        /// accumulation of subvectors
+        /// </summary>
+        static public void AccV<T, V>(this T acc, double alpha, V b, int offset_acc = 0, int offset_b = 0, int inc_acc = 1, int inc_b = 1, int N = -1)
+            where T : IList<double>
+            where V : IList<double> // 
+        {
+            if(N < 0)
+                N = b.Count;
+            for (int i = 0; i < N; i++) {
+                acc[i * inc_acc + offset_acc] += alpha * b[i * inc_b + offset_b];
+            }
+        }
+
+
+        /// <summary>
         /// L2-distance
         /// </summary>
         static public double L2Dist<TX, TY>(this TX a, TY b)
             where TX : IList<double>
-            where TY : IList<double> {
+            where TY : IList<double> //
+        {
             return Math.Sqrt(L2DistPow2(a, b));
         }
 
