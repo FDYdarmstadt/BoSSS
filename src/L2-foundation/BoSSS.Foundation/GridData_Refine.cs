@@ -141,7 +141,6 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                             // remove out-dated neighborship info
                             if (newCell.CellFaceTags != null && newCell.CellFaceTags.Length > 0) {
-                                //int[] oldNeighs = this.Cells.CellNeighbours[j];
                                 int[] oldNeighs = GetNeighboursViaEdgesAndVertices(j);
                                 foreach (int jNeigh in oldNeighs) {
                                     if (cellsToRefineBitmask[jNeigh] || cellsToCoarseBitmask[jNeigh]) {
@@ -597,7 +596,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                 for (int z = 0; z < coarseningCellCluster.Length; z++) {
                     int currentCellIndex = coarseningClusterID[z];
 
-                    //int[] neighbourCells = this.Cells.CellNeighbours[currentCellIndex];
                     int[] neighbourCells = GetNeighboursViaEdgesAndVertices(currentCellIndex);
 
                     foreach (int neighbourCellIndex in neighbourCells) {
@@ -942,7 +940,6 @@ namespace BoSSS.Foundation.Grid.Classic {
             int noOfLocalCells = this.Cells.NoOfLocalUpdatedCells;
 
             for (int j = 0; j < noOfLocalCells; j++) {
-                //this.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaEdges, out int[] neighbourCells, out _);
                 int[] neighbourCells = GetNeighboursViaEdgesAndVertices(j);
 
                 for (int i = 0; i < neighbourCells.Length; i++) {
@@ -1013,12 +1010,13 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <summary>
         /// Recreates the boundary info on adapted cell faces
         /// </summary>
-        /// <param name="cellsOnNeighbourProcess">
+        /// <param name="adaptedCells">
         /// </param>
-        /// <param name="localCellIndex">
+        /// <param name="Edge2Face">
         /// </param>
-        /// <param name="leavesLength">
-        /// No of cell subdivisions
+        /// <param name="iEdge">
+        /// </param>
+        /// <param name="localCellIndex1">
         /// </param>
         private void AdaptBoundaryCellFaces(Cell[][] adaptedCells, byte[,] Edge2Face, int iEdge, int localCellIndex1) {
             Cell[] adaptedBCells1 = adaptedCells[localCellIndex1];

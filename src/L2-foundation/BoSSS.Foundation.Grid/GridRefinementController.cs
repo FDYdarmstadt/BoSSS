@@ -211,7 +211,6 @@ namespace BoSSS.Foundation.Grid
                 if (CellsWithMaxRefineLevel[globalIndex] != 0 && globalCurrentLevel[globalIndex] < CellsWithMaxRefineLevel[globalIndex])
                 {
                     levelIndicator[globalIndex] = globalCurrentLevel[globalIndex] + 1;
-                    GetNeighbourLevelIndicatorRecursive(globalCellNeighbourship, levelIndicator, globalIndex, globalCurrentLevel[globalIndex]);
                 }  
             }
 
@@ -221,32 +220,6 @@ namespace BoSSS.Foundation.Grid
             }
 
             return levelIndicator;
-        }
-
-        /// <summary>
-        /// Recursive computation for the desired level of each global cell.
-        /// </summary>
-        /// <param name="globalCellNeighbourship">
-        /// Jaggerd int-array where the first index refers to the current cell and the second one to the neighbour cells.
-        /// </param>
-        /// <param name="levelIndicator">
-        /// Int-array of the desired level of each global cell.
-        /// </param>
-        /// <param name="globalIndex">
-        /// The global index of the current cell.
-        /// </param>
-        /// <param name="refinementLevel">
-        /// The current refinement level of the current cell.
-        /// </param>
-        private static void GetNeighbourLevelIndicatorRecursive(int[][] globalCellNeighbourship, int[] levelIndicator, int globalIndex, int refinementLevel)
-        {
-            foreach (int jNeigh in globalCellNeighbourship[globalIndex])
-            {
-                if (levelIndicator[jNeigh] < refinementLevel)
-                    levelIndicator[jNeigh] = refinementLevel;
-                if (refinementLevel > 1)
-                    GetNeighbourLevelIndicatorRecursive(globalCellNeighbourship, levelIndicator, jNeigh, refinementLevel - 1);
-            }
         }
 
         /// <summary>

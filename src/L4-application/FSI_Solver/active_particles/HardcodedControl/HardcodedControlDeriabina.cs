@@ -191,7 +191,7 @@ namespace BoSSS.Application.FSI_Solver
             // basic database options
             // ======================
 
-            C.DbPath = @"C:\Users\deussen\localBoSSSDatabases\Deriabina";
+            C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\Deriabina";
             C.saveperiod = 1;
             C.ProjectName = "ParticleCollisionTest";
             C.ProjectDescription = "Gravity";
@@ -309,7 +309,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-2;
+            C.ForceAndTorque_ConvergenceCriterion = 1e-3;
 
 
             // Timestepping
