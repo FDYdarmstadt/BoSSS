@@ -805,14 +805,29 @@ namespace BoSSS.Solution.NSECommon {
         public const string StressXX = "StressXX";
 
         /// <summary>
-        /// XY Tensor component of the extra stress tensor
-        /// </summary>
-        public const string StressXY = "StressXY";
-
-        /// <summary>
         /// YY Tensor component of the extra stress tensor
         /// </summary>
         public const string StressYY = "StressYY";
+
+        /// <summary>
+        /// ZZ Tensor component of the extra stress tensor
+        /// </summary>
+        public const string StressZZ = "StressZZ";
+
+        /// <summary>
+        /// YZ Tensor component of the extra stress tensor
+        /// </summary>
+        public const string StressYZ = "StressYZ";
+
+        /// <summary>
+        /// XZ Tensor component of the extra stress tensor
+        /// </summary>
+        public const string StressXZ = "StressXZ";
+
+        /// <summary>
+        /// XY Tensor component of the extra stress tensor
+        /// </summary>
+        public const string StressXY = "StressXY";
 
         /// <summary>
         /// XX Tensor component of the extra stress tensor as parameter
@@ -820,14 +835,29 @@ namespace BoSSS.Solution.NSECommon {
         public const string StressXXP = "StressXXP";
 
         /// <summary>
-        /// XY Tensor component of the extra stress tensor as parameter
-        /// </summary>
-        public const string StressXYP = "StressXYP";
-
-        /// <summary>
         /// YY Tensor component of the extra stress tensor as parameter
         /// </summary>
         public const string StressYYP = "StressYYP";
+
+        /// <summary>
+        /// ZZ Tensor component of the extra stress tensor as parameter
+        /// </summary>
+        public const string StressZZP = "StressZZP";
+
+        /// <summary>
+        /// YZ Tensor component of the extra stress tensor as parameter
+        /// </summary>
+        public const string StressYZP = "StressYZP";
+
+        /// <summary>
+        /// XZ Tensor component of the extra stress tensor as parameter
+        /// </summary>
+        public const string StressXZP = "StressXZP";
+
+        /// <summary>
+        /// XY Tensor component of the extra stress tensor as parameter
+        /// </summary>
+        public const string StressXYP = "StressXYP";
 
         /// <summary>
         /// Extra stress tensor
@@ -860,6 +890,46 @@ namespace BoSSS.Solution.NSECommon {
             throw new NotSupportedException("unsupported spatial dimension");
         }
 
+        /// <summary>
+        /// Extra stress tensor in 3D
+        /// </summary>
+        /// <param name="row">
+        /// row index
+        /// </param>
+        /// /// <param name="column">
+        /// column index
+        /// </param>
+        static public string ExtraStress3D(int row, int column)
+        {
+            switch (row)
+            {
+                case 0:
+                    switch (column)
+                    {
+                        case 0: return StressXX;
+                        case 1: return StressXY;
+                        case 2: return StressXZ;
+                        default: throw new NotSupportedException("unsupported spatial dimension");
+                    }
+                case 1:
+                    switch (column)
+                    {
+                        case 0: return StressXY;
+                        case 1: return StressYY;
+                        case 2: return StressYZ;
+                        default: throw new NotSupportedException("unsupported spatial dimension");
+                    }
+                case 2:
+                    switch (column)
+                    {
+                        case 0: return StressXZ;
+                        case 1: return StressYZ;
+                        case 2: return StressZZ;
+                        default: throw new NotSupportedException("unsupported spatial dimension");
+                    }
+            }
+            throw new NotSupportedException("unsupported spatial dimension");
+        }
         /// <summary>
         /// Velocity gradient tensor XX component
         /// </summary>
