@@ -152,7 +152,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 _AllocateBuffers: this.AllocateBuffers);
 
             q.CustomTimers = new Stopwatch[] { new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch() };
-            q.CustomTimers_Names = new string[] { "Flux-Eval", "Basis-Eval", "Loops", "ParametersAndNormals", "Flux-Trafo" };
+            q.CustomTimers_Names = new string[] { "Flux-Eval", "Basis-Eval", "LoopsLECedge", "ParametersAndNormals", "Flux-Trafo" };
             q.CustomTimers_RootPointer = new int[q.CustomTimers_Names.Length];
             ArrayTools.SetAll(q.CustomTimers_RootPointer, -1);
             this.Flux_Eval = q.CustomTimers[0];

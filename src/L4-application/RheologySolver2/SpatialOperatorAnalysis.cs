@@ -159,7 +159,6 @@ namespace BoSSS.Application.Rheology {
                             bmc.PutSparseMatrix(SaddlePointMatrix, "SaddlePointMatrix");
                             bmc.PutSparseMatrix(ConstitutiveMatrix, "ConstitutiveMatrix");
                             bmc.PutSparseMatrix(DiffMatrix, "DiffMatrix");
-
                             bmc.Cmd("DiffMatrix = 0.5*(DiffMatrix + DiffMatrix');");
 
                             bmc.Cmd("condNoFullMatrix = condest(FullMatrix);");
