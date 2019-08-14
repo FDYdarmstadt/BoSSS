@@ -539,7 +539,7 @@ namespace ilPSP.LinSolvers {
             }
         }
 
-        public static int Scan(int l, int[,] old2new, IBlockPartitioning part, bool ExtOk, int iBlock, out int l0, out int le) {
+        static int Scan(int l, int[,] old2new, IBlockPartitioning part, bool ExtOk, int iBlock, out int l0, out int le) {
             int Inc = 0;
             l0 = l;
             le = l - 1;
@@ -612,7 +612,7 @@ namespace ilPSP.LinSolvers {
 
         /// <summary>
         /// Marker for rows with blocks/entries in the external range of the <see cref="_ColPartitioning"/>.
-        /// -index: local block row.
+        /// - index: local block row.
         /// - value: true if the row contains an external block.
         /// </summary>
         BitArray m_ExternalBlock;
@@ -2254,6 +2254,70 @@ namespace ilPSP.LinSolvers {
             m_ExternalBlock.SetAll(false);
             ComPatternValid = true;
         }
+
+        /// <summary>
+        /// Computes the amount of memory allocated resp. used by this matrix.
+        /// </summary>
+        public void GetMemoryInfo(out long Allocated, out long Used) {
+            Allocated = 0;
+            foreach (var mbk in m_Membanks) {
+                Allocated += mbk.Mem.Length * sizeof(double);
+            }
+
+            Used = 0;
+            for (int iBlockLoc = 0; iBlockLoc < m_BlockRows.Length; iBlockLoc++) {
+                var BlockRow = this.m_BlockRows[iBlockLoc];
+                if (BlockRow != null) {
+                    int iBlockGlb = iBlockLoc + this._RowPartitioning.FirstBlock;
+                    int i0 = this._RowPartitioning.GetBlockI0(iBlockGlb);
+
+                    foreach (var KV in BlockRow) {
+                        int jBlockGlb = KV.Key;
+                        BlockEntry Block = KV.Value;
+                        Debug.Assert(jBlockGlb == Block.jBlkCol);
+
+                        int BlockPointerMem = (Block.InMembnk.Length + Block.MembnkIdx.Length + 1) * sizeof(int);
+                        Used += BlockPointerMem;
+                        Allocated += BlockPointerMem;
+
+
+                        int j0 = this._ColPartitioning.GetBlockI0(jBlockGlb);
+
+
+                        
+                        int NoOfSblk_rows = Block.InMembnk.GetLength(0);
+                        int NoOfSblk_cols = Block.InMembnk.GetLength(1);
+                        int RowBlockType = _RowPartitioning.GetBlockType(jBlockGlb);
+                        int ColBlockType = _ColPartitioning.GetBlockType(iBlockGlb);
+
+
+                        int[] RowSblkLen = _RowPartitioning.GetSubblkLen(RowBlockType);
+                        Debug.Assert(RowSblkLen.Length == NoOfSblk_rows);
+
+                        int[] ColSblkLen = _ColPartitioning.GetSubblkLen(ColBlockType);
+                        Debug.Assert(ColSblkLen.Length == NoOfSblk_cols);
+
+                        for (int sblkRow = 0; sblkRow < NoOfSblk_rows; sblkRow++) {
+                            for (int sblkCol = 0; sblkCol < NoOfSblk_cols; sblkCol++) {
+                                if (Block.InMembnk[sblkCol, sblkRow] < 0 || Block.MembnkIdx[sblkCol, sblkRow] < 0)
+                                    continue;
+
+                                int M = RowSblkLen[sblkRow];
+                                int N = ColSblkLen[sblkCol];
+
+                                Used += M * N * sizeof(double);
+                            }
+                        }
+
+
+
+                    }
+                }
+            }
+
+        }
+
+
 
         public static Stopwatch SPMV_tot = new Stopwatch();
         public static Stopwatch SPMV_inner = new Stopwatch();
