@@ -73,9 +73,9 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         public override double Phi_P(double[] X) {
-            double alpha = -(Angle[0]);
-            var r = -((((X[0] - Position[0][0]) * Math.Cos(alpha) - (X[1] - Position[0][1]) * Math.Sin(alpha)).Pow2()) / length_P.Pow2()) 
-                    -(((X[0] - Position[0][0]) * Math.Sin(alpha) + (X[1] - Position[0][1]) * Math.Cos(alpha)).Pow2() / thickness_P.Pow2()) 
+            double alpha = -(angle[0]);
+            var r = -((((X[0] - position[0][0]) * Math.Cos(alpha) - (X[1] - position[0][1]) * Math.Sin(alpha)).Pow2()) / length_P.Pow2()) 
+                    -(((X[0] - position[0][0]) * Math.Sin(alpha) + (X[1] - position[0][1]) * Math.Cos(alpha)).Pow2() / thickness_P.Pow2()) 
                     + 1.0;
             if (double.IsNaN(r) || double.IsInfinity(r))
                 throw new ArithmeticException();
@@ -90,7 +90,7 @@ namespace BoSSS.Application.FSI_Solver {
             double radiusTolerance = 1;
             double a = !WithoutTolerance ? length_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : length_P;
             double b = !WithoutTolerance ? thickness_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : thickness_P;
-            double Ellipse = ((point[0] - Position[0][0]) * Math.Cos(Angle[0]) + (point[1] - Position[0][1]) * Math.Sin(Angle[0])).Pow2() / a.Pow2() + (-(point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])).Pow2() / b.Pow2();
+            double Ellipse = ((point[0] - position[0][0]) * Math.Cos(angle[0]) + (point[1] - position[0][1]) * Math.Sin(angle[0])).Pow2() / a.Pow2() + (-(point[0] - position[0][0]) * Math.Sin(angle[0]) + (point[1] - position[0][1]) * Math.Cos(angle[0])).Pow2() / b.Pow2();
             if (Ellipse < radiusTolerance)
             {
                 return true;
@@ -113,8 +113,8 @@ namespace BoSSS.Application.FSI_Solver {
             {
                 double temp0 = Math.Cos(InfinitisemalAngle[j]) * length_P;
                 double temp1 = Math.Sin(InfinitisemalAngle[j]) * thickness_P;
-                SurfacePoints[0, j, 0] = (temp0 * Math.Cos(Angle[0]) - temp1 * Math.Sin(Angle[0])) + Position[0][0];
-                SurfacePoints[0, j, 1] = (temp0 * Math.Sin(Angle[0]) + temp1 * Math.Cos(Angle[0])) + Position[0][1];
+                SurfacePoints[0, j, 0] = (temp0 * Math.Cos(angle[0]) - temp1 * Math.Sin(angle[0])) + position[0][0];
+                SurfacePoints[0, j, 1] = (temp0 * Math.Sin(angle[0]) + temp1 * Math.Cos(angle[0])) + position[0][1];
 
             }
             return SurfacePoints;
@@ -126,14 +126,14 @@ namespace BoSSS.Application.FSI_Solver {
             if (double.IsNaN(Vector[0]) || double.IsNaN(Vector[1]))
                 throw new ArithmeticException("Error trying to calculate VectorVectorVector Value:  " + Vector[0] + " VectorVectorVector " + Vector[1]);
             double[,] B = new double[2, 2];
-            B[0, 0] = length_P * Math.Cos(Angle[0]);
+            B[0, 0] = length_P * Math.Cos(angle[0]);
             if (double.IsNaN(B[0, 0]))
-                throw new ArithmeticException("Error trying to calculate Angle Value:  " + B[0, 0] + " length_P " + length_P + " Math.Cos(Angle): " + Math.Cos(Angle[0]) + " Angle " + Angle[0]);
-            B[0, 1] = -thickness_P * Math.Sin(Angle[0]);
-            B[1, 0] = length_P * Math.Sin(Angle[0]);
-            B[1, 1] = thickness_P * Math.Cos(Angle[0]);
-            if (double.IsNaN(Angle[0]))
-                throw new ArithmeticException("Error trying to calculate Angle Value:  " + Angle + " Angle " + Angle);
+                throw new ArithmeticException("Error trying to calculate Angle Value:  " + B[0, 0] + " length_P " + length_P + " Math.Cos(Angle): " + Math.Cos(angle[0]) + " Angle " + angle[0]);
+            B[0, 1] = -thickness_P * Math.Sin(angle[0]);
+            B[1, 0] = length_P * Math.Sin(angle[0]);
+            B[1, 1] = thickness_P * Math.Cos(angle[0]);
+            if (double.IsNaN(angle[0]))
+                throw new ArithmeticException("Error trying to calculate Angle Value:  " + angle + " Angle " + angle);
             double[,] BT = B.CloneAs();
             BT[0, 1] = B[1, 0];
             BT[1, 0] = B[0, 1];
@@ -163,7 +163,7 @@ namespace BoSSS.Application.FSI_Solver {
                     if (double.IsNaN(SupportPoint[i]) || double.IsInfinity(SupportPoint[i]))
                         throw new ArithmeticException("Error trying to calculate SupportPoint Value:  " + SupportPoint[i] + "temp Value: " + temp[j] + " B[i, j] " + B[i, j] + "BetragTemp" + BetragTemp + "ij" +i +j);
                 }
-                SupportPoint[i] += Position[0][i];
+                SupportPoint[i] += position[0][i];
             }
         }
 

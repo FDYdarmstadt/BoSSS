@@ -60,8 +60,8 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 60 * MeshFactor;
-                r = 120 * MeshFactor;
+                q = 30 * MeshFactor;
+                r = 60 * MeshFactor;
 
                 double[] Xnodes = GenericBlas.Linspace(-6 * BaseSize, 6 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-12 * BaseSize, 12 * BaseSize, r);
@@ -98,7 +98,7 @@ namespace BoSSS.Application.FSI_Solver
 
             // Mesh refinement
             // =============================
-            C.AdaptiveMeshRefinement = false;
+            C.AdaptiveMeshRefinement = true;
             C.RefinementLevel = 2;
             C.maxCurvature = 2;
 
@@ -126,7 +126,7 @@ namespace BoSSS.Application.FSI_Solver
             {
                 C.Particles.Add(new Particle_Sphere(new double[] { 0, 0 }, startAngl: 0)
                 {
-                    particleDensity = 1.01,
+                    particleDensity = 11.01,
                     radius_P = 1,
                     GravityVertical = -9.81,
                     useAddaptiveUnderrelaxation = true,
@@ -174,7 +174,7 @@ namespace BoSSS.Application.FSI_Solver
 
             // Coupling Properties
             // =============================
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.LSunderrelax = 1;
             C.max_iterations_fully_coupled = 100000;
 
@@ -375,7 +375,7 @@ namespace BoSSS.Application.FSI_Solver
             return C;
         }
 
-        public static FSI_Control WetParticleCollision(int k = 2, double DensityFactor = 50)
+        public static FSI_Control WetParticleCollision(int k = 3, double DensityFactor = 1)
         {
             FSI_Control C = new FSI_Control();
 
@@ -405,8 +405,8 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 8;
-                r = 8;
+                q = 5;
+                r = 5;
 
                 double[] Xnodes = GenericBlas.Linspace(-3 * BaseSize, 3 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-1 * BaseSize, 5 * BaseSize, r);
@@ -444,7 +444,7 @@ namespace BoSSS.Application.FSI_Solver
             // Mesh refinement
             // =============================
             C.AdaptiveMeshRefinement = true;
-            C.RefinementLevel = 6;
+            C.RefinementLevel = 5;
 
 
             // Boundary conditions
@@ -468,9 +468,9 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Sphere(new double[] { 0, 0 }, startAngl: 0)
+                C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 0.0 }, startAngl: 0)
                 {
-                    particleDensity = 7.8 * DensityFactor,
+                    particleDensity = 1 * DensityFactor,
                     radius_P = 0.5,
                     GravityVertical = -9.81,
                     useAddaptiveUnderrelaxation = true,
@@ -479,7 +479,7 @@ namespace BoSSS.Application.FSI_Solver
                     UseAddedDamping = false
                 });
             }
-
+            C.Particles[0].translationalVelocity[0][1] = -0.5;
             // Quadrature rules
             // =============================   
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
@@ -518,7 +518,7 @@ namespace BoSSS.Application.FSI_Solver
 
             // Coupling Properties
             // =============================
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
             C.max_iterations_fully_coupled = 100000;
 
@@ -646,7 +646,6 @@ namespace BoSSS.Application.FSI_Solver
                     particleDensity = 1,
                     radius_P = 0.1,
                     GravityVertical = 0,
-                    ActiveParticle = true,
                     ActiveStress = 1000,
                     useAddaptiveUnderrelaxation = true,
                     underrelaxation_factor = 5,
@@ -800,9 +799,9 @@ namespace BoSSS.Application.FSI_Solver
                         length_P = 0.8,
                         thickness_P = 0.2,
                     });
-                    C.Particles[i + j * i].TranslationalVelocity[0][0] = Math.Cos((23 * i - 12 * j) / 2 * Math.PI);
-                    C.Particles[i + j * i].TranslationalVelocity[0][1] = Math.Sin((23 * i - 12 * j) / 2 * Math.PI);
-                    C.Particles[i + j * i].RotationalVelocity[0] = 0;
+                    C.Particles[i + j * i].translationalVelocity[0][0] = Math.Cos((23 * i - 12 * j) / 2 * Math.PI);
+                    C.Particles[i + j * i].translationalVelocity[0][1] = Math.Sin((23 * i - 12 * j) / 2 * Math.PI);
+                    C.Particles[i + j * i].rotationalVelocity[0] = 0;
                 }
             }
             
@@ -813,7 +812,7 @@ namespace BoSSS.Application.FSI_Solver
             double V = 0;
             foreach (var p in C.Particles)
             {
-                V = Math.Max(V, p.TranslationalVelocity[0].L2Norm());
+                V = Math.Max(V, p.translationalVelocity[0].L2Norm());
             }
 
             if (V <= 0)
@@ -959,7 +958,7 @@ namespace BoSSS.Application.FSI_Solver
                 GravityVertical = -9.81,
             });
 
-            C.Particles[0].TranslationalVelocity[0][1] = -1.0;
+            C.Particles[0].translationalVelocity[0][1] = -1.0;
 
      /*       
                         C.Particles.Add(new Particle_superEllipsoid(new double[] { 0.55, 4.5 }, startAngl: 45)
@@ -1191,7 +1190,7 @@ namespace BoSSS.Application.FSI_Solver
                 GravityVertical = -9.81,
             });
 
-            C.Particles[0].TranslationalVelocity[0][1] = -1.0;
+            C.Particles[0].translationalVelocity[0][1] = -1.0;
 
             /*       
                                C.Particles.Add(new Particle_superEllipsoid(new double[] { 0.55, 4.5 }, startAngl: 45)
@@ -1423,7 +1422,7 @@ namespace BoSSS.Application.FSI_Solver
                 GravityVertical = -9.81,
             });
 
-            C.Particles[0].TranslationalVelocity[0][1] = -1.0;
+            C.Particles[0].translationalVelocity[0][1] = -1.0;
 
             /*       
                                C.Particles.Add(new Particle_superEllipsoid(new double[] { 0.55, 4.5 }, startAngl: 45)
@@ -1553,5 +1552,170 @@ namespace BoSSS.Application.FSI_Solver
 
             return C;
         }
+
+        public static FSI_Control FalleTest(string _DbPath = null, int k = 2, double VelXBase = 0.0, double angle = 0.0)
+        {
+            FSI_Control C = new FSI_Control();
+
+
+            const double BaseSize = 1.0;
+
+
+            // basic database options
+            // ======================
+
+            //C.DbPath = @"\\dc1\userspace\deriabina\bosss_db";
+            C.savetodb = false;
+            C.saveperiod = 1;
+            C.ProjectName = "ParticleCollisionTest";
+            C.ProjectDescription = "Gravity";
+            C.SessionName = C.ProjectName;
+            C.Tags.Add("with immersed boundary method");
+            C.AdaptiveMeshRefinement = false;
+            C.SessionName = "fjkfjksdfhjk";
+            C.RefinementLevel = 1;
+
+            C.pureDryCollisions = false;
+            C.SetDGdegree(k);
+
+            // grid and boundary conditions
+            // ============================
+
+            C.GridFunc = delegate
+            {
+
+                int q = new int();
+                int r = new int();
+
+                q = 40;
+                r = 40;
+
+                double[] Xnodes = GenericBlas.Linspace(-4.0 * BaseSize, 4.0 * BaseSize, q + 1);
+                double[] Ynodes = GenericBlas.Linspace(2 * BaseSize, 10 * BaseSize, r + 1);
+
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
+
+                grd.EdgeTagNames.Add(1, "Pressure_Outlet_left");
+                grd.EdgeTagNames.Add(2, "Pressure_Outlet_right");
+                grd.EdgeTagNames.Add(3, "Pressure_Outlet_lower");
+                grd.EdgeTagNames.Add(4, "Pressure_Outlet_upper");
+
+
+                grd.DefineEdgeTags(delegate (double[] X)
+                {
+                    byte et = 0;
+                    if (Math.Abs(X[0] - (-4 * BaseSize)) <= 1.0e-8)
+                        et = 1;
+                    if (Math.Abs(X[0] + (-4 * BaseSize)) <= 1.0e-8)
+                        et = 2;
+                    if (Math.Abs(X[1] - (2 * BaseSize)) <= 1.0e-8)
+                        et = 3;
+                    if (Math.Abs(X[1] + (-10 * BaseSize)) <= 1.0e-8)
+                        et = 4;
+
+
+                    return et;
+                });
+
+                Console.WriteLine("Cells:" + grd.NumberOfCells);
+
+                return grd;
+            };
+
+            C.GridPartType = GridPartType.Hilbert;
+
+            C.AddBoundaryValue("Pressure_Outlet_left");
+            C.AddBoundaryValue("Pressure_Outlet_right");
+            C.AddBoundaryValue("Pressure_Outlet_lower");
+            C.AddBoundaryValue("Pressure_Outlet_upper");
+
+            // Boundary values for level-set
+            //C.BoundaryFunc = new Func<double, double>[] { (t) => 0.1 * 2 * Math.PI * -Math.Sin(Math.PI * 2 * 1 * t), (t) =>  0};
+            //C.BoundaryFunc = new Func<double, double>[] { (t) => 0, (t) => 0 };
+
+            // Initial Values
+            // ==============
+
+            // Coupling Properties
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+
+            // Fluid Properties
+            C.PhysicalParameters.rho_A = 1.0;
+            C.PhysicalParameters.mu_A = 1.0;
+            C.CoefficientOfRestitution = 1.0;
+
+            // Particle Properties
+            //C.PhysicalParameters.mu_B = 0.1;
+            //C.particleMass = 1;
+
+            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 6.00 })
+            {
+                radius_P = 0.35,
+                particleDensity = 1.1,
+                GravityVertical = -9.81,
+                useAddaptiveUnderrelaxation = true,
+                underrelaxation_factor = 5,
+                clearSmallValues = true,
+                UseAddedDamping = true
+            });
+            C.Particles[0].translationalVelocity[0][1] = -0.25;
+            C.Particles.Add(new Particle_Falle_Links(new double[] { 0.975, 4.75 }, startAngl: 0)
+            {
+                particleDensity = 1,
+                width_P = 0.15,
+                GravityVertical = 0,
+                IncludeRotation = false,
+                IncludeTranslation = false,
+            });
+
+
+            C.Particles.Add(new Particle_Falle_Rechts(new double[] { -0.975, 4.75 }, startAngl: 0)
+            {
+                particleDensity = 1,
+                width_P = 0.15,
+                GravityVertical = 0,
+                IncludeRotation = false,
+                IncludeTranslation = false,
+            });
+
+            C.InitialValues_Evaluators.Add("VelocityX", X => 0);
+            C.InitialValues_Evaluators.Add("VelocityY", X => 0);
+            C.ForceAndTorque_ConvergenceCriterion = 1e-4;
+
+
+            // Physical Parameters
+            // ===================
+
+            C.PhysicalParameters.IncludeConvection = false;
+
+            // misc. solver options
+            // ====================
+
+            C.AdvancedDiscretizationOptions.PenaltySafety = 4;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            C.LevelSetSmoothing = false;
+            C.LinearSolver.MaxSolverIterations = 10;
+            C.NonLinearSolver.MaxSolverIterations = 10;
+            C.LinearSolver.NoOfMultigridLevels = 1;
+
+
+            // Timestepping
+            // ============
+
+            //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
+            C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
+            double dt = 1e-2;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 150.0;
+            C.NoOfTimesteps = 1000000;
+
+            // haben fertig...
+            // ===============
+
+            return C;
+        }
+
+
     }
 }
