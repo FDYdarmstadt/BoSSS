@@ -305,6 +305,8 @@ namespace ilPSP.Utils {
             // check for correctness of usage
             // ------------------------------
 
+            if (graph == null)
+                throw new ArgumentNullException("cannot sent 'null' - objects.");
             if (!m_CommPathsCommited) 
                 throw new ApplicationException("communication paths have to be committed first.");
             if (!m_SendBuffers.ContainsKey(TargetProc))
@@ -352,17 +354,25 @@ namespace ilPSP.Utils {
                     var testObj = bf.Deserialize(dess);
                 } catch(Exception e) {
                     Console.Error.WriteLine("Serialization buffer:: de-serialization exception: " + e.GetType().Name + " : " + e.Message);
+                    Console.Error.WriteLine("  object type is " + graph.GetType().FullName);
 
                     if(graph is IEnumerable enu) {
                         int count = 0;
                         object last = null;
                         foreach (object o in enu) {
                             last = o;
+                            Console.Error.Write("   entry #" + count + ":   ");
+                            if(o != null) {
+                                Console.Error.Write("instance of " + o.GetType().FullName);
+                            } else {
+                                Console.Error.Write("NULL");
+                            }
+                            Console.Error.WriteLine();
+                            
                             count++;
+
                         }
                         Console.Error.WriteLine("   Object is IEnumerable with " + count + " entries. ");
-
-
                     }
 
                 }
