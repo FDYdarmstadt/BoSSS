@@ -291,13 +291,13 @@ namespace ilPSP.Utils {
 
 
         /// <summary>
-        /// 1st phase of the trasmission process; must be called after 
+        /// 1st phase of the transmission process; must be called after 
         /// <see cref="CommitCommPaths"/>.
         /// </summary>
         /// <param name="TargetProc"></param>
         /// <param name="graph">
         /// a graph of objects, which will be send to process <paramref name="TargetProc"/>
-        /// by using serialisation.
+        /// by using serialization.
         /// </param>
         public void Transmitt(int TargetProc, object graph) {
 
@@ -327,20 +327,8 @@ namespace ilPSP.Utils {
 
             MemoryStream ms = m_SendBuffers[TargetProc];
             ms.Position = 0;
-            //try {
-                m_Formatter.Serialize(ms, graph);
-            //} catch (NullReferenceException nre) {
-            //    Console.WriteLine("fehler");
-            //    var obj = (ilPSP.LinSolvers.MsrMatrix.MSREntry[][]) graph;
-            //    Console.WriteLine(obj.Length);
-            //    for(int i = 0; i < obj.Length; i++) {
-            //        var row = obj[i];
-            //        Console.Write(row.Length + ".");
-            //    }
-				
-				
-            ////	Debugger.Break();
-            //}
+            m_Formatter.Serialize(ms, graph);
+            
 
             // ------------
             // send objects
@@ -356,6 +344,20 @@ namespace ilPSP.Utils {
 
             // send buffer content
             byte[] Buffer = m_SendBuffers[TargetProc].GetBuffer();
+            if(TestDeserialization) {
+                var dess = new MemoryStream(Buffer.CloneAs());
+                var bf = new BinaryFormatter();
+
+                try {
+                    var testObj = bf.Deserialize(dess);
+                } catch(Exception e) {
+                    Console.Error.WriteLine("Serialization buffer:: de-serialization exception: " + e.GetType().Name + " : " + e.Message);
+
+
+                }
+            }
+
+
             if (m_SendBuffersPin.ContainsKey(TargetProc))
                 m_SendBuffersPin[TargetProc] = GCHandle.Alloc(Buffer, GCHandleType.Pinned);
             else
@@ -365,11 +367,25 @@ namespace ilPSP.Utils {
                           TargetProc, TagBufferContent + m_MyTagOffset,
                           m_MPI_comm,
                           out m_Requests[m_Size + TargetProc]);
+
+            if (DiagnosisFile != null) {
+                File.WriteAllBytes(DiagnosisFile + "-smsSend-" + m_Rank + "-" + TargetProc + ".bin", Buffer);
+            }
         }
+
+        /// <summary>
+        /// Dumping of send/receive blocks for debugging purpose
+        /// </summary>
+        static public string DiagnosisFile = null;
+
+        /// <summary>
+        /// For debugging purpose: before sending, perform a de-serialization of the serialized data to check the functionality
+        /// </summary>
+        static public bool TestDeserialization = true;
 
 
         /// <summary>
-        /// entry at index p is reseved for the size of the object that is send to process p in bytes;
+        /// entry at index p is reserved for the size of the object that is send to process p in bytes;
         /// </summary>
         int[] m_SendObjectSizes;
 
@@ -549,7 +565,7 @@ namespace ilPSP.Utils {
 
                     int proc = index - 2*size;
                     
-                    // reallocate memory, if neccessary
+                    // reallocate memory, if necessary
                     byte[] buffer = m_ReceiveBuffers[proc];
                     if (buffer == null) {
                         buffer = new byte[m_ReceiveObjectSizes[proc]];
@@ -583,6 +599,10 @@ namespace ilPSP.Utils {
 
                     // free pin
                     m_ReceiveBuffersPin[proc].Free();
+
+                    if (DiagnosisFile != null) {
+                        File.WriteAllBytes(DiagnosisFile + "-smsReceive-" + proc + "-" + m_Rank + ".bin", m_ReceiveBuffers[proc]);
+                    }
 
                     // deserialize
                     MemoryStream ms = new MemoryStream(m_ReceiveBuffers[proc]);
