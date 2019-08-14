@@ -83,6 +83,8 @@
     <Compile Include="active_particles\ActiveConvectionAtIB.cs" />
     <Compile Include="active_particles\ActiveDivergenceAtIB.cs" />
     <Compile Include="active_particles\ActivePressureAtIB.cs" />
+    <Compile Include="active_particles\HardcodedControl\HardcodedControlDeriabina.cs" />
+    <Compile Include="active_particles\HardcodedControl\FourCellsTest.cs" />
     <Compile Include="active_particles\HardcodedControl\DryParticles.cs" />
     <Compile Include="active_particles\HardcodedControl\HardcodedControl_tiltedChannel.cs" />
     <Compile Include="active_particles\HardcodedControl\HardcodedControl_straightChannel.cs" />
@@ -93,7 +95,6 @@
     <Compile Include="FSI_LevelSetUpdate.cs" />
     <Compile Include="Particle\ParticleAcceleration.cs" />
     <Compile Include="Particle\ParticleAddedDamping.cs" />
-    <Compile Include="Particle\ParticleAuxillary.cs" />
     <Compile Include="Particle\ParticleForceIntegration.cs" />
     <Compile Include="Particle\ParticleUnderrelaxation.cs" />
     <Compile Include="Particle\Shapes\Falle_Rechts.cs" />
