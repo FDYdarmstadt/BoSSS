@@ -47,6 +47,7 @@
     <Compile Include="CellAgglomerator.cs" />
     <Compile Include="CutCellMetrics.cs" />
     <Compile Include="IEquationComponentExtensionXDG.cs" />
+    <Compile Include="IXEvaluator.cs" />
     <Compile Include="LevelSetTracker_Caches.cs" />
     <Compile Include="NECQuadratureLevelSet.cs" />
     <Compile Include="NonlinearLevelSetFormVectorizer.cs" />
@@ -120,10 +121,12 @@
     <Compile Include="XDGUtils.cs" />
     <Compile Include="Quadrature\XQuadFactoryHelper.cs" />
     <Compile Include="Quadrature\XQuadSchemeHelper.cs" />
+    <Compile Include="XOperatorFactoryBase.cs" />
     <Compile Include="XSpatialOperator.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="XSpatialOperatorExtensions.cs" />
+    <Compile Include="XSpatialOperatorMk2.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">

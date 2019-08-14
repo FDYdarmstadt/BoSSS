@@ -180,6 +180,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="phi"></param>
         /// <returns></returns>
         public double GetDiffusivity(double phi) {
+
             switch (this.MatParamsMode) {
                 case MaterialParamsMode.Constant:
                     return 1.0;
@@ -220,9 +221,9 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="phi"></param>
         /// <returns></returns>
         public double GetHeatCapacity(double phi) {
-            double gamma = 1.4;
-            double cp = gamma / (gamma - 1);
-            return 1.0;
+            // double gamma = 1.4;
+            double cp = 1.4;//  gamma / (gamma - 1);
+            return cp;
         }
 
         /// <summary>

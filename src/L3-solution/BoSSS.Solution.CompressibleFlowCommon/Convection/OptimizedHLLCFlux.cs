@@ -88,8 +88,21 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
                 Uout[i] = MultidimensionalArray.Create(Uin[i].GetLength(0), Uin[i].GetLength(1));
             }
 
+            // Loop over edges
             for (int e = 0; e < Lenght; e++) {
                 int edge = e + Offset;
+
+                // Get boundary condition on this edge
+                BoundaryCondition boundaryCondition;
+                if (this.boundaryMap is XDGCompressibleBoundaryCondMap xdgBoudaryMap) {
+                    boundaryCondition = xdgBoudaryMap.GetBoundaryConditionForSpecies(EdgeTags[e + EdgeTagsOffset], this.speciesName);
+                } else if (this.boundaryMap is CompressibleBoundaryCondMap boundaryMap) {
+                    boundaryCondition = boundaryMap.GetBoundaryCondition(EdgeTags[e + EdgeTagsOffset]);
+                } else {
+                    throw new NotSupportedException("This type of boundary condition map is not supported.");
+                }
+
+                // Loop over nodes
                 for (int n = 0; n < NoOfNodes; n++) {
                     double[] xLocal = new double[D];
                     double[] normalLocal = new double[D];
@@ -99,16 +112,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
                     }
 
                     StateVector stateIn = new StateVector(material, Uin, edge, n, D);
-
-                    StateVector stateBoundary;
-                    // XDG version
-                    if (this.boundaryMap is XDGCompressibleBoundaryCondMap xdgBoudaryMap) {
-                        stateBoundary = xdgBoudaryMap.GetBoundaryState(
-                            EdgeTags[e + EdgeTagsOffset], time, xLocal, normalLocal, stateIn, this.speciesName);
-                    } else {    // Standard version
-                        stateBoundary = this.boundaryMap.GetBoundaryState(
-                            EdgeTags[e + EdgeTagsOffset], time, xLocal, normalLocal, stateIn);
-                    }
+                    StateVector stateBoundary = boundaryCondition.GetBoundaryState(time, xLocal, normalLocal, stateIn);
 
                     Uout[0][edge, n] = stateBoundary.Density;
                     for (int d = 0; d < D; d++) {

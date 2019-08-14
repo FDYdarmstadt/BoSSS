@@ -492,35 +492,105 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #if DEBUG
             var Mbefore = M.CloneAs();
 #endif
-
             int n = M.NoOfRows;
-            for(int i = 0; i < n; i++) {
-                double M_ii = M[i, i];
-                if (M_ii == 0.0)
-                    throw new ArithmeticException("Zero diagonal element at " + i + "-th row.");
-                double scl = 1.0 / Math.Sqrt(Math.Abs(M_ii));
-                M.RowScale(i, scl);
-                L.RowScale(i, scl);
-                M.ColScale(i, scl);
+            unsafe
+            {
 
-                double diagsign = Math.Sign(M[i, i]);
-                if(diagsign == 0.0)
-                    throw new ArithmeticException("Zero diagonal element at " + i + "-th row.");
-                if (Math.Abs(Math.Abs(M[i, i]) - 1.0) > 1.0e-8)
-                    throw new ArithmeticException("Unable to create diagonal 1.0.");
+                void RowScale(double* pS, int i, double alpha, int RowCyc)
+                {
+                    pS += i * RowCyc;
+                    for (int nn = 0; nn < n; nn++)
+                    {
+                        *pS *= alpha;
+                        pS++;
+                    }
+                }
 
-                for(int k = i + 1; k < n; k++) {
-                    double M_ki = M[k, i];
+                void ColScale(double* pS, int i, double alpha, int RowCyc)
+                {
+                    pS += i;
+                    for (int nn = 0; nn < n; nn++)
+                    {
+                        *pS *= alpha;
+                        pS += RowCyc;
+                    }
+                }
 
-                    M.RowAdd(i, k, -M_ki * diagsign);
-                    L.RowAdd(i, k, -M_ki * diagsign);
-                    M.ColAdd(i, k, -M_ki * diagsign);
+                void RowAdd(double* pS, int iSrc, int iDst, double alpha, int RowCyc) 
+                {
+                    double* pDest = pS + iDst* RowCyc;
+                    double* pSrc = pS + iSrc* RowCyc;
+                    for (int l = 0; l < n; l++)
+                    {
+                        *pDest += *pSrc * alpha;
+                        pDest++;
+                        pSrc++;
+                    }
+                }
 
-                    Debug.Assert(Math.Abs(M[k, i]) < 1.0e-8);
-                    Debug.Assert(Math.Abs(M[i, k]) < 1.0e-8);
+                void ColAdd(double* pS, int iSrc, int iDst, double alpha, int RowCyc)
+                {
+                    double* pDest = pS + iDst;
+                    double* pSrc = pS + iSrc;
+                    for (int l = 0; l < n; l++)
+                    {
+                        *pDest += *pSrc * alpha;
+                        pDest += RowCyc;
+                        pSrc += RowCyc;
+                    }
+                }
+
+                fixed (double* pL = L.Storage, pM = M.Storage)
+                {
+                    int RowCycL = n > 1 ? (L.Index(1, 0) - L.Index(0, 0)) : 0;
+                    int RowCycM = n > 1 ? (M.Index(1, 0) - M.Index(0, 0)) : 0;
+
+
+                    for (int i = 0; i < n; i++)
+                    {
+                        double M_ii = M[i, i];
+                        if (M_ii == 0.0)
+                            throw new ArithmeticException("Zero diagonal element at " + i + "-th row.");
+                        double scl = 1.0 / Math.Sqrt(Math.Abs(M_ii));
+                        //M.RowScale(i, scl);
+                        //L.RowScale(i, scl);
+                        //M.ColScale(i, scl);
+                        RowScale(pM, i, scl, RowCycM);
+                        RowScale(pL, i, scl, RowCycL);
+                        ColScale(pM, i, scl, RowCycM);
+
+                        double diagsign = Math.Sign(M[i, i]);
+                        if (diagsign == 0.0)
+                            throw new ArithmeticException("Zero diagonal element at " + i + "-th row.");
+                        if (Math.Abs(Math.Abs(M[i, i]) - 1.0) > 1.0e-8)
+                            throw new ArithmeticException("Unable to create diagonal 1.0.");
+
+                        for (int k = i + 1; k < n; k++)
+                        {
+                            double M_ki = M[k, i];
+
+                            RowAdd(pM, i, k, -M_ki * diagsign, RowCycM);
+                            RowAdd(pL, i, k, -M_ki * diagsign, RowCycL);
+                            ColAdd(pM, i, k, -M_ki * diagsign, RowCycM);
+
+                            Debug.Assert(Math.Abs(M[k, i]) < 1.0e-8);
+                            Debug.Assert(Math.Abs(M[i, k]) < 1.0e-8);
+                        }
+
+                        /*
+                        unsafe
+                        {
+                            fixed (double* B_entries = Lo.Storage)
+                            {
+
+                                int UPLO = 'L', DIAG = 'N';
+                                LAPACK.F77_LAPACK.DSYTRF_(ref UPLO, ref DIAG, ref n, B_entries, ref n, out info);
+                            }
+                        }
+                        */
+                    }
                 }
             }
-
             L.TransposeTo(R);
 
 #if DEBUG

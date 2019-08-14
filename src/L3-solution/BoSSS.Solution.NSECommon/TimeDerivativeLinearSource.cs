@@ -32,8 +32,8 @@ namespace BoSSS.Solution.NSECommon {
     public class TimeDerivativeLinearSource : BoSSS.Solution.Utils.LinearSource {
         string[] m_ArgumentOrdering;
         //string[] m_ParameterOrdering;
-        MaterialLaw EoS;
-        bool m_conti;
+        MaterialLawLowMach EoS;
+        bool m_energy;
         double rho;
         double dt;
 
@@ -44,11 +44,12 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="conti">Set conti: true for the continuity equation</param>
         /// <param name="ArgumentOrdering"></param>
         /// <param name="TimeStepSize"></param>
-        public TimeDerivativeLinearSource(MaterialLaw EoS, double TimeStepSize, String[] ArgumentOrdering, bool conti = false) {
+        public TimeDerivativeLinearSource(MaterialLawLowMach EoS, double TimeStepSize, String[] ArgumentOrdering, bool energy = false) {
             m_ArgumentOrdering = ArgumentOrdering;//.Cat(VariableNames.Rho);
             this.EoS = EoS;
             dt = TimeStepSize;
-            m_conti = conti;
+            m_energy = energy;
+
         }
 
 
@@ -75,13 +76,15 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="U"></param>
         /// <returns></returns>
         protected override double Source(double[] x, double[] parameters, double[] U) {
-            //rho = EoS.GetDensity(parameters);
             Debug.Assert(ParameterOrdering[1] == VariableNames.Rho);
+            //rho = EoS.GetDensity(U[0]);
             rho = parameters[1];
-            if (m_conti)
-                return rho / dt;
-            else
-                return rho * U[0] / dt;
+            double mult = 1.0;
+
+            if (m_energy == true)
+                mult = 1 / EoS.GetHeatCapacity(parameters[0]);
+
+            return mult * rho * U[0];  
         }
     }
 }
