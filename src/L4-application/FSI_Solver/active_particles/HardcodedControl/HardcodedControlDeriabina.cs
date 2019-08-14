@@ -191,7 +191,7 @@ namespace BoSSS.Application.FSI_Solver
             // basic database options
             // ======================
 
-            C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\Deriabina";
+            C.DbPath = @"C:\Users\deussen\localBoSSSDatabases\Deriabina";
             C.saveperiod = 1;
             C.ProjectName = "ParticleCollisionTest";
             C.ProjectDescription = "Gravity";
@@ -199,7 +199,7 @@ namespace BoSSS.Application.FSI_Solver
             C.Tags.Add("with immersed boundary method");
             C.AdaptiveMeshRefinement = true;
             C.SessionName = "fjkfjksdfhjk";
-            C.RefinementLevel = 5;
+            C.RefinementLevel = 3;
 
             C.pureDryCollisions = false;
             C.SetDGdegree(k);
@@ -213,7 +213,7 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int();
                 int r = new int();
 
-                r = 40;
+                r = 80;
                 q = r / 4;
 
                 double[] Xnodes = GenericBlas.Linspace(-1.0 * BaseSize, 1.0 * BaseSize, q + 1);
@@ -272,7 +272,7 @@ namespace BoSSS.Application.FSI_Solver
             C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 9.5 })
             {
                 radius_P = 0.10,
-                particleDensity = 5,
+                particleDensity = 1.01,
                 GravityVertical = -9.81,
                 useAddaptiveUnderrelaxation = true,
                 underrelaxation_factor = 3.0,
@@ -283,7 +283,7 @@ namespace BoSSS.Application.FSI_Solver
             C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 9.1 })
             {
                 radius_P = 0.10,
-                particleDensity = 5,
+                particleDensity = 1.01,
                 GravityVertical = -9.81,
                 useAddaptiveUnderrelaxation = true,
                 underrelaxation_factor = 3.0,
@@ -309,7 +309,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-3;
+            C.ForceAndTorque_ConvergenceCriterion = 2e-3;
 
 
             // Timestepping
@@ -317,7 +317,7 @@ namespace BoSSS.Application.FSI_Solver
 
             //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
-            double dt = 1e-3;
+            double dt = 5e-4;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000000.0;

@@ -60,8 +60,8 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 60 * MeshFactor;
-                r = 120 * MeshFactor;
+                q = 30 * MeshFactor;
+                r = 60 * MeshFactor;
 
                 double[] Xnodes = GenericBlas.Linspace(-6 * BaseSize, 6 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-12 * BaseSize, 12 * BaseSize, r);
@@ -98,7 +98,7 @@ namespace BoSSS.Application.FSI_Solver
 
             // Mesh refinement
             // =============================
-            C.AdaptiveMeshRefinement = false;
+            C.AdaptiveMeshRefinement = true;
             C.RefinementLevel = 2;
             C.maxCurvature = 2;
 
@@ -126,7 +126,7 @@ namespace BoSSS.Application.FSI_Solver
             {
                 C.Particles.Add(new Particle_Sphere(new double[] { 0, 0 }, startAngl: 0)
                 {
-                    particleDensity = 1.01,
+                    particleDensity = 11.01,
                     radius_P = 1,
                     GravityVertical = -9.81,
                     useAddaptiveUnderrelaxation = true,
@@ -174,7 +174,7 @@ namespace BoSSS.Application.FSI_Solver
 
             // Coupling Properties
             // =============================
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.LSunderrelax = 1;
             C.max_iterations_fully_coupled = 100000;
 
