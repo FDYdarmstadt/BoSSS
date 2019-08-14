@@ -353,6 +353,17 @@ namespace ilPSP.Utils {
                 } catch(Exception e) {
                     Console.Error.WriteLine("Serialization buffer:: de-serialization exception: " + e.GetType().Name + " : " + e.Message);
 
+                    if(graph is IEnumerable enu) {
+                        int count = 0;
+                        object last = null;
+                        foreach (object o in enu) {
+                            last = o;
+                            count++;
+                        }
+                        Console.Error.WriteLine("   Object is IEnumerable with " + count + " entries. ");
+
+
+                    }
 
                 }
             }

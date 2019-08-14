@@ -73,10 +73,10 @@ namespace BoSSS.Foundation.Grid.Classic {
                 }
             }
 
-            /// <summary>
-            /// See <see cref="CellFaceTag.EdgeMayBeEmpty"/>.
-            /// </summary>
-            public bool EdgeMayBeEmpty;
+            ///// <summary>
+            ///// See <see cref="CellFaceTag."/>.
+            ///// </summary>
+            //public bool EdgeMayBeEmpty;
         }
 
         /// <summary>
