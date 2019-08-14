@@ -411,6 +411,9 @@ namespace BoSSS.Application.SipPoisson {
                 stw.Stop();
                 Console.WriteLine("done {0} sec.", stw.Elapsed.TotalSeconds);
 
+                LaplaceMtx.GetMemoryInfo(out long AllocatedMem, out long UsedMem);
+                Console.WriteLine("   Used   matrix storage (MB): {0}", UsedMem /(1024.0*1024));
+                Console.WriteLine("   Alloc. matrix storage (MB): {0}", AllocatedMem/(1024.0*1024));
 
 
                 
@@ -907,6 +910,8 @@ namespace BoSSS.Application.SipPoisson {
                 }
                 mgBasis.Stop();
                 Console.WriteLine("done. (" + mgBasis.Elapsed.TotalSeconds + " sec)");
+                //Console.WriteLine("going into infinity loop....");
+                //while (true) ;
 
 
                 //foreach (int sz in new int[] { 1000, 2000, 5000, 10000, 20000 }) {
