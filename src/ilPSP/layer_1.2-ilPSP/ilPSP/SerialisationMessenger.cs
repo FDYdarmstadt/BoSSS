@@ -402,7 +402,7 @@ namespace ilPSP.Utils {
         /// <summary>
         /// For debugging purpose: before sending, perform a de-serialization of the serialized data to check the functionality
         /// </summary>
-        static public bool TestDeserialization = true;
+        static public bool TestDeserialization = false;
 
 
         /// <summary>
