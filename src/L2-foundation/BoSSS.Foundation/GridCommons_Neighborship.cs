@@ -164,6 +164,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                         }
                     }
 
+                    //SerialisationMessenger.DiagnosisFile = "GetCellNeighborship";
+                    //SerialisationMessenger.TestDeserialization = true;
+
                     var W = SerialisationMessenger.ExchangeData(Y, csMPI.Raw._COMM.WORLD);
                     foreach (var wp in W.Values) {
                         foreach (NodeCellIndexPair Packet in wp) {
