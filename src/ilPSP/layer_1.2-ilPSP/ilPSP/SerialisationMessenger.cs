@@ -24,7 +24,8 @@ using System.Runtime.InteropServices;
 using System.Diagnostics;
 
 using MPI.Wrappers;
-
+using Newtonsoft.Json;
+using Newtonsoft.Json.Bson;
 
 namespace ilPSP.Utils {
     
@@ -45,7 +46,7 @@ namespace ilPSP.Utils {
     ///   </item>
     ///   <item>
     ///   Now, the messenger is ready to send objects to other processes, by multiple calls
-    ///   to <see cref="Transmitt"/>; Of course, these calls must match the <see cref="SetCommPath"/>-calls
+    ///   to <see cref="Transmit"/>; Of course, these calls must match the <see cref="SetCommPath"/>-calls
     ///   in the previous step;
     ///   </item>
     ///   <item>
@@ -217,7 +218,7 @@ namespace ilPSP.Utils {
 
             for (int p = 0; p < m_Size; p++)
                 if (m_MyCommPaths[p] != 0) {
-                    m_SendBuffers.Add(p, new MemoryStream());
+                    m_SendBuffers.Add(p, null);
                 }
 
 
@@ -236,7 +237,7 @@ namespace ilPSP.Utils {
         /// keys: processor rank "p";
         /// values: memory stream for the object that has to be send to process "p";
         /// </summary>
-        SortedDictionary<int, MemoryStream> m_SendBuffers = new SortedDictionary<int, MemoryStream>();
+        SortedDictionary<int, byte[]> m_SendBuffers = new SortedDictionary<int, byte[]>();
 
         /// <summary>
         /// keys: processor rank "p";
@@ -268,6 +269,77 @@ namespace ilPSP.Utils {
         /// </summary>
         BinaryFormatter m_Formatter = new BinaryFormatter();
 
+        JsonSerializer jsonFormatter = new JsonSerializer() {
+            NullValueHandling = NullValueHandling.Include,
+            TypeNameHandling = TypeNameHandling.All,
+            ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+            ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
+            TypeNameAssemblyFormat = System.Runtime.Serialization.Formatters.FormatterAssemblyStyle.Full
+        };
+
+
+        bool m_UseJson = true;
+
+        /// <summary>
+        /// Whether to use a JSON formatter or the binary formatter
+        /// </summary>
+        public bool UseJson {
+            get {
+                return m_UseJson;
+            }
+            set {
+                if (m_CommPathsCommited || m_TransmissionInProgress)
+                    throw new NotSupportedException("Cannot be changed after setup phase.");
+                m_UseJson = value;
+            }
+
+        }
+
+        [Serializable]
+        class JsonContainer {
+            public object PayLoad;
+        }
+
+        byte[] SerializeObject(object o) {
+            using (var ms = new MemoryStream()) {
+                if (m_UseJson) {
+                    // see: https://stackoverflow.com/questions/25741895/error-serialising-simple-string-to-bson-using-newtonsoft-json-net
+                    //var containerArray = Array.CreateInstance(o.GetType(), 1);
+                    //containerArray.SetValue(o, 0);
+                    var containerObj = new JsonContainer() { PayLoad = o };
+
+                    using (var w = new BsonWriter(ms)) {
+                        jsonFormatter.Serialize(w, containerObj);
+                    }
+                } else {
+                    m_Formatter.Serialize(ms, o);
+                }
+
+                byte[] ret = ms.GetBuffer();
+                //if (ret.Length > ms.Position) {
+                //    Array.Resize(ref ret, (int)ms.Position);
+                //}
+                return ret;
+            }
+
+        }
+
+        object DeserializeObject(byte[] data, Type t) {
+            using (var ms = new MemoryStream(data)) {
+                if (m_UseJson) {
+                    //Type ArrayType = Array.CreateInstance(t, 0).GetType();
+
+                    using (var w = new BsonReader(ms)) {
+                        var containerObj = (JsonContainer) jsonFormatter.Deserialize(w, typeof(JsonContainer));
+                        return containerObj.PayLoad;
+                    }
+                } else {
+                    return m_Formatter.Deserialize(ms);
+                }
+            }
+        }
+
+
 
         /// <summary>
         /// see <see cref="TransmissionInProgress"/>;
@@ -284,8 +356,8 @@ namespace ilPSP.Utils {
 
         /// <summary>
         /// when the transmission is in progress (<see cref="m_TransmissionInProgress"/> is true),
-        /// a true entry at index p indicates that <see cref="Transmitt"/> for process p has allready been called.
-        /// The only purpose of this array is to detect double <see cref="Transmitt"/>-calls to the same target process.
+        /// a true entry at index p indicates that <see cref="Transmit"/> for process p has allready been called.
+        /// The only purpose of this array is to detect double <see cref="Transmit"/>-calls to the same target process.
         /// </summary>
         BitArray m_TransmittCalled;
 
@@ -299,7 +371,7 @@ namespace ilPSP.Utils {
         /// a graph of objects, which will be send to process <paramref name="TargetProc"/>
         /// by using serialization.
         /// </param>
-        public void Transmitt(int TargetProc, object graph) {
+        public void Transmit(int TargetProc, object graph) {
 
             // ------------------------------
             // check for correctness of usage
@@ -327,17 +399,18 @@ namespace ilPSP.Utils {
             // serialize object
             // ---------------
 
-            MemoryStream ms = m_SendBuffers[TargetProc];
-            ms.Position = 0;
-            m_Formatter.Serialize(ms, graph);
-            
+            byte[] Buffer = SerializeObject(graph);
+            m_SendBuffers[TargetProc] = Buffer;
+#if DEBUG
+            DeserializeObject(Buffer, graph.GetType());
+#endif
 
             // ------------
             // send objects
             // ------------
 
             // send size of object 
-            m_SendObjectSizes[TargetProc] = (int) ms.Position;
+            m_SendObjectSizes[TargetProc] = m_SendBuffers[TargetProc].Length;
             csMPI.Raw.Issend(Marshal.UnsafeAddrOfPinnedArrayElement(m_SendObjectSizes, TargetProc),
                           4, csMPI.Raw._DATATYPE.BYTE,
                           TargetProc, TagBufferSize + m_MyTagOffset,
@@ -345,49 +418,17 @@ namespace ilPSP.Utils {
                           out m_Requests[TargetProc]);
 
             // send buffer content
-            byte[] Buffer = m_SendBuffers[TargetProc].GetBuffer();
-            if(TestDeserialization) {
-                var dess = new MemoryStream(Buffer.CloneAs());
-                var bf = new BinaryFormatter();
-
-                try {
-                    var testObj = bf.Deserialize(dess);
-                } catch(Exception e) {
-                    Console.Error.WriteLine("Serialization buffer:: de-serialization exception: " + e.GetType().Name + " : " + e.Message);
-                    Console.Error.WriteLine("  object type is " + graph.GetType().FullName);
-
-                    if(graph is IEnumerable enu) {
-                        int count = 0;
-                        object last = null;
-                        foreach (object o in enu) {
-                            last = o;
-                            Console.Error.Write("   entry #" + count + ":   ");
-                            if(o != null) {
-                                Console.Error.Write("instance of " + o.GetType().FullName);
-                            } else {
-                                Console.Error.Write("NULL");
-                            }
-                            Console.Error.WriteLine();
-                            
-                            count++;
-
-                        }
-                        Console.Error.WriteLine("   Object is IEnumerable with " + count + " entries. ");
-                    }
-
-                }
-            }
-
-
             if (m_SendBuffersPin.ContainsKey(TargetProc))
                 m_SendBuffersPin[TargetProc] = GCHandle.Alloc(Buffer, GCHandleType.Pinned);
             else
                 m_SendBuffersPin.Add(TargetProc, GCHandle.Alloc(Buffer, GCHandleType.Pinned));
-            csMPI.Raw.Issend(Marshal.UnsafeAddrOfPinnedArrayElement(Buffer, 0),
-                          (int) ms.Position, csMPI.Raw._DATATYPE.BYTE,
-                          TargetProc, TagBufferContent + m_MyTagOffset,
-                          m_MPI_comm,
-                          out m_Requests[m_Size + TargetProc]);
+            if (Buffer.Length > 0) {
+                csMPI.Raw.Issend(Marshal.UnsafeAddrOfPinnedArrayElement(Buffer, 0),
+                              Buffer.Length, csMPI.Raw._DATATYPE.BYTE,
+                              TargetProc, TagBufferContent + m_MyTagOffset,
+                              m_MPI_comm,
+                              out m_Requests[m_Size + TargetProc]);
+            }
 
             if (DiagnosisFile != null) {
                 File.WriteAllBytes(DiagnosisFile + "-smsSend-" + m_Rank + "-" + TargetProc + ".bin", Buffer);
@@ -399,10 +440,10 @@ namespace ilPSP.Utils {
         /// </summary>
         static public string DiagnosisFile = null;
 
-        /// <summary>
-        /// For debugging purpose: before sending, perform a de-serialization of the serialized data to check the functionality
-        /// </summary>
-        static public bool TestDeserialization = true;
+        ///// <summary>
+        ///// For debugging purpose: before sending, perform a de-serialization of the serialized data to check the functionality
+        ///// </summary>
+        //static public bool TestDeserialization = true;
 
 
         /// <summary>
@@ -492,7 +533,7 @@ namespace ilPSP.Utils {
             for( int p = 0; p < m_Size; p++) {
                 if (m_AllCommPaths[p, m_Rank] != 0) {
                     csMPI.Raw.Irecv(Marshal.UnsafeAddrOfPinnedArrayElement(m_ReceiveObjectSizes,p),
-                                 4, csMPI.Raw._DATATYPE.BYTE,
+                                 sizeof(int), csMPI.Raw._DATATYPE.BYTE,
                                  p, TagBufferSize + m_MyTagOffset,
                                  m_MPI_comm,
                                  out m_Requests[2*m_Size + p]);
@@ -505,7 +546,7 @@ namespace ilPSP.Utils {
 
         /// <summary>
         /// 2nd and last phase of the transmission process; must be called after all 
-        /// calls to <see cref="Transmitt"/> have been done;
+        /// calls to <see cref="Transmit"/> have been done;
         /// Must be called multiple times until <paramref name="o"/> is null
         /// after return, which guarantees that all send/receive's are finished
         /// (otherwise is very likly that MPI is in an undefined state).
@@ -534,7 +575,7 @@ namespace ilPSP.Utils {
             // --------------------------
 
             if (!m_CommPathsCommited)
-                throw new ApplicationException("communication paths must be commited first.");
+                throw new ApplicationException("communication paths must be committed first.");
 
             if (!m_TransmissionInProgress) {
                 // call InitTransmission for processes which don't send anything at all
@@ -552,7 +593,7 @@ namespace ilPSP.Utils {
                 throw new ApplicationException("communication must be started.");
             foreach (int p in m_SendBuffers.Keys) {
                 if (m_TransmittCalled[p] != true)
-                    throw new ApplicationException("before >GetNext< can be called, >Transmitt< must be called for every set communication path.");
+                    throw new ApplicationException("before >GetNext< can be called, >Transmit< must be called for every set communication path.");
             }
 
 
@@ -565,7 +606,7 @@ namespace ilPSP.Utils {
                 int index;
                 MPI_Status status;
                 csMPI.Raw.Waitany(m_Requests.Length, m_Requests, out index, out status);
-                Debug.Assert(m_Requests[index] == csMPI.Raw.MiscConstants.MPI_REQUEST_NULL);
+                Debug.Assert(index < 0 || m_Requests[index] == csMPI.Raw.MiscConstants.MPI_REQUEST_NULL);
                 
                 if (index >= 0 && index < size) {
                     // ++++++++++++++++++++++++++++++++++++++++++++
@@ -607,11 +648,13 @@ namespace ilPSP.Utils {
                         m_ReceiveBuffersPin.Add(proc, pin);
 
                     // start nonblocking receive
-                    csMPI.Raw.Irecv(pin.AddrOfPinnedObject(),
-                                 m_ReceiveObjectSizes[proc], csMPI.Raw._DATATYPE.BYTE,
-                                 proc, TagBufferContent + m_MyTagOffset,
-                                 m_MPI_comm,
-                                 out m_Requests[size * 3 + proc]);
+                    if (m_ReceiveObjectSizes[proc] > 0) {
+                        csMPI.Raw.Irecv(pin.AddrOfPinnedObject(),
+                                     m_ReceiveObjectSizes[proc], csMPI.Raw._DATATYPE.BYTE,
+                                     proc, TagBufferContent + m_MyTagOffset,
+                                     m_MPI_comm,
+                                     out m_Requests[size * 3 + proc]);
+                    }
                 } else if (index >= size * 3 && index < size * 4) {
                     // +++++++++++++++++++++++++++++++++++++++++
                     // object received - de-serialize and return
@@ -628,8 +671,7 @@ namespace ilPSP.Utils {
                     }
 
                     // deserialize
-                    MemoryStream ms = new MemoryStream(m_ReceiveBuffers[proc]);
-                    o = (T)m_Formatter.Deserialize(ms);
+                    o = (T)DeserializeObject(m_ReceiveBuffers[proc], typeof(T));
                     TargetProc = proc;
                     return true;
                     
@@ -689,17 +731,12 @@ namespace ilPSP.Utils {
                 m_ReceiveObjectSizesPin.Free();
 
             m_ReceiveBuffers = null;
-            if (m_SendBuffers != null) {
-                foreach (MemoryStream ms in m_SendBuffers.Values)
-                    ms.Dispose();
-            }
-            m_ReceiveBuffers = null;
             m_SendBuffers = null;
         }
 
 
         /// <summary>
-        /// Exchanges serializeable data objects in between all MPI processes.
+        /// Exchanges serialize-able data objects in between all MPI processes.
         /// </summary>
         /// <param name="objects_to_send">
         /// Data to send.<br/>
@@ -717,7 +754,7 @@ namespace ilPSP.Utils {
                 sms.SetCommPathsAndCommit(objects_to_send.Keys);
 
                 foreach (var kv in objects_to_send) {
-                    sms.Transmitt(kv.Key, kv.Value);
+                    sms.Transmit(kv.Key, kv.Value);
                 }
 
 

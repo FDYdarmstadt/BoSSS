@@ -271,15 +271,15 @@ namespace CNS {
 
                 using (new BlockTrace("TimeStepper.Perform", ht)) {
                     Exception e = null;
-                    try {
+                    //try {
                         //TimeStepper.CurrentState.SaveToTextFile("tsinp-lts.txt");
                         //ilPSP.Environment.GlobalVec =  TimeStepper.CurrentState.ToArray();
                         //double dist = ilPSP.Environment.CompareTo(TimeStepper.CurrentState);
                         dt = TimeStepper.Perform(dt);
-                    } catch (Exception ee) {
-                        e = ee;
-                    }
-                    e.ExceptionBcast();
+                    //} catch (Exception ee) {
+                    //    e = ee;
+                    //}
+                    //e.ExceptionBcast();
 
 
                     if (DatabaseDriver.MyRank == 0 && TimestepNo % printInterval == 0) {

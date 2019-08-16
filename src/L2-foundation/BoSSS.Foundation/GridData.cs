@@ -1236,7 +1236,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     sms.SetCommPathsAndCommit(ExternalCells.Keys);
 
                     foreach (var msg in ExternalCells)
-                        sms.Transmitt(msg.Key, msg.Value.ToArray());
+                        sms.Transmit(msg.Key, msg.Value.ToArray());
 
                     m_Parallel.SendCommLists = new int[MpiSize][];
 
@@ -1276,7 +1276,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         for (int l = 0; l < L; l++)
                             msg[l] = m_Grid.Cells[sendList[l]];
 
-                        sms.Transmitt(p, msg);
+                        sms.Transmit(p, msg);
                     }
 
                     m_Parallel.ExternalCells = new Cell[Jexternal];
