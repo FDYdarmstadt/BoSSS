@@ -61,9 +61,9 @@ namespace ilPSP.Utils {
         static int TagCnt = 1234;
 
         /// <summary>
-        /// 
+        /// ctor
         /// </summary>
-        /// <param name="_MPI_comm">the MPI communicator for this messnger (see <see cref="MPI_comm"/>);</param>
+        /// <param name="_MPI_comm">the MPI communicator for this messenger (see <see cref="MPI_comm"/>);</param>
         public SerialisationMessenger(MPI_Comm _MPI_comm) {
             MPICollectiveWatchDog.Watch(_MPI_comm);
 
@@ -88,7 +88,7 @@ namespace ilPSP.Utils {
 
                 csMPI.Raw.Bcast((IntPtr)(&myTag), 1, csMPI.Raw._DATATYPE.INT, 0, m_MPI_comm);
 
-                if (m_Rank > 0)
+                if (m_Rank > 0)  
                     m_MyTagOffset = myTag;
             }
         }
@@ -101,7 +101,7 @@ namespace ilPSP.Utils {
 
 
         /// <summary>
-        /// the MPI comunicator in which this messenger is acting;
+        /// the MPI communicator in which this messenger is acting;
         /// </summary>
         public MPI_Comm MPI_comm {
             get { return m_MPI_comm; }
@@ -154,7 +154,7 @@ namespace ilPSP.Utils {
         }
 
         /// <summary>
-        /// performas <see cref="SetCommPath"/> for each element in <paramref name="TargetProcRanks"/>
+        /// performs <see cref="SetCommPath"/> for each element in <paramref name="TargetProcRanks"/>
         /// and calls <see cref="CommitCommPaths"/>;
         /// </summary>
         /// <param name="TargetProcRanks"></param>
@@ -264,7 +264,7 @@ namespace ilPSP.Utils {
         bool m_CommPathsCommited;
 
         /// <summary>
-        /// formatter used for all serialisation/deserialisation
+        /// formatter used for all serialization/de-serialization
         /// </summary>
         BinaryFormatter m_Formatter = new BinaryFormatter();
 
@@ -445,16 +445,16 @@ namespace ilPSP.Utils {
         /// Array of length of 4*<see cref="m_Size"/>:
         /// <list type="bullet">
         ///   <item>
-        ///   1st quater (index 0 to <see cref="m_Size"/>-1): send handles for buffer size transmission;
+        ///   1st quarter (index 0 to <see cref="m_Size"/>-1): send handles for buffer size transmission;
         ///   </item>
         ///   <item>
-        ///   2nd quater (index <see cref="m_Size"/> to 2*<see cref="m_Size"/>-1): send handles for buffer content;
+        ///   2nd quarter (index <see cref="m_Size"/> to 2*<see cref="m_Size"/>-1): send handles for buffer content;
         ///   </item>
         ///   <item>
-        ///   3rd quater (index 2*<see cref="m_Size"/> to 3*<see cref="m_Size"/>-1): receive handles for buffer size;
+        ///   3rd quarter (index 2*<see cref="m_Size"/> to 3*<see cref="m_Size"/>-1): receive handles for buffer size;
         ///   </item>
         ///   <item>
-        ///   4th quater (index 3*<see cref="m_Size"/> to 4*<see cref="m_Size"/>-1): receive handles for buffer content;
+        ///   4th quarter (index 3*<see cref="m_Size"/> to 4*<see cref="m_Size"/>-1): receive handles for buffer content;
         ///   </item>
         /// </list>
         /// </summary>
@@ -522,7 +522,7 @@ namespace ilPSP.Utils {
         /// type of received object
         /// </typeparam>
         /// <returns>
-        /// true, if <paramref name="o"/> containes a received object;<br/>
+        /// true, if <paramref name="o"/> contains a received object;<br/>
         /// false if the communication is finished.
         /// </returns>
         public bool GetNext<T>(out int TargetProc, out T o) {
@@ -565,9 +565,8 @@ namespace ilPSP.Utils {
                 int index;
                 MPI_Status status;
                 csMPI.Raw.Waitany(m_Requests.Length, m_Requests, out index, out status);
-
-
-
+                Debug.Assert(m_Requests[index] == csMPI.Raw.MiscConstants.MPI_REQUEST_NULL);
+                
                 if (index >= 0 && index < size) {
                     // ++++++++++++++++++++++++++++++++++++++++++++
                     // some send has been completed - nothing to do
@@ -579,6 +578,8 @@ namespace ilPSP.Utils {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++
 
                     m_SendBuffersPin[index - size].Free();
+                    m_SendBuffersPin.Remove(index - size);
+
                 } else if (index >= size * 2 && index < size * 3) {
                     // ++++++++++++++++++++++++++++++++++++++++++++
                     // object size received - start content receive
@@ -612,14 +613,15 @@ namespace ilPSP.Utils {
                                  m_MPI_comm,
                                  out m_Requests[size * 3 + proc]);
                 } else if (index >= size * 3 && index < size * 4) {
-                    // ++++++++++++++++++++++++++++++++++++++++
-                    // object received - deserialize and return
-                    // ++++++++++++++++++++++++++++++++++++++++
+                    // +++++++++++++++++++++++++++++++++++++++++
+                    // object received - de-serialize and return
+                    // +++++++++++++++++++++++++++++++++++++++++
 
                     int proc = index - size * 3;
 
                     // free pin
                     m_ReceiveBuffersPin[proc].Free();
+                    m_ReceiveBuffersPin.Remove(proc);
 
                     if (DiagnosisFile != null) {
                         File.WriteAllBytes(DiagnosisFile + "-smsReceive-" + proc + "-" + m_Rank + ".bin", m_ReceiveBuffers[proc]);
@@ -641,6 +643,9 @@ namespace ilPSP.Utils {
 
                     m_SendObjectSizesPin.Free();
                     m_ReceiveObjectSizesPin.Free();
+                    Debug.Assert(m_SendBuffersPin.Count == 0);
+                    Debug.Assert(m_ReceiveBuffersPin.Count == 0);
+
 
                     o = default(T);
                     TargetProc = Int32.MinValue;
@@ -654,13 +659,34 @@ namespace ilPSP.Utils {
         }
 
         /// <summary>
-        /// 
+        /// terminates all ongoing communication
         /// </summary>
         public void Dispose() {
 
-            if (m_TransmissionInProgress != false)
-                throw new ApplicationException("unable to dispose now: communication is not finished yet - application in undefined state.");
+            if (m_TransmissionInProgress != false) {
+                //throw new ApplicationException("unable to dispose now: communication is not finished yet - application in undefined state.");
+                for(int i = 0; i < m_Requests.Length; i++) {
+                    if (m_Requests[i] != csMPI.Raw.MiscConstants.MPI_REQUEST_NULL)
+                        csMPI.Raw.Cancel(ref m_Requests[i]);
+                }
+            }
 
+            foreach (var h in m_SendBuffersPin) {
+                if (h.Value.IsAllocated)
+                    h.Value.Free();
+            }
+            foreach (var h in m_ReceiveBuffersPin) {
+                if (h.Value.IsAllocated)
+                    h.Value.Free();
+            }
+            m_SendBuffersPin = null;
+            m_ReceiveBuffersPin = null;
+            
+            if (m_SendObjectSizesPin.IsAllocated)
+                m_SendObjectSizesPin.Free();
+
+            if (m_ReceiveObjectSizesPin.IsAllocated)
+                m_ReceiveObjectSizesPin.Free();
 
             m_ReceiveBuffers = null;
             if (m_SendBuffers != null) {

@@ -790,6 +790,20 @@ namespace MPI.Wrappers {
                     return;
             }
         }
+
+#pragma warning disable 649
+        delegate void _MPI_CANCEL(ref MPI_Request r, out int ierr);
+        _MPI_CANCEL MPI_CANCEL;
+#pragma warning restore 649
+
+        /// <summary>
+        /// ~
+        /// </summary>
+        public void Cancel(ref MPI_Request r) {
+            int ierr;
+            MPI_CANCEL(ref r, out ierr);
+            MPIException.CheckReturnCode(ierr);
+        }
     }
 }
 
