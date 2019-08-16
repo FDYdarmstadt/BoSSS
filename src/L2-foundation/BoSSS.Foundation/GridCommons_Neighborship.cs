@@ -79,6 +79,16 @@ namespace BoSSS.Foundation.Grid.Classic {
             //public bool EdgeMayBeEmpty;
         }
 
+        [Serializable]
+        class NodeCellIndexPair_ContainerClass {
+            public NodeCellIndexPair[] list;
+        }
+
+        [Serializable]
+        class NodeCellListPair_ContainerClass {
+            public NodeCellListPair[] list;
+        }
+
         /// <summary>
         /// Computes the neighbor cells globally (i.e. over all MPI processors) for each local cell.
         /// </summary>
@@ -107,6 +117,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int j0 = this.CellPartitioning.i0;
                 int Jglob = this.CellPartitioning.TotalLength;
                 int j0Bc = this.BcCellPartitioning.i0;
+
+                ilPSP.Environment.StdoutOnlyOnRank0 = false;
+                System.IO.StreamWriter sw = new System.IO.StreamWriter("proc_" + this.MyRank + ".txt", append: true);
+                sw.WriteLine("Entering stupid function....");
+                SerialisationMessenger.PoorManDebugger = sw;
 
                 // Which cells make use of a particular node?
                 //-------------------------------------------
@@ -167,12 +182,38 @@ namespace BoSSS.Foundation.Grid.Classic {
                     //SerialisationMessenger.DiagnosisFile = "GetCellNeighborship";
                     //SerialisationMessenger.TestDeserialization = true;
 
-                    var W = SerialisationMessenger.ExchangeData(Y, csMPI.Raw._COMM.WORLD);
-                    foreach (var wp in W.Values) {
-                        foreach (NodeCellIndexPair Packet in wp) {
-                            Nodes2Cells[Packet.NodeId - k0].Add(Packet.GlobalCellIndex);
+                    var Yexc = new Dictionary<int, NodeCellIndexPair_ContainerClass>();
+                    {
+                        foreach(var kv in Y)
+                        {
+                            Yexc.Add(kv.Key,
+                                new NodeCellIndexPair_ContainerClass() { list = kv.Value.ToArray() });
+                        }
+                        Y = null;
+                    }
+
+
+                    sw.WriteLine("(1) process " + this.MyRank + " starting serialization/deserialization ...");
+
+                    try
+                    {
+                        var W = SerialisationMessenger.ExchangeData(Yexc, csMPI.Raw._COMM.WORLD);
+                        foreach (var wp in W.Values)
+                        {
+                            foreach (NodeCellIndexPair Packet in wp.list)
+                            {
+                                Nodes2Cells[Packet.NodeId - k0].Add(Packet.GlobalCellIndex);
+                            }
                         }
                     }
+                    catch (Exception e)
+                    {
+                        sw.WriteLine(e);
+                        throw e;
+                    }
+                    sw.Flush();
+                    //var W = SerialisationMessenger.ExchangeData(Y, csMPI.Raw._COMM.WORLD);
+
                 }
 
                 // For every cell, for every vertex in this cell:
@@ -260,58 +301,93 @@ namespace BoSSS.Foundation.Grid.Classic {
                         }
                     }
 
-                    var W = SerialisationMessenger.ExchangeData(Y, csMPI.Raw._COMM.WORLD);
-                    foreach (var wp in W.Values) {
-                        foreach (var P in wp) {
-                            int k_node = P.NodeId;
-                            int[] cell_list = P.CellList;
+                    var Yexc = new Dictionary<int, NodeCellListPair_ContainerClass>();
+                    {
+                        foreach (var kv in Y)
+                        {
+                            Yexc.Add(kv.Key,
+                                new NodeCellListPair_ContainerClass() { list = kv.Value.ToArray() });
+                        }
+                        Y = null;
+                    }
 
-                            foreach (int jCell in cell_list) {
-                                int cell_proc;
-                                int local_offset;
-                                if (jCell < Jglob) {
-                                    // normal cell
-                                    cell_proc = CPart.FindProcess(jCell);
-                                    local_offset = j0;
-                                } else {
-                                    // boundary condition cell
-                                    cell_proc = BcPart.FindProcess(jCell - Jglob);
-                                    local_offset = Jglob + j0Bc;
-                                }
+                    sw.WriteLine("(2) process " + this.MyRank + " starting serialization/deserialization ...");
+                    try
+                    {
+                        var W = SerialisationMessenger.ExchangeData(Yexc, csMPI.Raw._COMM.WORLD);
+                        foreach (var wp in W.Values)
+                        {
+                            foreach (var P in wp.list)
+                            {
+                                int k_node = P.NodeId;
+                                int[] cell_list = P.CellList;
 
-                                if (cell_proc == MyRank) {
-
-                                    int jCell_loc = jCell - local_offset;
-
-                                    Element Cell_j;
-                                    int oo;
-                                    if (jCell < Jglob) {
+                                foreach (int jCell in cell_list)
+                                {
+                                    int cell_proc;
+                                    int local_offset;
+                                    if (jCell < Jglob)
+                                    {
                                         // normal cell
-                                        Cell_j = this.Cells[jCell_loc];
-                                        oo = 0;
-                                    } else {
+                                        cell_proc = CPart.FindProcess(jCell);
+                                        local_offset = j0;
+                                    }
+                                    else
+                                    {
                                         // boundary condition cell
-                                        Cell_j = this.BcCells[jCell_loc];
-                                        oo = J;
+                                        cell_proc = BcPart.FindProcess(jCell - Jglob);
+                                        local_offset = Jglob + j0Bc;
                                     }
 
-                                    int kC;
-                                    bool bfound = false;
-                                    for (kC = 0; kC < Cell_j.NodeIndices.Length; kC++) {
-                                        if (Cell_j.NodeIndices[kC] == k_node) {
-                                            bfound = true;
-                                            break;
+                                    if (cell_proc == MyRank)
+                                    {
+
+                                        int jCell_loc = jCell - local_offset;
+
+                                        Element Cell_j;
+                                        int oo;
+                                        if (jCell < Jglob)
+                                        {
+                                            // normal cell
+                                            Cell_j = this.Cells[jCell_loc];
+                                            oo = 0;
                                         }
+                                        else
+                                        {
+                                            // boundary condition cell
+                                            Cell_j = this.BcCells[jCell_loc];
+                                            oo = J;
+                                        }
+
+                                        int kC;
+                                        bool bfound = false;
+                                        for (kC = 0; kC < Cell_j.NodeIndices.Length; kC++)
+                                        {
+                                            if (Cell_j.NodeIndices[kC] == k_node)
+                                            {
+                                                bfound = true;
+                                                break;
+                                            }
+                                        }
+
+                                        if (!bfound)
+                                            throw new ApplicationException("error in algorithm.");
+
+                                        NodePeers[jCell_loc + oo][kC] = cell_list;
                                     }
-
-                                    if (!bfound)
-                                        throw new ApplicationException("error in algorithm.");
-
-                                    NodePeers[jCell_loc + oo][kC] = cell_list;
                                 }
                             }
                         }
                     }
+                    catch (Exception e)
+                    {
+                        sw.WriteLine(e);
+                        throw e;
+                    }
+                    sw.Flush();
+
+
+                    
                 }
 
                 // Assemble final result
@@ -424,6 +500,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
                 }
 
+                SerialisationMessenger.PoorManDebugger = null;
                 return CellNeighbours;
             }
         }

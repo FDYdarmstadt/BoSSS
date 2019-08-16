@@ -503,6 +503,8 @@ namespace ilPSP.Utils {
             
         }
 
+        int ReceiveCount = 0;
+
         /// <summary>
         /// 2nd and last phase of the transmission process; must be called after all 
         /// calls to <see cref="Transmitt"/> have been done;
@@ -566,6 +568,14 @@ namespace ilPSP.Utils {
                 MPI_Status status;
                 csMPI.Raw.Waitany(m_Requests.Length, m_Requests, out index, out status);
 
+                ReceiveCount++;
+
+
+                //if (PoorManDebugger != null)
+                //{
+                //    PoorManDebugger.WriteLine("Request " + index + " done; rcvcnt = " + ReceiveCount);
+                //    PoorManDebugger.Flush();
+                //}
 
 
                 if (index >= 0 && index < size) {
@@ -627,7 +637,18 @@ namespace ilPSP.Utils {
 
                     // deserialize
                     MemoryStream ms = new MemoryStream(m_ReceiveBuffers[proc]);
-                    o = (T)m_Formatter.Deserialize(ms);
+                    try
+                    {
+                        o = (T)m_Formatter.Deserialize(ms);
+                    }
+                    catch (Exception e)
+                    {
+                        if(PoorManDebugger != null)
+                        {
+                            PoorManDebugger.WriteLine("error receiving from " + proc);
+                        }
+                        throw e;
+                    }
                     TargetProc = proc;
                     return true;
                     
@@ -646,6 +667,11 @@ namespace ilPSP.Utils {
                     TargetProc = Int32.MinValue;
                     return false;
                 } else {
+                    if(PoorManDebugger != null)
+                    {
+                        PoorManDebugger.WriteLine("are you kidding me?");
+                        PoorManDebugger.Flush();
+                    }
                     throw new ApplicationException("internal error: index of request out of range.");
                 }
             }
@@ -659,8 +685,15 @@ namespace ilPSP.Utils {
         public void Dispose() {
 
             if (m_TransmissionInProgress != false)
-                throw new ApplicationException("unable to dispose now: communication is not finished yet - application in undefined state.");
+            {
+                Console.Error.WriteLine("unable to dispose now: communication is not finished yet - application in undefined state.");
+                if(PoorManDebugger != null)
+                {
+                    Console.Error.WriteLine("unable to dispose now: communication is not finished yet - application in undefined state.");
+                }
 
+                //throw new ApplicationException("unable to dispose now: communication is not finished yet - application in undefined state.");
+            }
 
             m_ReceiveBuffers = null;
             if (m_SendBuffers != null) {
@@ -688,12 +721,15 @@ namespace ilPSP.Utils {
         /// </returns>
         public static IDictionary<int, T> ExchangeData<T>(IDictionary<int, T> objects_to_send, MPI_Comm comm) {
             using( var sms = new SerialisationMessenger(comm)) {
+                if (PoorManDebugger != null) {
+                    PoorManDebugger.WriteLine("tag offset is " + sms.m_MyTagOffset);
+                    PoorManDebugger.Flush();
+                }
                 sms.SetCommPathsAndCommit(objects_to_send.Keys);
 
                 foreach (var kv in objects_to_send) {
                     sms.Transmitt(kv.Key, kv.Value);
                 }
-
 
                 var R = new Dictionary<int, T>();
                 T obj;
@@ -702,9 +738,19 @@ namespace ilPSP.Utils {
                     R.Add(rcv_rank, obj);
                 }
 
+                if(PoorManDebugger != null)
+                {
+                    PoorManDebugger.WriteLine(" leaving ExchangeData");
+                    PoorManDebugger.Flush();
+                }
+
                 return R;
             }
         }
+
+
+        public static StreamWriter PoorManDebugger; 
+
 
         /// <summary>
         /// equal to <see cref="ExchangeData{T}(IDictionary{int,T},MPI_Comm)"/>, acting on the WORLD-communicator
