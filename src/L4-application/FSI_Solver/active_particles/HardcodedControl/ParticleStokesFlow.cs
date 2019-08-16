@@ -385,8 +385,8 @@ namespace BoSSS.Application.FSI_Solver
 
             // basic database options
             // =============================
-            C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\WetParticleCollision";
-            C.savetodb = false;
+            C.DbPath = @"D:\BoSSS_databases\wetParticleCollision";
+            C.savetodb = true;
             C.saveperiod = 1;
             C.ProjectName = "ParticleUnderGravity";
             C.ProjectDescription = "Active";
@@ -646,7 +646,7 @@ namespace BoSSS.Application.FSI_Solver
                     particleDensity = 1,
                     radius_P = 0.1,
                     GravityVertical = 0,
-                    ActiveStress = 1000,
+                    activeStress = 1000,
                     useAddaptiveUnderrelaxation = true,
                     underrelaxation_factor = 5,
                     clearSmallValues = true,

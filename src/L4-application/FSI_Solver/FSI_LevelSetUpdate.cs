@@ -224,12 +224,12 @@ namespace FSI_Solver
         /// <param name="Particles">
         /// A list of all particles.
         /// </param>
-        internal void DetermineGlobalParticleColor(IGridData GridData, int[] CellColor, List<Particle> Particles, out int[] GlobalParticleColor)
+        internal int[] DetermineGlobalParticleColor(IGridData GridData, int[] CellColor, List<Particle> Particles)
         {
             List<int[]> ColoredCellsSorted = ColoredCellsFindAndSort(CellColor);
             int[] ParticleColorArray = FindParticleColor(GridData, Particles, ColoredCellsSorted);
             int NoOfParticles = ParticleColorArray.Length;
-            GlobalParticleColor = new int[NoOfParticles];
+            int[] GlobalParticleColor = new int[NoOfParticles];
             double[] StateBuffer = new double[NoOfParticles];
             for (int i = 0; i < NoOfParticles; i++)
             {
@@ -240,6 +240,7 @@ namespace FSI_Solver
             {
                 GlobalParticleColor[i] = Convert.ToInt32(GlobalStateBuffer[i]);
             }
+            return GlobalParticleColor;
         }
     }
 }

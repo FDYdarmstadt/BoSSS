@@ -321,7 +321,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Active stress on the current particle.
         /// </summary>
-        public double ActiveStress = 0;
+        public double activeStress = 0;
 
         /// <summary>
         /// Active velocity (alternative to active stress) on the current particle.
@@ -333,6 +333,22 @@ namespace BoSSS.Application.FSI_Solver
         /// Area of the current particle.
         /// </summary>
         abstract public double Area_P { get; }
+
+        /// <summary>
+        /// Necessary for active particles. Returns 0 for the non active boundary region and a number between 0 and 1 for the active region.
+        /// </summary>
+        internal double SeperateBoundaryRegions(double[] X) {
+            double seperateBoundaryRegions;
+            // The posterior side of the particle 
+            if (Math.Cos(angle[0]) * (X[0] - position[0][0]) + Math.Sin(angle[0]) * (X[1] - position[0][1]) < 1e-8) {
+                seperateBoundaryRegions = (Math.Cos(angle[0]) * (X[0] - position[0][0]) + Math.Sin(angle[0]) * (X[1] - position[0][1])) / Math.Sqrt((X[0] - position[0][0]).Pow2() + (X[1] - position[0][1]).Pow2());
+            }
+            // The anterior side of the particle 
+            else {
+                seperateBoundaryRegions = 0;
+            }
+            return seperateBoundaryRegions;
+        }
 
         /// <summary>
         /// Mass of the current particle.
@@ -601,8 +617,8 @@ namespace BoSSS.Application.FSI_Solver
         {
             if (TimestepInt == 1)
             {
-                hydrodynamicForces[0][0] = 20 * Math.Cos(angle[0]) * ActiveStress * Circumference_P;
-                hydrodynamicForces[0][1] = 20 * Math.Sin(angle[0]) * ActiveStress * Circumference_P + GravityVertical * Mass_P;
+                hydrodynamicForces[0][0] = 20 * Math.Cos(angle[0]) * activeStress * Circumference_P;
+                hydrodynamicForces[0][1] = 20 * Math.Sin(angle[0]) * activeStress * Circumference_P + GravityVertical * Mass_P;
             }
             if (iteration_counter_P == 0)
             {

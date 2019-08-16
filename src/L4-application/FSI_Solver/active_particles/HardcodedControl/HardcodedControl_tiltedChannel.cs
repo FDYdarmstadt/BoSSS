@@ -130,7 +130,7 @@ namespace BoSSS.Application.FSI_Solver
                 C.Particles.Add(new Particle_Ellipsoid(new double[] { 5.0, 0.0 }, startAngl: 10)
                 {
                     particleDensity = 0,
-                    ActiveStress = stressM,
+                    activeStress = stressM,
                     thickness_P = 0.6 * BaseSize,
                     length_P = 1.5 * BaseSize,
                     useAddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
@@ -316,7 +316,7 @@ namespace BoSSS.Application.FSI_Solver
                 C.Particles.Add(new Particle_Ellipsoid(new double[] { -10, 0.0 }, startAngl: 10)
                 {
                     particleDensity = 2,//pg/(mum^3)
-                    ActiveStress = stressM,
+                    activeStress = stressM,
                     thickness_P = 0.4 * BaseSize,
                     length_P = 2 * BaseSize,
                     useAddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
