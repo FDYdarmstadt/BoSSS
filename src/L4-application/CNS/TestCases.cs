@@ -1385,7 +1385,8 @@ namespace CNS {
             //string dbPath = @"/work/scratch/yp19ysog/bosss_db_performance2";
             //string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr_run3_test";
             //string dbPath = @"C:\bosss_db_paper_ibmdmr_scratch_run3_test";
-            string dbPath = @"/work/scratch/jw52xeqa/DB_Cube";
+            //string dbPath = @"/work/scratch/jw52xeqa/DB_Cube";
+            string dbPath = @"./bosss_db_performance_3";
             string restart = "False";
 
             CNSControl c = DoubleMachReflection(dbPath, savePeriod, dgDegree, xMax, yMax, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, endTime, restart, cores);

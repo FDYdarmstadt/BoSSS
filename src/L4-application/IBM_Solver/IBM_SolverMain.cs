@@ -892,12 +892,9 @@ namespace BoSSS.Application.IBM_Solver {
                     mpiRank.SetMeanValue(j, DatabaseDriver.MyRank);
                 }
 
-                ilPSP.Environment.StdoutOnlyOnRank0 = false;
                 Console.WriteLine("Total number of cells:    {0}", Grid.NumberOfCells);
                 Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count());
                 Console.WriteLine("Total number of cut cells:     {0}", LsTrk.Regions.GetCutCellMask().NoOfItemsLocally);
-
-                ilPSP.Environment.StdoutOnlyOnRank0 = true;
             }
 
             // Using defauls CellCostEstimateFactories          

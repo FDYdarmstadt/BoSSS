@@ -118,7 +118,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int Jglob = this.CellPartitioning.TotalLength;
                 int j0Bc = this.BcCellPartitioning.i0;
 
-                ilPSP.Environment.StdoutOnlyOnRank0 = false;
                 System.IO.StreamWriter sw = new System.IO.StreamWriter("proc_" + this.MyRank + ".txt", append: true);
                 sw.WriteLine("Entering stupid function....");
                 SerialisationMessenger.PoorManDebugger = sw;
