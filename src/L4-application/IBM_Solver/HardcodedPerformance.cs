@@ -404,9 +404,9 @@ namespace BoSSS.Application.IBM_Solver {
             // ============
             
             if (pardiso) {
-                C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
+                C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             } else {
-                C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
+                C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
             }
 
             //C.whichSolver = DirectSolver._whichSolver.MUMPS;
@@ -751,11 +751,11 @@ namespace BoSSS.Application.IBM_Solver {
 
             if (pardiso)
             {
-                C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
+                C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             }
             else
             {
-                C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
+                C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
             }
             // Timestepping
             // ============

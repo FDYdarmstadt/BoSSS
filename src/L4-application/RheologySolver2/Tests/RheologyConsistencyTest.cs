@@ -95,7 +95,7 @@ namespace BoSSS.Application.Rheology {
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;//C.NonlinearMethod = NonlinearSolverMethod.Newton;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;//C.NonlinearMethod = NonlinearSolverMethod.Newton;
 
             //Grid Params
             //double GridLevel = 5;

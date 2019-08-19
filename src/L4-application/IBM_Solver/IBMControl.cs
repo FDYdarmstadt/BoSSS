@@ -41,11 +41,11 @@ namespace BoSSS.Application.IBM_Solver {
             base.LinearSolver.MaxSolverIterations = 2000; //MaxSolverIterations
             base.LinearSolver.MinSolverIterations = 2; //MinSolverIterations
             base.LinearSolver.ConvergenceCriterion = 1.0e-8; //Solver_ConvergenceCriterion
-            base.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps; //public LinearSolverCodes LinearSolve = LinearSolverCodes.classic_mumps;
+            base.LinearSolver.SolverCode = LinearSolverCode.classic_mumps; //public LinearSolverCodes LinearSolve = LinearSolverCodes.classic_mumps;
             base.NonLinearSolver.MaxSolverIterations = 2000; //MaxSolverIterations
             base.NonLinearSolver.MinSolverIterations = 2; //MinSolverIterations
             base.NonLinearSolver.ConvergenceCriterion = 1.0e-8; //Solver_ConvergenceCriterion
-            base.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Picard; //public NonlinearSolverCodes NonlinearSolve = NonlinearSolverCodes.Picard;
+            base.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard; //public NonLinearSolverCodes NonlinearSolve = NonLinearSolverCodes.Picard;
         }
 
         /// <summary>
@@ -96,6 +96,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Enforce the level-set to be continuous; 
         /// </summary>
+        [DataMember]
         public bool LevelSetSmoothing = true;
 
         [NonSerialized]

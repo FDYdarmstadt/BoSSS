@@ -1,33 +1,14 @@
 restart
 **************
-  Database Explorer v2
-  ____________________
+
+  BoSSSpad C# interpreter
+  _______________________
 
 Databases loaded:
-List of 23 instances of IDatabaseInfo {
-  0: { Session Count = 0; Grid Count = 2; Path = p:\BoSSS_DBs\Kovasznay }
-  1: { Session Count = 1; Grid Count = 1; Path = p:\BoSSS_DBs\ChannelFlow }
-  2: { Session Count = 0; Grid Count = 0; Path = p:\BoSSS_DBs\RectangularCylinder }
-  3: { Session Count = 0; Grid Count = 0; Path = p:\BoSSS_DBs\Cylinder3D }
-  4: { Session Count = 6; Grid Count = 1; Path = p:\BoSSS_DBs\MPI_Test }
-  5: { Session Count = 0; Grid Count = 0; Path = p:\BoSSS_DBs\3DSolverPerformance }
-  6: { Session Count = 2; Grid Count = 2; Path = P:\BoSSS_DBs\nonIBM_cylinder }
-  7: { Session Count = 12; Grid Count = 1; Path = P:\BoSSS_DBs\osciCylinder }
-  8: { Session Count = 0; Grid Count = 0; Path = P:\BoSSS_DBs\osciCylinder_new }
-  9: { Session Count = 21; Grid Count = 25; Path = P:\BoSSS_DBs\ImmersedBoundary }
-  10: { Session Count = 8; Grid Count = 44; Path = P:\BoSSS_DBs\ParticleInShearFlow\ }
-  11: { Session Count = 16; Grid Count = 46; Path = P:\BoSSS_DBs\ParticleUnderGravity }
-  12: { Session Count = 8; Grid Count = 31; Path = P:\BoSSS_DBs\fixedCylinder }
-  13: { Session Count = 0; Grid Count = 0; Path = P:\BoSSS_DBs\Paper_OsciCylinder }
-  14: { Session Count = 43; Grid Count = 45; Path = P:\BoSSS_DBs\IBMPaper }
-  15: { Session Count = 28; Grid Count = 15; Path = P:\BoSSS_DBs\Paper_IBM2D }
-  16: { Session Count = 38; Grid Count = 22; Path = P:\BoSSS_DBs\Paper_CellAgglo01_Penalty4 }
-  17: { Session Count = 51; Grid Count = 57; Path = P:\BoSSS_DBs\Sphere3D }
-  18: { Session Count = 22; Grid Count = 10; Path = P:\BoSSS_DBs\Performance }
-  19: { Session Count = 24; Grid Count = 14; Path = P:\BoSSS_DBs\PaperRevision }
-  20: { Session Count = 0; Grid Count = 0; Path = P:\Lichtenberg_DB }
-  21: { Session Count = 2; Grid Count = 354; Path = P:\BoSSS_DBs\Bug }
-  22: { Session Count = 97; Grid Count = 97; Path = L:\BoSSS_DB\Lichtenberg_DB }
+List of 3 instances of IDatabaseInfo {
+  0: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+  1: { Session Count = 8; Grid Count = 1; Path = G:\DB_Cube }
+  2: { Session Count = 4; Grid Count = 1; Path = G:\Performance_DB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -35,7 +16,7 @@ List of 23 instances of IDatabaseInfo {
 ==============
 using BoSSS.Application.IBM_Solver;
 using BoSSS.Foundation.Grid.RefElements;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using System.Text;
 using System.Threading.Tasks;
 using ilPSP.Tracing;
@@ -47,29 +28,25 @@ Project name is set to 'MPISolverPerformance_StokesSphere'.
 
 ==============
 //var WinTempDB = OpenOrCreateDatabase(@"L:\SLURM\temp_db");
-var LinuxTempDB = OpenOrCreateDatabase(@"L:\BoSSS_DB\Lichtenberg_DB");
+var myDB = OpenOrCreateDatabase(@"G:\Performance_DB");
 **************
-Opening existing database 'L:\BoSSS_DB\Lichtenberg_DB'.
+Opening existing database 'G:\Performance_DB'.
 
 ==============
 //Console.WriteLine("Please type in your Username");
 //var Username = Console.ReadLine();
 **************
 ==============
-var myBatch = new SlurmClient(@"L:\SLURM","lcluster2.hrz.tu-darmstadt.de","oe11okuz");
-**************
-Please enter your password...
-*
-Connecting to lcluster2.hrz.tu-darmstadt.de...
-
-Renci.SshNet.Common.SshAuthenticationException occurred: Permission denied (password).. Type 'LastError' for details.
-
-==============
-//var myBatch = new MiniBatchProcessorClient(@"P:\tmp\");
+//var myBatch = new SlurmClient(@"L:\SLURM","lcluster2.hrz.tu-darmstadt.de","oe11okuz");
 **************
 ==============
-//MiniBatchProcessor.Server.StartIfNotRunning();
+var myBatch = new MiniBatchProcessorClient(@"G:\deploy-Mini\");
 **************
+==============
+MiniBatchProcessor.Server.StartIfNotRunning();
+**************
+Mini batch processor is already running.
+
 ==============
 static class Utils {
     // DOF per cell in 3D
@@ -84,24 +61,29 @@ static class Utils {
 // ==========
 **************
 ==============
-LinearSolverCodes[] linSolvers = new LinearSolverCodes[] {
-    //LinearSolverCodes.exp_schwarz_directcoarse,
-    //LinearSolverCodes.exp_schwarz_Kcycle_directcoarse,
-    //LinearSolverCodes.exp_schwarz_directcoarse_overlap,
-    //LinearSolverCodes.exp_schwarz_Kcycle_directcoarse_overlap,
-    //LinearSolverCodes.exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-    //LinearSolverCodes.exp_softgmres_schwarz_directcoarse_overlap,
-    LinearSolverCodes.automatic
+**************
+==============
+LinearSolverCode[] linSolvers = new LinearSolverCode[] {
+    //LinearSolverCode.classic_mumps,
+    LinearSolverCode.exp_gmres_levelpmg,
+    //LinearSolverCode.exp_schwarz_directcoarse,
+    //LinearSolverCode.exp_schwarz_Kcycle_directcoarse,
+    //LinearSolverCode.exp_schwarz_directcoarse_overlap,
+    //LinearSolverCode.exp_schwarz_Kcycle_directcoarse_overlap,
+    //LinearSolverCode.exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+    //LinearSolverCode.exp_softgmres_schwarz_directcoarse_overlap,
+    //LinearSolverCode.automatic
+};
+NonLinearSolverCode[] nonlinSolvers= new NonLinearSolverCode[] {
+    NonLinearSolverCode.Newton,
 };
 int[] ks = new int[] {2,3};
 int cells_x  = 64;
 int cells_yz = 16;
 int re       = 1; 
 int saveToDB = 1;
-int[] procs    = new int[] {8,32,64};
+int[] procs    = new int[] {4};
 **************
-C# evaluator not initialized: use 'restart'.
-
 ==============
 // ===============================
 // Init grids and save to database
@@ -116,7 +98,7 @@ var _yNodes = GenericBlas.Linspace(-0.5, 0.5, cells_yz + 1);
 var _zNodes = GenericBlas.Linspace(-0.5, 0.5, cells_yz + 1);
 // Generate Grid
 GridCommons grd; 
-grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, false, true, false, CellType.Cube_Linear);
+grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, CellType.Cube_Linear, false, true, false, null);
 grd.EdgeTagNames.Add(1, "Velocity_inlet");
 grd.EdgeTagNames.Add(2, "Wall");
 grd.EdgeTagNames.Add(3, "Pressure_Outlet");
@@ -153,13 +135,10 @@ grd.DefineEdgeTags(delegate (double[] _X) {
                         
                         return ret;
                 });
-LinuxTempDB.SaveGrid(ref grd);
+myDB.SaveGrid(ref grd);
 **************
-(2,47): error CS0103: The name `cells_x' does not exist in the current context
-(4,47): error CS0103: The name `cells_yz' does not exist in the current context
-(6,47): error CS0103: The name `cells_yz' does not exist in the current context
-No. of errors|warnings: 3|0.
-
+An equivalent grid is already present in the database -- the grid will not be saved.
+61f5265d-06cc-4ffa-bbb2-bee4e4d3cc43
 ==============
 **************
 ==============
@@ -190,22 +169,23 @@ List<IBM_Control> controls = new List<IBM_Control>();
 **************
 ==============
 controls.Clear();
-foreach(LinearSolverCodes linSolverName in linSolvers){ 
+foreach(NonLinearSolverCode nonlinSolverName in nonlinSolvers){ 
+foreach(LinearSolverCode linSolverName in linSolvers){
 var C = new IBM_Control();
 controls.Add(C);
 
 // basic database options
 // ======================
 
-C.savetodb                    = true;
-//C.DbPath                      = "P:\\tmp\\temp_db";
-C.DbPath                      = @"/home/oe11okuz/BoSSS_DB/Lichtenberg_DB";
+C.savetodb = true;
+C.DbPath   = myDB.Path;
+//C.DbPath                      = @"/home/oe11okuz/BoSSS_DB/Lichtenberg_DB";
 C.DynamicLoadBalancing_Period = 1;
 
 C.saveperiod  = 1;
 C.ProjectName = "3DChannel";
 C.Tags.Add("Prec param study");
-C.SetDGdegree(1,3);
+C.SetDGdegree(1);
 C.SetGrid(grd);
 
 C.GridPartType = GridPartType.none;
@@ -238,10 +218,10 @@ C.InitialValues.Add("Phi", GetFormulaObject(InitialValues.Phi));
         //C.PhysicalParameters.mu_A = 1.0 / re;
 
         // Boundary conditions
-        C.AddBoundaryCondition("Velocity_inlet", "VelocityX", GetFormulaObject(InitialValues.VelocityInlet));
-        C.AddBoundaryCondition("Velocity_inlet", "VelocityY", GetFormulaObject(InitialValues.ZERO));
-        C.AddBoundaryCondition("Wall");
-        C.AddBoundaryCondition("Pressure_Outlet");
+        C.AddBoundaryValue("Velocity_inlet", "VelocityX", GetFormulaObject(InitialValues.VelocityInlet));
+        C.AddBoundaryValue("Velocity_inlet", "VelocityY", GetFormulaObject(InitialValues.ZERO));
+        C.AddBoundaryValue("Wall");
+        C.AddBoundaryValue("Pressure_Outlet");
 
 
         // misc. solver options
@@ -250,16 +230,18 @@ C.InitialValues.Add("Phi", GetFormulaObject(InitialValues.Phi));
         C.AdvancedDiscretizationOptions.PenaltySafety              = 4;
         C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
         C.LevelSetSmoothing                                        = false;
-        C.MaxKrylovDim                                             = 30;
-        C.MaxSolverIterations                                      = 50;
-        C.MinSolverIterations                                      = 1;
-        // C.MaxSolverIterations = 10000;
-        C.Solver_ConvergenceCriterion = 1E-10;
-        //C.Solver_ConvergenceCriterion = 1E-6;
+        C.LinearSolver.MaxKrylovDim                                = 30;
+        C.LinearSolver.MaxSolverIterations                         = 50;
+        C.LinearSolver.MinSolverIterations                         = 1;
+        C.LinearSolver.ConvergenceCriterion                        = 1E-10;
+        C.NonLinearSolver.MaxSolverIterations                      = 50;
+        C.NonLinearSolver.MinSolverIterations                      = 1;
+        C.NonLinearSolver.ConvergenceCriterion                     = 1E-10;
+        
         C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
         
         // Solver configuration
-        C.LinearSolve    = linSolverName;
+        C.LinearSolver.SolverCode = linSolverName;
 
         
 
@@ -267,19 +249,16 @@ C.InitialValues.Add("Phi", GetFormulaObject(InitialValues.Phi));
         // ============
         C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.BDF2;
         //C.dtFixed            = 1E20;
-        C.dtMax               = 1E20;
-        C.dtMin               = 1E20;
-        C.Endtime             = 10000000;
-        C.NoOfTimesteps       = 1;
-        C.NoOfMultigridLevels = 3;
+        C.dtMax                            = 1E20;
+        C.dtMin                            = 0;
+        C.Endtime                          = 1000;
+        C.NoOfTimesteps                    = 100;
+        C.LinearSolver.NoOfMultigridLevels = 3;
         
         // Assign correct names
-        C.SessionName = "Stokes_Sphere_Flow_k1"+linSolverName+"_MGLevels"+C.NoOfMultigridLevels;
-        }
+        C.SessionName = "Stokes_Sphere_Flow_k1"+nonlinSolverName+"&"+linSolverName+"_MGLevels"+C.LinearSolver.NoOfMultigridLevels;
+}}
 **************
-(2,44): error CS0103: The name `linSolvers' does not exist in the current context
-No. of errors|warnings: 1|0.
-
 ==============
 LastError
 **************
@@ -294,33 +273,53 @@ foreach(var ctrl in controls) {
 foreach(int proc in procs){
     ctrl.SessionName = tmpName+"_Proc"+proc;
     Console.WriteLine(" Submitting: " + ctrl.SessionName);
-    ctrl.RunBatch(myBatch,NumberOfMPIProcs:proc,UseComputeNodesExclusive:true,executionTime:"00:50:00");  
+    //old: ctrl.RunBatch(myBatch,NumberOfMPIProcs:proc,UseComputeNodesExclusive:true,executionTime:"00:50:00");  
+    ctrl.RunBatch(myBatch);
 }}
 **************
-(3,21): error CS0103: The name `procs' does not exist in the current context
-No. of errors|warnings: 1|0.
+ Submitting: Stokes_Sphere_Flow_k1Newton&classic_pardiso_MGLevels3_Proc4
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\IBM_Solver2019Aug13_15-01-17
+Source directory: G:\BoSSS-Performance\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+==============
+//Runit directly
+var Solver = new IBM_SolverMain();
+Solver.Init(controls[0]);
+Solver.RunSolverMode();
+Solver.Dispose();
+**************
+Session ID: 47392fff-8e86-4010-ad93-05a2b58dd804, DB path: 'G:\Performance_DB'.
+Total number of cells:    16384
+Total number of DOFs:     212992
+Total number of cut cells:     16384
+Using standard CellCostEstimatorFactories
+Total number of cells:    16384
+Total number of DOFs:     212992
+In-stationary solve, time-step #1.0, dt = 1E+20 ...
+Forces coeff: Saye, order = 3
+Torque coeff: Saye, order = 3
+x-Force:   0.553485073883748
+y-Force:   0.00015974582535079
+z-Force:   1.54016586328995E-05
+Torqe:   3.91980834143717E-06
+
+Removing tag: NotTerminated
 
 ==============
 **************
 ==============
 WorkflowMgm.AllJobs.Select(kv => kv.Key + ": \t" + kv.Value.Status);
 **************
-Loading session d7ab7826-1ae0-4c06-a735-8a40369c0b1a failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\d7ab7826-1ae0-4c06-a735-8a40369c0b1a\Session.info" konnte nicht gefunden werden.'
-Loading session 7dfbfff1-438f-42ca-aed4-999f9e864ec4 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\7dfbfff1-438f-42ca-aed4-999f9e864ec4\Session.info" konnte nicht gefunden werden.'
-Loading session 9e5bb878-0703-40f5-95df-a19001f2c1b5 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\9e5bb878-0703-40f5-95df-a19001f2c1b5\Session.info" konnte nicht gefunden werden.'
-Loading session 367124ed-0d70-4bf7-8027-52f8a3bd072c failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\367124ed-0d70-4bf7-8027-52f8a3bd072c\Session.info" konnte nicht gefunden werden.'
-Loading session b796d3b4-b645-439d-ad8b-b42bcaec306d failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\b796d3b4-b645-439d-ad8b-b42bcaec306d\Session.info" konnte nicht gefunden werden.'
-Loading session 672d147a-8d3b-4b9a-a597-28f72a4b9bc2 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\672d147a-8d3b-4b9a-a597-28f72a4b9bc2\Session.info" konnte nicht gefunden werden.'
-Loading session c27d5ea3-9613-4bed-8943-4cc2a3cc8ba5 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\c27d5ea3-9613-4bed-8943-4cc2a3cc8ba5\Session.info" konnte nicht gefunden werden.'
-Loading session a080db01-8fe8-4b42-927b-c997931d4b3a failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\a080db01-8fe8-4b42-927b-c997931d4b3a\Session.info" konnte nicht gefunden werden.'
-Loading session 321103b1-b62f-42b8-88f2-60a3b66af1b1 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\321103b1-b62f-42b8-88f2-60a3b66af1b1\Session.info" konnte nicht gefunden werden.'
-Loading session 25e225e7-706e-4909-9f1f-4e3b339c7727 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\25e225e7-706e-4909-9f1f-4e3b339c7727\Session.info" konnte nicht gefunden werden.'
-Loading session b4ea3e83-46f0-461f-a02b-18eade823966 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\b4ea3e83-46f0-461f-a02b-18eade823966\Session.info" konnte nicht gefunden werden.'
-Loading session 29bb56dc-ff23-42a5-ae9a-ae9fb4d59257 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\29bb56dc-ff23-42a5-ae9a-ae9fb4d59257\Session.info" konnte nicht gefunden werden.'
-Loading session ccb25d9a-d7c4-4d1d-98b2-93be839f4fe0 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\ccb25d9a-d7c4-4d1d-98b2-93be839f4fe0\Session.info" konnte nicht gefunden werden.'
 List of 1 instances of String {
-  0: Sphere_Flow: 	FinishedSuccessful
+  0: Stokes_Sphere_Flow_k1Newton&classic_pardiso_MGLevels3_Proc4: 	FinishedSuccessful
 }
+==============
+**************
 ==============
 //WorkflowMgm.AllJobs.ElementAt(9).Value.Stdout;
 **************
@@ -330,13 +329,6 @@ List of 1 instances of String {
 ==============
 WorkflowMgm.SessionTable.Rows.Count;
 **************
-Loading session 28a03143-5f6b-4aef-a8a3-315ef6864317 failed with message 'Die Datei "P:\BoSSS_DBs\Sphere3D\sessions\28a03143-5f6b-4aef-a8a3-315ef6864317\Session.info" konnte nicht gefunden werden.'
-Loading session 74ec7fde-4918-46b3-a338-1be68019539b failed with message 'Die Datei "P:\BoSSS_DBs\Sphere3D\sessions\74ec7fde-4918-46b3-a338-1be68019539b\Session.info" konnte nicht gefunden werden.'
-Loading session 52374b52-f897-43a6-a85a-1d56ca0faa68 failed with message 'Unexpected end when deserializing array. Path 'm_ComputeNodeNames[4]'.'
-Loading session 357b94e7-1ec3-4703-955b-3c711b1586f1 failed with message 'Unexpected end when deserializing array. Path 'm_ComputeNodeNames[4]'.'
-Loading session acc112ec-3547-4f6d-ae72-4f4ccc8e9744 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\acc112ec-3547-4f6d-ae72-4f4ccc8e9744\Session.info" konnte nicht gefunden werden.'
-Loading session 883fdea1-e03e-401e-b8b7-dc67324257e0 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\883fdea1-e03e-401e-b8b7-dc67324257e0\Session.info" konnte nicht gefunden werden.'
-Loading session ed1fcb1f-d1aa-42f0-b4d1-33299563da65 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\ed1fcb1f-d1aa-42f0-b4d1-33299563da65\Session.info" konnte nicht gefunden werden.'
 8
 ==============
 // =====================================
@@ -437,16 +429,114 @@ True
 SessTab = SessTab.ExtractColumns(AllCols.ToArray());
 **************
 ==============
-//Checking if table contains all information
-var SubTab_1 = SessTab.ExtractColumns("Processors","SlvIter_excl","SlvInit_excl","PrecSolve","LinearSolve","NoOfMultigridLevels","DGdegree:VelocityX","RegularTerminated");
+SessTab.GetColumnNames()
 **************
-System.ArgumentException occurred: Column "NewtonDirder" does not exist.. Type 'LastError' for details.
-
+List of 88 instances of String {
+  0: SessionName
+  1: DGdegree:Velocity*
+  2: DGdegree:Pressure
+  3: DGdegree:PhiDG
+  4: DGdegree:Phi
+  5: Bndtype:Velocity_inlet
+  6: Bndtype:Wall
+  7: Bndtype:Pressure_Outlet
+  8: GeneratedFromCode
+  9: ControlFileText_Index
+  10: dtFixed
+  11: AdvancedDiscretizationOptions.ContiSign
+  12: AdvancedDiscretizationOptions.RescaleConti
+  13: AdvancedDiscretizationOptions.LFFA
+  14: AdvancedDiscretizationOptions.LFFB
+  15: AdvancedDiscretizationOptions.PenaltySafety
+  16: AdvancedDiscretizationOptions.CellAgglomerationThreshold
+  17: RefinementLevel
+  18: maxCurvature
+  19: VelocityBlockPrecondMode
+  20: LevelSetSmoothing
+  21: PhysicalParameters.IncludeConvection
+  22: PhysicalParameters.rho_A
+  23: PhysicalParameters.mu_A
+  24: PhysicalParameters.Material
+  25: particleRadius
+  26: Timestepper_Scheme
+  27: FixedStreamwisePeriodicBC
+  28: TimeStepper_Init
+  29: GridPartType
+  30: ProjectName
+  31: NoOfTimesteps
+  32: Endtime
+  33: saveperiod
+  34: rollingSaves
+  35: dtMin
+  36: dtMax
+  37: CompMode
+  38: ImmediatePlotPeriod
+  39: SuperSampling
+  40: savetodb
+  41: logFileDirectory
+  42: Paramstudy_ContinueOnError
+  43: LinearSolver.verbose
+  44: LinearSolver.MaxKrylovDim
+  45: LinearSolver.MaxSolverIterations
+  46: LinearSolver.MinSolverIterations
+  47: LinearSolver.ConvergenceCriterion
+  48: LinearSolver.SolverCode
+  49: LinearSolver.NoOfMultigridLevels
+  50: LinearSolver.exp_localPrec_muA
+  51: LinearSolver.exp_localPrec_Min_dt
+  52: LinearSolver.TargetBlockSize
+  53: NonLinearSolver.verbose
+  54: NonLinearSolver.PrecondSolver.verbose
+  55: NonLinearSolver.PrecondSolver.MaxKrylovDim
+  56: NonLinearSolver.PrecondSolver.MaxSolverIterations
+  57: NonLinearSolver.PrecondSolver.MinSolverIterations
+  58: NonLinearSolver.PrecondSolver.ConvergenceCriterion
+  59: NonLinearSolver.PrecondSolver.SolverCode
+  60: NonLinearSolver.PrecondSolver.NoOfMultigridLevels
+  61: NonLinearSolver.PrecondSolver.exp_localPrec_muA
+  62: NonLinearSolver.PrecondSolver.exp_localPrec_Min_dt
+  63: NonLinearSolver.PrecondSolver.TargetBlockSize
+  64: NonLinearSolver.MaxSolverIterations
+  65: NonLinearSolver.MinSolverIterations
+  66: NonLinearSolver.ConvergenceCriterion
+  67: NonLinearSolver.UnderRelax
+  68: NonLinearSolver.SolverCode
+  69: DynamicLoadBalancing_RedistributeAtStartup
+  70: DynamicLoadBalancing_Period
+  71: DynamicLoadBalancing_ImbalanceThreshold
+  72: DynamicLoadBalancing_On
+  73: AdaptiveMeshRefinement
+  74: AMR_startUpSweeps
+  75: CutCellQuadratureType
+  76: ContinueOnIoError
+  77: Grid:NoOfCells
+  78: Grid:hMax
+  79: Grid:hMin
+  80: UsedNoOfMultigridLevels
+  81: C_Drag
+  82: C_Lift
+  83: RegularTerminated
+  84: SlvIter_excl
+  85: SlvInit_excl
+  86: PrecSolve
+  87: Processors
+}
+==============
+//Checking if table contains all information
+var SubTab_1 = SessTab.ExtractColumns("Processors","SlvIter_excl","SlvInit_excl","PrecSolve","LinearSolver.SolverCode","LinearSolver.NoOfMultigridLevels","NonLinearSolver.SolverCode","DGdegree:Velocity*","RegularTerminated");
+**************
 ==============
 SubTab_1.Print();
 **************
-System.NullReferenceException occurred: Der Objektverweis wurde nicht auf eine Objektinstanz festgelegt.. Type 'LastError' for details.
-
+   Processors SlvIter_excl SlvInit_excl PrecSolve LinearSolver.SolverCode LinearSolver.NoOfMultigridLevels NonLinearSolver.SolverCode DGdegree:Velocity* RegularTerminated 
+0: 1          177.8883927  3.9085843    NULL      2                       3                                1                          1                  True              
+1: 1          176.3072547  3.8829058    NULL      2                       3                                1                          1                  True              
+2: 1          17.2110452   22.7733776   NULL      12                      3                                1                          2                  True              
+3: 1          NULL         NULL         NULL      12                      3                                1                          2                  False             
+4: 1          NULL         NULL         NULL      10                      3                                1                          2                  False             
+5: 1          NULL         NULL         NULL      12                      3                                1                          2                  False             
+6: 1          NULL         NULL         NULL      10                      3                                1                          2                  False             
+7: 1          NULL         NULL         NULL      10                      3                                1                          2                  False             
 ==============
 using System.IO;
 **************
@@ -460,6 +550,18 @@ string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 // save session table as file: this can be stored in our git 
 // repository
 SessTab.SaveToFile(docpath);
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************
