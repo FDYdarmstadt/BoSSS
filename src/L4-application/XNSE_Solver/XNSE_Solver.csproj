@@ -85,6 +85,7 @@
     <Compile Include="PreCond\ApproxPredictor.cs" />
     <Compile Include="Tests\BcTest_PressureOutlet.cs" />
     <Compile Include="Tests\ChannelTest.cs" />
+    <Compile Include="XBase_Solver.cs" />
     <Compile Include="XNSE_Control.cs" />
     <Compile Include="HardcodedControl.cs" />
     <Compile Include="Tests\ITest.cs" />
