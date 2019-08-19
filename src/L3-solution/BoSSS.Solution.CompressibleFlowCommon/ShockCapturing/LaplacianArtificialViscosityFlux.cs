@@ -17,35 +17,69 @@ limitations under the License.
 using BoSSS.Foundation;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using BoSSS.Solution.NSECommon;
+using BoSSS.Solution.Utils;
 using ilPSP;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
     public class LaplacianArtificialViscosityFlux : SIPLaplace {
 
-        private readonly IBoundaryConditionMap boundaryMap;
+        private readonly BoundaryCondMap<XDGHeatBcType> boundaryCondMap;
 
-        private readonly ISpeciesMap speciesMap;
-
-        public LaplacianArtificialViscosityFlux(int order, MultidimensionalArray cj, Variable variable, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap) :
-        base((order + 1) * (order + CompressibleEnvironment.NumberOfDimensions) / (double)CompressibleEnvironment.NumberOfDimensions, cj, variable) {
-            this.boundaryMap = boundaryMap;
-            this.speciesMap = speciesMap;
-        }
-
-        public override double Nu(double[] x, double[] parameter, int jCell) {
-            return -1.0 * parameter[0];
+        public LaplacianArtificialViscosityFlux(BoundaryCondMap<XDGHeatBcType> boundaryCondMap, int order, MultidimensionalArray cj, string argumentName) :
+            base((order + 1) * (order + CompressibleEnvironment.NumberOfDimensions) / (double)CompressibleEnvironment.NumberOfDimensions, cj, argumentName) {
+            this.boundaryCondMap = boundaryCondMap;
         }
 
         protected override bool IsDirichlet(ref CommonParamsBnd inp) {
-            return false;
+            throw new NotSupportedException("I had to implement this...");
         }
 
-        public override IList<string> ParameterOrdering {
-            get {
-                return new string[] { "artificialViscosity" };
+        public override double Nu(double[] x, double[] p, int jCell) {
+            // Parent class implements the positive Laplace operator, i.e. \f$ + \text{div}( \nu \nabla u ) \f$. 
+            return -1.0 * base.Nu(x, p, jCell);
+        }
+
+
+        public override double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+            double Acc = 0.0;
+
+            double pnlty = 2 * this.GetPenalty(inp.jCellIn, -1);
+            double nuA = this.Nu(inp.X, inp.Parameters_IN, inp.jCellIn);
+
+            XDGHeatBcType edgeType = this.boundaryCondMap.EdgeTag2Type[inp.EdgeTag];
+
+            switch (edgeType) {
+                case XDGHeatBcType.Dirichlet:
+                    Func<double[], double, double> dirichletFunction = this.boundaryCondMap.bndFunction["u"][inp.EdgeTag];
+                    double g_D = dirichletFunction(inp.X, inp.time);
+                    Debug.Assert(inp.X[0] < 1e-14, "Fail Dirichlet");
+
+                    for (int d = 0; d < inp.D; d++) {
+                        double nd = inp.Normale[d];
+                        Acc += (nuA * _Grad_uA[0, d]) * (_vA) * nd;        // consistency
+                        Acc += (nuA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;  // symmetry
+                    }
+                    Acc *= this.m_alpha;
+
+                    Acc -= nuA * (_uA[0] - g_D) * (_vA - 0) * pnlty; // penalty
+                    break;
+
+                case XDGHeatBcType.ZeroNeumann:
+                    double g_N = 0.0;
+                    Debug.Assert(inp.X[0] >= 1e-14, "Fail");
+
+                    Acc += nuA * g_N * _vA * this.m_alpha;
+                    break;
+
+                default:
+                    throw new NotSupportedException();
             }
+
+            return Acc;
         }
     }
 }
