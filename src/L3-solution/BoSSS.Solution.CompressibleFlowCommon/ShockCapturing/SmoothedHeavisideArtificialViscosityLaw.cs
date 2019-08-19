@@ -78,6 +78,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             this.sensor = sensor;
             this.dgDegree = dgDegree;
             this.sensorLimit = Math.Log10(refSensorLimit / (double)Math.Pow(dgDegree, 4));
+            Debug.Assert(!double.IsNaN(this.sensorLimit), "Sensor limit is NaN");
+
             this.refMaxViscosity = refMaxViscosity;
             this.kappa = kappa;
             this.lambdaMax = lambdaMax;
