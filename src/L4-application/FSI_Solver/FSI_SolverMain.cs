@@ -49,8 +49,8 @@ namespace BoSSS.Application.FSI_Solver {
         protected override void SetInitial() {
             // Setup particles
             m_Particles = ((FSI_Control)this.Control).Particles;
-            hack_phystime = 0.0;
-            UpdateLevelSetParticles(0.0);
+            double phystimeInit = 0.0;
+            UpdateLevelSetParticles(phystimeInit);
 
             // call base implementation
             base.SetInitial();
@@ -241,7 +241,6 @@ namespace BoSSS.Application.FSI_Solver {
                                             // active particles
                                             if (containsParticle && p.activeStress != 0) {
                                                 double seperateBoundaryRegions = p.SeperateBoundaryRegions(X);
-
                                                 result[0] = p.translationalVelocity[0][0];
                                                 result[1] = p.translationalVelocity[0][1];
                                                 result[2] = p.rotationalVelocity[0];
@@ -340,7 +339,6 @@ namespace BoSSS.Application.FSI_Solver {
                                         // active particles
                                         if (containsParticle && p.activeStress != 0) {
                                             double seperateBoundaryRegions = p.SeperateBoundaryRegions(X);
-
                                             result[0] = p.translationalVelocity[0][0];
                                             result[1] = p.translationalVelocity[0][1];
                                             result[2] = p.rotationalVelocity[0];
@@ -897,18 +895,25 @@ namespace BoSSS.Application.FSI_Solver {
             // MPISum over Forces moved to Particle.cs 
         }
 
+        /// <summary>
+        /// runs solver one step?!
+        /// </summary>
+        /// <param name="TimestepInt">
+        /// Timestep number
+        /// </param>
+        /// <param name="phystime">
+        /// Physical time
+        /// </param>
+        /// <param name="dt">
+        /// Timestep size
+        /// </param>
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
             using (new FuncTrace()) {
 
                 ResLogger.TimeStep = TimestepInt;
-
-                hack_phystime = phystime;
                 dt = GetFixedTimestep();
-
                 Console.WriteLine("Starting time-step " + TimestepInt + "...");
-
                 // used later to check if there is exactly one push per timestep
-                // =============================================================
                 int OldPushCount = LsTrk.PushCount;
 
                 // =================================================
@@ -1097,8 +1102,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // init particles
             m_Particles = ArschInfo.Particles.ToList();
-            hack_phystime = ArschInfo.PhysicalTime;
-            UpdateLevelSetParticles(hack_phystime);
+            UpdateLevelSetParticles(ArschInfo.PhysicalTime);
 
             // call base shit
             var R = base.RestartFromDatabase(out time);
