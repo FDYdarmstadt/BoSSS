@@ -272,7 +272,7 @@ namespace BoSSS.Application.FSI_Solver
             C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 9.5 })
             {
                 radius_P = 0.10,
-                particleDensity = 1.1,
+                particleDensity = 1.01,
                 GravityVertical = -9.81,
                 useAddaptiveUnderrelaxation = true,
                 underrelaxation_factor = 3.0,
@@ -283,7 +283,7 @@ namespace BoSSS.Application.FSI_Solver
             C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 9.1 })
             {
                 radius_P = 0.10,
-                particleDensity = 1.1,
+                particleDensity = 1.01,
                 GravityVertical = -9.81,
                 useAddaptiveUnderrelaxation = true,
                 underrelaxation_factor = 3.0,

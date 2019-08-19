@@ -797,57 +797,81 @@ namespace BoSSS.Application.FSI_Solver {
         }
         
         /// <summary>
-        /// Initialization of <see cref="ParticleColor"/> 
+        /// Initialization of <see cref="ParticleColor"/>  based on particle geometry
         /// </summary>
         private int[] InitializeColoring() {
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            int[] Cells = new int[J];
-            List<int> ColoredCells = new List<int>();
+            int[] cells = new int[J];
+            List<int> coloredCells = new List<int>();
             for (int p = 0; p < m_Particles.Count; p++) {
-                Particle Particle = m_Particles[p];
+                Particle currentParticle = m_Particles[p];
                 double h_min = GridData.iGeomCells.h_min.Min();
                 double h_max = GridData.iGeomCells.h_max.Max();
                 for (int j = 0; j < J; j++) {
                     double[] center = GridData.iLogicalCells.GetCenter(j);
-                    if (Particle.Contains(center, h_max, h_min)) {
+                    // Check for every cell whether their center is part of a particle or not (with tolerance sqrt(h_max^2+h_min^2))
+                    if (currentParticle.Contains(center, h_max, h_min)) {
                         ParticleColor.SetMeanValue(j, p + 1);
-                        ColoredCells.Add(j);
-                        Cells[j] = p + 1;
+                        coloredCells.Add(j);
+                        cells[j] = p + 1;
                     }
                 }
             }
-            CheckForNeighborColorsInit(Cells, GridData);
-            return Cells;
+            FixNeighbourColoring(cells);
+            return cells;
         }
 
-        private void CheckForNeighborColorsInit(int[] ColoredCells, IGridData GridData) {
-            for (int i = 0; i < ColoredCells.Length; i++) {
-                if (ColoredCells[i] != 0) {
+        /// <summary>
+        /// Checks whether there are two different colours neighbouring each other. 
+        /// </summary>
+        /// <param name="coloredCells">
+        /// All cells with their colour, uncoloured cells are set to zero.
+        /// </param>
+        private void FixNeighbourColoring(int[] coloredCells) {
+            for (int i = 0; i < coloredCells.Length; i++) {
+                if (coloredCells[i] != 0) {
                     GridData.GetCellNeighbours(i, GetCellNeighbours_Mode.ViaEdges, out int[] CellNeighbors, out _);
                     for (int j = 0; j < CellNeighbors.Length; j++) {
-                        if (CellNeighbors[j] < ColoredCells.Max() && ColoredCells[i] != ColoredCells[j] && ColoredCells[CellNeighbors[j]] != 0) {
-                            RecolorCellsInit(ColoredCells, ColoredCells[i], ColoredCells[CellNeighbors[j]], GridData);
+                        if (CellNeighbors[j] < coloredCells.Max() && coloredCells[i] != coloredCells[j] && coloredCells[CellNeighbors[j]] != 0) {
+                            RecolorCells(coloredCells, coloredCells[i], coloredCells[CellNeighbors[j]]);
                         }
                     }
                 }
             }
         }
 
-        private void RecolorCellsInit(int[] ColoredCells, int NewColor, int OldColor, IGridData GridData) {
+        /// <summary>
+        /// Recolours all cells with a specific colour.
+        /// </summary>
+        /// <param name="coloredCells">
+        /// All cells with their colour, uncoloured cells are set to zero.
+        /// </param>
+        /// /// <param name="newColor">
+        /// </param>
+        /// /// <param name="oldColor">
+        /// </param>
+        private void RecolorCells(int[] coloredCells, int newColor, int oldColor) {
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             for (int i = 0; i < J; i++) {
-                if (ColoredCells[i] == OldColor) {
-                    ColoredCells[i] = NewColor;
-                    ParticleColor.SetMeanValue(i, NewColor);
+                if (coloredCells[i] == oldColor) {
+                    coloredCells[i] = newColor;
+                    ParticleColor.SetMeanValue(i, newColor);
                 }
             }
         }
 
-        private void CalculateHydrodynamicForces(List<Particle> Particles, double dt, bool firstIteration = true) {
-            //
+        /// <summary>
+        /// Calls the calculation of the hydrodyn. forces and torque in the particle.cs
+        /// </summary>
+        /// <param name="particles">
+        /// </param>
+        /// /// <param name="dt">
+        /// </param>
+        /// /// <param name="firstIteration">
+        /// </param>
+        private void CalculateHydrodynamicForces(List<Particle> particles, double dt, bool firstIteration = true) {
             // Note on MPI parallelization of particle solver:
             // ===============================================
-            //
             // - hydrodynamic forces are computed for each domain and added together;
             //   e.g. in the case of particles at MPI-boundaries each processor computes his part of the integral
             // - collisions are detected globally / collision forces are thus only computed on MPI rank 0
@@ -858,16 +882,16 @@ namespace BoSSS.Application.FSI_Solver {
             // Update forces
             // =============
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            for (int p = 0; p < Particles.Count(); p++) {
-                Particle CurrentParticle = Particles[p];
-                if (!((FSI_Control)Control).pureDryCollisions && !CurrentParticle.skipForceIntegration) {
-                    CurrentParticle.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, Control.PhysicalParameters.mu_A, dt, Control.PhysicalParameters.rho_A, firstIteration);
+            for (int p = 0; p < particles.Count(); p++) {
+                Particle currentParticle = particles[p];
+                if (!((FSI_Control)Control).pureDryCollisions && !currentParticle.skipForceIntegration) {
+                    currentParticle.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, Control.PhysicalParameters.mu_A, dt, Control.PhysicalParameters.rho_A, firstIteration);
 
                 }
                 else {
-                    CurrentParticle.hydrodynamicForces[0][0] = 0;
-                    CurrentParticle.hydrodynamicForces[0][1] = 0;
-                    CurrentParticle.hydrodynamicTorque[0] = 0;
+                    currentParticle.hydrodynamicForces[0][0] = 0;
+                    currentParticle.hydrodynamicForces[0][1] = 0;
+                    currentParticle.hydrodynamicTorque[0] = 0;
                 }
             }
             // MPISum over Forces moved to Particle.cs 
@@ -912,28 +936,7 @@ namespace BoSSS.Application.FSI_Solver {
                 // particle motion & collisions plus flow solver
                 // =============================================
                 else {
-                    // Collision triggered, no calculation of hydrodynamics
-                    // ====================================================
-                    if (triggerOnlyCollisionProcedure) {
-                        UpdateLevelSetParticles(phystime);
-                        triggerOnlyCollisionProcedure = false;
-                        return dt;
-                        /*
-                        if (phystime == 0) {
-                            if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
-                                Log_DragAndLift = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
-                                string firstline = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", "#Timestep", "#Time", "P0_PosX", "P0_PosY", "P0_angle", "P0_VelX", "P0_VelY", "xPosition", "TotalKineticEnergy", "TotalMomentum");
-                                Log_DragAndLift.WriteLine(firstline);
-                                if (m_Particles.Count > 1) {
-                                    Log_DragAndLift_P1 = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData_P1", CurrentSessionInfo.ID);
-                                    string firstline_P1 = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", "#Timestep", "#Time", "P1_PosX", "P1_PosY", "P1_angle", "P1_VelX", "P1_VelY", "xPosition", "TotalKineticEnergy", "TotalMomentum");
-                                    Log_DragAndLift_P1.WriteLine(firstline_P1);
-                                }
-                            }
-                        }
-                        */
-                    }
-                    else if (((FSI_Control)this.Control).Timestepper_LevelSetHandling != LevelSetHandling.Coupled_Iterative) {
+                    if (((FSI_Control)this.Control).Timestepper_LevelSetHandling != LevelSetHandling.Coupled_Iterative) {
                         if (phystime == 0) {
                             if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
                                 logPhysicalDataParticles = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
@@ -990,16 +993,12 @@ namespace BoSSS.Application.FSI_Solver {
                 // finalize
                 // ========
                 if (LsTrk.PushCount - OldPushCount != 1) {
-                    // To whom it concerns / who stumbles across this exception:
-                    // It is important that LevelSetTracker.PushStacks() is called *exactly once per time-step*, at the beginning.
-                    // Do not remove this check! Instead, remove any calls to 'PushStacks()' in subroutines of this method.
-                    // Fk.
-                    throw new ApplicationException("Illegal number of level-set push actions in time-step." + (LsTrk.PushCount - OldPushCount));
+                    throw new ApplicationException("Illegal number of level-set push actions in time-step." + (LsTrk.PushCount - OldPushCount) + " It is important that LevelSetTracker.PushStacks() is called *exactly once per time-step*, at the beginning.");
                 }
 
                 ResLogger.NextTimestep(false);
 
-                Console.WriteLine("done with time-step.");
+                Console.WriteLine("Done with time-step " + TimestepInt + ".");
                 return dt;
             }
         }
