@@ -183,9 +183,9 @@ namespace BoSSS.Application.SipPoisson {
             };
 
 
-            //R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_jacobi_mg;
-            R.LinearSolver.SolverCode = LinearSolverCode.exp_decomposedMG_OrthoScheme;
-            //R.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            //R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_jacobi_mg;
+            R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_decomposedMG_OrthoScheme;
+            //R.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
             R.LinearSolver.NoOfMultigridLevels = 10;
             R.LinearSolver.TargetBlockSize = 40;
             //R.LinearSolver.MaxSolverIterations = 1;
@@ -216,7 +216,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="solver_name">
         /// Name of solver to use.
         /// </param>
-        public static SipControl TestCartesian2(int Res, int Dim, LinearSolverCode solver_name = LinearSolverCode.exp_gmres_levelpmg, int deg = 5) {
+        public static SipControl TestCartesian2(int Res, int Dim, LinearSolverConfig.Code solver_name = LinearSolverConfig.Code.exp_Kcycle_schwarz, int deg = 5) {
             if (Dim != 2 && Dim != 3)
                 throw new ArgumentOutOfRangeException();
 
@@ -328,10 +328,10 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("Tex", exSol);
             R.ExactSolution_provided = true;
             //R.LinearSolver.NoOfMultigridLevels = 2;
-            //R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_mg;
-            R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_schwarz_directcoarse;
+            //R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_mg;
+            R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse;
             R.SuppressExceptionPrompt = true;
-            //R.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            //R.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
 
             R.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(-1, 1, xRes);
@@ -395,10 +395,10 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("Tex", exSol);
             R.ExactSolution_provided = true;
             //R.LinearSolver.NoOfMultigridLevels = 2;
-            //R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_mg;
-            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            //R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_mg;
+            R.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
             R.SuppressExceptionPrompt = true;
-            //R.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            //R.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
 
             R.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(0, 1, xRes + 1);

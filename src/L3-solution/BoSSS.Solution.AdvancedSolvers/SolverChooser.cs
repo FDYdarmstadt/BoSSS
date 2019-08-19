@@ -1577,16 +1577,36 @@ namespace BoSSS.Solution {
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsPerProcess = NoOfBlocks
                         },
+                        //m_BlockingStrategy = new Schwarz.MultigridBlocks() {
+                        //    Depth = 1
+                        //},
                         Overlap = 2, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
-                        UsePMGinBlocks = false
+                        UsePMGinBlocks = true
                     };
 
-                    
+                    /*
+                    var smoother2 = new Schwarz() {
+                        m_MaxIterations = 1,
+                        CoarseSolver = null,
+                        //m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                        //    NoOfPartsPerProcess = NoOfBlocks
+                        //},
+                        m_BlockingStrategy = new Schwarz.MultigridBlocks() {
+                            Depth = 2
+                        },
+                        Overlap = 0, // overlap seems to help; more overlap seems to help more
+                        EnableOverlapScaling = true,
+                        UsePMGinBlocks = true
+                    };
+                    */
+
                     //var smoother2 = new BlockJacobi() {
                     //    NoOfIterations = 2,
                     //    m_Tolerance = 0
                     //};
+
+                   
                     
 
                     levelSolver = new OrthonormalizationMultigrid() {

@@ -717,8 +717,8 @@ namespace BoSSS.Application.FSI_Solver
             // =======================================================
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             //CellColor = ((FSI_Control)Control).AdaptiveMeshRefinement ? InitializeColoring(J, GridData, ((FSI_Control)Control).AdaptiveMeshRefinement) : CellColor ?? InitializeColoring(J, GridData, ((FSI_Control)Control).AdaptiveMeshRefinement);
-            CellColor = CellColor == null ? InitializeColoring(J, GridData, ((FSI_Control)Control).AdaptiveMeshRefinement) : LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")]; 
-
+            CellColor = CellColor == null ? InitializeColoring(J, GridData, ((FSI_Control)Control).AdaptiveMeshRefinement) : UpdateColoring();//: LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
+                
             // =======================================================
             // Step 2
             // Delete the old level set
@@ -820,7 +820,7 @@ namespace BoSSS.Application.FSI_Solver
             // Update level set tracker and coloring
             // =======================================================
             LsTrk.UpdateTracker(__NearRegionWith: 2);
-            CellColor = UpdateColoring();
+            //CellColor = UpdateColoring();
         }
 
         /// <summary>
@@ -864,19 +864,17 @@ namespace BoSSS.Application.FSI_Solver
             // Step 2
             // Color neighbour cells
             // =======================================================
-            for (int j = 0; j < J; j++)
-            {
+            for (int j = 0; j < J; j++) {
                 GridData.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaEdges, out int[] CellNeighbors, out _);
-                for (int i = 0; i < CellNeighbors.Length; i++)
-                {
-                    if (PartColEx[CellNeighbors[i]] != 0 && PartColEx[j] == 0)
-                    {
+                for (int i = 0; i < CellNeighbors.Length; i++) {
+                    if (PartColEx[CellNeighbors[i]] != 0 && PartColEx[j] == 0) {
                         ParticleColor.SetMeanValue(j, PartColEx[CellNeighbors[i]]);
                         LevelSetDistance.SetMeanValue(j, LevelSetTracker.DecodeLevelSetDist(rCode[j], 0));
                         PartCol[j] = PartColEx[CellNeighbors[i]];
                     }
                 }
             }
+
             // rewrite to communication array
             for (int j = 0; j < J; j++)
             {
@@ -969,7 +967,7 @@ namespace BoSSS.Application.FSI_Solver
                 for (int j = 0; j < J; j++)
                 {
                     double[] center = GridData.iLogicalCells.GetCenter(j);
-                    if (Particle.Contains(center, h_max, h_max))
+                    if (Particle.Contains(center, h_max, h_min))
                     {
                         ParticleColor.SetMeanValue(j, p + 1);
                         ColoredCells.Add(j);
@@ -1570,11 +1568,11 @@ namespace BoSSS.Application.FSI_Solver
             {
                 int refinementLevel = ((FSI_Control)this.Control).RefinementLevel;
                 CellMask CutCells = LsTrk.Regions.GetCutCellMask();
-                CellMask CutCellNeighbors = LsTrk.Regions.GetNearFieldMask(1);
-                CutCells = CutCells.Union(CutCellNeighbors);
+                CellMask CutCellNeighbors = CutCells.AllNeighbourCells();
                 List<Tuple<int, CellMask>> AllCellsWithMaxRefineLevel = new List<Tuple<int, CellMask>>();
                 AllCellsWithMaxRefineLevel.Add(new Tuple<int, CellMask>(refinementLevel, CutCells));
-               
+                AllCellsWithMaxRefineLevel.Add(new Tuple<int, CellMask>(refinementLevel - 1, CutCellNeighbors));
+
 
                 bool AnyChange = GridRefinementController.ComputeGridChange((GridData)GridData, AllCellsWithMaxRefineLevel, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
