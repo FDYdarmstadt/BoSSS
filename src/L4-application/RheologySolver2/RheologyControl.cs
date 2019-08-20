@@ -79,7 +79,7 @@ namespace BoSSS.Application.Rheology {
         public double beta = 0.11;
 
         /// <summary>
-        /// Relaxation factor for convective part in constitutive equation
+        /// Upwinding factor for convective part in constitutive equation
         /// </summary>
         [DataMember]
         public double alpha = 0.5;
@@ -118,8 +118,8 @@ namespace BoSSS.Application.Rheology {
         /// <summary>
         /// updating algorithm for u
         /// </summary>
-        [DataMember]
-        public bool UpdateUAlg = false;
+        //[DataMember]
+        //public bool UpdateUAlg = false;
 
         /// <summary>
         /// Convergence criterion stresses
