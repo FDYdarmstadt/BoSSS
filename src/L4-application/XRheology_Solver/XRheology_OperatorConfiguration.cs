@@ -21,11 +21,12 @@ using System.Text;
 using System.Threading.Tasks;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XNSECommon;
-
+using BoSSS.Solution.RheologyCommon;
+using BoSSS.Application.XNSE_Solver;
 
 namespace BoSSS.Application.XRheology_Solver {
 
-    public class XRheology_OperatorConfiguration : IXNSE_Configuration {
+    public class XRheology_OperatorConfiguration : XNSE_OperatorConfiguration, IXRheology_Configuration {
 
         public XRheology_OperatorConfiguration() {}
 

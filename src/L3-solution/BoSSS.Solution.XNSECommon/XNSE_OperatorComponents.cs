@@ -25,6 +25,7 @@ using BoSSS.Foundation.XDG;
 
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
+using BoSSS.Solution.RheologyCommon;
 
 namespace BoSSS.Solution.XNSECommon {
 
@@ -152,6 +153,10 @@ namespace BoSSS.Solution.XNSECommon {
                                 dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
                                 BcMap, spcName, spcId, d, D, physParams.reynolds_A / physParams.beta_a, physParams.reynolds_B / physParams.beta_b);
                             comps.Add(Visc2);
+
+                            // ONLY REYNOLDS A. MUST BE IMPLEMENTED FOR TWO-PHASE FLOW!
+                            var div = new StressDivergenceInBulk(d,BcMap, physParams.reynolds_A, dntParams.Penalty1, dntParams.Penalty2, spcName, spcId);
+                            comps.Add(div);
 
                             break;
                         }

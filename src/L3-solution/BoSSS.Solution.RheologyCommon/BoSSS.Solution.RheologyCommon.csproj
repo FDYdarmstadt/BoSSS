@@ -43,6 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ArtificialViscosity.cs" />
+    <Compile Include="Constitutive_OperatorComponents.cs" />
     <Compile Include="DiffusionInBulk.cs" />
     <Compile Include="ObjectiveInBulk_Tparam.cs" />
     <Compile Include="ViscosityInBulk.cs" />
@@ -57,7 +58,7 @@
     <Compile Include="ConstitutiveEqns_CellWiseForm.cs" />
     <Compile Include="PerssonSensor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="StressDivergence_Cockburn.cs" />
+    <Compile Include="XRheology_OperatorFactory.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers\ilPSP.LinSolvers.csproj">

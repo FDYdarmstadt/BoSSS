@@ -44,9 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Constitutive_OperatorComponents.cs" />
     <Compile Include="XRheology_OperatorConfiguration.cs" />
-    <Compile Include="XRheology_OperatorFactory.cs" />
     <Compile Include="XRheology_Control.cs" />
     <Compile Include="XRheology_SolverMain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

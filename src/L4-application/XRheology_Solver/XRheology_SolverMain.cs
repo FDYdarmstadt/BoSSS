@@ -15,6 +15,8 @@ limitations under the License.
 */
 
 using System;
+using System.IO;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -24,37 +26,34 @@ using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
 
-using BoSSS.Platform;
+using MPI.Wrappers;
 
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.IO;
-using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
-using BoSSS.Foundation.Grid.Aggregation;
 
 using BoSSS.Solution;
+using BoSSS.Solution.Utils;
+using BoSSS.Solution.Control;
+using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.AdvancedSolvers;
+
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XNSECommon;
-using BoSSS.Solution.Utils;
-
-using MPI.Wrappers;
 using BoSSS.Solution.RheologyCommon;
-using BoSSS.Solution.XdgTimestepping;
-using BoSSS.Solution.Control;
+
 using BoSSS.Solution.Timestepping;
+using BoSSS.Solution.XdgTimestepping;
+
 using BoSSS.Solution.LevelSetTools;
-using BoSSS.Application.XNSE_Solver;
 using BoSSS.Solution.LevelSetTools.EllipticReInit;
 using BoSSS.Solution.LevelSetTools.Reinit.FastMarch;
 using BoSSS.Solution.LevelSetTools.Advection;
-using BoSSS.Solution.Tecplot;
-using System.IO;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
-using System.Collections;
+
+using BoSSS.Application.XNSE_Solver;
 
 namespace BoSSS.Application.XRheology_Solver {
     public class XRheology_SolverMain : BoSSS.Application.XNSE_Solver.XBase_Solver<XRheology_Control> {
