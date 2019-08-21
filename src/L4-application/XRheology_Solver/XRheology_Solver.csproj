@@ -95,6 +95,10 @@
       <Project>{02864872-ff49-4bd2-96fc-9769ac268b5a}</Project>
       <Name>BoSSS.Solution.RheologyCommon</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj">
+      <Project>{d0546422-ec92-4964-82e9-8ee819a2f786}</Project>
+      <Name>BoSSS.Solution.Tecplot</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XdgTimestepping\BoSSS.Solution.XdgTimestepping.csproj">
       <Project>{D8A961C8-75A9-4ECD-8627-C598697E7318}</Project>
       <Name>BoSSS.Solution.XdgTimestepping</Name>

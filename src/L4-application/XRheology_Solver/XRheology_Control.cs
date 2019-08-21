@@ -131,6 +131,28 @@ namespace BoSSS.Application.XRheology_Solver {
         [DataMember]
         public double ConvCritStress = 1E-10;
 
+
+        //=============================================================
+        // NOT QUITE SURE WHAT THEY ARE FOR??????
+        /// <summary>
+        /// Convergence criterion VelocitySolver
+        /// </summary>
+        [DataMember]
+        public double VelocitySolver_ConvergenceCriterion = 1e-5;
+
+        /// <summary>
+        /// Convergence criterion StressSolver
+        /// </summary>
+        [DataMember]
+        public double StressSolver_ConvergenceCriterion = 1e-5;
+
+        /// <summary>
+        /// should velocity be solved
+        /// </summary>
+        [DataMember]
+        public bool solveVelocity = true;
+        //===========================================================
+
         /// <summary>
         /// Raise Weissenberg Number?
         /// </summary>
@@ -213,12 +235,6 @@ namespace BoSSS.Application.XRheology_Solver {
         /// </summary>
         [DataMember]
         public bool ComputeL2Error = false;
-
-        /// <summary>
-        /// Compute body forces on wall?
-        /// </summary>
-        [DataMember]
-        public bool Bodyforces = false;
 
         /// <summary>
         /// Analysis Level Operator Matrix

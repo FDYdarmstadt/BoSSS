@@ -173,12 +173,12 @@ namespace BoSSS.Application.XNSE_Solver  {
 
 
 
-        IncompressibleMultiphaseBoundaryCondMap m_BcMap;
+        protected IncompressibleMultiphaseBoundaryCondMap m_BcMap;
 
         /// <summary>
         /// Boundary conditions.
         /// </summary>
-        IncompressibleMultiphaseBoundaryCondMap BcMap {
+        protected IncompressibleMultiphaseBoundaryCondMap BcMap {
             get {
                 if (m_BcMap == null)
                 {
@@ -192,10 +192,16 @@ namespace BoSSS.Application.XNSE_Solver  {
         /// <summary>
         /// HMF order/degree which is used globally in this solver.
         /// </summary>
-        int m_HMForder;
+        protected int m_HMForder;
 
+        /// <summary>
+        /// Explicit or implicit timestepping using Runge-Kutta formulas,
+        /// specialized for XDG applications.
+        /// </summary>
+        //XdgRKTimestepping m_RK_Timestepper;
 
-        int bdfOrder = -1000;
+        protected RungeKuttaScheme rksch = null;
+        protected int bdfOrder = -1000;
 
 
         // =========
@@ -207,14 +213,14 @@ namespace BoSSS.Application.XNSE_Solver  {
         /// Information of the current Fourier Level-Set
         /// DFT_coeff
         /// </summary>
-        FourierLevSetBase Fourier_LevSet;
+        protected FourierLevSetBase Fourier_LevSet;
 
         FourierLevSetTimestepper Fourier_Timestepper;
 
         /// <summary>
         /// saves the vector Guid for the sample points 
         /// </summary>
-        TextWriter Log_FourierLS;
+        protected TextWriter Log_FourierLS;
 
         /// <summary>
         /// init routine for the specialized Fourier level-set
@@ -252,7 +258,7 @@ namespace BoSSS.Application.XNSE_Solver  {
         /// <summary>
         /// setUp for the Level set initialization (Level-set algorithm, continuity, conservation)
         /// </summary>
-        private void InitLevelSet()
+        protected void InitLevelSet()
         {
             using (new FuncTrace())
             {
@@ -413,7 +419,7 @@ namespace BoSSS.Application.XNSE_Solver  {
         }
 
 
-        int hack_TimestepIndex;
+        protected int hack_TimestepIndex;
 
 
         /// <summary>
@@ -431,7 +437,7 @@ namespace BoSSS.Application.XNSE_Solver  {
         /// </param>
         /// <param name="underrelax">
         /// </param>
-        double DelUpdateLevelSet(DGField[] CurrentState, double Phystime, double dt, double underrelax, bool incremental)
+        public double DelUpdateLevelSet(DGField[] CurrentState, double Phystime, double dt, double underrelax, bool incremental)
         {
             using (new FuncTrace())
             {

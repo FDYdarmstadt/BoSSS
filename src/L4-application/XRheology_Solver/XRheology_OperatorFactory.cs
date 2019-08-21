@@ -286,6 +286,17 @@ namespace BoSSS.Application.XRheology_Solver {
                 Curvature = null;
             }
 
+
+            // Velocity and stresses for linearization
+            var U0 = new VectorField<XDGField>(CurrentState.Take(D).Select(F => (XDGField)F).ToArray());
+            var Stress0 = new VectorField<XDGField>(CurrentState.Skip(D + 1).Take(3).Select(F => (XDGField)F).ToArray());
+
+            if (U0.Count != D)
+                throw new ArgumentException("Spatial dimesion and number of velocity parameter components does not match!");
+
+            if (Stress0.Count != D + 1)
+                throw new ArgumentException("Spatial dimesion and number of stress parameter components does not match!");
+
             // linearization velocity:
             DGField[] U0_U0mean;
             if (this.U0meanrequired) {
@@ -297,18 +308,10 @@ namespace BoSSS.Application.XRheology_Solver {
                 U0_U0mean = new DGField[2 * D];
             }
 
-
-            // Temperature gradient for evaporation
-            //VectorField<DGField> GradTemp = new VectorField<DGField>(D, new XDGBasis(LsTrk, 0), XDGField.Factory);
-            //if (CoupledCurrentState != null) {
-            //    DGField Temp = CoupledCurrentState.ToArray()[0];
-            //    GradTemp = new VectorField<DGField>(D, Temp.Basis, "GradTemp", XDGField.Factory);
-            //    XNSEUtils.ComputeGradientForParam(Temp, GradTemp, this.LsTrk);
-            //}
-
             // concatenate everything
             var Params = ArrayTools.Cat<DGField>(
                 U0_U0mean,
+                VelocityXGradient, VelocityYGradient, Stress0, artificalViscosity
                 Normals,
                 Curvature,
                 ((SurfaceForce != null) ? SurfaceForce.ToArray() : new SinglePhaseField[D]),

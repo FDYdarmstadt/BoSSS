@@ -490,12 +490,12 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Control Options for ReInit
         /// </summary>
-        internal EllipticReInitAlgoControl ReInitControl = new EllipticReInitAlgoControl();
+        public EllipticReInitAlgoControl ReInitControl = new EllipticReInitAlgoControl();
 
         /// <summary>
         /// Control Options for ExtVel
         /// </summary>
-        internal EllipticExtVelAlgoControl EllipticExtVelAlgoControl = new EllipticExtVelAlgoControl();
+        public EllipticExtVelAlgoControl EllipticExtVelAlgoControl = new EllipticExtVelAlgoControl();
 
 
 
