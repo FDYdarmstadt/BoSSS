@@ -162,7 +162,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-2;
+            C.forceAndTorqueConvergenceCriterion = 1e-2;
 
 
             // Timestepping

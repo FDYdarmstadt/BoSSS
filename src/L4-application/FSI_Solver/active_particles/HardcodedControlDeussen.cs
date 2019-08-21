@@ -194,7 +194,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.MinSolverIterations = 1;
             C.LinearSolver.NoOfMultigridLevels = 1;
 
-            C.ForceAndTorque_ConvergenceCriterion = 1e-6;
+            C.forceAndTorqueConvergenceCriterion = 1e-6;
             C.LSunderrelax = 1.0;
             
 

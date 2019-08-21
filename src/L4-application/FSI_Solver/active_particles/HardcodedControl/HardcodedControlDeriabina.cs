@@ -160,7 +160,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 5e-3;
+            C.forceAndTorqueConvergenceCriterion = 5e-3;
 
 
             // Timestepping
@@ -309,7 +309,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 2e-3;
+            C.forceAndTorqueConvergenceCriterion = 2e-3;
 
 
             // Timestepping
@@ -317,7 +317,7 @@ namespace BoSSS.Application.FSI_Solver
 
             //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
-            double dt = 1e-4;
+            double dt = 1e-3;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000000.0;

@@ -168,7 +168,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-4;
+            C.forceAndTorqueConvergenceCriterion = 1e-4;
             C.LSunderrelax = 1.0;
 
 
@@ -348,7 +348,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-2;
+            C.forceAndTorqueConvergenceCriterion = 1e-2;
             C.LSunderrelax = 1.0;
 
 
@@ -512,7 +512,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-2;
+            C.forceAndTorqueConvergenceCriterion = 1e-2;
             C.LSunderrelax = 1.0;
 
 
@@ -702,7 +702,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 10;
+            C.forceAndTorqueConvergenceCriterion = 10;
             C.LSunderrelax = 1.0;
 
 
@@ -1680,7 +1680,7 @@ namespace BoSSS.Application.FSI_Solver
 
             C.InitialValues_Evaluators.Add("VelocityX", X => 0);
             C.InitialValues_Evaluators.Add("VelocityY", X => 0);
-            C.ForceAndTorque_ConvergenceCriterion = 1e-4;
+            C.forceAndTorqueConvergenceCriterion = 1e-4;
 
 
             // Physical Parameters

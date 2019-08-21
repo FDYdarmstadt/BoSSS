@@ -84,7 +84,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// The termination criterion for fully coupled/implicit level-set evolution.
         /// </summary>
         [DataMember]
-        public double ForceAndTorque_ConvergenceCriterion = 1.0e-6;
+        public double forceAndTorqueConvergenceCriterion = 1.0e-6;
 
         /// <summary>
         /// under-relaxation of the level set movement in case of coupled iterative

@@ -149,7 +149,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-2;
+            C.forceAndTorqueConvergenceCriterion = 1e-2;
 
 
             // Timestepping
@@ -794,7 +794,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-2;
+            C.forceAndTorqueConvergenceCriterion = 1e-2;
 
 
             // Timestepping
@@ -955,7 +955,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-2;
+            C.forceAndTorqueConvergenceCriterion = 1e-2;
             C.LSunderrelax = 1.0;
             
             // Coupling Properties
@@ -1120,7 +1120,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-2;
+            C.forceAndTorqueConvergenceCriterion = 1e-2;
             C.LSunderrelax = 1.0;
 
             // Coupling Properties

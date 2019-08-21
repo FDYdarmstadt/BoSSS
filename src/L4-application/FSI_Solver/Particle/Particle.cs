@@ -94,7 +94,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Check whether any particles is collided with another particle
         /// </summary>
-        public bool Collided;
+        public bool isCollided;
         
         /// <summary>
         /// Skip calculation of hydrodynamic force and Torque if particles are too close -----> to be tested whether it is still necessary
@@ -220,19 +220,19 @@ namespace BoSSS.Application.FSI_Solver
         /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
         /// </summary>
         [DataMember]
-        public List<double[]> CollisionNormalVector = new List<double[]>();
+        public List<double[]> collisionNormalVector = new List<double[]>();
 
         /// <summary>
         /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
         /// </summary>
         [DataMember]
-        public List<double[]> CollisionTangentialVector = new List<double[]>();
+        public List<double[]> collisionTangentialVector = new List<double[]>();
 
         /// <summary>
         /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
         /// </summary>
         [DataMember]
-        public double CollisionTimestep = new double();
+        public double collisionTimestep = new double();
 
         /// <summary>
         /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
@@ -398,11 +398,11 @@ namespace BoSSS.Application.FSI_Solver
             if (spatialDim != 2 && spatialDim != 3)
                 throw new NotSupportedException("Unknown particle dimension: SpatialDim = " + spatialDim);
 
-            int ClearAcceleartion = CollisionTimestep != 0 ? 0 : 1;
+            int ClearAcceleartion = collisionTimestep != 0 ? 0 : 1;
             if (IncludeTranslation == true) {
                 for (int d = 0; d < spatialDim; d++)
                 {
-                    position[0][d] = position[1][d] + ( translationalVelocity[0][d] + ClearAcceleartion * (4 * translationalVelocity[1][d] + translationalVelocity[2][d])) * (dt - CollisionTimestep) / 6;
+                    position[0][d] = position[1][d] + ( translationalVelocity[0][d] + ClearAcceleartion * (4 * translationalVelocity[1][d] + translationalVelocity[2][d])) * (dt - collisionTimestep) / 6;
                 }
             }
             else
@@ -431,10 +431,10 @@ namespace BoSSS.Application.FSI_Solver
             if (spatialDim != 2)
                 throw new NotSupportedException("Unknown particle dimension: SpatialDim = " + spatialDim);
 
-            int ClearAcceleartion = CollisionTimestep != 0 ? 0 : 1;
+            int ClearAcceleartion = collisionTimestep != 0 ? 0 : 1;
             if (IncludeRotation == true)
             {
-                angle[0] = angle[1] + (rotationalVelocity[0] + ClearAcceleartion * (4 * rotationalVelocity[1] + rotationalVelocity[2])) * (dt - CollisionTimestep) / 6;
+                angle[0] = angle[1] + (rotationalVelocity[0] + ClearAcceleartion * (4 * rotationalVelocity[1] + rotationalVelocity[2])) * (dt - collisionTimestep) / 6;
             }
             else
             {
@@ -486,7 +486,7 @@ namespace BoSSS.Application.FSI_Solver
             }
 
             // Include gravitiy for dry simulations
-            if (!Collided && !IncludeHydrodynamics)
+            if (!isCollided && !IncludeHydrodynamics)
             {
                 hydrodynamicForces[0][1] += GravityVertical * Mass_P;
             }
@@ -535,7 +535,7 @@ namespace BoSSS.Application.FSI_Solver
 
             double[] tempActiveVelcotiy = new double[2];
 
-            int ClearAcceleartion = CollisionTimestep != 0 ? 0 : 1;
+            int ClearAcceleartion = collisionTimestep != 0 ? 0 : 1;
 
             if (this.IncludeTranslation == false)
             {
@@ -573,7 +573,7 @@ namespace BoSSS.Application.FSI_Solver
                 Aux.SaveValueOfLastTimestep(rotationalVelocity);
             }
 
-            int ClearAcceleartion = CollisionTimestep != 0 ? 0 : 1;
+            int ClearAcceleartion = collisionTimestep != 0 ? 0 : 1;
             if (this.IncludeRotation == false) {
                 rotationalVelocity[0] = 0;
                 return;
@@ -955,7 +955,7 @@ namespace BoSSS.Application.FSI_Solver
         internal void CalculateEccentricity()
         {
             CalculateRadialVector(closestPointToOtherObject, out double[] RadialVector, out _);
-            double[] tangentialVector = CollisionTangentialVector.Last();
+            double[] tangentialVector = collisionTangentialVector.Last();
             eccentricity = RadialVector[0] * tangentialVector[0] + RadialVector[1] * tangentialVector[1];
             Aux.TestArithmeticException(eccentricity, "particle eccentricity");
         }
@@ -963,8 +963,8 @@ namespace BoSSS.Application.FSI_Solver
         internal void CalculateNormalAndTangentialVelocity()
         {
             double[] Velocity = translationalVelocity[0];
-            double[] NormalVector = CollisionNormalVector.Last();
-            double[] TangentialVector = CollisionTangentialVector.Last();
+            double[] NormalVector = collisionNormalVector.Last();
+            double[] TangentialVector = collisionTangentialVector.Last();
             PreCollisionVelocity = new double[] { Velocity[0] * NormalVector[0] + Velocity[1] * NormalVector[1], Velocity[0] * TangentialVector[0] + Velocity[1] * TangentialVector[1] };
             Aux.TestArithmeticException(PreCollisionVelocity, "particle velocity before collision");
         }
