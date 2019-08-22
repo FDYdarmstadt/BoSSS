@@ -51,9 +51,20 @@ namespace BoSSS.Application.XRheology_Solver {
         string[] Params;
 
         int HMFDegree;
+        int compRow;
+        int compCol;
+        int stressDegree;
 
         PhysicalParameters physParams;
         DoNotTouchParameters dntParams;
+
+        // Parameters: Velocity Gradient
+        public VectorField<XDGField> VelocityXGradient;
+        public VectorField<XDGField> VelocityYGradient;
+
+        bool useJacobianForOperatorMatrix;
+
+        bool useArtificialDiffusion;
 
         bool NormalsRequired;
 
@@ -69,7 +80,7 @@ namespace BoSSS.Application.XRheology_Solver {
         /// <param name="_HMFdegree"></param>
         /// <param name="BcMap"></param>
         /// <param name="degU"></param>
-        public XRheology_OperatorFactory(IXRheology_Configuration config, LevelSetTracker _LsTrk, int _HMFdegree, IncompressibleMultiphaseBoundaryCondMap BcMap, int degU) {
+        public XRheology_OperatorFactory(IXRheology_Configuration config, LevelSetTracker _LsTrk, int _HMFdegree, IncompressibleMultiphaseBoundaryCondMap BcMap, int D, int _stressDegree) {
 
 
             this.LsTrk = _LsTrk;
@@ -79,6 +90,8 @@ namespace BoSSS.Application.XRheology_Solver {
 
             this.physParams = config.getPhysParams;
             this.dntParams = config.getDntParams;
+            this.useJacobianForOperatorMatrix = config.isUseJacobian;
+            this.useArtificialDiffusion = config.isUseArtificialDiffusion;
 
 
             // test input
@@ -87,21 +100,21 @@ namespace BoSSS.Application.XRheology_Solver {
                 if (config.getDomBlocks.GetLength(0) != 3 || config.getCodBlocks.GetLength(0) != 3)
                     throw new ArgumentException();
 
-                if ((config.getPhysParams.mu_A <= 0) && (config.getPhysParams.mu_B <= 0)) {
-                    config.isViscous = false;
-                } else {
-                    if ((config.getPhysParams.mu_A <= 0) || (config.getPhysParams.mu_B <= 0))
-                        throw new ArgumentException();
-                }
+                //if ((config.getPhysParams.Weissenberg_a <= 0) && (config.getPhysParams.Weissenberg_a <= 0)) {
+                //    config.isOldroydB = false;
+                //} else {
+                //    if ((config.getPhysParams.mu_A <= 0) || (config.getPhysParams.mu_B <= 0))
+                //        throw new ArgumentException();
+                //}
 
-                if ((config.getPhysParams.reynolds_A <= 0) && (config.getPhysParams.reynolds_B <= 0)) {
-                    config.isViscous = false;
-                } else {  
-                    if ((config.getPhysParams.reynolds_A <= 0) || (config.getPhysParams.reynolds_B <= 0))
-                    throw new ArgumentException();
+                //if ((config.getPhysParams.reynolds_A <= 0) && (config.getPhysParams.reynolds_B <= 0)) {
+                //    config.isViscous = false;
+                //} else {  
+                //    if ((config.getPhysParams.reynolds_A <= 0) || (config.getPhysParams.reynolds_B <= 0))
+                //    throw new ArgumentException();
 
-                if ((config.getPhysParams.rho_A <= 0) || (config.getPhysParams.rho_B <= 0))
-                    throw new ArgumentException();
+                //if ((config.getPhysParams.rho_A <= 0) || (config.getPhysParams.rho_B <= 0))
+                //    throw new ArgumentException();
 
                 if (_LsTrk.SpeciesNames.Count != 2)
                     throw new ArgumentException();
@@ -157,24 +170,13 @@ namespace BoSSS.Application.XRheology_Solver {
             // species bulk components
             for (int spc = 0; spc < LsTrk.TotalNoOfSpecies; spc++) {
                 // Navier Stokes equations
-                Solution.XNSECommon.XOperatorComponentsFactory.AddSpeciesNSE(m_XOp, config, D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap, LsTrk, out U0meanrequired);
+                Solution.RheologyCommon.XConstitutiveOperatorComponentsFactory.AddSpeciesConstitutive(m_XOp, config, D, stressDegree, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap, LsTrk, out U0meanrequired);
 
-                // continuity equation
-                if (config.isContinuity)
-                    Solution.XNSECommon.XOperatorComponentsFactory.AddSpeciesContinuityEq(m_XOp, config, D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap);
             }
 
             // interface components
-            Solution.XNSECommon.XOperatorComponentsFactory.AddInterfaceNSE(m_XOp, config, D, BcMap, LsTrk);     // surface stress tensor
-            Solution.XNSECommon.XOperatorComponentsFactory.AddSurfaceTensionForce(m_XOp, config, D, BcMap, LsTrk, degU, out NormalsRequired, out CurvatureRequired);     // surface tension force
-
-            if (config.isContinuity)
-                Solution.XNSECommon.XOperatorComponentsFactory.AddInterfaceContinuityEq(m_XOp, config, D, LsTrk);       // continuity equation
-
-            if(config.isOldroydB)
-
-
-
+            //Solution.XNSECommon.XOperatorComponentsFactory.AddInterfaceNSE(m_XOp, config, D, BcMap, LsTrk);     // surface stress tensor
+            //Solution.XNSECommon.XOperatorComponentsFactory.AddSurfaceTensionForce(m_XOp, config, D, BcMap, LsTrk, degU, out NormalsRequired, out CurvatureRequired);     // surface tension force
 
             m_XOp.Commit();
         }
@@ -199,7 +201,7 @@ namespace BoSSS.Application.XRheology_Solver {
             UnsetteledCoordinateMapping RowMapping, UnsetteledCoordinateMapping ColMapping,
             IEnumerable<T> CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time,
             int CutCellQuadOrder, VectorField<SinglePhaseField> SurfaceForce,
-            VectorField<SinglePhaseField> LevelSetGradient, SinglePhaseField ExternalyProvidedCurvature,
+            VectorField<SinglePhaseField> LevelSetGradient, SinglePhaseField ExternalyProvidedCurvature, double currentWeissenberg,
             IEnumerable<T> CoupledCurrentState = null, IEnumerable<T> CoupledParams = null) where T : DGField {
 
             // checks:
@@ -209,7 +211,7 @@ namespace BoSSS.Application.XRheology_Solver {
                 throw new ArgumentException();
 
             int D = this.LsTrk.GridDat.SpatialDimension;
-            if (CurrentState != null && CurrentState.Count() != (D + 1))
+            if (CurrentState != null && CurrentState.Count() != (D + 4))
                 throw new ArgumentException();
 
             if (OpMatrix == null && CurrentState == null)
@@ -220,6 +222,15 @@ namespace BoSSS.Application.XRheology_Solver {
                 U0 = CurrentState.Take(D).ToArray();
             else
                 U0 = null;
+
+            DGField[] Stress0;
+            Stress0 = CurrentState.Skip(D + 1).Take(3).ToArray();
+
+            if (U0.Count() != D)
+                throw new ArgumentException("Spatial dimesion and number of velocity parameter components does not match!");
+
+            if (Stress0.Count() != D + 1)
+                throw new ArgumentException("Spatial dimesion and number of stress parameter components does not match!");
 
 
 
@@ -308,14 +319,6 @@ namespace BoSSS.Application.XRheology_Solver {
 
 
             // Velocity and stresses for linearization
-            var U0 = new VectorField<XDGField>(CurrentState.Take(D).Select(F => (XDGField)F).ToArray());
-            var Stress0 = new VectorField<XDGField>(CurrentState.Skip(D + 1).Take(3).Select(F => (XDGField)F).ToArray());
-
-            if (U0.Count != D)
-                throw new ArgumentException("Spatial dimesion and number of velocity parameter components does not match!");
-
-            if (Stress0.Count != D + 1)
-                throw new ArgumentException("Spatial dimesion and number of stress parameter components does not match!");
 
             // linearization velocity:
             DGField[] U0_U0mean;
@@ -331,7 +334,10 @@ namespace BoSSS.Application.XRheology_Solver {
             // concatenate everything
             var Params = ArrayTools.Cat<DGField>(
                 U0_U0mean,
-                VelocityXGradient, VelocityYGradient, Stress0, artificalViscosity
+                VelocityXGradient, 
+                VelocityYGradient, 
+                Stress0, 
+                //artificalViscosity,
                 Normals,
                 Curvature,
                 ((SurfaceForce != null) ? SurfaceForce.ToArray() : new SinglePhaseField[D]),
@@ -361,23 +367,62 @@ namespace BoSSS.Application.XRheology_Solver {
             // compute matrix
             if (OpMatrix != null) {
 
-                XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = this.m_XOp.GetMatrixBuilder(LsTrk, ColMapping, Params, RowMapping, SpcToCompute);
+                
+                
 
-                foreach (var kv in AgglomeratedCellLengthScales) {
-                    mtxBuilder.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
-                    mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
-                    mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
-                }
 
-                if (this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
-                    foreach (var kv in InterfaceLengths) {
-                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("InterfaceLengths", kv.Value);
+                if (!useJacobianForOperatorMatrix) {
+                    XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = this.m_XOp.GetMatrixBuilder(LsTrk, ColMapping, Params, RowMapping, SpcToCompute);
+                    this.ParameterUpdate(CurrentState, Params, CutCellQuadOrder, AgglomeratedCellLengthScales);
+
+                    foreach (var kv in AgglomeratedCellLengthScales) {
+                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
+                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
+                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
+                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
                     }
+
+                    if (this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
+                        foreach (var kv in InterfaceLengths) {
+                            mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("InterfaceLengths", kv.Value);
+                        }
+                    }
+
+                    mtxBuilder.time = time;
+                    mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
+
+                    foreach (var kv in AgglomeratedCellLengthScales) {
+                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
+                    }
+
+                } else {
+
+                    throw new NotImplementedException("The FDbuilder for the Jacobian is missing for the XSpatial Opearator!");
+                    // Finite Difference Linearization
+                    //XSpatialOperatorMk2.XEvaluatorLinear FDBuilder = this.m_XOp.GetFDJacobianBuilder(domMap, Params, codMap, this.ParameterUpdate);
+
+                    //foreach (var kv in AgglomeratedCellLengthScales) {
+                    //    FDbuilder.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
+                    //    FDbuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
+                    //    FDbuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
+                    //}
+
+                    //if (this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
+                    //    foreach (var kv in InterfaceLengths) {
+                    //        FDbuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("InterfaceLengths", kv.Value);
+                    //    }
+                    //}
+                    //FDbuilder.time = time;
+
+                    //FDbuilder.ComputeMatrix(OpMatrix, OpAffine);
+
+                    //// FDJacobian has (Mx +b) as RHS, for unsteady calc. we must subtract Mx for real affine Vector!
+                    //OpMatrix.SpMV(-1.0, new CoordinateVector(CurrentState), 1.0, OpAffine);
+
+                    //foreach (var kv in AgglomeratedCellLengthScales) {
+                    //    FDbuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
+                    //}
                 }
-
-                mtxBuilder.time = time;
-
-                mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
 
             } else {
                 XSpatialOperatorMk2.XEvaluatorNonlin eval = this.m_XOp.GetEvaluatorEx(this.LsTrk,
@@ -388,6 +433,7 @@ namespace BoSSS.Application.XRheology_Solver {
                     eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
                     eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
                     eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
+                    eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
                 }
 
                 if (this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
@@ -484,6 +530,64 @@ namespace BoSSS.Application.XRheology_Solver {
 
                 U0mean.ForEach(F => F.CheckForNanOrInf(true, true, true));
 
+            }
+        }
+
+        void ParameterUpdate(IEnumerable<DGField> CurrentState, IEnumerable<DGField> ParameterVar, int CutCellQuadOrder, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales) {
+
+            LevelSet Phi = (LevelSet)(this.LsTrk.LevelSets[0]);
+            SpeciesId[] SpcToCompute = AgglomeratedCellLengthScales.Keys.ToArray();
+
+            DGField[] U0;
+            if (CurrentState != null)
+                U0 = CurrentState.Take(D).ToArray();
+            else
+                U0 = null;
+
+            DGField[] Stress0;
+            Stress0 = CurrentState.Skip(D + 1).Take(3).ToArray();
+
+            if (U0.Count() != D)
+                throw new ArgumentException("Spatial dimesion and number of velocity parameter components does not match!");
+
+            if (Stress0.Count() != D + 1)
+                throw new ArgumentException("Spatial dimesion and number of stress parameter components does not match!");
+
+            // linearization velocity:
+            DGField[] U0_U0mean;
+            if (this.U0meanrequired) {
+                XDGBasis U0meanBasis = new XDGBasis(this.LsTrk, 0);
+                VectorField<XDGField> U0mean = new VectorField<XDGField>(D, U0meanBasis, "U0mean_", XDGField.Factory);
+
+                U0_U0mean = ArrayTools.Cat<DGField>(U0, U0mean);
+
+                U0mean.Clear();
+                ComputeAverageU(U0, U0mean, CutCellQuadOrder, LsTrk.GetXDGSpaceMetrics(SpcToCompute, CutCellQuadOrder, 1).XQuadSchemeHelper);
+            } else {
+                U0_U0mean = new DGField[2 * D];
+            }
+
+
+            //if (this.Control.SetParamsAnalyticalSol == false) {
+                //SinglePhaseField[] __VelocityXGradient = ParameterVar.Skip(2 * D).Take(D).Select(f => f as SinglePhaseField).ToArray();
+                //SinglePhaseField[] __VelocityYGradient = ParameterVar.Skip(3 * D).Take(D).Select(f => f as SinglePhaseField).ToArray();
+                //Debug.Assert(ArrayTools.AreEqual(__VelocityXGradient, VelocityXGradient.ToArray(), (fa, fb) => object.ReferenceEquals(fa, fb)));
+                //Debug.Assert(ArrayTools.AreEqual(__VelocityYGradient, VelocityYGradient.ToArray(), (fa, fb) => object.ReferenceEquals(fa, fb)));
+
+                VelocityXGradient.Clear();
+                VelocityXGradient.GradientByFlux(1.0, U0[0]);
+                VelocityYGradient.Clear();
+                VelocityYGradient.GradientByFlux(1.0, U0[1]);
+            //}
+
+            if (this.useArtificialDiffusion == true) {
+
+                throw new NotImplementedException("artificial diffusion not jet fully implemented...");
+                //SinglePhaseField __ArtificialViscosity = ParameterVar.Skip(5 * D + 1).Take(1).Select(f => f as SinglePhaseField).ToArray()[0];
+                //if (!object.ReferenceEquals(this.artificalViscosity, __ArtificialViscosity))
+                //    throw new ApplicationException();
+
+                //ArtificialViscosity.ProjectArtificalViscosityToDGField(__ArtificialViscosity, perssonsensor, this.Control.SensorLimit, artificialMaxViscosity);
             }
         }
 

@@ -457,7 +457,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
             XOpConfig = new XRheology_OperatorConfiguration(this.Control);
 
-            XRheology_Operator = new XRheology_OperatorFactory(XOpConfig, this.LsTrk, this.m_HMForder, this.BcMap, degU);
+            XRheology_Operator = new XRheology_OperatorFactory(XOpConfig, this.LsTrk, this.m_HMForder, this.BcMap, D, stressDegree);
 
             #region Create Timestepper
             // =======================
@@ -644,7 +644,7 @@ namespace BoSSS.Application.XRheology_Solver {
             this.XRheology_Operator.AssembleMatrix(
                 OpMtx, OpAffine, codMap, domMap,
                 CurrentState, AgglomeratedCellLengthScales, phystime,
-                this.m_HMForder, SurfaceForce, filtLevSetGradient, Curvature);
+                this.m_HMForder, SurfaceForce, filtLevSetGradient, Curvature, currentWeissenberg);
 
 
             if (filtLevSetGradient != null) {

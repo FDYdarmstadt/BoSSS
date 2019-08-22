@@ -148,15 +148,33 @@ namespace BoSSS.Solution.RheologyCommon {
         /// <param name="BcMap"></param>
         /// <param name="LsTrk"></param>
         /// <param name="U0meanrequired"></param>
-        public static void AddSpeciesConstitutive(XSpatialOperatorMk2 XOp, IRheology_Configuration config, int compRow, int compCol, int D, int stressDegree, string spcName, SpeciesId spcId,
+        public static void AddSpeciesConstitutive(XSpatialOperatorMk2 XOp, IRheology_Configuration config, int D, int stressDegree, string spcName, SpeciesId spcId,
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, out bool U0meanrequired) {
 
-            U0meanrequired = false;
-
-            for (int d = 0; d < D + 1; d++) {
-                AddSpeciesConstitutive_component(XOp, config, compRow, compCol, D, stressDegree, spcName, spcId, BcMap, LsTrk, out U0meanrequired);
+            if (D > 2) {
+                throw new NotSupportedException("Viscoelastic solver does not support 3D calculation. Only implemented for 2D cases!");
             }
 
+            U0meanrequired = false;
+            int compRow;
+            int compCol;
+
+            for (int d = 0; d < 3; d++) {
+
+                if (d == 0) {
+                    compRow = 0;
+                    compCol = 0;
+                    AddSpeciesConstitutive_component(XOp, config, compRow, compCol, D, stressDegree, spcName, spcId, BcMap, LsTrk, out U0meanrequired);
+                } else if (d == 1) {
+                    compRow = 0;
+                    compCol = 1;
+                    AddSpeciesConstitutive_component(XOp, config, compRow, compCol, D, stressDegree, spcName, spcId, BcMap, LsTrk, out U0meanrequired);
+                } else if (d == 2) {
+                    compRow = 1;
+                    compCol = 1;
+                    AddSpeciesConstitutive_component(XOp, config, compRow, compCol, D, stressDegree, spcName, spcId, BcMap, LsTrk, out U0meanrequired);
+                }
+            }
         }
 
 
@@ -251,40 +269,45 @@ namespace BoSSS.Solution.RheologyCommon {
 
     }
 
-        /// <summary>
-        /// configuration options for the bulk NSE including continuity equation
-        /// </summary>
-        public interface IRheology_Configuration : ISolver_Configuration {
-
-            /// <summary>
-            /// include upper convected derivative
-            /// </summary>
-            bool isOldroydB { get; }
-
-            /// <summary>
-            /// include artificial diffusion term
-            /// </summary>
-            bool isUseArtificialDiffusion { get; }
-
-        }
-
+    /// <summary>
+    /// configuration options for the bulk NSE including continuity equation
+    /// </summary>
+    public interface IRheology_Configuration : ISolver_Configuration {
 
         /// <summary>
-        /// extended configuration options for interface discretizations
+        /// include upper convected derivative
         /// </summary>
-        public interface IXRheology_Configuration : IRheology_Configuration {
+        bool isOldroydB { get; set; }
 
-            /// <summary>
-            /// switch for moving mesh flux discretizations
-            /// </summary>
-            bool isMovingMesh { get; }
+        /// <summary>
+        /// include artificial diffusion term
+        /// </summary>
+        bool isUseArtificialDiffusion { get; set; }
 
-            /// <summary>
-            /// true if the interface is a material interface
-            /// </summary>
-            bool isMatInt { get; }
+        /// <summary>
+        /// use Jacobian for linearization
+        /// </summary>
+        bool isUseJacobian { get; set; }
 
-        }
+    }
+
+
+    /// <summary>
+    /// extended configuration options for interface discretizations
+    /// </summary>
+    public interface IXRheology_Configuration : IRheology_Configuration {
+
+        /// <summary>
+        /// switch for moving mesh flux discretizations
+        /// </summary>
+        bool isMovingMesh { get; }
+
+        /// <summary>
+        /// true if the interface is a material interface
+        /// </summary>
+        bool isMatInt { get; }
+
+    }
 
     
 }

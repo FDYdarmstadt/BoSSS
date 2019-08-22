@@ -41,9 +41,12 @@ namespace BoSSS.Application.XRheology_Solver {
             DomBlocks = new bool[] { true, true };
             dntParams = control.AdvancedDiscretizationOptions;
             physParams = control.PhysicalParameters;
+            useJacobian = control.useJacobianForOperatorMatrix;
+            UseArtificialDiffusion = control.UseArtificialDiffusion;
 
 
-            if(control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.SemiImplicit)
+
+            if (control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.SemiImplicit)
                 control.PhysicalParameters.mu_I = control.dtFixed * control.PhysicalParameters.Sigma;
             
 
@@ -138,6 +141,11 @@ namespace BoSSS.Application.XRheology_Solver {
         public bool UseArtificialDiffusion;
 
         /// <summary>
+        /// use FDJacobian for linearization
+        /// </summary>
+        public bool useJacobian;
+
+        /// <summary>
         /// true if the interface is a material interface
         /// </summary>
         public bool MatInt = true;
@@ -197,10 +205,17 @@ namespace BoSSS.Application.XRheology_Solver {
 
         public bool isOldroydB {
             get { return OldroydB; }
+            set { OldroydB = value; }
         }
 
         public bool isUseArtificialDiffusion {
             get { return UseArtificialDiffusion; }
+            set { UseArtificialDiffusion = value; }
+        }
+
+        public bool isUseJacobian {
+            get { return useJacobian; }
+            set { useJacobian = value; }
         }
 
         public bool isMovingMesh {
