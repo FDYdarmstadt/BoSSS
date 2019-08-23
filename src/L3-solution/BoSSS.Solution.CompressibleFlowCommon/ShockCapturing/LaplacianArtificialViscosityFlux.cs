@@ -29,8 +29,16 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
         private readonly BoundaryCondMap<XDGHeatBcType> boundaryCondMap;
 
-        public LaplacianArtificialViscosityFlux(BoundaryCondMap<XDGHeatBcType> boundaryCondMap, int order, int dimension, MultidimensionalArray cj, string argumentName) :
-              base( (order + 1) * (order + dimension) / dimension, cj, argumentName) {
+        /// <summary>
+        /// Implements the positive Laplace operator, inherits from <see cref="SIPLaplace"/>
+        /// </summary>
+        /// <param name="boundaryCondMap">Information about boundary conditions</param>
+        /// <param name="penaltySafteyFactor">A user definded factor, typically in the range of 3.0 to 5.0</param>
+        /// <param name="penaltyFactor">A factor based on the grid type (tetras, quads, etc.)</param>
+        /// <param name="lengthScales">A cell length scale</param>
+        /// <param name="argumentName">The variable where the operator acts on</param>
+        public LaplacianArtificialViscosityFlux(BoundaryCondMap<XDGHeatBcType> boundaryCondMap, double penaltySafteyFactor, double penaltyFactor, MultidimensionalArray lengthScales, string argumentName) :
+              base(penaltySafteyFactor * penaltyFactor, lengthScales, argumentName) {
             this.boundaryCondMap = boundaryCondMap;
         }
 
@@ -50,7 +58,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 case XDGHeatBcType.Dirichlet:
                     Func<double[], double, double> dirichletFunction = this.boundaryCondMap.bndFunction["u"][inp.EdgeTag];
                     double g_D = dirichletFunction(inp.X, inp.time);
-                    //Debug.Assert(inp.X[0] < 1e-14, "Fail Dirichlet");
 
                     for (int d = 0; d < inp.D; d++) {
                         double nd = inp.Normale[d];
@@ -64,7 +71,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
                 case XDGHeatBcType.ZeroNeumann:
                     double g_N = 0.0;
-                    //Debug.Assert(inp.X[0] >= 1e-14, "Fail");
 
                     Acc += nuA * g_N * _vA * this.m_alpha;
                     break;
