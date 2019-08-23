@@ -30,7 +30,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         private readonly BoundaryCondMap<XDGHeatBcType> boundaryCondMap;
 
         /// <summary>
-        /// Implements the positive Laplace operator, inherits from <see cref="SIPLaplace"/>
+        /// Implements the negative Laplace operator, inherits from <see cref="SIPLaplace"/>
         /// </summary>
         /// <param name="boundaryCondMap">Information about boundary conditions</param>
         /// <param name="penaltySafteyFactor">A user definded factor, typically set to 4.0</param>
@@ -44,6 +44,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
         protected override bool IsDirichlet(ref CommonParamsBnd inp) {
             throw new NotSupportedException("I had to implement this...");
+        }
+
+        public override double Nu(double[] x, double[] p, int jCell) {
+            return -1.0;
         }
 
         public override double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
