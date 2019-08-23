@@ -240,7 +240,12 @@ namespace BoSSS.Application.XNSE_Solver {
             /// <summary>
             /// height of a rising capillary in a tube
             /// </summary>
-            CapillaryHeight
+            CapillaryHeight,
+
+            /// <summary>
+            /// Evaporative mass flux and speed of displacement 
+            /// </summary>
+            Evaporation
         }
 
         /// <summary>
@@ -503,6 +508,11 @@ namespace BoSSS.Application.XNSE_Solver {
         /// switch for the computation of the coupled heat solver
         /// </summary>
         public bool solveCoupledHeatEquation = false;
+
+        /// <summary>
+        /// only available if no heat equation is solved
+        /// </summary>
+        public double prescribedMassflux = 0.0;
 
         /// <summary>
         /// implementations for the conductivity part (laplace operator) of the heat equation 

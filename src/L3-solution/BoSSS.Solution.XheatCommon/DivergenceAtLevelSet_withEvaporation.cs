@@ -35,7 +35,7 @@ namespace BoSSS.Solution.XheatCommon {
     public class DivergenceAtLevelSet_withEvaporation : EvaporationAtLevelSet {
 
         public DivergenceAtLevelSet_withEvaporation(int _D, LevelSetTracker lsTrk, double _rhoA, double _rhoB,
-            double vorZeichen, bool RescaleConti, ThermalParameters thermParams, double _Rint, double _sigma) {
+            double vorZeichen, bool RescaleConti, ThermalParameters thermParams, double _Rint, double _sigma, double _prescrbM) {
             //double _kA, double _kB, double _hVapA, double _Rint, double _Tsat, double _sigma, double _pc) {
             this.D = _D;
             this.rhoA = _rhoA;
@@ -58,6 +58,8 @@ namespace BoSSS.Solution.XheatCommon {
             this.Tsat = thermParams.T_sat;
             this.sigma = _sigma;
             this.pc = thermParams.pc;
+
+            this.prescrbM = _prescrbM;
         }
 
 

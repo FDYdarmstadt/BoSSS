@@ -41,7 +41,7 @@ namespace BoSSS.Solution.XheatCommon {
         /// <param name="_d">spatial direction</param>
         /// <param name="_D">spatial dimension</param>
         /// <param name="LsTrk"></param>
-        public MassFluxAtInterface(int _d, int _D, LevelSetTracker LsTrk, double _rhoA, double _rhoB, ThermalParameters thermParams, double _Rint, double _sigma) {
+        public MassFluxAtInterface(int _d, int _D, LevelSetTracker LsTrk, double _rhoA, double _rhoB, ThermalParameters thermParams, double _Rint, double _sigma, double _prescrbM) {
             //double _kA, double _kB, double _hVapA, double _Rint, double _Tsat, double _sigma, double _pc) {
             m_LsTrk = LsTrk;
             if(_d >= _D)
@@ -60,6 +60,8 @@ namespace BoSSS.Solution.XheatCommon {
             this.Tsat = thermParams.T_sat;
             this.sigma = _sigma;
             this.pc = thermParams.pc;
+
+            this.prescrbM = _prescrbM;
         }
 
         int m_d;

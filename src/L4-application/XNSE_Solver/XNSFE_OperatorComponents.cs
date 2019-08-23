@@ -83,22 +83,22 @@ namespace BoSSS.Application.XNSE_Solver {
                 R_int = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (rhoA * hVapB.Pow2());
                 //T_intMin = Tsat * (1 + (pc / (rhoB * hVapB.Pow2())));
             }
-
+            double prescrbM = config.prescribedMassflux;
 
             // set components
             var comps = XOp.EquationComponents[CodName];
 
 
             if (config.isTransport) {
-                comps.Add(new ConvectionAtLevelSet_nonMaterialLLF(d, D, LsTrk, rhoA, rhoB, thermParams, R_int, sigma));
-                comps.Add(new ConvectionAtLevelSet_Consistency(d, D, LsTrk, rhoA, rhoB, dntParams.ContiSign, dntParams.RescaleConti, thermParams, R_int, sigma));
+                comps.Add(new ConvectionAtLevelSet_nonMaterialLLF(d, D, LsTrk, rhoA, rhoB, thermParams, R_int, sigma, prescrbM));
+                comps.Add(new ConvectionAtLevelSet_Consistency(d, D, LsTrk, rhoA, rhoB, dntParams.ContiSign, dntParams.RescaleConti, thermParams, R_int, sigma, prescrbM));
             }
 
             if (config.isViscous) {
-                comps.Add(new ViscosityAtLevelSet_FullySymmetric_withEvap(LsTrk, muA, muB, dntParams.PenaltySafety, d, rhoA, rhoB, thermParams, R_int, sigma));
+                comps.Add(new ViscosityAtLevelSet_FullySymmetric_withEvap(LsTrk, muA, muB, dntParams.PenaltySafety, d, rhoA, rhoB, thermParams, R_int, sigma, prescrbM));
             }
 
-            comps.Add(new MassFluxAtInterface(d, D, LsTrk, rhoA, rhoB, thermParams, R_int, sigma));
+            comps.Add(new MassFluxAtInterface(d, D, LsTrk, rhoA, rhoB, thermParams, R_int, sigma, prescrbM));
 
 
         }
@@ -162,12 +162,12 @@ namespace BoSSS.Application.XNSE_Solver {
                 R_int = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (rhoA * hVapB.Pow2());
                 //T_intMin = Tsat * (1 + (pc / (rhoB * hVapB.Pow2())));
             }
-
+            double prescrbM = config.prescribedMassflux;
 
             // set components
             var comps = XOp.EquationComponents[CodName];
 
-            var divEvap = new DivergenceAtLevelSet_withEvaporation(D, LsTrk, rhoA, rhoB, dntParams.ContiSign, dntParams.RescaleConti, thermParams, R_int, sigma);
+            var divEvap = new DivergenceAtLevelSet_withEvaporation(D, LsTrk, rhoA, rhoB, dntParams.ContiSign, dntParams.RescaleConti, thermParams, R_int, sigma, prescrbM);
             comps.Add(divEvap);
 
         }

@@ -40,6 +40,8 @@ namespace BoSSS.Solution.XheatCommon {
         protected double sigma;
         protected double pc;
 
+        protected double prescrbM = 0.0;
+
         protected double kA;
         protected double kB;
 
@@ -88,6 +90,9 @@ namespace BoSSS.Solution.XheatCommon {
 
             if (hVapA == 0.0)
                 return 0.0;
+
+            if (prescrbM != 0.0)
+                return (hVapA > 0) ? prescrbM * hVapA : -prescrbM * hVapA;
 
             double qEvap = 0.0;
             if (evapMicroRegion[jCell]) {
