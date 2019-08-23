@@ -411,22 +411,14 @@ namespace BoSSS.Application.SipPoisson {
                 stw.Stop();
                 Console.WriteLine("done {0} sec.", stw.Elapsed.TotalSeconds);
 
+                LaplaceMtx.GetMemoryInfo(out long AllocatedMem, out long UsedMem);
+                Console.WriteLine("   Used   matrix storage (MB): {0}", UsedMem /(1024.0*1024));
+                Console.WriteLine("   Alloc. matrix storage (MB): {0}", AllocatedMem/(1024.0*1024));
 
 
+                
 
-                //var JB = LapaceIp.GetFDJacobianBuilder(T.Mapping.Fields, null, T.Mapping, edgQrSch, volQrSch);
-                //var JacobiMtx = new BlockMsrMatrix(T.Mapping);
-                //var JacobiAffine = new double[T.Mapping.LocalLength];
-                //JB.ComputeMatrix(JacobiMtx, JacobiAffine);
-                //double L2ErrAffine = GenericBlas.L2Dist(JacobiAffine, LaplaceAffine);
-                //var ErrMtx2 = LaplaceMtx.CloneAs();
-                //ErrMtx2.Acc(-1.0, JacobiMtx);
-                //double LinfErrMtx2 = ErrMtx2.InfNorm();
 
-                //JacobiMtx.SaveToTextFileSparse("D:\\tmp\\Jac.txt");
-                //LaplaceMtx.SaveToTextFileSparse("D:\\tmp\\Lap.txt");
-
-                //Console.WriteLine("FD Jacobi Mtx: {0:e14}, Affine: {1:e14}", LinfErrMtx2, L2ErrAffine);
             }
         }
 
@@ -918,6 +910,8 @@ namespace BoSSS.Application.SipPoisson {
                 }
                 mgBasis.Stop();
                 Console.WriteLine("done. (" + mgBasis.Elapsed.TotalSeconds + " sec)");
+                //Console.WriteLine("going into infinity loop....");
+                //while (true) ;
 
 
                 //foreach (int sz in new int[] { 1000, 2000, 5000, 10000, 20000 }) {
@@ -999,11 +993,14 @@ namespace BoSSS.Application.SipPoisson {
                     solverIteration.Stop();
                     Console.WriteLine("done. (" + solverIteration.Elapsed.TotalSeconds + " sec)");
 
-                    //Console.WriteLine("Pardiso phase 11: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_11.Elapsed.TotalSeconds);
-                    //Console.WriteLine("Pardiso phase 22: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_22.Elapsed.TotalSeconds);
-                    //Console.WriteLine("Pardiso phase 33: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_33.Elapsed.TotalSeconds);
+                    Console.WriteLine("  Pardiso phase 11: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_11.Elapsed.TotalSeconds);
+                    Console.WriteLine("  Pardiso phase 22: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_22.Elapsed.TotalSeconds);
+                    Console.WriteLine("  Pardiso phase 33: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_33.Elapsed.TotalSeconds);
                     Console.WriteLine("  spmm total " + BlockMsrMatrix.multiply.Elapsed.TotalSeconds);
                     Console.WriteLine("  spmm core " + BlockMsrMatrix.multiply_core.Elapsed.TotalSeconds);
+                    Console.WriteLine("  spmv total " + BlockMsrMatrix.SPMV_tot.Elapsed.TotalSeconds);
+                    Console.WriteLine("  spmv inner " + BlockMsrMatrix.SPMV_inner.Elapsed.TotalSeconds);
+                    Console.WriteLine("  spmv outer " + BlockMsrMatrix.SPMV_outer.Elapsed.TotalSeconds);
 
                     Console.WriteLine("  dgetrf core " + dgetrf_time);
 

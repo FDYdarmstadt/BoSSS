@@ -169,7 +169,7 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// This will print out more information about iterations.
         /// </summary>
-        public bool verbose=false;
+        public bool verbose = false;
 
         /// <summary>
         /// If iterative saddle-point solvers like GMRES or Orthonormalization are used, the maximum number of basis vectors

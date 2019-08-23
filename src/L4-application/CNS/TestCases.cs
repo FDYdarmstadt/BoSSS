@@ -1136,7 +1136,7 @@ namespace CNS {
             CNSControl c = new CNSControl();
 
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_dmr_video";          // Lichtenberg
-            dbPath = @"c:\bosss_db";                                          // Local
+            //dbPath = @"c:\bosss_db";                                          // Local
             //dbPath = @"E:\geisenhofer\bosss_db_paper_ibmdmr";                   // HPC cluster
             //dbPath = @"\\dc1\userspace\geisenhofer\bosss_db_IBMShockTube";    // Network
 
@@ -1383,14 +1383,14 @@ namespace CNS {
 
             // Lichtenberg
             //string dbPath = @"/home/yp19ysog/bosss_db_paper_ibmdmr2";
-            string dbPath = @"/work/scratch/yp19ysog/bosss_db_performance2";
+            string dbPath = @"/work/scratch/yp19ysog/bosss_db_performance3";
             //string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr_run3_test";
             //string dbPath = @"C:\bosss_db_paper_ibmdmr_scratch_run3_test";
             string restart = "False";
 
             CNSControl c = DoubleMachReflection(dbPath, savePeriod, dgDegree, xMax, yMax, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, endTime, restart, cores);
 
-            c.ProjectName = "dmr_cube_run5";
+            c.ProjectName = "dmr_serialisation_debugging";
             c.NoOfTimesteps = timeSteps;
 
             return c;

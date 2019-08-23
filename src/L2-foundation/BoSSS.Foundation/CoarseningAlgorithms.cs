@@ -415,7 +415,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
                 // determine colors of neighbor cells
                 int[] Neighs = ag.iLogicalCells.CellNeighbours[j];
-                var NeighColors = Neighs.Select(jN => Colors[jN]);
+                var NeighColors = Neighs.Where(jN => jN < Jag).Select(jN => Colors[jN]);
 
                 // select color for cell 'j'
                 int iCol = 1;

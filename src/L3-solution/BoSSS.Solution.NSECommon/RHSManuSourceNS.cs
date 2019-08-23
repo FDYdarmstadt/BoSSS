@@ -39,7 +39,7 @@ namespace BoSSS.Solution.NSECommon {
         PhysicsMode physMode;
         double phystime;
         bool unsteady;
-        SinglePhaseField ThermodynamicPressure;
+
         /// <summary>
         /// <param name="Reynolds"></param>
         /// <param name="Froude"></param>
@@ -48,7 +48,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="direction">Can be "x" or "y".</param>
         /// <param name="physMode"></param>        
         /// </summary>
-        public RHSManuSourceNS(double Reynolds, double Froude, double[] MolarMasses, string direction, PhysicsMode physMode, double phystime, bool unsteady, SinglePhaseField ThermodynamicPressure) {
+        public RHSManuSourceNS(double Reynolds, double Froude, double[] MolarMasses, string direction, PhysicsMode physMode, double phystime, bool unsteady) {
             this.MolarMasses = MolarMasses;
             this.direction = direction;
             this.Reynolds = Reynolds;
@@ -58,7 +58,6 @@ namespace BoSSS.Solution.NSECommon {
 
             this.unsteady = unsteady;
             this.phystime = phystime;
-            this.ThermodynamicPressure = ThermodynamicPressure;
         }
 
 
@@ -79,7 +78,7 @@ namespace BoSSS.Solution.NSECommon {
         //Manufactured solution for T = cos(x*y), Y0 = 0.3 cos(x*y), Y1 = 0.6 cos(x*y), Y2 = 0.1 cos(x*y), u = cos(x*y), v = cos(x*y), p = sin(x*y).
         protected override double Source(double[] x, double[] parameters, double[] U) {
 
-            double p0 = ThermodynamicPressure.GetMeanValue(3);
+            double p0 = 1.0; // ThermodynamicPressure.GetMeanValue(3);
             double M1 = MolarMasses[0]; double M2 = MolarMasses[1]; double M3 = MolarMasses[2]; double M4 = MolarMasses[3];
             double x_ = x[0];
             double y_ = x[1];
@@ -93,8 +92,8 @@ namespace BoSSS.Solution.NSECommon {
             double PressureGradientTerm;
             double BouyancyTerm;
             double unsteadyTerm = 0.0;
-            double t_ = 0.0;
-            bool unsteady = false;
+            double t_ = phystime;
+
 
 
             if (unsteady) {
@@ -106,9 +105,7 @@ namespace BoSSS.Solution.NSECommon {
                             ConvectionTerm = p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Pow(Math.Cos(x_ * t_), 0.2e1) * y_ * t_ * Math.Sin(x_ * y_ * t_) - 0.2e1 * p0 / Math.Cos(x_ * y_ * t_) * Math.Cos(x_ * t_) * t_ * Math.Sin(x_ * t_) + p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Cos(x_ * t_) * Math.Cos(y_ * t_) * x_ * t_ * Math.Sin(x_ * y_ * t_) - p0 / Math.Cos(x_ * y_ * t_) * Math.Cos(x_ * t_) * t_ * Math.Sin(y_ * t_);
                             break;
                         case PhysicsMode.Combustion:
-                            unsteadyTerm = 0.0; //TODO
-                            ConvectionTerm = 0.0;//TODO
-                            break;
+                            throw new NotImplementedException("TODO");
                         default:
                             throw new NotImplementedException("should not happen");
                     }
@@ -130,10 +127,7 @@ namespace BoSSS.Solution.NSECommon {
                             BouyancyTerm = Math.Pow(Froude, -0.2e1) * p0 / Math.Cos(x_ * y_ * t_);
                             break;
                         case PhysicsMode.Combustion:
-                            ConvectionTerm = 0.0;//TODO
-                            unsteadyTerm = 0.0; //TODO
-                            BouyancyTerm = 0.0;//TODO
-
+                            throw new NotImplementedException("TODO");
                             break;
                         default:
                             throw new NotImplementedException("should not happen");

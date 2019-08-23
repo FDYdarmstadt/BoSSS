@@ -1067,7 +1067,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 #if DEBUG
                 for(int j = 0; j < J; j++) {
                     var CNglb_j = CNglb[j].ToArray();
-
+                    int test = MpiRank;
                     for(int n1 = 0; n1 < CNglb_j.Length; n1++) {
                         for (int n2 = 0; n2 < CNglb_j.Length; n2++) {
                             if(n1 != n2) {

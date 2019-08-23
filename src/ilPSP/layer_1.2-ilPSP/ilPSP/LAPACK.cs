@@ -78,6 +78,7 @@ namespace ilPSP.Utils {
         _DGEQP3 dgeqp3;
         _DORGQR dorgqr;
         _DPOSV dposv;
+        //_DSYTRF dsytrf;
 #pragma warning restore 649
 
         /// <summary>
@@ -170,7 +171,7 @@ namespace ilPSP.Utils {
         /// <summary>
         /// FORTRAN-style LAPACK
         /// </summary>
-        public void DTRTRI(char UPLO, char DIAG, int N, double[] A, int LDA, out int INFO) {
+        public void DTRTRI(int UPLO, int DIAG, int N, double[] A, int LDA, out int INFO) {
             if (UPLO != 'U' && UPLO != 'L')
                 throw new ArgumentOutOfRangeException();
             if (DIAG != 'N' && DIAG != 'U')
@@ -185,6 +186,35 @@ namespace ilPSP.Utils {
                 }
             }
         }
+
+
+        /// <summary>
+        /// factorization of a real symmetric matrix A
+        /// </summary>
+        public unsafe delegate void _DSYTRF(ref int UPLO, ref int N, double* A, ref int LDA, int* IPIV, double* WORK, int* LWORK, ref int INFO);
+
+        /// <summary>
+        /// factorization of a real symmetric matrix A
+        /// </summary>
+        public unsafe _DSYTRF DSYTRF_ {
+            get {
+                return null;
+                //return dsytrf;
+            }
+        }
+
+        /// <summary>
+        /// factorization of a real symmetric matrix A
+        /// </summary>
+        unsafe public void DSYTRF(int UPLO, int N, double* A, int LDA, int* IPIV, double* WORK, int* LWORK, out int INFO)
+        {
+            if (UPLO != 'U' && UPLO != 'L')
+                throw new ArgumentOutOfRangeException();
+
+            INFO = 0;
+            DSYTRF_(ref UPLO, ref N, A, ref LDA, IPIV, WORK, LWORK, ref INFO);
+        }
+
 
 
         /// <summary>

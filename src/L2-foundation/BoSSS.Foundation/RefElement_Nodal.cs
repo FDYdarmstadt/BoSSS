@@ -410,7 +410,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 Array.Clear(rhs, 0, rhs.Length);
                 rhs[k] = 1.0;
 
-                Sol.gemv(1.0, rhs, 0.0, b);
+                Sol.GEMV(1.0, rhs, 0.0, b);
 
                 for (int i = 0; i < NoOfPolys; i++) {
                     if (Math.Abs(b[i]) > 1.0e-12) {

@@ -143,6 +143,26 @@ namespace ilPSP {
 
         /// <summary>
         /// Determines the index of the element with the minimum value with
+        /// respect to the default comparer.
+        /// </summary>
+        public static int IndexOfMin<T>(this IEnumerable<T> source)
+            where T : IComparable<T>
+        {
+            return IndexOfMin(source, i => i);
+        }
+
+        /// <summary>
+        /// Determines the index of the element with the minimum value with
+        /// respect to the default comparer.
+        /// </summary>
+        public static int IndexOfMax<T>(this IEnumerable<T> source)
+            where T : IComparable<T>
+        {
+            return IndexOfMax(source, i => i);
+        }
+
+        /// <summary>
+        /// Determines the index of the element with the minimum value with
         /// respect to the comparer of <typeparamref name="TCompare"/>.
         /// </summary>
         /// <typeparam name="TSource">

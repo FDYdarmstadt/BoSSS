@@ -109,7 +109,6 @@
     <Compile Include="ShockCapturing\HeavisideArtificialViscosityLaw.cs" />
     <Compile Include="ShockCapturing\ICNSShockSensor.cs" />
     <Compile Include="ShockCapturing\LaplacianArtificialViscosityFluxBuilder.cs" />
-    <Compile Include="ShockCapturing\LaplacianArtificialViscosityFlux.cs" />
     <Compile Include="ShockCapturing\PerssonSensor.cs" />
     <Compile Include="ShockCapturing\PrimitiveFVMLimiter.cs" />
     <Compile Include="ShockCapturing\ZhangPosivityPreservingLimiter.cs" />
