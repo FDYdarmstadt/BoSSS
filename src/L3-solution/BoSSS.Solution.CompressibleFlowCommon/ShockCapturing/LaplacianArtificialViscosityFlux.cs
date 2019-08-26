@@ -76,7 +76,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 case XDGHeatBcType.ZeroNeumann:
                     double g_N = 0.0;
 
-                    Acc += nuA * g_N * _vA * this.m_alpha;
+                    Acc += nuA * g_N * _vA * this.m_alpha;      // consistency
                     break;
 
                 default:
