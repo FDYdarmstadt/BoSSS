@@ -1,0 +1,334 @@
+﻿/* =======================================================================
+Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.XDG;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.Diffusion;
+using BoSSS.Solution.Utils;
+using ilPSP;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+
+namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
+
+    /// <summary>
+    /// Implements the negative Laplace operator
+    /// </summary>
+    public class XOptimizedLaplacianArtificialViscosityFlux : INonlinear2ndOrderForm {
+
+        public GridData GridData {
+            get;
+            private set;
+        }
+
+        public bool AdiabaticWall {
+            get;
+            set;
+        }
+
+        private readonly BoundaryCondMap<XDGHeatBcType> boundaryCondMap;
+
+        private readonly double[] penalties;
+
+        private readonly string ArgumentName;
+
+        public XOptimizedLaplacianArtificialViscosityFlux(BoundaryCondMap<XDGHeatBcType> boundaryCondMap, LevelSetTracker levelSetTracker, string ArgumentVarName, double penaltySafetyFactor, double penaltyFactor, Dictionary<SpeciesId, MultidimensionalArray> agglomeratedLengthScales) {
+            this.GridData = levelSetTracker.GridDat;
+            this.ArgumentName = ArgumentVarName;
+            this.boundaryCondMap = boundaryCondMap;
+
+            // Calculate penalties
+            CellMask cutCells = levelSetTracker.Regions.GetCutCellMask();
+            CellMask speciesAWithOutCutCells = levelSetTracker.Regions.GetSpeciesMask("A").Except(cutCells);
+            CellMask speciesBWithOutCutCells = levelSetTracker.Regions.GetSpeciesMask("B").Except(cutCells);
+
+            double[] lengthScales_A = agglomeratedLengthScales[levelSetTracker.GetSpeciesId("A")].To1DArray();
+            double[] lengthScales_B = agglomeratedLengthScales[levelSetTracker.GetSpeciesId("B")].To1DArray();
+
+            this.penalties = new double[lengthScales_A.Length];
+
+            foreach (int cell in speciesAWithOutCutCells.ItemEnum) {
+                this.penalties[cell] = penaltySafetyFactor * penaltyFactor / lengthScales_A[cell];
+            }
+
+            foreach (int cell in speciesBWithOutCutCells.ItemEnum) {
+                this.penalties[cell] = penaltySafetyFactor * penaltyFactor / lengthScales_B[cell];
+            }
+
+            foreach (int cell in cutCells.ItemEnum) {
+                this.penalties[cell] = double.NaN;
+            }
+        }
+
+        #region IEquationComponent Members
+        IList<string> IEquationComponent.ArgumentOrdering {
+            get {
+                return new string[] { ArgumentName };
+            }
+        }
+
+        IList<string> IEquationComponent.ParameterOrdering {
+            get {
+                return new string[] { "artificialViscosity" };
+            }
+        }
+        #endregion
+
+        #region IEdgeForm Members
+        TermActivationFlags IEdgeForm.BoundaryEdgeTerms {
+            get {
+                return TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV;
+            }
+        }
+
+        TermActivationFlags IEdgeForm.InnerEdgeTerms {
+            get {
+                return TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV;
+            }
+        }
+
+        double IEdgeForm.InnerEdgeForm(ref CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
+            double Acc = 0.0;
+
+            double pnlty = Math.Max(this.penalties[inp.jCellIn], this.penalties[inp.jCellOut]);
+            double nuA = inp.Parameters_IN[0];
+            double nuB = inp.Parameters_OUT[0];
+
+            for (int d = 0; d < inp.D; d++) {
+                Acc += 0.5 * (nuA * _Grad_uA[0, d] + nuB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
+                Acc += 0.5 * (nuA * _Grad_vA[d] + nuB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
+            }
+
+            //Acc *= this.m_alpha;
+
+            double nuMax = (Math.Abs(nuA) > Math.Abs(nuB)) ? nuA : nuB;
+
+            Acc -= (_uA[0] - _uB[0]) * (_vA - _vB) * pnlty * nuMax; // penalty term
+
+            return Acc;
+        }
+
+        double IEdgeForm.BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+            // Boundary value is zero neumann boundary, i.e. do nothing
+            double Acc = 0.0;
+            return Acc;
+        }
+        #endregion
+
+        #region IVolumeForm Members
+        TermActivationFlags IVolumeForm.VolTerms {
+            get {
+                return TermActivationFlags.GradUxGradV;
+            }
+        }
+
+        double IVolumeForm.VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+            double ret = 0;
+            double viscosity = cpv.Parameters[0];
+            for (int d = 0; d < this.GridData.SpatialDimension; d++) {
+                ret += viscosity * GradU[0, d] * GradV[d];
+            }
+            return ret;
+        }
+        #endregion
+
+        #region INonlineEdgeform_GradV Members
+        void INonlinEdgeForm_GradV.InternalEdge(ref EdgeFormParams efp,
+            MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
+            MultidimensionalArray fin, MultidimensionalArray fot) {
+
+            int NumOfCells = efp.Len;
+            Debug.Assert(fin.GetLength(0) == NumOfCells);
+            Debug.Assert(fot.GetLength(0) == NumOfCells);
+            int NumOfNodes = fin.GetLength(1); // no of nodes per cell
+
+            for (int cell = 0; cell < NumOfCells; cell++) { // loop over cells...
+                int iEdge = efp.e0 + cell;
+
+                for (int node = 0; node < NumOfNodes; node++) { // loop over nodes...
+                    double uJump = 0.5 * (Uin[0][cell, node] - Uout[0][cell, node]);
+                    double fluxIn = efp.ParameterVars_IN[0][cell, node] * uJump;
+                    double fluxOut = efp.ParameterVars_OUT[0][cell, node] * uJump;
+
+                    for (int d = 0; d < GridData.SpatialDimension; d++) {
+                        double n = efp.Normals[cell, node, d];
+                        fin[cell, node, d] -= fluxIn * n;
+                        fot[cell, node, d] -= fluxOut * n;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Symmetry term
+        /// </summary>
+        void INonlinEdgeForm_GradV.BoundaryEdge(ref EdgeFormParams efp,
+            MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin,
+            MultidimensionalArray fin) {
+            int NumOfCells = efp.Len;
+            Debug.Assert(fin.GetLength(0) == NumOfCells);
+            int NumOfNodes = fin.GetLength(1); // no of nodes per cell
+            int dimension = efp.GridDat.SpatialDimension;
+
+            for (int cell = 0; cell < NumOfCells; cell++) { // loop over cells...
+                int iEdge = efp.e0 + cell;
+
+                byte edgeTag = this.GridData.iGeomEdges.EdgeTags[iEdge];
+                XDGHeatBcType edgeType = this.boundaryCondMap.EdgeTag2Type[edgeTag];
+                Func<double[], double, double> dirichletFunction = this.boundaryCondMap.bndFunction["u"][edgeTag];
+
+                for (int node = 0; node < NumOfNodes; node++) { // loop over nodes...
+
+                    // Global node coordinates
+                    double[] X = new double[dimension];
+                    for (int i = 0; i < dimension; i++) {
+                        X[i] = efp.NodesGlobal[cell, node, i];
+                    }
+
+                    switch (edgeType) {
+                        case XDGHeatBcType.Dirichlet:
+                            double g_D = dirichletFunction(X, efp.time);
+                            double uJump = 0.5 * (Uin[0][cell, node] - g_D);
+                            double fluxIn = efp.ParameterVars_IN[0][cell, node] * uJump;
+
+                            for (int d = 0; d < GridData.SpatialDimension; d++) {
+                                double n = efp.Normals[cell, node, d];
+                                fin[cell, node, d] -= fluxIn * n;
+                            }
+                            break;
+
+                        default:
+                            // Boundary value is zero neumann boundary, i.e. do nothing
+                            break;
+                    }
+                }
+            }
+        }
+        #endregion
+
+        #region INonlineEdgeform_V Members
+        void INonlinEdgeForm_V.InternalEdge(ref EdgeFormParams efp,
+            MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
+            MultidimensionalArray fin, MultidimensionalArray fot) {
+
+            int NumOfCells = efp.Len;
+            Debug.Assert(fin.GetLength(0) == NumOfCells);
+            Debug.Assert(fot.GetLength(0) == NumOfCells);
+            int NumOfNodes = fin.GetLength(1); // no of nodes per cell
+
+            for (int cell = 0; cell < NumOfCells; cell++) { // loop over cells...
+                int iEdge = efp.e0 + cell;
+
+                // Penalty is calculated according to the formula in background cells
+                int jCellIn = this.GridData.Edges.CellIndices[iEdge, 0];
+                int jCellOut = this.GridData.Edges.CellIndices[iEdge, 1];
+                double penalty = Math.Max(this.penalties[jCellIn], this.penalties[jCellOut]);
+
+                for (int node = 0; node < NumOfNodes; node++) { // loop over nodes...
+
+                    // SIPG Flux Loops
+                    double viscosityIn = efp.ParameterVars_IN[0][cell, node];
+                    double viscosityOut = efp.ParameterVars_OUT[0][cell, node];
+
+                    double flux = 0.0;
+                    for (int d = 0; d < GridData.SpatialDimension; d++) {
+                        double n = efp.Normals[cell, node, d];
+                        flux -= 0.5 * (viscosityIn * GradUin[0][cell, node, d] + viscosityOut * GradUout[0][cell, node, d]) * n;    // Consistency term
+                    }
+                    flux += Math.Max(viscosityIn, viscosityOut) * (Uin[0][cell, node] - Uout[0][cell, node]) * penalty; // Penalty term
+
+                    fin[cell, node] += flux;
+                    fot[cell, node] -= flux;
+                }
+            }
+        }
+
+        void INonlinEdgeForm_V.BoundaryEdge(ref EdgeFormParams efp,
+            MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin,
+            MultidimensionalArray fin) {
+
+            int NumOfCells = efp.Len;
+            Debug.Assert(fin.GetLength(0) == NumOfCells);
+            int NumOfNodes = fin.GetLength(1); // no of nodes per cell
+            int dimension = efp.GridDat.SpatialDimension;
+
+            for (int cell = 0; cell < NumOfCells; cell++) { // loop over cells...
+                int iEdge = efp.e0 + cell;
+
+                // Penalty is calculated according to the formula in background cells
+                int jCellIn = this.GridData.Edges.CellIndices[iEdge, 0];
+                double penalty = 2 * this.penalties[jCellIn];
+
+                byte edgeTag = this.GridData.iGeomEdges.EdgeTags[iEdge];
+                XDGHeatBcType edgeType = this.boundaryCondMap.EdgeTag2Type[edgeTag];
+                Func<double[], double, double> dirichletFunction = this.boundaryCondMap.bndFunction["u"][edgeTag];
+
+                for (int node = 0; node < NumOfNodes; node++) { // loop over nodes...
+
+                    // Global node coordinates
+                    double[] X = new double[dimension];
+                    for (int i = 0; i < dimension; i++) {
+                        X[i] = efp.NodesGlobal[cell, node, i];
+                    }
+
+                    // SIPG Flux Loops
+                    double viscosityIn = efp.ParameterVars_IN[0][cell, node];
+
+                    switch (edgeType) {
+                        case XDGHeatBcType.Dirichlet:
+                            double g_D = dirichletFunction(X, efp.time);
+
+                            double flux = 0.0;
+                            for (int d = 0; d < GridData.SpatialDimension; d++) {
+                                double n = efp.Normals[cell, node, d];
+                                flux -= viscosityIn * GradUin[0][cell, node, d] * n;    // Consistency term
+                            }
+                            flux += viscosityIn * (Uin[0][cell, node] - g_D) * penalty; // Penalty term
+                            fin[cell, node] += flux;
+                            break;
+                        default:
+                            // Boundary value is zero neumann boundary, i.e. do nothing
+                            break;
+                    }
+                }
+            }
+        }
+        #endregion
+
+        #region INonLinearVolumeForm_GradV Members
+        void INonlinVolumeForm_GradV.Form(ref VolumFormParams prm,
+            MultidimensionalArray[] U, MultidimensionalArray[] GradU,
+            MultidimensionalArray f) {
+            int NumofCells = prm.Len;
+            Debug.Assert(f.GetLength(0) == NumofCells);
+            int NumOfNodes = f.GetLength(1); // no of nodes per cell
+
+            for (int cell = 0; cell < NumofCells; cell++) { // loop over cells...
+                for (int node = 0; node < NumOfNodes; node++) { // loop over nodes...
+                    double viscosity = prm.ParameterVars[0][cell, node];
+                    for (int d = 0; d < GridData.SpatialDimension; d++) {
+                        f[cell, node, d] += viscosity * GradU[0][cell, node, d];
+                    }
+                }
+            }
+        }
+        #endregion
+    }
+}
