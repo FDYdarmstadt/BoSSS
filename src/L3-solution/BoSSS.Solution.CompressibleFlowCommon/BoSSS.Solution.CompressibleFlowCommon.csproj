@@ -88,6 +88,7 @@
     <Compile Include="ShockCapturing\LaplacianArtificialViscosityFlux.cs" />
     <Compile Include="ShockCapturing\OptimizedLaplacianArtificialViscosityFlux.cs" />
     <Compile Include="ShockCapturing\SmoothedHeavisideArtificialViscosityLaw.cs" />
+    <Compile Include="ShockCapturing\XOptimizedLaplacianArtificialViscosityFlux_Interface.cs" />
     <Compile Include="StateVector.cs" />
     <Compile Include="Variable.cs" />
     <Compile Include="CompressibleVariables.cs" />

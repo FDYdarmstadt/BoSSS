@@ -105,6 +105,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         }
 
         double IEdgeForm.InnerEdgeForm(ref CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
+            return this.InnerEdgeFormHack(ref inp, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
+        }
+
+        public double InnerEdgeFormHack(ref CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
             double Acc = 0.0;
 
             double pnlty = Math.Max(this.penalties[inp.jCellIn], this.penalties[inp.jCellOut]);
@@ -180,7 +184,12 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         void INonlinEdgeForm_GradV.InternalEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
             MultidimensionalArray fin, MultidimensionalArray fot) {
+            InternalEdge_GradV(ref efp, Uin, Uout, GradUin, GradUout, fin, fot);
+        }
 
+        public void InternalEdge_GradV(ref EdgeFormParams efp,
+            MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
+            MultidimensionalArray fin, MultidimensionalArray fot) {
             int NumOfCells = efp.Len;
             Debug.Assert(fin.GetLength(0) == NumOfCells);
             Debug.Assert(fot.GetLength(0) == NumOfCells);
@@ -253,6 +262,12 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
         #region INonlineEdgeform_V Members
         void INonlinEdgeForm_V.InternalEdge(ref EdgeFormParams efp,
+            MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
+            MultidimensionalArray fin, MultidimensionalArray fot) {
+            InternalEdge_V(ref efp, Uin, Uout, GradUin, GradUout, fin, fot);
+        }
+
+        public void InternalEdge_V(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
             MultidimensionalArray fin, MultidimensionalArray fot) {
 
