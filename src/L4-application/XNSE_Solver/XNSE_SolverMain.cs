@@ -516,7 +516,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // coupled heat Operator
             // =====================
 
-            if(this.Control.solveCoupledHeatEquation) {
+            if (this.Control.solveCoupledHeatEquation) {
                 this.generateCoupledOperator();
             }
 
@@ -638,7 +638,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         m_BDF_energyTimestepper.coupledOperator = true;
                     }
 
-                    if(this.Control.solveCoupledHeatEquation) {
+                    if (this.Control.solveCoupledHeatEquation) {
                         m_BDF_coupledTimestepper = new XdgBDFTimestepping(
                         this.CurrentCoupledSolution.Mapping.Fields,
                         this.CurrentCoupledResidual.Mapping.Fields,
@@ -656,18 +656,18 @@ namespace BoSSS.Application.XNSE_Solver {
                         true,
                         this.Control.NonLinearSolver,
                         this.Control.LinearSolver
-                        );           
+                        );
                         m_BDF_coupledTimestepper.m_ResLogger = this.CouplededResLogger;
                         m_BDF_coupledTimestepper.m_ResidualNames = this.CurrentCoupledResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
                         //m_BDF_coupledTimestepper.Config_SolverConvergenceCriterion = this.Control.Solver_ConvergenceCriterion;
                         m_BDF_coupledTimestepper.Config_LevelSetConvergenceCriterion = this.Control.LevelSet_ConvergenceCriterion;
                         //m_BDF_coupledTimestepper.Config_MaxIterations = this.Control.Solver_MaxIterations;
 
-                        this.Control.NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.NonLinearSolver.MinSolverIterations; 
+                        this.Control.NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.NonLinearSolver.MinSolverIterations;
                         //m_BDF_coupledTimestepper.Config_MinIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.Solver_MinIterations;
 
                         m_BDF_coupledTimestepper.Timestepper_Init = TimeStepperInit.SingleInit;
-                        m_BDF_coupledTimestepper.PushLevelSet = delegate() { };    // dummy push
+                        m_BDF_coupledTimestepper.PushLevelSet = delegate () { };    // dummy push
                         m_BDF_coupledTimestepper.coupledOperator = true;
 
                         m_BDF_coupledTimestepper.XdgSolverFactory.Update(this.Control.NonLinearSolver, this.Control.LinearSolver); //do not forget to update your changes to Solver configurations!
@@ -712,7 +712,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity), 
                     this.LsTrk, this.MultigridSequence);
 
-                if(this.Control.solveCoupledHeatEquation)
+                if (this.Control.solveCoupledHeatEquation)
                     m_BDF_coupledTimestepper.DataRestoreAfterBalancing(L,
                           this.Temperature.ToEnumerable(),
                           this.ResidualHeat.ToEnumerable(),
@@ -2391,13 +2391,13 @@ namespace BoSSS.Application.XNSE_Solver {
                                        //if (qEvap > -9.99 || qEvap < -10.01)
                                        //    Console.WriteLine("qEvap - DelUpdateLevelSet = {0}", qEvap);
 
-                                       double mEvap = qEvap / hVap; // mass flux
+                                       double mEvap = (this.Control.prescribedMassflux != 0.0) ? this.Control.prescribedMassflux : qEvap / hVap; // mass flux
                                        //result[j, k] = mEvap * ((1 / rho_v) - (1 / rho_l)) * Normals[j, k, d];   //
                                        result[j, k] = mEvap * (1 / rho_v) * Normals[j, k, d];   //
                                        //result[j, k] = - Normals[j, k, d];   //
                                    }
                                }
-                           }, new Foundation.Quadrature.CellQuadratureScheme(true, LsTrk.Regions.GetCutCellMask()));
+                           }, new CellQuadratureScheme(true, LsTrk.Regions.GetCutCellMask()));
 
                     }
 
@@ -2484,22 +2484,23 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
                     // check interface velocity
-                    //int p = evapVelocity[0].Basis.Degree;
-                    //SubGrid sgrd = LsTrk.Regions.GetCutCellSubgrid4LevSet(0);
-                    //NodeSet[] Nodes = LsTrk.GridDat.Grid.RefElements.Select(Kref => Kref.GetQuadratureRule(p * 2).Nodes).ToArray();
+                    int p = evapVelocity[0].Basis.Degree;
+                    SubGrid sgrd = LsTrk.Regions.GetCutCellSubgrid4LevSet(0);
+                    NodeSet[] Nodes = LsTrk.GridDat.Grid.RefElements.Select(Kref => Kref.GetQuadratureRule(p * 2).Nodes).ToArray();
 
-                    //var cp = new ClosestPointFinder(LsTrk, 0, sgrd, Nodes);
+                    var cp = new ClosestPointFinder(LsTrk, 0, sgrd, Nodes);
 
-                    //MultidimensionalArray[] VelocityEval = evapVelocity.Select(sf => cp.EvaluateAtCp(sf)).ToArray();
+                    MultidimensionalArray[] VelocityEval = evapVelocity.Select(sf => cp.EvaluateAtCp(sf)).ToArray();
 
-                    //double nNodes = VelocityEval[0].Length;
-                    //double evapVelX = VelocityEval[0].Sum() / nNodes;
-                    //double evapVelY = VelocityEval[1].Sum() / nNodes;
+                    double nNodes = VelocityEval[0].Length;
+                    double evapVelY = VelocityEval[1].Sum() / nNodes;
                     //Console.WriteLine("EvapVelocity: ({0},{1})", evapVelX, evapVelY);
+
+                    EvapVeloc = evapVelY;
 
 
                     // construct evolution velocity
-                    for(int d = 0; d < D; d++) {
+                    for (int d = 0; d < D; d++) {
                         //SinglePhaseField FiltEvapVeloc = new SinglePhaseField(evapVelocity[d].Basis);
                         //FiltEvapVeloc.AccLaidBack(1.0, evapVelocity[d]);
                         //Filter(FiltEvapVeloc, 2, LsTrk.Regions.GetCutCellMask());
@@ -2718,6 +2719,15 @@ namespace BoSSS.Application.XNSE_Solver {
                 for (int d = 0; d < D; d++)
                     this.XDGvelocity.Velocity[d].UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
 
+                if (this.Control.solveCoupledHeatEquation) {
+                    this.Temperature.UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
+                    if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+                        for (int d = 0; d < D; d++)
+                            this.HeatFlux[d].UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
+                    }
+                }
+
+                //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 3 }), 2);
 
 
                 // ===============
@@ -2726,6 +2736,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 this.LsTrk.UpdateTracker(incremental: true);
 
+                //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 4 }), 2);
+
                 // update near field (in case of adaptive mesh refinement)
                 if (this.Control.AdaptiveMeshRefinement && this.Control.Option_LevelSetEvolution == LevelSetEvolution.FastMarching) {
                     Near1 = LsTrk.Regions.GetNearMask4LevSet(0, 1);
@@ -2733,6 +2745,8 @@ namespace BoSSS.Application.XNSE_Solver {
                     ContinuityEnforcer.SetFarField(this.DGLevSet.Current, Near1, PosFF);
                     ContinuityEnforcer.SetFarField(this.LevSet, Near1, PosFF);
                 }
+
+                //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 5 }), 2);
 
 
                 // ==================================================================
@@ -3488,9 +3502,11 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="sessionID"></param>
         public void InitLogFile(Guid sessionID) {
 
-            if(this.Control.WriteInterfaceP) {
+            string header;
+
+            if (this.Control.WriteInterfaceP) {
                 LogInterfaceP = base.DatabaseDriver.FsDriver.GetNewLog("InterfaceP", sessionID);
-                string header = String.Format("{0}\t{1}\t{2}", "#timestep", "#time", "interfacePoints");
+                header = String.Format("{0}\t{1}\t{2}", "#timestep", "#time", "interfacePoints");
                 LogInterfaceP.WriteLine(header);
                 LogInterfaceP.Flush();
             }
@@ -3500,7 +3516,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                         // File for physical data
                         TextWriter setUpData = base.DatabaseDriver.FsDriver.GetNewLog("SetUpData", sessionID);
-                        string header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}", "lambda", "H0", "rho1", "rho2", "mu1", "mu2", "sigma", "g");
+                        header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}", "lambda", "H0", "rho1", "rho2", "mu1", "mu2", "sigma", "g");
                         setUpData.WriteLine(header);
                         setUpData.Flush();
                         string data = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}", this.Control.AdditionalParameters[1], this.Control.AdditionalParameters[2], this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B,
@@ -3512,41 +3528,43 @@ namespace BoSSS.Application.XNSE_Solver {
                         // Log file for the interface height
                         Log = base.DatabaseDriver.FsDriver.GetNewLog("Amplitude", sessionID);
                         header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "#timestep", "#time", "magnitude", "real", "imaginary");
-                        Log.WriteLine(header);
-                        Log.Flush();
 
                         return;
                     }
                 case XNSE_Control.LoggingValues.RisingBubble: {
 
                         Log = base.DatabaseDriver.FsDriver.GetNewLog("BenchmarkQuantities_RisingBubble", sessionID);
-                        string header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", "#timestep", "#time", "area", "center of mass - x", "center of mass - y", "circularity", "rise velocity");
-                        Log.WriteLine(header);
-                        Log.Flush();
+                        header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", "#timestep", "#time", "area", "center of mass - x", "center of mass - y", "circularity", "rise velocity");
 
                         return;
                     }
                 case XNSE_Control.LoggingValues.MovingContactLine: {
 
                         Log = base.DatabaseDriver.FsDriver.GetNewLog("ContactAngle", sessionID);
-                        string header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", "#timestep", "#time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-angle");
-                        Log.WriteLine(header);
-                        Log.Flush();
+                        header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", "#timestep", "#time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-angle");
 
                         return;
                     }
                 case XNSE_Control.LoggingValues.CapillaryHeight: {
 
                         Log = base.DatabaseDriver.FsDriver.GetNewLog("CapillaryHeight", sessionID);
-                        string header = String.Format("{0}\t{1}\t{2}\t{3}", "#timestep", "#time", "capillary-height", "at-PositionX");
-                        Log.WriteLine(header);
-                        Log.Flush();
+                        header = String.Format("{0}\t{1}\t{2}\t{3}", "#timestep", "#time", "capillary-height", "at-PositionX");
+
+                        break;
+                    }
+                case XNSE_Control.LoggingValues.Evaporation: {
+
+                        Log = base.DatabaseDriver.FsDriver.GetNewLog("Evaporation", sessionID);
+                        header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "'#imestep", "time", "MassFlux", "InterfaceVelocity", "interfacePosition");
 
                         break;
                     }
                 default:
                     throw new ArgumentException("No specified LogFormat");
             }
+
+            Log.WriteLine(header);
+            Log.Flush();
         }
 
         /// <summary>
@@ -3719,12 +3737,29 @@ namespace BoSSS.Application.XNSE_Solver {
 
                         break;
                     }
+                case XNSE_Control.LoggingValues.Evaporation: {
+
+                        MultidimensionalArray InterfacePoints = XNSEUtils.GetInterfacePoints(this.LsTrk, this.LevSet);
+
+                        double nNodes = InterfacePoints.GetLength(0);
+                        double posY = InterfacePoints.ExtractSubArrayShallow(-1, 1).To1DArray().Sum() / nNodes;
+
+                        double hVap = this.Control.ThermalParameters.hVap_A;
+                        double MassFlux = (hVap > 0) ? EvapVeloc * hVap : -EvapVeloc * hVap;
+
+                        string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", TimestepNo, phystime, MassFlux, EvapVeloc, posY);
+                        Log.WriteLine(line);
+                        Log.Flush();
+
+                        break;
+                    }
                 default:
                     throw new ArgumentException("No specified LogFormat");
             }
 
         }
 
+        double EvapVeloc;
 
         /// <summary>
         /// encapsulated handling of query values

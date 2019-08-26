@@ -217,6 +217,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             Heat = control.solveCoupledHeatEquation;
             Evaporation = (control.ThermalParameters.hVap_A != 0.0 && control.ThermalParameters.hVap_B != 0.0);
+            prescribedMassflux = control.prescribedMassflux;
             MatInt = !Evaporation;
 
             this.conductMode = control.conductMode;
@@ -245,6 +246,10 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public bool Evaporation;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public double prescribedMassflux;
 
         public ThermalParameters getThermParams {
             get { return thermParams; }
