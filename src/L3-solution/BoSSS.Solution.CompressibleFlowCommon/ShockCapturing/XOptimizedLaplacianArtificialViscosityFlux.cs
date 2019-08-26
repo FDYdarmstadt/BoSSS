@@ -49,7 +49,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
         private readonly string ArgumentName;
 
-        public XOptimizedLaplacianArtificialViscosityFlux(BoundaryCondMap<XDGHeatBcType> boundaryCondMap, LevelSetTracker levelSetTracker, string ArgumentVarName, double penaltySafetyFactor, double penaltyFactor, Dictionary<SpeciesId, MultidimensionalArray> agglomeratedLengthScales) {
+        public XOptimizedLaplacianArtificialViscosityFlux(BoundaryCondMap<XDGHeatBcType> boundaryCondMap, LevelSetTracker levelSetTracker, string ArgumentVarName, double penaltySafetyFactor, double penaltyFactor, Dictionary<SpeciesId, MultidimensionalArray> inverseLengthScales) {
             this.GridData = levelSetTracker.GridDat;
             this.ArgumentName = ArgumentVarName;
             this.boundaryCondMap = boundaryCondMap;
@@ -59,17 +59,17 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             CellMask speciesAWithOutCutCells = levelSetTracker.Regions.GetSpeciesMask("A").Except(cutCells);
             CellMask speciesBWithOutCutCells = levelSetTracker.Regions.GetSpeciesMask("B").Except(cutCells);
 
-            double[] lengthScales_A = agglomeratedLengthScales[levelSetTracker.GetSpeciesId("A")].To1DArray();
-            double[] lengthScales_B = agglomeratedLengthScales[levelSetTracker.GetSpeciesId("B")].To1DArray();
+            double[] lengthScales_A = inverseLengthScales[levelSetTracker.GetSpeciesId("A")].To1DArray();
+            double[] lengthScales_B = inverseLengthScales[levelSetTracker.GetSpeciesId("B")].To1DArray();
 
             this.penalties = new double[lengthScales_A.Length];
 
             foreach (int cell in speciesAWithOutCutCells.ItemEnum) {
-                this.penalties[cell] = penaltySafetyFactor * penaltyFactor / lengthScales_A[cell];
+                this.penalties[cell] = penaltySafetyFactor * penaltyFactor * lengthScales_A[cell];
             }
 
             foreach (int cell in speciesBWithOutCutCells.ItemEnum) {
-                this.penalties[cell] = penaltySafetyFactor * penaltyFactor / lengthScales_B[cell];
+                this.penalties[cell] = penaltySafetyFactor * penaltyFactor * lengthScales_B[cell];
             }
 
             foreach (int cell in cutCells.ItemEnum) {
@@ -94,7 +94,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         #region IEdgeForm Members
         TermActivationFlags IEdgeForm.BoundaryEdgeTerms {
             get {
-                return TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV;
+                return TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV | TermActivationFlags.V | TermActivationFlags.GradV;
             }
         }
 
@@ -112,22 +112,51 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             double nuB = inp.Parameters_OUT[0];
 
             for (int d = 0; d < inp.D; d++) {
-                Acc += 0.5 * (nuA * _Grad_uA[0, d] + nuB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
-                Acc += 0.5 * (nuA * _Grad_vA[d] + nuB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
+                Acc -= 0.5 * (nuA * _Grad_uA[0, d] + nuB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
+                Acc -= 0.5 * (nuA * _Grad_vA[d] + nuB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
             }
 
             //Acc *= this.m_alpha;
 
             double nuMax = (Math.Abs(nuA) > Math.Abs(nuB)) ? nuA : nuB;
 
-            Acc -= (_uA[0] - _uB[0]) * (_vA - _vB) * pnlty * nuMax; // penalty term
+            Acc += (_uA[0] - _uB[0]) * (_vA - _vB) * pnlty * nuMax; // penalty term
 
             return Acc;
         }
 
         double IEdgeForm.BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
-            // Boundary value is zero neumann boundary, i.e. do nothing
             double Acc = 0.0;
+
+            double pnlty = 2 * this.penalties[inp.jCellIn];
+            double nuA = inp.Parameters_IN[0];
+
+            XDGHeatBcType edgeType = this.boundaryCondMap.EdgeTag2Type[inp.EdgeTag];
+
+            switch (edgeType) {
+                case XDGHeatBcType.Dirichlet:
+                    Func<double[], double, double> dirichletFunction = this.boundaryCondMap.bndFunction["u"][inp.EdgeTag];
+                    double g_D = dirichletFunction(inp.X, inp.time);
+
+                    for (int d = 0; d < inp.D; d++) {
+                        double nd = inp.Normale[d];
+                        Acc -= (nuA * _Grad_uA[0, d]) * (_vA) * nd;        // consistency
+                        Acc -= (nuA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;  // symmetry
+                    }
+
+                    Acc += nuA * (_uA[0] - g_D) * (_vA - 0) * pnlty; // penalty
+                    break;
+
+                case XDGHeatBcType.ZeroNeumann:
+                    double g_N = 0.0;
+
+                    Acc -= nuA * g_N * _vA;     // consistency
+                    break;
+
+                default:
+                    throw new NotSupportedException();
+            }
+
             return Acc;
         }
         #endregion
@@ -140,12 +169,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         }
 
         double IVolumeForm.VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
-            double ret = 0;
-            double viscosity = cpv.Parameters[0];
-            for (int d = 0; d < this.GridData.SpatialDimension; d++) {
-                ret += viscosity * GradU[0, d] * GradV[d];
-            }
-            return ret;
+            double acc = 0;
+            for (int d = 0; d < cpv.D; d++)
+                acc += GradU[0, d] * GradV[d] * cpv.Parameters[0];
+            return acc;
         }
         #endregion
 
@@ -205,7 +232,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                     switch (edgeType) {
                         case XDGHeatBcType.Dirichlet:
                             double g_D = dirichletFunction(X, efp.time);
-                            double uJump = 0.5 * (Uin[0][cell, node] - g_D);
+                            //double uJump = 0.5 * (Uin[0][cell, node] - g_D);
+                            double uJump = 1.0 * (Uin[0][cell, node] - g_D);
                             double fluxIn = efp.ParameterVars_IN[0][cell, node] * uJump;
 
                             for (int d = 0; d < GridData.SpatialDimension; d++) {
@@ -260,6 +288,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             }
         }
 
+        /// <summary>
+        /// Consistency and penalty term
+        /// </summary>
         void INonlinEdgeForm_V.BoundaryEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin,
             MultidimensionalArray fin) {
