@@ -115,6 +115,18 @@ namespace BoSSS.Application.BoSSSpad {
             if (log != null) {
                 log.Close();
             }
+
+            // if wanted perform a more detailed check of the BoSSS installation
+            Console.WriteLine();
+            Console.WriteLine("Basic setup check completed!");
+            Console.WriteLine("Do you wish to perform a detailed check of functionality? y/n");
+            char performCheck = Console.ReadKey().KeyChar;
+            if (performCheck == 'y')
+            {
+                Console.Write("\n");
+                DetailCheckSetup();
+            }
+
         }
 
         /// <summary>
@@ -204,14 +216,64 @@ namespace BoSSS.Application.BoSSSpad {
             log.Flush();
         }
 
+        private static void DetailCheckSetup()
+        {
+            int n = 50;
+            int spacing = 1;
+            double[] x = new double[n];
+            double[] b = new double[n];
+            MultidimensionalArray M = MultidimensionalArray.Create(n, n);
+
+            // create some array
+            for(int i = 0; i< n; i++)
+            {
+                b[i] = 1;
+                for(int j = 0; j < n; j++){
+                    M[i, j] = i+Math.Pow(j,i);
+                }
+            }
+
+            try
+            {
+                Console.Write("Starting with a test of LAPACK Function DGETRF\n");
+                M.Solve(x, b);
+                Console.Write("Succesfully called DGETRF\n\n");
+
+                Console.Write("Starting with a test of BLAS Function DDOT\n");
+                BLAS.DDOT(ref n, x, ref spacing, b,ref spacing);
+                Console.Write("Succesfully called DDOT\n\n");
+
+                Console.Write("Starting with a test of Tecplot Function tecnod110\n");
+                Console.Write("This test is not yet implemented\n");
+                Console.Write("Succesfully called Tecplot Function tecnod110\n\n");
+
+                Console.Write("Starting with a test of METIS Function \n");
+                Console.Write("This test is not yet implemented\n");
+                Console.Write("Succesfully called METIS \n\n");
+
+                Console.Write("Starting with a test of the MUMPS Solver\n");
+                Console.Write("This test is not yet implemented\n");
+                Console.Write("Succesfully called the MUMPS Solver\n\n");
+
+                Console.Write("Starting with a test of the PARDISO Solver\n");
+                Console.Write("This test is not yet implemented\n");
+                Console.Write("Succesfully called the PARDISO Solver\n\n");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
+        }
+
         class Metis : DynLibLoader {
 
             public Metis() :
-                base(new string[] { "metis.dll", "libmetis.so" },
-                     new string[2][][],
-                     new GetNameMangling[] { StandardMangling, StandardMangling },
-                     new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix },
-                     new int[] { -1, -1 }) {
+                base(new string[] { "metis.dll", "libBoSSSnative_seq.so", "libmetis.so" },
+                     new string[3][][],
+                     new GetNameMangling[] { StandardMangling, DynLibLoader.BoSSS_Prefix, StandardMangling },
+                     new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix },
+                     new int[] { -1, -1, -1 }) {
             }
 
             static string StandardMangling(string _name) {
@@ -239,11 +301,11 @@ namespace BoSSS.Application.BoSSSpad {
         class Tecplot : DynLibLoader {
 
             public Tecplot() :
-                base(new string[] { "tecio.dll", "libtecio.so" },
-                     new string[2][][],
-                     new GetNameMangling[] { NoMangling, NoMangling },
-                     new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix },
-                     new int[] { -1, -1 }) {
+                base(new string[] { "tecio.dll","libBoSSSnative_seq.so", "libtecio.so" },
+                     new string[3][][],
+                     new GetNameMangling[] { NoMangling, DynLibLoader.BoSSS_Prefix, NoMangling },
+                     new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix },
+                     new int[] { -1, -1, -1 }) {
             }
 
             static string NoMangling(string _name) {
@@ -255,11 +317,11 @@ namespace BoSSS.Application.BoSSSpad {
         class MUMPS : DynLibLoader {
 
             public MUMPS() :
-                base(new string[] { "dmumps-mpi.dll", "libdmumps.so" },
-                     new string[2][][],
-                     new GetNameMangling[] { NoMangling, NoMangling },
-                     new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix },
-                     new int[] { -1, -1 }) {
+                base(new string[] { "dmumps-mpi.dll","libBoSSSnative_mpi.so", "libdmumps.so" },
+                     new string[3][][],
+                     new GetNameMangling[] { NoMangling, DynLibLoader.BoSSS_Prefix, NoMangling },
+                     new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix },
+                     new int[] { -1, -1, -1 }) {
             }
 
             static string NoMangling(string _name) {

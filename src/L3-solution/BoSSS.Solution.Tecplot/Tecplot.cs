@@ -136,7 +136,7 @@ namespace BoSSS.Solution.Tecplot {
             ptrFName = Marshal.StringToHGlobalAnsi(filenameWithPath);
             ptrVariables = Marshal.StringToHGlobalAnsi(Variables);
 
-            int errorWhileOpening = tecini110(ptrTitle, ptrVariables, ptrFName, ptrScratchDir, ref Debug, ref VIsDouble);
+            int errorWhileOpening = BoSSS_tecini110(ptrTitle, ptrVariables, ptrFName, ptrScratchDir, ref Debug, ref VIsDouble);
             if (errorWhileOpening == -1)
             {
                 throw new Exception("Tecplot could not create file. Do you have writing permission?");
@@ -151,7 +151,7 @@ namespace BoSSS.Solution.Tecplot {
         /// Closes the currently open output file 
         /// </summary>
         override protected void CloseFile() {
-            tecend110();
+            BoSSS_tecend110();
         }
 
         /// <summary>
@@ -245,7 +245,7 @@ namespace BoSSS.Solution.Tecplot {
 
                             int VIsDouble = 1;
                             int n = globalCoordinates.Length;
-                            tecdat110(ref n, globalCoordinates, ref VIsDouble);
+                            BoSSS_tecdat110(ref n, globalCoordinates, ref VIsDouble);
                         }
                     } else {
                         // each-cell-on-its-own -- mode
@@ -260,7 +260,7 @@ namespace BoSSS.Solution.Tecplot {
 
                                 int VIsDouble = 1;
                                 int n = globalCoordinates.Length;
-                                tecdat110(ref n, globalCoordinates, ref VIsDouble);
+                                BoSSS_tecdat110(ref n, globalCoordinates, ref VIsDouble);
                             }
                         }
                     }
@@ -273,9 +273,9 @@ namespace BoSSS.Solution.Tecplot {
                         SampleField(field, showJumps);
 
                         if (!showJumps) {
-                            tecdat110(ref totalVertices, smoothedResult, ref VIsDouble);
+                            BoSSS_tecdat110(ref totalVertices, smoothedResult, ref VIsDouble);
                         } else {
-                            tecdat110(ref totalVertices, notSmoothedResult, ref VIsDouble);
+                            BoSSS_tecdat110(ref totalVertices, notSmoothedResult, ref VIsDouble);
                         }
                     }
 
@@ -292,7 +292,7 @@ namespace BoSSS.Solution.Tecplot {
                                 permutedConnectivity[i, j] = 1 + connectivity[i, permutationTable[j]];
                             }
                         }
-                        tecnod110(permutedConnectivity);
+                        BoSSS_tecnod110(permutedConnectivity);
                     } else {
                         int[,,] permutedConnectivity = new int[NoOfCells, subdivisionsPerCell, permutationTable.Length];
                         for (int j = 0; j < NoOfCells; j++) {
@@ -302,7 +302,7 @@ namespace BoSSS.Solution.Tecplot {
                                 }
                             }
                         }
-                        tecnod110(permutedConnectivity);
+                        BoSSS_tecnod110(permutedConnectivity);
                     }
 
                 }
@@ -334,7 +334,7 @@ namespace BoSSS.Solution.Tecplot {
                 int IsBlock = 1;
                 int StrandID = 0, ParentZone = 0, ShrConn = 0;
 
-                teczne110(ptrZoneTitle,
+                BoSSS_teczne110(ptrZoneTitle,
                     ref zoneTypeIndex,
                     ref numberOfPoints,
                     ref numberOfElements,
@@ -430,8 +430,9 @@ namespace BoSSS.Solution.Tecplot {
         /// or double precision.
         /// </param>
         /// <returns>0 if successful, -1 if unsuccessful.</returns>
-        [DllImport("tecio")]
-        private static unsafe extern int tecini110(
+        //[DllImport("tecio")]
+        [DllImport("libBoSSSnative_seq")]
+        private static unsafe extern int BoSSS_tecini110(
             IntPtr Title,
             IntPtr Variables,
             IntPtr FName,
@@ -545,8 +546,9 @@ namespace BoSSS.Solution.Tecplot {
         /// between cell-based and face-based finite-element zones.
         /// </param>
         /// <returns>0 if successful, -1 if unsuccessful.</returns>
-        [DllImport("tecio")]
-        private static unsafe extern int teczne110(
+        //[DllImport("tecio")]
+        [DllImport("libBoSSSnative_seq")]
+        private static unsafe extern int BoSSS_teczne110(
             IntPtr ZoneTitle,
             ref int ZoneType,
             ref int IMxOrNumPts,
@@ -586,16 +588,18 @@ namespace BoSSS.Solution.Tecplot {
         /// single (0) or double (1) precision.
         /// </param>
         /// <returns>0 if successful, -1 if unsuccessful.</returns>
-        [DllImport("tecio")]
-        private static unsafe extern int tecdat110(ref int N, double[] Data, ref int IsDouble);
+        //[DllImport("tecio")]
+        [DllImport("libBoSSSnative_seq")]
+        private static unsafe extern int BoSSS_tecdat110(ref int N, double[] Data, ref int IsDouble);
 
         /// <summary>
         /// Must be called to close out the current data file. There must be
         /// one call to TECEND110 for each TECINI111.
         /// </summary>
         /// <returns>0 if successful, -1 if unsuccessful.</returns>
-        [DllImport("tecio")]
-        private static unsafe extern int tecend110();
+        //[DllImport("tecio")]
+        [DllImport("libBoSSSnative_seq")]
+        private static unsafe extern int BoSSS_tecend110();
 
         /// <summary>
         /// Writes an array of node data to the binary data file. This is the
@@ -606,8 +610,9 @@ namespace BoSSS.Solution.Tecplot {
         /// <see cref="TecplotZone.PlotZone"/>
         /// </param>
         /// <returns>0 if successful, -1 if unsuccessful.</returns>
-        [DllImport("tecio")]
-        private static unsafe extern int tecnod110(int[,,] nodelist);
+        //[DllImport("tecio")]
+        [DllImport("libBoSSSnative_seq")]
+        private static unsafe extern int BoSSS_tecnod110(int[,,] nodelist);
 
         /// <summary>
         /// Writes an array of node data to the binary data file. This is the
@@ -626,8 +631,9 @@ namespace BoSSS.Solution.Tecplot {
         /// 8=Brick
         /// </param>
         /// <returns>0 if successful, -1 if unsuccessful.</returns>
-        [DllImport("tecio")]
-        private static unsafe extern int tecnod110(int[,] nodelist);
+        //[DllImport("tecio")]
+        [DllImport("libBoSSSnative_seq")]
+        private static unsafe extern int BoSSS_tecnod110(int[,] nodelist);
 
 
     }

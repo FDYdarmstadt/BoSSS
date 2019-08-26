@@ -25,20 +25,21 @@ namespace ilPSP.LinSolvers.MUMPS
 {
 	public unsafe class MUMPS_csharp
 	{
-        [DllImport("dmumps-mpi")]
-        extern static unsafe int* mumps_get_mapping();
+        //[DllImport("dmumps-mpi")]
+        [DllImport("libBoSSSnative_mpi")]
+        extern static unsafe int* BoSSS_mumps_get_mapping();
 
-        [DllImport("dmumps-mpi")]
-		extern static unsafe int* mumps_get_pivnul_list();
+        [DllImport("libBoSSSnative_mpi")]
+		extern static unsafe int* BoSSS_mumps_get_pivnul_list();
 
-		[DllImport("dmumps-mpi")]
-		extern static unsafe int* mumps_get_sym_perm();
+		[DllImport("libBoSSSnative_mpi")]
+		extern static unsafe int* BoSSS_mumps_get_sym_perm();
 
-		[DllImport("dmumps-mpi")]
-		extern static unsafe int* mumps_get_uns_perm();
+		[DllImport("libBoSSSnative_mpi")]
+		extern static unsafe int* BoSSS_mumps_get_uns_perm();
 
-		[DllImport("dmumps-mpi", EntryPoint = "dmumps_f77_")]
-		extern static unsafe void MUMPS_F77(
+		[DllImport("libBoSSSnative_mpi")] //, EntryPoint = "dmumps_f77_")]
+		extern static unsafe void BoSSS_dmumps_f77_(
 		   int* job,
 		   int* sym,
 		   int* par,
@@ -423,7 +424,7 @@ namespace ilPSP.LinSolvers.MUMPS
 								//isol_loc, &isol_loc_avail, &mumps_par.nz_rhs, &mumps_par.lsol_loc, &mumps_par.schur_mloc, &mumps_par.schur_nloc, &mumps_par.schur_lld, &mumps_par.mblock, &mumps_par.nblock,
 								//&mumps_par.nprow, &mumps_par.npcol, ooc_tmpdir, ooc_prefix, write_problem, &ooc_tmpdirlen, &ooc_prefixlen, &write_problemlen);
 
-								MUMPS_F77(job, sym, par, comm_fortran, n, icntl, cntl, keep, dkeep, keep8, nz
+								BoSSS_dmumps_f77_(job, sym, par, comm_fortran, n, icntl, cntl, keep, dkeep, keep8, nz
 						   , irn, &irn_avail, jcn, &jcn_avail, a, &a_avail, nz_loc, irn_loc, &irn_loc_avail, jcn_loc, &jcn_loc_avail
 						   , a_loc, &a_loc_avail, nelt, eltptr, &eltptr_avail, eltvar, &eltvar_avail, a_elt, &a_elt_avail, perm_in, &perm_in_avail,
 						   rhs, &rhs_avail, redrhs, &redrhs_avail, info, rinfo, infog, rinfog, deficiency, lwk_user, &size_schur, listvar_schur,
@@ -454,7 +455,7 @@ namespace ilPSP.LinSolvers.MUMPS
 								//        mumps_par.mapping[ii] = mumps_par_mapping[ii];
 								//}
 
-								int* mumps_par_mapping = mumps_get_mapping();
+								int* mumps_par_mapping = BoSSS_mumps_get_mapping();
 								mumps_par.sym_perm = new int[mumps_par.nz];
 								if (mumps_par_mapping != null) {
 									for (int ii = 0; ii < mumps_par.nz; ii++)
@@ -484,14 +485,14 @@ namespace ilPSP.LinSolvers.MUMPS
 
 
 								// to get permutations computed during analysis 
-								int* mumps_par_sym_perm = mumps_get_sym_perm();
+								int* mumps_par_sym_perm = BoSSS_mumps_get_sym_perm();
 								mumps_par.sym_perm = new int[mumps_par.n];
 								if (mumps_par_sym_perm != null) {
 									for (int ii = 0; ii < mumps_par.n; ii++)
 										mumps_par.sym_perm[ii] = mumps_par_sym_perm[ii];
 								}
 
-								int* mumps_par_uns_perm = mumps_get_uns_perm();
+								int* mumps_par_uns_perm = BoSSS_mumps_get_uns_perm();
 								mumps_par.uns_perm = new int[mumps_par.n];
 								if (mumps_par_uns_perm != null) {
 									for (int ii = 0; ii < mumps_par.n; ii++)

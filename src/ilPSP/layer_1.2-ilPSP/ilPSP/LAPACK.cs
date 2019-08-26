@@ -61,7 +61,7 @@ namespace ilPSP.Utils {
         public LAPACK() :
             base(new string[] { "BLAS_LAPACK.dll","libBoSSSnative_seq.so", "libacml.so", "liblapack.so", "libopenblas.so" },
                  new string[5][][],
-                 new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Suffix, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore },
+                 new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore },
                  Helper(),
                  new int[] { -1, -1, -1, -1, -1 }) {
         }

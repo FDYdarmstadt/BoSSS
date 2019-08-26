@@ -72,7 +72,7 @@ namespace ilPSP.LinSolvers.PARDISO {
             : base(
                 new string[] { "PARDISO.dll", "libBoSSSnative_seq.so" },
                 new string[2][][],
-                new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Suffix },
+                new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix },
                 new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix },
                 new int[] { -1, -1 }) { }
 

@@ -185,7 +185,7 @@ namespace MPI.Wrappers.Utils {
                         Info("MISMATCH IN POINTER BYTENESS");
                         continue; // don't search for the library 'LibNames[i]' on this system
                     }
-                    Info("FILTERS PASSED");
+                    Info("FILERS PASSED");
                 }
 
                 // load prequesite library
@@ -517,9 +517,9 @@ namespace MPI.Wrappers.Utils {
         }
 
         /// <summary>
-        /// DLL function name mangling: BoSSS_ suffix for custom libBoSSSnative
+        /// DLL function name mangling: BoSSS_ prefix for custom libBoSSSnative
         /// </summary>
-        public static string BoSSS_Suffix(string Name)
+        public static string BoSSS_Prefix(string Name)
         {
             return "BoSSS_" + Name;
         }

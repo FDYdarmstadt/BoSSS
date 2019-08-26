@@ -68,7 +68,8 @@ namespace ilPSP.Kraypis {
         /// <summary>
         /// see METIS manual;
         /// </summary>
-        [DllImport("metis", EntryPoint = "METIS_PartGraphKway")]
+        //[DllImport("metis", EntryPoint = "METIS_PartGraphKway")]
+        [DllImport("libBoSSSnative_seq", EntryPoint = "METIS_PartGraphKway")]
         public static extern int PartGraphKway(ref int nvtxs, ref int ncon,
                                                 int[] xadj, int[] adjncy,
                                                 int[] vwgt, int[] vsize, int[] adjwgt,
@@ -78,7 +79,8 @@ namespace ilPSP.Kraypis {
         /// <summary>
         /// see METIS manual;
         /// </summary>
-        [DllImport("metis", EntryPoint = "METIS_PartGraphRecursive")]
+        //[DllImport("metis", EntryPoint = "METIS_PartGraphRecursive")]
+        [DllImport("libBoSSSnative_seq", EntryPoint = "METIS_PartGraphRecursive")]
         public static extern int PartGraphRecursive(ref int nvtxs, ref int ncon,
                                                      int[] xadj, int[] adjncy,
                                                      int[] vwgt, int[] vsize, int[] adjwgt,
