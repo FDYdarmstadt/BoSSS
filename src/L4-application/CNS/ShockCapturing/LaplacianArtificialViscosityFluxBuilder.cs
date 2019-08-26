@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
@@ -28,22 +29,33 @@ namespace CNS.ShockCapturing {
         }
 
         public override void BuildFluxes(Operator mapping) {
-            //double hMin = this.speciesMap.GridData.Cells.h_minGlobal;
+            GridData gridData = (GridData)this.speciesMap.GridData;
 
-            // Optimized artificial viscosity flux
             mapping.DensityComponents.Add(new OptimizedLaplacianArtificialViscosityFlux(
-                (BoSSS.Foundation.Grid.Classic.GridData) this.speciesMap.GridData, 
-                control.DensityDegree, this.speciesMap.GridData.SpatialDimension, CompressibleVariables.Density.Name));
+                gridData,
+                CompressibleVariables.Density.Name,
+                penaltySafetyFactor: 1.0,
+                penaltyFactor: (control.DensityDegree + 1) * (control.DensityDegree + gridData.SpatialDimension) / gridData.SpatialDimension,
+                inverseLengthScales: gridData.Cells.cj
+                ));
 
-            for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
+            for (int d = 0; d < gridData.SpatialDimension; d++) {
                 mapping.MomentumComponents[d].Add(new OptimizedLaplacianArtificialViscosityFlux(
-                    (BoSSS.Foundation.Grid.Classic.GridData) this.speciesMap.GridData, 
-                    control.MomentumDegree, this.speciesMap.GridData.SpatialDimension, CompressibleVariables.Momentum[d].Name));
-            }   
-            
+                    gridData,
+                    CompressibleVariables.Momentum[d].Name,
+                    penaltySafetyFactor: 1.0,
+                    penaltyFactor: (control.MomentumDegree + 1) * (control.MomentumDegree + gridData.SpatialDimension) / gridData.SpatialDimension,
+                    inverseLengthScales: gridData.Cells.cj
+                    ));
+            }
+
             mapping.EnergyComponents.Add(new OptimizedLaplacianArtificialViscosityFlux(
-                 (BoSSS.Foundation.Grid.Classic.GridData) this.speciesMap.GridData, 
-                 control.EnergyDegree, this.speciesMap.GridData.SpatialDimension, CompressibleVariables.Energy.Name));
+                 gridData,
+                 CompressibleVariables.Energy.Name,
+                    penaltySafetyFactor: 1.0,
+                    penaltyFactor: (control.EnergyDegree + 1) * (control.EnergyDegree + gridData.SpatialDimension) / gridData.SpatialDimension,
+                    inverseLengthScales: gridData.Cells.cj
+                 ));
 
 
             //// Old artificial viscosity flux (hack for testing different AV boundary conditions)
