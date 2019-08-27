@@ -15,7 +15,9 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.XDG;
 using BoSSS.Solution.CompressibleFlowCommon.Diffusion;
 using ilPSP;
 using System;
@@ -34,18 +36,56 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
         private readonly string ArgumentName;
 
-        private readonly double penaltySafetyFactor;
+        private readonly double[] penalties;
 
-        private readonly double penaltyFactor;
-
-        private readonly MultidimensionalArray inverseLengthScales;
-
+        /// <summary>
+        /// Ctor for standard (non-XDG) usage on boundary-fitted grids
+        /// </summary>
         public OptimizedLaplacianArtificialViscosityFlux(GridData gridData, string ArgumentVarName, double penaltySafetyFactor, double penaltyFactor, MultidimensionalArray inverseLengthScales) {
             this.gridData = gridData;
             this.ArgumentName = ArgumentVarName;
-            this.penaltySafetyFactor = penaltySafetyFactor;
-            this.penaltyFactor = penaltyFactor;
-            this.inverseLengthScales = inverseLengthScales;
+
+            this.penalties = new double[inverseLengthScales.Length];
+            for (int i = 0; i < this.penalties.Length; i++) {
+                this.penalties[i] = penaltySafetyFactor * penaltyFactor * inverseLengthScales[i];
+            }
+        }
+
+        /// <summary>
+        /// Ctor for XDG usage
+        /// </summary>
+        public OptimizedLaplacianArtificialViscosityFlux(LevelSetTracker levelSetTracker, string ArgumentVarName, double penaltySafetyFactor, double penaltyFactor, Dictionary<SpeciesId, MultidimensionalArray> inverseLengthScales) {
+            this.gridData = levelSetTracker.GridDat;
+            this.ArgumentName = ArgumentVarName;
+
+            // Combine length scales from species A and B
+            CellMask cutCells = levelSetTracker.Regions.GetCutCellMask();
+            CellMask speciesAWithOutCutCells = levelSetTracker.Regions.GetSpeciesMask("A").Except(cutCells);
+            CellMask speciesBWithOutCutCells = levelSetTracker.Regions.GetSpeciesMask("B").Except(cutCells);
+
+            double[] inverseLengthScales_A = inverseLengthScales[levelSetTracker.GetSpeciesId("A")].To1DArray();
+            double[] inverseLengthScales_B = inverseLengthScales[levelSetTracker.GetSpeciesId("B")].To1DArray();
+
+            this.penalties = new double[inverseLengthScales_A.Length];
+
+            foreach (int cell in speciesAWithOutCutCells.ItemEnum) {
+                this.penalties[cell] = penaltySafetyFactor * penaltyFactor * inverseLengthScales_A[cell];
+            }
+
+            foreach (int cell in speciesBWithOutCutCells.ItemEnum) {
+                this.penalties[cell] = penaltySafetyFactor * penaltyFactor * inverseLengthScales_B[cell];
+            }
+
+            foreach (int cell in cutCells.ItemEnum) {
+                this.penalties[cell] = penaltySafetyFactor * penaltyFactor * Math.Max(inverseLengthScales_A[cell], inverseLengthScales_B[cell]);
+            }
+
+#if DEBUG
+            // Some checks
+            penalties.ForEach(s => Debug.Assert(s >= 0.0, "Penalty is smaller than zero"));
+            penalties.ForEach(s => Debug.Assert(!double.IsNaN(s), "Penalty is NaN"));
+            penalties.ForEach(s => Debug.Assert(!double.IsInfinity(s), "Penalty is infinite"));
+#endif
         }
 
         #region IEquationComponent Members
@@ -165,7 +205,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
                 int jCellIn = gridData.Edges.CellIndices[iEdge, 0];
                 int jCellOut = gridData.Edges.CellIndices[iEdge, 1];
-                double Penalty = penaltyFactor * Math.Max(inverseLengthScales[jCellIn], inverseLengthScales[jCellOut]);
+                double Penalty = Math.Max(penalties[jCellIn], penalties[jCellOut]);
 
                 for (int node = 0; node < NumOfNodes; node++) { // loop over nodes...
                     // SIPG Flux Loops
