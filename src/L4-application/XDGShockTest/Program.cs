@@ -321,7 +321,7 @@ namespace XDGShockTest {
                         CompressibleVariables.Density,
                         penaltySafetyFactor: 1.0,
                         penaltyFactor: (Density.Basis.Degree + 1) * (Density.Basis.Degree + gridData.SpatialDimension) / gridData.SpatialDimension,
-                        inverseLengthScales: gridData.Cells.cj
+                        cellLengthScales: gridData.Cells.CellLengthScale
                         ));
 
                 for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
@@ -331,7 +331,7 @@ namespace XDGShockTest {
                             CompressibleVariables.Momentum[d],
                             penaltySafetyFactor: 1.0,
                             penaltyFactor: (Momentum[0].Basis.Degree + 1) * (Momentum[0].Basis.Degree + gridData.SpatialDimension) / gridData.SpatialDimension,
-                            inverseLengthScales: gridData.Cells.cj
+                            cellLengthScales: gridData.Cells.CellLengthScale
                             ));
                 }
                 this.XSpatialOperator.EquationComponents[CompressibleVariables.Energy].Add(
@@ -340,7 +340,7 @@ namespace XDGShockTest {
                         CompressibleVariables.Energy,
                         penaltySafetyFactor: 1.0,
                         penaltyFactor: (Energy.Basis.Degree + 1) * (Energy.Basis.Degree + gridData.SpatialDimension) / gridData.SpatialDimension,
-                        inverseLengthScales: gridData.Cells.cj
+                        cellLengthScales: gridData.Cells.CellLengthScale
                         ));
             }
 

@@ -36,7 +36,7 @@ namespace CNS.ShockCapturing {
                 CompressibleVariables.Density.Name,
                 penaltySafetyFactor: 1.0,
                 penaltyFactor: (control.DensityDegree + 1) * (control.DensityDegree + gridData.SpatialDimension) / gridData.SpatialDimension,
-                inverseLengthScales: gridData.Cells.cj
+                cellLengthScales: gridData.Cells.CellLengthScale
                 ));
 
             for (int d = 0; d < gridData.SpatialDimension; d++) {
@@ -45,7 +45,7 @@ namespace CNS.ShockCapturing {
                     CompressibleVariables.Momentum[d].Name,
                     penaltySafetyFactor: 1.0,
                     penaltyFactor: (control.MomentumDegree + 1) * (control.MomentumDegree + gridData.SpatialDimension) / gridData.SpatialDimension,
-                    inverseLengthScales: gridData.Cells.cj
+                    cellLengthScales: gridData.Cells.CellLengthScale
                     ));
             }
 
@@ -54,7 +54,7 @@ namespace CNS.ShockCapturing {
                  CompressibleVariables.Energy.Name,
                     penaltySafetyFactor: 1.0,
                     penaltyFactor: (control.EnergyDegree + 1) * (control.EnergyDegree + gridData.SpatialDimension) / gridData.SpatialDimension,
-                    inverseLengthScales: gridData.Cells.cj
+                    cellLengthScales: gridData.Cells.CellLengthScale
                  ));
 
 

@@ -42,20 +42,20 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         /// <summary>
         /// Ctor for standard (non-XDG) usage on boundary-fitted grids
         /// </summary>
-        public OptimizedLaplacianArtificialViscosityFlux(GridData gridData, string ArgumentVarName, double penaltySafetyFactor, double penaltyFactor, MultidimensionalArray inverseLengthScales) {
+        public OptimizedLaplacianArtificialViscosityFlux(GridData gridData, string ArgumentVarName, double penaltySafetyFactor, double penaltyFactor, MultidimensionalArray cellLengthScales) {
             this.gridData = gridData;
             this.ArgumentName = ArgumentVarName;
 
-            this.penalties = new double[inverseLengthScales.Length];
+            this.penalties = new double[cellLengthScales.Length];
             for (int i = 0; i < this.penalties.Length; i++) {
-                this.penalties[i] = penaltySafetyFactor * penaltyFactor * inverseLengthScales[i];
+                this.penalties[i] = penaltySafetyFactor * penaltyFactor / cellLengthScales[i];
             }
         }
 
         /// <summary>
         /// Ctor for XDG usage
         /// </summary>
-        public OptimizedLaplacianArtificialViscosityFlux(LevelSetTracker levelSetTracker, string ArgumentVarName, double penaltySafetyFactor, double penaltyFactor, Dictionary<SpeciesId, MultidimensionalArray> inverseLengthScales) {
+        public OptimizedLaplacianArtificialViscosityFlux(LevelSetTracker levelSetTracker, string ArgumentVarName, double penaltySafetyFactor, double penaltyFactor, Dictionary<SpeciesId, MultidimensionalArray> cellLengthScales) {
             this.gridData = levelSetTracker.GridDat;
             this.ArgumentName = ArgumentVarName;
 
@@ -64,21 +64,21 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             CellMask speciesAWithOutCutCells = levelSetTracker.Regions.GetSpeciesMask("A").Except(cutCells);
             CellMask speciesBWithOutCutCells = levelSetTracker.Regions.GetSpeciesMask("B").Except(cutCells);
 
-            double[] inverseLengthScales_A = inverseLengthScales[levelSetTracker.GetSpeciesId("A")].To1DArray();
-            double[] inverseLengthScales_B = inverseLengthScales[levelSetTracker.GetSpeciesId("B")].To1DArray();
+            double[] cellLengthScales_A = cellLengthScales[levelSetTracker.GetSpeciesId("A")].To1DArray();
+            double[] cellLengthScales_B = cellLengthScales[levelSetTracker.GetSpeciesId("B")].To1DArray();
 
-            this.penalties = new double[inverseLengthScales_A.Length];
+            this.penalties = new double[cellLengthScales_A.Length];
 
             foreach (int cell in speciesAWithOutCutCells.ItemEnum) {
-                this.penalties[cell] = penaltySafetyFactor * penaltyFactor * inverseLengthScales_A[cell];
+                this.penalties[cell] = penaltySafetyFactor * penaltyFactor / cellLengthScales_A[cell];
             }
 
             foreach (int cell in speciesBWithOutCutCells.ItemEnum) {
-                this.penalties[cell] = penaltySafetyFactor * penaltyFactor * inverseLengthScales_B[cell];
+                this.penalties[cell] = penaltySafetyFactor * penaltyFactor / cellLengthScales_B[cell];
             }
 
             foreach (int cell in cutCells.ItemEnum) {
-                this.penalties[cell] = penaltySafetyFactor * penaltyFactor * Math.Max(inverseLengthScales_A[cell], inverseLengthScales_B[cell]);
+                this.penalties[cell] = penaltySafetyFactor * penaltyFactor / Math.Min(cellLengthScales_A[cell], cellLengthScales_B[cell]);
             }
 
 #if DEBUG
