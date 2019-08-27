@@ -29,7 +29,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
     public class OptimizedLaplacianArtificialViscosityFlux : INonlinear2ndOrderForm {
 
         public bool AdiabaticWall {
-            get; set;
+            get;
+            set;
         }
 
         private GridData gridData;
@@ -115,12 +116,36 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             }
         }
 
+        /// <summary>
+        /// Non-optimized version of the inner edge flux,
+        /// <seealso cref="BoSSS.Solution.NSECommon.SIPLaplace"/>
+        /// </summary>
         double IEdgeForm.InnerEdgeForm(ref CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
-            throw new NotImplementedException();
+            double Acc = 0.0;
+
+            double penalty = Math.Max(penalties[inp.jCellIn], penalties[inp.jCellOut]);
+            double nuA = inp.Parameters_IN[0];
+            double nuB = inp.Parameters_OUT[0];
+
+            for (int d = 0; d < inp.D; d++) {
+                Acc -= 0.5 * (nuA * _Grad_uA[0, d] + nuB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
+                Acc -= 0.5 * (nuA * _Grad_vA[d] + nuB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
+            }
+
+            double nuMax = (Math.Abs(nuA) > Math.Abs(nuB)) ? nuA : nuB;
+
+            Acc += (_uA[0] - _uB[0]) * (_vA - _vB) * penalty * nuMax; // penalty term
+
+            return Acc;
         }
 
+        /// <summary>
+        /// Non-optimized version of the border edge flux,
+        /// <seealso cref="BoSSS.Solution.NSECommon.SIPLaplace"/>
+        /// </summary>
         double IEdgeForm.BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
-            throw new NotImplementedException();
+            // Zero Neumann boundary conditions
+            return 0.0;
         }
         #endregion
 
@@ -201,7 +226,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
             for (int cell = 0; cell < NumOfCells; cell++) { // loop over cells...
                 int iEdge = efp.e0 + cell;
-                //double Penalty = penalty(gridDat.Edges.CellIndices[iEdge, 0], gridDat.Edges.CellIndices[iEdge, 1], gridDat.Cells.cj);
 
                 int jCellIn = gridData.Edges.CellIndices[iEdge, 0];
                 int jCellOut = gridData.Edges.CellIndices[iEdge, 1];
@@ -297,7 +321,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 for (int node = 0; node < NumOfNodes; node++) { // loop over nodes...
                     double viscosity = prm.ParameterVars[0][cell, node];
                     for (int d = 0; d < gridData.SpatialDimension; d++) {
-                        //acc -= GradU[0, d] * GradV[d] * this.Nu(cpv.Xglobal, cpv.Parameters, cpv.jCell) * this.m_alpha;
                         f[cell, node, d] += viscosity * GradU[0][cell, node, d];
                     }
                 }
