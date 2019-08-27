@@ -365,8 +365,7 @@ namespace XDGShockTest {
                 this.Control.AgglomerationThreshold,
                 true,
                 this.Control.NonLinearSolver,
-                this.Control.LinearSolver,
-                this.Sensor);
+                this.Control.LinearSolver);
         }
 
         MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig {
@@ -519,7 +518,7 @@ namespace XDGShockTest {
 
             Exception e = null;
             try {
-                TimeStepper.Solve(phystime, dt, this.Density);    // Update sensor values is included
+                TimeStepper.Solve(phystime, dt);
             } catch (Exception ee) {
                 e = ee;
             }
