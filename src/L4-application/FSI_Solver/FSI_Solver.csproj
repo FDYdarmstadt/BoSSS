@@ -94,9 +94,15 @@
     <Compile Include="FSI_Collision.cs" />
     <Compile Include="FSI_TimestepInfo.cs" />
     <Compile Include="FSI_LevelSetUpdate.cs" />
+    <Compile Include="Particle\MovementTypes\Motion_Standard_PostCollision.cs" />
+    <Compile Include="Particle\MovementTypes\Motion_AddedDamping_PostCollision.cs" />
+    <Compile Include="Particle\MovementTypes\Motion_AddedDamping.cs" />
+    <Compile Include="Particle\MovementTypes\Motion_Dry.cs" />
+    <Compile Include="Particle\MovementTypes\Motion_Fixed.cs" />
     <Compile Include="Particle\ParticleAcceleration.cs" />
     <Compile Include="Particle\ParticleAddedDamping.cs" />
     <Compile Include="Particle\ParticleForceIntegration.cs" />
+    <Compile Include="Particle\ParticleMotion.cs" />
     <Compile Include="Particle\ParticleUnderrelaxation.cs" />
     <Compile Include="Particle\Shapes\Falle_Rechts.cs" />
     <Compile Include="Particle\Shapes\Falle_Links.cs" />

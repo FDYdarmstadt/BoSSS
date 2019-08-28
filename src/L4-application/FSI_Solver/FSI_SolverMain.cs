@@ -1425,10 +1425,9 @@ namespace BoSSS.Application.FSI_Solver {
                 // ===================================================
                 int refinementLevel = ((FSI_Control)this.Control).RefinementLevel;
                 CellMask CutCells = LsTrk.Regions.GetCutCellMask();
-                CellMask CutCellNeighbours = CutCells.AllNeighbourCells();
+                //CutCells = CutCells.Union(CutCells.AllNeighbourCells());
                 List<Tuple<int, CellMask>> AllCellsWithMaxRefineLevel = new List<Tuple<int, CellMask>> {
                     new Tuple<int, CellMask>(refinementLevel, CutCells),
-                    new Tuple<int, CellMask>(refinementLevel, CutCellNeighbours)
                 };
 
                 // Get the cells to refine and to coarse

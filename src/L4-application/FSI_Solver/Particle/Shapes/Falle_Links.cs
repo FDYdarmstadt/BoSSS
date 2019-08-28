@@ -33,22 +33,18 @@ using System.IO;
 using System.Collections;
 using BoSSS.Platform.Utils.Geom;
 
-namespace BoSSS.Application.FSI_Solver
-{
+namespace BoSSS.Application.FSI_Solver {
     [DataContract]
     [Serializable]
-    public class Particle_Falle_Links : Particle
-    {
+    public class Particle_Falle_Links : Particle {
         /// <summary>
         /// Empty constructor used during de-serialization
         /// </summary>
-        private Particle_Falle_Links() : base()
-        {
+        private Particle_Falle_Links() : base() {
 
         }
 
-        public Particle_Falle_Links(double[] startPos = null, double startAngl = 0) : base(2, startPos, startAngl)
-        {
+        public Particle_Falle_Links(double[] startPos = null, double startAngl = 0) : base(2, startPos, startAngl) {
 
 
         }
@@ -59,37 +55,29 @@ namespace BoSSS.Application.FSI_Solver
         [DataMember]
         public double width_P;
 
-        internal override int NoOfSubParticles()
-        {
+        internal override int NoOfSubParticles() {
             return 2;
         }
 
-        public override double Area_P
-        {
-            get
-            {
+        public override double Area_P {
+            get {
                 return (7 * width_P * width_P) / 8;
             }
         }
 
-        protected override double Circumference_P
-        {
-            get
-            {
+        protected override double Circumference_P {
+            get {
                 return width_P * 5;
             }
         }
 
-        override public double MomentOfInertia_P
-        {
-            get
-            {
+        override public double MomentOfInertia_P {
+            get {
                 return Math.Pow(width_P, 4) * 0.13785958;
             }
         }
 
-        public override double Phi_P(double[] X)
-        {
+        public override double Phi_P(double[] X) {
             double alpha = -(angle[0]);
             double r;
             // Rechteck:
@@ -111,22 +99,19 @@ namespace BoSSS.Application.FSI_Solver
             return r;
         }
 
-        public override bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false)
-        {
+        public override bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false) {
             // only for rectangular cells
             if (h_max == 0)
                 h_max = h_min;
             double radiusTolerance = !WithoutTolerance ? 5 * width_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
             var distance = point.L2Distance(position[0]);
-            if (distance < (radiusTolerance))
-            {
+            if (distance < (radiusTolerance)) {
                 return true;
             }
             return false;
         }
 
-        override public MultidimensionalArray GetSurfacePoints(double hMin)
-        {
+        override public MultidimensionalArray GetSurfacePoints(double hMin) {
             if (spatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
 
@@ -137,27 +122,23 @@ namespace BoSSS.Application.FSI_Solver
             if (Math.Abs(10 * Circumference_P / hMin + 1) >= int.MaxValue)
                 throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");
 
-            for (int k = 0; k < NoOfSurfacePoints; k++)
-            {
+            for (int k = 0; k < NoOfSurfacePoints; k++) {
                 SurfacePoints[0, k, 0] = position[0][0] - width_P / 2 + InfinitisemalLength[k];
                 SurfacePoints[0, k, 1] = position[0][1] - width_P / 2 - 1.5 * SurfacePoints[0, k, 0] + width_P / 2;
             }
 
-            for (int j = 0; j < NoOfSurfacePoints; j++)
-            {
+            for (int j = 0; j < NoOfSurfacePoints; j++) {
                 SurfacePoints[0, j, 0] = Math.Sign(Math.Cos(InfinitisemalAngle[j])) * width_P * 7 + position[0][0] + 7 * width_P / 4;
                 SurfacePoints[0, j, 1] = Math.Sign(Math.Sin(InfinitisemalAngle[j])) * width_P * 7 + position[0][1] + 7 * width_P / 2;
             }
-            for (int j = 0; j < NoOfSurfacePoints; j++)
-            {
+            for (int j = 0; j < NoOfSurfacePoints; j++) {
                 SurfacePoints[1, j, 0] = -Math.Sign(Math.Cos(InfinitisemalAngle[j])) * width_P * 2.5 + position[0][0];
                 SurfacePoints[1, j, 1] = -Math.Sign(Math.Sin(InfinitisemalAngle[j])) * width_P * 2.5 + position[0][1];
             }
             return SurfacePoints;
         }
 
-        override public double[] GetLengthScales()
-        {
+        override public double[] GetLengthScales() {
             return new double[] { width_P, width_P };
         }
     }
