@@ -50,6 +50,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             for (int i = 0; i < this.penalties.Length; i++) {
                 this.penalties[i] = penaltySafetyFactor * penaltyFactor / cellLengthScales[i];
             }
+#if DEBUG
+            penalties.ForEach(s => Debug.Assert(s >= 0.0, "Penalty is smaller than zero"));
+            penalties.ForEach(s => Debug.Assert(!double.IsNaN(s), "Penalty is NaN"));
+            penalties.ForEach(s => Debug.Assert(!double.IsInfinity(s), "Penalty is infinite"));
+#endif
         }
 
         /// <summary>
@@ -80,9 +85,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             foreach (int cell in cutCells.ItemEnum) {
                 this.penalties[cell] = penaltySafetyFactor * penaltyFactor / Math.Min(cellLengthScales_A[cell], cellLengthScales_B[cell]);
             }
-
 #if DEBUG
-            // Some checks
             penalties.ForEach(s => Debug.Assert(s >= 0.0, "Penalty is smaller than zero"));
             penalties.ForEach(s => Debug.Assert(!double.IsNaN(s), "Penalty is NaN"));
             penalties.ForEach(s => Debug.Assert(!double.IsInfinity(s), "Penalty is infinite"));
