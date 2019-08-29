@@ -15,7 +15,9 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.XDG;
 using BoSSS.Solution.CompressibleFlowCommon.Diffusion;
 using ilPSP;
 using System;
@@ -26,38 +28,65 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
     public class OptimizedLaplacianArtificialViscosityFlux : INonlinear2ndOrderForm {
 
-        public GridData GridData {
-            private set;
-            get;
-        }
-
         public bool AdiabaticWall {
-            get; set;
-        }
-
-        public MultidimensionalArray CellLengthScale {
-            private set;
             get;
+            set;
         }
 
-        public double PenaltyFactor {
-            private set;
-            get;
-        }
-
-        private readonly int dimension;
+        private GridData gridData;
 
         private readonly string ArgumentName;
 
-        private readonly double? dirichlet;
+        private readonly double[] penalties;
 
-        public OptimizedLaplacianArtificialViscosityFlux(GridData gridData, double order, int dimension, string ArgumentVarName, double? dirichlet = null) {
-            this.dimension = dimension;
-            this.CellLengthScale = gridData.Cells.cj;
-            this.GridData = gridData;
-            this.PenaltyFactor = (order + 1) * (order + (double)dimension) / (double)dimension;
+        /// <summary>
+        /// Ctor for standard (non-XDG) usage on boundary-fitted grids
+        /// </summary>
+        public OptimizedLaplacianArtificialViscosityFlux(GridData gridData, string ArgumentVarName, double penaltySafetyFactor, double penaltyFactor, MultidimensionalArray cellLengthScales) {
+            this.gridData = gridData;
             this.ArgumentName = ArgumentVarName;
-            this.dirichlet = dirichlet;
+
+            this.penalties = new double[cellLengthScales.Length];
+            for (int i = 0; i < this.penalties.Length; i++) {
+                this.penalties[i] = penaltySafetyFactor * penaltyFactor / cellLengthScales[i];
+            }
+        }
+
+        /// <summary>
+        /// Ctor for XDG usage
+        /// </summary>
+        public OptimizedLaplacianArtificialViscosityFlux(LevelSetTracker levelSetTracker, string ArgumentVarName, double penaltySafetyFactor, double penaltyFactor, Dictionary<SpeciesId, MultidimensionalArray> cellLengthScales) {
+            this.gridData = levelSetTracker.GridDat;
+            this.ArgumentName = ArgumentVarName;
+
+            // Combine length scales from species A and B
+            CellMask cutCells = levelSetTracker.Regions.GetCutCellMask();
+            CellMask speciesAWithOutCutCells = levelSetTracker.Regions.GetSpeciesMask("A").Except(cutCells);
+            CellMask speciesBWithOutCutCells = levelSetTracker.Regions.GetSpeciesMask("B").Except(cutCells);
+
+            double[] cellLengthScales_A = cellLengthScales[levelSetTracker.GetSpeciesId("A")].To1DArray();
+            double[] cellLengthScales_B = cellLengthScales[levelSetTracker.GetSpeciesId("B")].To1DArray();
+
+            this.penalties = new double[cellLengthScales_A.Length];
+
+            foreach (int cell in speciesAWithOutCutCells.ItemEnum) {
+                this.penalties[cell] = penaltySafetyFactor * penaltyFactor / cellLengthScales_A[cell];
+            }
+
+            foreach (int cell in speciesBWithOutCutCells.ItemEnum) {
+                this.penalties[cell] = penaltySafetyFactor * penaltyFactor / cellLengthScales_B[cell];
+            }
+
+            foreach (int cell in cutCells.ItemEnum) {
+                this.penalties[cell] = penaltySafetyFactor * penaltyFactor / Math.Min(cellLengthScales_A[cell], cellLengthScales_B[cell]);
+            }
+
+#if DEBUG
+            // Some checks
+            penalties.ForEach(s => Debug.Assert(s >= 0.0, "Penalty is smaller than zero"));
+            penalties.ForEach(s => Debug.Assert(!double.IsNaN(s), "Penalty is NaN"));
+            penalties.ForEach(s => Debug.Assert(!double.IsInfinity(s), "Penalty is infinite"));
+#endif
         }
 
         #region IEquationComponent Members
@@ -74,84 +103,49 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         }
         #endregion
 
-        #region IEdgeForm Members
+        #region IEdgeComponent Members
         TermActivationFlags IEdgeForm.BoundaryEdgeTerms {
             get {
-                //return TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV;
-                return TermActivationFlags.AllOn;
+                return TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV;
             }
         }
 
         TermActivationFlags IEdgeForm.InnerEdgeTerms {
             get {
-                //return TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV;
-                return TermActivationFlags.AllOn;
+                return TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV;
             }
         }
 
+        /// <summary>
+        /// Non-optimized version of the inner edge flux,
+        /// <seealso cref="BoSSS.Solution.NSECommon.SIPLaplace"/>
+        /// </summary>
         double IEdgeForm.InnerEdgeForm(ref CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
-            double penalty = this.PenaltyFactor * Math.Max(this.CellLengthScale[inp.jCellIn], this.CellLengthScale[inp.jCellOut]);
-            return InternalEdgeForXDG_nonOptimized(ref inp, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB, penalty);
-        }
-
-        double IEdgeForm.BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
-            double penalty = this.PenaltyFactor * this.CellLengthScale[inp.jCellIn];
-            return BoundaryEdgeForXDG_nonOptimized(ref inp, _uA, _Grad_uA, _vA, _Grad_vA, penalty);
-        }
-
-        public double InternalEdgeForXDG_nonOptimized(ref CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB, double penalty) {
             double Acc = 0.0;
 
+            double penalty = Math.Max(penalties[inp.jCellIn], penalties[inp.jCellOut]);
             double nuA = inp.Parameters_IN[0];
             double nuB = inp.Parameters_OUT[0];
 
             for (int d = 0; d < inp.D; d++) {
-                Acc += 0.5 * (nuA * _Grad_uA[0, d] + nuB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
-                Acc += 0.5 * (nuA * _Grad_vA[d] + nuB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
+                Acc -= 0.5 * (nuA * _Grad_uA[0, d] + nuB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
+                Acc -= 0.5 * (nuA * _Grad_vA[d] + nuB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
             }
 
             double nuMax = (Math.Abs(nuA) > Math.Abs(nuB)) ? nuA : nuB;
 
-            Acc -= (_uA[0] - _uB[0]) * (_vA - _vB) * penalty * nuMax; // penalty term
+            Acc += (_uA[0] - _uB[0]) * (_vA - _vB) * penalty * nuMax; // penalty term
 
             return Acc;
         }
 
-        public double BoundaryEdgeForXDG_nonOptimized(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA, double penalty) {
-            if (dirichlet != null) {
-                double Acc = 0.0;
-                if (Math.Abs(inp.X[0]) < 1e-14) {
-                    double nuA = inp.Parameters_IN[0];
-
-                    for (int d = 0; d < inp.D; d++) {
-                        Acc += nuA * _Grad_uA[0, d] * _vA * inp.Normale[d];  // consistency term
-                        Acc += nuA * _Grad_vA[d] * (_uA[0] - (double)dirichlet) * inp.Normale[d];  // symmetry term
-                    }
-
-                    Acc -= (_uA[0] - (double)dirichlet) * _vA * penalty * nuA; // penalty term
-                }
-                return Acc;
-            } else {
-                //Boundary value is zero neumann boundary, i.e. do nothing
-                return 0.0;
-            }
-        }
-        #endregion
-
-        #region IVolumeForm Members
-        TermActivationFlags IVolumeForm.VolTerms {
-            get {
-                return TermActivationFlags.GradUxGradV;
-            }
-        }
-
-        double IVolumeForm.VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
-            double ret = 0;
-            double viscosity = cpv.Parameters[0];
-            for (int d = 0; d < dimension; d++) {
-                ret += viscosity * GradU[0, d] * GradV[d];
-            }
-            return ret;
+        /// <summary>
+        /// Non-optimized version of the border edge flux,
+        /// <seealso cref="BoSSS.Solution.NSECommon.SIPLaplace"/>
+        /// </summary>
+        double IEdgeForm.BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+            // Zero Neumann boundary conditions
+            return 0.0;
         }
         #endregion
 
@@ -172,7 +166,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                     double fluxIn = efp.ParameterVars_IN[0][cell, node] * uJump;
                     double fluxOut = efp.ParameterVars_OUT[0][cell, node] * uJump;
 
-                    for (int d = 0; d < dimension; d++) {
+                    for (int d = 0; d < gridData.SpatialDimension; d++) {
                         double n = efp.Normals[cell, node, d];
                         fin[cell, node, d] -= fluxIn * n;
                         fot[cell, node, d] -= fluxOut * n;
@@ -184,30 +178,40 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         void INonlinEdgeForm_GradV.BoundaryEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin,
             MultidimensionalArray fin) {
-            if (dirichlet != null) {
-                int NumOfCells = efp.Len;
-                Debug.Assert(fin.GetLength(0) == NumOfCells);
-                int NumOfNodes = fin.GetLength(1); // no of nodes per cell
 
-                for (int cell = 0; cell < NumOfCells; cell++) { // loop over cells...
-                    int iEdge = efp.e0 + cell;
+            //Boundary value is zero neumann boundary!
+            // i.e. do nothing!
 
-                    for (int node = 0; node < NumOfNodes; node++) { // loop over nodes...
-                        double[] X = efp.NodesGlobal.ExtractSubArrayShallow(cell, node, -1).To1DArray();
-                        if (Math.Abs(X[0]) <= 1e-14) {
-                            double uJump = 1.0 * (Uin[0][cell, node] - (double)dirichlet);
-                            double fluxIn = efp.ParameterVars_IN[0][cell, node] * uJump;
+            //int NumOfCells = efp.Len;
+            //Debug.Assert(fin.GetLength(0) == NumOfCells);
+            //int NumOfNodes = fin.GetLength(1); // no of nodes per cell
 
-                            for (int d = 0; d < dimension; d++) {
-                                double n = efp.Normals[cell, node, d];
-                                fin[cell, node, d] -= fluxIn * n;
-                            }
-                        }
-                    }
-                }
-            } else {
-                // Boundary value is zero neumann boundary, i.e. do nothing
-            }
+            //int NumOfArguments = this.ArgumentOrdering.Count;
+            //Debug.Assert(NumOfArguments == Uin.Length);
+            //Debug.Assert(NumOfArguments == GradUin.Length);
+
+            //double[] U_in = new double[NumOfArguments];
+            //double[] U_ot = new double[NumOfArguments];
+
+            //for (int cell = 0; cell < NumOfCells; cell++) { // loop over cells...
+            //    int iEdge = efp.e0 + cell;
+
+            //    for (int node = 0; node < NumOfNodes; node++) { // loop over nodes...
+
+            //        for (int na = 0; na < NumOfArguments; na++) {
+            //            U_in[na] = Uin[na][cell, node];
+            //        }
+
+            //        //// Reference implementation
+            //        //for (int d = 0; d < dimension; d++) {
+            //        //        double n = efp.Normals[cell, node, d];
+            //        //         fin[cell, node, d] -= 0.5 * efp.ParameterVars_IN[0][cell, node] * n;
+
+            //        //}
+
+
+            //    }
+            //}
         }
         #endregion
 
@@ -220,46 +224,12 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             Debug.Assert(fot.GetLength(0) == NumOfCells);
             int NumOfNodes = fin.GetLength(1); // no of nodes per cell
 
-            InternalEdgeForXDG(efp, Uin, Uout, GradUin, GradUout, fin, fot, null);
-        }
-
-        void INonlinEdgeForm_V.BoundaryEdge(ref EdgeFormParams efp,
-            MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin,
-            MultidimensionalArray fin) {
-
-            int NumOfCells = efp.Len;
-            Debug.Assert(fin.GetLength(0) == NumOfCells);
-            int NumOfNodes = fin.GetLength(1); // no of nodes per cell
-
-            BoundaryEdgeForXDG(efp, Uin, GradUin, fin, null);
-
-        }
-
-        /// <summary>
-        /// Hack in order to use the bulk AV flux as AV interface flux in XDG simulations.
-        /// The question is how to pass the penalty factors in a suitable way. According to Florian,
-        /// this is a general issue and has to be tackle in a global manner.
-        /// Currently, we do not have any better idea.
-        /// </summary>
-        public void InternalEdgeForXDG(EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout, MultidimensionalArray fin, MultidimensionalArray fot, double[] penalties) {
-            int NumOfNodes = fin.GetLength(1); // no of nodes per cell
-            int NumOfCells = efp.Len;
-
             for (int cell = 0; cell < NumOfCells; cell++) { // loop over cells...
-                //double Penalty = penalty(gridDat.Edges.CellIndices[iEdge, 0], gridDat.Edges.CellIndices[iEdge, 1], gridDat.Cells.cj);
                 int iEdge = efp.e0 + cell;
 
-                double penalty;
-                if (penalties != null) {
-                    // Use given penalties at the interface
-                    Debug.Assert(iEdge == efp.e0, "Cell index should be the edge index at the interface, int cell should always be zero");
-                    penalty = penalties[iEdge];
-                } else {
-                    // Penalty is calculated according to the formula in background cells
-                    int jCellIn = this.GridData.Edges.CellIndices[iEdge, 0];
-                    int jCellOut = this.GridData.Edges.CellIndices[iEdge, 1];
-                    penalty = this.PenaltyFactor * Math.Max(this.CellLengthScale[jCellIn], this.CellLengthScale[jCellOut]);
-                }
+                int jCellIn = gridData.Edges.CellIndices[iEdge, 0];
+                int jCellOut = gridData.Edges.CellIndices[iEdge, 1];
+                double Penalty = Math.Max(penalties[jCellIn], penalties[jCellOut]);
 
                 for (int node = 0; node < NumOfNodes; node++) { // loop over nodes...
                     // SIPG Flux Loops
@@ -267,11 +237,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                     double viscosityOut = efp.ParameterVars_OUT[0][cell, node];
 
                     double flux = 0.0;
-                    for (int d = 0; d < dimension; d++) {
+                    for (int d = 0; d < gridData.SpatialDimension; d++) {
                         double n = efp.Normals[cell, node, d];
-                        flux -= 0.5 * (viscosityIn * GradUin[0][cell, node, d] + viscosityOut * GradUout[0][cell, node, d]) * n;    // Consistency term
+                        flux -= 0.5 * (viscosityIn * GradUin[0][cell, node, d] + viscosityOut * GradUout[0][cell, node, d]) * n;
                     }
-                    flux += Math.Max(viscosityIn, viscosityOut) * (Uin[0][cell, node] - Uout[0][cell, node]) * penalty; // Penalty term
+                    flux += Math.Max(viscosityIn, viscosityOut) * (Uin[0][cell, node] - Uout[0][cell, node]) * Penalty;
 
                     fin[cell, node] += flux;
                     fot[cell, node] -= flux;
@@ -279,47 +249,63 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             }
         }
 
-        public void BoundaryEdgeForXDG(EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray fin, double[] penalties) {
-            if (dirichlet != null) {
-                int NumOfNodes = fin.GetLength(1); // no of nodes per cell
-                int NumOfCells = efp.Len;
+        void INonlinEdgeForm_V.BoundaryEdge(ref EdgeFormParams efp,
+            MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin,
+            MultidimensionalArray fin) {
+            //int NumOfCells = efp.Len;
+            //Debug.Assert(fin.GetLength(0) == NumOfCells);
+            //int NumOfNodes = fin.GetLength(1); // no of nodes per cell
 
-                for (int cell = 0; cell < NumOfCells; cell++) { // loop over cells...
-                                                                //double Penalty = penalty(gridDat.Edges.CellIndices[iEdge, 0], gridDat.Edges.CellIndices[iEdge, 1], gridDat.Cells.cj);
-                    int iEdge = efp.e0 + cell;
+            //int NumOfArguments = this.ArgumentOrdering.Count;
+            //Debug.Assert(NumOfArguments == Uin.Length);
+            //Debug.Assert(NumOfArguments == GradUin.Length);
 
-                    double penalty;
-                    if (penalties != null) {
-                        // Use given penalties at the interface
-                        Debug.Assert(iEdge == efp.e0, "Cell index should be the edge index at the interface, int cell should always be zero");
-                        penalty = penalties[iEdge];
-                    } else {
-                        // Penalty is calculated according to the formula in background cells
-                        int jCellIn = this.GridData.Edges.CellIndices[iEdge, 0];
-                        penalty = this.PenaltyFactor * this.CellLengthScale[jCellIn];
-                    }
+            //double[] U_in = new double[NumOfArguments];
+            //double[] U_ot = new double[NumOfArguments];
+            //double[,] GradU_in = new double[dimension, NumOfArguments];
 
-                    for (int node = 0; node < NumOfNodes; node++) { // loop over nodes...
-                                                                    // SIPG Flux Loops
+            //for (int cell = 0; cell < NumOfCells; cell++) { // loop over cells...
+            //    int iEdge = efp.e0 + cell;
 
-                        double[] X = efp.NodesGlobal.ExtractSubArrayShallow(cell, node, -1).To1DArray();
-                        if (Math.Abs(X[0]) <= 1e-14) {
-                            double viscosityIn = efp.ParameterVars_IN[0][cell, node];
+            //    for (int node = 0; node < NumOfNodes; node++) { // loop over nodes...
 
-                            double flux = 0.0;
-                            for (int d = 0; d < dimension; d++) {
-                                double n = efp.Normals[cell, node, d];
-                                flux -= viscosityIn * GradUin[0][cell, node, d] * n;    // Consistency term
-                            }
-                            flux += viscosityIn * (Uin[0][cell, node] - (double)dirichlet) * penalty; // Penalty term
+            //        for (int na = 0; na < NumOfArguments; na++) {
+            //            U_in[na] = Uin[na][cell, node];
 
-                            fin[cell, node] += flux;
-                        }
-                    }
-                }
-            } else {
-                // Boundary value is zero neumann boundary, i.e. do nothing
+            //            for (int d = 0; d < dimension; d++) {
+            //                GradU_in[d, na] = GradUin[na][cell, node, d];
+            //            }
+            //        }
+
+            //        // SIPG Flux Loops
+            //        //double flux = 0.0;
+            //        //for (int k = 0; k < dimension; k++) {
+            //        //    double nk = efp.Normals[cell, node, k];
+            //        //    for (int l = 0; l < dimension; l++) {
+            //        //        double nl = efp.Normals[cell, node, l];
+            //        //        for (int j = 0; j < NumOfArguments; j++) {
+            //        //            // consistency
+            //        //            flux -= (GTensorOut[k, l, j] * GradU_in[l,j]) * nk;
+            //        //            // penalty
+            //        //            flux += (GTensorOut[k, l, j]) * (U_in[j] - U_ot[j]) * nl * Penalty * nk;
+            //        //        }
+            //        //    }
+            //        //}
+            //        //fin[cell, node] += flux;
+            //    }
+            //}
+        }
+        #endregion
+
+        #region IVolumeForm Members
+        TermActivationFlags IVolumeForm.VolTerms {
+            get {
+                return (TermActivationFlags.GradUxGradV);
             }
+        }
+
+        double IVolumeForm.VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+            throw new NotImplementedException();
         }
         #endregion
 
@@ -334,8 +320,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             for (int cell = 0; cell < NumofCells; cell++) { // loop over cells...
                 for (int node = 0; node < NumOfNodes; node++) { // loop over nodes...
                     double viscosity = prm.ParameterVars[0][cell, node];
-                    for (int d = 0; d < dimension; d++) {
-                        //acc -= GradU[0, d] * GradV[d] * this.Nu(cpv.Xglobal, cpv.Parameters, cpv.jCell) * this.m_alpha;
+                    for (int d = 0; d < gridData.SpatialDimension; d++) {
                         f[cell, node, d] += viscosity * GradU[0][cell, node, d];
                     }
                 }
