@@ -118,6 +118,12 @@ namespace BoSSS.Application.BoSSSpad {
         private readonly KeyHandler[] keyHandlers;
 
         /// <summary>
+        /// prevent division by zero error if WindowWidth cannot be determined
+        /// </summary>
+        static int FallbackWindowWidth = 80;
+        int WindowWidth = Console.WindowWidth == 0 ? FallbackWindowWidth : 0;
+
+	/// <summary>
         /// Creates a new reader with the given <paramref name="name"/>.
         /// </summary>
         /// <param name="name">
@@ -213,7 +219,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         /// <param name="screenpos"></param>
         private void UpdateHomeRow(int screenpos) {
-            int lines = 1 + (screenpos / Console.WindowWidth);
+            int lines = 1 + (screenpos / WindowWidth);
             homeRow = Console.CursorTop - (lines - 1);
             if (homeRow < 0) {
                 homeRow = 0;
@@ -332,7 +338,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         private int LineCount {
             get {
-                return (prompt.Length + renderedText.Length) / Console.WindowWidth;
+                return (prompt.Length + renderedText.Length) / WindowWidth;
             }
         }
 
@@ -344,8 +350,8 @@ namespace BoSSS.Application.BoSSSpad {
             textPosition = newpos;
 
             int actual_pos = prompt.Length + GetRenderedTextPosition(textPosition);
-            int row = homeRow + (actual_pos / Console.WindowWidth);
-            int col = actual_pos % Console.WindowWidth;
+            int row = homeRow + (actual_pos / WindowWidth);
+            int col = actual_pos % WindowWidth;
 
             if (row >= Console.BufferHeight) {
                 row = Console.BufferHeight - 1;
