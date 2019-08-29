@@ -306,10 +306,10 @@ namespace XDGShockTest {
             this.XSpatialOperator.EquationComponents[CompressibleVariables.Energy].Add(new OptimizedHLLCEnergyFlux(boundaryMap, material));
 
             // Interface fluxes
-            this.XSpatialOperator.EquationComponents[CompressibleVariables.Density].Add(new HLLCFlux_Interface(this.LevelSetTracker, boundaryMap, material, FluxTypes.Density));
-            this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.xComponent].Add(new HLLCFlux_Interface(this.LevelSetTracker, boundaryMap, material, FluxTypes.Momentum, 0));
-            this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.yComponent].Add(new HLLCFlux_Interface(this.LevelSetTracker, boundaryMap, material, FluxTypes.Momentum, 1));
-            this.XSpatialOperator.EquationComponents[CompressibleVariables.Energy].Add(new HLLCFlux_Interface(this.LevelSetTracker, boundaryMap, material, FluxTypes.Energy));
+            this.XSpatialOperator.EquationComponents[CompressibleVariables.Density].Add(new HLLCFlux_Interface(this.LevelSetTracker, boundaryMap, material, FluxVariables.Density));
+            this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.xComponent].Add(new HLLCFlux_Interface(this.LevelSetTracker, boundaryMap, material, FluxVariables.Momentum, 0));
+            this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.yComponent].Add(new HLLCFlux_Interface(this.LevelSetTracker, boundaryMap, material, FluxVariables.Momentum, 1));
+            this.XSpatialOperator.EquationComponents[CompressibleVariables.Energy].Add(new HLLCFlux_Interface(this.LevelSetTracker, boundaryMap, material, FluxVariables.Energy));
 
             // Artificial viscosity bulk fluxes
             if (this.ArtificialViscosityField != null) {
