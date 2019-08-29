@@ -121,7 +121,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// prevent division by zero error if WindowWidth cannot be determined
         /// </summary>
         static int FallbackWindowWidth = 80;
-        int WindowWidth = Console.WindowWidth == 0 ? FallbackWindowWidth : 0;
+        int WindowWidth = Console.WindowWidth == 0 ? FallbackWindowWidth : Console.WindowWidth;
 
 	/// <summary>
         /// Creates a new reader with the given <paramref name="name"/>.
