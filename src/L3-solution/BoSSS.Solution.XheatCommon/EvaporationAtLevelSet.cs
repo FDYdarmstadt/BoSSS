@@ -40,8 +40,6 @@ namespace BoSSS.Solution.XheatCommon {
         protected double sigma;
         protected double pc;
 
-        protected double prescrbM = 0.0;
-
         protected double kA;
         protected double kB;
 
@@ -91,8 +89,8 @@ namespace BoSSS.Solution.XheatCommon {
             if (hVapA == 0.0)
                 return 0.0;
 
-            if (prescrbM != 0.0)
-                return (hVapA > 0) ? prescrbM * hVapA : -prescrbM * hVapA;
+            if (MEvapIsPrescribd)
+                return (hVapA > 0) ? prescrbMEvap * hVapA : -prescrbMEvap * hVapA;
 
             double qEvap = 0.0;
             if (evapMicroRegion[jCell]) {
@@ -118,10 +116,18 @@ namespace BoSSS.Solution.XheatCommon {
         protected LevelSetTracker m_LsTrk;
         BitArray evapMicroRegion;
 
+        bool MEvapIsPrescribd = false;
+        double prescrbMEvap;
+
         public virtual void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
 
             if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
                 evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
+
+            if (csA.UserDefinedValues.Keys.Contains("prescribedMassflux")) {
+                MEvapIsPrescribd = true;
+                prescrbMEvap = (double)csA.UserDefinedValues["prescribedMassflux"];
+            }
 
         }
 

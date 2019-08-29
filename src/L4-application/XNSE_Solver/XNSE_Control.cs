@@ -512,7 +512,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// only available if no heat equation is solved
         /// </summary>
-        public double prescribedMassflux = 0.0;
+        public Func<double, double> prescribedMassflux;
 
         /// <summary>
         /// implementations for the conductivity part (laplace operator) of the heat equation 

@@ -204,6 +204,10 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool isMatInt {
             get { return MatInt; }
         }
+
+        public virtual bool isPInterfaceSet {
+            get { return false; }
+        }
     }
 
 
@@ -249,7 +253,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// 
         /// </summary>
-        public double prescribedMassflux;
+        public Func<double, double> prescribedMassflux;
 
         public ThermalParameters getThermParams {
             get { return thermParams; }
@@ -265,6 +269,10 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         public bool isEvaporation {
+            get { return Evaporation; }
+        }
+
+        public override bool isPInterfaceSet {
             get { return Evaporation; }
         }
     }
