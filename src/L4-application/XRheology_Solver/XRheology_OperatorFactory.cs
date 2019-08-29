@@ -80,7 +80,7 @@ namespace BoSSS.Application.XRheology_Solver {
         /// <param name="_HMFdegree"></param>
         /// <param name="BcMap"></param>
         /// <param name="degU"></param>
-        public XRheology_OperatorFactory(IXRheology_Configuration config, LevelSetTracker _LsTrk, int _HMFdegree, IncompressibleMultiphaseBoundaryCondMap BcMap, int D, int _stressDegree) {
+        public XRheology_OperatorFactory(XRheology_OperatorConfiguration config, LevelSetTracker _LsTrk, int _HMFdegree, IncompressibleMultiphaseBoundaryCondMap BcMap, int _stressDegree, int degU) {
 
 
             this.LsTrk = _LsTrk;
@@ -124,45 +124,42 @@ namespace BoSSS.Application.XRheology_Solver {
 
             // full operator:
             // ==============
-            CodName = ArrayTools.Cat(EquationNames.MomentumEquations(D), EquationNames.ContinuityEquation, EquationNames.Constitutive(D));
+            CodName = ArrayTools.Cat(EquationNames.MomentumEquations(this.D), EquationNames.ContinuityEquation, EquationNames.Constitutive(this.D));
             Params = ArrayTools.Cat(
-                VariableNames.Velocity0Vector(D),
-                VariableNames.Velocity0MeanVector(D),
+                VariableNames.Velocity0Vector(this.D),
+                VariableNames.Velocity0MeanVector(this.D),
                 VariableNames.VelocityX_GradientVector(), 
                 VariableNames.VelocityY_GradientVector(), 
                 VariableNames.StressXXP, 
                 VariableNames.StressXYP, 
                 VariableNames.StressYYP, 
-                "artificialViscosity",
-                VariableNames.NormalVector(D),
+               // "artificialViscosity",
+                VariableNames.NormalVector(this.D),
                 VariableNames.Curvature,
-                VariableNames.SurfaceForceVector(D),
-                VariableNames.Temperature0,
-                VariableNames.HeatFlux0Vector(D),
-                VariableNames.DisjoiningPressure
+                VariableNames.SurfaceForceVector(this.D)
                 );
-            DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure, VariableNames.StressXX, VariableNames.StressXY, VariableNames.StressYY);
+            DomName = ArrayTools.Cat(VariableNames.VelocityVector(this.D), VariableNames.Pressure, VariableNames.StressXX, VariableNames.StressXY, VariableNames.StressYY);
 
 
             // selected part:
             if (config.getCodBlocks[0])
-                CodNameSelected = ArrayTools.Cat(CodNameSelected, CodName.GetSubVector(0, D));
+                CodNameSelected = ArrayTools.Cat(CodNameSelected, CodName.GetSubVector(0, this.D));
             if (config.getCodBlocks[1])
-                CodNameSelected = ArrayTools.Cat(CodNameSelected, CodName.GetSubVector(D, 1));
+                CodNameSelected = ArrayTools.Cat(CodNameSelected, CodName.GetSubVector(this.D, 1));
             if (config.getCodBlocks[2])
-                CodNameSelected = ArrayTools.Cat(CodNameSelected, CodName.GetSubVector(D+1, 3));
+                CodNameSelected = ArrayTools.Cat(CodNameSelected, CodName.GetSubVector(this.D + 1, 3));
 
             if (config.getDomBlocks[0])
-                DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(0, D));
+                DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(0, this.D));
             if (config.getDomBlocks[1])
-                DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(D, 1));
+                DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(this.D, 1));
             if (config.getDomBlocks[2])
-                    DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(D + 1, 3));
+                DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(this.D + 1, 3));
 
 
-                // create Operator
-                // ===============
-                m_XOp = new XSpatialOperatorMk2(DomNameSelected, Params, CodNameSelected, (A, B, C) => _HMFdegree, this.LsTrk.SpeciesIdS.ToArray());
+            // create Operator
+            // ===============
+            m_XOp = new XSpatialOperatorMk2(DomNameSelected, Params, CodNameSelected, (A, B, C) => _HMFdegree, this.LsTrk.SpeciesIdS.ToArray());
 
             // add components
             // ============================
@@ -170,13 +167,23 @@ namespace BoSSS.Application.XRheology_Solver {
             // species bulk components
             for (int spc = 0; spc < LsTrk.TotalNoOfSpecies; spc++) {
                 // Navier Stokes equations
-                Solution.RheologyCommon.XConstitutiveOperatorComponentsFactory.AddSpeciesConstitutive(m_XOp, config, D, stressDegree, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap, LsTrk, out U0meanrequired);
+                XOperatorComponentsFactory.AddSpeciesNSE(m_XOp, config, this.D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap, LsTrk, out U0meanrequired);
+
+                // continuity equation
+                if (config.isContinuity)
+                    XOperatorComponentsFactory.AddSpeciesContinuityEq(m_XOp, config, this.D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap);
+
+                // constitutive equation
+                XConstitutiveOperatorComponentsFactory.AddSpeciesConstitutive(m_XOp, config, this.D, stressDegree, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap, LsTrk, out U0meanrequired);
 
             }
 
             // interface components
-            //Solution.XNSECommon.XOperatorComponentsFactory.AddInterfaceNSE(m_XOp, config, D, BcMap, LsTrk);     // surface stress tensor
-            //Solution.XNSECommon.XOperatorComponentsFactory.AddSurfaceTensionForce(m_XOp, config, D, BcMap, LsTrk, degU, out NormalsRequired, out CurvatureRequired);     // surface tension force
+            XOperatorComponentsFactory.AddInterfaceNSE(m_XOp, config, this.D, BcMap, LsTrk);    // surface stress tensor
+            XOperatorComponentsFactory.AddSurfaceTensionForce(m_XOp, config, this.D, BcMap, LsTrk, degU, out NormalsRequired, out CurvatureRequired);     // surface tension force
+
+            if (config.isContinuity)
+                XOperatorComponentsFactory.AddInterfaceContinuityEq(m_XOp, config, this.D, LsTrk);       // continuity equation
 
             m_XOp.Commit();
         }
@@ -331,18 +338,25 @@ namespace BoSSS.Application.XRheology_Solver {
                 U0_U0mean = new DGField[2 * D];
             }
 
+
+            if (VelocityXGradient == null) {
+                VelocityXGradient = new VectorField<XDGField>(D, CurrentState.ElementAt(0).Basis, "VelocityX_Gradient", XDGField.Factory);
+            }
+            if (VelocityYGradient == null) {
+                VelocityYGradient = new VectorField<XDGField>(D, CurrentState.ElementAt(1).Basis, "VelocityY_Gradient", XDGField.Factory);
+            }
+
+
             // concatenate everything
             var Params = ArrayTools.Cat<DGField>(
                 U0_U0mean,
                 VelocityXGradient, 
-                VelocityYGradient, 
+               VelocityYGradient, 
                 Stress0, 
                 //artificalViscosity,
                 Normals,
                 Curvature,
-                ((SurfaceForce != null) ? SurfaceForce.ToArray() : new SinglePhaseField[D]),
-                ((CoupledCurrentState != null) ? CoupledCurrentState.ToArray<DGField>() : new SinglePhaseField[1]),
-                ((CoupledCurrentState != null) ? CoupledParams.ToArray<DGField>() : new SinglePhaseField[1]));
+                ((SurfaceForce != null) ? SurfaceForce.ToArray() : new SinglePhaseField[D]));
 
 
             // linearization velocity:
@@ -379,7 +393,6 @@ namespace BoSSS.Application.XRheology_Solver {
                         mtxBuilder.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
                         mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
                         mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
-                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
                     }
 
                     if (this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
@@ -569,15 +582,21 @@ namespace BoSSS.Application.XRheology_Solver {
 
 
             //if (this.Control.SetParamsAnalyticalSol == false) {
-                //SinglePhaseField[] __VelocityXGradient = ParameterVar.Skip(2 * D).Take(D).Select(f => f as SinglePhaseField).ToArray();
-                //SinglePhaseField[] __VelocityYGradient = ParameterVar.Skip(3 * D).Take(D).Select(f => f as SinglePhaseField).ToArray();
-                //Debug.Assert(ArrayTools.AreEqual(__VelocityXGradient, VelocityXGradient.ToArray(), (fa, fb) => object.ReferenceEquals(fa, fb)));
-                //Debug.Assert(ArrayTools.AreEqual(__VelocityYGradient, VelocityYGradient.ToArray(), (fa, fb) => object.ReferenceEquals(fa, fb)));
+            //SinglePhaseField[] __VelocityXGradient = ParameterVar.Skip(2 * D).Take(D).Select(f => f as SinglePhaseField).ToArray();
+            //SinglePhaseField[] __VelocityYGradient = ParameterVar.Skip(3 * D).Take(D).Select(f => f as SinglePhaseField).ToArray();
+            //Debug.Assert(ArrayTools.AreEqual(__VelocityXGradient, VelocityXGradient.ToArray(), (fa, fb) => object.ReferenceEquals(fa, fb)));
+            //Debug.Assert(ArrayTools.AreEqual(__VelocityYGradient, VelocityYGradient.ToArray(), (fa, fb) => object.ReferenceEquals(fa, fb)));
 
-                VelocityXGradient.Clear();
-                VelocityXGradient.GradientByFlux(1.0, U0[0]);
-                VelocityYGradient.Clear();
-                VelocityYGradient.GradientByFlux(1.0, U0[1]);
+            //if (VelocityXGradient == null) {
+            //    VelocityXGradient = new VectorField<XDGField>(D, CurrentState.ElementAt(0).Basis, "VelocityX_Gradient", XDGField.Factory);
+            //}
+            VelocityXGradient.Clear();
+            VelocityXGradient.GradientByFlux(1.0, U0[0]);
+            //if (VelocityYGradient == null) {
+            //    VelocityYGradient = new VectorField<XDGField>(D, CurrentState.ElementAt(1).Basis, "VelocityY_Gradient", XDGField.Factory);
+            //}
+            VelocityYGradient.Clear();
+            VelocityYGradient.GradientByFlux(1.0, U0[1]);
             //}
 
             if (this.useArtificialDiffusion == true) {

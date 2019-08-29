@@ -836,14 +836,14 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 int N = ((XDGBasis)(CurrentState[0].Basis)).NonX_Basis.Length;
 
-                foreach (int jCell in this.LsTrk.Regions.GetCutCellMask4LevSet(0).ItemEnum) {
-                    for (int d = 0; d < D; d++) {
-                        for (int n = 0; n < N; n++) {
-                            ((XDGField)(TmpRhs.Mapping.Fields[d])).GetSpeciesShadowField("A").Coordinates[jCell, n] = 0.5 * SurfaceForce[d].Coordinates[jCell, n];
-                            ((XDGField)(TmpRhs.Mapping.Fields[d])).GetSpeciesShadowField("B").Coordinates[jCell, n] = 0.5 * SurfaceForce[d].Coordinates[jCell, n];
-                        }
-                    }
-                }
+                //foreach (int jCell in this.LsTrk.Regions.GetCutCellMask4LevSet(0).ItemEnum) {
+                //    for (int d = 0; d < D; d++) {
+                //        for (int n = 0; n < N; n++) {
+                //            ((XDGField)(TmpRhs.Mapping.Fields[d])).GetSpeciesShadowField("A").Coordinates[jCell, n] = 0.5 * SurfaceForce[d].Coordinates[jCell, n];
+                //            ((XDGField)(TmpRhs.Mapping.Fields[d])).GetSpeciesShadowField("B").Coordinates[jCell, n] = 0.5 * SurfaceForce[d].Coordinates[jCell, n];
+                //        }
+                //    }
+                //}
 
                 OpAffine.AccV(1.0, TmpRhs);
             }

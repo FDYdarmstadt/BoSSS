@@ -155,7 +155,7 @@ namespace BoSSS.Solution.XNSECommon {
                             comps.Add(Visc2);
 
                             // ONLY REYNOLDS A. MUST BE IMPLEMENTED FOR TWO-PHASE FLOW!
-                            var div = new StressDivergenceInBulk(d,BcMap, physParams.reynolds_A, dntParams.Penalty1, dntParams.Penalty2, spcName, spcId);
+                            var div = new StressDivergenceInBulk(d, BcMap, physParams.reynolds_A, dntParams.Penalty1, dntParams.Penalty2, spcName, spcId);
                             comps.Add(div);
 
                             break;
@@ -221,6 +221,12 @@ namespace BoSSS.Solution.XNSECommon {
             double muA = physParams.mu_A;
             double muB = physParams.mu_B;
 
+            //viscoelastic
+            double reynoldsA = physParams.reynolds_A;
+            double reynoldsB = physParams.reynolds_B;
+            double[] penalty1 = dntParams.Penalty1;
+            double penalty2 = dntParams.Penalty2;
+
 
             // set components
             var comps = XOp.EquationComponents[CodName];
@@ -253,6 +259,10 @@ namespace BoSSS.Solution.XNSECommon {
                         break;
                     case ViscosityMode.FullySymmetric:
                         comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d, dntParams.UseWeightedAverages));
+                        break;
+                    case ViscosityMode.Viscoelastic:
+                        comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, reynoldsA, reynoldsB, penalty, d, dntParams.UseWeightedAverages));
+                        comps.Add(new Operator.Viscosity.StressDivergenceAtLevelSet(LsTrk, reynoldsA, reynoldsB, penalty1, penalty2, d));
                         break;
 
                     default:

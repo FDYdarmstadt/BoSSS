@@ -26,7 +26,7 @@ using BoSSS.Application.XNSE_Solver;
 
 namespace BoSSS.Application.XRheology_Solver {
 
-    public class XRheology_OperatorConfiguration : XNSE_OperatorConfiguration, IXRheology_Configuration {
+    public class XRheology_OperatorConfiguration : IXNSE_Configuration, IXRheology_Configuration {
 
         public XRheology_OperatorConfiguration() {}
 
@@ -37,8 +37,8 @@ namespace BoSSS.Application.XRheology_Solver {
             Viscous = true;
             PressureGradient = true;
             Transport = control.PhysicalParameters.IncludeConvection;
-            CodBlocks = new bool[] { true, true };
-            DomBlocks = new bool[] { true, true };
+            CodBlocks = new bool[] { true, true, true };
+            DomBlocks = new bool[] { true, true, true };
             dntParams = control.AdvancedDiscretizationOptions;
             physParams = control.PhysicalParameters;
             useJacobian = control.useJacobianForOperatorMatrix;

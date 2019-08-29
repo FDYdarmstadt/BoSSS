@@ -2532,7 +2532,9 @@ namespace ilPSP.LinSolvers {
                                                                         pCol++;
                                                                         pRow += CJ;
                                                                     }
-
+                                                                    if (Accu.IsNaN()) {
+                                                                        Console.WriteLine("blöd");
+                                                                    }
                                                                     VecAccu[iRowBlockLoc] += Accu;
                                                                     iRowLoc++;
                                                                     iRowBlockLoc++;

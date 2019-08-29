@@ -70,11 +70,11 @@ namespace BoSSS.Solution.XNSECommon {
                     int jCell = (int)GlobalIndex - GridDat.CellPartitioning.i0;
                     NodeSet CenterNode = new NodeSet(GridDat.iGeomCells.GetRefElement(jCell), new double[D]);
 
-                    MultidimensionalArray LevSetValues = LsTrk.DataHistories[0].Current.GetLevSetValues(CenterNode, jCell, 1); ;
+                    MultidimensionalArray LevSetValues = LsTrk.DataHistories[0].Current.GetLevSetValues(CenterNode, jCell, 1);
 
                     MultidimensionalArray CenterNodeGlobal = MultidimensionalArray.Create(1, D);
                     GridDat.TransformLocal2Global(CenterNode, CenterNodeGlobal, jCell);
-                    //Console.WriteLine("Pressure Ref Point @( {0:0.###E-00} | {1:0.###E-00} )", CenterNodeGlobal[0,0], CenterNodeGlobal[0,1]);
+                    //Console.WriteLine("Pressure Ref Point @( {0:0.###E-00} | {1:0.###E-00} )", CenterNodeGlobal[0, 0], CenterNodeGlobal[0, 1]);
 
                     LevelSetSignCode scode = LevelSetSignCode.ComputeLevelSetBytecode(LevSetValues[0, 0]);
                     ReducedRegionCode rrc;
@@ -126,14 +126,13 @@ namespace BoSSS.Solution.XNSECommon {
 
 
         /// <summary>
-        /// modifies a matrix <paramref name="Mtx"/> and a right-hand-side <paramref name="rhs"/>
+        /// modifies a residual (i.e. an operator evaluation)
         /// in order to fix the pressure at some reference point
         /// </summary>
-        /// <param name="map">row mapping for <paramref name="Mtx"/> as well as <paramref name="rhs"/></param>
+        /// <param name="currentState">current state of velocity & pressure</param>
         /// <param name="iVar">the index of the pressure variable in the mapping <paramref name="map"/>.</param>
         /// <param name="LsTrk"></param>
-        /// <param name="Mtx"></param>
-        /// <param name="rhs"></param>
+        /// <param name="Residual"></param>
         static public void SetPressureReferencePointResidual<T>(CoordinateVector currentState, int iVar, LevelSetTracker LsTrk, T Residual)
             where T : IList<double> //
         {
@@ -153,6 +152,7 @@ namespace BoSSS.Solution.XNSECommon {
                 long GlobalID, GlobalIndex;
                 bool IsInside, onthisProc;
                 grd.LocatePoint(new double[] { 5, 0 }, out GlobalID, out GlobalIndex, out IsInside, out onthisProc, LsTrk.Regions.GetCutCellSubGrid().VolumeMask.Complement());
+                //grd.LocatePoint(new double[D], out GlobalID, out GlobalIndex, out IsInside, out onthisProc, LsTrk.Regions.GetCutCellSubGrid().VolumeMask.Complement());
 
 
                 int iRowGl = -111;

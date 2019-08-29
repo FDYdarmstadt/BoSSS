@@ -27,7 +27,7 @@ namespace BoSSS.Solution.Control {
         public enum Code {
 
             /// <summary>
-            /// NewtonKrylov GMRES (<see cref="BoSSS.Solution.AdcancedSolvers.NonLinearSolver"/>) with linear solver (<see cref="LinearSolverConfig.Code"/>) used as preconditioner for matrix-free GMRES 
+            /// NewtonKrylov GMRES (<see cref="BoSSS.Solution.AdvancedSolvers.NonLinearSolver"/>) with linear solver (<see cref="LinearSolverConfig.Code"/>) used as preconditioner for matrix-free GMRES 
             /// </summary>
             NewtonGMRES = 0,
 
@@ -69,7 +69,7 @@ namespace BoSSS.Solution.Control {
         public int MaxSolverIterations = 2000;
 
         /// <summary>
-        /// If iterative solvers are used, the maximum number of iterations.
+        /// If iterative solvers are used, the minimum number of iterations.
         /// </summary>
         [DataMember]
         public int MinSolverIterations = 2;
