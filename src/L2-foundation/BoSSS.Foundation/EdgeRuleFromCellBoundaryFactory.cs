@@ -212,7 +212,6 @@ namespace BoSSS.Foundation.Quadrature {
                     if (Faces[i] >= 0) {
                         qrEdge = this.CombineQr(null, CellBndR, Faces[i]);
                     } else {
-                        Debugger.Launch();
                         throw new NotSupportedException("currently no support for non-conformal edges.");
                     }
 

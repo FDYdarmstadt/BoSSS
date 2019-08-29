@@ -1423,11 +1423,27 @@ namespace BoSSS.Application.FSI_Solver {
             if (((FSI_Control)Control).AdaptiveMeshRefinement) {
                 // Define cells to refine (only cut cells atm)
                 // ===================================================
+                int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
+                double h_min = LsTrk.GridDat.Cells.h_minGlobal;
+                double h_max = LsTrk.GridDat.Cells.h_maxGlobal;
+                BitArray coarse = new BitArray(noOfLocalCells);
+                BitArray fine = new BitArray(noOfLocalCells);
+                foreach (Particle p in m_Particles) {
+                    for (int j = 0; j < noOfLocalCells; j++) {
+                        fine[j] = p.Contains(new double[] { CellCenters[j, 0], CellCenters[j, 1] }, 2 * h_min);
+                        coarse[j] = p.Contains(new double[] { CellCenters[j, 0], CellCenters[j, 1] }, h_max / 2);
+                    }
+                }
+                CellMask coarseMask = new CellMask(GridData, coarse);
+                CellMask fineMask = new CellMask(GridData, fine);
                 int refinementLevel = ((FSI_Control)this.Control).RefinementLevel;
+                int coarseRefinementLevel = refinementLevel > 2 ? refinementLevel / 2 : 1;
                 CellMask CutCells = LsTrk.Regions.GetCutCellMask();
-                //CutCells = CutCells.Union(CutCells.AllNeighbourCells());
+                CutCells = CutCells.Union(CutCells.AllNeighbourCells());
                 List<Tuple<int, CellMask>> AllCellsWithMaxRefineLevel = new List<Tuple<int, CellMask>> {
-                    new Tuple<int, CellMask>(refinementLevel, CutCells),
+                    new Tuple<int, CellMask>(refinementLevel, fineMask),
+                    new Tuple<int, CellMask>(coarseRefinementLevel, coarseMask),
                 };
 
                 // Get the cells to refine and to coarse

@@ -293,7 +293,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                         throw new Exception("Error in refinement and coarsening algorithm: Both cells not on the current process");
 
                     int i0 = CellPartitioning.i0;
-
                     CheckIfCellIsMissing(localCellIndex1, adaptedCells1, i0);
                     CheckIfCellIsMissing(localCellIndex2, adaptedCells2, i0);
 
