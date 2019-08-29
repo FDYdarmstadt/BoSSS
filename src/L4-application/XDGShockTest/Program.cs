@@ -42,7 +42,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using XDGShock;
-using XDGShock.InterfaceFluxes;
+using XDGShock.Fluxes;
 using XDGShock.ShockCapturing;
 using XDGShock.TimeStepping;
 using XDGShock.Variables;
