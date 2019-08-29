@@ -59,8 +59,8 @@ namespace BoSSS.Application.FSI_Solver {
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 18;
-                r = 18;
+                q = 5;
+                r = 5;
 
                 double[] Xnodes = GenericBlas.Linspace(-5 * BaseSize, 5 * BaseSize, q + 1);
                 double[] Ynodes = GenericBlas.Linspace(-5 * BaseSize, 5 * BaseSize, r + 1);
@@ -97,7 +97,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Mesh refinement
             // =============================
             C.AdaptiveMeshRefinement = true;
-            C.RefinementLevel = 4;
+            C.RefinementLevel = 5;
 
 
             // Boundary conditions

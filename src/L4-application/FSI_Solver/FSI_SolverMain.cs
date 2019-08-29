@@ -1439,6 +1439,8 @@ namespace BoSSS.Application.FSI_Solver {
                 CellMask fineMask = new CellMask(GridData, fine);
                 int refinementLevel = ((FSI_Control)this.Control).RefinementLevel;
                 int coarseRefinementLevel = refinementLevel > 2 ? refinementLevel / 2 : 1;
+                if (refinementLevel - coarseRefinementLevel > coarseRefinementLevel)
+                    coarseRefinementLevel += 1;
                 CellMask CutCells = LsTrk.Regions.GetCutCellMask();
                 CutCells = CutCells.Union(CutCells.AllNeighbourCells());
                 List<Tuple<int, CellMask>> AllCellsWithMaxRefineLevel = new List<Tuple<int, CellMask>> {
