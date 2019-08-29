@@ -73,10 +73,10 @@ namespace BoSSS.Foundation.Grid.Classic {
                 }
             }
 
-            /// <summary>
-            /// See <see cref="CellFaceTag.EdgeMayBeEmpty"/>.
-            /// </summary>
-            public bool EdgeMayBeEmpty;
+            ///// <summary>
+            ///// See <see cref="CellFaceTag."/>.
+            ///// </summary>
+            //public bool EdgeMayBeEmpty;
         }
 
         /// <summary>
@@ -163,6 +163,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                             }
                         }
                     }
+
+                    //SerialisationMessenger.DiagnosisFile = "GetCellNeighborship";
+                    //SerialisationMessenger.TestDeserialization = true;
 
                     var W = SerialisationMessenger.ExchangeData(Y, csMPI.Raw._COMM.WORLD);
                     foreach (var wp in W.Values) {
