@@ -128,12 +128,12 @@ namespace BoSSS.Application.XRheology_Solver {
             Params = ArrayTools.Cat(
                 VariableNames.Velocity0Vector(this.D),
                 VariableNames.Velocity0MeanVector(this.D),
-                VariableNames.VelocityX_GradientVector(), 
-                VariableNames.VelocityY_GradientVector(), 
-                VariableNames.StressXXP, 
-                VariableNames.StressXYP, 
-                VariableNames.StressYYP, 
-               // "artificialViscosity",
+                VariableNames.VelocityX_GradientVector(),
+                VariableNames.VelocityY_GradientVector(),
+                VariableNames.StressXXP,
+                VariableNames.StressXYP,
+                VariableNames.StressYYP,
+                // "artificialViscosity",
                 VariableNames.NormalVector(this.D),
                 VariableNames.Curvature,
                 VariableNames.SurfaceForceVector(this.D)

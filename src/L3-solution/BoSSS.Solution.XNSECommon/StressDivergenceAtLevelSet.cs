@@ -74,16 +74,16 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             //Debug.Assert(Grad_uA.GetLength(1) == D);
             //Debug.Assert(Grad_uB.GetLength(1) == D);
 
-            double[] Grad_uA_xN = new double[2], Grad_uB_xN = new double[2];
-            double Grad_vA_xN = 0, Grad_vB_xN = 0;
-            for (int d = 0; d < D; d++) {
-                for (int dd = 0; dd < D; dd++) {
-                    Grad_uA_xN[dd] += Grad_uA[dd, d] * N[d];
-                    Grad_uB_xN[dd] += Grad_uB[dd, d] * N[d];
-                }
-                Grad_vA_xN += Grad_vA[d] * N[d];
-                Grad_vB_xN += Grad_vB[d] * N[d];
-            }
+            //double[] Grad_uA_xN = new double[2], Grad_uB_xN = new double[2];
+            //double Grad_vA_xN = 0, Grad_vB_xN = 0;
+            //for (int d = 0; d < D; d++) {
+            //    for (int dd = 0; dd < D; dd++) {
+            //        Grad_uA_xN[dd] += Grad_uA[dd, d] * N[d];
+            //        Grad_uB_xN[dd] += Grad_uB[dd, d] * N[d];
+            //    }
+            //    Grad_vA_xN += Grad_vA[d] * N[d];
+            //    Grad_vB_xN += Grad_vB[d] * N[d];
+            //}
 
             double PosCellLengthScale = PosLengthScaleS[inp.jCell];
             double NegCellLengthScale = NegLengthScaleS[inp.jCell];
@@ -100,14 +100,14 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             double res = 0;
 
 
-            res += 0.5 * (TA[0]* muA + TB[0]* muB) * N[0] + 0.5 * (TA[1]* muA + TB[1]* muB) * N[1]; // central difference for stress divergence
+            res +=( 0.5 * (TA[0]* muA + TB[0]* muB) * N[0] + 0.5 * (TA[1]* muA + TB[1]* muB) * N[1]) *(vA-vB); // central difference for stress divergence
 
             switch (component) {
                 case 0:
-                    res += -penalty2 / hCellMin * (TA[2]* muA - TB[2]* muB);
+                    res += -penalty2 / hCellMin * (TA[2]* muA - TB[2]* muB) * (vA - vB);
                     break;
                 case 1:
-                    res += -penalty2 / hCellMin * (TA[2] * muA - TB[2]* muB);
+                    res += -penalty2 / hCellMin * (TA[2] * muA - TB[2]* muB) * (vA - vB);
                     break;
                 default:
                     throw new NotImplementedException();
@@ -116,54 +116,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             }
 
             return  res;
-
-            //switch (m_ViscosityImplementation) {
-            //    // old Form (H-Implementation)
-            //    case ViscosityImplementation.H: {
-
-            //double wA;
-            //double wB;
-            //double wPenalty;
-            //if (!weighted) {
-            //    wA = 0.5;
-            //    wB = 0.5;
-            //    wPenalty = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
-            //} else {
-            //    wA = muB / (muA + muB);
-            //    wB = muA / (muA + muB);
-            //    wPenalty = muA * muB / (muA + muB);
-            //}
-
-            ////double muMax = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
-            //if (!staticInt) {
-            //    Ret -= (wA * muA * Grad_uA_xN[component] + wB * muB * Grad_uB_xN[component]) * (vA - vB);                           // consistency term
-            //    Ret -= (wA * muA * Grad_vA_xN + wB * muB * Grad_vB_xN) * (uA[component] - uB[component]);     // symmetry term
-            //    Ret += (penalty / hCutCellMin) * (uA[component] - uB[component]) * (vA - vB) * wPenalty; // penalty term
-            //    // Transpose Term
-            //    for (int i = 0; i < D; i++) {
-            //        Ret -= (wA * muA * Grad_uA[i, component] + wB * muB * Grad_uB[i, component]) * (vA - vB) * N[i];  // consistency term
-            //        Ret -= (wA * muA * Grad_vA[i] + wB * muB * Grad_vB[i]) * (uA[i] - uB[i]) * N[component];  // symmetry term
-            //    }
-
-            //} else {
-
-            //    //wall
-            //    Ret -= (wA * muA * Grad_uA_xN[component]) * (vA);                           // consistency term
-            //    Ret -= (wA * muA * Grad_vA_xN) * (uA[component]);     // symmetry term
-            //    Ret += (penalty / hCutCellMin) * (uA[component] - 0) * (vA) * muA; // penalty term
-
-            //    Ret += (wB * muB * Grad_uB_xN[component]) * (vB);                           // consistency term
-            //    Ret += (wB * muB * Grad_vB_xN) * (uB[component]);     // symmetry term
-            //    Ret += (penalty / hCutCellMin) * (0 - uB[component]) * (0 - vB) * muB; // penalty term
-            //    // Transpose Term
-            //    for (int d = 0; d < D; d++) {
-            //        Ret -= (wA * muA * Grad_uA[d, component]) * (vA) * N[d];  // consistency term
-            //        Ret -= (wA * muA * Grad_vA[d]) * (uA[d]) * N[component];  // symmetry term
-            //        Ret += (wB * muB * Grad_uB[d, component]) * (vB) * N[d];  // consistency term
-            //        Ret += (wB * muB * Grad_vB[d]) * (uB[d]) * N[component];  // symmetry term
-            //    }
-            //}
-            //return Ret;
         }
 
 

@@ -53,9 +53,10 @@ namespace BoSSS.Application.XRheology_Solver {
             //if(D == 3)
                 C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
-            AppControl._CompMode compMode = AppControl._CompMode.Steady;
+            AppControl._CompMode compMode = AppControl._CompMode.Transient;
 
-            //C.SkipSolveAndEvaluateResidual = true;
+            C.SkipSolveAndEvaluateResidual = false;
+            C.OperatorMatrixAnalysis = false;
 
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
             //_DbPath = @"D:\local\local_test_db";
@@ -142,8 +143,8 @@ namespace BoSSS.Application.XRheology_Solver {
             C.PhysicalParameters.reynolds_B = 1.0;
             //C.PhysicalParameters.mu_A = 1;
             //C.PhysicalParameters.mu_B = 1;
-            C.PhysicalParameters.beta_a = 1.0;
-            C.PhysicalParameters.beta_b = 1.0;
+            C.PhysicalParameters.beta_a = 0.0;
+            C.PhysicalParameters.beta_b = 0.0;
             double sigma = 1.0;
             C.PhysicalParameters.Sigma = sigma;
 

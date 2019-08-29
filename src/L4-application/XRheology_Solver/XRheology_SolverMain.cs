@@ -211,17 +211,20 @@ namespace BoSSS.Application.XRheology_Solver {
         /// <summary>
         /// Set true if Navier Stokes is solved, then the mean velocities as parameters for calculation of convective terms are needed
         /// </summary>
-        //protected bool U0MeanRequired {
-        //    get {
-        //        return (this.Control.PhysicalParameters.IncludeConvection);
-        //    }
-        //}
+        protected bool U0MeanRequired {
+            get {
+                return (this.Control.PhysicalParameters.IncludeConvection);
+            }
+        }
 #pragma warning restore 649
 
         protected override void CreateFields() {
             using (new FuncTrace()) {
                 base.CreateFields();
                 int D = this.GridData.SpatialDimension;
+
+                if (D > 2)
+                    throw new NotImplementedException("The viscoelastic solver is only implemented for 2D cases!");
 
                 //PRESSURE FIELD
                 this.Pressure = new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.Pressure].Degree), VariableNames.Pressure);
@@ -569,6 +572,7 @@ namespace BoSSS.Application.XRheology_Solver {
                         this.Control.NonLinearSolver,
                         this.Control.LinearSolver
                         );
+
                     m_BDF_Timestepper.m_ResLogger = base.ResLogger;
                     m_BDF_Timestepper.m_ResidualNames = this.CurrentResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
                     m_BDF_Timestepper.Timestepper_Init = (this.Control.CompMode == AppControl._CompMode.Transient) ? this.Control.Timestepper_BDFinit : TimeStepperInit.SingleInit;
@@ -656,7 +660,6 @@ namespace BoSSS.Application.XRheology_Solver {
 
             }
             #endregion
-
         }
 
 
@@ -809,27 +812,10 @@ namespace BoSSS.Application.XRheology_Solver {
                 }
             }
 
-            //if (OpMtx != null) {
-            //    if (!this.BcMap.DirichletPressureBoundary) {
-            //        IBMSolverUtils.SetPressureReferencePoint(
-            //            Mapping,
-            //            this.GridData.SpatialDimension,
-            //            this.LsTrk, OpMtx, OpAffine);
-            //    }
-            //} else {
-            //    if (!this.BcMap.DirichletPressureBoundary) {
-            //        XNSEUtils.SetPressureReferencePointResidual(
-            //            new CoordinateVector(CurrentState),
-            //            this.GridData.SpatialDimension,
-            //            this.LsTrk, OpAffine);
-            //    }
-            //}
-
-
-
             // transform from RHS to Affine
             OpAffine.ScaleV(-1.0);
 
+            //OpMtx.SaveToTextFile("OpMatrix");
         }
 
         int hack_TimestepIndex;
@@ -996,10 +982,13 @@ namespace BoSSS.Application.XRheology_Solver {
             using (var tr = new FuncTrace()) {
 
                 if (this.Control.OperatorMatrixAnalysis == true) {
-
-                    OpAnalysisBase myAnalysis = new OpAnalysisBase(DelComputeOperatorMatrix, CurrentSolution.Mapping, CurrentSolution.Mapping.Fields.ToArray(), null, phystime);
+                    var agg = LsTrk.GetAgglomerator(LsTrk.SpeciesIdS.ToArray(), m_HMForder, this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold).CellLengthScales;
+                    OpAnalysisBase myAnalysis = new OpAnalysisBase(DelComputeOperatorMatrix, CurrentSolution.Mapping, CurrentSolution.Mapping.Fields.ToArray(), agg, phystime);
                     //myAnalysis.VarGroup = new int[] { 0};
-                    myAnalysis.Analyse();
+                    //myAnalysis.Analyse();
+                    double[] condest = myAnalysis.CondNum();
+                    Console.WriteLine("Condition number full system, full matrix: " + condest[0] + "full system inner matrix (excl. BC): " + condest[1]);
+
                 }
 
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);

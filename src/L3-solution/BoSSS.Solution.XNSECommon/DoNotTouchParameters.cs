@@ -200,7 +200,10 @@ namespace BoSSS.Solution.XNSECommon {
 
         /// <summary>
         /// In viscoelastic case we calculate dimensionless and have the material parameter \beta
-        /// such that the dimensionless "Viscosity" is defined as \frac{\beta}{\mathrm{Re}}
+        /// such that the dimensionless "Viscosity" is defined as 
+        /// \f[ 
+        ///     \frac{\beta}{\mathrm{Re}}
+        /// \f]
         /// </summary>
         Viscoelastic
 

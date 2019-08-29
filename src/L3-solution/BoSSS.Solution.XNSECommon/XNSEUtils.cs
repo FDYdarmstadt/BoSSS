@@ -151,8 +151,12 @@ namespace BoSSS.Solution.XNSECommon {
 
                 long GlobalID, GlobalIndex;
                 bool IsInside, onthisProc;
-                grd.LocatePoint(new double[] { 5, 0 }, out GlobalID, out GlobalIndex, out IsInside, out onthisProc, LsTrk.Regions.GetCutCellSubGrid().VolumeMask.Complement());
-                //grd.LocatePoint(new double[D], out GlobalID, out GlobalIndex, out IsInside, out onthisProc, LsTrk.Regions.GetCutCellSubGrid().VolumeMask.Complement());
+
+                // somehow does not work for LDG...
+                //grd.LocatePoint(new double[] { 5, 0 }, out GlobalID, out GlobalIndex, out IsInside, out onthisProc, LsTrk.Regions.GetCutCellSubGrid().VolumeMask.Complement());
+
+                //trying this:
+                grd.LocatePoint(new double[D], out GlobalID, out GlobalIndex, out IsInside, out onthisProc, LsTrk.Regions.GetCutCellSubGrid().VolumeMask.Complement());
 
 
                 int iRowGl = -111;

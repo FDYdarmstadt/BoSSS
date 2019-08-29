@@ -44,7 +44,7 @@ namespace BoSSS.Solution {
             m_RHS = new double[Mapping.LocalLength]; //right hand side
             m_map = Mapping; // mapping
             VarGroup = m_map.BasisS.Count.ForLoop(i => i); //default: all dependent variables are included in operator matrix
-            delComputeOperatorMatrix(m_OpMtx, m_RHS, Mapping, CurrentState, null, time); // delegate for computing the operator matrix
+            delComputeOperatorMatrix(m_OpMtx, m_RHS, Mapping, CurrentState, AgglomeratedCellLengthScales, time); // delegate for computing the operator matrix
         }
 
 
