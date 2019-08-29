@@ -125,9 +125,6 @@ namespace BoSSS.Solution {
                         ConvCrit = nc.ConvergenceCriterion,
                         UnderRelax = nc.UnderRelax,
                     };
-
-
-
                     break;
 
                 //Besides NonLinearSolverConfig Newton needs also LinearSolverConfig
@@ -191,6 +188,8 @@ namespace BoSSS.Solution {
                 default:
                     throw new NotImplementedException();
             }
+
+            Check_NonLinearSolver(nonlinSolver);
 
             SetNonLinItCallback(nonlinSolver);
 #if DEBUG
@@ -1185,18 +1184,6 @@ namespace BoSSS.Solution {
             return solver;
         }
 
-
-
-        /// <summary>
-        /// Updates solver configuration.
-        /// </summary>
-        /// <param name="nc"></param>
-        /// <param name="lc"></param>
-        public void Update(NonLinearSolverConfig nc, LinearSolverConfig lc) {
-            this.m_lc = lc;
-            this.m_nc = nc;
-        }
-
         /// <summary>
         /// clears overgiven selfmade solvers
         /// </summary>
@@ -1206,6 +1193,36 @@ namespace BoSSS.Solution {
             this.m_linsolver = null;
             this.m_nonlinsolver = null;
         }
+
+        public void Check_NonLinearSolver(NonlinearSolver NLSolver)
+        {
+            if (NLSolver is Newton newtonsolver)
+                Check_Newton(newtonsolver);
+            if (NLSolver is FixpointIterator picardsolver)
+                Check_Picard(picardsolver);
+        }
+
+        private void Check_Newton(Newton NewtonSolver)
+        {
+            bool check=true;
+            check = m_nc.ConvergenceCriterion == NewtonSolver.ConvCrit &&
+            m_nc.MaxSolverIterations == NewtonSolver.MaxIter &&
+            m_nc.MinSolverIterations == NewtonSolver.MinIter;
+            //m_nc.PrecondSolver.Equals(NewtonSolver.Precond);
+            Debug.Assert(check);
+        }
+
+        private void Check_Picard(FixpointIterator FPSolver)
+        {
+            bool check = true;
+            check = m_nc.ConvergenceCriterion == FPSolver.ConvCrit &&
+            m_nc.MaxSolverIterations == FPSolver.MaxIter &&
+            m_nc.MinSolverIterations == FPSolver.MinIter &&
+            m_nc.PrecondSolver.Equals(FPSolver.Precond) &&
+            m_nc.UnderRelax == FPSolver.UnderRelax;
+            Debug.Assert(check);
+        }
+
 
         /// <summary>
         /// Checks overgiven selfmade linear solver

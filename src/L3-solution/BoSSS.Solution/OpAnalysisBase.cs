@@ -9,6 +9,8 @@ using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Connectors.Matlab;
 using BoSSS.Foundation.Grid;
+using MPI.Wrappers;
+using ilPSP.Utils;
 
 namespace BoSSS.Solution {
 
@@ -40,11 +42,23 @@ namespace BoSSS.Solution {
         /// <param name="time"></param>
         public OpAnalysisBase(DelComputeOperatorMatrix delComputeOperatorMatrix, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time){
 
+            System.Threading.Thread.Sleep(10000);
+
             m_OpMtx = new BlockMsrMatrix(Mapping, Mapping); //operator matrix
-            m_RHS = new double[Mapping.LocalLength]; //right hand side
+            //double[] localRHS = new double[Mapping.LocalLength]; //right hand side
+            m_RHS = new double[Mapping.LocalLength];
             m_map = Mapping; // mapping
+
             VarGroup = m_map.BasisS.Count.ForLoop(i => i); //default: all dependent variables are included in operator matrix
-            delComputeOperatorMatrix(m_OpMtx, m_RHS, Mapping, CurrentState, null, time); // delegate for computing the operator matrix
+            delComputeOperatorMatrix(m_OpMtx, m_RHS, Mapping, CurrentState, AgglomeratedCellLengthScales, time); // delegate for computing the operator matrix
+
+            //int[] Lengths = new int[ilPSP.Environment.MPIEnv.MPI_Size];
+            //for (int r = 0; r < Lengths.Length; r++)
+            //{
+            //    Lengths[r] = Mapping.GetLocalLength(r);
+            //}
+            //m_RHS = localRHS.MPIGatherv(Lengths);
+            //m_RHS = MPIEnviroment.Broadcast<double[]>(m_RHS, 0, ilPSP.Environment.MPIEnv.Mpi_comm);
         }
 
 
@@ -86,7 +100,7 @@ namespace BoSSS.Solution {
         /// - maximum and minimum eigenvalues and
         /// - the existence of a unique solution
         /// </summary>
-        public void Analyse(){
+        public void Analyse() {
 
             double[] CondNum_Write = CondNum();
 
@@ -94,22 +108,28 @@ namespace BoSSS.Solution {
 
             double[] Eigenval_Write = Eigenval();
 
-            Console.WriteLine("");
-            Console.WriteLine("==================================================================");
-            Console.WriteLine("Log of the analysis");
-            Console.WriteLine("==================================================================");
-            Console.WriteLine("Condition number:");
-            Console.WriteLine("full matrix: {0}", CondNum_Write[0]);
-            Console.WriteLine("inner matrix: {0}", CondNum_Write[1]);
-            Console.WriteLine("==================================================================");
-            Console.WriteLine("Symmetry and positive definiteness:");
-            Console.WriteLine("is symmetric: {0}", Symmetry_Write[0]);
-            Console.WriteLine("is positive definite: {0}", Symmetry_Write[1]);
-            Console.WriteLine("==================================================================");
-            Console.WriteLine("Eigenvalues:");
-            Console.WriteLine("mininmal eigenvalue: {0}", Eigenval_Write[0]);
-            Console.WriteLine("maximal eigenvalue: {0}", Eigenval_Write[1]);
-
+            //Console.WriteLine("");
+            //Console.WriteLine("==================================================================");
+            //Console.WriteLine("Log of the analysis");
+            //Console.WriteLine("==================================================================");
+            //Console.WriteLine("Condition number:");
+            //Console.WriteLine("full matrix: {0}", CondNum_Write[0]);
+            //Console.WriteLine("inner matrix: {0}", CondNum_Write[1]);
+            //Console.WriteLine("==================================================================");
+            //Console.WriteLine("Symmetry and positive definiteness:");
+            //Console.WriteLine("is symmetric: {0}", Symmetry_Write[0]);
+            //Console.WriteLine("is positive definite: {0}", Symmetry_Write[1]);
+            //Console.WriteLine("==================================================================");
+            //Console.WriteLine("Eigenvalues:");
+            //Console.WriteLine("mininmal eigenvalue: {0}", Eigenval_Write[0]);
+            //Console.WriteLine("maximal eigenvalue: {0}", Eigenval_Write[1]);
+            
+            //if (ilPSP.Environment.MPIEnv.MPI_Rank == 0)
+            //{
+            //    var fullmtrx = m_OpMtx.ToFullMatrixOnProc0();
+            //    fullmtrx.SaveToTextFile("post_matrix");
+            //    m_RHS.SaveToTextFile("post_rhs");
+            //}
             rankAnalysis(m_OpMtx, m_RHS);
 
             Console.WriteLine("");
@@ -121,12 +141,15 @@ namespace BoSSS.Solution {
         /// According to the Rouché-Capelli theorem, the system is inconsistent if rank(augMatrix) > rank(Matrix). 
         /// If rank(augMatrix) == rank(Matrix), the system has at least one solution.
         /// Additionally, if the rank is equal to the number of variables, the solution of the system is unique.
+        /// Remark: This requires the whole RHS not only local!!!
         /// </summary>
         /// <param name="OpMatrix"></param>
         /// <param name="RHS"></param>
         public void rankAnalysis(BlockMsrMatrix OpMatrix, double[] RHS){
 
             MultidimensionalArray outputArray = MultidimensionalArray.Create(2, 1); // The two rank values
+
+            var fullmtrx = m_OpMtx.ToFullMatrixOnProc0();
 
             using (var bmc = new BatchmodeConnector()){
 
@@ -140,6 +163,7 @@ namespace BoSSS.Solution {
                 bmc.GetMatrix(outputArray, "output");
                 bmc.Execute(false);
             }
+
 
             double[] output = new double[2];
             output[0] = outputArray[0, 0]; //Rank matrix 
@@ -268,7 +292,7 @@ namespace BoSSS.Solution {
             int[] DepVars = this.VarGroup;
             double[] DepVars_subvec = this.m_map.GetSubvectorIndices(true, DepVars).Select(i => i + 1.0).ToArray();
 
-            MsrMatrix OpMtxMSR = m_OpMtx.ToMsrMatrix();
+            //MsrMatrix OpMtxMSR = m_OpMtx.ToMsrMatrix();
 
             int[] SubMatrixIdx_Row = m_map.GetSubvectorIndices(false, DepVars);
             int[] SubMatrixIdx_Cols = m_map.GetSubvectorIndices(false, DepVars);
@@ -292,13 +316,20 @@ namespace BoSSS.Solution {
             var FullyPopulatedMatrix = m_OpMtx.ToFullMatrixOnProc0();
 
             bool posDef = true;
-            try{
-                FullyPopulatedMatrix.Cholesky();
-            }catch (ArithmeticException){
-                posDef = false;
+            // only proc 0 gets info so the following is executed exclusively on rank 0
+            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0)
+            {
+                try
+                {
+                    FullyPopulatedMatrix.Cholesky();
+                }
+                catch (ArithmeticException)
+                {
+                    posDef = false;
+                }
             }
+            res[1] = MPIEnviroment.Broadcast<bool>(posDef, 0, ilPSP.Environment.MPIEnv.Mpi_comm);
 
-            res[1] = posDef;
             return res;
         }
 
@@ -333,5 +364,6 @@ namespace BoSSS.Solution {
             double[] myeigs = new double[] { output[0, 0], output[1, 0] };
             return myeigs;
         }
+
     }
 }
