@@ -58,7 +58,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
             C.DbPath = _DbPath;
             C.savetodb = C.DbPath != null;
-            C.ProjectName = "XNSE/Channel";
+            C.ProjectName = "XRheology/Channel";
             C.ProjectDescription = "Channel flow with vertical interface";
 
             C.ContinueOnIoError = false;
@@ -123,16 +123,16 @@ namespace BoSSS.Application.XRheology_Solver {
             // ===================
             #region physics
 
-            C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.rho_B = 1;
+            //C.PhysicalParameters.rho_A = 1;
+            //C.PhysicalParameters.rho_B = 1;
             //C.PhysicalParameters.rho_A = 1e4;
             //C.PhysicalParameters.rho_B = 1e4;
-            //C.PhysicalParameters.reynolds_A = 1.0;
-            //C.PhysicalParameters.reynolds_B = 1.0;
-            C.PhysicalParameters.mu_A = 1;
-            C.PhysicalParameters.mu_B = 1;
-            //C.PhysicalParameters.beta_a = 1.0;
-            //C.PhysicalParameters.beta_b = 1.0;
+            C.PhysicalParameters.reynolds_A = 1.0;
+            C.PhysicalParameters.reynolds_B = 1.0;
+            //C.PhysicalParameters.mu_A = 1;
+            //C.PhysicalParameters.mu_B = 1;
+            C.PhysicalParameters.beta_a = 0.0;
+            C.PhysicalParameters.beta_b = 0.0;
             double sigma = 0.0;
             C.PhysicalParameters.Sigma = sigma;
 
@@ -205,7 +205,7 @@ namespace BoSSS.Application.XRheology_Solver {
             // ==============
             #region init
 
-            Func<double[], double> PhiFunc = (X => -1); // X[0] - (H / 2.0)); // + (H/20)*Math.Cos(8 * Math.PI * X[0] / L));
+            Func<double[], double> PhiFunc = (X => X[0] - (H / 2.0)); // + (H/20)*Math.Cos(8 * Math.PI * X[0] / L)); //-1);
 
             //double[] center = new double[] { H / 2.0, H / 2.0 };
             //double radius = 0.25;
@@ -280,7 +280,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.ComputeEnergy = false;
 
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
-            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
+            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MaxSolverIterations = 50;

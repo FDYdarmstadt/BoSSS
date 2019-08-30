@@ -89,6 +89,10 @@ namespace BoSSS.Solution.XNSECommon {
             if (config.isPressureGradient) {
                 var pres = new Operator.Pressure.PressureInSpeciesBulk(d, BcMap, spcName, spcId);
                 comps.Add(pres);
+
+                //problably necessary for LDG Simulation. Only one species parameter reynoldsA!!!!!!
+                var presStab = new PressureStabilizationInBulk(dntParams.PresPenalty2, physParams.reynolds_A, spcName, spcId);
+                comps.Add(presStab);
             }
 
             // viscous operator

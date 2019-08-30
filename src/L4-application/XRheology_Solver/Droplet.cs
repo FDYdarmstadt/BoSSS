@@ -145,6 +145,8 @@ namespace BoSSS.Application.XRheology_Solver {
             //C.PhysicalParameters.mu_B = 1;
             C.PhysicalParameters.beta_a = 0.0;
             C.PhysicalParameters.beta_b = 0.0;
+            C.AdvancedDiscretizationOptions.Penalty2 = 1;
+            C.AdvancedDiscretizationOptions.PresPenalty2 = 10;
             double sigma = 1.0;
             C.PhysicalParameters.Sigma = sigma;
 
@@ -360,11 +362,11 @@ namespace BoSSS.Application.XRheology_Solver {
             //C.Solver_ConvergenceCriterion = 1e-9;
             C.LevelSet_ConvergenceCriterion = 1e-7;
 
-           // C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Viscoelastic;
+            // C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Viscoelastic;
 
             //C.LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.PARDISO };
 
-            C.Option_LevelSetEvolution = (compMode == AppControl._CompMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
+            C.Option_LevelSetEvolution = LevelSetEvolution.None; // (compMode == AppControl._CompMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
             //C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
@@ -429,7 +431,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.Timestepper_Scheme = XRheology_Control.TimesteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
-            C.Timestepper_LevelSetHandling = (compMode == AppControl._CompMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.None; // (compMode == AppControl._CompMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
             //C.LSunderrelax = 0.05;
             //C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 

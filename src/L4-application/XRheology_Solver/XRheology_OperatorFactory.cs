@@ -391,6 +391,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
                     foreach (var kv in AgglomeratedCellLengthScales) {
                         mtxBuilder.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
+                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].EdgeLengthScales = this.LsTrk.GridDat.Edges.h_max_Edge;
                         mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
                         mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
                     }
@@ -444,6 +445,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
                 foreach (var kv in AgglomeratedCellLengthScales) {
                     eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
+                    eval.SpeciesOperatorCoefficients[kv.Key].EdgeLengthScales = this.LsTrk.GridDat.Edges.h_max_Edge;
                     eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
                     eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
                     eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);

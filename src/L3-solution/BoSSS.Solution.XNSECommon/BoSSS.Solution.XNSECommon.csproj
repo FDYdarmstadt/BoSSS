@@ -57,6 +57,7 @@
     <Compile Include="EnergyUtils.cs" />
     <Compile Include="IncompressibleMultiphaseBoundaryCondMap.cs" />
     <Compile Include="ConvectionInSpeciesBulk_LLF.cs" />
+    <Compile Include="PressureStabilizationInBulk.cs" />
     <Compile Include="StressDivergenceInBulk.cs" />
     <Compile Include="StressDivergence_Cockburn.cs" />
     <Compile Include="StressDivergenceAtLevelSet.cs" />
