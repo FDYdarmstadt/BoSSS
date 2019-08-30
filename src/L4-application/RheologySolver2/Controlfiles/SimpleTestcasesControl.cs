@@ -51,7 +51,7 @@ namespace BoSSS.Application.Rheology
             //Solver Options
             C.NoOfTimesteps = 1;
             C.savetodb = false;
-            C.DbPath = path;
+            //C.DbPath = path;
             C.ProjectName = "Channel";
             C.NonLinearSolver.MaxSolverIterations = 30;
             C.NonLinearSolver.MinSolverIterations = 3;
@@ -64,8 +64,8 @@ namespace BoSSS.Application.Rheology
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            //C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
+            //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.ObjectiveParam = 1.0;
 
             C.UsePerssonSensor = false;

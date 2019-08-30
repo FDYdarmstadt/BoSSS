@@ -268,7 +268,7 @@ namespace BoSSS.Solution {
             int[] DepVars = this.VarGroup;
             double[] DepVars_subvec = this.m_map.GetSubvectorIndices(true, DepVars).Select(i => i + 1.0).ToArray();
 
-            MsrMatrix OpMtxMSR = m_OpMtx.ToMsrMatrix();
+            //MsrMatrix OpMtxMSR = m_OpMtx.ToMsrMatrix();
 
             int[] SubMatrixIdx_Row = m_map.GetSubvectorIndices(false, DepVars);
             int[] SubMatrixIdx_Cols = m_map.GetSubvectorIndices(false, DepVars);
@@ -292,13 +292,21 @@ namespace BoSSS.Solution {
             var FullyPopulatedMatrix = m_OpMtx.ToFullMatrixOnProc0();
 
             bool posDef = true;
-            try{
-                FullyPopulatedMatrix.Cholesky();
-            }catch (ArithmeticException){
-                posDef = false;
+            // only proc 0 gets info so the following is executed exclusively on rank 0
+            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+                
+                try
+                {
+                    FullyPopulatedMatrix.Cholesky();
+                }
+                catch (ArithmeticException)
+                {
+                    posDef = false;
+                }
+                
             }
+            res[1] = MPIEnviroment.Broadcast<bool>(posDef, 0, ilPSP.Environment.MPIEnv.Mpi_comm);
 
-            res[1] = posDef;
             return res;
         }
 
@@ -315,6 +323,7 @@ namespace BoSSS.Solution {
 
             int[] DepVars = this.VarGroup;
             double[] DepVars_subvec = this.m_map.GetSubvectorIndices(true, DepVars).Select(i => i + 1.0).ToArray();
+
 
             using (BatchmodeConnector bmc = new BatchmodeConnector()){
 

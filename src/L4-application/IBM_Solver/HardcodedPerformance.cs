@@ -31,32 +31,33 @@ using BoSSS.Solution;
 namespace BoSSS.Application.IBM_Solver {
     public class HardcodedPerformance {
 
-        static public IBM_Control SphereFlow(string _DbPath = null, int k = 2, int cells_x = 11, int cells_yz = 9, bool only_channel = true, bool pardiso = false, int no_p = 1, int no_it = 1, bool restart = false, bool load_Grid = false, string _GridGuid = null) {
+        static public IBM_Control SphereFlow(string _DbPath = null, int k = 2, int cells_x = 64, int cells_yz = 16, bool only_channel = false, bool pardiso = true, int no_p = 1, int no_it = 1, bool restart = false, bool load_Grid = false, string _GridGuid = null) {
             IBM_Control C = new IBM_Control();
 
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
 
             // basic database options
             // ======================
             //C.DbPath = _DbPath;
-            C.savetodb = true;
-            //C.savetodb = false;
+            C.savetodb = false;
 
-            C.DbPath = @"F:\test_db";
+            C.DbPath = @"G:\test_db";
             //C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Bug";
             //C.DbPath = @"/home/ws35kire/test_db/";
 
             //string restartSession = "727da287-1b6a-463e-b7c9-7cc19093b5b3";
             //string restartGrid = "3f8f3445-46f1-47ed-ac0e-8f0260f64d8f";
 
+            //C.DynamicLoadBalancing_Period = 1;
+            //C.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int noOfPerformanceClasses) {
+            //    Console.WriteLine("i was called");
+            //    int[] map = new int[] { 1, 5, 100 };
+            //    return new StaticCellCostEstimator(map);
+            //});
+
+            C.GridPartType = GridPartType.none;
+            C.SetDGdegree(1);
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int noOfPerformanceClasses) {
-                Console.WriteLine("i was called");
-                int[] map = new int[] { 1, 5, 100 };
-                return new StaticCellCostEstimator(map);
-            });
-
-
 
             // Assign correct names
 
@@ -97,31 +98,31 @@ namespace BoSSS.Application.IBM_Solver {
             C.Tags.Add("cells_yz " + cells_yz);
             C.Tags.Add("restart " + restart);
 
-            // Create Fields
-            C.FieldOptions.Add("VelocityX", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityZ", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = k - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            //// Create Fields
+            //C.FieldOptions.Add("VelocityX", new FieldOpts() {
+            //    Degree = k,
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
+            //C.FieldOptions.Add("VelocityY", new FieldOpts() {
+            //    Degree = k,
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
+            //C.FieldOptions.Add("VelocityZ", new FieldOpts() {
+            //    Degree = k,
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
+            //C.FieldOptions.Add("Pressure", new FieldOpts() {
+            //    Degree = k - 1,
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
+            //C.FieldOptions.Add("PhiDG", new FieldOpts() {
+            //    Degree = 2,
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
+            //C.FieldOptions.Add("Phi", new FieldOpts() {
+            //    Degree = 2,
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
 
             //if (restart)
             //{
@@ -142,20 +143,20 @@ namespace BoSSS.Application.IBM_Solver {
                 C.GridFunc = delegate {
 
                     // x-direction
-                    var _xNodes = GenericBlas.Linspace(-10, 30, cells_x + 1);
+                    var _xNodes = GenericBlas.Linspace(-0.5, 1.5, cells_x + 1);
 
                     // y-direction
-                    var _yNodes = GenericBlas.Linspace(-10, 10, cells_yz + 1);
+                    var _yNodes = GenericBlas.Linspace(-0.5, 0.5, cells_yz + 1);
 
                     // z-direction
-                    var _zNodes = GenericBlas.Linspace(-10, 10, cells_yz + 1);
+                    var _zNodes = GenericBlas.Linspace(-0.5, 0.5, cells_yz + 1);
 
                     // Cut Out
                     var grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, CellType.Cube_Linear, false, false, false);
 
                     grd.EdgeTagNames.Add(1, "Velocity_inlet");
-                    grd.EdgeTagNames.Add(2, "Pressure_Outlet");
-                    // grd.EdgeTagNames.Add(3, "Wall");
+                    grd.EdgeTagNames.Add(2, "Wall");
+                    grd.EdgeTagNames.Add(3, "Pressure_Outlet");
 
                     grd.DefineEdgeTags(delegate (double[] _X) {
                         var X = _X;
@@ -163,27 +164,27 @@ namespace BoSSS.Application.IBM_Solver {
                         double y = X[1];
                         double z = X[2];
 
-                        if (Math.Abs(x - (-10)) < 1.0e-6)
+                        if (Math.Abs(x - (-0.5)) < 1.0e-6)
                             // inlet
                             return 1;
 
-                        if (Math.Abs(x - (30)) < 1.0e-6)
+                        if (Math.Abs(x - (1.5)) < 1.0e-6)
                             // outlet
-                            return 2;
+                            return 3;
 
-                        if (Math.Abs(y - (-10)) < 1.0e-6)
+                        if (Math.Abs(y - (-0.5)) < 1.0e-6)
                             // left
                             return 2;
 
-                        if (Math.Abs(y - (10)) < 1.0e-6)
+                        if (Math.Abs(y - (0.5)) < 1.0e-6)
                             // right
                             return 2;
 
-                        if (Math.Abs(z - (-10)) < 1.0e-6)
+                        if (Math.Abs(z - (-0.5)) < 1.0e-6)
                             // top left
                             return 2;
 
-                        if (Math.Abs(z - (10)) < 1.0e-6)
+                        if (Math.Abs(z - (0.5)) < 1.0e-6)
                             // top right
                             return 2;
 
@@ -357,9 +358,9 @@ namespace BoSSS.Application.IBM_Solver {
                 #endregion
 
                 // Set Initial Conditions
-                C.InitialValues_Evaluators.Add("VelocityX", X => 0.5);
+                C.InitialValues_Evaluators.Add("VelocityX", X => 0);
                 C.InitialValues_Evaluators.Add("VelocityY", X => 0);
-                C.InitialValues_Evaluators.Add("VelocityZ", X => 0.5);
+                C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
                 C.InitialValues_Evaluators.Add("Pressure", X => 0);
 
                 if (only_channel)
@@ -377,47 +378,53 @@ namespace BoSSS.Application.IBM_Solver {
             // Initial Solution
 
             // Physical values
-            C.particleRadius = 2.5;
+            C.particleRadius = 0.1;
             C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.mu_A = 2.5*2 / 100;
+            C.PhysicalParameters.mu_A = 0.2/1 ;
 
             // Boundary conditions
-            C.AddBoundaryValue("Velocity_inlet", "VelocityX", (X, t) => 1);
+            C.AddBoundaryValue("Velocity_inlet", "VelocityX", (X, t) => 1 - 4 * (X[2] * X[2]));
             C.AddBoundaryValue("Velocity_inlet", "VelocityY", (X, t) => 0);
-            //C.AddBoundaryCondition("Velocity_inlet", "VelocityZ", (X, t) => 0);
-           // C.AddBoundaryCondition("Wall");
+            //C.AddBoundaryValue("Velocity_inlet", "VelocityZ", (X, t) => 0);
+            C.AddBoundaryValue("Wall");
             C.AddBoundaryValue("Pressure_Outlet");
 
             
             // misc. solver options
             // ====================
-            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.IncludeConvection = false;
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.LinearSolver.MaxKrylovDim = 20;
+            C.LinearSolver.MaxKrylovDim = 30;
             C.LinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
+            C.LinearSolver.verbose = true;
+            C.NonLinearSolver.verbose = true;
+            C.NonLinearSolver.PrecondSolver.verbose = true;
+            //C.NonLinearSolver.ConvergenceCriterion = 1E-10;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
 
             // Timestepping
             // ============
             
-            if (pardiso) {
-                C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-            } else {
-                C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
-            }
+            //if (pardiso) {
+            //    C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            //} else {
+            //    C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            //}
 
             //C.whichSolver = DirectSolver._whichSolver.MUMPS;
             C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.BDF2;
             double dt = 0.1;
             C.dtFixed = dt;
-            C.dtMax = dt;
-            C.dtMin = dt;
-            C.Endtime = 10000000;
+            //C.dtMax = dt;
+            //C.dtMin = 0;
+            //C.Endtime = 1000;
             //C.NoOfTimesteps = 10;
-            C.NoOfTimesteps = 1;
+            C.NoOfTimesteps = 100;
             C.LinearSolver.NoOfMultigridLevels = 3;
 
             return C;

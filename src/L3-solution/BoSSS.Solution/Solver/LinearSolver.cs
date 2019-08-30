@@ -161,7 +161,6 @@ namespace BoSSS.Solution.Control {
         selfmade = 999,
     }
 
-
     [Serializable]
     public class LinearSolverConfig {
 
@@ -230,5 +229,7 @@ namespace BoSSS.Solution.Control {
         [DataMember]
         [BoSSS.Solution.Control.ExclusiveLowerBound(99.0)]
         public int TargetBlockSize = 10000;
+
+        //public Tuple<LinearSolverCode, Precond> SolverCode = new Tuple<LinearSolverCode, Precond>(LinearSolverCode.GMRES,Precond.none);
     }
 }
