@@ -44,14 +44,14 @@ namespace BoSSS.Application.Rheology
         /// <summary>
         /// Channel Flow
         /// </summary>
-        static public RheologyControl Channel(string path = @"C:\Users\kikker\AnnesBoSSSdb\Channel", int degree = 2, int GridLevel = 5)
+        static public RheologyControl Channel(string path = @"C:\Users\kikker\AnnesBoSSSdb\Channel", int degree = 2, int GridLevel = 4)
         {
             RheologyControl C = new RheologyControl();
 
             //Solver Options
             C.NoOfTimesteps = 1;
             C.savetodb = false;
-            C.DbPath = path;
+            //C.DbPath = path;
             C.ProjectName = "Channel";
             C.NonLinearSolver.MaxSolverIterations = 30;
             C.NonLinearSolver.MinSolverIterations = 3;
@@ -64,8 +64,8 @@ namespace BoSSS.Application.Rheology
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;
-            //C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_gmres_levelpmg;
-            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
+            C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_gmres_levelpmg;
+            //C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
             C.ObjectiveParam = 1.0;
 
             C.UsePerssonSensor = false;
