@@ -42,7 +42,7 @@ namespace BoSSS.Solution {
         /// <param name="time"></param>
         public OpAnalysisBase(DelComputeOperatorMatrix delComputeOperatorMatrix, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time){
 
-            System.Threading.Thread.Sleep(10000);
+            //System.Threading.Thread.Sleep(10000);
 
             m_OpMtx = new BlockMsrMatrix(Mapping, Mapping); //operator matrix
             //double[] localRHS = new double[Mapping.LocalLength]; //right hand side
