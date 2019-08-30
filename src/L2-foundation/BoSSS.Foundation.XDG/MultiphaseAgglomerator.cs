@@ -573,7 +573,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// The surface over cut cell volume ratio \f$ \frac{ | K^X |}{ | \partial K^X | } \f$
+        /// The volume over cut cell surface ratio \f$ \frac{ | K^X |}{ | \partial K^X | } \f$
         /// for each agglomerated cut-cell $K^X$.
         /// </summary>
         public Dictionary<SpeciesId, MultidimensionalArray> CellLengthScales {
