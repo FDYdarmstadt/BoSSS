@@ -621,6 +621,20 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
             using (new FuncTrace()) {
+
+                if (this.Control.OperatorMatrixAnalysis == true)
+                {
+                    //
+                    // 'Notlösung' -- no actual agglomeration available - use length scales form a temporary agglomerator.
+                    //
+                    var agg = this.LevsetTracker.GetAgglomerator(this.FluidSpecies, this.HMForder, this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold);
+                    var AggCLS = agg.CellLengthScales;
+
+                    Console.WriteLine("Starting OpAnal ...");
+                    OpAnalysisBase myAnalysis = new OpAnalysisBase(DelComputeOperatorMatrix, CurrentSolution.Mapping, CurrentSolution.Mapping.Fields.ToArray(), AggCLS, phystime);
+                    myAnalysis.Analyse();
+                }
+
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
                 int D = this.GridData.SpatialDimension;
 
