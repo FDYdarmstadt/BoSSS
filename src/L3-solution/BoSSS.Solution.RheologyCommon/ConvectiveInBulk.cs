@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using System;
 using System.Collections.Generic;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
@@ -30,19 +31,23 @@ namespace BoSSS.Solution.RheologyCommon {
         int ComponentRow;
         int ComponentCol;
         IncompressibleMultiphaseBoundaryCondMap m_bcMap;
-        double m_Weissenberg; // Weissenberg number
         double m_alpha; // upwind-paramter
 
         /// <summary>
         /// Initialize Convection
         /// </summary>
-        public ConvectiveInBulk(int _ComponentRow, int _ComponentCol, IncompressibleMultiphaseBoundaryCondMap _BcMap, double Weissenberg, double alpha, string spcName, SpeciesId spcId) : base(_ComponentRow, _ComponentCol, _BcMap, Weissenberg, alpha = 1.0) {
+        public ConvectiveInBulk(int _ComponentRow, int _ComponentCol, IncompressibleMultiphaseBoundaryCondMap _BcMap, double WeissenbergA, double WeissenbergB, double alpha, string spcName, SpeciesId spcId) : base(_ComponentRow, _ComponentCol, _BcMap, 0.0, alpha = 1.0) {
             this.ComponentRow = _ComponentRow;
             this.ComponentCol = _ComponentCol;
             this.m_spcId = spcId;
             this.m_bcMap = _BcMap;
-            this.m_Weissenberg = Weissenberg;
             this.m_alpha = alpha;
+
+            switch (spcName) {
+                case "A": base.m_Weissenberg = WeissenbergA; break;
+                case "B": base.m_Weissenberg = WeissenbergB; break;
+                default: throw new ArgumentException("Unknown species.");
+            }
         }
 
         public SpeciesId validSpeciesId {

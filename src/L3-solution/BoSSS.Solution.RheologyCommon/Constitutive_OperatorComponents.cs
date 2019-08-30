@@ -100,30 +100,32 @@ namespace BoSSS.Solution.RheologyCommon {
 
                 // convective operator
                 // ===================
-                var convective = new ConvectiveInBulk(compRow, compCol, BcMap, physParams.Weissenberg_a, dntParams.alpha, spcName, spcId);
+                var convective = new ConvectiveInBulk(compRow, compCol, BcMap, physParams.Weissenberg_a, physParams.Weissenberg_b, dntParams.alpha, spcName, spcId);
                 comps.Add(convective);
                 U0meanrequired = true;
 
                 // objective operator
                 // ===================
-                var objective = new ObjectiveInBulk(d, BcMap, physParams.Weissenberg_a, dntParams.ObjectiveParam, dntParams.StressPenalty, spcName, spcId);
+                var objective = new ObjectiveInBulk(d, BcMap, physParams.Weissenberg_a, physParams.Weissenberg_b, dntParams.ObjectiveParam, dntParams.StressPenalty, spcName, spcId);
                 comps.Add(objective);
 
                 // objective operator with Stress as param
                 // ========================================
-                var objective_Tparam = new ObjectiveInBulk_Tparam(d, BcMap, physParams.Weissenberg_a, dntParams.ObjectiveParam, spcName, spcId);
+                var objective_Tparam = new ObjectiveInBulk_Tparam(d, BcMap, physParams.Weissenberg_a, physParams.Weissenberg_b, dntParams.ObjectiveParam, spcName, spcId);
                 comps.Add(objective_Tparam);
             }
 
 
             // viscous operator
             // ==================
-            var viscosity = new ViscosityInBulk(d, BcMap, physParams.beta_a, dntParams.Penalty1, spcName, spcId);
+            var viscosity = new ViscosityInBulk(d, BcMap, physParams.beta_a, physParams.beta_b, dntParams.Penalty1, spcName, spcId);
             comps.Add(viscosity);
 
             // artificial diffusion
             // =====================
             if (config.isUseArtificialDiffusion == true) {
+
+                throw new NotImplementedException();
                 //    if (d == 0)
                 //        var diffusion = new DiffusionInBulk(stressDegree, D, ((GridData)GridData).Cells.cj, VariableNames.StressXX);
                 //        comps.Add(diffusion);

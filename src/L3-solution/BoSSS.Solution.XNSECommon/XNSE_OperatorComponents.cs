@@ -91,8 +91,8 @@ namespace BoSSS.Solution.XNSECommon {
                 comps.Add(pres);
 
                 //problably necessary for LDG Simulation. Only one species parameter reynoldsA!!!!!!
-                var presStab = new PressureStabilizationInBulk(dntParams.PresPenalty2, physParams.reynolds_A, spcName, spcId);
-                comps.Add(presStab);
+                //var presStab = new PressureStabilizationInBulk(dntParams.PresPenalty2, physParams.reynolds_A, spcName, spcId);
+                //comps.Add(presStab);
             }
 
             // viscous operator
@@ -158,8 +158,7 @@ namespace BoSSS.Solution.XNSECommon {
                                 BcMap, spcName, spcId, d, D, physParams.reynolds_A / physParams.beta_a, physParams.reynolds_B / physParams.beta_b);
                             comps.Add(Visc2);
 
-                            // ONLY REYNOLDS A. MUST BE IMPLEMENTED FOR TWO-PHASE FLOW!
-                            var div = new StressDivergenceInBulk(d, BcMap, physParams.reynolds_A, dntParams.Penalty1, dntParams.Penalty2, spcName, spcId);
+                            var div = new StressDivergenceInBulk(d, BcMap, physParams.reynolds_A, physParams.reynolds_B, dntParams.Penalty1, dntParams.Penalty2, spcName, spcId);
                             comps.Add(div);
 
                             break;

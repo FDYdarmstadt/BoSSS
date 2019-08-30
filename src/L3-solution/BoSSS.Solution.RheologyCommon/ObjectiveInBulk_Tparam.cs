@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using System;
 using System.Collections.Generic;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
@@ -29,17 +30,21 @@ namespace BoSSS.Solution.RheologyCommon {
         SpeciesId m_spcId;
         int Component;
         IncompressibleMultiphaseBoundaryCondMap m_bcMap;
-        double m_Weissenberg; // Weissenberg number
-        double m_alpha; // upwind-paramter
 
         /// <summary>
         /// Initialize objective term
         /// </summary>
-        public ObjectiveInBulk_Tparam(int _Component, IncompressibleMultiphaseBoundaryCondMap _BcMap, double Weissenberg, double ObjectiveParam, string spcName, SpeciesId spcId) : base(_Component, _BcMap, Weissenberg, ObjectiveParam) {
+        public ObjectiveInBulk_Tparam(int _Component, IncompressibleMultiphaseBoundaryCondMap _BcMap, double WeissenbergA, double WeissenbergB, double ObjectiveParam, string spcName, SpeciesId spcId) : base(_Component, _BcMap, 0.0, ObjectiveParam) {
             this.Component = _Component;
             this.m_spcId = spcId;
             this.m_bcMap = _BcMap;
-            this.m_Weissenberg = Weissenberg;
+            base.m_ObjectiveParam = ObjectiveParam;
+
+            switch (spcName) {
+                case "A": base.m_Weissenberg = WeissenbergA; break;
+                case "B": base.m_Weissenberg = WeissenbergB; break;
+                default: throw new ArgumentException("Unknown species.");
+            }
         }
 
         public SpeciesId validSpeciesId {

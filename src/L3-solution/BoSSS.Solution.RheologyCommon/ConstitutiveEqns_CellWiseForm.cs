@@ -30,7 +30,7 @@ namespace BoSSS.Solution.RheologyCommon {
         int ComponentRow;
         int ComponentCol;
         BoundaryCondMap<IncompressibleBcType> m_BcMap;
-        double m_Weissenberg; // Weissenberg number
+        protected double m_Weissenberg; // Weissenberg number
         double m_alpha; // upwind-paramter
 
         /// <summary>

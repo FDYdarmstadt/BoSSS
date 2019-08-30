@@ -31,8 +31,8 @@ namespace BoSSS.Solution.RheologyCommon
 
         int Component;           // equation index (0: xx, 1: xy, 2: yy)
         BoundaryCondMap<IncompressibleBcType> m_BcMap;
-        double m_Weissenberg; // relaxation factor lambda_1
-        double m_ObjectiveParam;
+        protected double m_Weissenberg; // relaxation factor lambda_1
+        protected double m_ObjectiveParam;
         double m_StressPenalty;
 
         /// <summary>

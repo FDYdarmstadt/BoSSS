@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using System;
 using System.Collections.Generic;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
@@ -29,23 +30,29 @@ namespace BoSSS.Solution.RheologyCommon {
         SpeciesId m_spcId;
         int Component;
         IncompressibleMultiphaseBoundaryCondMap m_bcMap;
-        double m_Reynolds; // Weissenberg number
-        double[] Penalty1;
-        double Penalty2;
+
 
         /// <summary>
         /// Initialize Convection
         /// </summary>
-        public StressDivergenceInBulk(int _Component, IncompressibleMultiphaseBoundaryCondMap _BcMap, double _Reynolds, double[] _Penalty1, double _Penalty2, string spcName, SpeciesId spcId) : base(_Component, _BcMap, _Reynolds, _Penalty1, _Penalty2) {
+        public StressDivergenceInBulk(int _Component, IncompressibleMultiphaseBoundaryCondMap _BcMap, double _ReynoldsA, double _ReynoldsB, double[] _Penalty1, double _Penalty2, string spcName, SpeciesId spcId) : base(_Component, _BcMap, 0.0, _Penalty1, _Penalty2) {
             this.Component = _Component;
             this.m_spcId = spcId;
             this.m_bcMap = _BcMap;
-            this.m_Reynolds = _Reynolds;
-            this.Penalty1 = _Penalty1;
-            this.Penalty2 = _Penalty2;
+            //this.m_ReynoldsA = _ReynoldsA;
+            //this.m_ReynoldsB = _ReynoldsB;
+            base.pen1 = _Penalty1;
+            base.pen2 = _Penalty2;
+
+            switch (spcName) {
+                case "A": base.InverseReynolds = -1 / _ReynoldsA; break;
+                case "B": base.InverseReynolds = -1 / _ReynoldsB; break;
+                default: throw new ArgumentException("Unknown species.");
+            }
+
         }
 
-        public SpeciesId validSpeciesId {
+    public SpeciesId validSpeciesId {
             get { return m_spcId; }
         }
     }

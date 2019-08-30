@@ -36,9 +36,9 @@ namespace BoSSS.Solution.RheologyCommon
 
         int Component;           // spatial dimension of momentum equation
         BoundaryCondMap<IncompressibleBcType> m_BcMap;
-        double InverseReynolds;
-        double[] pen1;
-        double pen2;
+        protected double InverseReynolds;
+        protected double[] pen1;
+        protected double pen2;
         /// <summary>
         /// Velocity Function for Dirichlet BC
         /// </summary>

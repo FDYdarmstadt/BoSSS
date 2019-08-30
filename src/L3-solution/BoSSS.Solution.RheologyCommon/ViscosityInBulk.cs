@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using System;
 using System.Collections.Generic;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
@@ -35,13 +36,17 @@ namespace BoSSS.Solution.RheologyCommon {
         /// <summary>
         /// Initialize Viscosity
         /// </summary>
-        public ViscosityInBulk(int _Component, IncompressibleMultiphaseBoundaryCondMap _BcMap, double _beta, double[] _Penalty1, string spcName, SpeciesId spcId) : base(_Component, _BcMap, _beta, _Penalty1) {
+        public ViscosityInBulk(int _Component, IncompressibleMultiphaseBoundaryCondMap _BcMap, double _betaA, double _betaB, double[] _Penalty1, string spcName, SpeciesId spcId) : base(_Component, _BcMap, 0.0, _Penalty1) {
             this.Component = _Component;
             this.m_spcId = spcId;
             this.m_bcMap = _BcMap;
-            this.Penalty1 = _Penalty1;
-            this.beta = _beta;
+            base.pen1 = _Penalty1;
 
+            switch (spcName) {
+                case "A": base.m_ViscosityNonNewton = 1- _betaA; break;
+                case "B": base.m_ViscosityNonNewton = 1 - _betaB; break;
+                default: throw new ArgumentException("Unknown species.");
+            }
         }
 
         public SpeciesId validSpeciesId {

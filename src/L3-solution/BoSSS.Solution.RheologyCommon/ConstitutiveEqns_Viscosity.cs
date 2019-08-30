@@ -36,12 +36,12 @@ namespace BoSSS.Solution.RheologyCommon
 
         int Component;           // equation index (0: xx, 1: xy, 2: yy)
         BoundaryCondMap<IncompressibleBcType> m_BcMap;
-        double m_ViscosityNonNewton; // polymeric viscosity
+        protected double m_ViscosityNonNewton; // polymeric viscosity
         /// <summary>
         /// Velocity function for Dirichlet value
         /// </summary>
         protected Func<double[], double, double>[,] VelFunction;
-        double[] pen1;
+        protected double[] pen1;
 
         /// <summary>
         /// Initialize viscosity part
