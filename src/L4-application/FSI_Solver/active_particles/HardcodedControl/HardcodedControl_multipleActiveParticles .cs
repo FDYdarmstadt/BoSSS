@@ -59,16 +59,16 @@ namespace BoSSS.Application.FSI_Solver {
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 5;
-                r = 5;
+                q = 12;
+                r = 12;
 
                 double[] Xnodes = GenericBlas.Linspace(-5 * BaseSize, 5 * BaseSize, q + 1);
                 double[] Ynodes = GenericBlas.Linspace(-5 * BaseSize, 5 * BaseSize, r + 1);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
 
-                grd.EdgeTagNames.Add(1, "Pressure_Outlet_left");
-                grd.EdgeTagNames.Add(2, "Pressure_Outlet_right");
+                grd.EdgeTagNames.Add(1, "Wall_left");
+                grd.EdgeTagNames.Add(2, "Wall_right");
                 grd.EdgeTagNames.Add(3, "Wall_lower");
                 grd.EdgeTagNames.Add(4, "Wall_upper");
 
@@ -97,13 +97,13 @@ namespace BoSSS.Application.FSI_Solver {
             // Mesh refinement
             // =============================
             C.AdaptiveMeshRefinement = true;
-            C.RefinementLevel = 5;
+            C.RefinementLevel = 4;
 
 
             // Boundary conditions
             // =============================
-            C.AddBoundaryValue("Pressure_Outlet_left");//, "VelocityX", X => 0.0);
-            C.AddBoundaryValue("Pressure_Outlet_right");//, "VelocityX", X => 0.0);
+            C.AddBoundaryValue("Wall_left");//, "VelocityX", X => 0.0);
+            C.AddBoundaryValue("Wall_right");//, "VelocityX", X => 0.0);
             C.AddBoundaryValue("Wall_lower");
             C.AddBoundaryValue("Wall_upper");
 
@@ -129,49 +129,49 @@ namespace BoSSS.Application.FSI_Solver {
                 UseAddedDamping = true,
             });
 
-            //C.Particles.Add(new Particle_Ellipsoid(new double[] { 1.0, 1.0 }, startAngl: 0) {
-            //    particleDensity = 1,
-            //    activeStress = 1e3,
-            //    thickness_P = 0.1 * BaseSize,
-            //    length_P = 0.2 * BaseSize,
-            //    useAddaptiveUnderrelaxation = true,
-            //    underrelaxation_factor = 3.0,
-            //    clearSmallValues = true,
-            //    UseAddedDamping = true
-            //});
+            C.Particles.Add(new Particle_Ellipsoid(new double[] { 2.5, 2.5 }, startAngl: 10) {
+                particleDensity = 1,
+                activeStress = 1e3,
+                thickness_P = 0.1 * BaseSize,
+                length_P = 0.2 * BaseSize,
+                useAddaptiveUnderrelaxation = true,
+                underrelaxation_factor = 3.0,
+                clearSmallValues = true,
+                UseAddedDamping = true
+            });
 
-            //C.Particles.Add(new Particle_Ellipsoid(new double[] { 1.0, -1.0 }, startAngl: 0) {
-            //    particleDensity = 1,
-            //    activeStress = 1e3,
-            //    thickness_P = 0.1 * BaseSize,
-            //    length_P = 0.2 * BaseSize,
-            //    useAddaptiveUnderrelaxation = true,
-            //    underrelaxation_factor = 3.0,
-            //    clearSmallValues = true,
-            //    UseAddedDamping = true
-            //});
+            C.Particles.Add(new Particle_Ellipsoid(new double[] { 2.5, -2.5 }, startAngl: 50) {
+                particleDensity = 1,
+                activeStress = 1e3,
+                thickness_P = 0.1 * BaseSize,
+                length_P = 0.2 * BaseSize,
+                useAddaptiveUnderrelaxation = true,
+                underrelaxation_factor = 3.0,
+                clearSmallValues = true,
+                UseAddedDamping = true
+            });
 
-            //C.Particles.Add(new Particle_Ellipsoid(new double[] { -1.0, 1.0 }, startAngl: 0) {
-            //    particleDensity = 1,
-            //    activeStress = 1e3,
-            //    thickness_P = 0.1 * BaseSize,
-            //    length_P = 0.2 * BaseSize,
-            //    useAddaptiveUnderrelaxation = true,
-            //    underrelaxation_factor = 3.0,
-            //    clearSmallValues = true,
-            //    UseAddedDamping = true
-            //});
+            C.Particles.Add(new Particle_Ellipsoid(new double[] { -2.5, 2.5 }, startAngl: 80) {
+                particleDensity = 1,
+                activeStress = 1e3,
+                thickness_P = 0.1 * BaseSize,
+                length_P = 0.2 * BaseSize,
+                useAddaptiveUnderrelaxation = true,
+                underrelaxation_factor = 3.0,
+                clearSmallValues = true,
+                UseAddedDamping = true
+            });
 
-            //C.Particles.Add(new Particle_Ellipsoid(new double[] { -1.0, -1.0 }, startAngl: 0) {
-            //    particleDensity = 1,
-            //    activeStress = 1e3,
-            //    thickness_P = 0.1 * BaseSize,
-            //    length_P = 0.2 * BaseSize,
-            //    useAddaptiveUnderrelaxation = true,
-            //    underrelaxation_factor = 3.0,
-            //    clearSmallValues = true,
-            //    UseAddedDamping = true
-            //});
+            C.Particles.Add(new Particle_Ellipsoid(new double[] { -2.5, -2.5 }, startAngl: 160) {
+                particleDensity = 1,
+                activeStress = 1e3,
+                thickness_P = 0.1 * BaseSize,
+                length_P = 0.2 * BaseSize,
+                useAddaptiveUnderrelaxation = true,
+                underrelaxation_factor = 3.0,
+                clearSmallValues = true,
+                UseAddedDamping = true
+            });
 
 
             // Quadrature rules

@@ -55,19 +55,19 @@ namespace BoSSS.Application.FSI_Solver {
             // Particle history
             // =============================   
             for (int i = 0; i < historyLength; i++) {
-                position.Add(new double[Dim]);
+                position.Add(new double[spatialDim]);
                 angle.Add(new double());
-                translationalVelocity.Add(new double[Dim]);
-                translationalAcceleration.Add(new double[Dim]);
+                translationalVelocity.Add(new double[spatialDim]);
+                translationalAcceleration.Add(new double[spatialDim]);
                 rotationalVelocity.Add(new double());
                 rotationalAcceleration.Add(new double());
-                hydrodynamicForces.Add(new double[Dim]);
+                hydrodynamicForces.Add(new double[spatialDim]);
                 hydrodynamicTorque.Add(new double());
             }
 
             // ============================= 
             if (startPos == null) {
-                startPos = new double[Dim];
+                startPos = new double[spatialDim];
             }
             position[0] = startPos;
             position[1] = startPos;
@@ -77,10 +77,10 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Set true if translation of the particle should be induced by hydrodynamical forces.
+        /// Instantiate object for particle motion.
         /// </summary>
         [DataMember]
-        public ParticleMotion Movement;
+        public ParticleMotion Motion;
 
         /// <summary>
         /// Set true if translation of the particle should be induced by hydrodynamical forces.
@@ -435,29 +435,6 @@ namespace BoSSS.Application.FSI_Solver {
                 rotationalVelocity[0] = 0;
             }
             Aux.TestArithmeticException(angle[0], "particle angle");
-        }
-
-        /// <summary>
-        /// Predict the new acceleration (translational and rotational)
-        /// </summary>
-        /// <param name="dt"></param>
-        public void PredictAcceleration() {
-            if (iteration_counter_P == 0) {
-                Aux.SaveMultidimValueOfLastTimestep(translationalAcceleration);
-                Aux.SaveValueOfLastTimestep(rotationalAcceleration);
-            }
-
-            for (int d = 0; d < spatialDim; d++) {
-                translationalAcceleration[0][d] = (translationalAcceleration[1][d] + 4 * translationalAcceleration[2][d] + translationalAcceleration[3][d]) / 8;
-                if (Math.Abs(translationalAcceleration[0][d]) < 1e-20)
-                    translationalAcceleration[0][d] = 0;
-            }
-            Aux.TestArithmeticException(translationalAcceleration[0], "particle acceleration");
-
-            rotationalAcceleration[0] = (rotationalAcceleration[1] + 4 * rotationalAcceleration[2] + rotationalAcceleration[3]) / 8;
-            if (Math.Abs(rotationalAcceleration[0]) < 1e-20)
-                rotationalAcceleration[0] = 0;
-            Aux.TestArithmeticException(rotationalAcceleration[0], "particle angular acceleration");
         }
 
         /// <summary>

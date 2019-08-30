@@ -420,62 +420,6 @@ namespace FSI_Solver
         }
 
         /// <summary>
-        /// Calls the calculation of the Acceleration and the velocity
-        /// </summary>
-        /// <param name="Particles">
-        /// A list of all particles
-        /// </param>
-        /// <param name="dt">
-        /// The time step
-        /// </param>
-        /// <param name="FullyCoupled">
-        /// Do you use FSI_Fully_Coupled?
-        /// </param>
-        /// <param name="IterationCounter">
-        /// No of iterations
-        /// </param>
-        /// <param name="IncludeHydrodynamics"></param>
-        internal void CalculateParticleVelocity(List<Particle> Particles, double dt, bool FullyCoupled, int IterationCounter, int TimestepInt, bool IncludeHydrodynamics = true)
-        {
-            foreach (Particle p in Particles)
-            {
-                p.iteration_counter_P = IterationCounter;
-                if (IterationCounter == 0 && FullyCoupled)
-                {
-                    Console.WriteLine("Predicting forces for the next timestep...");
-                    if (p.UseAddedDamping)
-                    {
-                        p.UpdateDampingTensors();
-                        //ExchangeDampingTensors(Particles);
-                    }
-                    p.PredictForceAndTorque(TimestepInt);
-                }
-                p.CalculateAcceleration(dt, FullyCoupled, IncludeHydrodynamics);
-                p.UpdateParticleVelocity(dt);
-            }
-        }
-
-        /// <summary>
-        /// Calls the calculation of position
-        /// </summary>
-        /// <param name="Particles">
-        /// A list of all particles
-        /// </param>
-        /// <param name="dt">
-        /// The time step
-        /// </param>
-        internal void CalculateParticlePosition(List<Particle> Particles, double dt)
-        {
-            for (int p = 0; p < Particles.Count(); p++)
-            {
-                Particle CurrentParticle = Particles[p];
-                CurrentParticle.CalculateParticlePosition(dt);
-                CurrentParticle.CalculateParticleAngle(dt);
-                CurrentParticle.collisionTimestep = 0;
-            }
-        }
-
-        /// <summary>
         /// Residual for fully coupled system
         /// </summary>
         /// <param name="Particles">

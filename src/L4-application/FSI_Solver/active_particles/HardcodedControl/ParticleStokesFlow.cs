@@ -1237,7 +1237,7 @@ namespace BoSSS.Application.FSI_Solver
 */
             
 
-                        C.Particles.Add(new Particle_Falle_Links(new double[] { 0.45, 4.5 }, startAngl: 0)
+                        C.Particles.Add(new Particle_TrapLeft(new double[] { 0.45, 4.5 }, startAngl: 0)
                         {
                             particleDensity = 1,
                             width_P = 0.1,
@@ -1247,7 +1247,7 @@ namespace BoSSS.Application.FSI_Solver
                         });
 
 
-                                            C.Particles.Add(new Particle_Falle_Rechts(new double[] { -0.45, 4.5 }, startAngl: 0)
+                                            C.Particles.Add(new Particle_TrapRight(new double[] { -0.45, 4.5 }, startAngl: 0)
                                     {
                                         particleDensity = 1,
                                         width_P = 0.1,
@@ -1659,7 +1659,7 @@ namespace BoSSS.Application.FSI_Solver
                 UseAddedDamping = true
             });
             C.Particles[0].translationalVelocity[0][1] = -0.25;
-            C.Particles.Add(new Particle_Falle_Links(new double[] { 0.975, 4.75 }, startAngl: 0)
+            C.Particles.Add(new Particle_TrapLeft(new double[] { 0.975, 4.75 }, startAngl: 0)
             {
                 particleDensity = 1,
                 width_P = 0.15,
@@ -1669,7 +1669,7 @@ namespace BoSSS.Application.FSI_Solver
             });
 
 
-            C.Particles.Add(new Particle_Falle_Rechts(new double[] { -0.975, 4.75 }, startAngl: 0)
+            C.Particles.Add(new Particle_TrapRight(new double[] { -0.975, 4.75 }, startAngl: 0)
             {
                 particleDensity = 1,
                 width_P = 0.15,

@@ -108,6 +108,12 @@ namespace BoSSS.Foundation.Grid {
             cellsToCoarsen = GetCoarseningCells(currentGrid, coarseningClusters);
 
             bool anyChangeInGrid = (cellsToRefine.Count() == 0 && cellsToCoarsen.Count() == 0) ? false : true;
+            bool[] exchangeGridChange = anyChangeInGrid.MPIGatherO(0);
+            exchangeGridChange = exchangeGridChange.MPIBroadcast(0);
+            for (int m = 0; m < exchangeGridChange.Length; m++) {
+                if (exchangeGridChange[m])
+                    anyChangeInGrid = true;
+            }
             return (anyChangeInGrid);
         }
 

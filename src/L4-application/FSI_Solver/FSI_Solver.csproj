@@ -94,18 +94,16 @@
     <Compile Include="FSI_Collision.cs" />
     <Compile Include="FSI_TimestepInfo.cs" />
     <Compile Include="FSI_LevelSetUpdate.cs" />
-    <Compile Include="Particle\MovementTypes\Motion_Standard_PostCollision.cs" />
-    <Compile Include="Particle\MovementTypes\Motion_AddedDamping_PostCollision.cs" />
-    <Compile Include="Particle\MovementTypes\Motion_AddedDamping.cs" />
-    <Compile Include="Particle\MovementTypes\Motion_Dry.cs" />
-    <Compile Include="Particle\MovementTypes\Motion_Fixed.cs" />
+    <Compile Include="Particle\Motion\Motion_AddedDamping.cs" />
+    <Compile Include="Particle\Motion\Motion_Dry.cs" />
+    <Compile Include="Particle\Motion\Motion_Fixed.cs" />
     <Compile Include="Particle\ParticleAcceleration.cs" />
     <Compile Include="Particle\ParticleAddedDamping.cs" />
     <Compile Include="Particle\ParticleForceIntegration.cs" />
-    <Compile Include="Particle\ParticleMotion.cs" />
+    <Compile Include="Particle\Motion\Main.cs" />
     <Compile Include="Particle\ParticleUnderrelaxation.cs" />
-    <Compile Include="Particle\Shapes\Falle_Rechts.cs" />
-    <Compile Include="Particle\Shapes\Falle_Links.cs" />
+    <Compile Include="Particle\Shapes\Particle_TrapRight.cs" />
+    <Compile Include="Particle\Shapes\Particle_TrapLeft.cs" />
     <Compile Include="Particle\Shapes\Particle_Pentagone.cs" />
     <Compile Include="Particle\Shapes\Particle_Bean.cs" />
     <Compile Include="Particle\Shapes\Particle_superEllipsoid.cs" />
@@ -118,7 +116,7 @@
     <Compile Include="HardcodedControl.cs" />
     <Compile Include="FSI_Control.cs" />
     <Compile Include="FSI_SolverMain.cs" />
-    <Compile Include="Particle\Particle.cs" />
+    <Compile Include="Particle\Particle_Main.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="FSI_Auxillary.cs" />
     <Compile Include="Tests\HardcodedTestExamples.cs" />
@@ -203,6 +201,9 @@
   </ItemGroup>
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Particle\Hydrodynamics\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -923,7 +923,6 @@ namespace BoSSS.Application.FSI_Solver {
                     Console.WriteLine("Predicting forces for the next timestep...");
                     if (p.UseAddedDamping) {
                         p.UpdateDampingTensors();
-                        //ExchangeDampingTensors(Particles);
                     }
                     p.PredictForceAndTorque(TimestepInt);
                 }
@@ -943,10 +942,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// </param>
         internal void CalculateParticlePosition(List<Particle> Particles, double dt) {
             for (int p = 0; p < Particles.Count(); p++) {
-                Particle CurrentParticle = Particles[p];
-                CurrentParticle.CalculateParticlePosition(dt);
-                CurrentParticle.CalculateParticleAngle(dt);
-                CurrentParticle.collisionTimestep = 0;
+                Particle currentParticle = Particles[p];
+                currentParticle.CalculateParticlePosition(dt);
+                currentParticle.CalculateParticleAngle(dt);
+                currentParticle.collisionTimestep = 0;
             }
         }
 
@@ -1421,61 +1420,19 @@ namespace BoSSS.Application.FSI_Solver {
         /// </param>
         protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
             if (((FSI_Control)Control).AdaptiveMeshRefinement) {
-                // Define cells to refine (only cut cells atm)
-                // ===================================================
-                int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-                MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
-                double h_min = LsTrk.GridDat.Cells.h_minGlobal;
-                double h_max = LsTrk.GridDat.Cells.h_maxGlobal;
-                BitArray coarse = new BitArray(noOfLocalCells);
-                BitArray fine = new BitArray(noOfLocalCells);
-                foreach (Particle p in m_Particles) {
-                    for (int j = 0; j < noOfLocalCells; j++) {
-                        fine[j] = p.Contains(new double[] { CellCenters[j, 0], CellCenters[j, 1] }, 2 * h_min);
-                        coarse[j] = p.Contains(new double[] { CellCenters[j, 0], CellCenters[j, 1] }, h_max / 2);
-                    }
-                }
-                CellMask coarseMask = new CellMask(GridData, coarse);
-                CellMask fineMask = new CellMask(GridData, fine);
-                int refinementLevel = ((FSI_Control)this.Control).RefinementLevel;
-                int coarseRefinementLevel = refinementLevel > 2 ? refinementLevel / 2 : 1;
-                if (refinementLevel - coarseRefinementLevel > coarseRefinementLevel)
-                    coarseRefinementLevel += 1;
-                CellMask CutCells = LsTrk.Regions.GetCutCellMask();
-                CutCells = CutCells.Union(CutCells.AllNeighbourCells());
-                List<Tuple<int, CellMask>> AllCellsWithMaxRefineLevel = new List<Tuple<int, CellMask>> {
-                    new Tuple<int, CellMask>(refinementLevel, fineMask),
-                    new Tuple<int, CellMask>(coarseRefinementLevel, coarseMask),
-                };
 
                 // Get the cells to refine and to coarse
                 // ===================================================
-                bool AnyChange = GridRefinementController.ComputeGridChange((GridData)GridData, AllCellsWithMaxRefineLevel, out List<int> CellsToRefineList, out List<int[]> Coarsening);
-                int NoOfCellsToRefine = 0;
-                int NoOfCellsToCoarsen = 0;
-                int oldJ = this.GridData.CellPartitioning.TotalLength;
-                int localJ = GridData.CellPartitioning.LocalLength;
-
-                // Write stuff to console
-                // ===================================================
-                int[] glb = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length) }).MPISum();
-                int[] localDataRefine = (CellsToRefineList.Count()).MPIGatherO(0);
-                int[] localDataCoarse = (Coarsening.Sum(L => L.Length)).MPIGatherO(0);
-                int[] localDataNoOfCells = localJ.MPIGatherO(0);
-                if (localDataRefine == null && localDataCoarse != null) {
-                    localDataRefine = new int[localDataCoarse.Length];
-                }
-                NoOfCellsToRefine = glb[0];
-                NoOfCellsToCoarsen = glb[1];
-                if (AnyChange || MPISize > 1) {
-                    Console.WriteLine("       Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
-                    Console.WriteLine("       Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
-                    if (localDataRefine != null) {
-                        for (int m = 0; m < localDataRefine.Length; m++) {
-                            Console.WriteLine("Refining on process " + m + ", " + localDataRefine[m] + " of " + localDataNoOfCells[m] + " cells");
-                            Console.WriteLine("Coarsening on process " + m + ", " + localDataCoarse[m] + " of " + localDataNoOfCells[m] + " cells");
-                        }
-                    }
+                List<Tuple<int, CellMask>> AllCellsWithRefinementLevel = GetCellMaskWithRefinementLevels();
+                bool AnyChange = GridRefinementController.ComputeGridChange((GridData)GridData, AllCellsWithRefinementLevel, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                
+                if (AnyChange) {
+                    // Write stuff to console
+                    // ===================================================
+                    int[] consoleRefineCoarse = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length) }).MPISum();
+                    int oldJ = this.GridData.CellPartitioning.TotalLength;
+                    Console.WriteLine("       Refining " + consoleRefineCoarse[0] + " of " + oldJ + " cells");
+                    Console.WriteLine("       Coarsening " + consoleRefineCoarse[1] + " of " + oldJ + " cells");
 
                     // Adapt grid.
                     // ===================================================
@@ -1490,6 +1447,51 @@ namespace BoSSS.Application.FSI_Solver {
                 newGrid = null;
                 old2NewGrid = null;
             }
+        }
+
+        private List<Tuple<int, CellMask>> GetCellMaskWithRefinementLevels() {
+            int refinementLevel = ((FSI_Control)this.Control).RefinementLevel;
+            int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
+            double h_min = LsTrk.GridDat.Cells.h_minGlobal;
+            double h_max = LsTrk.GridDat.Cells.h_maxGlobal;
+            BitArray coarse = new BitArray(noOfLocalCells);
+            BitArray fine = new BitArray(noOfLocalCells);
+            BitArray superfine = new BitArray(noOfLocalCells);
+            foreach (Particle p in m_Particles) {
+                for (int j = 0; j < noOfLocalCells; j++) {
+                    if (!superfine[j] && refinementLevel >= 6)
+                        superfine[j] = p.Contains(new double[] { CellCenters[j, 0], CellCenters[j, 1] }, h_min);
+                    if (!fine[j])
+                        fine[j] = p.Contains(new double[] { CellCenters[j, 0], CellCenters[j, 1] }, 4 * h_min);
+                    if (!coarse[j])
+                        coarse[j] = p.Contains(new double[] { CellCenters[j, 0], CellCenters[j, 1] }, h_max / 2);
+                }
+            }
+            CellMask coarseMask = new CellMask(GridData, coarse);
+            CellMask fineMask = new CellMask(GridData, fine);
+            CellMask superfineMask = new CellMask(GridData, superfine);
+            CellMask boundaryCollisionMask = GridData.GetBoundaryCells();
+            boundaryCollisionMask = boundaryCollisionMask.Intersect(fineMask);
+            int coarseRefinementLevel = refinementLevel > 2 ? refinementLevel / 2 : 1;
+            if (refinementLevel - coarseRefinementLevel > coarseRefinementLevel)
+                coarseRefinementLevel += 1;
+            CellMask CutCells = LsTrk.Regions.GetCutCellMask();
+            CutCells = CutCells.Union(CutCells.AllNeighbourCells());
+            List<Tuple<int, CellMask>> AllCellsWithMaxRefineLevel = new List<Tuple<int, CellMask>>();
+            if (refinementLevel >= 6) {
+                AllCellsWithMaxRefineLevel.Add(new Tuple<int, CellMask>(refinementLevel + 2, boundaryCollisionMask));
+                AllCellsWithMaxRefineLevel.Add(new Tuple<int, CellMask>(refinementLevel, superfineMask));
+                AllCellsWithMaxRefineLevel.Add(new Tuple<int, CellMask>(refinementLevel - 2, fineMask));
+                AllCellsWithMaxRefineLevel.Add(new Tuple<int, CellMask>(coarseRefinementLevel - 2, coarseMask));
+            }
+            else {
+                AllCellsWithMaxRefineLevel.Add(new Tuple<int, CellMask>(refinementLevel + 2, boundaryCollisionMask));
+                AllCellsWithMaxRefineLevel.Add(new Tuple<int, CellMask>(refinementLevel, fineMask));
+                AllCellsWithMaxRefineLevel.Add(new Tuple<int, CellMask>(coarseRefinementLevel, coarseMask));
+            }
+
+            return AllCellsWithMaxRefineLevel;
         }
     }
 }
