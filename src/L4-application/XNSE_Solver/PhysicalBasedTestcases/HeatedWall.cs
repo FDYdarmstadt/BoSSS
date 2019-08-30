@@ -1201,7 +1201,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 Func<double, double> mdot = t => -(kl / hlg) * (deltaT / (2.0 * Math.Sqrt(alpha_l * (t0 + t)))) * Math.Exp(-lmbdl.Pow2());
                 C.prescribedMassflux = mdot;
 
-                Func<double, double> Vl = t => mdot(t) / rhol;
+                Func<double, double> Vl = t => -mdot(t) / rhol;
 
                 C.InitialValues_Evaluators.Add("VelocityY#A", X => Vl(0));
 

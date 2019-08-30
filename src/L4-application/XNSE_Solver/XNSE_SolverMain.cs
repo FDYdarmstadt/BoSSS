@@ -603,7 +603,6 @@ namespace BoSSS.Application.XNSE_Solver {
                         //m_BDF_Timestepper.Config_linearSolver = new DirectSolver() { WhichSolver = this.Control.LinearSolver };
                     }
 
-                    m_BDF_Timestepper.XdgSolverFactory.Update(this.Control.NonLinearSolver, this.Control.LinearSolver); //Changes made to configs need to be updated afterwards
 
                     //Console.WriteLine("noofpartsperprocess = {0}", this.CurrentSolution.Count / 10000);
 
@@ -670,7 +669,6 @@ namespace BoSSS.Application.XNSE_Solver {
                         m_BDF_coupledTimestepper.PushLevelSet = delegate () { };    // dummy push
                         m_BDF_coupledTimestepper.coupledOperator = true;
 
-                        m_BDF_coupledTimestepper.XdgSolverFactory.Update(this.Control.NonLinearSolver, this.Control.LinearSolver); //do not forget to update your changes to Solver configurations!
                     }
 
                 } else {
