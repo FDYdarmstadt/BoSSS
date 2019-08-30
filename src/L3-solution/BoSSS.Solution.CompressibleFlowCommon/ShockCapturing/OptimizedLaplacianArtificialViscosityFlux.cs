@@ -37,7 +37,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
         private readonly string ArgumentName;
 
-        private readonly double[] penalties;
+        public double[] Penalties {
+            private set;
+            get;
+        }
 
         /// <summary>
         /// Ctor for standard (non-XDG) usage on boundary-fitted grids
@@ -46,10 +49,15 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             this.gridData = gridData;
             this.ArgumentName = ArgumentVarName;
 
-            this.penalties = new double[cellLengthScales.Length];
-            for (int i = 0; i < this.penalties.Length; i++) {
-                this.penalties[i] = penaltySafetyFactor * penaltyFactor / cellLengthScales[i];
+            this.Penalties = new double[cellLengthScales.Length];
+            for (int i = 0; i < this.Penalties.Length; i++) {
+                this.Penalties[i] = penaltySafetyFactor * penaltyFactor / cellLengthScales[i];
             }
+#if DEBUG
+            Penalties.ForEach(s => Debug.Assert(s >= 0.0, "Penalty is smaller than zero"));
+            Penalties.ForEach(s => Debug.Assert(!double.IsNaN(s), "Penalty is NaN"));
+            Penalties.ForEach(s => Debug.Assert(!double.IsInfinity(s), "Penalty is infinite"));
+#endif
         }
 
         /// <summary>
@@ -67,25 +75,23 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             double[] cellLengthScales_A = cellLengthScales[levelSetTracker.GetSpeciesId("A")].To1DArray();
             double[] cellLengthScales_B = cellLengthScales[levelSetTracker.GetSpeciesId("B")].To1DArray();
 
-            this.penalties = new double[cellLengthScales_A.Length];
+            this.Penalties = new double[cellLengthScales_A.Length];
 
             foreach (int cell in speciesAWithOutCutCells.ItemEnum) {
-                this.penalties[cell] = penaltySafetyFactor * penaltyFactor / cellLengthScales_A[cell];
+                this.Penalties[cell] = penaltySafetyFactor * penaltyFactor / cellLengthScales_A[cell];
             }
 
             foreach (int cell in speciesBWithOutCutCells.ItemEnum) {
-                this.penalties[cell] = penaltySafetyFactor * penaltyFactor / cellLengthScales_B[cell];
+                this.Penalties[cell] = penaltySafetyFactor * penaltyFactor / cellLengthScales_B[cell];
             }
 
             foreach (int cell in cutCells.ItemEnum) {
-                this.penalties[cell] = penaltySafetyFactor * penaltyFactor / Math.Min(cellLengthScales_A[cell], cellLengthScales_B[cell]);
+                this.Penalties[cell] = penaltySafetyFactor * penaltyFactor / Math.Min(cellLengthScales_A[cell], cellLengthScales_B[cell]);
             }
-
 #if DEBUG
-            // Some checks
-            penalties.ForEach(s => Debug.Assert(s >= 0.0, "Penalty is smaller than zero"));
-            penalties.ForEach(s => Debug.Assert(!double.IsNaN(s), "Penalty is NaN"));
-            penalties.ForEach(s => Debug.Assert(!double.IsInfinity(s), "Penalty is infinite"));
+            Penalties.ForEach(s => Debug.Assert(s >= 0.0, "Penalty is smaller than zero"));
+            Penalties.ForEach(s => Debug.Assert(!double.IsNaN(s), "Penalty is NaN"));
+            Penalties.ForEach(s => Debug.Assert(!double.IsInfinity(s), "Penalty is infinite"));
 #endif
         }
 
@@ -123,7 +129,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         double IEdgeForm.InnerEdgeForm(ref CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
             double Acc = 0.0;
 
-            double penalty = Math.Max(penalties[inp.jCellIn], penalties[inp.jCellOut]);
+            double penalty = Math.Max(Penalties[inp.jCellIn], Penalties[inp.jCellOut]);
             double nuA = inp.Parameters_IN[0];
             double nuB = inp.Parameters_OUT[0];
 
@@ -229,7 +235,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
                 int jCellIn = gridData.Edges.CellIndices[iEdge, 0];
                 int jCellOut = gridData.Edges.CellIndices[iEdge, 1];
-                double Penalty = Math.Max(penalties[jCellIn], penalties[jCellOut]);
+                double Penalty = Math.Max(Penalties[jCellIn], Penalties[jCellOut]);
 
                 for (int node = 0; node < NumOfNodes; node++) { // loop over nodes...
                     // SIPG Flux Loops
