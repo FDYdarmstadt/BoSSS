@@ -223,5 +223,7 @@ namespace BoSSS.Application.IBM_Solver {
 
         [DataMember]
         public BoSSS.Solution.Timestepping.TimeStepperInit TimeStepper_Init = Solution.Timestepping.TimeStepperInit.SingleInit;
+
+        public bool OperatorMatrixAnalysis = false;
     }
 }

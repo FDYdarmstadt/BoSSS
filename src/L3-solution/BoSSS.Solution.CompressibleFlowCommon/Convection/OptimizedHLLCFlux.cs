@@ -18,7 +18,6 @@ using System;
 using System.Collections.Generic;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
-using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using ilPSP;
@@ -55,17 +54,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <summary>
         /// <see cref="INonlinearFlux.BorderEdgeFlux"/>
         /// </summary>
-        /// <param name="time"></param>
-        /// <param name="jEdge"></param>
-        /// <param name="x"></param>
-        /// <param name="normal"></param>
-        /// <param name="normalFlipped"></param>
-        /// <param name="EdgeTags"></param>
-        /// <param name="EdgeTagsOffset"></param>
-        /// <param name="Uin"></param>
-        /// <param name="Offset"></param>
-        /// <param name="Lenght"></param>
-        /// <param name="Output"></param>
         public void BorderEdgeFlux(
             double time,
             int jEdge,
@@ -128,26 +116,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <summary>
         /// <see cref="INonlinearFlux.InnerEdgeFlux"/>
         /// </summary>
-        /// <param name="time"></param>
-        /// <param name="jEdge"></param>
-        /// <param name="x"></param>
-        /// <param name="normal"></param>
-        /// <param name="Uin"></param>
-        /// <param name="Uout"></param>
-        /// <param name="Offset"></param>
-        /// <param name="Lenght"></param>
-        /// <param name="Output"></param>
-        public abstract void InnerEdgeFlux(double time, int jEdge, MultidimensionalArray x, MultidimensionalArray normal, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, int Offset, int Lenght, MultidimensionalArray Output);
+        public abstract void InnerEdgeFlux(double time, int jEdge, MultidimensionalArray x, MultidimensionalArray normal, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, int Offset, int Length, MultidimensionalArray Output);
 
         /// <summary>
         /// <see cref="INonlinearFlux.Flux"/>
         /// </summary>
-        /// <param name="time"></param>
-        /// <param name="x"></param>
-        /// <param name="U"></param>
-        /// <param name="Offset"></param>
-        /// <param name="Length"></param>
-        /// <param name="Output"></param>
         public abstract void Flux(double time, MultidimensionalArray x, ilPSP.MultidimensionalArray[] U, int Offset, int Length, MultidimensionalArray Output);
 
         public void SetParameter(string speciesName, SpeciesId SpcId) {

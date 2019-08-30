@@ -43,11 +43,11 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="ArgumentVarName">
         /// the one and only string that is returned by the default implementation of <see cref="ArgumentOrdering"/>;
         /// </param>
-        /// <param name="PenaltyLengthScales"></param>
-        public SIPLaplace(double penalty, MultidimensionalArray PenaltyLengthScales, string ArgumentVarName) {
+        /// <param name="InverseLengthScales"></param>
+        public SIPLaplace(double penalty, MultidimensionalArray InverseLengthScales, string ArgumentVarName) {
             m_penalty = penalty;
             m_ArgumentOrdering = new string[] { ArgumentVarName };
-            this.PenaltyLengthScales = PenaltyLengthScales;
+            this.InverseLengthScales = InverseLengthScales;
         }
 
         /// <summary>
@@ -121,7 +121,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Length scales used in <see cref="GetPenalty"/>
         /// </summary>
-        protected  MultidimensionalArray PenaltyLengthScales;
+        protected  MultidimensionalArray InverseLengthScales;
                
         /// <summary>
         /// computation of penalty parameter according to:
@@ -130,10 +130,10 @@ namespace BoSSS.Solution.NSECommon {
         /// look at formula (7) in cited paper
         /// </summary>
         protected virtual double GetPenalty(int jCellIn, int jCellOut) {
-            double cj_in = PenaltyLengthScales[jCellIn];
+            double cj_in = InverseLengthScales[jCellIn];
             double mu = m_penalty* cj_in;
             if(jCellOut >= 0) {
-                double cj_out = PenaltyLengthScales[jCellOut];
+                double cj_out = InverseLengthScales[jCellOut];
                 mu = Math.Max(mu, m_penalty * cj_out);
             }
 
