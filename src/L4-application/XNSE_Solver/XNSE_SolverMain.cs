@@ -603,7 +603,6 @@ namespace BoSSS.Application.XNSE_Solver {
                         //m_BDF_Timestepper.Config_linearSolver = new DirectSolver() { WhichSolver = this.Control.LinearSolver };
                     }
 
-                    m_BDF_Timestepper.XdgSolverFactory.Update(this.Control.NonLinearSolver, this.Control.LinearSolver); //Changes made to configs need to be updated afterwards
 
                     //Console.WriteLine("noofpartsperprocess = {0}", this.CurrentSolution.Count / 10000);
 
@@ -670,7 +669,6 @@ namespace BoSSS.Application.XNSE_Solver {
                         m_BDF_coupledTimestepper.PushLevelSet = delegate () { };    // dummy push
                         m_BDF_coupledTimestepper.coupledOperator = true;
 
-                        m_BDF_coupledTimestepper.XdgSolverFactory.Update(this.Control.NonLinearSolver, this.Control.LinearSolver); //do not forget to update your changes to Solver configurations!
                     }
 
                 } else {
@@ -701,12 +699,6 @@ namespace BoSSS.Application.XNSE_Solver {
                 Debug.Assert(object.ReferenceEquals(this.MultigridSequence[0].ParentGrid, this.GridData));
 
 
-                if (this.Control.AdaptiveMeshRefinement && hack_TimestepIndex == 0) {
-                    base.SetInitial();
-                    this.InitLevelSet();
-                }
-
-
                 m_BDF_Timestepper.DataRestoreAfterBalancing(L, 
                     ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure), 
                     ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity), 
@@ -718,6 +710,11 @@ namespace BoSSS.Application.XNSE_Solver {
                           this.ResidualHeat.ToEnumerable(),
                           this.LsTrk, this.MultigridSequence);
 
+
+                if (this.Control.AdaptiveMeshRefinement && hack_TimestepIndex == 0) {
+                    base.SetInitial();
+                    this.InitLevelSet();
+                }
                 //PlotCurrentState(hack_Phystime, new TimestepNumber(hack_TimestepIndex, 13), 2);
 
                 ContinuityEnforcer = new ContinuityProjection(
@@ -2527,8 +2524,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     // plot
                     //Tecplot.PlotFields(Mevap.ToArray(), "Mevap" + hack_TimestepIndex, hack_Phystime, 2);
-                    Tecplot.PlotFields(evapVelocity.ToArray(), "EvapVelocity" + hack_TimestepIndex, hack_Phystime, 2);
-                    Tecplot.PlotFields(meanVelocity.ToArray(), "meanVelocity" + hack_TimestepIndex, hack_Phystime, 2);
+                    //Tecplot.PlotFields(evapVelocity.ToArray(), "EvapVelocity" + hack_TimestepIndex, hack_Phystime, 2);
+                    //Tecplot.PlotFields(meanVelocity.ToArray(), "meanVelocity" + hack_TimestepIndex, hack_Phystime, 2);
                 }
 
                 #endregion
