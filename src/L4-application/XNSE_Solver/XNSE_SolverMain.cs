@@ -701,12 +701,6 @@ namespace BoSSS.Application.XNSE_Solver {
                 Debug.Assert(object.ReferenceEquals(this.MultigridSequence[0].ParentGrid, this.GridData));
 
 
-                if (this.Control.AdaptiveMeshRefinement && hack_TimestepIndex == 0) {
-                    base.SetInitial();
-                    this.InitLevelSet();
-                }
-
-
                 m_BDF_Timestepper.DataRestoreAfterBalancing(L, 
                     ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure), 
                     ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity), 
@@ -718,6 +712,11 @@ namespace BoSSS.Application.XNSE_Solver {
                           this.ResidualHeat.ToEnumerable(),
                           this.LsTrk, this.MultigridSequence);
 
+
+                if (this.Control.AdaptiveMeshRefinement && hack_TimestepIndex == 0) {
+                    base.SetInitial();
+                    this.InitLevelSet();
+                }
                 //PlotCurrentState(hack_Phystime, new TimestepNumber(hack_TimestepIndex, 13), 2);
 
                 ContinuityEnforcer = new ContinuityProjection(
@@ -2527,8 +2526,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     // plot
                     //Tecplot.PlotFields(Mevap.ToArray(), "Mevap" + hack_TimestepIndex, hack_Phystime, 2);
-                    Tecplot.PlotFields(evapVelocity.ToArray(), "EvapVelocity" + hack_TimestepIndex, hack_Phystime, 2);
-                    Tecplot.PlotFields(meanVelocity.ToArray(), "meanVelocity" + hack_TimestepIndex, hack_Phystime, 2);
+                    //Tecplot.PlotFields(evapVelocity.ToArray(), "EvapVelocity" + hack_TimestepIndex, hack_Phystime, 2);
+                    //Tecplot.PlotFields(meanVelocity.ToArray(), "meanVelocity" + hack_TimestepIndex, hack_Phystime, 2);
                 }
 
                 #endregion

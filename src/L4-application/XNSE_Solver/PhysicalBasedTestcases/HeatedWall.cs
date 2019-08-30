@@ -994,14 +994,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control ThermodynamicEquilibrium_unsteadyTest(int p = 2, int kelemR = 34, string _DbPath = null) {
+        public static XNSE_Control ThermodynamicEquilibrium_unsteadyTest(int p = 3, int kelemR = 34, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
-            C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
 
-            bool superhetaed = true;
-            bool undercooled = false;
+            bool superhetaedVapor = false;
+            bool superhetaedLiquid = true;
 
             //_DbPath = @"D:\local\local_Testcase_databases\Testcase_HeatedWall";
 
@@ -1082,17 +1082,21 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.ThermalParameters.rho_A = C.PhysicalParameters.rho_A;
             C.ThermalParameters.rho_B = C.PhysicalParameters.rho_B;
-            C.ThermalParameters.c_A = 9.35e+3;
-            C.ThermalParameters.c_B = 15.4e+3;
-            C.ThermalParameters.k_A = 0.444;
+            double Cpl = 9.35e+3;
+            C.ThermalParameters.c_A = Cpl;
+            double Cpv = 15.4e+3;
+            C.ThermalParameters.c_B = Cpv;
+            double kl = 0.444;
+            C.ThermalParameters.k_A = kl;
             C.ThermalParameters.k_B = 0.114;
 
             double alpha_v = 0.6958e-7;
             double alpha_l = 0.8096e-7;
 
+            double hlg = 941.0;
             if (C.solveCoupledHeatEquation) {
-                C.ThermalParameters.hVap_A = 941.0;
-                C.ThermalParameters.hVap_B = -941.0;
+                C.ThermalParameters.hVap_A = hlg;
+                C.ThermalParameters.hVap_B = -hlg;
             }
 
             double Tsat = 620.0;
@@ -1102,7 +1106,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.PhysicalParameters.IncludeConvection = true;
-            C.ThermalParameters.IncludeConvection = true;
+            C.ThermalParameters.IncludeConvection = false;
             C.PhysicalParameters.Material = false;
 
             #endregion
@@ -1149,18 +1153,19 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region init
 
             double lmbdv = 1.71814;
-
-            double zi0 = Lv0;
-            Func<double, double> zi = t => zi0 + 2.0 * lmbdv * Math.Sqrt(alpha_v*t);
-
-            double t0 = 0.5;
-
-            Func<double[], double> PhiFunc = (X => zi(t0) - X[1]);     
-
-            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+            double lmbdl = (Cpl / Cpv) * lmbdv;
 
             double deltaT = 5.0;
-            if (superhetaed) {
+
+            double zi0 = Lv0;
+            double t0 = 0.5;
+
+            if (superhetaedVapor) {
+
+                Func<double, double> zi = t => zi0 + 2.0 * lmbdv * Math.Sqrt(alpha_v * t);
+                Func<double[], double> PhiFunc = (X => zi(t0) - X[1]);
+
+                C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
                 Func<double, double, double> Tempv = 
                     //(zeta, t) => Tsat + deltaT * (ErrorFuncUtil.erf(lmbdv) - ErrorFuncUtil.erf(lmbdv + Math.Sqrt(1.0 / alpha_v) * (zeta / (2.0 * Math.Sqrt(t))))) / (1.0 + ErrorFuncUtil.erf(lmbdv));
@@ -1178,11 +1183,31 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
                 C.InitialValues_Evaluators.Add("Pressure#B", X => P0 - mdot(t0).Pow2() * ((1.0 / rhov) - (1.0 / rhol)));
             }
-            //if (undercooled) {
-            //    C.InitialValues_Evaluators.Add("Temperature#A", X => Tsat + dTv);
-            //    C.InitialValues_Evaluators.Add("Temperature#B", X => Tsat);
-            //}
 
+
+            if (superhetaedLiquid) {
+
+                Func<double, double> zi = t => zi0 + 2.0 * lmbdl * Math.Sqrt(alpha_l * t);
+                Func<double[], double> PhiFunc = (X => zi(t0) - X[1]);
+
+                C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+
+                Func<double, double, double> Tempv =
+                    (zeta, t) => Tsat + deltaT * (SpecialFunctions.Erf(lmbdl + Math.Sqrt(1.0 / alpha_l) * (zeta / (2.0 * Math.Sqrt(t)))) - SpecialFunctions.Erf(lmbdl)) / (1.0 - SpecialFunctions.Erf(lmbdl));
+
+                C.InitialValues_Evaluators.Add("Temperature#A", X => Tempv((X[1] - zi0 - 2.0 * lmbdl * Math.Sqrt(alpha_l * t0)), t0));
+                C.InitialValues_Evaluators.Add("Temperature#B", X => Tsat);
+
+                Func<double, double> mdot = t => -(kl / hlg) * (deltaT / (2.0 * Math.Sqrt(alpha_l * (t0 + t)))) * Math.Exp(-lmbdl.Pow2());
+                C.prescribedMassflux = mdot;
+
+                Func<double, double> Vl = t => mdot(t) / rhol;
+
+                C.InitialValues_Evaluators.Add("VelocityY#A", X => Vl(0));
+
+                C.InitialValues_Evaluators.Add("Pressure#B", X => P0 - mdot(0).Pow2() * ((1.0 / rhov) - (1.0 / rhol)));
+
+            }
 
             C.InitialValues_Evaluators.Add("Pressure#A", X => P0);
 
@@ -1199,11 +1224,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region BC
 
-            if (superhetaed) {
+            if (superhetaedVapor) {
                 C.AddBoundaryValue("wall_ConstantTemperature_lower", "Temperature#B", (X, t) => Tsat + deltaT);
                 C.AddBoundaryValue("pressure_Dirichlet_ConstantTemperature_upper", "Temperature#A", (X, t) => Tsat);
             }
-            if (undercooled) {
+            if (superhetaedLiquid) {
                 C.AddBoundaryValue("wall_ConstantTemperature_lower", "Temperature#B", (X, t) => Tsat);
                 C.AddBoundaryValue("pressure_Dirichlet_ConstantTemperature_upper", "Temperature#A", (X, t) => Tsat + deltaT);
             }
@@ -1271,8 +1296,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
             C.CompMode = AppControl._CompMode.Transient;
-            C.dtMax = 1e-2;
-            C.dtMin = 1e-2; 
+            C.dtMax = 1e-4;
+            C.dtMin = 1e-4; 
             C.Endtime = 16;
             C.NoOfTimesteps = 10;
             C.saveperiod = 1;
@@ -1529,21 +1554,21 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control BubbleGrowth_Scriven(int p = 2, int kelem = 17, string _DbPath = null) {
+        public static XNSE_Control BubbleGrowth_Scriven(int p = 3, int kelem = 17, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
 
             //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
 
-            //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
+            _DbPath = @"\\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB";
 
             // basic database options
             // ======================
             #region db
 
             C.DbPath = _DbPath;
-            C.savetodb = false; // C.DbPath != null;
+            C.savetodb = C.DbPath != null;
             C.ProjectName = "XNSE/BubbleGrowth";
 
             C.ContinueOnIoError = false;
@@ -1609,7 +1634,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.ThermalParameters.rho_A = C.PhysicalParameters.rho_A;
             C.ThermalParameters.rho_B = C.PhysicalParameters.rho_B;
-            C.ThermalParameters.c_A = 2034;
+            double Cp_vap = 2034;
+            C.ThermalParameters.c_A = Cp_vap;
             double Cp_liq = 4216;
             C.ThermalParameters.c_B = Cp_liq;
             C.ThermalParameters.k_A = 0.026;
@@ -1630,7 +1656,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.PhysicalParameters.IncludeConvection = true;
-            C.ThermalParameters.IncludeConvection = false;
+            C.ThermalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = false;
 
             #endregion
@@ -1687,19 +1713,23 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             double Ja = 3.0;
             double T_inf = (Ja * rho_vap * L_vap / (rho_liq * Cp_liq)) + T_sat;
 
-            double beta = 3.3293;
+            //double beta = 3.3293;
+            double beta = 3.3277;
 
-            double t_0 = (R / beta).Pow2() / alpha;
+            double t_0 = (R / (2.0*beta)).Pow2() / alpha;
 
-            Func<double, double> intgrnd = (x => Math.Exp(-Math.Pow(x,2) - ((2.0 * epsilon * beta.Pow(3))/x))/Math.Pow(x,2));
-            Func<double[], double> Temp = (X => T_inf + (T_sat - T_inf) * (2.0 * beta.Pow(3) / Ja) * Math.Exp(beta.Pow2() + 2.0 * epsilon * beta.Pow2())
-                                                * MathNet.Numerics.Integration.Integrate.OnClosedInterval(intgrnd, (Math.Sqrt(X[0].Pow2() + X[1].Pow2()) + R) / (2.0 * Math.Sqrt(alpha * t_0)), double.MaxValue));
+            //Func<double, double> intgrnd = (x => Math.Exp(-Math.Pow(x,2) - ((2.0 * epsilon * beta.Pow(3))/x))/Math.Pow(x,2));
+            //Func<double[], double> Temp = (X => T_inf + (T_sat - T_inf) * (2.0 * beta.Pow(3) / Ja) * Math.Exp(beta.Pow2() + 2.0 * epsilon * beta.Pow2())
+            //                                    * MathNet.Numerics.Integration.Integrate.OnClosedInterval(intgrnd, (Math.Sqrt(X[0].Pow2() + X[1].Pow2()) + R) / (2.0 * Math.Sqrt(alpha * t_0)), double.MaxValue));
+
+            Func<double, double> intgrnd = (z => Math.Exp(-beta.Pow2() * (Math.Pow(1 - z, -2) - 2.0 * epsilon * z - 1)));
+            Func<double[], double> Temp = (X => T_inf - 2.0 * beta.Pow2() * ((L_vap + (Cp_liq - Cp_vap) * (T_inf - T_sat)) / (Ja * L_vap)) * (T_inf - T_sat)
+                                                * MathNet.Numerics.Integration.Integrate.OnClosedInterval(intgrnd, 1 - (R / Math.Sqrt(X[0].Pow2() + X[1].Pow2())), 1));
 
             C.InitialValues_Evaluators.Add("Temperature#B", Temp);
             C.InitialValues_Evaluators.Add("Temperature#A", X => T_sat);
 
-            //Func<double, double> mdot = t => -(k_liq / L_vap) * (T_sat - T_inf) * (8.0 / Ja) * Math.Exp(((3.0 / 4.0) - 2.0 * epsilon) * beta.Pow2());
-            Func<double, double> mdot = t => rho_vap * (beta / 2.0) * Math.Sqrt(alpha / (t_0 + t));
+            Func<double, double> mdot = t => rho_vap * beta * Math.Sqrt(alpha / (t_0 + t));
             C.prescribedMassflux = mdot;
 
 
@@ -1773,11 +1803,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
             C.CompMode = AppControl._CompMode.Transient;
-            C.dtMax = 1.8e-4;
-            C.dtMin = 1.8e-4;
+            C.dtMax = 1e-5;
+            C.dtMin = 1e-5;
             C.Endtime = 4.0*t_0;
-            C.NoOfTimesteps = 1000;
-            C.saveperiod = 1;
+            C.NoOfTimesteps = 60000;
+            C.saveperiod = 10;
 
             #endregion
 
