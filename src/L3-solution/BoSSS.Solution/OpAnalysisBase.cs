@@ -108,22 +108,22 @@ namespace BoSSS.Solution {
 
             double[] Eigenval_Write = Eigenval();
 
-            //Console.WriteLine("");
-            //Console.WriteLine("==================================================================");
-            //Console.WriteLine("Log of the analysis");
-            //Console.WriteLine("==================================================================");
-            //Console.WriteLine("Condition number:");
-            //Console.WriteLine("full matrix: {0}", CondNum_Write[0]);
-            //Console.WriteLine("inner matrix: {0}", CondNum_Write[1]);
-            //Console.WriteLine("==================================================================");
-            //Console.WriteLine("Symmetry and positive definiteness:");
-            //Console.WriteLine("is symmetric: {0}", Symmetry_Write[0]);
-            //Console.WriteLine("is positive definite: {0}", Symmetry_Write[1]);
-            //Console.WriteLine("==================================================================");
-            //Console.WriteLine("Eigenvalues:");
-            //Console.WriteLine("mininmal eigenvalue: {0}", Eigenval_Write[0]);
-            //Console.WriteLine("maximal eigenvalue: {0}", Eigenval_Write[1]);
-            
+            Console.WriteLine("");
+            Console.WriteLine("==================================================================");
+            Console.WriteLine("Log of the analysis");
+            Console.WriteLine("==================================================================");
+            Console.WriteLine("Condition number:");
+            Console.WriteLine("full matrix: {0}", CondNum_Write[0]);
+            Console.WriteLine("inner matrix: {0}", CondNum_Write[1]);
+            Console.WriteLine("==================================================================");
+            Console.WriteLine("Symmetry and positive definiteness:");
+            Console.WriteLine("is symmetric: {0}", Symmetry_Write[0]);
+            Console.WriteLine("is positive definite: {0}", Symmetry_Write[1]);
+            Console.WriteLine("==================================================================");
+            Console.WriteLine("Eigenvalues:");
+            Console.WriteLine("maximal eigenvalue: {0}", Eigenval_Write[0]);
+            Console.WriteLine("minimal eigenvalue: {0}", Eigenval_Write[1]);
+
             //if (ilPSP.Environment.MPIEnv.MPI_Rank == 0)
             //{
             //    var fullmtrx = m_OpMtx.ToFullMatrixOnProc0();
@@ -254,7 +254,7 @@ namespace BoSSS.Solution {
                 using (BatchmodeConnector bmc = new BatchmodeConnector()){
 
                     // if Octave should be used instead of Matlab....
-                    //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
+                    // BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
 
                     bmc.PutSparseMatrix(m_OpMtx, "FullMatrix");
                     bmc.PutVector(Inner_0Vars, "Inner_0Vars");

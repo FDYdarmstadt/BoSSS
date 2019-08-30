@@ -1218,7 +1218,7 @@ namespace BoSSS.Solution {
             check = m_nc.ConvergenceCriterion == FPSolver.ConvCrit &&
             m_nc.MaxSolverIterations == FPSolver.MaxIter &&
             m_nc.MinSolverIterations == FPSolver.MinIter &&
-            m_nc.PrecondSolver.Equals(FPSolver.Precond) &&
+            //m_nc.PrecondSolver.Equals(FPSolver.Precond) &&
             m_nc.UnderRelax == FPSolver.UnderRelax;
             Debug.Assert(check);
         }
