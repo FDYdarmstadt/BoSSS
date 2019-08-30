@@ -47,6 +47,11 @@ namespace BoSSS.Application.BoSSSpad {
             Console,
 
             /// <summary>
+            /// Simplified interactive console mode (for embedding into other terminals, experimental)
+            /// </summary>
+            SimpleConsole,
+
+            /// <summary>
             /// Batch execution of .bws files
             /// </summary>
             Batch,
@@ -146,6 +151,10 @@ namespace BoSSS.Application.BoSSSpad {
 
                 case Modes.Console:
                 ReadEvalPrintLoop.REPL();
+                break;
+
+                case Modes.SimpleConsole:
+                ReadEvalPrintLoop.REPL_Simple();
                 break;
 
                 case Modes.Check:
