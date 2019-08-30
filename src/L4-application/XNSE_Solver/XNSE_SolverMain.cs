@@ -233,7 +233,7 @@ namespace BoSSS.Application.XNSE_Solver {
                        new SinglePhaseField(new Basis(this.GridData, this.Control.FieldOptions["Phi"].Degree), "PhiDG"));
 
                 if (this.Control.FieldOptions["PhiDG"].Degree >= 0 && this.Control.FieldOptions["PhiDG"].Degree != this.DGLevSet.Current.Basis.Degree) {
-                    throw new ApplicationException("Specification of polynomial degree for 'PhiDG' is not supportet, since it is induced by polynomial degree of 'Phi'.");
+                    throw new ApplicationException("Specification of polynomial degree for 'PhiDG' is not supported, since it is induced by polynomial degree of 'Phi'.");
                 }
 
                 // ==============================
@@ -2391,7 +2391,7 @@ namespace BoSSS.Application.XNSE_Solver {
                                        //if (qEvap > -9.99 || qEvap < -10.01)
                                        //    Console.WriteLine("qEvap - DelUpdateLevelSet = {0}", qEvap);
 
-                                       double mEvap = (this.Control.prescribedMassflux != 0.0) ? this.Control.prescribedMassflux : qEvap / hVap; // mass flux
+                                       double mEvap = (this.Control.prescribedMassflux != null) ? this.Control.prescribedMassflux(hack_Phystime) : qEvap / hVap; // mass flux
                                        //result[j, k] = mEvap * ((1 / rho_v) - (1 / rho_l)) * Normals[j, k, d];   //
                                        result[j, k] = mEvap * (1 / rho_v) * Normals[j, k, d];   //
                                        //result[j, k] = - Normals[j, k, d];   //
@@ -2493,11 +2493,20 @@ namespace BoSSS.Application.XNSE_Solver {
                     MultidimensionalArray[] VelocityEval = evapVelocity.Select(sf => cp.EvaluateAtCp(sf)).ToArray();
 
                     double nNodes = VelocityEval[0].Length;
-                    double evapVelY = VelocityEval[1].Sum() / nNodes;
-                    //Console.WriteLine("EvapVelocity: ({0},{1})", evapVelX, evapVelY);
+                    //double evapVelY = VelocityEval[1].Sum() / nNodes;
+                    //Console.WriteLine("EvapVelocity = {0}", evapVelY);
+                    //EvapVelocMean = evapVelY;
 
-                    EvapVeloc = evapVelY;
-
+                    double evapVelMean = 0.0;
+                    for(int s = 0; s < sgrd.GlobalNoOfCells; s++) {
+                        for (int n = 0; n < Nodes.Length; n++) {
+                            double velX = VelocityEval[0].To2DArray()[s, n];
+                            double velY = VelocityEval[1].To2DArray()[s, n];
+                            evapVelMean += Math.Sqrt(velX.Pow2() + velY.Pow2());
+                        }
+                    }
+                    evapVelMean /= nNodes;
+                    Console.WriteLine("EvapVelocity = {0}", evapVelMean);
 
                     // construct evolution velocity
                     for (int d = 0; d < D; d++) {
@@ -2518,8 +2527,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     // plot
                     //Tecplot.PlotFields(Mevap.ToArray(), "Mevap" + hack_TimestepIndex, hack_Phystime, 2);
-                    //Tecplot.PlotFields(evapVelocity.ToArray(), "EvapVelocity" + hack_TimestepIndex, hack_Phystime, 2);
-                    //Tecplot.PlotFields(meanVelocity.ToArray(), "meanVelocity" + hack_TimestepIndex, hack_Phystime, 2);
+                    Tecplot.PlotFields(evapVelocity.ToArray(), "EvapVelocity" + hack_TimestepIndex, hack_Phystime, 2);
+                    Tecplot.PlotFields(meanVelocity.ToArray(), "meanVelocity" + hack_TimestepIndex, hack_Phystime, 2);
                 }
 
                 #endregion
@@ -3555,7 +3564,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 case XNSE_Control.LoggingValues.Evaporation: {
 
                         Log = base.DatabaseDriver.FsDriver.GetNewLog("Evaporation", sessionID);
-                        header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "'#imestep", "time", "MassFlux", "InterfaceVelocity", "interfacePosition");
+                        header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "'#timestep", "time", "interfacePosition", "InterfaceVelocity", "MassFlux"); //, "Temperatureprofile");
 
                         break;
                     }
@@ -3745,9 +3754,20 @@ namespace BoSSS.Application.XNSE_Solver {
                         double posY = InterfacePoints.ExtractSubArrayShallow(-1, 1).To1DArray().Sum() / nNodes;
 
                         double hVap = this.Control.ThermalParameters.hVap_A;
-                        double MassFlux = (hVap > 0) ? EvapVeloc * hVap : -EvapVeloc * hVap;
+                        double MassFlux = (hVap > 0) ? EvapVelocMean * hVap : -EvapVelocMean * hVap;
 
-                        string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", TimestepNo, phystime, MassFlux, EvapVeloc, posY);
+                        // temperature profile
+                        int N = 100;
+                        double[] tempP = new double[N];
+                        double L = 10.3e-3;
+                        double x_probe = 1e-3;
+
+                        //for (int i = 0; i < N; i++) {
+                        //    double[] probe = new double[] { x_probe, (L/(double)N) };
+                        //    tempP[i] = this.Temperature.ProbeAt(probe);
+                        //}
+
+                        string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", TimestepNo, phystime, posY, EvapVelocMean, MassFlux); // tempP);
                         Log.WriteLine(line);
                         Log.Flush();
 
@@ -3759,7 +3779,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
-        double EvapVeloc;
+        double EvapVelocMean;
 
         /// <summary>
         /// encapsulated handling of query values

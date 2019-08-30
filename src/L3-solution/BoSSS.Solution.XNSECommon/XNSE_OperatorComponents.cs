@@ -216,7 +216,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             // pressure gradient
             // =================
-            if(config.isPressureGradient) {
+            if(config.isPressureGradient) { // && !config.isPInterfaceSet) {
                 var presLs = new Operator.Pressure.PressureFormAtLevelSet(d, D, LsTrk);
                 comps.Add(presLs);
             }
@@ -587,6 +587,11 @@ namespace BoSSS.Solution.XNSECommon {
         /// true if the interface is a material interface
         /// </summary>
         bool isMatInt { get; }
+
+        /// <summary>
+        /// true if the interface pressure is prescribed i.e. for evaporation
+        /// </summary>
+        bool isPInterfaceSet { get; }
 
     }
 

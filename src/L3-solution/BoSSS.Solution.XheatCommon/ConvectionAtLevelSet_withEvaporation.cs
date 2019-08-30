@@ -37,7 +37,7 @@ namespace BoSSS.Solution.XheatCommon {
 
 
         public ConvectionAtLevelSet_nonMaterialLLF(int _d, int _D, LevelSetTracker lsTrk, double _rhoA, double _rhoB,
-            ThermalParameters thermParams, double _Rint, double _sigma, double _prescrbM) {
+            ThermalParameters thermParams, double _Rint, double _sigma) {
             //double _kA, double _kB, double _hVapA, double _Rint, double _Tsat, double _sigma, double _pc) {
             this.D = _D;
             this.m_d = _d;
@@ -54,7 +54,7 @@ namespace BoSSS.Solution.XheatCommon {
             this.sigma = _sigma;
             this.pc = thermParams.pc;
 
-            this.prescrbM = _prescrbM;
+            //this.prescrbM = _prescrbM;
         }
 
         int m_d;
@@ -129,7 +129,7 @@ namespace BoSSS.Solution.XheatCommon {
 
 
         public ConvectionAtLevelSet_Consistency(int _d, int _D, LevelSetTracker lsTrk, double _rhoA, double _rhoB,
-            double vorZeichen, bool RescaleConti, ThermalParameters thermParams, double _Rint, double _sigma, double _prescrbM) {
+            double vorZeichen, bool RescaleConti, ThermalParameters thermParams, double _Rint, double _sigma) {
             //double _kA, double _kB, double _hVapA, double _Rint, double _Tsat, double _sigma, double _pc) {
             this.D = _D;
             this.m_d = _d;
@@ -154,7 +154,7 @@ namespace BoSSS.Solution.XheatCommon {
             this.sigma = _sigma;
             this.pc = thermParams.pc;
 
-            this.prescrbM = _prescrbM;
+            //this.prescrbM = _prescrbM;
         }
 
         int m_d;
