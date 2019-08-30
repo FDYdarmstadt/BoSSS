@@ -172,7 +172,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </returns>
         public string ReadCommand(string prompt, string initialCommand) {
 	    if (Console.WindowWidth == 0) {
-		throw new Exception("Window width detection failed. Consider using --simpleconsole instead")
+		throw new Exception("Window width detection failed. Consider using --simpleconsole instead");
 	    }
             done = false;
             history.MoveToNextFreeEntry();
