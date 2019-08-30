@@ -640,7 +640,7 @@ namespace BoSSS.Application.FSI_Solver {
                 if (processContainsCurrentColor) {
                     int[] particlesOfCurrentColor = levelSetUpdate.FindParticlesOneColor(globalParticleColor, currentColor);
                     coloredCellMask = new CellMask(GridData, coloredCells);
-                    coloredCellMask.Union(coloredCellMask.AllNeighbourCells());
+                    coloredCellMask = coloredCellMask.Union(coloredCellMask.AllNeighbourCells());
 
                     // Save all colored cells of 
                     // any color in one cellmask
