@@ -51,7 +51,7 @@ namespace BoSSS.Application.Rheology
             //Solver Options
             C.NoOfTimesteps = 1;
             C.savetodb = false;
-            C.DbPath = path;
+            //C.DbPath = path;
             C.ProjectName = "Channel";
             C.NonLinearSolver.MaxSolverIterations = 30;
             C.NonLinearSolver.MinSolverIterations = 3;
@@ -59,13 +59,13 @@ namespace BoSSS.Application.Rheology
             C.LinearSolver.MaxSolverIterations = 30;
             C.LinearSolver.MinSolverIterations = 3;
             C.LinearSolver.ConvergenceCriterion = 1E-10;
-            C.dt = 0.1;
+            C.dt = 1e6;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;
-            //C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_gmres_levelpmg;
-            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
+            //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.ObjectiveParam = 1.0;
 
             C.UsePerssonSensor = false;
@@ -80,7 +80,7 @@ namespace BoSSS.Application.Rheology
             //C.WhichWall = "Wall_Cylinder";
 
             //Debugging and Solver Analysis
-            C.OperatorMatrixAnalysis = false;
+            C.OperatorMatrixAnalysis = true;
             C.SkipSolveAndEvaluateResidual = false;
             C.SetInitialConditions = true;
             C.SetInitialPressure = true;
@@ -91,7 +91,7 @@ namespace BoSSS.Application.Rheology
             C.GravityY = (X, t) => 0;
 
             //Physical Params
-            C.Stokes = false;
+            C.Stokes = true;
             C.FixedStreamwisePeriodicBC = false;
             C.beta = 0.59;
             C.Reynolds = 1;
@@ -263,7 +263,7 @@ namespace BoSSS.Application.Rheology
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.NewtonGMRES;
             C.ObjectiveParam = 1.0;
 
             //Grid Params
@@ -702,7 +702,7 @@ namespace BoSSS.Application.Rheology
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             //C.NonlinearMethod = NonlinearSolverMethod.Newton;
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.ObjectiveParam = 1.0;
             C.UsePerssonSensor = true;
             C.AdaptiveMeshRefinement = true;

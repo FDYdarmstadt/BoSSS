@@ -325,7 +325,7 @@ namespace BoSSS.Application.BoSSSpad {
                     p.WaitForExit();
 
                     if (p.ExitCode != 0 || !File.Exists(mainPngFile)) {
-                        Console.WriteLine("Unable to convert to png, '" + ImageMagikTool + "' exited with: " + p.ExitCode);
+                        Console.WriteLine("Unable to convert to png, '" + ImageMagikTool + "' exited with: " + p.ExitCode + ",  directory is " + WorkingDirectory.FullName);
                         return null;
                     }
 

@@ -138,9 +138,9 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="args"></param>
         static void Main(string[] args) {
             //BoSSS.Application.SipPoisson.Tests.TestProgram.Init();
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse);
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverCode.exp_softpcg_schwarz_directcoarse);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.Cleanup();
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverConfig.Code.exp_softpcg_schwarz);
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverCode.exp_softpcg_schwarz);
             //Assert.AreEqual(1, 2, "Remove Me!!");
 
 
@@ -411,22 +411,14 @@ namespace BoSSS.Application.SipPoisson {
                 stw.Stop();
                 Console.WriteLine("done {0} sec.", stw.Elapsed.TotalSeconds);
 
+                LaplaceMtx.GetMemoryInfo(out long AllocatedMem, out long UsedMem);
+                Console.WriteLine("   Used   matrix storage (MB): {0}", UsedMem /(1024.0*1024));
+                Console.WriteLine("   Alloc. matrix storage (MB): {0}", AllocatedMem/(1024.0*1024));
 
 
+                
 
-                //var JB = LapaceIp.GetFDJacobianBuilder(T.Mapping.Fields, null, T.Mapping, edgQrSch, volQrSch);
-                //var JacobiMtx = new BlockMsrMatrix(T.Mapping);
-                //var JacobiAffine = new double[T.Mapping.LocalLength];
-                //JB.ComputeMatrix(JacobiMtx, JacobiAffine);
-                //double L2ErrAffine = GenericBlas.L2Dist(JacobiAffine, LaplaceAffine);
-                //var ErrMtx2 = LaplaceMtx.CloneAs();
-                //ErrMtx2.Acc(-1.0, JacobiMtx);
-                //double LinfErrMtx2 = ErrMtx2.InfNorm();
 
-                //JacobiMtx.SaveToTextFileSparse("D:\\tmp\\Jac.txt");
-                //LaplaceMtx.SaveToTextFileSparse("D:\\tmp\\Lap.txt");
-
-                //Console.WriteLine("FD Jacobi Mtx: {0:e14}, Affine: {1:e14}", LinfErrMtx2, L2ErrAffine);
             }
         }
 
@@ -707,12 +699,12 @@ namespace BoSSS.Application.SipPoisson {
                 bool converged;
                 int NoOfIterations;
 
-                LinearSolverConfig.Code solvercodes = this.Control.LinearSolver.SolverCode;
+                LinearSolverCode solvercodes = this.Control.LinearSolver.SolverCode;
                 switch (solvercodes) {
 
-                    case LinearSolverConfig.Code.classic_cg:
-                    case LinearSolverConfig.Code.classic_mumps:
-                    case LinearSolverConfig.Code.classic_pardiso:
+                    case LinearSolverCode.classic_cg:
+                    case LinearSolverCode.classic_mumps:
+                    case LinearSolverCode.classic_pardiso:
                         ClassicSolve(out mintime, out maxtime, out converged, out NoOfIterations);
                         break;
 
@@ -791,21 +783,21 @@ namespace BoSSS.Application.SipPoisson {
                 // create sparse solver
                 // --------------------
                 ISparseSolver ipSolver;
-                LinearSolverConfig.Code solvercodes = this.Control.LinearSolver.SolverCode;
+                LinearSolverCode solvercodes = this.Control.LinearSolver.SolverCode;
 
                 switch (solvercodes) {
-                    case LinearSolverConfig.Code.classic_pardiso:
+                    case LinearSolverCode.classic_pardiso:
                         ipSolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver() {
                             CacheFactorization = true,
                             UseDoublePrecision = true
                         };
                         break;
 
-                    case LinearSolverConfig.Code.classic_mumps:
+                    case LinearSolverCode.classic_mumps:
                         ipSolver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
                         break;
 
-                    case LinearSolverConfig.Code.classic_cg:
+                    case LinearSolverCode.classic_cg:
                         ipSolver = new ilPSP.LinSolvers.monkey.CG() {
                             MaxIterations = 1000000,
                             Tolerance = 1.0e-10,
@@ -918,6 +910,8 @@ namespace BoSSS.Application.SipPoisson {
                 }
                 mgBasis.Stop();
                 Console.WriteLine("done. (" + mgBasis.Elapsed.TotalSeconds + " sec)");
+                //Console.WriteLine("going into infinity loop....");
+                //while (true) ;
 
 
                 //foreach (int sz in new int[] { 1000, 2000, 5000, 10000, 20000 }) {
@@ -1005,7 +999,8 @@ namespace BoSSS.Application.SipPoisson {
                     Console.WriteLine("  spmm total " + BlockMsrMatrix.multiply.Elapsed.TotalSeconds);
                     Console.WriteLine("  spmm core " + BlockMsrMatrix.multiply_core.Elapsed.TotalSeconds);
                     Console.WriteLine("  spmv total " + BlockMsrMatrix.SPMV_tot.Elapsed.TotalSeconds);
-                    Console.WriteLine("  spmv core " + BlockMsrMatrix.SPMV_inner.Elapsed.TotalSeconds);
+                    Console.WriteLine("  spmv inner " + BlockMsrMatrix.SPMV_inner.Elapsed.TotalSeconds);
+                    Console.WriteLine("  spmv outer " + BlockMsrMatrix.SPMV_outer.Elapsed.TotalSeconds);
 
                     Console.WriteLine("  dgetrf core " + dgetrf_time);
 

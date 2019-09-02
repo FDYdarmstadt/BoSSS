@@ -1020,8 +1020,8 @@ namespace BoSSS.Application.FSI_Solver
                 C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             }
 
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Picard;
-            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
 
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
             double dt = 0.001;

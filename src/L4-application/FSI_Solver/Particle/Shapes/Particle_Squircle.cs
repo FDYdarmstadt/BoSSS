@@ -74,8 +74,8 @@ namespace BoSSS.Application.FSI_Solver
         }
 
         public override double Phi_P(double[] X) {
-            double alpha = -(Angle[0]);
-            return -((((X[0] - Position[0][0]) * Math.Cos(alpha) - (X[1] - Position[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - Position[0][0]) * Math.Sin(alpha) + (X[1] - Position[0][1]) * Math.Cos(alpha)).Pow(4)) - radius_P.Pow(4));
+            double alpha = -(angle[0]);
+            return -((((X[0] - position[0][0]) * Math.Cos(alpha) - (X[1] - position[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - position[0][0]) * Math.Sin(alpha) + (X[1] - position[0][1]) * Math.Cos(alpha)).Pow(4)) - radius_P.Pow(4));
         }
 
         public override bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false)
@@ -84,7 +84,7 @@ namespace BoSSS.Application.FSI_Solver
             if (h_max == 0)
                 h_max = h_min;
             double radiusTolerance = !WithoutTolerance ? 1.0 + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
-            if (-((((point[0] - Position[0][0]) * Math.Cos(Angle[0]) - (point[1] - Position[0][1]) * Math.Sin(Angle[0])).Pow(4) + ((point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])).Pow(4)) - radiusTolerance.Pow(4)) > 0)
+            if (-((((point[0] - position[0][0]) * Math.Cos(angle[0]) - (point[1] - position[0][1]) * Math.Sin(angle[0])).Pow(4) + ((point[0] - position[0][0]) * Math.Sin(angle[0]) + (point[1] - position[0][1]) * Math.Cos(angle[0])).Pow(4)) - radiusTolerance.Pow(4)) > 0)
             {
                 return true;
             }     

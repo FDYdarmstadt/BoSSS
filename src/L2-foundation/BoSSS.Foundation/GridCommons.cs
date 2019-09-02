@@ -1276,6 +1276,8 @@ namespace BoSSS.Foundation.Grid.Classic {
 
             int cnt = 0;
             for (int i = min; i <= max; i++) {
+                if (i == 52)
+                    Console.WriteLine("");
                 if (Bussi[i - min]) {
                     Mapping[i - min] = cnt;
                     cnt++;
@@ -1358,8 +1360,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                     oldCellFaceTagIDs.AddRange((int)(AdditionalGlobalIdsToTransform[i]));
                 }
             }
-
-
 
             int[][] New = CompressIndexRangeParallel(new int[][] { oldGlobalID.ToArray(), oldCellFaceTagIDs.ToArray() });
             int[] newGlobalID = New[0];

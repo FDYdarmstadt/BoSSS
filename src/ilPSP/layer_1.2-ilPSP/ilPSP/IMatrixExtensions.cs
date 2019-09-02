@@ -540,7 +540,7 @@ namespace ilPSP {
                 throw new ArgumentException("in-place matrix-vector product is not supported");
 
 
-            if (typeof(MatrixType) == typeof(MultidimensionalArray)) {
+            if (typeof(MatrixType) == typeof(MultidimensionalArray) && m_NoOfRows >= 2 && m_NoOfCols >= 2) {
                 // +++++++++++++++++
                 // optimized version
                 // +++++++++++++++++
@@ -599,8 +599,8 @@ namespace ilPSP {
 
                     unsafe {
                         fixed (double* _pmdaM = mdaM.Storage, _px = _x) {
-                            
 
+                            
                             if (!transpose) {
                                 double* pmdaM = _pmdaM + off;
                                 for (int i = 0; i < m_NoOfRows; i++) {
@@ -618,8 +618,9 @@ namespace ilPSP {
 
                             } else {
 
+                                
                                 for (int i = 0; i < m_NoOfCols; i++) {
-                                    double* pmdaM = _pmdaM + off + SD;
+                                    double* pmdaM = _pmdaM + off + i*SD;
                                     double* px = _px;
                                     double yi = 0;
 
@@ -630,21 +631,15 @@ namespace ilPSP {
                                     }
                                     y[i] = y[i] * yScaling + yi * xScaling;
                                 }
+                                
                             }
-
                         }
                     }
                 }
-
-
-
             } else {
                 // +++++++++++++++++
                 // Reference version
                 // +++++++++++++++++
-
-               
-
 
                 if (!transpose) {
                     

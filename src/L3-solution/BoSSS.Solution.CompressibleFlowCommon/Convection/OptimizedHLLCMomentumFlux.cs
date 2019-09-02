@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
-using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using ilPSP;
@@ -50,15 +49,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <summary>
         /// <see cref="INonlinearFlux.InnerEdgeFlux"/>
         /// </summary>
-        /// <param name="time"></param>
-        /// <param name="jEdge"></param>
-        /// <param name="x"></param>
-        /// <param name="normal"></param>
-        /// <param name="Uin"></param>
-        /// <param name="Uout"></param>
-        /// <param name="Offset"></param>
-        /// <param name="Lenght"></param>
-        /// <param name="Output"></param>
         public override void InnerEdgeFlux(
             double time,
             int jEdge,
@@ -67,7 +57,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
             MultidimensionalArray[] Uin,
             MultidimensionalArray[] Uout,
             int Offset,
-            int Lenght,
+            int Length,
             MultidimensionalArray Output) {
 
             int NoOfNodes = Uin[0].GetLength(1);
@@ -76,7 +66,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
             double Mach = this.material.MachNumber;
             double MachScaling = gamma * Mach * Mach;
 
-            for (int e = 0; e < Lenght; e++) {
+            for (int e = 0; e < Length; e++) {
                 for (int n = 0; n < NoOfNodes; n++) {
                     double densityIn = Uin[0][e + Offset, n];
                     double densityOut = Uout[0][e + Offset, n];
@@ -171,12 +161,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <summary>
         /// <see cref="INonlinearFlux.Flux"/>
         /// </summary>
-        /// <param name="time"></param>
-        /// <param name="x"></param>
-        /// <param name="U"></param>
-        /// <param name="Offset"></param>
-        /// <param name="Length"></param>
-        /// <param name="Output"></param>
         public override void Flux(
             double time,
             MultidimensionalArray x,

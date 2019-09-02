@@ -55,11 +55,11 @@ namespace BoSSS.Application.XNSE_Solver {
             base.LinearSolver.MaxSolverIterations = 2000; //Solver_MaxIterations
             base.LinearSolver.MinSolverIterations = 4; //Solver_MinIterations
             base.LinearSolver.ConvergenceCriterion = 1.0e-10; //Solver_ConvergenceCriterion
-            base.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps; //LinearSolver
+            base.LinearSolver.SolverCode = LinearSolverCode.classic_mumps; //LinearSolver
             base.NonLinearSolver.MaxSolverIterations = 2000; //Solver_MaxIterations
             base.NonLinearSolver.MinSolverIterations = 4; //Solver_MinIterations
             base.NonLinearSolver.ConvergenceCriterion = 1.0e-10; //Solver_ConvergenceCriterion
-            base.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Picard; //NonLinearSolver
+            base.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard; //NonLinearSolver
         }
 
         /// <summary>
@@ -240,7 +240,12 @@ namespace BoSSS.Application.XNSE_Solver {
             /// <summary>
             /// height of a rising capillary in a tube
             /// </summary>
-            CapillaryHeight
+            CapillaryHeight,
+
+            /// <summary>
+            /// Evaporative mass flux and speed of displacement 
+            /// </summary>
+            Evaporation
         }
 
         /// <summary>
@@ -503,6 +508,11 @@ namespace BoSSS.Application.XNSE_Solver {
         /// switch for the computation of the coupled heat solver
         /// </summary>
         public bool solveCoupledHeatEquation = false;
+
+        /// <summary>
+        /// only available if no heat equation is solved
+        /// </summary>
+        public Func<double, double> prescribedMassflux;
 
         /// <summary>
         /// implementations for the conductivity part (laplace operator) of the heat equation 

@@ -20,7 +20,7 @@ using BoSSS.Foundation;
 using BoSSS.Solution;
 using MPI.Wrappers;
 using NUnit.Framework;
-using SolverCodes = BoSSS.Solution.Control.LinearSolverConfig.Code;
+using SolverCodes = BoSSS.Solution.Control.LinearSolverCode;
 
 namespace BoSSS.Application.SipPoisson.Tests {
 
@@ -106,12 +106,12 @@ namespace BoSSS.Application.SipPoisson.Tests {
             [Values(2)]int dgDeg,
             [Values(40)]int res,
             [Values(2)]int dim,
-            [Values(SolverCodes.exp_softpcg_schwarz)] SolverCodes solver
+            [Values(SolverCodes.exp_gmres_levelpmg, SolverCodes.exp_Kcycle_schwarz)] SolverCodes solver
 #else
-            [Values(3)]int dgDeg,
+            [Values(3,4)]int dgDeg,
             [Values(8)]int res,
             [Values(3)]int dim,
-            [Values(SolverCodes.exp_softpcg_mg, SolverCodes.exp_softpcg_schwarz, SolverCodes.exp_softpcg_schwarz_directcoarse)] SolverCodes solver
+            [Values(SolverCodes.exp_gmres_levelpmg, SolverCodes.exp_Kcycle_schwarz)] SolverCodes solver
 
 #endif
             ) {

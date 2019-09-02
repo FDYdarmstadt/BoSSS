@@ -5,6 +5,7 @@ using ilPSP.LinSolvers.PARDISO;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,6 +27,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int iLv = 0;
             for (var Op4Level = m_op.FinestLevel; Op4Level != null; Op4Level = Op4Level.CoarserLevel) {
                 if (L == Op4Level.Mapping.LocalLength) {
+                    Debug.Assert(Op4Level.LevelIndex == iLv);
                     return iLv;
                 }
                 iLv++;
@@ -46,10 +48,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public double[] ProlongateToTop(double[] V) {
             int iLv = FindLevel(V.Length);
 
-            MultigridOperator op_iLv = m_op;
+            MultigridOperator op_iLv = m_op.FinestLevel;
             for (int i = 0; i < iLv; i++)
                 op_iLv = op_iLv.CoarserLevel;
-
+            Debug.Assert(op_iLv.LevelIndex == iLv);
+            Debug.Assert(V.Length == op_iLv.Mapping.LocalLength);
 
             double[] Curr = V;
             for (var Op4Level = op_iLv; Op4Level.FinerLevel != null; Op4Level = Op4Level.FinerLevel) {
@@ -210,7 +213,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             m_LsubIdx = LsubIdx.ToArray();
 
 
-            BlockPartitioning localBlocking = new BlockPartitioning(GsubIdx.Count, lowLocalBlocks_i0, lowLocalBlocks__N, Map.MPI_Comm);
+            BlockPartitioning localBlocking = new BlockPartitioning(GsubIdx.Count, lowLocalBlocks_i0, lowLocalBlocks__N, Map.MPI_Comm, i0isLocal:true);
             var P01SubMatrix = new BlockMsrMatrix(localBlocking);
             op.OperatorMatrix.AccSubMatrixTo(1.0, P01SubMatrix, GsubIdx, default(int[]), GsubIdx, default(int[]));
 
@@ -315,7 +318,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         HighOrderBlocks_LU[j][iVar].BacksubsLU(HighOrderBlocks_LUpivots[j][iVar], xhi, bHi);
                         //HighOrderBlocks_LU[j][iVar].gemv(1.0, bHi, 0.0, xhi);
 
-                        X.AccV(1.0, xhi, offset_acc: i0_hi);
+                        X.AccV(1.0, xhi, offset_acc: i0_hi - Mapi0);
                     }
                 }
             }

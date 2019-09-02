@@ -170,6 +170,10 @@ namespace ilPSP.LinSolvers.MUMPS {
 
                     r.RunTime = st.Elapsed;
                 }
+                // Trying to get as output the condition number of the matrix. Controled by icntl[10]
+//                Console.WriteLine("cond1: {0}",mumps_par.rinfog[9]);
+//                Console.WriteLine("cond2: {0}",mumps_par.rinfog[10]);
+
                 return r;
 
             }
@@ -248,6 +252,11 @@ namespace ilPSP.LinSolvers.MUMPS {
 
                 // corresponds to the percentage increase in the estimated working space: Default value: 20 (which corresponds to a 20 % increase).
                 mumps_par.icntl[13] = 200;
+
+                //0:no error analysis (default), 1:full statistics, 2:main statistics
+
+//                mumps_par.icntl[10] = 1;
+
 
                 mumps_par.job = 2;
                 MUMPS_csharp.mumps_cs(ref mumps_par);
@@ -414,7 +423,7 @@ namespace ilPSP.LinSolvers.MUMPS {
 
         }
 
-        #region IDisposable Support
+#region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 
         protected virtual void Dispose(bool disposing) {
@@ -445,6 +454,6 @@ namespace ilPSP.LinSolvers.MUMPS {
             // TODO: uncomment the following line if the finalizer is overridden above.
             // GC.SuppressFinalize(this);
         }
-        #endregion
+#endregion
     }
 }

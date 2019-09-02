@@ -134,7 +134,6 @@ namespace BoSSS.Application.FSI_Solver
                     radius_P = 1,
                     particleDensity = 1.5,//pg/(mum^3)
                     GravityVertical = 0,
-                    ActiveParticle = true,
                     ActiveStress = stressM,
                     //thickness_P = 0.1 * BaseSize,  Sphere kann nur einen radius haben! fk.
                     //length_P = 2 * BaseSize,       Sphere kann nur einen radius haben! fk.
