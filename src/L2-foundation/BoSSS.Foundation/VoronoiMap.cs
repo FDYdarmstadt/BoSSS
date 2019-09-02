@@ -6,6 +6,46 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Foundation.Voronoi
 {
+    public class ArrayMap
+    {
+        int[] map;
+
+        public ArrayMap(int[] map)
+        {
+            this.map = map;
+        }
+
+        public int this[int i] {
+            get { return map[i]; }
+            set { map[i] = value;}
+        }
+
+        public bool IsBijective()
+        {
+            throw new NotImplementedException();
+            bool[] isPresent = new bool[map.Length];
+            //Check if all links are unique
+            for (int i = 0; i < map.Length; ++i)
+            {
+                if(isPresent[map[i]] == null)
+                {
+                    isPresent[map[i]] = true;
+                }
+                else
+                {
+                    return false;
+                }   
+            }
+            return true;
+        }
+
+        public int MaxIndice()
+        {
+            throw new NotImplementedException();
+            return 2;
+        }
+    }
+
     public class OneWayArrayMap
     {
         public ArrayConnection[] Map;

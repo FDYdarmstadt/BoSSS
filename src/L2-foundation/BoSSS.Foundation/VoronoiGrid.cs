@@ -50,25 +50,6 @@ namespace BoSSS.Foundation.Grid.Voronoi {
         {
             this.nodes = nodes;
             this.boundary = boundary;
-
-            DefineEdgeTags(boundary.BoundaryCells);
-            if (boundary.EdgeTagNames != null)
-            {
-                RegisterEdgeTagNames(EdgeTagNames);
-            }
-        }
-
-        private void DefineEdgeTags(BoundaryCellIndice[] cellsIndices)
-        {
-
-        }
-
-        private void RegisterEdgeTagNames(IDictionary<byte, string> EdgeTagNames)
-        {
-            foreach(KeyValuePair<byte, string> tagName in EdgeTagNames)
-            {
-                this.EdgeTagNames.Add(tagName);
-            }
         }
 
         public double EdgeVelocity(int jEdge, double[] x, Vector normal)
@@ -93,23 +74,15 @@ namespace BoSSS.Foundation.Grid.Voronoi {
     {
         public Vector[] BoundingBox;
 
-        public Edge Edge;
-
-        public BoundaryCellIndice[] BoundaryCells;
-
-        public IDictionary<byte, string> EdgeTagNames;
-    }
-
-    public class Edge
-    {
         public Vector[] Polygon;
 
         public byte[] EdgeTags;
-    }
 
-    public class BoundaryCellIndice
-    {
-        public int CellIndice;
-        public int EdgeIndice;
+        public IDictionary<byte, string> EdgeTagNames;
+
+        public byte GetEdgeTagOfPolygonEdge(int index)
+        {
+            return EdgeTags[index];
+        }
     }
 }

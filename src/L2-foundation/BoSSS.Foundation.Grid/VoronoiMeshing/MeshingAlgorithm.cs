@@ -1,6 +1,8 @@
 ﻿using BoSSS.Platform.LinAlg;
 using System.Collections.Generic;
 using System.Diagnostics;
+using BoSSS.Foundation.Voronoi;
+using System;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
@@ -15,6 +17,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         {
             public Vector[] BoundingBox;
             public Vector[] Boundary;
+            public ArrayMap PeriodicEdgeMapping = null;
             public int NumberOfLloydIterations = 10;
             public int FirstCellNode_indice = 0;
         }
@@ -22,24 +25,32 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         public static BoundaryMesh<T> ComputeMesh<T>(IList<T> nodeList, Settings settings)
             where T : IMesherNode, new()
         {
-            // Create Voronoi mesh
-            // =================================
+            
             IBoundaryEnumerator<Line> boundaryLines = Line.GetEnumerator(settings.Boundary);
             IntersectionMesh<T> mesh = null;
+            BoundaryHandler boundaryHandler = new BoundaryHandler(settings.Boundary, settings.PeriodicEdgeMapping);
 
+            // Create Voronoi mesh
+            // =================================
             for (int iLloyd = 0; iLloyd <= settings.NumberOfLloydIterations; ++iLloyd)
             {
-                // Mesh generation
+                // Voronoi Mesh generation
                 //-------------------------------------
                 AddDistantBoundingNodes(nodeList, settings.BoundingBox);
                 mesh = IntersectionMeshGenerator.CreateMesh(nodeList, settings.FirstCellNode_indice);
-                //Clip
+                
+                //Clip: cut out boundary polygon
                 //-------------------------------------
                 Intersecter.Intersect(mesh, boundaryLines);
 
+                //Impose Periodic Boundaries
+                //-------------------------------------
+                mesh = boundaryHandler.ImposePeriodicity(mesh, nodeList);
+
                 // Lloyds algorithm (Voronoi relaxation)
                 // -------------------------------------
-                IReadOnlyList<MeshCell<T>> cells = mesh.GetCells(); //GetInsideCell : Return Cells in order of MeshArray.
+                //Get inside cells : Return cells in order of Mesh Array.
+                IReadOnlyList<MeshCell<T>> cells = mesh.GetCells(); 
                 if (iLloyd != settings.NumberOfLloydIterations)
                 {
                     MoveNodesTowardsCellCenter(cells, ref settings.FirstCellNode_indice);

@@ -5,9 +5,11 @@ using System.Collections.Generic;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
-    public class Mesher<T>
+    public class VoronoiMesher<T>
         where T : IMesherNode, IVoronoiNodeCastable, new()
     {
+        internal BoundaryMesh<T> mesh;
+
         public class Settings
         {
             public VoronoiBoundary Boundary;
@@ -19,7 +21,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         {
             MeshingAlgorithm.Settings mesherSettings = new MeshingAlgorithm.Settings
             {
-                Boundary = settings.Boundary.Edge.Polygon,
+                Boundary = settings.Boundary.Polygon,
                 BoundingBox = settings.Boundary.BoundingBox,
                 NumberOfLloydIterations = settings.NumberOfLloydIterations,
                 FirstCellNode_indice = settings.FirstCellNode_indice
@@ -27,16 +29,15 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return mesherSettings;
         }
 
-        internal BoundaryMesh<T> CreateMesh(List<T> nodes, Settings settings)
-            
+        void CreateMesh(List<T> nodes, Settings settings)
         {
             MeshingAlgorithm.Settings meshingSettings = ConvertToMeshingAlgoSettings(settings);
-            BoundaryMesh<T> mesh = MeshingAlgorithm.ComputeMesh(nodes, meshingSettings);
-            return mesh;
+            mesh = MeshingAlgorithm.ComputeMesh(nodes, meshingSettings);
         }
 
-        internal VoronoiGrid Convert2VoronoiGrid(BoundaryMesh<T> mesh, Settings settings)
+        public VoronoiGrid CreateGrid(List<T> nodes, Settings settings)
         {
+            CreateMesh(nodes, settings); 
             VoronoiGrid grid = GridConverter.Convert2VoronoiGrid(mesh, settings.Boundary);
             return grid;
         }

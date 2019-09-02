@@ -201,7 +201,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                     CFT.AddToArray(ref this.Cells[jCell].CellFaceTags);
                 }
             }
-         
         }
 
         /// <summary>

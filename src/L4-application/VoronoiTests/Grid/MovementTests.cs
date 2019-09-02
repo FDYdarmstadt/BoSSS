@@ -8,7 +8,7 @@ using BoSSS.Foundation.Grid.Voronoi;
 
 namespace VoronoiTests.Grid
 {
-    class EdgeTests : BoSSSTestBench
+    class MovementTests : BoSSSTestBench
     {
         public override void Run()
         {
