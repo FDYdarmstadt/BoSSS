@@ -778,9 +778,9 @@ namespace BoSSS.Application.IBM_Solver {
                 #endregion
 
                 // Set Initial Conditions
-                C.InitialValues_Evaluators.Add("VelocityX", X => 0);
+                C.InitialValues_Evaluators.Add("VelocityX", X => 0.5);
                 C.InitialValues_Evaluators.Add("VelocityY", X => 0);
-                C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
+                C.InitialValues_Evaluators.Add("VelocityZ", X => 0.5);
                 C.InitialValues_Evaluators.Add("Pressure", X => 0);
 
                 if (only_channel)
@@ -805,7 +805,6 @@ namespace BoSSS.Application.IBM_Solver {
             // Boundary conditions
             C.AddBoundaryValue("Velocity_inlet", "VelocityX", (X, t) => 1);
             C.AddBoundaryValue("Velocity_inlet", "VelocityY", (X, t) => 0);
-            C.AddBoundaryValue("Velocity_inlet", "VelocityZ", (X, t) => 0);
             //C.AddBoundaryCondition("Velocity_inlet", "VelocityZ", (X, t) => 0);
             // C.AddBoundaryCondition("Wall");
             C.AddBoundaryValue("Pressure_Outlet");
