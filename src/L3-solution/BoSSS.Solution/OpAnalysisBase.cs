@@ -11,6 +11,7 @@ using ilPSP.Connectors.Matlab;
 using BoSSS.Foundation.Grid;
 using MPI.Wrappers;
 using ilPSP.Utils;
+using System.Diagnostics;
 
 namespace BoSSS.Solution {
 
@@ -45,28 +46,20 @@ namespace BoSSS.Solution {
             //System.Threading.Thread.Sleep(10000);
 
             m_OpMtx = new BlockMsrMatrix(Mapping, Mapping); //operator matrix
-            //double[] localRHS = new double[Mapping.LocalLength]; //right hand side
-            m_RHS = new double[Mapping.LocalLength];
+            localRHS = new double[Mapping.LocalLength]; //right hand side
+            RHSlen = Mapping.TotalLength;
             m_map = Mapping; // mapping
 
             VarGroup = m_map.BasisS.Count.ForLoop(i => i); //default: all dependent variables are included in operator matrix
-            delComputeOperatorMatrix(m_OpMtx, m_RHS, Mapping, CurrentState, AgglomeratedCellLengthScales, time); // delegate for computing the operator matrix
-
-            //int[] Lengths = new int[ilPSP.Environment.MPIEnv.MPI_Size];
-            //for (int r = 0; r < Lengths.Length; r++)
-            //{
-            //    Lengths[r] = Mapping.GetLocalLength(r);
-            //}
-            //m_RHS = localRHS.MPIGatherv(Lengths);
-            //m_RHS = MPIEnviroment.Broadcast<double[]>(m_RHS, 0, ilPSP.Environment.MPIEnv.Mpi_comm);
+            delComputeOperatorMatrix(m_OpMtx, localRHS, Mapping, CurrentState, AgglomeratedCellLengthScales, time); // delegate for computing the operator matrix
         }
 
 
         BlockMsrMatrix m_OpMtx;
-        double[] m_RHS;
+        int RHSlen;
         UnsetteledCoordinateMapping m_map;
         int[] _VarGroup;
-
+        double[] localRHS;
 
         /// <summary>
         /// user-defined indices of dependend variables, if not the full matrix should be analyzed, e.g. 0 = u_x, 1=u_y, 2=u_z, 3=p ...
@@ -124,13 +117,7 @@ namespace BoSSS.Solution {
             Console.WriteLine("maximal eigenvalue: {0}", Eigenval_Write[0]);
             Console.WriteLine("minimal eigenvalue: {0}", Eigenval_Write[1]);
 
-            //if (ilPSP.Environment.MPIEnv.MPI_Rank == 0)
-            //{
-            //    var fullmtrx = m_OpMtx.ToFullMatrixOnProc0();
-            //    fullmtrx.SaveToTextFile("post_matrix");
-            //    m_RHS.SaveToTextFile("post_rhs");
-            //}
-            rankAnalysis(m_OpMtx, m_RHS);
+            rankAnalysis(m_OpMtx, localRHS);
 
             Console.WriteLine("");
 
@@ -149,13 +136,12 @@ namespace BoSSS.Solution {
 
             MultidimensionalArray outputArray = MultidimensionalArray.Create(2, 1); // The two rank values
 
-            var fullmtrx = m_OpMtx.ToFullMatrixOnProc0();
-
+            //At this point OpMatrix and RHS are local, they are collected within bmc on proc rank==0
             using (var bmc = new BatchmodeConnector()){
-
                 bmc.PutSparseMatrix(OpMatrix, "OpMatrix");
                 bmc.PutVector(RHS, "RHS");
                 bmc.Cmd("output = zeros(2,1)"); // First value is rank(OpMatrix), second the rank of the augmented matrix = rank([Matrix|RHS])
+                bmc.Cmd("");
                 bmc.Cmd("fullMtx = full(OpMatrix);");
                 bmc.Cmd("augmentedMtx = [fullMtx RHS];");
                 bmc.Cmd("output(1) = rank(fullMtx)");
@@ -174,29 +160,42 @@ namespace BoSSS.Solution {
 
             // Some tests
             Console.WriteLine("==================================================================");
-            Console.WriteLine("Results of rank analysis:");
-            if (rnkAugmentedMtx > rnkMtx){
-                throw new Exception("The rank of the augmented matrix shouldn't be greater than the one of the original matrix!!");
+
+            //Output
+            {
+                Console.WriteLine("Results of rank analysis:");
+                if (rnkAugmentedMtx > rnkMtx)
+                {
+                    throw new Exception("The rank of the augmented matrix shouldn't be greater than the one of the original matrix!!");
+                }
+
+                if (rnkAugmentedMtx == rnkMtx)
+                {
+                    Console.WriteLine("The system has at least a solution");
+                }
+
+                //RHS and OpMatrix will be collected in Bmc, so total length has to be considered for RHS: RHS.length will lead to errors in parallel execution
+                if (rnkMtx < RHSlen)
+                {
+                    Console.WriteLine("The rank of the matrix is smaller than the number of variables. There are {0} free parameters", (RHS.Length - rnkMtx));
+                }
+
+                else if (rnkMtx == RHSlen)
+                {
+                    Console.WriteLine("The system has a unique solution :) ");
+                }
+
+                else
+                {
+                    throw new Exception("what? should not happen");
+                }
+
+                Console.WriteLine("Rank of the matrix : {0} \n" + "Rank of the augmented matrix : {1} \n" + "Number of variables: {2}", output[0], output[1], RHS.Length);
+                Console.WriteLine("==================================================================");
             }
 
-            if (rnkAugmentedMtx == rnkMtx){
-                Console.WriteLine("The system has at least a solution");
-            }
-
-            if (rnkMtx < RHS.Length){
-                Console.WriteLine("The rank of the matrix is smaller than the number of variables. There are {0} free parameters", (RHS.Length - rnkMtx));
-            }
-
-            else if (rnkMtx == RHS.Length){
-                Console.WriteLine("The system has a unique solution :) ");
-            }
-
-            else{
-                throw new Exception("what? should not happen");
-            }
-
-            Console.WriteLine("Rank of the matrix : {0} \n" + "Rank of the augmented matrix : {1} \n" + "Number of variables: {2}", output[0], output[1], RHS.Length);
-            Console.WriteLine("==================================================================");
+            Debug.Assert(output[0].MPIEquals(), "value does not match on procs");
+            Debug.Assert(output[1].MPIEquals(), "value does not match on procs");
         }
 
 
@@ -274,6 +273,10 @@ namespace BoSSS.Solution {
                     double condestInner = output[1, 0];
 
                     double[] condestOut = new double[] { condestFull, condestInner };
+
+
+                    Debug.Assert(condestOut[0].MPIEquals(),"value does not match on procs");
+                    Debug.Assert(condestOut[1].MPIEquals(), "value does not match on procs");
                     return condestOut;
                 }
             }
@@ -330,6 +333,8 @@ namespace BoSSS.Solution {
             }
             res[1] = MPIEnviroment.Broadcast<bool>(posDef, 0, ilPSP.Environment.MPIEnv.Mpi_comm);
 
+            Debug.Assert(res[0].MPIEquals(), "value does not match on procs");
+            Debug.Assert(res[1].MPIEquals(), "value does not match on procs");
             return res;
         }
 
@@ -362,6 +367,8 @@ namespace BoSSS.Solution {
             }
 
             double[] myeigs = new double[] { output[0, 0], output[1, 0] };
+            Debug.Assert(output[0, 0].MPIEquals(), "value does not match on procs");
+            Debug.Assert(output[1, 0].MPIEquals(), "value does not match on procs");
             return myeigs;
         }
 

@@ -45,21 +45,22 @@ namespace BoSSS.Application.IBM_Solver {
         /// <param name="load_Grid"></param>
         /// <param name="_GridGuid"></param>
         /// <returns></returns>
-        static public IBM_Control SphereFlow_BWS(string _DbPath = null, int k = 2, int cells_x = 16, int cells_yz = 4, bool only_channel = false, bool pardiso = true, int no_p = 1, int no_it = 1, bool restart = false, bool load_Grid = false, string _GridGuid = null)
+        static public IBM_Control SphereFlow_BWS(string _DbPath = null, int k = 2, int cells_x = 64, int cells_yz = 16, bool only_channel = false, bool pardiso = true, int no_p = 1, int no_it = 1, bool restart = false, bool load_Grid = false, string _GridGuid = null)
         {
             IBM_Control C = new IBM_Control();
-            C.OperatorMatrixAnalysis = true;
+            C.OperatorMatrixAnalysis = false;
             //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
 
             // basic database options
             // ======================
             //C.DbPath = _DbPath;
-            C.savetodb = false;
+            
 
             C.DbPath = @"G:\test_db";
             //C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Bug";
             //C.DbPath = @"/home/ws35kire/test_db/";
 
+            C.savetodb = C.DbPath != null;
             //string restartSession = "727da287-1b6a-463e-b7c9-7cc19093b5b3";
             //string restartGrid = "3f8f3445-46f1-47ed-ac0e-8f0260f64d8f";
 
@@ -161,7 +162,7 @@ namespace BoSSS.Application.IBM_Solver {
                     C.GridFunc = delegate {
 
                         // x-direction
-                        var _xNodes = GenericBlas.Linspace(-0.5, 1.5, cells_x + 1);
+                        var _xNodes = GenericBlas.Linspace(-0.5, 3, cells_x + 1);
 
                         // y-direction
                         var _yNodes = GenericBlas.Linspace(-0.5, 0.5, cells_yz + 1);
@@ -186,7 +187,7 @@ namespace BoSSS.Application.IBM_Solver {
                                 // inlet
                                 return 1;
 
-                            if (Math.Abs(x - (1.5)) < 1.0e-6)
+                            if (Math.Abs(x - (3)) < 1.0e-6)
                                 // outlet
                                 return 3;
 
@@ -398,12 +399,12 @@ namespace BoSSS.Application.IBM_Solver {
             // Physical values
             C.particleRadius = 0.1;
             C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.mu_A = 0.2 / 1;
+            C.PhysicalParameters.mu_A = 0.002 / 1;
 
             // Boundary conditions
-            C.AddBoundaryValue("Velocity_inlet", "VelocityX", (X, t) => 1 - 4 * (X[2] * X[2]));
+            C.AddBoundaryValue("Velocity_inlet", "VelocityX", (X, t) => 100 - 400 * (X[2] * X[2]) - 400 * (X[1] * X[1]));
             C.AddBoundaryValue("Velocity_inlet", "VelocityY", (X, t) => 0);
-            //C.AddBoundaryValue("Velocity_inlet", "VelocityZ", (X, t) => 0);
+            C.AddBoundaryValue("Velocity_inlet", "VelocityZ", (X, t) => 0);
             C.AddBoundaryValue("Wall");
             C.AddBoundaryValue("Pressure_Outlet");
 
@@ -417,8 +418,8 @@ namespace BoSSS.Application.IBM_Solver {
             C.LinearSolver.MaxKrylovDim = 30;
             C.LinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Picard;
-            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
+            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
+            //C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_schwarz_Kcycle_directcoarse;
             //C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_gmres_levelpmg;
             C.LinearSolver.verbose = true;
             C.NonLinearSolver.verbose = true;
@@ -437,7 +438,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             //C.whichSolver = DirectSolver._whichSolver.MUMPS;
             C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.BDF2;
-            double dt = 0.1;
+            double dt = 0.01;
             C.dtFixed = dt;
             //C.dtMax = dt;
             //C.dtMin = 0;
@@ -777,9 +778,9 @@ namespace BoSSS.Application.IBM_Solver {
                 #endregion
 
                 // Set Initial Conditions
-                C.InitialValues_Evaluators.Add("VelocityX", X => 0.5);
+                C.InitialValues_Evaluators.Add("VelocityX", X => 0);
                 C.InitialValues_Evaluators.Add("VelocityY", X => 0);
-                C.InitialValues_Evaluators.Add("VelocityZ", X => 0.5);
+                C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
                 C.InitialValues_Evaluators.Add("Pressure", X => 0);
 
                 if (only_channel)
@@ -804,8 +805,9 @@ namespace BoSSS.Application.IBM_Solver {
             // Boundary conditions
             C.AddBoundaryValue("Velocity_inlet", "VelocityX", (X, t) => 1);
             C.AddBoundaryValue("Velocity_inlet", "VelocityY", (X, t) => 0);
+            C.AddBoundaryValue("Velocity_inlet", "VelocityZ", (X, t) => 0);
             //C.AddBoundaryCondition("Velocity_inlet", "VelocityZ", (X, t) => 0);
-           // C.AddBoundaryCondition("Wall");
+            // C.AddBoundaryCondition("Wall");
             C.AddBoundaryValue("Pressure_Outlet");
 
             
