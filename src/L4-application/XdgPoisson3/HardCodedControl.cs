@@ -78,7 +78,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             R.xLaplaceBCs.IsDirichlet = (inp => true);
 
-            R.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;//R.solverName = "direct";
+            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;//R.solverName = "direct";
             R.AgglomerationThreshold = 0.0;
             R.PrePreCond = MultigridOperator.Mode.IdMass;
             R.penalty_multiplyer = 1.1;
@@ -90,7 +90,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// <summary>
         /// A circular interface in the 2D domain \f$ (3/2,3/2)^2 \f$.
         /// </summary>
-        public static XdgPoisson3Control Circle(int Resolution = 16, int p = 1, string DBPath = null, LinearSolverConfig.Code solver = LinearSolverConfig.Code.classic_pardiso) {
+        public static XdgPoisson3Control Circle(int Resolution = 16, int p = 1, string DBPath = null, LinearSolverCode solver = LinearSolverCode.classic_pardiso) {
             XdgPoisson3Control R = new XdgPoisson3Control();
 
             R.ProjectName = "XdgPoisson3/Circle";
@@ -134,7 +134,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             R.xLaplaceBCs.IsDirichlet = (inp => true);
 
             R.LinearSolver.SolverCode = solver;
-            R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_mg;
+            R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_mg;
 
             R.dtMax = 0.1;
             R.dtMin = 0.1;
@@ -237,7 +237,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                     return false;
             };
 
-            R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_schwarz;//R.solverName = "pcg+schwarz";
+            R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_schwarz;//R.solverName = "pcg+schwarz";
             R.LinearSolver.NoOfMultigridLevels = 2;
             R.AgglomerationThreshold = 0.0;
 
@@ -312,7 +312,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                     return false;
             };
 
-            R.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;//R.solverName = "direct";
+            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;//R.solverName = "direct";
             R.AgglomerationThreshold = 0.2;
 
 
@@ -384,7 +384,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                     return false;
             };
 
-            R.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;//R.solverName = "direct";
+            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;//R.solverName = "direct";
             R.AgglomerationThreshold = 0.0;
             R.PrePreCond = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
 
@@ -506,7 +506,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             R.xLaplaceBCs.g_Diri = ((CommonParamsBnd inp) => 0.0);
             R.xLaplaceBCs.IsDirichlet = (inp => true);
 
-            R.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;//R.solverName = "direct";
+            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;//R.solverName = "direct";
             R.AgglomerationThreshold = 0.1;
             R.PrePreCond = MultigridOperator.Mode.DiagBlockEquilib;
             R.penalty_multiplyer = 1.1;
@@ -526,10 +526,10 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             switch (solver) {
                 case 1:
-                    C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_mg;
+                    C.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_mg;
                     break;
                 case 2:
-                    C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse;
+                    C.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_schwarz_directcoarse;
                     break;
                 default:
                     throw new NotImplementedException("guess again");
@@ -561,9 +561,9 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.LinearSolver.TargetBlockSize = blocksize;
             C.SetDGdegree(2);
 
-            //C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_mg;
-            //C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse;
-            //C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_jacobi_mg;
+            //C.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_mg;
+            //C.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_schwarz_directcoarse;
+            //C.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_jacobi_mg;
 
             C.LinearSolver.NoOfMultigridLevels = 10;
             C.LinearSolver.ConvergenceCriterion = 1e-6;
@@ -647,7 +647,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             /// Solver Parameters
             //C.solverName = "pcg+mg+schwarz";
-            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;//R.solverName = "direct";
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;//R.solverName = "direct";
 
             /// Discretization Parameters
             C.ViscosityMode = XLaplace_Interface.Mode.SIP;

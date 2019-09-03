@@ -44,7 +44,7 @@ namespace BoSSS.Application.Rheology
         /// <summary>
         /// Channel Flow
         /// </summary>
-        static public RheologyControl Channel(string path = @"C:\Users\kikker\AnnesBoSSSdb\Channel", int degree = 2, int GridLevel = 4)
+        static public RheologyControl Channel(string path = @"C:\Users\kikker\AnnesBoSSSdb\Channel", int degree = 2, int GridLevel = 5)
         {
             RheologyControl C = new RheologyControl();
 
@@ -63,9 +63,9 @@ namespace BoSSS.Application.Rheology
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;
-            C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_gmres_levelpmg;
-            //C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
+            //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.ObjectiveParam = 1.0;
 
             C.UsePerssonSensor = false;
@@ -263,7 +263,7 @@ namespace BoSSS.Application.Rheology
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.NewtonGMRES;
             C.ObjectiveParam = 1.0;
 
             //Grid Params
@@ -702,7 +702,7 @@ namespace BoSSS.Application.Rheology
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             //C.NonlinearMethod = NonlinearSolverMethod.Newton;
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.ObjectiveParam = 1.0;
             C.UsePerssonSensor = true;
             C.AdaptiveMeshRefinement = true;

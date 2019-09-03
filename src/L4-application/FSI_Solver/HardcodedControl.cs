@@ -2016,7 +2016,7 @@ namespace BoSSS.Application.FSI_Solver {
             string JSON = System.IO.File.ReadAllText(path);
             var C = (FSI_Control) AppControl.Deserialize(JSON);
             C.NonLinearSolver.MaxSolverIterations = 40;
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             
             return C;
         }

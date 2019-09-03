@@ -273,7 +273,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 1;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.LevelSetSmoothing = false;
-            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.LinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MinSolverIterations = 1;
             C.NonLinearSolver.MaxSolverIterations = 100;

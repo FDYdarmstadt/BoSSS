@@ -417,9 +417,9 @@ namespace BoSSS.Application.IBM_Solver {
             C.LinearSolver.MaxKrylovDim = 30;
             C.LinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Picard;
-            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
-            //C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_gmres_levelpmg;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            //C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
             C.LinearSolver.verbose = true;
             C.NonLinearSolver.verbose = true;
             C.NonLinearSolver.PrecondSolver.verbose = true;
@@ -824,9 +824,9 @@ namespace BoSSS.Application.IBM_Solver {
             // ============
             
             if (pardiso) {
-                C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
+                C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             } else {
-                C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
+                C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
             }
 
             //C.whichSolver = DirectSolver._whichSolver.MUMPS;
@@ -1171,11 +1171,11 @@ namespace BoSSS.Application.IBM_Solver {
 
             if (pardiso)
             {
-                C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
+                C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             }
             else
             {
-                C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
+                C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
             }
             // Timestepping
             // ============
