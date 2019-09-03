@@ -94,13 +94,17 @@
     <Compile Include="FSI_Collision.cs" />
     <Compile Include="FSI_TimestepInfo.cs" />
     <Compile Include="FSI_LevelSetUpdate.cs" />
+    <Compile Include="Particle\Motion\Motion_Wet_NoTranslation.cs" />
+    <Compile Include="Particle\Motion\Motion_Wet_NoRotation.cs" />
     <Compile Include="Particle\Motion\Motion_AddedDamping.cs" />
+    <Compile Include="Particle\Motion\Motion_Dry_NoTranslation.cs" />
+    <Compile Include="Particle\Motion\Motion_Dry_NoRotation.cs" />
     <Compile Include="Particle\Motion\Motion_Dry.cs" />
     <Compile Include="Particle\Motion\Motion_Fixed.cs" />
     <Compile Include="Particle\ParticleAcceleration.cs" />
     <Compile Include="Particle\ParticleAddedDamping.cs" />
     <Compile Include="Particle\ParticleForceIntegration.cs" />
-    <Compile Include="Particle\Motion\Main.cs" />
+    <Compile Include="Particle\Motion\_Motion_Main.cs" />
     <Compile Include="Particle\ParticleUnderrelaxation.cs" />
     <Compile Include="Particle\Shapes\Particle_TrapRight.cs" />
     <Compile Include="Particle\Shapes\Particle_TrapLeft.cs" />
@@ -202,9 +206,7 @@
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Particle\Hydrodynamics\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

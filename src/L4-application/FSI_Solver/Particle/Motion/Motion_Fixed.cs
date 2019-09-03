@@ -10,14 +10,15 @@ using System.Collections.Generic;
 
 namespace BoSSS.Application.FSI_Solver {
     public class Motion_Fixed : ParticleMotion {
-        public Motion_Fixed(double[] gravity) : base(gravity) {
+
+        public Motion_Fixed(double[] gravity = null) : base(gravity) {
         }
 
         /// <summary>
         /// Calculate the new particle position
         /// </summary>
         /// <param name="dt"></param>
-        public override void CalculateParticlePosition(double dt, double collisionTimestep = 0) {
+        protected override void CalculateParticlePosition(double dt, double collisionTimestep = 0) {
             position[0] = position[1];
             Aux.TestArithmeticException(position[0], "particle position");
         }
@@ -26,7 +27,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Calculate the new particle angle
         /// </summary>
         /// <param name="dt"></param>
-        public override void CalculateParticleAngle(double dt, double collisionTimestep = 0) {
+        protected override void CalculateParticleAngle(double dt, double collisionTimestep = 0) {
             angle[0] = angle[1];
             Aux.TestArithmeticException(angle[0], "particle angle");
         }

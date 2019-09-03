@@ -58,13 +58,9 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         [DataMember]
         public double width_P;
-
-        public override double Area_P
-        {
-            get
-            {
-                return (5 * width_P.Pow2()) / 4;
-            }
+        public override double Area_P() {
+            // not correct area
+            return (5 * width_P.Pow2()) / 4;
         }
         protected override double Circumference_P
         {
@@ -110,6 +106,18 @@ namespace BoSSS.Application.FSI_Solver
             var distance = point.L2Distance(position[0]);
             if (distance < (radiusTolerance))
             {
+                return true;
+            }
+            return false;
+        }
+
+        public override bool particleInternalCell(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false) {
+            // only for rectangular cells
+            if (h_max == 0)
+                h_max = h_min;
+            double radiusTolerance = !WithoutTolerance ? width_P - Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
+            var distance = point.L2Distance(position[0]);
+            if (distance < (radiusTolerance)) {
                 return true;
             }
             return false;

@@ -12,22 +12,16 @@ namespace BoSSS.Application.FSI_Solver {
     public class Motion_AddedDamping : ParticleMotion {
         public Motion_AddedDamping(
             double[] gravity,
-            double maxParticleLengthScale,
-            double forceAndTorqueConvergence,
-            double underrelaxationFactor,
+            double underrelaxationFactor = 1,
+            double forceAndTorqueConvergence = 1e-10,
             bool useAddaptiveUnderrelaxation = true,
-            double addedDampingCoefficient = 1) : base(gravity) {
+            double addedDampingCoefficient = 1) : base(gravity, underrelaxationFactor, forceAndTorqueConvergence, useAddaptiveUnderrelaxation) {
             m_StartingAngle = angle[0];
             m_AddedDampingCoefficient = addedDampingCoefficient;
-            m_ForceAndTorqueConvergence = forceAndTorqueConvergence;
-            m_UnderrelaxationFactor = underrelaxationFactor;
-            m_UseAddaptiveUnderrelaxation = useAddaptiveUnderrelaxation;
-            m_MaxParticleLengthScale = maxParticleLengthScale;
         }
 
         readonly ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation();
         readonly ParticleAddedDamping AddedDamping = new ParticleAddedDamping();
-        readonly ParticleAcceleration Acceleration = new ParticleAcceleration();
 
         /// <summary>
         /// Complete added damping tensor, for reference: Banks et.al. 2017
@@ -37,32 +31,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Added damping coefficient, should be between 0.5 and 1.5, for reference: Banks et.al. 2017
         /// </summary>
-        protected double m_AddedDampingCoefficient;
+        private double m_AddedDampingCoefficient;
 
         /// <summary>
         /// Saving the initial angle of the particle for <see cref="UpdateDampingTensors()"/>
         /// </summary>
-       protected double m_StartingAngle;
-
-        /// <summary>
-        /// Convergence criterion.
-        /// </summary>
-        protected double m_ForceAndTorqueConvergence;
-
-        /// <summary>
-        /// Force and torque underrelaxation.
-        /// </summary>
-        protected double m_UnderrelaxationFactor;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        protected bool m_UseAddaptiveUnderrelaxation;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        protected double m_MaxParticleLengthScale;
+        private double m_StartingAngle;
 
         /// <summary>
         /// Calculate tensors to implement the added damping model (Banks et.al. 2017)
@@ -80,98 +54,58 @@ namespace BoSSS.Application.FSI_Solver {
             Aux.TestArithmeticException(addedDampingTensor, "particle added damping tensor");
         }
 
-        /// <summary>
-        /// Calculate the new particle position after a collision
-        /// </summary>
-        /// <param name="dt"></param>
-        public override void CalculateParticlePosition(double dt, double collisionTimestep) {
-            for (int d = 0; d < spatialDim; d++) {
-                position[0][d] = position[1][d] + translationalVelocity[0][d] * (dt - collisionTimestep) / 6;
+        protected override void CalculateTranslationalAcceleration(double dt) {
+            double[,] coefficientMatrix = CalculateCoefficientMatrix(dt);
+            double denominator = CalculateDenominator(coefficientMatrix);
+
+            double[] tempAcceleration = new double[2];
+            tempAcceleration[0] = hydrodynamicForces[0][0] * (coefficientMatrix[1, 1] * coefficientMatrix[2, 2] - coefficientMatrix[1, 2] * coefficientMatrix[2, 1]);
+            tempAcceleration[0] += hydrodynamicForces[0][1] * (-coefficientMatrix[0, 1] * coefficientMatrix[2, 2] + coefficientMatrix[0, 2] * coefficientMatrix[2, 1]);
+            tempAcceleration[0] += hydrodynamicTorque[0] * (coefficientMatrix[0, 1] * coefficientMatrix[1, 2] - coefficientMatrix[0, 2] * coefficientMatrix[1, 1]);
+            tempAcceleration[0] = tempAcceleration[0] / denominator;
+
+            tempAcceleration[1] = hydrodynamicForces[0][0] * (-coefficientMatrix[1, 0] * coefficientMatrix[2, 2] + coefficientMatrix[1, 2] * coefficientMatrix[2, 0]);
+            tempAcceleration[1] += hydrodynamicForces[0][1] * (coefficientMatrix[0, 0] * coefficientMatrix[2, 2] - coefficientMatrix[0, 2] * coefficientMatrix[2, 0]);
+            tempAcceleration[1] += hydrodynamicTorque[0] * (-coefficientMatrix[0, 0] * coefficientMatrix[1, 2] + coefficientMatrix[0, 2] * coefficientMatrix[1, 0]);
+            tempAcceleration[1] = tempAcceleration[1] / denominator;
+            translationalAcceleration[0] = tempAcceleration.CloneAs();
+        }
+
+        protected override void CalculateRotationalAcceleration(double dt) {
+            double[,] coefficientMatrix = CalculateCoefficientMatrix(dt);
+            double denominator = CalculateDenominator(coefficientMatrix);
+
+            double tempAcceleration = hydrodynamicForces[0][0] * (coefficientMatrix[1, 0] * coefficientMatrix[2, 1] - coefficientMatrix[1, 1] * coefficientMatrix[2, 0]);
+            tempAcceleration += hydrodynamicForces[0][1] * (coefficientMatrix[0, 1] * coefficientMatrix[2, 0] - coefficientMatrix[0, 0] * coefficientMatrix[2, 1]);
+            tempAcceleration += hydrodynamicTorque[0] * (coefficientMatrix[0, 0] * coefficientMatrix[1, 1] - coefficientMatrix[0, 1] * coefficientMatrix[1, 0]);
+            rotationalAcceleration[0] = tempAcceleration / denominator;
+        }
+
+        private double[,] CalculateCoefficientMatrix(double Timestep) {
+            double[,] massMatrix = GetMassMatrix();
+            double[,] coefficientMatrix = massMatrix.CloneAs();
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 3; j++) {
+                    coefficientMatrix[i, j] = massMatrix[i, j] + Timestep * m_AddedDampingCoefficient * addedDampingTensor[i, j];
+                }
             }
-            Aux.TestArithmeticException(position[0], "particle position");
+            return coefficientMatrix;
+        }
+        private double[,] GetMassMatrix() {
+            double[,] MassMatrix = new double[3, 3];
+            MassMatrix[0, 0] = MassMatrix[1, 1] = particleMass;
+            MassMatrix[2, 2] = momentOfInertia;
+            return MassMatrix;
         }
 
-        /// <summary>
-        /// Calculate the new particle angle after a collision
-        /// </summary>
-        /// <param name="dt"></param>
-        public override void CalculateParticleAngle(double dt, double collisionTimestep) {
-            angle[0] = angle[1] + rotationalVelocity[0] * (dt - collisionTimestep) / 6;
-            Aux.TestArithmeticException(angle[0], "particle angle");
-        }
-
-        /// <summary>
-        /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
-        /// </summary>
-        /// <param name="dt">Timestep</param>
-        /// <returns></returns>
-        public override void CalculateTranslationalVelocity(double dt, double collisionTimestep) {
-            for (int d = 0; d < spatialDim; d++) {
-                translationalVelocity[0][d] = translationalVelocity[1][d] + translationalAcceleration[0][d] * (dt - collisionTimestep) / 6;
-            }
-            Aux.TestArithmeticException(translationalVelocity[0], "particle translational velocity");
-        }
-
-        /// <summary>
-        /// Calculate the new angular velocity of the particle using explicit Euler scheme.
-        /// </summary>
-        /// <param name="dt">Timestep</param>
-        /// <returns></returns>
-        public override void CalculateAngularVelocity(double dt, double collisionTimestep) {
-            rotationalVelocity[0] = rotationalVelocity[1] + rotationalAcceleration[0] * (dt - collisionTimestep) / 6;
-            Aux.TestArithmeticException(rotationalVelocity[0], "particle rotational velocity");
-        }
-
-        /// <summary>
-        /// Calculate the new acceleration (translational and rotational)
-        /// </summary>
-        /// <param name="dt"></param>
-        public override void CalculateAcceleration(double dt, double[] force, double torque) {
-            // Added damping
-            double[,] coefficientMatrix = Acceleration.CalculateCoefficientMatrix(addedDampingTensor, particleMass, particleMomentOfInertia, dt, m_AddedDampingCoefficient);
-            Aux.TestArithmeticException(coefficientMatrix, "particle acceleration coefficients");
-            double Denominator = Acceleration.CalculateDenominator(coefficientMatrix);
-            Aux.TestArithmeticException(Denominator, "particle acceleration denominator");
-
-            // Translation
-            translationalAcceleration[0] = Acceleration.Translational(coefficientMatrix, Denominator, force, torque);
-            for (int d = 0; d < spatialDim; d++) {
-                if (Math.Abs(translationalAcceleration[0][d]) < 1e-20)
-                    translationalAcceleration[0][d] = 0;
-            }
-            Aux.TestArithmeticException(translationalAcceleration[0], "particle translational acceleration");
-
-            // Rotation
-            rotationalAcceleration[0] = Acceleration.Rotational(coefficientMatrix, Denominator, force, torque);
-            Aux.TestArithmeticException(translationalAcceleration[0], "particle rotational acceleration");
-            if (Math.Abs(rotationalAcceleration[0]) < 1e-20)
-                rotationalAcceleration[0] = 0;
-        }
-
-        /// <summary>
-        /// Calculate the new acceleration (translational and rotational)
-        /// </summary>
-        /// <param name="dt"></param>
-        public void CalculateAcceleration(double dt, double collisionTimestep, double[] force, double torque) {
-            // Added damping
-            double[,] coefficientMatrix = Acceleration.CalculateCoefficientMatrix(addedDampingTensor, particleMass, particleMomentOfInertia, (dt - collisionTimestep), m_AddedDampingCoefficient);
-            Aux.TestArithmeticException(coefficientMatrix, "particle acceleration coefficients");
-            double Denominator = Acceleration.CalculateDenominator(coefficientMatrix);
-            Aux.TestArithmeticException(Denominator, "particle acceleration denominator");
-
-            // Translation
-            translationalAcceleration[0] = Acceleration.Translational(coefficientMatrix, Denominator, force, torque);
-            for (int d = 0; d < spatialDim; d++) {
-                if (Math.Abs(translationalAcceleration[0][d]) < 1e-20)
-                    translationalAcceleration[0][d] = 0;
-            }
-            Aux.TestArithmeticException(translationalAcceleration[0], "particle translational acceleration");
-
-            // Rotation
-            rotationalAcceleration[0] = Acceleration.Rotational(coefficientMatrix, Denominator, force, torque);
-            Aux.TestArithmeticException(translationalAcceleration[0], "particle rotational acceleration");
-            if (Math.Abs(rotationalAcceleration[0]) < 1e-20)
-                rotationalAcceleration[0] = 0;
+        private double CalculateDenominator(double[,] coefficientMatrix) {
+            double denominator = coefficientMatrix[0, 0] * coefficientMatrix[1, 1] * coefficientMatrix[2, 2];
+            denominator -= coefficientMatrix[0, 0] * coefficientMatrix[1, 2] * coefficientMatrix[2, 1];
+            denominator -= coefficientMatrix[0, 1] * coefficientMatrix[1, 0] * coefficientMatrix[2, 2];
+            denominator += coefficientMatrix[0, 1] * coefficientMatrix[1, 2] * coefficientMatrix[2, 0];
+            denominator += coefficientMatrix[0, 2] * coefficientMatrix[1, 0] * coefficientMatrix[2, 1];
+            denominator -= coefficientMatrix[0, 2] * coefficientMatrix[1, 1] * coefficientMatrix[2, 0];
+            return denominator;
         }
 
         /// <summary>
@@ -200,19 +134,6 @@ namespace BoSSS.Application.FSI_Solver {
         public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double muA, double relativeParticleMass, double dt) {
             double[] tempForces = CalculateHydrodynamicForces(U, P, LsTrk, CutCells_P, muA, relativeParticleMass, dt);
             double tempTorque = CalculateHydrodynamicTorque(U, P, LsTrk, CutCells_P, muA, dt);
-            HydrodynamicsPostprocessing(tempForces, tempTorque);
-        }
-
-        /// <summary>
-        /// Calls the calculation of the hydrodynamics
-        /// </summary>
-        /// <param name="U"></param>
-        /// <param name="P"></param>
-        /// <param name="LsTrk"></param>
-        /// <param name="muA"></param>
-        public void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double muA, double relativeParticleMass, double dt, double collisionTimestep) {
-            double[] tempForces = CalculateHydrodynamicForces(U, P, LsTrk, CutCells_P, muA, relativeParticleMass, (dt - collisionTimestep));
-            double tempTorque = CalculateHydrodynamicTorque(U, P, LsTrk, CutCells_P, muA, (dt - collisionTimestep));
             HydrodynamicsPostprocessing(tempForces, tempTorque);
         }
 

@@ -41,11 +41,9 @@ namespace BoSSS.Application.FSI_Solver {
                 return 2 * Math.PI * radius_P;
             }
         }
-        public override double Area_P {
-            get {
-                // not correct area
-                return Math.PI * radius_P * radius_P;
-            }
+        public override double Area_P() {
+            // not correct area
+            return Math.PI * radius_P * radius_P;
         }
         override public double MomentOfInertia_P {
             get {
@@ -88,6 +86,18 @@ namespace BoSSS.Application.FSI_Solver {
             double b = !WithoutTolerance ? thickness_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : thickness_P;
             if (-((((point[0] - position[0][0]) * Math.Cos(angle[0]) - (point[1] - position[0][1]) * Math.Sin(angle[0])).Pow(2) + ((point[0] - position[0][0]) * Math.Sin(angle[0]) + (point[1] - position[0][1]) * Math.Cos(angle[0])).Pow(2)).Pow2() - a * ((point[0] - position[0][0]) * Math.Cos(angle[0]) - (point[1] - position[0][1]) * Math.Sin(angle[0])).Pow2() - b * ((point[0] - position[0][0]) * Math.Sin(angle[0]) + (point[1] - position[0][1]) * Math.Cos(angle[0])).Pow2()) > 0)
             {
+                return true;
+            }
+            return false;
+        }
+
+        public override bool particleInternalCell(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false) {
+            // only for rectangular cells
+            if (h_max == 0)
+                h_max = h_min;
+            double a = !WithoutTolerance ? length_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : length_P;
+            double b = !WithoutTolerance ? thickness_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : thickness_P;
+            if (-((((point[0] - position[0][0]) * Math.Cos(angle[0]) - (point[1] - position[0][1]) * Math.Sin(angle[0])).Pow(2) + ((point[0] - position[0][0]) * Math.Sin(angle[0]) + (point[1] - position[0][1]) * Math.Cos(angle[0])).Pow(2)).Pow2() - a * ((point[0] - position[0][0]) * Math.Cos(angle[0]) - (point[1] - position[0][1]) * Math.Sin(angle[0])).Pow2() - b * ((point[0] - position[0][0]) * Math.Sin(angle[0]) + (point[1] - position[0][1]) * Math.Cos(angle[0])).Pow2()) > 0) {
                 return true;
             }
             return false;

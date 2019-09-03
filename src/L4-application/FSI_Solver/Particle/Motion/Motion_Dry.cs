@@ -14,33 +14,14 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calculate the new particle position
-        /// </summary>
-        /// <param name="dt"></param>
-        public override void CalculateParticlePosition(double dt, double collisionTimestep) {
-            for (int d = 0; d < spatialDim; d++) {
-                position[0][d] = position[1][d] + translationalVelocity[0][d] * (dt - collisionTimestep) / 6;
-            }
-            Aux.TestArithmeticException(position[0], "particle position");
-        }
-
-        /// <summary>
-        /// Calculate the new particle angle
-        /// </summary>
-        /// <param name="dt"></param>
-        public override void CalculateParticleAngle(double dt, double collisionTimestep) {
-            angle[0] = angle[1] + rotationalVelocity[0] * (dt - collisionTimestep) / 6;
-            Aux.TestArithmeticException(angle[0], "particle angle");
-        }
-
-        /// <summary>
         /// Calculate the new translational velocity of the particle.
         /// </summary>
         /// <param name="dt">Timestep</param>
         /// <returns></returns>
-        public override void CalculateTranslationalVelocity(double dt) {
+        protected override void CalculateTranslationalVelocity(double dt) {
+            CalculateTranslationalAcceleration();
             for (int d = 0; d < spatialDim; d++) {
-                translationalVelocity[0][d] = translationalVelocity[1][d] + m_Gravity[d] * dt;
+                translationalVelocity[0][d] = translationalVelocity[1][d] + translationalAcceleration[0][d] * dt;
             }
             Aux.TestArithmeticException(translationalVelocity[0], "particle translational velocity");
         }
@@ -49,9 +30,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// Calculate the new translational velocity of the particle.
         /// </summary>
         /// <param name="dt">Timestep</param>
-        public override void CalculateTranslationalVelocity(double dt, double collisionTimestep) {
+        protected override void CalculateTranslationalVelocity(double dt, double collisionTimestep) {
+            CalculateTranslationalAcceleration();
             for (int d = 0; d < spatialDim; d++) {
-                translationalVelocity[0][d] = translationalVelocity[1][d] + m_Gravity[d] * (dt - collisionTimestep);
+                translationalVelocity[0][d] = translationalVelocity[1][d] + translationalAcceleration[0][d] * (dt - collisionTimestep);
             }
             Aux.TestArithmeticException(translationalVelocity[0], "particle translational velocity");
         }
@@ -61,7 +43,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt">Timestep</param>
         /// <returns></returns>
-        public override void CalculateAngularVelocity(double dt = 0) {
+        protected override void CalculateAngularVelocity(double dt = 0) {
             rotationalVelocity[0] = rotationalVelocity[1];
             Aux.TestArithmeticException(rotationalVelocity[0], "particle rotational velocity");
         }
@@ -70,9 +52,20 @@ namespace BoSSS.Application.FSI_Solver {
         /// Calculate the new angular velocity of the particle.
         /// </summary>
         /// <param name="dt">Timestep</param>
-        public override void CalculateAngularVelocity(double dt = 0, double collisionTimestep = 0) {
+        protected override void CalculateAngularVelocity(double dt = 0, double collisionTimestep = 0) {
             rotationalVelocity[0] = rotationalVelocity[1];
             Aux.TestArithmeticException(rotationalVelocity[0], "particle rotational velocity");
+        }
+
+        /// <summary>
+        /// Calculates the new translational acceleration.
+        /// </summary>
+        /// <param name="dt"></param>
+        protected override void CalculateTranslationalAcceleration(double dt = 0) {
+            for (int d = 0; d < spatialDim; d++) {
+                translationalAcceleration[0][d] = m_Gravity[d];
+            }
+            Aux.TestArithmeticException(translationalAcceleration[0], "particle translational acceleration");
         }
     }
 }

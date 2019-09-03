@@ -74,13 +74,15 @@ namespace BoSSS.Application.FSI_Solver {
             //From degree to radiant, StartingAngle used by addedDamping
             angle[0] = StartingAngle = startAngl * 2 * Math.PI / 360;
             angle[1] = startAngl * 2 * Math.PI / 360;
+
+            Motion.InitializeParticlePositionAndAngle(startPos, startAngl);
         }
 
         /// <summary>
         /// Instantiate object for particle motion.
         /// </summary>
         [DataMember]
-        public ParticleMotion Motion;
+        public ParticleMotion Motion = new ParticleMotion(gravity: new double[] { 0, 9.81 });
 
         /// <summary>
         /// Set true if translation of the particle should be induced by hydrodynamical forces.
@@ -335,7 +337,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Area of the current particle.
         /// </summary>
-        abstract public double Area_P { get; }
+        virtual public double Area_P() {
+            throw new NotImplementedException("");
+        }
 
         /// <summary>
         /// Necessary for active particles. Returns 0 for the non active boundary region and a number between 0 and 1 for the active region.
@@ -358,9 +362,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         public double Mass_P {
             get {
-                Aux.TestArithmeticException(Area_P, "particle area");
+                Aux.TestArithmeticException(Area_P(), "particle area");
                 Aux.TestArithmeticException(particleDensity, "particle density");
-                return Area_P * particleDensity;
+                return Area_P() * particleDensity;
             }
         }
 
@@ -397,6 +401,11 @@ namespace BoSSS.Application.FSI_Solver {
             if (spatialDim != 2 && spatialDim != 3)
                 throw new NotSupportedException("Unknown particle dimension: SpatialDim = " + spatialDim);
 
+            //for (int i = 0; i < 4; i++) {
+            //    Motion.position[i] = position[i];
+            //    Motion.translationalVelocity[i] = translationalVelocity[i];
+            //}
+            //Motion.CalculateParticlePosition(dt);
             int ClearAcceleartion = collisionTimestep != 0 ? 0 : 1;
             if (IncludeTranslation == true) {
                 for (int d = 0; d < spatialDim; d++) {
@@ -659,7 +668,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         private void CalculateGravitationalForce(ref double[] Forces, double fluidDensity) {
-            Forces[1] += (particleDensity - fluidDensity) * Area_P * GravityVertical;
+            Forces[1] += (particleDensity - fluidDensity) * Area_P() * GravityVertical;
         }
 
         private void ForceAddedDamping(ref double[] forces, double dt) {
@@ -814,6 +823,13 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="point"></param>
         /// <returns></returns>
         public abstract bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false);
+
+        /// <summary>
+        /// Gives a bool whether the particle contains a certain point or not
+        /// </summary>
+        /// <param name="point"></param>
+        /// <returns></returns>
+        public abstract bool particleInternalCell(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false);
 
         virtual public double[] GetLengthScales() {
             throw new NotImplementedException();

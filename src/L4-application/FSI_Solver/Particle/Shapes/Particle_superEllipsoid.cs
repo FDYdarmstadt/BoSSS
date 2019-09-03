@@ -63,12 +63,8 @@ namespace BoSSS.Application.FSI_Solver {
                 return (2 * length_P + 2 * thickness_P + 2 * Math.PI * thickness_P) / 2;
             }
         }
-
-        public override double Area_P {
-            get {
-                return 4 * length_P * thickness_P * (SpecialFunctions.Gamma(1 + 1 / superEllipsoidExponent)).Pow2() / SpecialFunctions.Gamma(1 + 2 / superEllipsoidExponent);
-            }
-
+        public override double Area_P() {
+            return 4 * length_P * thickness_P * (SpecialFunctions.Gamma(1 + 1 / superEllipsoidExponent)).Pow2() / SpecialFunctions.Gamma(1 + 2 / superEllipsoidExponent);
         }
 
         override public double MomentOfInertia_P {
@@ -102,6 +98,21 @@ namespace BoSSS.Application.FSI_Solver {
             double a = !WithoutTolerance ? length_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : length_P;
             double b = !WithoutTolerance ? thickness_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : thickness_P;
             double Superellipsoid = Math.Pow(((point[0] - position[0][0]) * Math.Cos(angle[0]) + (point[1] - position[0][1]) * Math.Sin(angle[0])) / a, superEllipsoidExponent) + (Math.Pow((-(point[0] - position[0][0]) * Math.Sin(angle[0]) + (point[1] - position[0][1]) * Math.Cos(angle[0])) / b,superEllipsoidExponent));
+            if (Superellipsoid < radiusTolerance)
+                return true;
+            else
+                return false;
+        }
+
+        public override bool particleInternalCell(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false) {
+            WithoutTolerance = false;
+            // only for rectangular cells
+            if (h_max == 0)
+                h_max = h_min;
+            double radiusTolerance = 1;
+            double a = !WithoutTolerance ? length_P - Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : length_P;
+            double b = !WithoutTolerance ? thickness_P - Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : thickness_P;
+            double Superellipsoid = Math.Pow(((point[0] - position[0][0]) * Math.Cos(angle[0]) + (point[1] - position[0][1]) * Math.Sin(angle[0])) / a, superEllipsoidExponent) + (Math.Pow((-(point[0] - position[0][0]) * Math.Sin(angle[0]) + (point[1] - position[0][1]) * Math.Cos(angle[0])) / b, superEllipsoidExponent));
             if (Superellipsoid < radiusTolerance)
                 return true;
             else

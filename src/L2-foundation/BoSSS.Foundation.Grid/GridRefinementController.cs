@@ -99,9 +99,9 @@ namespace BoSSS.Foundation.Grid {
             CellMask AllRelevantCells = CellMask.GetEmptyMask(currentGrid);
             if (CellsMaxRefineLevel.Count() > 0)
                 AllRelevantCells = CellsMaxRefineLevel[0].Item2;
-            for (int i = 1; i < CellsMaxRefineLevel.Count(); i++) {
-                AllRelevantCells.Union(CellsMaxRefineLevel[i].Item2);
-            }
+            //for (int i = 1; i < CellsMaxRefineLevel.Count(); i++) {
+            //    AllRelevantCells.Union(CellsMaxRefineLevel[i].Item2);
+            //}
 
             BitArray oK2Coarsen = GetCellsOk2Coarsen(currentGrid, AllRelevantCells, globalDesiredLevel, globalCellNeigbourship);
             int[][] coarseningClusters = FindCoarseningClusters(oK2Coarsen, currentGrid);
@@ -434,11 +434,11 @@ namespace BoSSS.Foundation.Grid {
                 }
             }
 
-            //if (cellsNotOK2Coarsen != null) {
-            //    foreach (int j in cellsNotOK2Coarsen.ItemEnum) {
-            //        oK2Coarsen[j] = false;
-            //    }
-            //}
+            if (cellsNotOK2Coarsen != null) {
+                foreach (int j in cellsNotOK2Coarsen.ItemEnum) {
+                    oK2Coarsen[j] = false;
+                }
+            }
 
             return oK2Coarsen;
         }
