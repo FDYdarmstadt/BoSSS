@@ -75,7 +75,7 @@
     <Compile Include="VoronoiMeshing\Mesh.cs" />
     <Compile Include="VoronoiMeshing\MIConvexHullMeshGenerator.cs" />
     <Compile Include="VoronoiMeshing\MeshingAlgorithm.cs" />
-    <Compile Include="VoronoiMeshing\PeriodicityEnforcer.cs" />
+    <Compile Include="VoronoiMeshing\BoundaryHandler.cs" />
     <Compile Include="VoronoiMeshing\TrackedVoronoiMesher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="VoronoiGrid2D.cs" />

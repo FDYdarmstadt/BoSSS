@@ -6,109 +6,143 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Foundation.Voronoi
 {
-    public class ArrayMap
+    public class Map
     {
-        int[] map;
+        protected IList<int> map;
 
-        public ArrayMap(int[] map)
+        public Map(IList<int> map)
         {
             this.map = map;
         }
 
-        public int this[int i] {
-            get { return map[i]; }
-            set { map[i] = value;}
+        public int Length {
+            get { return map.Count; }
+        }
+
+        public void SetMapping(int entry, int mapIndice)
+        {
+            map[mapIndice] = entry;
+        }
+
+        public int GetMapping( int mapIndice)
+        {
+            return map[mapIndice];
+        }
+
+        public T GetCorrespondingEntry<T>(int mapIndice, IList<T> list)
+        {
+            return list[map[mapIndice]];
+        }
+
+        public void SetCorrespondingEntry<T>(T entry, int mapIndice, IList<T> list)
+        {
+            list[map[mapIndice]] = entry;
+        }
+
+        public int Max()
+        {
+            int max = map[0];
+            for (int i = 1; i < map.Count; ++i)
+            {
+                if (map[i].CompareTo(max) > 0)
+                {
+                    max = map[i];
+                }
+            }
+            return max;
+        }
+
+        public int Min()
+        {
+            int min = map[0];
+            for (int i = 1; i < map.Count; ++i)
+            {
+                if (map[i].CompareTo(min) < 0)
+                {
+                    min = map[i];
+                }
+            }
+            return min;
         }
 
         public bool IsBijective()
         {
-            throw new NotImplementedException();
-            bool[] isPresent = new bool[map.Length];
+            HashSet<int> indices = new HashSet<int>();
             //Check if all links are unique
-            for (int i = 0; i < map.Length; ++i)
+            for (int i = 0; i < map.Count; ++i)
             {
-                if(isPresent[map[i]] == null)
+                if (!indices.Contains(map[i]))
                 {
-                    isPresent[map[i]] = true;
+                    indices.Add(map[i]);
                 }
                 else
                 {
                     return false;
-                }   
+                }
             }
             return true;
         }
 
-        public int MaxIndice()
+        public bool Combine()
         {
             throw new NotImplementedException();
-            return 2;
-        }
-    }
-
-    public class OneWayArrayMap
-    {
-        public ArrayConnection[] Map;
-
-        public int Length {
-            get {
-                return Map.Length;
-            }
-        }
-
-        public OneWayArrayMap() { }
-
-        public OneWayArrayMap(ArrayConnection[] map)
-        {
-            this.Map = map;
-        }
-
-        public ArrayConnection this[int j] {
-            get { return Map[j]; }
-            set { Map[j] = value; }
-        }
-
-        public static OneWayArrayMap CreateEmpty(Connection type, int length)
-        {
-            ArrayConnection[] map = new ArrayConnection[length];
-            for (int i = 0; i < length; ++i)
-            {
-                map[i] = new ArrayConnection
-                {
-                    Type = type,
-                    J = -1
-                };
-            }
-            return new OneWayArrayMap(map);
-        }
-
-        public static OneWayArrayMap Combine(OneWayArrayMap a, OneWayArrayMap b)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void AddReverse(OneWayArrayMap towardsThis)
-        {
-            for (int i = 0; i < towardsThis.Length; ++i)
-            {
-                ArrayConnection towardsConnection = towardsThis[i];
-                if (towardsConnection.Type == Connection.Remained)
-                {
-                    ArrayConnection connection;
-                    connection.J = i;
-                    connection.Type = Connection.Remained;
-                    Map[towardsConnection.J] = connection;
-                }
-            }
         }
     }
 
     public enum Connection { Created, Removed, Remained };
 
-    public struct ArrayConnection
+    public class ConnectionMap : Map
     {
-        public Connection Type;
+        IList<Connection> connections;
 
-        public int J;
+        public ConnectionMap(IList<Connection> connections, IList<int> map)
+            : base(map)
+        {
+            this.connections = connections;
+        }
+
+        public ConnectionMap(Connection connection, IList<int> map)
+            : base(map)
+        {
+            connections = new Connection[map.Count];
+            for(int i = 0; i < map.Count; ++i)
+            {
+                connections[i] = connection;
+            }
+        }
+
+        public static ConnectionMap CreateEmpty(Connection nodeConnection, int length)
+        {
+            Connection[] connections = new Connection[length];
+            for (int i = 0; i < length; ++i)
+            {
+                connections[i] = nodeConnection;
+            }
+            int[] map = new int[length];
+            return new ConnectionMap(connections, map);
+        }
+
+        public Connection GetConnection(int mapIndice)
+        {
+            return connections[mapIndice];
+        }
+
+        public void SetConnection(Connection entry, int mapIndice)
+        {
+            connections[mapIndice] = entry;
+        }
+
+        public void AddReverse(ConnectionMap towardsThis)
+        {
+            for (int i = 0; i < towardsThis.Length; ++i)
+            {
+                Connection towardsConnection = towardsThis.GetConnection(i);
+                if (towardsConnection == Connection.Remained)
+                {
+                    SetMapping(i, towardsThis.GetMapping(i));
+                    SetConnection(Connection.Remained, i);
+                }
+            }
+        }
     }
 }

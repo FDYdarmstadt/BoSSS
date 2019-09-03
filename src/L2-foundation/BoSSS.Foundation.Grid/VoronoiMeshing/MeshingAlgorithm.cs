@@ -17,7 +17,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         {
             public Vector[] BoundingBox;
             public Vector[] Boundary;
-            public ArrayMap PeriodicEdgeMapping = null;
+            public Map PeriodicEdgeMapping = null;
             public int NumberOfLloydIterations = 10;
             public int FirstCellNode_indice = 0;
         }
@@ -28,7 +28,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             
             IBoundaryEnumerator<Line> boundaryLines = Line.GetEnumerator(settings.Boundary);
             IntersectionMesh<T> mesh = null;
-            BoundaryHandler boundaryHandler = new BoundaryHandler(settings.Boundary, settings.PeriodicEdgeMapping);
+            BoundaryHandler boundaryHandler = new BoundaryHandler(
+                Line.ToLines(settings.Boundary), 
+                settings.PeriodicEdgeMapping);
 
             // Create Voronoi mesh
             // =================================

@@ -10,25 +10,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
     class Line
     {
-        public static Line[] ToLines(Vector[] polygon)
-        {
-            Line[] lines = new Line[polygon.Length];
-            Line line;
-            for (int i = 0; i < polygon.Length - 1; ++i)
-            {
-                line = new Line { start = new Vertex(), end = new Vertex() };
-                line.start.Position = polygon[i];
-                line.end.Position = polygon[i + 1];
-                lines[i] = line;
-            }
-            line = new Line { start = new Vertex(), end = new Vertex() };
-            line.start.Position = polygon[polygon.Length - 1];
-            line.end.Position = polygon[0];
-            lines[lines.Length - 1] = line;
-
-            return lines;
-        }
-
         public static IBoundaryEnumerator<Line> GetEnumerator(Vector[] polygon)
         {
             Line[] lines = ToLines(polygon);
@@ -37,10 +18,33 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return countTheLines;
         }
 
-        public Vertex start { get; set; }
-        public Vertex end { get; set; }
+        public Vertex Start { get; set; }
+        public Vertex End { get; set; }
 
-        public int Count { get; set; }
+        public double Length()
+        {
+            double length = (End.Position - Start.Position).Abs();
+            return length;
+        }
+
+        public static Line[] ToLines(Vector[] polygon)
+        {
+            Line[] lines = new Line[polygon.Length];
+            Line line;
+            for (int i = 0; i < polygon.Length - 1; ++i)
+            {
+                line = new Line { Start = new Vertex(), End = new Vertex() };
+                line.Start.Position = polygon[i];
+                line.End.Position = polygon[i + 1];
+                lines[i] = line;
+            }
+            line = new Line { Start = new Vertex(), End = new Vertex() };
+            line.Start.Position = polygon[polygon.Length - 1];
+            line.End.Position = polygon[0];
+            lines[lines.Length - 1] = line;
+
+            return lines;
+        }
     }
 
     class IntersectionMesh<T> : BoundaryMesh<T>, IIntersectableMesh<MeshCell<T>, Edge<T>, Line>
@@ -93,7 +97,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             {
                 Vector[] verts = Array.ConvertAll(cell.Vertices, item => (Vector)item);
                 //At this point, every cell is convex!
-                bool isInside = PolygonTesselation.PointInConvexPolygon(verts, (Vector)boundaryLine.start);
+                bool isInside = PolygonTesselation.PointInConvexPolygon(verts, (Vector)boundaryLine.Start);
                 if (isInside)
                 {
                     foundFirstCell = true;
@@ -120,8 +124,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             bool notParallel = PolygonClipping.ComputeIntersection(
                 edge.Start.Position,
                 edge.End.Position,
-                line.start.Position,
-                line.end.Position,
+                line.Start.Position,
+                line.End.Position,
                 out alpha,
                 out alpha2,
                 out vector);
@@ -162,9 +166,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 if (Math.Abs(alpha) <= accuracy)
                 {
                     double absRidge = (edge.Start.Position - edge.End.Position).L2Norm();
-                    double absLine = (edge.Start.Position - line.end.Position).L2Norm();
+                    double absLine = (edge.Start.Position - line.End.Position).L2Norm();
                     //Only when in same direction!
-                    double add = (edge.Start.Position - edge.End.Position + edge.Start.Position - line.end.Position).L2Norm();
+                    double add = (edge.Start.Position - edge.End.Position + edge.Start.Position - line.End.Position).L2Norm();
                     if (add < absLine + absRidge)
                     {
                         return false;
@@ -216,7 +220,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             //Add Vertices of lines
             for (int i = 1; i < verticesOfNewRidgeBoundary.Length - 1; ++i)
             {
-                verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 1 - i] = lines[i - 1].end;
+                verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 1 - i] = lines[i - 1].End;
                 int ID = AddVertex(verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 1 - i]);
             }
             //New Ridges
@@ -310,13 +314,13 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             Vertex[] verticesOfNewRidgeBoundary = new Vertex[lines.Count + 2];
             verticesOfNewRidgeBoundary[0] = firstCutEdge.End;
             verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 1] = Vertices[cell.IntersectionVertex];
-            verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 2] = lines[0].start;
-            int ID = AddVertex(lines[0].start);
+            verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 2] = lines[0].Start;
+            int ID = AddVertex(lines[0].Start);
 
             //Add Vertices of lines
             for (int i = 2; i < verticesOfNewRidgeBoundary.Length - 1; ++i)
             {
-                verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 1 - i] = lines[i - 1].end;
+                verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 1 - i] = lines[i - 1].End;
                 ID = AddVertex(verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 1 - i]);
             }
             //New Ridges
@@ -399,7 +403,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             bool IsBetween(Edge<T> a, Line b, Edge<T> c)
             {
                 Vector A1 = a.End.Position - a.Start.Position;
-                Vector C1 = b.end.Position - a.Start.Position;
+                Vector C1 = b.End.Position - a.Start.Position;
                 Vector B1 = c.End.Position - a.Start.Position;
 
                 double crossAB = A1.CrossProduct2D(B1);
@@ -500,7 +504,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             //Add Vertices of lines
             for (int i = 1; i < verticesOfNewEdgeBoundary.Length - 1; ++i)
             {
-                verticesOfNewEdgeBoundary[verticesOfNewEdgeBoundary.Length - 1 - i] = lines[i - 1].end;
+                verticesOfNewEdgeBoundary[verticesOfNewEdgeBoundary.Length - 1 - i] = lines[i - 1].End;
                 AddVertex(verticesOfNewEdgeBoundary[verticesOfNewEdgeBoundary.Length - 1 - i]);
             }
             //New Ridges

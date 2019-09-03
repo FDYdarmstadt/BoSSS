@@ -10,15 +10,20 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
     class BoundaryHandler
     {
-        bool boundaryHasPeriodicEdges; 
+        bool boundaryHasPeriodicEdges;
 
-        public BoundaryHandler(Vector[] boundary, ArrayMap periodicEdgeMapping)
+        Line[] boundary;
+
+        Map periodicEdgeMapping;
+
+        public BoundaryHandler(Line[] boundary, Map periodicEdgeMapping)
         {
-            
             if (periodicEdgeMapping != null)
             {
                 boundaryHasPeriodicEdges = true;
-                CheckIfValidInput(boundary, periodicEdgeMapping);
+                this.boundary = boundary;
+                this.periodicEdgeMapping = periodicEdgeMapping;
+                CheckIfValid();
             }
             else
             {
@@ -26,16 +31,38 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             }
         }
 
-        static void CheckIfValidInput(Vector[] boundary, ArrayMap periodicEdgeMapping)
+        void CheckIfValid()
         {
             if(!periodicEdgeMapping.IsBijective())
             {
                 throw new Exception();
             }
-            if(boundary.Length - 1 > periodicEdgeMapping.MaxIndice())
+            if(periodicEdgeMapping.Max() > boundary.Length - 1 || periodicEdgeMapping.Min() < 0)
             {
                 throw new Exception();
             }
+            if ( !PeriodicBoundariesAreSameSize())
+            {
+                throw new Exception();
+            }
+        }
+
+        bool PeriodicBoundariesAreSameSize()
+        {
+            for(int i = 0; i < periodicEdgeMapping.Length; ++i)
+            {
+                Line boundaryLineA = boundary[i];
+                Line boundaryLineB = periodicEdgeMapping.GetCorrespondingEntry(i, boundary);
+
+                double lengthA = boundaryLineA.Length();
+                double lengthB = boundaryLineB.Length();
+                
+                if( Math.Abs(lengthA - lengthB) > 1e-14 )
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         public IntersectionMesh<T> ImposePeriodicity<T>(IntersectionMesh<T> mesh, IList<T> nodeList) 
