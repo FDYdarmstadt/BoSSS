@@ -80,7 +80,7 @@ namespace BoSSS.Application.Rheology
             //C.WhichWall = "Wall_Cylinder";
 
             //Debugging and Solver Analysis
-            C.OperatorMatrixAnalysis = true;
+            C.OperatorMatrixAnalysis = false;
             C.SkipSolveAndEvaluateResidual = false;
             C.SetInitialConditions = true;
             C.SetInitialPressure = true;
@@ -240,7 +240,7 @@ namespace BoSSS.Application.Rheology
         /// <summary>
         /// Consistency Constitutive equation
         /// </summary>
-        static public RheologyControl ConsistencyConstitutive(string path = @"C:\AnnesBoSSSdb\ConsistencyConstitutive_withDiv", int degree = 1, int GridLevel = 5)
+        static public RheologyControl ConsistencyConstitutive(string path = @"C:\Users\kikker\AnnesBoSSSdb\ConsistencyConstitutive_withDiv", int degree = 1, int GridLevel = 5)
         {
 
 
@@ -481,7 +481,7 @@ namespace BoSSS.Application.Rheology
         /// <summary>
         /// Stagnation point flow (test of the wall BC for constitutive equations
         /// </summary>
-        static public RheologyControl Staupunkt(string path = @"C:\AnnesBoSSSdb\Staupunkt", int degree = 2, int GridLevel = 5)
+        static public RheologyControl Staupunkt(string path = @"C:\Users\kikker\AnnesBoSSSdb\Staupunkt", int degree = 2, int GridLevel = 5)
         {
 
 
@@ -673,7 +673,7 @@ namespace BoSSS.Application.Rheology
         /// <summary>
         /// Convergence of the Stokes system with LDG
         /// </summary>
-        static public RheologyControl ConvergenceStokesLDG(string path = @"C:\AnnesBoSSSdb\ConvergenceStokesLDG_Paper", int degree = 2, int GridLevel = 2)
+        static public RheologyControl ConvergenceStokesLDG(string path = @"C:\Users\kikker\AnnesBoSSSdb\ConvergenceStokesLDG_Paper", int degree = 2, int GridLevel = 5)
         {
             // Path wenn lokal gerechnet wird: C:\AnnesBoSSSdb\ConvergenceStokesLDG 
             // Path für lokal 2. Versuch ohne penalty in RB: C:\AnnesBoSSSdb\ConvergenceStokesLDG2exclBEpen
