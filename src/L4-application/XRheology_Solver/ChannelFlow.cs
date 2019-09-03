@@ -280,7 +280,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.ComputeEnergy = false;
 
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
-            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MaxSolverIterations = 50;

@@ -587,7 +587,7 @@ namespace BoSSS.Application.XRheology_Solver {
                     // solver 
                     this.Control.NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.NonLinearSolver.MinSolverIterations; //m_BDF_Timestepper.config_NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.Solver_MinIterations;
 
-                    if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverConfig.Code.NewtonGMRES) {
+                    if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.NewtonGMRES) {
                         m_BDF_Timestepper.XdgSolverFactory.Selfmade_precond =
                                             new Schwarz() {
                                                 m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
@@ -599,8 +599,6 @@ namespace BoSSS.Application.XRheology_Solver {
                     } else {
                         //m_BDF_Timestepper.Config_linearSolver = new DirectSolver() { WhichSolver = this.Control.LinearSolver };
                     }
-
-                    m_BDF_Timestepper.XdgSolverFactory.Update(this.Control.NonLinearSolver, this.Control.LinearSolver); //Changes made to configs need to be updated afterwards
 
                     //Console.WriteLine("noofpartsperprocess = {0}", this.CurrentSolution.Count / 10000);               
 
