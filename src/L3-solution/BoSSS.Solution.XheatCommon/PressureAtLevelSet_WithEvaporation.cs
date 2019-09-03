@@ -18,49 +18,53 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
+using System.Diagnostics;
 using BoSSS.Solution.NSECommon;
+using ilPSP.Utils;
+using BoSSS.Platform;
+using ilPSP;
+using BoSSS.Foundation;
+using System.Collections;
 
-namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
-    
+namespace BoSSS.Solution.XheatCommon {
+
     /// <summary>
     /// 
     /// </summary>
-    public class PressureFormAtLevelSet : ILevelSetForm {
+    public class GeneralizedPressureFormAtLevelSet : ILevelSetForm {
 
         LevelSetTracker m_LsTrk;
 
-        public PressureFormAtLevelSet(int _d, int _D, LevelSetTracker LsTrk, bool _weighted = false, double _wA = 1.0, double _wB = 1.0) {
+        public GeneralizedPressureFormAtLevelSet(int _d, LevelSetTracker LsTrk, double _pSat, double _hVapA) {
             m_d = _d;
-            m_D = _D;
             m_LsTrk = LsTrk;
-            if (_d >= _D)
-                throw new ArgumentException();
 
-            weighted = _weighted;
-            wA = _wA;
-            wB = _wB;
+            this.pSat = _pSat;
+            this.hVapA = _hVapA;
         }
 
         int m_d;
-        int m_D;
 
-        bool weighted;
-        double wA;
-        double wB;
+        double pSat;
+        double hVapA;
+
 
         public double LevelSetForm(ref CommonParamsLs inp, double[] pA, double[] pB, double[,] Grad_pA, double[,] Grad_pB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-            if (!weighted) {
-                return -(vB - vA) * inp.n[m_d] * 0.5 * (pB[0] + pA[0]);
+            double acc = 0.0;
+            if (hVapA > 0.0) {
+                acc += (0 - vA) * inp.n[m_d] * pSat;
+                acc += (vB - 0) * inp.n[m_d] * pB[0];
             } else {
-                return -(vB - vA) * inp.n[m_d] * (wA * pB[0] + wB * pA[0]) / (wA + wB);
+                acc += (0 - vA) * inp.n[m_d] * pA[0];
+                acc += (vB - 0) * inp.n[m_d] * pSat;
             }
-            
+            //return (vB - vA) * inp.n[m_d] * pSat;
+            return -acc;
         }
 
-       
+
 
         public IList<string> ArgumentOrdering {
             get {
@@ -82,7 +86,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
 
         public TermActivationFlags LevelSetTerms {
             get {
-                return TermActivationFlags.UxV;
+                return TermActivationFlags.UxV | TermActivationFlags.V;
             }
         }
 
@@ -90,6 +94,5 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
             get { return null; }
         }
     }
-
 
 }

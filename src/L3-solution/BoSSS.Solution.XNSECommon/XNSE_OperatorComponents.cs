@@ -620,6 +620,11 @@ namespace BoSSS.Solution.XNSECommon {
         /// </summary>
         bool isMatInt { get; }
 
+        /// <summary>
+        /// true if the interface pressure is prescribed i.e. for evaporation
+        /// </summary>
+        bool isPInterfaceSet { get; }
+
     }
 
 }

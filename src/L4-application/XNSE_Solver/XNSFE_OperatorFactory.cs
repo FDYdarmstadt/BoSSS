@@ -51,6 +51,7 @@ namespace BoSSS.Application.XNSE_Solver {
         string[] Params;
 
         int HMFDegree;
+        XNSFE_OperatorConfiguration config;
 
         /// <summary>
         /// ctor for the operator factory, where the equation compnents are set
@@ -60,8 +61,9 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="_HMFdegree"></param>
         /// <param name="BcMap"></param>
         /// <param name="degU"></param>
-        public XNSFE_OperatorFactory(XNSFE_OperatorConfiguration config, LevelSetTracker _LsTrk, int _HMFdegree, IncompressibleMultiphaseBoundaryCondMap BcMap, int degU) {
+        public XNSFE_OperatorFactory(XNSFE_OperatorConfiguration _config, LevelSetTracker _LsTrk, int _HMFdegree, IncompressibleMultiphaseBoundaryCondMap BcMap, int degU) {
 
+            this.config = _config;
             this.LsTrk = _LsTrk;
             this.D = _LsTrk.GridDat.SpatialDimension;
 
@@ -375,6 +377,9 @@ namespace BoSSS.Application.XNSE_Solver {
                     mtxBuilder.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
                     mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
                     mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
+                    if (config.prescribedMassflux != null) {
+                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("prescribedMassflux", config.prescribedMassflux(time));
+                    }
                 }
 
                 if (this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
@@ -396,6 +401,9 @@ namespace BoSSS.Application.XNSE_Solver {
                     eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
                     eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
                     eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
+                    if (config.prescribedMassflux != null) {
+                        eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("prescribedMassflux", config.prescribedMassflux(time));
+                    }
                 }
 
                 if (this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
