@@ -368,7 +368,7 @@ namespace BoSSS.Application.Rheology {
         protected override void CreateFields() {
             base.CreateFields();
             base.LsTrk = this.LevSetTrk;
-            if(Control.CutCellQuadratureType != base.LsTrk.CutCellQuadratureType)
+            if (Control.CutCellQuadratureType != base.LsTrk.CutCellQuadratureType)
                 throw new ApplicationException();
             if (Control.UsePerssonSensor == true) {
                 perssonsensor = new PerssonSensor(StressXX);
@@ -391,7 +391,7 @@ namespace BoSSS.Application.Rheology {
         }
 
         #endregion
- 
+
         /// <summary>
         /// Initialize Calculation, Create Equations
         /// </summary>
@@ -522,8 +522,7 @@ namespace BoSSS.Application.Rheology {
                     XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Viscosity(2, BcMap, this.Control.beta, this.Control.Penalty1));
 
                     // artificial diffusion part
-                    if (this.Control.UseArtificialDiffusion == true)
-                    {
+                    if (this.Control.UseArtificialDiffusion == true) {
                         XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Diffusion(this.StressXX.Basis.Degree, Grid.SpatialDimension, ((GridData)GridData).Cells.cj, VariableNames.StressXX));
                         XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Diffusion(this.StressXY.Basis.Degree, Grid.SpatialDimension, ((GridData)GridData).Cells.cj, VariableNames.StressXY));
                         XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Diffusion(this.StressYY.Basis.Degree, Grid.SpatialDimension, ((GridData)GridData).Cells.cj, VariableNames.StressYY));
@@ -592,8 +591,7 @@ namespace BoSSS.Application.Rheology {
         /// <param name="currentSol"></param>
         /// <param name="currentRes"></param>
         /// <param name="Mgop"></param>
-        protected void CoupledIterationCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop)
-        {
+        protected void CoupledIterationCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
 
             var R = new CoordinateVector(this.CurrentSolution.Mapping.Fields.ToArray());
             Mgop.TransformRhsFrom(R, currentRes);
@@ -606,16 +604,14 @@ namespace BoSSS.Application.Rheology {
                 double L2Res = R.Mapping.Fields[i].L2Norm();
                 if (i < 3) {
                     VelocityL2Res += L2Res;
-                }
-                else {
+                } else {
                     StressL2Res += L2Res;
                 }
             }
 
             if (solveVelocity && VelocityL2Res < this.VelocitySolver_ConvergenceCriterion) {
                 this.solveVelocity = false;
-            }
-            else if (!solveVelocity && StressL2Res < this.StressSolver_ConvergenceCriterion) {
+            } else if (!solveVelocity && StressL2Res < this.StressSolver_ConvergenceCriterion) {
                 this.solveVelocity = true;
             }
 
@@ -643,12 +639,10 @@ namespace BoSSS.Application.Rheology {
             OpAffine.AccV(1.0, OutputAffine);
 
             // Gravity Source (default should be zero!)
-            if (Control.GravitySource == true)
-            {
+            if (Control.GravitySource == true) {
                 bool test = false;
 
-                if (this.Control.GravityX != null && this.Control.GravityY != null)
-                {
+                if (this.Control.GravityX != null && this.Control.GravityY != null) {
                     Gravity[0].ProjectField(this.Control.GravityX.Vectorize(0.0));
                     Gravity[1].ProjectField(this.Control.GravityY.Vectorize(0.0));
                     int[] MomEqIdx = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 0, 1);
@@ -680,8 +674,7 @@ namespace BoSSS.Application.Rheology {
                 //    test = true;
                 //}
 
-                if (!test)
-                {
+                if (!test) {
                     throw new ApplicationException("Gravity is true, but no values set!");
                 }
             }
@@ -746,10 +739,10 @@ namespace BoSSS.Application.Rheology {
 
                     for (int i = 0; i <= NoIncrementTimestep; i++) {
 
-                        if(Control.UseArtificialDiffusion == true){
+                        if (Control.UseArtificialDiffusion == true) {
 
-                        
-                        artificialMaxViscosity = 1.0;
+
+                            artificialMaxViscosity = 1.0;
 
                             for (int j = 0; j < 3; j++) {
 
@@ -812,7 +805,7 @@ namespace BoSSS.Application.Rheology {
                         }
 
                     }
-                } else { 
+                } else {
 
                     currentWeissenberg = Control.Weissenberg;
 
@@ -913,10 +906,10 @@ namespace BoSSS.Application.Rheology {
         void ParameterUpdate(IEnumerable<DGField> CurrentState, IEnumerable<DGField> ParameterVar) {
 
             var U0 = new VectorField<SinglePhaseField>(CurrentState.Take(D).Select(F => (SinglePhaseField)F).ToArray());
-            var Stress0 = new VectorField<SinglePhaseField>(CurrentState.Skip(D+1).Take(3).Select(F => (SinglePhaseField)F).ToArray());
+            var Stress0 = new VectorField<SinglePhaseField>(CurrentState.Skip(D + 1).Take(3).Select(F => (SinglePhaseField)F).ToArray());
 
             if (this.U0MeanRequired) {
-                
+
                 SinglePhaseField[] __U0mean = ParameterVar.Skip(D).Take(D).Select(f => f as SinglePhaseField).ToArray();
                 VectorField<SinglePhaseField> U0mean = new VectorField<SinglePhaseField>(__U0mean);
 
@@ -930,8 +923,8 @@ namespace BoSSS.Application.Rheology {
             }
 
             if (this.Control.SetParamsAnalyticalSol == false) {
-                SinglePhaseField[] __VelocityXGradient = ParameterVar.Skip(2*D).Take(D).Select(f => f as SinglePhaseField).ToArray();
-                SinglePhaseField[] __VelocityYGradient = ParameterVar.Skip(3*D).Take(D).Select(f => f as SinglePhaseField).ToArray();
+                SinglePhaseField[] __VelocityXGradient = ParameterVar.Skip(2 * D).Take(D).Select(f => f as SinglePhaseField).ToArray();
+                SinglePhaseField[] __VelocityYGradient = ParameterVar.Skip(3 * D).Take(D).Select(f => f as SinglePhaseField).ToArray();
                 Debug.Assert(ArrayTools.AreEqual(__VelocityXGradient, VelocityXGradient.ToArray(), (fa, fb) => object.ReferenceEquals(fa, fb)));
                 Debug.Assert(ArrayTools.AreEqual(__VelocityYGradient, VelocityYGradient.ToArray(), (fa, fb) => object.ReferenceEquals(fa, fb)));
 
@@ -959,12 +952,12 @@ namespace BoSSS.Application.Rheology {
 
             D = this.GridData.SpatialDimension;
             var U0 = new VectorField<SinglePhaseField>(CurrentState.Take(D).Select(F => (SinglePhaseField)F).ToArray());
-            var Stress0 = new VectorField<SinglePhaseField>(CurrentState.Skip(D+1).Take(3).Select(F => (SinglePhaseField)F).ToArray());
+            var Stress0 = new VectorField<SinglePhaseField>(CurrentState.Skip(D + 1).Take(3).Select(F => (SinglePhaseField)F).ToArray());
 
             if (U0.Count != D)
                 throw new ArgumentException("Spatial dimesion and number of velocity parameter components does not match!");
 
-            if (Stress0.Count != D+1)
+            if (Stress0.Count != D + 1)
                 throw new ArgumentException("Spatial dimesion and number of stress parameter components does not match!");
 
 
@@ -975,7 +968,7 @@ namespace BoSSS.Application.Rheology {
                 Basis U0meanBasis = new Basis(GridData, 0);
                 VectorField<SinglePhaseField> U0mean = new VectorField<SinglePhaseField>(D, U0meanBasis, "U0mean_", SinglePhaseField.Factory);
                 U0mean.Clear();
-                                
+
                 U0_U0mean = ArrayTools.Cat<SinglePhaseField>(U0, U0mean);
             } else {
                 U0_U0mean = new SinglePhaseField[2 * D];
@@ -1122,7 +1115,7 @@ namespace BoSSS.Application.Rheology {
                 myFields = ArrayTools.Cat<DGField>(myFields, artificalViscosity);
             }
 
-            Tecplot.PlotFields(myFields, "Rheology-" + timestepNo.ToString(), physTime, superSampling); 
+            Tecplot.PlotFields(myFields, "Rheology-" + timestepNo.ToString(), physTime, superSampling);
         }
 
 
@@ -1143,7 +1136,7 @@ namespace BoSSS.Application.Rheology {
                 myFields = ArrayTools.Cat<DGField>(myFields, artificalViscosity);
             }
 
-            Tecplot.PlotFields( myFields, "Rheology-" + iterIndex.ToString(), 0.0, 2); 
+            Tecplot.PlotFields(myFields, "Rheology-" + iterIndex.ToString(), 0.0, 2);
         }
 
         /// <summary>
@@ -1209,7 +1202,7 @@ namespace BoSSS.Application.Rheology {
         /// <param name="U0"></param>
         /// <param name="U0mean"></param>
         private void ComputeAverageU(VectorField<SinglePhaseField> U0, VectorField<SinglePhaseField> U0mean) {
-            using(FuncTrace ft = new FuncTrace()) {
+            using (FuncTrace ft = new FuncTrace()) {
                 var CC = this.LsTrk.Regions.GetCutCellMask();
                 int D = this.LsTrk.GridDat.SpatialDimension;
                 double minvol = Math.Pow(this.LsTrk.GridDat.Cells.h_minGlobal, D);
@@ -1217,7 +1210,7 @@ namespace BoSSS.Application.Rheology {
                 int QuadDegree = this.HMForder;
 
                 var qh = LsTrk.GetXDGSpaceMetrics(this.FluidSpecies, QuadDegree, 1).XQuadSchemeHelper;
-                foreach(var Spc in this.FluidSpecies) { // loop over species...
+                foreach (var Spc in this.FluidSpecies) { // loop over species...
                     //var Spc = this.LsTrk.GetSpeciesId("B"); {
                     // shadow fields
                     var U0_Spc = U0.ToArray();
@@ -1225,7 +1218,7 @@ namespace BoSSS.Application.Rheology {
 
 
                     // normal cells:
-                    for(int d = 0; d < D; d++) {
+                    for (int d = 0; d < D; d++) {
                         U0mean_Spc[d].AccLaidBack(1.0, U0_Spc[d], this.LsTrk.Regions.GetSpeciesMask(Spc));
                     }
 
@@ -1239,21 +1232,21 @@ namespace BoSSS.Application.Rheology {
                         rule,
                         delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
                             EvalResult.Clear();
-                            for(int d = 0; d < D; d++)
+                            for (int d = 0; d < D; d++)
                                 U0_Spc[d].Evaluate(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, d));
                             var Vol = EvalResult.ExtractSubArrayShallow(-1, -1, D);
                             Vol.SetAll(1.0);
                         },
                         delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                            for(int i = 0; i < Length; i++) {
+                            for (int i = 0; i < Length; i++) {
                                 int jCell = i + i0;
 
                                 double Volume = ResultsOfIntegration[i, D];
-                                if(Math.Abs(Volume) < minvol * 1.0e-12) {
+                                if (Math.Abs(Volume) < minvol * 1.0e-12) {
                                     // keep current value
                                     // since the volume of species 'Spc' in cell 'jCell' is 0.0, the value in this cell should have no effect
                                 } else {
-                                    for(int d = 0; d < D; d++) {
+                                    for (int d = 0; d < D; d++) {
                                         double IntVal = ResultsOfIntegration[i, d];
                                         U0mean_Spc[d].SetMeanValue(jCell, IntVal / Volume);
                                     }
@@ -1307,7 +1300,7 @@ namespace BoSSS.Application.Rheology {
 
                 for (int d = 0; d < D; d++) {
                     base.QueryHandler.ValueQuery("L2err_" + VariableNames.Velocity_d(d), L2Error[d], true);
-                    Console.WriteLine("L2err " + VariableNames.Velocity_d(d) + " is " + L2Error[d]);                    
+                    Console.WriteLine("L2err " + VariableNames.Velocity_d(d) + " is " + L2Error[d]);
                 }
             }
 
@@ -1318,7 +1311,7 @@ namespace BoSSS.Application.Rheology {
 
                 double L2Error = 0;
 
-                L2Error = this.Pressure.L2Error(this.Control.ExSol_Pressure.Vectorize(0.0), order-1);
+                L2Error = this.Pressure.L2Error(this.Control.ExSol_Pressure.Vectorize(0.0), order - 1);
                 base.QueryHandler.ValueQuery("L2err_" + VariableNames.Pressure, L2Error, true);
                 Console.WriteLine("L2err " + VariableNames.Pressure + " is " + L2Error);
             }
@@ -1363,7 +1356,7 @@ namespace BoSSS.Application.Rheology {
         /// <summary>
         /// refinement indicator
         /// </summary>
-        int LevelIndicator(int j, int CurrentLevel){
+        int LevelIndicator(int j, int CurrentLevel) {
 
             if (this.Control.UsePerssonSensor) {
 
@@ -1379,7 +1372,7 @@ namespace BoSSS.Application.Rheology {
 
                     DesiredLevel_j = DesiredLevel_j + 1;
 
-                } else if(maxVal < lowerbound && DesiredLevel_j > 0) {
+                } else if (maxVal < lowerbound && DesiredLevel_j > 0) {
                     DesiredLevel_j = DesiredLevel_j - 1;
                 }
 

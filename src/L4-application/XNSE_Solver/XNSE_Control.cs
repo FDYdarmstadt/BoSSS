@@ -55,11 +55,11 @@ namespace BoSSS.Application.XNSE_Solver {
             base.LinearSolver.MaxSolverIterations = 2000; //Solver_MaxIterations
             base.LinearSolver.MinSolverIterations = 4; //Solver_MinIterations
             base.LinearSolver.ConvergenceCriterion = 1.0e-10; //Solver_ConvergenceCriterion
-            base.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps; //LinearSolver
+            base.LinearSolver.SolverCode = LinearSolverCode.classic_mumps; //LinearSolver
             base.NonLinearSolver.MaxSolverIterations = 2000; //Solver_MaxIterations
             base.NonLinearSolver.MinSolverIterations = 4; //Solver_MinIterations
             base.NonLinearSolver.ConvergenceCriterion = 1.0e-10; //Solver_ConvergenceCriterion
-            base.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Picard; //NonLinearSolver
+            base.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard; //NonLinearSolver
         }
 
         /// <summary>
@@ -495,12 +495,12 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Control Options for ReInit
         /// </summary>
-        internal EllipticReInitAlgoControl ReInitControl = new EllipticReInitAlgoControl();
+        public EllipticReInitAlgoControl ReInitControl = new EllipticReInitAlgoControl();
 
         /// <summary>
         /// Control Options for ExtVel
         /// </summary>
-        internal EllipticExtVelAlgoControl EllipticExtVelAlgoControl = new EllipticExtVelAlgoControl();
+        public EllipticExtVelAlgoControl EllipticExtVelAlgoControl = new EllipticExtVelAlgoControl();
 
 
 

@@ -1,0 +1,97 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{02864872-FF49-4BD2-96FC-9769AC268B5A}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>BoSSS.Solution.RheologyCommon</RootNamespace>
+    <AssemblyName>BoSSS.Solution.RheologyCommon</AssemblyName>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ArtificialViscosity.cs" />
+    <Compile Include="Constitutive_OperatorComponents.cs" />
+    <Compile Include="DiffusionInBulk.cs" />
+    <Compile Include="ObjectiveInBulk_Tparam.cs" />
+    <Compile Include="ViscosityInBulk.cs" />
+    <Compile Include="ObjectiveInBulk.cs" />
+    <Compile Include="ConvectiveInBulk.cs" />
+    <Compile Include="IdentityInBulk.cs" />
+    <Compile Include="ConstitutiveEqns_Viscosity.cs" />
+    <Compile Include="ConstitutiveEqns_Objective_Tparam.cs" />
+    <Compile Include="ConstitutiveEqns_Objective.cs" />
+    <Compile Include="ConstitutiveEqns_Identity.cs" />
+    <Compile Include="ConstitutiveEqns_Diffusion.cs" />
+    <Compile Include="ConstitutiveEqns_CellWiseForm.cs" />
+    <Compile Include="PerssonSensor.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers\ilPSP.LinSolvers.csproj">
+      <Project>{45eff2bd-0bcc-4aea-9e87-7d86d6423b0c}</Project>
+      <Name>ilPSP.LinSolvers</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
+      <Project>{8e6d8f23-623f-4204-b4ab-a088c0cd83aa}</Project>
+      <Name>ilPSP</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj">
+      <Project>{b7d5f7c7-ea9f-4506-ab69-c3cd2aa8c938}</Project>
+      <Name>BoSSS.Platform</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.XDG\BoSSS.Foundation.XDG.csproj">
+      <Project>{9a8cdc1f-64f7-441e-849d-66f2c56600f2}</Project>
+      <Name>BoSSS.Foundation.XDG</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
+      <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
+      <Name>BoSSS.Foundation</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj">
+      <Project>{e56b9ce4-14dc-4256-a337-46e5d298b722}</Project>
+      <Name>BoSSS.Solution.NSECommon</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj">
+      <Project>{0d8f577e-316d-4362-816b-9f610c5eb4a5}</Project>
+      <Name>BoSSS.Solution.XNSECommon</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BoSSS.Solution\BoSSS.Solution.csproj">
+      <Project>{df7f5abd-e606-41cd-beef-31a95d136dea}</Project>
+      <Name>BoSSS.Solution</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

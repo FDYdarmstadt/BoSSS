@@ -177,6 +177,37 @@ namespace BoSSS.Solution.NSECommon {
                 throw new NotSupportedException("unsupported spatial dimension: D = " + D + ".");
         }
 
+        /// <summary>
+        /// xx - component constitutive equation for viscoelastic extra stress
+        /// </summary>
+        public const string ConstitutiveXX = "ConstitutiveXX";
+
+        /// <summary>
+        /// xy - component constitutive equation for viscoelastic extra stress
+        /// </summary>
+        public const string ConstitutiveXY = "ConstitutiveXY";
+
+        /// <summary>
+        /// yy - component constitutive equation for viscoelastic extra stress
+        /// </summary>
+        public const string ConstitutiveYY = "ConstitutiveYY";
+
+
+        /// <summary>
+        /// vector of the auxiliary heat flux
+        /// </summary>
+        /// <param name="D">
+        /// spatial dimension
+        /// </param>
+        public static string[] Constitutive(int D)
+        {
+            if (D == 2)
+                return new string[] { ConstitutiveXX, ConstitutiveXY, ConstitutiveYY };
+            else if (D == 3)
+                throw new NotSupportedException("unsupported spatial dimension: D = " + D + ". 3D-case not implemented yet!");
+            else
+                throw new NotSupportedException("unsupported spatial dimension: D = " + D + ".");
+        }
     }
 
     
