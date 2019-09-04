@@ -1412,7 +1412,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 //var oldCCM = this.UpdateCutCellMetrics();
 
                 // evolve the level set
-                if (Config_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled)
+                if (Config_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled && !this.coupledOperator)
                 {
                     m_LsTrk.IncreaseHistoryLength(1);
                     m_LsTrk.PushStacks();
