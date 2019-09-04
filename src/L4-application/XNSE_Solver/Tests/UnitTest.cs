@@ -330,7 +330,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.LinearSolver.ConvergenceCriterion = 1e-9;
             //C.Solver_ConvergenceCriterion = 1e-9;
 
-            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
 
             // return
             // ======

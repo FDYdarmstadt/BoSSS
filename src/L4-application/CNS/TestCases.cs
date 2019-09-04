@@ -1386,7 +1386,7 @@ namespace CNS {
 
             // Lichtenberg
             //string dbPath = @"/home/yp19ysog/bosss_db_paper_ibmdmr2";
-            //string dbPath = @"/work/scratch/yp19ysog/bosss_db_performance2";
+            //string dbPath = @"/work/scratch/yp19ysog/bosss_db_performance3";
             //string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr_run3_test";
             //string dbPath = @"C:\bosss_db_paper_ibmdmr_scratch_run3_test";
             //string dbPath = @"/work/scratch/jw52xeqa/DB_Cube";
@@ -1395,7 +1395,7 @@ namespace CNS {
 
             CNSControl c = DoubleMachReflection(dbPath, savePeriod, dgDegree, xMax, yMax, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, endTime, restart, cores);
 
-            c.ProjectName = "dmr_cube_run5";
+            c.ProjectName = "dmr_serialisation_debugging";
             c.NoOfTimesteps = timeSteps;
 
             return c;

@@ -1412,7 +1412,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 //var oldCCM = this.UpdateCutCellMetrics();
 
                 // evolve the level set
-                if (Config_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled)
+                if (Config_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled && !this.coupledOperator)
                 {
                     m_LsTrk.IncreaseHistoryLength(1);
                     m_LsTrk.PushStacks();
@@ -1496,8 +1496,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                         System, MaMa,
                         this.Config_MultigridOperator);
 
-                    //System.SaveToTextFileSparse("MatrixNOsplitting.txt");
-                    //RHS.SaveToTextFile("rhsNOsplitting.txt ");
+                    System.SaveToTextFileSparse("MatrixNOsplitting.txt");
+                    RHS.SaveToTextFile("rhsNOsplitting.txt ");
 
                     using (var tr = new FuncTrace()) {
                         // init linear solver

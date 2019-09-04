@@ -138,9 +138,9 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="args"></param>
         static void Main(string[] args) {
             //BoSSS.Application.SipPoisson.Tests.TestProgram.Init();
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse);
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverCode.exp_softpcg_schwarz_directcoarse);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.Cleanup();
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverConfig.Code.exp_softpcg_schwarz);
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverCode.exp_softpcg_schwarz);
             //Assert.AreEqual(1, 2, "Remove Me!!");
 
 
@@ -700,12 +700,12 @@ namespace BoSSS.Application.SipPoisson {
                 bool converged;
                 int NoOfIterations;
 
-                LinearSolverConfig.Code solvercodes = this.Control.LinearSolver.SolverCode;
+                LinearSolverCode solvercodes = this.Control.LinearSolver.SolverCode;
                 switch (solvercodes) {
 
-                    case LinearSolverConfig.Code.classic_cg:
-                    case LinearSolverConfig.Code.classic_mumps:
-                    case LinearSolverConfig.Code.classic_pardiso:
+                    case LinearSolverCode.classic_cg:
+                    case LinearSolverCode.classic_mumps:
+                    case LinearSolverCode.classic_pardiso:
                         ClassicSolve(out mintime, out maxtime, out converged, out NoOfIterations);
                         break;
 
@@ -784,21 +784,21 @@ namespace BoSSS.Application.SipPoisson {
                 // create sparse solver
                 // --------------------
                 ISparseSolver ipSolver;
-                LinearSolverConfig.Code solvercodes = this.Control.LinearSolver.SolverCode;
+                LinearSolverCode solvercodes = this.Control.LinearSolver.SolverCode;
 
                 switch (solvercodes) {
-                    case LinearSolverConfig.Code.classic_pardiso:
+                    case LinearSolverCode.classic_pardiso:
                         ipSolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver() {
                             CacheFactorization = true,
                             UseDoublePrecision = true
                         };
                         break;
 
-                    case LinearSolverConfig.Code.classic_mumps:
+                    case LinearSolverCode.classic_mumps:
                         ipSolver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
                         break;
 
-                    case LinearSolverConfig.Code.classic_cg:
+                    case LinearSolverCode.classic_cg:
                         ipSolver = new ilPSP.LinSolvers.monkey.CG() {
                             MaxIterations = 1000000,
                             Tolerance = 1.0e-10,
