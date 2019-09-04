@@ -399,7 +399,7 @@ namespace BoSSS.Application.IBM_Solver {
             // Physical values
             C.particleRadius = 0.1;
             C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.mu_A = 0.002 / 1;
+            C.PhysicalParameters.mu_A = 0.0001 / 1;
 
             // Boundary conditions
             C.AddBoundaryValue("Velocity_inlet", "VelocityX", (X, t) => 100 - 400 * (X[2] * X[2]) - 400 * (X[1] * X[1]));
