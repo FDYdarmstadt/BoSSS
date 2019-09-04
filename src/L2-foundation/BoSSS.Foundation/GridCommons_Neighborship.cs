@@ -118,7 +118,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int Jglob = this.CellPartitioning.TotalLength;
                 int j0Bc = this.BcCellPartitioning.i0;
 
-                System.IO.StreamWriter sw = new System.IO.StreamWriter("proc_" + this.MyRank + ".txt", append: true);
+                System.IO.StreamWriter sw = new System.IO.StreamWriter("proc_" + this.MyRank + ".txt", append: false);
                 sw.WriteLine("Entering stupid function....");
                 SerialisationMessenger.PoorManDebugger = sw;
 

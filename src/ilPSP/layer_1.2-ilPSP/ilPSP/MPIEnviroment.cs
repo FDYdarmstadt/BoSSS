@@ -49,6 +49,7 @@ namespace ilPSP {
             m_mpi_comm = csMPI.Raw._COMM.WORLD;
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out m_MPISize);
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out m_MPI_Rank);
+            Console.WriteLine("First tests on MPI...");
 
             //if (m_MPI_Rank == 1)
             //    Debugger.Break();

@@ -2256,6 +2256,16 @@ namespace ilPSP.LinSolvers {
         }
 
         /// <summary>
+        /// Number of Bytes used
+        /// </summary>
+        public long UsedMemory {
+            get {
+                GetMemoryInfo(out long Allocated, out long Used);
+                return Used;
+            }
+        }
+
+        /// <summary>
         /// Computes the amount of memory allocated resp. used by this matrix.
         /// </summary>
         public void GetMemoryInfo(out long Allocated, out long Used) {
@@ -2287,8 +2297,8 @@ namespace ilPSP.LinSolvers {
                         
                         int NoOfSblk_rows = Block.InMembnk.GetLength(0);
                         int NoOfSblk_cols = Block.InMembnk.GetLength(1);
-                        int RowBlockType = _RowPartitioning.GetBlockType(jBlockGlb);
-                        int ColBlockType = _ColPartitioning.GetBlockType(iBlockGlb);
+                        int RowBlockType = _RowPartitioning.GetBlockType(iBlockGlb);
+                        int ColBlockType = _ColPartitioning.GetBlockType(jBlockGlb);
 
 
                         int[] RowSblkLen = _RowPartitioning.GetSubblkLen(RowBlockType);
@@ -5547,8 +5557,8 @@ namespace ilPSP.LinSolvers {
 
                                 int NoOfSblk_rows = Block.InMembnk.GetLength(0);
                                 int NoOfSblk_cols = Block.InMembnk.GetLength(1);
-                                int RowBlockType = _RowPartitioning.GetBlockType(jBlockGlb);
-                                int ColBlockType = _ColPartitioning.GetBlockType(iBlockGlb);
+                                int RowBlockType = _RowPartitioning.GetBlockType(iBlockGlb);
+                                int ColBlockType = _ColPartitioning.GetBlockType(jBlockGlb);
                                 int[] RowSblk_i0 = _RowPartitioning.GetSubblk_i0(RowBlockType);
                                 int[] RowSblkLen = _RowPartitioning.GetSubblkLen(RowBlockType);
                                 Debug.Assert(RowSblk_i0.Length == NoOfSblk_rows);

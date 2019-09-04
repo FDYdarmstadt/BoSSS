@@ -466,7 +466,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// Checks whether the enumeration has any entry ony any process.
         /// </summary>
         /// <param name="enumeration">
-        /// The eneumeration to be checked.
+        /// The enumeration to be checked.
         /// </param>
         private bool GetMPIGlobalIsNotNullOrEmpty(IEnumerable<int> enumeration) {
             int[] sendTestingVariable = new int[1];

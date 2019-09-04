@@ -1158,7 +1158,7 @@ namespace CNS {
             c.maxNumOfSubSteps = maxNumOfSubSteps;
             c.FluxCorrection = false;
 
-            // Dynamic load balacing
+            // Dynamic load balancing
             c.GridPartType = GridPartType.METIS;
             c.DynamicLoadBalancing_On = false;
             //c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
@@ -1256,24 +1256,28 @@ namespace CNS {
                     grid.EdgeTagNames.Add(2, "SupersonicOutlet");
                     grid.EdgeTagNames.Add(3, "AdiabaticSlipWall");
 
-                    grid.DefineEdgeTags(delegate (double[] X) {
-                        if (Math.Abs(X[1]) < 1e-14) {   // bottom
-                            if (X[0] < xWall) {         // bottom left
+                    for (int iii = 0; iii < 1; iii++) {
+                        Console.WriteLine("Setting edge tags (" + iii + ")...");
+                        grid.DefineEdgeTags(delegate (double[] X) {
+                            if (Math.Abs(X[1]) < 1e-14) {   // bottom
+                                if (X[0] < xWall) {         // bottom left
+                                    return 1;
+                                } else {                    // bottom right
+                                    return 3;
+                                }
+                            } else if (Math.Abs(X[1] - (yMax - yMin)) < 1e-14) {    // top
                                 return 1;
-                            } else {                    // bottom right
-                                return 3;
+                            } else if (Math.Abs(X[0]) < 1e-14) {                    // left
+                                return 1;
+                            } else if (Math.Abs(X[0] - (xMax - xMin)) < 1e-14) {    // right
+                                return 2;
+                            } else {
+                                throw new System.Exception("Boundary condition not specified");
                             }
-                        } else if (Math.Abs(X[1] - (yMax - yMin)) < 1e-14) {    // top
-                            return 1;
-                        } else if (Math.Abs(X[0]) < 1e-14) {                    // left
-                            return 1;
-                        } else if (Math.Abs(X[0] - (xMax - xMin)) < 1e-14) {    // right
-                            return 2;
-                        } else {
-                            throw new System.Exception("Boundary condition not specified");
-                        }
-                    });
-
+                        });
+                        MPI.Wrappers.csMPI.Raw.Barrier(MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+                        Console.WriteLine("done.");
+                    }
                     return grid;
                 };
             }
