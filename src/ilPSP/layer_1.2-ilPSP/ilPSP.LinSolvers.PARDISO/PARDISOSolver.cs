@@ -119,6 +119,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                 throw new ApplicationException("matrix is already defined. 'DefineMatrix'-method can be invoked only once in the lifetime of this object.");
             m_MpiRank = M.RowPartitioning.MpiRank;
             m_OrgMatrix = M;
+            MpiComm = M.MPI_Comm;
             MPICollectiveWatchDog.Watch(this.MpiComm);
         }
 
