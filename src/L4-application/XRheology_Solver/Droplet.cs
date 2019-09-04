@@ -349,7 +349,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
 
-            //C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
+            //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 10;

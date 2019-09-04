@@ -190,10 +190,6 @@ namespace BoSSS.Application.XRheology_Solver {
             get { return Transport; }
         }
 
-        public bool isPInterfaceSet {
-            get { return false; }
-        }
-
         public bool isViscous {
             get { return Viscous; }
             set { Viscous = value; }
@@ -229,5 +225,10 @@ namespace BoSSS.Application.XRheology_Solver {
         public bool isMatInt {
             get { return MatInt; }
         }
+
+        /// <summary>
+        /// true if the interface pressure is prescribed i.e. for evaporation
+        /// </summary>
+        public bool isPInterfaceSet { get; }
     }
 }
