@@ -20,7 +20,7 @@ using BoSSS.Foundation;
 using BoSSS.Solution;
 using MPI.Wrappers;
 using NUnit.Framework;
-using SolverCodes = BoSSS.Solution.Control.LinearSolverConfig.Code;
+using SolverCodes = BoSSS.Solution.Control.LinearSolverCode;
 
 namespace BoSSS.Application.SipPoisson.Tests {
 

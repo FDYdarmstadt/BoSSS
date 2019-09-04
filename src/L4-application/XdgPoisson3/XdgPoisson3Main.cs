@@ -41,7 +41,7 @@ using NUnit.Framework;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Grid.Aggregation;
 using ilPSP.Tracing;
-using Code = BoSSS.Solution.Control.LinearSolverConfig.Code;
+using Code = BoSSS.Solution.Control.LinearSolverCode;
 
 namespace BoSSS.Application.XdgPoisson3 {
 
