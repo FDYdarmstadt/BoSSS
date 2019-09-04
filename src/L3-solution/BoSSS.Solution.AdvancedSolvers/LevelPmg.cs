@@ -235,12 +235,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             else
                                 _pReq = 1;
 
-                            int _Np1 = BS[iVar].GetLength(jLoc, _pReq);
-                            int _Np = BS[iVar].GetLength(jLoc, degs[jVar]);
+                            int _Np1 = BS[jVar].GetLength(jLoc, _pReq);
+                            int _Np = BS[jVar].GetLength(jLoc, degs[jVar]);
                             int j0_hi = Map.GlobalUniqueIndex(jVar, jLoc, _Np1);
-                            int _Nphi = Np - Np1;
+                            int _Nphi = _Np - _Np1;
                             
-                            m_op.OperatorMatrix.ReadBlock(i0_hi, i0_hi,
+                            m_op.OperatorMatrix.ReadBlock(i0_hi, j0_hi,
                                 HighOrderBlocks_LU[jLoc].ExtractSubArrayShallow(new int[] { RowOffset, ColOffset }, new int[] { RowOffset + Nphi - 1, ColOffset + _Nphi - 1}));
                             
                             ColOffset += _Nphi;
