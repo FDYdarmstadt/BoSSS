@@ -49,6 +49,7 @@ namespace ilPSP {
             m_mpi_comm = csMPI.Raw._COMM.WORLD;
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out m_MPISize);
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out m_MPI_Rank);
+            Console.WriteLine("First tests on MPI...");
 
             //if (m_MPI_Rank == 1)
             //    Debugger.Break();
@@ -79,7 +80,7 @@ namespace ilPSP {
         /// detects how the MPI nodes are distributed over compute nodes (SMP nodes)
         /// </summary>
         private void SMPEvaluation() {
-            //int ht = m_Context.IOMaster.tracer.EnterFunction("BoSSS.Foundation.Comm.Master.SMPEvaluation");
+
 
             // define SMP rank;
             // for each MPI process, the SMP node index
@@ -98,7 +99,7 @@ namespace ilPSP {
                 sms.CommitCommPaths();
 
                 if (MPI_Rank > 0)
-                    sms.Transmitt(0, m_hostname);
+                    sms.Transmit(0, m_hostname);
 
                 int recvRnk;
                 string nmn;

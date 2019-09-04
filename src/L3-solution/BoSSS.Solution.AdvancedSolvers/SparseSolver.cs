@@ -323,11 +323,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             m_ThisLevelIterations = 0;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <typeparam name="T">generic datatype</typeparam>
-        /// <returns></returns>
         private static T Switcher<T>(T origin,T setter) {
             T thisreturn;
             if (setter != null) {
@@ -345,6 +340,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public ISolverSmootherTemplate Clone() {
             throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
+        }
+
+        /// <summary>
+        /// Release internal memory
+        /// </summary>
+        public void Dispose() {
+            this.m_Mtx = null;
         }
 
     }

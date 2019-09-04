@@ -150,7 +150,7 @@ namespace ilPSP.LinSolvers {
                 for (int r = 1; r < size; r++) {
                     MatrixEntry[][] entriesSend = new MatrixEntry[RowPart.GetLocalLength(r)][];
                     Array.Copy(entries, (int)RowPart.GetI0Offest(r), entriesSend, 0, entriesSend.Length);
-                    sms.Transmitt(r, entriesSend);
+                    sms.Transmit(r, entriesSend);
                 }
 
                 MatrixEntry[][] dummy;
@@ -260,7 +260,7 @@ namespace ilPSP.LinSolvers {
                 sms.SetCommPath(0);
                 sms.CommitCommPaths();
 
-                sms.Transmitt(0, m_Entries);
+                sms.Transmit(0, m_Entries);
 
                 MatrixEntry[][] dummy;
                 int dummy_;
@@ -812,7 +812,7 @@ namespace ilPSP.LinSolvers {
 
                 sms.SetCommPathsAndCommit(exchangeData.Keys);
                 foreach (int proc in exchangeData.Keys)
-                    sms.Transmitt(proc, exchangeData[proc].ToArray());
+                    sms.Transmit(proc, exchangeData[proc].ToArray());
 
                 TransposeHelper[] recvdat;
                 int dummy;
@@ -1303,7 +1303,7 @@ namespace ilPSP.LinSolvers {
 
                     for (int p = 0; p < size; p++) {
                         if (sendData[p] != null) {
-                            sms.Transmitt(p, sendData[p].ToArray());
+                            sms.Transmit(p, sendData[p].ToArray());
                             sendData[p] = null;
                         }
                     }
@@ -1363,7 +1363,7 @@ namespace ilPSP.LinSolvers {
 
                     for (int p = 0; p < size; p++) {
                         if (sendData[p] != null) {
-                            sms.Transmitt(p, sendData[p].ToArray());
+                            sms.Transmit(p, sendData[p].ToArray());
                             sendData[p] = null;
                         }
                     }

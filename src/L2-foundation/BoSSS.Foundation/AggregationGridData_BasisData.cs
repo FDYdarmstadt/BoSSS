@@ -101,9 +101,6 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
             int MaxSupportedDegree = -1;
 
-
-            
-
             public void Init(int ReqDegree) {
                 if (ReqDegree < 0)
                     throw new ArgumentOutOfRangeException();

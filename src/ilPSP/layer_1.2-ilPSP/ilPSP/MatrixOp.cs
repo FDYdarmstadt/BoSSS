@@ -232,7 +232,7 @@ namespace ilPSP.LinSolvers {
                     sms.SetCommPathsAndCommit(ColForProc.Keys);
 
                     foreach (int proc in ColForProc.Keys)
-                        sms.Transmitt(proc, ColForProc[proc].ToArray());
+                        sms.Transmit(proc, ColForProc[proc].ToArray());
 
                     int i0Loc = (int) ColPart.i0;
 
@@ -703,7 +703,7 @@ namespace ilPSP.LinSolvers {
             sms.CommitCommPaths();
 
             foreach (int proc in OperationsPerProcessor.Keys)
-                sms.Transmitt(proc, OperationsPerProcessor[proc].ToArray());
+                sms.Transmit(proc, OperationsPerProcessor[proc].ToArray());
 
             int rcvp; ColOp[] rcv;
             while (sms.GetNext(out rcvp, out rcv)) {

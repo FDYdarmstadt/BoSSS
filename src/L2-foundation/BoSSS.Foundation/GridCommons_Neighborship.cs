@@ -79,6 +79,16 @@ namespace BoSSS.Foundation.Grid.Classic {
             //public bool EdgeMayBeEmpty;
         }
 
+        [Serializable]
+        class NodeCellIndexPair_ContainerClass {
+            public NodeCellIndexPair[] list;
+        }
+
+        [Serializable]
+        class NodeCellListPair_ContainerClass {
+            public NodeCellListPair[] list;
+        }
+
         /// <summary>
         /// Computes the neighbor cells globally (i.e. over all MPI processors) for each local cell.
         /// </summary>
@@ -107,6 +117,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int j0 = this.CellPartitioning.i0;
                 int Jglob = this.CellPartitioning.TotalLength;
                 int j0Bc = this.BcCellPartitioning.i0;
+
+                /*
+                System.IO.StreamWriter sw = new System.IO.StreamWriter("proc_" + this.MyRank + ".txt", append: false);
+                sw.WriteLine("Entering stupid function....");
+                SerialisationMessenger.PoorManDebugger = sw;
+                */
 
                 // Which cells make use of a particular node?
                 //-------------------------------------------
@@ -167,12 +183,35 @@ namespace BoSSS.Foundation.Grid.Classic {
                     //SerialisationMessenger.DiagnosisFile = "GetCellNeighborship";
                     //SerialisationMessenger.TestDeserialization = true;
 
-                    var W = SerialisationMessenger.ExchangeData(Y, csMPI.Raw._COMM.WORLD);
+                    var Yexc = new Dictionary<int, NodeCellIndexPair_ContainerClass>();
+                    {
+                        foreach (var kv in Y) {
+                            Yexc.Add(kv.Key,
+                                new NodeCellIndexPair_ContainerClass() { list = kv.Value.ToArray() });
+                        }
+                        Y = null;
+                    }
+
+
+                    //sw.WriteLine("(1) process " + this.MyRank + " starting serialization/deserialization ...");
+
+                    //try
+                    //{
+                    var W = SerialisationMessenger.ExchangeData(Yexc, csMPI.Raw._COMM.WORLD);
                     foreach (var wp in W.Values) {
-                        foreach (NodeCellIndexPair Packet in wp) {
+                        foreach (NodeCellIndexPair Packet in wp.list) {
                             Nodes2Cells[Packet.NodeId - k0].Add(Packet.GlobalCellIndex);
                         }
                     }
+                    //}
+                    //catch (Exception e)
+                    //{
+                    //    sw.WriteLine(e);
+                    //    throw e;
+                    //}
+                    //sw.Flush();
+                    //var W = SerialisationMessenger.ExchangeData(Y, csMPI.Raw._COMM.WORLD);
+
                 }
 
                 // For every cell, for every vertex in this cell:
@@ -260,9 +299,21 @@ namespace BoSSS.Foundation.Grid.Classic {
                         }
                     }
 
-                    var W = SerialisationMessenger.ExchangeData(Y, csMPI.Raw._COMM.WORLD);
+                    var Yexc = new Dictionary<int, NodeCellListPair_ContainerClass>();
+                    {
+                        foreach (var kv in Y) {
+                            Yexc.Add(kv.Key,
+                                new NodeCellListPair_ContainerClass() { list = kv.Value.ToArray() });
+                        }
+                        Y = null;
+                    }
+
+                    //sw.WriteLine("(2) process " + this.MyRank + " starting serialization/deserialization ...");
+                    //try
+                    //{
+                    var W = SerialisationMessenger.ExchangeData(Yexc, csMPI.Raw._COMM.WORLD);
                     foreach (var wp in W.Values) {
-                        foreach (var P in wp) {
+                        foreach (var P in wp.list) {
                             int k_node = P.NodeId;
                             int[] cell_list = P.CellList;
 
@@ -312,6 +363,13 @@ namespace BoSSS.Foundation.Grid.Classic {
                             }
                         }
                     }
+                    //}
+                    //catch (Exception e)
+                    //{
+                    //    sw.WriteLine(e);
+                    //    throw e;
+                    //}
+                    //sw.Flush();
                 }
 
                 // Assemble final result
@@ -424,6 +482,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
                 }
 
+                //SerialisationMessenger.PoorManDebugger = null;
                 return CellNeighbours;
             }
         }
