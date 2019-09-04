@@ -678,6 +678,12 @@ namespace BoSSS.Application.Rheology {
                     throw new ApplicationException("Gravity is true, but no values set!");
                 }
             }
+
+            //if (OpMatrix != null) {//base.MPIRank == 0)
+            //    var OpWrite = OpMatrix.ToMsrMatrix();
+            //    OpWrite.ToFullMatrixOnProc0();
+            //    OpWrite.SaveToTextFile("OpMatrix.txt");
+            //}
         }
 
         /// <summary>

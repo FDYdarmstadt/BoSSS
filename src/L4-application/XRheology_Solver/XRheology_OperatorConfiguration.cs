@@ -190,6 +190,10 @@ namespace BoSSS.Application.XRheology_Solver {
             get { return Transport; }
         }
 
+        public bool isPInterfaceSet {
+            get { return false; }
+        }
+
         public bool isViscous {
             get { return Viscous; }
             set { Viscous = value; }
