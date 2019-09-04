@@ -16,14 +16,9 @@ limitations under the License.
 
 using System;
 using System.Runtime.Serialization;
-using BoSSS.Foundation.XDG;
 using ilPSP;
-using BoSSS.Foundation.Grid;
-using BoSSS.Foundation;
 using System.Linq;
-using System.Collections.Generic;
 using ilPSP.Utils;
-using System.Collections;
 
 namespace BoSSS.Application.FSI_Solver {
     [DataContract]
@@ -35,19 +30,22 @@ namespace BoSSS.Application.FSI_Solver {
         private Particle_Ellipsoid() : base() {
 
         }
-        public Particle_Ellipsoid(double[] startPos = null, double startAngl = 0) : base(2, startPos, startAngl) {
+        public Particle_Ellipsoid(double length = 4, double thickness = 1, double[] startPos = null, double startAngl = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(startPos, startAngl, startTransVelocity, startRotVelocity) {
+            length_P = length;
+            thickness_P = thickness;
+            Motion.GetParticleLengthscale(GetLengthScales().Max());
+            Motion.GetParticleArea(Area_P());
+            Motion.GetParticleMomentOfInertia(MomentOfInertia_P);
         }
 
         /// <summary>
         /// Length of an elliptic particle.
         /// </summary>
-        [DataMember]
         public double length_P;
 
         /// <summary>
         /// Thickness of an elliptic particle.
         /// </summary>
-        [DataMember]
         public double thickness_P;
 
         public override double Area_P() {

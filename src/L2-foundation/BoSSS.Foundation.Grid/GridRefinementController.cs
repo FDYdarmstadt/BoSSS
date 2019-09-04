@@ -434,11 +434,11 @@ namespace BoSSS.Foundation.Grid {
                 }
             }
 
-            if (cellsNotOK2Coarsen != null) {
-                foreach (int j in cellsNotOK2Coarsen.ItemEnum) {
-                    oK2Coarsen[j] = false;
-                }
-            }
+            //if (cellsNotOK2Coarsen != null) {
+            //    foreach (int j in cellsNotOK2Coarsen.ItemEnum) {
+            //        oK2Coarsen[j] = false;
+            //    }
+            //}
 
             return oK2Coarsen;
         }

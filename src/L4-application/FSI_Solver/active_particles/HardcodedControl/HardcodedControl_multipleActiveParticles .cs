@@ -38,7 +38,7 @@ namespace BoSSS.Application.FSI_Solver {
             // basic database options
             // =============================
             C.DbPath = @"D:\BoSSS_databases\multipleActiveParticles";
-            C.savetodb = true;
+            C.savetodb = false;
             C.saveperiod = 1;
             C.ProjectName = "5activeRods_noBackroundFlow";
             C.ProjectDescription = "Active";
@@ -118,55 +118,45 @@ namespace BoSSS.Application.FSI_Solver {
             // Particle Properties
             // =============================   
             // Defining particles
-            C.Particles.Add(new Particle_Ellipsoid(new double[] { 0.0, 0.0 }, startAngl: 0) {
+            C.Particles.Add(new Particle_Ellipsoid(length: 0.2, thickness: 0.1, new double[] { 0.0, 0.0 }, startAngl: 0) {
                 particleDensity = 1,
                 activeStress = 1e3,
-                thickness_P = 0.1 * BaseSize,
-                length_P = 0.2 * BaseSize,
                 useAddaptiveUnderrelaxation = true,
                 underrelaxation_factor = 3.0,
                 clearSmallValues = true,
                 UseAddedDamping = true,
             });
 
-            C.Particles.Add(new Particle_Ellipsoid(new double[] { 2.5, 2.5 }, startAngl: 10) {
+            C.Particles.Add(new Particle_Ellipsoid(length: 0.2, thickness: 0.1, new double[] { 2.5, 2.5 }, startAngl: 10) {
                 particleDensity = 1,
                 activeStress = 1e3,
-                thickness_P = 0.1 * BaseSize,
-                length_P = 0.2 * BaseSize,
                 useAddaptiveUnderrelaxation = true,
                 underrelaxation_factor = 3.0,
                 clearSmallValues = true,
                 UseAddedDamping = true
             });
 
-            C.Particles.Add(new Particle_Ellipsoid(new double[] { 2.5, -2.5 }, startAngl: 50) {
+            C.Particles.Add(new Particle_Ellipsoid(length: 0.2, thickness: 0.1, new double[] { 2.5, -2.5 }, startAngl: 50) {
                 particleDensity = 1,
                 activeStress = 1e3,
-                thickness_P = 0.1 * BaseSize,
-                length_P = 0.2 * BaseSize,
                 useAddaptiveUnderrelaxation = true,
                 underrelaxation_factor = 3.0,
                 clearSmallValues = true,
                 UseAddedDamping = true
             });
 
-            C.Particles.Add(new Particle_Ellipsoid(new double[] { -2.5, 2.5 }, startAngl: 80) {
+            C.Particles.Add(new Particle_Ellipsoid(length: 0.2, thickness: 0.1, new double[] { -2.5, 2.5 }, startAngl: 80) {
                 particleDensity = 1,
                 activeStress = 1e3,
-                thickness_P = 0.1 * BaseSize,
-                length_P = 0.2 * BaseSize,
                 useAddaptiveUnderrelaxation = true,
                 underrelaxation_factor = 3.0,
                 clearSmallValues = true,
                 UseAddedDamping = true
             });
 
-            C.Particles.Add(new Particle_Ellipsoid(new double[] { -2.5, -2.5 }, startAngl: 160) {
+            C.Particles.Add(new Particle_Ellipsoid(length: 0.2, thickness: 0.1, new double[] { -2.5, -2.5 }, startAngl: 160) {
                 particleDensity = 1,
                 activeStress = 1e3,
-                thickness_P = 0.1 * BaseSize,
-                length_P = 0.2 * BaseSize,
                 useAddaptiveUnderrelaxation = true,
                 underrelaxation_factor = 3.0,
                 clearSmallValues = true,
