@@ -265,10 +265,13 @@ namespace ilPSP.Utils {
         bool m_CommPathsCommited;
 
         /// <summary>
-        /// formatter used for all serialization/de-serialization
+        /// formatter used for all serialization/de-serialization (legacy)
         /// </summary>
         BinaryFormatter m_Formatter = new BinaryFormatter();
 
+        /// <summary>
+        /// formatter used for all serialization/de-serialization
+        /// </summary>
         JsonSerializer jsonFormatter = new JsonSerializer() {
             NullValueHandling = NullValueHandling.Include,
             TypeNameHandling = TypeNameHandling.All,
@@ -276,9 +279,8 @@ namespace ilPSP.Utils {
             ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
             TypeNameAssemblyFormat = System.Runtime.Serialization.Formatters.FormatterAssemblyStyle.Full
         };
-
-
-        bool m_UseJson = true;
+        
+        bool m_UseJson = false;
 
         /// <summary>
         /// Whether to use a JSON formatter or the binary formatter
@@ -430,15 +432,17 @@ namespace ilPSP.Utils {
                               out m_Requests[m_Size + TargetProc]);
             }
 
-            if (DiagnosisFile != null) {
-                File.WriteAllBytes(DiagnosisFile + "-smsSend-" + m_Rank + "-" + TargetProc + ".bin", Buffer);
-            }
+            //if (DiagnosisFile != null) {
+            //    File.WriteAllBytes(DiagnosisFile + "-smsSend-" + m_Rank + "-" + TargetProc + ".bin", Buffer);
+            //}
         }
 
+        /*
         /// <summary>
         /// Dumping of send/receive blocks for debugging purpose
         /// </summary>
         static public string DiagnosisFile = null;
+        */
 
         /// <summary>
         /// entry at index p is reserved for the size of the object that is send to process p in bytes;
@@ -662,9 +666,9 @@ namespace ilPSP.Utils {
                     m_ReceiveBuffersPin[proc].Free();
                     m_ReceiveBuffersPin.Remove(proc);
 
-                    if (DiagnosisFile != null) {
-                        File.WriteAllBytes(DiagnosisFile + "-smsReceive-" + proc + "-" + m_Rank + ".bin", m_ReceiveBuffers[proc]);
-                    }
+                    //if (DiagnosisFile != null) {
+                    //    File.WriteAllBytes(DiagnosisFile + "-smsReceive-" + proc + "-" + m_Rank + ".bin", m_ReceiveBuffers[proc]);
+                    //}
 
                     // deserialize
                     o = (T)DeserializeObject(m_ReceiveBuffers[proc], typeof(T));
@@ -689,11 +693,11 @@ namespace ilPSP.Utils {
                     TargetProc = Int32.MinValue;
                     return false;
                 } else {
-                    if(PoorManDebugger != null)
-                    {
-                        PoorManDebugger.WriteLine("are you kidding me?");
-                        PoorManDebugger.Flush();
-                    }
+                    //if(PoorManDebugger != null)
+                    //{
+                    //    PoorManDebugger.WriteLine("are you kidding me?");
+                    //    PoorManDebugger.Flush();
+                    //}
                     throw new ApplicationException("internal error: index of request out of range.");
                 }
             }
@@ -751,10 +755,10 @@ namespace ilPSP.Utils {
         /// </returns>
         public static IDictionary<int, T> ExchangeData<T>(IDictionary<int, T> objects_to_send, MPI_Comm comm) {
             using( var sms = new SerialisationMessenger(comm)) {
-                if (PoorManDebugger != null) {
-                    PoorManDebugger.WriteLine("tag offset is " + sms.m_MyTagOffset);
-                    PoorManDebugger.Flush();
-                }
+                //if (PoorManDebugger != null) {
+                //    PoorManDebugger.WriteLine("tag offset is " + sms.m_MyTagOffset);
+                //    PoorManDebugger.Flush();
+                //}
                 sms.SetCommPathsAndCommit(objects_to_send.Keys);
 
                 foreach (var kv in objects_to_send) {
@@ -768,19 +772,19 @@ namespace ilPSP.Utils {
                     R.Add(rcv_rank, obj);
                 }
 
-                if(PoorManDebugger != null)
-                {
-                    PoorManDebugger.WriteLine(" leaving ExchangeData");
-                    PoorManDebugger.Flush();
-                }
+                //if(PoorManDebugger != null)
+                //{
+                //    PoorManDebugger.WriteLine(" leaving ExchangeData");
+                //    PoorManDebugger.Flush();
+                //}
 
                 return R;
             }
         }
 
-
+        /*
         public static StreamWriter PoorManDebugger; 
-
+        */
 
         /// <summary>
         /// equal to <see cref="ExchangeData{T}(IDictionary{int,T},MPI_Comm)"/>, acting on the WORLD-communicator
