@@ -526,173 +526,9 @@ namespace BoSSS.Application.XNSE_Solver {
             // =======================
             if (L == null) {
 
-                switch (this.Control.Timestepper_Scheme) {
-                    case XNSE_Control.TimesteppingScheme.RK_ImplicitEuler: {
-                        rksch = RungeKuttaScheme.ImplicitEuler;
-                        break;
-                    }
-                    case XNSE_Control.TimesteppingScheme.RK_CrankNicolson: {
-                        rksch = RungeKuttaScheme.CrankNicolson;
-                        break;
-                    }
-                    case XNSE_Control.TimesteppingScheme.CrankNicolson: {
-                        //do not instantiate rksch, use bdf instead
-                        bdfOrder = -1;
-                        break;
-                    }
-                    case XNSE_Control.TimesteppingScheme.ImplicitEuler: {
-                        //do not instantiate rksch, use bdf instead
-                        bdfOrder = 1;
-                        break;
-                    }
-                    default: {
-                        if (this.Control.Timestepper_Scheme.ToString().StartsWith("BDF")) {
-                            //do not instantiate rksch, use bdf instead
-                            bdfOrder = Convert.ToInt32(this.Control.Timestepper_Scheme.ToString().Substring(3));
-                            break;
-                        } else
-                            throw new NotImplementedException();
-                    }
+                this.CreateTimestepper();
 
-                }
-
-
-                if (rksch == null) {
-                    m_BDF_Timestepper = new XdgBDFTimestepping(
-                        this.CurrentSolution.Mapping.Fields,
-                        this.CurrentResidual.Mapping.Fields,
-                        LsTrk,
-                        true,
-                        DelComputeOperatorMatrix, null, DelUpdateLevelSet,
-                        (this.Control.CompMode == AppControl._CompMode.Transient) ? bdfOrder : 1,
-                        this.Control.Timestepper_LevelSetHandling,
-                        this.XOpConfig.mmsd,
-                        (this.Control.PhysicalParameters.IncludeConvection) ? SpatialOperatorType.Nonlinear : SpatialOperatorType.LinearTimeDependent,
-                        MassScale,
-                        this.MultigridOperatorConfig, base.MultigridSequence,
-                        this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder,
-                        this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
-                        true,
-                        this.Control.NonLinearSolver,
-                        this.Control.LinearSolver
-                        );
-                    m_BDF_Timestepper.m_ResLogger = base.ResLogger;
-                    m_BDF_Timestepper.m_ResidualNames = this.CurrentResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
-                    m_BDF_Timestepper.Timestepper_Init = (this.Control.CompMode == AppControl._CompMode.Transient) ? this.Control.Timestepper_BDFinit : TimeStepperInit.SingleInit;
-                    m_BDF_Timestepper.incrementTimesteps = this.Control.incrementTimesteps;
-                    m_BDF_Timestepper.PushLevelSet = this.PushLevelSetAndRelatedStuff;
-                    m_BDF_Timestepper.IterUnderrelax = this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? this.Control.LSunderrelax : 1.0;
-
-                    m_BDF_Timestepper.Config_LevelSetConvergenceCriterion = this.Control.LevelSet_ConvergenceCriterion;
-                    //m_BDF_Timestepper.CustomIterationCallback += this.PlotOnIterationCallback;
-
-
-                    // solver 
-                    this.Control.NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.NonLinearSolver.MinSolverIterations; //m_BDF_Timestepper.config_NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.Solver_MinIterations;
-
-                    if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.NewtonGMRES) {
-                        m_BDF_Timestepper.XdgSolverFactory.Selfmade_precond =
-                                            new Schwarz() {
-                                                m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                                                    NoOfPartsPerProcess = this.CurrentSolution.Count / 10000,
-                                                },
-                                                Overlap = 1,
-                                                CoarseSolver = new SparseSolver() { WhichSolver = SparseSolver._whichSolver.MUMPS }
-                                            };
-                    } else {
-                        //m_BDF_Timestepper.Config_linearSolver = new DirectSolver() { WhichSolver = this.Control.LinearSolver };
-                    }
-
-
-                    //Console.WriteLine("noofpartsperprocess = {0}", this.CurrentSolution.Count / 10000);
-
-                    if(this.Control.ComputeEnergy) {
-                        m_BDF_energyTimestepper = new XdgBDFTimestepping(
-                        this.CurrentEnergySolution.Mapping.Fields,
-                        this.CurrentEnergyResidual.Mapping.Fields,
-                        LsTrk,
-                        false,
-                        DelComputeEnergyOperatorMatrix, null, DelUpdateLevelSet_EnergyOperator,
-                        (this.Control.CompMode == AppControl._CompMode.Transient) ? bdfOrder : 1,
-                        this.Control.Timestepper_LevelSetHandling,
-                        MassMatrixShapeandDependence.IsTimeDependent,   // only for Lie-Splitting and coupled_Once
-                        SpatialOperatorType.LinearTimeDependent,
-                        MassScaleForEnergy,
-                        this.MultigridEnergyOperatorConfig, base.MultigridSequence,
-                        this.LsTrk.SpeciesIdS.ToArray(), this.KineticEnergy.Basis.Degree * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2),
-                        this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
-                        true,
-                        this.Control.NonLinearSolver,
-                        this.Control.LinearSolver
-                        );
-                        m_BDF_energyTimestepper.m_ResLogger = this.EnergyResLogger;
-                        m_BDF_energyTimestepper.m_ResidualNames = this.CurrentEnergyResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
-                        //m_BDF_coupledTimestepper.Config_SolverConvergenceCriterion = this.Control.Solver_ConvergenceCriterion;
-                        m_BDF_energyTimestepper.Config_LevelSetConvergenceCriterion = this.Control.LevelSet_ConvergenceCriterion;
-                        //m_BDF_coupledTimestepper.Config_MaxIterations = this.Control.Solver_MaxIterations;
-                        this.Control.NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.NonLinearSolver.MinSolverIterations;
-                        //m_BDF_energyTimestepper.Config_MinIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.Solver_MinIterations;
-                        m_BDF_energyTimestepper.Timestepper_Init = TimeStepperInit.SingleInit;
-                        m_BDF_energyTimestepper.PushLevelSet = delegate () { };    // dummy push
-                        m_BDF_energyTimestepper.coupledOperator = true;
-                    }
-
-                    if (this.Control.solveCoupledHeatEquation) {
-                        m_BDF_coupledTimestepper = new XdgBDFTimestepping(
-                        this.CurrentCoupledSolution.Mapping.Fields,
-                        this.CurrentCoupledResidual.Mapping.Fields,
-                        LsTrk,
-                        false,
-                        DelComputeCoupledOperatorMatrix, null, DelUpdateLevelSet_CoupledOperator,
-                        (this.Control.CompMode == AppControl._CompMode.Transient) ? bdfOrder : 1,
-                        this.Control.Timestepper_LevelSetHandling,
-                        MassMatrixShapeandDependence.IsTimeDependent,   // only for Lie-Splitting and coupled_Once
-                        SpatialOperatorType.LinearTimeDependent,
-                        HeatScale,
-                        this.MultigridCoupledOperatorConfig, base.MultigridSequence,
-                        this.LsTrk.SpeciesIdS.ToArray(), m_HMForder,
-                        this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
-                        true,
-                        this.Control.NonLinearSolver,
-                        this.Control.LinearSolver
-                        );
-                        m_BDF_coupledTimestepper.m_ResLogger = this.CouplededResLogger;
-                        m_BDF_coupledTimestepper.m_ResidualNames = this.CurrentCoupledResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
-                        //m_BDF_coupledTimestepper.Config_SolverConvergenceCriterion = this.Control.Solver_ConvergenceCriterion;
-                        m_BDF_coupledTimestepper.Config_LevelSetConvergenceCriterion = this.Control.LevelSet_ConvergenceCriterion;
-                        //m_BDF_coupledTimestepper.Config_MaxIterations = this.Control.Solver_MaxIterations;
-
-                        this.Control.NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.NonLinearSolver.MinSolverIterations;
-                        //m_BDF_coupledTimestepper.Config_MinIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.Solver_MinIterations;
-
-                        m_BDF_coupledTimestepper.Timestepper_Init = TimeStepperInit.SingleInit;
-                        m_BDF_coupledTimestepper.PushLevelSet = delegate () { };    // dummy push
-                        m_BDF_coupledTimestepper.coupledOperator = true;
-
-                    }
-
-                } else {
-
-                    throw new NotSupportedException();
-
-                    //m_RK_Timestepper = new XdgRKTimestepping(
-                    //    this.CurrentSolution.Mapping.Fields.ToArray(),
-                    //    this.CurrentResidual.Mapping.Fields.ToArray(),
-                    //    LsTrk,
-                    //    DelComputeOperatorMatrix, DelUpdateLevelSet, DelUpdateCutCellMetrics,
-                    //    rksch,
-                    //    this.Control.Timestepper_LevelSetHandling,
-                    //    mmsd,
-                    //    (this.Control.PhysicalParameters.IncludeConvection) ? SpatialOperatorType.Nonlinear : SpatialOperatorType.LinearTimeDependent,
-                    //    MassScale,
-                    //    this.MultigridOperatorConfig, base.MultigridSequence,
-                    //    this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold, 
-                    //    true);
-                    //m_RK_Timestepper.m_ResLogger = base.ResLogger;
-                    //m_RK_Timestepper.m_ResidualNames = this.CurrentResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
-                }
-
-            } else {
+            } else { 
 
                 //PlotCurrentState(hack_Phystime, new TimestepNumber(hack_TimestepIndex, 12), 2);
 
@@ -717,10 +553,10 @@ namespace BoSSS.Application.XNSE_Solver {
                           this.LsTrk, this.MultigridSequence);
                 }
 
-                if (this.Control.AdaptiveMeshRefinement && hack_TimestepIndex == 0) {
-                    base.SetInitial();
-                    this.InitLevelSet();
-                }
+                //if (this.Control.AdaptiveMeshRefinement && hack_TimestepIndex == 0) {
+                //    this.ResetInitial();
+                //    this.InitLevelSet();
+                //}
                 //PlotCurrentState(hack_Phystime, new TimestepNumber(hack_TimestepIndex, 13), 2);
 
                 ContinuityEnforcer = new ContinuityProjection(
@@ -741,6 +577,176 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
+
+        private void CreateTimestepper() {
+
+            switch (this.Control.Timestepper_Scheme) {
+                case XNSE_Control.TimesteppingScheme.RK_ImplicitEuler: {
+                        rksch = RungeKuttaScheme.ImplicitEuler;
+                        break;
+                    }
+                case XNSE_Control.TimesteppingScheme.RK_CrankNicolson: {
+                        rksch = RungeKuttaScheme.CrankNicolson;
+                        break;
+                    }
+                case XNSE_Control.TimesteppingScheme.CrankNicolson: {
+                        //do not instantiate rksch, use bdf instead
+                        bdfOrder = -1;
+                        break;
+                    }
+                case XNSE_Control.TimesteppingScheme.ImplicitEuler: {
+                        //do not instantiate rksch, use bdf instead
+                        bdfOrder = 1;
+                        break;
+                    }
+                default: {
+                        if (this.Control.Timestepper_Scheme.ToString().StartsWith("BDF")) {
+                            //do not instantiate rksch, use bdf instead
+                            bdfOrder = Convert.ToInt32(this.Control.Timestepper_Scheme.ToString().Substring(3));
+                            break;
+                        } else
+                            throw new NotImplementedException();
+                    }
+
+            }
+
+
+            if (rksch == null) {
+                m_BDF_Timestepper = new XdgBDFTimestepping(
+                    this.CurrentSolution.Mapping.Fields,
+                    this.CurrentResidual.Mapping.Fields,
+                    LsTrk,
+                    true,
+                    DelComputeOperatorMatrix, null, DelUpdateLevelSet,
+                    (this.Control.CompMode == AppControl._CompMode.Transient) ? bdfOrder : 1,
+                    this.Control.Timestepper_LevelSetHandling,
+                    this.XOpConfig.mmsd,
+                    (this.Control.PhysicalParameters.IncludeConvection) ? SpatialOperatorType.Nonlinear : SpatialOperatorType.LinearTimeDependent,
+                    MassScale,
+                    this.MultigridOperatorConfig, base.MultigridSequence,
+                    this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder,
+                    this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
+                    true,
+                    this.Control.NonLinearSolver,
+                    this.Control.LinearSolver
+                    );
+                m_BDF_Timestepper.m_ResLogger = base.ResLogger;
+                m_BDF_Timestepper.m_ResidualNames = this.CurrentResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
+                m_BDF_Timestepper.Timestepper_Init = (this.Control.CompMode == AppControl._CompMode.Transient) ? this.Control.Timestepper_BDFinit : TimeStepperInit.SingleInit;
+                m_BDF_Timestepper.incrementTimesteps = this.Control.incrementTimesteps;
+                m_BDF_Timestepper.PushLevelSet = this.PushLevelSetAndRelatedStuff;
+                m_BDF_Timestepper.IterUnderrelax = this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? this.Control.LSunderrelax : 1.0;
+
+                m_BDF_Timestepper.Config_LevelSetConvergenceCriterion = this.Control.LevelSet_ConvergenceCriterion;
+                //m_BDF_Timestepper.CustomIterationCallback += this.PlotOnIterationCallback;
+
+
+                // solver 
+                this.Control.NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.NonLinearSolver.MinSolverIterations; //m_BDF_Timestepper.config_NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.Solver_MinIterations;
+
+                if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.NewtonGMRES) {
+                    m_BDF_Timestepper.XdgSolverFactory.Selfmade_precond =
+                                        new Schwarz() {
+                                            m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                                                NoOfPartsPerProcess = this.CurrentSolution.Count / 10000,
+                                            },
+                                            Overlap = 1,
+                                            CoarseSolver = new SparseSolver() { WhichSolver = SparseSolver._whichSolver.MUMPS }
+                                        };
+                } else {
+                    //m_BDF_Timestepper.Config_linearSolver = new DirectSolver() { WhichSolver = this.Control.LinearSolver };
+                }
+
+
+                //Console.WriteLine("noofpartsperprocess = {0}", this.CurrentSolution.Count / 10000);
+
+                if (this.Control.ComputeEnergy) {
+                    m_BDF_energyTimestepper = new XdgBDFTimestepping(
+                    this.CurrentEnergySolution.Mapping.Fields,
+                    this.CurrentEnergyResidual.Mapping.Fields,
+                    LsTrk,
+                    false,
+                    DelComputeEnergyOperatorMatrix, null, DelUpdateLevelSet_EnergyOperator,
+                    (this.Control.CompMode == AppControl._CompMode.Transient) ? bdfOrder : 1,
+                    this.Control.Timestepper_LevelSetHandling,
+                    MassMatrixShapeandDependence.IsTimeDependent,   // only for Lie-Splitting and coupled_Once
+                    SpatialOperatorType.LinearTimeDependent,
+                    MassScaleForEnergy,
+                    this.MultigridEnergyOperatorConfig, base.MultigridSequence,
+                    this.LsTrk.SpeciesIdS.ToArray(), this.KineticEnergy.Basis.Degree * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2),
+                    this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
+                    true,
+                    this.Control.NonLinearSolver,
+                    this.Control.LinearSolver
+                    );
+                    m_BDF_energyTimestepper.m_ResLogger = this.EnergyResLogger;
+                    m_BDF_energyTimestepper.m_ResidualNames = this.CurrentEnergyResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
+                    //m_BDF_coupledTimestepper.Config_SolverConvergenceCriterion = this.Control.Solver_ConvergenceCriterion;
+                    m_BDF_energyTimestepper.Config_LevelSetConvergenceCriterion = this.Control.LevelSet_ConvergenceCriterion;
+                    //m_BDF_coupledTimestepper.Config_MaxIterations = this.Control.Solver_MaxIterations;
+                    this.Control.NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.NonLinearSolver.MinSolverIterations;
+                    //m_BDF_energyTimestepper.Config_MinIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.Solver_MinIterations;
+                    m_BDF_energyTimestepper.Timestepper_Init = TimeStepperInit.SingleInit;
+                    m_BDF_energyTimestepper.PushLevelSet = delegate () { };    // dummy push
+                    m_BDF_energyTimestepper.coupledOperator = true;
+                }
+
+                if (this.Control.solveCoupledHeatEquation) {
+                    m_BDF_coupledTimestepper = new XdgBDFTimestepping(
+                    this.CurrentCoupledSolution.Mapping.Fields,
+                    this.CurrentCoupledResidual.Mapping.Fields,
+                    LsTrk,
+                    false,
+                    DelComputeCoupledOperatorMatrix, null, DelUpdateLevelSet_CoupledOperator,
+                    (this.Control.CompMode == AppControl._CompMode.Transient) ? bdfOrder : 1,
+                    this.Control.Timestepper_LevelSetHandling,
+                    MassMatrixShapeandDependence.IsTimeDependent,   // only for Lie-Splitting and coupled_Once
+                    SpatialOperatorType.LinearTimeDependent,
+                    HeatScale,
+                    this.MultigridCoupledOperatorConfig, base.MultigridSequence,
+                    this.LsTrk.SpeciesIdS.ToArray(), m_HMForder,
+                    this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
+                    true,
+                    this.Control.NonLinearSolver,
+                    this.Control.LinearSolver
+                    );
+                    m_BDF_coupledTimestepper.m_ResLogger = this.CouplededResLogger;
+                    m_BDF_coupledTimestepper.m_ResidualNames = this.CurrentCoupledResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
+                    //m_BDF_coupledTimestepper.Config_SolverConvergenceCriterion = this.Control.Solver_ConvergenceCriterion;
+                    m_BDF_coupledTimestepper.Config_LevelSetConvergenceCriterion = this.Control.LevelSet_ConvergenceCriterion;
+                    //m_BDF_coupledTimestepper.Config_MaxIterations = this.Control.Solver_MaxIterations;
+
+                    this.Control.NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.NonLinearSolver.MinSolverIterations;
+                    //m_BDF_coupledTimestepper.Config_MinIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.Solver_MinIterations;
+
+                    m_BDF_coupledTimestepper.Timestepper_Init = TimeStepperInit.SingleInit;
+                    m_BDF_coupledTimestepper.PushLevelSet = delegate () { };    // dummy push
+                    m_BDF_coupledTimestepper.coupledOperator = true;
+
+                }
+
+            } else {
+
+                throw new NotSupportedException();
+
+                //m_RK_Timestepper = new XdgRKTimestepping(
+                //    this.CurrentSolution.Mapping.Fields.ToArray(),
+                //    this.CurrentResidual.Mapping.Fields.ToArray(),
+                //    LsTrk,
+                //    DelComputeOperatorMatrix, DelUpdateLevelSet, DelUpdateCutCellMetrics,
+                //    rksch,
+                //    this.Control.Timestepper_LevelSetHandling,
+                //    mmsd,
+                //    (this.Control.PhysicalParameters.IncludeConvection) ? SpatialOperatorType.Nonlinear : SpatialOperatorType.LinearTimeDependent,
+                //    MassScale,
+                //    this.MultigridOperatorConfig, base.MultigridSequence,
+                //    this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold, 
+                //    true);
+                //m_RK_Timestepper.m_ResLogger = base.ResLogger;
+                //m_RK_Timestepper.m_ResidualNames = this.CurrentResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
+            }
+
+        }
 
 
         void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
@@ -1521,6 +1527,19 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
+
+        protected override void ResetInitial() {
+            base.SetInitial();
+            this.InitLevelSet();
+
+            m_BDF_Timestepper.ResetDataAfterBalancing(
+                    ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure));
+            m_BDF_Timestepper.DelayedTimestepperInit(0.0, 0, this.Control.GetFixedTimestep(),
+                // delegate for the initialization of previous timesteps from an analytic solution
+                BDFDelayedInitSetIntial);
+        }
+
+
         /// <summary>
         /// delegate for the initialization of previous timesteps from an analytic solution
         /// </summary>
@@ -2035,14 +2054,11 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
-
         public override void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
             m_BDF_Timestepper.DataBackupBeforeBalancing(L);
             if(this.Control.solveCoupledHeatEquation)
                 m_BDF_coupledTimestepper.DataBackupBeforeBalancing(L);
         }
-
-
 
 
         #endregion
@@ -2783,10 +2799,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 // solve coupled system
                 // =====================
 
-                if (this.Control.solveCoupledHeatEquation && m_BDF_coupledTimestepper != null) {
-                    m_BDF_coupledTimestepper.Solve(hack_Phystime, dt, Control.SkipSolveAndEvaluateResidual);
-                    //ComputeHeatflux();
-                }
+                //if (this.Control.solveCoupledHeatEquation && m_BDF_coupledTimestepper != null) {
+                //    m_BDF_coupledTimestepper.Solve(hack_Phystime, dt, Control.SkipSolveAndEvaluateResidual);
+                //    //ComputeHeatflux();
+                //}
 
 
                 // ==================

@@ -1580,6 +1580,10 @@ namespace BoSSS.Solution {
             }
         }
 
+        protected virtual void ResetInitial() {
+            // intended to be used user-specific but not necessary
+        }
+
         /// <summary>
         /// number of time-steps to be performed; <see cref="RunSolverMode"/>
         /// terminates if the number of time-steps exceeds this number; At startup, initialized equal to  <see cref="AppControl.NoOfTimesteps"/>.
@@ -1740,8 +1744,11 @@ namespace BoSSS.Solution {
                 for (int s = 0; s < this.Control.AMR_startUpSweeps; s++) 
                     this.MpiRedistributeAndMeshAdapt(i, physTime);
 
-                if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
-                    PlotCurrentState(physTime, i0, this.Control.SuperSampling);
+                if (this.Control != null && this.Control.AdaptiveMeshRefinement) {
+                    ResetInitial();
+                    if (this.Control.ImmediatePlotPeriod > 0)
+                        PlotCurrentState(physTime, i0, this.Control.SuperSampling);
+                }
 
                 for (i = i0.MajorNumber + 1; (i <= i0.MajorNumber + (long)NoOfTimesteps) && EndTime - physTime > 1.0E-10 && !TerminationKey; i++) {
                     tr.Info("performing timestep " + i + ", physical time = " + physTime);
