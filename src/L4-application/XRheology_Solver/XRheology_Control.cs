@@ -54,11 +54,11 @@ namespace BoSSS.Application.XRheology_Solver {
             base.LinearSolver.MaxSolverIterations = 50; //Solver_MaxIterations
             base.LinearSolver.MinSolverIterations = 50; //Solver_MinIterations
             base.LinearSolver.ConvergenceCriterion = 1.0e-10; //Solver_ConvergenceCriterion
-            base.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps; //LinearSolver
+            base.LinearSolver.SolverCode = LinearSolverCode.classic_mumps; //LinearSolver
             base.NonLinearSolver.MaxSolverIterations = 50; //Solver_MaxIterations
             base.NonLinearSolver.MinSolverIterations = 50; //Solver_MinIterations
             base.NonLinearSolver.ConvergenceCriterion = 1.0e-10; //Solver_ConvergenceCriterion
-            base.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Picard; //NonLinearSolver
+            base.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard; //NonLinearSolver
             base.NonLinearSolver.UnderRelax = 1.0; //UnderRelax
         }
 

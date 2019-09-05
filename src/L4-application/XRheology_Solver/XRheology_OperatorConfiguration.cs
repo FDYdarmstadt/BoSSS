@@ -225,5 +225,10 @@ namespace BoSSS.Application.XRheology_Solver {
         public bool isMatInt {
             get { return MatInt; }
         }
+
+        /// <summary>
+        /// true if the interface pressure is prescribed i.e. for evaporation
+        /// </summary>
+        public bool isPInterfaceSet { get; }
     }
 }

@@ -442,8 +442,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             break;
                         }
                     }
-                    
-                    
+
+
                     //if (this.m_MgOperator.LevelIndex == 0) {
                     //    double[] Err = Xex.CloneAs();
                     //    Err.AccV(-1.0, X);
@@ -463,6 +463,30 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 }
 
+                /*
+                if (m_MgOperator.LevelIndex == 0) {
+                    EndStat();
+                    GC.Collect();
+
+                    
+                    
+
+                    
+
+                    for(var mgop = m_MgOperator; mgop != null; mgop = mgop.CoarserLevel) {
+                        var Basis = mgop.Mapping.AggBasis[0];
+                        double MemBs = (double)Basis.UsedMemory / (1024.0 * 1024.0);
+                        Console.WriteLine("   Agg Basis lv {0} mem use : {1:F2} MB", mgop.LevelIndex, MemBs);
+                    }
+
+                    //Console.WriteLine("    MldimArry: " + (((double)MultidimensionalArray.AllocatedBytes)/ (1024.0 * 1024.0)) + "MB");
+                    //MultidimensionalArray.ListHugeOnes();
+                    
+                    Console.WriteLine("Entering infinity loop.");
+                    while (true) ;
+                }
+                */
+
                 // solution copy
                 // =============
                 //IterationCallback?.Invoke(iIter + 1, X, rl, this.m_MgOperator);
@@ -472,6 +496,36 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /*
+        void EndStat() {
+            var swz = PreSmoother as Schwarz;
+            var MemSwz = swz.UsedMem;
+            swz.DisposeBlocks();
+            PreSmoother = null;
+
+            int L = this.m_MgOperator.Mapping.LocalLength;
+
+            double Mem = this.MxxHistory.Count * 2.0 * 8.0 * L;
+                    Mem /= 1024;
+                    Mem /= 1024;
+                    
+
+            Console.WriteLine("lv " + m_MgOperator.LevelIndex + ":  Mem used in Precond " + ((double)MemSwz) / (1024 * 1024.0));
+            Console.WriteLine("lv " + m_MgOperator.LevelIndex + ":  Mem used  " + Mem);
+
+            if(CoarserLevelSolver is OrthonormalizationMultigrid) {
+                ((OrthonormalizationMultigrid)CoarserLevelSolver).EndStat();
+            } else {
+                ((SparseSolver)CoarserLevelSolver).Dispose();
+            }
+            CoarserLevelSolver = null;
+
+        }
+        */
+
+        /// <summary>
+        /// ~
+        /// </summary>
         public int IterationsInNested {
             get {
                 int iter = 0;

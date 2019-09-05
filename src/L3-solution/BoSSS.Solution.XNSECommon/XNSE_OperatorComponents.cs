@@ -623,7 +623,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// <summary>
         /// true if the interface pressure is prescribed i.e. for evaporation
         /// </summary>
-        bool isPInterfaceSet { get; }
+        //bool isPInterfaceSet { get; }
 
     }
 

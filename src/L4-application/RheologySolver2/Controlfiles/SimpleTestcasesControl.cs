@@ -44,7 +44,7 @@ namespace BoSSS.Application.Rheology
         /// <summary>
         /// Channel Flow
         /// </summary>
-        static public RheologyControl Channel(string path = @"C:\Users\kikker\AnnesBoSSSdb\Channel", int degree = 2, int GridLevel = 5)
+        static public RheologyControl Channel(string path = @"C:\Users\kikker\AnnesBoSSSdb\Channel", int degree = 2, int GridLevel = 3)
         {
             RheologyControl C = new RheologyControl();
 
@@ -96,7 +96,7 @@ namespace BoSSS.Application.Rheology
             C.beta = 0.59;
             C.Reynolds = 1;
             C.Weissenberg = 0.5; //aim Weissenberg number!
-            C.RaiseWeissenberg = true;
+            C.RaiseWeissenberg = false;
             C.WeissenbergIncrement = 0.1;
 
             //Grid Params
