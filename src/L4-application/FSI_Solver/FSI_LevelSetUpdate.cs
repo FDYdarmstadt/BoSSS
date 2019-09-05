@@ -15,22 +15,16 @@ limitations under the License.
 */
 
 using BoSSS.Application.FSI_Solver;
-using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
-using BoSSS.Solution.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FSI_Solver {
     class FSI_LevelSetUpdate {
-        readonly private FSI_Auxillary Auxillary = new FSI_Auxillary();
 
         internal FSI_LevelSetUpdate(LevelSetTracker levelSetTracker) {
             m_LevelSetTracker = levelSetTracker;
@@ -83,12 +77,92 @@ namespace FSI_Solver {
             for (int i = 0; i < ColoredCellsSorted.Count(); i++) {
                 ColorList.Add(ColoredCellsSorted[i][1]);
             }
-            int[] ListID = Auxillary.BinarySearchWithNeighbors(ColorList, CurrentColor);
+            int[] ListID = BinarySearchWithNeighbors(ColorList, CurrentColor);
             int[] CellID = new int[ListID.Length];
             for (int i = 0; i < ListID.Length; i++) {
                 CellID[i] = ColoredCellsSorted[ListID[i]][0];
             }
             return CellID;
+        }
+
+        /// <summary>
+        /// Binary search algorithm, output is the target and its neighbours
+        /// </summary>
+        /// <param name="SortedList">
+        /// A sorted list of all elements
+        /// </param>
+        /// <param name="Target">
+        /// The element to be found
+        /// </param>
+        internal int[] BinarySearchWithNeighbors(List<int> SortedList, int Target) {
+            int StartIndex = BinarySearch(SortedList, Target);
+            if (StartIndex == 0)
+                return LeftSearch(SortedList, StartIndex);
+            else if (StartIndex == SortedList.Count() - 1)
+                return RightSearch(SortedList, StartIndex);
+            else {
+                int[] Right = RightSearch(SortedList, StartIndex);
+                int[] Left = LeftSearch(SortedList, StartIndex);
+                return Left.Union(Right).ToArray();
+            }
+
+        }
+
+        /// <summary>
+        /// Binary search algorithm
+        /// </summary>
+        /// <param name="SortedList">
+        /// A sorted list of all elements
+        /// </param>
+        /// <param name="Target">
+        /// The element to be found
+        /// </param>
+        int BinarySearch(List<int> SortedList, int Target) {
+            int L = 0;
+            int R = SortedList.Count() - 1;
+            int TargetIndex = 0;
+
+            while (L <= R) {
+                TargetIndex = (L + R) / 2;
+                if (SortedList[TargetIndex] < Target)
+                    L = TargetIndex + 1;
+                else if (SortedList[TargetIndex] > Target)
+                    R = TargetIndex - 1;
+                else
+                    break;
+            }
+
+            return TargetIndex;
+        }
+
+        /// <summary>
+        /// Search for left neighbours
+        /// </summary>
+        /// <param name="SortedList">
+        /// A sorted list of all elements
+        /// </param>
+        /// <param name="StartIndex"></param>
+        private int[] LeftSearch(List<int> SortedList, int StartIndex) {
+            List<int> temp = new List<int> { StartIndex };
+            while (temp.Last() + 1 < SortedList.Count() && SortedList[temp.Last() + 1] == SortedList[temp.Last()]) {
+                temp.Add(temp.Last() + 1);
+            }
+            return temp.ToArray();
+        }
+
+        /// <summary>
+        /// Search for right neighbours
+        /// </summary>
+        /// <param name="SortedList">
+        /// A sorted list of all elements
+        /// </param>
+        /// <param name="StartIndex"></param>
+        private int[] RightSearch(List<int> SortedList, int StartIndex) {
+            List<int> temp = new List<int> { StartIndex };
+            while (temp.Last() - 1 > 0 && SortedList[temp.Last() - 1] == SortedList[temp.Last()]) {
+                temp.Add(temp.Last() - 1);
+            }
+            return temp.ToArray();
         }
 
         /// <summary>
