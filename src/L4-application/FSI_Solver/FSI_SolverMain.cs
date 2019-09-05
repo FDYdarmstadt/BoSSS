@@ -999,7 +999,7 @@ namespace BoSSS.Application.FSI_Solver {
                     // print and mpi check
                     // -------------------------------------------------
                     Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
-                    Auxillary.PrintResultToConsole(m_Particles, FluidViscosity: 0, FluidDensity: 0, phystime, TimestepInt, out double MPIangularVelocity, out Test_Force);
+                    Auxillary.PrintResultToConsole(m_Particles, 0, 0, phystime, TimestepInt, out double MPIangularVelocity, out Test_Force);
 
                     // Save for NUnit Test
                     // -------------------------------------------------
