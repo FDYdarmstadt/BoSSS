@@ -817,12 +817,12 @@ namespace BoSSS.Application.FSI_Solver {
             List<int> coloredCells = new List<int>();
             for (int p = 0; p < m_Particles.Count; p++) {
                 Particle currentParticle = m_Particles[p];
-                double h_min = GridData.iGeomCells.h_min.Min();
+                double h_min = GridData.iGeomCells.h_min.Min() / 2;
                 double h_max = GridData.iGeomCells.h_max.Max();
                 for (int j = 0; j < J; j++) {
                     double[] center = GridData.iLogicalCells.GetCenter(j);
                     // Check for every cell whether their center is part of a particle or not (with tolerance sqrt(h_max^2+h_min^2))
-                    if (currentParticle.Contains(center, h_max, h_min)) {
+                    if (currentParticle.Contains(center, h_min, h_min)) {
                         ParticleColor.SetMeanValue(j, p + 1);
                         coloredCells.Add(j);
                         cells[j] = p + 1;

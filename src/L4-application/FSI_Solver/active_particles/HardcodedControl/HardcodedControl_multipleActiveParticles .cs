@@ -38,7 +38,7 @@ namespace BoSSS.Application.FSI_Solver {
             // basic database options
             // =============================
             C.DbPath = @"D:\BoSSS_databases\multipleActiveParticles";
-            C.savetodb = false;
+            C.savetodb = true;
             C.saveperiod = 1;
             C.ProjectName = "5activeRods_noBackroundFlow";
             C.ProjectDescription = "Active";
@@ -59,8 +59,8 @@ namespace BoSSS.Application.FSI_Solver {
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 12;
-                r = 12;
+                q = 11;
+                r = 11;
 
                 double[] Xnodes = GenericBlas.Linspace(-5 * BaseSize, 5 * BaseSize, q + 1);
                 double[] Ynodes = GenericBlas.Linspace(-5 * BaseSize, 5 * BaseSize, r + 1);
@@ -98,6 +98,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             C.AdaptiveMeshRefinement = true;
             C.RefinementLevel = 4;
+            C.AMR_startUpSweeps = 6;
 
 
             // Boundary conditions
@@ -127,7 +128,43 @@ namespace BoSSS.Application.FSI_Solver {
                 UseAddedDamping = true,
             });
 
-            C.Particles.Add(new Particle_Ellipsoid( 0.2,  0.1, new double[] { 2.5, 2.5 }, startAngl: 10) {
+            C.Particles.Add(new Particle_Ellipsoid(0.2, 0.1, new double[] { 2.0, 0.0 }, startAngl: 12) {
+                particleDensity = 1,
+                activeStress = 1e3,
+                useAddaptiveUnderrelaxation = true,
+                underrelaxation_factor = 3.0,
+                clearSmallValues = true,
+                UseAddedDamping = true,
+            });
+
+            C.Particles.Add(new Particle_Ellipsoid(0.2, 0.1, new double[] { -2.0, 0.0 }, startAngl: -20) {
+                particleDensity = 1,
+                activeStress = 1e3,
+                useAddaptiveUnderrelaxation = true,
+                underrelaxation_factor = 3.0,
+                clearSmallValues = true,
+                UseAddedDamping = true,
+            });
+
+            C.Particles.Add(new Particle_Ellipsoid(0.2, 0.1, new double[] { 0.0, 2.0 }, startAngl: -45) {
+                particleDensity = 1,
+                activeStress = 1e3,
+                useAddaptiveUnderrelaxation = true,
+                underrelaxation_factor = 3.0,
+                clearSmallValues = true,
+                UseAddedDamping = true,
+            });
+
+            C.Particles.Add(new Particle_Ellipsoid(0.2, 0.1, new double[] { 0.0, -2.0 }, startAngl: 20) {
+                particleDensity = 1,
+                activeStress = 1e3,
+                useAddaptiveUnderrelaxation = true,
+                underrelaxation_factor = 3.0,
+                clearSmallValues = true,
+                UseAddedDamping = true,
+            });
+
+            C.Particles.Add(new Particle_Ellipsoid( 0.2,  0.1, new double[] { 2, 2 }, startAngl: 10) {
                 particleDensity = 1,
                 activeStress = 1e3,
                 useAddaptiveUnderrelaxation = true,
@@ -136,7 +173,7 @@ namespace BoSSS.Application.FSI_Solver {
                 UseAddedDamping = true
             });
 
-            C.Particles.Add(new Particle_Ellipsoid( 0.2,  0.1, new double[] { 2.5, -2.5 }, startAngl: 50) {
+            C.Particles.Add(new Particle_Ellipsoid( 0.2,  0.1, new double[] { 2, -2 }, startAngl: 50) {
                 particleDensity = 1,
                 activeStress = 1e3,
                 useAddaptiveUnderrelaxation = true,
@@ -145,7 +182,7 @@ namespace BoSSS.Application.FSI_Solver {
                 UseAddedDamping = true
             });
 
-            C.Particles.Add(new Particle_Ellipsoid( 0.2,  0.1, new double[] { -2.5, 2.5 }, startAngl: 80) {
+            C.Particles.Add(new Particle_Ellipsoid( 0.2,  0.1, new double[] { -2, 2 }, startAngl: 80) {
                 particleDensity = 1,
                 activeStress = 1e3,
                 useAddaptiveUnderrelaxation = true,
@@ -154,7 +191,7 @@ namespace BoSSS.Application.FSI_Solver {
                 UseAddedDamping = true
             });
 
-            C.Particles.Add(new Particle_Ellipsoid( 0.2,  0.1, new double[] { -2.5, -2.5 }, startAngl: 160) {
+            C.Particles.Add(new Particle_Ellipsoid( 0.2,  0.1, new double[] { -2, -2 }, startAngl: 34) {
                 particleDensity = 1,
                 activeStress = 1e3,
                 useAddaptiveUnderrelaxation = true,
@@ -162,7 +199,6 @@ namespace BoSSS.Application.FSI_Solver {
                 clearSmallValues = true,
                 UseAddedDamping = true
             });
-
 
             // Quadrature rules
             // =============================   

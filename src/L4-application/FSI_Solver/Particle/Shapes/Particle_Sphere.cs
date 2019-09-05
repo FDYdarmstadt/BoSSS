@@ -49,9 +49,9 @@ namespace BoSSS.Application.FSI_Solver
 
         public Particle_Sphere(double radius, double[] startPos = null, double startAngl = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(startPos, startAngl, startTransVelocity, startRotVelocity) {
             radius_P = radius;
-            Motion.GetParticleLengthscale(radius);
-            Motion.GetParticleArea(Area_P());
-            Motion.GetParticleMomentOfInertia(MomentOfInertia_P);
+            //Motion.GetParticleLengthscale(radius);
+            //Motion.GetParticleArea(Area_P());
+            //Motion.GetParticleMomentOfInertia(MomentOfInertia_P);
 
         }
 
