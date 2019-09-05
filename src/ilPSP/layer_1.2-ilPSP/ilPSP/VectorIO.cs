@@ -143,7 +143,7 @@ namespace ilPSP.Utils {
                 if (send == null)
                     send = list.ToArray();
 
-                sms.Transmitt(0, send);
+                sms.Transmit(0, send);
 
 
                 T[] dummy;

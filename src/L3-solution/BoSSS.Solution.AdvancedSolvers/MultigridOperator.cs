@@ -97,7 +97,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        BlockMsrMatrix m_RawOperatorMatrix = null;
+        BlockMsrMatrix m_RawOperatorMatrix = null; // forgotten after Setup()
         BlockMsrMatrix m_RawMassMatrix = null;
 
         bool setupdone = false;
@@ -127,14 +127,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //var __PrlgOperator = this.FinerLevel.Mapping.FromOtherLevelMatrix(this.Mapping);
                     Debug.Assert(__PrlgOperator.RowPartitioning.LocalLength == this.FinerLevel.Mapping.LocalLength);
                     Debug.Assert(__PrlgOperator.ColPartition.LocalLength == this.Mapping.LocalLength);
-//#if DEBUG
-//                    var __Err = __PrlgOperator_Check.CloneAs();
-//                    __Err.Acc(-1.0, __PrlgOperator);
-//                    double ErrNorm = __Err.InfNorm();
-//                    Console.WriteLine("Error norm: " + ErrNorm);
-//                    double Ref = Math.Max(__PrlgOperator.InfNorm(), __PrlgOperator_Check.InfNorm());
-//                    //Debug.Assert(ErrNorm < Ref*1.0e-8);  
-//#endif
 
 
                     if (this.FinerLevel.RightChangeOfBasis_Inverse != null)
@@ -155,23 +147,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 BlockMsrMatrix RawOpMatrix;
                 if (this.FinerLevel == null) {
                     RawOpMatrix = this.m_RawOperatorMatrix;
-                    this.m_RawOperatorMatrix = null;
                 } else {
                     BlockMsrMatrix Op = FinerLevel.OperatorMatrix;
-
                     RawOpMatrix = BlockMsrMatrix.Multiply(RawRestriction, BlockMsrMatrix.Multiply(Op, RawProlongation));
                 }
+                this.m_RawOperatorMatrix = null;
 
                 // mass matrix before change of basis
                 BlockMsrMatrix RawMassMatrix;
                 if (this.FinerLevel == null) {
                     RawMassMatrix = this.m_RawMassMatrix;
-                    this.m_RawMassMatrix = null;
                 } else {
                     BlockMsrMatrix MM = FinerLevel.MassMatrix;
-
                     RawMassMatrix = BlockMsrMatrix.Multiply(RawRestriction, BlockMsrMatrix.Multiply(MM, RawProlongation));
                 }
+                this.m_RawMassMatrix = null;
 
                 Debug.Assert(RawOpMatrix.RowPartitioning.LocalLength == this.Mapping.LocalLength);
 
@@ -561,7 +551,55 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /// <summary>
+        /// Number of Bytes used
+        /// </summary>
+        public long UsedMemory {
+            get {
+                GetMemoryInfo(out long Allocated, out long Used);
+                return Used;
+            }
+        }
 
+       
+
+        /// <summary>
+        /// Returns the amount of allocated/reserved and actually used memory in this level and coarser levels
+        /// </summary>
+        public void GetMemoryInfo(out long Allocated, out long Used) {
+            Allocated = 0;
+            Used = 0;
+                       
+            var allMtx = new HashSet<BlockMsrMatrix>(new FuncEqualityComparer<BlockMsrMatrix>((a, b) => ReferenceEquals(a, b)));
+            allMtx.Add(m_LeftChangeOfBasis);
+            allMtx.Add(m_LeftChangeOfBasis_Inverse);
+            allMtx.Add(m_RightChangeOfBasis);
+            allMtx.Add(m_RightChangeOfBasis_Inverse);
+            allMtx.Add(m_RestrictionOperator);
+            allMtx.Add(m_PrologateOperator);
+            allMtx.Add(m_RawMassMatrix);
+            allMtx.Add(m_RawOperatorMatrix);
+            allMtx.Add(m_MassMatrix);
+            allMtx.Add(m_OperatorMatrix);
+                       
+
+
+            foreach(var Mtx in allMtx) {
+                if (Mtx != null) {
+                    Mtx.GetMemoryInfo(out long allc, out long used);
+                    Allocated += allc;
+                    Used += used;
+                }
+            }
+
+
+            if (CoarserLevel != null) {
+                CoarserLevel.GetMemoryInfo(out long allc, out long used);
+                Allocated += allc;
+                Used += used;
+            }
+        }
+               
         BlockMsrMatrix m_OperatorMatrix = null;
         BlockMsrMatrix m_MassMatrix = null;
         

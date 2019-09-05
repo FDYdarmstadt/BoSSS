@@ -140,7 +140,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
 
                 using (new BlockTrace("Slv Iter", tr)) {
-                    while (fnorm > ConvCrit && itc < MaxIter) {
+                    while ((fnorm > ConvCrit && itc < MaxIter) || itc < MinIter) {
                         rat = fnorm / fNormo;
                         fNormo = fnorm;
                         itc++;
@@ -269,7 +269,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         f0 = ft.CloneAs();
 
                         OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
-
+                    
 
                     }
                 }

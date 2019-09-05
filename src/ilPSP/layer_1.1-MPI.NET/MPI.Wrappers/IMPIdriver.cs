@@ -324,6 +324,12 @@ namespace MPI.Wrappers {
         void Waitall(int count, MPI_Request[] array_of_requests, MPI_Status[] array_of_statuses);
 
         /// <summary>
+        /// Cancels a communication request
+        /// </summary>
+        void Cancel(ref MPI_Request r);
+
+
+        /// <summary>
         /// Blocks until one of the operations associated with the active
         /// requests in the array has completed. If more then one operation is
         /// enabled and can terminate, one is arbitrarily chosen. Returns in

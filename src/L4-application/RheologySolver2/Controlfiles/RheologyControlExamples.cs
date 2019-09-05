@@ -70,7 +70,7 @@ namespace BoSSS.Application.Rheology {
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.NewtonGMRES;
             C.ObjectiveParam = 1.0;
 
             //Debugging and Solver Analysis
@@ -408,8 +408,8 @@ namespace BoSSS.Application.Rheology {
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;
-            C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_gmres_levelpmg;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
             C.ObjectiveParam = 1.0;
             C.useJacobianForOperatorMatrix = false;
 

@@ -20,7 +20,7 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Code = BoSSS.Solution.Control.LinearSolverConfig.Code;
+using Code = BoSSS.Solution.Control.LinearSolverCode;
 
 namespace BoSSS.Application.XdgPoisson3 {
     [TestFixture]
