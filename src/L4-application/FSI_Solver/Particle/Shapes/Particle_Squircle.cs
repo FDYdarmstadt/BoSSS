@@ -34,14 +34,16 @@ namespace BoSSS.Application.FSI_Solver
 
         }
 
-        public Particle_Squircle(double[] startPos = null, double startAngl = 0) : base(2, startPos, startAngl) {
-
+        public Particle_Squircle(double radius, double[] startPos = null, double startAngl = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(startPos, startAngl, startTransVelocity, startRotVelocity) {
+            radius_P = radius;
+            Motion.GetParticleLengthscale(radius);
+            Motion.GetParticleArea(Area_P());
+            Motion.GetParticleMomentOfInertia(MomentOfInertia_P);
         }
 
         /// <summary>
         /// Radius of the particle. Not necessary for particles defined by their length and thickness
         /// </summary>
-        [DataMember]
         public double radius_P;
 
         protected override double Circumference_P

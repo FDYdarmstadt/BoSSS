@@ -459,8 +459,8 @@ namespace BoSSS.Application.FSI_Solver {
             const double BaseSize = 1.0;
 
             //C.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-             //                   new Tuple<string,object>("k", k),
-              //              };
+            //                   new Tuple<string,object>("k", k),
+            //              };
 
             // k = i;
 
@@ -500,8 +500,7 @@ namespace BoSSS.Application.FSI_Solver {
                 Degree = 2,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            C.FieldOptions.Add("Curvature", new FieldOpts()
-            {
+            C.FieldOptions.Add("Curvature", new FieldOpts() {
                 Degree = 2,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
@@ -593,10 +592,9 @@ namespace BoSSS.Application.FSI_Solver {
             //C.particleRadius = 0.125;
             //C.particleMass = 1;
 
-            
 
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 1.0 }) {
-                radius_P = (0.125/2.0),
+
+            C.Particles.Add(new Particle_Sphere(radius: 0.125 / 2.0, new double[] { 0.0, 1.0 }) {
                 particleDensity = 1.25,
                 IncludeRotation = false,
                 IncludeTranslation = true
@@ -804,19 +802,19 @@ namespace BoSSS.Application.FSI_Solver {
             //C.particleMass = 1;
 
 
-            
-            C.Particles.Add(new Particle_Ellipsoid(new double[] { 0.4, 1.0 }) {
+
+            C.Particles.Add(new Particle_Ellipsoid(length: 4, thickness: 1, new double[] { 0.4, 1.0 }) {
                 particleDensity = 1.0
             });
 
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.2, 0.5 }) {
+            C.Particles.Add(new Particle_Sphere(radius: 0.2, new double[] { 0.2, 0.5 }) {
                 radius_P = 0.2,
-                particleDensity = 1.0,        
+                particleDensity = 1.0,
             });
             C.Particles[1].translationalVelocity[0][0] = 0.5;
             C.Particles[1].translationalVelocity[0][1] = 1.0;
 
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.5, 2.0 }) {
+            C.Particles.Add(new Particle_Sphere(radius: 0.2, new double[] { 0.5, 2.0 }) {
                 radius_P = 0.2,
                 particleDensity = 1.0,
             });
@@ -1023,36 +1021,30 @@ namespace BoSSS.Application.FSI_Solver {
             //C.particleMass = 1;
 
 
-            
-            C.Particles.Add(new Particle_Ellipsoid(new double[] { -1.2, 0.9 }, startAngl: 90.0) {
+
+            C.Particles.Add(new Particle_Ellipsoid(length: 0.1, thickness: 0.05, new double[] { -1.2, 0.9 }, startAngl: 90.0) {
                 particleDensity = 1.0,
-                thickness_P = 0.05,
-                length_P = 0.1
             });
             C.Particles[0].translationalVelocity[0][0] = -5.0;
             C.Particles[0].rotationalVelocity[0] = -10;
 
-            C.Particles.Add(new Particle_Sphere(new double[] { -0.6, 0.3},startAngl:-90.0) {
-                radius_P = 0.25,
+            C.Particles.Add(new Particle_Sphere(radius: 0.25, new double[] { -0.6, 0.3 }, startAngl: -90.0) {
                 particleDensity = 1.0,
             });
 
- 
-            C.Particles.Add(new Particle_Hippopede(2, new double[] { -0.2, -0.5 }, startAngl:-45) {
-                radius_P = 0.15,
+
+            C.Particles.Add(new Particle_Hippopede(length: 0.15 * 4, thickness: 0.15, new double[] { -0.2, -0.5 }, startAngl: -45) {
                 particleDensity = 1.0,
             });
 
-            C.Particles[2].translationalVelocity[0] = new double[2] { -5.0,0.0};
+            C.Particles[2].translationalVelocity[0] = new double[2] { -5.0, 0.0 };
 
-            C.Particles.Add(new Particle_Squircle(new double[] { 1.0, 1.0 }, startAngl: -20.0) {
-                radius_P = 0.25,
+            C.Particles.Add(new Particle_Squircle(radius: 0.25, new double[] { 1.0, 1.0 }, startAngl: -20.0) {
                 particleDensity = 1.0,
             });
             C.Particles[3].translationalVelocity[0] = new double[2] { -5.0, -5.0 };
 
-            C.Particles.Add(new Particle_Bean(new double[] { 1.0, -1.0 }, startAngl: -20.0) {
-                radius_P = 0.25,
+            C.Particles.Add(new Particle_Bean(radius: 0.25, new double[] { 1.0, -1.0 }, startAngl: -20.0) {
                 particleDensity = 1.0,
             });
             C.Particles[4].translationalVelocity[0] = new double[2] { -5.0, 5.0 };
@@ -1092,7 +1084,7 @@ namespace BoSSS.Application.FSI_Solver {
             // ===================
 
             C.PhysicalParameters.IncludeConvection = true;
-        
+
 
             // misc. solver options
             // ====================
@@ -1124,7 +1116,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
 
-     
+
         public static FSI_Control FiveRandomParticles(string _DbPath = null, int k = 2, double dt = 0.001, double VelXBase = 0.0, int collisionModelInt = 1) {
             FSI_Control C = new FSI_Control();
 
@@ -1141,10 +1133,10 @@ namespace BoSSS.Application.FSI_Solver {
 
             // basic database options
             // ======================     
-            
+
             C.DbPath = @"\\hpccluster\hpccluster-scratch\krause\cluster_db";
             C.savetodb = true;
-            C.saveperiod = (int)(0.01/dt);
+            C.saveperiod = (int)(0.01 / dt);
             C.ProjectName = "ParticleCollisionTest";
             C.ProjectDescription = "Gravity";
             C.SessionName = C.ProjectName;
@@ -1273,29 +1265,23 @@ namespace BoSSS.Application.FSI_Solver {
             //C.particleMass = 1;
 
 
-            C.Particles.Add(new Particle_Sphere(new double[] { -0.2, 7.5 }, startAngl: 45.0) {
-                radius_P = 0.1,
+            C.Particles.Add(new Particle_Sphere(radius: 0.1, new double[] { -0.2, 7.5 }, startAngl: 45.0) {
                 particleDensity = 3.0
             });
 
-            C.Particles.Add(new Particle_Ellipsoid(new double[] { 0.2, 7.3 }, startAngl: 30.0) {
-                particleDensity = 3.0,
-                thickness_P = 0.05,
-                length_P = 0.1
-            });
-
-            C.Particles.Add(new Particle_Squircle(new double[] { -0.2, 6.95 }, startAngl: -20.0) {
-                radius_P = 0.1,
+            C.Particles.Add(new Particle_Ellipsoid(length: 0.1, thickness: 0.05, new double[] { 0.2, 7.3 }, startAngl: 30.0) {
                 particleDensity = 3.0,
             });
 
-            C.Particles.Add(new Particle_Sphere(new double[] { -0.5, 7.2 }, startAngl: -45.0) {
-                radius_P = 0.15,
+            C.Particles.Add(new Particle_Squircle(radius: 0.1, new double[] { -0.2, 6.95 }, startAngl: -20.0) {
                 particleDensity = 3.0,
             });
 
-            C.Particles.Add(new Particle_Squircle(new double[] { 0.2, 6.5 }, startAngl: -45.0) {
-                radius_P = 0.15,
+            C.Particles.Add(new Particle_Sphere(radius: 0.15, new double[] { -0.5, 7.2 }, startAngl: -45.0) {
+                particleDensity = 3.0,
+            });
+
+            C.Particles.Add(new Particle_Squircle(radius: 0.15, new double[] { 0.2, 6.5 }, startAngl: -45.0) {
                 particleDensity = 3.0,
             });
 
@@ -1376,7 +1362,7 @@ namespace BoSSS.Application.FSI_Solver {
 
         }
 
-        public static FSI_Control FallingEllipse(string _DbPath = null, int k = 2, double VelXBase = 0.0, double angle= 0.0) {
+        public static FSI_Control FallingEllipse(string _DbPath = null, int k = 2, double VelXBase = 0.0, double angle = 0.0) {
             FSI_Control C = new FSI_Control();
 
 
@@ -1517,10 +1503,8 @@ namespace BoSSS.Application.FSI_Solver {
             //C.particleMass = 1;
 
 
-            C.Particles.Add(new Particle_Ellipsoid(new double[] { 0.0*BaseSize, 1.0*BaseSize }, startAngl: angle) {
+            C.Particles.Add(new Particle_Ellipsoid(length: 0.1, thickness: 0.2, new double[] { 0.0 * BaseSize, 1.0 * BaseSize }, startAngl: angle) {
                 particleDensity = 10.0,
-                length_P = 0.1*BaseSize,
-                thickness_P = 0.2*BaseSize,
                 GravityVertical = 9.81
             });
 
@@ -1590,7 +1574,7 @@ namespace BoSSS.Application.FSI_Solver {
 
         }
 
-        public static FSI_Control DraftKissingTumbling(string _DbPath = null, int k = 2, double VelXBase = 0.0,int collisionModelInt = 0) {
+        public static FSI_Control DraftKissingTumbling(string _DbPath = null, int k = 2, double VelXBase = 0.0, int collisionModelInt = 0) {
             FSI_Control C = new FSI_Control();
 
 
@@ -1712,8 +1696,8 @@ namespace BoSSS.Application.FSI_Solver {
                 Console.WriteLine("Cells:" + grd.NumberOfCells);
 
                 return grd;
-            };           
-          
+            };
+
             C.AddBoundaryValue("Velocity_Inlet_left", "VelocityY", X => 0);
             C.AddBoundaryValue("Velocity_Inlet_right", "VelocityY", X => 0);
             C.AddBoundaryValue("Wall_lower");
@@ -1728,7 +1712,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Coupling Properties
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-          
+
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 0.01;
@@ -1738,22 +1722,20 @@ namespace BoSSS.Application.FSI_Solver {
             //C.particleMass = 1;
 
 
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 7.2 }) {
-                radius_P = 0.1,
+            C.Particles.Add(new Particle_Sphere(radius: 0.1, new double[] { 0.0, 7.2 }) {
                 particleDensity = 1.01
             });
 
             //C.Particles[0].TranslationalVelocity[0][1] = -0.5;
 
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 6.8 }) {
-                radius_P = 0.1,
+            C.Particles.Add(new Particle_Sphere(radius: 0.1, new double[] { 0.0, 6.8 }) {
                 particleDensity = 1.01,
             });
 
             //C.Particles[1].TranslationalVelocity[0][1] = -0.5;
 
             //Func<double[], double, double> phiComplete = (X, t) => -1 * (C.Particles[0].Phi_P(X, t) * C.Particles[1].Phi_P(X, t));
-      
+
 
             //C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
             C.InitialValues_Evaluators.Add("VelocityX", X => 0);
@@ -1870,7 +1852,7 @@ namespace BoSSS.Application.FSI_Solver {
                         q = 31;
                         r = 91;
                         break;
-                        
+
                     case 99:
                         q = 31; //61 //31
                         r = 31; //81 //41
@@ -1942,13 +1924,11 @@ namespace BoSSS.Application.FSI_Solver {
             //C.PhysicalParameters.mu_B = 0.1;
             //C.particleMass = 1;
 
-            C.Particles.Add(new Particle_Sphere(new double[] { -0.5, -1.35 }, startAngl: 0.0) {
-                radius_P = 0.1,
+            C.Particles.Add(new Particle_Sphere(radius: 0.1, new double[] { -0.5, -1.35 }, startAngl: 0.0) {
                 particleDensity = 1.25,
             });
 
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.8, -1.35 }, startAngl: 0.0) {
-                radius_P = 0.1,
+            C.Particles.Add(new Particle_Sphere(radius: 0.1, new double[] { 0.8, -1.35 }, startAngl: 0.0) {
                 particleDensity = 1.25,
             });
 

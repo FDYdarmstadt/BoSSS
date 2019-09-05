@@ -13,6 +13,10 @@ namespace BoSSS.Application.FSI_Solver {
         public Motion_Dry_NoTranslation(double[] gravity) : base(gravity) {
         }
 
+        public override void CheckCorrectInit(bool IsDry) {
+            // Do nothing
+        }
+
         /// <summary>
         /// Calculate the new particle position
         /// </summary>

@@ -127,12 +127,10 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Ellipsoid(new double[] { 5.0, 0.0 }, startAngl: 10)
+                C.Particles.Add(new Particle_Ellipsoid(length: 1.5, thickness: 0.6, new double[] { 5.0, 0.0 }, startAngl: 10)
                 {
                     particleDensity = 0,
                     activeStress = stressM,
-                    thickness_P = 0.6 * BaseSize,
-                    length_P = 1.5 * BaseSize,
                     useAddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
                     underrelaxation_factor = 0.5,// underrelaxation with [factor * 10^exponent]
                     clearSmallValues = true,
@@ -313,12 +311,10 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Ellipsoid(new double[] { -10, 0.0 }, startAngl: 10)
+                C.Particles.Add(new Particle_Ellipsoid(length: 2, thickness: 0.4, new double[] { -10, 0.0 }, startAngl: 10)
                 {
                     particleDensity = 2,//pg/(mum^3)
                     activeStress = stressM,
-                    thickness_P = 0.4 * BaseSize,
-                    length_P = 2 * BaseSize,
                     useAddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
                     underrelaxation_factor = 5,// underrelaxation with [factor * 10^exponent]
                     clearSmallValues = true

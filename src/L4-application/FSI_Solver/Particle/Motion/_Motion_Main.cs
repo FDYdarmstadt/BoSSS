@@ -7,6 +7,7 @@ using ilPSP;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Application.FSI_Solver {
     public class ParticleMotion {
@@ -27,6 +28,7 @@ namespace BoSSS.Application.FSI_Solver {
             m_ForceAndTorqueConvergence = forceAndTorqueConvergence;
             m_UnderrelaxationFactor = underrelaxationFactor;
             m_UseAddaptiveUnderrelaxation = useAddaptiveUnderrelaxation;
+
             for (int i = 0; i < historyLength; i++) {
                 position.Add(new double[spatialDim]);
                 angle.Add(new double());
@@ -45,9 +47,27 @@ namespace BoSSS.Application.FSI_Solver {
         protected double[] m_Gravity;
 
         /// <summary>
+        /// Density of the particle.
+        /// </summary>
+        [DataMember]
+        public double particleDensity = 1;
+
+        /// <summary>
+        /// Active stress on the current particle.
+        /// </summary>
+        [DataMember]
+        public double activeStress = 0;
+
+        /// <summary>
+        /// Active velocity (alternative to active stress) on the current particle.
+        /// </summary>
+        [DataMember]
+        public double ActiveVelocity = 0;
+
+        /// <summary>
         /// The translational velocity of the particle in the current time step.
         /// </summary>
-        protected double particleMass = new double();
+        protected double particleArea = new double();
 
         /// <summary>
         /// The translational velocity of the particle in the current time step.
@@ -143,9 +163,58 @@ namespace BoSSS.Application.FSI_Solver {
             Aux.SaveValueOfLastTimestep(hydrodynamicTorque);
         }
 
+        public virtual void CheckCorrectInit(bool IsDry) {
+            if (IsDry)
+                throw new Exception("The flow solver is switched of, but the particle is defined as if there was a fluid. Please use the dry motion models");
+        }
+
         public void InitializeParticlePositionAndAngle(double[] positionP, double angleP) {
             position[0] = positionP.CloneAs();
             angle[0] = angleP * 2 * Math.PI / 360;
+        }
+
+        public void InitializeParticleVelocity(double[] translationalVelocityP, double rotationalVelocityP) {
+            if (translationalVelocityP == null)
+                translationalVelocity[0] = new double[spatialDim];
+            else
+                translationalVelocity[0] = translationalVelocityP.CloneAs();
+
+            rotationalVelocity[0] = rotationalVelocityP;
+        }
+
+        /// <summary>
+        /// Init of the particle mass.
+        /// </summary>
+        /// <param name="mass"></param>
+        public void GetParticleArea(double area) {
+            particleArea = area;
+        }
+
+        /// <summary>
+        /// Init of the moment of inertia.
+        /// </summary>
+        /// <param name="moment"></param>
+        public void GetParticleLengthscale(double lengthscale) {
+            m_MaxParticleLengthScale = lengthscale;
+        }
+
+        /// <summary>
+        /// Mass of the current particle.
+        /// </summary>
+        public double ParticleMass {
+            get {
+                Aux.TestArithmeticException(particleArea, "particle area");
+                Aux.TestArithmeticException(particleDensity, "particle density");
+                return particleArea * particleDensity;
+            }
+        }
+
+        /// <summary>
+        /// Init of the moment of inertia.
+        /// </summary>
+        /// <param name="moment"></param>
+        public void GetParticleMomentOfInertia(double moment) {
+            momentOfInertia = moment;
         }
 
         /// <summary>
@@ -189,30 +258,6 @@ namespace BoSSS.Application.FSI_Solver {
             double[] tempForces = CalculateHydrodynamicForces(U, P, LsTrk, CutCells_P, muA, relativeParticleMass);
             double tempTorque = CalculateHydrodynamicTorque(U, P, LsTrk, CutCells_P, muA);
             HydrodynamicsPostprocessing(tempForces, tempTorque);
-        }
-
-        /// <summary>
-        /// Init of the particle mass.
-        /// </summary>
-        /// <param name="mass"></param>
-        public void GetParticleMass(double mass) {
-            particleMass = mass;
-        }
-
-        /// <summary>
-        /// Init of the moment of inertia.
-        /// </summary>
-        /// <param name="moment"></param>
-        public void GetParticleMomentOfInertia(double moment) {
-            momentOfInertia = moment;
-        }
-
-        /// <summary>
-        /// Init of the moment of inertia.
-        /// </summary>
-        /// <param name="moment"></param>
-        public void GetParticleLengthscale(double lengthscale) {
-            m_MaxParticleLengthScale = lengthscale;
         }
 
         /// <summary>
@@ -309,7 +354,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="dt"></param>
         protected virtual void CalculateTranslationalAcceleration(double dt) {
             for (int d = 0; d < spatialDim; d++) {
-                translationalAcceleration[0][d] = hydrodynamicForces[0][d] / particleMass;
+                translationalAcceleration[0][d] = hydrodynamicForces[0][d] / ParticleMass;
             }
             Aux.TestArithmeticException(translationalAcceleration[0], "particle translational acceleration");
         }
@@ -330,7 +375,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="P"></param>
         /// <param name="LsTrk"></param>
         /// <param name="muA"></param>
-        protected virtual double[] CalculateHydrodynamicForces(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double muA, double relativeParticleMass, double dt = 0) {
+        protected virtual double[] CalculateHydrodynamicForces(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double muA, double fluidDensity, double dt = 0) {
             int RequiredOrder = U[0].Basis.Degree * 3 + 2;
             Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
             SinglePhaseField[] UA = U.ToArray();
@@ -338,7 +383,7 @@ namespace BoSSS.Application.FSI_Solver {
             double[] tempForces = ForcesIntegration(UA, pA, LsTrk, CutCells_P, RequiredOrder, muA);
             Force_MPISum(ref tempForces);
             for (int d = 0; d < spatialDim; d++) {
-                tempForces[d] += relativeParticleMass * m_Gravity[d];
+                tempForces[d] += (particleDensity - fluidDensity) * particleArea * m_Gravity[d];
             }
             return tempForces;
         }

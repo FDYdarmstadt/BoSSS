@@ -48,9 +48,9 @@ namespace BoSSS.Application.FSI_Solver {
         private const int historyLength = 4;
         protected static int spatialDim = 2;
 
-        public Particle(int Dim, double[] startPos = null, double startAngl = 0.0) {
+        public Particle(double[] startPos = null, double startAngl = 0.0, double[] startTransVelocity = null, double startRotVelocity = 0) {
 
-            spatialDim = Dim;
+            spatialDim = startPos.Length;
 
             // Particle history
             // =============================   
@@ -76,6 +76,7 @@ namespace BoSSS.Application.FSI_Solver {
             angle[1] = startAngl * 2 * Math.PI / 360;
 
             Motion.InitializeParticlePositionAndAngle(startPos, startAngl);
+            Motion.InitializeParticleVelocity(startTransVelocity, startRotVelocity);
         }
 
         /// <summary>

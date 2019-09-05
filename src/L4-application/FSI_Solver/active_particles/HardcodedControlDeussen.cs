@@ -129,9 +129,8 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Sphere(new double[] { 0 + 14 * d, 0.0 }, startAngl: 180 * d)
+                C.Particles.Add(new Particle_Sphere(radius: 1, new double[] { 0 + 14 * d, 0.0 }, startAngl: 180 * d)
                 {
-                    radius_P = 1,
                     particleDensity = 1.5,//pg/(mum^3)
                     GravityVertical = 0,
                     activeStress = stressM,
@@ -298,7 +297,7 @@ namespace BoSSS.Application.FSI_Solver
 
             // Particles
             // =========
-            C.Particles.Add(new Particle_Sphere(new double[] { -0.5, -0.5 }, startAngl: 90.0)
+            C.Particles.Add(new Particle_Sphere(radius: 0.4, new double[] { -0.5, -0.5 }, startAngl: 90.0)
             {
                 particleDensity = 1.0,
                 radius_P = 0.4

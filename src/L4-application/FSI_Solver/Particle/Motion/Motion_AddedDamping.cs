@@ -93,7 +93,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
         private double[,] GetMassMatrix() {
             double[,] MassMatrix = new double[3, 3];
-            MassMatrix[0, 0] = MassMatrix[1, 1] = particleMass;
+            MassMatrix[0, 0] = MassMatrix[1, 1] = ParticleMass;
             MassMatrix[2, 2] = momentOfInertia;
             return MassMatrix;
         }

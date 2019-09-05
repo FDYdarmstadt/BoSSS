@@ -120,9 +120,8 @@ namespace BoSSS.Application.FSI_Solver
             C.CoefficientOfRestitution = 1;
 
 
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 9.5 })
+            C.Particles.Add(new Particle_Sphere(radius: 0.1, new double[] { 0.0, 9.5 })
             {
-                radius_P = 0.10,
                 particleDensity = 1.01,
                 GravityVertical = -9.81,
                 useAddaptiveUnderrelaxation = true,
@@ -131,9 +130,8 @@ namespace BoSSS.Application.FSI_Solver
                 UseAddedDamping = true
             });
 
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 9.1 })
+            C.Particles.Add(new Particle_Sphere(radius: 0.1, new double[] { 0.0, 9.1 })
             {
-                radius_P = 0.10,
                 particleDensity = 1.01,
                 GravityVertical = -9.81,
                 useAddaptiveUnderrelaxation = true,
@@ -269,9 +267,8 @@ namespace BoSSS.Application.FSI_Solver
             C.CoefficientOfRestitution = 1;
 
 
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 9.5 })
+            C.Particles.Add(new Particle_Sphere(radius: 0.1, new double[] { 0.0, 9.5 })
             {
-                radius_P = 0.10,
                 particleDensity = 1.01,
                 GravityVertical = -9.81,
                 useAddaptiveUnderrelaxation = true,
@@ -280,9 +277,8 @@ namespace BoSSS.Application.FSI_Solver
                 UseAddedDamping = true
             });
 
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 9.1 })
+            C.Particles.Add(new Particle_Sphere(radius: 0.1, new double[] { 0.0, 9.1 })
             {
-                radius_P = 0.10,
                 particleDensity = 1.01,
                 GravityVertical = -9.81,
                 useAddaptiveUnderrelaxation = true,

@@ -44,15 +44,17 @@ namespace BoSSS.Application.FSI_Solver {
 
         }
 
-        public Particle_TrapLeft(double[] startPos = null, double startAngl = 0) : base(2, startPos, startAngl) {
-
+        public Particle_TrapLeft(double width, double[] startPos = null, double startAngl = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(startPos, startAngl, startTransVelocity, startRotVelocity) {
+            width_P = width;
+            Motion.GetParticleLengthscale(width);
+            Motion.GetParticleArea(Area_P());
+            Motion.GetParticleMomentOfInertia(MomentOfInertia_P);
 
         }
 
         /// <summary>
         /// Radius of the particle. Not necessary for particles defined by their length and thickness
         /// </summary>
-        [DataMember]
         public double width_P;
 
         internal override int NoOfSubParticles() {
