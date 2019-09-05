@@ -120,9 +120,8 @@ namespace BoSSS.Application.FSI_Solver
             C.CoefficientOfRestitution = 1;
 
 
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 9.5 })
+            C.Particles.Add(new Particle_Sphere( 0.1, new double[] { 0.0, 9.5 })
             {
-                radius_P = 0.10,
                 particleDensity = 1.01,
                 GravityVertical = -9.81,
                 useAddaptiveUnderrelaxation = true,
@@ -131,9 +130,8 @@ namespace BoSSS.Application.FSI_Solver
                 UseAddedDamping = true
             });
 
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 9.1 })
+            C.Particles.Add(new Particle_Sphere( 0.1, new double[] { 0.0, 9.1 })
             {
-                radius_P = 0.10,
                 particleDensity = 1.01,
                 GravityVertical = -9.81,
                 useAddaptiveUnderrelaxation = true,
@@ -160,7 +158,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 5e-3;
+            C.forceAndTorqueConvergenceCriterion = 5e-3;
 
 
             // Timestepping
@@ -191,7 +189,7 @@ namespace BoSSS.Application.FSI_Solver
             // basic database options
             // ======================
 
-            C.DbPath = @"C:\Users\deussen\localBoSSSDatabases\Deriabina";
+            C.DbPath = @"D:\BoSSS_databases\wetParticleCollision";
             C.saveperiod = 1;
             C.ProjectName = "ParticleCollisionTest";
             C.ProjectDescription = "Gravity";
@@ -269,9 +267,8 @@ namespace BoSSS.Application.FSI_Solver
             C.CoefficientOfRestitution = 1;
 
 
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 9.5 })
+            C.Particles.Add(new Particle_Sphere( 0.1, new double[] { 0.0, 9.5 })
             {
-                radius_P = 0.10,
                 particleDensity = 1.01,
                 GravityVertical = -9.81,
                 useAddaptiveUnderrelaxation = true,
@@ -280,9 +277,8 @@ namespace BoSSS.Application.FSI_Solver
                 UseAddedDamping = true
             });
 
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 9.1 })
+            C.Particles.Add(new Particle_Sphere( 0.1, new double[] { 0.0, 9.1 })
             {
-                radius_P = 0.10,
                 particleDensity = 1.01,
                 GravityVertical = -9.81,
                 useAddaptiveUnderrelaxation = true,
@@ -309,7 +305,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 2e-3;
+            C.forceAndTorqueConvergenceCriterion = 2e-3;
 
 
             // Timestepping
@@ -317,7 +313,7 @@ namespace BoSSS.Application.FSI_Solver
 
             //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
-            double dt = 5e-4;
+            double dt = 1e-3;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000000.0;

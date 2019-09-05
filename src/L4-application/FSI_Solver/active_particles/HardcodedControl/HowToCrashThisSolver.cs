@@ -117,20 +117,16 @@ namespace BoSSS.Application.FSI_Solver
             C.CoefficientOfRestitution = 0;
 
 
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 0.6 })
+            C.Particles.Add(new Particle_Sphere( 0.18, new double[] { 0.0, 0.6 })
             {
-                radius_P = 0.18,
                 particleDensity = 4,
                 GravityVertical = -9.81,
             });
 
 
-            C.Particles.Add(new Particle_superEllipsoid(new double[] { 0.45, 0 }, startAngl: 45)
+            C.Particles.Add(new Particle_superEllipsoid( 0.4,  0.2, new double[] { 0.45, 0 }, startAngl: 45)
             {
                 particleDensity = 1,
-                thickness_P = 0.2,
-                length_P = 0.4,
-                //radius_P = 0.4,
                 superEllipsoidExponent = 4,
                 GravityVertical = -0,
                 IncludeRotation = false,
@@ -138,12 +134,9 @@ namespace BoSSS.Application.FSI_Solver
             });
 
 
-            C.Particles.Add(new Particle_superEllipsoid(new double[] { -0.45, 0 }, startAngl: -45)
+            C.Particles.Add(new Particle_superEllipsoid( 0.4,  0.2, new double[] { -0.45, 0 }, startAngl: -45)
             {
                 particleDensity = 1,
-                thickness_P = 0.2,
-                length_P = 0.4,
-                //radius_P = 0.4,
                 superEllipsoidExponent = 4,
                 GravityVertical = -0,
                 IncludeRotation = false,
@@ -162,7 +155,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-2;
+            C.forceAndTorqueConvergenceCriterion = 1e-2;
 
 
             // Timestepping

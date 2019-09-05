@@ -16,14 +16,9 @@ limitations under the License.
 
 using System;
 using System.Runtime.Serialization;
-using BoSSS.Foundation.XDG;
 using ilPSP;
-using BoSSS.Foundation.Grid;
-using BoSSS.Foundation;
 using System.Linq;
-using System.Collections.Generic;
 using ilPSP.Utils;
-using System.Collections;
 
 namespace BoSSS.Application.FSI_Solver {
     [DataContract]
@@ -35,29 +30,29 @@ namespace BoSSS.Application.FSI_Solver {
         private Particle_Ellipsoid() : base() {
 
         }
-        public Particle_Ellipsoid(double[] startPos = null, double startAngl = 0) : base(2, startPos, startAngl) {
-            
+        public Particle_Ellipsoid(double length = 4, double thickness = 1, double[] startPos = null, double startAngl = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(startPos, startAngl, startTransVelocity, startRotVelocity) {
+            length_P = length;
+            thickness_P = thickness;
+            Motion.GetParticleLengthscale(GetLengthScales().Max());
+            Motion.GetParticleArea(Area_P());
+            Motion.GetParticleMomentOfInertia(MomentOfInertia_P);
         }
 
         /// <summary>
         /// Length of an elliptic particle.
         /// </summary>
-        [DataMember]
         public double length_P;
 
         /// <summary>
         /// Thickness of an elliptic particle.
         /// </summary>
-        [DataMember]
         public double thickness_P;
 
-        public override double Area_P {
-            get {
-                double a = length_P * thickness_P * Math.PI;
-                if (a <= 0.0 || double.IsNaN(a) || double.IsInfinity(a))
-                    throw new ArithmeticException("Ellipsoid volume/area is " + a);
-                return a;
-            }
+        public override double Area_P() {
+            double a = length_P * thickness_P * Math.PI;
+            if (a <= 0.0 || double.IsNaN(a) || double.IsInfinity(a))
+                throw new ArithmeticException("Ellipsoid volume/area is " + a);
+            return a;
         }
 
         protected override double Circumference_P {
@@ -93,6 +88,21 @@ namespace BoSSS.Application.FSI_Solver {
             double Ellipse = ((point[0] - position[0][0]) * Math.Cos(angle[0]) + (point[1] - position[0][1]) * Math.Sin(angle[0])).Pow2() / a.Pow2() + (-(point[0] - position[0][0]) * Math.Sin(angle[0]) + (point[1] - position[0][1]) * Math.Cos(angle[0])).Pow2() / b.Pow2();
             if (Ellipse < radiusTolerance)
             {
+                return true;
+            }
+            else
+                return false;
+        }
+
+        public override bool particleInternalCell(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false) {
+            // only for rectangular cells
+            if (h_max == 0)
+                h_max = h_min;
+            double radiusTolerance = 1;
+            double a = !WithoutTolerance ? length_P - Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : length_P;
+            double b = !WithoutTolerance ? thickness_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : thickness_P;
+            double Ellipse = ((point[0] - position[0][0]) * Math.Cos(angle[0]) + (point[1] - position[0][1]) * Math.Sin(angle[0])).Pow2() / a.Pow2() + (-(point[0] - position[0][0]) * Math.Sin(angle[0]) + (point[1] - position[0][1]) * Math.Cos(angle[0])).Pow2() / b.Pow2();
+            if (Ellipse < radiusTolerance) {
                 return true;
             }
             else

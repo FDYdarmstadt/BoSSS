@@ -129,12 +129,10 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Ellipsoid(new double[] { 0 + 8 * d, 0 }, startAngl: 180 * d)
+                C.Particles.Add(new Particle_Ellipsoid(2,  1, new double[] { 0 + 8 * d, 0 }, startAngl: 180 * d)
                 {
                     particleDensity = 1,
-                    ActiveStress = stressM,
-                    thickness_P = 1 * BaseSize,
-                    length_P = 2 * BaseSize,
+                    activeStress = stressM,
                     useAddaptiveUnderrelaxation = true,
                     underrelaxation_factor = 1,
                     clearSmallValues = true,
@@ -176,7 +174,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-1;
+            C.forceAndTorqueConvergenceCriterion = 1e-1;
             C.LSunderrelax = 1.0;
             
 
@@ -303,12 +301,10 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Ellipsoid(new double[] { 1 + 2 * d, 0.25 }, startAngl: -8 + 12 * d)
+                C.Particles.Add(new Particle_Ellipsoid( 2.5, 0.5, new double[] { 1 + 2 * d, 0.25 }, startAngl: -8 + 12 * d)
                 {
                     particleDensity = 1,
-                    ActiveStress = stressM,
-                    thickness_P = 0.5 * BaseSize,
-                    length_P = 2.5 * BaseSize,
+                    activeStress = stressM,
                     useAddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
                     underrelaxation_factor = 0.2,// underrelaxation with [factor * 10^exponent]
                     clearSmallValues = true,
@@ -363,7 +359,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 100;
+            C.forceAndTorqueConvergenceCriterion = 100;
             C.LSunderrelax = 1.0;
 
 

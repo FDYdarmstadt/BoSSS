@@ -129,12 +129,11 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Sphere(new double[] { 0 + 14 * d, 0.0 }, startAngl: 180 * d)
+                C.Particles.Add(new Particle_Sphere(1, new double[] { 0 + 14 * d, 0.0 }, startAngl: 180 * d)
                 {
-                    radius_P = 1,
                     particleDensity = 1.5,//pg/(mum^3)
                     GravityVertical = 0,
-                    ActiveStress = stressM,
+                    activeStress = stressM,
                     //thickness_P = 0.1 * BaseSize,  Sphere kann nur einen radius haben! fk.
                     //length_P = 2 * BaseSize,       Sphere kann nur einen radius haben! fk.
                     //superEllipsoidExponent = 4, // only even numbers are supported
@@ -194,7 +193,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.MinSolverIterations = 1;
             C.LinearSolver.NoOfMultigridLevels = 1;
 
-            C.ForceAndTorque_ConvergenceCriterion = 1e-6;
+            C.forceAndTorqueConvergenceCriterion = 1e-6;
             C.LSunderrelax = 1.0;
             
 
@@ -298,7 +297,7 @@ namespace BoSSS.Application.FSI_Solver
 
             // Particles
             // =========
-            C.Particles.Add(new Particle_Sphere(new double[] { -0.5, -0.5 }, startAngl: 90.0)
+            C.Particles.Add(new Particle_Sphere(0.4, new double[] { -0.5, -0.5 }, startAngl: 90.0)
             {
                 particleDensity = 1.0,
                 radius_P = 0.4

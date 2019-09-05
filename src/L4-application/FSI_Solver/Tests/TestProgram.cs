@@ -58,10 +58,10 @@ namespace BoSSS.Application.FSI_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double p0_area = p.Particles[0].Area_P;
+                double p0_area = p.Particles[0].Area_P();
                 double p0_area_soll = Math.PI;
                 double p0_Mass = p.Particles[0].Mass_P;
-                double p1_area = p.Particles[1].Area_P;
+                double p1_area = p.Particles[1].Area_P();
 
 
                 double diff_Area1 = Math.Abs(p0_area - p0_area_soll);

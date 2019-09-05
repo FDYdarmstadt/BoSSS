@@ -95,10 +95,9 @@ namespace BoSSS.Application.FSI_Solver
                 return grd;
             };
 
-            C.Particles.Add(new Particle_Sphere(new double[] { 0, 0 }, startAngl: 0)
+            C.Particles.Add(new Particle_Sphere(0.1, new double[] { 0, 0 }, startAngl: 0)
             {
                 particleDensity = 7.8,
-                radius_P = 0.1,
                 GravityVertical = -9.81,
                 useAddaptiveUnderrelaxation = true,
                 underrelaxation_factor = 5,
@@ -137,7 +136,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-2;
+            C.forceAndTorqueConvergenceCriterion = 1e-2;
 
 
             // Timestepping

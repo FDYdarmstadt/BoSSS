@@ -941,8 +941,7 @@ namespace BoSSS.Application.FSI_Solver
 
                 return grd;
             };
-                C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 4.0 }) {
-                    radius_P = 0.125,
+                C.Particles.Add(new Particle_Sphere(0.125, new double[] { 0.0, 4.0 }) {
                     particleDensity = 1.25,
                     IncludeRotation = false,
                     IncludeTranslation = true
