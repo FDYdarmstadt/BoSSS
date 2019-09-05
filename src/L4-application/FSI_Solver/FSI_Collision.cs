@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Application.FSI_Solver;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.XDG;
 using ilPSP;
 using ilPSP.Utils;
 using System;
@@ -31,7 +32,7 @@ namespace FSI_Solver {
         private readonly double m_hMin;
         private readonly int m_CurrentColor;
         private double m_CoefficientOfRestitution;
-
+        private LevelSetTracker m_LevelSetTracker;
 
         private double AccDynamicTimestep = 0;
 
@@ -41,19 +42,20 @@ namespace FSI_Solver {
         private MultidimensionalArray ClosestPoint_P0;
         private MultidimensionalArray ClosestPoint_P1;
 
-        public FSI_Collision(int currentColor, double fluidViscosity, double fluidDensity, double CoefficientOfRestitution, double dt, double hMin) {
+        public FSI_Collision(LevelSetTracker levelSetTracker, int currentColor, double fluidViscosity, double fluidDensity, double CoefficientOfRestitution, double dt, double hMin) {
             m_FluidViscosity = fluidViscosity;
             m_FluidDensity = fluidDensity;
             m_CoefficientOfRestitution = CoefficientOfRestitution;
             m_dt = dt;
             m_hMin = hMin;
             m_CurrentColor = currentColor;
+            m_LevelSetTracker = levelSetTracker;
         }
 
         public FSI_Collision() { }
 
         private readonly FSI_Auxillary Aux = new FSI_Auxillary();
-        private readonly FSI_LevelSetUpdate LevelSetUpdate = new FSI_LevelSetUpdate();
+
 
         private void CreateCollisionArrarys(int noOfParticles, int spatialDim) {
             SaveTimeStepArray = MultidimensionalArray.Create(noOfParticles, noOfParticles + 4);
@@ -73,6 +75,7 @@ namespace FSI_Solver {
             // Step 1
             // Some var definintion
             // =======================================================
+            FSI_LevelSetUpdate LevelSetUpdate = new FSI_LevelSetUpdate(m_LevelSetTracker);
             int spatialDim = particles[0].position[0].Length;
             int ParticleOffset = particles.Count();
             double MaxDistance = m_dt * 1e-4;

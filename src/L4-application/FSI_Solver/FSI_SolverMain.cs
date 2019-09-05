@@ -82,7 +82,6 @@ namespace BoSSS.Application.FSI_Solver {
 
         bool CalculatedDampingTensors = false;
         readonly private FSI_Auxillary Auxillary = new FSI_Auxillary();
-        readonly private FSI_LevelSetUpdate LevelSetUpdate = new FSI_LevelSetUpdate();
         static int counter = 0;
 
         public static void MegaArschKakke2(DGField[] f) {
@@ -609,12 +608,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// Array of all local cells with their specific color.
         /// </summary>
         private int[] cellColor = null;
-        private readonly FSI_LevelSetUpdate levelSetUpdate = new FSI_LevelSetUpdate();
 
         /// <summary>
         /// Particle to Level-Set-Field 
         /// </summary>
         private void UpdateLevelSetParticles(double phystime) {
+            FSI_LevelSetUpdate levelSetUpdate = new FSI_LevelSetUpdate(LsTrk);
             // Step 1
             // Define an array with the respective cell colors
             // =======================================================
@@ -1289,16 +1288,17 @@ namespace BoSSS.Application.FSI_Solver {
             // Only particles with the same colour a close to each other, thus, we only test for collisions within those particles.
             // Determine colour.
             // =================================================
+            FSI_LevelSetUpdate levelSetUpdate = new FSI_LevelSetUpdate(LsTrk);
             int[] globalParticleColor = levelSetUpdate.DetermineGlobalParticleColor(GridData, CellColor, Particles);
             for (int i = 0; i < globalParticleColor.Length; i++) {
                 int CurrentColor = globalParticleColor[i];
-                int[] ParticlesOfCurrentColor = LevelSetUpdate.FindParticlesOneColor(globalParticleColor, CurrentColor);
+                int[] ParticlesOfCurrentColor = levelSetUpdate.FindParticlesOneColor(globalParticleColor, CurrentColor);
 
                 // Multiple particles with the same colour, trigger collision detection
                 // =================================================
                 if (ParticlesOfCurrentColor.Length >= 1 && CurrentColor != 0) {
-                    List<Particle> currentParticles = LevelSetUpdate.GetParticleListOneColor(m_Particles, globalParticleColor, CurrentColor);
-                    FSI_Collision _Collision = new FSI_Collision(CurrentColor, FluidViscosity, FluidDensity, ((FSI_Control)Control).CoefficientOfRestitution, dt, LsTrk.GridDat.Cells.h_minGlobal);
+                    List<Particle> currentParticles = levelSetUpdate.GetParticleListOneColor(m_Particles, globalParticleColor, CurrentColor);
+                    FSI_Collision _Collision = new FSI_Collision(LsTrk, CurrentColor, FluidViscosity, FluidDensity, ((FSI_Control)Control).CoefficientOfRestitution, dt, LsTrk.GridDat.Cells.h_minGlobal);
                     _Collision.CalculateCollision(currentParticles, GridData, CellColor);
                 }
 
