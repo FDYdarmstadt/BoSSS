@@ -1475,7 +1475,7 @@ namespace BoSSS.Application.FSI_Solver {
             foreach (Particle p in m_Particles) {
                 for (int j = 0; j < noOfLocalCells; j++) {
                     if (!fine[j])
-                        fine[j] = p.Contains(new double[] { CellCenters[j, 0], CellCenters[j, 1] }, 3 * h_min);
+                        fine[j] = p.Contains(new double[] { CellCenters[j, 0], CellCenters[j, 1] }, 4 * h_min);
                     if (LsTrk.Regions.IsSpeciesPresentInCell(LsTrk.GetSpeciesId("A"), j) && !coarse[j])
                         coarse[j] = p.Contains(new double[] { CellCenters[j, 0], CellCenters[j, 1] }, h_max / 2);
                 }
