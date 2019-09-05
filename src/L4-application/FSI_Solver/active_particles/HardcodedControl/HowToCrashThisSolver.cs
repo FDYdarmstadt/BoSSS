@@ -117,14 +117,14 @@ namespace BoSSS.Application.FSI_Solver
             C.CoefficientOfRestitution = 0;
 
 
-            C.Particles.Add(new Particle_Sphere(radius: 0.18, new double[] { 0.0, 0.6 })
+            C.Particles.Add(new Particle_Sphere( 0.18, new double[] { 0.0, 0.6 })
             {
                 particleDensity = 4,
                 GravityVertical = -9.81,
             });
 
 
-            C.Particles.Add(new Particle_superEllipsoid(length: 0.4, thickness: 0.2, new double[] { 0.45, 0 }, startAngl: 45)
+            C.Particles.Add(new Particle_superEllipsoid( 0.4,  0.2, new double[] { 0.45, 0 }, startAngl: 45)
             {
                 particleDensity = 1,
                 superEllipsoidExponent = 4,
@@ -134,7 +134,7 @@ namespace BoSSS.Application.FSI_Solver
             });
 
 
-            C.Particles.Add(new Particle_superEllipsoid(length: 0.4, thickness: 0.2, new double[] { -0.45, 0 }, startAngl: -45)
+            C.Particles.Add(new Particle_superEllipsoid( 0.4,  0.2, new double[] { -0.45, 0 }, startAngl: -45)
             {
                 particleDensity = 1,
                 superEllipsoidExponent = 4,

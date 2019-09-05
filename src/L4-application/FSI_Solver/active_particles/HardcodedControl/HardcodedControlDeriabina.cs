@@ -120,7 +120,7 @@ namespace BoSSS.Application.FSI_Solver
             C.CoefficientOfRestitution = 1;
 
 
-            C.Particles.Add(new Particle_Sphere(radius: 0.1, new double[] { 0.0, 9.5 })
+            C.Particles.Add(new Particle_Sphere( 0.1, new double[] { 0.0, 9.5 })
             {
                 particleDensity = 1.01,
                 GravityVertical = -9.81,
@@ -130,7 +130,7 @@ namespace BoSSS.Application.FSI_Solver
                 UseAddedDamping = true
             });
 
-            C.Particles.Add(new Particle_Sphere(radius: 0.1, new double[] { 0.0, 9.1 })
+            C.Particles.Add(new Particle_Sphere( 0.1, new double[] { 0.0, 9.1 })
             {
                 particleDensity = 1.01,
                 GravityVertical = -9.81,
@@ -267,7 +267,7 @@ namespace BoSSS.Application.FSI_Solver
             C.CoefficientOfRestitution = 1;
 
 
-            C.Particles.Add(new Particle_Sphere(radius: 0.1, new double[] { 0.0, 9.5 })
+            C.Particles.Add(new Particle_Sphere( 0.1, new double[] { 0.0, 9.5 })
             {
                 particleDensity = 1.01,
                 GravityVertical = -9.81,
@@ -277,7 +277,7 @@ namespace BoSSS.Application.FSI_Solver
                 UseAddedDamping = true
             });
 
-            C.Particles.Add(new Particle_Sphere(radius: 0.1, new double[] { 0.0, 9.1 })
+            C.Particles.Add(new Particle_Sphere( 0.1, new double[] { 0.0, 9.1 })
             {
                 particleDensity = 1.01,
                 GravityVertical = -9.81,

@@ -118,7 +118,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles = new List<Particle>();
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++) {
-                C.Particles.Add(new Particle_Sphere(radius: 1, new double[] { 0, 0 }, startAngl: 0) {
+                C.Particles.Add(new Particle_Sphere( 1, new double[] { 0, 0 }, startAngl: 0) {
                     particleDensity = 11.01,
                     GravityVertical = -9.81,
                     useAddaptiveUnderrelaxation = true,
@@ -277,7 +277,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles = new List<Particle>();
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++) {
-                C.Particles.Add(new Particle_Sphere(radius: 0.5, new double[] { 0, 6 }, startAngl: 0) {
+                C.Particles.Add(new Particle_Sphere( 0.5, new double[] { 0, 6 }, startAngl: 0) {
                     particleDensity = 7.8,
                     GravityVertical = -9.81,
                     useAddaptiveUnderrelaxation = true,
@@ -287,7 +287,7 @@ namespace BoSSS.Application.FSI_Solver {
                 });
             }
             for (int d = 0; d < numOfParticles; d++) {
-                C.Particles.Add(new Particle_Sphere(radius: 0.5, new double[] { 0, 4 }, startAngl: 0) {
+                C.Particles.Add(new Particle_Sphere( 0.5, new double[] { 0, 4 }, startAngl: 0) {
                     particleDensity = 7.8,
                     GravityVertical = -9.81,
                     useAddaptiveUnderrelaxation = true,
@@ -445,7 +445,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles = new List<Particle>();
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++) {
-                C.Particles.Add(new Particle_Sphere(radius: 0.5, new double[] { 0.0, 0.0 }, startAngl: 0) {
+                C.Particles.Add(new Particle_Sphere( 0.5, new double[] { 0.0, 0.0 }, startAngl: 0) {
                     particleDensity = 1 * DensityFactor,
                     GravityVertical = -9.81,
                     useAddaptiveUnderrelaxation = true,
@@ -602,7 +602,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Defining particles
             C.Particles = new List<Particle>();
             // The cylinder
-            C.Particles.Add(new Particle_Sphere(radius: 2, new double[] { 0, 0 }, startAngl: 0) {
+            C.Particles.Add(new Particle_Sphere(2, new double[] { 0, 0 }, startAngl: 0) {
                 particleDensity = 50,
                 GravityVertical = 0,
                 IncludeRotation = false,
@@ -610,7 +610,7 @@ namespace BoSSS.Application.FSI_Solver {
             });
             int numOfParticles = 3;
             for (int d = 0; d < numOfParticles; d++) {
-                C.Particles.Add(new Particle_Sphere(radius: 0.1, new double[] { -6, -2 + 2 * d }, startAngl: 0) {
+                C.Particles.Add(new Particle_Sphere( 0.1, new double[] { -6, -2 + 2 * d }, startAngl: 0) {
                     particleDensity = 1,
                     GravityVertical = 0,
                     activeStress = 1000,
@@ -756,7 +756,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =========
             for (int i = 0; i < 9; i++) {
                 for (int j = 0; j < 9; j++) {
-                    C.Particles.Add(new Particle_Ellipsoid(length: 0.8, thickness: 0.2, new double[] { -8 + 2 * i, 8 - 2 * j }, startAngl: 23 * i - 12 * j) {
+                    C.Particles.Add(new Particle_Ellipsoid( 0.8,  0.2, new double[] { -8 + 2 * i, 8 - 2 * j }, startAngl: 23 * i - 12 * j) {
                         particleDensity = 1.0,
                     });
                     C.Particles[i + j * i].translationalVelocity[0][0] = Math.Cos((23 * i - 12 * j) / 2 * Math.PI);
@@ -907,7 +907,7 @@ namespace BoSSS.Application.FSI_Solver {
             //C.PhysicalParameters.mu_B = 0.1;
             //C.particleMass = 1;
 
-            C.Particles.Add(new Particle_Sphere(radius: 0.25, new double[] { 0.0, 8 }) {
+            C.Particles.Add(new Particle_Sphere( 0.25, new double[] { 0.0, 8 }) {
                 particleDensity = 1.01,
                 GravityVertical = -9.81,
             });
@@ -939,14 +939,14 @@ namespace BoSSS.Application.FSI_Solver {
        */
 
 
-            C.Particles.Add(new Particle_Pentagone(width: 0.3, new double[] { 0.45, 4.5 }, startAngl: 0) {
+            C.Particles.Add(new Particle_Pentagone( 0.3, new double[] { 0.45, 4.5 }, startAngl: 0) {
                 particleDensity = 1,
                 GravityVertical = -9.81,
                 IncludeRotation = false,
                 IncludeTranslation = false,
             });
 
-            C.Particles.Add(new Particle_Pentagone(width: 0.3, new double[] { -0.45, 4.5 }, startAngl: 0) {
+            C.Particles.Add(new Particle_Pentagone( 0.3, new double[] { -0.45, 4.5 }, startAngl: 0) {
                 particleDensity = 1,
                 GravityVertical = -9.81,
                 IncludeRotation = false,
@@ -1130,7 +1130,7 @@ namespace BoSSS.Application.FSI_Solver {
             //C.PhysicalParameters.mu_B = 0.1;
             //C.particleMass = 1;
 
-            C.Particles.Add(new Particle_Sphere(radius: 0.25, new double[] { 0.0, 8 }) {
+            C.Particles.Add(new Particle_Sphere( 0.25, new double[] { 0.0, 8 }) {
                 particleDensity = 1.01,
                 GravityVertical = -9.81,
             });
@@ -1182,7 +1182,7 @@ namespace BoSSS.Application.FSI_Solver {
             */
 
 
-            C.Particles.Add(new Particle_TrapLeft(width: 0.1, new double[] { 0.45, 4.5 }, startAngl: 0) {
+            C.Particles.Add(new Particle_TrapLeft( 0.1, new double[] { 0.45, 4.5 }, startAngl: 0) {
                 particleDensity = 1,
                 GravityVertical = -9.81,
                 IncludeRotation = false,
@@ -1190,7 +1190,7 @@ namespace BoSSS.Application.FSI_Solver {
             });
 
 
-            C.Particles.Add(new Particle_TrapRight(width: 0.1, new double[] { -0.45, 4.5 }, startAngl: 0) {
+            C.Particles.Add(new Particle_TrapRight( 0.1, new double[] { -0.45, 4.5 }, startAngl: 0) {
                 particleDensity = 1,
                 GravityVertical = -9.81,
                 IncludeRotation = false,
@@ -1353,7 +1353,7 @@ namespace BoSSS.Application.FSI_Solver {
             //C.PhysicalParameters.mu_B = 0.1;
             //C.particleMass = 1;
 
-            C.Particles.Add(new Particle_Sphere(radius: 0.25, new double[] { 0.0, 8 }) {
+            C.Particles.Add(new Particle_Sphere( 0.25, new double[] { 0.0, 8 }) {
                 particleDensity = 1.01,
                 GravityVertical = -9.81,
             });
@@ -1385,14 +1385,14 @@ namespace BoSSS.Application.FSI_Solver {
        */
 
 
-            C.Particles.Add(new Particle_Pentagone(width: 0.3, new double[] { 0.45, 4.5 }, startAngl: 0) {
+            C.Particles.Add(new Particle_Pentagone( 0.3, new double[] { 0.45, 4.5 }, startAngl: 0) {
                 particleDensity = 1,
                 GravityVertical = -9.81,
                 IncludeRotation = false,
                 IncludeTranslation = false,
             });
 
-            C.Particles.Add(new Particle_Pentagone(width: 0.3, new double[] { -0.45, 4.5 }, startAngl: 0) {
+            C.Particles.Add(new Particle_Pentagone( 0.3, new double[] { -0.45, 4.5 }, startAngl: 0) {
                 particleDensity = 1,
                 GravityVertical = -9.81,
                 IncludeRotation = false,
@@ -1577,7 +1577,7 @@ namespace BoSSS.Application.FSI_Solver {
             //C.PhysicalParameters.mu_B = 0.1;
             //C.particleMass = 1;
 
-            C.Particles.Add(new Particle_Sphere(radius: 0.35, new double[] { 0.0, 6.00 }) {
+            C.Particles.Add(new Particle_Sphere( 0.35, new double[] { 0.0, 6.00 }) {
                 particleDensity = 1.1,
                 GravityVertical = -9.81,
                 useAddaptiveUnderrelaxation = true,
@@ -1586,7 +1586,7 @@ namespace BoSSS.Application.FSI_Solver {
                 UseAddedDamping = true
             });
             C.Particles[0].translationalVelocity[0][1] = -0.25;
-            C.Particles.Add(new Particle_TrapLeft(width: 0.15, new double[] { 0.975, 4.75 }, startAngl: 0) {
+            C.Particles.Add(new Particle_TrapLeft( 0.15, new double[] { 0.975, 4.75 }, startAngl: 0) {
                 particleDensity = 1,
                 GravityVertical = 0,
                 IncludeRotation = false,
@@ -1594,7 +1594,7 @@ namespace BoSSS.Application.FSI_Solver {
             });
 
 
-            C.Particles.Add(new Particle_TrapRight(width: 0.15, new double[] { -0.975, 4.75 }, startAngl: 0) {
+            C.Particles.Add(new Particle_TrapRight( 0.15, new double[] { -0.975, 4.75 }, startAngl: 0) {
                 particleDensity = 1,
                 GravityVertical = 0,
                 IncludeRotation = false,

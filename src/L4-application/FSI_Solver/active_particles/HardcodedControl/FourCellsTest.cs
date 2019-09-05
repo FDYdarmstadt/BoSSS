@@ -95,7 +95,7 @@ namespace BoSSS.Application.FSI_Solver
                 return grd;
             };
 
-            C.Particles.Add(new Particle_Sphere(radius: 0.1, new double[] { 0, 0 }, startAngl: 0)
+            C.Particles.Add(new Particle_Sphere(0.1, new double[] { 0, 0 }, startAngl: 0)
             {
                 particleDensity = 7.8,
                 GravityVertical = -9.81,

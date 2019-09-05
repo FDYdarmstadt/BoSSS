@@ -129,7 +129,7 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Ellipsoid(length: 2, thickness: 1, new double[] { 0 + 8 * d, 0 }, startAngl: 180 * d)
+                C.Particles.Add(new Particle_Ellipsoid(2,  1, new double[] { 0 + 8 * d, 0 }, startAngl: 180 * d)
                 {
                     particleDensity = 1,
                     activeStress = stressM,
@@ -301,7 +301,7 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Ellipsoid(length: 2.5, thickness: 0.5, new double[] { 1 + 2 * d, 0.25 }, startAngl: -8 + 12 * d)
+                C.Particles.Add(new Particle_Ellipsoid( 2.5, 0.5, new double[] { 1 + 2 * d, 0.25 }, startAngl: -8 + 12 * d)
                 {
                     particleDensity = 1,
                     activeStress = stressM,

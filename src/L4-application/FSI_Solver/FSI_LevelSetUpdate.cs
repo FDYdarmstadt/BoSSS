@@ -36,7 +36,7 @@ namespace FSI_Solver {
             m_LevelSetTracker = levelSetTracker;
         }
 
-        private LevelSetTracker m_LevelSetTracker;
+        private readonly LevelSetTracker m_LevelSetTracker;
 
         /// <summary>
         /// compiles a cell mask from all cells with a specific color and their direct neighbors
@@ -146,7 +146,6 @@ namespace FSI_Solver {
             List<int> CurrentColor = new List<int>();
             for (int p = 0; p < Particles.Count; p++) {
                 double h_min = m_LevelSetTracker.GridDat.Cells.h_minGlobal;
-                double Hmin = Math.Sqrt(gridData.iGeomCells.GetCellVolume(0));
                 double[] ParticlePos = Particles[p].position[0];
                 double Upperedge = ParticlePos[1] + h_min;
                 double Loweredge = ParticlePos[1] - h_min;

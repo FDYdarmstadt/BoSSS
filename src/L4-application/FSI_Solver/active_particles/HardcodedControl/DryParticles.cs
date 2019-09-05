@@ -96,7 +96,7 @@ namespace BoSSS.Application.FSI_Solver
                 for (int j = 0; j < 5; j++)
                 {
                     double StartAngle = 10 * i - 10 * i * j + 8;
-                    C.Particles.Add(new Particle_Ellipsoid(length: 0.5, thickness: 0.4, new double[] { -4 + 2 * i + Math.Pow(-1, j) * 0.5, -4 + 2 * j }, StartAngle)
+                    C.Particles.Add(new Particle_Ellipsoid(0.5, 0.4, new double[] { -4 + 2 * i + Math.Pow(-1, j) * 0.5, -4 + 2 * j }, StartAngle)
                     {
                         particleDensity = 100.0,
                         GravityVertical = -0.001,
