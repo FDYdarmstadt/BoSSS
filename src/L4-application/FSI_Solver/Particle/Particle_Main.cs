@@ -75,8 +75,8 @@ namespace BoSSS.Application.FSI_Solver {
             angle[0] = StartingAngle = startAngl * 2 * Math.PI / 360;
             angle[1] = startAngl * 2 * Math.PI / 360;
 
-            Motion.InitializeParticlePositionAndAngle(startPos, startAngl);
-            Motion.InitializeParticleVelocity(startTransVelocity, startRotVelocity);
+            //Motion.InitializeParticlePositionAndAngle(startPos, startAngl);
+            //Motion.InitializeParticleVelocity(startTransVelocity, startRotVelocity);
         }
 
         /// <summary>

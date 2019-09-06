@@ -664,8 +664,6 @@ namespace BoSSS.Application.FSI_Solver {
                         // Generating the correct sign
                         double phi = Math.Pow(-1, particlesOfCurrentColor.Length - 1);
                         // Multiplication over all particle-level-sets within the current color
-                        if (particlesOfCurrentColor.Length > 1)
-                            Console.WriteLine("more than one particle with colour " + currentColor);
                         for (int pC = 0; pC < particlesOfCurrentColor.Length; pC++) {
                             Particle currentParticle = m_Particles[particlesOfCurrentColor[pC]];
                             phi *= currentParticle.Phi_P(X);
@@ -1016,9 +1014,9 @@ namespace BoSSS.Application.FSI_Solver {
                         int iterationCounter = 0;
                         double hydroDynForceTorqueResidual = 1e12;
 
-                        foreach (Particle p in m_Particles) {
-                            p.Motion.SaveDataOfPreviousTimestep();
-                        }
+                        //foreach (Particle p in m_Particles) {
+                        //    p.Motion.SaveDataOfPreviousTimestep();
+                        //}
 
                         while (hydroDynForceTorqueResidual > HydrodynConvergenceCriterion) {
                             Auxillary.CheckForMaxIterations(iterationCounter, ((FSI_Control)Control).max_iterations_fully_coupled);
@@ -1302,6 +1300,8 @@ namespace BoSSS.Application.FSI_Solver {
             int[] globalParticleColor = levelSetUpdate.DetermineGlobalParticleColor(GridData, CellColor, Particles);
             for (int i = 0; i < globalParticleColor.Length; i++) {
                 int CurrentColor = globalParticleColor[i];
+                if (CurrentColor == 0)
+                    continue;
                 int[] ParticlesOfCurrentColor = levelSetUpdate.FindParticlesOneColor(globalParticleColor, CurrentColor);
 
                 // Multiple particles with the same colour, trigger collision detection

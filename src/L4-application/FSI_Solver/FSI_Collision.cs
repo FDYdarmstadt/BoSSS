@@ -305,11 +305,11 @@ namespace FSI_Solver {
                 Particle currentParticle = particles[p];
                 if (dynamicTimestep != 0) {
                     for (int d = 0; d < spatialDim; d++) {
-                        currentParticle.translationalVelocity[0][d] = currentParticle.translationalVelocity[1][d] + (currentParticle.translationalAcceleration[0][d] + 4 * currentParticle.translationalAcceleration[1][d] + currentParticle.translationalAcceleration[2][d]) * dynamicTimestep / 6;
+                        //currentParticle.translationalVelocity[0][d] = currentParticle.translationalVelocity[1][d] + (currentParticle.translationalAcceleration[0][d] + 4 * currentParticle.translationalAcceleration[1][d] + currentParticle.translationalAcceleration[2][d]) * dynamicTimestep / 6;
                         currentParticle.position[0][d] = currentParticle.position[0][d] + (currentParticle.translationalVelocity[0][d] + 4 * currentParticle.translationalVelocity[1][d] + currentParticle.translationalVelocity[2][d]) * dynamicTimestep / 6;
                         Aux.TestArithmeticException(currentParticle.position[0], "particle position");
                     }
-                    currentParticle.rotationalVelocity[0] = currentParticle.rotationalVelocity[1] + dynamicTimestep * (currentParticle.rotationalAcceleration[0] + 4 * currentParticle.rotationalAcceleration[1] + currentParticle.rotationalAcceleration[2]) / 6;
+                    //currentParticle.rotationalVelocity[0] = currentParticle.rotationalVelocity[1] + dynamicTimestep * (currentParticle.rotationalAcceleration[0] + 4 * currentParticle.rotationalAcceleration[1] + currentParticle.rotationalAcceleration[2]) / 6;
                     currentParticle.angle[0] = currentParticle.angle[0] + (currentParticle.rotationalVelocity[0] + 4 * currentParticle.rotationalVelocity[1] + currentParticle.rotationalVelocity[2]) * dynamicTimestep / 6;
                     Aux.TestArithmeticException(currentParticle.angle[0], "particle angle");
                 }
@@ -908,6 +908,7 @@ namespace FSI_Solver {
                 temp_TangentialVel /= particle.CollisionTranslationalVelocity.Count();
 
                 particle.translationalVelocity.Insert(0, new double[2]);
+                particle.translationalVelocity.RemoveAt(4);
                 for (int d = 0; d < SpatialDim; d++) {
                     particle.translationalVelocity[0][d] = Normal[d] * temp_NormalVel + Tangential[d] * temp_TangentialVel;
                 }
