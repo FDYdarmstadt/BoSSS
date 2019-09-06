@@ -22,6 +22,18 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Application.FSI_Solver {
+
+    public class ParticleUnderrelaxationParam {
+        public ParticleUnderrelaxationParam(double convergenceLimit, double underrelaxationFactorIn, bool useAddaptiveUnderrelaxationIn) {
+            hydroDynConvergenceLimit = convergenceLimit;
+            underrelaxationFactor = underrelaxationFactorIn;
+            useAddaptiveUnderrelaxation = useAddaptiveUnderrelaxationIn;
+        }
+
+        public double hydroDynConvergenceLimit;
+        public double underrelaxationFactor;
+        public bool useAddaptiveUnderrelaxation;
+    }
     class ParticleUnderrelaxation {
         /// <summary>
         /// This method underrelaxates the hydrodynamic forces and torque. The Underrelaxation

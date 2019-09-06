@@ -14,13 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.XDG;
+
 namespace BoSSS.Application.FSI_Solver {
     public class Motion_Dry_NoRotation : Motion_Dry {
         public Motion_Dry_NoRotation(double[] gravity) : base(gravity) {
-        }
-
-        public override void CheckCorrectInit(bool IsDry) {
-            // Do nothing
         }
 
         /// <summary>
@@ -58,6 +58,16 @@ namespace BoSSS.Application.FSI_Solver {
         protected override void CalculateAngularVelocity(double dt = 0, double collisionTimestep = 0) {
             rotationalVelocity[0] = 0;
             Aux.TestArithmeticException(rotationalVelocity[0], "particle rotational velocity");
+        }
+
+        /// <summary>
+        /// Overrides the calculation of hydrodynamics for fixed particles, so that nothing happens.
+        /// </summary>
+        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U = null, SinglePhaseField P = null, LevelSetTracker LsTrk = null, CellMask CutCells_P = null, double fluidViscosity = 0, double fluidDensity = 0, bool firstIteration = false, double dt = 0) {
+            for (int d = 0; d < spatialDim; d++) {
+                hydrodynamicForces[0][d] = m_Gravity[d] * particleDensity * particleArea;
+            }
+            hydrodynamicTorque[0] = 0;
         }
     }
 }

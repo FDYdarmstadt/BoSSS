@@ -26,7 +26,61 @@ using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace BoSSS.Application.FSI_Solver {
+
     public class ParticleMotion {
+        public ParticleMotion(double[] gravity = null,
+            bool isDry = false,
+            bool noRotation = false,
+            bool noTranslation = false,
+            ParticleUnderrelaxationParam underrelaxationParam = null,
+            double addedDampingCoefficient = -1) {
+            m_Gravity = gravity.IsNullOrEmpty() ? (new double[] { 0, 9.81 }) : gravity;
+            m_IsDry = isDry;
+            m_NoRotation = noRotation;
+            m_NoTranslation = noTranslation;
+            m_UnderrelaxationParam = underrelaxationParam;
+            m_AddedDampingCoefficient = addedDampingCoefficient;
+        }
+
+        readonly internal FSI_Auxillary Aux = new FSI_Auxillary();
+        readonly double[] m_Gravity;
+        readonly bool m_IsDry;
+        readonly bool m_NoRotation;
+        readonly bool m_NoTranslation;
+        readonly ParticleUnderrelaxationParam m_UnderrelaxationParam;
+        readonly double m_AddedDampingCoefficient;
+
+        public void CheckInput() {
+            if (m_IsDry && m_UnderrelaxationParam != null)
+                throw new Exception("Error in control file: Cannot perform a dry simulation with full coupling between the particles and the (non-existing) fluid");
+
+            if (m_AddedDampingCoefficient != -1 && m_AddedDampingCoefficient < 0.5 && m_AddedDampingCoefficient > 1.5)
+                throw new Exception("Error in control file: Added damping coefficient should be between 0.5 and 1.5! See for reference Banks et al.");
+            if (m_AddedDampingCoefficient != -1 && (m_NoRotation || m_NoTranslation))
+                throw new Exception("Error in control file: The added damping model is designed to contain all possible motion types (translation and rotation).");
+
+            Aux.TestArithmeticException(m_Gravity, "gravity");
+            Aux.TestArithmeticException(m_AddedDampingCoefficient, "added damping coefficient");
+        }
+
+        public Motion_Wet GetParticleMotion() {
+            if (m_NoRotation && m_NoTranslation)
+                return new Motion_Fixed();
+            if (m_IsDry) {
+                return m_NoRotation ? new Motion_Dry_NoRotation(m_Gravity)
+                    : m_NoTranslation ? new Motion_Dry_NoTranslation(m_Gravity)
+                    : new Motion_Dry(m_Gravity);
+            }
+            if (m_AddedDampingCoefficient != -1)
+                return new Motion_AddedDamping(m_Gravity, m_UnderrelaxationParam, m_AddedDampingCoefficient);
+            else
+                return m_NoRotation ? new Motion_Wet_NoRotation(m_Gravity)
+                    : m_NoTranslation ? new Motion_Wet_NoTranslation(m_Gravity)
+                    : new Motion_Wet(m_Gravity, m_UnderrelaxationParam);
+        }
+    }
+
+    public class Motion_Wet {
 
         private const int historyLength = 4;
         protected static int spatialDim = 2;
@@ -36,14 +90,10 @@ namespace BoSSS.Application.FSI_Solver {
         readonly private ParticleForceIntegration ForceIntegration = new ParticleForceIntegration();
         readonly ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation();
 
-        public ParticleMotion(double[] gravity,
-            double underrelaxationFactor = 1,
-            double forceAndTorqueConvergence = 1e-15,
-            bool useAddaptiveUnderrelaxation = false) {
+        public Motion_Wet(double[] gravity,
+            ParticleUnderrelaxationParam underrelaxationParam = null) {
             m_Gravity = gravity;
-            m_ForceAndTorqueConvergence = forceAndTorqueConvergence;
-            m_UnderrelaxationFactor = underrelaxationFactor;
-            m_UseAddaptiveUnderrelaxation = useAddaptiveUnderrelaxation;
+            m_UnderrelaxationParam = underrelaxationParam;
 
             for (int i = 0; i < historyLength; i++) {
                 position.Add(new double[spatialDim]);
@@ -56,6 +106,8 @@ namespace BoSSS.Application.FSI_Solver {
                 hydrodynamicTorque.Add(new double());
             }
         }
+
+        ParticleUnderrelaxationParam m_UnderrelaxationParam = null;
 
         /// <summary>
         /// The translational velocity of the particle in the current time step.
@@ -111,6 +163,11 @@ namespace BoSSS.Application.FSI_Solver {
         public List<double> rotationalVelocity = new List<double>();
 
         /// <summary>
+        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        public double[] PreCollisionVelocity;
+
+        /// <summary>
         /// The translational velocity of the particle in the current time step.
         /// </summary>
         protected List<double[]> translationalAcceleration = new List<double[]>();
@@ -128,7 +185,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// The force acting on the particle in the current time step.
         /// </summary>
-        protected double[] forcesPrevIteration = new double[spatialDim];
+        public double[] forcesPrevIteration = new double[spatialDim];
 
         /// <summary>
         /// The Torque acting on the particle in the current time step.
@@ -138,7 +195,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// The force acting on the particle in the current time step.
         /// </summary>
-        protected double torquePrevIteration = new double();
+        public double torquePrevIteration = new double();
+
 
         /// <summary>
         /// The force acting on the particle in the current time step.
@@ -151,37 +209,15 @@ namespace BoSSS.Application.FSI_Solver {
         protected double m_MaxParticleLengthScale;
 
         /// <summary>
-        /// Convergence criterion.
-        /// </summary>
-        protected double m_ForceAndTorqueConvergence;
-
-        /// <summary>
-        /// Force and torque underrelaxation.
-        /// </summary>
-        protected double m_UnderrelaxationFactor;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        protected bool m_UseAddaptiveUnderrelaxation;
-
-        /// <summary>
         /// Saves position, angle, acceleration and velocity of the last timestep
         /// </summary>
         public void SaveDataOfPreviousTimestep() {
-            Aux.SaveMultidimValueOfLastTimestep(position);
-            Aux.SaveValueOfLastTimestep(angle);
             Aux.SaveMultidimValueOfLastTimestep(translationalVelocity);
             Aux.SaveValueOfLastTimestep(rotationalVelocity);
             Aux.SaveMultidimValueOfLastTimestep(translationalAcceleration);
             Aux.SaveValueOfLastTimestep(rotationalAcceleration);
             Aux.SaveMultidimValueOfLastTimestep(hydrodynamicForces);
             Aux.SaveValueOfLastTimestep(hydrodynamicTorque);
-        }
-
-        public virtual void CheckCorrectInit(bool IsDry) {
-            if (IsDry)
-                throw new Exception("The flow solver is switched of, but the particle is defined as if there was a fluid. Please use the dry motion models");
         }
 
         public void InitializeParticlePositionAndAngle(double[] positionP, double angleP) {
@@ -204,6 +240,14 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="mass"></param>
         public void GetParticleArea(double area) {
             particleArea = area;
+        }
+
+        /// <summary>
+        /// Init of the particle mass.
+        /// </summary>
+        /// <param name="mass"></param>
+        public void GetParticleDensity(double density) {
+            particleDensity = density;
         }
 
         /// <summary>
@@ -238,7 +282,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         public void UpdateParticlePositionAndAngle(double dt) {
-            if(collisionTimestep == 0) {
+            Aux.SaveMultidimValueOfLastTimestep(position);
+            Aux.SaveValueOfLastTimestep(angle);
+            if (collisionTimestep == 0) {
                 CalculateParticlePosition(dt);
                 CalculateParticleAngle(dt);
             }
@@ -246,6 +292,15 @@ namespace BoSSS.Application.FSI_Solver {
                 CalculateParticlePosition(dt, collisionTimestep);
                 CalculateParticleAngle(dt, collisionTimestep);
             }
+        }
+
+        /// <summary>
+        /// Calls the calculation of the position and angle.
+        /// </summary>
+        /// <param name="dt"></param>
+        public void CollisionParticlePositionAndAngle(double collisionDynamicTimestep) {
+            CalculateParticlePosition(collisionDynamicTimestep, collisionProcedure: true);
+            CalculateParticleAngle(collisionDynamicTimestep, collisionProcedure: true);
         }
 
         /// <summary>
@@ -269,11 +324,15 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="U"></param>
         /// <param name="P"></param>
         /// <param name="LsTrk"></param>
-        /// <param name="muA"></param>
-        public virtual void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double muA, double relativeParticleMass, double dt = 0) {
-            double[] tempForces = CalculateHydrodynamicForces(U, P, LsTrk, CutCells_P, muA, relativeParticleMass);
-            double tempTorque = CalculateHydrodynamicTorque(U, P, LsTrk, CutCells_P, muA);
-            HydrodynamicsPostprocessing(tempForces, tempTorque);
+        /// <param name="fluidViscosity"></param>
+        public virtual void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double fluidViscosity, double fluidDensity, bool firstIteration, double dt = 0) {
+            double[] tempForces = CalculateHydrodynamicForces(U, P, LsTrk, CutCells_P, fluidViscosity, fluidDensity);
+            double tempTorque = CalculateHydrodynamicTorque(U, P, LsTrk, CutCells_P, fluidViscosity);
+            HydrodynamicsPostprocessing(tempForces, tempTorque, firstIteration);
+        }
+
+        public virtual void PredictForceAndTorque(int TimestepInt) {
+            throw new Exception("Predict force and torque should only be called if added damping is active.");
         }
 
         /// <summary>
@@ -283,6 +342,17 @@ namespace BoSSS.Application.FSI_Solver {
         protected virtual void CalculateParticlePosition(double dt) {
             for (int d = 0; d < spatialDim; d++) {
                 position[0][d] = position[1][d] + (translationalVelocity[0][d] + 4 * translationalVelocity[1][d] + translationalVelocity[2][d]) * dt / 6;
+            }
+            Aux.TestArithmeticException(position[0], "particle position");
+        }
+
+        /// <summary>
+        /// Calculate the new particle position
+        /// </summary>
+        /// <param name="dt"></param>
+        protected virtual void CalculateParticlePosition(double dt, bool collisionProcedure) {
+            for (int d = 0; d < spatialDim; d++) {
+                position[0][d] = position[0][d] + (translationalVelocity[0][d] + 4 * translationalVelocity[1][d] + translationalVelocity[2][d]) * dt / 6;
             }
             Aux.TestArithmeticException(position[0], "particle position");
         }
@@ -305,6 +375,15 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="dt"></param>
         protected virtual void CalculateParticleAngle(double dt) {
             angle[0] = angle[1] + (rotationalVelocity[0] + 4 * rotationalVelocity[1] + rotationalVelocity[2]) * dt / 6;
+            Aux.TestArithmeticException(angle[0], "particle angle");
+        }
+
+        /// <summary>
+        /// Calculate the new particle angle
+        /// </summary>
+        /// <param name="dt"></param>
+        protected virtual void CalculateParticleAngle(double dt, bool collisionProcedure) {
+            angle[0] = angle[0] + (rotationalVelocity[0] + 4 * rotationalVelocity[1] + rotationalVelocity[2]) * dt / 6;
             Aux.TestArithmeticException(angle[0], "particle angle");
         }
 
@@ -364,13 +443,20 @@ namespace BoSSS.Application.FSI_Solver {
             Aux.TestArithmeticException(rotationalVelocity[0], "particle rotational velocity");
         }
 
+        internal void CalculateNormalAndTangentialVelocity(double[] NormalVector) {
+            double[] Velocity = translationalVelocity[0];
+            double[] TangentialVector = new double[] { -NormalVector[1], NormalVector[0] };
+            PreCollisionVelocity = new double[] { Velocity[0] * NormalVector[0] + Velocity[1] * NormalVector[1], Velocity[0] * TangentialVector[0] + Velocity[1] * TangentialVector[1] };
+            Aux.TestArithmeticException(PreCollisionVelocity, "particle velocity before collision");
+        }
+
         /// <summary>
         /// Calculate the new acceleration
         /// </summary>
         /// <param name="dt"></param>
         protected virtual void CalculateTranslationalAcceleration(double dt) {
             for (int d = 0; d < spatialDim; d++) {
-                translationalAcceleration[0][d] = hydrodynamicForces[0][d] / ParticleMass;
+                translationalAcceleration[0][d] = hydrodynamicForces[0][d] / (particleDensity * particleArea);
             }
             Aux.TestArithmeticException(translationalAcceleration[0], "particle translational acceleration");
         }
@@ -493,27 +579,33 @@ namespace BoSSS.Application.FSI_Solver {
             torque = globalStateBuffer;
         }
 
-        protected virtual void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque) {
-            Underrelaxation.CalculateAverageForces(tempForces, tempTorque, m_MaxParticleLengthScale, out double averagedForces);
-            Underrelaxation.Forces(ref tempForces, forcesPrevIteration, m_ForceAndTorqueConvergence, m_UnderrelaxationFactor, m_UseAddaptiveUnderrelaxation, averagedForces);
-            Underrelaxation.Torque(ref tempTorque, torquePrevIteration, m_ForceAndTorqueConvergence, m_UnderrelaxationFactor, m_UseAddaptiveUnderrelaxation, averagedForces);
-            ForceClearSmallValues(tempForces);
-            TorqueClearSmallValues(tempTorque);
+        protected virtual void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque, bool firstIteration) {
+            double forceAndTorqueConvergence = 0;
+            if (m_UnderrelaxationParam != null && !firstIteration) {
+                forceAndTorqueConvergence = m_UnderrelaxationParam.hydroDynConvergenceLimit;
+                double underrelaxationFactor = m_UnderrelaxationParam.underrelaxationFactor;
+                bool useAddaptiveUnderrelaxation = m_UnderrelaxationParam.useAddaptiveUnderrelaxation;
+                Underrelaxation.CalculateAverageForces(tempForces, tempTorque, m_MaxParticleLengthScale, out double averagedForces);
+                Underrelaxation.Forces(ref tempForces, forcesPrevIteration, forceAndTorqueConvergence, underrelaxationFactor, useAddaptiveUnderrelaxation, averagedForces);
+                Underrelaxation.Torque(ref tempTorque, torquePrevIteration, forceAndTorqueConvergence, underrelaxationFactor, useAddaptiveUnderrelaxation, averagedForces);
+            }
+            ForceClearSmallValues(tempForces, forceAndTorqueConvergence);
+            TorqueClearSmallValues(tempTorque, forceAndTorqueConvergence);
             Aux.TestArithmeticException(hydrodynamicForces[0], "hydrodynamic forces");
             Aux.TestArithmeticException(hydrodynamicTorque[0], "hydrodynamic torque");
         }
 
-        private void ForceClearSmallValues(double[] tempForces) {
+        private void ForceClearSmallValues(double[] tempForces, double forceAndTorqueConvergence) {
             for (int d = 0; d < spatialDim; d++) {
                 hydrodynamicForces[0][d] = 0;
-                if (Math.Abs(tempForces[d]) > m_ForceAndTorqueConvergence * 1e-2)
+                if (Math.Abs(tempForces[d]) > forceAndTorqueConvergence * 1e-2)
                     hydrodynamicForces[0][d] = tempForces[d];
             }
         }
 
-        private void TorqueClearSmallValues(double tempTorque) {
+        private void TorqueClearSmallValues(double tempTorque, double forceAndTorqueConvergence) {
             hydrodynamicTorque[0] = 0;
-            if (Math.Abs(tempTorque) > m_ForceAndTorqueConvergence * 1e-2)
+            if (Math.Abs(tempTorque) > forceAndTorqueConvergence * 1e-2)
                 hydrodynamicTorque[0] = tempTorque;
         }
 

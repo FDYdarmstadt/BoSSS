@@ -21,13 +21,11 @@ using ilPSP;
 using System;
 
 namespace BoSSS.Application.FSI_Solver {
-    public class Motion_AddedDamping : ParticleMotion {
+    public class Motion_AddedDamping : Motion_Wet {
         public Motion_AddedDamping(
             double[] gravity,
-            double underrelaxationFactor = 1,
-            double forceAndTorqueConvergence = 1e-10,
-            bool useAddaptiveUnderrelaxation = true,
-            double addedDampingCoefficient = 1) : base(gravity, underrelaxationFactor, forceAndTorqueConvergence, useAddaptiveUnderrelaxation) {
+            ParticleUnderrelaxationParam underrelaxationParam,
+            double addedDampingCoefficient = 1) : base(gravity, underrelaxationParam) {
             m_StartingAngle = angle[0];
             m_AddedDampingCoefficient = addedDampingCoefficient;
         }
@@ -105,7 +103,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
         private double[,] GetMassMatrix() {
             double[,] MassMatrix = new double[3, 3];
-            MassMatrix[0, 0] = MassMatrix[1, 1] = ParticleMass;
+            MassMatrix[0, 0] = MassMatrix[1, 1] = particleArea * particleDensity;
             MassMatrix[2, 2] = momentOfInertia;
             return MassMatrix;
         }
@@ -123,16 +121,22 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Predicts the new acceleration (translational and rotational)
         /// </summary>
-        public void PredictForceAndTorque() {
-            for (int d = 0; d < spatialDim; d++) {
-                hydrodynamicForces[0][d] = (hydrodynamicForces[1][d] + 4 * hydrodynamicForces[2][d] + hydrodynamicForces[3][d]) / 6;
-                if (Math.Abs(hydrodynamicForces[0][d]) < 1e-20)
-                    hydrodynamicForces[0][d] = 0;
+        public override void PredictForceAndTorque(int TimestepInt) {
+            if (TimestepInt == 1) {
+                hydrodynamicForces[0][0] = 20 * Math.Cos(angle[0]) * activeStress + m_Gravity[1] * particleDensity * particleArea;
+                hydrodynamicForces[0][1] = 20 * Math.Sin(angle[0]) * activeStress + m_Gravity[1] * particleDensity * particleArea;
+            }
+            else {
+                for (int d = 0; d < spatialDim; d++) {
+                    hydrodynamicForces[0][d] = (hydrodynamicForces[1][d] + 4 * hydrodynamicForces[2][d] + hydrodynamicForces[3][d]) / 6;
+                    if (Math.Abs(hydrodynamicForces[0][d]) < 1e-20)
+                        hydrodynamicForces[0][d] = 0;
+                }
+                hydrodynamicTorque[0] = (hydrodynamicTorque[1] + 4 * hydrodynamicTorque[2] + hydrodynamicTorque[3]) / 6;
+                if (Math.Abs(hydrodynamicTorque[0]) < 1e-20)
+                    hydrodynamicTorque[0] = 0;
             }
             Aux.TestArithmeticException(hydrodynamicForces[0], "hydrodynamic forces");
-            hydrodynamicTorque[0] = (hydrodynamicTorque[1] + 4 * hydrodynamicTorque[2] + hydrodynamicTorque[3]) / 6;
-            if (Math.Abs(hydrodynamicTorque[0]) < 1e-20)
-                hydrodynamicTorque[0] = 0;
             Aux.TestArithmeticException(hydrodynamicTorque[0], "hydrodynamic torque");
         }
 
@@ -142,11 +146,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="U"></param>
         /// <param name="P"></param>
         /// <param name="LsTrk"></param>
-        /// <param name="muA"></param>
-        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double muA, double relativeParticleMass, double dt) {
-            double[] tempForces = CalculateHydrodynamicForces(U, P, LsTrk, CutCells_P, muA, relativeParticleMass, dt);
-            double tempTorque = CalculateHydrodynamicTorque(U, P, LsTrk, CutCells_P, muA, dt);
-            HydrodynamicsPostprocessing(tempForces, tempTorque);
+        /// <param name="fluidViscosity"></param>
+        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double fluidViscosity, double fluidDensity, bool firstIteration, double dt) {
+            double[] tempForces = CalculateHydrodynamicForces(U, P, LsTrk, CutCells_P, fluidViscosity, fluidDensity, dt);
+            double tempTorque = CalculateHydrodynamicTorque(U, P, LsTrk, CutCells_P, fluidViscosity, dt);
+            HydrodynamicsPostprocessing(tempForces, tempTorque, firstIteration);
         }
 
         /// <summary>
@@ -156,7 +160,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="P"></param>
         /// <param name="LsTrk"></param>
         /// <param name="muA"></param>
-        protected override double[] CalculateHydrodynamicForces(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double muA, double relativeParticleMass, double dt) {
+        protected override double[] CalculateHydrodynamicForces(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double muA, double fluidDensity, double dt) {
             int RequiredOrder = U[0].Basis.Degree * 3 + 2;
             Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
             SinglePhaseField[] UA = U.ToArray();
@@ -164,7 +168,7 @@ namespace BoSSS.Application.FSI_Solver {
             double[] tempForces = ForcesIntegration(UA, pA, LsTrk, CutCells_P, RequiredOrder, muA);
             Force_MPISum(ref tempForces);
             for (int d = 0; d < spatialDim; d++) {
-                tempForces[d] += relativeParticleMass * m_Gravity[d];
+                tempForces[d] += (particleDensity - fluidDensity) * particleArea * m_Gravity[d];
             }
             ForceAddedDamping(ref tempForces, dt);
             return tempForces;
@@ -188,30 +192,6 @@ namespace BoSSS.Application.FSI_Solver {
 
         private void TorqueAddedDamping(ref double torque, double dt) {
             torque += m_AddedDampingCoefficient * dt * (addedDampingTensor[2, 0] * translationalAcceleration[0][0] + addedDampingTensor[2, 1] * translationalAcceleration[0][1] + addedDampingTensor[2, 2] * rotationalAcceleration[0]);
-        }
-
-        protected override void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque) {
-            Underrelaxation.CalculateAverageForces(tempForces, tempTorque, m_MaxParticleLengthScale, out double averagedForces);
-            Underrelaxation.Forces(ref tempForces, forcesPrevIteration, m_ForceAndTorqueConvergence, m_UnderrelaxationFactor, m_UseAddaptiveUnderrelaxation, averagedForces);
-            Underrelaxation.Torque(ref tempTorque, torquePrevIteration, m_ForceAndTorqueConvergence, m_UnderrelaxationFactor, m_UseAddaptiveUnderrelaxation, averagedForces);
-            ForceClearSmallValues(tempForces);
-            TorqueClearSmallValues(tempTorque);
-            Aux.TestArithmeticException(hydrodynamicForces[0], "hydrodynamic forces");
-            Aux.TestArithmeticException(hydrodynamicTorque[0], "hydrodynamic torque");
-        }
-
-        private void ForceClearSmallValues(double[] tempForces) {
-            for (int d = 0; d < spatialDim; d++) {
-                hydrodynamicForces[0][d] = 0;
-                if (Math.Abs(tempForces[d]) > m_ForceAndTorqueConvergence * 1e-2)
-                    hydrodynamicForces[0][d] = tempForces[d];
-            }
-        }
-
-        private void TorqueClearSmallValues(double tempTorque) {
-            hydrodynamicTorque[0] = 0;
-            if (Math.Abs(tempTorque) > m_ForceAndTorqueConvergence * 1e-2)
-                hydrodynamicTorque[0] = tempTorque;
         }
     }
 }

@@ -99,6 +99,15 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         public double CoefficientOfRestitution = 1.0;
 
+        [DataMember]
+        public ParticleUnderrelaxationParam underrelaxationParam = new ParticleUnderrelaxationParam(1e-8, 1, false);
+
+        [DataMember]
+        public double[] gravity = new double[] { 0, -9.81 };
+
+        [DataMember]
+        public double addedDampingCoefficient = -1;
+
 
         /// <summary>
         /// Setting <see cref="Solution.Control.AppControl.FieldOptions"/>

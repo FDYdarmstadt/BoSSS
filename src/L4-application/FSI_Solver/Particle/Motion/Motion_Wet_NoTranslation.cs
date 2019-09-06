@@ -19,8 +19,8 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Application.FSI_Solver {
-    public class Motion_Wet_NoTranslation : ParticleMotion {
-        public Motion_Wet_NoTranslation(double[] gravity) : base(gravity) {
+    public class Motion_Wet_NoTranslation : Motion_Wet {
+        public Motion_Wet_NoTranslation(double[] gravity, ParticleUnderrelaxationParam underrelaxationParam = null) : base(gravity, underrelaxationParam) {
         }
 
         /// <summary>
@@ -76,18 +76,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="P"></param>
         /// <param name="LsTrk"></param>
         /// <param name="muA"></param>
-        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double muA, double relativeParticleMass, double dt = 0) {
+        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double muA, double relativeParticleMass, bool firstIteration, double dt = 0) {
             double[] tempForces = new double[spatialDim];
             double tempTorque = CalculateHydrodynamicTorque(U, P, LsTrk, CutCells_P, muA);
-            HydrodynamicsPostprocessing(tempForces, tempTorque);
-        }
-
-        protected override void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque) {
-            for (int d = 0; d < spatialDim; d++) {
-                hydrodynamicForces[0][d] = 0;
-            }
-            hydrodynamicTorque[0] = tempTorque;
-            Aux.TestArithmeticException(hydrodynamicTorque[0], "hydrodynamic torque");
+            HydrodynamicsPostprocessing(tempForces, tempTorque, firstIteration);
         }
     }
 }

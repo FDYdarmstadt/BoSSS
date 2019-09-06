@@ -14,13 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-namespace BoSSS.Application.FSI_Solver {
-    public class Motion_Dry : ParticleMotion {
-        public Motion_Dry(double[] gravity) : base(gravity) {
-        }
+using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.XDG;
 
-        public override void CheckCorrectInit(bool IsDry) {
-            // Do nothing
+namespace BoSSS.Application.FSI_Solver {
+    public class Motion_Dry : Motion_Wet {
+        public Motion_Dry(double[] gravity) : base(gravity) {
         }
 
         /// <summary>
@@ -76,6 +76,16 @@ namespace BoSSS.Application.FSI_Solver {
                 translationalAcceleration[0][d] = m_Gravity[d];
             }
             Aux.TestArithmeticException(translationalAcceleration[0], "particle translational acceleration");
+        }
+
+        /// <summary>
+        /// Overrides the calculation of hydrodynamics for fixed particles, so that nothing happens.
+        /// </summary>
+        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U = null, SinglePhaseField P = null, LevelSetTracker LsTrk = null, CellMask CutCells_P = null, double fluidViscosity = 0, double fluidDensity = 0, bool firstIteration = false, double dt = 0) {
+            for (int d = 0; d < spatialDim; d++) {
+                hydrodynamicForces[0][d] = m_Gravity[d] * particleDensity * particleArea;
+            }
+            hydrodynamicTorque[0] = 0;
         }
     }
 }

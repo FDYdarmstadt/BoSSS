@@ -115,11 +115,12 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.mu_A = 1;//pg(mum*s)
             C.PhysicalParameters.Material = true;
 
-
+            C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.forceAndTorqueConvergenceCriterion, underrelaxationFactorIn: 3.0, useAddaptiveUnderrelaxationIn: true);
+            ParticleMotion motion = new ParticleMotion(C.gravity, false, false, false, C.underrelaxationParam, 1);
             // Particle Properties
             // =============================   
             // Defining particles
-            C.Particles.Add(new Particle_Ellipsoid(0.2, 0.1, new double[] { 0.0, 0.0 }, startAngl: 0) {
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 0.0, 0.0 }, startAngl: 0) {
                 particleDensity = 1,
                 activeStress = 1e3,
                 useAddaptiveUnderrelaxation = true,
@@ -128,7 +129,7 @@ namespace BoSSS.Application.FSI_Solver {
                 UseAddedDamping = true,
             });
 
-            C.Particles.Add(new Particle_Ellipsoid(0.2, 0.1, new double[] { 2.0, 0.0 }, startAngl: 12) {
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 2.0, 0.0 }, startAngl: 12) {
                 particleDensity = 1,
                 activeStress = 1e3,
                 useAddaptiveUnderrelaxation = true,
@@ -137,7 +138,7 @@ namespace BoSSS.Application.FSI_Solver {
                 UseAddedDamping = true,
             });
 
-            C.Particles.Add(new Particle_Ellipsoid(0.2, 0.1, new double[] { -2.0, 0.0 }, startAngl: -20) {
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { -2.0, 0.0 }, startAngl: -20) {
                 particleDensity = 1,
                 activeStress = 1e3,
                 useAddaptiveUnderrelaxation = true,
@@ -146,7 +147,7 @@ namespace BoSSS.Application.FSI_Solver {
                 UseAddedDamping = true,
             });
 
-            C.Particles.Add(new Particle_Ellipsoid(0.2, 0.1, new double[] { 0.0, 2.0 }, startAngl: -45) {
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 0.0, 2.0 }, startAngl: -45) {
                 particleDensity = 1,
                 activeStress = 1e3,
                 useAddaptiveUnderrelaxation = true,
@@ -155,7 +156,7 @@ namespace BoSSS.Application.FSI_Solver {
                 UseAddedDamping = true,
             });
 
-            C.Particles.Add(new Particle_Ellipsoid(0.2, 0.1, new double[] { 0.0, -2.0 }, startAngl: 20) {
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 0.0, -2.0 }, startAngl: 20) {
                 particleDensity = 1,
                 activeStress = 1e3,
                 useAddaptiveUnderrelaxation = true,
@@ -164,41 +165,41 @@ namespace BoSSS.Application.FSI_Solver {
                 UseAddedDamping = true,
             });
 
-            C.Particles.Add(new Particle_Ellipsoid( 0.2,  0.1, new double[] { 2, 2 }, startAngl: 10) {
-                particleDensity = 1,
-                activeStress = 1e3,
-                useAddaptiveUnderrelaxation = true,
-                underrelaxation_factor = 3.0,
-                clearSmallValues = true,
-                UseAddedDamping = true
-            });
+            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2,  0.1, new double[] { 2, 2 }, startAngl: 10) {
+            //    particleDensity = 1,
+            //    activeStress = 1e3,
+            //    useAddaptiveUnderrelaxation = true,
+            //    underrelaxation_factor = 3.0,
+            //    clearSmallValues = true,
+            //    UseAddedDamping = true
+            //});
 
-            C.Particles.Add(new Particle_Ellipsoid( 0.2,  0.1, new double[] { 2, -2 }, startAngl: 50) {
-                particleDensity = 1,
-                activeStress = 1e3,
-                useAddaptiveUnderrelaxation = true,
-                underrelaxation_factor = 3.0,
-                clearSmallValues = true,
-                UseAddedDamping = true
-            });
+            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2,  0.1, new double[] { 2, -2 }, startAngl: 50) {
+            //    particleDensity = 1,
+            //    activeStress = 1e3,
+            //    useAddaptiveUnderrelaxation = true,
+            //    underrelaxation_factor = 3.0,
+            //    clearSmallValues = true,
+            //    UseAddedDamping = true
+            //});
 
-            C.Particles.Add(new Particle_Ellipsoid( 0.2,  0.1, new double[] { -2, 2 }, startAngl: 80) {
-                particleDensity = 1,
-                activeStress = 1e3,
-                useAddaptiveUnderrelaxation = true,
-                underrelaxation_factor = 3.0,
-                clearSmallValues = true,
-                UseAddedDamping = true
-            });
+            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2,  0.1, new double[] { -2, 2 }, startAngl: 80) {
+            //    particleDensity = 1,
+            //    activeStress = 1e3,
+            //    useAddaptiveUnderrelaxation = true,
+            //    underrelaxation_factor = 3.0,
+            //    clearSmallValues = true,
+            //    UseAddedDamping = true
+            //});
 
-            C.Particles.Add(new Particle_Ellipsoid( 0.2,  0.1, new double[] { -2, -2 }, startAngl: 34) {
-                particleDensity = 1,
-                activeStress = 1e3,
-                useAddaptiveUnderrelaxation = true,
-                underrelaxation_factor = 3.0,
-                clearSmallValues = true,
-                UseAddedDamping = true
-            });
+            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2,  0.1, new double[] { -2, -2 }, startAngl: 34) {
+            //    particleDensity = 1,
+            //    activeStress = 1e3,
+            //    useAddaptiveUnderrelaxation = true,
+            //    underrelaxation_factor = 3.0,
+            //    clearSmallValues = true,
+            //    UseAddedDamping = true
+            //});
 
             // Quadrature rules
             // =============================   

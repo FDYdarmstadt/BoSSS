@@ -19,7 +19,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Application.FSI_Solver {
-    public class Motion_Fixed : ParticleMotion {
+    public class Motion_Fixed : Motion_Wet {
 
         public Motion_Fixed(double[] gravity = null) : base(gravity) {
         }
@@ -45,7 +45,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Overrides the calculation of hydrodynamics for fixed particles, so that nothing happens.
         /// </summary>
-        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U = null, SinglePhaseField P = null, LevelSetTracker LsTrk = null, CellMask CutCells_P = null, double muA = 0, double relativeParticleMass = 0, double dt = 0) {
+        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U = null, SinglePhaseField P = null, LevelSetTracker LsTrk = null, CellMask CutCells_P = null, double fluidViscosity = 0, double fluidDensity = 0, bool firstIteration = false, double dt = 0) {
             for (int d = 0; d < spatialDim; d++) {
                 hydrodynamicForces[0][d] = 0;
             }

@@ -44,7 +44,7 @@ namespace BoSSS.Application.FSI_Solver {
 
         }
 
-        public Particle_Pentagone(double width, double[] startPos = null, double startAngl = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(startPos, startAngl, startTransVelocity, startRotVelocity) {
+        public Particle_Pentagone(ParticleMotion motionInit, double width, double[] startPos = null, double startAngl = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, startTransVelocity, startRotVelocity) {
             width_P = width;
             //Motion.GetParticleLengthscale(width);
             //Motion.GetParticleArea(Area_P());
@@ -126,8 +126,8 @@ namespace BoSSS.Application.FSI_Solver {
                 throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");
 
             for (int j = 0; j < NoOfSurfacePoints; j++) {
-                SurfacePoints[j, 0] = Math.Cos(InfinitisemalAngle[j]) * width_P + position[0][0];
-                SurfacePoints[j, 1] = Math.Sin(InfinitisemalAngle[j]) * width_P + position[0][1];
+                SurfacePoints[j, 0] = Math.Cos(InfinitisemalAngle[j]) * width_P + Motion.position[0][0];
+                SurfacePoints[j, 1] = Math.Sin(InfinitisemalAngle[j]) * width_P + Motion.position[0][1];
             }
             return SurfacePoints;
         }

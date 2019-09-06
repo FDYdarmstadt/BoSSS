@@ -19,8 +19,8 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Application.FSI_Solver {
-    public class Motion_Wet_NoRotation : ParticleMotion {
-        public Motion_Wet_NoRotation(double[] gravity) : base(gravity) {
+    public class Motion_Wet_NoRotation : Motion_Wet {
+        public Motion_Wet_NoRotation(double[] gravity, ParticleUnderrelaxationParam underrelaxationParam = null) : base(gravity, underrelaxationParam) {
         }
 
         /// <summary>
@@ -67,18 +67,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="U"></param>
         /// <param name="P"></param>
         /// <param name="LsTrk"></param>
-        /// <param name="muA"></param>
-        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double muA, double relativeParticleMass, double dt = 0) {
-            double[] tempForces = CalculateHydrodynamicForces(U, P, LsTrk, CutCells_P, muA, relativeParticleMass);
-            HydrodynamicsPostprocessing(tempForces);
-        }
-
-        protected override void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque = 0) {
-            for (int d = 0; d < spatialDim; d++) {
-                hydrodynamicForces[0][d] = tempForces[d];
-            }
-            hydrodynamicTorque[0] = 0;
-            Aux.TestArithmeticException(hydrodynamicForces[0], "hydrodynamic forces");
+        /// <param name="fluidViscosity"></param>
+        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double fluidViscosity, double fluidDensity, bool firstIteration, double dt = 0) {
+            double[] tempForces = CalculateHydrodynamicForces(U, P, LsTrk, CutCells_P, fluidViscosity, fluidDensity);
+            double tempTorque = 0;
+            HydrodynamicsPostprocessing(tempForces, tempTorque, firstIteration);
         }
     }
 }

@@ -35,7 +35,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// ctor
         /// </summary>
-        public Particle_superEllipsoid(double length, double thickness, double[] startPos = null, double startAngl = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(startPos, startAngl, startTransVelocity, startRotVelocity) {
+        public Particle_superEllipsoid(ParticleMotion motionInit, double length, double thickness, double[] startPos = null, double startAngl = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, startTransVelocity, startRotVelocity) {
             length_P = length;
             thickness_P = thickness;
             //Motion.GetParticleLengthscale(GetLengthScales().Max());
