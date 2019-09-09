@@ -64,8 +64,8 @@
     <Compile Include="Grid2D.cs" />
     <Compile Include="Grid3D.cs" />
     <Compile Include="GridRefinementController.cs" />
-    <Compile Include="VoronoiMeshing\BoundaryLineEnumerator.cs" />
-    <Compile Include="VoronoiMeshing\MeshDivider.cs" />
+    <Compile Include="VoronoiMeshing\Cutter\BoundaryLineEnumerator.cs" />
+    <Compile Include="VoronoiMeshing\Cutter\MeshDivider.cs" />
     <Compile Include="VoronoiMeshing\Cutter\BoundaryLine.cs" />
     <Compile Include="VoronoiMeshing\Cutter\CutterState.cs" />
     <Compile Include="VoronoiMeshing\Cutter\Intersectioncase.cs" />
@@ -84,7 +84,7 @@
     <Compile Include="VoronoiMeshing\GridConverter.cs" />
     <Compile Include="VoronoiMeshing\Cutter\LineIntersection.cs" />
     <Compile Include="VoronoiMeshing\Cutter\MeshIntersecter.cs" />
-    <Compile Include="VoronoiMeshing\MeshMethods.cs" />
+    <Compile Include="VoronoiMeshing\Cutter\MeshMethods.cs" />
     <Compile Include="VoronoiMeshing\MICHMesher\MIConvexHullMeshGenerator.cs" />
     <Compile Include="VoronoiMeshing\MeshingAlgorithm.cs" />
     <Compile Include="VoronoiMeshing\BoundaryHandler.cs" />
