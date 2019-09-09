@@ -245,7 +245,7 @@ namespace ilPSP.Tracing {
             {
                 StackFrame fr = new StackFrame(1, true);
 
-                _MethodBase m = fr.GetMethod();
+                System.Reflection.MethodBase m = fr.GetMethod();
                 _name = m.DeclaringType.FullName + "." + m.Name;
                 callingType = m.DeclaringType;
             }
@@ -277,7 +277,7 @@ namespace ilPSP.Tracing {
             {
                 StackFrame fr = new StackFrame(1, true);
 
-                _MethodBase m = fr.GetMethod();
+                System.Reflection.MethodBase m = fr.GetMethod();
                 callingType = m.DeclaringType;
             }
             Tracer.Push_MethodCallRecord(UserName);
