@@ -8,11 +8,11 @@ using BoSSS.Platform;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
-    class BoundaryLineEnumerator : CountingEnumerator<Line>, IBoundaryEnumerator<Line>
+    class BoundaryLineEnumerator : CountingEnumerator<BoundaryLine>
     {
         int Length;
 
-        public BoundaryLineEnumerator(IEnumerator<Line> enumerator, int Length) 
+        public BoundaryLineEnumerator(IEnumerator<BoundaryLine> enumerator, int Length) 
             : base(enumerator)
         {
             this.Length = Length;

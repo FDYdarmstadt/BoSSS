@@ -17,14 +17,14 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         VoronoiNode AsVoronoiNode();
     }
 
-    class GridConverter
+    static class GridConverter
     {
-        public static VoronoiGrid Convert2VoronoiGrid<T>(BoundaryMesh<T> mesh, VoronoiBoundary boundary)
+        public static VoronoiGrid Convert2VoronoiGrid<T>(IDMesh<T> mesh, VoronoiBoundary boundary)
             where T : IVoronoiNodeCastable
         {
-            (GridCommons grid, int[][] aggregation) = SetupGridCommonsAndAggregation(mesh.GetCells(), boundary);
+            (GridCommons grid, int[][] aggregation) = SetupGridCommonsAndAggregation(mesh.Cells, boundary);
 
-            IList<T> nodeList = mesh.GetNodes();
+            IList<T> nodeList = mesh.Nodes;
             IList<VoronoiNode> voronoiNodeList = CastAsVoronoiNodes(nodeList);
             VoronoiNodes nodes = new VoronoiNodes(voronoiNodeList);
             VoronoiGrid voronoiGrid = new VoronoiGrid(grid, aggregation, nodes, boundary);

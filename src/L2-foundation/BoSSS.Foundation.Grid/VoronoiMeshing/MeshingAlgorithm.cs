@@ -1,5 +1,6 @@
 ﻿using BoSSS.Platform.LinAlg;
 using System.Collections.Generic;
+using System.Collections;
 using System.Diagnostics;
 using BoSSS.Foundation.Voronoi;
 using System;
@@ -17,20 +18,26 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         {
             public Vector[] BoundingBox;
             public Vector[] Boundary;
-            public Map PeriodicEdgeMapping = null;
+            public HashSet<int> NotchedBoundaryLines = new HashSet<int>();
             public int NumberOfLloydIterations = 10;
             public int FirstCellNode_indice = 0;
         }
 
-        public static BoundaryMesh<T> ComputeMesh<T>(IList<T> nodeList, Settings settings)
+        static void AssertCorrectness(Settings settings)
+        {
+            Debug.Assert(settings.BoundingBox.Length == 4);
+            Debug.Assert(settings.Boundary.Length > 2);
+        }
+
+        public static IDMesh<T> ComputeMesh<T>(IList<T> nodeList, Settings settings)
             where T : IMesherNode, new()
         {
-            
-            IBoundaryEnumerator<Line> boundaryLines = Line.GetEnumerator(settings.Boundary);
-            IntersectionMesh<T> mesh = null;
-            BoundaryHandler boundaryHandler = new BoundaryHandler(
-                Line.ToLines(settings.Boundary), 
-                settings.PeriodicEdgeMapping);
+            AssertCorrectness(settings);
+            BoundaryLineEnumerator boundaryLines = BoundaryLine.GetEnumerator(
+                settings.Boundary, 
+                settings.NotchedBoundaryLines);
+            IDMesh<T> mesh = null;
+            var cutter = new BoundaryCutter<T>();
 
             // Create Voronoi mesh
             // =================================
@@ -39,25 +46,20 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 // Voronoi Mesh generation
                 //-------------------------------------
                 AddDistantBoundingNodes(nodeList, settings.BoundingBox);
-                mesh = IntersectionMeshGenerator.CreateMesh(nodeList, settings.FirstCellNode_indice);
-                
+                mesh = MIConvexHullMeshGenerator.CreateMesh(nodeList);
+
                 //Clip: cut out boundary polygon
                 //-------------------------------------
-                Intersecter.Intersect(mesh, boundaryLines);
-
-                //Impose Periodic Boundaries
-                //-------------------------------------
-                mesh = boundaryHandler.ImposePeriodicity(mesh, nodeList);
+                cutter.CutOut(mesh, boundaryLines, settings.FirstCellNode_indice);
 
                 // Lloyds algorithm (Voronoi relaxation)
                 // -------------------------------------
                 //Get inside cells : Return cells in order of Mesh Array.
-                IReadOnlyList<MeshCell<T>> cells = mesh.GetCells(); 
                 if (iLloyd != settings.NumberOfLloydIterations)
                 {
-                    MoveNodesTowardsCellCenter(cells, ref settings.FirstCellNode_indice);
+                    MoveNodesTowardsCellCenter(mesh.Cells, ref settings.FirstCellNode_indice);
                 }
-                nodeList = mesh.GetNodes();
+                nodeList = mesh.Nodes;
             }
             return mesh;
         }
@@ -83,21 +85,27 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             for (int i = 0; i < Cells.Count; ++i)
             {
                 MeshCell<T> cell = Cells[i];
+                Vector centerOfGravity = CenterOf(cell);
                 double relaxValue = 0.1;
-                Vector CenterOfGravity = new Vector(0, 0);
-                foreach (Vertex vertex in cell.Vertices)
-                {
-                    CenterOfGravity += vertex.Position;
-                }
-                CenterOfGravity.Scale(1.0 / cell.Vertices.Length);
-                CenterOfGravity = CenterOfGravity * relaxValue + new Vector(cell.Node.Position) * (1 - relaxValue);
+                centerOfGravity = centerOfGravity * relaxValue + new Vector(cell.Node.Position) * (1 - relaxValue);
+                cell.Node.Position = centerOfGravity;
 
-                cell.Node.Position = CenterOfGravity;
                 if (cell.ID == FirstCellNode_indice)
                 {
                     FirstCellNode_indice = i;
                 }
             }
+        }
+
+        static Vector CenterOf<T>(MeshCell<T> cell)
+        {
+            Vector centerOfGravity = new Vector(0, 0);
+            foreach (Vertex vertex in cell.Vertices)
+            {
+                centerOfGravity += vertex.Position;
+            }
+            centerOfGravity.Scale(1.0 / cell.Vertices.Length);
+            return centerOfGravity;
         }
     }
 }

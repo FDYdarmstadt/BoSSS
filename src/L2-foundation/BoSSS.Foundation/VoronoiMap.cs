@@ -89,7 +89,7 @@ namespace BoSSS.Foundation.Voronoi
         }
     }
 
-    public enum Connection { Created, Removed, Remained };
+    public enum Connection { Created, Removed, Remained, Mirror};
 
     public class ConnectionMap : Map
     {

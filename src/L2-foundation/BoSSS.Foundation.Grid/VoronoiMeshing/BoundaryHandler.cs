@@ -8,15 +8,16 @@ using BoSSS.Foundation.Voronoi;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
-    class BoundaryHandler
+    class BoundaryHandler<T>
+        where T : IMesherNode, new()
     {
-        bool boundaryHasPeriodicEdges;
+        public bool boundaryHasPeriodicEdges { get; private set; }
 
-        Line[] boundary;
+        BoundaryLine[] boundary;
 
         Map periodicEdgeMapping;
 
-        public BoundaryHandler(Line[] boundary, Map periodicEdgeMapping)
+        public BoundaryHandler(BoundaryLine[] boundary, Map periodicEdgeMapping)
         {
             if (periodicEdgeMapping != null)
             {
@@ -51,8 +52,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         {
             for(int i = 0; i < periodicEdgeMapping.Length; ++i)
             {
-                Line boundaryLineA = boundary[i];
-                Line boundaryLineB = periodicEdgeMapping.GetCorrespondingEntry(i, boundary);
+                BoundaryLine boundaryLineA = boundary[i];
+                BoundaryLine boundaryLineB = periodicEdgeMapping.GetCorrespondingEntry(i, boundary);
 
                 double lengthA = boundaryLineA.Length();
                 double lengthB = boundaryLineB.Length();
@@ -65,22 +66,44 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return true;
         }
 
-        public IntersectionMesh<T> ImposePeriodicity<T>(IntersectionMesh<T> mesh, IList<T> nodeList) 
-            where T : IMesherNode, new()
+        public void MirrorNodes(MeshIntersecter<T> mesh, IList<T> nodeList) 
         {
-            if (boundaryHasPeriodicEdges)
+            //Mirror : Follow boundary and
+            // 1) Collect nodes that should be mirrored
+            /*while (boundaryEdges.MoveNext())
             {
-                //Mirror : Follow boundary 2 times and
-                // 1) Collect nodes that should be copied
-                // 2) Copy
-
-                //Cut
-
-                //Merge/Shift: Follow boundary 2 times and
-                // 1) Collect
-                // 2) Remove & Add
+                Edge<T> edge = boundaryEdges.Current;
             }
-            return mesh;
+            for ()
+            {
+
+            }
+                
+            // 2) Mirror
+
+            //Cut
+
+            //Merge/Shift: Follow boundary 2 times and
+            // 1) Collect
+            // 2) Remove & Add
+            */
         }
+
+        public void UnifyMirroredCells(IList<MeshCell<T>> cells)
+        {
+
+        }
+
+    }
+
+    class Collecter<T>
+    {
+        IEnumerator<Edge<T>> boundaryEdges;
+
+    }
+
+    class Mirror<T>
+    {
+
     }
 }

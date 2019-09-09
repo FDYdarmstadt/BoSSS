@@ -1,51 +1,44 @@
 ﻿using BoSSS.Foundation.Voronoi;
 using BoSSS.Platform.LinAlg;
+using System;
 using System.Collections.Generic;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
-    public class Node : IMesherNode, IVoronoiNodeCastable
+    public class VoronoiMesher<T>
+        where T : IMesherNode, IVoronoiNodeCastable, new()
     {
-        VoronoiNode node;
+        internal IDMesh<T> mesh;
 
-        public Node()
+        public class Settings
         {
-            node = new VoronoiNode();
+            public VoronoiBoundary Boundary;
+            public int NumberOfLloydIterations = 10;
+            public int FirstCellNode_indice = 0;
         }
 
-        public Node(VoronoiNode node)
+        MeshingAlgorithm.Settings ConvertToMeshingAlgoSettings(Settings settings)
         {
-            this.node = node;
-        }
-
-        public Vector Position {
-            get { return node.Position; }
-            set { node.Position = value; }
-        }
-
-        public VoronoiNode AsVoronoiNode()
-        {
-            return node;
-        }
-    } 
-
-    public class VoronoiMesher : VoronoiMesher<Node>
-    {
-        List<Node> WrapInMesherNodes(IList<VoronoiNode> voronoiNodes)
-        {
-            List<Node> wrappedNodes = new List<Node>(voronoiNodes.Count);
-            for (int i = 0; i < voronoiNodes.Count; ++i)
+            MeshingAlgorithm.Settings mesherSettings = new MeshingAlgorithm.Settings
             {
-                Node wrappedNode = new Node(voronoiNodes[i]);
-                wrappedNodes.Add(wrappedNode);
-            }
-            return wrappedNodes;
+                Boundary = settings.Boundary.Polygon,
+                BoundingBox = settings.Boundary.BoundingBox,
+                NumberOfLloydIterations = settings.NumberOfLloydIterations,
+                FirstCellNode_indice = settings.FirstCellNode_indice
+            };
+            return mesherSettings;
         }
 
-        public VoronoiGrid CreateGrid(VoronoiNodes nodes, Settings settings)
+        protected void CreateMesh(List<T> nodes, Settings settings)
         {
-            List<Node> mesherNodes = WrapInMesherNodes(nodes.Nodes);
-            VoronoiGrid grid = CreateGrid(mesherNodes, settings);
+            MeshingAlgorithm.Settings meshingSettings = ConvertToMeshingAlgoSettings(settings);
+            mesh = MeshingAlgorithm.ComputeMesh(nodes, meshingSettings);
+        }
+
+        public VoronoiGrid CreateGrid(List<T> nodes, Settings settings)
+        {
+            CreateMesh(nodes, settings); 
+            VoronoiGrid grid = GridConverter.Convert2VoronoiGrid(mesh, settings.Boundary);
             return grid;
         }
     }

@@ -42,14 +42,14 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         }
     }
 
-    public class TrackedVoronoiMesher : VoronoiMesher<TrackableNode>
+    public class NodeTrackingVoronoiMesher : VoronoiMesher<TrackableNode>
     {
         public MappedVoronoiGrid CreateGrid(VoronoiNodes nodes, Settings settings)
         {
             List<TrackableNode> mesherNodes = WrapInMesherNodes(nodes.Nodes);
             VoronoiGrid grid = CreateGrid(mesherNodes, settings);
 
-            ConnectionMap resultMap = ExtractMap(base.mesh.GetNodes());
+            ConnectionMap resultMap = ExtractMap(base.mesh.Nodes);
             ConnectionMap inputMap = GetInputMap(resultMap, nodes.Count);
             MappedVoronoiGrid movingGrid = new MappedVoronoiGrid
             {
