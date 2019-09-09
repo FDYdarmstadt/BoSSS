@@ -21,10 +21,20 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Application.FSI_Solver
-{
-    class ParticleUnderrelaxation
-    {
+namespace BoSSS.Application.FSI_Solver {
+
+    public class ParticleUnderrelaxationParam {
+        public ParticleUnderrelaxationParam(double convergenceLimit, double underrelaxationFactorIn, bool useAddaptiveUnderrelaxationIn) {
+            hydroDynConvergenceLimit = convergenceLimit;
+            underrelaxationFactor = underrelaxationFactorIn;
+            useAddaptiveUnderrelaxation = useAddaptiveUnderrelaxationIn;
+        }
+
+        public double hydroDynConvergenceLimit;
+        public double underrelaxationFactor;
+        public bool useAddaptiveUnderrelaxation;
+    }
+    class ParticleUnderrelaxation {
         /// <summary>
         /// This method underrelaxates the hydrodynamic forces and torque. The Underrelaxation
         /// factor is either predefined or is calculated dynamically.
@@ -61,25 +71,21 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="iterationCounter">
         /// No. of iterations.
         /// </param>
-        internal void Forces(ref double[] forces, double[] forcesAtPrevIteration, double convergenceLimit, double relaxationFactor, bool UseAdaptiveUnderrelaxation, double averageForce)
-        {
+        internal void Forces(ref double[] forces, double[] forcesAtPrevIteration, double convergenceLimit, double relaxationFactor, bool UseAdaptiveUnderrelaxation, double averageForce) {
             int spatialDim = forces.Length;
             double[] underrelaxationCoeff = new double[spatialDim];
 
-            for (int d = 0; d < spatialDim; d++)
-            {
+            for (int d = 0; d < spatialDim; d++) {
                 underrelaxationCoeff[d] = UseAdaptiveUnderrelaxation == true
                     ? CalculateAdaptiveUnderrelaxation(forces[d], forcesAtPrevIteration[d], averageForce, convergenceLimit, relaxationFactor)
                     : relaxationFactor;
             }
-            for (int d = 0; d < spatialDim; d++)
-            {
+            for (int d = 0; d < spatialDim; d++) {
                 forces[d] = underrelaxationCoeff[d] * forces[d] + (1 - underrelaxationCoeff[d]) * forcesAtPrevIteration[d];
             }
         }
 
-        internal void Torque(ref double torque, double torqueAtPrevIteration, double convergenceLimit, double relaxationFactor, bool UseAdaptiveUnderrelaxation, double averageForce)
-        {
+        internal void Torque(ref double torque, double torqueAtPrevIteration, double convergenceLimit, double relaxationFactor, bool UseAdaptiveUnderrelaxation, double averageForce) {
             double underrelaxationCoeff = UseAdaptiveUnderrelaxation == true
                 ? CalculateAdaptiveUnderrelaxation(torque, torqueAtPrevIteration, averageForce, convergenceLimit, relaxationFactor)
                 : relaxationFactor;
@@ -99,11 +105,9 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="averageDistance">
         /// The average Lengthscale of the particle.
         /// </param>
-        public void CalculateAverageForces(double[] forces, double torque, double averageDistance, out double averageForces)
-        {
+        public void CalculateAverageForces(double[] forces, double torque, double averageDistance, out double averageForces) {
             averageForces = Math.Abs(torque) / averageDistance;
-            for (int d = 0; d < forces.Length; d++)
-            {
+            for (int d = 0; d < forces.Length; d++) {
                 averageForces += forces[d];
             }
             averageForces /= 3;
@@ -130,14 +134,12 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="iterationCounter">
         /// No. of iterations.
         /// </param>
-        private double CalculateAdaptiveUnderrelaxation(double variable, double variableAtPrevIteration, double averageValueOfVar, double convergenceLimit, double predefinedFactor)
-        {
+        private double CalculateAdaptiveUnderrelaxation(double variable, double variableAtPrevIteration, double averageValueOfVar, double convergenceLimit, double predefinedFactor) {
             double ConvergenceHelperFactor = 1;
             double UnderrelaxationCoeff = predefinedFactor * 1e-1;
             double UnderrelaxationExponent = 0;
 
-            while (Math.Abs(UnderrelaxationCoeff * variable) > 0.75 * Math.Abs(variableAtPrevIteration) && UnderrelaxationCoeff > 1e-20)
-            {
+            while (Math.Abs(UnderrelaxationCoeff * variable) > 0.75 * Math.Abs(variableAtPrevIteration) && UnderrelaxationCoeff > 1e-20) {
                 UnderrelaxationExponent -= 1;
                 UnderrelaxationCoeff = predefinedFactor * Math.Pow(10, UnderrelaxationExponent);
             }

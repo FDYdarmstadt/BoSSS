@@ -58,10 +58,10 @@ namespace BoSSS.Application.FSI_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double p0_area = p.Particles[0].Area_P;
+                double p0_area = p.Particles[0].Area_P();
                 double p0_area_soll = Math.PI;
                 double p0_Mass = p.Particles[0].Mass_P;
-                double p1_area = p.Particles[1].Area_P;
+                double p1_area = p.Particles[1].Area_P();
 
 
                 double diff_Area1 = Math.Abs(p0_area - p0_area_soll);
@@ -135,7 +135,7 @@ namespace BoSSS.Application.FSI_Solver {
                 p.RunSolverMode();
 
                 Vector Dest_Should;
-                Dest_Should = new Vector(0.0, 0.7995941200205);
+                Dest_Should = new Vector(0.0, 0.865886176125762);
 
                 Vector Dest_Is = new Vector(p.Particles[0].position[0]);
 
@@ -163,7 +163,7 @@ namespace BoSSS.Application.FSI_Solver {
                 double VelY_Should = 0;
 
                 Vector Dest_Is = new Vector(p.Particles[0].position[0]);
-                double VelY_Is = p.Particles[0].translationalVelocity[0][0];
+                double VelY_Is = p.Particles[0].Motion.translationalVelocity[0][0];
 
                 double dist = (Dest_Should - Dest_Is).L2Norm();
                 double Vel_Div = Math.Abs(VelY_Should - VelY_Is);
@@ -187,7 +187,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 double ForcesSoll = 30251.7764996821;
 
-                double Forces = p.Particles[0].hydrodynamicForces[0][0];
+                double Forces = p.Particles[0].Motion.hydrodynamicForces[0][0];
 
                 double DiffForces = Math.Abs(ForcesSoll - Forces); 
 
@@ -206,7 +206,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 double ForcesSoll = 5.62199895597732;
 
-                double Forces = p.Particles[0].hydrodynamicForces[0][0];
+                double Forces = p.Particles[0].Motion.hydrodynamicForces[0][0];
 
                 double DiffForces = Math.Abs(ForcesSoll - Forces);
 

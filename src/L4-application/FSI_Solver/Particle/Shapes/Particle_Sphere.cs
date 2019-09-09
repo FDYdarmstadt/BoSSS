@@ -47,23 +47,22 @@ namespace BoSSS.Application.FSI_Solver
 
         }
 
-        public Particle_Sphere(double[] startPos = null, double startAngl = 0) : base(2, startPos, startAngl) {
-
+        public Particle_Sphere(ParticleMotion motionInit, double radius, double[] startPos = null, double startAngl = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, startTransVelocity, startRotVelocity) {
+            radius_P = radius;
+            Motion.GetParticleLengthscale(radius);
+            Motion.GetParticleArea(Area_P());
+            Motion.GetParticleMomentOfInertia(MomentOfInertia_P);
 
         }
 
         /// <summary>
         /// Radius of the particle. Not necessary for particles defined by their length and thickness
         /// </summary>
-        [DataMember]
         public double radius_P;
 
-        public override double Area_P
-        {
-            get
-            {
-                return Math.PI * radius_P.Pow2();
-            }
+        public override double Area_P() {
+            // not correct area
+            return Math.PI * radius_P.Pow2();
         }
         protected override double Circumference_P
         {
@@ -81,8 +80,9 @@ namespace BoSSS.Application.FSI_Solver
         }
 
         public override double Phi_P(double[] X) {
-            double x0 = position[0][0];
-            double y0 = position[0][1];
+            double x0 = Motion.position[0][0];
+            double y0 = Motion.
+                position[0][1];
             return -(X[0] - x0).Pow2() + -(X[1] - y0).Pow2() + radius_P.Pow2();
         }
 
@@ -92,9 +92,21 @@ namespace BoSSS.Application.FSI_Solver
             if (h_max == 0)
                 h_max = h_min;
             double radiusTolerance = !WithoutTolerance ? radius_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : radius_P;
-            var distance = point.L2Distance(position[0]);
+            var distance = point.L2Distance(Motion.position[0]);
             if (distance < (radiusTolerance))
             {
+                return true;
+            }
+            return false;
+        }
+
+        public override bool particleInternalCell(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false) {
+            // only for rectangular cells
+            if (h_max == 0)
+                h_max = h_min;
+            double radiusTolerance = !WithoutTolerance ? radius_P - Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : radius_P;
+            var distance = point.L2Distance(position[0]);
+            if (distance < (radiusTolerance)) {
                 return true;
             }
             return false;
@@ -113,8 +125,8 @@ namespace BoSSS.Application.FSI_Solver
             
             for (int j = 0; j < NoOfSurfacePoints; j++)
             {
-                SurfacePoints[0, j, 0] = Math.Cos(InfinitisemalAngle[j]) * radius_P + position[0][0];
-                SurfacePoints[0, j, 1] = Math.Sin(InfinitisemalAngle[j]) * radius_P + position[0][1];
+                SurfacePoints[0, j, 0] = Math.Cos(InfinitisemalAngle[j]) * radius_P + Motion.position[0][0];
+                SurfacePoints[0, j, 1] = Math.Sin(InfinitisemalAngle[j]) * radius_P + Motion.position[0][1];
             }
             return SurfacePoints;
         }
@@ -127,8 +139,8 @@ namespace BoSSS.Application.FSI_Solver
             SupportPoint = new double[SpatialDim];
             if (SpatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
-            SupportPoint[0] = CosT * radius_P + position[0][0];
-            SupportPoint[1] = SinT * radius_P + position[0][1];
+            SupportPoint[0] = CosT * radius_P + Motion.position[0][0];
+            SupportPoint[1] = SinT * radius_P + Motion.position[0][1];
             if (double.IsNaN(SupportPoint[0]) || double.IsNaN(SupportPoint[1]))
                 throw new ArithmeticException("Error trying to calculate point0 Value:  " + SupportPoint[0] + " point1 " + SupportPoint[1]);
         }

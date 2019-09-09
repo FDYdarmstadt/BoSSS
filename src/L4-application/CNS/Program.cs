@@ -71,7 +71,7 @@ namespace CNS {
 
             //return;
 
-            Application.InitMPI(args);
+            //Application.InitMPI(args);
             //CNS.Tests.ConvectiveFlux.ShockTubeTests.Toro1RusanovTest();
             //CNS.Tests.ConvectiveFlux.ShockTubeTests.Toro1AllButRusanovTest(ConvectiveFluxTypes.Godunov);
             //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder0th();
@@ -80,8 +80,8 @@ namespace CNS {
             //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder3rd();
             //CNS.Tests.IBMTests.IBMIsentropicVortexTest.IBMVortexLocalTimeSteppingTest();
             //Debug.Assert(false);
-            csMPI.Raw.mpiFinalize();
-            return;
+            //csMPI.Raw.mpiFinalize();
+            //return;
 
             Application<CNSControl>._Main(
                 args,
