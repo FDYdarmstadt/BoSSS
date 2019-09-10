@@ -219,38 +219,14 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Initial Values
             // ==============
-            // Coupling Properties
-            //C.LevelSetMovement = "coupled";
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+            C.gravity = new double[] { 0, 0 };
             ParticleMotion motion = new ParticleMotion(C.gravity, C.pureDryCollisions, false, true);
-            // Particle Properties
             C.Particles.Add(new Particle_Sphere(motion, 0.4, new double[] { 0.0, 0.0 }) {
                 particleDensity = 1.0,
                 IncludeTranslation = false,
                 IncludeRotation = true
             });
-
-            
-
-            ////Define level-set
-            //Func<double[], double, double> phiComplete = delegate (double[] X, double t) {
-            //    int exp = C.Particles.Count - 1;
-            //    double ret = Math.Pow(-1, exp);
-            //    for (int i = 0; i < C.Particles.Count; i++) {
-            //        ret *= C.Particles[i].Phi_P(X, t);
-            //    }
-            //    return ret;
-            //};
-
-            //Func<double[], double, double> phi = (X, t) => -(X[0] - t+X[1]);
-            //C.MovementFunc = phi;
-
-            //C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
-            //C.InitialValues.Add("VelocityX#B", X => 1);
-            //C.InitialValues_Evaluators.Add("VelocityX", X => 0);
-            //C.InitialValues_Evaluators.Add("VelocityY", X => 0);
-            //C.InitialValues.Add("Phi", X => -1);
-            //C.InitialValues.Add("Phi", X => (X[0] - 0.41));
 
             // For restart
             //C.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("fec14187-4e12-43b6-af1e-e9d535c78668"), -1);
@@ -350,6 +326,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 0.1;
             C.pureDryCollisions = true;
+            C.gravity = new double[] { 0, 0 };
             ParticleMotion motion = new ParticleMotion(C.gravity, C.pureDryCollisions);
             // Particles
             // =========
@@ -727,19 +704,17 @@ namespace BoSSS.Application.FSI_Solver {
                 IncludeRotation = false
             });
 
-            C.Particles.Add(new Particle_superEllipsoid(motion2, 0.4, 0.2, new double[] { 0.45, 0 }, startAngl: 45)
+            C.Particles.Add(new Particle_superEllipsoid(motion2, 0.4, 0.2, 4, new double[] { 0.45, 0 }, startAngl: 45)
             {
                 particleDensity = 1,
-                superEllipsoidExponent = 4,
                 IncludeRotation = false,
                 IncludeTranslation = false,
             });
 
 
-            C.Particles.Add(new Particle_superEllipsoid(motion2, 0.4,  0.2, new double[] { -0.45, 0 }, startAngl: -45)
+            C.Particles.Add(new Particle_superEllipsoid(motion2, 0.4,  0.2, 4, new double[] { -0.45, 0 }, startAngl: -45)
             {
                 particleDensity = 1,
-                superEllipsoidExponent = 4,
                 IncludeRotation = false,
                 IncludeTranslation = false,
             });
@@ -858,7 +833,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.mu_A = 1e4;//pg(mum*s)
             C.PhysicalParameters.Material = true;
             ParticleUnderrelaxationParam underrelaxationParam = new ParticleUnderrelaxationParam(1e-2, 1, true);
-            ParticleMotion motion = new ParticleMotion(C.gravity, C.pureDryCollisions, true, false, underrelaxationParam, 1);
+            ParticleMotion motion = new ParticleMotion(C.gravity, C.pureDryCollisions, false, false, underrelaxationParam, 1);
             // Particle Properties
             // =============================   
             C.Particles = new List<Particle>();

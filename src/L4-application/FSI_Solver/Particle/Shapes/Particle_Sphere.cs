@@ -105,7 +105,7 @@ namespace BoSSS.Application.FSI_Solver
             if (h_max == 0)
                 h_max = h_min;
             double radiusTolerance = !WithoutTolerance ? radius_P - Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : radius_P;
-            var distance = point.L2Distance(position[0]);
+            var distance = point.L2Distance(Motion.position[0]);
             if (distance < (radiusTolerance)) {
                 return true;
             }

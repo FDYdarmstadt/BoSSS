@@ -29,7 +29,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="dt">Timestep</param>
         /// <returns></returns>
         protected override void CalculateTranslationalVelocity(double dt) {
-            CalculateTranslationalAcceleration();
+            CalculateTranslationalAcceleration(dt);
             for (int d = 0; d < spatialDim; d++) {
                 translationalVelocity[0][d] = translationalVelocity[1][d] + translationalAcceleration[0][d] * dt;
             }
@@ -41,7 +41,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt">Timestep</param>
         protected override void CalculateTranslationalVelocity(double dt, double collisionTimestep) {
-            CalculateTranslationalAcceleration();
+            CalculateTranslationalAcceleration(dt);
             for (int d = 0; d < spatialDim; d++) {
                 translationalVelocity[0][d] = translationalVelocity[1][d] + translationalAcceleration[0][d] * (dt - collisionTimestep);
             }
@@ -68,14 +68,12 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calculates the new translational acceleration.
+        /// Calculate the new acceleration (translational and rotational)
         /// </summary>
         /// <param name="dt"></param>
-        protected override void CalculateTranslationalAcceleration(double dt = 0) {
-            for (int d = 0; d < spatialDim; d++) {
-                translationalAcceleration[0][d] = m_Gravity[d];
-            }
-            Aux.TestArithmeticException(translationalAcceleration[0], "particle translational acceleration");
+        protected override void CalculateRotationalAcceleration(double dt) {
+            rotationalAcceleration[0] = 0;
+            Aux.TestArithmeticException(rotationalAcceleration[0], "particle rotational acceleration");
         }
 
         /// <summary>

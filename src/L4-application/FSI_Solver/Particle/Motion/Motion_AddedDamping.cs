@@ -33,15 +33,6 @@ namespace BoSSS.Application.FSI_Solver {
         readonly ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation();
         readonly ParticleAddedDamping AddedDamping = new ParticleAddedDamping();
 
-        /// <summary>
-        /// Complete added damping tensor, for reference: Banks et.al. 2017
-        /// </summary>
-        public double[,] addedDampingTensor = new double[6, 6];
-
-        /// <summary>
-        /// Added damping coefficient, should be between 0.5 and 1.5, for reference: Banks et.al. 2017
-        /// </summary>
-        private double m_AddedDampingCoefficient;
 
         /// <summary>
         /// Saving the initial angle of the particle for <see cref="UpdateDampingTensors()"/>
@@ -51,7 +42,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Calculate tensors to implement the added damping model (Banks et.al. 2017)
         /// </summary>
-        public void CalculateDampingTensor(Particle particle, LevelSetTracker LsTrk, double muA, double rhoA, double dt) {
+        public override void CalculateDampingTensor(Particle particle, LevelSetTracker LsTrk, double muA, double rhoA, double dt) {
             addedDampingTensor = AddedDamping.IntegrationOverLevelSet(particle, LsTrk, muA, rhoA, dt, position[0]);
             Aux.TestArithmeticException(addedDampingTensor, "particle added damping tensor");
         }
@@ -59,7 +50,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Update in every timestep tensors to implement the added damping model (Banks et.al. 2017)
         /// </summary>
-        public void UpdateDampingTensors() {
+        public override void UpdateDampingTensors() {
             addedDampingTensor = AddedDamping.RotateTensor(angle[0], m_StartingAngle, addedDampingTensor);
             Aux.TestArithmeticException(addedDampingTensor, "particle added damping tensor");
         }
@@ -79,6 +70,7 @@ namespace BoSSS.Application.FSI_Solver {
             tempAcceleration[1] += hydrodynamicTorque[0] * (-coefficientMatrix[0, 0] * coefficientMatrix[1, 2] + coefficientMatrix[0, 2] * coefficientMatrix[1, 0]);
             tempAcceleration[1] = tempAcceleration[1] / denominator;
             translationalAcceleration[0] = tempAcceleration.CloneAs();
+            Aux.TestArithmeticException(translationalAcceleration[0], "particle translational acceleration");
         }
 
         protected override void CalculateRotationalAcceleration(double dt) {
@@ -89,6 +81,7 @@ namespace BoSSS.Application.FSI_Solver {
             tempAcceleration += hydrodynamicForces[0][1] * (coefficientMatrix[0, 1] * coefficientMatrix[2, 0] - coefficientMatrix[0, 0] * coefficientMatrix[2, 1]);
             tempAcceleration += hydrodynamicTorque[0] * (coefficientMatrix[0, 0] * coefficientMatrix[1, 1] - coefficientMatrix[0, 1] * coefficientMatrix[1, 0]);
             rotationalAcceleration[0] = tempAcceleration / denominator;
+            Aux.TestArithmeticException(rotationalAcceleration[0], "particle rotational acceleration");
         }
 
         private double[,] CalculateCoefficientMatrix(double Timestep) {
@@ -116,28 +109,6 @@ namespace BoSSS.Application.FSI_Solver {
             denominator += coefficientMatrix[0, 2] * coefficientMatrix[1, 0] * coefficientMatrix[2, 1];
             denominator -= coefficientMatrix[0, 2] * coefficientMatrix[1, 1] * coefficientMatrix[2, 0];
             return denominator;
-        }
-
-        /// <summary>
-        /// Predicts the new acceleration (translational and rotational)
-        /// </summary>
-        public override void PredictForceAndTorque(int TimestepInt) {
-            if (TimestepInt == 1) {
-                hydrodynamicForces[0][0] = 20 * Math.Cos(angle[0]) * activeStress + m_Gravity[1] * particleDensity * particleArea;
-                hydrodynamicForces[0][1] = 20 * Math.Sin(angle[0]) * activeStress + m_Gravity[1] * particleDensity * particleArea;
-            }
-            else {
-                for (int d = 0; d < spatialDim; d++) {
-                    hydrodynamicForces[0][d] = (hydrodynamicForces[1][d] + 4 * hydrodynamicForces[2][d] + hydrodynamicForces[3][d]) / 6;
-                    if (Math.Abs(hydrodynamicForces[0][d]) < 1e-20)
-                        hydrodynamicForces[0][d] = 0;
-                }
-                hydrodynamicTorque[0] = (hydrodynamicTorque[1] + 4 * hydrodynamicTorque[2] + hydrodynamicTorque[3]) / 6;
-                if (Math.Abs(hydrodynamicTorque[0]) < 1e-20)
-                    hydrodynamicTorque[0] = 0;
-            }
-            Aux.TestArithmeticException(hydrodynamicForces[0], "hydrodynamic forces");
-            Aux.TestArithmeticException(hydrodynamicTorque[0], "hydrodynamic torque");
         }
 
         /// <summary>

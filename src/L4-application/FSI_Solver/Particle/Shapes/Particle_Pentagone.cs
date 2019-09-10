@@ -73,17 +73,17 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         public override double Phi_P(double[] X) {
-            double alpha = -(angle[0]);
+            double alpha = -(Motion.angle[0]);
             double r;
             // Rechteck:
-            //        r = Math.Max(X[0] - Position[0][0]  - Width_P,  Position[0][0] - Width_P - X[0]);
-            //        r = Math.Max(r, X[1] - Position[0][1] - Width_P);
-            //        r = Math.Max(r,  Position[0][1] - 0.5*Width_P - X[1]);
+            //        r = Math.Max(X[0] - Motion.position[0][0]  - Width_P,  Motion.position[0][0] - Width_P - X[0]);
+            //        r = Math.Max(r, X[1] - Motion.position[0][1] - Width_P);
+            //        r = Math.Max(r,  Motion.position[0][1] - 0.5*Width_P - X[1]);
 
             // Geo to try:
-            r = Math.Max(X[0] - position[0][0] - width_P, position[0][0] - width_P - X[0]);
-            r = Math.Max(r, position[0][1] - 0.5 * width_P - X[1]);
-            r = Math.Max(r, position[0][0] - width_P - X[1] - 1.5 * X[0]) + Math.Max(r, X[1] - position[0][1] - 0.5 * width_P);
+            r = Math.Max(X[0] - Motion.position[0][0] - width_P, Motion.position[0][0] - width_P - X[0]);
+            r = Math.Max(r, Motion.position[0][1] - 0.5 * width_P - X[1]);
+            r = Math.Max(r, Motion.position[0][0] - width_P - X[1] - 1.5 * X[0]) + Math.Max(r, X[1] - Motion.position[0][1] - 0.5 * width_P);
 
 
             //      r = r - Width_P;
@@ -96,7 +96,7 @@ namespace BoSSS.Application.FSI_Solver {
             if (h_max == 0)
                 h_max = h_min;
             double radiusTolerance = !WithoutTolerance ? width_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
-            var distance = point.L2Distance(position[0]);
+            var distance = point.L2Distance(Motion.position[0]);
             if (distance < (radiusTolerance)) {
                 return true;
             }
@@ -108,7 +108,7 @@ namespace BoSSS.Application.FSI_Solver {
             if (h_max == 0)
                 h_max = h_min;
             double radiusTolerance = !WithoutTolerance ? width_P - Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
-            var distance = point.L2Distance(position[0]);
+            var distance = point.L2Distance(Motion.position[0]);
             if (distance < (radiusTolerance)) {
                 return true;
             }

@@ -110,11 +110,11 @@ namespace BoSSS.Application.FSI_Solver {
 
                 Vector Dest_Should;
                 if (MeshRefine)
-                    Dest_Should = new Vector(0.0899494548876698, -0.711922806999655); 
+                    Dest_Should = new Vector(0.675739668970927, -0.125045821567354); 
                 else
-                    Dest_Should = new Vector(-0.0552265430761048, 0.751640173282737); 
+                    Dest_Should = new Vector(0.589548728652747, -0.21359473249373); 
 
-                Vector Dest_Is = new Vector(p.Particles[0].position[0]);
+                Vector Dest_Is = new Vector(p.Particles[0].Motion.position[0]);
 
                 double dist = (Dest_Should - Dest_Is).L2Norm();
 
@@ -137,7 +137,7 @@ namespace BoSSS.Application.FSI_Solver {
                 Vector Dest_Should;
                 Dest_Should = new Vector(0.0, 0.865886176125762);
 
-                Vector Dest_Is = new Vector(p.Particles[0].position[0]);
+                Vector Dest_Is = new Vector(p.Particles[0].Motion.position[0]);
 
                 double dist = (Dest_Should - Dest_Is).L2Norm();
 
@@ -162,7 +162,7 @@ namespace BoSSS.Application.FSI_Solver {
                 Dest_Should = new Vector(0.0, 0.075);
                 double VelY_Should = 0;
 
-                Vector Dest_Is = new Vector(p.Particles[0].position[0]);
+                Vector Dest_Is = new Vector(p.Particles[0].Motion.position[0]);
                 double VelY_Is = p.Particles[0].Motion.translationalVelocity[0][0];
 
                 double dist = (Dest_Should - Dest_Is).L2Norm();

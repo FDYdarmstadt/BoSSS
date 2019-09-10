@@ -115,6 +115,17 @@ namespace BoSSS.Application.FSI_Solver {
         protected double[] m_Gravity;
 
         /// <summary>
+        /// Added damping coefficient, should be between 0.5 and 1.5, for reference: Banks et.al. 2017
+        /// </summary>
+        public double m_AddedDampingCoefficient = -1;
+
+
+        /// <summary>
+        /// Complete added damping tensor, for reference: Banks et.al. 2017
+        /// </summary>
+        public double[,] addedDampingTensor = new double[6, 6];
+
+        /// <summary>
         /// Density of the particle.
         /// </summary>
         [DataMember]
@@ -209,20 +220,36 @@ namespace BoSSS.Application.FSI_Solver {
         protected double m_MaxParticleLengthScale;
 
         /// <summary>
-        /// Saves position, angle, acceleration and velocity of the last timestep
+        /// Saves position and angle of the last timestep
         /// </summary>
-        public void SaveDataOfPreviousTimestep() {
+        public void SavePositionAndAngleOfPreviousTimestep() {
+            Aux.SaveMultidimValueOfLastTimestep(position);
+            Aux.SaveValueOfLastTimestep(angle);
+        }
+
+        /// <summary>
+        /// Saves translational and rotational velocities of the last timestep
+        /// </summary>
+        public void SaveVelocityOfPreviousTimestep() {
             Aux.SaveMultidimValueOfLastTimestep(translationalVelocity);
             Aux.SaveValueOfLastTimestep(rotationalVelocity);
             Aux.SaveMultidimValueOfLastTimestep(translationalAcceleration);
             Aux.SaveValueOfLastTimestep(rotationalAcceleration);
+        }
+
+        /// <summary>
+        /// Saves force and torque of the previous timestep
+        /// </summary>
+        public void SaveHydrodynamicsOfPreviousTimestep() {
             Aux.SaveMultidimValueOfLastTimestep(hydrodynamicForces);
             Aux.SaveValueOfLastTimestep(hydrodynamicTorque);
         }
 
         public void InitializeParticlePositionAndAngle(double[] positionP, double angleP) {
-            position[0] = positionP.CloneAs();
-            angle[0] = angleP * 2 * Math.PI / 360;
+            for (int i = 0; i < historyLength; i++) {
+                position[i] = positionP.CloneAs();
+                angle[i] = angleP * 2 * Math.PI / 360;
+            }
         }
 
         public void InitializeParticleVelocity(double[] translationalVelocityP, double rotationalVelocityP) {
@@ -248,6 +275,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="mass"></param>
         public void GetParticleDensity(double density) {
             particleDensity = density;
+            Aux.TestArithmeticException(particleArea, "particle area");
+            Aux.TestArithmeticException(particleDensity, "particle density");
         }
 
         /// <summary>
@@ -282,8 +311,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         public void UpdateParticlePositionAndAngle(double dt) {
-            Aux.SaveMultidimValueOfLastTimestep(position);
-            Aux.SaveValueOfLastTimestep(angle);
             if (collisionTimestep == 0) {
                 CalculateParticlePosition(dt);
                 CalculateParticleAngle(dt);
@@ -299,6 +326,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         public void CollisionParticlePositionAndAngle(double collisionDynamicTimestep) {
+
             CalculateParticlePosition(collisionDynamicTimestep, collisionProcedure: true);
             CalculateParticleAngle(collisionDynamicTimestep, collisionProcedure: true);
         }
@@ -332,7 +360,31 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         public virtual void PredictForceAndTorque(int TimestepInt) {
-            throw new Exception("Predict force and torque should only be called if added damping is active.");
+            if (TimestepInt == 1) {
+                hydrodynamicForces[0][0] = 20 * Math.Cos(angle[0]) * activeStress + m_Gravity[1] * particleDensity * particleArea / 10;
+                hydrodynamicForces[0][1] = 20 * Math.Sin(angle[0]) * activeStress + m_Gravity[1] * particleDensity * particleArea / 10;
+                hydrodynamicTorque[0] = 0;
+            }
+            else {
+                for (int d = 0; d < spatialDim; d++) {
+                    hydrodynamicForces[0][d] = (hydrodynamicForces[1][d] + 4 * hydrodynamicForces[2][d] + hydrodynamicForces[3][d]) / 6;
+                    if (Math.Abs(hydrodynamicForces[0][d]) < 1e-20)
+                        hydrodynamicForces[0][d] = 0;
+                }
+                hydrodynamicTorque[0] = (hydrodynamicTorque[1] + 4 * hydrodynamicTorque[2] + hydrodynamicTorque[3]) / 6;
+                if (Math.Abs(hydrodynamicTorque[0]) < 1e-20)
+                    hydrodynamicTorque[0] = 0;
+            }
+            Aux.TestArithmeticException(hydrodynamicForces[0], "hydrodynamic forces");
+            Aux.TestArithmeticException(hydrodynamicTorque[0], "hydrodynamic torque");
+        }
+
+        public virtual void CalculateDampingTensor(Particle particle, LevelSetTracker LsTrk, double muA, double rhoA, double dt) {
+            throw new Exception("Added damping tensors should only be used if added damping is active.");
+        }
+
+        public virtual void UpdateDampingTensors() {
+            //throw new Exception("Predict force and torque should only be called if added damping is active.");
         }
 
         /// <summary>
@@ -343,6 +395,7 @@ namespace BoSSS.Application.FSI_Solver {
             for (int d = 0; d < spatialDim; d++) {
                 position[0][d] = position[1][d] + (translationalVelocity[0][d] + 4 * translationalVelocity[1][d] + translationalVelocity[2][d]) * dt / 6;
             }
+
             Aux.TestArithmeticException(position[0], "particle position");
         }
 

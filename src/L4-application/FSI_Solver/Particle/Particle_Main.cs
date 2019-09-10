@@ -48,7 +48,7 @@ namespace BoSSS.Application.FSI_Solver {
         private const int historyLength = 4;
         protected static int spatialDim = 2;
 
-        public Particle(ParticleMotion motionInit, double[] startPos = null, double startAngl = 0.0, double[] startTransVelocity = null, double startRotVelocity = 0) {
+        public Particle(ParticleMotion motionInit, double[] startPos = null, double startAngl = 0.0, double[] startTransVelocity = null, double startRotVelocity = 0, double activeStress = 0) {
 
             spatialDim = startPos.Length;
             m_MotionInit = motionInit;
@@ -69,11 +69,6 @@ namespace BoSSS.Application.FSI_Solver {
             if (startPos == null) {
                 startPos = new double[spatialDim];
             }
-            position.Add(startPos);
-            angle.Add(startAngl * 2 * Math.PI / 360);
-            angle.Add(startAngl * 2 * Math.PI / 360);
-            angle[0] = StartingAngle;
-
             m_MotionInit.CheckInput();
             Motion = m_MotionInit.GetParticleMotion();
             Motion.InitializeParticlePositionAndAngle(startPos, startAngl);
@@ -173,11 +168,11 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         public bool UseAddedDamping = false;
 
-        /// <summary>
-        /// Complete added damping tensor, for reference: Banks et.al. 2017
-        /// </summary>
-        [DataMember]
-        public double[,] addedDampingTensor = new double[6, 6];
+        ///// <summary>
+        ///// Complete added damping tensor, for reference: Banks et.al. 2017
+        ///// </summary>
+        //[DataMember]
+        //public double[,] addedDampingTensor = new double[6, 6];
 
         /// <summary>
         /// AddedDampingCoefficient
@@ -192,25 +187,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         [DataMember]
         public double particleDensity = 1;
-
-        /// <summary>
-        /// The position (center of mass) of the particle in the current time step.
-        /// </summary>
-        [DataMember]
-        public List<double[]> position = new List<double[]>();
-
-        /// <summary>
-        /// The angle (center of mass) of the particle in the current time step.
-        /// </summary>
-        [DataMember]
-        public List<double> angle = new List<double>();
-
-        /// <summary>
-        /// The angle (center of mass) of the particle at the starting point.
-        /// </summary>
-        [DataMember]
-        private readonly double StartingAngle = new double();
-
+        
         ///// <summary>
         ///// The translational velocity of the particle in the current time step.
         ///// </summary>
@@ -361,8 +338,8 @@ namespace BoSSS.Application.FSI_Solver {
         internal double SeperateBoundaryRegions(double[] X) {
             double seperateBoundaryRegions;
             // The posterior side of the particle 
-            if (Math.Cos(Motion.angle[0]) * (X[0] - position[0][0]) + Math.Sin(angle[0]) * (X[1] - position[0][1]) < 1e-8) {
-                seperateBoundaryRegions = (Math.Cos(angle[0]) * (X[0] - position[0][0]) + Math.Sin(angle[0]) * (X[1] - position[0][1])) / Math.Sqrt((X[0] - position[0][0]).Pow2() + (X[1] - position[0][1]).Pow2());
+            if (Math.Cos(Motion.angle[0]) * (X[0] - Motion.position[0][0]) + Math.Sin(Motion.angle[0]) * (X[1] - Motion.position[0][1]) < 1e-8) {
+                seperateBoundaryRegions = (Math.Cos(Motion.angle[0]) * (X[0] - Motion.position[0][0]) + Math.Sin(Motion.angle[0]) * (X[1] - Motion.position[0][1])) / Math.Sqrt((X[0] - Motion.position[0][0]).Pow2() + (X[1] - Motion.position[0][1]).Pow2());
             }
             // The anterior side of the particle 
             else {
@@ -559,21 +536,21 @@ namespace BoSSS.Application.FSI_Solver {
             throw new NotImplementedException("Currently cloning of a particle is not available");
         }
 
-        /// <summary>
-        /// Calculate tensors to implement the added damping model (Banks et.al. 2017)
-        /// </summary>
-        public void CalculateDampingTensor(Particle particle, LevelSetTracker LsTrk, double muA, double rhoA, double dt) {
-            addedDampingTensor = AddedDamping.IntegrationOverLevelSet(particle, LsTrk, muA, rhoA, dt, position[0]);
-            Aux.TestArithmeticException(addedDampingTensor, "particle added damping tensor");
-        }
+        ///// <summary>
+        ///// Calculate tensors to implement the added damping model (Banks et.al. 2017)
+        ///// </summary>
+        //public void CalculateDampingTensor(Particle particle, LevelSetTracker LsTrk, double muA, double rhoA, double dt) {
+        //    addedDampingTensor = AddedDamping.IntegrationOverLevelSet(particle, LsTrk, muA, rhoA, dt, position[0]);
+        //    Aux.TestArithmeticException(addedDampingTensor, "particle added damping tensor");
+        //}
 
-        /// <summary>
-        /// Update in every timestep tensors to implement the added damping model (Banks et.al. 2017)
-        /// </summary>
-        public void UpdateDampingTensors() {
-            addedDampingTensor = AddedDamping.RotateTensor(angle[0], StartingAngle, addedDampingTensor);
-            Aux.TestArithmeticException(addedDampingTensor, "particle added damping tensor");
-        }
+        ///// <summary>
+        ///// Update in every timestep tensors to implement the added damping model (Banks et.al. 2017)
+        ///// </summary>
+        //public void UpdateDampingTensors() {
+        //    addedDampingTensor = AddedDamping.RotateTensor(angle[0], StartingAngle, addedDampingTensor);
+        //    Aux.TestArithmeticException(addedDampingTensor, "particle added damping tensor");
+        //}
 
         ///// <summary>
         ///// Calculate the new acceleration (translational and rotational)
@@ -863,7 +840,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="RadialLength">
         /// </param>
         internal void CalculateRadialVector(double[] SurfacePoint, out double[] RadialVector, out double RadialLength) {
-            RadialVector = new double[] { SurfacePoint[0] - position[0][0], SurfacePoint[1] - position[0][1] };
+            RadialVector = new double[] { SurfacePoint[0] - Motion.position[0][0], SurfacePoint[1] - Motion.position[0][1] };
             RadialLength = RadialVector.L2Norm();
             RadialVector.ScaleV(1 / RadialLength);
             Aux.TestArithmeticException(RadialVector, "particle radial vector");
@@ -871,7 +848,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         internal void CalculateRadialNormalVector(double[] SurfacePoint, out double[] RadialNormalVector) {
-            RadialNormalVector = new double[] { SurfacePoint[1] - position[0][1], -SurfacePoint[0] + position[0][0] };
+            RadialNormalVector = new double[] { SurfacePoint[1] - Motion.position[0][1], -SurfacePoint[0] + Motion.position[0][0] };
             RadialNormalVector.ScaleV(1 / RadialNormalVector.L2Norm());
             Aux.TestArithmeticException(RadialNormalVector, "particle vector normal to radial vector");
         }

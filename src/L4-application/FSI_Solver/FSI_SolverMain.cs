@@ -269,7 +269,7 @@ namespace BoSSS.Application.FSI_Solver {
                                                 result[2] = p.Motion.rotationalVelocity[0];
                                                 result[3] = radialNormalVector[0];
                                                 result[4] = radialNormalVector[1];
-                                                result[5] = p.position[0].L2Distance(X);
+                                                result[5] = p.Motion.position[0].L2Distance(X);
                                                 result[6] = -seperateBoundaryRegions;
                                             }
                                             // passive particles
@@ -279,7 +279,7 @@ namespace BoSSS.Application.FSI_Solver {
                                                 result[2] = p.Motion.rotationalVelocity[0];
                                                 result[3] = radialNormalVector[0];
                                                 result[4] = radialNormalVector[1];
-                                                result[5] = p.position[0].L2Distance(X);
+                                                result[5] = p.Motion.position[0].L2Distance(X);
                                                 result[6] = 0;
                                             }
                                         }
@@ -367,10 +367,10 @@ namespace BoSSS.Application.FSI_Solver {
                                             result[2] = p.Motion.rotationalVelocity[0];
                                             result[3] = RadialNormalVector[0];
                                             result[4] = RadialNormalVector[1];
-                                            result[5] = p.position[0].L2Distance(X);
+                                            result[5] = p.Motion.position[0].L2Distance(X);
                                             result[6] = p.activeStress;
                                             result[7] = -seperateBoundaryRegions;
-                                            result[8] = p.angle[0];
+                                            result[8] = p.Motion.angle[0];
                                         }
                                         // passive particles
                                         else if (containsParticle && p.activeStress == 0) {
@@ -379,10 +379,10 @@ namespace BoSSS.Application.FSI_Solver {
                                             result[2] = p.Motion.rotationalVelocity[0];
                                             result[3] = RadialNormalVector[0];
                                             result[4] = RadialNormalVector[1];
-                                            result[5] = p.position[0].L2Distance(X);
+                                            result[5] = p.Motion.position[0].L2Distance(X);
                                             result[6] = 0;
                                             result[7] = 0;
-                                            result[8] = p.angle[0];
+                                            result[8] = p.Motion.angle[0];
                                         }
                                     }
                                     return result;
@@ -428,7 +428,7 @@ namespace BoSSS.Application.FSI_Solver {
                                        result[2] = p.Motion.rotationalVelocity[0];
                                        result[3] = RadialNormalVector[0];
                                        result[4] = RadialNormalVector[1];
-                                       result[5] = p.position[0].L2Distance(X);
+                                       result[5] = p.Motion.position[0].L2Distance(X);
                                        return result;
                                    }
                                }
@@ -473,8 +473,8 @@ namespace BoSSS.Application.FSI_Solver {
                     MassMatrixShape = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
                     if (!CalculatedDampingTensors) {
                         foreach (Particle p in m_Particles) {
-                            if (p.UseAddedDamping) {
-                                p.CalculateDampingTensor(p, LsTrk, ((FSI_Control)this.Control).PhysicalParameters.mu_A, ((FSI_Control)this.Control).PhysicalParameters.rho_A, ((FSI_Control)this.Control).dtMax);
+                            if (p.Motion.m_AddedDampingCoefficient != -1) {
+                                p.Motion.CalculateDampingTensor(p, LsTrk, ((FSI_Control)this.Control).PhysicalParameters.mu_A, ((FSI_Control)this.Control).PhysicalParameters.rho_A, ((FSI_Control)this.Control).dtMax);
                                 Auxillary.ExchangeDampingTensors(m_Particles);
                             }
                         }
@@ -486,8 +486,8 @@ namespace BoSSS.Application.FSI_Solver {
                     MassMatrixShape = MassMatrixShapeandDependence.IsTimeDependent;
                     if (!CalculatedDampingTensors) {
                         foreach (Particle p in m_Particles) {
-                            if (p.UseAddedDamping) {
-                                p.CalculateDampingTensor(p, LsTrk, ((FSI_Control)this.Control).PhysicalParameters.mu_A, ((FSI_Control)this.Control).PhysicalParameters.rho_A, ((FSI_Control)this.Control).dtMax);
+                            if (p.Motion.m_AddedDampingCoefficient != -1) {
+                                p.Motion.CalculateDampingTensor(p, LsTrk, ((FSI_Control)this.Control).PhysicalParameters.mu_A, ((FSI_Control)this.Control).PhysicalParameters.rho_A, ((FSI_Control)this.Control).dtMax);
                                 Auxillary.ExchangeDampingTensors(m_Particles);
                             }
                         }
@@ -900,7 +900,7 @@ namespace BoSSS.Application.FSI_Solver {
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             for (int p = 0; p < particles.Count(); p++) {
                 Particle currentParticle = particles[p];
-                if (!((FSI_Control)Control).pureDryCollisions && !currentParticle.skipForceIntegration) {
+                if (!((FSI_Control)Control).pureDryCollisions) { // && !currentParticle.skipForceIntegration) {
                     currentParticle.Motion.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, currentParticle.CutCells_P(LsTrk), Control.PhysicalParameters.mu_A, Control.PhysicalParameters.rho_A, firstIteration, dt);
 
                 }
@@ -935,7 +935,7 @@ namespace BoSSS.Application.FSI_Solver {
                 if (IterationCounter == 0 && FullyCoupled) {
                     Console.WriteLine("Predicting forces for the next timestep...");
                     if (p.UseAddedDamping) {
-                        p.UpdateDampingTensors();
+                        p.Motion.UpdateDampingTensors();
                     }
                     p.Motion.PredictForceAndTorque(TimestepInt);
                 }
@@ -996,25 +996,23 @@ namespace BoSSS.Application.FSI_Solver {
                     // -------------------------------------------------
                     foreach (Particle p in m_Particles) {
                         p.Motion.GetParticleDensity(p.particleDensity);
-                        p.Motion.SaveDataOfPreviousTimestep();
-                        p.position[0] = p.Motion.position[0];
-                        p.angle[0] = p.Motion.angle[0];
+                        p.Motion.SaveHydrodynamicsOfPreviousTimestep();
                     }
                     CalculateHydrodynamicForces(m_Particles, dt);
                     CalculateParticleVelocity(m_Particles, dt, IsFullyCoupled, 0, TimestepInt, false);
                     ResetCollisionState(m_Particles);
                     CalculateCollision(m_Particles, cellColor, dt);
-                    foreach(Particle p in m_Particles) {
+                    foreach (Particle p in m_Particles) {
                         p.Motion.UpdateParticlePositionAndAngle(dt);
                         p.Motion.collisionTimestep = 0;
                     }
                     //CalculateParticlePosition(m_Particles, dt);
                     UpdateLevelSetParticles(phystime);
-
+                    Auxillary.PrintResultToConsole(m_Particles, 0, 0, phystime, TimestepInt, out double MPIangularVelocity, out Test_Force);
                     // print and mpi check
                     // -------------------------------------------------
                     Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
-                    Auxillary.PrintResultToConsole(m_Particles, 0, 0, phystime, TimestepInt, out double MPIangularVelocity, out Test_Force);
+                    //Auxillary.PrintResultToConsole(m_Particles, 0, 0, phystime, TimestepInt, out double MPIangularVelocity, out Test_Force);
 
                     // Save for NUnit Test
                     // -------------------------------------------------
@@ -1036,9 +1034,8 @@ namespace BoSSS.Application.FSI_Solver {
                         //}
                         foreach (Particle p in m_Particles) {
                             p.Motion.GetParticleDensity(p.particleDensity);
-                            p.Motion.SaveDataOfPreviousTimestep();
-                            p.position[0] = p.Motion.position[0];
-                            p.angle[0] = p.Motion.angle[0];
+                            p.Motion.SaveHydrodynamicsOfPreviousTimestep();
+                            p.Motion.activeStress = p.activeStress;
                         }
                         while (hydroDynForceTorqueResidual > HydrodynConvergenceCriterion) {
                             Auxillary.CheckForMaxIterations(iterationCounter, ((FSI_Control)Control).max_iterations_fully_coupled);
@@ -1049,6 +1046,11 @@ namespace BoSSS.Application.FSI_Solver {
                             if (iterationCounter != 0 || !IsFullyCoupled) { // in the first iteration of the fully coupled simulation the hydrodyn. forces are predicted by the particle.cs
                                 m_BDF_Timestepper.Solve(phystime, dt, false);
                                 CalculateHydrodynamicForces(m_Particles, dt, false);
+                            }
+                            if (iterationCounter == 0) {
+                                foreach (Particle p in m_Particles) {
+                                    p.Motion.SaveVelocityOfPreviousTimestep();
+                                }
                             }
                             CalculateParticleVelocity(m_Particles, dt, IsFullyCoupled, iterationCounter, TimestepInt);
 
@@ -1064,7 +1066,9 @@ namespace BoSSS.Application.FSI_Solver {
                             hydroDynForceTorqueResidual = Auxillary.CalculateParticleResidual(m_Particles, ref iterationCounter);
 
                         }
-
+                        foreach (Particle p in m_Particles) {
+                            p.Motion.SavePositionAndAngleOfPreviousTimestep();
+                        }
                         // collision
                         // -------------------------------------------------
                         ResetCollisionState(m_Particles);
@@ -1135,7 +1139,7 @@ namespace BoSSS.Application.FSI_Solver {
         private void LogPhysicalData(double phystime) {
             if ((base.MPIRank == 0) && (logPhysicalDataParticles != null)) {
                 for (int p = 0; p < m_Particles.Count(); p++) {
-                    string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}", p, phystime, m_Particles[p].position[0][0], m_Particles[p].position[0][1], m_Particles[p].angle[0], m_Particles[p].Motion.translationalVelocity[0][0], m_Particles[p].Motion.translationalVelocity[0][1], m_Particles[p].Motion.rotationalVelocity[0], m_Particles[p].Motion.hydrodynamicForces[0][0], m_Particles[p].Motion.hydrodynamicForces[0][1], m_Particles[p].Motion.hydrodynamicTorque[0]);
+                    string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}", p, phystime, m_Particles[p].Motion.position[0][0], m_Particles[p].Motion.position[0][1], m_Particles[p].Motion.angle[0], m_Particles[p].Motion.translationalVelocity[0][0], m_Particles[p].Motion.translationalVelocity[0][1], m_Particles[p].Motion.rotationalVelocity[0], m_Particles[p].Motion.hydrodynamicForces[0][0], m_Particles[p].Motion.hydrodynamicForces[0][1], m_Particles[p].Motion.hydrodynamicTorque[0]);
                     logPhysicalDataParticles.WriteLine(line);
                     logPhysicalDataParticles.Flush();
                 }
@@ -1216,7 +1220,7 @@ namespace BoSSS.Application.FSI_Solver {
             Debug.Assert(b.Particles.Length == o.Particles.Length);
             int L = b.Particles.Length;
             for (int l = 0; l < L; l++) { // loop over particles
-                Debug.Assert(GenericBlas.L2Dist(b.Particles[l].position[0], o.Particles[l].position[0]) < 1e-13);
+                Debug.Assert(GenericBlas.L2Dist(b.Particles[l].Motion.position[0], o.Particles[l].Motion.position[0]) < 1e-13);
             }
 
         }

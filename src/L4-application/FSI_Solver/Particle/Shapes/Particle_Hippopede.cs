@@ -70,8 +70,8 @@ namespace BoSSS.Application.FSI_Solver {
         public override double Phi_P(double[] X) {
             double a = length_P;
             double b = thickness_P;
-            double alpha = -(angle[0]);
-            return -((((X[0] - position[0][0]) * Math.Cos(alpha) - (X[1] - position[0][1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - position[0][0]) * Math.Sin(alpha) + (X[1] - position[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - position[0][0]) * Math.Cos(alpha) - (X[1] - position[0][1]) * Math.Sin(alpha)).Pow2() - b * ((X[0] - position[0][0]) * Math.Sin(alpha) + (X[1] - position[0][1]) * Math.Cos(alpha)).Pow2());
+            double alpha = -(Motion.angle[0]);
+            return -((((X[0] - Motion.position[0][0]) * Math.Cos(alpha) - (X[1] - Motion.position[0][1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - Motion.position[0][0]) * Math.Sin(alpha) + (X[1] - Motion.position[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - Motion.position[0][0]) * Math.Cos(alpha) - (X[1] - Motion.position[0][1]) * Math.Sin(alpha)).Pow2() - b * ((X[0] - Motion.position[0][0]) * Math.Sin(alpha) + (X[1] - Motion.position[0][1]) * Math.Cos(alpha)).Pow2());
         }
 
         
@@ -82,7 +82,7 @@ namespace BoSSS.Application.FSI_Solver {
                 h_max = h_min;
             double a = !WithoutTolerance ? length_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : length_P;
             double b = !WithoutTolerance ? thickness_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : thickness_P;
-            if (-((((point[0] - position[0][0]) * Math.Cos(angle[0]) - (point[1] - position[0][1]) * Math.Sin(angle[0])).Pow(2) + ((point[0] - position[0][0]) * Math.Sin(angle[0]) + (point[1] - position[0][1]) * Math.Cos(angle[0])).Pow(2)).Pow2() - a * ((point[0] - position[0][0]) * Math.Cos(angle[0]) - (point[1] - position[0][1]) * Math.Sin(angle[0])).Pow2() - b * ((point[0] - position[0][0]) * Math.Sin(angle[0]) + (point[1] - position[0][1]) * Math.Cos(angle[0])).Pow2()) > 0) {
+            if (-((((point[0] - Motion.position[0][0]) * Math.Cos(Motion.angle[0]) - (point[1] - Motion.position[0][1]) * Math.Sin(Motion.angle[0])).Pow(2) + ((point[0] - Motion.position[0][0]) * Math.Sin(Motion.angle[0]) + (point[1] - Motion.position[0][1]) * Math.Cos(Motion.angle[0])).Pow(2)).Pow2() - a * ((point[0] - Motion.position[0][0]) * Math.Cos(Motion.angle[0]) - (point[1] - Motion.position[0][1]) * Math.Sin(Motion.angle[0])).Pow2() - b * ((point[0] - Motion.position[0][0]) * Math.Sin(Motion.angle[0]) + (point[1] - Motion.position[0][1]) * Math.Cos(Motion.angle[0])).Pow2()) > 0) {
                 return true;
             }
             return false;
@@ -94,7 +94,7 @@ namespace BoSSS.Application.FSI_Solver {
                 h_max = h_min;
             double a = !WithoutTolerance ? length_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : length_P;
             double b = !WithoutTolerance ? thickness_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : thickness_P;
-            if (-((((point[0] - position[0][0]) * Math.Cos(angle[0]) - (point[1] - position[0][1]) * Math.Sin(angle[0])).Pow(2) + ((point[0] - position[0][0]) * Math.Sin(angle[0]) + (point[1] - position[0][1]) * Math.Cos(angle[0])).Pow(2)).Pow2() - a * ((point[0] - position[0][0]) * Math.Cos(angle[0]) - (point[1] - position[0][1]) * Math.Sin(angle[0])).Pow2() - b * ((point[0] - position[0][0]) * Math.Sin(angle[0]) + (point[1] - position[0][1]) * Math.Cos(angle[0])).Pow2()) > 0) {
+            if (-((((point[0] - Motion.position[0][0]) * Math.Cos(Motion.angle[0]) - (point[1] - Motion.position[0][1]) * Math.Sin(Motion.angle[0])).Pow(2) + ((point[0] - Motion.position[0][0]) * Math.Sin(Motion.angle[0]) + (point[1] - Motion.position[0][1]) * Math.Cos(Motion.angle[0])).Pow(2)).Pow2() - a * ((point[0] - Motion.position[0][0]) * Math.Cos(Motion.angle[0]) - (point[1] - Motion.position[0][1]) * Math.Sin(Motion.angle[0])).Pow2() - b * ((point[0] - Motion.position[0][0]) * Math.Sin(Motion.angle[0]) + (point[1] - Motion.position[0][1]) * Math.Cos(Motion.angle[0])).Pow2()) > 0) {
                 return true;
             }
             return false;

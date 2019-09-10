@@ -80,6 +80,15 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
+        /// Calculate the new acceleration (translational and rotational)
+        /// </summary>
+        /// <param name="dt"></param>
+        protected override void CalculateRotationalAcceleration(double dt) {
+            rotationalAcceleration[0] = 0;
+            Aux.TestArithmeticException(rotationalAcceleration[0], "particle rotational acceleration");
+        }
+
+        /// <summary>
         /// Overrides the calculation of hydrodynamics for fixed particles, so that nothing happens.
         /// </summary>
         public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U = null, SinglePhaseField P = null, LevelSetTracker LsTrk = null, CellMask CutCells_P = null, double fluidViscosity = 0, double fluidDensity = 0, bool firstIteration = false, double dt = 0) {

@@ -312,7 +312,7 @@ namespace FSI_Solver
                 {
                     for (int j = 0; j < 3; j++)
                     {
-                        StateBuffer[NoOfVars * NoOfVars * p + i + NoOfVars * j] = P.addedDampingTensor[i, j];
+                        StateBuffer[NoOfVars * NoOfVars * p + i + NoOfVars * j] = P.Motion.addedDampingTensor[i, j];
                     }
                 }
 
@@ -325,7 +325,7 @@ namespace FSI_Solver
                 {
                     for (int j = 0; j < 3; j++)
                     {
-                        P.addedDampingTensor[i, j] = GlobalStateBuffer[NoOfVars * NoOfVars * p + i + NoOfVars * j];
+                        P.Motion.addedDampingTensor[i, j] = GlobalStateBuffer[NoOfVars * NoOfVars * p + i + NoOfVars * j];
                     }
                 }
             }
@@ -513,9 +513,9 @@ namespace FSI_Solver
                     OutputBuilder.AppendLine("Transl VelocityX: " + CurrentParticle.Motion.translationalVelocity[0][0]);
                     OutputBuilder.AppendLine("Transl VelocityY: " + CurrentParticle.Motion.translationalVelocity[0][1]);
                     OutputBuilder.AppendLine("Angular Velocity: " + CurrentParticle.Motion.rotationalVelocity[0]);
-                    OutputBuilder.AppendLine("X-position: " + CurrentParticle.position[0][0]);
-                    OutputBuilder.AppendLine("Y-position: " + CurrentParticle.position[0][1]);
-                    OutputBuilder.AppendLine("Angle: " + CurrentParticle.angle[0]);
+                    OutputBuilder.AppendLine("X-position: " + CurrentParticle.Motion.position[0][0]);
+                    OutputBuilder.AppendLine("Y-position: " + CurrentParticle.Motion.position[0][1]);
+                    OutputBuilder.AppendLine("Angle: " + CurrentParticle.Motion.angle[0]);
                     OutputBuilder.AppendLine();
                     OutputBuilder.AppendLine("Particle Reynolds number: " + ParticleReynoldsNumber[p]);
                     OutputBuilder.AppendLine("Particle Stokes number: " + ParticleStokesNumber[p]);
@@ -545,8 +545,8 @@ namespace FSI_Solver
                 // ============================================================================
                 if (IterationCounter == 0 && IsFullyCoupled == false)
                 {
-                    p.Aux.SaveMultidimValueOfLastTimestep(p.Motion.hydrodynamicForces);
-                    p.Aux.SaveValueOfLastTimestep(p.Motion.hydrodynamicTorque);
+                    //p.Aux.SaveMultidimValueOfLastTimestep(p.Motion.hydrodynamicForces);
+                    //p.Aux.SaveValueOfLastTimestep(p.Motion.hydrodynamicTorque);
                 }
                 // Save status for residual
                 // ========================
@@ -598,7 +598,7 @@ namespace FSI_Solver
                     CheckSend[p * NoOfVars + 4] = P.forceAndTorque_convergence;
                     CheckSend[p * NoOfVars + 5] = P.Mass_P;
                     CheckSend[p * NoOfVars + 6] = P.particleDensity;
-                    CheckSend[p * NoOfVars + 7] = P.addedDampingTensor[0,0];
+                    CheckSend[p * NoOfVars + 7] = P.Motion.addedDampingTensor[0,0];
                     // todo: add more values here that might be relevant for the particle state;
 
                     // vector values
@@ -607,8 +607,6 @@ namespace FSI_Solver
                         int Offset = 10;
                         CheckSend[p * NoOfVars + Offset + 0 * D + d] = P.Motion.position[0][d];
                         CheckSend[p * NoOfVars + Offset + 1 * D + d] = P.Motion.position[1][d];
-                        //CheckSend[p * NoOfVars + Offset + 2 * D + d] = P.Motion.translationalAcceleration[0][d];
-                        //CheckSend[p * NoOfVars + Offset + 3 * D + d] = P.Motion.translationalAcceleration[1][d];
                         CheckSend[p * NoOfVars + Offset + 2 * D + d] = P.Motion.translationalVelocity[0][d];
                         CheckSend[p * NoOfVars + Offset + 3 * D + d] = P.Motion.translationalVelocity[1][d];
                         CheckSend[p * NoOfVars + Offset + 4 * D + d] = P.Motion.hydrodynamicForces[0][d];

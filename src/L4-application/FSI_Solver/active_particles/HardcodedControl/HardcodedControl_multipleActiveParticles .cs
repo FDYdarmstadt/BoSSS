@@ -114,6 +114,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.rho_A = 1;//pg/(mum^3)
             C.PhysicalParameters.mu_A = 1;//pg(mum*s)
             C.PhysicalParameters.Material = true;
+            C.gravity = new double[] { 0, 0 };
 
             C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.forceAndTorqueConvergenceCriterion, underrelaxationFactorIn: 3.0, useAddaptiveUnderrelaxationIn: true);
             ParticleMotion motion = new ParticleMotion(C.gravity, false, false, false, C.underrelaxationParam, 1);
@@ -129,7 +130,7 @@ namespace BoSSS.Application.FSI_Solver {
                 UseAddedDamping = true,
             });
 
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 2.0, 0.0 }, startAngl: 12) {
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 4.0, 0.0 }, startAngl: 12) {
                 particleDensity = 1,
                 activeStress = 1e3,
                 useAddaptiveUnderrelaxation = true,
@@ -138,7 +139,7 @@ namespace BoSSS.Application.FSI_Solver {
                 UseAddedDamping = true,
             });
 
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { -2.0, 0.0 }, startAngl: -20) {
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { -4.0, 0.0 }, startAngl: -20) {
                 particleDensity = 1,
                 activeStress = 1e3,
                 useAddaptiveUnderrelaxation = true,
@@ -147,7 +148,7 @@ namespace BoSSS.Application.FSI_Solver {
                 UseAddedDamping = true,
             });
 
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 0.0, 2.0 }, startAngl: -45) {
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 0.0, 4.0 }, startAngl: -45) {
                 particleDensity = 1,
                 activeStress = 1e3,
                 useAddaptiveUnderrelaxation = true,
@@ -156,7 +157,7 @@ namespace BoSSS.Application.FSI_Solver {
                 UseAddedDamping = true,
             });
 
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 0.0, -2.0 }, startAngl: 20) {
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 0.0, -4.0 }, startAngl: 20) {
                 particleDensity = 1,
                 activeStress = 1e3,
                 useAddaptiveUnderrelaxation = true,
