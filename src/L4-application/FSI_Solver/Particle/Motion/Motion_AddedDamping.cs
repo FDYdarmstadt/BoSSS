@@ -28,6 +28,7 @@ namespace BoSSS.Application.FSI_Solver {
             double addedDampingCoefficient = 1) : base(gravity, underrelaxationParam) {
             m_StartingAngle = angle[0];
             m_AddedDampingCoefficient = addedDampingCoefficient;
+            useAddedDamping = true;
         }
 
         readonly ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation();

@@ -21,6 +21,7 @@ using BoSSS.Foundation.XDG;
 namespace BoSSS.Application.FSI_Solver {
     public class Motion_Wet_NoTranslation : Motion_Wet {
         public Motion_Wet_NoTranslation(double[] gravity, ParticleUnderrelaxationParam underrelaxationParam = null) : base(gravity, underrelaxationParam) {
+            includeTranslation = false;
         }
 
         /// <summary>

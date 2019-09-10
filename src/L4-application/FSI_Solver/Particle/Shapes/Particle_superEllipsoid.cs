@@ -105,7 +105,7 @@ namespace BoSSS.Application.FSI_Solver {
                 return false;
         }
 
-        public override bool particleInternalCell(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false) {
+        public override bool ParticleInternalCell(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false) {
             WithoutTolerance = false;
             // only for rectangular cells
             if (h_max == 0)

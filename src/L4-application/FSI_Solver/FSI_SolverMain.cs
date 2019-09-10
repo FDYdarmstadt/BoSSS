@@ -618,7 +618,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Array of all local cells with their specific color.
         /// </summary>
         private int[] cellColor = null;
-
+        int[] globalParticleColor = null;
         /// <summary>
         /// Particle to Level-Set-Field 
         /// </summary>
@@ -641,11 +641,11 @@ namespace BoSSS.Application.FSI_Solver {
             CellMask allParticleMask = null;
             CellMask coloredCellMask = null;
 
-            int[] globalParticleColor = levelSetUpdate.DetermineGlobalParticleColor(GridData, cellColor, m_Particles);
-
-            for (int p = 0; p < globalParticleColor.Length; p++) {
+            globalParticleColor = levelSetUpdate.DetermineGlobalParticleColor(GridData, cellColor, m_Particles);
+            int[] _globalParticleColor = globalParticleColor.CloneAs();
+            for (int p = 0; p < _globalParticleColor.Length; p++) {
                 // Search for current colour on current process
-                int currentColor = globalParticleColor[p];
+                int currentColor = _globalParticleColor[p];
                 bool processContainsCurrentColor = false;
                 BitArray coloredCells = new BitArray(noOfLocalCells);
                 for (int j = 0; j < noOfLocalCells; j++) {
@@ -656,7 +656,7 @@ namespace BoSSS.Application.FSI_Solver {
                 }
 
                 if (processContainsCurrentColor) {
-                    int[] particlesOfCurrentColor = levelSetUpdate.FindParticlesOneColor(globalParticleColor, currentColor);
+                    int[] particlesOfCurrentColor = levelSetUpdate.FindParticlesOneColor(_globalParticleColor, currentColor);
                     coloredCellMask = new CellMask(GridData, coloredCells);
 
                     // Save all colored cells of 
@@ -674,7 +674,7 @@ namespace BoSSS.Application.FSI_Solver {
                             Particle currentParticle = m_Particles[particlesOfCurrentColor[pC]];
                             phi *= currentParticle.Phi_P(X);
                             // Delete the particle within the current color from the particle color array
-                            globalParticleColor[particlesOfCurrentColor[pC]] = 0;
+                            _globalParticleColor[particlesOfCurrentColor[pC]] = 0;
                         }
                         return phi;
                     }
@@ -934,7 +934,7 @@ namespace BoSSS.Application.FSI_Solver {
                 p.iteration_counter_P = IterationCounter;
                 if (IterationCounter == 0 && FullyCoupled) {
                     Console.WriteLine("Predicting forces for the next timestep...");
-                    if (p.UseAddedDamping) {
+                    if (p.Motion.useAddedDamping) {
                         p.Motion.UpdateDampingTensors();
                     }
                     p.Motion.PredictForceAndTorque(TimestepInt);
@@ -1152,7 +1152,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// </param>
         internal void ResetCollisionState(List<Particle> Particles) {
             foreach (Particle p in Particles) {
-                p.skipForceIntegration = false;
                 p.isCollided = false;
             }
         }
@@ -1326,26 +1325,27 @@ namespace BoSSS.Application.FSI_Solver {
             // Determine colour.
             // =================================================
             FSI_LevelSetUpdate levelSetUpdate = new FSI_LevelSetUpdate(LsTrk);
-            int[] globalParticleColor = levelSetUpdate.DetermineGlobalParticleColor(GridData, CellColor, Particles);
-            for (int i = 0; i < globalParticleColor.Length; i++) {
-                int CurrentColor = globalParticleColor[i];
+            //int[] globalParticleColor = levelSetUpdate.DetermineGlobalParticleColor(GridData, CellColor, Particles);
+            int[] _GlobalParticleColor = globalParticleColor.CloneAs();
+            for (int i = 0; i < _GlobalParticleColor.Length; i++) {
+                int CurrentColor = _GlobalParticleColor[i];
                 if (CurrentColor == 0)
                     continue;
-                int[] ParticlesOfCurrentColor = levelSetUpdate.FindParticlesOneColor(globalParticleColor, CurrentColor);
+                int[] ParticlesOfCurrentColor = levelSetUpdate.FindParticlesOneColor(_GlobalParticleColor, CurrentColor);
 
                 // Multiple particles with the same colour, trigger collision detection
                 // =================================================
                 if (ParticlesOfCurrentColor.Length >= 1 && CurrentColor != 0) {
-                    List<Particle> currentParticles = levelSetUpdate.GetParticleListOneColor(m_Particles, globalParticleColor, CurrentColor);
+                    List<Particle> currentParticles = levelSetUpdate.GetParticleListOneColor(m_Particles, _GlobalParticleColor, CurrentColor);
                     FSI_Collision _Collision = new FSI_Collision(LsTrk, CurrentColor, FluidViscosity, FluidDensity, ((FSI_Control)Control).CoefficientOfRestitution, dt, LsTrk.GridDat.Cells.h_minGlobal);
                     _Collision.CalculateCollision(currentParticles, GridData, CellColor);
                 }
 
                 // Remove already investigated particles/colours from array
                 // =================================================
-                for (int j = 0; j < globalParticleColor.Length; j++) {
-                    if (globalParticleColor[j] == CurrentColor)
-                        globalParticleColor[j] = 0;
+                for (int j = 0; j < _GlobalParticleColor.Length; j++) {
+                    if (_GlobalParticleColor[j] == CurrentColor)
+                        _GlobalParticleColor[j] = 0;
                 }
             }
 
@@ -1375,15 +1375,8 @@ namespace BoSSS.Application.FSI_Solver {
             // Did a collision take place on one of the processes?
             // ===================================================
             isCollidedSend[0] = currentParticle.isCollided ? 1 : 0;
-            sendSkipForceIntegration[0] = currentParticle.skipForceIntegration ? 1 : 0;
-            double[] receiveSkipForceIntegration = new double[MPISize];
             double[] isCollidedReceive = new double[MPISize];
-            MPISendAndReceive(sendSkipForceIntegration, ref receiveSkipForceIntegration);
             MPISendAndReceive(isCollidedSend, ref isCollidedReceive);
-            for (int i = 0; i < receiveSkipForceIntegration.Length; i++) {
-                if (receiveSkipForceIntegration[i] == 1)
-                    currentParticle.skipForceIntegration = true;
-            }
 
             for (int i = 0; i < isCollidedReceive.Length; i++) {
                 // The particle is collided, thus, copy the data from

@@ -426,7 +426,7 @@ namespace FSI_Solver
             {
                 Particle CurrentParticle = Particles[p];
                 // only print particles with some action
-                if(CurrentParticle.IncludeTranslation || CurrentParticle.IncludeRotation)
+                if(CurrentParticle.Motion.includeTranslation || CurrentParticle.Motion.includeRotation)
                 {
                     int PrintP = p + 1;
                     OutputBuilder.AppendLine("=======================================================");
@@ -499,7 +499,7 @@ namespace FSI_Solver
             {
                 Particle CurrentParticle = Particles[p];
                 // only print particles with some action
-                if (CurrentParticle.IncludeTranslation || CurrentParticle.IncludeRotation)
+                if (CurrentParticle.Motion.includeTranslation || CurrentParticle.Motion.includeRotation)
                 {
                     int PrintP = p + 1;
                     OutputBuilder.AppendLine("=======================================================");
@@ -594,7 +594,6 @@ namespace FSI_Solver
                     CheckSend[p * NoOfVars + 1] = P.Motion.angle[1];
                     CheckSend[p * NoOfVars + 2] = P.Motion.rotationalVelocity[0];
                     //CheckSend[iP*NoOfVars + 2] = P.Area_P;
-                    CheckSend[p * NoOfVars + 3] = P.clearSmallValues ? 1.0 : 0.0;
                     CheckSend[p * NoOfVars + 4] = P.forceAndTorque_convergence;
                     CheckSend[p * NoOfVars + 5] = P.Mass_P;
                     CheckSend[p * NoOfVars + 6] = P.particleDensity;

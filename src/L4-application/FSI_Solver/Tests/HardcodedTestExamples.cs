@@ -224,8 +224,6 @@ namespace BoSSS.Application.FSI_Solver {
             ParticleMotion motion = new ParticleMotion(C.gravity, C.pureDryCollisions, false, true);
             C.Particles.Add(new Particle_Sphere(motion, 0.4, new double[] { 0.0, 0.0 }) {
                 particleDensity = 1.0,
-                IncludeTranslation = false,
-                IncludeRotation = true
             });
 
             // For restart
@@ -701,22 +699,17 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles.Add(new Particle_Sphere(motion1, 0.18, new double[] { 0.0, 0.6 })
             {
                 particleDensity = 4,
-                IncludeRotation = false
             });
 
             C.Particles.Add(new Particle_superEllipsoid(motion2, 0.4, 0.2, 4, new double[] { 0.45, 0 }, startAngl: 45)
             {
                 particleDensity = 1,
-                IncludeRotation = false,
-                IncludeTranslation = false,
             });
 
 
             C.Particles.Add(new Particle_superEllipsoid(motion2, 0.4,  0.2, 4, new double[] { -0.45, 0 }, startAngl: -45)
             {
                 particleDensity = 1,
-                IncludeRotation = false,
-                IncludeTranslation = false,
             });
             C.InitialValues_Evaluators.Add("VelocityX", X => 0);
             C.InitialValues_Evaluators.Add("VelocityY", X => 0);
@@ -844,12 +837,6 @@ namespace BoSSS.Application.FSI_Solver {
                 {
                     particleDensity = 1,
                     activeStress = 1e5,
-                    useAddaptiveUnderrelaxation = true,
-                    underrelaxation_factor = 1,// underrelaxation with [factor * 10^exponent]
-                    clearSmallValues = true,
-                    UseAddedDamping = true,
-                    IncludeRotation = false,
-                    IncludeTranslation = true
                 });
             }
             //Define level-set
@@ -1010,10 +997,6 @@ namespace BoSSS.Application.FSI_Solver {
                 C.Particles.Add(new Particle_Sphere(motion, 0.5, new double[] { 0.0, 0.0 }, startAngl: 0)
                 {
                     particleDensity = 1,
-                    useAddaptiveUnderrelaxation = true,
-                    underrelaxation_factor = 9,// underrelaxation with [factor * 10^exponent]
-                    clearSmallValues = true,
-                    UseAddedDamping = true,
                 });
             }
             //Define level-set

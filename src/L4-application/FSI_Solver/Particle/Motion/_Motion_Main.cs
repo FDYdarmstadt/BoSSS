@@ -109,6 +109,8 @@ namespace BoSSS.Application.FSI_Solver {
 
         ParticleUnderrelaxationParam m_UnderrelaxationParam = null;
 
+
+
         /// <summary>
         /// The translational velocity of the particle in the current time step.
         /// </summary>
@@ -117,8 +119,22 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Added damping coefficient, should be between 0.5 and 1.5, for reference: Banks et.al. 2017
         /// </summary>
-        public double m_AddedDampingCoefficient = -1;
+        public bool includeRotation = true;
 
+        /// <summary>
+        /// Added damping coefficient, should be between 0.5 and 1.5, for reference: Banks et.al. 2017
+        /// </summary>
+        public bool includeTranslation = true;
+
+        /// <summary>
+        /// Added damping coefficient, should be between 0.5 and 1.5, for reference: Banks et.al. 2017
+        /// </summary>
+        public bool useAddedDamping = false;
+
+        /// <summary>
+        /// Added damping coefficient, should be between 0.5 and 1.5, for reference: Banks et.al. 2017
+        /// </summary>
+        public double m_AddedDampingCoefficient = -1;
 
         /// <summary>
         /// Complete added damping tensor, for reference: Banks et.al. 2017
@@ -361,8 +377,8 @@ namespace BoSSS.Application.FSI_Solver {
 
         public virtual void PredictForceAndTorque(int TimestepInt) {
             if (TimestepInt == 1) {
-                hydrodynamicForces[0][0] = 20 * Math.Cos(angle[0]) * activeStress + m_Gravity[1] * particleDensity * particleArea / 10;
-                hydrodynamicForces[0][1] = 20 * Math.Sin(angle[0]) * activeStress + m_Gravity[1] * particleDensity * particleArea / 10;
+                hydrodynamicForces[0][0] = Math.Cos(angle[0]) * activeStress + m_Gravity[1] * particleDensity * particleArea / 10;
+                hydrodynamicForces[0][1] = Math.Sin(angle[0]) * activeStress + m_Gravity[1] * particleDensity * particleArea / 10;
                 hydrodynamicTorque[0] = 0;
             }
             else {

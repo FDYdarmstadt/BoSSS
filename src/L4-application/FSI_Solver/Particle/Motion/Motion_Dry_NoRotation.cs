@@ -21,6 +21,7 @@ using BoSSS.Foundation.XDG;
 namespace BoSSS.Application.FSI_Solver {
     public class Motion_Dry_NoRotation : Motion_Dry {
         public Motion_Dry_NoRotation(double[] gravity) : base(gravity) {
+            includeRotation = false;
         }
 
         /// <summary>

@@ -104,6 +104,7 @@
     <Compile Include="Particle\ParticleAddedDamping.cs" />
     <Compile Include="Particle\ParticleForceIntegration.cs" />
     <Compile Include="Particle\Motion\_Motion_Main.cs" />
+    <Compile Include="Particle\ParticlePhysicalParameters.cs" />
     <Compile Include="Particle\ParticleUnderrelaxation.cs" />
     <Compile Include="Particle\Shapes\Particle_TrapRight.cs" />
     <Compile Include="Particle\Shapes\Particle_TrapLeft.cs" />
