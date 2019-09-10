@@ -138,10 +138,39 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return edge;
         }
 
-        public Vertex DivideEdge(Edge<T> edge, double alpha, out Edge<T> newEdge)
+        public Vertex DivideEdge<T>(Edge<T> edge, double alpha, out Edge<T> newEdge)
         {
-            Vertex newVertex = MeshMethods.DivideEdge(edge, alpha, out newEdge);
+            Vector start = edge.Start.Position;
+            Vector end = edge.End.Position;
+
+            Vector intersection = start * (1 - alpha) + end * alpha;
+            Vertex newVertex = new Vertex
+            {
+                Position = intersection,
+            };
             mesh.AddVertex(newVertex);
+
+            newEdge = new Edge<T>
+            {
+                Start = newVertex,
+                End = edge.End,
+                Cell = edge.Cell
+            };
+            Edge<T> newRidgeTwin = new Edge<T>
+            {
+                End = newVertex,
+                Start = edge.End,
+                Cell = edge.Twin.Cell,
+                Twin = newEdge
+            };
+            newEdge.Twin = newRidgeTwin;
+
+            edge.End = newVertex;
+            edge.Twin.Start = newVertex;
+
+            MeshMethods.InsertEdgesAndVertices(newEdge);
+            MeshMethods.InsertEdgesAndVertices(newRidgeTwin);
+
             return newVertex;
         }
 

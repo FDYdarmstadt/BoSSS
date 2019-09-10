@@ -155,40 +155,5 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 boundaryCount.Next();
             }
         }
-
-        public static Vertex DivideEdge<T>(Edge<T> edge, double alpha, out Edge<T> newEdge)
-        {
-            Vector start = edge.Start.Position;
-            Vector end = edge.End.Position;
-
-            Vector intersection = start * (1 - alpha) + end * alpha;
-            Vertex newVertex = new Vertex
-            {
-                Position = intersection,
-            };
-
-            newEdge = new Edge<T>
-            {
-                Start = newVertex,
-                End = edge.End,
-                Cell = edge.Cell
-            };
-            Edge<T> newRidgeTwin = new Edge<T>
-            {
-                End = newVertex,
-                Start = edge.End,
-                Cell = edge.Twin.Cell,
-                Twin = newEdge
-            };
-            newEdge.Twin = newRidgeTwin;
-
-            edge.End = newVertex;
-            edge.Twin.Start = newVertex;
-
-            InsertEdgesAndVertices(newEdge);
-            InsertEdgesAndVertices(newRidgeTwin);
-
-            return newVertex;
-        }
     }
 }
