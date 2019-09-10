@@ -563,7 +563,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =========
             C.pureDryCollisions = true;
             ParticleMotion motion = new ParticleMotion(C.gravity, C.pureDryCollisions);
-            C.Particles.Add(new Particle_Sphere(motion, 0.15, new double[] { 0.0, 0.8 }, startAngl: 0.0, new double[] { 0, 0 } , 0) {
+            C.Particles.Add(new Particle_Sphere(motion, 0.15, new double[] { 0.0, 0.8 }, 0.0, new double[] { 0, 0 } , 0) {
                 
                 particleDensity = 1.0,
             });
