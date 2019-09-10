@@ -997,6 +997,8 @@ namespace BoSSS.Application.FSI_Solver {
                     foreach (Particle p in m_Particles) {
                         p.Motion.GetParticleDensity(p.particleDensity);
                         p.Motion.SaveHydrodynamicsOfPreviousTimestep();
+                        p.Motion.SaveVelocityOfPreviousTimestep();
+                        p.Motion.SavePositionAndAngleOfPreviousTimestep();
                     }
                     CalculateHydrodynamicForces(m_Particles, dt);
                     CalculateParticleVelocity(m_Particles, dt, IsFullyCoupled, 0, TimestepInt, false);
@@ -1043,7 +1045,7 @@ namespace BoSSS.Application.FSI_Solver {
                             Auxillary.SaveOldParticleState(m_Particles, iterationCounter, ((FSI_Control)Control).forceAndTorqueConvergenceCriterion, IsFullyCoupled);
                             // actual physics
                             // -------------------------------------------------
-                            if (iterationCounter != 0 || !IsFullyCoupled) { // in the first iteration of the fully coupled simulation the hydrodyn. forces are predicted by the particle.cs
+                            if (iterationCounter != 0 || !IsFullyCoupled) { // in the first iteration of the fully coupled simulation the hydrodyn. forces are predicted by the particle.motion.cs
                                 m_BDF_Timestepper.Solve(phystime, dt, false);
                                 CalculateHydrodynamicForces(m_Particles, dt, false);
                             }
