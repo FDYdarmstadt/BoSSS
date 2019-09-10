@@ -6,30 +6,19 @@ using BoSSS.Platform;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
-    class MeshDivider<T>
+    class Divider<T>
     {
         IDMesh<T> mesh;
 
-        List<MeshCell<T>> insideCells;
+        MeshCell<T> insideCell;
 
-        List<T> insideNodes;
-
-        public MeshCell<T> insideCell;
-
-        public int Count {
-            get {
-                return insideCells.Count;
-            }
-        }
-
-        public MeshDivider(IDMesh<T> mesh, int firstCell_NodeIndice)
+        public Divider(IDMesh<T> mesh, int firstCell_NodeIndice)
             : this(mesh)
         {
-            
             this.insideCell = mesh.Cells[firstCell_NodeIndice];
         }
 
-        public MeshDivider(IDMesh<T> mesh)
+        public Divider(IDMesh<T> mesh)
         {
             this.mesh = mesh;
         }
@@ -46,7 +35,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             }
 
             //Check if boundaryLine.Start is still in cell, else search neighborhood
-            foreach (MeshCell<T> cell in CellsOnSameSideOfBoundary_Iterative(insideCell))
+            foreach (MeshCell<T> cell in CellsOnSameSideOfBoundary(insideCell))
             {
                 Vector[] verts = Array.ConvertAll(cell.Vertices, item => (Vector)item);
                 //At this point, every cell is convex!
@@ -65,29 +54,50 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return insideCell;
         }
 
-        public List<MeshCell<T>> GetInsideCells()
-        {
-            if (insideCells == null)
-            {
-                DetermineInsideCells();
-            }
-            return insideCells;
-
-        }
-
         public void RemoveOutsideCells()
         {
-            mesh.Cells = GetInsideCells();
-            mesh.Nodes = GetInsideNodes();
+            IdentifyInsideCells();
+            List<MeshCell<T>> insideCells = CollectInsideCells();
+            mesh.Cells = insideCells;
+            List<T> nodes = CollectNodes(insideCells);
+            mesh.Nodes = nodes;
         }
 
-        public List<T> GetInsideNodes()
+        List<MeshCell<T>> CollectInsideCells()
         {
-            if (insideNodes == null)
+            List<MeshCell<T>> cells = new List<MeshCell<T>>(mesh.Cells.Count);
+            foreach(MeshCell<T> cell in mesh.Cells)
             {
-                DetermineInsideNodes();
+                if(cell.type == MeshCellType.Inside)
+                {
+                    cells.Add(cell);
+                }
             }
-            return insideNodes;
+            return cells;
+        }
+
+        static List<T> CollectNodes(List<MeshCell<T>> cells)
+        {
+            List<T> nodes = new List<T>(cells.Count);
+            foreach(MeshCell<T> cell in cells)
+            {
+                nodes.Add(cell.Node);
+            }
+            return nodes;
+        }
+
+        void IdentifyInsideCells()
+        {
+            foreach (MeshCell<T> cell in CellsOnSameSideOfBoundary(insideCell))
+            {
+                cell.type = MeshCellType.Inside;
+            }
+        }
+
+        IEnumerable<MeshCell<T>> CellsOnSameSideOfBoundary(MeshCell<T> cell)
+        {
+            BitArray visited = new BitArray(mesh.Cells.Count);
+            return IterativeYieldConnectedCells(cell, visited);
         }
 
         /// <summary>
@@ -98,13 +108,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         /// Enumeration starts with this cell and then return its neighbors and so on.
         /// </param>
         /// <returns></returns>
-        public IEnumerable<MeshCell<T>> CellsOnSameSideOfBoundary_Recursive(MeshCell<T> cell)
-        {
-            BitArray visited = new BitArray(mesh.Cells.Count);
-            return YieldConnectedCells(cell, visited);
-        }
-
-        private IEnumerable<MeshCell<T>> YieldConnectedCells(MeshCell<T> cell, BitArray visited)
+        private static IEnumerable<MeshCell<T>> RecursiveYieldConnectedCells(MeshCell<T> cell, BitArray visited)
         {
             visited[cell.ID] = true;
             yield return cell;
@@ -114,7 +118,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 Edge<T> newRidge = edge.Twin;
                 if (!visited[newRidge.Cell.ID] && !newRidge.IsBoundary)
                 {
-                    foreach (MeshCell<T> neighbor in YieldConnectedCells(newRidge.Cell, visited))
+                    foreach (MeshCell<T> neighbor in RecursiveYieldConnectedCells(newRidge.Cell, visited))
                     {
                         yield return neighbor;
                     }
@@ -129,9 +133,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         /// Enumeration starts with this cell and then return its neighbors and so on.
         /// </param>
         /// <returns></returns>
-        public IEnumerable<MeshCell<T>> CellsOnSameSideOfBoundary_Iterative(MeshCell<T> cell)
+        static IEnumerable<MeshCell<T>> IterativeYieldConnectedCells(MeshCell<T> cell, BitArray visited)
         {
-            BitArray visited = new BitArray(mesh.Cells.Count);
             LinkedList<MeshCell<T>> cells = new LinkedList<MeshCell<T>>();
             cells.AddFirst(cell);
             visited[cell.ID] = true;
@@ -152,33 +155,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             }
         }
 
-        public void DetermineInsideCells()
-        {
-            insideCells = SetCellTypesOnSameSideOfBoundary(insideCell, MeshCellType.Inside, ref insideCells);
-        }
-
-        void DetermineInsideNodes()
-        {
-            IReadOnlyList<MeshCell<T>> cells = GetInsideCells();
-            insideNodes = new List<T>(cells.Count);
-            foreach (MeshCell<T> cell in cells)
-            {
-                insideNodes.Add(cell.Node);
-            }
-        }
-
-        protected List<MeshCell<T>> SetCellTypesOnSameSideOfBoundary(
-            MeshCell<T> startingCell, 
-            MeshCellType type, 
-            ref List<MeshCell<T>> cells)
-        {
-            List<MeshCell<T>> sameSideCells = new List<MeshCell<T>>();
-            foreach (MeshCell<T> cell in CellsOnSameSideOfBoundary_Iterative(startingCell))
-            {
-                cell.type = type;
-                sameSideCells.Add(cell);
-            }
-            return sameSideCells;
-        }
+        
     }
 }

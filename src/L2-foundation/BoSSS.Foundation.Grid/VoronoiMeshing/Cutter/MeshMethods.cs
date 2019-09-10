@@ -119,7 +119,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         }
 
-        public static void CreateEdge<T>(
+        public static void CreateBoundaryEdge<T>(
             Vertex[] vertices,
             MeshCell<T> cell,
             MeshCell<T> neighborCell,
@@ -185,8 +185,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             edge.End = newVertex;
             edge.Twin.Start = newVertex;
 
-            MeshMethods.InsertEdgesAndVertices(newEdge);
-            MeshMethods.InsertEdgesAndVertices(newRidgeTwin);
+            InsertEdgesAndVertices(newEdge);
+            InsertEdgesAndVertices(newRidgeTwin);
 
             return newVertex;
         }

@@ -11,6 +11,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
     {
         MeshIntersecter<T> meshIntersecter;
 
+        Divider<T> greatDivider;
+
         BoundaryLineEnumerator boundary;
 
         CutterState<Edge<T>> state;
@@ -77,7 +79,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             }
             HandleLastCell();
             boundary.Reset();
-            meshIntersecter.RemoveOutsideCells();
+            greatDivider.RemoveOutsideCells();
         }
 
         void Initialize(
@@ -85,7 +87,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             BoundaryLineEnumerator boundary,
             int firstCellNode_indice)
         {
-            this.meshIntersecter = new MeshIntersecter<T>(mesh, firstCellNode_indice);
+            this.meshIntersecter = new MeshIntersecter<T>(mesh);
+            this.greatDivider = new Divider<T>(mesh, firstCellNode_indice);
             this.boundary = boundary;
             state = new CutterState<Edge<T>>();
             edgeCutter = new OnEdgeCutter<T>(this.meshIntersecter, boundary);
@@ -96,7 +99,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         {
             IEnumerator<Edge<T>> ridgeEnum;
             boundary.MoveNext();
-            ridgeEnum = meshIntersecter.GetFirst(boundary.Current);
+            MeshCell<T> first = greatDivider.GetFirst(boundary.Current);
+            ridgeEnum = meshIntersecter.GetFirstEnumerator(first);
             boundary.Reset();
             return ridgeEnum;
         }

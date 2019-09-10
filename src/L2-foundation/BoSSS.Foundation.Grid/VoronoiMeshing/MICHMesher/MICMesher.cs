@@ -47,7 +47,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             }
             List<MeshCell<T>> cells = new List<MeshCell<T>>(vCells);
             List<Vertex> vertices = new List<Vertex>(arrVertices);
-            IDMesh<T> mesh = new IDMesh<T>(cells, vertices);
+            IDMesh<T> mesh = new IDMesh<T>
+            {
+                Cells = cells,
+                Vertices = vertices
+            };
             return mesh;
         }
 

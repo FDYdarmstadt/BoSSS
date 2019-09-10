@@ -65,7 +65,7 @@
     <Compile Include="Grid3D.cs" />
     <Compile Include="GridRefinementController.cs" />
     <Compile Include="VoronoiMeshing\Cutter\BoundaryLineEnumerator.cs" />
-    <Compile Include="VoronoiMeshing\Cutter\MeshDivider.cs" />
+    <Compile Include="VoronoiMeshing\Cutter\Divider.cs" />
     <Compile Include="VoronoiMeshing\Cutter\BoundaryLine.cs" />
     <Compile Include="VoronoiMeshing\Cutter\CutterState.cs" />
     <Compile Include="VoronoiMeshing\Cutter\Intersectioncase.cs" />
