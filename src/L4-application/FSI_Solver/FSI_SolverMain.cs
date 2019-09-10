@@ -55,6 +55,21 @@ namespace BoSSS.Application.FSI_Solver {
 
             // call base implementation
             base.SetInitial();
+            int pCounter = 1;
+            foreach (Particle p in m_Particles) {
+                Console.WriteLine("===============================================================");
+                Console.WriteLine("Particle properties, particle " + pCounter);
+                Console.WriteLine("Type: " + p);
+                Console.WriteLine("Density " + p.particleDensity);
+                Console.WriteLine("Lengthscales #1 " + p.GetLengthScales()[0] + " #2 " + p.GetLengthScales()[1]);
+            }
+            if (!((FSI_Control)this.Control).pureDryCollisions) {
+                Console.WriteLine("===============================================================");
+                Console.WriteLine("Fluid properties: ");
+                Console.WriteLine("Density: " + ((FSI_Control)this.Control).PhysicalParameters.rho_A);
+                Console.WriteLine("Viscosity: " + ((FSI_Control)this.Control).PhysicalParameters.mu_A);
+            }
+            Console.WriteLine("===============================================================");
         }
 
         /// <summary>
@@ -83,31 +98,24 @@ namespace BoSSS.Application.FSI_Solver {
 
         bool CalculatedDampingTensors = false;
         readonly private FSI_Auxillary Auxillary = new FSI_Auxillary();
-        static int counter = 0;
 
-        public static void MegaArschKakke2(DGField[] f) {
-            int rank;
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
-            Tecplot.PlotFields(f, "MegaArschKakke-" + counter, 0.0, 0);
-            counter++;
-        }
+        //public static void MegaArschKakke2(DGField[] f) {
+        //    int rank;
+        //    csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
+        //    Tecplot.PlotFields(f, "MegaArschKakke-" + counter, 0.0, 0);
+        //    counter++;
+        //}
 
         /// <summary>
         /// Application entry point.
         /// </summary>
         static void Main(string[] args) {
-            MultiphaseCellAgglomerator.Katastrophenplot = MegaArschKakke2;
+            //MultiphaseCellAgglomerator.Katastrophenplot = MegaArschKakke2;
             _Main(args, false, delegate () {
                 var p = new FSI_SolverMain();
                 return p;
             });
         }
-
-        /// <summary>
-        /// Curvature; DG-polynomial degree should be 2 times the polynomial degree of <see cref="LevSet"/>.
-        /// </summary>
-        [InstantiateFromControlFile("Curvature", "Curvature", IOListOption.ControlFileDetermined)]
-        public SinglePhaseField Curvature;
 
         SinglePhaseField ParticleColor;
         SinglePhaseField LevelSetDistance;
@@ -154,19 +162,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         bool IsFullyCoupled {
             get {
-                if (((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled)
-                    return true;
-                else
-                    return false;
-            }
-        }
-
-        /// <summary>
-        /// Fully coupled LieSplitting?
-        /// </summary>
-        bool IsDry {
-            get {
-                return ((FSI_Control)Control).pureDryCollisions;
+                return ((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled;
             }
         }
 

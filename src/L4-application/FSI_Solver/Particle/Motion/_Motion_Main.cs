@@ -27,59 +27,6 @@ using System.Runtime.Serialization;
 
 namespace BoSSS.Application.FSI_Solver {
 
-    public class ParticleMotion {
-        public ParticleMotion(double[] gravity = null,
-            bool isDry = false,
-            bool noRotation = false,
-            bool noTranslation = false,
-            ParticleUnderrelaxationParam underrelaxationParam = null,
-            double addedDampingCoefficient = -1) {
-            m_Gravity = gravity.IsNullOrEmpty() ? (new double[] { 0, 9.81 }) : gravity;
-            m_IsDry = isDry;
-            m_NoRotation = noRotation;
-            m_NoTranslation = noTranslation;
-            m_UnderrelaxationParam = underrelaxationParam;
-            m_AddedDampingCoefficient = addedDampingCoefficient;
-        }
-
-        readonly internal FSI_Auxillary Aux = new FSI_Auxillary();
-        readonly double[] m_Gravity;
-        readonly bool m_IsDry;
-        readonly bool m_NoRotation;
-        readonly bool m_NoTranslation;
-        readonly ParticleUnderrelaxationParam m_UnderrelaxationParam;
-        readonly double m_AddedDampingCoefficient;
-
-        public void CheckInput() {
-            if (m_IsDry && m_UnderrelaxationParam != null)
-                throw new Exception("Error in control file: Cannot perform a dry simulation with full coupling between the particles and the (non-existing) fluid");
-
-            if (m_AddedDampingCoefficient != -1 && m_AddedDampingCoefficient < 0.5 && m_AddedDampingCoefficient > 1.5)
-                throw new Exception("Error in control file: Added damping coefficient should be between 0.5 and 1.5! See for reference Banks et al.");
-            if (m_AddedDampingCoefficient != -1 && (m_NoRotation || m_NoTranslation))
-                throw new Exception("Error in control file: The added damping model is designed to contain all possible motion types (translation and rotation).");
-
-            Aux.TestArithmeticException(m_Gravity, "gravity");
-            Aux.TestArithmeticException(m_AddedDampingCoefficient, "added damping coefficient");
-        }
-
-        public Motion_Wet GetParticleMotion() {
-            if (m_NoRotation && m_NoTranslation)
-                return new Motion_Fixed();
-            if (m_IsDry) {
-                return m_NoRotation ? new Motion_Dry_NoRotation(m_Gravity)
-                    : m_NoTranslation ? new Motion_Dry_NoTranslation(m_Gravity)
-                    : new Motion_Dry(m_Gravity);
-            }
-            if (m_AddedDampingCoefficient != -1)
-                return new Motion_AddedDamping(m_Gravity, m_UnderrelaxationParam, m_AddedDampingCoefficient);
-            else
-                return m_NoRotation ? new Motion_Wet_NoRotation(m_Gravity)
-                    : m_NoTranslation ? new Motion_Wet_NoTranslation(m_Gravity)
-                    : new Motion_Wet(m_Gravity, m_UnderrelaxationParam);
-        }
-    }
-
     public class Motion_Wet {
 
         private const int historyLength = 4;
@@ -377,8 +324,8 @@ namespace BoSSS.Application.FSI_Solver {
 
         public virtual void PredictForceAndTorque(int TimestepInt) {
             if (TimestepInt == 1) {
-                hydrodynamicForces[0][0] = Math.Cos(angle[0]) * activeStress + m_Gravity[1] * particleDensity * particleArea / 10;
-                hydrodynamicForces[0][1] = Math.Sin(angle[0]) * activeStress + m_Gravity[1] * particleDensity * particleArea / 10;
+                hydrodynamicForces[0][0] = 20 * Math.Cos(angle[0]) * activeStress + m_Gravity[1] * particleDensity * particleArea / 10;
+                hydrodynamicForces[0][1] = 20 * Math.Sin(angle[0]) * activeStress + m_Gravity[1] * particleDensity * particleArea / 10;
                 hydrodynamicTorque[0] = 0;
             }
             else {

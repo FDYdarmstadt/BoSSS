@@ -100,7 +100,7 @@
     <Compile Include="Particle\Motion\Motion_Dry_NoRotation.cs" />
     <Compile Include="Particle\Motion\Motion_Dry.cs" />
     <Compile Include="Particle\Motion\Motion_Fixed.cs" />
-    <Compile Include="Particle\ParticleAcceleration.cs" />
+    <Compile Include="Particle\Motion\ParticleMotionInit.cs" />
     <Compile Include="Particle\ParticleAddedDamping.cs" />
     <Compile Include="Particle\ParticleForceIntegration.cs" />
     <Compile Include="Particle\Motion\_Motion_Main.cs" />

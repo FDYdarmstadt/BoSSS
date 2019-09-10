@@ -44,7 +44,7 @@ namespace BoSSS.Application.FSI_Solver {
 
         }
 
-        public Particle_TrapLeft(ParticleMotion motionInit, double width, double[] startPos = null, double startAngl = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, startTransVelocity, startRotVelocity) {
+        public Particle_TrapLeft(ParticleMotionInit motionInit, double width, double[] startPos = null, double startAngl = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, startTransVelocity, startRotVelocity) {
             width_P = width;
             //Motion.GetParticleLengthscale(width);
             //Motion.GetParticleArea(Area_P());

@@ -33,7 +33,7 @@ namespace BoSSS.Application.FSI_Solver
         {
 
         }
-        public Particle_Bean(ParticleMotion motionInit, double radius, double[] startPos = null, double startAngl = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, startTransVelocity, startRotVelocity) {
+        public Particle_Bean(ParticleMotionInit motionInit, double radius, double[] startPos = null, double startAngl = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, startTransVelocity, startRotVelocity) {
             radius_P = radius;
             //Motion.GetParticleLengthscale(radius);
             //Motion.GetParticleArea(Area_P());

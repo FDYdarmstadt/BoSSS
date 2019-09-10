@@ -31,7 +31,7 @@ namespace BoSSS.Application.FSI_Solver {
 
         }
 
-        public Particle_Hippopede(ParticleMotion motionInit, double length, double thickness, double[] startPos = null, double startAngl = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, startTransVelocity, startRotVelocity) {
+        public Particle_Hippopede(ParticleMotionInit motionInit, double length, double thickness, double[] startPos = null, double startAngl = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, startTransVelocity, startRotVelocity) {
             length_P = length;
             thickness_P = thickness;
             //Motion.GetParticleLengthscale(GetLengthScales().Max());

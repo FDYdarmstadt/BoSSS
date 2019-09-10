@@ -34,6 +34,7 @@ namespace BoSSS.Application.FSI_Solver {
         public double underrelaxationFactor;
         public bool useAddaptiveUnderrelaxation;
     }
+
     class ParticleUnderrelaxation {
         /// <summary>
         /// This method underrelaxates the hydrodynamic forces and torque. The Underrelaxation
