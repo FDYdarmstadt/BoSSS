@@ -896,17 +896,8 @@ namespace BoSSS.Application.FSI_Solver {
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             for (int p = 0; p < particles.Count(); p++) {
                 Particle currentParticle = particles[p];
-                if (!((FSI_Control)Control).pureDryCollisions) { // && !currentParticle.skipForceIntegration) {
-                    currentParticle.Motion.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, currentParticle.CutCells_P(LsTrk), Control.PhysicalParameters.mu_A, Control.PhysicalParameters.rho_A, firstIteration, dt);
-
-                }
-                else {
-                    currentParticle.Motion.hydrodynamicForces[0][0] = 0;
-                    currentParticle.Motion.hydrodynamicForces[0][1] = 0;
-                    currentParticle.Motion.hydrodynamicTorque[0] = 0;
-                }
+                currentParticle.Motion.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, currentParticle.CutCells_P(LsTrk), FluidViscosity, FluidDensity, firstIteration, dt);
             }
-            // MPISum over Forces moved to Particle.cs 
         }
 
         /// <summary>
@@ -935,8 +926,6 @@ namespace BoSSS.Application.FSI_Solver {
                     }
                     p.Motion.PredictForceAndTorque(TimestepInt);
                 }
-                //p.CalculateAcceleration(dt, FullyCoupled, IncludeHydrodynamics);
-                //p.UpdateParticleVelocity(dt);
                 p.Motion.UpdateParticleVelocity(dt);
             }
         }
@@ -998,7 +987,6 @@ namespace BoSSS.Application.FSI_Solver {
                     }
                     CalculateHydrodynamicForces(m_Particles, dt);
                     CalculateParticleVelocity(m_Particles, dt, IsFullyCoupled, 0, TimestepInt, false);
-                    ResetCollisionState(m_Particles);
                     CalculateCollision(m_Particles, cellColor, dt);
                     foreach (Particle p in m_Particles) {
                         p.Motion.UpdateParticlePositionAndAngle(dt);
@@ -1026,10 +1014,6 @@ namespace BoSSS.Application.FSI_Solver {
                         if (phystime == 0) { CreatePhysicalDataLogger(); }
                         int iterationCounter = 0;
                         double hydroDynForceTorqueResidual = 1e12;
-
-                        //foreach (Particle p in m_Particles) {
-                        //    p.Motion.SaveDataOfPreviousTimestep();
-                        //}
                         foreach (Particle p in m_Particles) {
                             p.Motion.GetParticleDensity(p.particleDensity);
                             p.Motion.SaveHydrodynamicsOfPreviousTimestep();
@@ -1052,7 +1036,7 @@ namespace BoSSS.Application.FSI_Solver {
                             }
                             CalculateParticleVelocity(m_Particles, dt, IsFullyCoupled, iterationCounter, TimestepInt);
 
-                            // print
+                            // print iteration status
                             // -------------------------------------------------
                             if (IsFullyCoupled)
                                 Auxillary.PrintResultToConsole(m_Particles, phystime, iterationCounter, out Test_Force);
@@ -1069,7 +1053,6 @@ namespace BoSSS.Application.FSI_Solver {
                         }
                         // collision
                         // -------------------------------------------------
-                        ResetCollisionState(m_Particles);
                         CalculateCollision(m_Particles, cellColor, dt);
 
                         // particle position
@@ -1141,16 +1124,6 @@ namespace BoSSS.Application.FSI_Solver {
                     logPhysicalDataParticles.WriteLine(line);
                     logPhysicalDataParticles.Flush();
                 }
-            }
-        }
-
-        /// <summary>
-        /// </summary>
-        /// <param name = Particles>
-        /// </param>
-        internal void ResetCollisionState(List<Particle> Particles) {
-            foreach (Particle p in Particles) {
-                p.isCollided = false;
             }
         }
 
@@ -1319,6 +1292,10 @@ namespace BoSSS.Application.FSI_Solver {
             if (CollisionModel == FSI_Control.CollisionModel.RepulsiveForce)
                 throw new NotImplementedException("Repulsive force model is currently unsupported, please use the momentum conservation model.");
 
+            foreach (Particle p in Particles) {
+                p.isCollided = false;
+            }
+
             // Only particles with the same colour a close to each other, thus, we only test for collisions within those particles.
             // Determine colour.
             // =================================================
@@ -1484,6 +1461,9 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
+        /// <summary>
+        /// Creates the cellmask which should be refined.
+        /// </summary>
         private List<Tuple<int, CellMask>> GetCellMaskWithRefinementLevels() {
             int refinementLevel = ((FSI_Control)this.Control).RefinementLevel;
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
@@ -1495,7 +1475,7 @@ namespace BoSSS.Application.FSI_Solver {
             foreach (Particle p in m_Particles) {
                 for (int j = 0; j < noOfLocalCells; j++) {
                     if (!fine[j])
-                        fine[j] = p.Contains(new double[] { CellCenters[j, 0], CellCenters[j, 1] }, 4 * h_min);
+                        fine[j] = p.Contains(new double[] { CellCenters[j, 0], CellCenters[j, 1] }, 3 * h_min);
                     if (LsTrk.Regions.IsSpeciesPresentInCell(LsTrk.GetSpeciesId("A"), j) && !coarse[j])
                         coarse[j] = p.Contains(new double[] { CellCenters[j, 0], CellCenters[j, 1] }, h_max / 2);
                 }
@@ -1506,9 +1486,7 @@ namespace BoSSS.Application.FSI_Solver {
             int coarseRefinementLevel = refinementLevel > 2 ? refinementLevel / 2 : 1;
             if (refinementLevel - coarseRefinementLevel > coarseRefinementLevel)
                 coarseRefinementLevel += 1;
-            CellMask CutCells = LsTrk.Regions.GetCutCellMask();
             List<Tuple<int, CellMask>> AllCellsWithMaxRefineLevel = new List<Tuple<int, CellMask>>();
-            AllCellsWithMaxRefineLevel.Add(new Tuple<int, CellMask>(refinementLevel, CutCells));
             AllCellsWithMaxRefineLevel.Add(new Tuple<int, CellMask>(refinementLevel, fineMask));
             AllCellsWithMaxRefineLevel.Add(new Tuple<int, CellMask>(coarseRefinementLevel, coarseMask));
 

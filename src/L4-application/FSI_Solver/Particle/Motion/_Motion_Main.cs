@@ -304,7 +304,7 @@ namespace BoSSS.Application.FSI_Solver {
                 CalculateAngularVelocity(dt);
             }
             else {
-                CalculateTranslationalVelocity(dt, collisionTimestep);
+                CalculateTranslationalVelocity(dt, collisionTimestep);// ich glaube das kann weg
                 CalculateAngularVelocity(dt, collisionTimestep);
             }
         }
@@ -324,8 +324,8 @@ namespace BoSSS.Application.FSI_Solver {
 
         public virtual void PredictForceAndTorque(int TimestepInt) {
             if (TimestepInt == 1) {
-                hydrodynamicForces[0][0] = 20 * Math.Cos(angle[0]) * activeStress + m_Gravity[1] * particleDensity * particleArea / 10;
-                hydrodynamicForces[0][1] = 20 * Math.Sin(angle[0]) * activeStress + m_Gravity[1] * particleDensity * particleArea / 10;
+                hydrodynamicForces[0][0] = 10 * Math.Cos(angle[0]) * activeStress + m_Gravity[1] * particleDensity * particleArea / 10;
+                hydrodynamicForces[0][1] = 10 * Math.Sin(angle[0]) * activeStress + m_Gravity[1] * particleDensity * particleArea / 10;
                 hydrodynamicTorque[0] = 0;
             }
             else {
