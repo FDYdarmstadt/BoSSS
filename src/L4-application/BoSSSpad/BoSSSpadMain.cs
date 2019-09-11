@@ -253,6 +253,7 @@ namespace BoSSS.Application.BoSSSpad {
             Console.WriteLine("Option 2: Console mode (interactive/text):");
             Console.WriteLine("------------------------------------------");
             Console.WriteLine("    BoSSSpad.exe --console             Starts a console session.");
+            Console.WriteLine("    BoSSSpad.exe --simpleconsole       Starts a simple (e.g. no autocompletion etc.) console session.");
             Console.WriteLine();
             Console.WriteLine("Option 3: Batch mode (non-interactive/text):");
             Console.WriteLine("--------------------------------------------");
