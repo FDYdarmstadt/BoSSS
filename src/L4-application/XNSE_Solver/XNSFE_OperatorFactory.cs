@@ -134,7 +134,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // species bulk components
             for (int spc = 0; spc < LsTrk.TotalNoOfSpecies; spc++) {
                 // Navier Stokes equations
-                Solution.XNSECommon.XOperatorComponentsFactory.AddSpeciesNSE(m_XOp, config, D,  LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap, LsTrk, out U0meanrequired);
+                Solution.XNSECommon.XOperatorComponentsFactory.AddSpeciesNSE(m_XOp, config, D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap, LsTrk, out U0meanrequired);
 
                 // continuity equation
                 if (config.isContinuity)
@@ -346,7 +346,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 ((SurfaceForce != null) ? SurfaceForce.ToArray() : new SinglePhaseField[D]),
                 ((CoupledCurrentState != null) ? CoupledCurrentState.ToArray<DGField>() : new SinglePhaseField[1]),
                 ((CoupledCurrentState != null) ? HeatFluxParam : new SinglePhaseField[D]),
-                ((CoupledCurrentState != null) ? CoupledParams.ToArray<DGField>() : new SinglePhaseField[1])); 
+                ((CoupledCurrentState != null) ? CoupledParams.ToArray<DGField>() : new SinglePhaseField[1]));
 
 
             // linearization velocity:

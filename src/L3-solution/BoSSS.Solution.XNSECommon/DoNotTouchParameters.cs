@@ -196,7 +196,16 @@ namespace BoSSS.Solution.XNSECommon {
         ///    \mathrm{div} \left( \mu \vec{u}^T \right),
         /// \f]
         /// </summary>
-        TransposeTermMissing
+        TransposeTermMissing,
+
+        /// <summary>
+        /// In viscoelastic case we calculate dimensionless and have the material parameter \beta
+        /// such that the dimensionless "Viscosity" is defined as 
+        /// \f[ 
+        ///     \frac{\beta}{\mathrm{Re}}
+        /// \f]
+        /// </summary>
+        Viscoelastic
 
     }
 
@@ -333,6 +342,55 @@ namespace BoSSS.Solution.XNSECommon {
         public NavierSlip_SlipLength GNBC_SlipLength = NavierSlip_SlipLength.Prescribed_Beta;
 
 
+        //viscoelastic LDG stuff:
+        //=========================
+
+        /// <summary>
+        /// determines which implementation of objective Term should be used:
+        /// =1 only velocity gradient as param
+        /// =0 only stress tensor as param
+        /// </summary>
+        [DataMember]
+        public double ObjectiveParam = 1.0;
+
+        /// <summary>
+        /// Upwinding factor for convective part in constitutive equation
+        /// </summary>
+        [DataMember]
+        public double alpha = 1.0;
+
+        /// <summary>
+        /// Penalty Values LDG (alpha, beta; Lit. Cockburn (2002) Local DG Methods for the Stokes system)
+        /// Penalty in Stress Divergence (beta)
+        /// </summary>
+        [DataMember]
+        public double[] Penalty1 = { 0, 0 };
+
+        /// <summary>
+        /// Penalty in Constitutive Viscosity (alpha)
+        /// </summary>
+        [DataMember]
+        public double Penalty2 = 1.0;
+
+        /// <summary>
+        /// Penalty for pressure/conti (beta)
+        /// </summary>
+        [DataMember]
+        public double[] PresPenalty1 = { 0, 0 };
+
+        /// <summary>
+        /// Penalty for pressure (alpha)
+        /// </summary>
+        [DataMember]
+        public double PresPenalty2 = 1.0;
+
+        /// <summary>
+        /// penalty for stress in objective term
+        /// </summary>
+        [DataMember]
+        public double StressPenalty = 1.0;
+
+
         /// <summary>
         /// clone
         /// </summary>
@@ -353,8 +411,16 @@ namespace BoSSS.Solution.XNSECommon {
                 UseGhostPenalties = this.UseGhostPenalties,
                 FilterConfiguration = this.FilterConfiguration,
                 GNBC_Localization = this.GNBC_Localization,
-                GNBC_SlipLength = this.GNBC_SlipLength
-                
+                GNBC_SlipLength = this.GNBC_SlipLength,
+                //viscoelastic LDG Stuff:
+                ObjectiveParam = this.ObjectiveParam,
+                alpha = this.alpha,
+                Penalty1 = this.Penalty1,
+                Penalty2 = this.Penalty2,
+                PresPenalty1 = this.PresPenalty1,
+                PresPenalty2 = this.PresPenalty2,
+                StressPenalty = this.StressPenalty
+
             };
             return cl;
         }

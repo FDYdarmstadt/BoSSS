@@ -189,8 +189,8 @@ namespace BoSSS.Application.IBM_Solver {
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;                    
 
             // Solver configuration
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
-            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.NewtonGMRES;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
      
 
             // Timestepping
@@ -537,9 +537,9 @@ namespace BoSSS.Application.IBM_Solver {
             ISolverSmootherTemplate Prec;
 
             if (name_newton == 1)
-                C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
+                C.NonLinearSolver.SolverCode = NonLinearSolverCode.NewtonGMRES;
             else
-                C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.PicardGMRES;
+                C.NonLinearSolver.SolverCode = NonLinearSolverCode.PicardGMRES;
 
 
             switch (precNo)
@@ -551,30 +551,30 @@ namespace BoSSS.Application.IBM_Solver {
                     }
                 case 1:
                     {
-                        C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_Schur;
+                        C.LinearSolver.SolverCode = LinearSolverCode.exp_Schur;
                         break;
                     }
                 case 2:
                     {
 
-                        C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_Simple;
+                        C.LinearSolver.SolverCode = LinearSolverCode.exp_Simple;
                         break;
                     }
                 case 3:
                     {
-                        C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_AS_1000;
+                        C.LinearSolver.SolverCode = LinearSolverCode.exp_AS_1000;
                         C.LinearSolver.NoOfMultigridLevels = MGLevels;  // 3 // --> grobes MG am Ende nochmal
                         break;
                     }
                 case 4:
                     {
-                        C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_AS_5000;
+                        C.LinearSolver.SolverCode = LinearSolverCode.exp_AS_5000;
                         C.LinearSolver.NoOfMultigridLevels = MGLevels;
                         break;
                     }
                 case 5:
                     {
-                        C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_AS_10000;
+                        C.LinearSolver.SolverCode = LinearSolverCode.exp_AS_10000;
                         C.LinearSolver.NoOfMultigridLevels = MGLevels;
                         break;
                     }
@@ -582,13 +582,13 @@ namespace BoSSS.Application.IBM_Solver {
                     {
                         //depth = 2,
                         //   Depth = ASDepth,  //--> MG bei der Blockzerlegung --> Resultat ergibt die Blöcke zur Berechnung (kleine Blöcke--> schlecht)
-                        C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_AS_MG;
+                        C.LinearSolver.SolverCode = LinearSolverCode.exp_AS_MG;
                         C.LinearSolver.NoOfMultigridLevels = MGLevels;
                         break;
                     }
                 case 7:
                     {
-                        C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_localPrec; ;
+                        C.LinearSolver.SolverCode = LinearSolverCode.exp_localPrec; ;
                         C.LinearSolver.NoOfMultigridLevels = MGLevels;
                         break;
                     }

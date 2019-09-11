@@ -41,11 +41,11 @@ namespace BoSSS.Application.Rheology {
             base.LinearSolver.MaxSolverIterations = 10; //MaxIter
             base.LinearSolver.MinSolverIterations = 1; //MinIter
             base.LinearSolver.ConvergenceCriterion = 1.0e-6; //ConvCritGMRES
-            base.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps; //LinearSolver
+            base.LinearSolver.SolverCode = LinearSolverCode.classic_mumps; //LinearSolver
             base.NonLinearSolver.MaxSolverIterations = 10; //MaxIter
             base.NonLinearSolver.MinSolverIterations = 1; //MinIter
             base.NonLinearSolver.ConvergenceCriterion = 1.0e-10; //ConvCrit
-            base.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton; //NonLinearSolver
+            base.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton; //NonLinearSolver
             base.NonLinearSolver.UnderRelax = 1.0; //UnderRelax
         }
 
@@ -79,7 +79,7 @@ namespace BoSSS.Application.Rheology {
         public double beta = 0.11;
 
         /// <summary>
-        /// Relaxation factor for convective part in constitutive equation
+        /// Upwinding factor for convective part in constitutive equation
         /// </summary>
         [DataMember]
         public double alpha = 0.5;
@@ -118,8 +118,8 @@ namespace BoSSS.Application.Rheology {
         /// <summary>
         /// updating algorithm for u
         /// </summary>
-        [DataMember]
-        public bool UpdateUAlg = false;
+        //[DataMember]
+        //public bool UpdateUAlg = false;
 
         /// <summary>
         /// Convergence criterion stresses

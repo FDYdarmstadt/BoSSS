@@ -27,7 +27,7 @@ namespace BoSSS.Solution.XNSECommon {
     [DataContract]
     [Serializable]
     public class PhysicalParameters : ICloneable {
-        
+
         /// <summary>
         /// Include nonlinear terms?
         /// Resp.: Navier-Stokes vs. Stokes
@@ -54,6 +54,14 @@ namespace BoSSS.Solution.XNSECommon {
         /// <summary> dynamic viscosity fluid B </summary>
         [DataMember]
         public double mu_B;
+
+        /// <summary> Reynolds fluid B for dimensionless </summary>
+        [DataMember]
+        public double reynolds_B;
+
+        /// <summary> Reynolds fluid A for dimensionless </summary>
+        [DataMember]
+        public double reynolds_A;
 
         /// <summary>
         /// surface tension
@@ -104,6 +112,30 @@ namespace BoSSS.Solution.XNSECommon {
         public double sliplength = 0.0;
 
         /// <summary>
+        /// viscoelastic dimensionless: ratio between relaxation time and retardation time (fluid A)
+        /// </summary>
+        [DataMember]
+        public double beta_a = 1.0;
+
+        /// <summary>
+        /// viscoelastic dimensionless: ratio between relaxation time and retardation time (fluid B)
+        /// </summary>
+        [DataMember]
+        public double beta_b = 1.0;
+
+        /// <summary>
+        /// viscoelastic dimensionless: Weissenberg number (fluid A)
+        /// </summary>
+        [DataMember]
+        public double Weissenberg_a = 0.0;
+
+        /// <summary>
+        /// viscoelastic dimensionless: Weissenberg number (fluid B)
+        /// </summary>
+        [DataMember]
+        public double Weissenberg_b = 0.0;
+
+        /// <summary>
         /// is the interface a material one or is it non-material?
         /// </summary>
         [DataMember]
@@ -131,6 +163,8 @@ namespace BoSSS.Solution.XNSECommon {
             cl.rho_B = this.rho_B;
             cl.mu_A = this.mu_A;
             cl.mu_B = this.mu_B;
+            cl.reynolds_A = this.reynolds_A;
+            cl.reynolds_B = this.reynolds_B;
             cl.Sigma = this.Sigma;
             cl.mu_I = this.mu_I;
             cl.lambda_I = this.lambda_I;
@@ -139,6 +173,8 @@ namespace BoSSS.Solution.XNSECommon {
             cl.betaL = this.betaL;
             cl.theta_e = this.theta_e;
             cl.sliplength = this.sliplength;
+            cl.beta_a = this.beta_a;
+            cl.beta_b = this.beta_b;
             cl.Material = this.Material;
             //cl.prescribedVolumeFlux = this.prescribedVolumeFlux;
             cl.useArtificialSurfaceForce = this.useArtificialSurfaceForce;

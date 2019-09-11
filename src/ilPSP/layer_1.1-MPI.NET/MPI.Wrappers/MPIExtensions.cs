@@ -372,6 +372,160 @@ namespace MPI.Wrappers {
 
 
         /// <summary>
+        /// equal to <see cref="MPIEqual(bool,MPI_Comm)"/> acting on WORLD-communicator
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        static public bool MPIEquals(this bool b)
+        {
+            return MPIEquals(b, csMPI.Raw._COMM.WORLD);
+        }
+
+        static public bool MPIEquals(this bool b, MPI_Comm comm)
+        {
+            byte loc= (byte)(b ? 1 : 0);
+            byte glob = 0;
+            unsafe
+            {
+                csMPI.Raw.Allreduce(((IntPtr)(&loc)), ((IntPtr)(&glob)), 1, csMPI.Raw._DATATYPE.BYTE, csMPI.Raw._OP.BXOR, comm);
+            }
+            return glob == 0 ? true : false;
+        }
+
+        /// <summary>
+        /// equal to <see cref="MPIEquals(double,MPI_Comm)"/> acting on WORLD-communicator
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        static public bool MPIEquals(this double i)
+        {
+            return MPIEquals(i, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// returns true on every process, if <paramref name="i"/> is equal at every process
+        /// </summary>
+        /// <param name="i"></param>
+        /// <param name="comm"></param>
+        /// <returns></returns>
+        static public bool MPIEquals(this double i, MPI_Comm comm)
+        {
+            ulong u_loc=(ulong)i;
+            ulong u_glob = ulong.MaxValue;
+            unsafe
+            {
+                 csMPI.Raw.Allreduce(((IntPtr)(&u_loc)), ((IntPtr)(&u_glob)), 1, csMPI.Raw._DATATYPE.UNSIGNED_LONG_LONG, csMPI.Raw._OP.BXOR, comm);
+            }
+            return u_glob == 0? true:false;
+        }
+
+        /// <summary>
+        /// equal to <see cref="MPIEquals(int,MPI_Comm)"/> acting on WORLD-communicator
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        static public bool MPIEquals(this int i)
+        {
+            return MPIEquals(i, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// returns true on every process, if <paramref name="i"/> is equal at every process
+        /// </summary>
+        /// <param name="i"></param>
+        /// <param name="comm"></param>
+        /// <returns></returns>
+        static public bool MPIEquals(this int i, MPI_Comm comm)
+        {
+            double loc = i;
+            double glob = int.MaxValue;
+            unsafe
+            {
+                csMPI.Raw.Allreduce(((IntPtr)(&loc)), ((IntPtr)(&glob)), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.BXOR, comm);
+            }
+            return glob == 0 ? true : false;
+        }
+
+        /// <summary>
+        /// equal to <see cref="MPIEquals(double[],MPI_Comm)"/> acting on WORLD-communicator
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        static public bool[] MPIEquals(this double[] i)
+        {
+            return MPIEquals(i, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// returns true on every process for every entry of <paramref name="i"/> if they are equal at every process
+        /// </summary>
+        /// <param name="i"></param>
+        /// <param name="comm"></param>
+        /// <returns></returns>
+        static public bool[] MPIEquals(this double[] i, MPI_Comm comm)
+        {
+            ulong[] conv_loc = new ulong[i.Length];
+            for(int iDbl = 0; iDbl < i.Length; iDbl++)
+            {
+                conv_loc[iDbl] = (ulong)i[iDbl];
+            }
+                
+            ulong[] R = new ulong[i.Length];
+            bool[] check = new bool[i.Length];
+            unsafe
+            {
+                    fixed (ulong* loc = conv_loc, glob = R)
+                    {
+                        csMPI.Raw.Allreduce(((IntPtr)(loc)), ((IntPtr)(glob)), i.Length, csMPI.Raw._DATATYPE.UNSIGNED_LONG_LONG, csMPI.Raw._OP.BXOR, comm);
+                    }
+            }
+            for(int k=0; k<i.Length;k++)
+            {
+                check[k] = R[k] == 0? true : false;
+            }
+            return check;
+        }
+
+        /// <summary>
+        /// equal to <see cref="MPIEquals(int[],MPI_Comm)"/> acting on WORLD-communicator
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        static public bool[] MPIEquals(this int[] i)
+        {
+            return MPIEquals(i, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// returns true on every process for every entry of <paramref name="i"/> if they are equal at every process
+        /// </summary>
+        /// <param name="i"></param>
+        /// <param name="comm"></param>
+        /// <returns></returns>
+        static public bool[] MPIEquals(this int[] i, MPI_Comm comm)
+        {
+            int[] R = new int[i.Length];
+            bool[] check = new bool[i.Length];
+            unsafe
+            {
+                fixed (int* loc = i, glob = R)
+                {
+                    csMPI.Raw.Allreduce(((IntPtr)(loc)), ((IntPtr)(glob)), i.Length, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.BXOR, comm);
+                }
+            }
+            for (int k = 0; k < i.Length; k++)
+            {
+                check[k] = R[k] == 0 ? true : false;
+            }
+            return check;
+        }
+
+
+
+
+
+
+        /// <summary>
         /// equal to <see cref="MPIMax(int[],MPI_Comm)"/>, acting on the
         /// WORLD-communicator
         /// </summary>

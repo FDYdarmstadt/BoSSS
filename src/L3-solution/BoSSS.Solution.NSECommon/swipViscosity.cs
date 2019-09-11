@@ -216,7 +216,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Reynolds number for dimensionless formulation.
         /// </summary>
-        double m_reynolds = double.NaN;
+        protected double m_reynolds = double.NaN;
 
         /// <summary>
         /// Optional material law for calculating the viscosity
