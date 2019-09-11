@@ -95,12 +95,6 @@ namespace BoSSS.Application.FSI_Solver {
         public double particleDensity = 1;
 
         /// <summary>
-        /// Active stress on the current particle.
-        /// </summary>
-        [DataMember]
-        public double activeStress = 0;
-
-        /// <summary>
         /// Active velocity (alternative to active stress) on the current particle.
         /// </summary>
         [DataMember]
@@ -322,7 +316,7 @@ namespace BoSSS.Application.FSI_Solver {
             HydrodynamicsPostprocessing(tempForces, tempTorque, firstIteration);
         }
 
-        public virtual void PredictForceAndTorque(int TimestepInt) {
+        public virtual void PredictForceAndTorque(double activeStress, int TimestepInt) {
             if (TimestepInt == 1) {
                 hydrodynamicForces[0][0] = 10 * Math.Cos(angle[0]) * activeStress + m_Gravity[1] * particleDensity * particleArea / 10;
                 hydrodynamicForces[0][1] = 10 * Math.Sin(angle[0]) * activeStress + m_Gravity[1] * particleDensity * particleArea / 10;
