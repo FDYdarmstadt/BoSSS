@@ -117,12 +117,6 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         private readonly KeyHandler[] keyHandlers;
 
-        /// <summary>
-        /// prevent division by zero error if WindowWidth cannot be determined
-        /// </summary>
-        static int FallbackWindowWidth = 80;
-        int SafeWindowWidth = Console.WindowWidth == 0 ? FallbackWindowWidth : Console.WindowWidth;
-
 	/// <summary>
         /// Creates a new reader with the given <paramref name="name"/>.
         /// </summary>
@@ -177,6 +171,9 @@ namespace BoSSS.Application.BoSSSpad {
         /// pressed
         /// </returns>
         public string ReadCommand(string prompt, string initialCommand) {
+	    if (Console.WindowWidth == 0) {
+                throw new Exception("Window width detection failed. Consider using --simpleconsole instead");
+            }
             done = false;
             history.MoveToNextFreeEntry();
             maxRenderedLength = 0;
@@ -219,7 +216,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         /// <param name="screenpos"></param>
         private void UpdateHomeRow(int screenpos) {
-            int lines = 1 + (screenpos / SafeWindowWidth);
+            int lines = 1 + (screenpos / Console.WindowWidth);
             homeRow = Console.CursorTop - (lines - 1);
             if (homeRow < 0) {
                 homeRow = 0;
@@ -338,7 +335,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         private int LineCount {
             get {
-                return (prompt.Length + renderedText.Length) / SafeWindowWidth;
+                return (prompt.Length + renderedText.Length) / Console.WindowWidth;
             }
         }
 
@@ -350,8 +347,8 @@ namespace BoSSS.Application.BoSSSpad {
             textPosition = newpos;
 
             int actual_pos = prompt.Length + GetRenderedTextPosition(textPosition);
-            int row = homeRow + (actual_pos / SafeWindowWidth);
-            int col = actual_pos % SafeWindowWidth;
+            int row = homeRow + (actual_pos / Console.WindowWidth);
+            int col = actual_pos % Console.WindowWidth;
 
             if (row >= Console.BufferHeight) {
                 row = Console.BufferHeight - 1;
