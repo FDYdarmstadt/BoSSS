@@ -598,7 +598,13 @@ namespace BoSSS.Solution {
                     break;
 
                 case LinearSolverCode.exp_Kcycle_schwarz:
-                    templinearSolve = KcycleMultiSchwarz(lc, LocalDOF);
+                    _precond = KcycleMultiSchwarz(lc, LocalDOF);
+                    templinearSolve = new SoftGMRES()
+                    {
+                        MaxKrylovDim = lc.MaxKrylovDim,
+                        m_Tolerance = lc.ConvergenceCriterion,
+                        Precond = _precond
+                    };
                     //templinearSolve = new DynamicMultigrid();
                     break;
 
