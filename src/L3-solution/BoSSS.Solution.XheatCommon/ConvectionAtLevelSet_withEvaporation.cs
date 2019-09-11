@@ -261,5 +261,80 @@ namespace BoSSS.Solution.XheatCommon {
 
     }
 
-    
+
+    public class ConvectionAtLevelSet_MovingMesh : EvaporationAtLevelSet {
+
+        public ConvectionAtLevelSet_MovingMesh(int _d, int _D, LevelSetTracker lsTrk, double _rhoA, double _rhoB, ThermalParameters thermParams) {
+            this.D = _D;
+            this.m_d = _d;
+            this.rhoA = _rhoA;
+            this.rhoB = _rhoB;
+            this.m_LsTrk = lsTrk;
+
+            this.hVapA = thermParams.hVap_A;
+        }
+
+        int m_d;
+
+        double rhoA;
+        double rhoB;
+
+
+        public override TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.UxV | TermActivationFlags.V;
+            }
+        }
+
+
+        private double ComputeEvaporationMass(double[] paramsNeg, double[] paramsPos, double[] N, int jCell) {
+
+            double qEvap = ComputeHeatFlux(paramsNeg, paramsPos, N, jCell);
+
+            if (qEvap == 0.0)
+                return 0.0;
+
+            double hVap = (hVapA > 0) ? hVapA : -hVapA;
+            double M = qEvap / hVap;
+
+            return M;
+
+        }
+
+
+        public override double LevelSetForm(ref Foundation.XDG.CommonParamsLs cp,
+            double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
+            double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+
+
+            double M = ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.n, cp.jCell);
+            if (M == 0.0)
+                return 0.0;
+
+            double s;
+            if (hVapA > 0) {
+                s = (M / rhoB) * cp.n[m_d] + U_Pos[0];
+            } else {
+                s = (M / rhoA) * cp.n[m_d] + U_Neg[0];
+            }
+
+            double FlxNeg;
+            double FlxPos;
+            if (hVapA > 0) {
+                FlxNeg = -s * U_Neg[0];
+                FlxPos = -FlxNeg;
+            } else {
+                FlxNeg = -s * U_Pos[0];
+                FlxPos = -FlxNeg;
+            }
+
+            return FlxNeg * vA - FlxPos * vB;
+        }
+
+        public override IList<string> ArgumentOrdering {
+            get {
+                return new string[] { VariableNames.Velocity_d(m_d) };
+            }
+        }
+    }
 }

@@ -219,12 +219,16 @@ namespace BoSSS.Application.XNSE_Solver {
 
             thermParams = control.ThermalParameters;
 
-            Heat = control.solveCoupledHeatEquation;
+            solveHeat = control.solveCoupledHeatEquation;
             Evaporation = (control.ThermalParameters.hVap_A != 0.0 && control.ThermalParameters.hVap_B != 0.0);
             prescribedMassflux = control.prescribedMassflux;
             MatInt = !Evaporation;
 
-            this.conductMode = control.conductMode;
+            if (solveHeat) {
+                this.conductMode = control.conductMode;
+                CodBlocks = (this.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) ? new bool[] { true, true, true } : new bool[] { true, true, true, true };
+                DomBlocks = (this.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) ? new bool[] { true, true, true } : new bool[] { true, true, true, true };
+            }
         }
 
 
@@ -238,7 +242,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// include heat equation
         /// </summary>
-        public bool Heat;
+        public bool solveHeat;
 
         /// <summary>
         /// include transport operator
@@ -272,8 +276,8 @@ namespace BoSSS.Application.XNSE_Solver {
             get { return Evaporation; }
         }
 
-        public override bool isPInterfaceSet {
-            get { return Evaporation; }
-        }
+        //public override bool isPInterfaceSet {
+        //    get { return Evaporation; }
+        //}
     }
 }

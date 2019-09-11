@@ -823,7 +823,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.PhysicalParameters.Sigma = 0.0; 
 
             C.solveCoupledHeatEquation = true;
-            C.prescribedMassflux = t => -0.1;
             if (separated)
                 C.conductMode = Solution.XheatCommon.ConductivityInSpeciesBulk.ConductivityMode.LDG;
 
@@ -848,7 +847,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             bool includeConv = true;
             C.PhysicalParameters.IncludeConvection = includeConv;
-            C.ThermalParameters.IncludeConvection = false;
+            C.ThermalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = false;
 
             #endregion
@@ -904,7 +903,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.InitialValues_Evaluators.Add("Temperature#A", X => Tsat);
             C.InitialValues_Evaluators.Add("Temperature#B", X => Tsat + (qv/kv)*(zi0 - X[1]));
 
-            C.prescribedMassflux = t => -0.1;
+            //C.prescribedMassflux = t => -0.1;
 
             if (!steady) {
                 C.InitialValues_Evaluators.Add("Pressure#A", X => pSat);
@@ -958,6 +957,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ContinuousDG;
 
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
@@ -968,6 +970,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
+            
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
@@ -1000,9 +1003,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF2;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-            C.Timestepper_LevelSetHandling = steady ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
+            C.Timestepper_LevelSetHandling = steady ? LevelSetHandling.None : LevelSetHandling.LieSplitting;
 
             C.CompMode = steady ? AppControl._CompMode.Steady : AppControl._CompMode.Transient;
             C.dtMax = 5e-4;
@@ -1026,12 +1029,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
 
             bool superheatedVapor = true;
             bool superheatedLiquid = !superheatedVapor;
 
-            //_DbPath = @"D:\local\local_Testcase_databases\Testcase_HeatedWall";
+            _DbPath = @"D:\local\local_Testcase_databases\Testcase_HeatedWall";
             //_DbPath = @"\\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB";
 
             // basic database options
@@ -1108,7 +1111,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.PhysicalParameters.Sigma = 0.0;
 
             C.solveCoupledHeatEquation = true;
-            //C.conductMode = Solution.XheatCommon.ConductivityInSpeciesBulk.ConductivityMode.LDG;
+            C.conductMode = Solution.XheatCommon.ConductivityInSpeciesBulk.ConductivityMode.LDG;
 
             C.ThermalParameters.rho_A = C.PhysicalParameters.rho_A;
             C.ThermalParameters.rho_B = C.PhysicalParameters.rho_B;
@@ -1137,7 +1140,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.PhysicalParameters.IncludeConvection = true;
-            C.ThermalParameters.IncludeConvection = false;
+            C.ThermalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = false;
 
             #endregion
@@ -1286,12 +1289,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ContinuousDG;
 
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
-            C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MaxSolverIterations = 20;
+            C.LinearSolver.MaxSolverIterations = 20;
             //C.Solver_MaxIterations = 50;
-            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-6;
             C.LinearSolver.ConvergenceCriterion = 1e-8;
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;

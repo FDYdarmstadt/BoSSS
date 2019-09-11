@@ -94,9 +94,9 @@ namespace BoSSS.Application.XNSE_Solver {
                 comps.Add(new ConvectionAtLevelSet_Consistency(d, D, LsTrk, rhoA, rhoB, dntParams.ContiSign, dntParams.RescaleConti, thermParams, R_int, sigma));
             }
 
-            //if (config.isPInterfaceSet) {
-            //    comps.Add(new GeneralizedPressureFormAtLevelSet(d, LsTrk, thermParams.p_sat, thermParams.hVap_A));
-            //}
+            if (config.isMovingMesh) {
+                comps.Add(new ConvectionAtLevelSet_MovingMesh(d, D, LsTrk, rhoA, rhoB, thermParams));
+            }
 
             if (config.isViscous) {
                 comps.Add(new ViscosityAtLevelSet_FullySymmetric_withEvap(LsTrk, muA, muB, dntParams.PenaltySafety, d, rhoA, rhoB, thermParams, R_int, sigma));
