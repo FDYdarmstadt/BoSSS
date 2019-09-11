@@ -220,8 +220,8 @@ namespace FSI_Solver {
             List<int> CurrentColor = new List<int>();
             for (int p = 0; p < Particles.Count; p++) {
                 double h_min = m_LevelSetTracker.GridDat.Cells.h_minGlobal > Particles[p].GetLengthScales().Min()
-                    ? 2 * m_LevelSetTracker.GridDat.Cells.h_minGlobal
-                    : 4 * m_LevelSetTracker.GridDat.Cells.h_minGlobal;
+                    ? 1.5 * m_LevelSetTracker.GridDat.Cells.h_minGlobal
+                    : 2 * m_LevelSetTracker.GridDat.Cells.h_minGlobal;
                 double[] ParticlePos = Particles[p].Motion.position[0];
                 double Upperedge = ParticlePos[1] + h_min;
                 double Loweredge = ParticlePos[1] - h_min;

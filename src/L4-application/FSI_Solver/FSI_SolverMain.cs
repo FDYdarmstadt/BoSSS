@@ -976,8 +976,11 @@ namespace BoSSS.Application.FSI_Solver {
                     CalculateParticleVelocity(m_Particles, dt, 0);
                     CalculateCollision(m_Particles, cellColor, dt);
                     foreach (Particle p in m_Particles) {
+                        if (p.Motion.collisionTimestep < 0)
+                            p.Motion.collisionTimestep = 0;
                         p.Motion.UpdateParticlePositionAndAngle(dt);
-                        p.Motion.collisionTimestep = 0;
+                        if (p.Motion.collisionTimestep > dt) { p.Motion.collisionTimestep -= dt; }
+                        else p.Motion.collisionTimestep = 0;
                     }
                     UpdateLevelSetParticles(phystime);
 
@@ -1003,6 +1006,8 @@ namespace BoSSS.Application.FSI_Solver {
                         foreach (Particle p in m_Particles) {
                             p.Motion.GetParticleDensity(p.particleDensity);
                         }
+                        int RequiredOrder = Velocity[0].Basis.Degree * 3 + 2;
+                        Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
                         while (hydroDynForceTorqueResidual > HydrodynConvergenceCriterion) {
                             Auxillary.CheckForMaxIterations(iterationCounter, ((FSI_Control)Control).max_iterations_fully_coupled);
                             Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
@@ -1463,7 +1468,7 @@ namespace BoSSS.Application.FSI_Solver {
             foreach (Particle p in m_Particles) {
                 for (int j = 0; j < noOfLocalCells; j++) {
                     if (!fine[j])
-                        fine[j] = p.Contains(new double[] { CellCenters[j, 0], CellCenters[j, 1] }, 3 * h_min);
+                        fine[j] = p.Contains(new double[] { CellCenters[j, 0], CellCenters[j, 1] }, 4 * h_min);
                     if (LsTrk.Regions.IsSpeciesPresentInCell(LsTrk.GetSpeciesId("A"), j) && !coarse[j])
                         coarse[j] = p.Contains(new double[] { CellCenters[j, 0], CellCenters[j, 1] }, h_max / 2);
                 }

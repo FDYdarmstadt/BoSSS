@@ -98,10 +98,12 @@ namespace FSI_Solver {
                 // met.
                 // -------------------------------------------------------
                 while (minimalDistance > distanceThreshold) {
+                    if (AccDynamicTimestep < 0)
+                        Console.WriteLine();
                     // Step 2.1.1
                     // Move the particle with the current save timestep.
                     // -------------------------------------------------------
-                    UpdateParticleState(particles, SaveTimeStep, spatialDim);
+                    UpdateParticleState(particles, SaveTimeStep, m_dt);
                     SaveTimeStep = double.MaxValue;
                     for (int p0 = 0; p0 < particles.Count(); p0++) {
                         // Step 2.1.2
@@ -126,7 +128,8 @@ namespace FSI_Solver {
                             Distance[p0, ParticleOffset + w] = temp_Distance;
                             double[] normalVector = CalculateNormalVector(temp_DistanceVector.To1DArray());
                             double temp_SaveTimeStep = DynamicTimestep(particles[p0], temp_ClosestPoint_p0.To1DArray(), normalVector, Distance[p0, ParticleOffset + w]);
-                            Console.WriteLine("SaveTimeStep " + temp_SaveTimeStep + " dt " + m_dt);
+                            if (temp_SaveTimeStep < 0)
+                                Console.WriteLine();
                             SaveTimeStepArray[p0, ParticleOffset + w] = temp_SaveTimeStep;
                             DistanceVector.SetSubArray(temp_DistanceVector, new int[] { p0, ParticleOffset + w, -1 });
                             ClosestPoint_P0.SetSubArray(temp_ClosestPoint_p0, new int[] { p0, ParticleOffset + w, -1 });
@@ -171,13 +174,13 @@ namespace FSI_Solver {
                     // Step 2.1.2
                     // Accumulate the current save timestep.
                     // -------------------------------------------------------
-                    if (SaveTimeStep != -m_dt)
+                    if (SaveTimeStep >= 0)
                         AccDynamicTimestep += SaveTimeStep;
-                    if (Math.Abs(AccDynamicTimestep) >= m_dt) {
+                    if (AccDynamicTimestep >= m_dt) {
                         break;
                     }
                 }
-                if (Math.Abs(AccDynamicTimestep) >= m_dt) {
+                if (AccDynamicTimestep >= m_dt) {
                     break;
                 }
                 // Step 3
@@ -233,9 +236,9 @@ namespace FSI_Solver {
                 // Step 5
                 // Write already used time to particle.cs.
                 // =======================================================
-                for (int p = 0; p < particles.Count(); p++) {
-                    particles[p].Motion.collisionTimestep = AccDynamicTimestep;
-                }
+                //for (int p = 0; p < particles.Count(); p++) {
+                //    particles[p].Motion.collisionTimestep = AccDynamicTimestep;
+                //}
             }
         }
 
@@ -301,7 +304,7 @@ namespace FSI_Solver {
         /// <param name="particles"></param>
         ///  <param name="dynamicTimestep"></param>
         /// <param name="spatialDim"></param>
-        private void UpdateParticleState(List<Particle> particles, double dynamicTimestep, int spatialDim) {
+        private void UpdateParticleState(List<Particle> particles, double dynamicTimestep, double dt) {
             for (int p = 0; p < particles.Count(); p++) {
                 Particle currentParticle = particles[p];
                 if (dynamicTimestep != 0) {

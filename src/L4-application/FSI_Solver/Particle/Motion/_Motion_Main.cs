@@ -274,6 +274,11 @@ namespace BoSSS.Application.FSI_Solver {
                 CalculateParticleAngle(dt);
             }
             else {
+                double[] tempPos = position[0].CloneAs();
+                double tempAngle = angle[0];
+                SavePositionAndAngleOfPreviousTimestep();
+                position[0] = tempPos.CloneAs();
+                angle[0] = tempAngle;
                 CalculateParticlePosition(dt, collisionTimestep);
                 CalculateParticleAngle(dt, collisionTimestep);
             }
@@ -298,7 +303,7 @@ namespace BoSSS.Application.FSI_Solver {
                 CalculateAngularVelocity(dt);
             }
             else {
-                CalculateTranslationalVelocity(dt, collisionTimestep);// ich glaube das kann weg
+                CalculateTranslationalVelocity(dt, collisionTimestep);
                 CalculateAngularVelocity(dt, collisionTimestep);
             }
         }
@@ -374,7 +379,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
         protected virtual void CalculateParticlePosition(double dt, double collisionTimestep) {
             for (int d = 0; d < spatialDim; d++) {
-                position[0][d] = position[1][d] + translationalVelocity[0][d] * (dt - collisionTimestep) / 6;
+                position[0][d] = position[0][d] + translationalVelocity[0][d] * (dt - collisionTimestep) / 6;
             }
             Aux.TestArithmeticException(position[0], "particle position");
         }
@@ -489,7 +494,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="muA"></param>
         protected virtual double[] CalculateHydrodynamicForces(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double muA, double fluidDensity, double dt = 0) {
             int RequiredOrder = U[0].Basis.Degree * 3 + 2;
-            Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
             SinglePhaseField[] UA = U.ToArray();
             ConventionalDGField pA = P;
             double[] tempForces = ForcesIntegration(UA, pA, LsTrk, CutCells_P, RequiredOrder, muA);
