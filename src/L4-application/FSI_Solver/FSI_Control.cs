@@ -84,7 +84,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// The termination criterion for fully coupled/implicit level-set evolution.
         /// </summary>
         [DataMember]
-        public double ForceAndTorque_ConvergenceCriterion = 1.0e-6;
+        public double forceAndTorqueConvergenceCriterion = 1.0e-6;
 
         /// <summary>
         /// under-relaxation of the level set movement in case of coupled iterative
@@ -98,6 +98,15 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         [DataMember]
         public double CoefficientOfRestitution = 1.0;
+
+        [DataMember]
+        public ParticleUnderrelaxationParam underrelaxationParam = new ParticleUnderrelaxationParam(1e-8, 1, false);
+
+        [DataMember]
+        public double[] gravity = new double[] { 0, -9.81 };
+
+        [DataMember]
+        public double addedDampingCoefficient = -1;
 
 
         /// <summary>

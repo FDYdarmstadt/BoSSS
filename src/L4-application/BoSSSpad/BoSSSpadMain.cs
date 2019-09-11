@@ -47,6 +47,11 @@ namespace BoSSS.Application.BoSSSpad {
             Console,
 
             /// <summary>
+            /// Simplified interactive console mode (for embedding into other terminals, experimental)
+            /// </summary>
+            SimpleConsole,
+
+            /// <summary>
             /// Batch execution of .bws files
             /// </summary>
             Batch,
@@ -148,6 +153,10 @@ namespace BoSSS.Application.BoSSSpad {
                 ReadEvalPrintLoop.REPL();
                 break;
 
+                case Modes.SimpleConsole:
+                ReadEvalPrintLoop.REPL_Simple();
+                break;
+
                 case Modes.Check:
                 InstallationChecker.CheckSetup();
                 break;
@@ -244,6 +253,7 @@ namespace BoSSS.Application.BoSSSpad {
             Console.WriteLine("Option 2: Console mode (interactive/text):");
             Console.WriteLine("------------------------------------------");
             Console.WriteLine("    BoSSSpad.exe --console             Starts a console session.");
+            Console.WriteLine("    BoSSSpad.exe --simpleconsole       Starts a simple (e.g. no autocompletion etc.) console session.");
             Console.WriteLine();
             Console.WriteLine("Option 3: Batch mode (non-interactive/text):");
             Console.WriteLine("--------------------------------------------");

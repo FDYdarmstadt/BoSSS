@@ -246,8 +246,29 @@ namespace BoSSS.Application.BoSSSpad {
             CommandLineReader reader = GetCommandLineReader();
 
             while (eval != null) {
-                Console.WriteLine();
+		Console.WriteLine();
                 string line = reader.ReadCommand("> ", "").Trim();
+
+                if (line == null || exitCommands.Contains(line)) {
+                    break;
+                }
+
+                EvalPrint(line, out var dummy2);
+            }
+        }
+
+        /// <summary>
+        /// Executes simpler variant of the REPL (Read-Eval-Print-Loop) until terminated.
+        /// </summary>
+        public static void REPL_Simple() {
+            EvalPrint("restart", out var dummy1);
+
+            CommandLineReader reader = GetCommandLineReader();
+
+            while (eval != null) {
+		Console.WriteLine();
+                Console.Write("> ");
+                string line = Console.ReadLine ();
 
                 if (line == null || exitCommands.Contains(line)) {
                     break;
