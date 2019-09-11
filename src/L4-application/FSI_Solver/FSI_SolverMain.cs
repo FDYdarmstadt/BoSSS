@@ -930,24 +930,6 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        ///// <summary>
-        ///// Calls the calculation of position
-        ///// </summary>
-        ///// <param name="Particles">
-        ///// A list of all particles
-        ///// </param>
-        ///// <param name="dt">
-        ///// The time step
-        ///// </param>
-        //internal void CalculateParticlePosition(List<Particle> Particles, double dt) {
-        //    for (int p = 0; p < Particles.Count(); p++) {
-        //        Particle currentParticle = Particles[p];
-        //        currentParticle.CalculateParticlePosition(dt);
-        //        currentParticle.CalculateParticleAngle(dt);
-        //        currentParticle.collisionTimestep = 0;
-        //    }
-        //}
-
         /// <summary>
         /// runs solver one step?!
         /// </summary>
@@ -983,7 +965,6 @@ namespace BoSSS.Application.FSI_Solver {
                         p.Motion.GetParticleDensity(p.particleDensity);
                         p.Motion.SaveHydrodynamicsOfPreviousTimestep();
                         p.Motion.SaveVelocityOfPreviousTimestep();
-                        p.Motion.SavePositionAndAngleOfPreviousTimestep();
                     }
                     CalculateHydrodynamicForces(m_Particles, dt);
                     CalculateParticleVelocity(m_Particles, dt, IsFullyCoupled, 0, TimestepInt, false);
@@ -1048,16 +1029,12 @@ namespace BoSSS.Application.FSI_Solver {
                             hydroDynForceTorqueResidual = Auxillary.CalculateParticleResidual(m_Particles, ref iterationCounter);
 
                         }
-                        foreach (Particle p in m_Particles) {
-                            p.Motion.SavePositionAndAngleOfPreviousTimestep();
-                        }
                         // collision
                         // -------------------------------------------------
                         CalculateCollision(m_Particles, cellColor, dt);
 
                         // particle position
                         // -------------------------------------------------
-                        //CalculateParticlePosition(m_Particles, dt);
                         foreach (Particle p in m_Particles) {
                             p.Motion.UpdateParticlePositionAndAngle(dt);
                             p.Motion.collisionTimestep = 0;

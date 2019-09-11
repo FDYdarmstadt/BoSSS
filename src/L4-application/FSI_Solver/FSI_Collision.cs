@@ -79,11 +79,10 @@ namespace FSI_Solver {
             FSI_LevelSetUpdate LevelSetUpdate = new FSI_LevelSetUpdate(m_LevelSetTracker);
             int spatialDim = particles[0].Motion.position[0].Length;
             int ParticleOffset = particles.Count();
-            double MaxDistance = m_dt * 1e-4;
+            double distanceThreshold = m_dt * 1e-4;
             int J = gridData.iLogicalCells.NoOfLocalUpdatedCells;
             List<int[]> ColoredCellsSorted = LevelSetUpdate.ColoredCellsFindAndSort(cellColor);
             CellMask ParticleCutCells = LevelSetUpdate.CellsOneColor(gridData, ColoredCellsSorted, m_CurrentColor, J, false);
-            BackupParticleState(particles, out List<double[]> backupPosition, out List<double> backupAngle);
 
             // Step 2
             // Loop over time until the particles hit.
@@ -91,22 +90,20 @@ namespace FSI_Solver {
             while (AccDynamicTimestep < m_dt)// the collision needs to take place within the current timestep dt.
             {
                 CreateCollisionArrarys(particles.Count(), spatialDim);
-                double MinDistance = double.MaxValue;
+                double minimalDistance = double.MaxValue;
                 double SaveTimeStep = 0;// the timestep size without any collision
 
                 // Step 2.1
                 // Loop over the distance until a predefined criterion is 
                 // met.
                 // -------------------------------------------------------
-                while (MinDistance > MaxDistance) {
-
+                while (minimalDistance > distanceThreshold) {
                     // Step 2.1.1
                     // Move the particle with the current save timestep.
                     // -------------------------------------------------------
                     UpdateParticleState(particles, SaveTimeStep, spatialDim);
                     SaveTimeStep = double.MaxValue;
                     for (int p0 = 0; p0 < particles.Count(); p0++) {
-
                         // Step 2.1.2
                         // Test for wall collisions for all particles 
                         // of the current color.
@@ -135,11 +132,11 @@ namespace FSI_Solver {
                             ClosestPoint_P0.SetSubArray(temp_ClosestPoint_p0, new int[] { p0, ParticleOffset + w, -1 });
                             if (temp_SaveTimeStep < SaveTimeStep && temp_SaveTimeStep > 0) {
                                 SaveTimeStep = temp_SaveTimeStep;
-                                MinDistance = Distance[p0, ParticleOffset + w];
+                                minimalDistance = Distance[p0, ParticleOffset + w];
                             }
                             if (temp_Overlapping) {
                                 SaveTimeStep = -m_dt * 0.25; // reset time to find a particle state before they overlap.
-                                MinDistance = double.MaxValue;
+                                minimalDistance = double.MaxValue;
                             }
                         }
 
@@ -162,11 +159,11 @@ namespace FSI_Solver {
                             ClosestPoint_P1.SetSubArray(temp_ClosestPoint_p1, new int[] { p0, p1, -1 });
                             if (temp_SaveTimeStep < SaveTimeStep && temp_SaveTimeStep > 0) {
                                 SaveTimeStep = temp_SaveTimeStep;
-                                MinDistance = Distance[p0, p1];
+                                minimalDistance = Distance[p0, p1];
                             }
                             if (temp_Overlapping) {
                                 SaveTimeStep = -m_dt * 0.25; // reset time to find a particle state before they overlap.
-                                MinDistance = double.MaxValue;
+                                minimalDistance = double.MaxValue;
                             }
                         }
                     }
@@ -176,11 +173,11 @@ namespace FSI_Solver {
                     // -------------------------------------------------------
                     if (SaveTimeStep != -m_dt)
                         AccDynamicTimestep += SaveTimeStep;
-                    if (AccDynamicTimestep >= m_dt) {
+                    if (Math.Abs(AccDynamicTimestep) >= m_dt) {
                         break;
                     }
                 }
-                if (AccDynamicTimestep >= m_dt) {
+                if (Math.Abs(AccDynamicTimestep) >= m_dt) {
                     break;
                 }
                 // Step 3
@@ -192,7 +189,7 @@ namespace FSI_Solver {
                     // Particle-wall collisions
                     // -------------------------------------------------------
                     for (int w = 0; w < 4; w++) {
-                        if (Distance[p0, ParticleOffset + w] < MaxDistance && SaveTimeStepArray[p0, ParticleOffset + w] > 0) {
+                        if (Distance[p0, ParticleOffset + w] < distanceThreshold && SaveTimeStepArray[p0, ParticleOffset + w] > 0) {
                             double[] CurrentDistanceVector = DistanceVector.ExtractSubArrayShallow(new int[] { p0, ParticleOffset + w, -1 }).To1DArray();
                             particles[p0].closestPointToOtherObject = ClosestPoint_P0.ExtractSubArrayShallow(new int[] { p0, ParticleOffset + w, -1 }).To1DArray();
                             particles[p0].Motion.collisionTimestep = AccDynamicTimestep;
@@ -207,7 +204,7 @@ namespace FSI_Solver {
                     // Particle-particle collisions
                     // -------------------------------------------------------
                     for (int p1 = p0 + 1; p1 < particles.Count(); p1++) {
-                        if (Distance[p0, p1] < MaxDistance && SaveTimeStepArray[p0, p1] > 0) {
+                        if (Distance[p0, p1] < distanceThreshold && SaveTimeStepArray[p0, p1] > 0) {
                             List<Particle> collidedParticles = new List<Particle> { particles[p0], particles[p1] };
                             double[] currentDistanceVector = DistanceVector.ExtractSubArrayShallow(new int[] { p0, p1, -1 }).To1DArray();
                             double[] normalVector = CalculateNormalVector(currentDistanceVector);
@@ -310,25 +307,6 @@ namespace FSI_Solver {
                 if (dynamicTimestep != 0) {
                     currentParticle.Motion.CollisionParticlePositionAndAngle(dynamicTimestep);
                 }
-            }
-        }
-
-        private void BackupParticleState(List<Particle> particles, out List<double[]> backupPosition, out List<double> backupAngle) {
-            backupPosition = new List<double[]>();
-            backupAngle = new List<double>();
-            for (int p = 0; p < particles.Count(); p++) {
-                Particle currentParticle = particles[p];
-                backupPosition.Add(currentParticle.Motion.position[0].CloneAs());
-                backupAngle.Add(currentParticle.Motion.angle[0]);
-            }
-        }
-
-        private void ResetParticleState(List<Particle> particles, List<double[]> backupPosition, List<double> backupAngle) {
-            for (int p = 0; p < particles.Count(); p++) {
-                Particle currentParticle = particles[p];
-                currentParticle.Motion.position[0] = backupPosition[p].CloneAs();
-                currentParticle.Motion.angle[0] = backupAngle[p];
-                currentParticle.Motion.collisionTimestep = 0;
             }
         }
 

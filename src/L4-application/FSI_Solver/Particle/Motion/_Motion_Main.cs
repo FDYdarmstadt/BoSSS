@@ -275,6 +275,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="dt"></param>
         public void UpdateParticlePositionAndAngle(double dt) {
             if (collisionTimestep == 0) {
+                SavePositionAndAngleOfPreviousTimestep();
                 CalculateParticlePosition(dt);
                 CalculateParticleAngle(dt);
             }
@@ -289,7 +290,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         public void CollisionParticlePositionAndAngle(double collisionDynamicTimestep) {
-
             CalculateParticlePosition(collisionDynamicTimestep, collisionProcedure: true);
             CalculateParticleAngle(collisionDynamicTimestep, collisionProcedure: true);
         }
