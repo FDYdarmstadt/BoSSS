@@ -219,12 +219,14 @@ namespace FSI_Solver {
             int J = gridData.iLogicalCells.NoOfLocalUpdatedCells;
             List<int> CurrentColor = new List<int>();
             for (int p = 0; p < Particles.Count; p++) {
-                double h_min = m_LevelSetTracker.GridDat.Cells.h_minGlobal;
+                double h_min = m_LevelSetTracker.GridDat.Cells.h_minGlobal > Particles[p].GetLengthScales().Min()
+                    ? 2 * m_LevelSetTracker.GridDat.Cells.h_minGlobal
+                    : 4 * m_LevelSetTracker.GridDat.Cells.h_minGlobal;
                 double[] ParticlePos = Particles[p].Motion.position[0];
-                double Upperedge = ParticlePos[1] + 2 * h_min;
-                double Loweredge = ParticlePos[1] - 2 * h_min;
-                double Leftedge = ParticlePos[0] - 2 * h_min;
-                double Rightedge = ParticlePos[0] + 2 * h_min;
+                double Upperedge = ParticlePos[1] + h_min;
+                double Loweredge = ParticlePos[1] - h_min;
+                double Leftedge = ParticlePos[0] - h_min;
+                double Rightedge = ParticlePos[0] + h_min;
                 int temp = 0;
                 for (int i = 0; i < ColoredCellsSorted.Count; i++) {
                     if (ColoredCellsSorted[i][0] < J) {
