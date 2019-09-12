@@ -29,103 +29,43 @@ using BoSSS.Solution.XdgTimestepping;
 namespace BoSSS.Application.FSI_Solver {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples {
         public static FSI_Control ActiveRod_noBackroundFlow(int k = 3) {
-            FSI_Control C = new FSI_Control();
-            // basic database options
+            FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
+            C.SetSaveOptions(dataBasePath: @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\Channel", savePeriod: 1);
+
+            // Domain
             // =============================
-            C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\Channel";
-            C.savetodb = true;
-            C.saveperiod = 1;
-            C.ProjectName = "activeRod_noBackroundFlow";
-            C.ProjectDescription = "Active";
-            C.SessionName = C.ProjectName;
-            C.Tags.Add("with immersed boundary method");
-
-
-            // DG degrees
-            // =============================
-            C.SetDGdegree(k);
-
-
-            // Grid 
-            // =============================
-            //Generating grid
-            C.GridFunc = delegate {
-
-                int q = new int(); // #Cells in x-dircetion + 1
-                int r = new int(); // #Cells in y-dircetion + 1
-
-                q = 20;
-                r = 8;
-
-                double[] Xnodes = GenericBlas.Linspace(-10, 10, q);
-                double[] Ynodes = GenericBlas.Linspace(-4, 4, r);
-
-                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true, periodicY: false);
-
-                grd.EdgeTagNames.Add(1, "Pressure_Outlet_left");
-                grd.EdgeTagNames.Add(2, "Pressure_Outlet_right");
-                grd.EdgeTagNames.Add(3, "Wall_lower");
-                grd.EdgeTagNames.Add(4, "Wall_upper");
-
-
-                grd.DefineEdgeTags(delegate (double[] X) {
-                    byte et = 0;
-                    if (Math.Abs(X[0] - (-6)) <= 1.0e-8)
-                        et = 1;
-                    if (Math.Abs(X[0] + (-18)) <= 1.0e-8)
-                        et = 2;
-                    if (Math.Abs(X[1] - (-4)) <= 1.0e-8)
-                        et = 3;
-                    if (Math.Abs(X[1] + (-4)) <= 1.0e-8)
-                        et = 4;
-
-                    Debug.Assert(et != 0);
-                    return et;
-                });
-
-                Console.WriteLine("Cells:" + grd.NumberOfCells);
-
-                return grd;
+            List<string> boundaryValues = new List<string> {
+                "Pressure_Outlet_left",
+                "Pressure_Outlet_right",
+                "Wall_lower",
+                "Wall_upper"
             };
-
-
-            // Mesh refinement
-            // =============================
-            C.AdaptiveMeshRefinement = true;
-            C.RefinementLevel = 4;
-            C.AMR_startUpSweeps = 4;
-
-            // Boundary conditions
-            // =============================
-            C.AddBoundaryValue("Pressure_Outlet_left");//, "VelocityX", X => 0.0);
-            C.AddBoundaryValue("Pressure_Outlet_right");//, "VelocityX", X => 0.0);
-            C.AddBoundaryValue("Wall_lower");
-            C.AddBoundaryValue("Wall_upper");
-
+            C.SetBoundaries(boundaryValues);
+            C.SetGrid(lengthX: 20, lengthY: 8, cellsPerUnitLength: 1, periodicX: true, periodicY: false);
+            C.SetAddaptiveMeshRefinement(amrLevel: 4);
 
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;//pg/(mum^3)
             C.PhysicalParameters.mu_A = 1;//pg(mum*s)
+            C.PhysicalParameters.IncludeConvection = false;
             C.gravity = new double[] { 0, 0 };
-            C.forceAndTorqueConvergenceCriterion = 1e-8;
-
+            C.forceAndTorqueConvergenceCriterion = 1e-5;
 
             // Particle Properties
             // =============================   
-            // Defining particles
-            C.Particles = new List<Particle>();
             C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.forceAndTorqueConvergenceCriterion, underrelaxationFactorIn: 3.0, useAddaptiveUnderrelaxationIn: true);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, false, false, false, C.underrelaxationParam, 1);
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 0.0, 0.0 }, startAngl: 0) {
-                particleDensity = 1,
-                activeStress = 1,
-            });
+            C.Particles = new List<Particle> {
+                new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 0.0, 0.0 }, startAngl: 0) {
+                    particleDensity = 1,
+                    activeStress = 1,
+                }
+            };
 
             // Quadrature rules
             // =============================   
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
-
 
             //Initial Values
             // =============================   
@@ -133,17 +73,10 @@ namespace BoSSS.Application.FSI_Solver {
             C.InitialValues_Evaluators.Add("VelocityX", X => 0);
             C.InitialValues_Evaluators.Add("VelocityY", X => 0);
 
-
             // For restart
             // =============================  
             //C.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("42c82f3c-bdf1-4531-8472-b65feb713326"), 400);
             //C.GridGuid = new Guid("f1659eb6 -b249-47dc-9384-7ee9452d05df");
-
-
-            // Physical Parameters
-            // =============================  
-            C.PhysicalParameters.IncludeConvection = false;
-
 
             // misc. solver options
             // =============================  
