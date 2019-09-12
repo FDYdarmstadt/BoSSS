@@ -47,8 +47,10 @@ namespace BoSSS.Application.FSI_Solver {
             ProjectName = projectName;
             SessionName = projectName;
             ProjectDescription = projectDescription;
-            for (int i = 0; i < tags.Count(); i++) {
-                Tags.Add(tags[i]);
+            if (tags != null) {
+                for (int i = 0; i < tags.Count(); i++) {
+                    Tags.Add(tags[i]);
+                }
             }
             SetDGdegree(degree);
         }
@@ -94,7 +96,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        List<string> m_BoundaryValues;
+        List<string> m_BoundaryValues = new List<string>();
 
         public void SetGrid(int lengthX, int lengthY, int cellsPerUnitLength, bool periodicX = false, bool periodicY = false) {
             GridFunc = delegate {
@@ -111,7 +113,7 @@ namespace BoSSS.Application.FSI_Solver {
                 Grid2D grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: periodicX, periodicY: periodicY);
 
                 for(int i = 0; i < m_BoundaryValues.Count(); i++) {
-                    byte iB = (byte)i;
+                    byte iB = (byte)(i + 1);
                     grd.EdgeTagNames.Add(iB, m_BoundaryValues[i]);
                 }
 
@@ -165,11 +167,18 @@ namespace BoSSS.Application.FSI_Solver {
             };
         }
 
+        public void SetTimesteps(double dt, int noOfTimesteps) {
+            dtMax = dt;
+            dtMin = dt;
+            Endtime = noOfTimesteps * dt;
+            NoOfTimesteps = noOfTimesteps;
+        }
+
         /// <summary>
         /// Set true if the coupling between fluid and particle should be calculated iterative, while using Lie-Splitting.
         /// </summary>
         [DataMember]
-        public int max_iterations_fully_coupled = 10000;
+        public int maxIterationsFullyCoupled = 10000;
 
         /// <summary>
         /// Set true if translation of the particle should be induced by hydrodynamical forces.
@@ -199,7 +208,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// The termination criterion for fully coupled/implicit level-set evolution.
         /// </summary>
         [DataMember]
-        public double forceAndTorqueConvergenceCriterion = 1.0e-6;
+        public double hydrodynamicsConvergenceCriterion = 1.0e-6;
 
         /// <summary>
         /// under-relaxation of the level set movement in case of coupled iterative

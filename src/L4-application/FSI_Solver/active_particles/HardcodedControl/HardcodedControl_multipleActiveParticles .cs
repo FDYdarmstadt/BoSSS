@@ -115,7 +115,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Particle Properties
             // =============================
-            C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.forceAndTorqueConvergenceCriterion, underrelaxationFactorIn: 3.0, useAddaptiveUnderrelaxationIn: true);
+            C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.hydrodynamicsConvergenceCriterion, underrelaxationFactorIn: 3.0, useAddaptiveUnderrelaxationIn: true);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, false, false, false, C.underrelaxationParam, 1);
             C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 0.0, 0.0 }, startAngl: 0) {
                 particleDensity = 1,
@@ -194,7 +194,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.forceAndTorqueConvergenceCriterion = 1e-2;
+            C.hydrodynamicsConvergenceCriterion = 1e-2;
             C.LSunderrelax = 1.0;
 
 
@@ -202,12 +202,11 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.max_iterations_fully_coupled = 10000;
+            C.maxIterationsFullyCoupled = 10000;
 
 
             // Timestepping
             // =============================  
-            C.instationarySolver = true;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
             double dt = 1e-1;
             C.dtMax = dt;

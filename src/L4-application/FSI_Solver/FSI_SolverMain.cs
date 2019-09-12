@@ -155,7 +155,7 @@ namespace BoSSS.Application.FSI_Solver {
 
         private double FluidDensity => ((FSI_Control)Control).pureDryCollisions ? 0 : ((FSI_Control)Control).PhysicalParameters.rho_A;
 
-        private double HydrodynConvergenceCriterion => ((FSI_Control)Control).forceAndTorqueConvergenceCriterion;
+        private double HydrodynConvergenceCriterion => ((FSI_Control)Control).hydrodynamicsConvergenceCriterion;
 
         /// <summary>
         /// Creates Navier-Stokes and continuity eqution
@@ -508,7 +508,7 @@ namespace BoSSS.Application.FSI_Solver {
                 m_ResLogger = base.ResLogger,
                 m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification), this.ResidualContinuity.Identification),
                 IterUnderrelax = ((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? ((FSI_Control)this.Control).LSunderrelax : 1.0,
-                Config_LevelSetConvergenceCriterion = ((FSI_Control)this.Control).forceAndTorqueConvergenceCriterion,
+                Config_LevelSetConvergenceCriterion = ((FSI_Control)this.Control).hydrodynamicsConvergenceCriterion,
                 SessionPath = SessionPath,
                 Timestepper_Init = Solution.Timestepping.TimeStepperInit.SingleInit
             };
@@ -534,7 +534,7 @@ namespace BoSSS.Application.FSI_Solver {
                     UpdateLevelSetParticles(phystime);
                     foreach (Particle p in m_Particles) {
                         p.iteration_counter_P += 1;
-                        p.forceAndTorque_convergence = ((FSI_Control)this.Control).forceAndTorqueConvergenceCriterion;
+                        p.forceAndTorque_convergence = ((FSI_Control)this.Control).hydrodynamicsConvergenceCriterion;
                     }
                     break;
 
@@ -1026,9 +1026,9 @@ namespace BoSSS.Application.FSI_Solver {
                         int RequiredOrder = Velocity[0].Basis.Degree * 3 + 2;
                         Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
                         while (hydroDynForceTorqueResidual > HydrodynConvergenceCriterion) {
-                            Auxillary.CheckForMaxIterations(iterationCounter, ((FSI_Control)Control).max_iterations_fully_coupled);
+                            Auxillary.CheckForMaxIterations(iterationCounter, ((FSI_Control)Control).maxIterationsFullyCoupled);
                             Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
-                            Auxillary.SaveOldParticleState(m_Particles, iterationCounter, ((FSI_Control)Control).forceAndTorqueConvergenceCriterion, IsFullyCoupled);
+                            Auxillary.SaveOldParticleState(m_Particles, iterationCounter, ((FSI_Control)Control).hydrodynamicsConvergenceCriterion, IsFullyCoupled);
 
                             // actual physics
                             // -------------------------------------------------
@@ -1100,7 +1100,7 @@ namespace BoSSS.Application.FSI_Solver {
                     else {// LevelSetHandling.Coupled_Iterative
                         foreach (Particle p in m_Particles) {
                             p.iteration_counter_P = -1;
-                            p.forceAndTorque_convergence = ((FSI_Control)this.Control).forceAndTorqueConvergenceCriterion;
+                            p.forceAndTorque_convergence = ((FSI_Control)this.Control).hydrodynamicsConvergenceCriterion;
                         }
                         m_BDF_Timestepper.Solve(phystime, dt, false);
                     }

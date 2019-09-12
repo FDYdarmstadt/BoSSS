@@ -146,7 +146,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
-            C.forceAndTorqueConvergenceCriterion = 1e-2;
+            C.hydrodynamicsConvergenceCriterion = 1e-2;
 
 
             // Timestepping
@@ -724,7 +724,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
-            C.forceAndTorqueConvergenceCriterion = 1e-2;
+            C.hydrodynamicsConvergenceCriterion = 1e-2;
 
 
             // Timestepping
@@ -877,20 +877,19 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.forceAndTorqueConvergenceCriterion = 1e-2;
+            C.hydrodynamicsConvergenceCriterion = 1e-2;
             C.LSunderrelax = 1.0;
             
             // Coupling Properties
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.max_iterations_fully_coupled = 1000;
+            C.maxIterationsFullyCoupled = 1000;
 
 
 
             // Timestepping
             // =============================  
-            C.instationarySolver = true;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
             double dt = 1e-3;
             C.dtMax = dt;
@@ -1037,20 +1036,19 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.forceAndTorqueConvergenceCriterion = 1e-2;
+            C.hydrodynamicsConvergenceCriterion = 1e-2;
             C.LSunderrelax = 1.0;
 
             // Coupling Properties
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.max_iterations_fully_coupled = 1000;
+            C.maxIterationsFullyCoupled = 1000;
 
 
 
             // Timestepping
             // =============================  
-            C.instationarySolver = true;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
             double dt = 1e-3;
             C.dtMax = dt;
