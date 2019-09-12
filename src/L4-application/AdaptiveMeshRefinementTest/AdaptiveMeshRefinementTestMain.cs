@@ -3,26 +3,20 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
-using BoSSS.Platform.Utils.Geom;
 using BoSSS.Solution;
 using BoSSS.Solution.Utils;
-using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Tecplot;
-using BoSSS.Solution.XdgTimestepping;
 using ilPSP;
-using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Collections;
 using NUnit.Framework;
 using MPI.Wrappers;
-using BoSSS.Solution.Control;
 
-namespace BoSSS.Application.AdaptiveMeshRefinementTest { 
+namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
     /// <summary>
     /// App which performs basic tests on adaptive mesh refinement and dynamic load balancing.
@@ -72,7 +66,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         }
 
         public override void Init(BoSSS.Solution.Control.AppControl control) {
-            control.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
+            //control.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
             control.LinearSolver.NoOfMultigridLevels = 1;
             base.Init(control);
         }
@@ -140,10 +134,6 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
           
         }
-
-   
-
-       
 
 
         /// <summary>
@@ -349,6 +339,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 //base.NoOfTimesteps = 20;
 
                 //UpdateBaseGrid(phystime + dt);
+
                 //UpdateRefinedGrid(phystime + dt, TimestepNo);
                 DelUpdateLevelset(new DGField[] { uX }, phystime, dt, 1.0, false);
 

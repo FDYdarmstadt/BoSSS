@@ -93,6 +93,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             C.AdaptiveMeshRefinement = true;
             C.RefinementLevel = 4;
+            C.AMR_startUpSweeps = 4;
 
             // Boundary conditions
             // =============================
@@ -107,7 +108,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.rho_A = 1;//pg/(mum^3)
             C.PhysicalParameters.mu_A = 1;//pg(mum*s)
             C.gravity = new double[] { 0, 0 };
-            C.forceAndTorqueConvergenceCriterion = 1e-4;
+            C.forceAndTorqueConvergenceCriterion = 1e-8;
 
 
             // Particle Properties
@@ -116,7 +117,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles = new List<Particle>();
             C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.forceAndTorqueConvergenceCriterion, underrelaxationFactorIn: 3.0, useAddaptiveUnderrelaxationIn: true);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, false, false, false, C.underrelaxationParam, 1);
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 0.0, 0.0 }, startAngl: 10) {
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 0.0, 0.0 }, startAngl: 0) {
                 particleDensity = 1,
                 activeStress = 1,
             });
@@ -168,11 +169,11 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================  
             C.instationarySolver = true;
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            double dt = 1e-3;
+            double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000000000;
-            C.NoOfTimesteps = 1;
+            C.NoOfTimesteps = 1000000000;
 
             // haben fertig...
             // ===============
