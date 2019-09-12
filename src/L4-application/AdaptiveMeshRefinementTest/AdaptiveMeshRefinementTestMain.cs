@@ -243,7 +243,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         /// <summary>
         /// Very primitive refinement indicator, works on a gradient criterion.
         /// </summary>
-        int LevelInicator(int j, int CurrentLevel) {
+        int LevelIndicator(int j, int CurrentLevel) {
             double GradMag = MagGrad_u.GetMeanValue(j);
 
             int DesiredLevel_j = 0;
@@ -264,6 +264,30 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             
         }
 
+        /// <summary>
+        /// Creates the cellmask which should be refined.
+        /// </summary>
+        private List<Tuple<int, CellMask>> GetCellMaskWithRefinementLevels() {
+            int refinementLevel = 2;
+            int coarseRefinementLevel = 1;
+            int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            BitArray coarse = new BitArray(noOfLocalCells);
+            BitArray fine = new BitArray(noOfLocalCells);
+            for (int j = 0; j < noOfLocalCells; j++) {
+                double GradMag = MagGrad_u.GetMeanValue(j);
+                if (GradMag > 0.81)
+                    fine[j] = true;
+                else if (GradMag > 0.6)
+                    coarse[j] = true;
+            }
+            CellMask coarseMask = new CellMask(GridData, coarse);
+            CellMask fineMask = new CellMask(GridData, fine);
+            List<Tuple<int, CellMask>> AllCellsWithMaxRefineLevel = new List<Tuple<int, CellMask>>();
+            AllCellsWithMaxRefineLevel.Add(new Tuple<int, CellMask>(refinementLevel, fineMask));
+            AllCellsWithMaxRefineLevel.Add(new Tuple<int, CellMask>(coarseRefinementLevel, coarseMask));
+            return AllCellsWithMaxRefineLevel;
+        }
+
         protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
             if(TimestepNo > 3 && TimestepNo % 3 != 0) {
             //{ 
@@ -274,8 +298,15 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
             // Check grid changes
             // ==================
-
-            bool AnyChange = GridRefinementController.ComputeGridChange((GridData) this.GridData, LsTrk.Regions.GetCutCellMask(), LevelInicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+            bool AnyChange;
+            List<int> CellsToRefineList;
+            List<int[]> Coarsening;
+            if (MPISize > 1) {
+                List<Tuple<int, CellMask>> cellMaskRefinementLevel = GetCellMaskWithRefinementLevels();
+                AnyChange = GridRefinementController.ComputeGridChange((GridData)this.GridData, LsTrk.Regions.GetCutCellMask(), cellMaskRefinementLevel, out CellsToRefineList, out Coarsening);
+            }
+            else
+                AnyChange = GridRefinementController.ComputeGridChange((GridData) this.GridData, LsTrk.Regions.GetCutCellMask(), LevelIndicator, out CellsToRefineList, out Coarsening);
             int NoOfCellsToRefine = 0;
             int NoOfCellsToCoarsen = 0;
             if(AnyChange) {

@@ -732,25 +732,12 @@ namespace FSI_Solver {
         }
 
         /// <summary>
-        /// Does nothing atm. (Computes the coefficient of restitution. At small Stokes-No. the coefficient of restitution becomes zero.)
-        /// </summary>
-        /// <param name="stokesNumber"></param>
-        /// <param name="coefficientOfRestitution"></param>
-        private void ModelCoefficientOfRestitution(double stokesNumber, out double coefficientOfRestitution) {
-            coefficientOfRestitution = m_CoefficientOfRestitution;
-            //if (stokesNumber < 9 && stokesNumber != 0)// the Stokes number is zero in case of a dry simulation (no fluid)
-            //    coefficientOfRestitution = 0;
-        }
-
-        /// <summary>
         /// Computes the post-collision velocities of two particles.
         /// </summary>
         /// <param name="collidedParticles">
         /// List of the two colliding particles
         /// </param>
         internal void ComputeMomentumBalanceCollision(List<Particle> collidedParticles) {
-            ModelCoefficientOfRestitution(collidedParticles[0].ComputeParticleSt(m_FluidViscosity, m_FluidDensity, Aux.VectorDiff(collidedParticles[0].Motion.translationalVelocity[0], collidedParticles[1].Motion.translationalVelocity[0])), out m_CoefficientOfRestitution);
-
             for (int p = 0; p < collidedParticles.Count(); p++) {
                 collidedParticles[p].Motion.CalculateNormalAndTangentialVelocity(collidedParticles[p].collisionNormalVector.Last());
                 collidedParticles[p].CalculateEccentricity();
@@ -772,8 +759,6 @@ namespace FSI_Solver {
         /// </summary>
         /// <param name="particle"></param>
         internal void ComputeMomentumBalanceCollision(Particle particle) {
-            ModelCoefficientOfRestitution(particle.ComputeParticleSt(m_FluidViscosity, m_FluidDensity), out m_CoefficientOfRestitution);
-
             particle.Motion.CalculateNormalAndTangentialVelocity(particle.collisionNormalVector.Last());
             particle.CalculateEccentricity();
 

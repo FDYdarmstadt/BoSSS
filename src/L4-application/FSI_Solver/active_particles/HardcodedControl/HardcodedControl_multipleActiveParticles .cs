@@ -211,7 +211,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================  
             C.instationarySolver = true;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
-            double dt = 1e-4;
+            double dt = 1e-3;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000000;

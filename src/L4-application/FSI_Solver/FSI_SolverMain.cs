@@ -542,7 +542,10 @@ namespace BoSSS.Application.FSI_Solver {
                     break;
 
                 case LevelSetHandling.FSI_LieSplittingFullyCoupled:
-                    UpdateLevelSetParticles(phystime);
+                    if (firstiteration)
+                        UpdateLevelSetParticles(phystime);
+                    else
+                        CopyLevelSet();
                     break;
 
                 case LevelSetHandling.StrangSplitting:
@@ -593,6 +596,12 @@ namespace BoSSS.Application.FSI_Solver {
                 forces_PResidual = 0;
             }
             return forces_PResidual;
+        }
+        bool firstiteration = true;
+        private void CopyLevelSet() {
+            this.LevSet.Clear();
+            this.LevSet.AccLaidBack(1.0, this.DGLevSet.Current);
+            LsTrk.UpdateTracker(__NearRegionWith: 2);
         }
 
         /// <summary>
@@ -727,12 +736,8 @@ namespace BoSSS.Application.FSI_Solver {
                     }
                 }
                 particleColorExchange = particleColor.CloneAs();
+                particleColorExchange.MPIExchange(GridData);
             }
-
-            // Step 3
-            // Communicate
-            // =======================================================
-            particleColorExchange.MPIExchange(GridData);
 
             // Step 4
             // Find neighbouring colours and recolour one of them
@@ -1016,11 +1021,14 @@ namespace BoSSS.Application.FSI_Solver {
                             // actual physics
                             // -------------------------------------------------
                             if (IsFullyCoupled) {
-                                if (iterationCounter == 0) 
+                                if (iterationCounter == 0) {
+                                    firstiteration = true;
                                     InitializeParticlePerIteration(m_Particles, TimestepInt);
+                                }
                                 else {
                                     m_BDF_Timestepper.Solve(phystime, dt, false);
                                     CalculateHydrodynamicForces(m_Particles, dt, false);
+                                    firstiteration = false;
                                 }
                             }
                             else {
@@ -1429,7 +1437,7 @@ namespace BoSSS.Application.FSI_Solver {
                 // Get the cells to refine and to coarse
                 // ===================================================
                 List<Tuple<int, CellMask>> AllCellsWithRefinementLevel = GetCellMaskWithRefinementLevels();
-                bool AnyChange = GridRefinementController.ComputeGridChange((GridData)GridData, AllCellsWithRefinementLevel, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                bool AnyChange = GridRefinementController.ComputeGridChange((GridData)GridData, null, AllCellsWithRefinementLevel, out List<int> CellsToRefineList, out List<int[]> Coarsening);
 
                 if (AnyChange) {
                     // Write stuff to console
