@@ -56,14 +56,12 @@ namespace BoSSS.Application.FSI_Solver {
             //Generating grid
             C.GridFunc = delegate {
 
-                int q = new int(); // #Cells in x-dircetion + 1
-                int r = new int(); // #Cells in y-dircetion + 1
+                int q = new int();
 
-                q = 11;
-                r = 11;
+                q = 12;
 
-                double[] Xnodes = GenericBlas.Linspace(-5 * BaseSize, 5 * BaseSize, q + 1);
-                double[] Ynodes = GenericBlas.Linspace(-5 * BaseSize, 5 * BaseSize, r + 1);
+                double[] Xnodes = GenericBlas.Linspace(-5 * BaseSize, 5 * BaseSize, q);
+                double[] Ynodes = GenericBlas.Linspace(-5 * BaseSize, 5 * BaseSize, q);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
 
@@ -98,7 +96,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             C.AdaptiveMeshRefinement = true;
             C.RefinementLevel = 4;
-            C.AMR_startUpSweeps = 6;
+            C.AMR_startUpSweeps = 4;
 
 
             // Boundary conditions
@@ -121,47 +119,47 @@ namespace BoSSS.Application.FSI_Solver {
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, false, false, false, C.underrelaxationParam, 1);
             C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 0.0, 0.0 }, startAngl: 0) {
                 particleDensity = 1,
-                activeStress = 1e3,
+                activeStress = 1,
             });
 
             C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 4.0, 0.0 }, startAngl: 112) {
                 particleDensity = 1,
-                activeStress = 1e3,
+                activeStress = 1,
             });
 
             C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { -4.0, 0.0 }, startAngl: -120) {
                 particleDensity = 1,
-                activeStress = 1e3,
+                activeStress = 1,
             });
 
             C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 0.0, 4.0 }, startAngl: -145) {
                 particleDensity = 1,
-                activeStress = 1e3,
+                activeStress = 1,
             });
 
             C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 0.0, -4.0 }, startAngl: 120) {
                 particleDensity = 1,
-                activeStress = 1e3,
+                activeStress = 1,
             });
 
             C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 2, 2 }, startAngl: 10) {
                 particleDensity = 1,
-                activeStress = 1e3,
+                activeStress = 1,
             });
 
             C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 2, -2 }, startAngl: 50) {
                 particleDensity = 1,
-                activeStress = 1e3,
+                activeStress = 1,
             });
 
             C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { -2, 2 }, startAngl: 80) {
                 particleDensity = 1,
-                activeStress = 1e3,
+                activeStress = 1,
             });
 
             C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { -2, -2 }, startAngl: 34) {
                 particleDensity = 1,
-                activeStress = 1e3,
+                activeStress = 1,
             });
 
             // Quadrature rules
@@ -196,7 +194,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.forceAndTorqueConvergenceCriterion = 10;
+            C.forceAndTorqueConvergenceCriterion = 1e-2;
             C.LSunderrelax = 1.0;
 
 
@@ -211,7 +209,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================  
             C.instationarySolver = true;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
-            double dt = 1e-3;
+            double dt = 1e-1;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000000;

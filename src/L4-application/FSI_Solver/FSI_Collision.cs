@@ -79,7 +79,7 @@ namespace FSI_Solver {
             FSI_LevelSetUpdate LevelSetUpdate = new FSI_LevelSetUpdate(m_LevelSetTracker);
             int spatialDim = particles[0].Motion.position[0].Length;
             int ParticleOffset = particles.Count();
-            double distanceThreshold = m_dt * 1e-4;
+            double distanceThreshold = m_hMin / 10;// m_dt;// * 1e-4;
             int J = gridData.iLogicalCells.NoOfLocalUpdatedCells;
             List<int[]> ColoredCellsSorted = LevelSetUpdate.ColoredCellsFindAndSort(cellColor);
             CellMask ParticleCutCells = LevelSetUpdate.CellsOneColor(gridData, ColoredCellsSorted, m_CurrentColor, J, false);
@@ -98,8 +98,6 @@ namespace FSI_Solver {
                 // met.
                 // -------------------------------------------------------
                 while (minimalDistance > distanceThreshold) {
-                    if (AccDynamicTimestep < 0)
-                        Console.WriteLine();
                     // Step 2.1.1
                     // Move the particle with the current save timestep.
                     // -------------------------------------------------------
@@ -128,8 +126,6 @@ namespace FSI_Solver {
                             Distance[p0, ParticleOffset + w] = temp_Distance;
                             double[] normalVector = CalculateNormalVector(temp_DistanceVector.To1DArray());
                             double temp_SaveTimeStep = DynamicTimestep(particles[p0], temp_ClosestPoint_p0.To1DArray(), normalVector, Distance[p0, ParticleOffset + w]);
-                            if (temp_SaveTimeStep < 0)
-                                Console.WriteLine();
                             SaveTimeStepArray[p0, ParticleOffset + w] = temp_SaveTimeStep;
                             DistanceVector.SetSubArray(temp_DistanceVector, new int[] { p0, ParticleOffset + w, -1 });
                             ClosestPoint_P0.SetSubArray(temp_ClosestPoint_p0, new int[] { p0, ParticleOffset + w, -1 });
@@ -232,13 +228,6 @@ namespace FSI_Solver {
                     PostProcessCollisionTranslation(particles[p]);
                     PostProcessCollisionRotation(particles[p]);
                 }
-
-                // Step 5
-                // Write already used time to particle.cs.
-                // =======================================================
-                //for (int p = 0; p < particles.Count(); p++) {
-                //    particles[p].Motion.collisionTimestep = AccDynamicTimestep;
-                //}
             }
         }
 

@@ -149,6 +149,7 @@ namespace BoSSS.Application.FSI_Solver {
         private void ForceAddedDamping(ref double[] forces, double dt) {
             for (int d = 0; d < spatialDim; d++) {
                 forces[d] += m_AddedDampingCoefficient * dt * (addedDampingTensor[0, d] * translationalAcceleration[0][0] + addedDampingTensor[1, d] * translationalAcceleration[0][1] + addedDampingTensor[d, 2] * rotationalAcceleration[0]);
+                Console.WriteLine("AddedDamping: " + m_AddedDampingCoefficient + " addedDampingTensor[0, d] " + addedDampingTensor[0, d] + " addedDampingTensor[1, d] " + addedDampingTensor[1, d] + " addedDampingTensor[2, d] " + addedDampingTensor[2, d]);
             }
         }
 

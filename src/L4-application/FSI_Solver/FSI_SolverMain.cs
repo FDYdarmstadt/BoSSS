@@ -452,28 +452,29 @@ namespace BoSSS.Application.FSI_Solver {
 
                 case LevelSetHandling.LieSplitting:
                     MassMatrixShape = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
-                    if (!CalculatedDampingTensors) {
-                        foreach (Particle p in m_Particles) {
-                            if (p.Motion.m_AddedDampingCoefficient != -1) {
-                                p.Motion.CalculateDampingTensor(p, LsTrk, ((FSI_Control)this.Control).PhysicalParameters.mu_A, ((FSI_Control)this.Control).PhysicalParameters.rho_A, ((FSI_Control)this.Control).dtMax);
-                                Auxillary.ExchangeDampingTensors(m_Particles);
-                            }
-                        }
-                    }
-                    CalculatedDampingTensors = true;
+                    //if (!CalculatedDampingTensors) {
+                    //    foreach (Particle p in m_Particles) {
+                    //        if (p.Motion.useAddedDamping) {
+                    //            p.Motion.CalculateDampingTensor(p, LsTrk, ((FSI_Control)this.Control).PhysicalParameters.mu_A, ((FSI_Control)this.Control).PhysicalParameters.rho_A, ((FSI_Control)this.Control).dtMax);
+                    //            Auxillary.ExchangeDampingTensors(m_Particles);
+                    //        }
+                    //    }
+                    //}
+                    //CalculatedDampingTensors = true;
                     break;
 
                 case LevelSetHandling.FSI_LieSplittingFullyCoupled:
                     MassMatrixShape = MassMatrixShapeandDependence.IsTimeDependent;
-                    if (!CalculatedDampingTensors) {
-                        foreach (Particle p in m_Particles) {
-                            if (p.Motion.m_AddedDampingCoefficient != -1) {
-                                p.Motion.CalculateDampingTensor(p, LsTrk, ((FSI_Control)this.Control).PhysicalParameters.mu_A, ((FSI_Control)this.Control).PhysicalParameters.rho_A, ((FSI_Control)this.Control).dtMax);
-                                Auxillary.ExchangeDampingTensors(m_Particles);
-                            }
-                        }
-                    }
-                    CalculatedDampingTensors = true;
+                    //if (!CalculatedDampingTensors) {
+                    //    foreach (Particle p in m_Particles) {
+                    //        if (p.Motion.useAddedDamping) {
+                    //            Console.WriteLine("Calculate added damping tensor");
+                    //            p.Motion.CalculateDampingTensor(p, LsTrk, ((FSI_Control)this.Control).PhysicalParameters.mu_A, ((FSI_Control)this.Control).PhysicalParameters.rho_A, ((FSI_Control)this.Control).dtMax);
+                    //            Auxillary.ExchangeDampingTensors(m_Particles);
+                    //        }
+                    //    }
+                    //}
+                    //CalculatedDampingTensors = true;
                     break;
 
                 case LevelSetHandling.StrangSplitting:
@@ -546,6 +547,16 @@ namespace BoSSS.Application.FSI_Solver {
                         UpdateLevelSetParticles(phystime);
                     else
                         CopyLevelSet();
+                    if (!CalculatedDampingTensors) {
+                        foreach (Particle p in m_Particles) {
+                            if (p.Motion.useAddedDamping) {
+                                Console.WriteLine("Calculate added damping tensor");
+                                p.Motion.CalculateDampingTensor(p, LsTrk, ((FSI_Control)this.Control).PhysicalParameters.mu_A, ((FSI_Control)this.Control).PhysicalParameters.rho_A, ((FSI_Control)this.Control).dtMax);
+                                Auxillary.ExchangeDampingTensors(m_Particles);
+                            }
+                        }
+                    }
+                    CalculatedDampingTensors = true;
                     break;
 
                 case LevelSetHandling.StrangSplitting:
@@ -911,6 +922,7 @@ namespace BoSSS.Application.FSI_Solver {
             foreach (Particle p in Particles) {
                 Console.WriteLine("Predicting forces for the next timestep...");
                 if (p.Motion.useAddedDamping) {
+                    Console.WriteLine("Update added damping tensors!");
                     p.Motion.UpdateDampingTensors();
                 }
                 p.Motion.PredictForceAndTorque(p.activeStress, TimestepInt);
@@ -1060,8 +1072,11 @@ namespace BoSSS.Application.FSI_Solver {
                         // particle position
                         // -------------------------------------------------
                         foreach (Particle p in m_Particles) {
+                            if (p.Motion.collisionTimestep < 0)
+                                p.Motion.collisionTimestep = 0;
                             p.Motion.UpdateParticlePositionAndAngle(dt);
-                            p.Motion.collisionTimestep = 0;
+                            if (p.Motion.collisionTimestep > dt) { p.Motion.collisionTimestep -= dt; }
+                            else p.Motion.collisionTimestep = 0;
                         }
 
                         // print
