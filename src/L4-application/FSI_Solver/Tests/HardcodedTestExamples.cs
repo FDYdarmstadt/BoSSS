@@ -688,6 +688,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.rho_A = 1.0;
             C.PhysicalParameters.mu_A = 0.1;
             C.CoefficientOfRestitution = 0;
+            C.gravity = new double[] { 0, -9.81 };
 
             // Particle Properties
             //C.PhysicalParameters.mu_B = 0.1;

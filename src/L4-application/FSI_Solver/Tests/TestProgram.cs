@@ -159,7 +159,7 @@ namespace BoSSS.Application.FSI_Solver {
                 p.RunSolverMode();
 
                 Vector Dest_Should;
-                Dest_Should = new Vector(0.0, 0.075);
+                Dest_Should = new Vector(0.0, 0.0761459999999999);
                 double VelY_Should = 0;
 
                 Vector Dest_Is = new Vector(p.Particles[0].Motion.position[0]);
