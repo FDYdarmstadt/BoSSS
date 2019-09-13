@@ -21,6 +21,7 @@ using System.Runtime.InteropServices;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using System.Linq;
+using MPI.Wrappers.Utils;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 
@@ -33,11 +34,14 @@ namespace BoSSS.Solution.Tecplot {
 
         private readonly string path = null;
 
+        static UnsafeTECIO m_TECIO;
+
         /// <summary>
         /// see <see cref="PlotDriver.PlotDriver"/>.
         /// </summary>
         public Tecplot(IGridData context, uint superSampling)
             : base(context, true, false, superSampling, null) {
+            m_TECIO = new UnsafeTECIO();
         }
 
         /// <summary>
@@ -45,6 +49,7 @@ namespace BoSSS.Solution.Tecplot {
         /// </summary>
         public Tecplot(IGridData context, bool showJumps, bool ghostZone, uint superSampling, CellMask mask = null)
             : base(context, showJumps, ghostZone, superSampling, mask) {
+            m_TECIO = new UnsafeTECIO();
         }
 
         /// <summary>
@@ -53,6 +58,7 @@ namespace BoSSS.Solution.Tecplot {
         public Tecplot(IGridData context, uint superSampling, string path)
             : this(context, superSampling) {
             this.path = path;
+            m_TECIO = new UnsafeTECIO();
         }
 
         /// <summary>
@@ -136,7 +142,7 @@ namespace BoSSS.Solution.Tecplot {
             ptrFName = Marshal.StringToHGlobalAnsi(filenameWithPath);
             ptrVariables = Marshal.StringToHGlobalAnsi(Variables);
 
-            int errorWhileOpening = BoSSS_tecini110(ptrTitle, ptrVariables, ptrFName, ptrScratchDir, ref Debug, ref VIsDouble);
+            int errorWhileOpening = m_TECIO.TECINI110(ptrTitle, ptrVariables, ptrFName, ptrScratchDir, ref Debug, ref VIsDouble);
             if (errorWhileOpening == -1)
             {
                 throw new Exception("Tecplot could not create file. Do you have writing permission?");
@@ -151,13 +157,15 @@ namespace BoSSS.Solution.Tecplot {
         /// Closes the currently open output file 
         /// </summary>
         override protected void CloseFile() {
-            BoSSS_tecend110();
+            m_TECIO.TECEND110();
         }
 
         /// <summary>
         /// Tecplot Zone
         /// </summary>
         public class TecplotZone : ZoneDriver {
+
+            UnsafeTECIO m_TECPLOT = new UnsafeTECIO();
 
             /// <summary>
             /// The different finite-element zone types supported by Tecplot. The
@@ -214,7 +222,7 @@ namespace BoSSS.Solution.Tecplot {
             /// Plots all fields in <paramref name="fieldsToPlot"/> into a Tecplot file, see
             /// <see cref="PlotDriver.ZoneDriver.PlotZone"/>.
             /// </summary>
-            public override void PlotZone(string ZoneName, double time, IEnumerable<Tuple<string, ScalarFunctionEx>> fieldsToPlot) {
+            public unsafe override void PlotZone(string ZoneName, double time, IEnumerable<Tuple<string, ScalarFunctionEx>> fieldsToPlot) {
                 List<ScalarFunctionEx> fields = new List<ScalarFunctionEx>(
                     fieldsToPlot.Select(x => x.Item2));
 
@@ -245,7 +253,7 @@ namespace BoSSS.Solution.Tecplot {
 
                             int VIsDouble = 1;
                             int n = globalCoordinates.Length;
-                            BoSSS_tecdat110(ref n, globalCoordinates, ref VIsDouble);
+                            m_TECPLOT.TECDAT110(ref n, globalCoordinates, ref VIsDouble);
                         }
                     } else {
                         // each-cell-on-its-own -- mode
@@ -260,7 +268,7 @@ namespace BoSSS.Solution.Tecplot {
 
                                 int VIsDouble = 1;
                                 int n = globalCoordinates.Length;
-                                BoSSS_tecdat110(ref n, globalCoordinates, ref VIsDouble);
+                                m_TECPLOT.TECDAT110(ref n, globalCoordinates, ref VIsDouble);
                             }
                         }
                     }
@@ -273,9 +281,9 @@ namespace BoSSS.Solution.Tecplot {
                         SampleField(field, showJumps);
 
                         if (!showJumps) {
-                            BoSSS_tecdat110(ref totalVertices, smoothedResult, ref VIsDouble);
+                            m_TECPLOT.TECDAT110(ref totalVertices, smoothedResult, ref VIsDouble);
                         } else {
-                            BoSSS_tecdat110(ref totalVertices, notSmoothedResult, ref VIsDouble);
+                            m_TECPLOT.TECDAT110(ref totalVertices, notSmoothedResult, ref VIsDouble);
                         }
                     }
 
@@ -284,25 +292,39 @@ namespace BoSSS.Solution.Tecplot {
 
                     int[] permutationTable = zoneTypeToPermutationTableMap[zoneType];
 
-                    if (!showJumps) {
+                    if (!showJumps)
+                    {
                         int[,] permutedConnectivity = new int[totalCells, connectivity.GetLength(1)];
 
-                        for (int i = 0; i < totalCells; i++) {
-                            for (int j = 0; j < permutationTable.Length; j++) {
+                        for (int i = 0; i < totalCells; i++)
+                        {
+                            for (int j = 0; j < permutationTable.Length; j++)
+                            {
                                 permutedConnectivity[i, j] = 1 + connectivity[i, permutationTable[j]];
                             }
                         }
-                        BoSSS_tecnod110(permutedConnectivity);
-                    } else {
+                        fixed (int* permutedConnectivity_start = &permutedConnectivity[0, 0])
+                        {
+                            m_TECPLOT.TECNOD110(permutedConnectivity_start);
+                        }
+                    }
+                    else
+                    {
                         int[,,] permutedConnectivity = new int[NoOfCells, subdivisionsPerCell, permutationTable.Length];
-                        for (int j = 0; j < NoOfCells; j++) {
-                            for (int jj = 0; jj < subdivisionsPerCell; jj++) {
-                                for (int i = 0; i < permutationTable.Length; i++) {
+                        for (int j = 0; j < NoOfCells; j++)
+                        {
+                            for (int jj = 0; jj < subdivisionsPerCell; jj++)
+                            {
+                                for (int i = 0; i < permutationTable.Length; i++)
+                                {
                                     permutedConnectivity[j, jj, i] = 1 + j * verticesPerCell + subdivisionTreeLeaves[jj].GlobalVerticeInd[permutationTable[i]];
                                 }
                             }
                         }
-                        BoSSS_tecnod110(permutedConnectivity);
+                        fixed (int* permutedConnectivity_start = &permutedConnectivity[0, 0, 0])
+                        {
+                            m_TECPLOT.TECNOD110(permutedConnectivity_start);
+                        }
                     }
 
                 }
@@ -334,7 +356,7 @@ namespace BoSSS.Solution.Tecplot {
                 int IsBlock = 1;
                 int StrandID = 0, ParentZone = 0, ShrConn = 0;
 
-                BoSSS_teczne110(ptrZoneTitle,
+                m_TECPLOT.TECZNE110(ptrZoneTitle,
                     ref zoneTypeIndex,
                     ref numberOfPoints,
                     ref numberOfElements,
@@ -399,6 +421,7 @@ namespace BoSSS.Solution.Tecplot {
         }
         */
 
+        /*
         /// <summary>
         /// Initializes the process of writing a binary data file. This must be
         /// called first before any other TecIO calls are made (except
@@ -634,7 +657,276 @@ namespace BoSSS.Solution.Tecplot {
         //[DllImport("tecio")]
         [DllImport("libBoSSSnative_seq")]
         private static unsafe extern int BoSSS_tecnod110(int[,] nodelist);
-
+        */
 
     }
-}
+
+
+    /// <summary>
+    /// subset of TECIO
+    /// </summary>
+    public sealed class UnsafeTECIO : DynLibLoader
+    {
+
+        // workaround for .NET bug:
+        // https://connect.microsoft.com/VisualStudio/feedback/details/635365/runtimehelpers-initializearray-fails-on-64b-framework
+        static PlatformID[] Helper()
+        {
+            PlatformID[] p = new PlatformID[2];
+            p[0] = PlatformID.Win32NT;
+            p[1] = PlatformID.Unix;
+            return p;
+        }
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public UnsafeTECIO() :
+            base(new string[] { "tecio.dll", "libBoSSSnative_seq.so" },
+                  new string[2][][],
+                  new GetNameMangling[] { DynLibLoader.Identity, DynLibLoader.BoSSS_Prefix },
+                  Helper(), //new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix },
+                  new int[] { -1, -1 })
+        { }
+
+#pragma warning disable 649
+        _TECINI110 tecini110;
+        _TECZNE110 teczne110;
+        _TECDAT110 tecdat110;
+        _TECEND110 tecend110;
+        _TECNOD110 tecnod110;
+#pragma warning restore       649
+
+        /// <summary>
+        /// Initializes the process of writing a binary data file. This must be
+        /// called first before any other TecIO calls are made (except
+        /// TECFOREIGN110). You may write to multiple files by calling
+        /// TECINI110 more than once. Each time TECINI110 is called, a new file
+        /// is opened. Use TECFIL110 to switch between files. For each call to
+        /// TECINI, there must be a corresponding call to TECEND110
+        /// </summary>
+        /// <param name="Title">
+        /// Title of the data set
+        /// </param>
+        /// <param name="Variables">
+        /// List of variable names. If a comma appears in the string it will be
+        /// used as the separator between variable names, otherwise a space is
+        /// used.
+        /// </param>
+        /// <param name="FName">Name of the file to create</param>
+        /// <param name="ScratchDir">
+        /// Name of the directory to put the scratch file.
+        /// </param>
+        /// <param name="Debug">
+        /// Pointer to the integer flag for debugging. Set to 0 for no
+        /// debugging or 1 to debug. When set to 1, the debug messages will be
+        /// sent to the standard output (stdout).
+        /// </param>
+        /// <param name="VIsDouble">
+        /// Pointer to the integer flag for specifying whether field data
+        /// generated in future calls to TECDAT110 are to be written in single
+        /// or double precision.
+        /// </param>
+        /// <returns>0 if successful, -1 if unsuccessful.</returns>
+        public unsafe delegate int _TECINI110(
+            IntPtr Title,
+            IntPtr Variables,
+            IntPtr FName,
+            IntPtr ScratchDir,
+            ref int Debug,
+            ref int VIsDouble);
+
+        public unsafe _TECINI110 TECINI110
+        {
+            get { return tecini110; }
+        }
+
+        /// <summary>
+        /// Writes header information about the next zone to be added to the
+        /// data file. After TECZNE110 is called, you must call TECDAT110 one
+        /// or more times. If the zone is a finite-element zone, call TECNOD110
+        /// (cell-based zones) or TECPOLY111 (face-based zones) after calling
+        /// TECDAT110
+        /// </summary>
+        /// <param name="ZoneTitle">
+        /// The name of the zone
+        /// </param>
+        /// <param name="ZoneType">
+        /// 0=ORDERED
+        /// 1=FELINESEG
+        /// 2=FETRIANGLE
+        /// 3=FEQUADRILATERAL
+        /// 4=FETETRAHEDRON
+        /// 5=FEBRICK
+        /// 6=FEPOLYGON
+        /// 7=FEPOLYHEDRON
+        /// </param>
+        /// <param name="IMxOrNumPts">
+        /// For ordered zones, the number of nodes in the Iindex direction. For
+        /// finite-element zones (cellbased and face-based), the number of
+        /// nodes.
+        /// </param>
+        /// <param name="JMxOrNumElements">
+        /// For ordered zones, the number of nodes in the J index direction.
+        /// For finite-element zones (cellbased and face-based), the number of
+        /// elements.
+        /// </param>
+        /// <param name="KMx">
+        /// For ordered zones, the number of nodes in the K index direction.
+        /// For polyhedral and polygonal finite-element zones, it is the number
+        /// of faces. Not used all other finite-element zone types
+        /// </param>
+        /// <param name="ICellMax">Reserved for future use. Set to zero</param>
+        /// <param name="JCellMax">Reserved for future use. Set to zero.</param>
+        /// <param name="KCellMax">Reserved for future use. Set to zero.</param>
+        /// <param name="SolutionTime">
+        /// Scalar double precision value specifying the time associated with
+        /// the zone.
+        /// </param>
+        /// <param name="StrandID">
+        /// Scalar integer value specifying the strand to which the zone is
+        /// associated.
+        /// 0 = static zone, not associated with a strand.
+        /// Values greater than 0 indicate a zone is assigned to a given strand
+        /// </param>
+        /// <param name="ParentZone">
+        /// Scalar integer value representing the relationship between this
+        /// zone and its parent. With a parent zone association, Tecplot can
+        /// generate a surface streamtrace on a no-slip boundary zone. A zone
+        /// may not specify itself as its own parent.
+        /// 0 = indicates that this zone is not associated with a parent zone.
+        /// >0 = A value greater than zero is considered this zone's parent.
+        /// </param>
+        /// <param name="IsBlock">
+        /// Indicates whether the data will be passed into TECDAT110 in BLOCK
+        /// or POINT format.
+        /// 0=POINT
+        /// 1=BLOCK
+        /// </param>
+        /// <param name="NumFaceConnections">
+        /// Used for cell-based finite-element and ordered zones only. The
+        /// number of face connections that will be passed in routine
+        /// TECFACE110
+        /// </param>
+        /// <param name="FaceNeighborMode">
+        /// Used for cell-baseda finite-element and ordered zones only. The
+        /// type of face connections that will be passed in routine TECFACE110.
+        /// 0=LocalOneToOne
+        /// 2=GlobalOneToOne
+        /// 1=LocalOneToMany
+        /// 3=GlobalOneToMany
+        /// </param>
+        /// <param name="PassiveVarList">
+        /// Array, dimensioned by the number of variables, of 4 byte integer
+        /// values specifying the active/passive nature of each variable. A
+        /// value of 0 indicates the associated variable is active while a
+        /// value of 1 indicates that it is passive.
+        /// </param>
+        /// <param name="ValueLocation">
+        /// The location of each variable in the data set. ValueLocation(I)
+        /// indicates the location of variable I for this zone.
+        /// 0=cell-centered
+        /// 1=node-centered.
+        /// Pass null to indicate that all variables are nodecentered.
+        /// </param>
+        /// <param name="ShareVarFromZone">
+        /// Indicates variable sharing. Array, dimensioned by the number of
+        /// variables. ShareVarFromZone(I) indicates the zone number with which
+        /// variable I will be shared. This reduces the amount of data to be
+        /// passed via TECDAT110. A value of 0 indicates that the variable is
+        /// not shared. Pass null to indicate no variable sharing for this
+        /// zone. You must pass null for the first zone in a data set (there is
+        /// no data available to share).
+        /// </param>
+        /// <param name="ShareConnectivityFromZone">
+        /// Indicates the zone number with which connectivity is shared. Pass 0
+        /// to indicate no connectivity sharing. You must pass 0 for the first
+        /// zone in a data set.
+        /// NOTE: Connectivity and/or face neighbors cannot be shared when the
+        /// face neighbor mode is set to Global. Connectivity cannot be shared
+        /// between cell-based and face-based finite-element zones.
+        /// </param>
+        /// <returns>0 if successful, -1 if unsuccessful.</returns>
+        public unsafe delegate int _TECZNE110(
+            IntPtr ZoneTitle,
+            ref int ZoneType,
+            ref int IMxOrNumPts,
+            ref int JMxOrNumElements,
+            ref int KMx,
+            ref int ICellMax,
+            ref int JCellMax,
+            ref int KCellMax,
+            ref double SolutionTime,
+            ref int StrandID,
+            ref int ParentZone,
+            ref int IsBlock,
+            ref int NumFaceConnections,
+            ref int FaceNeighborMode,
+            int[] PassiveVarList,
+            int[] ValueLocation,
+            int[] ShareVarFromZone,
+            ref int ShareConnectivityFromZone);
+
+        public unsafe _TECZNE110 TECZNE110
+        {
+            get { return teczne110; }
+        }
+
+        /// <summary>
+        /// Writes an array of data to the data file. Data should not be passed
+        /// for variables that have been indicated as passive or shared (via
+        /// TECZNE110). TECDAT110 allows you to write your data in a piecemeal
+        /// fashion in case it is not contained in one contiguous block in your
+        /// program. TECDAT110 must be called enough times to ensure that the
+        /// correct number of values are written for each zone and that the
+        /// aggregate order for the data is correct.
+        /// </summary>
+        /// <param name="N">
+        /// Pointer to an integer value specifying number of values to write.
+        /// </param>
+        /// <param name="Data">
+        /// Array of single or double precision data values
+        /// </param>
+        /// <param name="IsDouble">
+        /// Pointer to the integer flag stating whether the array Data is
+        /// single (0) or double (1) precision.
+        /// </param>
+        /// <returns>0 if successful, -1 if unsuccessful.</returns>
+        public unsafe delegate int _TECDAT110(ref int N, double[] Data, ref int IsDouble);
+
+        public unsafe _TECDAT110 TECDAT110
+        {
+            get { return tecdat110; }
+        }
+
+        /// <summary>
+        /// Must be called to close out the current data file. There must be
+        /// one call to TECEND110 for each TECINI111.
+        /// </summary>
+        /// <returns>0 if successful, -1 if unsuccessful.</returns>
+        public unsafe delegate int _TECEND110();
+
+        public unsafe _TECEND110 TECEND110
+        {
+            get { return tecend110; }
+        }
+
+        /// <summary>
+        /// Writes an array of node data to the binary data file. This is the
+        /// connectivity list for cell-based finite-element zones (line
+        /// segment, triangle, quadrilateral, brick, and tetrahedral zones)
+        /// </summary>
+        /// <param name="nodelist">
+        /// <see cref="TecplotZone.PlotZone"/>
+        /// </param>
+        /// <returns>0 if successful, -1 if unsuccessful.</returns>
+        
+        public unsafe delegate int _TECNOD110(int* nodelist);
+
+        public unsafe _TECNOD110 TECNOD110
+        {
+            get { return tecnod110; }
+        }
+    }
+
+    }
