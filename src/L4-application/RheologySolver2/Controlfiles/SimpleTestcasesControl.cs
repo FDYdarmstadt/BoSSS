@@ -44,7 +44,7 @@ namespace BoSSS.Application.Rheology
         /// <summary>
         /// Channel Flow
         /// </summary>
-        static public RheologyControl Channel(string path = @"C:\Users\kikker\AnnesBoSSSdb\Channel", int degree = 2, int GridLevel = 3)
+        static public RheologyControl Channel(string path = @"C:\Users\kikker\AnnesBoSSSdb\Channel", int degree = 2, int GridLevel = 5)
         {
             RheologyControl C = new RheologyControl();
 
@@ -53,10 +53,10 @@ namespace BoSSS.Application.Rheology
             C.savetodb = false;
             //C.DbPath = path;
             C.ProjectName = "Channel";
-            C.NonLinearSolver.MaxSolverIterations = 30;
+            C.NonLinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MinSolverIterations = 3;
             C.NonLinearSolver.ConvergenceCriterion = 1E-10;
-            C.LinearSolver.MaxSolverIterations = 30;
+            C.LinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.MinSolverIterations = 3;
             C.LinearSolver.ConvergenceCriterion = 1E-10;
             C.dt = 1e6;
@@ -64,8 +64,8 @@ namespace BoSSS.Application.Rheology
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
-            //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            //C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.ObjectiveParam = 1.0;
 
             C.UsePerssonSensor = false;
@@ -82,8 +82,8 @@ namespace BoSSS.Application.Rheology
             //Debugging and Solver Analysis
             C.OperatorMatrixAnalysis = false;
             C.SkipSolveAndEvaluateResidual = false;
-            C.SetInitialConditions = true;
-            C.SetInitialPressure = true;
+            C.SetInitialConditions = false;
+            C.SetInitialPressure = false;
             C.SetParamsAnalyticalSol = false;
             C.ComputeL2Error = false;
             C.GravitySource = false;
@@ -91,12 +91,12 @@ namespace BoSSS.Application.Rheology
             C.GravityY = (X, t) => 0;
 
             //Physical Params
-            C.Stokes = true;
+            C.Stokes = false;
             C.FixedStreamwisePeriodicBC = false;
             C.beta = 0.59;
             C.Reynolds = 1;
             C.Weissenberg = 0.5; //aim Weissenberg number!
-            C.RaiseWeissenberg = false;
+            C.RaiseWeissenberg = true;
             C.WeissenbergIncrement = 0.1;
 
             //Grid Params
@@ -120,7 +120,7 @@ namespace BoSSS.Application.Rheology
             Func<double[], double, double> VelocityXfunction = (X, t) => 1 - (X[1] * X[1]);
             Func<double[], double, double> VelocityYfunction = (X, t) => 0;
             Func<double[], double, double> Pressurefunction = (X, t) => 2* C.Reynolds * (20 - X[0]);
-            Func<double[], double, double> StressXXfunction = (X, t) => 0;// 2  * (1 - C.beta) * (((-2 * X[1])) * ((-2 * X[1])));
+            Func<double[], double, double> StressXXfunction = (X, t) => 2  * C.Weissenberg * (1 - C.beta) * ((-2 * X[1]) * (-2 * X[1]));
             Func<double[], double, double> StressXYfunction = (X, t) => (1 - C.beta) * (-2 * X[1]);
             Func<double[], double, double> StressYYfunction = (X, t) => (0.0);
 

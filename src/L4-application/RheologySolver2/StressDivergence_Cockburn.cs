@@ -161,6 +161,13 @@ namespace BoSSS.Application.Rheology {
                     res += Tin[1] * inp.Normale[1];
                 break;
 
+                case IncompressibleBcType.FreeSlip:
+
+                    //Free slip wall for symmetry lilne of symmetric channel
+                    res += inp.Normale[0] * Tin[0] * inp.Normale[0] * inp.Normale[0];
+                    res += inp.Normale[1] * Tin[1] * inp.Normale[1] * inp.Normale[1];
+                    break;
+
                 case IncompressibleBcType.Velocity_Inlet:
                 case IncompressibleBcType.Wall:
 

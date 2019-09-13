@@ -69,6 +69,7 @@
     <Reference Include="System.Runtime.Serialization" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ConstitutiveEqns\ConstitutiveEqns_CellWiseForm_2.cs" />
     <Compile Include="ConstitutiveEqns\ConstitutiveEqns_Diffusion.cs" />
     <Compile Include="ConstitutiveEqns\OLD\ConstitutiveEqns_Objective_withGrad.cs" />
     <Compile Include="ConstitutiveEqns\OLD\ConstitutiveEqns_Objective_allparam.cs" />
