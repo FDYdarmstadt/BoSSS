@@ -38,10 +38,12 @@ namespace BoSSS.Application.FSI_Solver {
                 "Wall_lower",
                 "Wall_upper"
             };
+
+            int sqrtPart = 5;
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 11, lengthY: 11, cellsPerUnitLength: 2, periodicX: false, periodicY: false);
+            C.SetGrid(lengthX: 2 * sqrtPart + 1, lengthY: 2 * sqrtPart + 1, cellsPerUnitLength: 1.5, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel: 4);
-            C.hydrodynamicsConvergenceCriterion = 1000e-1;
+            C.hydrodynamicsConvergenceCriterion = 10;
 
             // Fluid Properties
             // =============================
@@ -53,138 +55,15 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.hydrodynamicsConvergenceCriterion, underrelaxationFactorIn: 3.0, useAddaptiveUnderrelaxationIn: true);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, false, false, false, C.underrelaxationParam, 1);
-            for (int x = 0; x < 10; x++) {
-                for (int y = 0; y < 10; y++) {
-                    C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { -5 + x, 5 - y }, startAngl: x * y + 26 * y) {
+            for (int x = 0; x < sqrtPart; x++) {
+                for (int y = 0; y < sqrtPart; y++) {
+                    C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { -sqrtPart + 1 + 2 * x, sqrtPart - 1 - 2 * y }, startAngl: x * y + 26 * y) {
                         particleDensity = 1,
                         activeStress = 1,
                     });
                 }
             }
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 0.0, 0.0 }, startAngl: 0) {
-            //    particleDensity = 1,
-            //    activeStress = 1,
-            //});
-
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 4.0, 0.0 }, startAngl: 112) {
-            //    particleDensity = 1,
-            //    activeStress = 1,
-            //});
-
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { -4.0, 0.0 }, startAngl: -120) {
-            //    particleDensity = 1,
-            //    activeStress = 1,
-            //});
-
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 0.0, 4.0 }, startAngl: -145) {
-            //    particleDensity = 1,
-            //    activeStress = 1,
-            //});
-
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 0.0, -4.0 }, startAngl: 123) {
-            //    particleDensity = 1,
-            //    activeStress = 1,
-            //});
-
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 2.0, 0.0 }, startAngl: 23) {
-            //    particleDensity = 1,
-            //    activeStress = 1,
-            //});
-
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { -2.0, 0.0 }, startAngl: -12) {
-            //    particleDensity = 1,
-            //    activeStress = 1,
-            //});
-
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 0.0, 2.0 }, startAngl: -26) {
-            //    particleDensity = 1,
-            //    activeStress = 1,
-            //});
-
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 0.0, -2.0 }, startAngl: 457) {
-            //    particleDensity = 1,
-            //    activeStress = 1,
-            //});
-
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 2, 2 }, startAngl: 10) {
-            //    particleDensity = 1,
-            //    activeStress = 1,
-            //});
-
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 2, -2 }, startAngl: 50) {
-            //    particleDensity = 1,
-            //    activeStress = 1,
-            //});
-
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { -2, 2 }, startAngl: 80) {
-            //    particleDensity = 1,
-            //    activeStress = 1,
-            //});
-
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { -2, -2 }, startAngl: 34) {
-            //    particleDensity = 1,
-            //    activeStress = 1,
-            //});
-
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 4, 2 }, startAngl: 10) {
-            //    particleDensity = 1,
-            //    activeStress = 1,
-            //});
-
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 4, -2 }, startAngl: 50) {
-            //    particleDensity = 1,
-            //    activeStress = 1,
-            //});
-
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { -4, 2 }, startAngl: 80) {
-            //    particleDensity = 1,
-            //    activeStress = 1,
-            //});
-
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { -4, -2 }, startAngl: 34) {
-            //    particleDensity = 1,
-            //    activeStress = 1,
-            //});
-
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 2, 4 }, startAngl: 10) {
-            //    particleDensity = 1,
-            //    activeStress = 1,
-            //});
-
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 2, -4 }, startAngl: 50) {
-            //    particleDensity = 1,
-            //    activeStress = 1,
-            //});
-
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { -2, 4 }, startAngl: 80) {
-            //    particleDensity = 1,
-            //    activeStress = 1,
-            //});
-
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { -2, -4 }, startAngl: 34) {
-            //    particleDensity = 1,
-            //    activeStress = 1,
-            //});
-
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 4, 4 }, startAngl: 10) {
-            //    particleDensity = 1,
-            //    activeStress = 1,
-            //});
-
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 4, -4 }, startAngl: 50) {
-            //    particleDensity = 1,
-            //    activeStress = 1,
-            //});
-
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { -4, 4 }, startAngl: 80) {
-            //    particleDensity = 1,
-            //    activeStress = 1,
-            //});
-
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { -4, -4 }, startAngl: 34) {
-            //    particleDensity = 1,
-            //    activeStress = 1,
-            //});
+            //
 
             // Quadrature rules
             // =============================   
