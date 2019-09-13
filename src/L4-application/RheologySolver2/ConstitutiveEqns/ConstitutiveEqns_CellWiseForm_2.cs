@@ -120,7 +120,7 @@ namespace BoSSS.Application.Rheology
             double[] Normale = inp.Normale;
             double Tout;
 
-            if (m_BcMap.EdgeTag2Type[inp.EdgeTag] == IncompressibleBcType.Wall) {
+            if (m_BcMap.EdgeTag2Type[inp.EdgeTag] == IncompressibleBcType.Wall || m_BcMap.EdgeTag2Type[inp.EdgeTag] == IncompressibleBcType.FreeSlip) {
                 Tout = Tin[0];
             } else {
 

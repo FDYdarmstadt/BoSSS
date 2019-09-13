@@ -210,15 +210,13 @@ namespace BoSSS.Application.Rheology {
                 case IncompressibleBcType.Pressure_Outlet:
 
                     // Atmospheric outlet/pressure outflow: hom. Neumann
-                    res += Uin[0] * n1 + Uin[1] * n2;
+                    res += Uin[0] * n1 + Uin[1] * n2;           
                     break;
 
                 case IncompressibleBcType.FreeSlip:
-                    if (Component == 1)
-                    {
-                        res += Uin[0] * n1 + Uin[1] * n2;
-                    }
 
+                    //Free slip wall for symmetry line of symmetric channel
+                    res += n2 * (Uin[0] * n1 + Uin[1] * n2) * n1;
                     break;
 
                 case IncompressibleBcType.Velocity_Inlet:

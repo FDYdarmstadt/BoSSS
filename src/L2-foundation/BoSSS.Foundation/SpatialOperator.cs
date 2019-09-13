@@ -1508,7 +1508,7 @@ namespace BoSSS.Foundation {
 
                 BuildGridColoring();
 
-                Console.WriteLine("FDJac: no of color lists: " + ColorLists.Length);
+                //Console.WriteLine("FDJac: no of color lists: " + ColorLists.Length);
             }
 
             /// <summary>
@@ -2235,7 +2235,7 @@ namespace BoSSS.Foundation {
                 DelParamUpdate(domFields, Eval.Parameters.ToArray());
 
 
-                Console.WriteLine("Total number of evaluations: " + NoOfEvals);
+                //Console.WriteLine("Total number of evaluations: " + NoOfEvals);
 
                 // correct the affine offset
                 // =========================
