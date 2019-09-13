@@ -515,7 +515,7 @@ namespace ilPSP.Utils {
         /// </summary>
         /// <param name="inp">source.</param>
         /// <param name="output">destination.</param>
-        /// <param name="idxSrc">list of indices, to pich values from the source array</param>
+        /// <param name="idxSrc">list of indices, to pick values from the source array</param>
         /// <param name="idxTarg">
         /// Optional, can be null; if this is the case, it is assumed to be {0,1,2,3, ... }.
         /// </param>

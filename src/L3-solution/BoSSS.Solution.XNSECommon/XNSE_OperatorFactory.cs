@@ -345,6 +345,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 foreach(var kv in AgglomeratedCellLengthScales) {
                     eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
+                    eval.SpeciesOperatorCoefficients[kv.Key].EdgeLengthScales = kv.Value;
                     eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
                 }
 

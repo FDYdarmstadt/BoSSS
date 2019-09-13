@@ -64,10 +64,10 @@ namespace BoSSS.Application.FSI_Solver
                                         NormalComponent[2] = 0;
                                         switch (DampingTensorID)
                                         {
-                                            case 0:
+                                            case 0://D^{vv}
                                                 result[j, k] = d1 == d2 ? (1 - NormalComponent[d1] * NormalComponent[d2]) * muA / dn : -NormalComponent[d1] * NormalComponent[d2] * muA / dn;
                                                 break;
-                                            case 1:
+                                            case 1://D^{vw}
                                                 if (d1 == 2 && d2 != 2)
                                                 {
                                                     result[j, k] = R[1 - d2] * Math.Pow(-1, d2) * muA / dn;
@@ -78,7 +78,7 @@ namespace BoSSS.Application.FSI_Solver
                                                 }
                                                 else result[j, k] = 0;
                                                 break;
-                                            case 2:
+                                            case 2://D^{wv}
                                                 if (d2 == 2 && d1 != 2)
                                                 {
                                                     result[j, k] = R[1 - d1] * Math.Pow(-1, d1) * muA / dn;
@@ -89,7 +89,7 @@ namespace BoSSS.Application.FSI_Solver
                                                 }
                                                 else result[j, k] = 0;
                                                 break;
-                                            case 3:
+                                            case 3://D^{ww}
                                                 if (d1 == d2 && d1 != 2)
                                                 {
                                                     result[j, k] = R[1 - d1].Pow2() * muA / dn;

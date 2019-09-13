@@ -1114,7 +1114,7 @@ namespace BoSSS.Solution {
                 sms.SetCommPath(0);
                 sms.CommitCommPaths();
 
-                sms.Transmitt(0, ilPSP.Environment.MPIEnv.Hostname);
+                sms.Transmit(0, ilPSP.Environment.MPIEnv.Hostname);
 
                 object o;
                 int rank;

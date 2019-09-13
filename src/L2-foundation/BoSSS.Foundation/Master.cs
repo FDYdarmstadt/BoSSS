@@ -85,7 +85,7 @@ namespace BoSSS.Foundation.Comm {
                     sms.CommitCommPaths();
 
                     if (MyRank > 0)
-                        sms.Transmitt(0, m_hostname);
+                        sms.Transmit(0, m_hostname);
 
                     int recvRnk;
                     string nmn;

@@ -55,6 +55,22 @@ namespace CNS {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
+            //int L = 5;
+            //var A = MultidimensionalArray.Create(L, L); 
+            //var B = MultidimensionalArray.Create(L, L); 
+            //var C = MultidimensionalArray.Create(L, L);
+
+            //for (int l = 0; l < L; l++)
+            //    A[l, l] = l + 1 + l * 2;
+
+            //A.InvertTo(B);
+
+            //C.GEMM(1.0, A, B, 0.0);
+
+            //Console.WriteLine("BLAS-LAPACK ok");
+
+            //return;
+
             //Application.InitMPI(args);
             //CNS.Tests.ConvectiveFlux.ShockTubeTests.Toro1RusanovTest();
             //CNS.Tests.ConvectiveFlux.ShockTubeTests.Toro1AllButRusanovTest(ConvectiveFluxTypes.Godunov);
@@ -64,6 +80,8 @@ namespace CNS {
             //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder3rd();
             //CNS.Tests.IBMTests.IBMIsentropicVortexTest.IBMVortexLocalTimeSteppingTest();
             //Debug.Assert(false);
+            //csMPI.Raw.mpiFinalize();
+            //return;
 
             Application<CNSControl>._Main(
                 args,

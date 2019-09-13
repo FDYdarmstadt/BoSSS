@@ -53,7 +53,7 @@ namespace ilPSP {
         [Conditional("DEBUG")]
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void Watch(MPI_Comm comm) {
-            if(!Tracing.Tracer.InstrumentationSwitch)
+            if (!Tracing.Tracer.InstrumentationSwitch)
                 // if tracing is off for performance reasons,
                 // also this method should be turned of.
                 return;
@@ -64,7 +64,7 @@ namespace ilPSP {
             DateTime entryTime = DateTime.Now;
             {
                 StackFrame fr = new StackFrame(1, true);
-                _MethodBase m = fr.GetMethod();
+                System.Reflection.MethodBase m = fr.GetMethod();
                 m_functionName = m.DeclaringType.FullName + "." + m.Name;
             }
 

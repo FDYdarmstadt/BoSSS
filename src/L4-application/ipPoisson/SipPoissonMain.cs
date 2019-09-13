@@ -343,6 +343,7 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         private void UpdateMatrices() {
             using (var tr = new FuncTrace()) {
+                             
                 // time measurement for matrix assembly
                 Stopwatch stw = new Stopwatch();
                 stw.Start();
@@ -894,6 +895,7 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         private void ExperimentalSolve(out double mintime, out double maxtime, out bool Converged, out int NoOfIter) {
             using (var tr = new FuncTrace()) {
+                
                 int p = this.T.Basis.Degree;
                 var MgSeq = this.MultigridSequence;
                 mintime = double.MaxValue;
@@ -910,13 +912,8 @@ namespace BoSSS.Application.SipPoisson {
                 }
                 mgBasis.Stop();
                 Console.WriteLine("done. (" + mgBasis.Elapsed.TotalSeconds + " sec)");
-                //Console.WriteLine("going into infinity loop....");
-                //while (true) ;
-
-
-                //foreach (int sz in new int[] { 1000, 2000, 5000, 10000, 20000 }) {
-                //    base.Control.TargetBlockSize = sz;
-
+          
+               
                 for (int irun = 0; irun < base.Control.NoOfSolverRuns; irun++) {
                     Stopwatch stw = new Stopwatch();
                     stw.Reset();
@@ -968,6 +965,10 @@ namespace BoSSS.Application.SipPoisson {
                     }
                     solverSetup.Stop();
                     Console.WriteLine("done. (" + solverSetup.Elapsed.TotalSeconds + " sec)");
+
+                    MultigridOp.GetMemoryInfo(out long AllocMem, out long UsedMem);
+                    Console.WriteLine("  Memory reserved|used by multi-grid operator {0:F2} | {1:F2} MB", (double)AllocMem / (1024.0 * 1024.0), (double)UsedMem / (1024.0 * 1024.0));
+
 
                     Console.WriteLine("Running solver...");
                     var solverIteration = new Stopwatch();

@@ -172,7 +172,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// Links edge tags (<see cref="IGeometricalEdgeData.EdgeTags"/>) and
         /// boundary conditions in the control object (<see cref="BoSSS.Solution.Control.AppControl.BoundaryValues"/>).
         /// </summary>
-        protected IncompressibleBoundaryCondMap BcMap;
+        protected IncompressibleBoundaryCondMap boundaryCondMap;
 
         CoordinateVector m_CurrentSolution;
 
@@ -262,7 +262,7 @@ namespace BoSSS.Application.IBM_Solver {
                 string[] DomNameSelected = new string[0];
 
                 int D = this.GridData.SpatialDimension;
-                BcMap = new IncompressibleBoundaryCondMap(this.GridData, this.Control.BoundaryValues, PhysicsMode.Incompressible);
+                boundaryCondMap = new IncompressibleBoundaryCondMap(this.GridData, this.Control.BoundaryValues, PhysicsMode.Incompressible);
 
                 int degU = this.Velocity[0].Basis.Degree;
                 var IBM_Op_config = new NSEOperatorConfiguration {
@@ -306,11 +306,11 @@ namespace BoSSS.Application.IBM_Solver {
                         var comps = IBM_Op.EquationComponents[CodName[d]];
 
                         //var ConvBulk = new Solution.XNSECommon.Operator.Convection.ConvectionInBulk_LLF(D, BcMap, d, this.Control.PhysicalParameters.rho_A, 1, IBM_Op_config.dntParams.LFFA, IBM_Op_config.dntParams.LFFB, LsTrk);
-                        var ConvBulk = new Solution.NSECommon.LinearizedConvection(D, BcMap, d);
+                        var ConvBulk = new Solution.NSECommon.LinearizedConvection(D, boundaryCondMap, d);
                         //IBM_Op.OnIntegratingBulk += ConvBulk.SetParameter;
                         comps.Add(ConvBulk); // bulk component
 
-                        var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(d, D, LsTrk, this.Control.AdvancedDiscretizationOptions.LFFA, BcMap,
+                        var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(d, D, LsTrk, this.Control.AdvancedDiscretizationOptions.LFFA, boundaryCondMap,
                             delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; }, this.Control.PhysicalParameters.rho_A, false);
 
                         comps.Add(ConvIB); // immersed boundary component
@@ -322,7 +322,7 @@ namespace BoSSS.Application.IBM_Solver {
                 if (IBM_Op_config.PressureGradient) {
                     for (int d = 0; d < D; d++) {
                         var comps = IBM_Op.EquationComponents[CodName[d]];
-                        var pres = new PressureGradientLin_d(d, BcMap);
+                        var pres = new PressureGradientLin_d(d, boundaryCondMap);
                         //var pres = new Solution.XNSECommon.Operator.Pressure.PressureInBulk(d, BcMap, 1, 1);
                         //IBM_Op.OnIntegratingBulk += pres.SetParameter;
                         comps.Add(pres); // bulk component
@@ -353,7 +353,7 @@ namespace BoSSS.Application.IBM_Solver {
 
 
                         //var Visc = new Solution.XNSECommon.Operator.Viscosity.ViscosityInBulk_GradUTerm(penalty, 1.0, BcMap, d, D, this.Control.PhysicalParameters.mu_A, 1, ViscosityImplementation.H);
-                        var Visc = new swipViscosity_Term1(penalty_bulk, d, D, BcMap,
+                        var Visc = new swipViscosity_Term1(penalty_bulk, d, D, boundaryCondMap,
                             ViscosityOption.ConstantViscosity,
                             this.Control.PhysicalParameters.mu_A ,// / this.Control.PhysicalParameters.rho_A
                             double.NaN, null);
@@ -376,7 +376,7 @@ namespace BoSSS.Application.IBM_Solver {
                         //var src = new Solution.XNSECommon.Operator.Continuity.DivergenceInBulk_Volume(d, D, 1, 0, 1, false);
                         var src = new Divergence_DerivativeSource(d, D);
                         //IBM_Op.OnIntegratingBulk += src.SetParameter;
-                        var flx = new Divergence_DerivativeSource_Flux(d, BcMap);
+                        var flx = new Divergence_DerivativeSource_Flux(d, boundaryCondMap);
                         //IBM_Op.OnIntegratingBulk += flx.SetParameter;
                         IBM_Op.EquationComponents["div"].Add(src);
                         IBM_Op.EquationComponents["div"].Add(flx);
@@ -572,7 +572,7 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             // Set Pressure Reference Point
-            if (!this.BcMap.DirichletPressureBoundary) {
+            if (!this.boundaryCondMap.DirichletPressureBoundary) {
                 if (OpMatrix != null) {
 
                     IBMSolverUtils.SetPressureReferencePoint(
@@ -614,6 +614,8 @@ namespace BoSSS.Application.IBM_Solver {
         protected double torque = new double();
         protected double oldtorque = new double();
 
+        private int AnalyseCounter=1;
+
         //SinglePhaseField blocking = null;
 
         /// <summary>
@@ -622,9 +624,9 @@ namespace BoSSS.Application.IBM_Solver {
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
             using (new FuncTrace()) {
 
-                if (this.Control.OperatorMatrixAnalysis == true)
+                //Es folgt: die Analyse des Operators
+                if (this.Control.OperatorMatrixAnalysis == true && AnalyseCounter!=0)
                 {
-                    //
                     // 'Notlösung' -- no actual agglomeration available - use length scales form a temporary agglomerator.
                     //
                     var agg = this.LevsetTracker.GetAgglomerator(this.FluidSpecies, this.HMForder, this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold);
@@ -633,7 +635,9 @@ namespace BoSSS.Application.IBM_Solver {
                     Console.WriteLine("Starting OpAnal ...");
                     OpAnalysisBase myAnalysis = new OpAnalysisBase(DelComputeOperatorMatrix, CurrentSolution.Mapping, CurrentSolution.Mapping.Fields.ToArray(), AggCLS, phystime);
                     myAnalysis.Analyse();
+                    AnalyseCounter--;
                 }
+
 
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
                 int D = this.GridData.SpatialDimension;
@@ -906,12 +910,9 @@ namespace BoSSS.Application.IBM_Solver {
                     mpiRank.SetMeanValue(j, DatabaseDriver.MyRank);
                 }
 
-                ilPSP.Environment.StdoutOnlyOnRank0 = false;
                 Console.WriteLine("Total number of cells:    {0}", Grid.NumberOfCells);
                 Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count());
                 Console.WriteLine("Total number of cut cells:     {0}", LsTrk.Regions.GetCutCellMask().NoOfItemsLocally);
-
-                ilPSP.Environment.StdoutOnlyOnRank0 = true;
             }
 
             // Using defauls CellCostEstimateFactories          
