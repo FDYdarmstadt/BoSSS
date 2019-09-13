@@ -28,7 +28,6 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples {
-
         public static FSI_Control ActiveRod_noBackroundFlow(int k = 3) {
             FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
             C.SetSaveOptions(dataBasePath: @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\Channel", savePeriod: 1);
@@ -53,8 +52,8 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Fluid Properties
             // =============================
-            C.PhysicalParameters.rho_A = 1;//pg/(mum^3)
-            C.PhysicalParameters.mu_A = 1;//pg(mum*s)
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.IncludeConvection = false;
             C.gravity = new double[] { 0, 0 };
 
@@ -86,7 +85,6 @@ namespace BoSSS.Application.FSI_Solver {
 
             // misc. solver options
             // =============================  
-            C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
             C.NonLinearSolver.MaxSolverIterations = 1000;
@@ -124,8 +122,8 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Fluid Properties
             // =============================
-            C.PhysicalParameters.rho_A = 1;//pg/(mum^3)
-            C.PhysicalParameters.mu_A = 1;//pg(mum*s)
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.IncludeConvection = false;
             C.gravity = new double[] { 0, 0 };
 
@@ -157,7 +155,6 @@ namespace BoSSS.Application.FSI_Solver {
 
             // misc. solver options
             // =============================  
-            C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
             C.NonLinearSolver.MaxSolverIterations = 1000;
