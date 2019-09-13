@@ -104,6 +104,7 @@ namespace BoSSS.Application.FSI_Solver {
 
         SinglePhaseField ParticleColor;
         SinglePhaseField LevelSetDistance;
+        SinglePhaseField Vorticity2D;
 
         /// <summary>
         /// Create the colour and level set distance field. Necessary for the definition of the particle level set.
@@ -118,6 +119,10 @@ namespace BoSSS.Application.FSI_Solver {
             LevelSetDistance = new SinglePhaseField(new Basis(this.GridData, 0), "LevelSetDistance");
             m_RegisteredFields.Add(LevelSetDistance);
             m_IOFields.Add(LevelSetDistance);
+
+            Vorticity2D = new SinglePhaseField(new Basis(this.GridData, Velocity[0].Basis.Degree), "Vorticity");
+            m_RegisteredFields.Add(Vorticity2D);
+            m_IOFields.Add(Vorticity2D);
         }
 
         /// <summary>
@@ -550,7 +555,6 @@ namespace BoSSS.Application.FSI_Solver {
                     if (!CalculatedDampingTensors) {
                         foreach (Particle p in m_Particles) {
                             if (p.Motion.useAddedDamping) {
-                                Console.WriteLine("Calculate added damping tensor");
                                 p.Motion.CalculateDampingTensor(p, LsTrk, ((FSI_Control)this.Control).PhysicalParameters.mu_A, ((FSI_Control)this.Control).PhysicalParameters.rho_A, ((FSI_Control)this.Control).dtMax);
                                 Auxillary.ExchangeDampingTensors(m_Particles);
                             }
@@ -814,7 +818,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         private int[] InitializeColoring() {
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int JE = GridData.iLogicalCells.NoOfExternalCells + J;
             int[] cells = new int[J];
+            int[] cellsExchange = new int[JE];
             List<int> coloredCells = new List<int>();
             for (int p = 0; p < m_Particles.Count; p++) {
                 Particle currentParticle = m_Particles[p];
@@ -827,10 +833,15 @@ namespace BoSSS.Application.FSI_Solver {
                         ParticleColor.SetMeanValue(j, p + 1);
                         coloredCells.Add(j);
                         cells[j] = p + 1;
+                        cellsExchange[j] = cells[j];
                     }
                 }
             }
-            FixNeighbourColoring(cells);
+            cellsExchange.MPIExchange(GridData);
+            FixNeighbourColoring(cellsExchange);
+            for(int j = 0; j < J; j++) {
+                cells[j] = cellsExchange[j];
+            }
             return cells;
         }
 
@@ -841,11 +852,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// All cells with their colour, uncoloured cells are set to zero.
         /// </param>
         private void FixNeighbourColoring(int[] coloredCells) {
-            for (int i = 0; i < coloredCells.Length; i++) {
+            int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            for (int i = 0; i < J; i++) {
                 if (coloredCells[i] != 0) {
                     GridData.GetCellNeighbours(i, GetCellNeighbours_Mode.ViaEdges, out int[] CellNeighbors, out _);
                     for (int j = 0; j < CellNeighbors.Length; j++) {
-                        if (CellNeighbors[j] < coloredCells.Max() && coloredCells[i] != coloredCells[j] && coloredCells[CellNeighbors[j]] != 0) {
+                        if (CellNeighbors[j] < coloredCells.Max() && coloredCells[i] != coloredCells[CellNeighbors[j]] && coloredCells[CellNeighbors[j]] != 0) {
                             RecolorCells(coloredCells, coloredCells[i], coloredCells[CellNeighbors[j]]);
                         }
                     }
@@ -922,7 +934,6 @@ namespace BoSSS.Application.FSI_Solver {
             foreach (Particle p in Particles) {
                 Console.WriteLine("Predicting forces for the next timestep...");
                 if (p.Motion.useAddedDamping) {
-                    Console.WriteLine("Update added damping tensors!");
                     p.Motion.UpdateDampingTensors();
                 }
                 p.Motion.PredictForceAndTorque(p.activeStress, TimestepInt);
@@ -1029,7 +1040,7 @@ namespace BoSSS.Application.FSI_Solver {
                             Auxillary.CheckForMaxIterations(iterationCounter, ((FSI_Control)Control).maxIterationsFullyCoupled);
                             Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
                             Auxillary.SaveOldParticleState(m_Particles, iterationCounter, ((FSI_Control)Control).hydrodynamicsConvergenceCriterion, IsFullyCoupled);
-
+                           
                             // actual physics
                             // -------------------------------------------------
                             if (IsFullyCoupled) {
@@ -1039,6 +1050,7 @@ namespace BoSSS.Application.FSI_Solver {
                                 }
                                 else {
                                     m_BDF_Timestepper.Solve(phystime, dt, false);
+                                    Vorticity2D.Curl2D(1, Velocity);
                                     CalculateHydrodynamicForces(m_Particles, dt, false);
                                     firstiteration = false;
                                 }

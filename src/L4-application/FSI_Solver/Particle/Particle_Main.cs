@@ -172,8 +172,7 @@ namespace BoSSS.Application.FSI_Solver {
             double seperateBoundaryRegions;
             // The posterior side of the particle 
             if (Math.Cos(Motion.angle[0]) * (X[0] - Motion.position[0][0]) + Math.Sin(Motion.angle[0]) * (X[1] - Motion.position[0][1]) < 1e-8) {
-                seperateBoundaryRegions = (Math.Cos(Motion.angle[0]) * (X[0] - Motion.position[0][0]) + Math.Sin(Motion.angle[0]) * (X[1] - Motion.position[0][1]));
-                seperateBoundaryRegions /= Math.Sqrt((X[0] - Motion.position[0][0]).Pow2() + (X[1] - Motion.position[0][1]).Pow2());
+                seperateBoundaryRegions = (Math.Cos(Motion.angle[0]) * (X[0] - Motion.position[0][0]) + Math.Sin(Motion.angle[0]) * (X[1] - Motion.position[0][1])) / Math.Sqrt((X[0] - Motion.position[0][0]).Pow2() + (X[1] - Motion.position[0][1]).Pow2());
             }
             // The anterior side of the particle 
             else {
