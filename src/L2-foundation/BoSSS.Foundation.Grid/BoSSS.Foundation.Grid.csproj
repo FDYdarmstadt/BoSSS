@@ -28,7 +28,7 @@
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -64,9 +64,11 @@
     <Compile Include="Grid2D.cs" />
     <Compile Include="Grid3D.cs" />
     <Compile Include="GridRefinementController.cs" />
+    <Compile Include="VoronoiMeshing\BoundaryEdgeEnumerator.cs" />
+    <Compile Include="VoronoiMeshing\BoundaryTransformation.cs" />
     <Compile Include="VoronoiMeshing\Cutter\BoundaryLineEnumerator.cs" />
     <Compile Include="VoronoiMeshing\Cutter\Divider.cs" />
-    <Compile Include="VoronoiMeshing\Cutter\BoundaryLine.cs" />
+    <Compile Include="VoronoiMeshing\BoundaryLine.cs" />
     <Compile Include="VoronoiMeshing\Cutter\CutterState.cs" />
     <Compile Include="VoronoiMeshing\Cutter\Intersectioncase.cs" />
     <Compile Include="VoronoiMeshing\DataStructures\ArrayEnum.cs" />
@@ -75,7 +77,9 @@
     <Compile Include="VoronoiMeshing\Cutter\BoundaryCutter.cs" />
     <Compile Include="VoronoiMeshing\Cutter\OnEdgeCutter.cs" />
     <Compile Include="VoronoiMeshing\IDMesh.cs" />
+    <Compile Include="VoronoiMeshing\InsideCellEnumerator.cs" />
     <Compile Include="VoronoiMeshing\MeshCell.cs" />
+    <Compile Include="VoronoiMeshing\MeshGenerator.cs" />
     <Compile Include="VoronoiMeshing\MICHMesher\MICHDelaunayCell.cs" />
     <Compile Include="VoronoiMeshing\MICHMesher\MICHVertex.cs" />
     <Compile Include="VoronoiMeshing\MICHMesher\MICMesher.cs" />

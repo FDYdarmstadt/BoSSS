@@ -10,7 +10,9 @@ namespace BoSSS.Platform
     public class CyclicArray<T>
     {
         protected readonly T[] data;
+
         public readonly int Length;
+
         protected int start = 0;
 
         public CyclicArray(int Length)
@@ -24,6 +26,12 @@ namespace BoSSS.Platform
             data = array;
             Length = array.Length;
 
+        }
+
+        public CyclicArray(T[] array, int start)
+            : this(array)
+        {
+            this.start = start; 
         }
 
         public int Start {

@@ -1,9 +1,6 @@
 ﻿using BoSSS.Platform.LinAlg;
 using System.Collections.Generic;
-using System.Collections;
 using System.Diagnostics;
-using BoSSS.Foundation.Voronoi;
-using System;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
@@ -17,9 +14,13 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         public class Settings
         {
             public Vector[] BoundingBox;
+
             public Vector[] Boundary;
-            public HashSet<int> NotchedBoundaryLines = new HashSet<int>();
+
+            public Dictionary<int, int> PeriodicBoundaryMap = null;
+
             public int NumberOfLloydIterations = 10;
+
             public int FirstCellNode_indice = 0;
         }
 
@@ -29,59 +30,31 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             Debug.Assert(settings.Boundary.Length > 2);
         }
 
-        public static IDMesh<T> ComputeMesh<T>(IList<T> nodeList, Settings settings)
+        public static Mesh<T> ComputeMesh<T>(IList<T> nodes, Settings settings)
             where T : IMesherNode, new()
         {
             AssertCorrectness(settings);
-            BoundaryLineEnumerator boundaryLines = BoundaryLine.GetEnumerator(
-                settings.Boundary, 
-                settings.NotchedBoundaryLines);
-            IDMesh<T> mesh = null;
-            var cutter = new BoundaryCutter<T>();
+            Mesh<T> mesh = null;
+            MeshGenerator<T> voronoiMesher = new MeshGenerator<T>(settings);
+            
 
-            // Create Voronoi mesh
-            // =================================
             for (int iLloyd = 0; iLloyd <= settings.NumberOfLloydIterations; ++iLloyd)
             {
-                // Voronoi Mesh generation
-                //-------------------------------------
-                AddDistantBoundingNodes(nodeList, settings.BoundingBox);
-                mesh = MIConvexHullMeshGenerator.CreateMesh(nodeList);
-
-                //Clip: cut out boundary polygon
-                //-------------------------------------
-                cutter.CutOut(mesh, boundaryLines, settings.FirstCellNode_indice);
+                mesh = voronoiMesher.Generate(nodes);
 
                 // Lloyds algorithm (Voronoi relaxation)
-                // -------------------------------------
-                //Get inside cells : Return cells in order of Mesh Array.
                 if (iLloyd != settings.NumberOfLloydIterations)
                 {
                     MoveNodesTowardsCellCenter(mesh.Cells, ref settings.FirstCellNode_indice);
                 }
-                nodeList = mesh.Nodes;
+                nodes = mesh.Nodes;
             }
             return mesh;
-        }
-
-        static void AddDistantBoundingNodes<T>(IList<T> nodes, Vector[] boundingBox)
-            where T : IMesherNode, new()
-        {
-            Debug.Assert(nodes.Count > 0);
-            foreach (Vector corner in boundingBox)
-            {
-                T cornerNode = new T();
-                cornerNode.Position = corner * 10;
-                nodes.Add(cornerNode);
-            }
         }
 
         static void MoveNodesTowardsCellCenter<T>(IReadOnlyList<MeshCell<T>> Cells, ref int FirstCellNode_indice)
             where T : IMesherNode, new()
         {
-            //Mark inside nodes
-            //Use Original Nodes List and update. Use LinkedList?! Only iterate and cut some nodes, or insert
-            //Let's give it a try!
             for (int i = 0; i < Cells.Count; ++i)
             {
                 MeshCell<T> cell = Cells[i];

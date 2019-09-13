@@ -5,105 +5,85 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using BoSSS.Foundation.Voronoi;
+using ilPSP;
+using System.Diagnostics;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
     class BoundaryHandler<T>
         where T : IMesherNode, new()
     {
-        public bool boundaryHasPeriodicEdges { get; private set; }
+        Dictionary<int, BoundaryTransformation> periodicTrafoMap;
 
         BoundaryLine[] boundary;
 
-        Map periodicEdgeMapping;
+        int firstCellNodeIndice;
 
-        public BoundaryHandler(BoundaryLine[] boundary, Map periodicEdgeMapping)
+        public bool ContainsPeriodicBoundaries { get; private set; }
+
+        public BoundaryHandler(
+            BoundaryLine[] boundary,
+            Dictionary<int, int> periodicBoundaryMap,
+            int firstCellNodeIndice)
         {
-            if (periodicEdgeMapping != null)
+            this.boundary = boundary;
+            this.firstCellNodeIndice = firstCellNodeIndice;
+            if (periodicBoundaryMap != null)
             {
-                boundaryHasPeriodicEdges = true;
-                this.boundary = boundary;
-                this.periodicEdgeMapping = periodicEdgeMapping;
-                CheckIfValid();
+                ContainsPeriodicBoundaries = true;
+                periodicTrafoMap = CreateMappingFrom(boundary, periodicBoundaryMap);
             }
             else
             {
-                boundaryHasPeriodicEdges = false;
+                ContainsPeriodicBoundaries = false;
             }
         }
 
-        void CheckIfValid()
+        static Dictionary<int, BoundaryTransformation> CreateMappingFrom(BoundaryLine[] boundary, IDictionary<int, int> map)
         {
-            if(!periodicEdgeMapping.IsBijective())
+            Dictionary<int, BoundaryTransformation> periodicTrafoMap = new Dictionary<int, BoundaryTransformation>(map.Count);
+            foreach(var boundaryPair in map)
             {
-                throw new Exception();
+                BoundaryLine source = boundary[boundaryPair.Key];
+                BoundaryLine target = boundary[boundaryPair.Value];
+                BoundaryTransformation transformation = new BoundaryTransformation(source, target);
+                periodicTrafoMap.Add(boundaryPair.Key, transformation);
             }
-            if(periodicEdgeMapping.Max() > boundary.Length - 1 || periodicEdgeMapping.Min() < 0)
-            {
-                throw new Exception();
-            }
-            if ( !PeriodicBoundariesAreSameSize())
-            {
-                throw new Exception();
-            }
+            return periodicTrafoMap;
         }
 
-        bool PeriodicBoundariesAreSameSize()
+        public void CloneNodesAlongPeriodicBoundaries(Mesh<T> mesh, IList<T> nodes) 
         {
-            for(int i = 0; i < periodicEdgeMapping.Length; ++i)
-            {
-                BoundaryLine boundaryLineA = boundary[i];
-                BoundaryLine boundaryLineB = periodicEdgeMapping.GetCorrespondingEntry(i, boundary);
+            Debug.Assert(ContainsPeriodicBoundaries == true);
+            List<T> clones = new List<T>();
 
-                double lengthA = boundaryLineA.Length();
-                double lengthB = boundaryLineB.Length();
-                
-                if( Math.Abs(lengthA - lengthB) > 1e-14 )
+            //Follow boundary and
+            BoundaryEdgeEnumerator<T> edgeCells = new BoundaryEdgeEnumerator<T>(mesh);
+            Vector start = (Vector)boundary[0].Start;
+            foreach (Edge<T> edge in edgeCells.Edges(start, firstCellNodeIndice))
+            {
+                // 1) Collect nodes that should be mirrored
+                // 2) Clone and teleport/transform to paired boundary
+                if (periodicTrafoMap.TryGetValue(edge.BoundaryEdgeNumber, out BoundaryTransformation transformation))
                 {
-                    return false;
+                    MeshCell<T> cell = edge.Cell;
+                    T clone = new T
+                    {
+                        Position = transformation.Transform(cell.Node.Position)
+                    };
+                    clones.Add(clone); 
                 }
             }
-            return true;
+            nodes.AddRange(clones);
         }
 
-        public void MirrorNodes(MeshIntersecter<T> mesh, IList<T> nodeList) 
+        public void RecomposePeriodicEdges(Mesh<T> mesh)
         {
-            //Mirror : Follow boundary and
-            // 1) Collect nodes that should be mirrored
-            /*while (boundaryEdges.MoveNext())
-            {
-                Edge<T> edge = boundaryEdges.Current;
-            }
-            for ()
-            {
-
-            }
-                
-            // 2) Mirror
-
-            //Cut
-
+            Debug.Assert(ContainsPeriodicBoundaries == true);
+            throw new NotImplementedException();
             //Merge/Shift: Follow boundary 2 times and
             // 1) Collect
             // 2) Remove & Add
-            */
         }
-
-        public void UnifyMirroredCells(IList<MeshCell<T>> cells)
-        {
-
-        }
-
-    }
-
-    class Collecter<T>
-    {
-        IEnumerator<Edge<T>> boundaryEdges;
-
-    }
-
-    class Mirror<T>
-    {
-
     }
 }

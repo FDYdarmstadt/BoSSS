@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections;
+﻿using BoSSS.Platform.LinAlg;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BoSSS.Platform;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
@@ -12,7 +7,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
     {
         int Length;
 
-        public BoundaryLineEnumerator(IEnumerator<BoundaryLine> enumerator, int Length) 
+        public BoundaryLineEnumerator(IEnumerator<BoundaryLine> enumerator, int Length)
             : base(enumerator)
         {
             this.Length = Length;
@@ -29,7 +24,20 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 return new CyclicInterval(0, Length - 1, Counter);
             }
         }
-    }
 
-    
+        public static BoundaryLineEnumerator GetEnumerator(
+            Vector[] polygon)
+        {
+            BoundaryLine[] lines = BoundaryLine.ToLines(polygon);
+            BoundaryLineEnumerator enumerateAndCount = GetEnumerator(lines);
+            return enumerateAndCount;
+        }
+
+        public static BoundaryLineEnumerator GetEnumerator(BoundaryLine[] polygon)
+        {
+            ArrayEnum<BoundaryLine> lineEnum = new ArrayEnum<BoundaryLine>(polygon);
+            BoundaryLineEnumerator enumerateAndCount = new BoundaryLineEnumerator(lineEnum, polygon.Length);
+            return enumerateAndCount;
+        }
+    }
 }

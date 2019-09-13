@@ -69,7 +69,5 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         public Vertex[] Vertices { get; set; }
         public Edge<T>[] Edges { get; set; }
         public int IntersectionVertex { get; set; }
-
-        //public Vector Position { get; set; }
     }
 }

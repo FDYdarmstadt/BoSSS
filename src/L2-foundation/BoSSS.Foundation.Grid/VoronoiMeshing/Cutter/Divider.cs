@@ -8,50 +8,24 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
     class Divider<T>
     {
-        IDMesh<T> mesh;
+        Mesh<T> mesh;
 
-        MeshCell<T> insideCell;
+        InsideCellEnumerator<T> insideCells;
 
-        public Divider(IDMesh<T> mesh, int firstCell_NodeIndice)
-            : this(mesh)
+        public Divider(Mesh<T> mesh, int firstCell_NodeIndice)
         {
-            this.insideCell = mesh.Cells[firstCell_NodeIndice];
+            insideCells = new InsideCellEnumerator<T>(mesh, firstCell_NodeIndice);
         }
 
-        public Divider(IDMesh<T> mesh)
+        public Divider(Mesh<T> mesh)
         {
-            this.mesh = mesh;
+            insideCells = new InsideCellEnumerator<T>(mesh);
         }
 
         public MeshCell<T> GetFirst(BoundaryLine boundaryLine)
         {
-            //Find cell that contains boundaryLine.Start;
-            bool foundFirstCell = false;
-            if (insideCell == null)
-            {
-                //SetFirst Cell: any random cell. Influences runtime, though
-                insideCell = mesh.Cells[0];
-                foundFirstCell = true;
-            }
-
-            //Check if boundaryLine.Start is still in cell, else search neighborhood
-            foreach (MeshCell<T> cell in CellsOnSameSideOfBoundary(insideCell))
-            {
-                Vector[] verts = Array.ConvertAll(cell.Vertices, item => (Vector)item);
-                //At this point, every cell is convex!
-                bool isInside = PolygonTesselation.PointInConvexPolygon(verts, (Vector)boundaryLine.Start);
-                if (isInside)
-                {
-                    foundFirstCell = true;
-                    insideCell = cell;
-                    break;
-                }
-            }
-            if (!foundFirstCell)
-            {
-                throw new Exception("First cell could not be found: boundaryLine.start not inside a cell");
-            }
-            return insideCell;
+            insideCells.SetFirstCell((Vector)boundaryLine.Start);
+            return insideCells.GetFirstCell();
         }
 
         public void RemoveOutsideCells()
@@ -88,73 +62,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         void IdentifyInsideCells()
         {
-            foreach (MeshCell<T> cell in CellsOnSameSideOfBoundary(insideCell))
+            foreach (MeshCell<T> cell in insideCells.Cells())
             {
                 cell.type = MeshCellType.Inside;
             }
         }
-
-        IEnumerable<MeshCell<T>> CellsOnSameSideOfBoundary(MeshCell<T> cell)
-        {
-            BitArray visited = new BitArray(mesh.Cells.Count);
-            return IterativeYieldConnectedCells(cell, visited);
-        }
-
-        /// <summary>
-        /// Enumerates the cells inside the boundary of this mesh.
-        /// Recursion produces Stack overflow, when to many cells in mesh.
-        /// </summary>
-        /// <param name="cell">
-        /// Enumeration starts with this cell and then return its neighbors and so on.
-        /// </param>
-        /// <returns></returns>
-        private static IEnumerable<MeshCell<T>> RecursiveYieldConnectedCells(MeshCell<T> cell, BitArray visited)
-        {
-            visited[cell.ID] = true;
-            yield return cell;
-
-            foreach (Edge<T> edge in cell.Edges)
-            {
-                Edge<T> newRidge = edge.Twin;
-                if (!visited[newRidge.Cell.ID] && !newRidge.IsBoundary)
-                {
-                    foreach (MeshCell<T> neighbor in RecursiveYieldConnectedCells(newRidge.Cell, visited))
-                    {
-                        yield return neighbor;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Enumerates the cells inside the boundary of this mesh.
-        /// </summary>
-        /// <param name="cell">
-        /// Enumeration starts with this cell and then return its neighbors and so on.
-        /// </param>
-        /// <returns></returns>
-        static IEnumerable<MeshCell<T>> IterativeYieldConnectedCells(MeshCell<T> cell, BitArray visited)
-        {
-            LinkedList<MeshCell<T>> cells = new LinkedList<MeshCell<T>>();
-            cells.AddFirst(cell);
-            visited[cell.ID] = true;
-            while (cells.Count > 0)
-            {
-                MeshCell<T> current = cells.First.Value;
-                yield return current;
-                cells.RemoveFirst();
-                foreach (Edge<T> edge in current.Edges)
-                {
-                    Edge<T> newEdge = edge.Twin;
-                    if (!visited[newEdge.Cell.ID] && !newEdge.IsBoundary)
-                    {
-                        cells.AddLast(newEdge.Cell);
-                        visited[newEdge.Cell.ID] = true;
-                    }
-                }
-            }
-        }
-
-        
     }
 }

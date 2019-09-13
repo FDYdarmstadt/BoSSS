@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using BoSSS.Platform.LinAlg;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,11 +10,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
     class BoundaryCutter<T>
         where T :IMesherNode, new()
     {
+        BoundaryLineEnumerator boundary;
+
         MeshIntersecter<T> meshIntersecter;
 
         Divider<T> greatDivider;
-
-        BoundaryLineEnumerator boundary;
 
         CutterState<Edge<T>> state;
 
@@ -30,11 +31,28 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         public void CutOut(
             IDMesh<T> mesh,
-            BoundaryLineEnumerator boundary,
+            BoundaryLine[] boundary,
             int firstCellNode_indice)
         {
-            Initialize(mesh, boundary, firstCellNode_indice);
+            this.boundary = BoundaryLineEnumerator.GetEnumerator(boundary);
+            Initialize(mesh, firstCellNode_indice);
+            CutOut();
+        }
 
+        void Initialize(
+            IDMesh<T> mesh,
+            int firstCellNode_indice)
+        {
+            this.meshIntersecter = new MeshIntersecter<T>(mesh);
+            this.greatDivider = new Divider<T>(mesh, firstCellNode_indice);
+            
+            state = new CutterState<Edge<T>>();
+            edgeCutter = new OnEdgeCutter<T>(this.meshIntersecter, this.boundary);
+            firstCell = null;
+        }
+
+        void CutOut()
+        {
             IEnumerator<Edge<T>> edgeEnumerator = FirstCellEdgeEnumerator();
             List<BoundaryLine> lines = new List<BoundaryLine>(10);
             BoundaryLine activeLine = default(BoundaryLine);
@@ -80,19 +98,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             HandleLastCell();
             boundary.Reset();
             greatDivider.RemoveOutsideCells();
-        }
-
-        void Initialize(
-            IDMesh<T> mesh,
-            BoundaryLineEnumerator boundary,
-            int firstCellNode_indice)
-        {
-            this.meshIntersecter = new MeshIntersecter<T>(mesh);
-            this.greatDivider = new Divider<T>(mesh, firstCellNode_indice);
-            this.boundary = boundary;
-            state = new CutterState<Edge<T>>();
-            edgeCutter = new OnEdgeCutter<T>(this.meshIntersecter, boundary);
-            firstCell = null;
         }
 
         IEnumerator<Edge<T>> FirstCellEdgeEnumerator()

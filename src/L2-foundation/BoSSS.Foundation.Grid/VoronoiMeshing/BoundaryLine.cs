@@ -9,27 +9,13 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
     class BoundaryLine : Line
     {
-        public bool RemoveNodesOnLeft;
-
         public double Length()
         {
             double length = (End.Position - Start.Position).Abs();
             return length;
         }
 
-        public static BoundaryLineEnumerator GetEnumerator(
-            Vector[] polygon,
-            HashSet<int> notchedBoundaryLines)
-        {
-            BoundaryLine[] lines = ToLines(polygon, notchedBoundaryLines);
-            ArrayEnum<BoundaryLine> lineEnum = new ArrayEnum<BoundaryLine>(lines);
-            BoundaryLineEnumerator countTheLines = new BoundaryLineEnumerator(lineEnum, polygon.Length);
-            return countTheLines;
-        }
-
-        public static BoundaryLine[] ToLines(
-            Vector[] polygon,
-            HashSet<int> notchedBoundaryLines)
+        public static BoundaryLine[] ToLines( Vector[] polygon)
         {
             BoundaryLine[] lines = new BoundaryLine[polygon.Length];
             BoundaryLine line;
@@ -46,10 +32,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                         Position = polygon[i + 1]
                     },
                 };
-                if (notchedBoundaryLines.Contains(i))
-                {
-                    line.RemoveNodesOnLeft = true;
-                }
                 lines[i] = line;
             }
             line = new BoundaryLine { Start = new Vertex(), End = new Vertex() };
