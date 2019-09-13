@@ -112,19 +112,19 @@ namespace BoSSS.Application.FSI_Solver {
             };
             C.SetBoundaries(boundaryValues);
             C.SetGrid(lengthX: 20, lengthY: 8, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel: 4);
+            C.SetAddaptiveMeshRefinement(amrLevel: 6);
 
             // Coupling Properties
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.maxIterationsFullyCoupled = 100000;
-            C.hydrodynamicsConvergenceCriterion = 1e-5;
+            C.hydrodynamicsConvergenceCriterion = 1e-1;
 
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 1;
-            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.IncludeConvection = true;
             C.gravity = new double[] { 0, 0 };
 
             // Particle Properties
@@ -132,7 +132,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.hydrodynamicsConvergenceCriterion, underrelaxationFactorIn: 3.0, useAddaptiveUnderrelaxationIn: true);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, false, false, false, C.underrelaxationParam, 1);
             C.Particles = new List<Particle> {
-                new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { 0.0, 0.0 }, startAngl: 0) {
+                new Particle_Ellipsoid(motion, 0.5, 0.05, new double[] { 0.0, 0.0 }, startAngl: 0) {
                     particleDensity = 1,
                     activeStress = 1,
                 }
