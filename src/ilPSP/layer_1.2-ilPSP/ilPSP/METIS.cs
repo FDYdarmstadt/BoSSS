@@ -14,7 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using System;
 using System.Runtime.InteropServices;
+using MPI.Wrappers.Utils;
 
 namespace ilPSP.Kraypis {
 
@@ -24,7 +26,7 @@ namespace ilPSP.Kraypis {
     /// <remarks>
     /// METIS can downloaded from http://glaros.dtc.umn.edu/gkhome/metis/metis/overview
     /// </remarks>
-    public class METIS {
+    public class METIS : DynLibLoader {
 
         /// <summary>
         /// Length of the METIS options array
@@ -65,26 +67,61 @@ namespace ilPSP.Kraypis {
             METIS_ERROR = -4    /*!< Some other errors */
         }
 
+        // workaround for .NET bug:
+        // https://connect.microsoft.com/VisualStudio/feedback/details/635365/runtimehelpers-initializearray-fails-on-64b-framework
+        static PlatformID[] Helper()
+        {
+            PlatformID[] p = new PlatformID[2];
+            p[0] = PlatformID.Win32NT;
+            p[1] = PlatformID.Unix;
+            return p;
+        }
+
         /// <summary>
-        /// see METIS manual;
+        /// ctor
         /// </summary>
-        //[DllImport("metis", EntryPoint = "METIS_PartGraphKway")]
-        [DllImport("libBoSSSnative_seq", EntryPoint = "METIS_PartGraphKway")]
-        public static extern int PartGraphKway(ref int nvtxs, ref int ncon,
-                                                int[] xadj, int[] adjncy,
-                                                int[] vwgt, int[] vsize, int[] adjwgt,
-                                                ref int nparts, double[] tpwgts, double[] ubvec,
-                                                int[] options, ref int objval, int[] part);
+        public METIS() :
+            base(new string[] { "metis.dll", "libBoSSSnative_seq.so" },
+                  new string[2][][],
+                  new GetNameMangling[] { DynLibLoader.Identity, DynLibLoader.BoSSS_Prefix },
+                  Helper(), //new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix },
+                  new int[] { -1, -1 })
+        { }
+
+#pragma warning disable 649
+        static _PartGraphKway METIS_PartGraphKway;
+        static _PartGraphRecursive METIS_PartGraphRecursive;
+#pragma warning restore 649
 
         /// <summary>
         /// see METIS manual;
         /// </summary>
-        //[DllImport("metis", EntryPoint = "METIS_PartGraphRecursive")]
-        [DllImport("libBoSSSnative_seq", EntryPoint = "METIS_PartGraphRecursive")]
-        public static extern int PartGraphRecursive(ref int nvtxs, ref int ncon,
-                                                     int[] xadj, int[] adjncy,
-                                                     int[] vwgt, int[] vsize, int[] adjwgt,
-                                                     ref int nparts, double[] tpwgts, double[] ubvec,
-                                                     int[] options, ref int objval, int[] part);
+        public unsafe delegate int _PartGraphKway(ref int nvtxs, ref int ncon, int[] xadj,
+                                                int[] adjncy, int[] vwgt, int[] vsize,
+                                                int[] adjwgt, ref int nparts, double[] tpwgts,
+                                                double[] ubvec, int[] options, ref int objval, int[] part);
+
+        public unsafe static _PartGraphKway PartGraphKway
+        {
+            get { return METIS_PartGraphKway; }
+        }
+
+        /// <summary>
+        /// see METIS manual;
+        /// </summary>
+        public unsafe delegate int _PartGraphRecursive(ref int nvtxs, ref int ncon,
+                                                 int[] xadj, int[] adjncy,
+                                                 int[] vwgt, int[] vsize, int[] adjwgt,
+                                                 ref int nparts, double[] tpwgts, double[] ubvec,
+                                                 int[] options, ref int objval, int[] part);
+
+        public unsafe static _PartGraphRecursive PartGraphRecursive
+        {
+            get { return METIS_PartGraphRecursive; }
+        }
+
+
+
     }
+    
 }
