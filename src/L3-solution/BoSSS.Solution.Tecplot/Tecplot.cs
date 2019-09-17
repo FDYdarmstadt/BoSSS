@@ -34,7 +34,7 @@ namespace BoSSS.Solution.Tecplot {
 
         private readonly string path = null;
 
-        static UnsafeTECIO m_TECIO;
+        UnsafeTECIO m_TECIO;
 
         /// <summary>
         /// see <see cref="PlotDriver.PlotDriver"/>.

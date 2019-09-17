@@ -18,6 +18,9 @@ using BoSSS.Solution.Gnuplot;
 using BoSSS.Solution.GridImport;
 using ilPSP;
 using ilPSP.Utils;
+using ilPSP.Kraypis;
+using BoSSS.Solution.Tecplot;
+using ilPSP.LinSolvers.MUMPS;
 using MPI.Wrappers;
 using MPI.Wrappers.Utils;
 using System;
@@ -94,15 +97,15 @@ namespace BoSSS.Application.BoSSSpad {
                     ReportError("gnuplot", isOptional: true, detailedMessage: e.Message);
                 }
 
-                CheckDynamicLibrary("METIS", () => new Metis(), isOptional: true);
+                CheckDynamicLibrary("METIS", () => new UnsafeMETIS(), isOptional: true);
                 CheckDynamicLibrary("ParMETIS", () => new ParMetis(), isOptional: true);
 
                 CheckDynamicLibrary("CGNS", () => new CgnsDriver(false), isOptional: true);
                 CheckDynamicLibrary("CGNS (HDF5)", () => new CgnsDriver(true), isOptional: true);
 
-                CheckDynamicLibrary("Tecplot", () => new Tecplot(), isOptional: true);
+                CheckDynamicLibrary("Tecplot", () => new UnsafeTECIO(), isOptional: true);
 
-                CheckDynamicLibrary("MUMPS", () => new MUMPS(), isOptional: true);
+                CheckDynamicLibrary("MUMPS", () => new UnsafeMUMPS(), isOptional: true);
 
                 CheckDynamicLibrary("PARDISO (Intel MKL)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_MKL(), isOptional: true);
                 CheckDynamicLibrary("PARDISO (v4)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_v4(), isOptional: true);
@@ -266,12 +269,14 @@ namespace BoSSS.Application.BoSSSpad {
 
         }
 
+
+        // Deprecated
         class Metis : DynLibLoader {
 
             public Metis() :
                 base(new string[] { "metis.dll", "libBoSSSnative_seq.so", "libmetis.so" },
                      new string[3][][],
-                     new GetNameMangling[] { StandardMangling, DynLibLoader.BoSSS_Prefix, StandardMangling },
+                     new GetNameMangling[] { DynLibLoader.Identity, DynLibLoader.BoSSS_Prefix, StandardMangling },
                      new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix },
                      new int[] { -1, -1, -1 }) {
             }
@@ -297,7 +302,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-
+        // Deprecated
         class Tecplot : DynLibLoader {
 
             public Tecplot() :
@@ -313,7 +318,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-
+        // Deprecated
         class MUMPS : DynLibLoader {
 
             public MUMPS() :

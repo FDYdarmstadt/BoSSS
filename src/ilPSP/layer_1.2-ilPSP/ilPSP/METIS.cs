@@ -26,7 +26,14 @@ namespace ilPSP.Kraypis {
     /// <remarks>
     /// METIS can downloaded from http://glaros.dtc.umn.edu/gkhome/metis/metis/overview
     /// </remarks>
-    public class METIS : DynLibLoader {
+    static public class METIS {
+
+        static UnsafeMETIS m_METIS; 
+
+        static METIS()
+        {
+            m_METIS = new UnsafeMETIS();
+        }
 
         /// <summary>
         /// Length of the METIS options array
@@ -67,6 +74,33 @@ namespace ilPSP.Kraypis {
             METIS_ERROR = -4    /*!< Some other errors */
         }
 
+        static public int PARTGRAPHKWAY(ref int nvtxs, ref int ncon, int[] xadj,
+                                                int[] adjncy, int[] vwgt, int[] vsize,
+                                                int[] adjwgt, ref int nparts, double[] tpwgts,
+                                                double[] ubvec, int[] options, ref int objval, int[] part)
+        {
+            return m_METIS.PartGraphKway(ref nvtxs, ref ncon, xadj,
+                                                adjncy, vwgt, vsize,
+                                                adjwgt, ref nparts, tpwgts,
+                                                ubvec, options, ref objval, part);
+        }
+
+        static public int PARTGRAPHRECURSIVE(ref int nvtxs, ref int ncon, int[] xadj,
+                                                int[] adjncy, int[] vwgt, int[] vsize,
+                                                int[] adjwgt, ref int nparts, double[] tpwgts,
+                                                double[] ubvec, int[] options, ref int objval, int[] part)
+        {
+            return m_METIS.PartGraphRecursive(ref nvtxs, ref ncon, xadj,
+                                                adjncy, vwgt, vsize,
+                                                adjwgt, ref nparts, tpwgts,
+                                                ubvec, options, ref objval, part);
+        }
+
+
+    }
+
+    public sealed class UnsafeMETIS : DynLibLoader
+    {
         // workaround for .NET bug:
         // https://connect.microsoft.com/VisualStudio/feedback/details/635365/runtimehelpers-initializearray-fails-on-64b-framework
         static PlatformID[] Helper()
@@ -80,7 +114,7 @@ namespace ilPSP.Kraypis {
         /// <summary>
         /// ctor
         /// </summary>
-        public METIS() :
+        public UnsafeMETIS() :
             base(new string[] { "metis.dll", "libBoSSSnative_seq.so" },
                   new string[2][][],
                   new GetNameMangling[] { DynLibLoader.Identity, DynLibLoader.BoSSS_Prefix },
@@ -89,8 +123,8 @@ namespace ilPSP.Kraypis {
         { }
 
 #pragma warning disable 649
-        static _PartGraphKway METIS_PartGraphKway;
-        static _PartGraphRecursive METIS_PartGraphRecursive;
+        _PartGraphKway METIS_PartGraphKway;
+        _PartGraphRecursive METIS_PartGraphRecursive;
 #pragma warning restore 649
 
         /// <summary>
@@ -109,19 +143,15 @@ namespace ilPSP.Kraypis {
         /// <summary>
         /// see METIS manual;
         /// </summary>
-        public unsafe delegate int _PartGraphRecursive(ref int nvtxs, ref int ncon,
-                                                 int[] xadj, int[] adjncy,
-                                                 int[] vwgt, int[] vsize, int[] adjwgt,
-                                                 ref int nparts, double[] tpwgts, double[] ubvec,
-                                                 int[] options, ref int objval, int[] part);
+        public unsafe delegate int _PartGraphRecursive(ref int nvtxs, ref int ncon, int[] xadj,
+                                                int[] adjncy, int[] vwgt, int[] vsize,
+                                                int[] adjwgt, ref int nparts, double[] tpwgts,
+                                                double[] ubvec, int[] options, ref int objval, int[] part);
 
         public unsafe _PartGraphRecursive PartGraphRecursive
         {
             get { return METIS_PartGraphRecursive; }
         }
-
-
-
     }
     
 }
