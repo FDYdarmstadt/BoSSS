@@ -247,7 +247,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             neighboursGlobal[localOffset + i] = neighboursLocal[i];
                         }
                     } else {
-                        sms.Transmitt(0, neighboursLocal);
+                        sms.Transmit(0, neighboursLocal);
                     }
 
                     while (sms.GetNext(out int senderRank, out IEnumerable<Neighbour>[] neighbours)) {
@@ -276,7 +276,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             cellWeightsGlobal[localOffset + i] = cellWeightsLocal[i];
                         }
                     } else {
-                        sms.Transmitt(0, cellWeightsLocal);
+                        sms.Transmit(0, cellWeightsLocal);
                     }
 
                     while (sms.GetNext(out int senderRank, out int[] cellWeights)) {
@@ -1161,7 +1161,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             // start transmission
             for (int p = 0; p < Size; p++) {
                 if (exch[p] != null && p != MyRank)
-                    sm.Transmitt(p, exch[p]);
+                    sm.Transmit(p, exch[p]);
             }
 
             // receive cells from other processors

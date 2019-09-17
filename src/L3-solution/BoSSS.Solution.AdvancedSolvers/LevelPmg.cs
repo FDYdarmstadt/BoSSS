@@ -5,6 +5,7 @@ using ilPSP.LinSolvers.PARDISO;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,6 +27,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int iLv = 0;
             for (var Op4Level = m_op.FinestLevel; Op4Level != null; Op4Level = Op4Level.CoarserLevel) {
                 if (L == Op4Level.Mapping.LocalLength) {
+                    Debug.Assert(Op4Level.LevelIndex == iLv);
                     return iLv;
                 }
                 iLv++;
@@ -46,10 +48,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public double[] ProlongateToTop(double[] V) {
             int iLv = FindLevel(V.Length);
 
-            MultigridOperator op_iLv = m_op;
+            MultigridOperator op_iLv = m_op.FinestLevel;
             for (int i = 0; i < iLv; i++)
                 op_iLv = op_iLv.CoarserLevel;
-
+            Debug.Assert(op_iLv.LevelIndex == iLv);
+            Debug.Assert(V.Length == op_iLv.Mapping.LocalLength);
 
             double[] Curr = V;
             for (var Op4Level = op_iLv; Op4Level.FinerLevel != null; Op4Level = Op4Level.FinerLevel) {
@@ -115,6 +118,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             private set;
         }
 
+        /// <summary>
+        /// If true, cell-local solvers will be used to approximate a solution to high-order modes
+        /// </summary>
         public bool UseHiOrderSmoothing {
             get;
             set;
@@ -127,13 +133,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         MultigridOperator m_op;
 
-        MultidimensionalArray[][] HighOrderBlocks_LU;
-        int[][][] HighOrderBlocks_LUpivots;
-        MultidimensionalArray[][] HighLoOrderBlocks;
+        /// <summary>
+        /// - 1st index: cell
+        /// </summary>
+        MultidimensionalArray[] HighOrderBlocks_LU;
+        int[][] HighOrderBlocks_LUpivots;
+        int[][] HighOrderBlocks_indices;
+
+        //MultidimensionalArray[][] HighLoOrderBlocks;
 
         
 
-
+        /// <summary>
+        /// ~
+        /// </summary>
         public void Init(MultigridOperator op) {
             //var Mtx = op.OperatorMatrix;
             m_op = op;
@@ -147,9 +160,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             var BS = Map.AggBasis;
 
             if (UseHiOrderSmoothing) {
-                HighOrderBlocks_LU = new MultidimensionalArray[J][];
-                HighOrderBlocks_LUpivots = new int[J][][];
-                HighLoOrderBlocks = new MultidimensionalArray[J][];
+                HighOrderBlocks_LU = new MultidimensionalArray[J];
+                HighOrderBlocks_LUpivots = new int[J][];
+                HighOrderBlocks_indices = new int[J][];
             }
 
 
@@ -162,12 +175,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 lowLocalBlocks_i0.Add(cnt);
                 lowLocalBlocks__N.Add(0);
 
-                if (UseHiOrderSmoothing) {
-                    HighOrderBlocks_LU[jLoc] = new MultidimensionalArray[NoVars];
-                    HighLoOrderBlocks[jLoc] = new MultidimensionalArray[NoVars];
-                    HighOrderBlocks_LUpivots[jLoc] = new int[NoVars][];
-                }
+                //if (UseHiOrderSmoothing) {
+                //    HighOrderBlocks_LU[jLoc] = new MultidimensionalArray[NoVars];
+                //    HighLoOrderBlocks[jLoc] = new MultidimensionalArray[NoVars];
+                //    HighOrderBlocks_LUpivots[jLoc] = new int[NoVars][];
+                //}
 
+                int NpHiTot = 0;
                 for (int iVar = 0; iVar < NoVars; iVar++) {
                     int pReq;
                     if (iVar == 2) // quick hack for Anne Kikker
@@ -178,21 +192,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     int Np1 = BS[iVar].GetLength(jLoc, pReq);
                     int Np = BS[iVar].GetLength(jLoc, degs[iVar]);
                     lowLocalBlocks__N[jLoc] += Np1;
-
-                    if (UseHiOrderSmoothing) {
-                        HighOrderBlocks_LU[jLoc][iVar] = MultidimensionalArray.Create(Np - Np1, Np - Np1);
-                        int i0_lo = Map.GlobalUniqueIndex(iVar, jLoc, 0);
-                        int i0_hi = Map.GlobalUniqueIndex(iVar, jLoc, Np1);
-                        m_op.OperatorMatrix.ReadBlock(i0_hi, i0_hi, HighOrderBlocks_LU[jLoc][iVar]);
-                        HighOrderBlocks_LUpivots[jLoc][iVar] = new int[Np - Np1];
-
-                        HighOrderBlocks_LU[jLoc][iVar].FactorizeLU(HighOrderBlocks_LUpivots[jLoc][iVar]);
-                        //HighOrderBlocks_LU[jLoc][iVar].Invert();
-
-
-                        HighLoOrderBlocks[jLoc][iVar] = MultidimensionalArray.Create(Np - Np1, Np1);
-                        m_op.OperatorMatrix.ReadBlock(i0_lo, i0_hi, HighLoOrderBlocks[jLoc][iVar]);
-                    }
+                    NpHiTot += (Np - Np1);
 
                     for (int n = 0; n < Np1; n++) {
 
@@ -204,6 +204,58 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     }
                 }
+
+                if (UseHiOrderSmoothing && NpHiTot > 0) {
+                    HighOrderBlocks_LU[jLoc] = MultidimensionalArray.Create(NpHiTot, NpHiTot);
+                    int[] idxs = new int[NpHiTot];
+                    HighOrderBlocks_indices[jLoc] = idxs;
+
+                    int RowOffset = 0;
+                    for (int iVar = 0; iVar < NoVars; iVar++) {
+                        int pReq;
+                        if (iVar == 2) // quick hack for Anne Kikker
+                            pReq = 0;
+                        else
+                            pReq = 1;
+
+                        int Np1 = BS[iVar].GetLength(jLoc, pReq);
+                        int Np = BS[iVar].GetLength(jLoc, degs[iVar]);
+                        int Nphi = Np - Np1;
+
+                        int i0_hi = Map.GlobalUniqueIndex(iVar, jLoc, Np1);
+
+                        for (int i = 0; i < Nphi; i++)
+                            idxs[i + RowOffset] = i0_hi + i - Map.i0;
+
+                        int ColOffset = 0;
+                        for (int jVar = 0; jVar < NoVars; jVar++) {
+                            int _pReq;
+                            if (jVar == 2) // quick hack for Anne Kikker
+                                _pReq = 0;
+                            else
+                                _pReq = 1;
+
+                            int _Np1 = BS[jVar].GetLength(jLoc, _pReq);
+                            int _Np = BS[jVar].GetLength(jLoc, degs[jVar]);
+                            int j0_hi = Map.GlobalUniqueIndex(jVar, jLoc, _Np1);
+                            int _Nphi = _Np - _Np1;
+                            
+                            m_op.OperatorMatrix.ReadBlock(i0_hi, j0_hi,
+                                HighOrderBlocks_LU[jLoc].ExtractSubArrayShallow(new int[] { RowOffset, ColOffset }, new int[] { RowOffset + Nphi - 1, ColOffset + _Nphi - 1}));
+                            
+                            ColOffset += _Nphi;
+                        }
+                        Debug.Assert(ColOffset == NpHiTot);
+                        RowOffset += (Np - Np1);
+                    }
+                    Debug.Assert(RowOffset == NpHiTot);
+
+                    HighOrderBlocks_LUpivots[jLoc] = new int[NpHiTot];
+                    HighOrderBlocks_LU[jLoc].FactorizeLU(HighOrderBlocks_LUpivots[jLoc]);
+                    //HighOrderBlocks_LU[jLoc][iVar].Invert();
+                }
+
+
 
                 cnt += lowLocalBlocks__N[jLoc];
             }
@@ -284,6 +336,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             // solver high-order 
             if (UseHiOrderSmoothing) {
+                // compute residual of low-order solution
                 Res_f.SetV(B);
                 Mtx.SpMV(-1.0, X, 1.0, Res_f);
 
@@ -297,7 +350,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var BS = Map.AggBasis;
 
                 int Mapi0 = Map.i0;
+                double[] b_f = null, x_hi = null;
                 for (int j = 0; j < J; j++) {
+
+                    if(HighOrderBlocks_LU[j] != null) {
+                        int NpTotHi = HighOrderBlocks_LU[j].NoOfRows;
+                        if (b_f == null || b_f.Length != NpTotHi) {
+                            b_f = new double[NpTotHi];
+                            x_hi = new double[NpTotHi];
+                        }
+
+                        ArrayTools.GetSubVector<int[],int[],double>(Res_f, b_f, HighOrderBlocks_indices[j]);
+                        HighOrderBlocks_LU[j].BacksubsLU(HighOrderBlocks_LUpivots[j], x_hi, b_f);
+                        X.AccV(1.0, x_hi, HighOrderBlocks_indices[j], default(int[]));
+                    }
+
+
+                    /*
                     for (int iVar = 0; iVar < NoVars; iVar++) {
                         int pReq = 1;
 
@@ -317,6 +386,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         X.AccV(1.0, xhi, offset_acc: i0_hi - Mapi0);
                     }
+                    */
                 }
             }
 

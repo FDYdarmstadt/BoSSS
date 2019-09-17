@@ -15,21 +15,16 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using ilPSP;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BoSSS.Application.FSI_Solver
 {
     class ParticleAddedDamping
     {
-        public double[,] IntegrationOverLevelSet(LevelSetTracker LsTrk, double muA, double rhoA, double dt, double[] currentPosition)
+        public double[,] IntegrationOverLevelSet(Particle particle, LevelSetTracker LsTrk, double muA, double rhoA, double dt, double[] currentPosition)
         {
             double[,] addedDampingTensor = new double[6, 6];
             double alpha = 0.5;
@@ -69,10 +64,10 @@ namespace BoSSS.Application.FSI_Solver
                                         NormalComponent[2] = 0;
                                         switch (DampingTensorID)
                                         {
-                                            case 0:
+                                            case 0://D^{vv}
                                                 result[j, k] = d1 == d2 ? (1 - NormalComponent[d1] * NormalComponent[d2]) * muA / dn : -NormalComponent[d1] * NormalComponent[d2] * muA / dn;
                                                 break;
-                                            case 1:
+                                            case 1://D^{vw}
                                                 if (d1 == 2 && d2 != 2)
                                                 {
                                                     result[j, k] = R[1 - d2] * Math.Pow(-1, d2) * muA / dn;
@@ -83,7 +78,7 @@ namespace BoSSS.Application.FSI_Solver
                                                 }
                                                 else result[j, k] = 0;
                                                 break;
-                                            case 2:
+                                            case 2://D^{wv}
                                                 if (d2 == 2 && d1 != 2)
                                                 {
                                                     result[j, k] = R[1 - d1] * Math.Pow(-1, d1) * muA / dn;
@@ -94,7 +89,7 @@ namespace BoSSS.Application.FSI_Solver
                                                 }
                                                 else result[j, k] = 0;
                                                 break;
-                                            case 3:
+                                            case 3://D^{ww}
                                                 if (d1 == d2 && d1 != 2)
                                                 {
                                                     result[j, k] = R[1 - d1].Pow2() * muA / dn;
@@ -125,7 +120,7 @@ namespace BoSSS.Application.FSI_Solver
                         var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
                         //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, );
 
-                        CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+                        CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, particle.CutCells_P(LsTrk));
                         //CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, ParticleCutCells);
 
                         CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,

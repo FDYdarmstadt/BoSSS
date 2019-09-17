@@ -25,9 +25,10 @@ using BoSSS.Foundation.XDG;
 
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
+using BoSSS.Solution.RheologyCommon;
 
 namespace BoSSS.Solution.XNSECommon {
-    
+
     /// <summary>
     /// 
     /// </summary>
@@ -49,15 +50,15 @@ namespace BoSSS.Solution.XNSECommon {
         /// <param name="config"></param>
         /// <param name="LsTrk"></param>
         /// <param name="U0meanrequired"></param>
-        public static void AddSpeciesNSE_component(XSpatialOperatorMk2 XOp, INSE_Configuration config, int d, int D, string spcName, SpeciesId spcId, 
+        public static void AddSpeciesNSE_component(XSpatialOperatorMk2 XOp, INSE_Configuration config, int d, int D, string spcName, SpeciesId spcId,
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, out bool U0meanrequired) {
 
             // check input
-            if(XOp.IsCommited)
+            if (XOp.IsCommited)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
 
             string CodName = EquationNames.MomentumEquationComponent(d);
-            if(!XOp.CodomainVar.Contains(CodName))
+            if (!XOp.CodomainVar.Contains(CodName))
                 throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 
             PhysicalParameters physParams = config.getPhysParams;
@@ -65,7 +66,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             // set species arguments
             double rhoSpc, LFFSpc, muSpc;
-            switch(spcName) {
+            switch (spcName) {
                 case "A": { rhoSpc = physParams.rho_A; LFFSpc = dntParams.LFFA; muSpc = physParams.mu_A; break; }
                 case "B": { rhoSpc = physParams.rho_B; LFFSpc = dntParams.LFFB; muSpc = physParams.mu_B; break; }
                 default: throw new ArgumentException("Unknown species.");
@@ -77,7 +78,7 @@ namespace BoSSS.Solution.XNSECommon {
             // convective operator
             // ===================
             U0meanrequired = false;
-            if(physParams.IncludeConvection && config.isTransport) {
+            if (physParams.IncludeConvection && config.isTransport) {
                 var conv = new Operator.Convection.ConvectionInSpeciesBulk_LLF(D, BcMap, spcName, spcId, d, rhoSpc, LFFSpc, LsTrk);
                 comps.Add(conv);
                 U0meanrequired = true;
@@ -85,18 +86,22 @@ namespace BoSSS.Solution.XNSECommon {
 
             // pressure gradient
             // =================
-            if(config.isPressureGradient) {
+            if (config.isPressureGradient) {
                 var pres = new Operator.Pressure.PressureInSpeciesBulk(d, BcMap, spcName, spcId);
                 comps.Add(pres);
+
+                //problably necessary for LDG Simulation. Only one species parameter reynoldsA!!!!!!
+                //var presStab = new PressureStabilizationInBulk(dntParams.PresPenalty2, physParams.reynolds_A, spcName, spcId);
+                //comps.Add(presStab);
             }
 
             // viscous operator
             // ================
-            if(config.isViscous && !(muSpc == 0.0)) {
+            if (config.isViscous && !(muSpc == 0.0)) {
 
                 double penalty = dntParams.PenaltySafety;
-                switch(dntParams.ViscosityMode) {
-                    case ViscosityMode.Standard: 
+                switch (dntParams.ViscosityMode) {
+                    case ViscosityMode.Standard:
                     case ViscosityMode.TransposeTermMissing: {
                             // Bulk operator:
                             var Visc1 = new Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
@@ -104,7 +109,7 @@ namespace BoSSS.Solution.XNSECommon {
                                 BcMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
                             comps.Add(Visc1);
 
-                            if(dntParams.UseGhostPenalties) {
+                            if (dntParams.UseGhostPenalties) {
                                 var Visc1Penalty = new Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
                                     penalty, 0.0,
                                     BcMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
@@ -119,14 +124,14 @@ namespace BoSSS.Solution.XNSECommon {
                                 dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
                                 BcMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
                             comps.Add(Visc1);
-                            
+
                             var Visc2 = new Operator.Viscosity.ViscosityInSpeciesBulk_GradUtranspTerm(
                                 dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
                                 BcMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
                             comps.Add(Visc2);
 
 
-                            if(dntParams.UseGhostPenalties) {
+                            if (dntParams.UseGhostPenalties) {
                                 var Visc1Penalty = new Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
                                     penalty, 0.0,
                                     BcMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
@@ -141,13 +146,29 @@ namespace BoSSS.Solution.XNSECommon {
 
                             break;
                         }
+                    case ViscosityMode.Viscoelastic: {
+                            // Bulk operator:
+                            var Visc1 = new Operator.Viscosity.DimensionlessViscosityInSpeciesBulk_GradUTerm(
+                                dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
+                                BcMap, spcName, spcId, d, D, physParams.reynolds_A / physParams.beta_a, physParams.reynolds_B / physParams.beta_b);
+                            comps.Add(Visc1);
+
+                            var Visc2 = new Operator.Viscosity.DimensionlessViscosityInSpeciesBulk_GradUtranspTerm(
+                                dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
+                                BcMap, spcName, spcId, d, D, physParams.reynolds_A / physParams.beta_a, physParams.reynolds_B / physParams.beta_b);
+                            comps.Add(Visc2);
+
+                            var div = new StressDivergenceInBulk(d, BcMap, physParams.reynolds_A, physParams.reynolds_B, dntParams.Penalty1, dntParams.Penalty2, spcName, spcId);
+                            comps.Add(div);
+
+                            break;
+                        }
+
 
                     default:
                         throw new NotImplementedException();
                 }
             }
-
-
         }
 
         /// <summary>
@@ -165,7 +186,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             U0meanrequired = false;
 
-            for(int d = 0; d < D; d++) {
+            for (int d = 0; d < D; d++) {
                 AddSpeciesNSE_component(XOp, config, d, D, spcName, spcId, BcMap, LsTrk, out U0meanrequired);
             }
 
@@ -185,7 +206,7 @@ namespace BoSSS.Solution.XNSECommon {
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk) {
 
             // check input
-            if(XOp.IsCommited)
+            if (XOp.IsCommited)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
 
             string CodName = EquationNames.MomentumEquationComponent(d);
@@ -203,38 +224,49 @@ namespace BoSSS.Solution.XNSECommon {
             double muA = physParams.mu_A;
             double muB = physParams.mu_B;
 
+            //viscoelastic
+            double reynoldsA = physParams.reynolds_A;
+            double reynoldsB = physParams.reynolds_B;
+            double[] penalty1 = dntParams.Penalty1;
+            double penalty2 = dntParams.Penalty2;
+
 
             // set components
             var comps = XOp.EquationComponents[CodName];
 
             // convective operator
             // ===================
-            if(physParams.IncludeConvection && config.isTransport) {
+            if (physParams.IncludeConvection && config.isTransport) {
                 var conv = new Operator.Convection.ConvectionAtLevelSet_LLF(d, D, LsTrk, rhoA, rhoB, LFFA, LFFB, physParams.Material, BcMap, config.isMovingMesh);
                 comps.Add(conv);
             }
 
             // pressure gradient
             // =================
-            if(config.isPressureGradient) {
+            if (config.isPressureGradient) {
                 var presLs = new Operator.Pressure.PressureFormAtLevelSet(d, D, LsTrk);
                 comps.Add(presLs);
             }
 
             // viscous operator
             // ================
-            if(config.isViscous && (!(muA == 0.0) && !(muB == 0.0))) {
+            if (config.isViscous && (!(muA == 0.0) && !(muB == 0.0))) {
 
                 double penalty = dntParams.PenaltySafety;
-                switch(dntParams.ViscosityMode) {
+                switch (dntParams.ViscosityMode) {
                     case ViscosityMode.Standard:
                         comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, muA, muB, penalty * 1.0, d, true));
                         break;
                     case ViscosityMode.TransposeTermMissing:
                         comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, muA, muB, penalty * 1.0, d, false));
-                        break;                   
+                        break;
                     case ViscosityMode.FullySymmetric:
                         comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d, dntParams.UseWeightedAverages));
+                        break;
+                    case ViscosityMode.Viscoelastic:
+                        //comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, 1 / reynoldsA, 1 / reynoldsB, penalty * 1.0, d, false));
+                        comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, 1/reynoldsA, 1/reynoldsB, penalty, d, dntParams.UseWeightedAverages));
+                        comps.Add(new Operator.Viscosity.StressDivergenceAtLevelSet(LsTrk, reynoldsA, reynoldsB, penalty1, penalty2, d));
                         break;
 
                     default:
@@ -253,9 +285,9 @@ namespace BoSSS.Solution.XNSECommon {
         /// <param name="BcMap"></param>
         /// <param name="LsTrk"></param>
         public static void AddInterfaceNSE(XSpatialOperatorMk2 XOp, IXNSE_Configuration config, int D,
-            IncompressibleMultiphaseBoundaryCondMap BcMap,  LevelSetTracker LsTrk) {
+            IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk) {
 
-            for(int d = 0; d < D; d++) {
+            for (int d = 0; d < D; d++) {
                 AddInterfaceNSE_component(XOp, config, d, D, BcMap, LsTrk);
             }
         }
@@ -274,11 +306,11 @@ namespace BoSSS.Solution.XNSECommon {
         /// <param name="NormalsRequired"></param>
         /// <param name="CurvatureRequired"></param>
         public static void AddSurfaceTensionForce_component(XSpatialOperatorMk2 XOp, IXNSE_Configuration config, int d, int D,
-            IncompressibleMultiphaseBoundaryCondMap BcMap,  LevelSetTracker LsTrk, int degU,
+            IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, int degU,
             out bool NormalsRequired, out bool CurvatureRequired) {
 
             // check input
-            if(XOp.IsCommited)
+            if (XOp.IsCommited)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
 
             string CodName = EquationNames.MomentumEquationComponent(d);
@@ -298,16 +330,16 @@ namespace BoSSS.Solution.XNSECommon {
             // =====================
             NormalsRequired = false;
             CurvatureRequired = false;
-            if(config.isPressureGradient && physParams.Sigma != 0.0) {
+            if (config.isPressureGradient && physParams.Sigma != 0.0) {
 
                 // isotropic part of the surface stress tensor
                 // ===========================================
 
-                if(dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux
+                if (dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux
                  || dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local
                  || dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
 
-                    if(dntParams.SST_isotropicMode != SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
+                    if (dntParams.SST_isotropicMode != SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
                         IEquationComponent G = new SurfaceTension_LaplaceBeltrami_Surface(d, sigma * 0.5);
                         XOp.SurfaceElementOperator.EquationComponents[CodName].Add(G);
                         IEquationComponent H = new SurfaceTension_LaplaceBeltrami_BndLine(d, sigma * 0.5, dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
@@ -318,7 +350,7 @@ namespace BoSSS.Solution.XNSECommon {
                     }
                     NormalsRequired = true;
 
-                } else if(dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.Curvature_Projected
+                } else if (dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.Curvature_Projected
                         || dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint
                         || dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean
                         || dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.Curvature_Fourier) {
@@ -335,7 +367,7 @@ namespace BoSSS.Solution.XNSECommon {
                 // dynamic part of the surface stress tensor
                 // =========================================
 
-                if(dntParams.SurfStressTensor != SurfaceSressTensor.Isotropic) {
+                if (dntParams.SurfStressTensor != SurfaceSressTensor.Isotropic) {
 
                     double muI = physParams.mu_I;
                     double lamI = physParams.lambda_I;
@@ -344,21 +376,21 @@ namespace BoSSS.Solution.XNSECommon {
                     double penalty = penalty_base * dntParams.PenaltySafety;
 
                     // surface shear viscosity 
-                    if(dntParams.SurfStressTensor == SurfaceSressTensor.SurfaceRateOfDeformation ||
+                    if (dntParams.SurfStressTensor == SurfaceSressTensor.SurfaceRateOfDeformation ||
                         dntParams.SurfStressTensor == SurfaceSressTensor.SemiImplicit ||
                         dntParams.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
 
                         var surfDeformRate = new BoussinesqScriven_SurfaceDeformationRate_GradU(d, muI * 0.5, penalty);
                         XOp.SurfaceElementOperator.EquationComponents[CodName].Add(surfDeformRate);
 
-                        if(dntParams.SurfStressTensor != SurfaceSressTensor.SemiImplicit) {
+                        if (dntParams.SurfStressTensor != SurfaceSressTensor.SemiImplicit) {
                             var surfDeformRateT = new BoussinesqScriven_SurfaceDeformationRate_GradUTranspose(d, muI * 0.5, penalty);
                             XOp.SurfaceElementOperator.EquationComponents[CodName].Add(surfDeformRateT);
                         }
 
                     }
                     // surface dilatational viscosity
-                    if(dntParams.SurfStressTensor == SurfaceSressTensor.SurfaceVelocityDivergence ||
+                    if (dntParams.SurfStressTensor == SurfaceSressTensor.SurfaceVelocityDivergence ||
                         dntParams.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
 
                         var surfVelocDiv = new BoussinesqScriven_SurfaceVelocityDivergence(d, muI * 0.5, lamI * 0.5, penalty, BcMap.EdgeTag2Type);
@@ -371,7 +403,7 @@ namespace BoSSS.Solution.XNSECommon {
                 // stabilization
                 // =============
 
-                if(dntParams.UseLevelSetStabilization) {
+                if (dntParams.UseLevelSetStabilization) {
 
                     XOp.EquationComponents[CodName].Add(new LevelSetStabilization(d, D, LsTrk));
                 }
@@ -382,7 +414,7 @@ namespace BoSSS.Solution.XNSECommon {
             // artificial surface tension force 
             // ================================
 
-            if(config.isPressureGradient && physParams.useArtificialSurfaceForce) {
+            if (config.isPressureGradient && physParams.useArtificialSurfaceForce) {
 
                 XOp.EquationComponents[CodName].Add(new SurfaceTension_ArfForceSrc(d, D, LsTrk));
             }
@@ -407,8 +439,8 @@ namespace BoSSS.Solution.XNSECommon {
             NormalsRequired = false;
             CurvatureRequired = false;
 
-            for(int d = 0; d < D; d++) {
-                AddSurfaceTensionForce_component(XOp, config, d, D, BcMap,LsTrk, degU, out NormalsRequired, out CurvatureRequired);
+            for (int d = 0; d < D; d++) {
+                AddSurfaceTensionForce_component(XOp, config, d, D, BcMap, LsTrk, degU, out NormalsRequired, out CurvatureRequired);
             }
 
 
@@ -430,15 +462,15 @@ namespace BoSSS.Solution.XNSECommon {
         /// <param name="spcName"></param>
         /// <param name="spcId"></param>
         /// <param name="BcMap"></param>
-        public static void AddSpeciesContinuityEq(XSpatialOperatorMk2 XOp, INSE_Configuration config, int D, 
-            string spcName, SpeciesId spcId, IncompressibleMultiphaseBoundaryCondMap BcMap ) {
+        public static void AddSpeciesContinuityEq(XSpatialOperatorMk2 XOp, INSE_Configuration config, int D,
+            string spcName, SpeciesId spcId, IncompressibleMultiphaseBoundaryCondMap BcMap) {
 
             // check input
-            if(XOp.IsCommited)
+            if (XOp.IsCommited)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
 
             string CodName = EquationNames.ContinuityEquation;
-            if(!XOp.CodomainVar.Contains(CodName))
+            if (!XOp.CodomainVar.Contains(CodName))
                 throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 
             PhysicalParameters physParams = config.getPhysParams;
@@ -446,7 +478,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             // set species arguments
             double rhoSpc;
-            switch(spcName) {
+            switch (spcName) {
                 case "A": { rhoSpc = physParams.rho_A; break; }
                 case "B": { rhoSpc = physParams.rho_B; break; }
                 default: throw new ArgumentException("Unknown species.");
@@ -455,7 +487,7 @@ namespace BoSSS.Solution.XNSECommon {
             // set components
             var comps = XOp.EquationComponents[CodName];
 
-            for(int d = 0; d < D; d++) {
+            for (int d = 0; d < D; d++) {
                 var src = new Operator.Continuity.DivergenceInSpeciesBulk_Volume(d, D, spcId, rhoSpc, dntParams.ContiSign, dntParams.RescaleConti);
                 comps.Add(src);
                 var flx = new Operator.Continuity.DivergenceInSpeciesBulk_Edge(d, BcMap, spcName, spcId, rhoSpc, dntParams.ContiSign, dntParams.RescaleConti);
@@ -476,11 +508,11 @@ namespace BoSSS.Solution.XNSECommon {
         public static void AddInterfaceContinuityEq(XSpatialOperatorMk2 XOp, IXNSE_Configuration config, int D, LevelSetTracker LsTrk) {
 
             // check input
-            if(XOp.IsCommited)
+            if (XOp.IsCommited)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
 
             string CodName = EquationNames.ContinuityEquation;
-            if(!XOp.CodomainVar.Contains(CodName))
+            if (!XOp.CodomainVar.Contains(CodName))
                 throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 
             PhysicalParameters physParams = config.getPhysParams;
@@ -587,6 +619,11 @@ namespace BoSSS.Solution.XNSECommon {
         /// true if the interface is a material interface
         /// </summary>
         bool isMatInt { get; }
+
+        /// <summary>
+        /// true if the interface pressure is prescribed i.e. for evaporation
+        /// </summary>
+        //bool isPInterfaceSet { get; }
 
     }
 

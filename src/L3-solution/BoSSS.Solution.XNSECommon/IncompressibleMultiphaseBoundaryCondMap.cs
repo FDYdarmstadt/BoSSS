@@ -32,33 +32,39 @@ namespace BoSSS.Solution.XNSECommon {
     public class IncompressibleMultiphaseBoundaryCondMap : BoSSS.Solution.NSECommon.IncompressibleBoundaryCondMap {
 
 
-         static string[] BndFunctions(IGridData g, string[] SpeciesNames) {
+        static string[] BndFunctions(IGridData g, string[] SpeciesNames) {
             int D = g.SpatialDimension;
             List<string> scalarFields = new List<string>();
 
-            foreach(var S in SpeciesNames) {
-                for(int d = 0; d < D; d++) {
+            foreach (var S in SpeciesNames) {
+                for (int d = 0; d < D; d++) {
                     scalarFields.Add(VariableNames.Velocity_d(d) + "#" + S);
                 }
                 scalarFields.Add(VariableNames.Pressure + "#" + S);
+                scalarFields.Add(VariableNames.StressXX + "#" + S);
+                scalarFields.Add(VariableNames.StressXY + "#" + S);
+                scalarFields.Add(VariableNames.StressYY + "#" + S);
             }
 
             scalarFields.Add(VariableNames.LevelSet);
 
             return scalarFields.ToArray();
-         }
+        }
 
 
-         public IncompressibleMultiphaseBoundaryCondMap(IGridData f, IDictionary<string, BoSSS.Solution.Control.AppControl.BoundaryValueCollection> b, string[] SpeciesNames)
-            : base(f, b, PhysicsMode.Incompressible, BndFunctions(f, SpeciesNames)) //
-         {
-             string S0 = "#" + SpeciesNames[0];
+        public IncompressibleMultiphaseBoundaryCondMap(IGridData f, IDictionary<string, BoSSS.Solution.Control.AppControl.BoundaryValueCollection> b, string[] SpeciesNames)
+           : base(f, b, PhysicsMode.Incompressible, BndFunctions(f, SpeciesNames)) //
+        {
+            string S0 = "#" + SpeciesNames[0];
 
-             int D = f.SpatialDimension;
-             for(int d = 0; d < D; d++) {
-                 base.bndFunction.Add(VariableNames.Velocity_d(d), base.bndFunction[VariableNames.Velocity_d(d) + S0]);
-             }
-             base.bndFunction.Add(VariableNames.Pressure, base.bndFunction[VariableNames.Pressure + S0]);
-         }
+            int D = f.SpatialDimension;
+            for (int d = 0; d < D; d++) {
+                base.bndFunction.Add(VariableNames.Velocity_d(d), base.bndFunction[VariableNames.Velocity_d(d) + S0]);
+            }
+            base.bndFunction.Add(VariableNames.Pressure, base.bndFunction[VariableNames.Pressure + S0]);
+            base.bndFunction.Add(VariableNames.StressXX, base.bndFunction[VariableNames.StressXX + S0]);
+            base.bndFunction.Add(VariableNames.StressXY, base.bndFunction[VariableNames.StressXX + S0]);
+            base.bndFunction.Add(VariableNames.StressYY, base.bndFunction[VariableNames.StressXX + S0]);
+        }
     }
 }

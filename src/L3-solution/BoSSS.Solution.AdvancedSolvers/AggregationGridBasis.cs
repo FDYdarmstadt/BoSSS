@@ -667,10 +667,28 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 #endif
                 m_InjectionOperator = Injection;
+                int totalMem = Injection != null ?  Injection.Sum(A => A != null ? A.Length * sizeof(double) : 0) : 0;
 
                 //SetupProlongationOperator();
             }
         }
+
+        /// <summary>
+        /// Number of Bytes used
+        /// </summary>
+        public long UsedMemory {
+            get {
+                long Ret = 0;
+                if(m_CompositeBasis != null) {
+                    Ret += m_CompositeBasis.Sum(mda => ((long)mda.Length) * sizeof(double));
+                }
+                if(m_InjectionOperator != null) {
+                    Ret += m_InjectionOperator.Sum(mda => ((long)mda.Length) * sizeof(double));
+                }
+                return Ret;
+            }
+        }
+
 
         MultidimensionalArray[] m_InjectionOperator;
 
@@ -688,15 +706,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 return m_InjectionOperator;
             }
         }
-
-//<<<<<<< HEAD
-//                        MassMatrix.AccEye(-1.0);
-//                        Debug.Assert(MassMatrix.InfNorm() < 1.0e-8);
-//#endif
-//                    }
-//=======
-//>>>>>>> 194f8c566ec46e985d0a6f0b37e02f3ee621ccaa
-        
 
         /// <summary>
         /// restricts/projects a vector from the full grid (<see cref="BoSSS.Foundation.Grid.Classic.GridData"/>)
@@ -1078,6 +1087,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         void SetupCompositeBasis() {
             using(new FuncTrace()) {
+
+
+
                 Basis b = this.DGBasis;
                 AggregationGridData ag = this.AggGrid;
                 Debug.Assert(object.ReferenceEquals(b.GridDat, GetGridData(ag)));
@@ -1087,9 +1099,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int JAGG = ag.iLogicalCells.NoOfLocalUpdatedCells;
                 m_CompositeBasis = new MultidimensionalArray[JAGG];
 
+                int totalMem = 0;
                 for(int jAgg = 0; jAgg < JAGG; jAgg++) { // loop over agglomerated cells...
 
                     m_CompositeBasis[jAgg] = CA(jAgg);
+                    totalMem += m_CompositeBasis[jAgg].Length * sizeof(double);
 
                     /*
                     var compCell = ag.iLogicalCells.AggregateCellToParts[jAgg];

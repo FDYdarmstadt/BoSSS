@@ -57,6 +57,10 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="MathNet.Numerics, Version=2.6.0.29, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\libs\MathNet.Numerics-2.6.0.29\MathNet.Numerics.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -85,6 +89,8 @@
     <Compile Include="PreCond\ApproxPredictor.cs" />
     <Compile Include="Tests\BcTest_PressureOutlet.cs" />
     <Compile Include="Tests\ChannelTest.cs" />
+    <Compile Include="XBase_Solver.cs" />
+    <Compile Include="XBase_Control.cs" />
     <Compile Include="XNSE_Control.cs" />
     <Compile Include="HardcodedControl.cs" />
     <Compile Include="Tests\ITest.cs" />
@@ -128,6 +134,10 @@
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Gnuplot\BoSSS.Solution.Gnuplot.csproj">
       <Project>{d4fadb7c-0b11-4f41-a97a-146dc1f7034e}</Project>
       <Name>BoSSS.Solution.Gnuplot</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.RheologyCommon\BoSSS.Solution.RheologyCommon.csproj">
+      <Project>{02864872-ff49-4bd2-96fc-9769ac268b5a}</Project>
+      <Name>BoSSS.Solution.RheologyCommon</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Statistic\BoSSS.Solution.Statistic.csproj">
       <Project>{45BCA5F9-27E7-43C0-B021-4312BF442C7D}</Project>

@@ -332,7 +332,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /// <summary>
+        /// Strategy for finding the Schwarz blocks.
+        /// </summary>
         public BlockingStrategy m_BlockingStrategy;
+
+
         MultigridOperator m_MgOp;
 
 #if DEBUG
@@ -518,7 +523,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 List<int>[] Blk_i0LoModes, Blk_NLoModes; // Blocking for low-order modes
                 List<int>[] Blk_i0HiModes, Blk_NHiModes; // Blocking for high-order modes
                 List<int>[] Blk_NspcHiModes; // number of species in sub-blocks/cells
-                
+
 
                 // for matrix 'ExternalRowsTemp': which rows of 'Mop' are required locally
                 List<int> ExternalRowsIndices, ExternalRows_BlockI0, ExternalRows_BlockN;
@@ -541,7 +546,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     TempRowIdx_gI = NoOfSchwzBlocks.ForLoop(iPart => new List<int>());
                     BlkIdx_lI_eR = NoOfSchwzBlocks.ForLoop(iPart => new List<int>());
 
-                    if(this.UsePMGinBlocks) {
+                    if (this.UsePMGinBlocks) {
                         Blk_LoModes = NoOfSchwzBlocks.ForLoop(iPart => new List<int>());
                         Blk_HiModes = NoOfSchwzBlocks.ForLoop(iPart => new List<int>());
                         Blk_i0LoModes = NoOfSchwzBlocks.ForLoop(iPart => new List<int>());
@@ -607,7 +612,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 }
 
                             }
-                                                                                                          
+
                             LocalizedBlockCounter += Nj;
                             ExternalRows_BlockI0.Add(LocalizedBlockCounter);
                             ExternalRows_BlockN.Add(Nj);
@@ -616,7 +621,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             LBBN.Add(Nj);
 
 
-                            if(UsePMGinBlocks) {
+                            if (UsePMGinBlocks) {
                                 int cellOffset = anotherCounter;
                                 var PMGloBlock = Blk_LoModes[iPart];
                                 var PMGhiBlock = Blk_HiModes[iPart];
@@ -664,7 +669,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             anotherCounter += Nj;
                         }
 
-                        if(UsePMGinBlocks) {
+                        if (UsePMGinBlocks) {
                             Debug.Assert(Blk_i0LoModes[iPart].Count == Jblock);
                             Debug.Assert(Blk_NLoModes[iPart].Count == Jblock);
                             Debug.Assert(Blk_i0HiModes[iPart].Count == Jblock * NoOfVars);
@@ -673,7 +678,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                     }
                 }
-                
+
 
 
                 // get rows for blocks that use external cells
@@ -780,7 +785,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 {
                     blockSolvers = new ISparseSolver[NoOfSchwzBlocks];
-                    if(UsePMGinBlocks) {
+                    if (UsePMGinBlocks) {
                         BlockMatrices = new BlockMsrMatrix[NoOfSchwzBlocks];
                         //BlockMatrices = new ilPSP.LinSolvers.monkey.CPU.RefMatrix[NoOfSchwzBlocks];
                         PmgBlock_HiModeSolvers = new MultidimensionalArray[NoOfSchwzBlocks][];
@@ -845,7 +850,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         if (UsePMGinBlocks) {
                             // define low-order solver
-                            var lo_block = new BlockPartitioning(Blk_LoModes[iPart].Count , Blk_i0LoModes[iPart], Blk_NLoModes[iPart], csMPI.Raw._COMM.SELF);
+                            var lo_block = new BlockPartitioning(Blk_LoModes[iPart].Count, Blk_i0LoModes[iPart], Blk_NLoModes[iPart], csMPI.Raw._COMM.SELF);
                             var LoBlock = new BlockMsrMatrix(lo_block, lo_block);
                             Block.AccSubMatrixTo(1.0, LoBlock, Blk_LoModes[iPart], default(int[]), Blk_LoModes[iPart], default(int[]));
                             blockSolvers[iPart].DefineMatrix(LoBlock);
@@ -873,7 +878,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 int NoOfSpc = NspcHi[iSubBlock];
                                 int NpBase = Np / NoOfSpc;
                                 Debug.Assert(i0 == HiModes[ptrHiModes]);
-                                    
+
                                 HiModeSolvers[iSubBlock] = MultidimensionalArray.Create(Np, Np);
 
                                 for (int iSpcRow = 0; iSpcRow < NoOfSpc; iSpcRow++) {
@@ -956,7 +961,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
 
-                    if(UsePMGinBlocks) {
+                    if (UsePMGinBlocks) {
                         this.PmgBlock_LoModes = NoOfSchwzBlocks.ForLoop(iblk => Blk_LoModes[iblk].ToArray());
                         this.PmgBlock_HiModes = NoOfSchwzBlocks.ForLoop(iblk => Blk_HiModes[iblk].ToArray());
                     } else {
@@ -977,7 +982,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     int LocalLength = MgMap.LocalLength;
                     this.SolutionScaling = new double[LocalLength];
                     var SolScale = this.SolutionScaling;
-                    
+
                     var XExchange = new MPIexchangeInverse<double[]>(this.m_MgOp.Mapping, SolScale);
 
                     for (int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) {
@@ -1004,10 +1009,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     XExchange.TransceiveStartImReturn();
                     XExchange.TransceiveFinish(1.0);
 
-                    for(int l = 0; l < LocalLength; l++) {
+                    for (int l = 0; l < LocalLength; l++) {
                         SolScale[l] = 1.0 / SolScale[l];
                     }
-                    
+
                 }
 
 
@@ -1354,13 +1359,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #endif
                 }
 
-
                 int LocLength = m_MgOp.Mapping.LocalLength;
 
                 for (int iIter = 0; iIter < m_MaxIterations; iIter++) {
                     this.NoIter++;
 
                     Res.SetV(B);
+                    //Console.WriteLine("norm on swz entry: " + X.L2Norm());
                     this.MtxFull.SpMV(-1.0, X, 1.0, Res);
 
                     if (IterationCallback != null)
@@ -1389,7 +1394,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         ResExchange.TransceiveFinish(0.0);
                     }
 
+
                     using (new BlockTrace("block_solve_level" + this.m_MgOp.LevelIndex, tr)) {
+
                         for (int iPart = 0; iPart < NoParts; iPart++) {
                             int[] ci = BlockIndices_Local[iPart];
                             int[] ciE = BlockIndices_External[iPart];
@@ -1456,7 +1463,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     }
                                     Debug.Assert(ptr_CiHi == ciHi.Length);
                                 }
-                            
+
                             } else {
                                 // ++++++++++++++++++++++++++++++
                                 // use block solver for all modes
@@ -1473,6 +1480,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                     }
 
+
                     if (Overlap > 0 && EnableOverlapScaling) {
                         // block solutions stored on *external* indices will be accumulated on other processors.
                         XExchange.TransceiveStartImReturn();
@@ -1482,15 +1490,102 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             XExchange.Vector_Ext.ClearEntries();
 
                         var SolScale = this.SolutionScaling;
-                        for(int l = 0; l < LocLength; l++) {
+                        for (int l = 0; l < LocLength; l++) {
                             X[l] *= SolScale[l];
                         }
                     }
-                }
-            }
+
+                    /*
+                     * Note (fk, 04aug19:)
+                     * Doing the PMG after the low-p Schawrz blocks does not work very well
+                     * - it would be faster, since one global SpMV replaces multiple SpMVs in blocks
+                     * - but somehow,  oscillations at block boundaries cause oscillations and slower convergence in general
+                    if (vi == null)
+                        vi = new MGViz(this.m_MgOp);
+                    var Xb4 = X.ToArray();
+                    
+                    double ResiNormB4 = 0.0;
+                    if (UsePMGinBlocks) {
+                        int Jloc = this.m_MgOp.Mapping.LocalNoOfBlocks;
+                        bool[] hackMarker = new bool[Jloc];
+
+                        using (new BlockTrace("himode_smoother_level" + this.m_MgOp.LevelIndex, tr)) {
+                            Res.SetV(B);
+                            this.MtxFull.SpMV(-1.0, X, 1.0, Res);
+                            ResiNormB4 = Res.L2Norm();
+
+                            for (int iPart = 0; iPart < NoParts; iPart++) {
+
+                                int[] BlockCells_iPart = this.BlockCells[iPart];
+                                
+                                int[] ci = BlockIndices_Local[iPart];
+                                int[] ciE = BlockIndices_External[iPart];
+                                int L = ci.Length;
+                                if (ciE != null)
+                                    L += ciE.Length;
+
+                                double[] bi = new double[L];
+                                double[] xi = new double[L];
+
+                                // extract block part of residual
+                                bi.AccV(1.0, Res, default(int[]), ci);
+                                //if (ciE != null && ciE.Length > 0)
+                                //    bi.AccV(1.0, ResExchange.Vector_Ext, default(int[]), ciE, acc_index_shift: ci.Length, b_index_shift: (-LocLength));
+
+                                // solve the high-order system
+                                int[] ciHi = PmgBlock_HiModes[iPart];
+                                var HiModeSolvers = PmgBlock_HiModeSolvers[iPart];
+                                int NoCells = HiModeSolvers.Length;
+                                Debug.Assert(NoCells == BlockCells_iPart.Length);
+
+                                double[] xiHi = null;
+                                double[] biHi = null;
+
+                                int ptr_CiHi = 0;
+                                for (int j = 0; j < NoCells; j++) {
+                                    int jCell = BlockCells_iPart[j];
+                                    var HiModeSolver = HiModeSolvers[j];
+                                    int Np = HiModeSolver.NoOfRows;
+
+                                    if (jCell < Jloc && hackMarker[jCell] == false) {
+
+
+                                        if (xiHi == null || xiHi.Length != Np)
+                                            xiHi = new double[Np];
+                                        if (biHi == null || biHi.Length != Np)
+                                            biHi = new double[Np];
+
+                                        for (int n = 0; n < Np; n++) {
+                                            biHi[n] = bi[ciHi[ptr_CiHi + n]];
+                                        }
+
+                                        HiModeSolver.GEMV(1.0, biHi, 0.0, xiHi);
+
+                                        for (int n = 0; n < Np; n++) {
+                                            xi[ciHi[ptr_CiHi + n]] = xiHi[n];
+                                        }
+                                    }
+                                    ptr_CiHi += Np;
+                                }
+                                Debug.Assert(ptr_CiHi == ciHi.Length);
+
+                                // accumulate block solution 'xi' to global solution 'X'
+                                X.AccV(-1.0, xi, ci, default(int[]));
+                            }
+                        }
+                        
+
+                    }//*/
+
+                } // end loop Schwarz iterations
+
+            } // end FuncTrace
         }
 
 
+        /// <summary>
+        /// ~
+        /// </summary>
         public int IterationsInNested {
             get {
                 if (this.CoarseSolver != null)
@@ -1521,29 +1616,59 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 this.CoarseSolver.ResetStat();
         }
 
+        public void DisposeBlocks() {
+            foreach(var b in this.blockSolvers) {
+                b.Dispose();
+            }
+        }
+
         public ISolverSmootherTemplate Clone() {
             Schwarz Clone = new Schwarz();
             if (this.m_BlockingStrategy is METISBlockingStrategy) {
                 Clone.m_BlockingStrategy = new METISBlockingStrategy() {
                     NoOfPartsPerProcess = ((METISBlockingStrategy)this.m_BlockingStrategy).NoOfPartsPerProcess
                 };
-            }
-            if (this.m_BlockingStrategy is SimpleBlocking) {
+            } else if (this.m_BlockingStrategy is SimpleBlocking) {
                 Clone.m_BlockingStrategy = new SimpleBlocking() {
                     NoOfPartsPerProcess = ((SimpleBlocking)this.m_BlockingStrategy).NoOfPartsPerProcess
                 };
-            }
-            if (this.m_BlockingStrategy is MultigridBlocks) {
+            } else if (this.m_BlockingStrategy is MultigridBlocks) {
                 Clone.m_BlockingStrategy = new MultigridBlocks() {
                     Depth = ((MultigridBlocks)this.m_BlockingStrategy).Depth
                 };
+            } else {
+                throw new NotImplementedException();
             }
+
+            if (Clone.m_BlockingStrategy.GetType() != this.m_BlockingStrategy.GetType())
+                throw new NotImplementedException();
+
+
             Clone.m_MaxIterations = this.m_MaxIterations;
             Clone.m_Overlap = this.m_Overlap;
             Clone.IterationCallback = this.IterationCallback;
             if (this.CoarseSolver != null)
                 Clone.CoarseSolver = this.CoarseSolver.Clone();
             return Clone;
+        }
+
+        /// <summary>
+        /// ~
+        /// </summary>
+        public long UsedMem {
+            get {
+                long s = 0;
+
+                if(BlockMatrices != null) {
+                    s += BlockMatrices.Sum(mtx => mtx.UsedMemory);
+                }
+
+                if(PmgBlock_HiModeSolvers != null) {
+                    s += PmgBlock_HiModeSolvers.Sum(mdaa => mdaa.Sum(mda => (long)mda.Length * sizeof(double)));
+                }
+                
+                return s;
+            }
         }
 
     }

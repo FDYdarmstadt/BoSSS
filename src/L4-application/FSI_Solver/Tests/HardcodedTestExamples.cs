@@ -123,17 +123,14 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.rho_A = 1.0;
             C.PhysicalParameters.mu_A = 0.1;
             C.CoefficientOfRestitution = 0;
-
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 0.0 })
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, C.pureDryCollisions);
+            C.Particles.Add(new Particle_Sphere(motion, 1, new double[] { 0.0, 0.0 })
             {
-                radius_P = 1,
                 particleDensity = 2,
             });
-            C.Particles.Add(new Particle_Ellipsoid(new double[] { 0.0, 4.0 }, startAngl: 0)
+            C.Particles.Add(new Particle_Ellipsoid(motion, 1, 1, new double[] { 0.0, 4.0 }, startAngl: 0)
             {
                 particleDensity = 1,
-                thickness_P = 1,
-                length_P = 1,
             });
 
             C.InitialValues_Evaluators.Add("VelocityX", X => 0);
@@ -149,7 +146,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-2;
+            C.hydrodynamicsConvergenceCriterion = 1e-2;
 
 
             // Timestepping
@@ -222,39 +219,12 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Initial Values
             // ==============
-            // Coupling Properties
-            //C.LevelSetMovement = "coupled";
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-
-            // Particle Properties
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 0.0 }) {
-                radius_P = 0.4,
+            C.gravity = new double[] { 0, 0 };
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, C.pureDryCollisions, false, true);
+            C.Particles.Add(new Particle_Sphere(motion, 0.4, new double[] { 0.0, 0.0 }) {
                 particleDensity = 1.0,
-                IncludeTranslation = false,
-                IncludeRotation = true
             });
-
-            
-
-            ////Define level-set
-            //Func<double[], double, double> phiComplete = delegate (double[] X, double t) {
-            //    int exp = C.Particles.Count - 1;
-            //    double ret = Math.Pow(-1, exp);
-            //    for (int i = 0; i < C.Particles.Count; i++) {
-            //        ret *= C.Particles[i].Phi_P(X, t);
-            //    }
-            //    return ret;
-            //};
-
-            //Func<double[], double, double> phi = (X, t) => -(X[0] - t+X[1]);
-            //C.MovementFunc = phi;
-
-            //C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
-            //C.InitialValues.Add("VelocityX#B", X => 1);
-            //C.InitialValues_Evaluators.Add("VelocityX", X => 0);
-            //C.InitialValues_Evaluators.Add("VelocityY", X => 0);
-            //C.InitialValues.Add("Phi", X => -1);
-            //C.InitialValues.Add("Phi", X => (X[0] - 0.41));
 
             // For restart
             //C.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("fec14187-4e12-43b6-af1e-e9d535c78668"), -1);
@@ -273,7 +243,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 1;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.LevelSetSmoothing = false;
-            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.LinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MinSolverIterations = 1;
             C.NonLinearSolver.MaxSolverIterations = 100;
@@ -353,23 +323,20 @@ namespace BoSSS.Application.FSI_Solver {
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 0.1;
-
+            C.pureDryCollisions = true;
+            C.gravity = new double[] { 0, 0 };
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, C.pureDryCollisions);
             // Particles
             // =========
-            C.Particles.Add(new Particle_Sphere(new double[] { -0.5, -0.5 }, startAngl: 90.0)
+            C.Particles.Add(new Particle_Sphere(motion, 0.1, new double[] { -0.5, -0.5 }, startAngl: 90.0, startTransVelocity: new double[] { 1, -1 }, startRotVelocity: 0)
             {
                 particleDensity = 1.0,
-                radius_P = 0.1,
             });
-            C.Particles[0].TranslationalVelocity[0][0] = +1;
-            C.Particles[0].TranslationalVelocity[0][1] = -1;
-            C.Particles[0].RotationalVelocity[0] = 0;
-            C.pureDryCollisions = true;
             C.collisionModel = FSI_Control.CollisionModel.MomentumConservation;
 
             double V = 0;
             foreach (var p in C.Particles) {
-                V = Math.Max(V, p.TranslationalVelocity[0].L2Norm());
+                V = Math.Max(V, p.Motion.translationalVelocity[0].L2Norm());
             }
 
             if (V <= 0)
@@ -477,27 +444,21 @@ namespace BoSSS.Application.FSI_Solver {
             // Particles
             // =========
 
-            C.Particles.Add(new Particle_Sphere(new double[] { -0.6, +0.1 }, startAngl: 90.0) {
+            C.pureDryCollisions = true;
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, C.pureDryCollisions);
+            C.Particles.Add(new Particle_Sphere(motion, 0.15, new double[] { -0.6, +0.1 }, startAngl: 90.0, startTransVelocity: new double[] { 1, 0 }, startRotVelocity: 0) {
                 particleDensity = 1.0,
-                radius_P = 0.15
             });
-            C.Particles[0].TranslationalVelocity[0][0] = +1;
-            C.Particles[0].TranslationalVelocity[0][1] = 0;
-            C.Particles[0].RotationalVelocity[0] = 0;
 
-            C.Particles.Add(new Particle_Sphere(new double[] { +0.6, -0.1 }, startAngl: 90.0) {
+            C.Particles.Add(new Particle_Sphere(motion, 0.15, new double[] { +0.6, -0.1 }, startAngl: 90.0, startTransVelocity: new double[] { -1, 0 }, startRotVelocity: 0) {
                 particleDensity = 1.0,
-                radius_P = 0.15
             });
-            C.Particles[1].TranslationalVelocity[0][0] = -1;
-            C.Particles[1].TranslationalVelocity[0][1] = 0;
-            C.Particles[1].RotationalVelocity[0] = 0;
             
             C.collisionModel = FSI_Control.CollisionModel.MomentumConservation;
 
             double V = 0;
             foreach (var p in C.Particles) {
-                V = Math.Max(V, p.TranslationalVelocity[0].L2Norm());
+                V = Math.Max(V, p.Motion.translationalVelocity[0].L2Norm());
             }
 
             if (V <= 0)
@@ -506,8 +467,6 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Physical Parameters
             // ===================
-
-            C.pureDryCollisions = true;
             C.PhysicalParameters.IncludeConvection = true;
 
 
@@ -586,13 +545,6 @@ namespace BoSSS.Application.FSI_Solver {
 
             C.AddBoundaryValue("Wall");
 
-            // Boundary values for level-set
-            //C.BoundaryFunc = new Func<double, double>[] { (t) => 0.1 * 2 * Math.PI * -Math.Sin(Math.PI * 2 * 1 * t), (t) =>  0};
-            //C.BoundaryFunc = new Func<double, double>[] { (t) => 0, (t) => 0 };
-
-            // Initial Values
-            // ==============
-
             // Coupling Properties
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
@@ -601,27 +553,20 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 0.1;
 
-
-            // Particles
-            // =========
-
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 0.8 }, startAngl: 0.0)
-            {
-                particleDensity = 1.0,
-                radius_P = 0.15,
-                GravityVertical = -9.81
-            });
-
-            C.collisionModel = FSI_Control.CollisionModel.MomentumConservation;
-
-
-            // Physical Parameters
-            // ===================
-
-            C.pureDryCollisions = true;
             C.PhysicalParameters.IncludeConvection = true;
             C.CoefficientOfRestitution = 1;
 
+
+            // Particles
+            // =========
+            C.pureDryCollisions = true;
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, C.pureDryCollisions);
+            C.Particles.Add(new Particle_Sphere(motion, 0.15, new double[] { 0.0, 0.8 }, 0.0, new double[] { 0, 0 } , 0) {
+                
+                particleDensity = 1.0,
+            });
+
+            C.collisionModel = FSI_Control.CollisionModel.MomentumConservation;
 
             // misc. solver options
             // ====================
@@ -743,43 +688,29 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.rho_A = 1.0;
             C.PhysicalParameters.mu_A = 0.1;
             C.CoefficientOfRestitution = 0;
+            C.gravity = new double[] { 0, -9.81 };
 
             // Particle Properties
             //C.PhysicalParameters.mu_B = 0.1;
             //C.particleMass = 1;
 
+            ParticleMotionInit motion1 = new ParticleMotionInit(C.gravity, C.pureDryCollisions, true);
+            ParticleMotionInit motion2 = new ParticleMotionInit(C.gravity, C.pureDryCollisions, true, true);
 
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 0.6 })
+            C.Particles.Add(new Particle_Sphere(motion1, 0.18, new double[] { 0.0, 0.6 })
             {
-                radius_P = 0.18,
                 particleDensity = 4,
-                GravityVertical = -9.81,
-                IncludeRotation = false
             });
 
-            C.Particles.Add(new Particle_superEllipsoid(new double[] { 0.45, 0 }, startAngl: 45)
+            C.Particles.Add(new Particle_superEllipsoid(motion2, 0.4, 0.2, 4, new double[] { 0.45, 0 }, startAngl: 45)
             {
                 particleDensity = 1,
-                thickness_P = 0.2,
-                length_P = 0.4,
-                //radius_P = 0.4,
-                superEllipsoidExponent = 4,
-                GravityVertical = -0,
-                IncludeRotation = false,
-                IncludeTranslation = false,
             });
 
 
-            C.Particles.Add(new Particle_superEllipsoid(new double[] { -0.45, 0 }, startAngl: -45)
+            C.Particles.Add(new Particle_superEllipsoid(motion2, 0.4,  0.2, 4, new double[] { -0.45, 0 }, startAngl: -45)
             {
                 particleDensity = 1,
-                thickness_P = 0.2,
-                length_P = 0.4,
-                //radius_P = 0.4,
-                superEllipsoidExponent = 4,
-                GravityVertical = -0,
-                IncludeRotation = false,
-                IncludeTranslation = false,
             });
             C.InitialValues_Evaluators.Add("VelocityX", X => 0);
             C.InitialValues_Evaluators.Add("VelocityY", X => 0);
@@ -794,7 +725,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-2;
+            C.hydrodynamicsConvergenceCriterion = 1e-2;
 
 
             // Timestepping
@@ -895,27 +826,18 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.rho_A = 1;//pg/(mum^3)
             C.PhysicalParameters.mu_A = 1e4;//pg(mum*s)
             C.PhysicalParameters.Material = true;
-
-
+            ParticleUnderrelaxationParam underrelaxationParam = new ParticleUnderrelaxationParam(1e-2, 1, true);
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, C.pureDryCollisions, false, false, underrelaxationParam, 1);
             // Particle Properties
             // =============================   
             C.Particles = new List<Particle>();
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Ellipsoid(new double[] { 0.0, 0.0 }, startAngl: 0)
+                C.Particles.Add(new Particle_Ellipsoid(motion, 1, 0.4, new double[] { 0.0, 0.0 }, startAngl: 0)
                 {
                     particleDensity = 1,
-                    ActiveParticle = true,
-                    ActiveStress = 1e5,
-                    thickness_P = 0.4,
-                    length_P = 1,
-                    useAddaptiveUnderrelaxation = true,
-                    underrelaxation_factor = 1,// underrelaxation with [factor * 10^exponent]
-                    clearSmallValues = true,
-                    UseAddedDamping = true,
-                    IncludeRotation = false,
-                    IncludeTranslation = true
+                    activeStress = 1e5,
                 });
             }
             //Define level-set
@@ -956,20 +878,19 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-2;
+            C.hydrodynamicsConvergenceCriterion = 1e-2;
             C.LSunderrelax = 1.0;
             
             // Coupling Properties
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.max_iterations_fully_coupled = 1000;
+            C.maxIterationsFullyCoupled = 1000;
 
 
 
             // Timestepping
             // =============================  
-            C.instationarySolver = true;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
             double dt = 1e-3;
             C.dtMax = dt;
@@ -1064,23 +985,18 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.rho_A = 0.1;//pg/(mum^3)
             C.PhysicalParameters.mu_A = 1e-1;//pg(mum*s)
             C.PhysicalParameters.Material = true;
-
-
+            C.gravity = new double[] { 0, 0 };
+            ParticleUnderrelaxationParam underrelaxationParam = new ParticleUnderrelaxationParam(1e-2, 9, true);
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, C.pureDryCollisions, false, false, underrelaxationParam, 1);
             // Particle Properties
             // =============================   
             C.Particles = new List<Particle>();
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 0.0 }, startAngl: 0)
+                C.Particles.Add(new Particle_Sphere(motion, 0.5, new double[] { 0.0, 0.0 }, startAngl: 0)
                 {
                     particleDensity = 1,
-                    radius_P = 0.5,
-                    GravityVertical = 0,
-                    useAddaptiveUnderrelaxation = true,
-                    underrelaxation_factor = 9,// underrelaxation with [factor * 10^exponent]
-                    clearSmallValues = true,
-                    UseAddedDamping = true,
                 });
             }
             //Define level-set
@@ -1121,20 +1037,19 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-2;
+            C.hydrodynamicsConvergenceCriterion = 1e-2;
             C.LSunderrelax = 1.0;
 
             // Coupling Properties
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.max_iterations_fully_coupled = 1000;
+            C.maxIterationsFullyCoupled = 1000;
 
 
 
             // Timestepping
             // =============================  
-            C.instationarySolver = true;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
             double dt = 1e-3;
             C.dtMax = dt;

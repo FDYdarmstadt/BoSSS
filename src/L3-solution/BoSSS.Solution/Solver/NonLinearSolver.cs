@@ -23,29 +23,31 @@ using System.Threading.Tasks;
 using BoSSS.Solution;
 
 namespace BoSSS.Solution.Control {
+
+    public enum NonLinearSolverCode {
+
+        /// <summary>
+            /// NewtonKrylov GMRES (<see cref="BoSSS.Solution.AdvancedSolvers.NonLinearSolver"/>) with linear solver (<see cref="LinearSolverConfig.Code"/>) used as preconditioner for matrix-free GMRES 
+        /// </summary>
+        NewtonGMRES = 0,
+
+        /// <summary>
+        /// The bald guy from the Enterprise.
+        /// Picard fixpoint solver (<see cref="BoSSS.Solution.AdvancedSolvers.FixpointIterator"/>) with linear solver (<see cref="LinearSolverCode"/>) for the linearized equation system
+        /// </summary>
+        Picard = 1,
+
+        /// <summary>
+        /// Newtons method (<see cref="BoSSS.Solution.Advance"/>) with linear solver (<see cref="LinearSolverCode"/>) used to approximate the inverse of the jacobian with the inverse operator matrix. 
+        /// </summary>
+        Newton = 2,
+
+        PicardGMRES = 3,
+
+        selfmade = 999,
+    }
+
     public class NonLinearSolverConfig {
-        public enum Code {
-
-            /// <summary>
-            /// NewtonKrylov GMRES (<see cref="BoSSS.Solution.AdcancedSolvers.NonLinearSolver"/>) with linear solver (<see cref="LinearSolverConfig.Code"/>) used as preconditioner for matrix-free GMRES 
-            /// </summary>
-            NewtonGMRES = 0,
-
-            /// <summary>
-            /// The bald guy from the Enterprise.
-            /// Picard fixpoint solver (<see cref="BoSSS.Solution.AdvancedSolvers.FixpointIterator"/>) with linear solver (<see cref="LinearSolverConfig.Code"/>) for the linearized equation system
-            /// </summary>
-            Picard = 1,
-
-            /// <summary>
-            /// Newtons method (<see cref="BoSSS.Solution.Advance"/>) with linear solver (<see cref="LinearSolverConfig.Code"/>) used to approximate the inverse of the jacobian with the inverse operator matrix. 
-            /// </summary>
-            Newton = 2,
-
-            PicardGMRES = 3,
-
-            selfmade = 999,
-        }
 
         /// <summary>
         /// This will print out more information about iterations.
@@ -69,7 +71,7 @@ namespace BoSSS.Solution.Control {
         public int MaxSolverIterations = 2000;
 
         /// <summary>
-        /// If iterative solvers are used, the maximum number of iterations.
+        /// If iterative solvers are used, the minimum number of iterations.
         /// </summary>
         [DataMember]
         public int MinSolverIterations = 2;
@@ -90,7 +92,7 @@ namespace BoSSS.Solution.Control {
         /// Sets the algorithm to use for nonlinear solving, e.g. Newton or Picard.
         /// </summary>
         [DataMember]
-        public NonLinearSolverConfig.Code SolverCode = NonLinearSolverConfig.Code.Picard;
+        public NonLinearSolverCode SolverCode = NonLinearSolverCode.Picard;
     }
 
 }

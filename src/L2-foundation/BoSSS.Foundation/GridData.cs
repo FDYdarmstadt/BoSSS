@@ -1067,7 +1067,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 #if DEBUG
                 for(int j = 0; j < J; j++) {
                     var CNglb_j = CNglb[j].ToArray();
-
+                    int test = MpiRank;
                     for(int n1 = 0; n1 < CNglb_j.Length; n1++) {
                         for (int n2 = 0; n2 < CNglb_j.Length; n2++) {
                             if(n1 != n2) {
@@ -1236,7 +1236,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     sms.SetCommPathsAndCommit(ExternalCells.Keys);
 
                     foreach (var msg in ExternalCells)
-                        sms.Transmitt(msg.Key, msg.Value.ToArray());
+                        sms.Transmit(msg.Key, msg.Value.ToArray());
 
                     m_Parallel.SendCommLists = new int[MpiSize][];
 
@@ -1276,7 +1276,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         for (int l = 0; l < L; l++)
                             msg[l] = m_Grid.Cells[sendList[l]];
 
-                        sms.Transmitt(p, msg);
+                        sms.Transmit(p, msg);
                     }
 
                     m_Parallel.ExternalCells = new Cell[Jexternal];
