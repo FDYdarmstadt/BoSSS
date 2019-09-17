@@ -101,7 +101,7 @@ namespace ilPSP.Kraypis {
                                                 int[] adjwgt, ref int nparts, double[] tpwgts,
                                                 double[] ubvec, int[] options, ref int objval, int[] part);
 
-        public unsafe static _PartGraphKway PartGraphKway
+        public unsafe _PartGraphKway PartGraphKway
         {
             get { return METIS_PartGraphKway; }
         }
@@ -115,7 +115,7 @@ namespace ilPSP.Kraypis {
                                                  ref int nparts, double[] tpwgts, double[] ubvec,
                                                  int[] options, ref int objval, int[] part);
 
-        public unsafe static _PartGraphRecursive PartGraphRecursive
+        public unsafe _PartGraphRecursive PartGraphRecursive
         {
             get { return METIS_PartGraphRecursive; }
         }

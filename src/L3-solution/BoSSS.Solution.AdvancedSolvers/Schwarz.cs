@@ -169,6 +169,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public class METISBlockingStrategy : BlockingStrategy {
 
+            METIS m_METIS = new METIS();
+
             /// <summary>
             /// Number of parts/additive Schwarz blocks on current MPI process.
             /// </summary>
@@ -214,7 +216,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         int ncon = 1;
                         int edgecut = 0;
                         int[] options = null; //new int[] { 0, 0, 0, 0, 0 };
-                        METIS.PartGraphKway(
+                        m_METIS.PartGraphKway(
                             ref JComp, ref ncon,
                             xadj,
                             adjncy.ToArray(),
