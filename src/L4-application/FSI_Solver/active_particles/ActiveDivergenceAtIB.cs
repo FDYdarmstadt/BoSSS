@@ -62,7 +62,6 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity
 
         public double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB)
         {
-
             double uAxN = GenericBlas.InnerProd(U_Neg, cp.n);
 
             var parameters_P = m_getParticleParams(cp.x, cp.time);
@@ -87,24 +86,6 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity
 
             return FlxNeg * v_Neg;
         }
-
-        /*
-        public override void PrimalVar_LevelSetFlux(out double FlxNeg, out double FlxPos,
-            ref CommonParamsLs cp,
-            double[] U_Neg, double[] U_Pos) {
-            FlxNeg = 0;
-            FlxPos = 0;
-        }
-
-        public override void FluxPotential(out double G, double[] U) {
-            G = 0;
-        }
-
-        public override void Nu(out double NuNeg, out double NuPos, ref CommonParamsLs cp) {
-            NuNeg = 1.0;
-            NuPos = 1.0;
-        }
-        */
 
         public IList<string> ArgumentOrdering
         {

@@ -63,23 +63,11 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         /// default-implementation
         /// </summary>
         public double LevelSetForm(ref CommonParamsLs inp,
-        //public override double EdgeForm(ref Linear2ndDerivativeCouplingFlux.CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double[] N = inp.n;
-
-
-            //Debug.Assert(!double.IsNaN(inp.PosCellLengthScale));
-            //double hCutCellMin = Math.Min(inp.PosCellLengthScale, inp.NegCellLengthScale);
-            //double hCutCellMin = inp.NegCellLengthScale; // for IBM, there is no positive species!
-            //if (hCutCellMin <= 1.0e-10 * hCellMin)
-            //    // very small cell -- clippling
-            //    hCutCellMin = hCellMin;
-            //double _penalty = penalty(hCutCellMin);
             double _penalty = m_PenaltyFunc(m_penalty, inp.jCell);
-
             int D = N.Length;
-
 
             // Particle parameters
             // ============================= 
@@ -99,7 +87,6 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             Debug.Assert(Grad_uA.GetLength(1) == D);
             Debug.Assert(Grad_uB.GetLength(1) == D);
 
-
             // Gradient of u and v 
             // ============================= 
             double Grad_uA_xN = 0, Grad_vA_xN = 0;
@@ -108,12 +95,10 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
                 Grad_vA_xN += Grad_vA[d] * N[d];
             }
 
-
             // Evaluate the complete velocity as a sum of translation and angular velocity
             // ============================= 
             double uAFict;
             double Ret = 0.0;
-            double[] active_stress_visc = new double[2];
 
             // 3D for IBM_Solver
             // ============================= 
@@ -137,27 +122,12 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             {
                 uAFict = (uLevSet[component] + RadialLength * wLevSet * RadialNormalVector[1]) * (1 - scale) + uA[component] * scale;
             }
-            active_stress_visc[0] = active_stress * Math.Cos(Ang_P);
-            active_stress_visc[1] = active_stress * Math.Sin(Ang_P);
-            double f_xN;
+            double f_xN = component == 0 ? active_stress * Math.Cos(Ang_P) * Math.Abs(inp.n[1]) : active_stress * Math.Sin(Ang_P) * Math.Abs(inp.n[0]);
 
-            //Defining active stress
-            if (component == 0)
-            {
-                //active_stress_visc =  - inp.n[0] / Math.Abs(inp.n[0]) * active_stress * scale * Math.Abs(inp.n[1]);
-                f_xN = active_stress_visc[0] * Math.Abs(inp.n[1]);
-            }
-            else
-            {
-                //active_stress_visc = inp.n[1] / Math.Abs(inp.n[1]) * active_stress * scale * Math.Abs(inp.n[0]);
-                f_xN = active_stress_visc[1] * Math.Abs(inp.n[0]);
-                //active_stress_visc = 0;
-            }
-            
             //Computing flux
             Ret -= Grad_uA_xN * (vA) * muA * (1 - scale);                   // consistency term 
             Ret -= Grad_vA_xN * (uA[component] - uAFict) * muA;             // symmetry term 
-            Ret += _penalty * (uA[component] - uAFict) * (vA) * muA ;        // penalty term
+            Ret += _penalty * (uA[component] - uAFict) * (vA) * muA ;       // penalty term
             Ret += f_xN * (vA) * scale;                                     // active term (Neumann boundary condition)
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));

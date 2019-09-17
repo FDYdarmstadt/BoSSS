@@ -840,6 +840,7 @@ namespace BoSSS.Application.FSI_Solver {
                 else {
                     if (((FSI_Control)Control).Timestepper_LevelSetHandling != LevelSetHandling.Coupled_Iterative) {
                         if (phystime == 0) { CreatePhysicalDataLogger(); }
+                        if (phystime == 0) { CreateResidualLogger(); }
                         int iterationCounter = 0;
                         double hydroDynForceTorqueResidual = double.MaxValue;
                         foreach (Particle p in m_Particles) {
@@ -876,6 +877,7 @@ namespace BoSSS.Application.FSI_Solver {
                             // print iteration status
                             // -------------------------------------------------
                             Auxillary.PrintResultToConsole(m_Particles, phystime, hydroDynForceTorqueResidual, iterationCounter);
+                            LogResidual(phystime, iterationCounter, hydroDynForceTorqueResidual);
                         }
 
                         // collision
@@ -1015,7 +1017,34 @@ namespace BoSSS.Application.FSI_Solver {
         private void CalculateVorticity() {
             Vorticity2D.Curl2D(1, Velocity);
         }
-                
+
+        /// <summary>
+        /// Saves the residual of the hydrodynamic forces and torque of all particles.
+        /// </summary>
+        private TextWriter logHydrodynamicsResidual;
+
+        /// <summary>
+        /// Creates a log file for the residum of the hydrodynamic forces.
+        /// </summary>
+        private void CreateResidualLogger() {
+            if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
+                logHydrodynamicsResidual = base.DatabaseDriver.FsDriver.GetNewLog("HydrodynamicResidual", CurrentSessionInfo.ID);
+                string firstline = String.Format("{0}\t{1}\t{2}", "Time", "Iteration", "Residual");
+                logHydrodynamicsResidual.WriteLine(firstline);
+            }
+        }
+
+        /// <summary>
+        /// Creates a log file for the residum of the hydrodynamic forces.
+        /// </summary>
+        private void LogResidual(double phystime, int iterationCounter, double residual) {
+            if ((base.MPIRank == 0) && (logPhysicalDataParticles != null)) {
+                string line = String.Format("{0}\t{1}\t{2}", phystime, iterationCounter, residual);
+                logHydrodynamicsResidual.WriteLine(line);
+                logHydrodynamicsResidual.Flush();
+            }
+        }
+
         /// <summary>
         /// Saves the physical data of all particles
         /// </summary>
@@ -1047,7 +1076,6 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        // restart
         /// <summary>
         /// over-ridden in oder to save the particles (<see cref="m_Particles"/>) to the database
         /// </summary>
@@ -1220,7 +1248,6 @@ namespace BoSSS.Application.FSI_Solver {
             // Determine colour.
             // =================================================
             FSI_LevelSetUpdate levelSetUpdate = new FSI_LevelSetUpdate(LsTrk);
-            //int[] globalParticleColor = levelSetUpdate.DetermineGlobalParticleColor(GridData, CellColor, Particles);
             int[] _GlobalParticleColor = globalParticleColor.CloneAs();
             for (int i = 0; i < _GlobalParticleColor.Length; i++) {
                 int CurrentColor = _GlobalParticleColor[i];
@@ -1264,7 +1291,6 @@ namespace BoSSS.Application.FSI_Solver {
         private void Collision_MPICommunication(Particle currentParticle, int MPISize) {
             int noOfVars = 13;
             double[] isCollidedSend = new double[1];
-            double[] sendSkipForceIntegration = new double[1];
             bool noCurrentCollision = true;
 
             // Did a collision take place on one of the processes?

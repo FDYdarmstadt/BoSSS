@@ -62,7 +62,6 @@ namespace BoSSS.Application.FSI_Solver {
                     });
                 }
             }
-            //
 
             // Quadrature rules
             // =============================   
