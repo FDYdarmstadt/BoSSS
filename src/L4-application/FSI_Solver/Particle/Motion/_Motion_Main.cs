@@ -327,7 +327,7 @@ namespace BoSSS.Application.FSI_Solver {
 
         public virtual void PredictForceAndTorque(double activeStress, int TimestepInt) {
             if (TimestepInt == 1) {
-                hydrodynamicForces[0][0] = m_MaxParticleLengthScale * Math.Cos(angle[0]) * activeStress / 2 + m_Gravity[1] * particleDensity * particleArea / 10;
+                hydrodynamicForces[0][0] = m_MaxParticleLengthScale * Math.Cos(angle[0]) * activeStress / 2 + m_Gravity[0] * particleDensity * particleArea / 10;
                 hydrodynamicForces[0][1] = m_MaxParticleLengthScale * Math.Sin(angle[0]) * activeStress / 2 + m_Gravity[1] * particleDensity * particleArea / 10;
                 hydrodynamicTorque[0] = 0;
             }
