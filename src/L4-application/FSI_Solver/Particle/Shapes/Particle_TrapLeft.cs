@@ -77,7 +77,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        public override double Phi_P(double[] X) {
+        public override double levelSetFunction(double[] X) {
             double alpha = -(Motion.angle[0]);
             double r;
             // Rechteck:

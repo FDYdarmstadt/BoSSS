@@ -274,6 +274,8 @@ namespace BoSSS.Application.FSI_Solver {
                 CalculateParticleAngle(dt);
             }
             else {
+                if (collisionTimestep < 0)
+                    collisionTimestep = 0;
                 double[] tempPos = position[0].CloneAs();
                 double tempAngle = angle[0];
                 SavePositionAndAngleOfPreviousTimestep();
@@ -281,6 +283,8 @@ namespace BoSSS.Application.FSI_Solver {
                 angle[0] = tempAngle;
                 CalculateParticlePosition(dt, collisionTimestep);
                 CalculateParticleAngle(dt, collisionTimestep);
+                if (collisionTimestep > dt) { collisionTimestep -= dt; }
+                else collisionTimestep = 0;
             }
         }
 
@@ -650,6 +654,10 @@ namespace BoSSS.Application.FSI_Solver {
                 sum = naiveSum;
             }
             return sum + c;
+        }
+
+        private bool RunOrTumbleChange(int probabilityPromille) {
+            return new Random().Next(1000) < probabilityPromille;
         }
     }
 }

@@ -67,7 +67,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        public override double Phi_P(double[] X) {
+        public override double levelSetFunction(double[] X) {
             double a = length_P;
             double b = thickness_P;
             double alpha = -(Motion.angle[0]);

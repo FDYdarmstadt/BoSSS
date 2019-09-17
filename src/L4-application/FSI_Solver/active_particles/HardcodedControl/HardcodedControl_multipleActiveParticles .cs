@@ -39,21 +39,20 @@ namespace BoSSS.Application.FSI_Solver {
                 "Wall_upper"
             };
 
-            int sqrtPart = 5;
+            int sqrtPart = 3;
             C.SetBoundaries(boundaryValues);
             C.SetGrid(lengthX: 2 * sqrtPart + 1, lengthY: 2 * sqrtPart + 1, cellsPerUnitLength: 1.5, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel: 4);
-            C.hydrodynamicsConvergenceCriterion = 10;
+            C.hydrodynamicsConvergenceCriterion = 0.1;
 
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 1;
-            C.gravity = new double[] { 0, 0 };
 
             // Particle Properties
             // =============================
-            C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.hydrodynamicsConvergenceCriterion, underrelaxationFactorIn: 3.0, useAddaptiveUnderrelaxationIn: true);
+            C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.hydrodynamicsConvergenceCriterion, underrelaxationFactorIn: 5.0, useAddaptiveUnderrelaxationIn: true);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, false, false, false, C.underrelaxationParam, 1);
             for (int x = 0; x < sqrtPart; x++) {
                 for (int y = 0; y < sqrtPart; y++) {
@@ -104,7 +103,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.maxIterationsFullyCoupled = 10000;
+            C.maxIterationsFullyCoupled = 1000000;
 
 
             // Timestepping

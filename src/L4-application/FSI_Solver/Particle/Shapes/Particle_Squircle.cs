@@ -70,7 +70,7 @@ namespace BoSSS.Application.FSI_Solver
             }
         }
 
-        public override double Phi_P(double[] X) {
+        public override double levelSetFunction(double[] X) {
             double alpha = -(Motion.angle[0]);
             return -((((X[0] - Motion.position[0][0]) * Math.Cos(alpha) - (X[1] - Motion.position[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - Motion.position[0][0]) * Math.Sin(alpha) + (X[1] - Motion.position[0][1]) * Math.Cos(alpha)).Pow(4)) - radius_P.Pow(4));
         }

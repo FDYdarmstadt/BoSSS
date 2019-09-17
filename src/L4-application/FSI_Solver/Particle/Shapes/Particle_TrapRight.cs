@@ -80,7 +80,7 @@ namespace BoSSS.Application.FSI_Solver {
         //    double alpha = -(Angle[0]);
         //    Phi_P = (X, t) => -(X[0] - Motion.position[0][0]).Pow2() + -(X[1] - Motion.position[0][1]).Pow2() + radius_P.Pow2();
         //}
-        public override double Phi_P(double[] X) {
+        public override double levelSetFunction(double[] X) {
             double alpha = -(Motion.angle[0]);
             double r;
             // Rechteck:

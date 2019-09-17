@@ -79,7 +79,7 @@ namespace BoSSS.Application.FSI_Solver
             }
         }
 
-        public override double Phi_P(double[] X) {
+        public override double levelSetFunction(double[] X) {
             double x0 = Motion.position[0][0];
             double y0 = Motion.
                 position[0][1];

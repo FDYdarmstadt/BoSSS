@@ -156,7 +156,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
             double wLevSet = parameters_P[2];
             double[] RadialNormalVector = new double[] { parameters_P[3], parameters_P[4] };
             double RadialLength = parameters_P[5];
-            double scale = parameters_P[6];
+            double scale = parameters_P[7];
 
 
             // Level-set velocity

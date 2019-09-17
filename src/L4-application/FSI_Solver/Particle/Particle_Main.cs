@@ -145,7 +145,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Level set function describing the particle.
         /// </summary>       
-        public abstract double Phi_P(double[] X);
+        public abstract double levelSetFunction(double[] X);
 
         /// <summary>
         /// Convergence criterion for the calculation of the Forces and Torque
