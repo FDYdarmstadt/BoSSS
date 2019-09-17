@@ -43,7 +43,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.SetBoundaries(boundaryValues);
             C.SetGrid(lengthX: 2 * sqrtPart + 1, lengthY: 2 * sqrtPart + 1, cellsPerUnitLength: 1.5, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel: 4);
-            C.hydrodynamicsConvergenceCriterion = 0.1;
+            C.hydrodynamicsConvergenceCriterion = 1e-2;
 
             // Fluid Properties
             // =============================

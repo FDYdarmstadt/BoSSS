@@ -296,19 +296,16 @@ namespace FSI_Solver {
         /// <param name="IterationCounter_Out"> </param>
         internal double CalculateParticleResidual(List<Particle> Particles, ref int iterationCounter) {
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            double residual;
+            double residual = 0;
             if (iterationCounter == 0)
                 residual = 1e12;
             else {
-                double[] ForcesNewSquared = new double[2];
-                double TorqueNewSquared = new double();
-                residual = 0;
                 foreach (Particle p in Particles) {
-                    p.ForceTorqueResidual = Math.Sqrt((p.Motion.forcesPrevIteration[0] - p.Motion.hydrodynamicForces[0][0]).Pow2() + (p.Motion.forcesPrevIteration[1] - p.Motion.hydrodynamicForces[0][1]).Pow2() + (p.Motion.torquePrevIteration - p.Motion.hydrodynamicTorque[0]).Pow2());
-                    for (int d = 0; d < 2; d++)
-                        ForcesNewSquared[d] += p.Motion.hydrodynamicForces[0][d].Pow2();
-                    TorqueNewSquared += p.Motion.hydrodynamicTorque[0].Pow2();
-                    residual += p.ForceTorqueResidual;
+                    double diffForcesX = (p.Motion.forcesPrevIteration[0] - p.Motion.hydrodynamicForces[0][0]).Pow2();
+                    double diffForcesY = (p.Motion.forcesPrevIteration[1] - p.Motion.hydrodynamicForces[0][1]).Pow2();
+                    double diffTorque = (p.Motion.torquePrevIteration - p.Motion.hydrodynamicTorque[0]).Pow2();
+                    double absSolution = Math.Sqrt(p.Motion.hydrodynamicForces[0][0].Pow2() + p.Motion.hydrodynamicForces[0][1].Pow2() + p.Motion.hydrodynamicTorque[0].Pow2());
+                    residual += Math.Sqrt(diffForcesX + diffForcesY + diffTorque) / absSolution;
                 }
             }
             residual /= Particles.Count();
@@ -327,13 +324,8 @@ namespace FSI_Solver {
         /// <param name="Particles">
         /// A list of all particles
         /// </param>
-        /// <param name="FluidViscosity"></param>
         /// <param name="phystime"></param>
-        /// <param name="TimestepInt"></param>
         /// <param name="IterationCounter"> </param>
-        /// /// <param name="Finalresult"></param>
-        /// <param name="MPIangularVelocity"></param>
-        /// <param name="Force"></param>
         internal void PrintResultToConsole(List<Particle> Particles, double phystime, double residual, int IterationCounter) {
             if (Particles.Count() == 0) {
                 return;
@@ -479,7 +471,7 @@ namespace FSI_Solver {
         /// <param name="IterationCounter"></param>
         /// <param name="ForceTorqueConvergenceCriterion"></param>
         /// /// <param name="IsFullyCoupled"></param>
-        internal void SaveOldParticleState(List<Particle> Particles, int IterationCounter, double ForceTorqueConvergenceCriterion, bool IsFullyCoupled) {
+        internal void SaveOldParticleState(List<Particle> Particles, int IterationCounter, double ForceTorqueConvergenceCriterion) {
             foreach (Particle p in Particles) {
                 p.iteration_counter_P = IterationCounter;
                 // Save status for residual

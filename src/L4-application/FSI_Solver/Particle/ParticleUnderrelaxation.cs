@@ -43,14 +43,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="forces">
         /// The hydrodynamic forces.
         /// </param>
-        /// <param name="torque">
-        /// The hydrodynamic torque.
-        /// </param>
         /// <param name="forcesAtPrevIteration">
         /// The hydrodynamic forces at the previous iteration.
-        /// </param>
-        /// <param name="torqueAtPrevIteration">
-        /// The hydrodynamic torque at the previous iteration.
         /// </param>
         /// <param name="convergenceLimit">
         /// The predefined convergence limit for the fully coupled system.
@@ -59,18 +53,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// The predefined relaxation factor, either used directly or as a base to calculate
         /// a dynamic factor.
         /// </param>
-        /// <param name="clearSmallValues">
-        /// Bool to check whether small components should be set to zero (tool to stabilize the
-        /// simulation).
-        /// </param>
         /// <param name="UseAdaptiveUnderrelaxation">
         /// Bool to check whether the relaxation factor should be calculated dynamically or not.
-        /// </param>
-        /// <param name="averageDistance">
-        /// The average Lengthscale of the particle.
-        /// </param>
-        /// <param name="iterationCounter">
-        /// No. of iterations.
         /// </param>
         internal void Forces(ref double[] forces, double[] forcesAtPrevIteration, double convergenceLimit, double relaxationFactor, bool UseAdaptiveUnderrelaxation, double averageForce) {
             int spatialDim = forces.Length;
@@ -140,7 +124,7 @@ namespace BoSSS.Application.FSI_Solver {
             double UnderrelaxationCoeff = predefinedFactor * 1e-1;
             double UnderrelaxationExponent = 0;
 
-            while (Math.Abs(UnderrelaxationCoeff * variable) > 0.75 * Math.Abs(variableAtPrevIteration) && UnderrelaxationCoeff > 1e-20) {
+            while (Math.Abs(UnderrelaxationCoeff * variable) > 0.9 * Math.Abs(variableAtPrevIteration) && UnderrelaxationCoeff > 1e-20) {
                 UnderrelaxationExponent -= 1;
                 UnderrelaxationCoeff = predefinedFactor * Math.Pow(10, UnderrelaxationExponent);
             }

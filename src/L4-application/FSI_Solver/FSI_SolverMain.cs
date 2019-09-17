@@ -845,29 +845,22 @@ namespace BoSSS.Application.FSI_Solver {
                         foreach (Particle p in m_Particles) {
                             p.Motion.GetParticleDensity(p.particleDensity);
                         }
-                        int RequiredOrder = Velocity[0].Basis.Degree * 3 + 2;
-                        Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
+                        Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, Velocity[0].Basis.Degree * 3 + 2);
                         while (hydroDynForceTorqueResidual > HydrodynConvergenceCriterion) {
                             Auxillary.CheckForMaxIterations(iterationCounter, ((FSI_Control)Control).maxIterationsFullyCoupled);
                             Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
-                            Auxillary.SaveOldParticleState(m_Particles, iterationCounter, ((FSI_Control)Control).hydrodynamicsConvergenceCriterion, IsFullyCoupled);
+                            Auxillary.SaveOldParticleState(m_Particles, iterationCounter, ((FSI_Control)Control).hydrodynamicsConvergenceCriterion);
 
                             // actual physics
                             // -------------------------------------------------
-                            if (IsFullyCoupled) {
-                                calculateNewLevelSet = iterationCounter == 0;
-                                if (iterationCounter == 0) {
-                                    InitializeParticlePerIteration(m_Particles, TimestepInt);
-                                }
-                                else {
-                                    m_BDF_Timestepper.Solve(phystime, dt, false);
-                                    CalculateVorticity();
-                                    CalculateHydrodynamicForces(m_Particles, dt, false);
-                                }
+                            calculateNewLevelSet = iterationCounter == 0;
+                            if (IsFullyCoupled && iterationCounter == 0) {
+                                InitializeParticlePerIteration(m_Particles, TimestepInt);
                             }
                             else {
                                 m_BDF_Timestepper.Solve(phystime, dt, false);
-                                CalculateHydrodynamicForces(m_Particles, dt, false);
+                                CalculateVorticity();
+                                CalculateHydrodynamicForces(m_Particles, dt, !IsFullyCoupled);
                             }
                             CalculateParticleVelocity(m_Particles, dt, iterationCounter);
 
