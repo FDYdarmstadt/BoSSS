@@ -417,7 +417,7 @@ namespace ilPSP.LinSolvers.monkey {
                 sms.CommitCommPaths();
 
                 foreach (int proc in CommLists.Keys)
-                    sms.Transmitt(proc, CommLists[proc].ToArray());
+                    sms.Transmit(proc, CommLists[proc].ToArray());
 
                 int _proc;
                 int[] CommListReceived;

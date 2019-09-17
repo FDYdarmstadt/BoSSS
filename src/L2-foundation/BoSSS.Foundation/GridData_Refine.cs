@@ -54,6 +54,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 Partitioning cellPartitioning = CellPartitioning;
                 Old2New = new GridCorrelation();
 
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);// somehow this barrier is absolutly necessary, I have no idea why.
                 int J = Cells.NoOfLocalUpdatedCells;
                 int JE = Cells.NoOfExternalCells + Cells.NoOfLocalUpdatedCells;
 
@@ -270,7 +271,8 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     Cell[] adaptedCells1 = new Cell[1];
                     Cell[] adaptedCells2 = new Cell[1];
-                    
+
+                    int i0 = CellPartitioning.i0;
                     if (IsPartOfLocalCells(J, localCellIndex1) && IsPartOfLocalCells(J, localCellIndex2)) {
                         adaptedCells1 = adaptedCells[localCellIndex1];
                         adaptedCells2 = adaptedCells[localCellIndex2];
@@ -281,6 +283,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         RefElement Kref = KrefS[iKref];
                         RefElement.SubdivisionTreeNode[] Leaves = KrefS_SubdivLeaves[iKref];
                         adaptedCells2 = FindCellOnNeighbourProcess(cellsOnNeighbourProcess, localCellIndex2, Leaves.Length);
+                        CheckIfCellIsMissing(localCellIndex2, adaptedCells2, i0);
                     }
                     else if (!IsPartOfLocalCells(J, localCellIndex1) && IsPartOfLocalCells(J, localCellIndex2)) {
                         int iKref = Cells.GetRefElementIndex(localCellIndex1);
@@ -288,18 +291,22 @@ namespace BoSSS.Foundation.Grid.Classic {
                         RefElement.SubdivisionTreeNode[] Leaves = KrefS_SubdivLeaves[iKref];
                         adaptedCells1 = FindCellOnNeighbourProcess(cellsOnNeighbourProcess, localCellIndex1, Leaves.Length);
                         adaptedCells2 = adaptedCells[localCellIndex2];
+                        CheckIfCellIsMissing(localCellIndex1, adaptedCells1, i0);
                     }
                     else
                         throw new Exception("Error in refinement and coarsening algorithm: Both cells not on the current process");
-
-                    int i0 = CellPartitioning.i0;
 
                     CheckIfCellIsMissing(localCellIndex1, adaptedCells1, i0);
                     CheckIfCellIsMissing(localCellIndex2, adaptedCells2, i0);
 
                     if (cellsToCoarseBitmask[localCellIndex1] && cellsToCoarseBitmask[localCellIndex2]) {
+                        //continue;
                         Debug.Assert(adaptedCells1.Length == 1);
                         Debug.Assert(adaptedCells2.Length == 1);
+                        if (adaptedCells1[0] == null)
+                            throw new Exception("Cell is missing! Cell with global index " + (i0 + localCellIndex1));
+                        if (adaptedCells2[0] == null)
+                            throw new Exception("Cell is missing! Cell with global index " + (i0 + localCellIndex1));
                         if (adaptedCells1[0].GlobalID == adaptedCells2[0].GlobalID) {
                             // these two cells will be joint into one cell -> no new neighborship
                             Debug.Assert(ReferenceEquals(adaptedCells1[0], adaptedCells2[0]));
@@ -364,6 +371,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             if (conCount1 > 0)
                                 continue;
 
+                            byte iEdgeTag = 0;
                             MultidimensionalArray VtxFace2;
                             {
                                 MultidimensionalArray VtxFace2_L;
@@ -376,7 +384,16 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                                 MultidimensionalArray VtxFace2_G = MultidimensionalArray.Create(VtxFace2_L.GetLength(0), VtxFace2_L.GetLength(1));
                                 VtxFace2 = MultidimensionalArray.Create(VtxFace2_L.GetLength(0), VtxFace2_L.GetLength(1));
+
                                 this.TransformLocal2Global(VtxFace2_L, VtxFace2_G, localCellIndex2);
+
+                                if (this.Grid.GridData.Edges.EdgeTags[iEdge] >= GridCommons.FIRST_PERIODIC_BC_TAG) {
+                                    var perTrf = this.Grid.GridData.Edges.GetPeriodicTrafo(iEdge, false);
+                                    MultidimensionalArray VtxFace2_Gtmp = VtxFace2_G.CloneAs();
+                                    perTrf.Transform(VtxFace2_Gtmp, VtxFace2_G);
+                                    iEdgeTag = this.Grid.GridData.Edges.EdgeTags[iEdge];
+                                }
+
                                 bool[] Converged = new bool[VtxFace2_L.NoOfRows];
                                 this.TransformGlobal2Local(VtxFace2_G, VtxFace2, localCellIndex1, Converged);
                                 if (Converged.Any(t => t == false))
@@ -384,21 +401,26 @@ namespace BoSSS.Foundation.Grid.Classic {
                             }
 
                             bool bIntersect = EdgeData.FaceIntersect(VtxFace1, VtxFace2,
-                                Kref1.GetFaceTrafo(iFace1), Kref1.GetInverseFaceTrafo(iFace1),
-                                VerticesFor_KrefEdge,
-                                out bool conformal1, out bool conformal2, out AffineTrafo newTrafo, out int Edg_idx);
+                                    Kref1.GetFaceTrafo(iFace1), Kref1.GetInverseFaceTrafo(iFace1),
+                                    VerticesFor_KrefEdge,
+                                    out bool conformal1, out bool conformal2, out AffineTrafo newTrafo, out int Edg_idx);
+
 
                             if (bIntersect) {
                                 ArrayTools.AddToArray(new CellFaceTag() {
                                     ConformalNeighborship = false,
                                     NeighCell_GlobalID = Cl2.GlobalID,
-                                    FaceIndex = iFace1
+                                    FaceIndex = iFace1,
+                                    EdgeTag = iEdgeTag,
+                                    PeriodicInverse = (iEdgeTag >= GridCommons.FIRST_PERIODIC_BC_TAG) ? true : false
                                 }, ref Cl1.CellFaceTags);
 
                                 ArrayTools.AddToArray(new CellFaceTag() {
                                     ConformalNeighborship = false,
                                     NeighCell_GlobalID = Cl1.GlobalID,
-                                    FaceIndex = iFace2
+                                    FaceIndex = iFace2,
+                                    EdgeTag = iEdgeTag,
+                                    PeriodicInverse = false
                                 }, ref Cl2.CellFaceTags);
                             }
                         }
@@ -466,7 +488,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// Checks whether the enumeration has any entry ony any process.
         /// </summary>
         /// <param name="enumeration">
-        /// The eneumeration to be checked.
+        /// The enumeration to be checked.
         /// </param>
         private bool GetMPIGlobalIsNotNullOrEmpty(IEnumerable<int> enumeration) {
             int[] sendTestingVariable = new int[1];
@@ -995,13 +1017,17 @@ namespace BoSSS.Foundation.Grid.Classic {
             Cell[] adaptedCell = new Cell[leavesLength];
             int noOfLocalCells = Cells.NoOfLocalUpdatedCells;
             long[] externalCellsGlobalIndices = iParallel.GlobalIndicesExternalCells;
-            int jCell2GlobalIndex = (int)externalCellsGlobalIndices[localCellIndex - noOfLocalCells];
+            int globalIndex = (int)externalCellsGlobalIndices[localCellIndex - noOfLocalCells];
+            bool foundNothing = true;
             for (int j = 0; j < cellsOnNeighbourProcess.Count(); j++) {
-                if (jCell2GlobalIndex == cellsOnNeighbourProcess[j].Item1) {
+                if (globalIndex == cellsOnNeighbourProcess[j].Item1) {
                     adaptedCell = cellsOnNeighbourProcess[j].Item2;
+                    foundNothing = false;
                     break;
                 }
             }
+            if (foundNothing)
+                throw new Exception("Found no cell with localCellIndex " + localCellIndex + " global index: " + globalIndex + " on MPIRank " + MpiRank + " no of local cells: " + noOfLocalCells);
             return adaptedCell;
         }
 
@@ -1042,7 +1068,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <param name="i0">
         /// </param>
         private static void CheckIfCellIsMissing(int jCell, Cell[] adaptedCell, int i0) {
-            if (adaptedCell == null) {
+            if (adaptedCell[0] == null) {
                 throw new Exception("Cell with global index " + (i0 + jCell) + ", i0 = " + i0 + ", does not exist!");
             }
         }

@@ -68,8 +68,8 @@ namespace BoSSS.Application.IBM_Solver {
             C.Endtime = 60;
             C.NoOfTimesteps = 1;
             C.LinearSolver.MaxKrylovDim = 1000;
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
-            C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_localPrec;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.NewtonGMRES;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_localPrec;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
 
             // Physical values
@@ -536,8 +536,8 @@ namespace BoSSS.Application.IBM_Solver {
                 C.NonLinearSolver.MaxSolverIterations = 50;
                 C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
                 C.LinearSolver.NoOfMultigridLevels = 1;
-                C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
-                C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_Schur;
+                C.NonLinearSolver.SolverCode = NonLinearSolverCode.NewtonGMRES;
+                C.LinearSolver.SolverCode = LinearSolverCode.exp_Schur;
 
                 // Timestepping
                 // ============
@@ -1327,9 +1327,9 @@ namespace BoSSS.Application.IBM_Solver {
             VelocityYex = (X, t) => (0);
             Pressure = (X, t) => (0);
 
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.PicardGMRES;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.PicardGMRES;
 
-            C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_Schur;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Schur;
 
 
 
@@ -1385,8 +1385,8 @@ namespace BoSSS.Application.IBM_Solver {
             C.dtMin = dt;
             C.Endtime = 60;
             C.NoOfTimesteps = 1;
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Picard;
-            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
 
             // Physical values
             C.PhysicalParameters.rho_A = 1;

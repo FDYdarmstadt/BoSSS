@@ -44,14 +44,14 @@ namespace BoSSS.Application.Rheology
         /// <summary>
         /// Channel Flow
         /// </summary>
-        static public RheologyControl Channel(string path = @"C:\Users\kikker\AnnesBoSSSdb\Channel", int degree = 2, int GridLevel = 5)
+        static public RheologyControl Channel(string path = @"C:\Users\kikker\AnnesBoSSSdb\Channel", int degree = 2, int GridLevel = 3)
         {
             RheologyControl C = new RheologyControl();
 
             //Solver Options
             C.NoOfTimesteps = 1;
             C.savetodb = false;
-            C.DbPath = path;
+            //C.DbPath = path;
             C.ProjectName = "Channel";
             C.NonLinearSolver.MaxSolverIterations = 30;
             C.NonLinearSolver.MinSolverIterations = 3;
@@ -63,9 +63,9 @@ namespace BoSSS.Application.Rheology
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;
-            //C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_gmres_levelpmg;
-            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
+            //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.ObjectiveParam = 1.0;
 
             C.UsePerssonSensor = false;
@@ -80,7 +80,7 @@ namespace BoSSS.Application.Rheology
             //C.WhichWall = "Wall_Cylinder";
 
             //Debugging and Solver Analysis
-            C.OperatorMatrixAnalysis = true;
+            C.OperatorMatrixAnalysis = false;
             C.SkipSolveAndEvaluateResidual = false;
             C.SetInitialConditions = true;
             C.SetInitialPressure = true;
@@ -96,7 +96,7 @@ namespace BoSSS.Application.Rheology
             C.beta = 0.59;
             C.Reynolds = 1;
             C.Weissenberg = 0.5; //aim Weissenberg number!
-            C.RaiseWeissenberg = true;
+            C.RaiseWeissenberg = false;
             C.WeissenbergIncrement = 0.1;
 
             //Grid Params
@@ -240,7 +240,7 @@ namespace BoSSS.Application.Rheology
         /// <summary>
         /// Consistency Constitutive equation
         /// </summary>
-        static public RheologyControl ConsistencyConstitutive(string path = @"C:\AnnesBoSSSdb\ConsistencyConstitutive_withDiv", int degree = 1, int GridLevel = 5)
+        static public RheologyControl ConsistencyConstitutive(string path = @"C:\Users\kikker\AnnesBoSSSdb\ConsistencyConstitutive_withDiv", int degree = 1, int GridLevel = 5)
         {
 
 
@@ -263,7 +263,7 @@ namespace BoSSS.Application.Rheology
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.NewtonGMRES;
             C.ObjectiveParam = 1.0;
 
             //Grid Params
@@ -481,7 +481,7 @@ namespace BoSSS.Application.Rheology
         /// <summary>
         /// Stagnation point flow (test of the wall BC for constitutive equations
         /// </summary>
-        static public RheologyControl Staupunkt(string path = @"C:\AnnesBoSSSdb\Staupunkt", int degree = 2, int GridLevel = 5)
+        static public RheologyControl Staupunkt(string path = @"C:\Users\kikker\AnnesBoSSSdb\Staupunkt", int degree = 2, int GridLevel = 5)
         {
 
 
@@ -673,7 +673,7 @@ namespace BoSSS.Application.Rheology
         /// <summary>
         /// Convergence of the Stokes system with LDG
         /// </summary>
-        static public RheologyControl ConvergenceStokesLDG(string path = @"C:\AnnesBoSSSdb\ConvergenceStokesLDG_Paper", int degree = 2, int GridLevel = 2)
+        static public RheologyControl ConvergenceStokesLDG(string path = @"C:\Users\kikker\AnnesBoSSSdb\ConvergenceStokesLDG_Paper", int degree = 2, int GridLevel = 5)
         {
             // Path wenn lokal gerechnet wird: C:\AnnesBoSSSdb\ConvergenceStokesLDG 
             // Path für lokal 2. Versuch ohne penalty in RB: C:\AnnesBoSSSdb\ConvergenceStokesLDG2exclBEpen
@@ -702,7 +702,7 @@ namespace BoSSS.Application.Rheology
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             //C.NonlinearMethod = NonlinearSolverMethod.Newton;
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.ObjectiveParam = 1.0;
             C.UsePerssonSensor = true;
             C.AdaptiveMeshRefinement = true;

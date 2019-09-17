@@ -117,7 +117,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         private readonly KeyHandler[] keyHandlers;
 
-        /// <summary>
+	/// <summary>
         /// Creates a new reader with the given <paramref name="name"/>.
         /// </summary>
         /// <param name="name">
@@ -171,6 +171,9 @@ namespace BoSSS.Application.BoSSSpad {
         /// pressed
         /// </returns>
         public string ReadCommand(string prompt, string initialCommand) {
+	    if (Console.WindowWidth == 0) {
+                throw new Exception("Window width detection failed. Consider using --simpleconsole instead");
+            }
             done = false;
             history.MoveToNextFreeEntry();
             maxRenderedLength = 0;

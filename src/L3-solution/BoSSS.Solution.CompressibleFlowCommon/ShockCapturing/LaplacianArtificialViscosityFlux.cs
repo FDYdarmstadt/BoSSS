@@ -17,78 +17,73 @@ limitations under the License.
 using BoSSS.Foundation;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using BoSSS.Solution.NSECommon;
+using BoSSS.Solution.Utils;
 using ilPSP;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
-    class LaplacianArtificialViscosityFlux : SIPLaplace {
+    public class LaplacianArtificialViscosityFlux : SIPLaplace {
 
-        private IBoundaryConditionMap boundaryMap;
+        private readonly BoundaryCondMap<XDGHeatBcType> boundaryCondMap;
 
-        private ISpeciesMap speciesMap;
-
-        //public LaplacianArtificialViscosityFlux(int order, MultidimensionalArray cj, string[] arguments, int affectedComponent, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap) :
-        //    base((order + 1) * (order + CompressibleEnvironment.NumberOfDimensions) / (double)CompressibleEnvironment.NumberOfDimensions, cj, arguments, affectedComponent) {
-        public LaplacianArtificialViscosityFlux(int order, MultidimensionalArray cj, Variable variable, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap) :
-        base((order + 1) * (order + CompressibleEnvironment.NumberOfDimensions) / (double)CompressibleEnvironment.NumberOfDimensions, cj, variable) {
-            this.boundaryMap = boundaryMap;
-            this.speciesMap = speciesMap;
-        }
-
-        public override double Nu(double[] x, double[] parameter, int jCell) {
-            return -1.0 * parameter[0];
+        /// <summary>
+        /// Implements the negative Laplace operator, inherits from <see cref="SIPLaplace"/>
+        /// </summary>
+        /// <param name="boundaryCondMap">Information about boundary conditions</param>
+        /// <param name="penaltySafteyFactor">A user definded factor, typically set to 4.0</param>
+        /// <param name="penaltyFactor">A factor based on the grid type (tetras, quads, etc.)</param>
+        /// <param name="lengthScales">A cell length scale</param>
+        /// <param name="argumentName">The variable where the operator acts on</param>
+        public LaplacianArtificialViscosityFlux(BoundaryCondMap<XDGHeatBcType> boundaryCondMap, double penaltySafteyFactor, double penaltyFactor, MultidimensionalArray lengthScales, string argumentName) :
+              base(penaltySafteyFactor * penaltyFactor, lengthScales, argumentName) {
+            this.boundaryCondMap = boundaryCondMap;
         }
 
         protected override bool IsDirichlet(ref CommonParamsBnd inp) {
-            return false;
+            throw new NotSupportedException("I had to implement this...");
         }
 
-        //public override double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
-        //    StateVector stateIn = new StateVector(_uA, speciesMap.GetMaterial(double.NaN));
-        //    //StateVector boundaryState = boundaryMap.GetBoundaryState(inp.EdgeTag, inp.time, inp.X, inp.Normale, stateIn);
-        //    //double[] _uB = boundaryState.ToArray();
+        public override double Nu(double[] x, double[] p, int jCell) {
+            return -1.0;
+        }
 
-        //    double[] _uB = stateIn.ToArray();
+        public override double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+            double Acc = 0.0;
 
-        //    double[,] _Grad_uB = _Grad_uA;
+            double pnlty = 2 * this.GetPenalty(inp.jCellIn, -1);
+            double nuA = this.Nu(inp.X, inp.Parameters_IN, inp.jCellIn);
 
-        //    double _vB = 0; // JA
-        //    double[] _Grad_vB = _Grad_vA; // JA
+            XDGHeatBcType edgeType = this.boundaryCondMap.EdgeTag2Type[inp.EdgeTag];
 
-        //    double[] paramsOut = inp.Parameters_IN; // Vielleicht AV innen = außen?
-        //    //double[] paramsOut = new double[inp.Parameters_IN.Length]; // Vielleicht AV innen = außen?
+            switch (edgeType) {
+                case XDGHeatBcType.Dirichlet:
+                    Func<double[], double, double> dirichletFunction = this.boundaryCondMap.bndFunction["u"][inp.EdgeTag];
+                    double g_D = dirichletFunction(inp.X, inp.time);
 
-        //    CommonParams inpInner = new CommonParams() {
-        //        GridDat = inp.GridDat,
-        //        iEdge = inp.iEdge,
-        //        Normale = inp.Normale,
-        //        Parameters_IN = inp.Parameters_IN,
-        //        Parameters_OUT = paramsOut,
-        //        time = inp.time,
-        //        X = inp.X
-        //    };
+                    for (int d = 0; d < inp.D; d++) {
+                        double nd = inp.Normale[d];
+                        Acc += (nuA * _Grad_uA[0, d]) * (_vA) * nd;        // consistency
+                        Acc += (nuA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;  // symmetry
+                    }
+                    Acc *= this.m_alpha;
 
-        //    return base.InnerEdgeForm(ref inpInner, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
-        //}
+                    Acc -= nuA * (_uA[0] - g_D) * (_vA - 0) * pnlty; // penalty
+                    break;
 
-        //public override double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
-        //    double Acc = 0.0;
+                case XDGHeatBcType.ZeroNeumann:
+                    double g_N = 0.0;
 
-        //    double nuA = this.Nu(inp.X, inp.Parameters_IN, inp.jCellIn);
+                    Acc += nuA * g_N * _vA * this.m_alpha;      // consistency
+                    break;
 
-        //    for (int d = 0; d < inp.D; d++)
-        //        Acc += nuA * _Grad_uA[0, d] * _vA * inp.Normale[d]; // consistency term
-
-        //    Acc *= this.m_alpha;
-
-        //    return Acc;
-        //}
-
-        public override IList<string> ParameterOrdering {
-            get {
-                return new string[] { "artificialViscosity" };
+                default:
+                    throw new NotSupportedException();
             }
+
+            return Acc;
         }
     }
 }

@@ -669,12 +669,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 m_InjectionOperator = Injection;
                 int totalMem = Injection != null ?  Injection.Sum(A => A != null ? A.Length * sizeof(double) : 0) : 0;
 
-                Console.WriteLine("     AggBasis, inj, lv " + this.AggGrid.MgLevel + "   mem alloc " + (totalMem / (1024.0 * 1024.0)));
-
-
                 //SetupProlongationOperator();
             }
         }
+
+        /// <summary>
+        /// Number of Bytes used
+        /// </summary>
+        public long UsedMemory {
+            get {
+                long Ret = 0;
+                if(m_CompositeBasis != null) {
+                    Ret += m_CompositeBasis.Sum(mda => ((long)mda.Length) * sizeof(double));
+                }
+                if(m_InjectionOperator != null) {
+                    Ret += m_InjectionOperator.Sum(mda => ((long)mda.Length) * sizeof(double));
+                }
+                return Ret;
+            }
+        }
+
 
         MultidimensionalArray[] m_InjectionOperator;
 
@@ -1160,8 +1174,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
                     //*/
                 }
-
-                Console.WriteLine("     AggBasis, BASE inj, lv " + this.AggGrid.MgLevel + "   mem alloc " + Math.Round(totalMem / (1024.0 * 1024.0)));
             }
         }
 

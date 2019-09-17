@@ -272,7 +272,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Picard;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
 
             C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
 

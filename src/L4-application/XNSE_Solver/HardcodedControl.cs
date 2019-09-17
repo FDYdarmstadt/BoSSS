@@ -3827,7 +3827,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             //C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
-            C.LinearSolver.SolverCode=LinearSolverConfig.Code.classic_pardiso;
+            C.LinearSolver.SolverCode=LinearSolverCode.classic_pardiso;
 
             #endregion
 
@@ -4039,7 +4039,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.LinearSolver.SolverCode =  LinearSolverConfig.Code.classic_pardiso;
+            C.LinearSolver.SolverCode =  LinearSolverCode.classic_pardiso;
 
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;

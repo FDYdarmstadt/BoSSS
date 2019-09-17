@@ -56,6 +56,8 @@ namespace BoSSS.Solution.XheatCommon {
             this.Tsat = thermParams.T_sat;
             this.sigma = _sigma;
             this.pc = thermParams.pc;
+
+            //this.prescrbM = _prescrbM;
         }
 
         double muA;

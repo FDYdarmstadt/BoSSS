@@ -76,7 +76,7 @@ namespace BoSSS.Application.XNSE_Solver {
         ExtensionVelocity
     }
 
-    class LevelSetMover {
+    public class LevelSetMover {
 
         DGField[] Velocity;
         LevelSetTracker LsTrk;
