@@ -878,7 +878,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.hydrodynamicsConvergenceCriterion = 1e-2;
+            C.hydrodynamicsConvergenceCriterion = 1e-4;
             C.LSunderrelax = 1.0;
             
             // Coupling Properties
