@@ -44,7 +44,7 @@ namespace BoSSS.Application.Rheology
         /// <summary>
         /// Channel Flow
         /// </summary>
-        static public RheologyControl Channel(string path = @"C:\Users\kikker\AnnesBoSSSdb\Channel", int degree = 2, int GridLevel = 3)
+        static public RheologyControl Channel(string path = @"C:\Users\kikker\AnnesBoSSSdb\Channel", int degree = 2, int GridLevel = 6)
         {
             RheologyControl C = new RheologyControl();
 
@@ -53,12 +53,11 @@ namespace BoSSS.Application.Rheology
             C.savetodb = false;
             //C.DbPath = path;
             C.ProjectName = "Channel";
-            C.NonLinearSolver.MaxSolverIterations = 30;
-            C.NonLinearSolver.MinSolverIterations = 3;
-            C.NonLinearSolver.ConvergenceCriterion = 1E-10;
-            C.LinearSolver.MaxSolverIterations = 30;
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-6;
+            C.LinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MinSolverIterations = 3;
-            C.LinearSolver.ConvergenceCriterion = 1E-10;
+            C.LinearSolver.ConvergenceCriterion = 1E-8;
             C.dt = 1e6;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
@@ -70,6 +69,7 @@ namespace BoSSS.Application.Rheology
             C.NonLinearSolver.verbose = true;
             C.LinearSolver.verbose = true;
             C.NonLinearSolver.PrecondSolver.verbose = true;
+            C.GridPartType = GridPartType.METIS;
 
             C.ObjectiveParam = 1.0;
 

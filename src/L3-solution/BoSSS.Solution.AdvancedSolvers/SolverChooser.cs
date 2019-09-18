@@ -791,7 +791,15 @@ namespace BoSSS.Solution {
 
                     templinearSolve=new OrthonormalizationScheme()
                     {
-                        PrecondS = new ISolverSmootherTemplate[]{ new LevelPmg() {UseHiOrderSmoothing=true} },
+                        PrecondS = new ISolverSmootherTemplate[]{
+                            //new Schwarz() { CoarseSolver = new SparseSolver()
+                            //{ WhichSolver = SparseSolver._whichSolver.PARDISO,TestSolution = false},
+                            //Overlap=1,
+                            //m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                            //NoOfPartsPerProcess = NoOfBlocks},},
+                            new LevelPmg() {UseHiOrderSmoothing=true},
+                            new BlockJacobi() {NoOfIterations=1},
+                        },
                         MaxKrylovDim = lc.MaxKrylovDim,
                         MaxIter = lc.MaxSolverIterations,
                         Tolerance = lc.ConvergenceCriterion
