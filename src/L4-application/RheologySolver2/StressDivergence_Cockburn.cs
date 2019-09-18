@@ -164,8 +164,33 @@ namespace BoSSS.Application.Rheology {
                 case IncompressibleBcType.FreeSlip:
 
                     //Free slip wall for symmetry line of symmetric channel
+
+
+                    //double VelocityX2 = VelFunction[inp.EdgeTag, 0](inp.X, inp.time);
+                    //double VelocityY2 = VelFunction[inp.EdgeTag, 1](inp.X, inp.time);
+
                     res += inp.Normale[0] * Tin[0] * inp.Normale[0] * inp.Normale[0];
                     res += inp.Normale[1] * Tin[1] * inp.Normale[1] * inp.Normale[1];
+
+                    //switch (Component) {
+                    //    case 0:
+                    //        res += inp.Normale[0] * Tin[0] * inp.Normale[0] * inp.Normale[0];
+                    //        res += inp.Normale[1] * Tin[1] * inp.Normale[1] * inp.Normale[1];
+                    //        //alpha penalty for boundary (no beta penalty)
+                    //        res += -pen2 / h * (Tin[2] - VelocityX2);
+
+                    //        break;
+                    //    case 1:
+                    //        res += inp.Normale[0] * Tin[0] * inp.Normale[0] * inp.Normale[0];
+                    //        res += inp.Normale[1] * Tin[1] * inp.Normale[1] * inp.Normale[1];
+                    //        //alpha penalty for boundary (no beta penalty)
+                    //        res += -pen2 / h * (Tin[2] - VelocityY2);
+
+                    //        break;
+                    //    default:
+                    //        throw new NotImplementedException();
+                    //}
+
                     break;
 
                 case IncompressibleBcType.Velocity_Inlet:

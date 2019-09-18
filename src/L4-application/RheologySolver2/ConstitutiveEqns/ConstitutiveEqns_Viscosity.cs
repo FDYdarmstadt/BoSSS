@@ -216,7 +216,10 @@ namespace BoSSS.Application.Rheology {
                 case IncompressibleBcType.FreeSlip:
 
                     //Free slip wall for symmetry line of symmetric channel
-                    res += n2 * (Uin[0] * n1 + Uin[1] * n2) * n1;
+                    //res += n2 * (Uin[0] * n1 + Uin[1] * n2) * n1;
+                    //res += n2 * 0.5 * ((Uin[0] + Vel1) * n1 + (Uin[1] + Vel2) * n2) * n1;
+                    //res += n1 * n2 * (Uin[0] * n1 + Uin[1] * n2) * n1 * n2;
+                    res += (Uin[0] * n1 + Uin[1] * n2);
                     break;
 
                 case IncompressibleBcType.Velocity_Inlet:

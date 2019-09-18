@@ -64,8 +64,9 @@ namespace BoSSS.Application.Rheology
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            //C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            //C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
             C.ObjectiveParam = 1.0;
 
             C.UsePerssonSensor = false;
@@ -82,7 +83,7 @@ namespace BoSSS.Application.Rheology
             //Debugging and Solver Analysis
             C.OperatorMatrixAnalysis = false;
             C.SkipSolveAndEvaluateResidual = false;
-            C.SetInitialConditions = false;
+            C.SetInitialConditions = true;
             C.SetInitialPressure = false;
             C.SetParamsAnalyticalSol = false;
             C.ComputeL2Error = false;
@@ -93,10 +94,10 @@ namespace BoSSS.Application.Rheology
             //Physical Params
             C.Stokes = false;
             C.FixedStreamwisePeriodicBC = false;
-            C.beta = 0.59;
+            C.beta = 0;// 1;// 0.59;
             C.Reynolds = 1;
-            C.Weissenberg = 0.5; //aim Weissenberg number!
-            C.RaiseWeissenberg = true;
+            C.Weissenberg = 0;// .5; //aim Weissenberg number!
+            C.RaiseWeissenberg = false;
             C.WeissenbergIncrement = 0.1;
 
             //Grid Params
@@ -143,7 +144,8 @@ namespace BoSSS.Application.Rheology
             // Create Grid
             C.GridFunc = delegate {
                 var _xNodes = GenericBlas.Linspace(0, 20, cells2 + 1);
-                var _yNodes = GenericBlas.Linspace(-1, 1, (cells2 / 4) + 1);
+                //var _yNodes = GenericBlas.Linspace(-1, 1, (cells2 / 4) + 1);
+                var _yNodes = GenericBlas.Linspace(0, 1, (cells2 / 4) + 1);
 
                 var grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes, CellType.Square_Linear, C.FixedStreamwisePeriodicBC);
 
@@ -153,16 +155,17 @@ namespace BoSSS.Application.Rheology
                     grd.EdgeTagNames.Add(4, "Pressure_Outlet");
                 }
 
-                grd.EdgeTagNames.Add(2, "Wall_bottom");
+                //grd.EdgeTagNames.Add(2, "Wall_bottom");
                 grd.EdgeTagNames.Add(3, "Wall_top");
-                //grd.EdgeTagNames.Add(2, "FreeSlip");
+                grd.EdgeTagNames.Add(2, "FreeSlip");
 
                 grd.DefineEdgeTags(delegate (double[] _X) {
                     var X = _X;
                     double x = X[0];
                     double y = X[1];
 
-                    if (Math.Abs(y - (-1)) < 1.0e-6)
+                    //if (Math.Abs(y - (-1)) < 1.0e-6)
+                    if (Math.Abs(y - (0)) < 1.0e-6)
                         // bottom
                         return 2;
 
@@ -213,7 +216,7 @@ namespace BoSSS.Application.Rheology
             C.InitialValues_Evaluators.Add("Phi", X => -1);
 
             // Set Boundary Conditions
-            C.AddBoundaryValue("Wall_bottom", "VelocityX", VelocityXfunction);
+            //C.AddBoundaryValue("Wall_bottom", "VelocityX", VelocityXfunction);
             C.AddBoundaryValue("Wall_top", "VelocityX", VelocityXfunction);
             //C.AddBoundaryValue("Wall_bottom", "VelocityY", VelocityYfunction);
             //C.AddBoundaryValue("Wall_top", "VelocityY", VelocityYfunction);
@@ -221,7 +224,7 @@ namespace BoSSS.Application.Rheology
             //C.AddBoundaryValue("Wall_top", "VelocityX", X => 0);
             //C.AddBoundaryValue("Wall_bottom", "VelocityY", X => 0);
             //C.AddBoundaryValue("Wall_top", "VelocityY", X => 0);
-            //C.AddBoundaryCondition("FreeSlip");
+            C.AddBoundaryValue("FreeSlip");//, "VelocityX", VelocityXfunction);
 
             if (!C.FixedStreamwisePeriodicBC)
             {

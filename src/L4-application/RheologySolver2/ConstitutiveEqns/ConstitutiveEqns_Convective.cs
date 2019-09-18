@@ -28,10 +28,8 @@ using BoSSS.Foundation.Grid.Classic;
 using System.Diagnostics;
 using ilPSP;
 
-namespace BoSSS.Application.Rheology
-{
-    class ConstitutiveEqns_CellWiseForm_2 : IVolumeForm, IEdgeForm, IEquationComponentCoefficient
-    {
+namespace BoSSS.Application.Rheology {
+    class ConstitutiveEqns_Convective : IVolumeForm, IEdgeForm, IEquationComponentCoefficient {
         int Component;
         BoundaryCondMap<IncompressibleBcType> m_BcMap;
         double m_Weissenberg; // Weissenberg number
@@ -52,22 +50,20 @@ namespace BoSSS.Application.Rheology
         ///// </summary>
         //protected Func<double[], double, double>[,] velFunction;
 
-        public ConstitutiveEqns_CellWiseForm_2(int _Component, BoundaryCondMap<IncompressibleBcType> _BcMap, double Weissenberg, double alpha = 1.0)
-        {
+        public ConstitutiveEqns_Convective(int _Component, BoundaryCondMap<IncompressibleBcType> _BcMap, double Weissenberg, double alpha = 1.0) {
             Component = _Component;
             this.m_BcMap = _BcMap;
             this.m_Weissenberg = Weissenberg;
             this.m_alpha = alpha;
 
-            StressFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, 2,2];
+            StressFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, 2, 2];
 
 
             var stressXXfuncS = m_BcMap.bndFunction[VariableNames.StressXX];
             var stressXYfuncS = m_BcMap.bndFunction[VariableNames.StressXY];
             var stressYYfuncS = m_BcMap.bndFunction[VariableNames.StressYY];
 
-            for (int et = 0; et < GridCommons.FIRST_PERIODIC_BC_TAG; et++)
-            {
+            for (int et = 0; et < GridCommons.FIRST_PERIODIC_BC_TAG; et++) {
                 StressFunction[et, 0, 0] = stressXXfuncS[et];
                 StressFunction[et, 1, 0] = stressXYfuncS[et];
                 StressFunction[et, 0, 1] = stressXYfuncS[et];
@@ -113,10 +109,9 @@ namespace BoSSS.Application.Rheology
             }
         }
 
-       
 
-        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] Tin, double[,] Grad_Tin, double Vin, double[] Grad_Vin)
-        {
+
+        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] Tin, double[,] Grad_Tin, double Vin, double[] Grad_Vin) {
             double[] Normale = inp.Normale;
             double Tout;
 

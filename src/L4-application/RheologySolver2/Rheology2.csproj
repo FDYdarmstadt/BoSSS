@@ -69,12 +69,12 @@
     <Reference Include="System.Runtime.Serialization" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ConstitutiveEqns\ConstitutiveEqns_CellWiseForm_2.cs" />
+    <Compile Include="ConstitutiveEqns\ConstitutiveEqns_Convective.cs" />
     <Compile Include="ConstitutiveEqns\ConstitutiveEqns_Diffusion.cs" />
     <Compile Include="ConstitutiveEqns\OLD\ConstitutiveEqns_Objective_withGrad.cs" />
     <Compile Include="ConstitutiveEqns\OLD\ConstitutiveEqns_Objective_allparam.cs" />
     <Compile Include="ConstitutiveEqns\OLD\ConstitutiveEqns_Convective_FluxDiff.cs" />
-    <Compile Include="ConstitutiveEqns\ConstitutiveEqns_CellWiseForm.cs" />
+    <Compile Include="ConstitutiveEqns\OLD\ConstitutiveEqns_CellWiseForm.cs" />
     <Compile Include="ConstitutiveEqns\ConstitutiveEqns_Objective_Tparam.cs" />
     <Compile Include="ArtificialViscosity.cs" />
     <Compile Include="SpatialOperatorAnalysis.cs" />
@@ -85,7 +85,7 @@
     <Compile Include="Tests\RheologyConsistencyTest.cs" />
     <Compile Include="Tests\RheologyLocalDGTest.cs" />
     <Compile Include="Controlfiles\SimpleTestcasesControl.cs" />
-    <Compile Include="ConstitutiveEqns\OLD\ConstitutiveEqns_Convective.cs" />
+    <Compile Include="ConstitutiveEqns\OLD\ConstitutiveEqns_Convective_old.cs" />
     <Compile Include="ConstitutiveEqns\ConstitutiveEqns_Identity.cs" />
     <Compile Include="ConstitutiveEqns\ConstitutiveEqns_Objective.cs" />
     <Compile Include="ConstitutiveEqns\ConstitutiveEqns_Viscosity.cs" />
