@@ -179,7 +179,8 @@
     </ProjectReference>
     <ProjectReference Include="..\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
       <Project>{efe8c307-09bc-4f58-b991-6ef8fd6d5eff}</Project>
-    </ProjectReference> 
+      <Name>BoSSS.Solution.AdvancedSolvers</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -36,15 +36,15 @@ using BoSSS.Platform.Utils.Geom;
 namespace BoSSS.Application.FSI_Solver {
     [DataContract]
     [Serializable]
-    public class Particle_Pentagone : Particle {
+    public class Particle_TrapLeft : Particle {
         /// <summary>
         /// Empty constructor used during de-serialization
         /// </summary>
-        private Particle_Pentagone() : base() {
+        private Particle_TrapLeft() : base() {
 
         }
 
-        public Particle_Pentagone(ParticleMotionInit motionInit, double width, double[] startPos = null, double startAngl = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, startTransVelocity, startRotVelocity) {
+        public Particle_TrapLeft(ParticleMotionInit motionInit, double width, double[] startPos = null, double startAngl = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, startTransVelocity, startRotVelocity) {
             width_P = width;
             Motion.GetParticleLengthscale(width);
             Motion.GetParticleArea(Area_P());
@@ -57,18 +57,23 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         public double width_P;
 
-        public override double Area_P() {
-            // not correct area
-            return (5 * width_P.Pow2()) / 4;
+        internal override int NoOfSubParticles() {
+            return 2;
         }
+
+        public override double Area_P() {
+            return (7 * width_P * width_P) / 8;
+        }
+
         protected override double Circumference_P {
             get {
-                return width_P * 4.41421356;
+                return width_P * 5;
             }
         }
+
         override public double MomentOfInertia_P {
             get {
-                return Math.Pow(width_P, 4) * 0.2887963;
+                return Math.Pow(width_P, 4) * 0.13785958;
             }
         }
 
@@ -80,13 +85,16 @@ namespace BoSSS.Application.FSI_Solver {
             //        r = Math.Max(r, X[1] - Motion.position[0][1] - Width_P);
             //        r = Math.Max(r,  Motion.position[0][1] - 0.5*Width_P - X[1]);
 
-            // Geo to try:
-            r = Math.Max(X[0] - Motion.position[0][0] - width_P, Motion.position[0][0] - width_P - X[0]);
-            r = Math.Max(r, Motion.position[0][1] - 0.5 * width_P - X[1]);
-            r = Math.Max(r, Motion.position[0][0] - width_P - X[1] - 1.5 * X[0]) + Math.Max(r, X[1] - Motion.position[0][1] - 0.5 * width_P);
+            // parallelogram
+            //          r = Math.Abs(Motion.position[0][1] + 0.5 * width_P - X[1]);
+            //          r = Math.Max(r, Math.Abs(-X[1] - 0.5 * X[0] + Motion.position[0][1] + width_P) + Math.Abs(X[1] - Motion.position[0][1]));
+            //          r = Math.Max(r, Math.Abs(Motion.position[0][0] - 0.5 * width_P - X[0]));
 
-
-            //      r = r - Width_P;
+            // Falle_Links:
+            r = Math.Abs(Motion.position[0][1] - X[1]);
+            r = Math.Max(r, Math.Abs(-X[1] + 0.5 * X[0] + Motion.position[0][1] - Motion.position[0][0] - width_P) - Math.Abs(X[1] - Motion.position[0][1]));
+            r = Math.Max(r, Math.Abs(Motion.position[0][0] - X[0] - 0.5 * width_P));
+            r = r - 4.5 * width_P;
             r = -r;
             return r;
         }
@@ -95,7 +103,7 @@ namespace BoSSS.Application.FSI_Solver {
             // only for rectangular cells
             if (h_max == 0)
                 h_max = h_min;
-            double radiusTolerance = !WithoutTolerance ? width_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
+            double radiusTolerance = !WithoutTolerance ? 5 * width_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
             var distance = point.L2Distance(Motion.position[0]);
             if (distance < (radiusTolerance)) {
                 return true;
@@ -107,7 +115,7 @@ namespace BoSSS.Application.FSI_Solver {
             // only for rectangular cells
             if (h_max == 0)
                 h_max = h_min;
-            double radiusTolerance = !WithoutTolerance ? width_P - Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
+            double radiusTolerance = !WithoutTolerance ? 5 * width_P - Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
             var distance = point.L2Distance(Motion.position[0]);
             if (distance < (radiusTolerance)) {
                 return true;
@@ -115,19 +123,29 @@ namespace BoSSS.Application.FSI_Solver {
             return false;
         }
 
-        public override MultidimensionalArray GetSurfacePoints(double hMin) {
+        override public MultidimensionalArray GetSurfacePoints(double hMin) {
             if (spatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
 
             int NoOfSurfacePoints = Convert.ToInt32(20 * Circumference_P / hMin) + 1;
-            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSurfacePoints, spatialDim);
-            double[] InfinitisemalAngle = GenericBlas.Linspace(0, 2 * Math.PI, NoOfSurfacePoints + 1);
+            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSubParticles(), NoOfSurfacePoints, spatialDim);
+            double[] InfinitisemalAngle = GenericBlas.Linspace(-Math.PI / 4, 5 * Math.PI / 4, NoOfSurfacePoints + 1);
+            double[] InfinitisemalLength = GenericBlas.Linspace(0, width_P / 4, NoOfSurfacePoints + 1);
             if (Math.Abs(10 * Circumference_P / hMin + 1) >= int.MaxValue)
                 throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");
 
+            for (int k = 0; k < NoOfSurfacePoints; k++) {
+                SurfacePoints[0, k, 0] = Motion.position[0][0] - width_P / 2 + InfinitisemalLength[k];
+                SurfacePoints[0, k, 1] = Motion.position[0][1] - width_P / 2 - 1.5 * SurfacePoints[0, k, 0] + width_P / 2;
+            }
+
             for (int j = 0; j < NoOfSurfacePoints; j++) {
-                SurfacePoints[j, 0] = Math.Cos(InfinitisemalAngle[j]) * width_P + Motion.position[0][0];
-                SurfacePoints[j, 1] = Math.Sin(InfinitisemalAngle[j]) * width_P + Motion.position[0][1];
+                SurfacePoints[0, j, 0] = Math.Sign(Math.Cos(InfinitisemalAngle[j])) * width_P * 7 + Motion.position[0][0] + 7 * width_P / 4;
+                SurfacePoints[0, j, 1] = Math.Sign(Math.Sin(InfinitisemalAngle[j])) * width_P * 7 + Motion.position[0][1] + 7 * width_P / 2;
+            }
+            for (int j = 0; j < NoOfSurfacePoints; j++) {
+                SurfacePoints[1, j, 0] = -Math.Sign(Math.Cos(InfinitisemalAngle[j])) * width_P * 2.5 + Motion.position[0][0];
+                SurfacePoints[1, j, 1] = -Math.Sign(Math.Sin(InfinitisemalAngle[j])) * width_P * 2.5 + Motion.position[0][1];
             }
             return SurfacePoints;
         }

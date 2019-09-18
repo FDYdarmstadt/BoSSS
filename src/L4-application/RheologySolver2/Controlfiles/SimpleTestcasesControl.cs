@@ -54,19 +54,25 @@ namespace BoSSS.Application.Rheology
             //C.DbPath = path;
             C.ProjectName = "Channel";
             C.NonLinearSolver.MaxSolverIterations = 10;
-            C.NonLinearSolver.MinSolverIterations = 3;
-            C.NonLinearSolver.ConvergenceCriterion = 1E-10;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-6;
+            C.LinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.MinSolverIterations = 3;
+            C.LinearSolver.ConvergenceCriterion = 1E-8;
             C.LinearSolver.ConvergenceCriterion = 1E-10;
             C.dt = 1e6;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-            //C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            //C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
+            // Maximum analytical output ...
+            C.NonLinearSolver.verbose = true;
+            C.LinearSolver.verbose = true;
+            C.NonLinearSolver.PrecondSolver.verbose = true;
+            C.GridPartType = GridPartType.METIS;
+
             C.ObjectiveParam = 1.0;
 
             C.UsePerssonSensor = false;
@@ -83,7 +89,7 @@ namespace BoSSS.Application.Rheology
             //Debugging and Solver Analysis
             C.OperatorMatrixAnalysis = false;
             C.SkipSolveAndEvaluateResidual = false;
-            C.SetInitialConditions = true;
+            C.SetInitialConditions = false;
             C.SetInitialPressure = false;
             C.SetParamsAnalyticalSol = false;
             C.ComputeL2Error = false;

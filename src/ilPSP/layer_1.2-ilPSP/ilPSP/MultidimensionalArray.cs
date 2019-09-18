@@ -966,7 +966,7 @@ namespace ilPSP {
             for(int iSkip = 0; iSkip < RET.Length; iSkip++) {
                 StackFrame fr = new StackFrame(iSkip + 2, true);
 
-                _MethodBase m = fr.GetMethod();
+                System.Reflection.MethodBase m = fr.GetMethod();
                 string _name = m != null ? m.DeclaringType.FullName + "." + m.Name : "null";
                 //callingType = m.DeclaringType;
                 RET[iSkip] = _name;
