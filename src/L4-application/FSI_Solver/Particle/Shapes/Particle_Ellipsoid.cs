@@ -69,9 +69,9 @@ namespace BoSSS.Application.FSI_Solver {
 
         public override double levelSetFunction(double[] X) {
             double alpha = -(Motion.angle[0]);
-            var r = -((((X[0] - Motion.position[0][0]) * Math.Cos(alpha) - (X[1] - Motion.position[0][1]) * Math.Sin(alpha)).Pow2()) / length_P.Pow2()) 
-                    -(((X[0] - Motion.position[0][0]) * Math.Sin(alpha) + (X[1] - Motion.position[0][1]) * Math.Cos(alpha)).Pow2() / thickness_P.Pow2()) 
-                    + 1.0;
+            double r = -(((X[0] - Motion.position[0][0]) * Math.Cos(alpha) - (X[1] - Motion.position[0][1]) * Math.Sin(alpha)) / length_P).Pow2() 
+                       -(((X[0] - Motion.position[0][0]) * Math.Sin(alpha) + (X[1] - Motion.position[0][1]) * Math.Cos(alpha)) / thickness_P).Pow2() 
+                       + 1.0;
             if (double.IsNaN(r) || double.IsInfinity(r))
                 throw new ArithmeticException();
             return r;

@@ -494,6 +494,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         int[] globalParticleColor = null;
 
+        bool setupLevelSet = false;
+
         /// <summary>
         /// Particle to Level-Set-Field 
         /// </summary>
@@ -552,7 +554,7 @@ namespace BoSSS.Application.FSI_Solver {
                             double tempLevelSetFunction = currentParticle.levelSetFunction(X);
                             if (tempLevelSetFunction > 1)
                                 tempLevelSetFunction = 1;
-                            if(tempLevelSetFunction < -1) {
+                            if (tempLevelSetFunction < -1 && setupLevelSet) {
                                 tempLevelSetFunction = -1;
                             }
                             levelSetFunctionOneColor *= tempLevelSetFunction;
@@ -585,6 +587,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Update level set tracker
             // =======================================================
             LsTrk.UpdateTracker(__NearRegionWith: 2);
+            setupLevelSet = true;
         }
 
         /// <summary>
