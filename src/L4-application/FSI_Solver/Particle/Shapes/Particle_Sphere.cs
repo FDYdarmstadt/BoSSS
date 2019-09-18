@@ -81,8 +81,7 @@ namespace BoSSS.Application.FSI_Solver
 
         public override double levelSetFunction(double[] X) {
             double x0 = Motion.position[0][0];
-            double y0 = Motion.
-                position[0][1];
+            double y0 = Motion.position[0][1];
             return -(X[0] - x0).Pow2() + -(X[1] - y0).Pow2() + radius_P.Pow2();
         }
 

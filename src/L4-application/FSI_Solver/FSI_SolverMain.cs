@@ -448,10 +448,7 @@ namespace BoSSS.Application.FSI_Solver {
                     break;
 
                 case LevelSetHandling.FSI_LieSplittingFullyCoupled:
-                    if (calculateNewLevelSet)
-                        UpdateLevelSetParticles(phystime);
-                    else
-                        CopyLevelSet();
+                    UpdateLevelSetParticles(phystime);
                     if (!CalculatedDampingTensors) {
                         foreach (Particle p in m_Particles) {
                             if (p.Motion.useAddedDamping) {
@@ -488,20 +485,6 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// For FSI_LieSplitting_FullyCoupled. As the position is only update at the end of the iteration, the level set is only updated at the beginning of each iteration.
-        /// </summary>
-        bool calculateNewLevelSet = true;
-
-        /// <summary>
-        /// Copies the level set function of the previous iteration (only for FSI_Splitting_FullyCoupled)
-        /// </summary>
-        private void CopyLevelSet() {
-            this.LevSet.Clear();
-            this.LevSet.AccLaidBack(1.0, this.DGLevSet.Current);
-            LsTrk.UpdateTracker(__NearRegionWith: 2);
-        }
-
-        /// <summary>
         /// Array of all local cells with their specific color.
         /// </summary>
         private int[] cellColor = null;
@@ -524,7 +507,6 @@ namespace BoSSS.Application.FSI_Solver {
             // =======================================================
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             cellColor = cellColor == null ? InitializeColoring() : UpdateColoring();
-
             // Step 2
             // Delete the old level set
             // =======================================================
@@ -567,7 +549,13 @@ namespace BoSSS.Application.FSI_Solver {
                         // Multiplication over all particle-level-sets within the current color
                         for (int pC = 0; pC < particlesOfCurrentColor.Length; pC++) {
                             Particle currentParticle = m_Particles[particlesOfCurrentColor[pC]];
-                            levelSetFunctionOneColor *= currentParticle.levelSetFunction(X);
+                            double tempLevelSetFunction = currentParticle.levelSetFunction(X);
+                            if (tempLevelSetFunction > 1)
+                                tempLevelSetFunction = 1;
+                            if(tempLevelSetFunction < -1) {
+                                tempLevelSetFunction = -1;
+                            }
+                            levelSetFunctionOneColor *= tempLevelSetFunction;
                             // Delete the particle within the current color from the particle color array
                             _globalParticleColor[particlesOfCurrentColor[pC]] = 0;
                         }
@@ -839,14 +827,15 @@ namespace BoSSS.Application.FSI_Solver {
                 // =================================================
                 else {
                     if (((FSI_Control)Control).Timestepper_LevelSetHandling != LevelSetHandling.Coupled_Iterative) {
-                        if (phystime == 0) { CreatePhysicalDataLogger(); }
-                        if (phystime == 0) { CreateResidualLogger(); }
+                        if (phystime == 0) {
+                            CreatePhysicalDataLogger();
+                            CreateResidualLogger();
+                        }
                         int iterationCounter = 0;
                         double hydroDynForceTorqueResidual = double.MaxValue;
                         foreach (Particle p in m_Particles) {
                             p.Motion.GetParticleDensity(p.particleDensity);
                         }
-                        Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, Velocity[0].Basis.Degree * 3 + 2);
                         while (hydroDynForceTorqueResidual > HydrodynConvergenceCriterion) {
                             Auxillary.CheckForMaxIterations(iterationCounter, ((FSI_Control)Control).maxIterationsFullyCoupled);
                             Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
@@ -854,13 +843,11 @@ namespace BoSSS.Application.FSI_Solver {
 
                             // actual physics
                             // -------------------------------------------------
-                            calculateNewLevelSet = iterationCounter == 0;
                             if (IsFullyCoupled && iterationCounter == 0) {
                                 InitializeParticlePerIteration(m_Particles, TimestepInt);
                             }
                             else {
                                 m_BDF_Timestepper.Solve(phystime, dt, false);
-                                CalculateVorticity();
                                 CalculateHydrodynamicForces(m_Particles, dt, !IsFullyCoupled);
                             }
                             CalculateParticleVelocity(m_Particles, dt, iterationCounter);
@@ -945,8 +932,6 @@ namespace BoSSS.Application.FSI_Solver {
             // - particle motion is computed for all particles simultaneously on all processors; every processor knows every particle
             // - since the particle solver is much cheaper than the flow solver, this "not-really parallel" approach may work up to a few hundreds of particles
             // ===============================================
-            // Update forces
-            // =============
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             for (int p = 0; p < particles.Count(); p++) {
                 Particle currentParticle = particles[p];
@@ -1009,13 +994,6 @@ namespace BoSSS.Application.FSI_Solver {
                 Particle particle = m_Particles[p];
                 particle.Motion.UpdateParticlePositionAndAngle(dt);
             }
-        }
-
-        /// <summary>
-        /// Calls the calculation of the vorticity (for plotting purpose)
-        /// </summary>
-        private void CalculateVorticity() {
-            Vorticity2D.Curl2D(1, Velocity);
         }
 
         /// <summary>
