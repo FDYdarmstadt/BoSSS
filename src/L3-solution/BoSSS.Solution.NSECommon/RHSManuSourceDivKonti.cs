@@ -30,8 +30,9 @@ namespace BoSSS.Solution.NSECommon {
     /// Current manufactured solutions used is T = cos(x*y), Y0 = 0.3 cos(x*y), Y1 = 0.6 cos(x*y), Y2 = 0.1 cos(x*y), u = -cos(x), v = -cos(y), p = sin(x*y).
     /// See also ControlManuSol() control function.
     /// </summary>
-    public class RHSManuSourceDivKonti : BoSSS.Solution.Utils.LinearSource {
-
+    //public class RHSManuSourceDivKonti : BoSSS.Solution.Utils.LinearSource {
+    public class RHSManuSourceDivKonti : IVolumeForm
+    {
         double ReynoldsNumber;
         double[] MolarMasses;
         PhysicsMode physicsMode;
@@ -52,26 +53,41 @@ namespace BoSSS.Solution.NSECommon {
 
         }
 
+
         /// <summary>
         /// None
         /// </summary>
-        public override IList<string> ArgumentOrdering {
+        public IList<string> ArgumentOrdering {
             get { return new string[0]; }
         }
 
         /// <summary>
         /// None
         /// </summary>
-        public override IList<string> ParameterOrdering {
+        public IList<string> ParameterOrdering {
             get { return null; }
         }
 
-        //Manufactured solution for T = cos(x*y), Y0 = 0.3 cos(x*y), Y1 = 0.6 cos(x*y), Y2 = 0.1 cos(x*y), u = -cos(x), v = -cos(y), p = sin(x*y).
-        protected override double Source(double[] x, double[] parameters, double[] U) {
 
+        /// <summary>
+        /// None
+        /// </summary>
+        public TermActivationFlags VolTerms {
+            get {
+                return TermActivationFlags.AllOn;
+            }
+        }
+ 
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+            //    throw new NotImplementedException();
+            //}
+
+            ////Manufactured solution for T = cos(x*y), Y0 = 0.3 cos(x*y), Y1 = 0.6 cos(x*y), Y2 = 0.1 cos(x*y), u = -cos(x), v = -cos(y), p = sin(x*y).
+            //protected override double Source(double[] x, double[] parameters, double[] U) {
+            double[] x = cpv.Xglobal;
             double x_ = x[0];
             double y_ = x[1];
-            double t_ = phystime;
+            double t_ = cpv.time;
             double p0 = 1.0;// ThermodynamicPressure.GetMeanValue(3);
 
             double M1 = MolarMasses[0]; double M2 = MolarMasses[1]; double M3 = MolarMasses[2]; double M4 = MolarMasses[3];
@@ -81,14 +97,32 @@ namespace BoSSS.Solution.NSECommon {
             double man1;
 
 
+            //double conti = -p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Cos(x_ * t_) * y_ * t_ * Math.Sin(x_ * y_ * t_) + p0 / Math.Cos(x_ * y_ * t_) * t_ * Math.Sin(x_ * t_) - p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Cos(y_ * t_) * x_ * t_ * Math.Sin(x_ * y_ * t_) + p0 / Math.Cos(x_ * y_ * t_) * t_ * Math.Sin(y_ * t_);
 
+            //return -1 * conti;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            /////////////////////////////////////////////////////////////////
             if (unsteady) {
                 switch (physicsMode) {
                     case PhysicsMode.LowMach:
                         double dRhodt = p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * x_ * y_ * Math.Sin(x_ * y_ * t_);
                         double dRhoUdx = -p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Cos(x_ * t_) * y_ * t_ * Math.Sin(x_ * y_ * t_) + p0 / Math.Cos(x_ * y_ * t_) * t_ * Math.Sin(x_ * t_);
                         double dRhoVdy = -p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Cos(y_ * t_) * x_ * t_ * Math.Sin(x_ * y_ * t_) + p0 / Math.Cos(x_ * y_ * t_) * t_ * Math.Sin(y_ * t_);
-                        man1 = -1 * (dRhodt + dRhoUdx + dRhoVdy);
+                        man1 = -1 * (dRhodt*1 + dRhoUdx + dRhoVdy);
                         break;
                     case PhysicsMode.Combustion:
                         throw new NotImplementedException("TODO");
@@ -145,7 +179,7 @@ namespace BoSSS.Solution.NSECommon {
 
 
 
-            return man1;
+            return man1*V;
         }
     }
 }

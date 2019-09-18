@@ -14,9 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.XdgTimestepping;
+using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
@@ -30,31 +33,153 @@ namespace BoSSS.Application.FSI_Solver {
     public class FSI_Control : IBM_Solver.IBM_Control {
 
         /// <summary>
-        /// ctor
+        /// ctor to remain compatible with old control files
         /// </summary>
         public FSI_Control() : base() {
             this.Particles = new List<Particle>();
         }
-        
+
         /// <summary>
-        /// Set true if the coupling between fluid and particle should be calculated iterative, while using Lie-Splitting.
+        /// ctor
         /// </summary>
-        public bool splitting_fully_coupled()
-        {
-            return Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled;
+        public FSI_Control(int degree, string projectName, string projectDescription = null, List<string> tags = null) : base() {
+            this.Particles = new List<Particle>();
+            ProjectName = projectName;
+            SessionName = projectName;
+            ProjectDescription = projectDescription;
+            if (tags != null) {
+                for (int i = 0; i < tags.Count(); i++) {
+                    Tags.Add(tags[i]);
+                }
+            }
+            SetDGdegree(degree);
+        }
+
+        /// <summary>
+        /// Setting <see cref="Solution.Control.AppControl.FieldOptions"/>
+        /// </summary>
+        public override void SetDGdegree(int k) {
+            if (k < 1)
+                throw new ArgumentOutOfRangeException("DG polynomial degree must be at least 1.");
+            int k_phiDG = Math.Max(2, k);
+            int k_phi = 2 * k_phiDG;
+            base.FieldOptions.Clear();
+            this.AddFieldOption("Velocity*", k);
+            this.AddFieldOption("Pressure", k - 1);
+            this.AddFieldOption("PhiDG", k_phiDG);
+            this.AddFieldOption("Phi", k_phi);
+            this.AddFieldOption("Curvature", 2);
+            this.AddFieldOption("Vorticity*", k);
+        }
+
+        public void SetSaveOptions(string dataBasePath = null, int savePeriod = 1) {
+            if (dataBasePath != null) {
+                savetodb = true;
+                DbPath = dataBasePath;
+                saveperiod = savePeriod;
+            }
+            else
+                savetodb = false;
+        }
+
+        public void SetAddaptiveMeshRefinement(int amrLevel) {
+            AdaptiveMeshRefinement = true;
+            RefinementLevel = amrLevel;
+            AMR_startUpSweeps = amrLevel;
+        }
+
+        public void SetBoundaries(List<string> boundaryValues) {
+            if (boundaryValues.Count() > 4)
+                throw new NotImplementedException("max 4 boundary values");
+            for (int i = 0; i < boundaryValues.Count(); i++) {
+                AddBoundaryValue(boundaryValues[i]);
+                m_BoundaryValues.Add(boundaryValues[i]);
+            }
+        }
+
+        List<string> m_BoundaryValues = new List<string>();
+
+        public void SetGrid(double lengthX, double lengthY, double cellsPerUnitLength, bool periodicX = false, bool periodicY = false) {
+            GridFunc = delegate {
+
+                int q = new int(); // #Cells in x-dircetion + 1
+                int r = new int(); // #Cells in y-dircetion + 1
+
+                q = (int)(cellsPerUnitLength * lengthX);
+                r = (int)(cellsPerUnitLength * lengthY);
+
+                double[] Xnodes = GenericBlas.Linspace(-lengthX / 2, lengthX / 2, q);
+                double[] Ynodes = GenericBlas.Linspace(-lengthY / 2, lengthY / 2, r);
+
+                Grid2D grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: periodicX, periodicY: periodicY);
+
+                for(int i = 0; i < m_BoundaryValues.Count(); i++) {
+                    byte iB = (byte)(i + 1);
+                    grd.EdgeTagNames.Add(iB, m_BoundaryValues[i]);
+                }
+
+                if (m_BoundaryValues.Count() == 0)
+                    throw new Exception("Please specify boundaries before creating the grid");
+
+                if (m_BoundaryValues.Count() == 1) {
+                    grd.DefineEdgeTags(delegate (double[] X) {
+                        byte et = 1;
+                        return et;
+                    });
+                }
+                else {
+                    grd.DefineEdgeTags(delegate (double[] X) {
+                        byte et = 0;
+                        if (Math.Abs(X[0] - (-lengthX / 2)) <= 1.0e-8) {
+                            for (int i = 0; i < m_BoundaryValues.Count(); i++) {
+                                if (m_BoundaryValues[i].Contains("left") || m_BoundaryValues[i].Contains("Left")) {
+                                    et = (byte)(i + 1);
+                                }
+                            }
+                        }
+                        if (Math.Abs(X[0] + (-lengthX / 2)) <= 1.0e-8) {
+                            for (int i = 0; i < m_BoundaryValues.Count(); i++) {
+                                if (m_BoundaryValues[i].Contains("right") || m_BoundaryValues[i].Contains("Right")) {
+                                    et = (byte)(i + 1);
+                                }
+                            }
+                        }
+
+                        if (Math.Abs(X[1] - (-lengthY / 2)) <= 1.0e-8) {
+                            for (int i = 0; i < m_BoundaryValues.Count(); i++) {
+                                if (m_BoundaryValues[i].Contains("lower") || m_BoundaryValues[i].Contains("Lower")) {
+                                    et = (byte)(i + 1);
+                                }
+                            }
+                        }
+                        if (Math.Abs(X[1] + (-lengthY / 2)) <= 1.0e-8) {
+                            for (int i = 0; i < m_BoundaryValues.Count(); i++) {
+                                if (m_BoundaryValues[i].Contains("upper") || m_BoundaryValues[i].Contains("Upper")) {
+                                    et = (byte)(i + 1);
+                                }
+                            }
+                        }
+                        Debug.Assert(et != 0);
+                        return et;
+                    });
+                }
+                Console.WriteLine("Cells:" + grd.NumberOfCells);
+                return grd;
+            };
+        }
+
+        public void SetTimesteps(double dt, int noOfTimesteps) {
+            dtMax = dt;
+            dtMin = dt;
+            Endtime = noOfTimesteps * dt;
+            NoOfTimesteps = noOfTimesteps;
         }
 
         /// <summary>
         /// Set true if the coupling between fluid and particle should be calculated iterative, while using Lie-Splitting.
         /// </summary>
         [DataMember]
-        public int max_iterations_fully_coupled = 10000;
-
-        /// <summary>
-        /// Set true if translation of the particle should be induced by hydrodynamical forces.
-        /// </summary>
-        [DataMember]
-        public bool instationarySolver = true;
+        public int maxIterationsFullyCoupled = 100000;
 
         /// <summary>
         /// Set true if translation of the particle should be induced by hydrodynamical forces.
@@ -84,7 +209,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// The termination criterion for fully coupled/implicit level-set evolution.
         /// </summary>
         [DataMember]
-        public double forceAndTorqueConvergenceCriterion = 1.0e-6;
+        public double hydrodynamicsConvergenceCriterion = 1.0e-6;
 
         /// <summary>
         /// under-relaxation of the level set movement in case of coupled iterative
@@ -102,36 +227,20 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         public ParticleUnderrelaxationParam underrelaxationParam = new ParticleUnderrelaxationParam(1e-8, 1, false);
 
+        /// <summary>
+        /// Gravity acting on the particles, zero by default.
+        /// </summary>
         [DataMember]
-        public double[] gravity = new double[] { 0, -9.81 };
+        public double[] gravity = new double[] { 0, 0 };
 
         [DataMember]
         public double addedDampingCoefficient = -1;
-
-
-        /// <summary>
-        /// Setting <see cref="Solution.Control.AppControl.FieldOptions"/>
-        /// </summary>
-        public override void SetDGdegree(int k) {
-            if (k < 1)
-                throw new ArgumentOutOfRangeException("DG polynomial degree must be at least 1.");
-            int k_phiDG = Math.Max(2, k);
-            int k_phi = 2 * k_phiDG;
-            base.FieldOptions.Clear();
-            this.AddFieldOption("Velocity*", k);
-            this.AddFieldOption("Pressure", k - 1);
-            this.AddFieldOption("PhiDG", k_phiDG);
-            this.AddFieldOption("Phi", k_phi);
-            this.AddFieldOption("Curvature", 2);
-        }
-        
 
         /// <summary>
         /// See <see cref="LevelSetHandling"/>
         /// </summary>
         [DataMember]
         public LevelSetHandling Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-
 
         /// <summary>
         /// Function describing the boundary values at the level-set (VelocityX, VelocityY)
