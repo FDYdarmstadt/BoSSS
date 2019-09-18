@@ -64,8 +64,13 @@ namespace BoSSS.Application.Rheology
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
-            //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            //C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
+            // Maximum analytical output ...
+            C.NonLinearSolver.verbose = true;
+            C.LinearSolver.verbose = true;
+            C.NonLinearSolver.PrecondSolver.verbose = true;
+
             C.ObjectiveParam = 1.0;
 
             C.UsePerssonSensor = false;
@@ -82,8 +87,8 @@ namespace BoSSS.Application.Rheology
             //Debugging and Solver Analysis
             C.OperatorMatrixAnalysis = false;
             C.SkipSolveAndEvaluateResidual = false;
-            C.SetInitialConditions = true;
-            C.SetInitialPressure = true;
+            C.SetInitialConditions = false;
+            C.SetInitialPressure = false;
             C.SetParamsAnalyticalSol = false;
             C.ComputeL2Error = false;
             C.GravitySource = false;

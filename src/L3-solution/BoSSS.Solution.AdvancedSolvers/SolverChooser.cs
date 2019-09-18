@@ -786,6 +786,17 @@ namespace BoSSS.Solution {
                         Precond = _precond,
                     };
                     break;
+
+                case LinearSolverCode.exp_OrthoS_pMG:
+
+                    templinearSolve=new OrthonormalizationScheme()
+                    {
+                        PrecondS = new ISolverSmootherTemplate[]{ new LevelPmg() {UseHiOrderSmoothing=true} },
+                        MaxKrylovDim = lc.MaxKrylovDim,
+                        MaxIter = lc.MaxSolverIterations,
+                        Tolerance = lc.ConvergenceCriterion
+                    };
+                    break;
                 //end of testing area
 
                 case LinearSolverCode.selfmade:
@@ -795,6 +806,8 @@ namespace BoSSS.Solution {
                         templinearSolve = m_linsolver;
                     }
                     break;
+
+
                 default:
                     throw new NotImplementedException("Linear solver option not available");
             }
