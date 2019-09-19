@@ -27,13 +27,12 @@ namespace BoSSS.Application.FSI_Solver {
             double density,
             ParticleUnderrelaxationParam underrelaxationParam,
             double addedDampingCoefficient = 1) : base(gravity, density, underrelaxationParam) {
-            m_StartingAngle = angle[0];
+            m_StartingAngle = Angle[0];
             m_AddedDampingCoefficient = addedDampingCoefficient;
             UseAddedDamping = true;
         }
 
-        readonly ParticleAddedDamping AddedDamping = new ParticleAddedDamping();
-
+        private readonly ParticleAddedDamping AddedDamping = new ParticleAddedDamping();
 
         /// <summary>
         /// Saving the initial angle of the particle for <see cref="UpdateDampingTensors()"/>
@@ -44,7 +43,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Calculate tensors to implement the added damping model (Banks et.al. 2017)
         /// </summary>
         public override void CalculateDampingTensor(Particle particle, LevelSetTracker LsTrk, double muA, double rhoA, double dt) {
-            addedDampingTensor = AddedDamping.IntegrationOverLevelSet(particle, LsTrk, muA, rhoA, dt, position[0]);
+            addedDampingTensor = AddedDamping.IntegrationOverLevelSet(particle, LsTrk, muA, rhoA, dt, Position[0]);
             Aux.TestArithmeticException(addedDampingTensor, "particle added damping tensor");
         }
 
@@ -52,7 +51,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Update in every timestep tensors to implement the added damping model (Banks et.al. 2017)
         /// </summary>
         public override void UpdateDampingTensors() {
-            addedDampingTensor = AddedDamping.RotateTensor(angle[0], m_StartingAngle, addedDampingTensor);
+            addedDampingTensor = AddedDamping.RotateTensor(Angle[0], m_StartingAngle, addedDampingTensor);
             Aux.TestArithmeticException(addedDampingTensor, "particle added damping tensor");
         }
 

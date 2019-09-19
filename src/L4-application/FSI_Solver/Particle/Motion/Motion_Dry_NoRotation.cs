@@ -29,8 +29,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         protected override void CalculateParticleAngle(double dt) {
-            angle[0] = angle[1];
-            Aux.TestArithmeticException(angle[0], "particle angle");
+            Angle[0] = Angle[1];
+            Aux.TestArithmeticException(Angle[0], "particle angle");
         }
 
         /// <summary>
@@ -38,8 +38,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         protected override void CalculateParticleAngle(double dt, double collisionTimestep) {
-            angle[0] = angle[1];
-            Aux.TestArithmeticException(angle[0], "particle angle");
+            Angle[0] = Angle[1];
+            Aux.TestArithmeticException(Angle[0], "particle angle");
         }
 
         /// <summary>

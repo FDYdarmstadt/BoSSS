@@ -21,12 +21,10 @@ using ilPSP;
 using BoSSS.Foundation.Grid;
 using MathNet.Numerics;
 
-namespace BoSSS.Application.FSI_Solver
-{
+namespace BoSSS.Application.FSI_Solver {
     [DataContract]
     [Serializable]
-    public class Particle_Squircle : Particle
-    {
+    public class Particle_Squircle : Particle {
         /// <summary>
         /// Empty constructor used during de-serialization
         /// </summary>
@@ -44,12 +42,10 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Radius of the particle. Not necessary for particles defined by their length and thickness
         /// </summary>
-        public double radius_P;
+        private readonly double radius_P;
 
-        protected override double Circumference_P
-        {
-            get
-            {
+        protected override double Circumference_P {
+            get {
                 return 4 * radius_P;
             }
         }
@@ -62,45 +58,29 @@ namespace BoSSS.Application.FSI_Solver
         public override double Area_P() {
             return 4 * radius_P.Pow2() * (SpecialFunctions.Gamma(1 + 1 / superEllipsoidExponent)).Pow2() / SpecialFunctions.Gamma(1 + 2 / superEllipsoidExponent);
         }
-        override public double MomentOfInertia_P
-        {
-            get
-            {
+        override public double MomentOfInertia_P {
+            get {
                 return (1 / 2.0) * (Mass_P * radius_P * radius_P);
             }
         }
 
         public override double LevelSetFunction(double[] X) {
-            double alpha = -(Motion.angle[0]);
-            return -((((X[0] - Motion.position[0][0]) * Math.Cos(alpha) - (X[1] - Motion.position[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - Motion.position[0][0]) * Math.Sin(alpha) + (X[1] - Motion.position[0][1]) * Math.Cos(alpha)).Pow(4)) - radius_P.Pow(4));
+            double alpha = -(Motion.Angle[0]);
+            return -((((X[0] - Motion.Position[0][0]) * Math.Cos(alpha) - (X[1] - Motion.Position[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - Motion.Position[0][0]) * Math.Sin(alpha) + (X[1] - Motion.Position[0][1]) * Math.Cos(alpha)).Pow(4)) - radius_P.Pow(4));
         }
 
-        public override bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false)
-        {
+        public override bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false) {
             // only for rectangular cells
             if (h_max == 0)
                 h_max = h_min;
             double radiusTolerance = !WithoutTolerance ? 1.0 + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
-            if (-((((point[0] - Motion.position[0][0]) * Math.Cos(Motion.angle[0]) - (point[1] - Motion.position[0][1]) * Math.Sin(Motion.angle[0])).Pow(4) + ((point[0] - Motion.position[0][0]) * Math.Sin(Motion.angle[0]) + (point[1] - Motion.position[0][1]) * Math.Cos(Motion.angle[0])).Pow(4)) - radiusTolerance.Pow(4)) > 0)
-            {
-                return true;
-            }     
-            return false;
-        }
-
-        public override bool ParticleInternalCell(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false) {
-            // only for rectangular cells
-            if (h_max == 0)
-                h_max = h_min;
-            double radiusTolerance = !WithoutTolerance ? 1.0 - Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
-            if (-((((point[0] - Motion.position[0][0]) * Math.Cos(Motion.angle[0]) - (point[1] - Motion.position[0][1]) * Math.Sin(Motion.angle[0])).Pow(4) + ((point[0] - Motion.position[0][0]) * Math.Sin(Motion.angle[0]) + (point[1] - Motion.position[0][1]) * Math.Cos(Motion.angle[0])).Pow(4)) - radiusTolerance.Pow(4)) > 0) {
+            if (-((((point[0] - Motion.Position[0][0]) * Math.Cos(Motion.Angle[0]) - (point[1] - Motion.Position[0][1]) * Math.Sin(Motion.Angle[0])).Pow(4) + ((point[0] - Motion.Position[0][0]) * Math.Sin(Motion.Angle[0]) + (point[1] - Motion.Position[0][1]) * Math.Cos(Motion.Angle[0])).Pow(4)) - radiusTolerance.Pow(4)) > 0) {
                 return true;
             }
             return false;
         }
 
-        override public double[] GetLengthScales()
-        {
+        override public double[] GetLengthScales() {
             return new double[] { radius_P, radius_P };
         }
     }

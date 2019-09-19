@@ -14,16 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.Quadrature;
-using BoSSS.Foundation.XDG;
 using FSI_Solver;
 using ilPSP;
-using MPI.Wrappers;
 using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
 
 namespace BoSSS.Application.FSI_Solver {
 
@@ -53,6 +46,9 @@ namespace BoSSS.Application.FSI_Solver {
         private readonly ParticleUnderrelaxationParam m_UnderrelaxationParam;
         private readonly double m_AddedDampingCoefficient;
 
+        /// <summary>
+        /// Initial check for the particle motion parameter.
+        /// </summary>
         public void CheckInput() {
             if (m_IsDry && m_UnderrelaxationParam != null)
                 throw new Exception("Error in control file: Cannot perform a dry simulation with full coupling between the particles and the (non-existing) fluid");
@@ -66,20 +62,25 @@ namespace BoSSS.Application.FSI_Solver {
             Aux.TestArithmeticException(m_AddedDampingCoefficient, "added damping coefficient");
         }
 
-        public Motion_Wet GetParticleMotion() {
-            if (m_NoRotation && m_NoTranslation)
-                return new Motion_Fixed();
-            if (m_IsDry) {
-                return m_NoRotation ? new Motion_Dry_NoRotation(m_Gravity, m_Density)
-                    : m_NoTranslation ? new Motion_Dry_NoTranslation(m_Gravity, m_Density)
-                    : new Motion_Dry(m_Gravity, m_Density);
+        /// <summary>
+        /// Initialize the correct derived motion.cs.
+        /// </summary>
+        public Motion_Wet ParticleMotion {
+            get {
+                if (m_NoRotation && m_NoTranslation)
+                    return new Motion_Fixed();
+                if (m_IsDry) {
+                    return m_NoRotation ? new Motion_Dry_NoRotation(m_Gravity, m_Density)
+                        : m_NoTranslation ? new Motion_Dry_NoTranslation(m_Gravity, m_Density)
+                        : new Motion_Dry(m_Gravity, m_Density);
+                }
+                if (m_AddedDampingCoefficient != -1)
+                    return new Motion_AddedDamping(m_Gravity, m_Density, m_UnderrelaxationParam, m_AddedDampingCoefficient);
+                else
+                    return m_NoRotation ? new Motion_Wet_NoRotation(m_Gravity, m_Density)
+                        : m_NoTranslation ? new Motion_Wet_NoTranslation(m_Gravity, m_Density)
+                        : new Motion_Wet(m_Gravity, m_Density, m_UnderrelaxationParam);
             }
-            if (m_AddedDampingCoefficient != -1)
-                return new Motion_AddedDamping(m_Gravity, m_Density, m_UnderrelaxationParam, m_AddedDampingCoefficient);
-            else
-                return m_NoRotation ? new Motion_Wet_NoRotation(m_Gravity, m_Density)
-                    : m_NoTranslation ? new Motion_Wet_NoTranslation(m_Gravity, m_Density)
-                    : new Motion_Wet(m_Gravity, m_Density, m_UnderrelaxationParam);
         }
     }
 }

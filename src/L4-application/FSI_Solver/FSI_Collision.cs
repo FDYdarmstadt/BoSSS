@@ -77,7 +77,7 @@ namespace FSI_Solver {
             // Some var definintion
             // =======================================================
             FSI_LevelSetUpdate LevelSetUpdate = new FSI_LevelSetUpdate(m_LevelSetTracker);
-            int spatialDim = particles[0].Motion.position[0].Length;
+            int spatialDim = particles[0].Motion.Position[0].Length;
             int ParticleOffset = particles.Count();
             double distanceThreshold = m_hMin / 10;// m_dt;// * 1e-4;
             int J = gridData.iLogicalCells.NoOfLocalUpdatedCells;
@@ -111,7 +111,7 @@ namespace FSI_Solver {
                         CellMask ParticleBoundaryCells = gridData.GetBoundaryCells().Intersect(ParticleCutCells);
                         GetWall(gridData, ParticleBoundaryCells, out double[][] wallPoints);
                         for (int w = 0; w < wallPoints.GetLength(0); w++) {
-                            particles[p0].ClosestPointOnOtherObjectToThis = particles[p0].Motion.position[0].CloneAs();
+                            particles[p0].ClosestPointOnOtherObjectToThis = particles[p0].Motion.Position[0].CloneAs();
                             if (wallPoints[w] == null)
                                 continue;
                             else if (wallPoints[w][0] != 0) {
@@ -327,7 +327,7 @@ namespace FSI_Solver {
         /// Is true if the two particles are overlapping.
         /// </param>
         internal void CalculateMinimumDistance(Particle Particle0, Particle Particle1, out double Distance, out MultidimensionalArray DistanceVector, out MultidimensionalArray ClosestPoint_P0, out MultidimensionalArray ClosestPoint_P1, out bool Overlapping) {
-            int SpatialDim = Particle0.Motion.position[0].Length;
+            int SpatialDim = Particle0.Motion.Position[0].Length;
             Distance = double.MaxValue;
             DistanceVector = MultidimensionalArray.Create(SpatialDim);
             ClosestPoint_P0 = MultidimensionalArray.Create(SpatialDim);
@@ -371,7 +371,7 @@ namespace FSI_Solver {
         /// Is true if the two particles are overlapping.
         /// </param>
         internal void CalculateMinimumDistance(Particle Particle0, out double Distance, out MultidimensionalArray DistanceVector, out MultidimensionalArray ClosestPoint_P0, out bool Overlapping) {
-            int SpatialDim = Particle0.Motion.position[0].Length;
+            int SpatialDim = Particle0.Motion.Position[0].Length;
             Distance = double.MaxValue;
             DistanceVector = MultidimensionalArray.Create(SpatialDim);
             ClosestPoint_P0 = MultidimensionalArray.Create(SpatialDim);
@@ -427,9 +427,9 @@ namespace FSI_Solver {
             // Step 1
             // Initialize the algorithm with the particle position
             // =======================================================
-            double[] Position0 = Particle0.Motion.position[0].CloneAs();
+            double[] Position0 = Particle0.Motion.Position[0].CloneAs();
             int SpatialDim = Position0.Length;
-            double[] Position1 = Particle1 == null ? Particle0.ClosestPointOnOtherObjectToThis.CloneAs() : Particle1.Motion.position[0].CloneAs();
+            double[] Position1 = Particle1 == null ? Particle0.ClosestPointOnOtherObjectToThis.CloneAs() : Particle1.Motion.Position[0].CloneAs();
             double[] v = Aux.VectorDiff(Position0, Position1);
             Aux.TestArithmeticException(v, nameof(v));
             // Define the simplex, which contains all points to be tested for their distance (max. 3 points in 2D)
@@ -519,7 +519,7 @@ namespace FSI_Solver {
         /// The support point (Cpt. Obvious)
         /// </param>
         private void CalculateSupportPoint(Particle particle, int SubParticleID, double[] Vector, out double[] SupportPoint) {
-            int SpatialDim = particle.Motion.position[0].Length;
+            int SpatialDim = particle.Motion.Position[0].Length;
             SupportPoint = new double[SpatialDim];
             // A direct formulation of the support function for a sphere exists, thus it is also possible to map it to an ellipsoid.
             if (particle is Particle_Ellipsoid || particle is Particle_Sphere) {
@@ -849,7 +849,7 @@ namespace FSI_Solver {
         /// The particle to be processed
         /// </param>
         private void PostProcessCollisionTranslation(Particle particle) {
-            int SpatialDim = particle.Motion.position[0].Length;
+            int SpatialDim = particle.Motion.Position[0].Length;
             if (particle.Motion.CollisionTranslationalVelocity.Count() >= 1) {
                 double[] Normal = new double[SpatialDim];
                 double[] Tangential = new double[SpatialDim];
@@ -878,8 +878,13 @@ namespace FSI_Solver {
                 temp_NormalVel /= particle.Motion.CollisionTranslationalVelocity.Count();
                 temp_TangentialVel /= particle.Motion.CollisionTranslationalVelocity.Count();
 
-                particle.Motion.translationalVelocity.Insert(0, new double[2]);
-                particle.Motion.translationalVelocity.RemoveAt(4);
+                //particle.Motion.translationalVelocity.Insert(0, new double[2]);
+                //particle.Motion.translationalVelocity.RemoveAt(4);
+                for (int i = 0; i < particle.Motion.translationalVelocity.Count(); i++) {
+                    for (int d = 0; d < SpatialDim; d++) {
+                        particle.Motion.translationalVelocity[i][d] = 0;
+                    }
+                }
                 for (int d = 0; d < SpatialDim; d++) {
                     particle.Motion.translationalVelocity[0][d] = Normal[d] * temp_NormalVel + Tangential[d] * temp_TangentialVel;
                 }
@@ -898,6 +903,9 @@ namespace FSI_Solver {
         /// </param>
         private void PostProcessCollisionRotation(Particle particle) {
             if (particle.Motion.CollisionRotationalVelocity.Count() >= 1) {
+                for (int i = 0; i < particle.Motion.rotationalVelocity.Count(); i++) {
+                    particle.Motion.rotationalVelocity[i] = 0;
+                }
                 particle.Motion.rotationalVelocity[0] = particle.Motion.CollisionRotationalVelocity.Sum() / particle.Motion.CollisionRotationalVelocity.Count();
                 particle.Motion.CollisionRotationalVelocity.Clear();
 

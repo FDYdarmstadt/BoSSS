@@ -55,7 +55,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Radius of the particle. Not necessary for particles defined by their length and thickness
         /// </summary>
-        public double width_P;
+        private readonly double width_P;
 
         public override double Area_P() {
             // not correct area
@@ -72,21 +72,12 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        public override double LevelSetFunction(double[] X) {
-            double alpha = -(Motion.angle[0]);
+        public override double LevelSetFunction(double[] X) { // attention: no dependency on angle...
+            double alpha = -(Motion.Angle[0]);
             double r;
-            // Rechteck:
-            //        r = Math.Max(X[0] - Motion.position[0][0]  - Width_P,  Motion.position[0][0] - Width_P - X[0]);
-            //        r = Math.Max(r, X[1] - Motion.position[0][1] - Width_P);
-            //        r = Math.Max(r,  Motion.position[0][1] - 0.5*Width_P - X[1]);
-
-            // Geo to try:
-            r = Math.Max(X[0] - Motion.position[0][0] - width_P, Motion.position[0][0] - width_P - X[0]);
-            r = Math.Max(r, Motion.position[0][1] - 0.5 * width_P - X[1]);
-            r = Math.Max(r, Motion.position[0][0] - width_P - X[1] - 1.5 * X[0]) + Math.Max(r, X[1] - Motion.position[0][1] - 0.5 * width_P);
-
-
-            //      r = r - Width_P;
+            r = Math.Max(X[0] - Motion.Position[0][0] - width_P, Motion.Position[0][0] - width_P - X[0]);
+            r = Math.Max(r, Motion.Position[0][1] - 0.5 * width_P - X[1]);
+            r = Math.Max(r, Motion.Position[0][0] - width_P - X[1] - 1.5 * X[0]) + Math.Max(r, X[1] - Motion.Position[0][1] - 0.5 * width_P);
             r = -r;
             return r;
         }
@@ -96,19 +87,7 @@ namespace BoSSS.Application.FSI_Solver {
             if (h_max == 0)
                 h_max = h_min;
             double radiusTolerance = !WithoutTolerance ? width_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
-            var distance = point.L2Distance(Motion.position[0]);
-            if (distance < (radiusTolerance)) {
-                return true;
-            }
-            return false;
-        }
-
-        public override bool ParticleInternalCell(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false) {
-            // only for rectangular cells
-            if (h_max == 0)
-                h_max = h_min;
-            double radiusTolerance = !WithoutTolerance ? width_P - Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
-            var distance = point.L2Distance(Motion.position[0]);
+            var distance = point.L2Distance(Motion.Position[0]);
             if (distance < (radiusTolerance)) {
                 return true;
             }
@@ -126,8 +105,8 @@ namespace BoSSS.Application.FSI_Solver {
                 throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");
 
             for (int j = 0; j < NoOfSurfacePoints; j++) {
-                SurfacePoints[j, 0] = Math.Cos(InfinitisemalAngle[j]) * width_P + Motion.position[0][0];
-                SurfacePoints[j, 1] = Math.Sin(InfinitisemalAngle[j]) * width_P + Motion.position[0][1];
+                SurfacePoints[j, 0] = Math.Cos(InfinitisemalAngle[j]) * width_P + Motion.Position[0][0];
+                SurfacePoints[j, 1] = Math.Sin(InfinitisemalAngle[j]) * width_P + Motion.Position[0][1];
             }
             return SurfacePoints;
         }

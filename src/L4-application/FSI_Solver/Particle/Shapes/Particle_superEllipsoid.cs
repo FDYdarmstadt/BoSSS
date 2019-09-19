@@ -47,18 +47,18 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Length of an elliptic particle.
         /// </summary>
-        public double length_P;
+        private readonly double length_P;
 
         /// <summary>
         /// Thickness of an elliptic particle.
         /// </summary>
-        public double thickness_P;
+        private readonly double thickness_P;
 
         /// <summary>
         /// Exponent of the super ellipsoid. Higher exponent leads to a more "squary" appearance.
         /// </summary>
         [DataMember]
-        public double m_SuperEllipsoidExponent;
+        private readonly double m_SuperEllipsoidExponent;
 
         protected override double Circumference_P {
             get {
@@ -76,10 +76,10 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         public override double LevelSetFunction(double[] X) {
-            double alpha = -(Motion.angle[0]);
+            double alpha = -(Motion.Angle[0]);
             double r;
-            r = -Math.Pow(((X[0] - Motion.position[0][0]) * Math.Cos(alpha) - (X[1] - Motion.position[0][1]) * Math.Sin(alpha)) / length_P, m_SuperEllipsoidExponent)
-                - Math.Pow(((X[0] - Motion.position[0][0]) * Math.Sin(alpha) + (X[1] - Motion.position[0][1]) * Math.Cos(alpha)) / thickness_P, m_SuperEllipsoidExponent)
+            r = -Math.Pow(((X[0] - Motion.Position[0][0]) * Math.Cos(alpha) - (X[1] - Motion.Position[0][1]) * Math.Sin(alpha)) / length_P, m_SuperEllipsoidExponent)
+                - Math.Pow(((X[0] - Motion.Position[0][0]) * Math.Sin(alpha) + (X[1] - Motion.Position[0][1]) * Math.Cos(alpha)) / thickness_P, m_SuperEllipsoidExponent)
                 + 1;
             if (double.IsNaN(r) || double.IsInfinity(r))
                 throw new ArithmeticException();
@@ -94,27 +94,13 @@ namespace BoSSS.Application.FSI_Solver {
             double radiusTolerance = 1;
             double a = !WithoutTolerance ? length_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : length_P;
             double b = !WithoutTolerance ? thickness_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : thickness_P;
-            double Superellipsoid = Math.Pow(((point[0] - Motion.position[0][0]) * Math.Cos(Motion.angle[0]) + (point[1] - Motion.position[0][1]) * Math.Sin(Motion.angle[0])) / a, m_SuperEllipsoidExponent) + (Math.Pow((-(point[0] - Motion.position[0][0]) * Math.Sin(Motion.angle[0]) + (point[1] - Motion.position[0][1]) * Math.Cos(Motion.angle[0])) / b, m_SuperEllipsoidExponent));
+            double Superellipsoid = Math.Pow(((point[0] - Motion.Position[0][0]) * Math.Cos(Motion.Angle[0]) + (point[1] - Motion.Position[0][1]) * Math.Sin(Motion.Angle[0])) / a, m_SuperEllipsoidExponent) + (Math.Pow((-(point[0] - Motion.Position[0][0]) * Math.Sin(Motion.Angle[0]) + (point[1] - Motion.Position[0][1]) * Math.Cos(Motion.Angle[0])) / b, m_SuperEllipsoidExponent));
             if (Superellipsoid < radiusTolerance)
                 return true;
             else
                 return false;
         }
 
-        public override bool ParticleInternalCell(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false) {
-            WithoutTolerance = false;
-            // only for rectangular cells
-            if (h_max == 0)
-                h_max = h_min;
-            double radiusTolerance = 1;
-            double a = !WithoutTolerance ? length_P - Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : length_P;
-            double b = !WithoutTolerance ? thickness_P - Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : thickness_P;
-            double Superellipsoid = Math.Pow(((point[0] - Motion.position[0][0]) * Math.Cos(Motion.angle[0]) + (point[1] - Motion.position[0][1]) * Math.Sin(Motion.angle[0])) / a, m_SuperEllipsoidExponent) + (Math.Pow((-(point[0] - Motion.position[0][0]) * Math.Sin(Motion.angle[0]) + (point[1] - Motion.position[0][1]) * Math.Cos(Motion.angle[0])) / b, m_SuperEllipsoidExponent));
-            if (Superellipsoid < radiusTolerance)
-                return true;
-            else
-                return false;
-        }
         override public double[] GetLengthScales() {
             return new double[] { length_P, thickness_P };
         }
@@ -130,16 +116,16 @@ namespace BoSSS.Application.FSI_Solver {
             if (Math.Abs(10 * Circumference_P / hMin + 1) >= int.MaxValue)
                 throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");
             for (int j = 0; j < QuarterSurfacePoints; j++) {
-                SurfacePoints[0, j, 0] = (Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * length_P * Math.Cos(Motion.angle[0]) - Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * thickness_P * Math.Sin(Motion.angle[0])) + Motion.position[0][0];
-                SurfacePoints[0, j, 1] = (Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * length_P * Math.Sin(Motion.angle[0]) + Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * thickness_P * Math.Cos(Motion.angle[0])) + Motion.position[0][1];
-                SurfacePoints[0, 2 * QuarterSurfacePoints + j - 1, 0] = (-(Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * length_P) * Math.Cos(Motion.angle[0]) + Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * thickness_P * Math.Sin(Motion.angle[0])) + Motion.position[0][0];
-                SurfacePoints[0, 2 * QuarterSurfacePoints + j - 1, 1] = (-(Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * length_P) * Math.Sin(Motion.angle[0]) - Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * thickness_P * Math.Cos(Motion.angle[0])) + Motion.position[0][1]; ;
+                SurfacePoints[0, j, 0] = (Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * length_P * Math.Cos(Motion.Angle[0]) - Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * thickness_P * Math.Sin(Motion.Angle[0])) + Motion.Position[0][0];
+                SurfacePoints[0, j, 1] = (Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * length_P * Math.Sin(Motion.Angle[0]) + Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * thickness_P * Math.Cos(Motion.Angle[0])) + Motion.Position[0][1];
+                SurfacePoints[0, 2 * QuarterSurfacePoints + j - 1, 0] = (-(Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * length_P) * Math.Cos(Motion.Angle[0]) + Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * thickness_P * Math.Sin(Motion.Angle[0])) + Motion.Position[0][0];
+                SurfacePoints[0, 2 * QuarterSurfacePoints + j - 1, 1] = (-(Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * length_P) * Math.Sin(Motion.Angle[0]) - Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * thickness_P * Math.Cos(Motion.Angle[0])) + Motion.Position[0][1]; ;
             }
             for (int j = 1; j < QuarterSurfacePoints; j++) {
-                SurfacePoints[0, 2 * QuarterSurfacePoints - j - 1, 0] = (-(Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * length_P) * Math.Cos(Motion.angle[0]) - Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * thickness_P * Math.Sin(Motion.angle[0])) + Motion.position[0][0];
-                SurfacePoints[0, 2 * QuarterSurfacePoints - j - 1, 1] = (-(Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * length_P) * Math.Sin(Motion.angle[0]) + Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * thickness_P * Math.Cos(Motion.angle[0])) + Motion.position[0][1];
-                SurfacePoints[0, 4 * QuarterSurfacePoints - j - 2, 0] = (Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * length_P * Math.Cos(Motion.angle[0]) + Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * thickness_P * Math.Sin(Motion.angle[0])) + Motion.position[0][0];
-                SurfacePoints[0, 4 * QuarterSurfacePoints - j - 2, 1] = (Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * length_P * Math.Sin(Motion.angle[0]) - Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * thickness_P * Math.Cos(Motion.angle[0])) + Motion.position[0][1];
+                SurfacePoints[0, 2 * QuarterSurfacePoints - j - 1, 0] = (-(Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * length_P) * Math.Cos(Motion.Angle[0]) - Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * thickness_P * Math.Sin(Motion.Angle[0])) + Motion.Position[0][0];
+                SurfacePoints[0, 2 * QuarterSurfacePoints - j - 1, 1] = (-(Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * length_P) * Math.Sin(Motion.Angle[0]) + Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * thickness_P * Math.Cos(Motion.Angle[0])) + Motion.Position[0][1];
+                SurfacePoints[0, 4 * QuarterSurfacePoints - j - 2, 0] = (Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * length_P * Math.Cos(Motion.Angle[0]) + Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * thickness_P * Math.Sin(Motion.Angle[0])) + Motion.Position[0][0];
+                SurfacePoints[0, 4 * QuarterSurfacePoints - j - 2, 1] = (Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * length_P * Math.Sin(Motion.Angle[0]) - Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_SuperEllipsoidExponent) * thickness_P * Math.Cos(Motion.Angle[0])) + Motion.Position[0][1];
             }
             return SurfacePoints;
         }
