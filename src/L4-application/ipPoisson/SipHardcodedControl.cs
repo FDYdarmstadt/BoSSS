@@ -238,6 +238,8 @@ namespace BoSSS.Application.SipPoisson {
             // exp_gmres_levelpmg
 
 #if DEBUG
+            // For testing in DEBUG mode, this setting enforces the use 
+            // of many multigrid-levels. In 2D, the examples are so small that 
             R.LinearSolver.TargetBlockSize = 100;
 #endif
 
