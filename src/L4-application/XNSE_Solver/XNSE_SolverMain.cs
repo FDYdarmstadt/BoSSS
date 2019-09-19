@@ -704,12 +704,18 @@ namespace BoSSS.Application.XNSE_Solver {
                     ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity), 
                     this.LsTrk, this.MultigridSequence);
 
-                if (this.Control.solveCoupledHeatEquation)
-                    m_BDF_coupledTimestepper.DataRestoreAfterBalancing(L,
+                if (this.Control.solveCoupledHeatEquation) {
+                    if (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP)
+                        m_BDF_coupledTimestepper.DataRestoreAfterBalancing(L,
                           this.Temperature.ToEnumerable(),
                           this.ResidualHeat.ToEnumerable(),
                           this.LsTrk, this.MultigridSequence);
-
+                    else
+                        m_BDF_coupledTimestepper.DataRestoreAfterBalancing(L,
+                          ArrayTools.Cat<DGField>(this.Temperature.ToEnumerable(), this.HeatFlux.ToArray()),
+                          ArrayTools.Cat<DGField>(this.ResidualHeat.ToEnumerable(), this.ResidualAuxHeatFlux.ToArray()),
+                          this.LsTrk, this.MultigridSequence);
+                }
 
                 if (this.Control.AdaptiveMeshRefinement && hack_TimestepIndex == 0) {
                     base.SetInitial();
@@ -833,14 +839,14 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 int N = ((XDGBasis)(CurrentState[0].Basis)).NonX_Basis.Length;
 
-                foreach (int jCell in this.LsTrk.Regions.GetCutCellMask4LevSet(0).ItemEnum) {
-                    for (int d = 0; d < D; d++) {
-                        for (int n = 0; n < N; n++) {
-                            ((XDGField)(TmpRhs.Mapping.Fields[d])).GetSpeciesShadowField("A").Coordinates[jCell, n] = 0.5 * SurfaceForce[d].Coordinates[jCell, n];
-                            ((XDGField)(TmpRhs.Mapping.Fields[d])).GetSpeciesShadowField("B").Coordinates[jCell, n] = 0.5 * SurfaceForce[d].Coordinates[jCell, n];
-                        }
-                    }
-                }
+                //foreach (int jCell in this.LsTrk.Regions.GetCutCellMask4LevSet(0).ItemEnum) {
+                //    for (int d = 0; d < D; d++) {
+                //        for (int n = 0; n < N; n++) {
+                //            ((XDGField)(TmpRhs.Mapping.Fields[d])).GetSpeciesShadowField("A").Coordinates[jCell, n] = 0.5 * SurfaceForce[d].Coordinates[jCell, n];
+                //            ((XDGField)(TmpRhs.Mapping.Fields[d])).GetSpeciesShadowField("B").Coordinates[jCell, n] = 0.5 * SurfaceForce[d].Coordinates[jCell, n];
+                //        }
+                //    }
+                //}
 
                 OpAffine.AccV(1.0, TmpRhs);
             }
@@ -1199,10 +1205,10 @@ namespace BoSSS.Application.XNSE_Solver {
                     if(m_BDF_Timestepper != null) {
                         m_BDF_Timestepper.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
 
-                        if(this.Control.solveCoupledHeatEquation && m_BDF_coupledTimestepper != null) {
-                            m_BDF_coupledTimestepper.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-                            //ComputeHeatflux();
-                        }
+                        //if(this.Control.solveCoupledHeatEquation && m_BDF_coupledTimestepper != null) {
+                        //    m_BDF_coupledTimestepper.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
+                        //    //ComputeHeatflux();
+                        //}
                         
                     } else {
                         //m_RK_Timestepper.Solve(phystime, dt);
@@ -2490,20 +2496,20 @@ namespace BoSSS.Application.XNSE_Solver {
                     MultidimensionalArray[] VelocityEval = evapVelocity.Select(sf => cp.EvaluateAtCp(sf)).ToArray();
 
                     double nNodes = VelocityEval[0].Length;
-                    //double evapVelY = VelocityEval[1].Sum() / nNodes;
-                    //Console.WriteLine("EvapVelocity = {0}", evapVelY);
-                    //EvapVelocMean = evapVelY;
+                    double evapVelY = VelocityEval[1].Sum() / nNodes;
+                    Console.WriteLine("EvapVelocity = {0}", evapVelY);
+                    EvapVelocMean = evapVelY;
 
-                    double evapVelMean = 0.0;
-                    for(int s = 0; s < sgrd.GlobalNoOfCells; s++) {
-                        for (int n = 0; n < Nodes.Length; n++) {
-                            double velX = VelocityEval[0].To2DArray()[s, n];
-                            double velY = VelocityEval[1].To2DArray()[s, n];
-                            evapVelMean += Math.Sqrt(velX.Pow2() + velY.Pow2());
-                        }
-                    }
-                    evapVelMean /= nNodes;
-                    Console.WriteLine("EvapVelocity = {0}", evapVelMean);
+                    //double evapVelMean = 0.0;
+                    //for(int s = 0; s < sgrd.GlobalNoOfCells; s++) {
+                    //    for (int n = 0; n < Nodes.Length; n++) {
+                    //        double velX = VelocityEval[0].To2DArray()[s, n];
+                    //        double velY = VelocityEval[1].To2DArray()[s, n];
+                    //        evapVelMean += Math.Sqrt(velX.Pow2() + velY.Pow2());
+                    //    }
+                    //}
+                    //evapVelMean /= nNodes;
+                    //Console.WriteLine("EvapVelocity = {0}", evapVelMean);
 
                     // construct evolution velocity
                     for (int d = 0; d < D; d++) {
@@ -2770,6 +2776,16 @@ namespace BoSSS.Application.XNSE_Solver {
                     Console.WriteLine("Interface divergence = {0}", SurfChangerate);
                     Console.WriteLine("actual surface changerate = {0}", actualSurfChangerate);
 
+                }
+
+
+                // =====================
+                // solve coupled system
+                // =====================
+
+                if (this.Control.solveCoupledHeatEquation && m_BDF_coupledTimestepper != null) {
+                    m_BDF_coupledTimestepper.Solve(hack_Phystime, dt, Control.SkipSolveAndEvaluateResidual);
+                    //ComputeHeatflux();
                 }
 
 

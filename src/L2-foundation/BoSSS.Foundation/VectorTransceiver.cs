@@ -397,7 +397,22 @@ namespace BoSSS.Foundation.Comm {
                 throw new ArgumentException("length must be equal to number of cells.", "b");
             }
 
+            int Je = GridData.iLogicalCells.Count;
+            int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            if (b.Length != Je)
+                throw new ArgumentException();
+            byte[] bb = new byte[Je];
+            for(int j = 0;j < J; j++) {
+                bb[j] = b[j] ? byte.MaxValue : (byte)0;
+            }
 
+            MPIExchange<byte[], byte>(bb, GridData);
+
+            for(int j = J; j < Je; j++) {
+                b[j] = bb[j] > 128;
+            }
+
+            /*
             if (GridData.CellPartitioning.MpiSize > 1) {
 
                 // external 
@@ -422,7 +437,7 @@ namespace BoSSS.Foundation.Comm {
                             packet_for_p[l] = b[sendlist[l]];
                         }
 
-                        sms.Transmitt(p, packet_for_p);
+                        sms.Transmit(p, packet_for_p);
                     }
 
                     // receive data
@@ -442,7 +457,9 @@ namespace BoSSS.Foundation.Comm {
                     // dispose
                     sms.Dispose();
                 }
-            }
+            }*/
+
+
         }
     }
 }

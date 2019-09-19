@@ -30,7 +30,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
     public class ViscosityInSpeciesBulk_GradUTerm : BoSSS.Solution.NSECommon.swipViscosity_Term1, ISpeciesFilter {
 
-        public ViscosityInSpeciesBulk_GradUTerm(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, string spcName, SpeciesId spcId, int _d, int _D, 
+        public ViscosityInSpeciesBulk_GradUTerm(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, string spcName, SpeciesId spcId, int _d, int _D,
             double _muA, double _muB, double _betaS = 0.0)
             : base(penalty, _d, _D, bcMap, NSECommon.ViscosityOption.ConstantViscosity, constantViscosityValue: double.NegativeInfinity) {
 
@@ -38,7 +38,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             this.m_bcMap = bcMap;
 
             m_spcId = spcId;
-            switch(spcName) {
+            switch (spcName) {
                 case "A": currentMu = _muA; complementMu = _muB; break;
                 case "B": currentMu = _muB; complementMu = _muA; break;
                 default: throw new ArgumentException("Unknown species.");
@@ -76,7 +76,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
     public class ViscosityInSpeciesBulk_GradUtranspTerm : BoSSS.Solution.NSECommon.swipViscosity_Term2, ISpeciesFilter {
 
-        public ViscosityInSpeciesBulk_GradUtranspTerm(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, string spcName, SpeciesId spcId, int _d, int _D, 
+        public ViscosityInSpeciesBulk_GradUtranspTerm(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, string spcName, SpeciesId spcId, int _d, int _D,
             double _muA, double _muB, double _betaS = 0.0)
             : base(penalty, _d, _D, bcMap, NSECommon.ViscosityOption.ConstantViscosity, constantViscosityValue: double.NegativeInfinity) {
 
@@ -84,7 +84,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             this.m_bcMap = bcMap;
 
             m_spcId = spcId;
-            switch(spcName) {
+            switch (spcName) {
                 case "A": currentMu = _muA; complementMu = _muB; break;
                 case "B": currentMu = _muB; complementMu = _muA; break;
                 default: throw new ArgumentException("Unknown species.");
@@ -119,4 +119,63 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
     }
 
+    public class DimensionlessViscosityInSpeciesBulk_GradUTerm : BoSSS.Solution.NSECommon.swipViscosity_Term1, ISpeciesFilter {
+
+        public DimensionlessViscosityInSpeciesBulk_GradUTerm(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, string spcName, SpeciesId spcId, int _d, int _D,
+            double _reynoldsA, double _reynoldsB)
+            : base(penalty, _d, _D, bcMap, NSECommon.ViscosityOption.ConstantViscosityDimensionless, reynolds: 0.0) {
+
+            base.m_alpha = sw;
+            this.m_bcMap = bcMap;
+
+            m_spcId = spcId;
+            switch (spcName) {
+                case "A": base.m_reynolds = _reynoldsA; break;
+                case "B": base.m_reynolds = _reynoldsB; break;
+                default: throw new ArgumentException("Unknown species.");
+            }
+
+            int D = base.m_D;
+            base.velFunction = D.ForLoop(d => this.m_bcMap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName]);
+        }
+
+        SpeciesId m_spcId;
+
+        public SpeciesId validSpeciesId {
+            get { return m_spcId; }
+        }
+
+        IncompressibleMultiphaseBoundaryCondMap m_bcMap;
+
+    }
+
+    public class DimensionlessViscosityInSpeciesBulk_GradUtranspTerm : BoSSS.Solution.NSECommon.swipViscosity_Term2, ISpeciesFilter {
+
+        public DimensionlessViscosityInSpeciesBulk_GradUtranspTerm(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, string spcName, SpeciesId spcId, int _d, int _D,
+            double _reynoldsA, double _reynoldsB)
+            : base(penalty, _d, _D, bcMap, NSECommon.ViscosityOption.ConstantViscosityDimensionless, reynolds: 0.0) {
+
+            base.m_alpha = sw;
+            this.m_bcMap = bcMap;
+
+            m_spcId = spcId;
+            switch (spcName) {
+                case "A": base.m_reynolds = _reynoldsA; break;
+                case "B": base.m_reynolds = _reynoldsB; break;
+                default: throw new ArgumentException("Unknown species.");
+            }
+
+            int D = base.m_D;
+            base.velFunction = D.ForLoop(d => this.m_bcMap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName]);
+        }
+
+        SpeciesId m_spcId;
+
+        public SpeciesId validSpeciesId {
+            get { return m_spcId; }
+        }
+
+        IncompressibleMultiphaseBoundaryCondMap m_bcMap;
+
+    }
 }

@@ -44,9 +44,6 @@ namespace ilPSP.LinSolvers.PARDISO {
         public PARDISOSolver() {
         }
 
-        //public static Stopwatch Inner = new Stopwatch();
-        //public static Stopwatch InitAndSolve = new Stopwatch();
-        //public static Stopwatch SingleCalls = new Stopwatch();
         public static Stopwatch Phase_11 = new Stopwatch();
         public static Stopwatch Phase_22 = new Stopwatch();
         public static Stopwatch Phase_33 = new Stopwatch();
@@ -107,10 +104,11 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// Communicator on which the solver is defined.
         /// </summary>
         public MPI_Comm MpiComm {
-            get {
-                return m_OrgMatrix.MPI_Comm;
-            }
+            get;
+            private set;
         }
+
+       
         
         /// <summary>
         /// converts <paramref name="M"/> into suitable structures for PARDISO;
@@ -121,6 +119,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                 throw new ApplicationException("matrix is already defined. 'DefineMatrix'-method can be invoked only once in the lifetime of this object.");
             m_MpiRank = M.RowPartitioning.MpiRank;
             m_OrgMatrix = M;
+            MpiComm = M.MPI_Comm;
             MPICollectiveWatchDog.Watch(this.MpiComm);
         }
 
@@ -554,8 +553,7 @@ namespace ilPSP.LinSolvers.PARDISO {
         bool PARDISOInitAndSolve(IMutableMatrixEx Mtx, double[] _x, double[] _b) {
             using (var tr = new FuncTrace()) {
                 //InitAndSolve.Start();
-
-
+                              
                 if (m_PardisoMatrix == null)
                     m_PardisoMatrix = new Matrix(Mtx, this.UseDoublePrecision);
 
@@ -860,6 +858,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                 Array.Clear(m_PardInt.m_pt, 0, m_PardInt.m_pt.Length);
             }
 
+            m_PardisoMatrix.Dispose();
             m_PardisoMatrix = null;
             m_PardInt.m_PardisoInitialized = false;
         }
@@ -895,6 +894,8 @@ namespace ilPSP.LinSolvers.PARDISO {
         public void Dispose() {
             if (m_PardInt.m_PardisoInitialized)
                 PARDISODispose();
+            m_OrgMatrix = null;
+            
         }
 
         #endregion

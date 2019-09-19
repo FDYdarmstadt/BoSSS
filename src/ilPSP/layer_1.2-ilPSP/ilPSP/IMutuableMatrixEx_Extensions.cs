@@ -547,7 +547,7 @@ namespace ilPSP.LinSolvers {
                     var entries = M.GetAllEntries();
                     var c = new Helper();
                     c.entries = entries;
-                    sms.Transmitt(0, c);
+                    sms.Transmit(0, c);
 
 
                     MsrMatrix.MatrixEntry[][] dummy; int dummy_;
@@ -679,7 +679,7 @@ namespace ilPSP.LinSolvers {
             }
 
             if (Rank > 0)
-                sms.Transmitt(0, data);
+                sms.Transmit(0, data);
 
             int rcvProc = 0;
             if (Rank == 0) {
