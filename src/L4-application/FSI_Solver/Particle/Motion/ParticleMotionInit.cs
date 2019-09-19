@@ -42,13 +42,13 @@ namespace BoSSS.Application.FSI_Solver {
             m_AddedDampingCoefficient = addedDampingCoefficient;
         }
 
-        readonly internal FSI_Auxillary Aux = new FSI_Auxillary();
-        readonly double[] m_Gravity;
-        readonly bool m_IsDry;
-        readonly bool m_NoRotation;
-        readonly bool m_NoTranslation;
-        readonly ParticleUnderrelaxationParam m_UnderrelaxationParam;
-        readonly double m_AddedDampingCoefficient;
+        private readonly FSI_Auxillary Aux = new FSI_Auxillary();
+        private readonly double[] m_Gravity;
+        private readonly bool m_IsDry;
+        private readonly bool m_NoRotation;
+        private readonly bool m_NoTranslation;
+        private readonly ParticleUnderrelaxationParam m_UnderrelaxationParam;
+        private readonly double m_AddedDampingCoefficient;
 
         public void CheckInput() {
             if (m_IsDry && m_UnderrelaxationParam != null)

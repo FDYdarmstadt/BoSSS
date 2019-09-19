@@ -186,7 +186,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 double ForcesSoll = 30251.7764996821;
 
-                double Forces = p.GetParticles()[0].Motion.hydrodynamicForces[0][0];
+                double Forces = p.GetParticles()[0].Motion.HydrodynamicForces[0][0];
 
                 double DiffForces = Math.Abs(ForcesSoll - Forces); 
 
@@ -205,7 +205,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 double ForcesSoll = 5.62199895597732;
 
-                double Forces = p.GetParticles()[0].Motion.hydrodynamicForces[0][0];
+                double Forces = p.GetParticles()[0].Motion.HydrodynamicForces[0][0];
 
                 double DiffForces = Math.Abs(ForcesSoll - Forces);
 

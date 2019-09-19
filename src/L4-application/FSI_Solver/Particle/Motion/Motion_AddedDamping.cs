@@ -28,7 +28,7 @@ namespace BoSSS.Application.FSI_Solver {
             double addedDampingCoefficient = 1) : base(gravity, underrelaxationParam) {
             m_StartingAngle = angle[0];
             m_AddedDampingCoefficient = addedDampingCoefficient;
-            useAddedDamping = true;
+            UseAddedDamping = true;
         }
 
         readonly ParticleAddedDamping AddedDamping = new ParticleAddedDamping();
@@ -60,14 +60,14 @@ namespace BoSSS.Application.FSI_Solver {
             double denominator = CalculateDenominator(coefficientMatrix);
 
             double[] tempAcceleration = new double[2];
-            tempAcceleration[0] = hydrodynamicForces[0][0] * (coefficientMatrix[1, 1] * coefficientMatrix[2, 2] - coefficientMatrix[1, 2] * coefficientMatrix[2, 1]);
-            tempAcceleration[0] += hydrodynamicForces[0][1] * (-coefficientMatrix[0, 1] * coefficientMatrix[2, 2] + coefficientMatrix[0, 2] * coefficientMatrix[2, 1]);
-            tempAcceleration[0] += hydrodynamicTorque[0] * (coefficientMatrix[0, 1] * coefficientMatrix[1, 2] - coefficientMatrix[0, 2] * coefficientMatrix[1, 1]);
+            tempAcceleration[0] = HydrodynamicForces[0][0] * (coefficientMatrix[1, 1] * coefficientMatrix[2, 2] - coefficientMatrix[1, 2] * coefficientMatrix[2, 1]);
+            tempAcceleration[0] += HydrodynamicForces[0][1] * (-coefficientMatrix[0, 1] * coefficientMatrix[2, 2] + coefficientMatrix[0, 2] * coefficientMatrix[2, 1]);
+            tempAcceleration[0] += HydrodynamicTorque[0] * (coefficientMatrix[0, 1] * coefficientMatrix[1, 2] - coefficientMatrix[0, 2] * coefficientMatrix[1, 1]);
             tempAcceleration[0] = tempAcceleration[0] / denominator;
 
-            tempAcceleration[1] = hydrodynamicForces[0][0] * (-coefficientMatrix[1, 0] * coefficientMatrix[2, 2] + coefficientMatrix[1, 2] * coefficientMatrix[2, 0]);
-            tempAcceleration[1] += hydrodynamicForces[0][1] * (coefficientMatrix[0, 0] * coefficientMatrix[2, 2] - coefficientMatrix[0, 2] * coefficientMatrix[2, 0]);
-            tempAcceleration[1] += hydrodynamicTorque[0] * (-coefficientMatrix[0, 0] * coefficientMatrix[1, 2] + coefficientMatrix[0, 2] * coefficientMatrix[1, 0]);
+            tempAcceleration[1] = HydrodynamicForces[0][0] * (-coefficientMatrix[1, 0] * coefficientMatrix[2, 2] + coefficientMatrix[1, 2] * coefficientMatrix[2, 0]);
+            tempAcceleration[1] += HydrodynamicForces[0][1] * (coefficientMatrix[0, 0] * coefficientMatrix[2, 2] - coefficientMatrix[0, 2] * coefficientMatrix[2, 0]);
+            tempAcceleration[1] += HydrodynamicTorque[0] * (-coefficientMatrix[0, 0] * coefficientMatrix[1, 2] + coefficientMatrix[0, 2] * coefficientMatrix[1, 0]);
             tempAcceleration[1] = tempAcceleration[1] / denominator;
             translationalAcceleration[0] = tempAcceleration.CloneAs();
             Aux.TestArithmeticException(translationalAcceleration[0], "particle translational acceleration");
@@ -77,9 +77,9 @@ namespace BoSSS.Application.FSI_Solver {
             double[,] coefficientMatrix = CalculateCoefficientMatrix(dt);
             double denominator = CalculateDenominator(coefficientMatrix);
 
-            double tempAcceleration = hydrodynamicForces[0][0] * (coefficientMatrix[1, 0] * coefficientMatrix[2, 1] - coefficientMatrix[1, 1] * coefficientMatrix[2, 0]);
-            tempAcceleration += hydrodynamicForces[0][1] * (coefficientMatrix[0, 1] * coefficientMatrix[2, 0] - coefficientMatrix[0, 0] * coefficientMatrix[2, 1]);
-            tempAcceleration += hydrodynamicTorque[0] * (coefficientMatrix[0, 0] * coefficientMatrix[1, 1] - coefficientMatrix[0, 1] * coefficientMatrix[1, 0]);
+            double tempAcceleration = HydrodynamicForces[0][0] * (coefficientMatrix[1, 0] * coefficientMatrix[2, 1] - coefficientMatrix[1, 1] * coefficientMatrix[2, 0]);
+            tempAcceleration += HydrodynamicForces[0][1] * (coefficientMatrix[0, 1] * coefficientMatrix[2, 0] - coefficientMatrix[0, 0] * coefficientMatrix[2, 1]);
+            tempAcceleration += HydrodynamicTorque[0] * (coefficientMatrix[0, 0] * coefficientMatrix[1, 1] - coefficientMatrix[0, 1] * coefficientMatrix[1, 0]);
             rotationalAcceleration[0] = tempAcceleration / denominator;
             Aux.TestArithmeticException(rotationalAcceleration[0], "particle rotational acceleration");
         }

@@ -81,9 +81,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U = null, SinglePhaseField P = null, LevelSetTracker LsTrk = null, CellMask CutCells_P = null, double fluidViscosity = 0, double fluidDensity = 0, bool firstIteration = false, double dt = 0) {
             for (int d = 0; d < spatialDim; d++) {
-                hydrodynamicForces[0][d] = m_Gravity[d] * particleDensity * particleArea;
+                HydrodynamicForces[0][d] = m_Gravity[d] * particleDensity * particleArea;
             }
-            hydrodynamicTorque[0] = 0;
+            HydrodynamicTorque[0] = 0;
         }
     }
 }

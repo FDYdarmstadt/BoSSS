@@ -301,10 +301,10 @@ namespace FSI_Solver {
                 residual = 1e12;
             else {
                 foreach (Particle p in Particles) {
-                    double diffForcesX = (p.Motion.forcesPrevIteration[0] - p.Motion.hydrodynamicForces[0][0]).Pow2();
-                    double diffForcesY = (p.Motion.forcesPrevIteration[1] - p.Motion.hydrodynamicForces[0][1]).Pow2();
-                    double diffTorque = (p.Motion.torquePrevIteration - p.Motion.hydrodynamicTorque[0]).Pow2();
-                    double absSolution = Math.Sqrt(p.Motion.hydrodynamicForces[0][0].Pow2() + p.Motion.hydrodynamicForces[0][1].Pow2() + p.Motion.hydrodynamicTorque[0].Pow2());
+                    double diffForcesX = (p.Motion.ForcesPrevIteration[0] - p.Motion.HydrodynamicForces[0][0]).Pow2();
+                    double diffForcesY = (p.Motion.ForcesPrevIteration[1] - p.Motion.HydrodynamicForces[0][1]).Pow2();
+                    double diffTorque = (p.Motion.TorquePrevIteration - p.Motion.HydrodynamicTorque[0]).Pow2();
+                    double absSolution = Math.Sqrt(p.Motion.HydrodynamicForces[0][0].Pow2() + p.Motion.HydrodynamicForces[0][1].Pow2() + p.Motion.HydrodynamicTorque[0].Pow2());
                     residual += Math.Sqrt(diffForcesX + diffForcesY + diffTorque) / absSolution;
                 }
             }
@@ -355,16 +355,16 @@ namespace FSI_Solver {
             for (int p = 0; p < Particles.Count(); p++) {
                 Particle CurrentParticle = Particles[p];
                 // only print particles with some action
-                if (CurrentParticle.Motion.includeTranslation || CurrentParticle.Motion.includeRotation) {
+                if (CurrentParticle.Motion.IncludeTranslation || CurrentParticle.Motion.IncludeRotation) {
                     int PrintP = p + 1;
                     OutputBuilder.AppendLine("-------------------------------------------------------");
                     OutputBuilder.AppendLine("Status report particle #" + PrintP + ", Time: " + phystime + ", Iteration #" + IterationCounter);
                     if (CurrentParticle.isCollided)
                         OutputBuilder.AppendLine("The particle is collided");
                     OutputBuilder.AppendLine("-------------------------------------------------------");
-                    OutputBuilder.AppendLine("Drag Force: " + CurrentParticle.Motion.hydrodynamicForces[0][0]);
-                    OutputBuilder.AppendLine("Lift Force: " + CurrentParticle.Motion.hydrodynamicForces[0][1]);
-                    OutputBuilder.AppendLine("Torqe: " + CurrentParticle.Motion.hydrodynamicTorque[0]);
+                    OutputBuilder.AppendLine("Drag Force: " + CurrentParticle.Motion.HydrodynamicForces[0][0]);
+                    OutputBuilder.AppendLine("Lift Force: " + CurrentParticle.Motion.HydrodynamicForces[0][1]);
+                    OutputBuilder.AppendLine("Torqe: " + CurrentParticle.Motion.HydrodynamicTorque[0]);
                     OutputBuilder.AppendLine("Transl VelocityX: " + CurrentParticle.Motion.translationalVelocity[0][0]);
                     OutputBuilder.AppendLine("Transl VelocityY: " + CurrentParticle.Motion.translationalVelocity[0][1]);
                     OutputBuilder.AppendLine("Angular Velocity: " + CurrentParticle.Motion.rotationalVelocity[0]);
@@ -417,7 +417,7 @@ namespace FSI_Solver {
                 ParticleStokesNumber[Particles.IndexOf(CurrentParticle)] = CurrentParticle.ComputeParticleSt(FluidViscosity, FluidDensity);
             }
 
-            Force = Particles[0].Motion.hydrodynamicForces[0];
+            Force = Particles[0].Motion.HydrodynamicForces[0];
             MPIangularVelocity = Particles[0].Motion.rotationalVelocity[0];
 
             StringBuilder OutputBuilder = new StringBuilder();
@@ -433,7 +433,7 @@ namespace FSI_Solver {
             for (int p = 0; p < Particles.Count(); p++) {
                 Particle CurrentParticle = Particles[p];
                 // only print particles with some action
-                if (CurrentParticle.Motion.includeTranslation || CurrentParticle.Motion.includeRotation) {
+                if (CurrentParticle.Motion.IncludeTranslation || CurrentParticle.Motion.IncludeRotation) {
                     int PrintP = p + 1;
                     OutputBuilder.AppendLine("-------------------------------------------------------");
                     OutputBuilder.AppendLine("Final status report for timestep #" + TimestepInt + ", particle #" + PrintP + ", Time: " + phystime);
@@ -443,9 +443,9 @@ namespace FSI_Solver {
                     if (CurrentParticle.isCollided)
                         OutputBuilder.AppendLine("The particle is collided");
                     OutputBuilder.AppendLine("-------------------------------------------------------");
-                    OutputBuilder.AppendLine("Drag Force: " + CurrentParticle.Motion.hydrodynamicForces[0][0]);
-                    OutputBuilder.AppendLine("Lift Force: " + CurrentParticle.Motion.hydrodynamicForces[0][1]);
-                    OutputBuilder.AppendLine("Torqe: " + CurrentParticle.Motion.hydrodynamicTorque[0]);
+                    OutputBuilder.AppendLine("Drag Force: " + CurrentParticle.Motion.HydrodynamicForces[0][0]);
+                    OutputBuilder.AppendLine("Lift Force: " + CurrentParticle.Motion.HydrodynamicForces[0][1]);
+                    OutputBuilder.AppendLine("Torqe: " + CurrentParticle.Motion.HydrodynamicTorque[0]);
                     OutputBuilder.AppendLine("Transl VelocityX: " + CurrentParticle.Motion.translationalVelocity[0][0]);
                     OutputBuilder.AppendLine("Transl VelocityY: " + CurrentParticle.Motion.translationalVelocity[0][1]);
                     OutputBuilder.AppendLine("Angular Velocity: " + CurrentParticle.Motion.rotationalVelocity[0]);
@@ -473,13 +473,10 @@ namespace FSI_Solver {
         /// /// <param name="IsFullyCoupled"></param>
         internal void SaveOldParticleState(List<Particle> Particles, int IterationCounter, double ForceTorqueConvergenceCriterion) {
             foreach (Particle p in Particles) {
-                p.iteration_counter_P = IterationCounter;
                 // Save status for residual
                 // ========================
                 p.forceAndTorque_convergence = ForceTorqueConvergenceCriterion;
-                p.Motion.forcesPrevIteration[0] = p.Motion.hydrodynamicForces[0][0];
-                p.Motion.forcesPrevIteration[1] = p.Motion.hydrodynamicForces[0][1];
-                p.Motion.torquePrevIteration = p.Motion.hydrodynamicTorque[0];
+                p.Motion.SaveHydrodynamicsOfPreviousIteration();
             }
         }
 
@@ -531,8 +528,8 @@ namespace FSI_Solver {
                         CheckSend[p * NoOfVars + Offset + 1 * D + d] = P.Motion.position[1][d];
                         CheckSend[p * NoOfVars + Offset + 2 * D + d] = P.Motion.translationalVelocity[0][d];
                         CheckSend[p * NoOfVars + Offset + 3 * D + d] = P.Motion.translationalVelocity[1][d];
-                        CheckSend[p * NoOfVars + Offset + 4 * D + d] = P.Motion.hydrodynamicForces[0][d];
-                        CheckSend[p * NoOfVars + Offset + 5 * D + d] = P.Motion.hydrodynamicForces[1][d];
+                        CheckSend[p * NoOfVars + Offset + 4 * D + d] = P.Motion.HydrodynamicForces[0][d];
+                        CheckSend[p * NoOfVars + Offset + 5 * D + d] = P.Motion.HydrodynamicForces[1][d];
                         // todo: add more vector values here that might be relevant for the particle state;
                     }
                 }

@@ -735,9 +735,9 @@ namespace FSI_Solver {
             CalculateCollisionCoefficient(collidedParticles, out double collisionCoefficient);
 
             for (int p = 0; p < collidedParticles.Count(); p++) {
-                double tempCollisionVn = collidedParticles[p].Motion.includeTranslation ? collidedParticles[p].Motion.PreCollisionVelocity[0] + Math.Pow(-1, p + 1) * collisionCoefficient / collidedParticles[p].Mass_P : 0;
-                double tempCollisionVt = collidedParticles[p].Motion.includeTranslation ? collidedParticles[p].Motion.PreCollisionVelocity[1] * m_CoefficientOfRestitution : 0;
-                double tempCollisionRot = collidedParticles[p].Motion.includeRotation ? collidedParticles[p].Motion.rotationalVelocity[0] + Math.Pow(-1, p) * collidedParticles[p].eccentricity * collisionCoefficient / collidedParticles[p].MomentOfInertia_P : 0;
+                double tempCollisionVn = collidedParticles[p].Motion.IncludeTranslation ? collidedParticles[p].Motion.PreCollisionVelocity[0] + Math.Pow(-1, p + 1) * collisionCoefficient / collidedParticles[p].Mass_P : 0;
+                double tempCollisionVt = collidedParticles[p].Motion.IncludeTranslation ? collidedParticles[p].Motion.PreCollisionVelocity[1] * m_CoefficientOfRestitution : 0;
+                double tempCollisionRot = collidedParticles[p].Motion.IncludeRotation ? collidedParticles[p].Motion.rotationalVelocity[0] + Math.Pow(-1, p) * collidedParticles[p].eccentricity * collisionCoefficient / collidedParticles[p].MomentOfInertia_P : 0;
                 collidedParticles[p].CollisionTranslationalVelocity.Add(new double[] { tempCollisionVn, tempCollisionVt });
                 collidedParticles[p].CollisionRotationalVelocity.Add(tempCollisionRot);
             }
@@ -753,9 +753,9 @@ namespace FSI_Solver {
 
             CalculateCollisionCoefficient(particle, out double collisionCoefficient);
 
-            double tempCollisionVn = particle.Motion.includeTranslation ? particle.Motion.PreCollisionVelocity[0] - collisionCoefficient / particle.Mass_P : 0;
-            double tempCollisionVt = particle.Motion.includeTranslation ? particle.Motion.PreCollisionVelocity[1] : 0;
-            double tempCollisionRot = particle.Motion.includeRotation ? particle.Motion.rotationalVelocity[0] + particle.eccentricity * collisionCoefficient / particle.MomentOfInertia_P : 0;
+            double tempCollisionVn = particle.Motion.IncludeTranslation ? particle.Motion.PreCollisionVelocity[0] - collisionCoefficient / particle.Mass_P : 0;
+            double tempCollisionVt = particle.Motion.IncludeTranslation ? particle.Motion.PreCollisionVelocity[1] : 0;
+            double tempCollisionRot = particle.Motion.IncludeRotation ? particle.Motion.rotationalVelocity[0] + particle.eccentricity * collisionCoefficient / particle.MomentOfInertia_P : 0;
             particle.CollisionTranslationalVelocity.Add(new double[] { tempCollisionVn, tempCollisionVt });
             particle.CollisionRotationalVelocity.Add(tempCollisionRot);
         }
@@ -769,8 +769,8 @@ namespace FSI_Solver {
             double[] massReciprocal = new double[2];
             double[] momentOfInertiaReciprocal = new double[2];
             for (int p = 0; p < collidedParticles.Count(); p++) {
-                massReciprocal[p] = collidedParticles[p].Motion.includeTranslation ? 1 / collidedParticles[p].Mass_P : 0;
-                momentOfInertiaReciprocal[p] = collidedParticles[p].Motion.includeRotation ? collidedParticles[p].eccentricity.Pow2() / collidedParticles[p].MomentOfInertia_P : 0;
+                massReciprocal[p] = collidedParticles[p].Motion.IncludeTranslation ? 1 / collidedParticles[p].Mass_P : 0;
+                momentOfInertiaReciprocal[p] = collidedParticles[p].Motion.IncludeRotation ? collidedParticles[p].eccentricity.Pow2() / collidedParticles[p].MomentOfInertia_P : 0;
             }
             collisionCoefficient = (1 + m_CoefficientOfRestitution) * ((collidedParticles[0].Motion.PreCollisionVelocity[0] - collidedParticles[1].Motion.PreCollisionVelocity[0]) / (massReciprocal[0] + massReciprocal[1] + momentOfInertiaReciprocal[0] + momentOfInertiaReciprocal[1]));
             collisionCoefficient += (1 + m_CoefficientOfRestitution) * ((-collidedParticles[0].eccentricity * collidedParticles[0].Motion.rotationalVelocity[0] + collidedParticles[1].eccentricity * collidedParticles[1].Motion.rotationalVelocity[0]) / (massReciprocal[0] + massReciprocal[1] + momentOfInertiaReciprocal[0] + momentOfInertiaReciprocal[1]));

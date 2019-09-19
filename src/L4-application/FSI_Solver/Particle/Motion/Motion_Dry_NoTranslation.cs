@@ -21,7 +21,7 @@ using BoSSS.Foundation.XDG;
 namespace BoSSS.Application.FSI_Solver {
     public class Motion_Dry_NoTranslation : Motion_Dry {
         public Motion_Dry_NoTranslation(double[] gravity) : base(gravity) {
-            includeTranslation = false;
+            IncludeTranslation = false;
         }
 
         /// <summary>
@@ -94,9 +94,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U = null, SinglePhaseField P = null, LevelSetTracker LsTrk = null, CellMask CutCells_P = null, double fluidViscosity = 0, double fluidDensity = 0, bool firstIteration = false, double dt = 0) {
             for (int d = 0; d < spatialDim; d++) {
-                hydrodynamicForces[0][d] = 0;
+                HydrodynamicForces[0][d] = 0;
             }
-            hydrodynamicTorque[0] = 0;
+            HydrodynamicTorque[0] = 0;
         }
     }
 }

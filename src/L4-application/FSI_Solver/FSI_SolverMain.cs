@@ -476,7 +476,7 @@ namespace BoSSS.Application.FSI_Solver {
                     UpdateLevelSetParticles(phystime);
                     if (!CalculatedDampingTensors) {
                         foreach (Particle p in m_Particles) {
-                            if (p.Motion.useAddedDamping) {
+                            if (p.Motion.UseAddedDamping) {
                                 p.Motion.CalculateDampingTensor(p, LsTrk, FluidViscosity, FluidDensity, DtMax);
                                 Auxillary.ExchangeDampingTensors(m_Particles);
                             }
@@ -632,14 +632,14 @@ namespace BoSSS.Application.FSI_Solver {
             // ======================================================
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             ushort[] regionsCode = LsTrk.Regions.RegionsCode;
-            int[] particleColor = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
-            int[] particleColorExchange = particleColor.CloneAs();
+            int[] coloredCells = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
+            int[] coloredCellsExchange = coloredCells.CloneAs();
 
             // No particles on current proc
             // -----------------------------
             if (m_Particles.Count == 0)
-                return particleColor;
-            particleColorExchange.MPIExchange(GridData);
+                return coloredCells;
+            coloredCellsExchange.MPIExchange(GridData);
 
             // Step 2
             // Color neighbour cells
@@ -649,13 +649,13 @@ namespace BoSSS.Application.FSI_Solver {
                 for (int j = 0; j < noOfLocalCells; j++) {
                     GridData.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaEdges, out int[] CellNeighbors, out _);
                     for (int i = 0; i < CellNeighbors.Length; i++) {
-                        if (particleColorExchange[CellNeighbors[i]] != 0 && particleColorExchange[j] == 0) {
-                            particleColor[j] = particleColorExchange[CellNeighbors[i]];
+                        if (coloredCellsExchange[CellNeighbors[i]] != 0 && coloredCellsExchange[j] == 0) {
+                            coloredCells[j] = coloredCellsExchange[CellNeighbors[i]];
                         }
                     }
                 }
-                particleColorExchange = particleColor.CloneAs();
-                particleColorExchange.MPIExchange(GridData);
+                coloredCellsExchange = coloredCells.CloneAs();
+                coloredCellsExchange.MPIExchange(GridData);
             }
 
             // Step 4
@@ -664,20 +664,22 @@ namespace BoSSS.Application.FSI_Solver {
             // Find neighbouring cells with
             // different colours
             // -----------------------------
-            int maxColor = particleColor.Max().MPIMax();
+            int maxColor = coloredCells.Max().MPIMax();
             int[,] colorToRecolorWith = new int[maxColor + 1, 2];
             for (int j = 0; j < noOfLocalCells; j++) {
-                GridData.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaEdges, out int[] CellNeighbors, out _);
-                for (int i = 0; i < CellNeighbors.Length; i++) {
-                    if (particleColorExchange[CellNeighbors[i]] != particleColor[j] && particleColor[j] != 0 && particleColorExchange[CellNeighbors[i]] > 0) {
-                        if (particleColorExchange[CellNeighbors[i]] < particleColor[j] || colorToRecolorWith[particleColor[j], 1] > particleColorExchange[CellNeighbors[i]]) {
-                            colorToRecolorWith[particleColor[j], 0] = particleColor[j];
-                            colorToRecolorWith[particleColor[j], 1] = particleColorExchange[CellNeighbors[i]];
-                        }
-                        if (particleColorExchange[CellNeighbors[i]] > particleColor[j]) {
-                            if (colorToRecolorWith[particleColorExchange[CellNeighbors[i]], 0] == 0 || colorToRecolorWith[particleColorExchange[CellNeighbors[i]], 1] > particleColor[j]) {
-                                colorToRecolorWith[particleColorExchange[CellNeighbors[i]], 0] = particleColorExchange[CellNeighbors[i]];
-                                colorToRecolorWith[particleColorExchange[CellNeighbors[i]], 1] = particleColor[j];
+                if (coloredCells[j] != 0) {
+                    GridData.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaEdges, out int[] CellNeighbors, out _);
+                    for (int i = 0; i < CellNeighbors.Length; i++) {
+                        if (coloredCellsExchange[CellNeighbors[i]] != coloredCells[j] && coloredCellsExchange[CellNeighbors[i]] > 0) {
+                            if (coloredCellsExchange[CellNeighbors[i]] < coloredCells[j] || colorToRecolorWith[coloredCells[j], 1] > coloredCellsExchange[CellNeighbors[i]]) {
+                                colorToRecolorWith[coloredCells[j], 0] = coloredCells[j];
+                                colorToRecolorWith[coloredCells[j], 1] = coloredCellsExchange[CellNeighbors[i]];
+                            }
+                            if (coloredCellsExchange[CellNeighbors[i]] > coloredCells[j]) {
+                                if (colorToRecolorWith[coloredCellsExchange[CellNeighbors[i]], 0] == 0 || colorToRecolorWith[coloredCellsExchange[CellNeighbors[i]], 1] > coloredCells[j]) {
+                                    colorToRecolorWith[coloredCellsExchange[CellNeighbors[i]], 0] = coloredCellsExchange[CellNeighbors[i]];
+                                    colorToRecolorWith[coloredCellsExchange[CellNeighbors[i]], 1] = coloredCells[j];
+                                }
                             }
                         }
                     }
@@ -703,18 +705,20 @@ namespace BoSSS.Application.FSI_Solver {
             for (int i = maxColor; i > 0; i--) {
                 if (colorToRecolorWith[i, 0] != 0) {
                     for (int j = 0; j < noOfLocalCells; j++) {
-                        if (particleColor[j] == colorToRecolorWith[i, 0]) {
-                            particleColor[j] = colorToRecolorWith[i, 1];
+                        if (coloredCells[j] == colorToRecolorWith[i, 0]) {
+                            coloredCells[j] = colorToRecolorWith[i, 1];
                         }
                     }
                 }
             }
 
+            // Set DG-Fields
+            // -----------------------------
             for (int j = 0; j < noOfLocalCells; j++) {
-                ParticleColor.SetMeanValue(j, particleColor[j]);
+                ParticleColor.SetMeanValue(j, coloredCells[j]);
                 LevelSetDistance.SetMeanValue(j, LevelSetTracker.DecodeLevelSetDist(regionsCode[j], 0));
             }
-            return particleColor;
+            return coloredCells;
         }
 
         /// <summary>
@@ -731,7 +735,6 @@ namespace BoSSS.Application.FSI_Solver {
                 double h_min = GridData.iGeomCells.h_min.Min() / 2;
                 for (int j = 0; j < J; j++) {
                     double[] center = GridData.iLogicalCells.GetCenter(j);
-                    // Check for every cell whether their center is part of a particle or not (with tolerance sqrt(h_max^2+h_min^2))
                     if (currentParticle.Contains(center, h_min, h_min)) {
                         ParticleColor.SetMeanValue(j, p + 1);
                         coloredCells.Add(j);
@@ -990,7 +993,7 @@ namespace BoSSS.Application.FSI_Solver {
             for (int p = 0; p < Particles.Count; p++) {
                 Particle currentParticle = Particles[p];
                 Console.WriteLine("Predicting forces for the next timestep...");
-                if (currentParticle.Motion.useAddedDamping) {
+                if (currentParticle.Motion.UseAddedDamping) {
                     currentParticle.Motion.UpdateDampingTensors();
                 }
                 currentParticle.Motion.SaveHydrodynamicsOfPreviousTimestep();
@@ -1070,7 +1073,7 @@ namespace BoSSS.Application.FSI_Solver {
         private void LogPhysicalData(double phystime) {
             if ((MPIRank == 0) && (logPhysicalDataParticles != null)) {
                 for (int p = 0; p < m_Particles.Count(); p++) {
-                    logPhysicalDataParticles.WriteLine(string.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}", p, phystime, m_Particles[p].Motion.position[0][0], m_Particles[p].Motion.position[0][1], m_Particles[p].Motion.angle[0], m_Particles[p].Motion.translationalVelocity[0][0], m_Particles[p].Motion.translationalVelocity[0][1], m_Particles[p].Motion.rotationalVelocity[0], m_Particles[p].Motion.hydrodynamicForces[0][0], m_Particles[p].Motion.hydrodynamicForces[0][1], m_Particles[p].Motion.hydrodynamicTorque[0]));
+                    logPhysicalDataParticles.WriteLine(string.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}", p, phystime, m_Particles[p].Motion.position[0][0], m_Particles[p].Motion.position[0][1], m_Particles[p].Motion.angle[0], m_Particles[p].Motion.translationalVelocity[0][0], m_Particles[p].Motion.translationalVelocity[0][1], m_Particles[p].Motion.rotationalVelocity[0], m_Particles[p].Motion.HydrodynamicForces[0][0], m_Particles[p].Motion.HydrodynamicForces[0][1], m_Particles[p].Motion.HydrodynamicTorque[0]));
                     logPhysicalDataParticles.Flush();
                 }
             }
