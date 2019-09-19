@@ -31,14 +31,13 @@ namespace BoSSS.Application.FSI_Solver {
             useAddedDamping = true;
         }
 
-        readonly ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation();
         readonly ParticleAddedDamping AddedDamping = new ParticleAddedDamping();
 
 
         /// <summary>
         /// Saving the initial angle of the particle for <see cref="UpdateDampingTensors()"/>
         /// </summary>
-        private double m_StartingAngle;
+        private readonly double m_StartingAngle;
 
         /// <summary>
         /// Calculate tensors to implement the added damping model (Banks et.al. 2017)
@@ -134,7 +133,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="muA"></param>
         protected override double[] CalculateHydrodynamicForces(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double muA, double fluidDensity, double dt) {
             int RequiredOrder = U[0].Basis.Degree * 3 + 2;
-            Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
             SinglePhaseField[] UA = U.ToArray();
             ConventionalDGField pA = P;
             double[] tempForces = ForcesIntegration(UA, pA, LsTrk, CutCells_P, RequiredOrder, muA);

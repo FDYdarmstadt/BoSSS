@@ -54,9 +54,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        ParticleUnderrelaxationParam m_UnderrelaxationParam = null;
-
-
+        readonly ParticleUnderrelaxationParam m_UnderrelaxationParam = null;
 
         /// <summary>
         /// The translational velocity of the particle in the current time step.
@@ -598,33 +596,30 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         protected virtual void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque, bool firstIteration) {
-            double forceAndTorqueConvergence = 0;
             if (m_UnderrelaxationParam != null && !firstIteration) {
-                forceAndTorqueConvergence = m_UnderrelaxationParam.hydroDynConvergenceLimit;
+                double forceAndTorqueConvergence = m_UnderrelaxationParam.hydroDynConvergenceLimit;
                 double underrelaxationFactor = m_UnderrelaxationParam.underrelaxationFactor;
                 bool useAddaptiveUnderrelaxation = m_UnderrelaxationParam.useAddaptiveUnderrelaxation;
                 Underrelaxation.CalculateAverageForces(tempForces, tempTorque, m_MaxParticleLengthScale, out double averagedForces);
                 Underrelaxation.Forces(ref tempForces, forcesPrevIteration, forceAndTorqueConvergence, underrelaxationFactor, useAddaptiveUnderrelaxation, averagedForces);
                 Underrelaxation.Torque(ref tempTorque, torquePrevIteration, forceAndTorqueConvergence, underrelaxationFactor, useAddaptiveUnderrelaxation, averagedForces);
             }
-            ForceClearSmallValues(tempForces, forceAndTorqueConvergence);
-            TorqueClearSmallValues(tempTorque, forceAndTorqueConvergence);
+            ForceClearSmallValues(tempForces);
+            TorqueClearSmallValues(tempTorque);
             Aux.TestArithmeticException(hydrodynamicForces[0], "hydrodynamic forces");
             Aux.TestArithmeticException(hydrodynamicTorque[0], "hydrodynamic torque");
         }
 
-        private void ForceClearSmallValues(double[] tempForces, double forceAndTorqueConvergence) {
+        private void ForceClearSmallValues(double[] tempForces) {
             for (int d = 0; d < spatialDim; d++) {
                 hydrodynamicForces[0][d] = 0;
-                //if (Math.Abs(tempForces[d]) > forceAndTorqueConvergence * 1e-2)
-                    hydrodynamicForces[0][d] = tempForces[d];
+                hydrodynamicForces[0][d] = tempForces[d];
             }
         }
 
-        private void TorqueClearSmallValues(double tempTorque, double forceAndTorqueConvergence) {
+        private void TorqueClearSmallValues(double tempTorque) {
             hydrodynamicTorque[0] = 0;
-            //if (Math.Abs(tempTorque) > forceAndTorqueConvergence * 1e-2)
-                hydrodynamicTorque[0] = tempTorque;
+            hydrodynamicTorque[0] = tempTorque;
         }
 
         /// <summary>
@@ -654,10 +649,6 @@ namespace BoSSS.Application.FSI_Solver {
                 sum = naiveSum;
             }
             return sum + c;
-        }
-
-        private bool RunOrTumbleChange(int probabilityPromille) {
-            return new Random().Next(1000) < probabilityPromille;
         }
     }
 }

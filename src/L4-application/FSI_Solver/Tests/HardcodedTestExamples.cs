@@ -166,7 +166,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
 
-        public static FSI_Control Test_ParticleInShearFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0) {
+        public static FSI_Control Test_ParticleInShearFlow(int k = 2) {
             FSI_Control C = new FSI_Control();
 
             const double BaseSize = 1.0;
@@ -273,16 +273,17 @@ namespace BoSSS.Application.FSI_Solver {
         /// Testing of particle/wall interactions using a single particle
         /// </summary>
         public static FSI_Control Test_SingleDryParticleAgainstWall(string _DbPath = null, bool MeshRefine = true) {
-            FSI_Control C = new FSI_Control();
+            FSI_Control C = new FSI_Control {
 
-            // basic database options
-            // ======================
+                // basic database options
+                // ======================
 
-            C.DbPath = _DbPath;
-            C.savetodb = _DbPath != null;
-            C.saveperiod = 1;
-            C.ProjectName = "ParticleCollisionTest";
-            C.ProjectDescription = "Gravity";
+                DbPath = _DbPath,
+                savetodb = _DbPath != null,
+                saveperiod = 1,
+                ProjectName = "ParticleCollisionTest",
+                ProjectDescription = "Gravity"
+            };
             C.SessionName = C.ProjectName;
             C.Tags.Add("with immersed boundary method");
             C.AdaptiveMeshRefinement = true;
@@ -385,16 +386,17 @@ namespace BoSSS.Application.FSI_Solver {
         /// Testing of particle/wall interactions using a single particle
         /// </summary>
         public static FSI_Control Test_DryParticleCollision(string _DbPath = null, bool MeshRefine = false) {
-            FSI_Control C = new FSI_Control();
+            FSI_Control C = new FSI_Control {
 
-            // basic database options
-            // ======================
+                // basic database options
+                // ======================
 
-            C.DbPath = _DbPath;
-            C.savetodb = _DbPath != null;
-            C.saveperiod = 1;
-            C.ProjectName = "ParticleCollisionTest";
-            C.ProjectDescription = "Gravity";
+                DbPath = _DbPath,
+                savetodb = _DbPath != null,
+                saveperiod = 1,
+                ProjectName = "ParticleCollisionTest",
+                ProjectDescription = "Gravity"
+            };
             C.SessionName = C.ProjectName;
             C.Tags.Add("with immersed boundary method");
             C.AdaptiveMeshRefinement = true;
@@ -506,16 +508,17 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         public static FSI_Control Test_DryParticleBounce(string _DbPath = null)
         {
-            FSI_Control C = new FSI_Control();
+            FSI_Control C = new FSI_Control {
 
-            // basic database options
-            // ======================
+                // basic database options
+                // ======================
 
-            C.DbPath = _DbPath;
-            C.savetodb = _DbPath != null;
-            C.saveperiod = 1;
-            C.ProjectName = "ParticleCollisionTest";
-            C.ProjectDescription = "Gravity";
+                DbPath = _DbPath,
+                savetodb = _DbPath != null,
+                saveperiod = 1,
+                ProjectName = "ParticleCollisionTest",
+                ProjectDescription = "Gravity"
+            };
             C.SessionName = C.ProjectName;
             C.Tags.Add("with immersed boundary method");
 
@@ -598,7 +601,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control Test_StickyTrap(string _DbPath = null, int k = 2, double VelXBase = 0.0, double angle = 0.0)
+        public static FSI_Control Test_StickyTrap(int k = 2)
         {
             FSI_Control C = new FSI_Control();
 
@@ -747,15 +750,16 @@ namespace BoSSS.Application.FSI_Solver {
 
         public static FSI_Control Test_ActiveForce(int k = 2)
         {
-            FSI_Control C = new FSI_Control();
+            FSI_Control C = new FSI_Control {
 
-            // basic database options
-            // =============================
-            //C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\straightChannel";
-            C.savetodb = false;
-            C.saveperiod = 1;
-            C.ProjectName = "Test_singleActiveParticle";
-            C.ProjectDescription = "Test_singleActiveParticle";
+                // basic database options
+                // =============================
+                //C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\straightChannel";
+                savetodb = false,
+                saveperiod = 1,
+                ProjectName = "Test_singleActiveParticle",
+                ProjectDescription = "Test_singleActiveParticle"
+            };
             C.SessionName = C.ProjectName;
             C.Tags.Add("activeParticle");
             
@@ -906,15 +910,16 @@ namespace BoSSS.Application.FSI_Solver {
 
         public static FSI_Control Test_HydrodynamicForces(int k = 2)
         {
-            FSI_Control C = new FSI_Control();
+            FSI_Control C = new FSI_Control {
 
-            // basic database options
-            // =============================
-            //C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\straightChannel";
-            C.savetodb = false;
-            C.saveperiod = 1;
-            C.ProjectName = "Test_singleActiveParticle";
-            C.ProjectDescription = "Test_singleActiveParticle";
+                // basic database options
+                // =============================
+                //C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\straightChannel";
+                savetodb = false,
+                saveperiod = 1,
+                ProjectName = "Test_singleActiveParticle",
+                ProjectDescription = "Test_singleActiveParticle"
+            };
             C.SessionName = C.ProjectName;
             C.Tags.Add("activeParticle");
 
@@ -1037,7 +1042,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.hydrodynamicsConvergenceCriterion = 1e-2;
+            C.hydrodynamicsConvergenceCriterion = 1e-4;
             C.LSunderrelax = 1.0;
 
             // Coupling Properties

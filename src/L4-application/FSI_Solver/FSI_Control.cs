@@ -97,7 +97,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        List<string> m_BoundaryValues = new List<string>();
+        readonly List<string> m_BoundaryValues = new List<string>();
 
         public void SetGrid(double lengthX, double lengthY, double cellsPerUnitLength, bool periodicX = false, bool periodicY = false) {
             GridFunc = delegate {

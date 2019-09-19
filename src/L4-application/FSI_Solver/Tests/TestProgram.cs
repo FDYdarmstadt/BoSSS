@@ -33,11 +33,10 @@ namespace BoSSS.Application.FSI_Solver {
 
         [TestFixtureSetUp]
         public static void Init() {
-            bool dummy;
             ilPSP.Environment.Bootstrap(
                 new string[0],
                 BoSSS.Solution.Application<FSI_Control>.GetBoSSSInstallDir(),
-                out dummy);
+                out _);
         }
 
         [TestFixtureTearDown]

@@ -24,7 +24,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace FSI_Solver {
-    class FSI_LevelSetUpdate {
+    internal class FSI_LevelSetUpdate {
 
         internal FSI_LevelSetUpdate(LevelSetTracker levelSetTracker) {
             m_LevelSetTracker = levelSetTracker;

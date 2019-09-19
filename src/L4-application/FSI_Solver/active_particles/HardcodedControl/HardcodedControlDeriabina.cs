@@ -23,7 +23,7 @@ using BoSSS.Solution.XdgTimestepping;
 namespace BoSSS.Application.FSI_Solver {
     public class HardcodedControlDeriabina : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control DeriabinaPentagoneFalle(string _DbPath = null, int k = 2, double VelXBase = 0.0, double angle = 0.0) {
+        public static FSI_Control DeriabinaPentagoneFalle(int k = 2) {
             FSI_Control C = new FSI_Control();
 
 
