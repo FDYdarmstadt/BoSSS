@@ -42,212 +42,108 @@ namespace BoSSS.Application.FSI_Solver {
             // noop
         }
 
-        protected static int spatialDim = 2;
-
-        public Particle(ParticleMotionInit motionInit, double[] startPos = null, double startAngl = 0.0, double[] startTransVelocity = null, double startRotVelocity = 0) {
+        public Particle(ParticleMotionInit motionInit, double[] startPos, double startAngl = 0.0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) {
             spatialDim = startPos.Length;
-            if (startPos == null) {
-                startPos = new double[spatialDim];
-            }
-
+            ActiveStress = activeStress;
             m_MotionInit = motionInit;
             m_MotionInit.CheckInput();
             Motion = m_MotionInit.GetParticleMotion();
             Motion.InitializeParticlePositionAndAngle(startPos, startAngl);
             Motion.InitializeParticleVelocity(startTransVelocity, startRotVelocity);
+            particleDensity = Motion.Density;
         }
+
+        private readonly FSI_Auxillary Aux = new FSI_Auxillary();
 
         /// <summary>
         /// Initialize particle motion.
         /// </summary>
         [DataMember]
-        public ParticleMotionInit m_MotionInit;
+        private readonly ParticleMotionInit m_MotionInit;
 
         /// <summary>
         /// Instantiate object for particle motion.
         /// </summary>
         [DataMember]
-        public Motion_Wet Motion = new Motion_Wet(new double[] { 0, 9.81 });
+        public Motion_Wet Motion { get; private set; } = new Motion_Wet(gravity: new double[] { 0, 9.81 }, density: 1);
 
-        /// <summary>
-        /// Check whether any particles is collided with another particle
-        /// </summary>
-        public bool isCollided;
-
-        /// <summary>
-        /// Number of iterations
-        /// </summary>
-        [DataMember]
-        public int iteration_counter_P = 0;
-
-        /// <summary>
-        /// Number of iterations
-        /// </summary>
-        [DataMember]
-        public double ForceTorqueResidual;
-
-        virtual internal int NoOfSubParticles() { return 1; }
+        protected int spatialDim;
 
         /// <summary>
         /// Density of the particle.
         /// </summary>
         [DataMember]
-        public double particleDensity = 1;
-
-        /// <summary>
-        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
-        /// </summary>
-        [DataMember]
-        public double eccentricity;
-
-        /// <summary>
-        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
-        /// </summary>
-        [DataMember]
-        public List<double[]> CollisionTranslationalVelocity = new List<double[]>();
-
-        /// <summary>
-        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
-        /// </summary>
-        [DataMember]
-        public List<double[]> collisionNormalVector = new List<double[]>();
-
-        /// <summary>
-        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
-        /// </summary>
-        [DataMember]
-        public List<double[]> collisionTangentialVector = new List<double[]>();
-
-        /// <summary>
-        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
-        /// </summary>
-        [DataMember]
-        public double[] closestPointToOtherObject = new double[spatialDim];
-
-        /// <summary>
-        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
-        /// </summary>
-        [DataMember]
-        public double[] closestPointOnOtherObjectToThis = new double[spatialDim];
-
-        /// <summary>
-        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
-        /// </summary>
-        [DataMember]
-        public double[] TotalCollisionPositionCorrection = new double[spatialDim];
-
-        /// <summary>
-        /// The angular velocity of the particle in the current time step. This list is used by the momentum conservation model.
-        /// </summary>
-        [DataMember]
-        public List<double> CollisionRotationalVelocity = new List<double>();
-
-        /// <summary>
-        /// Level set function describing the particle.
-        /// </summary>       
-        public abstract double levelSetFunction(double[] X);
-
-        /// <summary>
-        /// Convergence criterion for the calculation of the Forces and Torque
-        /// </summary>
-        [DataMember]
-        public double forceAndTorque_convergence = 1e-8;
-
-        /// <summary>
-        /// Active stress on the current particle.
-        /// </summary>
-        public double activeStress = 0;
-
-        /// <summary>
-        /// Area of the current particle.
-        /// </summary>
-        virtual public double Area_P() {
-            throw new NotImplementedException("");
-        }
-
-        /// <summary>
-        /// Necessary for active particles. Returns 0 for the non active boundary region and a number between 0 and 1 for the active region.
-        /// </summary>
-        internal double SeperateBoundaryRegions(double[] X) {
-            double seperateBoundaryRegions;
-            // The posterior side of the particle 
-            if (Math.Cos(Motion.angle[0]) * (X[0] - Motion.position[0][0]) + Math.Sin(Motion.angle[0]) * (X[1] - Motion.position[0][1]) < 1e-8) {
-                seperateBoundaryRegions = (Math.Cos(Motion.angle[0]) * (X[0] - Motion.position[0][0]) + Math.Sin(Motion.angle[0]) * (X[1] - Motion.position[0][1])) / Math.Sqrt((X[0] - Motion.position[0][0]).Pow2() + (X[1] - Motion.position[0][1]).Pow2());
-            }
-            // The anterior side of the particle 
-            else {
-                seperateBoundaryRegions = 0;
-            }
-            return seperateBoundaryRegions;
-        }
+        private readonly double particleDensity;
 
         /// <summary>
         /// Mass of the current particle.
         /// </summary>
-        public double Mass_P {
+        protected double Mass_P {
             get {
                 Aux.TestArithmeticException(Area_P(), "particle area");
-                Aux.TestArithmeticException(particleDensity, "particle density");
                 return Area_P() * particleDensity;
             }
         }
 
         /// <summary>
+        /// Check whether any particles is collided with another particle
+        /// </summary>
+        public bool IsCollided { get; set; }
+
+        /// <summary>
+        /// No of convex (!) sub-particles (for GJK algorithm, distance calc)
+        /// </summary>
+        public virtual int NoOfSubParticles => 1;
+        
+        /// <summary>
+        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
+        public double Eccentricity { get; private set; }
+
+        /// <summary>
+        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
+        public double[] ClosestPointToOtherObject { get; set; }
+
+        /// <summary>
+        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
+        public double[] ClosestPointOnOtherObjectToThis { get; set; }
+
+        /// <summary>
+        /// Active stress on the current particle.
+        /// </summary>
+        public double ActiveStress { get; private set; } = 0;
+
+        /// <summary>
+        /// Level set function describing the particle.
+        /// </summary>       
+        public abstract double LevelSetFunction(double[] X);
+
+        /// <summary>
+        /// Area of the current particle.
+        /// </summary>
+        public virtual double Area_P() => throw new NotImplementedException();
+
+        /// <summary>
+        /// Necessary for active particles. Returns 0 for the non active boundary region and a number between 0 and 1 for the active region.
+        /// </summary>
+        public double SeperateBoundaryRegions(double[] X) => Math.Cos(Motion.angle[0]) * (X[0] - Motion.position[0][0]) + Math.Sin(Motion.angle[0]) * (X[1] - Motion.position[0][1]) < 1e-8
+                ? (Math.Cos(Motion.angle[0]) * (X[0] - Motion.position[0][0]) + Math.Sin(Motion.angle[0]) * (X[1] - Motion.position[0][1])) / Math.Sqrt((X[0] - Motion.position[0][0]).Pow2() + (X[1] - Motion.position[0][1]).Pow2())
+                : 0;
+
+        /// <summary>
         /// Circumference of the current particle.
         /// </summary>
-        abstract protected double Circumference_P { get; }
+        protected abstract double Circumference_P { get; }
 
         /// <summary>
         /// Moment of inertia of the current particle.
         /// </summary>
-        abstract public double MomentOfInertia_P { get; }
-
-        [NonSerialized]
-        readonly internal FSI_Auxillary Aux = new FSI_Auxillary();
-
-        /// <summary>
-        /// clone, not implemented
-        /// </summary>
-        virtual public object Clone() {
-            throw new NotImplementedException("Currently cloning of a particle is not available");
-        }
-
-        public double[] CalculateParticleMomentum() {
-            double[] temp = new double[spatialDim + 1];
-            for (int d = 0; d < spatialDim; d++) {
-                temp[d] = Mass_P * Motion.translationalVelocity[0][d];
-            }
-            temp[spatialDim] = MomentOfInertia_P * Motion.rotationalVelocity[0];
-            return temp;
-        }
-
-        public double[] CalculateParticleKineticEnergy() {
-            double[] temp = new double[spatialDim + 1];
-            for (int d = 0; d < spatialDim; d++) {
-                temp[d] = 0.5 * Mass_P * Motion.translationalVelocity[0][d].Pow2();
-            }
-            temp[spatialDim] = 0.5 * MomentOfInertia_P * Motion.rotationalVelocity[0].Pow2();
-            return temp;
-        }
-
-        /// <summary>
-        /// Calculating the particle reynolds number
-        /// </summary>
-        public double ComputeParticleRe(double ViscosityFluid) {
-            return Motion.translationalVelocity[0].L2Norm() * GetLengthScales().Max() / ViscosityFluid;
-        }
-
-        public double ComputeParticleSt(double ViscosityFluid, double DensityFluid) {
-            return ComputeParticleRe(ViscosityFluid) * particleDensity / (9 * DensityFluid);
-        }
-
-        public double ComputeParticleRe(double ViscosityFluid, double[] relativeVelocity) {
-            return relativeVelocity.L2Norm() * GetLengthScales().Max() / ViscosityFluid;
-        }
-
-        public double ComputeParticleSt(double ViscosityFluid, double DensityFluid, double[] relativeVelocity) {
-            return ComputeParticleRe(ViscosityFluid, relativeVelocity) * particleDensity / (9 * DensityFluid);
-        }
+        public abstract double MomentOfInertia_P { get; }
 
         /// <summary>
         /// get cut cells describing the boundary of this particle
@@ -272,27 +168,29 @@ namespace BoSSS.Application.FSI_Solver {
         /// Gives a bool whether the particle contains a certain point or not
         /// </summary>
         /// <param name="point"></param>
-        /// <returns></returns>
-        public abstract bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false);
+        /// <param name="h_min"></param>
+        /// <param name="h_max"></param>
+        /// <param name="WithoutTolerance"></param>
+        public virtual bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false) => throw new NotImplementedException();
 
         /// <summary>
-        /// Gives a bool whether the particle contains a certain point or not
+        /// Return the lengthscales of the particle (length and thickness)
         /// </summary>
-        /// <param name="point"></param>
-        /// <returns></returns>
-        public abstract bool ParticleInternalCell(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false);
+        public virtual double[] GetLengthScales() => throw new NotImplementedException();
 
-        virtual public double[] GetLengthScales() {
-            throw new NotImplementedException();
-        }
+        /// <summary>
+        /// Returns surface points (for distance calc)
+        /// </summary>
+        /// <param name="hMin"></param>
+        public virtual MultidimensionalArray GetSurfacePoints(double hMin) => throw new NotImplementedException();
 
-        virtual public MultidimensionalArray GetSurfacePoints(double hMin) {
-            throw new NotImplementedException();
-        }
-
-        virtual public void GetSupportPoint(int SpatialDim, double[] Vector, out double[] SupportPoint) {
-            throw new NotImplementedException();
-        }
+        /// <summary>
+        /// Calculates the support point with an analytic formula (if applicable)
+        /// </summary>
+        /// <param name="SpatialDim"></param>
+        /// <param name="Vector"></param>
+        /// <param name="SupportPoint"></param>
+        public virtual void GetSupportPoint(int SpatialDim, double[] Vector, out double[] SupportPoint) => throw new NotImplementedException();
 
         /// <summary>
         /// Calculates the radial vector (SurfacePoint-ParticlePosition)
@@ -311,18 +209,32 @@ namespace BoSSS.Application.FSI_Solver {
             Aux.TestArithmeticException(RadialLength, "particle radial length");
         }
 
+        /// <summary>
+        /// Calculates the vector normal to the radial vector.
+        /// </summary>
+        /// <param name="SurfacePoint">
+        /// </param>
+        /// <param name="RadialNormalVector">
+        /// </param>
         internal void CalculateRadialNormalVector(double[] SurfacePoint, out double[] RadialNormalVector) {
             RadialNormalVector = new double[] { SurfacePoint[1] - Motion.position[0][1], -SurfacePoint[0] + Motion.position[0][0] };
             RadialNormalVector.ScaleV(1 / RadialNormalVector.L2Norm());
             Aux.TestArithmeticException(RadialNormalVector, "particle vector normal to radial vector");
         }
 
+        /// <summary>
+        /// Calculates the eccentricity of a collision
+        /// </summary>
         internal void CalculateEccentricity() {
-            CalculateRadialVector(closestPointToOtherObject, out double[] RadialVector, out _);
-            double[] tangentialVector = collisionTangentialVector.Last();
-            eccentricity = RadialVector[0] * tangentialVector[0] + RadialVector[1] * tangentialVector[1];
-            Aux.TestArithmeticException(eccentricity, "particle eccentricity");
+            CalculateRadialVector(ClosestPointToOtherObject, out double[] RadialVector, out _);
+            Eccentricity = RadialVector[0] * Motion.collisionTangentialVector.Last()[0] + RadialVector[1] * Motion.collisionTangentialVector.Last()[1];
+            Aux.TestArithmeticException(Eccentricity, "particle eccentricity");
         }
+
+        /// <summary>
+        /// clone, not implemented
+        /// </summary>
+        public virtual object Clone() => throw new NotImplementedException("Currently cloning of a particle is not available");
     }
 }
 

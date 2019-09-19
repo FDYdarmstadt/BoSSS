@@ -38,9 +38,11 @@ namespace BoSSS.Application.FSI_Solver {
         readonly ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation();
 
         public Motion_Wet(double[] gravity,
+            double density,
             ParticleUnderrelaxationParam underrelaxationParam = null) {
             m_Gravity = gravity;
             m_UnderrelaxationParam = underrelaxationParam;
+            Density = density;
 
             for (int i = 0; i < historyLength; i++) {
                 position.Add(new double[spatialDim]);
@@ -89,7 +91,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Density of the particle.
         /// </summary>
-        protected double particleDensity = 1;
+        public double Density { get; protected set; } = 1;
 
         /// <summary>
         /// The translational velocity of the particle in the current time step.
@@ -162,6 +164,30 @@ namespace BoSSS.Application.FSI_Solver {
         public double[] PreCollisionVelocity { get; private set; }
 
         /// <summary>
+        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
+        public List<double[]> CollisionTranslationalVelocity = new List<double[]>();
+
+        /// <summary>
+        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
+        public List<double[]> collisionNormalVector = new List<double[]>();
+
+        /// <summary>
+        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
+        public List<double[]> collisionTangentialVector = new List<double[]>();
+
+        /// <summary>
+        /// The angular velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
+        public List<double> CollisionRotationalVelocity = new List<double>();
+
+        /// <summary>
         /// The maximum lenghtscale of the particle.
         /// </summary>
         protected double m_MaxParticleLengthScale;
@@ -225,13 +251,14 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Init of the particle mass.
+        /// Mass of the current particle.
         /// </summary>
-        /// <param name="mass"></param>
-        public void GetParticleDensity(double density) {
-            particleDensity = density;
-            Aux.TestArithmeticException(particleArea, "particle area");
-            Aux.TestArithmeticException(particleDensity, "particle density");
+        public double Mass_P {
+            get {
+                Aux.TestArithmeticException(particleArea, "particle area");
+                Aux.TestArithmeticException(Density, "particle density");
+                return particleArea * Density;
+            }
         }
 
         /// <summary>
@@ -248,8 +275,8 @@ namespace BoSSS.Application.FSI_Solver {
         public double ParticleMass {
             get {
                 Aux.TestArithmeticException(particleArea, "particle area");
-                Aux.TestArithmeticException(particleDensity, "particle density");
-                return particleArea * particleDensity;
+                Aux.TestArithmeticException(Density, "particle density");
+                return particleArea * Density;
             }
         }
 
@@ -325,8 +352,8 @@ namespace BoSSS.Application.FSI_Solver {
 
         public virtual void PredictForceAndTorque(double activeStress, int TimestepInt) {
             if (TimestepInt == 1) {
-                HydrodynamicForces[0][0] = m_MaxParticleLengthScale * Math.Cos(angle[0]) * activeStress / 2 + m_Gravity[0] * particleDensity * particleArea / 10;
-                HydrodynamicForces[0][1] = m_MaxParticleLengthScale * Math.Sin(angle[0]) * activeStress / 2 + m_Gravity[1] * particleDensity * particleArea / 10;
+                HydrodynamicForces[0][0] = m_MaxParticleLengthScale * Math.Cos(angle[0]) * activeStress / 2 + m_Gravity[0] * Density * particleArea / 10;
+                HydrodynamicForces[0][1] = m_MaxParticleLengthScale * Math.Sin(angle[0]) * activeStress / 2 + m_Gravity[1] * Density * particleArea / 10;
                 HydrodynamicTorque[0] = 0;
             }
             else {
@@ -473,7 +500,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="dt"></param>
         protected virtual void CalculateTranslationalAcceleration(double dt) {
             for (int d = 0; d < spatialDim; d++) {
-                translationalAcceleration[0][d] = HydrodynamicForces[0][d] / (particleDensity * particleArea);
+                translationalAcceleration[0][d] = HydrodynamicForces[0][d] / (Density * particleArea);
             }
             Aux.TestArithmeticException(translationalAcceleration[0], "particle translational acceleration");
         }
@@ -501,7 +528,7 @@ namespace BoSSS.Application.FSI_Solver {
             double[] tempForces = ForcesIntegration(UA, pA, LsTrk, CutCells_P, RequiredOrder, muA);
             Force_MPISum(ref tempForces);
             for (int d = 0; d < spatialDim; d++) {
-                tempForces[d] += (particleDensity - fluidDensity) * particleArea * m_Gravity[d];
+                tempForces[d] += (Density - fluidDensity) * particleArea * m_Gravity[d];
             }
             return tempForces;
         }
@@ -650,5 +677,38 @@ namespace BoSSS.Application.FSI_Solver {
             }
             return sum + c;
         }
+
+        /// <summary>
+        /// Calculating the particle Reynolds number
+        /// </summary>
+        public double ComputeParticleRe(double ViscosityFluid) {
+            return translationalVelocity[0].L2Norm() * m_MaxParticleLengthScale / ViscosityFluid;
+        }
+
+        /// <summary>
+        /// Calculating the particle Stokes number
+        /// </summary>
+        public double ComputeParticleSt(double ViscosityFluid, double DensityFluid) {
+            return ComputeParticleRe(ViscosityFluid) * Density / (9 * DensityFluid);
+        }
+
+        public double[] CalculateParticleMomentum() {
+            double[] temp = new double[spatialDim + 1];
+            for (int d = 0; d < spatialDim; d++) {
+                temp[d] = Mass_P * translationalVelocity[0][d];
+            }
+            temp[spatialDim] = momentOfInertia * rotationalVelocity[0];
+            return temp;
+        }
+
+        public double[] CalculateParticleKineticEnergy() {
+            double[] temp = new double[spatialDim + 1];
+            for (int d = 0; d < spatialDim; d++) {
+                temp[d] = 0.5 * Mass_P * translationalVelocity[0][d].Pow2();
+            }
+            temp[spatialDim] = 0.5 * momentOfInertia * rotationalVelocity[0].Pow2();
+            return temp;
+        }
+
     }
 }

@@ -47,7 +47,7 @@ namespace BoSSS.Application.FSI_Solver
 
         }
 
-        public Particle_Sphere(ParticleMotionInit motionInit, double radius, double[] startPos = null, double startAngl = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, startTransVelocity, startRotVelocity) {
+        public Particle_Sphere(ParticleMotionInit motionInit, double radius, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
             radius_P = radius;
             Motion.GetParticleLengthscale(radius);
             Motion.GetParticleArea(Area_P());
@@ -79,7 +79,7 @@ namespace BoSSS.Application.FSI_Solver
             }
         }
 
-        public override double levelSetFunction(double[] X) {
+        public override double LevelSetFunction(double[] X) {
             double x0 = Motion.position[0][0];
             double y0 = Motion.position[0][1];
             return -(X[0] - x0).Pow2() + -(X[1] - y0).Pow2() + radius_P.Pow2();
@@ -117,7 +117,7 @@ namespace BoSSS.Application.FSI_Solver
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
 
             int NoOfSurfacePoints = Convert.ToInt32(10 * Circumference_P / hMin) + 1;
-            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSubParticles(), NoOfSurfacePoints, spatialDim);
+            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSubParticles, NoOfSurfacePoints, spatialDim);
             double[] InfinitisemalAngle = GenericBlas.Linspace(0, 2 * Math.PI, NoOfSurfacePoints + 1);
             if (Math.Abs(10 * Circumference_P / hMin + 1) >= int.MaxValue)
                 throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");

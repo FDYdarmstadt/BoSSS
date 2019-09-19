@@ -111,14 +111,14 @@ namespace FSI_Solver {
                         CellMask ParticleBoundaryCells = gridData.GetBoundaryCells().Intersect(ParticleCutCells);
                         GetWall(gridData, ParticleBoundaryCells, out double[][] wallPoints);
                         for (int w = 0; w < wallPoints.GetLength(0); w++) {
-                            particles[p0].closestPointOnOtherObjectToThis = particles[p0].Motion.position[0].CloneAs();
+                            particles[p0].ClosestPointOnOtherObjectToThis = particles[p0].Motion.position[0].CloneAs();
                             if (wallPoints[w] == null)
                                 continue;
                             else if (wallPoints[w][0] != 0) {
-                                particles[p0].closestPointOnOtherObjectToThis[0] = wallPoints[w][0];
+                                particles[p0].ClosestPointOnOtherObjectToThis[0] = wallPoints[w][0];
                             }
                             else if (wallPoints[w][1] != 0) {
-                                particles[p0].closestPointOnOtherObjectToThis[1] = wallPoints[w][1];
+                                particles[p0].ClosestPointOnOtherObjectToThis[1] = wallPoints[w][1];
                             }
                             else
                                 continue;
@@ -190,11 +190,11 @@ namespace FSI_Solver {
                     for (int w = 0; w < 4; w++) {
                         if (Distance[p0, ParticleOffset + w] < distanceThreshold && SaveTimeStepArray[p0, ParticleOffset + w] > 0) {
                             double[] CurrentDistanceVector = DistanceVector.ExtractSubArrayShallow(new int[] { p0, ParticleOffset + w, -1 }).To1DArray();
-                            particles[p0].closestPointToOtherObject = ClosestPoint_P0.ExtractSubArrayShallow(new int[] { p0, ParticleOffset + w, -1 }).To1DArray();
+                            particles[p0].ClosestPointToOtherObject = ClosestPoint_P0.ExtractSubArrayShallow(new int[] { p0, ParticleOffset + w, -1 }).To1DArray();
                             particles[p0].Motion.collisionTimestep = AccDynamicTimestep;
-                            particles[p0].isCollided = true;
-                            particles[p0].collisionNormalVector.Add(CalculateNormalVector(CurrentDistanceVector));
-                            particles[p0].collisionTangentialVector.Add(CalculateTangentialVector(CalculateNormalVector(CurrentDistanceVector)));
+                            particles[p0].IsCollided = true;
+                            particles[p0].Motion.collisionNormalVector.Add(CalculateNormalVector(CurrentDistanceVector));
+                            particles[p0].Motion.collisionTangentialVector.Add(CalculateTangentialVector(CalculateNormalVector(CurrentDistanceVector)));
                             ComputeMomentumBalanceCollision(particles[p0]);
                         }
                     }
@@ -209,11 +209,11 @@ namespace FSI_Solver {
                             double[] normalVector = CalculateNormalVector(currentDistanceVector);
                             double[] tangentialVector = CalculateTangentialVector(normalVector);
                             foreach (Particle p in collidedParticles) {
-                                p.closestPointToOtherObject = ClosestPoint_P0.ExtractSubArrayShallow(new int[] { p0, p1, -1 }).To1DArray();
+                                p.ClosestPointToOtherObject = ClosestPoint_P0.ExtractSubArrayShallow(new int[] { p0, p1, -1 }).To1DArray();
                                 p.Motion.collisionTimestep = AccDynamicTimestep;
-                                p.isCollided = true;
-                                p.collisionNormalVector.Add(normalVector);
-                                p.collisionTangentialVector.Add(tangentialVector);
+                                p.IsCollided = true;
+                                p.Motion.collisionNormalVector.Add(normalVector);
+                                p.Motion.collisionTangentialVector.Add(tangentialVector);
                             }
                             ComputeMomentumBalanceCollision(collidedParticles);
                         }
@@ -333,9 +333,9 @@ namespace FSI_Solver {
             ClosestPoint_P0 = MultidimensionalArray.Create(SpatialDim);
             ClosestPoint_P1 = MultidimensionalArray.Create(SpatialDim);
             Overlapping = false;
-            int NoOfSubParticles1 = Particle1 == null ? 1 : Particle1.NoOfSubParticles();
+            int NoOfSubParticles1 = Particle1 == null ? 1 : Particle1.NoOfSubParticles;
 
-            for (int i = 0; i < Particle0.NoOfSubParticles(); i++) {
+            for (int i = 0; i < Particle0.NoOfSubParticles; i++) {
                 for (int j = 0; j < NoOfSubParticles1; j++) {
                     GJK_DistanceAlgorithm(Particle0, i, Particle1, j, out double temp_Distance, out double[] temp_DistanceVector, out double[] temp_ClosestPoint_P0, out double[] temp_ClosestPoint_P1, out Overlapping);
                     if (Overlapping)
@@ -377,7 +377,7 @@ namespace FSI_Solver {
             ClosestPoint_P0 = MultidimensionalArray.Create(SpatialDim);
             Overlapping = false;
 
-            for (int i = 0; i < Particle0.NoOfSubParticles(); i++) {
+            for (int i = 0; i < Particle0.NoOfSubParticles; i++) {
                 GJK_DistanceAlgorithm(Particle0, i, null, 1, out double temp_Distance, out double[] temp_DistanceVector, out double[] temp_ClosestPoint_P0, out _, out Overlapping);
                 if (Overlapping)
                     break;
@@ -429,7 +429,7 @@ namespace FSI_Solver {
             // =======================================================
             double[] Position0 = Particle0.Motion.position[0].CloneAs();
             int SpatialDim = Position0.Length;
-            double[] Position1 = Particle1 == null ? Particle0.closestPointOnOtherObjectToThis.CloneAs() : Particle1.Motion.position[0].CloneAs();
+            double[] Position1 = Particle1 == null ? Particle0.ClosestPointOnOtherObjectToThis.CloneAs() : Particle1.Motion.position[0].CloneAs();
             double[] v = Aux.VectorDiff(Position0, Position1);
             Aux.TestArithmeticException(v, nameof(v));
             // Define the simplex, which contains all points to be tested for their distance (max. 3 points in 2D)
@@ -728,18 +728,18 @@ namespace FSI_Solver {
         /// </param>
         internal void ComputeMomentumBalanceCollision(List<Particle> collidedParticles) {
             for (int p = 0; p < collidedParticles.Count(); p++) {
-                collidedParticles[p].Motion.CalculateNormalAndTangentialVelocity(collidedParticles[p].collisionNormalVector.Last());
+                collidedParticles[p].Motion.CalculateNormalAndTangentialVelocity(collidedParticles[p].Motion.collisionNormalVector.Last());
                 collidedParticles[p].CalculateEccentricity();
             }
 
             CalculateCollisionCoefficient(collidedParticles, out double collisionCoefficient);
 
             for (int p = 0; p < collidedParticles.Count(); p++) {
-                double tempCollisionVn = collidedParticles[p].Motion.IncludeTranslation ? collidedParticles[p].Motion.PreCollisionVelocity[0] + Math.Pow(-1, p + 1) * collisionCoefficient / collidedParticles[p].Mass_P : 0;
+                double tempCollisionVn = collidedParticles[p].Motion.IncludeTranslation ? collidedParticles[p].Motion.PreCollisionVelocity[0] + Math.Pow(-1, p + 1) * collisionCoefficient / collidedParticles[p].Motion.Mass_P : 0;
                 double tempCollisionVt = collidedParticles[p].Motion.IncludeTranslation ? collidedParticles[p].Motion.PreCollisionVelocity[1] * m_CoefficientOfRestitution : 0;
-                double tempCollisionRot = collidedParticles[p].Motion.IncludeRotation ? collidedParticles[p].Motion.rotationalVelocity[0] + Math.Pow(-1, p) * collidedParticles[p].eccentricity * collisionCoefficient / collidedParticles[p].MomentOfInertia_P : 0;
-                collidedParticles[p].CollisionTranslationalVelocity.Add(new double[] { tempCollisionVn, tempCollisionVt });
-                collidedParticles[p].CollisionRotationalVelocity.Add(tempCollisionRot);
+                double tempCollisionRot = collidedParticles[p].Motion.IncludeRotation ? collidedParticles[p].Motion.rotationalVelocity[0] + Math.Pow(-1, p) * collidedParticles[p].Eccentricity * collisionCoefficient / collidedParticles[p].MomentOfInertia_P : 0;
+                collidedParticles[p].Motion.CollisionTranslationalVelocity.Add(new double[] { tempCollisionVn, tempCollisionVt });
+                collidedParticles[p].Motion.CollisionRotationalVelocity.Add(tempCollisionRot);
             }
         }
 
@@ -748,16 +748,16 @@ namespace FSI_Solver {
         /// </summary>
         /// <param name="particle"></param>
         internal void ComputeMomentumBalanceCollision(Particle particle) {
-            particle.Motion.CalculateNormalAndTangentialVelocity(particle.collisionNormalVector.Last());
+            particle.Motion.CalculateNormalAndTangentialVelocity(particle.Motion.collisionNormalVector.Last());
             particle.CalculateEccentricity();
 
             CalculateCollisionCoefficient(particle, out double collisionCoefficient);
 
-            double tempCollisionVn = particle.Motion.IncludeTranslation ? particle.Motion.PreCollisionVelocity[0] - collisionCoefficient / particle.Mass_P : 0;
+            double tempCollisionVn = particle.Motion.IncludeTranslation ? particle.Motion.PreCollisionVelocity[0] - collisionCoefficient / particle.Motion.Mass_P : 0;
             double tempCollisionVt = particle.Motion.IncludeTranslation ? particle.Motion.PreCollisionVelocity[1] : 0;
-            double tempCollisionRot = particle.Motion.IncludeRotation ? particle.Motion.rotationalVelocity[0] + particle.eccentricity * collisionCoefficient / particle.MomentOfInertia_P : 0;
-            particle.CollisionTranslationalVelocity.Add(new double[] { tempCollisionVn, tempCollisionVt });
-            particle.CollisionRotationalVelocity.Add(tempCollisionRot);
+            double tempCollisionRot = particle.Motion.IncludeRotation ? particle.Motion.rotationalVelocity[0] + particle.Eccentricity * collisionCoefficient / particle.MomentOfInertia_P : 0;
+            particle.Motion.CollisionTranslationalVelocity.Add(new double[] { tempCollisionVn, tempCollisionVt });
+            particle.Motion.CollisionRotationalVelocity.Add(tempCollisionRot);
         }
 
         /// <summary>
@@ -769,11 +769,11 @@ namespace FSI_Solver {
             double[] massReciprocal = new double[2];
             double[] momentOfInertiaReciprocal = new double[2];
             for (int p = 0; p < collidedParticles.Count(); p++) {
-                massReciprocal[p] = collidedParticles[p].Motion.IncludeTranslation ? 1 / collidedParticles[p].Mass_P : 0;
-                momentOfInertiaReciprocal[p] = collidedParticles[p].Motion.IncludeRotation ? collidedParticles[p].eccentricity.Pow2() / collidedParticles[p].MomentOfInertia_P : 0;
+                massReciprocal[p] = collidedParticles[p].Motion.IncludeTranslation ? 1 / collidedParticles[p].Motion.Mass_P : 0;
+                momentOfInertiaReciprocal[p] = collidedParticles[p].Motion.IncludeRotation ? collidedParticles[p].Eccentricity.Pow2() / collidedParticles[p].MomentOfInertia_P : 0;
             }
             collisionCoefficient = (1 + m_CoefficientOfRestitution) * ((collidedParticles[0].Motion.PreCollisionVelocity[0] - collidedParticles[1].Motion.PreCollisionVelocity[0]) / (massReciprocal[0] + massReciprocal[1] + momentOfInertiaReciprocal[0] + momentOfInertiaReciprocal[1]));
-            collisionCoefficient += (1 + m_CoefficientOfRestitution) * ((-collidedParticles[0].eccentricity * collidedParticles[0].Motion.rotationalVelocity[0] + collidedParticles[1].eccentricity * collidedParticles[1].Motion.rotationalVelocity[0]) / (massReciprocal[0] + massReciprocal[1] + momentOfInertiaReciprocal[0] + momentOfInertiaReciprocal[1]));
+            collisionCoefficient += (1 + m_CoefficientOfRestitution) * ((-collidedParticles[0].Eccentricity * collidedParticles[0].Motion.rotationalVelocity[0] + collidedParticles[1].Eccentricity * collidedParticles[1].Motion.rotationalVelocity[0]) / (massReciprocal[0] + massReciprocal[1] + momentOfInertiaReciprocal[0] + momentOfInertiaReciprocal[1]));
         }
 
         /// <summary>
@@ -782,8 +782,8 @@ namespace FSI_Solver {
         /// <param name="particle"></param>
         /// <param name="collisionCoefficient"></param>
         private void CalculateCollisionCoefficient(Particle particle, out double collisionCoefficient) {
-            collisionCoefficient = (1 + m_CoefficientOfRestitution) * (particle.Motion.PreCollisionVelocity[0] / (1 / particle.Mass_P + particle.eccentricity.Pow2() / particle.MomentOfInertia_P));
-            collisionCoefficient += -(1 + m_CoefficientOfRestitution) * particle.eccentricity * particle.Motion.rotationalVelocity[0] / (1 / particle.Mass_P + particle.eccentricity.Pow2() / particle.MomentOfInertia_P);
+            collisionCoefficient = (1 + m_CoefficientOfRestitution) * (particle.Motion.PreCollisionVelocity[0] / (1 / particle.Motion.Mass_P + particle.Eccentricity.Pow2() / particle.MomentOfInertia_P));
+            collisionCoefficient += -(1 + m_CoefficientOfRestitution) * particle.Eccentricity * particle.Motion.rotationalVelocity[0] / (1 / particle.Motion.Mass_P + particle.Eccentricity.Pow2() / particle.MomentOfInertia_P);
         }
 
         /// <summary>
@@ -850,33 +850,33 @@ namespace FSI_Solver {
         /// </param>
         private void PostProcessCollisionTranslation(Particle particle) {
             int SpatialDim = particle.Motion.position[0].Length;
-            if (particle.CollisionTranslationalVelocity.Count() >= 1) {
+            if (particle.Motion.CollisionTranslationalVelocity.Count() >= 1) {
                 double[] Normal = new double[SpatialDim];
                 double[] Tangential = new double[SpatialDim];
-                for (int t = 0; t < particle.CollisionTranslationalVelocity.Count(); t++) {
+                for (int t = 0; t < particle.Motion.CollisionTranslationalVelocity.Count(); t++) {
                     for (int d = 0; d < SpatialDim; d++) {
-                        Normal[d] += particle.collisionNormalVector[t][d];
-                        Tangential[d] += particle.collisionTangentialVector[t][d];
+                        Normal[d] += particle.Motion.collisionNormalVector[t][d];
+                        Tangential[d] += particle.Motion.collisionTangentialVector[t][d];
                     }
                 }
 
                 Normal.ScaleV(1 / Math.Sqrt(Normal[0].Pow2() + Normal[1].Pow2()));
                 Tangential.ScaleV(1 / Math.Sqrt(Tangential[0].Pow2() + Tangential[1].Pow2()));
-                double[] Cos = new double[particle.CollisionTranslationalVelocity.Count()];
-                double[] Sin = new double[particle.CollisionTranslationalVelocity.Count()];
+                double[] Cos = new double[particle.Motion.CollisionTranslationalVelocity.Count()];
+                double[] Sin = new double[particle.Motion.CollisionTranslationalVelocity.Count()];
                 double temp_NormalVel = 0;
                 double temp_TangentialVel = 0;
-                for (int t = 0; t < particle.CollisionTranslationalVelocity.Count(); t++) {
+                for (int t = 0; t < particle.Motion.CollisionTranslationalVelocity.Count(); t++) {
                     for (int d = 0; d < SpatialDim; d++) {
-                        Cos[t] += Normal[d] * particle.collisionNormalVector[t][d];
+                        Cos[t] += Normal[d] * particle.Motion.collisionNormalVector[t][d];
                     }
-                    Sin[t] = Cos[t] == 1 ? 0 : particle.collisionNormalVector[t][0] > Normal[0] ? Math.Sqrt(1 + 1e-15 - Cos[t].Pow2()) : -Math.Sqrt(1 + 1e-15 - Cos[t].Pow2());
-                    temp_NormalVel += particle.CollisionTranslationalVelocity[t][0] * Cos[t] - particle.CollisionTranslationalVelocity[t][1] * Sin[t];
-                    temp_TangentialVel += particle.CollisionTranslationalVelocity[t][0] * Sin[t] + particle.CollisionTranslationalVelocity[t][1] * Cos[t];
+                    Sin[t] = Cos[t] == 1 ? 0 : particle.Motion.collisionNormalVector[t][0] > Normal[0] ? Math.Sqrt(1 + 1e-15 - Cos[t].Pow2()) : -Math.Sqrt(1 + 1e-15 - Cos[t].Pow2());
+                    temp_NormalVel += particle.Motion.CollisionTranslationalVelocity[t][0] * Cos[t] - particle.Motion.CollisionTranslationalVelocity[t][1] * Sin[t];
+                    temp_TangentialVel += particle.Motion.CollisionTranslationalVelocity[t][0] * Sin[t] + particle.Motion.CollisionTranslationalVelocity[t][1] * Cos[t];
 
                 }
-                temp_NormalVel /= particle.CollisionTranslationalVelocity.Count();
-                temp_TangentialVel /= particle.CollisionTranslationalVelocity.Count();
+                temp_NormalVel /= particle.Motion.CollisionTranslationalVelocity.Count();
+                temp_TangentialVel /= particle.Motion.CollisionTranslationalVelocity.Count();
 
                 particle.Motion.translationalVelocity.Insert(0, new double[2]);
                 particle.Motion.translationalVelocity.RemoveAt(4);
@@ -884,9 +884,9 @@ namespace FSI_Solver {
                     particle.Motion.translationalVelocity[0][d] = Normal[d] * temp_NormalVel + Tangential[d] * temp_TangentialVel;
                 }
 
-                particle.CollisionTranslationalVelocity.Clear();
-                particle.collisionNormalVector.Clear();
-                particle.collisionTangentialVector.Clear();
+                particle.Motion.CollisionTranslationalVelocity.Clear();
+                particle.Motion.collisionNormalVector.Clear();
+                particle.Motion.collisionTangentialVector.Clear();
             }
         }
 
@@ -897,9 +897,9 @@ namespace FSI_Solver {
         /// The particle to be processed
         /// </param>
         private void PostProcessCollisionRotation(Particle particle) {
-            if (particle.CollisionRotationalVelocity.Count() >= 1) {
-                particle.Motion.rotationalVelocity[0] = particle.CollisionRotationalVelocity.Sum() / particle.CollisionRotationalVelocity.Count();
-                particle.CollisionRotationalVelocity.Clear();
+            if (particle.Motion.CollisionRotationalVelocity.Count() >= 1) {
+                particle.Motion.rotationalVelocity[0] = particle.Motion.CollisionRotationalVelocity.Sum() / particle.Motion.CollisionRotationalVelocity.Count();
+                particle.Motion.CollisionRotationalVelocity.Clear();
 
                 if (double.IsNaN(particle.Motion.rotationalVelocity[0]) || double.IsInfinity(particle.Motion.rotationalVelocity[0]))
                     throw new ArithmeticException("Error trying to update particle angular velocity during collision post-processing. The angular velocity is:  " + particle.Motion.rotationalVelocity[0]);

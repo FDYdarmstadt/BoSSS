@@ -21,7 +21,7 @@ using BoSSS.Foundation.XDG;
 namespace BoSSS.Application.FSI_Solver {
     public class Motion_Fixed : Motion_Wet {
 
-        public Motion_Fixed(double[] gravity = null) : base(gravity) {
+        public Motion_Fixed(double[] gravity = null, double density = 0) : base(gravity, density) {
             IncludeRotation = false;
             IncludeTranslation = false;
         }

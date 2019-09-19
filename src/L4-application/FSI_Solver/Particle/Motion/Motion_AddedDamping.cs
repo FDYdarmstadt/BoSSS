@@ -24,8 +24,9 @@ namespace BoSSS.Application.FSI_Solver {
     public class Motion_AddedDamping : Motion_Wet {
         public Motion_AddedDamping(
             double[] gravity,
+            double density,
             ParticleUnderrelaxationParam underrelaxationParam,
-            double addedDampingCoefficient = 1) : base(gravity, underrelaxationParam) {
+            double addedDampingCoefficient = 1) : base(gravity, density, underrelaxationParam) {
             m_StartingAngle = angle[0];
             m_AddedDampingCoefficient = addedDampingCoefficient;
             UseAddedDamping = true;
@@ -96,7 +97,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
         private double[,] GetMassMatrix() {
             double[,] MassMatrix = new double[3, 3];
-            MassMatrix[0, 0] = MassMatrix[1, 1] = particleArea * particleDensity;
+            MassMatrix[0, 0] = MassMatrix[1, 1] = particleArea * Density;
             MassMatrix[2, 2] = momentOfInertia;
             return MassMatrix;
         }
@@ -138,7 +139,7 @@ namespace BoSSS.Application.FSI_Solver {
             double[] tempForces = ForcesIntegration(UA, pA, LsTrk, CutCells_P, RequiredOrder, muA);
             Force_MPISum(ref tempForces);
             for (int d = 0; d < spatialDim; d++) {
-                tempForces[d] += (particleDensity - fluidDensity) * particleArea * m_Gravity[d];
+                tempForces[d] += (Density - fluidDensity) * particleArea * m_Gravity[d];
             }
             ForceAddedDamping(ref tempForces, dt);
             return tempForces;

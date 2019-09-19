@@ -35,7 +35,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// ctor
         /// </summary>
-        public Particle_superEllipsoid(ParticleMotionInit motionInit, double length, double thickness, int superEllipsoidExponent, double[] startPos = null, double startAngl = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, startTransVelocity, startRotVelocity) {
+        public Particle_superEllipsoid(ParticleMotionInit motionInit, double length, double thickness, int superEllipsoidExponent, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
             length_P = length;
             thickness_P = thickness;
             m_SuperEllipsoidExponent = superEllipsoidExponent;
@@ -75,7 +75,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        public override double levelSetFunction(double[] X) {
+        public override double LevelSetFunction(double[] X) {
             double alpha = -(Motion.angle[0]);
             double r;
             r = -Math.Pow(((X[0] - Motion.position[0][0]) * Math.Cos(alpha) - (X[1] - Motion.position[0][1]) * Math.Sin(alpha)) / length_P, m_SuperEllipsoidExponent)
@@ -125,7 +125,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             int NoOfSurfacePoints = Convert.ToInt32(10 * Circumference_P / hMin);
             int QuarterSurfacePoints = NoOfSurfacePoints / 4;
-            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSubParticles(), 4 * QuarterSurfacePoints - 2, spatialDim);
+            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSubParticles, 4 * QuarterSurfacePoints - 2, spatialDim);
             double[] Infinitisemalangle = GenericBlas.Linspace(0, Math.PI / 2, QuarterSurfacePoints + 2);
             if (Math.Abs(10 * Circumference_P / hMin + 1) >= int.MaxValue)
                 throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");

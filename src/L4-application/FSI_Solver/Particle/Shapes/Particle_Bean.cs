@@ -33,7 +33,7 @@ namespace BoSSS.Application.FSI_Solver
         {
 
         }
-        public Particle_Bean(ParticleMotionInit motionInit, double radius, double[] startPos = null, double startAngl = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, startTransVelocity, startRotVelocity) {
+        public Particle_Bean(ParticleMotionInit motionInit, double radius, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
             radius_P = radius;
             Motion.GetParticleLengthscale(radius);
             Motion.GetParticleArea(Area_P());
@@ -65,7 +65,7 @@ namespace BoSSS.Application.FSI_Solver
             }
         }
 
-        public override double levelSetFunction(double[] X) {
+        public override double LevelSetFunction(double[] X) {
             double alpha = -(Motion.angle[0]);
             double a = 3.0 * radius_P.Pow2();
             double b = 1.0 * radius_P.Pow2();

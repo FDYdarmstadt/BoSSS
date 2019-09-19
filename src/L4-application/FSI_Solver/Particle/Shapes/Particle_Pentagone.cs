@@ -44,7 +44,7 @@ namespace BoSSS.Application.FSI_Solver {
 
         }
 
-        public Particle_Pentagone(ParticleMotionInit motionInit, double width, double[] startPos = null, double startAngl = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, startTransVelocity, startRotVelocity) {
+        public Particle_Pentagone(ParticleMotionInit motionInit, double width, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
             width_P = width;
             Motion.GetParticleLengthscale(width);
             Motion.GetParticleArea(Area_P());
@@ -72,7 +72,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        public override double levelSetFunction(double[] X) {
+        public override double LevelSetFunction(double[] X) {
             double alpha = -(Motion.angle[0]);
             double r;
             // Rechteck:

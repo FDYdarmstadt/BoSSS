@@ -20,7 +20,7 @@ using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Application.FSI_Solver {
     public class Motion_Dry_NoRotation : Motion_Dry {
-        public Motion_Dry_NoRotation(double[] gravity) : base(gravity) {
+        public Motion_Dry_NoRotation(double[] gravity, double density) : base(gravity, density) {
             IncludeRotation = false;
         }
 
@@ -75,7 +75,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U = null, SinglePhaseField P = null, LevelSetTracker LsTrk = null, CellMask CutCells_P = null, double fluidViscosity = 0, double fluidDensity = 0, bool firstIteration = false, double dt = 0) {
             for (int d = 0; d < spatialDim; d++) {
-                HydrodynamicForces[0][d] = m_Gravity[d] * particleDensity * particleArea;
+                HydrodynamicForces[0][d] = m_Gravity[d] * Density * particleArea;
             }
             HydrodynamicTorque[0] = 0;
         }

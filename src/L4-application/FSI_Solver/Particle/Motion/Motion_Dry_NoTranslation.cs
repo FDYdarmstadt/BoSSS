@@ -20,7 +20,7 @@ using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Application.FSI_Solver {
     public class Motion_Dry_NoTranslation : Motion_Dry {
-        public Motion_Dry_NoTranslation(double[] gravity) : base(gravity) {
+        public Motion_Dry_NoTranslation(double[] gravity, double density) : base(gravity, density) {
             IncludeTranslation = false;
         }
 

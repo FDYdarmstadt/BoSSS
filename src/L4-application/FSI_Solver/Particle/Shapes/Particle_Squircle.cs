@@ -34,7 +34,7 @@ namespace BoSSS.Application.FSI_Solver
 
         }
 
-        public Particle_Squircle(ParticleMotionInit motionInit, double radius, double[] startPos = null, double startAngl = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, startTransVelocity, startRotVelocity) {
+        public Particle_Squircle(ParticleMotionInit motionInit, double radius, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
             radius_P = radius;
             Motion.GetParticleLengthscale(radius);
             Motion.GetParticleArea(Area_P());
@@ -70,7 +70,7 @@ namespace BoSSS.Application.FSI_Solver
             }
         }
 
-        public override double levelSetFunction(double[] X) {
+        public override double LevelSetFunction(double[] X) {
             double alpha = -(Motion.angle[0]);
             return -((((X[0] - Motion.position[0][0]) * Math.Cos(alpha) - (X[1] - Motion.position[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - Motion.position[0][0]) * Math.Sin(alpha) + (X[1] - Motion.position[0][1]) * Math.Cos(alpha)).Pow(4)) - radius_P.Pow(4));
         }

@@ -336,8 +336,8 @@ namespace FSI_Solver {
 
             for (int p = 0; p < Particles.Count(); p++) {
                 Particle CurrentParticle = Particles[p];
-                double[] SingleParticleMomentum = CurrentParticle.CalculateParticleMomentum();
-                double[] SingleParticleKineticEnergy = CurrentParticle.CalculateParticleKineticEnergy();
+                double[] SingleParticleMomentum = CurrentParticle.Motion.CalculateParticleMomentum();
+                double[] SingleParticleKineticEnergy = CurrentParticle.Motion.CalculateParticleKineticEnergy();
                 TranslationalMomentum[0] += SingleParticleMomentum[0];
                 TranslationalMomentum[1] += SingleParticleMomentum[1];
                 RotationalMomentum += SingleParticleMomentum[SingleParticleMomentum.Length - 1];
@@ -359,7 +359,7 @@ namespace FSI_Solver {
                     int PrintP = p + 1;
                     OutputBuilder.AppendLine("-------------------------------------------------------");
                     OutputBuilder.AppendLine("Status report particle #" + PrintP + ", Time: " + phystime + ", Iteration #" + IterationCounter);
-                    if (CurrentParticle.isCollided)
+                    if (CurrentParticle.IsCollided)
                         OutputBuilder.AppendLine("The particle is collided");
                     OutputBuilder.AppendLine("-------------------------------------------------------");
                     OutputBuilder.AppendLine("Drag Force: " + CurrentParticle.Motion.HydrodynamicForces[0][0]);
@@ -405,16 +405,16 @@ namespace FSI_Solver {
 
             for (int p = 0; p < Particles.Count(); p++) {
                 Particle CurrentParticle = Particles[p];
-                double[] SingleParticleMomentum = CurrentParticle.CalculateParticleMomentum();
-                double[] SingleParticleKineticEnergy = CurrentParticle.CalculateParticleKineticEnergy();
+                double[] SingleParticleMomentum = CurrentParticle.Motion.CalculateParticleMomentum();
+                double[] SingleParticleKineticEnergy = CurrentParticle.Motion.CalculateParticleKineticEnergy();
                 TranslationalMomentum[0] += SingleParticleMomentum[0];
                 TranslationalMomentum[1] += SingleParticleMomentum[1];
                 RotationalMomentum += SingleParticleMomentum[SingleParticleMomentum.Length - 1];
                 totalKE[0] += SingleParticleKineticEnergy[0];
                 totalKE[1] += SingleParticleKineticEnergy[1];
                 totalKE[2] += SingleParticleKineticEnergy[SingleParticleMomentum.Length - 1];
-                ParticleReynoldsNumber[Particles.IndexOf(CurrentParticle)] = CurrentParticle.ComputeParticleRe(FluidViscosity);
-                ParticleStokesNumber[Particles.IndexOf(CurrentParticle)] = CurrentParticle.ComputeParticleSt(FluidViscosity, FluidDensity);
+                ParticleReynoldsNumber[Particles.IndexOf(CurrentParticle)] = CurrentParticle.Motion.ComputeParticleRe(FluidViscosity);
+                ParticleStokesNumber[Particles.IndexOf(CurrentParticle)] = CurrentParticle.Motion.ComputeParticleSt(FluidViscosity, FluidDensity);
             }
 
             Force = Particles[0].Motion.HydrodynamicForces[0];
@@ -438,9 +438,9 @@ namespace FSI_Solver {
                     OutputBuilder.AppendLine("-------------------------------------------------------");
                     OutputBuilder.AppendLine("Final status report for timestep #" + TimestepInt + ", particle #" + PrintP + ", Time: " + phystime);
                     OutputBuilder.AppendLine("Particle type: " + CurrentParticle);
-                    OutputBuilder.AppendLine("Particle density: " + CurrentParticle.particleDensity);
+                    OutputBuilder.AppendLine("Particle density: " + CurrentParticle.Motion.Density);
                     OutputBuilder.AppendLine("Maximum length: " + CurrentParticle.GetLengthScales().Max() + ", minimum length: " + CurrentParticle.GetLengthScales().Min());
-                    if (CurrentParticle.isCollided)
+                    if (CurrentParticle.IsCollided)
                         OutputBuilder.AppendLine("The particle is collided");
                     OutputBuilder.AppendLine("-------------------------------------------------------");
                     OutputBuilder.AppendLine("Drag Force: " + CurrentParticle.Motion.HydrodynamicForces[0][0]);
@@ -475,7 +475,6 @@ namespace FSI_Solver {
             foreach (Particle p in Particles) {
                 // Save status for residual
                 // ========================
-                p.forceAndTorque_convergence = ForceTorqueConvergenceCriterion;
                 p.Motion.SaveHydrodynamicsOfPreviousIteration();
             }
         }
@@ -514,10 +513,8 @@ namespace FSI_Solver {
                     CheckSend[p * NoOfVars + 0] = P.Motion.angle[0];
                     CheckSend[p * NoOfVars + 1] = P.Motion.angle[1];
                     CheckSend[p * NoOfVars + 2] = P.Motion.rotationalVelocity[0];
-                    //CheckSend[iP*NoOfVars + 2] = P.Area_P;
-                    CheckSend[p * NoOfVars + 4] = P.forceAndTorque_convergence;
-                    CheckSend[p * NoOfVars + 5] = P.Mass_P;
-                    CheckSend[p * NoOfVars + 6] = P.particleDensity;
+                    CheckSend[p * NoOfVars + 5] = P.Motion.Mass_P;
+                    CheckSend[p * NoOfVars + 6] = P.Motion.Density;
                     CheckSend[p * NoOfVars + 7] = P.Motion.addedDampingTensor[0, 0];
                     // todo: add more values here that might be relevant for the particle state;
 

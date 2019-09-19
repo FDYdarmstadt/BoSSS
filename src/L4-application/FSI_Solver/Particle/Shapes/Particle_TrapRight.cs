@@ -44,7 +44,7 @@ namespace BoSSS.Application.FSI_Solver {
 
         }
 
-        public Particle_TrapRight(ParticleMotionInit motionInit, double width, double[] startPos = null, double startAngl = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, startTransVelocity, startRotVelocity) {
+        public Particle_TrapRight(ParticleMotionInit motionInit, double width, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
             width_P = width;
             Motion.GetParticleLengthscale(width);
             Motion.GetParticleArea(Area_P());
@@ -57,9 +57,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         public double width_P;
 
-        internal override int NoOfSubParticles() {
-            return 2;
-        }
+        internal override int NoOfSubParticles => 2;
 
         public override double Area_P() {
             return (7 * width_P * width_P) / 8;
@@ -80,7 +78,7 @@ namespace BoSSS.Application.FSI_Solver {
         //    double alpha = -(Angle[0]);
         //    Phi_P = (X, t) => -(X[0] - Motion.position[0][0]).Pow2() + -(X[1] - Motion.position[0][1]).Pow2() + radius_P.Pow2();
         //}
-        public override double levelSetFunction(double[] X) {
+        public override double LevelSetFunction(double[] X) {
             double alpha = -(Motion.angle[0]);
             double r;
             // Rechteck:
@@ -129,7 +127,7 @@ namespace BoSSS.Application.FSI_Solver {
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
 
             int NoOfSurfacePoints = Convert.ToInt32(20 * Circumference_P / hMin) + 1;
-            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSubParticles(), NoOfSurfacePoints, spatialDim);
+            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSubParticles, NoOfSurfacePoints, spatialDim);
             double[] InfinitisemalAngle = GenericBlas.Linspace(-Math.PI / 4, 5 * Math.PI / 4, NoOfSurfacePoints + 1);
             double[] InfinitisemalLength = GenericBlas.Linspace(0, width_P / 4, NoOfSurfacePoints + 1);
             if (Math.Abs(10 * Circumference_P / hMin + 1) >= int.MaxValue)

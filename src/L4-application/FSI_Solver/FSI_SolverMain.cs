@@ -424,7 +424,7 @@ namespace BoSSS.Application.FSI_Solver {
             double[] couplingArray = new double[X.Length + 7];
             foreach (Particle p in m_Particles) {
                 p.CalculateRadialNormalVector(X, out double[] RadialNormalVector);
-                double seperateBoundaryRegions = p.activeStress != 0 ? p.SeperateBoundaryRegions(X) : 0;
+                double seperateBoundaryRegions = p.ActiveStress != 0 ? p.SeperateBoundaryRegions(X) : 0;
                 bool containsParticle = m_Particles.Count == 1 ? true : p.Contains(X, GridData.iGeomCells.h_min.Min());
                 if (containsParticle) {
                     couplingArray[0] = p.Motion.translationalVelocity[0][0];
@@ -433,7 +433,7 @@ namespace BoSSS.Application.FSI_Solver {
                     couplingArray[3] = RadialNormalVector[0];
                     couplingArray[4] = RadialNormalVector[1];
                     couplingArray[5] = p.Motion.position[0].L2Distance(X);
-                    couplingArray[6] = p.activeStress; // zero for passive particles
+                    couplingArray[6] = p.ActiveStress; // zero for passive particles
                     couplingArray[7] = -seperateBoundaryRegions;
                     couplingArray[8] = p.Motion.angle[0];
                 }
@@ -462,10 +462,6 @@ namespace BoSSS.Application.FSI_Solver {
                     Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
                     CalculateHydrodynamicForces(m_Particles, dt);
                     UpdateLevelSetParticles(phystime);
-                    foreach (Particle p in m_Particles) {
-                        p.iteration_counter_P += 1;
-                        p.forceAndTorque_convergence = ((FSI_Control)this.Control).hydrodynamicsConvergenceCriterion;
-                    }
                     break;
 
                 case LevelSetHandling.LieSplitting:
@@ -565,7 +561,7 @@ namespace BoSSS.Application.FSI_Solver {
                         // Multiplication over all particle-level-sets within the current color
                         for (int pC = 0; pC < particlesOfCurrentColor.Length; pC++) {
                             Particle currentParticle = m_Particles[particlesOfCurrentColor[pC]];
-                            double tempLevelSetFunction = currentParticle.levelSetFunction(X);
+                            double tempLevelSetFunction = currentParticle.LevelSetFunction(X);
                             // prevent extreme values
                             if (tempLevelSetFunction > 1)
                                 tempLevelSetFunction = 1;
@@ -819,9 +815,6 @@ namespace BoSSS.Application.FSI_Solver {
                     LsTrk.PushStacks(); // in other branches, called by the BDF timestepper
                     DGLevSet.Push();
 
-                    foreach (Particle p in m_Particles) {
-                        p.Motion.GetParticleDensity(p.particleDensity);
-                    }
                     Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
 
                     // physics
@@ -849,9 +842,6 @@ namespace BoSSS.Application.FSI_Solver {
                         }
                         int iterationCounter = 0;
                         double hydroDynForceTorqueResidual = double.MaxValue;
-                        foreach (Particle p in m_Particles) {
-                            p.Motion.GetParticleDensity(p.particleDensity);
-                        }
                         while (hydroDynForceTorqueResidual > HydrodynConvergenceCriterion) {
                             Console.WriteLine("Auxillary stuff");
                             Auxillary.CheckForMaxIterations(iterationCounter, ((FSI_Control)Control).maxIterationsFullyCoupled);
@@ -922,10 +912,6 @@ namespace BoSSS.Application.FSI_Solver {
                         }
                     }
                     else {// LevelSetHandling.Coupled_Iterative
-                        foreach (Particle p in m_Particles) {
-                            p.iteration_counter_P = -1;
-                            p.forceAndTorque_convergence = ((FSI_Control)this.Control).hydrodynamicsConvergenceCriterion;
-                        }
                         m_BDF_Timestepper.Solve(phystime, dt, false);
                     }
                 }
@@ -997,7 +983,7 @@ namespace BoSSS.Application.FSI_Solver {
                     currentParticle.Motion.UpdateDampingTensors();
                 }
                 currentParticle.Motion.SaveHydrodynamicsOfPreviousTimestep();
-                currentParticle.Motion.PredictForceAndTorque(currentParticle.activeStress, TimestepInt);
+                currentParticle.Motion.PredictForceAndTorque(currentParticle.ActiveStress, TimestepInt);
             }
         }
 
@@ -1244,7 +1230,7 @@ namespace BoSSS.Application.FSI_Solver {
                 throw new NotImplementedException("Repulsive force model is currently unsupported, please use the momentum conservation model.");
 
             foreach (Particle p in Particles) {
-                p.isCollided = false;
+                p.IsCollided = false;
             }
 
             // Only particles with the same colour a close to each other, thus, we only test for collisions within those particles.
@@ -1295,7 +1281,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Did a collision take place on one of the processes?
             // ===================================================
             double[] isCollidedSend = new double[1];
-            isCollidedSend[0] = currentParticle.isCollided ? 1 : 0;
+            isCollidedSend[0] = currentParticle.IsCollided ? 1 : 0;
             double[] isCollidedReceive = new double[MPISize];
             MPISendAndReceive(isCollidedSend, ref isCollidedReceive);
 
@@ -1338,14 +1324,14 @@ namespace BoSSS.Application.FSI_Solver {
                     currentParticle.Motion.position[1][0] = dataReceive[11 + i * noOfVars];
                     currentParticle.Motion.position[1][1] = dataReceive[12 + i * noOfVars];
 
-                    currentParticle.isCollided = true;
+                    currentParticle.IsCollided = true;
                     noCurrentCollision = false;
                 }
             }
             // nothing happend
             // ===================================================
             if (noCurrentCollision) {
-                currentParticle.isCollided = false;
+                currentParticle.IsCollided = false;
             }
         }
 

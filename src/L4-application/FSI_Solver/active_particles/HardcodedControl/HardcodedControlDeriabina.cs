@@ -112,20 +112,18 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.mu_A = 0.1;
             C.CoefficientOfRestitution = 1.0;
             C.gravity = new double[] { 0, -9.81 };
+            double particleDensity = 2.01;
 
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, C.pureDryCollisions);
-            ParticleMotionInit fix = new ParticleMotionInit(C.gravity, C.pureDryCollisions, true, true);
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions);
+            ParticleMotionInit fix = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, true, true);
 
             C.Particles.Add(new Particle_Sphere(motion, 0.35, new double[] { -1.0, 5.5 }) {
-                particleDensity = 2.01,
             });
 
             C.Particles.Add(new Particle_superEllipsoid(fix, 1, 0.3, 4, new double[] { 0.60, 4.0 }, startAngl: 45) {
-                particleDensity = 1,
             });
 
             C.Particles.Add(new Particle_superEllipsoid(fix, 1, 0.3, 4, new double[] { -0.60, 4.0 }, startAngl: -45) {
-                particleDensity = 1,
             });
 
             C.InitialValues_Evaluators.Add("VelocityX", X => 0);
