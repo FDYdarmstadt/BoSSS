@@ -810,7 +810,8 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.mu_A = 1e4;//pg(mum*s)
             C.PhysicalParameters.Material = true;
             double particleDensity = 1.0;
-            ParticleUnderrelaxationParam underrelaxationParam = new ParticleUnderrelaxationParam(1e-2, 1, true);
+            C.hydrodynamicsConvergenceCriterion = 1e-6;
+            ParticleUnderrelaxationParam underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, 1, true);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, false, false, underrelaxationParam, 1);
             // Particle Properties
             // =============================   
@@ -858,7 +859,6 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.hydrodynamicsConvergenceCriterion = 1e-4;
             C.LSunderrelax = 1.0;
             
             // Coupling Properties
@@ -968,7 +968,8 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.Material = true;
             C.gravity = new double[] { 0, 0 };
             double particleDensity = 1.0;
-            ParticleUnderrelaxationParam underrelaxationParam = new ParticleUnderrelaxationParam(1e-2, 9, true);
+            C.hydrodynamicsConvergenceCriterion = 1e-6;
+            ParticleUnderrelaxationParam underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, 9, true);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, false, false, underrelaxationParam, 1);
             // Particle Properties
             // =============================   
@@ -1002,7 +1003,6 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.hydrodynamicsConvergenceCriterion = 1e-4;
             C.LSunderrelax = 1.0;
 
             // Coupling Properties
