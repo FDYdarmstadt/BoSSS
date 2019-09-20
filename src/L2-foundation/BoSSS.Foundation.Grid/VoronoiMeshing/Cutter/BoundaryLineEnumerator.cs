@@ -35,7 +35,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         public static BoundaryLineEnumerator GetEnumerator(BoundaryLine[] polygon)
         {
-            ArrayEnum<BoundaryLine> lineEnum = new ArrayEnum<BoundaryLine>(polygon);
+            ArrayEnumerator<BoundaryLine> lineEnum = new ArrayEnumerator<BoundaryLine>(polygon);
             BoundaryLineEnumerator enumerateAndCount = new BoundaryLineEnumerator(lineEnum, polygon.Length);
             return enumerateAndCount;
         }

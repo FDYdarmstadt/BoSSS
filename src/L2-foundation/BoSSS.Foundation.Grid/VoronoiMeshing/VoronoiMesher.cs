@@ -1,6 +1,5 @@
-﻿using BoSSS.Foundation.Voronoi;
-using BoSSS.Platform.LinAlg;
-using System;
+﻿using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
 using System.Collections.Generic;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
@@ -8,7 +7,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
     public class VoronoiMesher<T>
         where T : IMesherNode, IVoronoiNodeCastable, new()
     {
-        internal IDMesh<T> mesh;
+        internal Mesh<T> mesh;
 
         public class Settings
         {
@@ -24,9 +23,34 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 Boundary = settings.Boundary.Polygon,
                 BoundingBox = settings.Boundary.BoundingBox,
                 NumberOfLloydIterations = settings.NumberOfLloydIterations,
-                FirstCellNode_indice = settings.FirstCellNode_indice
+                FirstCellNode_indice = settings.FirstCellNode_indice,
+                PeriodicBoundaryMap = ExtractPeriodicBoundaryMap(settings.Boundary)
             };
             return mesherSettings;
+        }
+
+        IDictionary<int,int> ExtractPeriodicBoundaryMap(VoronoiBoundary boundary)
+        {
+            byte[] tags = boundary.EdgeTags;
+            IDictionary<int, int> periodicBoundaryMap = new Dictionary<int, int>();
+            IDictionary<byte, int> usedTags = new LinkedListDictionary<byte, int>(); 
+            for(int i = 0; i < tags.Length; ++i)
+            {
+                byte tag = tags[i];
+                if(tag >= GridCommons.FIRST_PERIODIC_BC_TAG && tag < 255)
+                {
+                    if (usedTags.TryGetValue(tag, out int index))
+                    {
+                        periodicBoundaryMap.Add(i, index);
+                        periodicBoundaryMap.Add(index, i);
+                    }
+                    else
+                    {
+                        usedTags.Add(tag, i);
+                    };
+                }
+            }
+            return periodicBoundaryMap;
         }
 
         protected void CreateMesh(List<T> nodes, Settings settings)

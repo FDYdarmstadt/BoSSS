@@ -15,11 +15,13 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         public Divider(Mesh<T> mesh, int firstCell_NodeIndice)
         {
             insideCells = new InsideCellEnumerator<T>(mesh, firstCell_NodeIndice);
+            this.mesh = mesh;
         }
 
         public Divider(Mesh<T> mesh)
         {
             insideCells = new InsideCellEnumerator<T>(mesh);
+            this.mesh = mesh;
         }
 
         public MeshCell<T> GetFirst(BoundaryLine boundaryLine)

@@ -66,7 +66,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         public virtual IEnumerable<MeshCell<T>> Cells()
         {
             Debug.Assert( firstCell != null, "Initialize before calling Cells()");
-            HashSet<int> visited = new HashSet<int>(mesh.Cells.Count);
+            HashSet<int> visited = new HashSet<int>();//mesh.Cells.Count);
             return IterativeYieldConnectedCells(firstCell, visited);
         }
 

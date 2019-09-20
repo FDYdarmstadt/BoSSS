@@ -19,7 +19,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
     static class GridConverter
     {
-        public static VoronoiGrid Convert2VoronoiGrid<T>(IDMesh<T> mesh, VoronoiBoundary boundary)
+        public static VoronoiGrid Convert2VoronoiGrid<T>(Mesh<T> mesh, VoronoiBoundary boundary)
             where T : IVoronoiNodeCastable
         {
             (GridCommons grid, int[][] aggregation) = SetupGridCommonsAndAggregation(mesh.Cells, boundary);

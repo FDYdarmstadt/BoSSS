@@ -1,4 +1,5 @@
-﻿using BoSSS.Platform.LinAlg;
+﻿using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
+using BoSSS.Platform.LinAlg;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -17,7 +18,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
             public Vector[] Boundary;
 
-            public Dictionary<int, int> PeriodicBoundaryMap = null;
+            public IDictionary<int, int> PeriodicBoundaryMap = null;
 
             public int NumberOfLloydIterations = 10;
 

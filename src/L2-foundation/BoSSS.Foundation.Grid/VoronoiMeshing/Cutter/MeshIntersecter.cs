@@ -227,7 +227,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                     }
                 }
             }
-            return new ArrayEnum<Edge<T>>(outgoingEdges);
+            return new ArrayEnumerator<Edge<T>>(outgoingEdges);
         }
 
         public void VertexCut(Edge<T> edge, double alphaCut)

@@ -7,19 +7,18 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
-    public class ArrayEnum<T> : IEnumerator<T>
+    class BackwardsEnumerator<T> : IEnumerator<T>
     {
-        int pointer;
+        int pointer; 
 
-        IList<T> arr;
+        readonly IList<T> array;
 
-        public ArrayEnum(IList<T> Arr)
+        public BackwardsEnumerator(IList<T> array)
         {
-            arr = Arr;
-            pointer = -1;
+            this.array = array;
         }
 
-        public T Current => arr[pointer];
+        public T Current => array[pointer];
 
         object IEnumerator.Current => Current;
 
@@ -29,12 +28,12 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         public bool MoveNext()
         {
-            return (++pointer < arr.Count);
+            return (--pointer > -1);
         }
 
         public void Reset()
         {
-            pointer = -1;
+            pointer = array.Count + 1;
         }
     }
 }

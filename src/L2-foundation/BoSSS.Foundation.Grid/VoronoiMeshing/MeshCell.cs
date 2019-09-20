@@ -1,9 +1,5 @@
-﻿using System;
+﻿using BoSSS.Platform.LinAlg;
 using System.Collections.Generic;
-using BoSSS.Platform.LinAlg;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
