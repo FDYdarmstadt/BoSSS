@@ -2900,7 +2900,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         // ===================================================
-        // pre-/postprocessing, compute properteis and logging
+        // pre-/postprocessing, compute properties and logging
         // ===================================================
 
         private void Preprocessing(int TimestepInt, double phystime, double dt, TimestepNumber TimestepNo) {

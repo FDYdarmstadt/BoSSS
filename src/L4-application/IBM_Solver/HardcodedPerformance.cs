@@ -45,7 +45,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <param name="load_Grid"></param>
         /// <param name="_GridGuid"></param>
         /// <returns></returns>
-        static public IBM_Control SphereFlow_BWS(string _DbPath = null, int k = 2, int cells_x = 64, int cells_yz = 16, bool only_channel = false, bool pardiso = true, int no_p = 1, int no_it = 1, bool restart = false, bool load_Grid = false, string _GridGuid = null)
+        static public IBM_Control SphereFlow_BWS(string _DbPath = null, int k = 3, int cells_x = 128, int cells_yz = 32, bool only_channel = false, bool pardiso = true, int no_p = 1, int no_it = 1, bool restart = false, bool load_Grid = false, string _GridGuid = null)
         {
             IBM_Control C = new IBM_Control();
             C.OperatorMatrixAnalysis = false;

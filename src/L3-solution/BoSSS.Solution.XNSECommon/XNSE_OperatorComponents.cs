@@ -55,7 +55,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             // check input
             if (XOp.IsCommited)
-                throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
+                throw new InvalidOperationException("Spatial Operator is already committed. Adding of new components is not allowed");
 
             string CodName = EquationNames.MomentumEquationComponent(d);
             if (!XOp.CodomainVar.Contains(CodName))
