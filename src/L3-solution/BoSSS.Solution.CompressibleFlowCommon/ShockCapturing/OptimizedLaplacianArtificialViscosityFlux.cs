@@ -23,6 +23,7 @@ using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using BoSSS.Solution.NSECommon;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
@@ -124,7 +125,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
         /// <summary>
         /// Non-optimized version of the inner edge flux,
-        /// <seealso cref="BoSSS.Solution.NSECommon.SIPLaplace"/>
+        /// <seealso cref="SIPLaplace"/>, sign has been changed
         /// </summary>
         double IEdgeForm.InnerEdgeForm(ref CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
             double Acc = 0.0;
@@ -310,8 +311,14 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             }
         }
 
+        /// <summary>
+        /// See <see cref="ipLaplace"/>, sign has been changed
+        /// </summary>
         double IVolumeForm.VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
-            throw new NotImplementedException();
+            double acc = 0;
+            for (int d = 0; d < cpv.D; d++)
+                acc += GradU[0, d] * GradV[d] * cpv.Parameters[0];
+            return acc;
         }
         #endregion
 

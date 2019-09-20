@@ -612,14 +612,14 @@ namespace BoSSS.Application.FSI_Solver {
         private void ForceClearSmallValues(double[] tempForces, double forceAndTorqueConvergence) {
             for (int d = 0; d < spatialDim; d++) {
                 hydrodynamicForces[0][d] = 0;
-                if (Math.Abs(tempForces[d]) > forceAndTorqueConvergence * 1e-2)
+                //if (Math.Abs(tempForces[d]) > forceAndTorqueConvergence * 1e-2)
                     hydrodynamicForces[0][d] = tempForces[d];
             }
         }
 
         private void TorqueClearSmallValues(double tempTorque, double forceAndTorqueConvergence) {
             hydrodynamicTorque[0] = 0;
-            if (Math.Abs(tempTorque) > forceAndTorqueConvergence * 1e-2)
+            //if (Math.Abs(tempTorque) > forceAndTorqueConvergence * 1e-2)
                 hydrodynamicTorque[0] = tempTorque;
         }
 

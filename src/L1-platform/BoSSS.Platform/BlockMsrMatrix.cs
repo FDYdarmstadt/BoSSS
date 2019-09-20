@@ -2542,35 +2542,17 @@ namespace ilPSP.LinSolvers {
                                                                         pCol++;
                                                                         pRow += CJ;
                                                                     }
-                                                                    if (Accu.IsNaN()) {
-                                                                        Console.WriteLine("blöd");
-                                                                    }
                                                                     VecAccu[iRowBlockLoc] += Accu;
                                                                     iRowLoc++;
                                                                     iRowBlockLoc++;
                                                                 }
                                                             } else {
-                                                                //if (I != J || CI != I)
-                                                                //    Console.Write("");
-
                 SPMV_inner.Start();
                                                                 BLAS.dgemv('t', J, I, 1.0, pRawMem + Offset, CI, pa + _jColLoc, 1, 1.0,
-                                                                    //arschKakke, 
                                                                     pVecAccu + _iRowBlockLoc, 
                                                                     1);
                 SPMV_inner.Stop();
                                                             }
-
-                                                            //for (int i = 0; i < I; i++) {
-                                                            //    double zahl1 = arschKakke[i];
-                                                            //    double zahl2 = pVecAccu[_iRowBlockLoc + i];
-                                                            //    double tol = Math.Max(Math.Abs(zahl1), Math.Abs(zahl2))*1e-3;
-                                                            //    double dist = Math.Abs(zahl1 - zahl2);
-
-                                                            //    if (dist > tol)
-                                                            //        throw new ArithmeticException();
-                                                            //}
-                                                            
 
                                                         }
 

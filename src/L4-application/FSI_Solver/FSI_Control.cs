@@ -69,6 +69,7 @@ namespace BoSSS.Application.FSI_Solver {
             this.AddFieldOption("PhiDG", k_phiDG);
             this.AddFieldOption("Phi", k_phi);
             this.AddFieldOption("Curvature", 2);
+            this.AddFieldOption("Vorticity*", k);
         }
 
         public void SetSaveOptions(string dataBasePath = null, int savePeriod = 1) {
@@ -98,14 +99,14 @@ namespace BoSSS.Application.FSI_Solver {
 
         List<string> m_BoundaryValues = new List<string>();
 
-        public void SetGrid(int lengthX, int lengthY, int cellsPerUnitLength, bool periodicX = false, bool periodicY = false) {
+        public void SetGrid(double lengthX, double lengthY, double cellsPerUnitLength, bool periodicX = false, bool periodicY = false) {
             GridFunc = delegate {
 
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = cellsPerUnitLength * lengthX;
-                r = cellsPerUnitLength * lengthY;
+                q = (int)(cellsPerUnitLength * lengthX);
+                r = (int)(cellsPerUnitLength * lengthY);
 
                 double[] Xnodes = GenericBlas.Linspace(-lengthX / 2, lengthX / 2, q);
                 double[] Ynodes = GenericBlas.Linspace(-lengthY / 2, lengthY / 2, r);
@@ -132,14 +133,14 @@ namespace BoSSS.Application.FSI_Solver {
                         if (Math.Abs(X[0] - (-lengthX / 2)) <= 1.0e-8) {
                             for (int i = 0; i < m_BoundaryValues.Count(); i++) {
                                 if (m_BoundaryValues[i].Contains("left") || m_BoundaryValues[i].Contains("Left")) {
-                                    et = (byte)i;
+                                    et = (byte)(i + 1);
                                 }
                             }
                         }
                         if (Math.Abs(X[0] + (-lengthX / 2)) <= 1.0e-8) {
                             for (int i = 0; i < m_BoundaryValues.Count(); i++) {
                                 if (m_BoundaryValues[i].Contains("right") || m_BoundaryValues[i].Contains("Right")) {
-                                    et = (byte)i;
+                                    et = (byte)(i + 1);
                                 }
                             }
                         }
@@ -147,14 +148,14 @@ namespace BoSSS.Application.FSI_Solver {
                         if (Math.Abs(X[1] - (-lengthY / 2)) <= 1.0e-8) {
                             for (int i = 0; i < m_BoundaryValues.Count(); i++) {
                                 if (m_BoundaryValues[i].Contains("lower") || m_BoundaryValues[i].Contains("Lower")) {
-                                    et = (byte)i;
+                                    et = (byte)(i + 1);
                                 }
                             }
                         }
                         if (Math.Abs(X[1] + (-lengthY / 2)) <= 1.0e-8) {
                             for (int i = 0; i < m_BoundaryValues.Count(); i++) {
                                 if (m_BoundaryValues[i].Contains("upper") || m_BoundaryValues[i].Contains("Upper")) {
-                                    et = (byte)i;
+                                    et = (byte)(i + 1);
                                 }
                             }
                         }
@@ -178,7 +179,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Set true if the coupling between fluid and particle should be calculated iterative, while using Lie-Splitting.
         /// </summary>
         [DataMember]
-        public int maxIterationsFullyCoupled = 10000;
+        public int maxIterationsFullyCoupled = 100000;
 
         /// <summary>
         /// Set true if translation of the particle should be induced by hydrodynamical forces.
