@@ -37,7 +37,6 @@ namespace ilPSP.LinSolvers.PARDISO {
         private void Init(Version __V) {
             switch (__V) {
                 case Version.MKL: if(mkl == null) mkl = new Wrapper_MKL(); break;
-                case Version.v4: if(v4 == null) v4 = new Wrapper_v4(); break;
                 case Version.v5: if(v5 == null) v5 = new Wrapper_v5(); break;
             }
         }
@@ -45,9 +44,7 @@ namespace ilPSP.LinSolvers.PARDISO {
 
         static Wrapper_MKL mkl;
 
-        static Wrapper_v4 v4;
-
-        static Wrapper_v5 v5;
+         static Wrapper_v5 v5;
 
 
         /// <summary>
@@ -56,11 +53,6 @@ namespace ilPSP.LinSolvers.PARDISO {
         public unsafe int PARDISOINIT(void* pt, int* mtype, int* iparm, double* dparam) {
             if (mkl != null) {
                 return mkl.PARDISOINIT(pt, mtype, iparm);
-            } else if (v4 != null) {
-                int error = 0;
-                int solver = 0; // use sparse direct
-                v4.PARDISOINIT(pt, mtype, &solver, iparm, dparam,&error);
-                return error;
             } else if (v5 != null) {
                 int error = 0;
                 int solver = 0; // use sparse direct
@@ -82,9 +74,6 @@ namespace ilPSP.LinSolvers.PARDISO {
             //
             if (mkl != null) {
                 return mkl.PARDISO(pt, maxfct, mnum, mtype, phase, n, a, ia, ja, perm, nrhs, iparm, msglvl, b, x, error);
-            } else if (v4 != null) {
-                v4.PARDISO(pt, maxfct, mnum, mtype, phase, n, a, ia, ja, perm, nrhs, iparm, msglvl, b, x, error, dparam);
-                return *error;
             } else if (v5 != null) {
                 v5.PARDISO(pt, maxfct, mnum, mtype, phase, n, a, ia, ja, perm, nrhs, iparm, msglvl, b, x, error, dparam);
                 return *error;
@@ -96,8 +85,6 @@ namespace ilPSP.LinSolvers.PARDISO {
         public string PARDISOerror2string(int error) {
             if (mkl != null) {
                 return mkl.PARDISOerror2string(error);
-            } else if (v4 != null) {
-                return v4.PARDISOerror2string(error);
             } else if (v5 != null) {
                 return v5.PARDISOerror2string(error);
             }

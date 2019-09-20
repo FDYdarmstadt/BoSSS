@@ -81,8 +81,8 @@ namespace BoSSS.Solution.NSECommon {
             rho = parameters[1];
             double mult = 1.0;
 
-            if (m_energy == true)
-                mult = 1 / EoS.GetHeatCapacity(parameters[0]);
+            //if (m_energy == true)
+            //    mult = 1 / EoS.GetHeatCapacity(parameters[0]);
 
             return mult * rho * U[0];  
         }
