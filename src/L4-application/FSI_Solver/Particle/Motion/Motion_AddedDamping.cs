@@ -29,7 +29,7 @@ namespace BoSSS.Application.FSI_Solver {
             double density,
             ParticleUnderrelaxationParam underrelaxationParam,
             double addedDampingCoefficient = 1) : base(gravity, density, underrelaxationParam) {
-            m_StartingAngle = angle[0];
+            m_StartingAngle = Angle[0];
             m_AddedDampingCoefficient = addedDampingCoefficient;
             UseAddedDamping = true;
         }
@@ -73,7 +73,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Update in every timestep tensors to implement the added damping model (Banks et.al. 2017)
         /// </summary>
         public override void UpdateDampingTensors() {
-            m_AddedDampingTensor = AddedDamping.RotateTensor(angle[0], m_StartingAngle, AddedDampingTensor);
+            m_AddedDampingTensor = AddedDamping.RotateTensor(Angle[0], m_StartingAngle, AddedDampingTensor);
             Aux.TestArithmeticException(m_AddedDampingTensor, "particle added damping tensor");
         }
 
