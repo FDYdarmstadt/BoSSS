@@ -25,21 +25,28 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
+        /// Include rotation?
+        /// </summary>
+        public override bool IncludeRotation { get; } = false;
+
+        /// <summary>
         /// Calculate the new particle angle
         /// </summary>
         /// <param name="dt"></param>
-        protected override void CalculateParticleAngle(double dt) {
-            Angle[0] = Angle[1];
-            Aux.TestArithmeticException(Angle[0], "particle angle");
+        protected override double CalculateParticleAngle(double dt) {
+            double l_Angle = angle[1];
+            Aux.TestArithmeticException(angle[0], "particle angle");
+            return l_Angle;
         }
 
         /// <summary>
         /// Calculate the new particle angle
         /// </summary>
         /// <param name="dt"></param>
-        protected override void CalculateParticleAngle(double dt, double collisionTimestep) {
-            Angle[0] = Angle[1];
-            Aux.TestArithmeticException(Angle[0], "particle angle");
+        protected override double CalculateParticleAngle(double dt, double collisionTimestep) {
+            double l_Angle = angle[1];
+            Aux.TestArithmeticException(angle[0], "particle angle");
+            return l_Angle;
         }
 
         /// <summary>
@@ -48,8 +55,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="dt">Timestep</param>
         /// <returns></returns>
         protected override void CalculateAngularVelocity(double dt = 0) {
-            rotationalVelocity[0] = 0;
-            Aux.TestArithmeticException(rotationalVelocity[0], "particle rotational velocity");
+            RotationalVelocity[0] = 0;
+            Aux.TestArithmeticException(RotationalVelocity[0], "particle rotational velocity");
         }
 
         /// <summary>
@@ -57,17 +64,16 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt">Timestep</param>
         protected override void CalculateAngularVelocity(double dt = 0, double collisionTimestep = 0) {
-            rotationalVelocity[0] = 0;
-            Aux.TestArithmeticException(rotationalVelocity[0], "particle rotational velocity");
+            RotationalVelocity[0] = 0;
+            Aux.TestArithmeticException(RotationalVelocity[0], "particle rotational velocity");
         }
 
         /// <summary>
         /// Calculate the new acceleration (translational and rotational)
         /// </summary>
         /// <param name="dt"></param>
-        protected override void CalculateRotationalAcceleration(double dt) {
-            rotationalAcceleration[0] = 0;
-            Aux.TestArithmeticException(rotationalAcceleration[0], "particle rotational acceleration");
+        protected override double CalculateRotationalAcceleration(double dt) {
+            return 0;
         }
 
         /// <summary>
@@ -75,7 +81,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U = null, SinglePhaseField P = null, LevelSetTracker LsTrk = null, CellMask CutCells_P = null, double fluidViscosity = 0, double fluidDensity = 0, bool firstIteration = false, double dt = 0) {
             for (int d = 0; d < spatialDim; d++) {
-                HydrodynamicForces[0][d] = m_Gravity[d] * Density * particleArea;
+                HydrodynamicForces[0][d] = Gravity[d] * Density * ParticleArea;
             }
             HydrodynamicTorque[0] = 0;
         }

@@ -98,10 +98,11 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         readonly List<string> m_BoundaryValues = new List<string>();
+        public double FluidDomainVolume;
 
         public void SetGrid(double lengthX, double lengthY, double cellsPerUnitLength, bool periodicX = false, bool periodicY = false) {
             GridFunc = delegate {
-
+                FluidDomainVolume = lengthX * lengthY;
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
@@ -174,6 +175,7 @@ namespace BoSSS.Application.FSI_Solver {
             Endtime = noOfTimesteps * dt;
             NoOfTimesteps = noOfTimesteps;
         }
+
 
         /// <summary>
         /// Set true if the coupling between fluid and particle should be calculated iterative, while using Lie-Splitting.

@@ -193,7 +193,7 @@ namespace BoSSS.Application.FSI_Solver {
         public virtual void GetSupportPoint(int SpatialDim, double[] Vector, out double[] SupportPoint) => throw new NotImplementedException();
 
         /// <summary>
-        /// Calculates the radial vector (SurfacePoint-ParticlePosition)
+        /// Calculates the radial vector (SurfacePoint-ParticleReadOnlyPosition)
         /// </summary>
         /// <param name="SurfacePoint">
         /// </param>

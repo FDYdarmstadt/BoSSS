@@ -58,7 +58,6 @@ namespace BoSSS.Application.FSI_Solver {
         private readonly double radius_P;
 
         public override double Area_P() {
-            // not correct area
             return Math.PI * radius_P.Pow2();
         }
         protected override double Circumference_P {

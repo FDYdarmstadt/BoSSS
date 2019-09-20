@@ -162,7 +162,7 @@ namespace BoSSS.Application.FSI_Solver {
                 double VelY_Should = 0;
 
                 Vector Dest_Is = new Vector(p.GetParticles()[0].Motion.Position[0]);
-                double VelY_Is = p.GetParticles()[0].Motion.translationalVelocity[0][0];
+                double VelY_Is = p.GetParticles()[0].Motion.TranslationalVelocity[0][0];
 
                 double dist = (Dest_Should - Dest_Is).L2Norm();
                 double Vel_Div = Math.Abs(VelY_Should - VelY_Is);

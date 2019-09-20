@@ -427,9 +427,9 @@ namespace BoSSS.Application.FSI_Solver {
                 double seperateBoundaryRegions = p.ActiveStress != 0 ? p.SeperateBoundaryRegions(X) : 0;
                 bool containsParticle = m_Particles.Count == 1 ? true : p.Contains(X, GridData.iGeomCells.h_min.Min());
                 if (containsParticle) {
-                    couplingArray[0] = p.Motion.translationalVelocity[0][0];
-                    couplingArray[1] = p.Motion.translationalVelocity[0][1];
-                    couplingArray[2] = p.Motion.rotationalVelocity[0];
+                    couplingArray[0] = p.Motion.TranslationalVelocity[0][0];
+                    couplingArray[1] = p.Motion.TranslationalVelocity[0][1];
+                    couplingArray[2] = p.Motion.RotationalVelocity[0];
                     couplingArray[3] = RadialNormalVector[0];
                     couplingArray[4] = RadialNormalVector[1];
                     couplingArray[5] = p.Motion.Position[0].L2Distance(X);
@@ -470,15 +470,6 @@ namespace BoSSS.Application.FSI_Solver {
 
                 case LevelSetHandling.FSI_LieSplittingFullyCoupled:
                     UpdateLevelSetParticles(phystime);
-                    if (!CalculatedDampingTensors) {
-                        foreach (Particle p in m_Particles) {
-                            if (p.Motion.UseAddedDamping) {
-                                p.Motion.CalculateDampingTensor(p, LsTrk, FluidViscosity, FluidDensity, DtMax);
-                                Auxillary.ExchangeDampingTensors(m_Particles);
-                            }
-                        }
-                    }
-                    CalculatedDampingTensors = true;
                     break;
 
                 case LevelSetHandling.StrangSplitting:
@@ -599,6 +590,16 @@ namespace BoSSS.Application.FSI_Solver {
             // =======================================================
             LsTrk.UpdateTracker(__NearRegionWith: 2);
             setupLevelSet = true;
+
+            if (!CalculatedDampingTensors) {
+                foreach (Particle p in m_Particles) {
+                    if (p.Motion.UseAddedDamping) {
+                        p.Motion.CalculateDampingTensor(p, LsTrk, FluidViscosity, FluidDensity, DtMax);
+                        p.Motion.ExchangeAddedDampingTensors();
+                    }
+                }
+            }
+            CalculatedDampingTensors = true;
         }
 
         /// <summary>
@@ -827,7 +828,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                     // print
                     // -------------------------------------------------
-                    Auxillary.PrintResultToConsole(m_Particles, 0, 0, phystime, TimestepInt, out double MPIangularVelocity, out Test_Force);
+                    Auxillary.PrintResultToConsole(m_Particles, 0, 0, phystime, TimestepInt, ((FSI_Control)Control).FluidDomainVolume, out double MPIangularVelocity, out Test_Force);
                     LogPhysicalData(phystime);
                     SaveForNUnitTest(MPIangularVelocity);
 
@@ -846,7 +847,7 @@ namespace BoSSS.Application.FSI_Solver {
                             Console.WriteLine("Auxillary stuff");
                             Auxillary.CheckForMaxIterations(iterationCounter, ((FSI_Control)Control).maxIterationsFullyCoupled);
                             Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
-                            Auxillary.SaveOldParticleState(m_Particles, iterationCounter, ((FSI_Control)Control).hydrodynamicsConvergenceCriterion);
+                            Auxillary.SaveOldParticleState(m_Particles);
 
                             // actual physics
                             // -------------------------------------------------
@@ -894,7 +895,7 @@ namespace BoSSS.Application.FSI_Solver {
                         // print
                         // -------------------------------------------------
                         Console.WriteLine("Print2");
-                        Auxillary.PrintResultToConsole(m_Particles, FluidViscosity, FluidDensity, phystime, TimestepInt, out double Test_RotationalVelocity, out Test_Force);
+                        Auxillary.PrintResultToConsole(m_Particles, FluidViscosity, FluidDensity, phystime, TimestepInt, ((FSI_Control)Control).FluidDomainVolume, out double Test_RotationalVelocity, out Test_Force);
                         Console.WriteLine("Log2");
                         LogPhysicalData(phystime);
 
@@ -1059,7 +1060,7 @@ namespace BoSSS.Application.FSI_Solver {
         private void LogPhysicalData(double phystime) {
             if ((MPIRank == 0) && (logPhysicalDataParticles != null)) {
                 for (int p = 0; p < m_Particles.Count(); p++) {
-                    logPhysicalDataParticles.WriteLine(string.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}", p, phystime, m_Particles[p].Motion.Position[0][0], m_Particles[p].Motion.Position[0][1], m_Particles[p].Motion.Angle[0], m_Particles[p].Motion.translationalVelocity[0][0], m_Particles[p].Motion.translationalVelocity[0][1], m_Particles[p].Motion.rotationalVelocity[0], m_Particles[p].Motion.HydrodynamicForces[0][0], m_Particles[p].Motion.HydrodynamicForces[0][1], m_Particles[p].Motion.HydrodynamicTorque[0]));
+                    logPhysicalDataParticles.WriteLine(string.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}", p, phystime, m_Particles[p].Motion.Position[0][0], m_Particles[p].Motion.Position[0][1], m_Particles[p].Motion.Angle[0], m_Particles[p].Motion.TranslationalVelocity[0][0], m_Particles[p].Motion.TranslationalVelocity[0][1], m_Particles[p].Motion.RotationalVelocity[0], m_Particles[p].Motion.HydrodynamicForces[0][0], m_Particles[p].Motion.HydrodynamicForces[0][1], m_Particles[p].Motion.HydrodynamicTorque[0]));
                     logPhysicalDataParticles.Flush();
                 }
             }
@@ -1291,38 +1292,13 @@ namespace BoSSS.Application.FSI_Solver {
                 // the owning process.
                 // ===================================================
                 if (isCollidedReceive[i] != 0) {
-                    int noOfVars = 13;
-                    double[] dataSend = new double[noOfVars];
-                    dataSend[0] = currentParticle.Motion.rotationalVelocity[0];
-                    dataSend[1] = currentParticle.Motion.translationalVelocity[0][0];
-                    dataSend[2] = currentParticle.Motion.translationalVelocity[0][1];
-                    dataSend[3] = currentParticle.Motion.Angle[0];
-                    dataSend[4] = currentParticle.Motion.Position[0][0];
-                    dataSend[5] = currentParticle.Motion.Position[0][1];
-                    dataSend[6] = currentParticle.Motion.collisionTimestep;
-                    dataSend[7] = currentParticle.Motion.rotationalVelocity[1];
-                    dataSend[8] = currentParticle.Motion.translationalVelocity[1][0];
-                    dataSend[9] = currentParticle.Motion.translationalVelocity[1][1];
-                    dataSend[10] = currentParticle.Motion.Angle[1];
-                    dataSend[11] = currentParticle.Motion.Position[1][0];
-                    dataSend[12] = currentParticle.Motion.Position[1][1];
+                    double[] dataSend = currentParticle.Motion.BuildSendArray();
+                    int noOfVars = dataSend.Length;
 
                     double[] dataReceive = new double[noOfVars * MPISize];
                     MPISendAndReceive(dataSend, ref dataReceive);
 
-                    currentParticle.Motion.rotationalVelocity[0] = dataReceive[0 + i * noOfVars];
-                    currentParticle.Motion.translationalVelocity[0][0] = dataReceive[1 + i * noOfVars];
-                    currentParticle.Motion.translationalVelocity[0][1] = dataReceive[2 + i * noOfVars];
-                    currentParticle.Motion.Angle[0] = dataReceive[3 + i * noOfVars];
-                    currentParticle.Motion.Position[0][0] = dataReceive[4 + i * noOfVars];
-                    currentParticle.Motion.Position[0][1] = dataReceive[5 + i * noOfVars];
-                    currentParticle.Motion.collisionTimestep = dataReceive[6 + i * noOfVars];
-                    currentParticle.Motion.rotationalVelocity[1] = dataReceive[7 + i * noOfVars];
-                    currentParticle.Motion.translationalVelocity[1][0] = dataReceive[8 + i * noOfVars];
-                    currentParticle.Motion.translationalVelocity[1][1] = dataReceive[9 + i * noOfVars];
-                    currentParticle.Motion.Angle[1] = dataReceive[10 + i * noOfVars];
-                    currentParticle.Motion.Position[1][0] = dataReceive[11 + i * noOfVars];
-                    currentParticle.Motion.Position[1][1] = dataReceive[12 + i * noOfVars];
+                    currentParticle.Motion.WriteReceiveArray(dataReceive, Offset: i * noOfVars);
 
                     currentParticle.IsCollided = true;
                     noCurrentCollision = false;

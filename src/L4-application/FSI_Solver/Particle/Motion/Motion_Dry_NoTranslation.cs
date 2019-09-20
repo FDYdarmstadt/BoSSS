@@ -25,25 +25,38 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
+        /// Include translation?
+        /// </summary>
+        public override bool IncludeTranslation { get; } = false;
+
+        /// <summary>
         /// Calculate the new particle position
         /// </summary>
         /// <param name="dt"></param>
-        protected override void CalculateParticlePosition(double dt) {
+        /// <summary>
+        /// Calculate the new particle position
+        /// </summary>
+        /// <param name="dt"></param>
+        protected override double[] CalculateParticlePosition(double dt) {
+            double[] l_Position = new double[spatialDim];
             for (int d = 0; d < spatialDim; d++) {
-                Position[0][d] = Position[1][d];
+                l_Position[d] = Position[1][d];
             }
-            Aux.TestArithmeticException(Position[0], "particle position");
+            Aux.TestArithmeticException(l_Position, "particle position");
+            return l_Position;
         }
 
         /// <summary>
         /// Calculate the new particle position
         /// </summary>
         /// <param name="dt"></param>
-        protected override void CalculateParticlePosition(double dt, double collisionTimestep) {
+        protected override double[] CalculateParticlePosition(double dt, double collisionTimestep) {
+            double[] l_Position = new double[spatialDim];
             for (int d = 0; d < spatialDim; d++) {
-                Position[0][d] = Position[1][d];
+                l_Position[d] = Position[1][d];
             }
-            Aux.TestArithmeticException(Position[0], "particle position");
+            Aux.TestArithmeticException(l_Position, "particle position");
+            return l_Position;
         }
 
         /// <summary>
@@ -53,9 +66,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// <returns></returns>
         protected override void CalculateTranslationalVelocity(double dt) {
             for (int d = 0; d < spatialDim; d++) {
-                translationalVelocity[0][d] = 0;
+                TranslationalVelocity[0][d] = 0;
             }
-            Aux.TestArithmeticException(translationalVelocity[0], "particle translational velocity");
+            Aux.TestArithmeticException(TranslationalVelocity[0], "particle translational velocity");
         }
 
         /// <summary>
@@ -64,29 +77,25 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="dt">Timestep</param>
         protected override void CalculateTranslationalVelocity(double dt, double collisionTimestep) {
             for (int d = 0; d < spatialDim; d++) {
-                translationalVelocity[0][d] = 0;
+                TranslationalVelocity[0][d] = 0;
             }
-            Aux.TestArithmeticException(translationalVelocity[0], "particle translational velocity");
+            Aux.TestArithmeticException(TranslationalVelocity[0], "particle translational velocity");
         }
 
         /// <summary>
         /// Calculates the new translational acceleration.
         /// </summary>
         /// <param name="dt"></param>
-        protected override void CalculateTranslationalAcceleration(double dt) {
-            for (int d = 0; d < spatialDim; d++) {
-                translationalAcceleration[0][d] = 0;
-            }
-            Aux.TestArithmeticException(translationalAcceleration[0], "particle translational acceleration");
+        protected override double[] CalculateTranslationalAcceleration(double dt) {
+            return new double[] { 0, 0 };
         }
 
         /// <summary>
         /// Calculate the new acceleration (translational and rotational)
         /// </summary>
         /// <param name="dt"></param>
-        protected override void CalculateRotationalAcceleration(double dt) {
-            rotationalAcceleration[0] = 0;
-            Aux.TestArithmeticException(rotationalAcceleration[0], "particle rotational acceleration");
+        protected override double CalculateRotationalAcceleration(double dt) {
+            return 0;
         }
 
         /// <summary>
