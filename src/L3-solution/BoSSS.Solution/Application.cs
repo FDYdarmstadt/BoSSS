@@ -262,76 +262,89 @@ namespace BoSSS.Solution {
             string[] args,
             bool noControlFile,
             Func<Application<T>> ApplicationFactory) {
+#if !DEBUG
+            try {
+#endif
+                CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+                CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
-            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
-            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
+                InitMPI(args);
 
-            InitMPI(args);
+                // lets see if we have environment variables which override command line arguments
+                // (environment variables are usually more robust w.r.t. e.g. escape characters)
+                List<string> _args = new List<string>(args);
+                int ArgCounter = 0;
+                while (true) {
+                    string ArgOverrideName = "BOSSS_ARG_" + ArgCounter;
+                    string ArgValue = System.Environment.GetEnvironmentVariable(ArgOverrideName);
+                    if (ArgValue == null)
+                        break;
 
-            // lets see if we have environment variables which override command line arguments
-            // (environment variables are usually more robust w.r.t. e.g. escape characters)
-            List<string> _args = new List<string>(args);
-            int ArgCounter = 0;
-            while (true) {
-                string ArgOverrideName = "BOSSS_ARG_" + ArgCounter;
-                string ArgValue = System.Environment.GetEnvironmentVariable(ArgOverrideName);
-                if (ArgValue == null)
-                    break;
+                    if (ArgCounter < _args.Count) {
+                        _args[ArgCounter] = ArgValue;
+                    } else {
+                        _args.Add(ArgValue);
+                    }
 
-                if (ArgCounter < _args.Count) {
-                    _args[ArgCounter] = ArgValue;
-                } else {
-                    _args.Add(ArgValue);
+                    Console.WriteLine("arg #{0} override from environment variable '{1}': {2}", ArgCounter, ArgOverrideName, ArgValue);
+
+                    ArgCounter++;
                 }
 
-                Console.WriteLine("arg #{0} override from environment variable '{1}': {2}", ArgCounter, ArgOverrideName, ArgValue);
+                args = _args.ToArray();
 
-                ArgCounter++;
-            }
 
-            args = _args.ToArray();
+                // parse arguments
+                CommandLineOptions opt = new CommandLineOptions();
+                ICommandLineParser parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
+                bool argsParseSuccess;
+                if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+                    argsParseSuccess = parser.ParseArguments(args, opt);
+                    argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
+                } else {
+                    argsParseSuccess = false;
+                    argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
+                }
 
-            // parse arguments
-            CommandLineOptions opt = new CommandLineOptions();
-            ICommandLineParser parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
-            bool argsParseSuccess;
-            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
-                argsParseSuccess = parser.ParseArguments(args, opt);
-                argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
-            } else {
-                argsParseSuccess = false;
-                argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
-            }
+                if (!argsParseSuccess) {
+                    MPI.Wrappers.csMPI.Raw.mpiFinalize();
+                    m_MustFinalizeMPI = false;
+                    System.Environment.Exit(-1);
+                }
 
-            if (!argsParseSuccess) {
-                MPI.Wrappers.csMPI.Raw.mpiFinalize();
-                m_MustFinalizeMPI = false;
+                if (opt.ControlfilePath != null) {
+                    opt.ControlfilePath = opt.ControlfilePath.Trim();
+                }
+                opt = opt.MPIBroadcast(0, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+
+                // Delete old plots if requested
+                if (opt.delPlt) {
+                    DeleteOldPlotFiles();
+                }
+
+
+                // load control file
+                T ctrlV2 = null;
+                T[] ctrlV2_ParameterStudy = null;
+                if (!noControlFile) {
+                    LoadControlFile(opt.ControlfilePath, out ctrlV2, out ctrlV2_ParameterStudy);
+                } else {
+                    ctrlV2 = new T();
+                }
+
+                AppEntry(ApplicationFactory, opt, ctrlV2, ctrlV2_ParameterStudy);
+
+                FinalizeMPI();
+
+#if !DEBUG
+            } catch(Exception e) {
+                Console.WriteLine(e.StackTrace);
+                Console.WriteLine();
+                Console.WriteLine(e.GetType().Name);
+                Console.WriteLine(e.Message);
                 System.Environment.Exit(-1);
             }
-
-            if (opt.ControlfilePath != null) {
-                opt.ControlfilePath = opt.ControlfilePath.Trim();
-            }
-            opt = opt.MPIBroadcast(0, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
-
-            // Delete old plots if requested
-            if (opt.delPlt) {
-                DeleteOldPlotFiles();
-            }
-
-
-            // load control file
-            T ctrlV2 = null;
-            T[] ctrlV2_ParameterStudy = null;
-            if (!noControlFile) {
-                LoadControlFile(opt.ControlfilePath, out ctrlV2, out ctrlV2_ParameterStudy);
-            } else {
-                ctrlV2 = new T();
-            }
-
-            AppEntry(ApplicationFactory, opt, ctrlV2, ctrlV2_ParameterStudy);
-
-            FinalizeMPI();
+#endif
         }
 
         /// <summary>
@@ -878,9 +891,6 @@ namespace BoSSS.Solution {
                 if (this.DatabaseDriver.FsDriver is NullFileSystemDriver)
                     this.passiveIo = true;
 
-                //if (this.Control.TracingNamespaces != null)
-                //    Tracer.SetTracingNamespaces(this.Control.TracingNamespaces);
-
                 if (this.Control.TracingNamespaces == null) {
                     Tracer.NamespacesToLog = new string[0];
                 } else {
@@ -892,12 +902,9 @@ namespace BoSSS.Solution {
                         Tracer.NamespacesToLog = NamespacesToLog;
                     }
                 }
-
-
             } else {
                 this.passiveIo = true;
             }
-
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             if (!passiveIo) {
                 CurrentSessionInfo = m_Database.Controller.DBDriver.CreateNewSession(m_Database);
@@ -922,6 +929,7 @@ namespace BoSSS.Solution {
                 CurrentSessionInfo.Tags = tags;
             }
 
+            Console.WriteLine("setup environment3...");
             this.DatabaseDriver.InitTraceFile(CurrentSessionInfo);
             using (var ht = new FuncTrace()) {
                 // create or load grid
@@ -1706,8 +1714,10 @@ namespace BoSSS.Solution {
         /// </list>
         /// </remarks>
         public virtual void RunSolverMode() {
+            Console.WriteLine("runsolvermode: 1");
             SetUpEnvironment(); // remark: tracer is not avail before setup
             
+            Console.WriteLine("runsolvermode: 2");
             using (var tr = new FuncTrace()) {
 
                 var rollingSavesTsi = new List<Tuple<int, ITimestepInfo>>();
