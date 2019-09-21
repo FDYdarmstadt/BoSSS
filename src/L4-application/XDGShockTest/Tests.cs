@@ -124,7 +124,7 @@ namespace XDGShockTest {
             int dgDegree = 2;
 
             // ### Time-Stepping ###
-            c.TimeSteppingScheme = TimeSteppingSchemes.RungeKutta;
+            c.TimeSteppingScheme = TimeSteppingSchemes.XdgRK;
             c.ExplicitOrder = 1;
 
             // ### Physics ###
@@ -234,7 +234,7 @@ namespace XDGShockTest {
 
             string tempSessionName;
 
-            if (c.TimeSteppingScheme == TimeSteppingSchemes.RungeKutta) {
+            if (c.TimeSteppingScheme == TimeSteppingSchemes.XdgRK) {
                 tempSessionName = String.Format("TEST_XDGST_p{0}_xCells{1}_yCells{2}_RK{3}_s0={4}_species{5}", dgDegree, numOfCellsX, numOfCellsY, c.ExplicitOrder, c.SensorLimit, speciesName);
             } else {
                 throw new NotImplementedException("Session name is not available for this type of time stepper");
