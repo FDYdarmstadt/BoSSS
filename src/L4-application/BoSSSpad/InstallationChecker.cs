@@ -109,8 +109,6 @@ namespace BoSSS.Application.BoSSSpad {
 
                 CheckDynamicLibrary("PARDISO (Intel MKL)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_MKL(), isOptional: true);
 
-                CheckDynamicLibrary("PARDISO (v4)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_v4(), isOptional: true);
-
                 CheckDynamicLibrary("PARDISO (v5)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_v5(), isOptional: true);
 
                 CheckDynamicLibrary("OpenCL", () => new ilPSP.LinSolvers.monkey.CL.cl(), isOptional: true);

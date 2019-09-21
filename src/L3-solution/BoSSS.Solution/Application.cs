@@ -504,6 +504,9 @@ namespace BoSSS.Solution {
                 if (opt.SuperSampling != null) {
                     ctrlV2.SuperSampling = opt.SuperSampling.Value;
                 }
+                if(opt.fullTracing) {
+                    ctrlV2.TracingNamespaces = "*";
+                }
 
                 // ad-hoc added tags (added by command-line option)
                 if (opt != null && (opt.TagsToAdd != null && opt.TagsToAdd.Length > 0)) {
@@ -875,8 +878,22 @@ namespace BoSSS.Solution {
                 if (this.DatabaseDriver.FsDriver is NullFileSystemDriver)
                     this.passiveIo = true;
 
-                if (this.Control.TracingNamespaces != null)
-                    Tracer.SetTracingNamespaces(this.Control.TracingNamespaces);
+                //if (this.Control.TracingNamespaces != null)
+                //    Tracer.SetTracingNamespaces(this.Control.TracingNamespaces);
+
+                if (this.Control.TracingNamespaces == null) {
+                    Tracer.NamespacesToLog = new string[0];
+                } else {
+                    var NamespacesToLog = this.Control.TracingNamespaces.Split(new char[] { ',', ' ', '\n', '\t', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+
+                    if(NamespacesToLog.Any(s => s.Equals("*"))) {
+                        Tracer.NamespacesToLog = new string[] { "" };
+                    } else {
+                        Tracer.NamespacesToLog = NamespacesToLog;
+                    }
+                }
+
+
             } else {
                 this.passiveIo = true;
             }

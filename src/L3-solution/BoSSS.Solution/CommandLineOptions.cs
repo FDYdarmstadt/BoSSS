@@ -89,5 +89,11 @@ namespace BoSSS.Solution {
             [Option("n", "sesnmn", HelpText = "optional name for the compute session.")]
             public string SessionName = null;
 
+
+            /// <summary>
+            /// Tracing of all namespaces on.
+            /// </summary>
+            [Option(null, "fulltracing", HelpText = "Mainly for debugging purpose, turns tracing of all namespaces on, trace-files will be created.")]
+            public bool fullTracing = false;
         }
 }
