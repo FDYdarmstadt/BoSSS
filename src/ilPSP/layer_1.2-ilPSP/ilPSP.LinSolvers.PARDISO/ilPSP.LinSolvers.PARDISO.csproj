@@ -40,7 +40,6 @@
     <Compile Include="MetaWrapper.cs" />
     <Compile Include="PARDISOSolver.cs" />
     <Compile Include="Version.cs" />
-    <Compile Include="Wrapper_v4.cs" />
     <Compile Include="Wrapper_MKL.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Wrapper_v5.cs" />
