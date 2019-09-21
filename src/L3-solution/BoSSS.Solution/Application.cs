@@ -42,6 +42,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Xml;
 
@@ -269,6 +270,7 @@ namespace BoSSS.Solution {
                 CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
                 InitMPI(args);
+        
 
                 // lets see if we have environment variables which override command line arguments
                 // (environment variables are usually more robust w.r.t. e.g. escape characters)
@@ -335,13 +337,14 @@ namespace BoSSS.Solution {
                 AppEntry(ApplicationFactory, opt, ctrlV2, ctrlV2_ParameterStudy);
 
                 FinalizeMPI();
-
+            
 #if !DEBUG
             } catch(Exception e) {
-                Console.WriteLine(e.StackTrace);
-                Console.WriteLine();
-                Console.WriteLine(e.GetType().Name);
-                Console.WriteLine(e.Message);
+                Console.Error.WriteLine(e.StackTrace);
+                Console.Error.WriteLine();
+                Console.Error.WriteLine(e.GetType().Name);
+                Console.Error.WriteLine(e.Message);
+                Console.Error.Flush();
                 System.Environment.Exit(-1);
             }
 #endif
@@ -491,7 +494,7 @@ namespace BoSSS.Solution {
         private static void AppEntry(
             Func<Application<T>> ApplicationFactory,
             CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy) {
-
+            
             if (opt == null)
                 throw new ArgumentNullException();
 
@@ -531,7 +534,7 @@ namespace BoSSS.Solution {
 
                 // run app
                 // -------
-
+       
                 using (Application<T> app = ApplicationFactory()) {
                     app.Init(ctrlV2);
                     app.RunSolverMode();
@@ -884,6 +887,7 @@ namespace BoSSS.Solution {
         protected void SetUpEnvironment() {
             // init database
             // =============
+            
             m_Database = GetDatabase();
 
             if (this.Control != null) {
@@ -929,7 +933,6 @@ namespace BoSSS.Solution {
                 CurrentSessionInfo.Tags = tags;
             }
 
-            Console.WriteLine("setup environment3...");
             this.DatabaseDriver.InitTraceFile(CurrentSessionInfo);
             using (var ht = new FuncTrace()) {
                 // create or load grid
@@ -1714,10 +1717,9 @@ namespace BoSSS.Solution {
         /// </list>
         /// </remarks>
         public virtual void RunSolverMode() {
-            Console.WriteLine("runsolvermode: 1");
+            
             SetUpEnvironment(); // remark: tracer is not avail before setup
             
-            Console.WriteLine("runsolvermode: 2");
             using (var tr = new FuncTrace()) {
 
                 var rollingSavesTsi = new List<Tuple<int, ITimestepInfo>>();
@@ -2325,14 +2327,19 @@ namespace BoSSS.Solution {
         void ByeInt(bool CorrectlyTerminated) {
             // remove the 'NotTerminated' tag from the session info
             // =====================================================
-            if (CorrectlyTerminated && this.CurrentSessionInfo.Tags.Contains(SessionInfo.NOT_TERMINATED_TAG)) {
+
+            // code extra-cautious, since exceptions in Dispose() are, especially in Mono,
+            // sometimes not correctly reported and may cause unexplainable segfaults.
+            var csi = this.CurrentSessionInfo;
+            IEnumerable<string> tags = csi != null ? csi.Tags : null;
+            bool contains_not_terminated = tags != null ? tags.Contains(SessionInfo.NOT_TERMINATED_TAG) : false;
+            if (csi != null && tags != null && CorrectlyTerminated && contains_not_terminated) {
 
                 Console.WriteLine("Removing tag: " + SessionInfo.NOT_TERMINATED_TAG);
-                IList<string> sessTags = this.CurrentSessionInfo.Tags.ToList();
+                IList<string> sessTags = tags.ToList();
                 sessTags.Remove(SessionInfo.NOT_TERMINATED_TAG);
                 this.CurrentSessionInfo.Tags = sessTags;
             }
-
             if(m_ResLogger != null) {
                 m_ResLogger.Close();
                 m_ResLogger = null;
@@ -2352,20 +2359,22 @@ namespace BoSSS.Solution {
         protected virtual void ProfilingLog() {
             var R = Tracer.Root;
 
-            using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_bin")) {
-                var str = R.Serialize();
-                using (StreamWriter stw = new StreamWriter(stream)) {
-                    stw.Write(str);
-                    stw.Flush();
+            if (this.DatabaseDriver != null && this.CurrentSessionInfo != null) {
+                using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_bin")) {
+                    var str = R.Serialize();
+                    using (StreamWriter stw = new StreamWriter(stream)) {
+                        stw.Write(str);
+                        stw.Flush();
+                    }
                 }
-            }
 
-            using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary")) {
-                using (StreamWriter stw = new StreamWriter(stream)) {
-                    WriteProfilingReport(stw, R);
-                    stw.Flush();
-                    stream.Flush();
-                    stw.Close();
+                using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary")) {
+                    using (StreamWriter stw = new StreamWriter(stream)) {
+                        WriteProfilingReport(stw, R);
+                        stw.Flush();
+                        stream.Flush();
+                        stw.Close();
+                    }
                 }
             }
         }
@@ -2795,11 +2804,7 @@ namespace BoSSS.Solution {
         /// </summary>
         public virtual void Dispose() {
             if (!IsDisposed) {
-#if DEBUG
-                {
-#else
                 try {
-#endif
                     ByeInt(true);
                     Bye();
                     ProfilingLog();
@@ -2811,11 +2816,11 @@ namespace BoSSS.Solution {
                     }
                     Console.Out.Flush();
                     Console.Error.Flush();
-#if DEBUG
+
+                } catch (Exception e) {
+                    Console.WriteLine(e.GetType().Name + " in Dispose() " + e.Message);
+                    Console.WriteLine(e.StackTrace);
                 }
-#else
-                } catch (Exception) { }
-#endif
                 IsDisposed = true;
             }
         }
