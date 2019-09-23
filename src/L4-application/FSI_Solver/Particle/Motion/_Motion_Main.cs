@@ -61,46 +61,55 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Gravity (volume force) acting on the particle.
         /// </summary>
+        [DataMember]
         protected double[] Gravity { get; }
 
         /// <summary>
         /// Density of the particle.
         /// </summary>
+        [DataMember]
         public double Density { get; }
 
         /// <summary>
         /// The translational velocity of the particle in the current time step.
         /// </summary>
+        [DataMember]
         protected double ParticleArea { get; private set; }
 
         /// <summary>
         /// The translational velocity of the particle in the current time step.
         /// </summary>
+        [DataMember]
         protected double MomentOfInertia { get; private set; }
 
         /// <summary>
         /// The maximum lenghtscale of the particle.
         /// </summary>
+        [DataMember]
         protected double MaxParticleLengthScale { get; private set; }
 
         /// <summary>
         /// Include rotation?
         /// </summary>
+        [DataMember]
         public virtual bool IncludeRotation { get; } = true;
 
         /// <summary>
         /// Include translation?
         /// </summary>
+        [DataMember]
         public virtual bool IncludeTranslation { get; } = true;
 
         /// <summary>
         /// Use added damping?, for reference: Banks et.al. 2017
         /// </summary>
+        [DataMember]
         public virtual bool UseAddedDamping { get; } = false;
 
         /// <summary>
         /// Complete added damping tensor, for reference: Banks et.al. 2017
         /// </summary>
+        [DataMember]
         public virtual double[,] AddedDampingTensor { get; } = new double[6, 6];
 
         /// <summary>
@@ -109,7 +118,7 @@ namespace BoSSS.Application.FSI_Solver {
         public double[] GetPosition(int historyPosition) {// used method instead of property as IReadOnlyList causes exceptions during deserialization
             return m_Position[historyPosition];
         }
-
+        [DataMember]
         private readonly List<double[]> m_Position = new List<double[]>();
 
         /// <summary>
@@ -118,7 +127,7 @@ namespace BoSSS.Application.FSI_Solver {
         public double GetAngle(int historyPosition) {
             return m_Angle[historyPosition];
         }
-
+        [DataMember]
         private readonly List<double> m_Angle = new List<double>();
 
         /// <summary>
@@ -127,7 +136,7 @@ namespace BoSSS.Application.FSI_Solver {
         public double[] GetTranslationalVelocity(int historyPosition) {
             return m_TranslationalVelocity[historyPosition];
         }
-
+        [DataMember]
         private readonly List<double[]> m_TranslationalVelocity = new List<double[]>();
 
         /// <summary>
@@ -136,7 +145,7 @@ namespace BoSSS.Application.FSI_Solver {
         public double GetRotationalVelocity(int historyPosition) {
             return m_RotationalVelocity[historyPosition];
         }
-
+        [DataMember]
         private readonly List<double> m_RotationalVelocity = new List<double>();
 
         /// <summary>
@@ -145,7 +154,7 @@ namespace BoSSS.Application.FSI_Solver {
         public double[] GetTranslationalAcceleration(int historyPosition) {
             return m_TranslationalAcceleration[historyPosition];
         }
-
+        [DataMember]
         private readonly List<double[]> m_TranslationalAcceleration = new List<double[]>();
 
         /// <summary>
@@ -154,7 +163,7 @@ namespace BoSSS.Application.FSI_Solver {
         public double GetRotationalAcceleration(int historyPosition) {
             return m_RotationalAcceleration[historyPosition];
         }
-
+        [DataMember]
         private readonly List<double> m_RotationalAcceleration = new List<double>();
 
         /// <summary>
@@ -163,7 +172,7 @@ namespace BoSSS.Application.FSI_Solver {
         public double[] GetHydrodynamicForces(int historyPosition) {
             return m_HydrodynamicForces[historyPosition];
         }
-
+        [DataMember]
         private readonly List<double[]> m_HydrodynamicForces = new List<double[]>();
 
         /// <summary>
@@ -172,7 +181,7 @@ namespace BoSSS.Application.FSI_Solver {
         public double GetHydrodynamicTorque(int historyPosition) {
             return m_HydrodynamicTorque[historyPosition];
         }
-
+        [DataMember]
         private readonly List<double> m_HydrodynamicTorque = new List<double>();
 
         /// <summary>
@@ -181,17 +190,19 @@ namespace BoSSS.Application.FSI_Solver {
         public double[] GetForcesPreviousIter() {
             return m_ForcesPreviousIter;
         }
-
+        [DataMember]
         private double[] m_ForcesPreviousIter = new double[spatialDim];
 
         /// <summary>
         /// The force acting on the particle in the current time step.
         /// </summary>
+        [DataMember]
         public double TorquePreviousIter { get; private set; }
 
         /// <summary>
         /// The force acting on the particle in the current time step.
         /// </summary>
+        [DataMember]
         private double m_CollisionTimestep = 0;
 
         /// <summary>
@@ -200,7 +211,7 @@ namespace BoSSS.Application.FSI_Solver {
         public double[] GetPreCollisionVelocity() {
             return m_PreCollisionVelocity;
         }
-
+        [DataMember]
         private double[] m_PreCollisionVelocity = new double[spatialDim];
 
         /// <summary>
@@ -227,7 +238,7 @@ namespace BoSSS.Application.FSI_Solver {
         public double[] GetLastCollisionTangentialVector() {
             return m_CollisionTangentialVector.Last();
         }
-
+        [DataMember]
         private readonly List<double[]> m_CollisionTangentialVector = new List<double[]>();
 
 

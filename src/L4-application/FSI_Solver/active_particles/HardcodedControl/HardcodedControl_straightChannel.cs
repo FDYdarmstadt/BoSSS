@@ -28,7 +28,7 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control ActiveRod_noBackroundFlow(int k = 3, int aspectRatio = 10) {
+        public static FSI_Control ActiveRod_noBackroundFlow(int k = 3, int aspectRatio = 1) {
             FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
             C.SetSaveOptions(dataBasePath: @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\Channel", savePeriod: 1);
 
