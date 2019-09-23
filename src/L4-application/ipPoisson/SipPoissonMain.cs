@@ -148,7 +148,7 @@ namespace BoSSS.Application.SipPoisson {
             si3 = si3 != null ? si3 : "NIX";
             pp = pp != null ? pp : "NIX";
 
-            Console.WriteLine ("PATH          : " + pp);
+          
             Console.WriteLine ("BOSSS_INSTALL : " + si3);
 
 
