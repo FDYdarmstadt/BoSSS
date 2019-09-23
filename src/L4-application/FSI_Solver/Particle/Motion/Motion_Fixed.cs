@@ -43,7 +43,7 @@ namespace BoSSS.Application.FSI_Solver {
         protected override double[] CalculateParticlePosition(double dt, double collisionTimestep) {
             double[] l_Position = new double[spatialDim];
             for (int d = 0; d < spatialDim; d++) {
-                l_Position[d] = position[1][d];
+                l_Position[d] = Position[1][d];
             }
             Aux.TestArithmeticException(l_Position, "particle position");
             return l_Position;
@@ -59,49 +59,52 @@ namespace BoSSS.Application.FSI_Solver {
             return l_Angle;
         }
 
-
         /// <summary>
-        /// Calculate the new translational velocity of the particle.
+        /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
-        /// <returns></returns>
-        protected override void CalculateTranslationalVelocity(double dt) {
-            CalculateTranslationalAcceleration();
+        protected override double[] CalculateTranslationalVelocity(double dt) {
+            double[] l_TranslationalVelocity = new double[spatialDim];
             for (int d = 0; d < spatialDim; d++) {
-                TranslationalVelocity[0][d] = 0;
+                l_TranslationalVelocity[d] = 0;
             }
-            Aux.TestArithmeticException(TranslationalVelocity[0], "particle translational velocity");
+            Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
+            return l_TranslationalVelocity;
         }
 
         /// <summary>
-        /// Calculate the new translational velocity of the particle.
+        /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
-        protected override void CalculateTranslationalVelocity(double dt, double collisionTimestep) {
-            CalculateTranslationalAcceleration();
+        protected override double[] CalculateTranslationalVelocity(double dt, double collisionTimestep) {
+            double[] l_TranslationalVelocity = new double[spatialDim];
             for (int d = 0; d < spatialDim; d++) {
-                TranslationalVelocity[0][d] = 0;
+                l_TranslationalVelocity[d] = 0;
             }
-            Aux.TestArithmeticException(TranslationalVelocity[0], "particle translational velocity");
+            Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
+            return l_TranslationalVelocity;
         }
 
         /// <summary>
-        /// Calculate the new angular velocity of the particle.
+        /// Calculate the new angular velocity of the particle using explicit Euler scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
-        /// <returns></returns>
-        protected override void CalculateAngularVelocity(double dt = 0) {
-            RotationalVelocity[0] = 0;
-            Aux.TestArithmeticException(RotationalVelocity[0], "particle rotational velocity");
+        /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
+        protected override double CalculateAngularVelocity(double dt) {
+            double l_RotationalVelocity = 0;
+            Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
+            return l_RotationalVelocity;
         }
 
         /// <summary>
-        /// Calculate the new angular velocity of the particle.
+        /// Calculate the new angular velocity of the particle using explicit Euler scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
-        protected override void CalculateAngularVelocity(double dt = 0, double collisionTimestep = 0) {
-            RotationalVelocity[0] = 0;
-            Aux.TestArithmeticException(RotationalVelocity[0], "particle rotational velocity");
+        /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
+        protected override double CalculateAngularVelocity(double dt, double collisionTimestep) {
+            double l_RotationalVelocity = 0;
+            Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
+            return l_RotationalVelocity;
         }
 
         /// <summary>

@@ -24,47 +24,51 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calculate the new translational velocity of the particle.
+        /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
-        /// <returns></returns>
-        protected override void CalculateTranslationalVelocity(double dt) {
-            CalculateTranslationalAcceleration(dt);
+        protected override double[] CalculateTranslationalVelocity(double dt) {
+            double[] l_TranslationalVelocity = new double[spatialDim];
             for (int d = 0; d < spatialDim; d++) {
-                TranslationalVelocity[0][d] = TranslationalVelocity[1][d] + TranslationalAcceleration[0][d] * dt;
+                l_TranslationalVelocity[d] = TranslationalVelocity[1][d] + TranslationalAcceleration[0][d] * dt;
             }
-            Aux.TestArithmeticException(TranslationalVelocity[0], "particle translational velocity");
+            Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
+            return l_TranslationalVelocity;
         }
 
         /// <summary>
-        /// Calculate the new translational velocity of the particle.
+        /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
-        protected override void CalculateTranslationalVelocity(double dt, double collisionTimestep) {
-            CalculateTranslationalAcceleration(dt);
+        protected override double[] CalculateTranslationalVelocity(double dt, double collisionTimestep) {
+            double[] l_TranslationalVelocity = new double[spatialDim];
             for (int d = 0; d < spatialDim; d++) {
-                TranslationalVelocity[0][d] = TranslationalVelocity[1][d] + TranslationalAcceleration[0][d] * (dt - collisionTimestep);
+                l_TranslationalVelocity[d] = TranslationalVelocity[1][d] + TranslationalAcceleration[0][d] * (dt - collisionTimestep);
             }
-            Aux.TestArithmeticException(TranslationalVelocity[0], "particle translational velocity");
+            Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
+            return l_TranslationalVelocity;
         }
 
         /// <summary>
-        /// Calculate the new angular velocity of the particle.
+        /// Calculate the new angular velocity of the particle using explicit Euler scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
-        /// <returns></returns>
-        protected override void CalculateAngularVelocity(double dt = 0) {
-            RotationalVelocity[0] = RotationalVelocity[1];
-            Aux.TestArithmeticException(RotationalVelocity[0], "particle rotational velocity");
+        /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
+        protected override double CalculateAngularVelocity(double dt) {
+            double l_RotationalVelocity = RotationalVelocity[1];
+            Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
+            return l_RotationalVelocity;
         }
 
         /// <summary>
-        /// Calculate the new angular velocity of the particle.
+        /// Calculate the new angular velocity of the particle using explicit Euler scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
-        protected override void CalculateAngularVelocity(double dt = 0, double collisionTimestep = 0) {
-            RotationalVelocity[0] = RotationalVelocity[1];
-            Aux.TestArithmeticException(RotationalVelocity[0], "particle rotational velocity");
+        /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
+        protected override double CalculateAngularVelocity(double dt, double collisionTimestep) {
+            double l_RotationalVelocity = RotationalVelocity[1];
+            Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
+            return l_RotationalVelocity;
         }
 
         /// <summary>

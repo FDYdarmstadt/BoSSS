@@ -427,7 +427,7 @@ namespace BoSSS.Application.FSI_Solver {
                     couplingArray[2] = p.Motion.RotationalVelocity[0];
                     couplingArray[3] = RadialNormalVector[0];
                     couplingArray[4] = RadialNormalVector[1];
-                    couplingArray[5] = p.Motion.position[0].L2Distance(X);
+                    couplingArray[5] = p.Motion.Position[0].L2Distance(X);
                     couplingArray[6] = p.ActiveStress; // zero for passive particles
                     couplingArray[7] = -seperateBoundaryRegions;
                     couplingArray[8] = p.Motion.Angle[0];
@@ -1054,7 +1054,7 @@ namespace BoSSS.Application.FSI_Solver {
         private void LogPhysicalData(double phystime) {
             if ((MPIRank == 0) && (logPhysicalDataParticles != null)) {
                 for (int p = 0; p < m_Particles.Count(); p++) {
-                    logPhysicalDataParticles.WriteLine(string.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}", p, phystime, m_Particles[p].Motion.position[0][0], m_Particles[p].Motion.position[0][1], m_Particles[p].Motion.Angle[0], m_Particles[p].Motion.TranslationalVelocity[0][0], m_Particles[p].Motion.TranslationalVelocity[0][1], m_Particles[p].Motion.RotationalVelocity[0], m_Particles[p].Motion.HydrodynamicForces[0][0], m_Particles[p].Motion.HydrodynamicForces[0][1], m_Particles[p].Motion.HydrodynamicTorque[0]));
+                    logPhysicalDataParticles.WriteLine(string.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}", p, phystime, m_Particles[p].Motion.Position[0][0], m_Particles[p].Motion.Position[0][1], m_Particles[p].Motion.Angle[0], m_Particles[p].Motion.TranslationalVelocity[0][0], m_Particles[p].Motion.TranslationalVelocity[0][1], m_Particles[p].Motion.RotationalVelocity[0], m_Particles[p].Motion.HydrodynamicForces[0][0], m_Particles[p].Motion.HydrodynamicForces[0][1], m_Particles[p].Motion.HydrodynamicTorque[0]));
                     logPhysicalDataParticles.Flush();
                 }
             }
@@ -1122,7 +1122,7 @@ namespace BoSSS.Application.FSI_Solver {
             Debug.Assert(b.Particles.Length == o.Particles.Length);
             int L = b.Particles.Length;
             for (int l = 0; l < L; l++) { // loop over particles
-                Debug.Assert(GenericBlas.L2Dist(b.Particles[l].Motion.position[0], o.Particles[l].Motion.position[0]) < 1e-13);
+                Debug.Assert(GenericBlas.L2Dist((double[])b.Particles[l].Motion.Position[0], (double[])o.Particles[l].Motion.Position[0]) < 1e-13);
             }
 
         }

@@ -424,8 +424,8 @@ namespace FSI_Solver {
                     OutputBuilder.AppendLine("Transl VelocityX: " + CurrentParticle.Motion.TranslationalVelocity[0][0]);
                     OutputBuilder.AppendLine("Transl VelocityY: " + CurrentParticle.Motion.TranslationalVelocity[0][1]);
                     OutputBuilder.AppendLine("Angular Velocity: " + CurrentParticle.Motion.RotationalVelocity[0]);
-                    OutputBuilder.AppendLine("X-position: " + CurrentParticle.Motion.position[0][0]);
-                    OutputBuilder.AppendLine("Y-position: " + CurrentParticle.Motion.position[0][1]);
+                    OutputBuilder.AppendLine("X-position: " + CurrentParticle.Motion.Position[0][0]);
+                    OutputBuilder.AppendLine("Y-position: " + CurrentParticle.Motion.Position[0][1]);
                     OutputBuilder.AppendLine("Angle: " + CurrentParticle.Motion.Angle[0]);
                     OutputBuilder.AppendLine();
                     OutputBuilder.AppendLine("Particle Reynolds number: " + ParticleReynoldsNumber[p]);
@@ -496,8 +496,8 @@ namespace FSI_Solver {
                     // vector values
                     for (int d = 0; d < D; d++) {
                         int Offset = 10;
-                        CheckSend[p * NoOfVars + Offset + 0 * D + d] = P.Motion.position[0][d];
-                        CheckSend[p * NoOfVars + Offset + 1 * D + d] = P.Motion.position[1][d];
+                        CheckSend[p * NoOfVars + Offset + 0 * D + d] = P.Motion.Position[0][d];
+                        CheckSend[p * NoOfVars + Offset + 1 * D + d] = P.Motion.Position[1][d];
                         CheckSend[p * NoOfVars + Offset + 2 * D + d] = P.Motion.TranslationalVelocity[0][d];
                         //CheckSend[p * NoOfVars + Offset + 3 * D + d] = P.Motion.TranslationalVelocity[1][d];
                         CheckSend[p * NoOfVars + Offset + 4 * D + d] = P.Motion.HydrodynamicForces[0][d];

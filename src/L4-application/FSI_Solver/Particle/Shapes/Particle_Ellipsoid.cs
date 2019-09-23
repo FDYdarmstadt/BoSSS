@@ -69,8 +69,8 @@ namespace BoSSS.Application.FSI_Solver {
 
         public override double LevelSetFunction(double[] X) {
             double alpha = -(Motion.Angle[0]);
-            double r = -(((X[0] - Motion.position[0][0]) * Math.Cos(alpha) - (X[1] - Motion.position[0][1]) * Math.Sin(alpha)) / length_P).Pow2() 
-                       -(((X[0] - Motion.position[0][0]) * Math.Sin(alpha) + (X[1] - Motion.position[0][1]) * Math.Cos(alpha)) / thickness_P).Pow2() 
+            double r = -(((X[0] - Motion.Position[0][0]) * Math.Cos(alpha) - (X[1] - Motion.Position[0][1]) * Math.Sin(alpha)) / length_P).Pow2() 
+                       -(((X[0] - Motion.Position[0][0]) * Math.Sin(alpha) + (X[1] - Motion.Position[0][1]) * Math.Cos(alpha)) / thickness_P).Pow2() 
                        + 1.0;
             if (double.IsNaN(r) || double.IsInfinity(r))
                 throw new ArithmeticException();
@@ -85,7 +85,7 @@ namespace BoSSS.Application.FSI_Solver {
             double radiusTolerance = 1;
             double a = !WithoutTolerance ? length_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : length_P;
             double b = !WithoutTolerance ? thickness_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : thickness_P;
-            double Ellipse = ((point[0] - Motion.position[0][0]) * Math.Cos(Motion.Angle[0]) + (point[1] - Motion.position[0][1]) * Math.Sin(Motion.Angle[0])).Pow2() / a.Pow2() + (-(point[0] - Motion.position[0][0]) * Math.Sin(Motion.Angle[0]) + (point[1] - Motion.position[0][1]) * Math.Cos(Motion.Angle[0])).Pow2() / b.Pow2();
+            double Ellipse = ((point[0] - Motion.Position[0][0]) * Math.Cos(Motion.Angle[0]) + (point[1] - Motion.Position[0][1]) * Math.Sin(Motion.Angle[0])).Pow2() / a.Pow2() + (-(point[0] - Motion.Position[0][0]) * Math.Sin(Motion.Angle[0]) + (point[1] - Motion.Position[0][1]) * Math.Cos(Motion.Angle[0])).Pow2() / b.Pow2();
             if (Ellipse < radiusTolerance)
             {
                 return true;
@@ -108,8 +108,8 @@ namespace BoSSS.Application.FSI_Solver {
             {
                 double temp0 = Math.Cos(InfinitisemalAngle[j]) * length_P;
                 double temp1 = Math.Sin(InfinitisemalAngle[j]) * thickness_P;
-                SurfacePoints[0, j, 0] = (temp0 * Math.Cos(Motion.Angle[0]) - temp1 * Math.Sin(Motion.Angle[0])) + Motion.position[0][0];
-                SurfacePoints[0, j, 1] = (temp0 * Math.Sin(Motion.Angle[0]) + temp1 * Math.Cos(Motion.Angle[0])) + Motion.position[0][1];
+                SurfacePoints[0, j, 0] = (temp0 * Math.Cos(Motion.Angle[0]) - temp1 * Math.Sin(Motion.Angle[0])) + Motion.Position[0][0];
+                SurfacePoints[0, j, 1] = (temp0 * Math.Sin(Motion.Angle[0]) + temp1 * Math.Cos(Motion.Angle[0])) + Motion.Position[0][1];
 
             }
             return SurfacePoints;
@@ -158,7 +158,7 @@ namespace BoSSS.Application.FSI_Solver {
                     if (double.IsNaN(SupportPoint[i]) || double.IsInfinity(SupportPoint[i]))
                         throw new ArithmeticException("Error trying to calculate SupportPoint Value:  " + SupportPoint[i] + "temp Value: " + temp[j] + " B[i, j] " + B[i, j] + "BetragTemp" + BetragTemp + "ij" +i +j);
                 }
-                SupportPoint[i] += Motion.position[0][i];
+                SupportPoint[i] += Motion.Position[0][i];
             }
         }
 

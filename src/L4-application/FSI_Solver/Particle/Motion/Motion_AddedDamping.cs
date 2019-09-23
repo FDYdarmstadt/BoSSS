@@ -19,8 +19,6 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
 using ilPSP;
 using MPI.Wrappers;
-using System;
-using System.Collections.Generic;
 
 namespace BoSSS.Application.FSI_Solver {
     public class Motion_AddedDamping : Motion_Wet {
@@ -65,7 +63,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Calculate tensors to implement the added damping model (Banks et.al. 2017)
         /// </summary>
         public override void CalculateDampingTensor(Particle particle, LevelSetTracker LsTrk, double muA, double rhoA, double dt) {
-            m_AddedDampingTensor = AddedDamping.IntegrationOverLevelSet(particle, LsTrk, muA, rhoA, dt, position[0]);
+            m_AddedDampingTensor = AddedDamping.IntegrationOverLevelSet(particle, LsTrk, muA, rhoA, dt, (double[])Position[0]);
             Aux.TestArithmeticException(m_AddedDampingTensor, "particle added damping tensor");
         }
 
@@ -80,9 +78,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// MPI exchange of the damping tensors
         /// </summary>
-        /// <param name="Particles">
-        /// A list of all particles
-        /// </param>
         public override void ExchangeAddedDampingTensors() {
             int NoOfVars = 3;
             double[] StateBuffer = new double[NoOfVars * NoOfVars];
@@ -99,6 +94,10 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
+        /// <summary>
+        /// Calculates the translational acceleration of the particle using the added damping model.
+        /// </summary>
+        /// <param name="dt">Timestep</param>
         protected override double[] CalculateTranslationalAcceleration(double dt) {
             double[,] coefficientMatrix = CalculateCoefficientMatrix(dt);
             double denominator = CalculateDenominator(coefficientMatrix);
@@ -117,6 +116,10 @@ namespace BoSSS.Application.FSI_Solver {
             return l_Acceleration;
         }
 
+        /// <summary>
+        /// Calculates the rotational acceleration of the particle using the added damping model.
+        /// </summary>
+        /// <param name="dt">Timestep</param>
         protected override double CalculateRotationalAcceleration(double dt) {
             double[,] coefficientMatrix = CalculateCoefficientMatrix(dt);
             double denominator = CalculateDenominator(coefficientMatrix);
@@ -129,16 +132,24 @@ namespace BoSSS.Application.FSI_Solver {
             return l_Acceleration;
         }
 
-        private double[,] CalculateCoefficientMatrix(double Timestep) {
+        /// <summary>
+        /// Calculates the coefficient matrix for the acceleration constituted of the mass matrix and the added damping tensor.
+        /// </summary>
+        /// <param name="dt">Timestep</param>
+        private double[,] CalculateCoefficientMatrix(double dt) {
             double[,] massMatrix = GetMassMatrix();
             double[,] coefficientMatrix = massMatrix.CloneAs();
             for (int i = 0; i < 3; i++) {
                 for (int j = 0; j < 3; j++) {
-                    coefficientMatrix[i, j] = massMatrix[i, j] + Timestep * m_AddedDampingCoefficient * AddedDampingTensor[i, j];
+                    coefficientMatrix[i, j] = massMatrix[i, j] + dt * m_AddedDampingCoefficient * AddedDampingTensor[i, j];
                 }
             }
             return coefficientMatrix;
         }
+
+        /// <summary>
+        /// Calculates the mass matrix of the particle.
+        /// </summary>
         private double[,] GetMassMatrix() {
             double[,] MassMatrix = new double[3, 3];
             MassMatrix[0, 0] = MassMatrix[1, 1] = ParticleArea * Density;
@@ -146,6 +157,10 @@ namespace BoSSS.Application.FSI_Solver {
             return MassMatrix;
         }
 
+        /// <summary>
+        /// Calculates the denominator necessary for the calculation of the acceleration of the particle.
+        /// </summary>
+        /// <param name="coefficientMatrix">The matrix calculated in <see cref="CalculateCoefficientMatrix"></see>/></param>
         private double CalculateDenominator(double[,] coefficientMatrix) {
             double denominator = coefficientMatrix[0, 0] * coefficientMatrix[1, 1] * coefficientMatrix[2, 2];
             denominator -= coefficientMatrix[0, 0] * coefficientMatrix[1, 2] * coefficientMatrix[2, 1];
@@ -170,12 +185,14 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Update Forces and Torque acting from fluid onto the particle
+        /// Update Forces acting from fluid onto the particle
         /// </summary>
         /// <param name="U"></param>
         /// <param name="P"></param>
         /// <param name="LsTrk"></param>
+        /// <param name="CutCells_P"></param>
         /// <param name="muA"></param>
+        /// <param name="dt"></param>
         protected override double[] CalculateHydrodynamicForces(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double muA, double fluidDensity, double dt) {
             int RequiredOrder = U[0].Basis.Degree * 3 + 2;
             SinglePhaseField[] UA = U.ToArray();
@@ -189,12 +206,26 @@ namespace BoSSS.Application.FSI_Solver {
             return tempForces;
         }
 
+        /// <summary>
+        /// Calculates the added damping effects on the hydrodynamic forces
+        /// </summary>
+        /// <param name="dt"></param>
+        /// <param name="forces"></param>
         private void ForceAddedDamping(ref double[] forces, double dt) {
             for (int d = 0; d < spatialDim; d++) {
                 forces[d] += m_AddedDampingCoefficient * dt * (AddedDampingTensor[0, d] * TranslationalAcceleration[0][0] + AddedDampingTensor[1, d] * TranslationalAcceleration[0][1] + AddedDampingTensor[d, 2] * RotationalAcceleration[0]);
             }
         }
 
+        /// <summary>
+        /// Update Torque acting from fluid onto the particle.
+        /// </summary>
+        /// <param name="U"></param>
+        /// <param name="P"></param>
+        /// <param name="LsTrk"></param>
+        /// <param name="CutCells_P"></param>
+        /// <param name="muA"></param>
+        /// <param name="dt"></param>
         protected override double CalculateHydrodynamicTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double muA, double dt) {
             int RequiredOrder = U[0].Basis.Degree * 3 + 2;
             SinglePhaseField[] UA = U.ToArray();
@@ -205,6 +236,11 @@ namespace BoSSS.Application.FSI_Solver {
             return tempTorque;
         }
 
+        /// <summary>
+        /// Calculates the added damping effects on the hydrodynamic torque.
+        /// </summary>
+        /// <param name="dt"></param>
+        /// <param name="torque"></param>
         private void TorqueAddedDamping(ref double torque, double dt) {
             torque += m_AddedDampingCoefficient * dt * (AddedDampingTensor[2, 0] * TranslationalAcceleration[0][0] + AddedDampingTensor[2, 1] * TranslationalAcceleration[0][1] + AddedDampingTensor[2, 2] * RotationalAcceleration[0]);
         }

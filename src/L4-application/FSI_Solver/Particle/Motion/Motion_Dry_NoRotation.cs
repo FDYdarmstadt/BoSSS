@@ -50,22 +50,25 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calculate the new angular velocity of the particle.
+        /// Calculate the new angular velocity of the particle using explicit Euler scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
-        /// <returns></returns>
-        protected override void CalculateAngularVelocity(double dt = 0) {
-            RotationalVelocity[0] = 0;
-            Aux.TestArithmeticException(RotationalVelocity[0], "particle rotational velocity");
+        /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
+        protected override double CalculateAngularVelocity(double dt) {
+            double l_RotationalVelocity = 0;
+            Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
+            return l_RotationalVelocity;
         }
 
         /// <summary>
-        /// Calculate the new angular velocity of the particle.
+        /// Calculate the new angular velocity of the particle using explicit Euler scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
-        protected override void CalculateAngularVelocity(double dt = 0, double collisionTimestep = 0) {
-            RotationalVelocity[0] = 0;
-            Aux.TestArithmeticException(RotationalVelocity[0], "particle rotational velocity");
+        /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
+        protected override double CalculateAngularVelocity(double dt, double collisionTimestep) {
+            double l_RotationalVelocity = 0;
+            Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
+            return l_RotationalVelocity;
         }
 
         /// <summary>
