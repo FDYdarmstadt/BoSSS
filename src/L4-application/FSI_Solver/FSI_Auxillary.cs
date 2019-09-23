@@ -479,7 +479,7 @@ namespace FSI_Solver {
 
                 // nor, compare those particles:
                 int matrixDim = Particles[0].Motion.AddedDampingTensor.GetLength(0);
-                int NoOfVars = (8 + D * 8 + matrixDim * matrixDim); // variables per particle; size can be increased if more values should be compared
+                int NoOfVars = (7 + D * 8 + matrixDim * matrixDim); // variables per particle; size can be increased if more values should be compared
                 double[] CheckSend = new double[NoOfParticles * NoOfVars];
 
                 for (int p = 0; p < NoOfParticles; p++) {
@@ -493,10 +493,9 @@ namespace FSI_Solver {
                     CheckSend[p * NoOfVars + 4] = P.Motion.RotationalAcceleration[0];
                     CheckSend[p * NoOfVars + 5] = P.Motion.RotationalAcceleration[1];
                     CheckSend[p * NoOfVars + 6] = P.Motion.Mass_P;
-                    CheckSend[p * NoOfVars + 7] = P.Motion.Density;
 
                     // vector values
-                    int Offset = 8;
+                    int Offset = 7;
                     for (int d = 0; d < D; d++) {
                         CheckSend[p * NoOfVars + Offset + 0 * D + d] = P.Motion.Position[0][d];
                         CheckSend[p * NoOfVars + Offset + 1 * D + d] = P.Motion.Position[1][d];

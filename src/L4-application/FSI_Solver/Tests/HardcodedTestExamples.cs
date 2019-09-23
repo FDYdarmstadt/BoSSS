@@ -968,7 +968,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.Material = true;
             C.gravity = new double[] { 0, 0 };
             double particleDensity = 1.0;
-            C.hydrodynamicsConvergenceCriterion = 1e-3;
+            C.hydrodynamicsConvergenceCriterion = 1e-2;
             ParticleUnderrelaxationParam underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, 9, true);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, false, false, underrelaxationParam, 1);
             // Particle Properties

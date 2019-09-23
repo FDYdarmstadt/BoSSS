@@ -20,9 +20,11 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using FSI_Solver;
 using ilPSP;
+using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 
 namespace BoSSS.Application.FSI_Solver {
@@ -176,25 +178,27 @@ namespace BoSSS.Application.FSI_Solver {
         /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
         /// </summary>
         [DataMember]
-        public List<double[]> CollisionTranslationalVelocity = new List<double[]>();
-
-        /// <summary>
-        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
-        /// </summary>
-        [DataMember]
-        public List<double[]> collisionNormalVector = new List<double[]>();
-
-        /// <summary>
-        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
-        /// </summary>
-        [DataMember]
-        public List<double[]> collisionTangentialVector = new List<double[]>();
+        private readonly List<double[]> m_CollisionTranslationalVelocity = new List<double[]>();
 
         /// <summary>
         /// The angular velocity of the particle in the current time step. This list is used by the momentum conservation model.
         /// </summary>
         [DataMember]
-        public List<double> CollisionRotationalVelocity = new List<double>();
+        private readonly List<double> m_CollisionRotationalVelocity = new List<double>();
+
+        /// <summary>
+        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
+        private readonly List<double[]> m_CollisionNormalVector = new List<double[]>();
+
+        /// <summary>
+        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
+        public IReadOnlyList<IReadOnlyList<double>> CollisionTangentialVector { get => m_CollisionTangentialVector; } 
+        private readonly List<double[]> m_CollisionTangentialVector = new List<double[]>();
+
 
         /// <summary>
         /// Saves position and angle of the last timestep
@@ -486,10 +490,6 @@ namespace BoSSS.Application.FSI_Solver {
             return l_TranslationalVelocity;
         }
 
-        public virtual void WritePostCollisionVelocity(double[] postCollisionVelocity) {
-            m_TranslationalVelocity[0] = postCollisionVelocity;
-        }
-
         /// <summary>
         /// Calculate the new angular velocity of the particle using explicit Euler scheme.
         /// </summary>
@@ -512,14 +512,11 @@ namespace BoSSS.Application.FSI_Solver {
             return l_RotationalVelocity;
         }
 
-        public virtual void WritePostCollisionAngularVelocity(double postCollisionAngularVelocity) {
-            m_RotationalVelocity[0] = postCollisionAngularVelocity;
-        }
-
-        internal void CalculateNormalAndTangentialVelocity(double[] NormalVector) {
+        internal void CalculateNormalAndTangentialVelocity() {
+            double[] normalVector = m_CollisionNormalVector.Last();
+            double[] TangentialVector = new double[] { -normalVector[1], normalVector[0] };
             double[] Velocity = m_TranslationalVelocity[0];
-            double[] TangentialVector = new double[] { -NormalVector[1], NormalVector[0] };
-            m_PreCollisionVelocity = new double[] { Velocity[0] * NormalVector[0] + Velocity[1] * NormalVector[1], Velocity[0] * TangentialVector[0] + Velocity[1] * TangentialVector[1] };
+            m_PreCollisionVelocity = new double[] { Velocity[0] * normalVector[0] + Velocity[1] * normalVector[1], Velocity[0] * TangentialVector[0] + Velocity[1] * TangentialVector[1] };
             Aux.TestArithmeticException(m_PreCollisionVelocity, "particle velocity before collision");
         }
 
@@ -714,6 +711,9 @@ namespace BoSSS.Application.FSI_Solver {
             return ComputeParticleRe(ViscosityFluid) * Density / (9 * DensityFluid);
         }
 
+        /// <summary>
+        /// Calculating the particle momentum
+        /// </summary>
         public double[] CalculateParticleMomentum() {
             double[] temp = new double[spatialDim + 1];
             for (int d = 0; d < spatialDim; d++) {
@@ -723,6 +723,9 @@ namespace BoSSS.Application.FSI_Solver {
             return temp;
         }
 
+        /// <summary>
+        /// Calculating the particle kinetic energy
+        /// </summary>
         public double[] CalculateParticleKineticEnergy() {
             double[] temp = new double[spatialDim + 1];
             for (int d = 0; d < spatialDim; d++) {
@@ -732,6 +735,9 @@ namespace BoSSS.Application.FSI_Solver {
             return temp;
         }
 
+        /// <summary>
+        /// Deletes the complete history of the translational velocity
+        /// </summary>
         public void ClearParticleHistoryTranslation() {
             for (int i = 0; i < TranslationalVelocity.Count; i++) {
                 for (int d = 0; d < spatialDim; d++) {
@@ -741,10 +747,77 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
+        /// <summary>
+        /// Deletes the complete history of the rotational velocity
+        /// </summary>
         public void ClearParticleHistoryRotational() {
             for (int i = 0; i < RotationalVelocity.Count; i++) {
                 m_RotationalAcceleration[i] = 0;
                 m_RotationalVelocity[i] = 0;
+            }
+        }
+
+        public void SetCollisionVectors(double[] normalVector, double[] tangentialVector) {
+            m_CollisionNormalVector.Add(normalVector);
+            m_CollisionTangentialVector.Add(tangentialVector);
+        }
+
+        public void SetCollisionVelocities(double normalVelocity, double tangentialVelocity, double rotationalVelocity) {
+            m_CollisionTranslationalVelocity.Add(new double[] { normalVelocity, tangentialVelocity });
+            m_CollisionRotationalVelocity.Add(rotationalVelocity);
+        }
+
+        /// <summary>
+        /// Collision post-processing. Sums up the results of the multiple binary collisions of one timestep
+        /// </summary>
+        public void PostProcessCollisionTranslation() {
+            if (m_CollisionTranslationalVelocity.Count >= 1) {
+                double[] Normal = new double[spatialDim];
+                double[] Tangential = new double[spatialDim];
+                for (int t = 0; t < m_CollisionTranslationalVelocity.Count; t++) {
+                    for (int d = 0; d < spatialDim; d++) {
+                        Normal[d] += m_CollisionNormalVector[t][d];
+                        Tangential[d] += m_CollisionTangentialVector[t][d];
+                    }
+                }
+
+                Normal.ScaleV(1 / Math.Sqrt(Normal[0].Pow2() + Normal[1].Pow2()));
+                Tangential.ScaleV(1 / Math.Sqrt(Tangential[0].Pow2() + Tangential[1].Pow2()));
+                double temp_NormalVel = 0;
+                double temp_TangentialVel = 0;
+                for (int t = 0; t < m_CollisionTranslationalVelocity.Count; t++) {
+                    double cos = new double();
+                    for (int d = 0; d < spatialDim; d++) {
+                        cos += Normal[d] * m_CollisionNormalVector[t][d];
+                    }
+                    double sin = cos == 1 ? 0 : m_CollisionNormalVector[t][0] > Normal[0] ? Math.Sqrt(1 + 1e-15 - cos.Pow2()) : -Math.Sqrt(1 + 1e-15 - cos.Pow2());
+                    temp_NormalVel += m_CollisionTranslationalVelocity[t][0] * cos - m_CollisionTranslationalVelocity[t][1] * sin;
+                    temp_TangentialVel += m_CollisionTranslationalVelocity[t][0] * sin + m_CollisionTranslationalVelocity[t][1] * cos;
+
+                }
+                temp_NormalVel /= m_CollisionTranslationalVelocity.Count;
+                temp_TangentialVel /=m_CollisionTranslationalVelocity.Count;
+
+                ClearParticleHistoryTranslation();
+                for (int d = 0; d < spatialDim; d++) {
+                    m_TranslationalVelocity[0][d] = Normal[d] * temp_NormalVel + Tangential[d] * temp_TangentialVel;
+                }
+                m_CollisionTranslationalVelocity.Clear();
+                m_CollisionNormalVector.Clear();
+                m_CollisionTangentialVector.Clear();
+            }
+        }
+
+        /// <summary>
+        /// Collision post-processing. Sums up the results for the angular velocity of the multiple binary collisions of one timestep
+        /// </summary>
+        public void PostProcessCollisionRotation() {
+            if (m_CollisionRotationalVelocity.Count >= 1) {
+                ClearParticleHistoryRotational();
+                m_RotationalVelocity[0] = m_CollisionRotationalVelocity.Sum() / m_CollisionRotationalVelocity.Count;
+                m_CollisionRotationalVelocity.Clear();
+                if (double.IsNaN(m_RotationalVelocity[0]) || double.IsInfinity(m_RotationalVelocity[0]))
+                    throw new ArithmeticException("Error trying to update particle angular velocity during collision post-processing. The angular velocity is:  " + m_RotationalVelocity[0]);
             }
         }
 
