@@ -129,13 +129,13 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// The translational velocity of the particle in the current time step.
         /// </summary>
-        protected IReadOnlyList<IReadOnlyList<double>> TranslationalAcceleration { get => m_TranslationalAcceleration; } 
+        public IReadOnlyList<IReadOnlyList<double>> TranslationalAcceleration { get => m_TranslationalAcceleration; } 
         private readonly List<double[]> m_TranslationalAcceleration = new List<double[]>();
 
         /// <summary>
         /// The angular velocity of the particle in the current time step.
         /// </summary>
-        protected IReadOnlyList<double> RotationalAcceleration { get => m_RotationalAcceleration; }
+        public IReadOnlyList<double> RotationalAcceleration { get => m_RotationalAcceleration; }
         private readonly List<double> m_RotationalAcceleration = new List<double>();
 
         /// <summary>
@@ -164,12 +164,13 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// The force acting on the particle in the current time step.
         /// </summary>
-        public double CollisionTimestep { get; set; }
+        private double m_CollisionTimestep = 0;
 
         /// <summary>
         /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
         /// </summary>
-        public double[] PreCollisionVelocity { get; private set; }
+        public IReadOnlyList<double> PreCollisionVelocity { get => m_PreCollisionVelocity; }
+        private double[] m_PreCollisionVelocity = new double[spatialDim];
 
         /// <summary>
         /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
@@ -287,28 +288,32 @@ namespace BoSSS.Application.FSI_Solver {
             MomentOfInertia = moment;
         }
 
+        public void SetCollisionTimestep(double collisionTimestep) {
+            m_CollisionTimestep = collisionTimestep;
+        }
+
         /// <summary>
         /// Calls the calculation of the position and angle.
         /// </summary>
         /// <param name="dt"></param>
         public void UpdateParticlePositionAndAngle(double dt) {
-            if (CollisionTimestep == 0) {
+            if (m_CollisionTimestep == 0) {
                 SavePositionAndAngleOfPreviousTimestep();
                 m_Position[0] = CalculateParticlePosition(dt);
                 m_Angle[0] = CalculateParticleAngle(dt);
             }
             else {
-                if (CollisionTimestep < 0)
-                    CollisionTimestep = 0;
+                if (m_CollisionTimestep < 0)
+                    m_CollisionTimestep = 0;
                 double[] tempPos = m_Position[0].CloneAs();
                 double tempAngle = m_Angle[0];
                 SavePositionAndAngleOfPreviousTimestep();
                 m_Position[0] = tempPos.CloneAs();
                 m_Angle[0] = tempAngle;
-                m_Position[0] = CalculateParticlePosition(dt, CollisionTimestep);
-                m_Angle[0] = CalculateParticleAngle(dt, CollisionTimestep);
-                if (CollisionTimestep > dt) { CollisionTimestep -= dt; }
-                else CollisionTimestep = 0;
+                m_Position[0] = CalculateParticlePosition(dt, m_CollisionTimestep);
+                m_Angle[0] = CalculateParticleAngle(dt, m_CollisionTimestep);
+                if (m_CollisionTimestep > dt) { m_CollisionTimestep -= dt; }
+                else m_CollisionTimestep = 0;
             }
         }
 
@@ -326,15 +331,15 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         public void UpdateParticleVelocity(double dt) {
-            m_TranslationalAcceleration[0] = CalculateTranslationalAcceleration(dt - CollisionTimestep);
-            m_RotationalAcceleration[0] = CalculateRotationalAcceleration(dt - CollisionTimestep);
-            if (CollisionTimestep == 0) {
+            m_TranslationalAcceleration[0] = CalculateTranslationalAcceleration(dt - m_CollisionTimestep);
+            m_RotationalAcceleration[0] = CalculateRotationalAcceleration(dt - m_CollisionTimestep);
+            if (m_CollisionTimestep == 0) {
                 m_TranslationalVelocity[0] = CalculateTranslationalVelocity(dt);
                 m_RotationalVelocity[0] = CalculateAngularVelocity(dt);
             }
             else {
-                m_TranslationalVelocity[0] = CalculateTranslationalVelocity(dt, CollisionTimestep);
-                m_RotationalVelocity[0] = CalculateAngularVelocity(dt, CollisionTimestep);
+                m_TranslationalVelocity[0] = CalculateTranslationalVelocity(dt, m_CollisionTimestep);
+                m_RotationalVelocity[0] = CalculateAngularVelocity(dt, m_CollisionTimestep);
             }
         }
 
@@ -514,8 +519,8 @@ namespace BoSSS.Application.FSI_Solver {
         internal void CalculateNormalAndTangentialVelocity(double[] NormalVector) {
             double[] Velocity = m_TranslationalVelocity[0];
             double[] TangentialVector = new double[] { -NormalVector[1], NormalVector[0] };
-            PreCollisionVelocity = new double[] { Velocity[0] * NormalVector[0] + Velocity[1] * NormalVector[1], Velocity[0] * TangentialVector[0] + Velocity[1] * TangentialVector[1] };
-            Aux.TestArithmeticException(PreCollisionVelocity, "particle velocity before collision");
+            m_PreCollisionVelocity = new double[] { Velocity[0] * NormalVector[0] + Velocity[1] * NormalVector[1], Velocity[0] * TangentialVector[0] + Velocity[1] * TangentialVector[1] };
+            Aux.TestArithmeticException(m_PreCollisionVelocity, "particle velocity before collision");
         }
 
         /// <summary>
@@ -751,7 +756,7 @@ namespace BoSSS.Application.FSI_Solver {
             dataSend[3] = Angle[0];
             dataSend[4] = Position[0][0];
             dataSend[5] = Position[0][1];
-            dataSend[6] = CollisionTimestep;
+            dataSend[6] = m_CollisionTimestep;
             dataSend[7] = RotationalVelocity[1];
             dataSend[8] = TranslationalVelocity[1][0];
             dataSend[9] = TranslationalVelocity[1][1];
@@ -768,7 +773,7 @@ namespace BoSSS.Application.FSI_Solver {
             m_Angle[0] = dataReceive[3 + Offset];
             m_Position[0][0] = dataReceive[4 + Offset];
             m_Position[0][1] = dataReceive[5 + Offset];
-            CollisionTimestep = dataReceive[6 + Offset];
+            m_CollisionTimestep = dataReceive[6 + Offset];
             m_RotationalVelocity[1] = dataReceive[7 + Offset];
             m_TranslationalVelocity[1][0] = dataReceive[8 + Offset];
             m_TranslationalVelocity[1][1] = dataReceive[9 + Offset];

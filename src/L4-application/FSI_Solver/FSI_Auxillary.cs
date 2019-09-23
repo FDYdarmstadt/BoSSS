@@ -478,7 +478,8 @@ namespace FSI_Solver {
                     throw new ApplicationException("mismatch in number of MPI particles");
 
                 // nor, compare those particles:
-                int NoOfVars = (10 + D * 10); // variables per particle; size can be increased if more values should be compared
+                int matrixDim = Particles[0].Motion.AddedDampingTensor.GetLength(0);
+                int NoOfVars = (8 + D * 8 + matrixDim * matrixDim); // variables per particle; size can be increased if more values should be compared
                 double[] CheckSend = new double[NoOfParticles * NoOfVars];
 
                 for (int p = 0; p < NoOfParticles; p++) {
@@ -488,21 +489,31 @@ namespace FSI_Solver {
                     CheckSend[p * NoOfVars + 0] = P.Motion.Angle[0];
                     CheckSend[p * NoOfVars + 1] = P.Motion.Angle[1];
                     CheckSend[p * NoOfVars + 2] = P.Motion.RotationalVelocity[0];
-                    CheckSend[p * NoOfVars + 5] = P.Motion.Mass_P;
-                    CheckSend[p * NoOfVars + 6] = P.Motion.Density;
-                    CheckSend[p * NoOfVars + 7] = P.Motion.AddedDampingTensor[0, 0];
-                    // todo: add more values here that might be relevant for the particle state;
+                    CheckSend[p * NoOfVars + 3] = P.Motion.RotationalVelocity[1];
+                    CheckSend[p * NoOfVars + 4] = P.Motion.RotationalAcceleration[0];
+                    CheckSend[p * NoOfVars + 5] = P.Motion.RotationalAcceleration[1];
+                    CheckSend[p * NoOfVars + 6] = P.Motion.Mass_P;
+                    CheckSend[p * NoOfVars + 7] = P.Motion.Density;
 
                     // vector values
+                    int Offset = 8;
                     for (int d = 0; d < D; d++) {
-                        int Offset = 10;
                         CheckSend[p * NoOfVars + Offset + 0 * D + d] = P.Motion.Position[0][d];
                         CheckSend[p * NoOfVars + Offset + 1 * D + d] = P.Motion.Position[1][d];
                         CheckSend[p * NoOfVars + Offset + 2 * D + d] = P.Motion.TranslationalVelocity[0][d];
-                        //CheckSend[p * NoOfVars + Offset + 3 * D + d] = P.Motion.TranslationalVelocity[1][d];
-                        CheckSend[p * NoOfVars + Offset + 4 * D + d] = P.Motion.HydrodynamicForces[0][d];
-                        CheckSend[p * NoOfVars + Offset + 5 * D + d] = P.Motion.HydrodynamicForces[1][d];
-                        // todo: add more vector values here that might be relevant for the particle state;
+                        CheckSend[p * NoOfVars + Offset + 3 * D + d] = P.Motion.TranslationalVelocity[1][d];
+                        CheckSend[p * NoOfVars + Offset + 4 * D + d] = P.Motion.TranslationalAcceleration[0][d];
+                        CheckSend[p * NoOfVars + Offset + 5 * D + d] = P.Motion.TranslationalAcceleration[1][d];
+                        CheckSend[p * NoOfVars + Offset + 6 * D + d] = P.Motion.HydrodynamicForces[0][d];
+                        CheckSend[p * NoOfVars + Offset + 7 * D + d] = P.Motion.HydrodynamicForces[1][d];
+                    }
+
+                    // matrix values
+                    Offset += D * 8;
+                    for (int d1 = 0; d1 < matrixDim; d1++) {
+                        for(int d2 = 0; d2 < matrixDim; d2++) {
+                            CheckSend[p * NoOfVars + Offset + d1 + d1 * d2] = P.Motion.AddedDampingTensor[d1, d2];
+                        }
                     }
                 }
 

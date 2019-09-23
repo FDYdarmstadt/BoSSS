@@ -187,7 +187,7 @@ namespace FSI_Solver {
                         if (Distance[p0, ParticleOffset + w] < distanceThreshold && SaveTimeStepArray[p0, ParticleOffset + w] > 0) {
                             double[] CurrentDistanceVector = DistanceVector.ExtractSubArrayShallow(new int[] { p0, ParticleOffset + w, -1 }).To1DArray();
                             particles[p0].ClosestPointToOtherObject = ClosestPoint_P0.ExtractSubArrayShallow(new int[] { p0, ParticleOffset + w, -1 }).To1DArray();
-                            particles[p0].Motion.CollisionTimestep = AccDynamicTimestep;
+                            particles[p0].Motion.SetCollisionTimestep(AccDynamicTimestep);
                             particles[p0].IsCollided = true;
                             particles[p0].Motion.collisionNormalVector.Add(CalculateNormalVector(CurrentDistanceVector));
                             particles[p0].Motion.collisionTangentialVector.Add(CalculateTangentialVector(CalculateNormalVector(CurrentDistanceVector)));
@@ -206,7 +206,7 @@ namespace FSI_Solver {
                             double[] tangentialVector = CalculateTangentialVector(normalVector);
                             foreach (Particle p in collidedParticles) {
                                 p.ClosestPointToOtherObject = ClosestPoint_P0.ExtractSubArrayShallow(new int[] { p0, p1, -1 }).To1DArray();
-                                p.Motion.CollisionTimestep = AccDynamicTimestep;
+                                p.Motion.SetCollisionTimestep(AccDynamicTimestep);
                                 p.IsCollided = true;
                                 p.Motion.collisionNormalVector.Add(normalVector);
                                 p.Motion.collisionTangentialVector.Add(tangentialVector);
