@@ -34,7 +34,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         protected override double CalculateParticleAngle(double dt) {
-            double l_Angle = Angle[1];
+            double l_Angle = GetAngle(1);
             Aux.TestArithmeticException(l_Angle, "particle angle");
             return l_Angle;
         }
@@ -45,7 +45,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="dt"></param>
         /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
         protected override double CalculateParticleAngle(double dt, double collisionTimestep) {
-            double l_Angle = Angle[1];
+            double l_Angle = GetAngle(1);
             Aux.TestArithmeticException(l_Angle, "particle angle");
             return l_Angle;
         }

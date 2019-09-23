@@ -57,20 +57,23 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         public override double LevelSetFunction(double[] X) {
-            double alpha = -(Motion.Angle[0]);
+            double alpha = -Motion.GetAngle(0);
+            double[] position = Motion.GetPosition(0);
             double a = 3.0 * radius_P.Pow2();
             double b = 1.0 * radius_P.Pow2();
-            return -((((X[0] - Motion.Position[0][0]) * Math.Cos(alpha) - (X[1] - Motion.Position[0][1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - Motion.Position[0][0]) * Math.Sin(alpha) + (X[1] - Motion.Position[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - Motion.Position[0][0]) * Math.Cos(alpha) - (X[1] - Motion.Position[0][1]) * Math.Sin(alpha)).Pow(3) - b * ((X[0] - Motion.Position[0][0]) * Math.Sin(alpha) + (X[1] - Motion.Position[0][1]) * Math.Cos(alpha)).Pow2());
+            return -((((X[0] - position[0]) * Math.Cos(alpha) - (X[1] - position[1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - position[0]) * Math.Sin(alpha) + (X[1] - position[1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - position[0]) * Math.Cos(alpha) - (X[1] - position[1]) * Math.Sin(alpha)).Pow(3) - b * ((X[0] - position[0]) * Math.Sin(alpha) + (X[1] - position[1]) * Math.Cos(alpha)).Pow2());
         }
 
         public override bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false) {
+            double alpha = Motion.GetAngle(0);
+            double[] position = Motion.GetPosition(0);
             // only for rectangular cells
             if (h_max == 0)
                 h_max = h_min;
             double radiusTolerance = !WithoutTolerance ? 1.0 + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
             double a = 4.0 * radiusTolerance.Pow2();
             double b = 1.0 * radiusTolerance.Pow2();
-            if (-((((point[0] - Motion.Position[0][0]) * Math.Cos(Motion.Angle[0]) - (point[1] - Motion.Position[0][1]) * Math.Sin(Motion.Angle[0])).Pow(2) + ((point[0] - Motion.Position[0][0]) * Math.Sin(Motion.Angle[0]) + (point[1] - Motion.Position[0][1]) * Math.Cos(Motion.Angle[0])).Pow(2)).Pow2() - a * ((point[0] - Motion.Position[0][0]) * Math.Cos(Motion.Angle[0]) - (point[1] - Motion.Position[0][1]) * Math.Sin(Motion.Angle[0])).Pow(3) - b * ((point[0] - Motion.Position[0][0]) * Math.Sin(Motion.Angle[0]) + (point[1] - Motion.Position[0][1]) * Math.Cos(Motion.Angle[0])).Pow2()) > 0) {
+            if (-((((point[0] - position[0]) * Math.Cos(alpha) - (point[1] - position[1]) * Math.Sin(alpha)).Pow(2) + ((point[0] - position[0]) * Math.Sin(alpha) + (point[1] - position[1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((point[0] - position[0]) * Math.Cos(alpha) - (point[1] - position[1]) * Math.Sin(alpha)).Pow(3) - b * ((point[0] - position[0]) * Math.Sin(alpha) + (point[1] - position[1]) * Math.Cos(alpha)).Pow2()) > 0) {
                 return true;
             }
             return false;

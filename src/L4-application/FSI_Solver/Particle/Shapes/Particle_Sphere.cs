@@ -58,8 +58,8 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         public override double LevelSetFunction(double[] X) {
-            double x0 = Motion.Position[0][0];
-            double y0 = Motion.Position[0][1];
+            double x0 = Motion.GetPosition(0)[0];
+            double y0 = Motion.GetPosition(0)[1];
             return -(X[0] - x0).Pow2() + -(X[1] - y0).Pow2() + radius_P.Pow2();
         }
 
@@ -68,7 +68,7 @@ namespace BoSSS.Application.FSI_Solver {
             if (h_max == 0)
                 h_max = h_min;
             double radiusTolerance = !WithoutTolerance ? radius_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : radius_P;
-            var distance = point.L2Distance(Motion.Position[0]);
+            var distance = point.L2Distance(Motion.GetPosition(0));
             if (distance < (radiusTolerance)) {
                 return true;
             }
@@ -86,8 +86,8 @@ namespace BoSSS.Application.FSI_Solver {
                 throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");
 
             for (int j = 0; j < NoOfSurfacePoints; j++) {
-                SurfacePoints[0, j, 0] = Math.Cos(InfinitisemalAngle[j]) * radius_P + Motion.Position[0][0];
-                SurfacePoints[0, j, 1] = Math.Sin(InfinitisemalAngle[j]) * radius_P + Motion.Position[0][1];
+                SurfacePoints[0, j, 0] = Math.Cos(InfinitisemalAngle[j]) * radius_P + Motion.GetPosition(0)[0];
+                SurfacePoints[0, j, 1] = Math.Sin(InfinitisemalAngle[j]) * radius_P + Motion.GetPosition(0)[1];
             }
             return SurfacePoints;
         }
@@ -99,8 +99,8 @@ namespace BoSSS.Application.FSI_Solver {
             SupportPoint = new double[SpatialDim];
             if (SpatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
-            SupportPoint[0] = CosT * radius_P + Motion.Position[0][0];
-            SupportPoint[1] = SinT * radius_P + Motion.Position[0][1];
+            SupportPoint[0] = CosT * radius_P + Motion.GetPosition(0)[0];
+            SupportPoint[1] = SinT * radius_P + Motion.GetPosition(0)[1];
             if (double.IsNaN(SupportPoint[0]) || double.IsNaN(SupportPoint[1]))
                 throw new ArithmeticException("Error trying to calculate point0 Value:  " + SupportPoint[0] + " point1 " + SupportPoint[1]);
         }

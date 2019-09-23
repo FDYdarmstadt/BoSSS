@@ -27,8 +27,8 @@ namespace BoSSS.Application.FSI_Solver {
             double density,
             ParticleUnderrelaxationParam underrelaxationParam,
             double addedDampingCoefficient = 1) : base(gravity, density, underrelaxationParam) {
-            m_StartingAngle = Angle[0];
-            m_AddedDampingCoefficient = addedDampingCoefficient;
+            m_StartingAngle = GetAngle(0);
+            m_AddedDampingCoefficient = addedDampingCoefficient;    
             UseAddedDamping = true;
         }
 
@@ -63,7 +63,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Calculate tensors to implement the added damping model (Banks et.al. 2017)
         /// </summary>
         public override void CalculateDampingTensor(Particle particle, LevelSetTracker LsTrk, double muA, double rhoA, double dt) {
-            m_AddedDampingTensor = AddedDamping.IntegrationOverLevelSet(particle, LsTrk, muA, rhoA, dt, (double[])Position[0]);
+            m_AddedDampingTensor = AddedDamping.IntegrationOverLevelSet(particle, LsTrk, muA, rhoA, dt, GetPosition(0));
             Aux.TestArithmeticException(m_AddedDampingTensor, "particle added damping tensor");
         }
 
@@ -71,7 +71,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Update in every timestep tensors to implement the added damping model (Banks et.al. 2017)
         /// </summary>
         public override void UpdateDampingTensors() {
-            m_AddedDampingTensor = AddedDamping.RotateTensor(Angle[0], m_StartingAngle, AddedDampingTensor);
+            m_AddedDampingTensor = AddedDamping.RotateTensor(GetAngle(0), m_StartingAngle, AddedDampingTensor);
             Aux.TestArithmeticException(m_AddedDampingTensor, "particle added damping tensor");
         }
 
@@ -103,14 +103,14 @@ namespace BoSSS.Application.FSI_Solver {
             double denominator = CalculateDenominator(coefficientMatrix);
 
             double[] l_Acceleration = new double[2];
-            l_Acceleration[0] = HydrodynamicForces[0][0] * (coefficientMatrix[1, 1] * coefficientMatrix[2, 2] - coefficientMatrix[1, 2] * coefficientMatrix[2, 1]);
-            l_Acceleration[0] += HydrodynamicForces[0][1] * (-coefficientMatrix[0, 1] * coefficientMatrix[2, 2] + coefficientMatrix[0, 2] * coefficientMatrix[2, 1]);
-            l_Acceleration[0] += HydrodynamicTorque[0] * (coefficientMatrix[0, 1] * coefficientMatrix[1, 2] - coefficientMatrix[0, 2] * coefficientMatrix[1, 1]);
+            l_Acceleration[0] = GetHydrodynamicForces(0)[0] * (coefficientMatrix[1, 1] * coefficientMatrix[2, 2] - coefficientMatrix[1, 2] * coefficientMatrix[2, 1]);
+            l_Acceleration[0] += GetHydrodynamicForces(0)[1] * (-coefficientMatrix[0, 1] * coefficientMatrix[2, 2] + coefficientMatrix[0, 2] * coefficientMatrix[2, 1]);
+            l_Acceleration[0] += GetHydrodynamicTorque(0) * (coefficientMatrix[0, 1] * coefficientMatrix[1, 2] - coefficientMatrix[0, 2] * coefficientMatrix[1, 1]);
             l_Acceleration[0] = l_Acceleration[0] / denominator;
 
-            l_Acceleration[1] = HydrodynamicForces[0][0] * (-coefficientMatrix[1, 0] * coefficientMatrix[2, 2] + coefficientMatrix[1, 2] * coefficientMatrix[2, 0]);
-            l_Acceleration[1] += HydrodynamicForces[0][1] * (coefficientMatrix[0, 0] * coefficientMatrix[2, 2] - coefficientMatrix[0, 2] * coefficientMatrix[2, 0]);
-            l_Acceleration[1] += HydrodynamicTorque[0] * (-coefficientMatrix[0, 0] * coefficientMatrix[1, 2] + coefficientMatrix[0, 2] * coefficientMatrix[1, 0]);
+            l_Acceleration[1] = GetHydrodynamicForces(0)[0] * (-coefficientMatrix[1, 0] * coefficientMatrix[2, 2] + coefficientMatrix[1, 2] * coefficientMatrix[2, 0]);
+            l_Acceleration[1] += GetHydrodynamicForces(0)[1] * (coefficientMatrix[0, 0] * coefficientMatrix[2, 2] - coefficientMatrix[0, 2] * coefficientMatrix[2, 0]);
+            l_Acceleration[1] += GetHydrodynamicTorque(0) * (-coefficientMatrix[0, 0] * coefficientMatrix[1, 2] + coefficientMatrix[0, 2] * coefficientMatrix[1, 0]);
             l_Acceleration[1] = l_Acceleration[1] / denominator;
             Aux.TestArithmeticException(l_Acceleration, "particle translational acceleration");
             return l_Acceleration;
@@ -124,9 +124,9 @@ namespace BoSSS.Application.FSI_Solver {
             double[,] coefficientMatrix = CalculateCoefficientMatrix(dt);
             double denominator = CalculateDenominator(coefficientMatrix);
 
-            double l_Acceleration = HydrodynamicForces[0][0] * (coefficientMatrix[1, 0] * coefficientMatrix[2, 1] - coefficientMatrix[1, 1] * coefficientMatrix[2, 0]);
-            l_Acceleration += HydrodynamicForces[0][1] * (coefficientMatrix[0, 1] * coefficientMatrix[2, 0] - coefficientMatrix[0, 0] * coefficientMatrix[2, 1]);
-            l_Acceleration += HydrodynamicTorque[0] * (coefficientMatrix[0, 0] * coefficientMatrix[1, 1] - coefficientMatrix[0, 1] * coefficientMatrix[1, 0]);
+            double l_Acceleration = GetHydrodynamicForces(0)[0] * (coefficientMatrix[1, 0] * coefficientMatrix[2, 1] - coefficientMatrix[1, 1] * coefficientMatrix[2, 0]);
+            l_Acceleration += GetHydrodynamicForces(0)[1] * (coefficientMatrix[0, 1] * coefficientMatrix[2, 0] - coefficientMatrix[0, 0] * coefficientMatrix[2, 1]);
+            l_Acceleration += GetHydrodynamicTorque(0) * (coefficientMatrix[0, 0] * coefficientMatrix[1, 1] - coefficientMatrix[0, 1] * coefficientMatrix[1, 0]);
             l_Acceleration /= denominator;
             Aux.TestArithmeticException(l_Acceleration, "particle rotational acceleration");
             return l_Acceleration;
@@ -213,7 +213,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="forces"></param>
         private void ForceAddedDamping(ref double[] forces, double dt) {
             for (int d = 0; d < spatialDim; d++) {
-                forces[d] += m_AddedDampingCoefficient * dt * (AddedDampingTensor[0, d] * TranslationalAcceleration[0][0] + AddedDampingTensor[1, d] * TranslationalAcceleration[0][1] + AddedDampingTensor[d, 2] * RotationalAcceleration[0]);
+                forces[d] += m_AddedDampingCoefficient * dt * (AddedDampingTensor[0, d] * GetTranslationalAcceleration(0)[0] + AddedDampingTensor[1, d] * GetTranslationalAcceleration(0)[1] + AddedDampingTensor[d, 2] * GetRotationalAcceleration(0));
             }
         }
 
@@ -242,7 +242,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="dt"></param>
         /// <param name="torque"></param>
         private void TorqueAddedDamping(ref double torque, double dt) {
-            torque += m_AddedDampingCoefficient * dt * (AddedDampingTensor[2, 0] * TranslationalAcceleration[0][0] + AddedDampingTensor[2, 1] * TranslationalAcceleration[0][1] + AddedDampingTensor[2, 2] * RotationalAcceleration[0]);
+            torque += m_AddedDampingCoefficient * dt * (AddedDampingTensor[2, 0] * GetTranslationalAcceleration(0)[0] + AddedDampingTensor[2, 1] * GetTranslationalAcceleration(0)[1] + AddedDampingTensor[2, 2] * GetRotationalAcceleration(0));
         }
     }
 }

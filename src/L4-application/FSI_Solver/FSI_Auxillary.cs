@@ -271,10 +271,10 @@ namespace FSI_Solver {
                 residual = 1e12;
             else {
                 foreach (Particle p in Particles) {
-                    double diffForcesX = (p.Motion.ForcesPreviousIter[0] - p.Motion.HydrodynamicForces[0][0]).Pow2();
-                    double diffForcesY = (p.Motion.ForcesPreviousIter[1] - p.Motion.HydrodynamicForces[0][1]).Pow2();
-                    double diffTorque = (p.Motion.TorquePreviousIter - p.Motion.HydrodynamicTorque[0]).Pow2();
-                    double absSolution = Math.Sqrt(p.Motion.HydrodynamicForces[0][0].Pow2() + p.Motion.HydrodynamicForces[0][1].Pow2() + p.Motion.HydrodynamicTorque[0].Pow2());
+                    double diffForcesX = (p.Motion.GetForcesPreviousIter()[0] - p.Motion.GetHydrodynamicForces(0)[0]).Pow2();
+                    double diffForcesY = (p.Motion.GetForcesPreviousIter()[1] - p.Motion.GetHydrodynamicForces(0)[1]).Pow2();
+                    double diffTorque = (p.Motion.TorquePreviousIter - p.Motion.GetHydrodynamicTorque(0)).Pow2();
+                    double absSolution = Math.Sqrt(p.Motion.GetHydrodynamicForces(0)[0].Pow2() + p.Motion.GetHydrodynamicForces(0)[1].Pow2() + p.Motion.GetHydrodynamicTorque(0).Pow2());
                     residual += Math.Sqrt(diffForcesX + diffForcesY + diffTorque) / absSolution;
                 }
             }
@@ -332,12 +332,12 @@ namespace FSI_Solver {
                     if (CurrentParticle.IsCollided)
                         OutputBuilder.AppendLine("The particle is collided");
                     OutputBuilder.AppendLine("-------------------------------------------------------");
-                    OutputBuilder.AppendLine("Drag Force: " + CurrentParticle.Motion.HydrodynamicForces[0][0]);
-                    OutputBuilder.AppendLine("Lift Force: " + CurrentParticle.Motion.HydrodynamicForces[0][1]);
-                    OutputBuilder.AppendLine("Torqe: " + CurrentParticle.Motion.HydrodynamicTorque[0]);
-                    OutputBuilder.AppendLine("Transl VelocityX: " + CurrentParticle.Motion.TranslationalVelocity[0][0]);
-                    OutputBuilder.AppendLine("Transl VelocityY: " + CurrentParticle.Motion.TranslationalVelocity[0][1]);
-                    OutputBuilder.AppendLine("Angular Velocity: " + CurrentParticle.Motion.RotationalVelocity[0]);
+                    OutputBuilder.AppendLine("Drag Force: " + CurrentParticle.Motion.GetHydrodynamicForces(0)[0]);
+                    OutputBuilder.AppendLine("Lift Force: " + CurrentParticle.Motion.GetHydrodynamicForces(0)[1]);
+                    OutputBuilder.AppendLine("Torqe: " + CurrentParticle.Motion.GetHydrodynamicTorque(0));
+                    OutputBuilder.AppendLine("Transl VelocityX: " + CurrentParticle.Motion.GetTranslationalVelocity(0)[0]);
+                    OutputBuilder.AppendLine("Transl VelocityY: " + CurrentParticle.Motion.GetTranslationalVelocity(0)[1]);
+                    OutputBuilder.AppendLine("Angular Velocity: " + CurrentParticle.Motion.GetRotationalVelocity(0));
                 }
             }
             OutputBuilder.AppendLine();
@@ -391,8 +391,8 @@ namespace FSI_Solver {
 
             volumeFraction /= FluidDomainVolume;
 
-            Force = ((double[])Particles[0].Motion.HydrodynamicForces[0]).CloneAs();
-            MPIangularVelocity = Particles[0].Motion.RotationalVelocity[0];
+            Force = ((double[])Particles[0].Motion.GetHydrodynamicForces(0)).CloneAs();
+            MPIangularVelocity = Particles[0].Motion.GetRotationalVelocity(0);
 
             StringBuilder OutputBuilder = new StringBuilder();
 
@@ -418,15 +418,15 @@ namespace FSI_Solver {
                     if (CurrentParticle.IsCollided)
                         OutputBuilder.AppendLine("The particle is collided");
                     OutputBuilder.AppendLine("-------------------------------------------------------");
-                    OutputBuilder.AppendLine("Drag Force: " + CurrentParticle.Motion.HydrodynamicForces[0][0]);
-                    OutputBuilder.AppendLine("Lift Force: " + CurrentParticle.Motion.HydrodynamicForces[0][1]);
-                    OutputBuilder.AppendLine("Torqe: " + CurrentParticle.Motion.HydrodynamicTorque[0]);
-                    OutputBuilder.AppendLine("Transl VelocityX: " + CurrentParticle.Motion.TranslationalVelocity[0][0]);
-                    OutputBuilder.AppendLine("Transl VelocityY: " + CurrentParticle.Motion.TranslationalVelocity[0][1]);
-                    OutputBuilder.AppendLine("Angular Velocity: " + CurrentParticle.Motion.RotationalVelocity[0]);
-                    OutputBuilder.AppendLine("X-position: " + CurrentParticle.Motion.Position[0][0]);
-                    OutputBuilder.AppendLine("Y-position: " + CurrentParticle.Motion.Position[0][1]);
-                    OutputBuilder.AppendLine("Angle: " + CurrentParticle.Motion.Angle[0]);
+                    OutputBuilder.AppendLine("Drag Force: " + CurrentParticle.Motion.GetHydrodynamicForces(0)[0]);
+                    OutputBuilder.AppendLine("Lift Force: " + CurrentParticle.Motion.GetHydrodynamicForces(0)[1]);
+                    OutputBuilder.AppendLine("Torqe: " + CurrentParticle.Motion.GetHydrodynamicTorque(0));
+                    OutputBuilder.AppendLine("Transl VelocityX: " + CurrentParticle.Motion.GetTranslationalVelocity(0)[0]);
+                    OutputBuilder.AppendLine("Transl VelocityY: " + CurrentParticle.Motion.GetTranslationalVelocity(0)[1]);
+                    OutputBuilder.AppendLine("Angular Velocity: " + CurrentParticle.Motion.GetRotationalVelocity(0));
+                    OutputBuilder.AppendLine("X-position: " + CurrentParticle.Motion.GetPosition(0)[0]);
+                    OutputBuilder.AppendLine("Y-position: " + CurrentParticle.Motion.GetPosition(0)[1]);
+                    OutputBuilder.AppendLine("Angle: " + CurrentParticle.Motion.GetAngle(0));
                     OutputBuilder.AppendLine();
                     OutputBuilder.AppendLine("Particle Reynolds number: " + ParticleReynoldsNumber[p]);
                     OutputBuilder.AppendLine("Particle Stokes number: " + ParticleStokesNumber[p]);
@@ -486,25 +486,25 @@ namespace FSI_Solver {
                     var P = Particles[p];
 
                     // scalar values
-                    CheckSend[p * NoOfVars + 0] = P.Motion.Angle[0];
-                    CheckSend[p * NoOfVars + 1] = P.Motion.Angle[1];
-                    CheckSend[p * NoOfVars + 2] = P.Motion.RotationalVelocity[0];
-                    CheckSend[p * NoOfVars + 3] = P.Motion.RotationalVelocity[1];
-                    CheckSend[p * NoOfVars + 4] = P.Motion.RotationalAcceleration[0];
-                    CheckSend[p * NoOfVars + 5] = P.Motion.RotationalAcceleration[1];
+                    CheckSend[p * NoOfVars + 0] = P.Motion.GetAngle(0);
+                    CheckSend[p * NoOfVars + 1] = P.Motion.GetAngle(1);
+                    CheckSend[p * NoOfVars + 2] = P.Motion.GetRotationalVelocity(0);
+                    CheckSend[p * NoOfVars + 3] = P.Motion.GetRotationalVelocity(1);
+                    CheckSend[p * NoOfVars + 4] = P.Motion.GetRotationalAcceleration(0);
+                    CheckSend[p * NoOfVars + 5] = P.Motion.GetRotationalAcceleration(1);
                     CheckSend[p * NoOfVars + 6] = P.Motion.Mass_P;
 
                     // vector values
                     int Offset = 7;
                     for (int d = 0; d < D; d++) {
-                        CheckSend[p * NoOfVars + Offset + 0 * D + d] = P.Motion.Position[0][d];
-                        CheckSend[p * NoOfVars + Offset + 1 * D + d] = P.Motion.Position[1][d];
-                        CheckSend[p * NoOfVars + Offset + 2 * D + d] = P.Motion.TranslationalVelocity[0][d];
-                        CheckSend[p * NoOfVars + Offset + 3 * D + d] = P.Motion.TranslationalVelocity[1][d];
-                        CheckSend[p * NoOfVars + Offset + 4 * D + d] = P.Motion.TranslationalAcceleration[0][d];
-                        CheckSend[p * NoOfVars + Offset + 5 * D + d] = P.Motion.TranslationalAcceleration[1][d];
-                        CheckSend[p * NoOfVars + Offset + 6 * D + d] = P.Motion.HydrodynamicForces[0][d];
-                        CheckSend[p * NoOfVars + Offset + 7 * D + d] = P.Motion.HydrodynamicForces[1][d];
+                        CheckSend[p * NoOfVars + Offset + 0 * D + d] = P.Motion.GetPosition(0)[d];
+                        CheckSend[p * NoOfVars + Offset + 1 * D + d] = P.Motion.GetPosition(1)[d];
+                        CheckSend[p * NoOfVars + Offset + 2 * D + d] = P.Motion.GetTranslationalVelocity(0)[d];
+                        CheckSend[p * NoOfVars + Offset + 3 * D + d] = P.Motion.GetTranslationalVelocity(1)[d];
+                        CheckSend[p * NoOfVars + Offset + 4 * D + d] = P.Motion.GetTranslationalAcceleration(0)[d];
+                        CheckSend[p * NoOfVars + Offset + 5 * D + d] = P.Motion.GetTranslationalAcceleration(1)[d];
+                        CheckSend[p * NoOfVars + Offset + 6 * D + d] = P.Motion.GetHydrodynamicForces(0)[d];
+                        CheckSend[p * NoOfVars + Offset + 7 * D + d] = P.Motion.GetHydrodynamicForces(1)[d];
                     }
 
                     // matrix values

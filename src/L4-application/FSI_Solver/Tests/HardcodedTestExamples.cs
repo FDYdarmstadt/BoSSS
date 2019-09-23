@@ -331,7 +331,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             double V = 0;
             foreach (var p in C.Particles) {
-                V = Math.Max(V, p.Motion.TranslationalVelocity[0].L2Norm());
+                V = Math.Max(V, p.Motion.GetTranslationalVelocity(0).L2Norm());
             }
 
             if (V <= 0)
@@ -451,7 +451,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             double V = 0;
             foreach (var p in C.Particles) {
-                V = Math.Max(V, p.Motion.TranslationalVelocity[0].L2Norm());
+                V = Math.Max(V, p.Motion.GetTranslationalVelocity(0).L2Norm());
             }
 
             if (V <= 0)

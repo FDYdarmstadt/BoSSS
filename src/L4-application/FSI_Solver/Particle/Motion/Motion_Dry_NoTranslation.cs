@@ -40,7 +40,7 @@ namespace BoSSS.Application.FSI_Solver {
         protected override double[] CalculateParticlePosition(double dt) {
             double[] l_Position = new double[spatialDim];
             for (int d = 0; d < spatialDim; d++) {
-                l_Position[d] = Position[1][d];
+                l_Position[d] = GetPosition(1)[d];
             }
             Aux.TestArithmeticException(l_Position, "particle position");
             return l_Position;
@@ -53,7 +53,7 @@ namespace BoSSS.Application.FSI_Solver {
         protected override double[] CalculateParticlePosition(double dt, double collisionTimestep) {
             double[] l_Position = new double[spatialDim];
             for (int d = 0; d < spatialDim; d++) {
-                l_Position[d] = Position[1][d];
+                l_Position[d] = GetPosition(1)[d];
             }
             Aux.TestArithmeticException(l_Position, "particle position");
             return l_Position;

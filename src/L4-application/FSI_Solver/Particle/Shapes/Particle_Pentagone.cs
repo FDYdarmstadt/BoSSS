@@ -60,9 +60,9 @@ namespace BoSSS.Application.FSI_Solver {
 
         public override double LevelSetFunction(double[] X) { // attention: no dependency on angle...
             double r;
-            r = Math.Max(X[0] - Motion.Position[0][0] - width_P, Motion.Position[0][0] - width_P - X[0]);
-            r = Math.Max(r, Motion.Position[0][1] - 0.5 * width_P - X[1]);
-            r = Math.Max(r, Motion.Position[0][0] - width_P - X[1] - 1.5 * X[0]) + Math.Max(r, X[1] - Motion.Position[0][1] - 0.5 * width_P);
+            r = Math.Max(X[0] - Motion.GetPosition(0)[0] - width_P, Motion.GetPosition(0)[0] - width_P - X[0]);
+            r = Math.Max(r, Motion.GetPosition(0)[1] - 0.5 * width_P - X[1]);
+            r = Math.Max(r, Motion.GetPosition(0)[0] - width_P - X[1] - 1.5 * X[0]) + Math.Max(r, X[1] - Motion.GetPosition(0)[1] - 0.5 * width_P);
             r = -r;
             return r;
         }
@@ -72,7 +72,7 @@ namespace BoSSS.Application.FSI_Solver {
             if (h_max == 0)
                 h_max = h_min;
             double radiusTolerance = !WithoutTolerance ? width_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
-            var distance = point.L2Distance(Motion.Position[0]);
+            var distance = point.L2Distance(Motion.GetPosition(0));
             if (distance < (radiusTolerance)) {
                 return true;
             }
@@ -90,8 +90,8 @@ namespace BoSSS.Application.FSI_Solver {
                 throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");
 
             for (int j = 0; j < NoOfSurfacePoints; j++) {
-                SurfacePoints[j, 0] = Math.Cos(InfinitisemalAngle[j]) * width_P + Motion.Position[0][0];
-                SurfacePoints[j, 1] = Math.Sin(InfinitisemalAngle[j]) * width_P + Motion.Position[0][1];
+                SurfacePoints[j, 0] = Math.Cos(InfinitisemalAngle[j]) * width_P + Motion.GetPosition(0)[0];
+                SurfacePoints[j, 1] = Math.Sin(InfinitisemalAngle[j]) * width_P + Motion.GetPosition(0)[1];
             }
             return SurfacePoints;
         }

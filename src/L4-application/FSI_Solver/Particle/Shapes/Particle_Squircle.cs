@@ -65,8 +65,8 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         public override double LevelSetFunction(double[] X) {
-            double alpha = -(Motion.Angle[0]);
-            return -((((X[0] - Motion.Position[0][0]) * Math.Cos(alpha) - (X[1] - Motion.Position[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - Motion.Position[0][0]) * Math.Sin(alpha) + (X[1] - Motion.Position[0][1]) * Math.Cos(alpha)).Pow(4)) - radius_P.Pow(4));
+            double alpha = -(Motion.GetAngle(0));
+            return -((((X[0] - Motion.GetPosition(0)[0]) * Math.Cos(alpha) - (X[1] - Motion.GetPosition(0)[1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - Motion.GetPosition(0)[0]) * Math.Sin(alpha) + (X[1] - Motion.GetPosition(0)[1]) * Math.Cos(alpha)).Pow(4)) - radius_P.Pow(4));
         }
 
         public override bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false) {
@@ -74,7 +74,7 @@ namespace BoSSS.Application.FSI_Solver {
             if (h_max == 0)
                 h_max = h_min;
             double radiusTolerance = !WithoutTolerance ? 1.0 + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
-            if (-((((point[0] - Motion.Position[0][0]) * Math.Cos(Motion.Angle[0]) - (point[1] - Motion.Position[0][1]) * Math.Sin(Motion.Angle[0])).Pow(4) + ((point[0] - Motion.Position[0][0]) * Math.Sin(Motion.Angle[0]) + (point[1] - Motion.Position[0][1]) * Math.Cos(Motion.Angle[0])).Pow(4)) - radiusTolerance.Pow(4)) > 0) {
+            if (-((((point[0] - Motion.GetPosition(0)[0]) * Math.Cos(Motion.GetAngle(0)) - (point[1] - Motion.GetPosition(0)[1]) * Math.Sin(Motion.GetAngle(0))).Pow(4) + ((point[0] - Motion.GetPosition(0)[0]) * Math.Sin(Motion.GetAngle(0)) + (point[1] - Motion.GetPosition(0)[1]) * Math.Cos(Motion.GetAngle(0))).Pow(4)) - radiusTolerance.Pow(4)) > 0) {
                 return true;
             }
             return false;
