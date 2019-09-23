@@ -271,9 +271,9 @@ namespace FSI_Solver {
                 residual = 1e12;
             else {
                 foreach (Particle p in Particles) {
-                    double diffForcesX = (p.Motion.ForcesPrevIteration[0] - p.Motion.HydrodynamicForces[0][0]).Pow2();
-                    double diffForcesY = (p.Motion.ForcesPrevIteration[1] - p.Motion.HydrodynamicForces[0][1]).Pow2();
-                    double diffTorque = (p.Motion.TorquePrevIteration - p.Motion.HydrodynamicTorque[0]).Pow2();
+                    double diffForcesX = (p.Motion.ForcesPreviousIter[0] - p.Motion.HydrodynamicForces[0][0]).Pow2();
+                    double diffForcesY = (p.Motion.ForcesPreviousIter[1] - p.Motion.HydrodynamicForces[0][1]).Pow2();
+                    double diffTorque = (p.Motion.TorquePreviousIter - p.Motion.HydrodynamicTorque[0]).Pow2();
                     double absSolution = Math.Sqrt(p.Motion.HydrodynamicForces[0][0].Pow2() + p.Motion.HydrodynamicForces[0][1].Pow2() + p.Motion.HydrodynamicTorque[0].Pow2());
                     residual += Math.Sqrt(diffForcesX + diffForcesY + diffTorque) / absSolution;
                 }
@@ -391,7 +391,7 @@ namespace FSI_Solver {
 
             volumeFraction /= FluidDomainVolume;
 
-            Force = Particles[0].Motion.HydrodynamicForces[0];
+            Force = ((double[])Particles[0].Motion.HydrodynamicForces[0]).CloneAs();
             MPIangularVelocity = Particles[0].Motion.RotationalVelocity[0];
 
             StringBuilder OutputBuilder = new StringBuilder();

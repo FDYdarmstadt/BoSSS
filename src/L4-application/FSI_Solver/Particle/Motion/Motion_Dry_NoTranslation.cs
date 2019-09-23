@@ -105,10 +105,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// Overrides the calculation of hydrodynamics for fixed particles, so that nothing happens.
         /// </summary>
         public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U = null, SinglePhaseField P = null, LevelSetTracker LsTrk = null, CellMask CutCells_P = null, double fluidViscosity = 0, double fluidDensity = 0, bool firstIteration = false, double dt = 0) {
+            double[] tempForces = new double[spatialDim];
             for (int d = 0; d < spatialDim; d++) {
-                HydrodynamicForces[0][d] = 0;
+                tempForces[d] = 0;
             }
-            HydrodynamicTorque[0] = 0;
+            double tempTorque = 0;
+            HydrodynamicsPostprocessing(tempForces, tempTorque, true);
         }
     }
 }
