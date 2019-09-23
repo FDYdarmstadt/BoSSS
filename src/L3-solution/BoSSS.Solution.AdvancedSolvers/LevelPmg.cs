@@ -82,7 +82,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// p-Multigrid on a single grid level
     /// </summary>
-    public class LevelPmg : ISolverSmootherTemplate {
+    public class LevelPmg : ISolverSmootherTemplate, ISolverWithCallback {
 
         /// <summary>
         /// ctor
@@ -207,7 +207,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         int n = 0;
                         int cellOffset = NpBase * iSpc;
-                        IdxHighOffset[iVar][iSpc] = Map.GlobalUniqueIndex(iVar, jLoc, cellOffset);
+                        IdxHighOffset[iVar][iSpc] = Map.GlobalUniqueIndex(iVar, jLoc, cellOffset+ NpBaseLow);
 
                         for (; n < NpBaseLow; n++)
                         {
@@ -234,7 +234,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         
                     }
                     IdxHighBlockOffset[iVar][NoOfSpc] = NpHiTot;
-                    Debug.Assert(GsubIdx.Last() == Map.LocalUniqueIndex(NoVars - 1, jLoc,NoOfSpc* NpBase- (NpBase - NpBaseLow)-1));
+                    Debug.Assert(GsubIdx.Last() == Map.LocalUniqueIndex(iVar, jLoc, NoOfSpc * NpBase - (NpBase - NpBaseLow) - 1));
                 }
                 
                 // Save high order blocks for later smoothing
@@ -346,9 +346,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Res_f.SetV(B);
                 Mtx.SpMV(-1.0, X, 1.0, Res_f);
 
-
-
-                var Map = m_op.Mapping;
+            var Map = m_op.Mapping;
                 int NoVars = Map.AggBasis.Length;
                 int j0 = Map.FirstBlock;
                 int J = Map.LocalNoOfBlocks;
@@ -370,7 +368,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         HighOrderBlocks_LU[j].BacksubsLU(HighOrderBlocks_LUpivots[j], x_hi, b_f);
                         X.AccV(1.0, x_hi, HighOrderBlocks_indices[j], default(int[]));
                     }
-                }
+                
+            }
+            //compute residual for Callback
+            Res_f.SetV(B);
+            Mtx.SpMV(-1.0, X, 1.0, Res_f);
+            if (IterationCallback != null)
+                IterationCallback(0, X.ToArray(), Res_f, m_op);
+        }
+        public Action<int, double[], double[], MultigridOperator> IterationCallback {
+            get;
+            set;
         }
     }
 }

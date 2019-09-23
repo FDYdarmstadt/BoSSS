@@ -191,7 +191,7 @@ namespace BoSSS.Application.SipPoisson {
             R.LinearSolver.NoOfMultigridLevels = 10;
             R.LinearSolver.TargetBlockSize = 40;
             R.LinearSolver.ConvergenceCriterion = 1e-8;
-            //R.LinearSolver.MaxSolverIterations = 1;
+            R.LinearSolver.MaxSolverIterations = 10;
             //R.LinearSolver.MaxSolverIterations = 10;
 
             R.AddBoundaryValue(BoundaryType.Dirichlet.ToString());
