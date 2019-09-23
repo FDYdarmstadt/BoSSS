@@ -1,0 +1,3 @@
+this stuff is consisten with what is written in handbook
+folder new contains new stuff: gmres_pMG und OrthoMG_Schwarz_pMG
+handbook has to be adjusted first, before this can be overtaken
