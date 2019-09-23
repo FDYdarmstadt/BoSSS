@@ -49,9 +49,7 @@ namespace ilPSP {
         /// whole application).
         /// </param>
         /// <param name="ilPSP_Directory">
-        /// optional directory to search for native libraries. On windows, it
-        /// must contain the 'x86' and the 'amd64' sub-directories, which
-        /// themselves contain the native libs (e.g. HYPRE.dll, ...).
+        /// optional directory to search for native libraries. 
         /// </param>
         /// <returns>
         /// File directory for native files.
@@ -117,18 +115,22 @@ namespace ilPSP {
                         // ++++++++++++++++++++++++++++++++++++++++++++++++++
 
                         DirectoryInfo d = new DirectoryInfo(ilPSP_Directory);
-                        _di = new DirectoryInfo(Path.Combine(d.FullName, Path.Combine("bin", "native", "win")));
+                        _di = new DirectoryInfo(Path.Combine(d.FullName, "bin", "native", "win"));
                         if (!_di.Exists) {
                             Console.Error.WriteLine("WARNING: illegal BoSSS installation; missing directory '" + _di.FullName + "';");
                         }
+                    } else {
+                        Console.Error.WriteLine ("WARNING: Native libraries: local search failed, missing BOSSS_INSTALL - depending on system setings.");
+                        _di = new DirectoryInfo (".");
                     }
 
-                    if(IntPtr.Size == 8) {
+                    if (IntPtr.Size == 8) {
                         // seem to run on 64-Bit windows
                         //Console.WriteLine("running 64 bit");
                         nativeDir = _di.GetDirectories("amd64").FirstOrDefault();
                     } else if (IntPtr.Size == 4) {
                         // seem to run on 32-Bit windows
+                        Console.Error.WriteLine ("Warning: seem to run on 32 bit - unless you build native libraries yourself, this is not supported; expecting libraries in directory 'x86'.");
                         nativeDir = _di.GetDirectories("x86").FirstOrDefault();
                     } else {
                         throw new ApplicationException("something very strange: IntPtr.Size == " + IntPtr.Size + ".");
@@ -148,15 +150,101 @@ namespace ilPSP {
                 
                 // search for the right Dll's (either 64 or 32 Bit)
                 SetDllDirectory(nativeDir.FullName);
+                MPI.Wrappers.Utils.DynLibLoader.AdditionalLibrarySearchPath = nativeDir.FullName;
                 ret = nativeDir.FullName;
 
                 m_BootStrapDone = true;
 
             } else if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX) {
+                // ++++
                 // Unix
-                // currently, nothing is done
+                // ++++
 
-				m_BootStrapDone = true;
+                // search for "amd64"  subdirectories locally (in application directory)
+                // =====================================================================
+                DirectoryInfo nativeDir = null; // directory where we search for native lib's
+                {
+                    DirectoryInfo di = null;
+
+                    System.Reflection.Assembly a = System.Reflection.Assembly.GetEntryAssembly ();
+                    if (a == null) {
+                        // Entry assembly might be null if called from
+                        // unmanaged code; fall back to executing assembly in
+                        // this case
+                        a = System.Reflection.Assembly.GetExecutingAssembly ();
+                    }
+
+                    di = new DirectoryInfo (Path.GetDirectoryName (a.Location));
+
+                    if (IntPtr.Size == 8) {
+                        // seem to run on 64-Bit windows
+                        //Console.WriteLine("running 64 bit");
+                        nativeDir = di.GetDirectories ("amd64-openmpi").FirstOrDefault ();
+                    } else if (IntPtr.Size == 4) {
+                        // seem to run on 32-Bit windows
+                        Console.Error.WriteLine ("Warning: seem to run on 32 bit - unless you build native libraries yourself, this is not supported.");
+
+                    } else {
+                        throw new ApplicationException ("something very strange: IntPtr.Size == " + IntPtr.Size + ".");
+                    }
+                }
+
+
+                // if not found, search for a BoSSS-Installation globally
+                // ======================================================
+
+                if (nativeDir == null || !nativeDir.Exists) {
+
+                    DirectoryInfo _di = null;
+
+                    if (ilPSP_Directory != null && ilPSP_Directory.Length > 0) {
+                        // search in the path of the optional ilPSP directory
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                        DirectoryInfo d = new DirectoryInfo (ilPSP_Directory);
+                        _di = new DirectoryInfo (Path.Combine (d.FullName, "bin", "native", "linux"));
+                        if (!_di.Exists) {
+                            Console.Error.WriteLine ("WARNING: illegal BoSSS installation; missing directory '" + _di.FullName + "';");
+                        }
+                    } else {
+                        Console.Error.WriteLine ("WARNING: Native libraries: local search failed, missing BOSSS_INSTALL - depending on system setings.");
+                        _di = new DirectoryInfo (".");
+                    }
+
+                    if (IntPtr.Size == 8) {
+                        // seem to run on 64-Bit windows
+                        //Console.WriteLine("running 64 bit");
+                        nativeDir = _di.GetDirectories ("amd64-openmpi").FirstOrDefault ();
+                    } else if (IntPtr.Size == 4) {
+                        // seem to run on 32-Bit linux
+                        nativeDir = _di.GetDirectories ("x86").FirstOrDefault ();
+                    } else {
+                        throw new ApplicationException ("something very strange: IntPtr.Size == " + IntPtr.Size + ".");
+                    }
+
+                }
+
+                // error
+                // =====
+
+                if (nativeDir == null || !nativeDir.Exists)
+                    throw new ApplicationException ("unable to do native library bootstrapping: missing directory 'x86' or 'amd64-openmpi'");
+
+
+                // set location for native ilPSP libraries
+                // =======================================
+                // append the directory to LD_LIBRARY_PATH
+                var ld_library_path = System.Environment.GetEnvironmentVariable ("LD_LIBRARY_PATH");
+                if (ld_library_path.IsEmptyOrWhite ())
+                    ld_library_path = "";
+                ld_library_path = nativeDir.FullName + ":" + ld_library_path;
+                System.Environment.SetEnvironmentVariable ("LD_LIBRARY_PATH", ld_library_path);
+                MPI.Wrappers.Utils.DynLibLoader.AdditionalLibrarySearchPath = nativeDir.FullName;
+
+
+                ret = nativeDir.FullName;
+
+                m_BootStrapDone = true;
             } else {
                 Console.WriteLine("WARNING: Unable to determine os type (MS Windows od Unix?).");
                 Console.WriteLine("WARNING: No bootstrapping performed");

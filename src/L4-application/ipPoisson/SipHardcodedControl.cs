@@ -99,6 +99,7 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         public static SipControl TestCartesian1(int xRes = 32, double xStretch = 1.0, int yRes = 16, double yStretch = 1.01, int pDG = 2)
         {
+            //BoSSS.Application.SipPoisson.SipHardcodedControl.TestCartesian1()
             var RR = new SipControl();
             RR.ProjectName = "ipPoison/cartesian";
             RR.savetodb = false;
