@@ -31,6 +31,7 @@ namespace ilPSP {
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
         private static extern void SetDllDirectory(string lpPathName);
+                     
 
         /// <summary>
         /// checks for the native library perquisites, inits MPI
@@ -74,8 +75,8 @@ namespace ilPSP {
                 // MS windows 
                 // ++++++++++
 
-                // search for "amd64" or "x86" subdirectories locally (in application directory)
-                // =============================================================================
+                // search for "amd64"  subdirectories locally (in application directory)
+                // =====================================================================
                 DirectoryInfo nativeDir = null; // directory where we search for native lib's
                 {
                     DirectoryInfo di = null;
@@ -116,9 +117,9 @@ namespace ilPSP {
                         // ++++++++++++++++++++++++++++++++++++++++++++++++++
 
                         DirectoryInfo d = new DirectoryInfo(ilPSP_Directory);
-                        _di = new DirectoryInfo(Path.Combine(d.FullName, Path.Combine("bin", Path.Combine("native", "win"))));
+                        _di = new DirectoryInfo(Path.Combine(d.FullName, Path.Combine("bin", "native", "win")));
                         if (!_di.Exists) {
-                            Console.Error.WriteLine("WARNING: illegal ilPSP installation; missing directory '" + _di.FullName + "';");
+                            Console.Error.WriteLine("WARNING: illegal BoSSS installation; missing directory '" + _di.FullName + "';");
                         }
                     }
 
