@@ -65,7 +65,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Calculate tensors to implement the added damping model (Banks et.al. 2017)
         /// </summary>
         public override void CalculateDampingTensor(Particle particle, LevelSetTracker LsTrk, double muA, double rhoA, double dt) {
-            m_AddedDampingTensor = AddedDamping.IntegrationOverLevelSet(particle, LsTrk, muA, rhoA, dt, Position[0]);
+            m_AddedDampingTensor = AddedDamping.IntegrationOverLevelSet(particle, LsTrk, muA, rhoA, dt, position[0]);
             Aux.TestArithmeticException(m_AddedDampingTensor, "particle added damping tensor");
         }
 

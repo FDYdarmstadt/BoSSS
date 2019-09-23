@@ -23,6 +23,7 @@ using ilPSP.Utils;
 using BoSSS.Foundation.Grid;
 using System.Collections;
 using FSI_Solver;
+using System.Collections.Generic;
 
 namespace BoSSS.Application.FSI_Solver {
 
@@ -74,6 +75,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         [DataMember]
         private readonly double particleDensity;
+
 
         /// <summary>
         /// Mass of the current particle.
@@ -131,9 +133,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Necessary for active particles. Returns 0 for the non active boundary region and a number between 0 and 1 for the active region.
         /// </summary>
-        public double SeperateBoundaryRegions(double[] X) => Math.Cos(Motion.Angle[0]) * (X[0] - Motion.Position[0][0]) + Math.Sin(Motion.Angle[0]) * (X[1] - Motion.Position[0][1]) < 1e-8
-                ? (Math.Cos(Motion.Angle[0]) * (X[0] - Motion.Position[0][0]) + Math.Sin(Motion.Angle[0]) * (X[1] - Motion.Position[0][1])) / Math.Sqrt((X[0] - Motion.Position[0][0]).Pow2() + (X[1] - Motion.Position[0][1]).Pow2())
-                : 0;
+        public double SeperateBoundaryRegions(double[] X) {
+            return Math.Cos(Motion.Angle[0]) * (X[0] - Motion.position[0][0]) + Math.Sin(Motion.Angle[0]) * (X[1] - Motion.position[0][1]) < 1e-8
+            ? (Math.Cos(Motion.Angle[0]) * (X[0] - Motion.position[0][0]) + Math.Sin(Motion.Angle[0]) * (X[1] - Motion.position[0][1])) / Math.Sqrt((X[0] - Motion.position[0][0]).Pow2() + (X[1] - Motion.position[0][1]).Pow2())
+            : 0;
+        }
 
         /// <summary>
         /// Circumference of the current particle.
@@ -202,7 +206,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="RadialLength">
         /// </param>
         internal void CalculateRadialVector(double[] SurfacePoint, out double[] RadialVector, out double RadialLength) {
-            RadialVector = new double[] { SurfacePoint[0] - Motion.Position[0][0], SurfacePoint[1] - Motion.Position[0][1] };
+            RadialVector = new double[] { SurfacePoint[0] - Motion.position[0][0], SurfacePoint[1] - Motion.position[0][1] };
             RadialLength = RadialVector.L2Norm();
             RadialVector.ScaleV(1 / RadialLength);
             Aux.TestArithmeticException(RadialVector, "particle radial vector");
@@ -217,7 +221,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="RadialNormalVector">
         /// </param>
         internal void CalculateRadialNormalVector(double[] SurfacePoint, out double[] RadialNormalVector) {
-            RadialNormalVector = new double[] { SurfacePoint[1] - Motion.Position[0][1], -SurfacePoint[0] + Motion.Position[0][0] };
+            RadialNormalVector = new double[] { SurfacePoint[1] - Motion.position[0][1], -SurfacePoint[0] + Motion.position[0][0] };
             RadialNormalVector.ScaleV(1 / RadialNormalVector.L2Norm());
             Aux.TestArithmeticException(RadialNormalVector, "particle vector normal to radial vector");
         }
