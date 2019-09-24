@@ -18,6 +18,9 @@ using BoSSS.Solution.Gnuplot;
 using BoSSS.Solution.GridImport;
 using ilPSP;
 using ilPSP.Utils;
+using ilPSP.Kraypis;
+using BoSSS.Solution.Tecplot;
+using ilPSP.LinSolvers.MUMPS;
 using MPI.Wrappers;
 using MPI.Wrappers.Utils;
 using System;
@@ -94,17 +97,18 @@ namespace BoSSS.Application.BoSSSpad {
                     ReportError("gnuplot", isOptional: true, detailedMessage: e.Message);
                 }
 
-                CheckDynamicLibrary("METIS", () => new Metis(), isOptional: true);
+                CheckDynamicLibrary("METIS", () => new UnsafeMETIS(), isOptional: true);
                 CheckDynamicLibrary("ParMETIS", () => new ParMetis(), isOptional: true);
 
                 CheckDynamicLibrary("CGNS", () => new CgnsDriver(false), isOptional: true);
                 CheckDynamicLibrary("CGNS (HDF5)", () => new CgnsDriver(true), isOptional: true);
 
-                CheckDynamicLibrary("Tecplot", () => new Tecplot(), isOptional: true);
+                CheckDynamicLibrary("Tecplot", () => new UnsafeTECIO(), isOptional: true);
 
-                CheckDynamicLibrary("MUMPS", () => new MUMPS(), isOptional: true);
+                CheckDynamicLibrary("MUMPS", () => new UnsafeMUMPS(), isOptional: true);
 
                 CheckDynamicLibrary("PARDISO (Intel MKL)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_MKL(), isOptional: true);
+
                 CheckDynamicLibrary("PARDISO (v5)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_v5(), isOptional: true);
 
                 CheckDynamicLibrary("OpenCL", () => new ilPSP.LinSolvers.monkey.CL.cl(), isOptional: true);
@@ -114,6 +118,18 @@ namespace BoSSS.Application.BoSSSpad {
             if (log != null) {
                 log.Close();
             }
+
+            // if wanted perform a more detailed check of the BoSSS installation
+            Console.WriteLine();
+            Console.WriteLine("Basic setup check completed!");
+            Console.WriteLine("Do you wish to perform a detailed check of functionality? y/n");
+            char performCheck = Console.ReadKey().KeyChar;
+            if (performCheck == 'y')
+            {
+                Console.Write("\n");
+                DetailCheckSetup();
+            }
+
         }
 
         /// <summary>
@@ -203,14 +219,66 @@ namespace BoSSS.Application.BoSSSpad {
             log.Flush();
         }
 
+        private static void DetailCheckSetup()
+        {
+            int n = 50;
+            int spacing = 1;
+            double[] x = new double[n];
+            double[] b = new double[n];
+            MultidimensionalArray M = MultidimensionalArray.Create(n, n);
+
+            // create some array
+            for(int i = 0; i< n; i++)
+            {
+                b[i] = 1;
+                for(int j = 0; j < n; j++){
+                    M[i, j] = i+Math.Pow(j,i);
+                }
+            }
+
+            try
+            {
+                Console.Write("Starting with a test of LAPACK Function DGETRF\n");
+                M.Solve(x, b);
+                Console.Write("Succesfully called DGETRF\n\n");
+
+                Console.Write("Starting with a test of BLAS Function DDOT\n");
+                BLAS.DDOT(ref n, x, ref spacing, b,ref spacing);
+                Console.Write("Succesfully called DDOT\n\n");
+
+                Console.Write("Starting with a test of Tecplot Function tecnod110\n");
+                Console.Write("This test is not yet implemented\n");
+                Console.Write("Succesfully called Tecplot Function tecnod110\n\n");
+
+                Console.Write("Starting with a test of METIS Function \n");
+                Console.Write("This test is not yet implemented\n");
+                Console.Write("Succesfully called METIS \n\n");
+
+                Console.Write("Starting with a test of the MUMPS Solver\n");
+                Console.Write("This test is not yet implemented\n");
+                Console.Write("Succesfully called the MUMPS Solver\n\n");
+
+                Console.Write("Starting with a test of the PARDISO Solver\n");
+                Console.Write("This test is not yet implemented\n");
+                Console.Write("Succesfully called the PARDISO Solver\n\n");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
+        }
+
+
+        // Deprecated
         class Metis : DynLibLoader {
 
             public Metis() :
-                base(new string[] { "metis.dll", "libmetis.so" },
-                     new string[2][][],
-                     new GetNameMangling[] { StandardMangling, StandardMangling },
-                     new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix },
-                     new int[] { -1, -1 }) {
+                base(new string[] { "metis.dll", "libBoSSSnative_seq.so", "libmetis.so" },
+                     new string[3][][],
+                     new GetNameMangling[] { DynLibLoader.Identity, DynLibLoader.BoSSS_Prefix, StandardMangling },
+                     new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix },
+                     new int[] { -1, -1, -1 }) {
             }
 
             static string StandardMangling(string _name) {
@@ -234,15 +302,15 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-
+        // Deprecated
         class Tecplot : DynLibLoader {
 
             public Tecplot() :
-                base(new string[] { "tecio.dll", "libtecio.so" },
-                     new string[2][][],
-                     new GetNameMangling[] { NoMangling, NoMangling },
-                     new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix },
-                     new int[] { -1, -1 }) {
+                base(new string[] { "tecio.dll","libBoSSSnative_seq.so", "libtecio.so" },
+                     new string[3][][],
+                     new GetNameMangling[] { NoMangling, DynLibLoader.BoSSS_Prefix, NoMangling },
+                     new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix },
+                     new int[] { -1, -1, -1 }) {
             }
 
             static string NoMangling(string _name) {
@@ -250,15 +318,15 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-
+        // Deprecated
         class MUMPS : DynLibLoader {
 
             public MUMPS() :
-                base(new string[] { "dmumps-mpi.dll", "libdmumps.so" },
-                     new string[2][][],
-                     new GetNameMangling[] { NoMangling, NoMangling },
-                     new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix },
-                     new int[] { -1, -1 }) {
+                base(new string[] { "dmumps-mpi.dll","libBoSSSnative_mpi.so", "libdmumps.so" },
+                     new string[3][][],
+                     new GetNameMangling[] { NoMangling, DynLibLoader.BoSSS_Prefix, NoMangling },
+                     new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix },
+                     new int[] { -1, -1, -1 }) {
             }
 
             static string NoMangling(string _name) {

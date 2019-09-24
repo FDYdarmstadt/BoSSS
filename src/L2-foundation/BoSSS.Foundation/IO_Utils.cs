@@ -50,9 +50,16 @@ namespace BoSSS.Foundation.IO {
 
             string si2 = System.Environment.GetEnvironmentVariable("BOSSS_INSTALL", EnvironmentVariableTarget.Machine);
             if (si2 != null && si2.Length > 0)
-                logger.Info("found MACHINE variable 'BOSSS_INSTALL': '" + si1 + "'.");
+                logger.Info("found MACHINE variable 'BOSSS_INSTALL': '" + si2 + "'.");
             else
                 logger.Info("unable to find a MACHINE variable 'BOSSS_INSTALL'.");
+
+            string si3 = System.Environment.GetEnvironmentVariable ("BOSSS_INSTALL");
+            if (si3 != null && si3.Length > 0)
+                logger.Info ("found variable 'BOSSS_INSTALL': '" + si3 + "'.");
+            else
+                logger.Info ("unable to find a variable 'BOSSS_INSTALL'.");
+
 
             string si = null;
             if (si1 != null && si1.Length > 0) {
@@ -60,7 +67,10 @@ namespace BoSSS.Foundation.IO {
                 logger.Info("Picking USER setting.");
             } else if (si2 != null && si2.Length > 0) {
                 si = si2;
-                logger.Info("Picking MACHINE setting.");
+                logger.Info ("Picking MACHINE setting.");
+            } else if (si3 != null && si3.Length > 0) {
+                si = si3;
+                logger.Info ("Picking generel setting.");
             }
 
             if (si != null && si.Length > 0) {

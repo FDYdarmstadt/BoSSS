@@ -423,10 +423,15 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         public void Dispose() {
             if (m_TimeStepLog != null) {
-                m_TimeStepLog.Flush();
-                m_TimeStepLog.Close();
-                m_TimeStepLog.Dispose();
+                try {
+                    m_TimeStepLog.Flush();
+                    m_TimeStepLog.Close();
+                    m_TimeStepLog.Dispose();
+                } catch(Exception) {
+                    // nop
+                }
             }
+            
         }
     }
 }

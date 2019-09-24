@@ -272,6 +272,12 @@ namespace BoSSS.Application.BoSSSpad {
         public string Title = null;
 
         /// <summary>
+        /// Fontsize for the Labels.
+        /// </summary>
+        [DataMember]
+        public double LabelFont = 16.0;
+
+        /// <summary>
         /// Turn the legend (the key, in gnuplot terms) on or off.
         /// </summary>
         [DataMember]
@@ -284,6 +290,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         [DataMember]
         public string[] LegendAlignment = null;
+
+        /// <summary>
+        /// Font size for the Gnuplot legend.
+        /// </summary>
+        [DataMember]
+        public double LegendFont = 16.0;
 
         /// <summary>
         /// Orders the legend entries rowwise if set to true
@@ -878,7 +890,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Writes plot commands to a gnuplot object.
         /// </summary>
         public void ToGnuplot(Gnuplot gp) {
-            //gp.Cmd("set terminal enhanced font \"Helvetica, 30\" ");
+            //gp.Cmd($"set terminal enhanced font \"Helvetica, 30\" ");
 
             // =======
             // margins
@@ -1010,7 +1022,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                 if (this.ShowLegend) {
                     gp.Cmd("unset key");
-                    string command= "set key font \",16\"";
+                    string command= $"set key font \",{this.LegendFont}\"";
 
                     if ((this.LegendPosition != null) & (this.LegendAlignment != null))
                         System.Console.WriteLine("legend position and legend alignment is set. Choose only one of them! Ignoring alignment ...");
@@ -1067,7 +1079,9 @@ namespace BoSSS.Application.BoSSSpad {
                     if (this.LogX){
                         gp.Cmd("set xtics format \"$" + this.LogBaseX + "^{%L}$\" ");
                         gp.Cmd("set xtics offset 0, 0-0.4 font \"sans, 18\" ");
-                    }else
+                        gp.Cmd($"set xtics font \"sans, {this.LabelFont}\" ");
+                    }
+                    else
                         gp.Cmd("set xtics ");
                 } else {
                     gp.Cmd("set xtics format \" \" "); // shows ticks/marks, but hides numbers
@@ -1085,7 +1099,7 @@ namespace BoSSS.Application.BoSSSpad {
                 if (this.ShowYtics) {
                     if (this.LogY){
                         gp.Cmd("set ytics format \"$" + this.LogBaseY + "^{%L}$\" ");
-                        gp.Cmd("set ytics font \"sans, 16\" ");
+                        gp.Cmd($"set ytics font \"sans, {this.LabelFont}\" ");
                     }else
                         gp.Cmd("set ytics ");
                 } else {
