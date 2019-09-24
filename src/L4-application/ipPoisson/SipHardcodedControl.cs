@@ -99,6 +99,7 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         public static SipControl TestCartesian1(int xRes = 32, double xStretch = 1.0, int yRes = 16, double yStretch = 1.01, int pDG = 2)
         {
+            //BoSSS.Application.SipPoisson.SipHardcodedControl.TestCartesian1()
             var RR = new SipControl();
             RR.ProjectName = "ipPoison/cartesian";
             RR.savetodb = false;
@@ -218,7 +219,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="solver_name">
         /// Name of solver to use.
         /// </param>
-        public static SipControl TestCartesian2(int Res, int Dim, LinearSolverCode solver_name = LinearSolverCode.exp_gmres_levelpmg, int deg = 5) {
+        public static SipControl TestCartesian2(int Res, int Dim, LinearSolverCode solver_name = LinearSolverCode.classic_pardiso, int deg = 5) {
 
             if (Dim != 2 && Dim != 3)
                 throw new ArgumentOutOfRangeException();
