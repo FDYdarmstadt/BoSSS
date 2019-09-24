@@ -146,7 +146,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Test on a Cartesian grid, with an exact polynomial solution.
         /// </summary>
-        public static SipControl TestCartesian3D(int PowRes = 2, int DGdegree = 3, string blapath = null, int xRes = 2, double xStretch = 1.0, int yRes = 2, double yStretch = 1.0, int zRes = 2, double zStretch = 1.0) {
+        public static SipControl TestCartesian3D(int PowRes = 2, int DGdegree = 5, string blapath = null, int xRes = 2, double xStretch = 1.0, int yRes = 2, double yStretch = 1.0, int zRes = 2, double zStretch = 1.0) {
             xRes = (int)Math.Pow(xRes, PowRes);
             yRes = (int)Math.Pow(yRes, PowRes);
             zRes = (int)Math.Pow(zRes, PowRes);
@@ -188,10 +188,11 @@ namespace BoSSS.Application.SipPoisson {
             //R.LinearSolver.SolverCode = LinearSolverCode.exp_decomposedMG_OrthoScheme;
             //R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             //R.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
-            R.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
+            R.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
             R.LinearSolver.NoOfMultigridLevels = 10;
             R.LinearSolver.TargetBlockSize = 40;
-            //R.LinearSolver.MaxSolverIterations = 1;
+            R.LinearSolver.ConvergenceCriterion = 1e-8;
+            R.LinearSolver.MaxSolverIterations = 10;
             //R.LinearSolver.MaxSolverIterations = 10;
 
             R.AddBoundaryValue(BoundaryType.Dirichlet.ToString());
