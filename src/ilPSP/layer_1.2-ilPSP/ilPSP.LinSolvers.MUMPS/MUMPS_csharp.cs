@@ -20,109 +20,13 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using MPI.Wrappers.Utils;
 
 namespace ilPSP.LinSolvers.MUMPS
 {
 	public unsafe class MUMPS_csharp
 	{
-        [DllImport("dmumps-mpi")]
-        extern static unsafe int* mumps_get_mapping();
-
-        [DllImport("dmumps-mpi")]
-		extern static unsafe int* mumps_get_pivnul_list();
-
-		[DllImport("dmumps-mpi")]
-		extern static unsafe int* mumps_get_sym_perm();
-
-		[DllImport("dmumps-mpi")]
-		extern static unsafe int* mumps_get_uns_perm();
-
-		[DllImport("dmumps-mpi", EntryPoint = "dmumps_f77_")]
-		extern static unsafe void MUMPS_F77(
-		   int* job,
-		   int* sym,
-		   int* par,
-		   int* comm_fortran,
-		   int* n,
-		   int* icntl,
-		   double* cntl,
-		   int* keep,
-		   double* dkeep,
-		   long* keep8,
-		   int* nz,
-		   int* irn,
-		   int* irn_avail,
-		   int* jcn,
-		   int* jcn_avail,
-		   double* a,
-		   int* a_avail,
-		   int* nz_loc,
-		   int* irn_loc,
-		   int* irn_loc_avail,
-		   int* jcn_loc,
-		   int* jcn_loc_avail,
-		   double* a_loc,
-		   int* a_loc_avail,
-		   int* nelt,
-		   int* eltptr,
-		   int* eltptr_avail,
-		   int* eltvar,
-		   int* eltvar_avail,
-		   double* a_elt,
-		   int* a_elt_avail,
-		   int* perm_in,
-		   int* perm_in_avail,
-		   double* rhs,
-		   int* rhs_avail,
-		   double* redrhs,
-		   int* redrhs_avail,
-		   int* info,
-		   double* rinfo,
-		   int* infog,
-		   double* rinfog,
-		   int* deficiency,
-		   int* lwk_user,
-		   int* size_schur,
-		   int* listvar_schur,
-		   int* listvar_schur_avail,
-		   double* schur,
-		   int* schur_avail,
-		   double* wk_user,
-		   int* wk_user_avail,
-		   double* colsca,
-		   int* colsca_avail,
-		   double* rowsca,
-		   int* rowsca_avail,
-		   int* instance_number,
-		   int* nrhs,
-		   int* lrhs,
-		   int* lredrhs,
-		   double* rhs_sparse,
-		   int* rhs_sparse_avail,
-		   double* sol_loc,
-		   int* sol_loc_avail,
-		   int* irhs_sparse,
-		   int* irhs_sparse_avail,
-		   int* irhs_ptr,
-		   int* irhs_ptr_avail,
-		   int* isol_loc,
-		   int* isol_loc_avail,
-		   int* nz_rhs,
-		   int* lsol_loc,
-		   int* schur_mloc,
-		   int* schur_nloc,
-		   int* schur_lld,
-		   int* schur_mblock,
-		   int* schur_nblock,
-		   int* schur_nprow,
-		   int* schur_npcol,
-		   int* ooc_tmpdir,
-		   int* ooc_prefix,
-		   int* write_problem,
-		   int* ooc_tmpdirlen,
-		   int* ooc_prefixlen,
-		   int* write_problemlen
-		   );
+        static UnsafeMUMPS m_MUMPS = new UnsafeMUMPS();                
 
 		public unsafe struct DMUMPS_STRUC_CS {
 
@@ -423,7 +327,7 @@ namespace ilPSP.LinSolvers.MUMPS
 								//isol_loc, &isol_loc_avail, &mumps_par.nz_rhs, &mumps_par.lsol_loc, &mumps_par.schur_mloc, &mumps_par.schur_nloc, &mumps_par.schur_lld, &mumps_par.mblock, &mumps_par.nblock,
 								//&mumps_par.nprow, &mumps_par.npcol, ooc_tmpdir, ooc_prefix, write_problem, &ooc_tmpdirlen, &ooc_prefixlen, &write_problemlen);
 
-								MUMPS_F77(job, sym, par, comm_fortran, n, icntl, cntl, keep, dkeep, keep8, nz
+								m_MUMPS.DMUMPS_F77_(job, sym, par, comm_fortran, n, icntl, cntl, keep, dkeep, keep8, nz
 						   , irn, &irn_avail, jcn, &jcn_avail, a, &a_avail, nz_loc, irn_loc, &irn_loc_avail, jcn_loc, &jcn_loc_avail
 						   , a_loc, &a_loc_avail, nelt, eltptr, &eltptr_avail, eltvar, &eltvar_avail, a_elt, &a_elt_avail, perm_in, &perm_in_avail,
 						   rhs, &rhs_avail, redrhs, &redrhs_avail, info, rinfo, infog, rinfog, deficiency, lwk_user, &size_schur, listvar_schur,
@@ -454,7 +358,7 @@ namespace ilPSP.LinSolvers.MUMPS
 								//        mumps_par.mapping[ii] = mumps_par_mapping[ii];
 								//}
 
-								int* mumps_par_mapping = mumps_get_mapping();
+								int* mumps_par_mapping = m_MUMPS.MUMPS_GET_MAPPING();
 								mumps_par.sym_perm = new int[mumps_par.nz];
 								if (mumps_par_mapping != null) {
 									for (int ii = 0; ii < mumps_par.nz; ii++)
@@ -484,14 +388,14 @@ namespace ilPSP.LinSolvers.MUMPS
 
 
 								// to get permutations computed during analysis 
-								int* mumps_par_sym_perm = mumps_get_sym_perm();
+								int* mumps_par_sym_perm = m_MUMPS.MUMPS_GET_SYM_PERM();
 								mumps_par.sym_perm = new int[mumps_par.n];
 								if (mumps_par_sym_perm != null) {
 									for (int ii = 0; ii < mumps_par.n; ii++)
 										mumps_par.sym_perm[ii] = mumps_par_sym_perm[ii];
 								}
 
-								int* mumps_par_uns_perm = mumps_get_uns_perm();
+								int* mumps_par_uns_perm = m_MUMPS.MUMPS_GET_UNS_PERM();
 								mumps_par.uns_perm = new int[mumps_par.n];
 								if (mumps_par_uns_perm != null) {
 									for (int ii = 0; ii < mumps_par.n; ii++)
@@ -532,4 +436,154 @@ namespace ilPSP.LinSolvers.MUMPS
 
 		}
 	}
+
+    public unsafe class UnsafeMUMPS : DynLibLoader
+    {
+        // workaround for .NET bug:
+        // https://connect.microsoft.com/VisualStudio/feedback/details/635365/runtimehelpers-initializearray-fails-on-64b-framework
+        static PlatformID[] Helper()
+        {
+            PlatformID[] p = new PlatformID[2];
+            p[0] = PlatformID.Win32NT;
+            p[1] = PlatformID.Unix;
+            return p;
+        }
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public UnsafeMUMPS() :
+            base(new string[] { "dmumps-mpi.dll", "libBoSSSnative_mpi.so" },
+                  new string[2][][],
+                  new GetNameMangling[] { DynLibLoader.Identity, DynLibLoader.BoSSS_Prefix },
+                  Helper(), //new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix },
+                  new int[] { -1, -1 })
+        { }
+
+#pragma warning disable 649
+        _MUMPS_GET_MAPPING mumps_get_mapping;
+        _MUMPS_GET_PIVNUL_LIST mumps_get_pivnul_list;
+        _MUMPS_GET_SYM_PERM mumps_get_sym_perm;
+        _MUMPS_GET_UNS_PERM mumps_get_uns_perm;
+        _DMUMPS_F77_ dmumps_f77_;
+#pragma warning restore 649
+
+        public unsafe delegate int* _MUMPS_GET_MAPPING();
+
+        public unsafe _MUMPS_GET_MAPPING MUMPS_GET_MAPPING
+        {
+            get { return mumps_get_mapping; }
+        }
+
+        public unsafe delegate int* _MUMPS_GET_PIVNUL_LIST();
+
+        public unsafe _MUMPS_GET_PIVNUL_LIST MUMPS_GET_PIVNUL_LIST
+        {
+            get { return mumps_get_pivnul_list; }
+        }
+
+        public unsafe delegate int* _MUMPS_GET_SYM_PERM();
+
+        public unsafe _MUMPS_GET_SYM_PERM MUMPS_GET_SYM_PERM
+        {
+            get { return mumps_get_sym_perm; }
+        }
+
+        public unsafe delegate int* _MUMPS_GET_UNS_PERM();
+
+        public unsafe _MUMPS_GET_UNS_PERM MUMPS_GET_UNS_PERM
+        {
+            get { return mumps_get_uns_perm; }
+        }
+
+        public unsafe delegate void _DMUMPS_F77_(int* job,
+           int* sym,
+           int* par,
+           int* comm_fortran,
+           int* n,
+           int* icntl,
+           double* cntl,
+           int* keep,
+           double* dkeep,
+           long* keep8,
+           int* nz,
+           int* irn,
+           int* irn_avail,
+           int* jcn,
+           int* jcn_avail,
+           double* a,
+           int* a_avail,
+           int* nz_loc,
+           int* irn_loc,
+           int* irn_loc_avail,
+           int* jcn_loc,
+           int* jcn_loc_avail,
+           double* a_loc,
+           int* a_loc_avail,
+           int* nelt,
+           int* eltptr,
+           int* eltptr_avail,
+           int* eltvar,
+           int* eltvar_avail,
+           double* a_elt,
+           int* a_elt_avail,
+           int* perm_in,
+           int* perm_in_avail,
+           double* rhs,
+           int* rhs_avail,
+           double* redrhs,
+           int* redrhs_avail,
+           int* info,
+           double* rinfo,
+           int* infog,
+           double* rinfog,
+           int* deficiency,
+           int* lwk_user,
+           int* size_schur,
+           int* listvar_schur,
+           int* listvar_schur_avail,
+           double* schur,
+           int* schur_avail,
+           double* wk_user,
+           int* wk_user_avail,
+           double* colsca,
+           int* colsca_avail,
+           double* rowsca,
+           int* rowsca_avail,
+           int* instance_number,
+           int* nrhs,
+           int* lrhs,
+           int* lredrhs,
+           double* rhs_sparse,
+           int* rhs_sparse_avail,
+           double* sol_loc,
+           int* sol_loc_avail,
+           int* irhs_sparse,
+           int* irhs_sparse_avail,
+           int* irhs_ptr,
+           int* irhs_ptr_avail,
+           int* isol_loc,
+           int* isol_loc_avail,
+           int* nz_rhs,
+           int* lsol_loc,
+           int* schur_mloc,
+           int* schur_nloc,
+           int* schur_lld,
+           int* schur_mblock,
+           int* schur_nblock,
+           int* schur_nprow,
+           int* schur_npcol,
+           int* ooc_tmpdir,
+           int* ooc_prefix,
+           int* write_problem,
+           int* ooc_tmpdirlen,
+           int* ooc_prefixlen,
+           int* write_problemlen);
+
+        public unsafe _DMUMPS_F77_ DMUMPS_F77_
+        {
+            get { return dmumps_f77_; }
+        }
+    }
+
 }

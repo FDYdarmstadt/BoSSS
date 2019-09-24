@@ -32,7 +32,6 @@ namespace BoSSS.Foundation.IO {
         /// constructor
         /// </summary>
         public StandardFsDriver(string databasePath) {
-
             if (!File.Exists(databasePath) && !Directory.Exists(databasePath))
                 throw new FileNotFoundException("Database directory/file does not exist.");
 
@@ -47,7 +46,6 @@ namespace BoSSS.Foundation.IO {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
                 if (Rank == 0) {
-
                     // we use the application directory (and not some temp-directory)
                     // because the application directory is most likely to be accessible from all
                     // MPI processes.
@@ -96,10 +94,10 @@ namespace BoSSS.Foundation.IO {
                 }
             }
 
-
             // check base path
             VerifyDirectoryStructure(databasePath);
             BasePath = databasePath;
+
         }
 
         /// <summary>

@@ -806,24 +806,25 @@ namespace ilPSP.Utils {
 		// workaround for .NET bug:
 		// https://connect.microsoft.com/VisualStudio/feedback/details/635365/runtimehelpers-initializearray-fails-on-64b-framework
 		static PlatformID[] Helper() {
-			PlatformID[] p = new PlatformID[5];
+			PlatformID[] p = new PlatformID[6];
 			p[0] = PlatformID.Win32NT;
 			p[1] = PlatformID.Unix;
 			p[2] = PlatformID.Unix;
 			p[3] = PlatformID.Unix;
 			p[4] = PlatformID.Unix;
-			return p;
+            p[5] = PlatformID.Unix;
+            return p;
 		}
 
         /// <summary>
         /// ctor
         /// </summary>
         public UnsafeDBLAS() :
-            base(new string[] { "BLAS_LAPACK.dll", "libacml.so", "libatlas.so", "libblas.so", "libopenblas.so" },
-                  new string[5][][], 
-                  new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore },
+            base(new string[] { "BLAS_LAPACK.dll","libBoSSSnative_seq.so", "libacml.so", "libatlas.so", "libblas.so", "libopenblas.so" },
+                  new string[6][][], 
+                  new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore },
                   Helper(), //new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix },
-                  new int[] { -1, -1, -1, -1, -1 }) { }
+                  new int[] { -1, -1, -1, -1, -1, -1 }) { }
 
         
         /// <summary> FORTRAN BLAS routine </summary>
@@ -831,13 +832,13 @@ namespace ilPSP.Utils {
         
 
 #pragma warning disable        649
-        _DDOT ddot;
-        _DNRM2 dnrm2;
-        _DSWAP dswap;
-        _DGEMM dgemm;
-        _DGEMV dgemv;
-        _DAXPY daxpy;
-        _DSCAL dscal;
+        _DDOT   ddot;
+        _DNRM2  dnrm2;
+        _DSWAP  dswap;
+        _DGEMM  dgemm;
+        _DGEMV  dgemv;
+        _DAXPY  daxpy;
+        _DSCAL  dscal;
 #pragma warning restore       649
 
         /// <summary> FORTRAN BLAS routine </summary>

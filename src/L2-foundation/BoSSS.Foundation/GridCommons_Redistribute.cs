@@ -323,7 +323,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     Options[(int)METIS.OptionCodes.METIS_OPTION_NITER] = 10; // This is the default refinement iterations
                     Options[(int)METIS.OptionCodes.METIS_OPTION_UFACTOR] = 30; // Maximum imbalance of 3 percent (this is the default kway clustering)
 
-                    METIS.ReturnCodes status = (METIS.ReturnCodes)METIS.PartGraphKway(
+                    METIS.ReturnCodes status = (METIS.ReturnCodes)METIS.PARTGRAPHKWAY(
                         nvtxs: ref J,
                         ncon: ref ncon,
                         xadj: xadj,

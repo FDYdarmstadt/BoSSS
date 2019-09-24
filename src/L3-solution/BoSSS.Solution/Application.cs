@@ -42,6 +42,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Xml;
 
@@ -262,76 +263,91 @@ namespace BoSSS.Solution {
             string[] args,
             bool noControlFile,
             Func<Application<T>> ApplicationFactory) {
+#if !DEBUG
+            try {
+#endif
+                CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+                CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
-            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
-            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
+                InitMPI(args);
+        
 
-            InitMPI(args);
+                // lets see if we have environment variables which override command line arguments
+                // (environment variables are usually more robust w.r.t. e.g. escape characters)
+                List<string> _args = new List<string>(args);
+                int ArgCounter = 0;
+                while (true) {
+                    string ArgOverrideName = "BOSSS_ARG_" + ArgCounter;
+                    string ArgValue = System.Environment.GetEnvironmentVariable(ArgOverrideName);
+                    if (ArgValue == null)
+                        break;
 
-            // lets see if we have environment variables which override command line arguments
-            // (environment variables are usually more robust w.r.t. e.g. escape characters)
-            List<string> _args = new List<string>(args);
-            int ArgCounter = 0;
-            while (true) {
-                string ArgOverrideName = "BOSSS_ARG_" + ArgCounter;
-                string ArgValue = System.Environment.GetEnvironmentVariable(ArgOverrideName);
-                if (ArgValue == null)
-                    break;
+                    if (ArgCounter < _args.Count) {
+                        _args[ArgCounter] = ArgValue;
+                    } else {
+                        _args.Add(ArgValue);
+                    }
 
-                if (ArgCounter < _args.Count) {
-                    _args[ArgCounter] = ArgValue;
-                } else {
-                    _args.Add(ArgValue);
+                    Console.WriteLine("arg #{0} override from environment variable '{1}': {2}", ArgCounter, ArgOverrideName, ArgValue);
+
+                    ArgCounter++;
                 }
 
-                Console.WriteLine("arg #{0} override from environment variable '{1}': {2}", ArgCounter, ArgOverrideName, ArgValue);
+                args = _args.ToArray();
 
-                ArgCounter++;
-            }
 
-            args = _args.ToArray();
+                // parse arguments
+                CommandLineOptions opt = new CommandLineOptions();
+                ICommandLineParser parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
+                bool argsParseSuccess;
+                if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+                    argsParseSuccess = parser.ParseArguments(args, opt);
+                    argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
+                } else {
+                    argsParseSuccess = false;
+                    argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
+                }
 
-            // parse arguments
-            CommandLineOptions opt = new CommandLineOptions();
-            ICommandLineParser parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
-            bool argsParseSuccess;
-            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
-                argsParseSuccess = parser.ParseArguments(args, opt);
-                argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
-            } else {
-                argsParseSuccess = false;
-                argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
-            }
+                if (!argsParseSuccess) {
+                    MPI.Wrappers.csMPI.Raw.mpiFinalize();
+                    m_MustFinalizeMPI = false;
+                    System.Environment.Exit(-1);
+                }
 
-            if (!argsParseSuccess) {
-                MPI.Wrappers.csMPI.Raw.mpiFinalize();
-                m_MustFinalizeMPI = false;
+                if (opt.ControlfilePath != null) {
+                    opt.ControlfilePath = opt.ControlfilePath.Trim();
+                }
+                opt = opt.MPIBroadcast(0, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+
+                // Delete old plots if requested
+                if (opt.delPlt) {
+                    DeleteOldPlotFiles();
+                }
+
+
+                // load control file
+                T ctrlV2 = null;
+                T[] ctrlV2_ParameterStudy = null;
+                if (!noControlFile) {
+                    LoadControlFile(opt.ControlfilePath, out ctrlV2, out ctrlV2_ParameterStudy);
+                } else {
+                    ctrlV2 = new T();
+                }
+
+                AppEntry(ApplicationFactory, opt, ctrlV2, ctrlV2_ParameterStudy);
+
+                FinalizeMPI();
+            
+#if !DEBUG
+            } catch(Exception e) {
+                Console.Error.WriteLine(e.StackTrace);
+                Console.Error.WriteLine();
+                Console.Error.WriteLine(e.GetType().Name);
+                Console.Error.WriteLine(e.Message);
+                Console.Error.Flush();
                 System.Environment.Exit(-1);
             }
-
-            if (opt.ControlfilePath != null) {
-                opt.ControlfilePath = opt.ControlfilePath.Trim();
-            }
-            opt = opt.MPIBroadcast(0, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
-
-            // Delete old plots if requested
-            if (opt.delPlt) {
-                DeleteOldPlotFiles();
-            }
-
-
-            // load control file
-            T ctrlV2 = null;
-            T[] ctrlV2_ParameterStudy = null;
-            if (!noControlFile) {
-                LoadControlFile(opt.ControlfilePath, out ctrlV2, out ctrlV2_ParameterStudy);
-            } else {
-                ctrlV2 = new T();
-            }
-
-            AppEntry(ApplicationFactory, opt, ctrlV2, ctrlV2_ParameterStudy);
-
-            FinalizeMPI();
+#endif
         }
 
         /// <summary>
@@ -478,7 +494,7 @@ namespace BoSSS.Solution {
         private static void AppEntry(
             Func<Application<T>> ApplicationFactory,
             CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy) {
-
+            
             if (opt == null)
                 throw new ArgumentNullException();
 
@@ -504,6 +520,9 @@ namespace BoSSS.Solution {
                 if (opt.SuperSampling != null) {
                     ctrlV2.SuperSampling = opt.SuperSampling.Value;
                 }
+                if(opt.fullTracing) {
+                    ctrlV2.TracingNamespaces = "*";
+                }
 
                 // ad-hoc added tags (added by command-line option)
                 if (opt != null && (opt.TagsToAdd != null && opt.TagsToAdd.Length > 0)) {
@@ -515,7 +534,7 @@ namespace BoSSS.Solution {
 
                 // run app
                 // -------
-
+       
                 using (Application<T> app = ApplicationFactory()) {
                     app.Init(ctrlV2);
                     app.RunSolverMode();
@@ -868,6 +887,7 @@ namespace BoSSS.Solution {
         protected void SetUpEnvironment() {
             // init database
             // =============
+            
             m_Database = GetDatabase();
 
             if (this.Control != null) {
@@ -875,12 +895,20 @@ namespace BoSSS.Solution {
                 if (this.DatabaseDriver.FsDriver is NullFileSystemDriver)
                     this.passiveIo = true;
 
-                if (this.Control.TracingNamespaces != null)
-                    Tracer.SetTracingNamespaces(this.Control.TracingNamespaces);
+                if (this.Control.TracingNamespaces == null) {
+                    Tracer.NamespacesToLog = new string[0];
+                } else {
+                    var NamespacesToLog = this.Control.TracingNamespaces.Split(new char[] { ',', ' ', '\n', '\t', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+
+                    if(NamespacesToLog.Any(s => s.Equals("*"))) {
+                        Tracer.NamespacesToLog = new string[] { "" };
+                    } else {
+                        Tracer.NamespacesToLog = NamespacesToLog;
+                    }
+                }
             } else {
                 this.passiveIo = true;
             }
-
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             if (!passiveIo) {
                 CurrentSessionInfo = m_Database.Controller.DBDriver.CreateNewSession(m_Database);
@@ -1689,6 +1717,7 @@ namespace BoSSS.Solution {
         /// </list>
         /// </remarks>
         public virtual void RunSolverMode() {
+            
             SetUpEnvironment(); // remark: tracer is not avail before setup
             
             using (var tr = new FuncTrace()) {
@@ -2298,14 +2327,19 @@ namespace BoSSS.Solution {
         void ByeInt(bool CorrectlyTerminated) {
             // remove the 'NotTerminated' tag from the session info
             // =====================================================
-            if (CorrectlyTerminated && this.CurrentSessionInfo.Tags.Contains(SessionInfo.NOT_TERMINATED_TAG)) {
+
+            // code extra-cautious, since exceptions in Dispose() are, especially in Mono,
+            // sometimes not correctly reported and may cause unexplainable segfaults.
+            var csi = this.CurrentSessionInfo;
+            IEnumerable<string> tags = csi != null ? csi.Tags : null;
+            bool contains_not_terminated = tags != null ? tags.Contains(SessionInfo.NOT_TERMINATED_TAG) : false;
+            if (csi != null && tags != null && CorrectlyTerminated && contains_not_terminated) {
 
                 Console.WriteLine("Removing tag: " + SessionInfo.NOT_TERMINATED_TAG);
-                IList<string> sessTags = this.CurrentSessionInfo.Tags.ToList();
+                IList<string> sessTags = tags.ToList();
                 sessTags.Remove(SessionInfo.NOT_TERMINATED_TAG);
                 this.CurrentSessionInfo.Tags = sessTags;
             }
-
             if(m_ResLogger != null) {
                 m_ResLogger.Close();
                 m_ResLogger = null;
@@ -2325,20 +2359,22 @@ namespace BoSSS.Solution {
         protected virtual void ProfilingLog() {
             var R = Tracer.Root;
 
-            using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_bin")) {
-                var str = R.Serialize();
-                using (StreamWriter stw = new StreamWriter(stream)) {
-                    stw.Write(str);
-                    stw.Flush();
+            if (this.DatabaseDriver != null && this.CurrentSessionInfo != null) {
+                using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_bin")) {
+                    var str = R.Serialize();
+                    using (StreamWriter stw = new StreamWriter(stream)) {
+                        stw.Write(str);
+                        stw.Flush();
+                    }
                 }
-            }
 
-            using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary")) {
-                using (StreamWriter stw = new StreamWriter(stream)) {
-                    WriteProfilingReport(stw, R);
-                    stw.Flush();
-                    stream.Flush();
-                    stw.Close();
+                using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary")) {
+                    using (StreamWriter stw = new StreamWriter(stream)) {
+                        WriteProfilingReport(stw, R);
+                        stw.Flush();
+                        stream.Flush();
+                        stw.Close();
+                    }
                 }
             }
         }
@@ -2768,11 +2804,7 @@ namespace BoSSS.Solution {
         /// </summary>
         public virtual void Dispose() {
             if (!IsDisposed) {
-#if DEBUG
-                {
-#else
                 try {
-#endif
                     ByeInt(true);
                     Bye();
                     ProfilingLog();
@@ -2784,11 +2816,11 @@ namespace BoSSS.Solution {
                     }
                     Console.Out.Flush();
                     Console.Error.Flush();
-#if DEBUG
+
+                } catch (Exception e) {
+                    Console.WriteLine(e.GetType().Name + " in Dispose() " + e.Message);
+                    Console.WriteLine(e.StackTrace);
                 }
-#else
-                } catch (Exception) { }
-#endif
                 IsDisposed = true;
             }
         }
