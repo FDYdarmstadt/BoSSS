@@ -93,6 +93,7 @@
     <Compile Include="FSI_Collision.cs" />
     <Compile Include="FSI_TimestepInfo.cs" />
     <Compile Include="FSI_LevelSetUpdate.cs" />
+    <Compile Include="FSI_Tutorial.cs" />
     <Compile Include="Particle\Motion\Motion_Wet_NoTranslation.cs" />
     <Compile Include="Particle\Motion\Motion_Wet_NoRotation.cs" />
     <Compile Include="Particle\Motion\Motion_AddedDamping.cs" />

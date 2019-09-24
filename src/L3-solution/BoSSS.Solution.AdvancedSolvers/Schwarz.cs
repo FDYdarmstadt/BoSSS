@@ -213,8 +213,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if (NoOfPartsPerProcess > 1) {
                         int ncon = 1;
                         int edgecut = 0;
-                        int[] options = null; //new int[] { 0, 0, 0, 0, 0 };
-                        METIS.PartGraphKway(
+                        int[] options = new int[] { 1 };//null; //new int[] { 0, 0, 0, 0, 0 };                    
+                        METIS.PARTGRAPHKWAY(
                             ref JComp, ref ncon,
                             xadj,
                             adjncy.ToArray(),

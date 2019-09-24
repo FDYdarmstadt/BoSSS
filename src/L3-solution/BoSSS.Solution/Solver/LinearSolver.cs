@@ -158,6 +158,11 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         exp_decomposedMG_OrthoScheme = 50,
 
+        /// <summary>
+        /// Orthonormalization Scheme with p-multigrid preconditioner
+        /// </summary>
+        exp_OrthoS_pMG = 51,
+
         selfmade = 999,
     }
 

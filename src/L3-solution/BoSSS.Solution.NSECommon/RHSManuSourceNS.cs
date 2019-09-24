@@ -30,8 +30,8 @@ namespace BoSSS.Solution.NSECommon {
     /// Current manufactured solutions used is T = cos(x*y), Y0 = 0.3 cos(x*y), Y1 = 0.6 cos(x*y), Y2 = 0.1 cos(x*y), u = -cos(x), v = -cos(y), p = sin(x*y).
     /// See also ControlManuSol() control function.
     /// </summary>
-    public class RHSManuSourceNS : BoSSS.Solution.Utils.LinearSource {
-
+    //public class RHSManuSourceNS : BoSSS.Solution.Utils.LinearSource {
+    public class RHSManuSourceNS : IVolumeForm{
         double[] MolarMasses;
         string direction;
         double Reynolds;
@@ -64,19 +64,36 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// None
         /// </summary>
-        public override IList<string> ArgumentOrdering {
+        public IList<string> ArgumentOrdering {
             get { return new string[0]; }
         }
 
         /// <summary>
         /// None
         /// </summary>
-        public override IList<string> ParameterOrdering {
+        public IList<string> ParameterOrdering {
             get { return null; }
         }
 
-        //Manufactured solution for T = cos(x*y), Y0 = 0.3 cos(x*y), Y1 = 0.6 cos(x*y), Y2 = 0.1 cos(x*y), u = cos(x*y), v = cos(x*y), p = sin(x*y).
-        protected override double Source(double[] x, double[] parameters, double[] U) {
+
+        /// <summary>
+        /// None
+        /// </summary>
+         public TermActivationFlags VolTerms {
+            get {
+                return TermActivationFlags.AllOn;
+            }
+        }
+
+
+
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+            // throw new NotImplementedException();
+            //}
+
+            ////Manufactured solution for T = cos(x*y), Y0 = 0.3 cos(x*y), Y1 = 0.6 cos(x*y), Y2 = 0.1 cos(x*y), u = cos(x*y), v = cos(x*y), p = sin(x*y).
+            //protected override double Source(double[] x, double[] parameters, double[] U) {
+            double[] x = cpv.Xglobal;
 
             double p0 = 1.0; // ThermodynamicPressure.GetMeanValue(3);
             double M1 = MolarMasses[0]; double M2 = MolarMasses[1]; double M3 = MolarMasses[2]; double M4 = MolarMasses[3];
@@ -92,8 +109,25 @@ namespace BoSSS.Solution.NSECommon {
             double PressureGradientTerm;
             double BouyancyTerm;
             double unsteadyTerm = 0.0;
-            double t_ = phystime;
+            double t_ = cpv.time;
+           
+            //double myMS = 0;
+            //if (direction == "x") {
+            //    myMS = p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Pow(Math.Cos(x_ * t_), 0.2e1) * y_ * t_ * Math.Sin(x_ * y_ * t_) - 0.2e1 * p0 / Math.Cos(x_ * y_ * t_) * Math.Cos(x_ * t_) * t_ * Math.Sin(x_ * t_) + p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Cos(x_ * t_) * Math.Cos(y_ * t_) * x_ * t_ * Math.Sin(x_ * y_ * t_) - p0 / Math.Cos(x_ * y_ * t_) * Math.Cos(x_ * t_) * t_ * Math.Sin(y_ * t_) + y_ * t_ * Math.Cos(x_ * y_ * t_) + 0.4e1 / 0.3e1 / Reynolds * t_ * t_ * Math.Cos(x_ * t_);
 
+            //}
+            //else if (direction == "y") {
+            //    myMS = p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Cos(y_ * t_) * Math.Cos(x_ * t_) * y_ * t_ * Math.Sin(x_ * y_ * t_) - p0 / Math.Cos(x_ * y_ * t_) * Math.Cos(y_ * t_) * t_ * Math.Sin(x_ * t_) + p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Pow(Math.Cos(y_ * t_), 0.2e1) * x_ * t_ * Math.Sin(x_ * y_ * t_) - 0.2e1 * p0 / Math.Cos(x_ * y_ * t_) * Math.Cos(y_ * t_) * t_ * Math.Sin(y_ * t_) + x_ * t_ * Math.Cos(x_ * y_ * t_) + 0.4e1 / 0.3e1 / Reynolds * t_ * t_ * Math.Cos(y_ * t_);
+
+            //}
+
+            //return -myMS;
+        
+
+
+ 
+
+            ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
             if (unsteady) {
@@ -189,7 +223,7 @@ namespace BoSSS.Solution.NSECommon {
             }
 
 
-            return -( unsteadyTerm + ConvectionTerm + ViscTerm + PressureGradientTerm + BouyancyTerm * -1);
+            return -( unsteadyTerm*1 + ConvectionTerm + ViscTerm + PressureGradientTerm + BouyancyTerm * -1)*V;
         }
     }
 }

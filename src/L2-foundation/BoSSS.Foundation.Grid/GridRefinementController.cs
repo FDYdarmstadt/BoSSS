@@ -87,7 +87,7 @@ namespace BoSSS.Foundation.Grid {
         /// <returns>
         /// True if any refinement or coarsening of the current grid should be performed; otherwise false.
         /// </returns>
-        public static bool ComputeGridChange(GridData currentGrid, List<Tuple<int, CellMask>> CellsMaxRefineLevel, out List<int> cellsToRefine, out List<int[]> cellsToCoarsen) {
+        public static bool ComputeGridChange(GridData currentGrid, CellMask CutCells, List<Tuple<int, CellMask>> CellsMaxRefineLevel, out List<int> cellsToRefine, out List<int[]> cellsToCoarsen) {
             int[][] globalCellNeigbourship = GetGlobalCellNeigbourship(currentGrid);
 
             int[] CellsWithMaxRefineLevel = GetAllCellsWithMaxRefineLevel(currentGrid, CellsMaxRefineLevel);
@@ -95,15 +95,7 @@ namespace BoSSS.Foundation.Grid {
             int[] globalDesiredLevel = GetGlobalDesiredLevel(currentGrid, levelIndicator, globalCellNeigbourship);
             cellsToRefine = GetCellsToRefine(currentGrid, globalDesiredLevel);
 
-            // to be refactored
-            CellMask AllRelevantCells = CellMask.GetEmptyMask(currentGrid);
-            if (CellsMaxRefineLevel.Count() > 0)
-                AllRelevantCells = CellsMaxRefineLevel[0].Item2;
-            //for (int i = 1; i < CellsMaxRefineLevel.Count(); i++) {
-            //    AllRelevantCells.Union(CellsMaxRefineLevel[i].Item2);
-            //}
-
-            BitArray oK2Coarsen = GetCellsOk2Coarsen(currentGrid, AllRelevantCells, globalDesiredLevel, globalCellNeigbourship);
+            BitArray oK2Coarsen = GetCellsOk2Coarsen(currentGrid, CutCells, globalDesiredLevel, globalCellNeigbourship);
             int[][] coarseningClusters = FindCoarseningClusters(oK2Coarsen, currentGrid);
             cellsToCoarsen = GetCoarseningCells(currentGrid, coarseningClusters);
 
@@ -434,11 +426,11 @@ namespace BoSSS.Foundation.Grid {
                 }
             }
 
-            //if (cellsNotOK2Coarsen != null) {
-            //    foreach (int j in cellsNotOK2Coarsen.ItemEnum) {
-            //        oK2Coarsen[j] = false;
-            //    }
-            //}
+            if (cellsNotOK2Coarsen != null) {
+                foreach (int j in cellsNotOK2Coarsen.ItemEnum) {
+                    oK2Coarsen[j] = false;
+                }
+            }
 
             return oK2Coarsen;
         }

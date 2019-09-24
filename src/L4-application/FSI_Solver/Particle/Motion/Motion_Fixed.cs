@@ -22,6 +22,8 @@ namespace BoSSS.Application.FSI_Solver {
     public class Motion_Fixed : Motion_Wet {
 
         public Motion_Fixed(double[] gravity = null) : base(gravity) {
+            includeRotation = false;
+            includeTranslation = false;
         }
 
         /// <summary>

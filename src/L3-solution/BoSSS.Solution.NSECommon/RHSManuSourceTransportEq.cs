@@ -30,7 +30,9 @@ namespace BoSSS.Solution.NSECommon {
     /// Current manufactured solutions used is T = cos(x*y), Y0 = 0.3 cos(x*y), Y1 = 0.6 cos(x*y), Y2 = 0.1 cos(x*y), u = -cos(x), v = -cos(y), p = sin(x*y).
     /// See also ControlManuSol() control function.
     /// </summary>
-    public class RHSManuSourceTransportEq : BoSSS.Solution.Utils.LinearSource {
+    //public class RHSManuSourceTransportEq : BoSSS.Solution.Utils.LinearSource {
+    public class RHSManuSourceTransportEq : IVolumeForm
+    {
 
         double HeatReleaseFactor;
         double ReynoldsNumber;
@@ -102,21 +104,34 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// None
         /// </summary>
-        public override IList<string> ArgumentOrdering {
+        public IList<string> ArgumentOrdering {
             get { return new string[0]; }
         }
 
         /// <summary>
-        /// Temperature, MassFraction0, MassFraction1, MassFraction2, MassFraction3 at linearization point.
+        /// None
         /// </summary>
-        public override IList<string> ParameterOrdering {
-            get { return new string[] { /*VariableNames.Temperature0, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0*/ }; }
+        public IList<string> ParameterOrdering {
+            get { return null; }
         }
 
 
-        //Manufactured solution for T = cos(x*y), Y0 = 0.3 cos(x*y), Y1 = 0.6 cos(x*y), Y2 = 0.1 cos(x*y), u = -cos(x), v = -cos(y), p = sin(x*y).
-        protected override double Source(double[] x, double[] parameters, double[] U) {
+        /// <summary>
+        /// None
+        /// </summary>
+        public TermActivationFlags VolTerms {
+            get {
+                return TermActivationFlags.AllOn;
+            }
+        }
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+        //    throw new NotImplementedException();
+        //}
 
+
+        ////Manufactured solution for T = cos(x*y), Y0 = 0.3 cos(x*y), Y1 = 0.6 cos(x*y), Y2 = 0.1 cos(x*y), u = -cos(x), v = -cos(y), p = sin(x*y).
+        //protected override double Source(double[] x, double[] parameters, double[] U) {
+            double[] x = cpv.Xglobal;
             double x_ = x[0];
             double y_ = x[1];
             double t_ = phystime;
@@ -134,6 +149,13 @@ namespace BoSSS.Solution.NSECommon {
             double SourceTerm;
             double DiffussionTerm;
             double unsteadyTerm = 0.0;
+
+
+
+     
+
+
+
 
 
             if (unsteady) {
@@ -155,7 +177,7 @@ namespace BoSSS.Solution.NSECommon {
 
                         SourceTerm = 0.0;//TODO
 
-                        return -(unsteadyTerm + ConvectionTerm + DiffussionTerm + SourceTerm);
+                        return -(unsteadyTerm + ConvectionTerm + DiffussionTerm + SourceTerm)*V;
 
                     case "MassFraction":
                         if (SpeciesIndex == -1)
@@ -190,7 +212,7 @@ namespace BoSSS.Solution.NSECommon {
 
 
                         SourceTerm = -MolarMasses[SpeciesIndex] * StoichiometricCoeff * ReactionRate;
-                        return -(ConvectionTerm + -DiffussionTerm + SourceTerm); // TODO CHECK SIGNS
+                        return -(ConvectionTerm + -DiffussionTerm + SourceTerm)*V; // TODO CHECK SIGNS
 
                     default:
                         throw new NotImplementedException();
@@ -214,7 +236,7 @@ namespace BoSSS.Solution.NSECommon {
                     case "Temperature":
                         DiffussionTerm = 1.0 / (ReynoldsNumber * PrandtlNumber) * Math.Cos(x_ * y_) * (Math.Pow(x_, 2) + Math.Pow(y_, 2)); // OK
                         SourceTerm = HeatReleaseFactor * Math.Cos(x_ * y_) * ReactionRate;
-                        return -(ConvectionTerm + DiffussionTerm + SourceTerm);
+                        return -(ConvectionTerm + DiffussionTerm + SourceTerm)*V;
 
                     case "MassFraction":
                         if (SpeciesIndex == -1)
@@ -249,7 +271,7 @@ namespace BoSSS.Solution.NSECommon {
 
 
                         SourceTerm = -MolarMasses[SpeciesIndex] * StoichiometricCoeff * ReactionRate;
-                        return -(ConvectionTerm + -DiffussionTerm + SourceTerm); // TODO CHECK SIGNS
+                        return -(ConvectionTerm + -DiffussionTerm + SourceTerm)*V; // TODO CHECK SIGNS
 
                     default:
                         throw new NotImplementedException();

@@ -79,7 +79,7 @@ namespace FSI_Solver {
             FSI_LevelSetUpdate LevelSetUpdate = new FSI_LevelSetUpdate(m_LevelSetTracker);
             int spatialDim = particles[0].Motion.position[0].Length;
             int ParticleOffset = particles.Count();
-            double distanceThreshold = m_dt * 1e-4;
+            double distanceThreshold = m_hMin / 10;// m_dt;// * 1e-4;
             int J = gridData.iLogicalCells.NoOfLocalUpdatedCells;
             List<int[]> ColoredCellsSorted = LevelSetUpdate.ColoredCellsFindAndSort(cellColor);
             CellMask ParticleCutCells = LevelSetUpdate.CellsOneColor(gridData, ColoredCellsSorted, m_CurrentColor, J, false);
@@ -101,7 +101,7 @@ namespace FSI_Solver {
                     // Step 2.1.1
                     // Move the particle with the current save timestep.
                     // -------------------------------------------------------
-                    UpdateParticleState(particles, SaveTimeStep, spatialDim);
+                    UpdateParticleState(particles, SaveTimeStep, m_dt);
                     SaveTimeStep = double.MaxValue;
                     for (int p0 = 0; p0 < particles.Count(); p0++) {
                         // Step 2.1.2
@@ -126,7 +126,6 @@ namespace FSI_Solver {
                             Distance[p0, ParticleOffset + w] = temp_Distance;
                             double[] normalVector = CalculateNormalVector(temp_DistanceVector.To1DArray());
                             double temp_SaveTimeStep = DynamicTimestep(particles[p0], temp_ClosestPoint_p0.To1DArray(), normalVector, Distance[p0, ParticleOffset + w]);
-                            Console.WriteLine("SaveTimeStep " + temp_SaveTimeStep + " dt " + m_dt);
                             SaveTimeStepArray[p0, ParticleOffset + w] = temp_SaveTimeStep;
                             DistanceVector.SetSubArray(temp_DistanceVector, new int[] { p0, ParticleOffset + w, -1 });
                             ClosestPoint_P0.SetSubArray(temp_ClosestPoint_p0, new int[] { p0, ParticleOffset + w, -1 });
@@ -171,13 +170,13 @@ namespace FSI_Solver {
                     // Step 2.1.2
                     // Accumulate the current save timestep.
                     // -------------------------------------------------------
-                    if (SaveTimeStep != -m_dt)
+                    if (SaveTimeStep >= 0)
                         AccDynamicTimestep += SaveTimeStep;
-                    if (Math.Abs(AccDynamicTimestep) >= m_dt) {
+                    if (AccDynamicTimestep >= m_dt) {
                         break;
                     }
                 }
-                if (Math.Abs(AccDynamicTimestep) >= m_dt) {
+                if (AccDynamicTimestep >= m_dt) {
                     break;
                 }
                 // Step 3
@@ -228,13 +227,6 @@ namespace FSI_Solver {
                 for (int p = 0; p < particles.Count(); p++) {
                     PostProcessCollisionTranslation(particles[p]);
                     PostProcessCollisionRotation(particles[p]);
-                }
-
-                // Step 5
-                // Write already used time to particle.cs.
-                // =======================================================
-                for (int p = 0; p < particles.Count(); p++) {
-                    particles[p].Motion.collisionTimestep = AccDynamicTimestep;
                 }
             }
         }
@@ -301,7 +293,7 @@ namespace FSI_Solver {
         /// <param name="particles"></param>
         ///  <param name="dynamicTimestep"></param>
         /// <param name="spatialDim"></param>
-        private void UpdateParticleState(List<Particle> particles, double dynamicTimestep, int spatialDim) {
+        private void UpdateParticleState(List<Particle> particles, double dynamicTimestep, double dt) {
             for (int p = 0; p < particles.Count(); p++) {
                 Particle currentParticle = particles[p];
                 if (dynamicTimestep != 0) {
@@ -729,25 +721,12 @@ namespace FSI_Solver {
         }
 
         /// <summary>
-        /// Does nothing atm. (Computes the coefficient of restitution. At small Stokes-No. the coefficient of restitution becomes zero.)
-        /// </summary>
-        /// <param name="stokesNumber"></param>
-        /// <param name="coefficientOfRestitution"></param>
-        private void ModelCoefficientOfRestitution(double stokesNumber, out double coefficientOfRestitution) {
-            coefficientOfRestitution = m_CoefficientOfRestitution;
-            //if (stokesNumber < 9 && stokesNumber != 0)// the Stokes number is zero in case of a dry simulation (no fluid)
-            //    coefficientOfRestitution = 0;
-        }
-
-        /// <summary>
         /// Computes the post-collision velocities of two particles.
         /// </summary>
         /// <param name="collidedParticles">
         /// List of the two colliding particles
         /// </param>
         internal void ComputeMomentumBalanceCollision(List<Particle> collidedParticles) {
-            ModelCoefficientOfRestitution(collidedParticles[0].ComputeParticleSt(m_FluidViscosity, m_FluidDensity, Aux.VectorDiff(collidedParticles[0].Motion.translationalVelocity[0], collidedParticles[1].Motion.translationalVelocity[0])), out m_CoefficientOfRestitution);
-
             for (int p = 0; p < collidedParticles.Count(); p++) {
                 collidedParticles[p].Motion.CalculateNormalAndTangentialVelocity(collidedParticles[p].collisionNormalVector.Last());
                 collidedParticles[p].CalculateEccentricity();
@@ -769,8 +748,6 @@ namespace FSI_Solver {
         /// </summary>
         /// <param name="particle"></param>
         internal void ComputeMomentumBalanceCollision(Particle particle) {
-            ModelCoefficientOfRestitution(particle.ComputeParticleSt(m_FluidViscosity, m_FluidDensity), out m_CoefficientOfRestitution);
-
             particle.Motion.CalculateNormalAndTangentialVelocity(particle.collisionNormalVector.Last());
             particle.CalculateEccentricity();
 

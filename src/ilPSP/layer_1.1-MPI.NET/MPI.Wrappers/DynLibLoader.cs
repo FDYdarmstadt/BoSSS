@@ -339,7 +339,7 @@ namespace MPI.Wrappers.Utils {
 
                 foreach (var f in files) {
                     Info("Found '" + f.FullName + "'");
-                    LibNames.Add(f.Name);
+                    LibNames.Add(f.FullName);
                 }
             }
 
@@ -392,42 +392,66 @@ namespace MPI.Wrappers.Utils {
         }
 
         /// <summary>
+        /// typically, this should initialized to the BoSSS installation directory.
+        /// </summary>
+        public static string AdditionalLibrarySearchPath = null;
+
+        /// <summary>
         /// all directories in "PATH" or "LD_LIBRARY_PATH"
         /// </summary>
-        private List<DirectoryInfo> GetLibrarySearchDirs(PlatformID CurrentSys) {
-            List<DirectoryInfo> LibrarySearchPath = new List<DirectoryInfo>();
-            {
-                switch (CurrentSys) {
-                    case PlatformID.MacOSX:
-                    case PlatformID.Unix: {
+        private List<DirectoryInfo> GetLibrarySearchDirs (PlatformID CurrentSys)
+        {
+            List<DirectoryInfo> LibrarySearchPath = new List<DirectoryInfo> ();
 
-                            AddDirsFromSystemEnvironment(LibrarySearchPath, "LD_LIBRARY_PATH", new char[] { ':' });
-
-                            foreach (var dir in new string[] { "/usr/lib", "/lib" }) {
-                                try {
-                                    var di = new DirectoryInfo(dir);
-                                    if (di.Exists) {
-                                        LibrarySearchPath.Add(di);
-                                        m_debugoutput.WriteLine("Adding search directory: " + dir);
-                                    }
-                                } catch (Exception) {
-
-                                }
-                            }
-                            break;
-                        }
-                    case PlatformID.Win32S:
-                    case PlatformID.Win32Windows:
-                    case PlatformID.Win32NT: {
-                            string varName = "PATH";
-                            AddDirsFromSystemEnvironment(LibrarySearchPath, varName, new char[] { ';' });
-                            break;
-                        }
-
-                    default:
-                        break;
+            if (AdditionalLibrarySearchPath != null) {
+                try {
+                    var di = new DirectoryInfo (AdditionalLibrarySearchPath);
+                    if (di.Exists) {
+                        LibrarySearchPath.Add (di);
+                        Info ("Adding search directory: " + AdditionalLibrarySearchPath);
+                    } else {
+                        Warn ("Explicity set installation directory " + AdditionalLibrarySearchPath + " seems non-existent.");
+                    }
+                } catch (Exception exc) {
+                    Warn ("Error accessing explicity set installation directory " + AdditionalLibrarySearchPath + " : " + exc.Message + " (" + exc.GetType ().FullName + ")");
                 }
             }
+
+            {
+                switch (CurrentSys) {
+                case PlatformID.MacOSX:
+                case PlatformID.Unix: {
+
+                        AddDirsFromSystemEnvironment (LibrarySearchPath, "LD_LIBRARY_PATH", new char [] { ':' });
+
+                        foreach (var dir in new string [] { "/usr/lib", "/lib" }) {
+                            try {
+                                var di = new DirectoryInfo (dir);
+                                if (di.Exists) {
+                                    LibrarySearchPath.Add (di);
+                                    Info ("Adding search directory: " + dir);
+                                } else {
+                                    Warn ("Directory " + dir + " seems non-existent.");
+                                }
+                            } catch (Exception exc) {
+                                Warn ("Error accessing directory " + dir + " : " + exc.Message + " (" + exc.GetType ().FullName + ")");
+                            }
+                        }
+                        break;
+                    }
+                case PlatformID.Win32S:
+                case PlatformID.Win32Windows:
+                case PlatformID.Win32NT: {
+                        string varName = "PATH";
+                        AddDirsFromSystemEnvironment (LibrarySearchPath, varName, new char [] { ';' });
+                        break;
+                    }
+
+                default:
+                    break;
+                }
+            }
+
             return LibrarySearchPath;
         }
 
@@ -508,12 +532,19 @@ namespace MPI.Wrappers.Utils {
             m_debugoutput.WriteLine(obj.ToString());
         }
 
-
         /// <summary>
         /// DLL function name mangling: no change
         /// </summary>
         public static string Identity(string Name) {
             return Name;
+        }
+
+        /// <summary>
+        /// DLL function name mangling: BoSSS_ prefix for custom libBoSSSnative
+        /// </summary>
+        public static string BoSSS_Prefix(string Name)
+        {
+            return "BoSSS_" + Name;
         }
 
         /// <summary>

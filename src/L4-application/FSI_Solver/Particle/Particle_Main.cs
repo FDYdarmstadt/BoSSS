@@ -44,7 +44,7 @@ namespace BoSSS.Application.FSI_Solver {
 
         protected static int spatialDim = 2;
 
-        public Particle(ParticleMotionInit motionInit, double[] startPos = null, double startAngl = 0.0, double[] startTransVelocity = null, double startRotVelocity = 0, double activeStress = 0) {
+        public Particle(ParticleMotionInit motionInit, double[] startPos = null, double startAngl = 0.0, double[] startTransVelocity = null, double startRotVelocity = 0) {
             spatialDim = startPos.Length;
             if (startPos == null) {
                 startPos = new double[spatialDim];
