@@ -273,7 +273,7 @@ namespace FSI_Solver {
                 foreach (Particle p in Particles) {
                     double diffForcesX = (p.Motion.GetForcesPreviousIter()[0] - p.Motion.GetHydrodynamicForces(0)[0]).Pow2();
                     double diffForcesY = (p.Motion.GetForcesPreviousIter()[1] - p.Motion.GetHydrodynamicForces(0)[1]).Pow2();
-                    double diffTorque = (p.Motion.TorquePreviousIter - p.Motion.GetHydrodynamicTorque(0)).Pow2();
+                    double diffTorque = (p.Motion.GetTorquePreviousIteration() - p.Motion.GetHydrodynamicTorque(0)).Pow2();
                     double absSolution = Math.Sqrt(p.Motion.GetHydrodynamicForces(0)[0].Pow2() + p.Motion.GetHydrodynamicForces(0)[1].Pow2() + p.Motion.GetHydrodynamicTorque(0).Pow2());
                     residual += Math.Sqrt(diffForcesX + diffForcesY + diffTorque) / absSolution;
                 }

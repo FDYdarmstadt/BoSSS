@@ -20,6 +20,19 @@ using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Application.FSI_Solver {
     public class Motion_Wet_NoTranslation : Motion_Wet {
+
+        /// <summary>
+        /// The dry description of motion including hydrodynamics without translation.
+        /// </summary>
+        /// <param name="gravity">
+        /// The gravity (volume forces) acting on the particle.
+        /// </param>
+        /// <param name="density">
+        /// The density of the particle.
+        /// </param>
+        /// /// <param name="underrelaxationParam">
+        /// The underrelaxation parameters (convergence limit, prefactor and a bool whether to use addaptive underrelaxation) defined in <see cref="ParticleUnderrelaxationParam"/>.
+        /// </param>
         public Motion_Wet_NoTranslation(double[] gravity, double density, ParticleUnderrelaxationParam underrelaxationParam = null) : base(gravity, density, underrelaxationParam) {
             IncludeTranslation = false;
         }
@@ -27,7 +40,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Include translation?
         /// </summary>
-        public override bool IncludeTranslation { get; } = false;
+        internal override bool IncludeTranslation { get; } = false;
 
         /// <summary>
         /// Calculate the new particle position
@@ -92,11 +105,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="U"></param>
         /// <param name="P"></param>
-        /// <param name="LsTrk"></param>
+        /// <param name="levelSetTracker"></param>
         /// <param name="muA"></param>
-        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double muA, double relativeParticleMass, bool firstIteration, double dt = 0) {
+        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker levelSetTracker, CellMask cutCells, double muA, double relativeParticleMass, bool firstIteration, double dt = 0) {
             double[] tempForces = new double[spatialDim];
-            double tempTorque = CalculateHydrodynamicTorque(U, P, LsTrk, CutCells_P, muA);
+            double tempTorque = CalculateHydrodynamicTorque(U, P, levelSetTracker, cutCells, muA);
             HydrodynamicsPostprocessing(tempForces, tempTorque, firstIteration);
         }
     }

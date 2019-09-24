@@ -20,6 +20,19 @@ using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Application.FSI_Solver {
     public class Motion_Wet_NoRotation : Motion_Wet {
+
+        /// <summary>
+        /// The dry description of motion including hydrodynamics without rotation.
+        /// </summary>
+        /// <param name="gravity">
+        /// The gravity (volume forces) acting on the particle.
+        /// </param>
+        /// <param name="density">
+        /// The density of the particle.
+        /// </param>
+        /// /// <param name="underrelaxationParam">
+        /// The underrelaxation parameters (convergence limit, prefactor and a bool whether to use addaptive underrelaxation) defined in <see cref="ParticleUnderrelaxationParam"/>.
+        /// </param>
         public Motion_Wet_NoRotation(double[] gravity, double density, ParticleUnderrelaxationParam underrelaxationParam = null) : base(gravity, density, underrelaxationParam) {
             IncludeRotation = false;
         }
@@ -27,7 +40,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Include translation?
         /// </summary>
-        public override bool IncludeRotation { get; } = false;
+        internal override bool IncludeRotation { get; } = false;
 
         /// <summary>
         /// Calculate the new particle angle
@@ -77,10 +90,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="U"></param>
         /// <param name="P"></param>
-        /// <param name="LsTrk"></param>
+        /// <param name="levelSetTracker"></param>
         /// <param name="fluidViscosity"></param>
-        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double fluidViscosity, double fluidDensity, bool firstIteration, double dt = 0) {
-            double[] tempForces = CalculateHydrodynamicForces(U, P, LsTrk, CutCells_P, fluidViscosity, fluidDensity);
+        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker levelSetTracker, CellMask cutCells, double fluidViscosity, double fluidDensity, bool firstIteration, double dt = 0) {
+            double[] tempForces = CalculateHydrodynamicForces(U, P, levelSetTracker, cutCells, fluidViscosity, fluidDensity);
             double tempTorque = 0;
             HydrodynamicsPostprocessing(tempForces, tempTorque, firstIteration);
         }

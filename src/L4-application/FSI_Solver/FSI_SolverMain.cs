@@ -1292,7 +1292,7 @@ namespace BoSSS.Application.FSI_Solver {
                     double[] dataReceive = new double[noOfVars * MPISize];
                     MPISendAndReceive(dataSend, ref dataReceive);
 
-                    currentParticle.Motion.WriteReceiveArray(dataReceive, Offset: i * noOfVars);
+                    currentParticle.Motion.WriteReceiveArray(dataReceive, offset: i * noOfVars);
 
                     currentParticle.IsCollided = true;
                     noCurrentCollision = false;

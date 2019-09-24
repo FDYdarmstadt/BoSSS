@@ -19,56 +19,69 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
 using ilPSP;
 using MPI.Wrappers;
+using System;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Application.FSI_Solver {
     public class Motion_AddedDamping : Motion_Wet {
-        public Motion_AddedDamping(
-            double[] gravity,
-            double density,
-            ParticleUnderrelaxationParam underrelaxationParam,
-            double addedDampingCoefficient = 1) : base(gravity, density, underrelaxationParam) {
+
+        /// <summary>
+        /// The added damping description of motion including hydrodynamics, for reference: Banks et.al. 2017.
+        /// </summary>
+        /// <param name="gravity">
+        /// The gravity (volume forces) acting on the particle.
+        /// </param>
+        /// <param name="density">
+        /// The density of the particle.
+        /// </param>
+        /// <param name="underrelaxationParam">
+        /// The underrelaxation parameters (convergence limit, prefactor and a bool whether to use addaptive underrelaxation) defined in <see cref="ParticleUnderrelaxationParam"/>.
+        /// </param>
+        /// <param name="addedDampingCoefficient">
+        /// The added damping coefficient is a scaling factor for the model. Should be between 0.5 and 1.5, for reference: Banks et.al. 2017.
+        /// </param>
+        public Motion_AddedDamping( double[] gravity, double density, ParticleUnderrelaxationParam underrelaxationParam, double addedDampingCoefficient = 1) : base(gravity, density, underrelaxationParam) {
             m_StartingAngle = GetAngle(0);
             m_AddedDampingCoefficient = addedDampingCoefficient;    
             UseAddedDamping = true;
         }
 
-        /// <summary>
-        /// Use added damping?, for reference: Banks et.al. 2017
-        /// </summary>
-        public override bool UseAddedDamping { get; } = true;
-
+        [NonSerialized]
         private readonly ParticleAddedDamping AddedDamping = new ParticleAddedDamping();
-
-        /// <summary>
-        /// Added damping coefficient, should be between 0.5 and 1.5, for reference: Banks et.al. 2017
-        /// </summary>
-        private readonly double m_AddedDampingCoefficient;
-
-        /// <summary>
-        /// Complete added damping tensor, for reference: Banks et.al. 2017
-        /// </summary>
+        [DataMember]
         private double[,] m_AddedDampingTensor;
-
-        /// <summary>
-        /// Complete added damping tensor, for reference: Banks et.al. 2017
-        /// </summary>
-        public override double[,] AddedDampingTensor { get => m_AddedDampingTensor; } 
-
-        /// <summary>
-        /// Saving the initial angle of the particle for <see cref="UpdateDampingTensors()"/>
-        /// </summary>
+        [DataMember]
+        private readonly double m_AddedDampingCoefficient;
+        [DataMember]
         private readonly double m_StartingAngle;
 
         /// <summary>
-        /// Calculate tensors to implement the added damping model (Banks et.al. 2017)
+        /// We are using the added damping model, for reference: Banks et.al. 2017.
         /// </summary>
-        public override void CalculateDampingTensor(Particle particle, LevelSetTracker LsTrk, double muA, double rhoA, double dt) {
-            m_AddedDampingTensor = AddedDamping.IntegrationOverLevelSet(particle, LsTrk, muA, rhoA, dt, GetPosition(0));
+        [DataMember]
+        internal override bool UseAddedDamping { get; } = true;
+        
+        /// <summary>
+        /// Complete added damping tensor, for reference: Banks et.al. 2017.
+        /// </summary>
+        [DataMember]
+        internal override double[,] AddedDampingTensor { get => m_AddedDampingTensor; }
+
+        /// <summary>
+        /// Calculate the tensors to implement the added damping model (Banks et.al. 2017)
+        /// </summary>
+        /// <param name="particle"></param>
+        /// <param name="levelSetTracker"></param>
+        /// <param name="fluidViscosity"></param>
+        /// <param name="fluidDensity"></param>
+        /// <param name="dt"></param>
+        public override void CalculateDampingTensor(Particle particle, LevelSetTracker levelSetTracker, double fluidViscosity, double fluidDensity, double dt) {
+            m_AddedDampingTensor = AddedDamping.IntegrationOverLevelSet(particle, levelSetTracker, fluidViscosity, fluidDensity, dt, GetPosition(0));
             Aux.TestArithmeticException(m_AddedDampingTensor, "particle added damping tensor");
         }
 
         /// <summary>
-        /// Update in every timestep tensors to implement the added damping model (Banks et.al. 2017)
+        /// Update in every timestep tensors to implement the added damping model (Banks et.al. 2017).
         /// </summary>
         public override void UpdateDampingTensors() {
             m_AddedDampingTensor = AddedDamping.RotateTensor(GetAngle(0), m_StartingAngle, AddedDampingTensor);
@@ -176,11 +189,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="U"></param>
         /// <param name="P"></param>
-        /// <param name="LsTrk"></param>
+        /// <param name="levelSetTracker"></param>
         /// <param name="fluidViscosity"></param>
-        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double fluidViscosity, double fluidDensity, bool firstIteration, double dt) {
-            double[] tempForces = CalculateHydrodynamicForces(U, P, LsTrk, CutCells_P, fluidViscosity, fluidDensity, dt);
-            double tempTorque = CalculateHydrodynamicTorque(U, P, LsTrk, CutCells_P, fluidViscosity, dt);
+        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker levelSetTracker, CellMask cutCells, double fluidViscosity, double fluidDensity, bool firstIteration, double dt) {
+            double[] tempForces = CalculateHydrodynamicForces(U, P, levelSetTracker, cutCells, fluidViscosity, fluidDensity, dt);
+            double tempTorque = CalculateHydrodynamicTorque(U, P, levelSetTracker, cutCells, fluidViscosity, dt);
             HydrodynamicsPostprocessing(tempForces, tempTorque, firstIteration);
         }
 
@@ -189,15 +202,15 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="U"></param>
         /// <param name="P"></param>
-        /// <param name="LsTrk"></param>
-        /// <param name="CutCells_P"></param>
-        /// <param name="muA"></param>
+        /// <param name="levelSetTracker"></param>
+        /// <param name="cutCells"></param>
+        /// <param name="fluidViscosity"></param>
         /// <param name="dt"></param>
-        protected override double[] CalculateHydrodynamicForces(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double muA, double fluidDensity, double dt) {
-            int RequiredOrder = U[0].Basis.Degree * 3 + 2;
-            SinglePhaseField[] UA = U.ToArray();
+        protected override double[] CalculateHydrodynamicForces(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker levelSetTracker, CellMask cutCells, double fluidViscosity, double fluidDensity, double dt) {
+            int requiredOrder = U[0].Basis.Degree * 3 + 2;
+            SinglePhaseField[] uA = U.ToArray();
             ConventionalDGField pA = P;
-            double[] tempForces = ForcesIntegration(UA, pA, LsTrk, CutCells_P, RequiredOrder, muA);
+            double[] tempForces = ForcesIntegration(uA, pA, levelSetTracker, cutCells, requiredOrder, fluidViscosity);
             Force_MPISum(ref tempForces);
             for (int d = 0; d < spatialDim; d++) {
                 tempForces[d] += (Density - fluidDensity) * ParticleArea * Gravity[d];
@@ -222,15 +235,15 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="U"></param>
         /// <param name="P"></param>
-        /// <param name="LsTrk"></param>
-        /// <param name="CutCells_P"></param>
-        /// <param name="muA"></param>
+        /// <param name="levelSetTracker"></param>
+        /// <param name="cutCells"></param>
+        /// <param name="fluidViscosity"></param>
         /// <param name="dt"></param>
-        protected override double CalculateHydrodynamicTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double muA, double dt) {
-            int RequiredOrder = U[0].Basis.Degree * 3 + 2;
+        protected override double CalculateHydrodynamicTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker levelSetTracker, CellMask cutCells, double fluidViscosity, double dt) {
+            int requiredOrder = U[0].Basis.Degree * 3 + 2;
             SinglePhaseField[] UA = U.ToArray();
             ConventionalDGField pA = P;
-            double tempTorque = TorqueIntegration(UA, pA, LsTrk, CutCells_P, RequiredOrder, muA);
+            double tempTorque = TorqueIntegration(UA, pA, levelSetTracker, cutCells, requiredOrder, fluidViscosity);
             Torque_MPISum(ref tempTorque);
             TorqueAddedDamping(ref tempTorque, dt);
             return tempTorque;

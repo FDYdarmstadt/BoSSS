@@ -30,220 +30,308 @@ using System.Runtime.Serialization;
 namespace BoSSS.Application.FSI_Solver {
     public class Motion_Wet {
 
-        public Motion_Wet(double[] gravity,
-            double density,
-            ParticleUnderrelaxationParam underrelaxationParam = null) {
+        /// <summary>
+        /// The standard description of motion including hydrodynamics.
+        /// </summary>
+        /// <param name="gravity">
+        /// The gravity (volume forces) acting on the particle.
+        /// </param>
+        /// <param name="density">
+        /// The density of the particle.
+        /// </param>
+        /// <param name="underrelaxationParam">
+        /// The underrelaxation parameters (convergence limit, prefactor and a bool whether to use addaptive underrelaxation) defined in <see cref="ParticleUnderrelaxationParam"/>.
+        /// </param>
+        public Motion_Wet(double[] gravity, double density, ParticleUnderrelaxationParam underrelaxationParam = null) {
             Gravity = gravity;
             m_UnderrelaxationParam = underrelaxationParam;
             Density = density;
-
+            // creating list for motion parameters (to save the history)
             for (int i = 0; i < historyLength; i++) {
                 m_Position.Add(new double[spatialDim]);
                 m_Angle.Add(new double());
                 m_TranslationalVelocity.Add(new double[spatialDim]);
-                m_TranslationalAcceleration.Add(new double[spatialDim]);
                 m_RotationalVelocity.Add(new double());
+                m_TranslationalAcceleration.Add(new double[spatialDim]);
                 m_RotationalAcceleration.Add(new double());
                 m_HydrodynamicForces.Add(new double[spatialDim]);
                 m_HydrodynamicTorque.Add(new double());
             }
         }
 
-        private const int historyLength = 4;
-        protected static int spatialDim = 2;
         [NonSerialized]
-        readonly internal FSI_Auxillary Aux = new FSI_Auxillary();
+        internal readonly FSI_Auxillary Aux = new FSI_Auxillary();
         [NonSerialized]
-        readonly private ParticleForceIntegration ForceIntegration = new ParticleForceIntegration();
-        readonly ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation();
+        private readonly ParticleForceIntegration ForceIntegration = new ParticleForceIntegration();
+        [NonSerialized]
+        private readonly ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation();
+        [NonSerialized]
         private readonly ParticleUnderrelaxationParam m_UnderrelaxationParam = null;
+
+        [DataMember]
+        private const int historyLength = 4;
+        [DataMember]
+        protected static int spatialDim = 2;
+        [DataMember]
+        private readonly List<double[]> m_Position = new List<double[]>();
+        [DataMember]
+        private readonly List<double> m_Angle = new List<double>();
+        [DataMember]
+        private readonly List<double[]> m_TranslationalVelocity = new List<double[]>();
+        [DataMember]
+        private readonly List<double> m_RotationalVelocity = new List<double>();
+        [DataMember]
+        private readonly List<double[]> m_TranslationalAcceleration = new List<double[]>();
+        [DataMember]
+        private readonly List<double> m_RotationalAcceleration = new List<double>();
+        [DataMember]
+        private readonly List<double[]> m_HydrodynamicForces = new List<double[]>();
+        [DataMember]
+        private readonly List<double> m_HydrodynamicTorque = new List<double>();
+        [DataMember]
+        private double[] m_ForcesPreviousIteration = new double[spatialDim];
+        [DataMember]
+        private double m_TorquePreviousIteration = new double();
+        [DataMember]
+        private double m_CollisionTimestep = 0;
+        [DataMember]
+        private double[] m_PreCollisionVelocity = new double[spatialDim];
+        [DataMember]
+        private double particleArea;
+        [DataMember]
+        private readonly List<double[]> m_CollisionTranslationalVelocity = new List<double[]>();
+        [DataMember]
+        private readonly List<double> m_CollisionRotationalVelocity = new List<double>();
+        [DataMember]
+        private readonly List<double[]> m_CollisionNormalVector = new List<double[]>();
+        [DataMember]
+        private readonly List<double[]> m_CollisionTangentialVector = new List<double[]>();
+        [DataMember]
+        private double density;
+        [DataMember]
+        private double[] gravity;
+        [DataMember]
+        private double momentOfInertia;
+        [DataMember]
+        private double maxParticleLengthScale;
 
         /// <summary>
         /// Gravity (volume force) acting on the particle.
         /// </summary>
         [DataMember]
-        protected double[] Gravity { get; }
+        protected double[] Gravity {
+            get {
+                Aux.TestArithmeticException(gravity, "particle density");
+                return gravity;
+            }
+            private set => gravity = value;
+        }
 
         /// <summary>
         /// Density of the particle.
         /// </summary>
         [DataMember]
-        public double Density { get; }
+        public double Density {
+            get {
+                Aux.TestArithmeticException(density, "particle density");
+                return density;
+            }
+            private set => density = value;
+        }
 
         /// <summary>
-        /// The translational velocity of the particle in the current time step.
+        /// The area occupied by the particle. Calculated by <see cref="Particle"/>.
         /// </summary>
         [DataMember]
-        protected double ParticleArea { get; private set; }
+        protected double ParticleArea {
+            get {
+                Aux.TestArithmeticException(particleArea, "particle area");
+                return particleArea;
+            }
+            private set => particleArea = value;
+        }
 
         /// <summary>
-        /// The translational velocity of the particle in the current time step.
+        /// Mass of the current particle.
         /// </summary>
         [DataMember]
-        protected double MomentOfInertia { get; private set; }
+        public double Mass_P => ParticleArea * Density;
 
         /// <summary>
-        /// The maximum lenghtscale of the particle.
+        /// The moment of inertia. Calculated by <see cref="Particle"/>.
         /// </summary>
         [DataMember]
-        protected double MaxParticleLengthScale { get; private set; }
+        protected double MomentOfInertia {
+            get {
+                Aux.TestArithmeticException(momentOfInertia, "particle moment of inertia");
+                return momentOfInertia;
+            }
+            private set => momentOfInertia = value;
+        }
+
+        /// <summary>
+        /// The maximum lenghtscale of the particle. Calculated by <see cref="Particle"/>.
+        /// </summary>
+        [DataMember]
+        protected double MaxParticleLengthScale {
+            get {
+                Aux.TestArithmeticException(maxParticleLengthScale, "particle moment of inertia");
+                return maxParticleLengthScale;
+            }
+            private set => maxParticleLengthScale = value;
+        }
 
         /// <summary>
         /// Include rotation?
         /// </summary>
         [DataMember]
-        public virtual bool IncludeRotation { get; } = true;
+        internal virtual bool IncludeRotation { get; } = true;
 
         /// <summary>
         /// Include translation?
         /// </summary>
         [DataMember]
-        public virtual bool IncludeTranslation { get; } = true;
+        internal virtual bool IncludeTranslation { get; } = true;
 
         /// <summary>
         /// Use added damping?, for reference: Banks et.al. 2017
         /// </summary>
         [DataMember]
-        public virtual bool UseAddedDamping { get; } = false;
+        internal virtual bool UseAddedDamping { get; } = false;
 
         /// <summary>
         /// Complete added damping tensor, for reference: Banks et.al. 2017
         /// </summary>
         [DataMember]
-        public virtual double[,] AddedDampingTensor { get; } = new double[6, 6];
+        internal virtual double[,] AddedDampingTensor { get; } = new double[6, 6];
 
         /// <summary>
-        /// The position of the particle in the current time step.
+        /// Returns the position of the particle.
         /// </summary>
-        public double[] GetPosition(int historyPosition) {// used method instead of property as IReadOnlyList causes exceptions during deserialization
+        /// <param name="historyPosition">
+        /// The history of the particle is saved for four timesteps. historyPosition=0 returns the newest value.
+        /// </param>
+        internal double[] GetPosition(int historyPosition = 0) {
+            if (historyPosition >= historyLength)
+                throw new Exception("Error in Particle.Motion: Only " + historyLength + " timesteps are saved. The requested value is " + historyPosition + " steps in the past!");
             return m_Position[historyPosition];
         }
-        [DataMember]
-        private readonly List<double[]> m_Position = new List<double[]>();
 
         /// <summary>
-        /// The angular velocity of the particle in the current time step.
+        /// Returns the angle of the particle.
         /// </summary>
-        public double GetAngle(int historyPosition) {
+        /// /// <param name="historyPosition">
+        /// The history of the particle is saved for four timesteps. historyPosition=0 returns the newest value.
+        /// </param>
+        internal double GetAngle(int historyPosition = 0) {
+            if (historyPosition >= historyLength)
+                throw new Exception("Error in Particle.Motion: Only " + historyLength + " timesteps are saved. The requested value is " + historyPosition + " steps in the past!");
             return m_Angle[historyPosition];
         }
-        [DataMember]
-        private readonly List<double> m_Angle = new List<double>();
 
         /// <summary>
-        /// The translational velocity of the particle in the current time step.
+        /// Returns the translational velocity of the particle.
         /// </summary>
-        public double[] GetTranslationalVelocity(int historyPosition) {
+        /// /// <param name="historyPosition">
+        /// The history of the particle is saved for four timesteps. historyPosition=0 returns the newest value.
+        /// </param>
+        internal double[] GetTranslationalVelocity(int historyPosition = 0) {
+            if (historyPosition >= historyLength)
+                throw new Exception("Error in Particle.Motion: Only " + historyLength + " timesteps are saved. The requested value is " + historyPosition + " steps in the past!");
             return m_TranslationalVelocity[historyPosition];
         }
-        [DataMember]
-        private readonly List<double[]> m_TranslationalVelocity = new List<double[]>();
 
         /// <summary>
-        /// The angular velocity of the particle in the current time step.
+        /// Returns the rotational velocity of the particle.
         /// </summary>
-        public double GetRotationalVelocity(int historyPosition) {
+        /// /// <param name="historyPosition">
+        /// The history of the particle is saved for four timesteps. historyPosition=0 returns the newest value.
+        /// </param>
+        internal double GetRotationalVelocity(int historyPosition = 0) {
+            if (historyPosition >= historyLength)
+                throw new Exception("Error in Particle.Motion: Only " + historyLength + " timesteps are saved. The requested value is " + historyPosition + " steps in the past!");
             return m_RotationalVelocity[historyPosition];
         }
-        [DataMember]
-        private readonly List<double> m_RotationalVelocity = new List<double>();
 
         /// <summary>
-        /// The translational velocity of the particle in the current time step.
+        /// Returns the translational acceleration of the particle.
         /// </summary>
-        public double[] GetTranslationalAcceleration(int historyPosition) {
+        /// /// <param name="historyPosition">
+        /// The history of the particle is saved for four timesteps. historyPosition=0 returns the newest value.
+        /// </param>
+        internal double[] GetTranslationalAcceleration(int historyPosition = 0) {
+            if (historyPosition >= historyLength)
+                throw new Exception("Error in Particle.Motion: Only " + historyLength + " timesteps are saved. The requested value is " + historyPosition + " steps in the past!");
             return m_TranslationalAcceleration[historyPosition];
         }
-        [DataMember]
-        private readonly List<double[]> m_TranslationalAcceleration = new List<double[]>();
 
         /// <summary>
-        /// The angular velocity of the particle in the current time step.
+        /// Returns the rotational acceleration of the particle.
         /// </summary>
-        public double GetRotationalAcceleration(int historyPosition) {
+        /// /// <param name="historyPosition">
+        /// The history of the particle is saved for four timesteps. historyPosition=0 returns the newest value.
+        /// </param>
+        internal double GetRotationalAcceleration(int historyPosition = 0) {
+            if (historyPosition >= historyLength)
+                throw new Exception("Error in Particle.Motion: Only " + historyLength + " timesteps are saved. The requested value is " + historyPosition + " steps in the past!");
             return m_RotationalAcceleration[historyPosition];
         }
-        [DataMember]
-        private readonly List<double> m_RotationalAcceleration = new List<double>();
 
         /// <summary>
-        /// The force acting on the particle in the current time step.
+        /// Returns the force acting on the particle in the current time step.
         /// </summary>
-        public double[] GetHydrodynamicForces(int historyPosition) {
+        /// /// <param name="historyPosition">
+        /// The history of the particle is saved for 4 timesteps. historyPosition=0 returns the newest value.
+        /// </param>
+        internal double[] GetHydrodynamicForces(int historyPosition = 0) {
+            if (historyPosition >= historyLength)
+                throw new Exception("Error in Particle.Motion: Only " + historyLength + " timesteps are saved. The requested value is " + historyPosition + " steps in the past!");
             return m_HydrodynamicForces[historyPosition];
         }
-        [DataMember]
-        private readonly List<double[]> m_HydrodynamicForces = new List<double[]>();
 
         /// <summary>
-        /// The Torque acting on the particle in the current time step.
+        /// Returns the torque acting on the particle in the current time step.
         /// </summary>
-        public double GetHydrodynamicTorque(int historyPosition) {
+        /// /// <param name="historyPosition">
+        /// The history of the particle is saved for four timesteps. historyPosition=0 returns the newest value.
+        /// </param>
+        internal double GetHydrodynamicTorque(int historyPosition = 0) {
+            if (historyPosition >= historyLength)
+                throw new Exception("Error in Particle.Motion: Only " + historyLength + " timesteps are saved. The requested value is " + historyPosition + " steps in the past!");
             return m_HydrodynamicTorque[historyPosition];
         }
-        [DataMember]
-        private readonly List<double> m_HydrodynamicTorque = new List<double>();
 
         /// <summary>
-        /// The force acting on the particle in the current time step.
+        /// Returns the force of the previous iteration.
         /// </summary>
-        public double[] GetForcesPreviousIter() {
-            return m_ForcesPreviousIter;
+        internal double[] GetForcesPreviousIter() {
+            return m_ForcesPreviousIteration;
         }
-        [DataMember]
-        private double[] m_ForcesPreviousIter = new double[spatialDim];
 
         /// <summary>
-        /// The force acting on the particle in the current time step.
+        /// Returns the torque of the previous iteration.
         /// </summary>
-        [DataMember]
-        public double TorquePreviousIter { get; private set; }
+        internal double GetTorquePreviousIteration() {
+            return m_TorquePreviousIteration;
+        }
 
         /// <summary>
-        /// The force acting on the particle in the current time step.
+        /// The translational velocity of the particle before a colllision is triggered. This value is used by the momentum conservation model.
         /// </summary>
-        [DataMember]
-        private double m_CollisionTimestep = 0;
-
-        /// <summary>
-        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
-        /// </summary>
-        public double[] GetPreCollisionVelocity() {
+        internal double[] GetPreCollisionVelocity() {
             return m_PreCollisionVelocity;
         }
-        [DataMember]
-        private double[] m_PreCollisionVelocity = new double[spatialDim];
 
         /// <summary>
-        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// The tangential vector of the last calculated collsion.
         /// </summary>
-        [DataMember]
-        private readonly List<double[]> m_CollisionTranslationalVelocity = new List<double[]>();
-
-        /// <summary>
-        /// The angular velocity of the particle in the current time step. This list is used by the momentum conservation model.
-        /// </summary>
-        [DataMember]
-        private readonly List<double> m_CollisionRotationalVelocity = new List<double>();
-
-        /// <summary>
-        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
-        /// </summary>
-        [DataMember]
-        private readonly List<double[]> m_CollisionNormalVector = new List<double[]>();
-
-        /// <summary>
-        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
-        /// </summary>
-        public double[] GetLastCollisionTangentialVector() {
+        internal double[] GetLastCollisionTangentialVector() {
             return m_CollisionTangentialVector.Last();
         }
-        [DataMember]
-        private readonly List<double[]> m_CollisionTangentialVector = new List<double[]>();
 
 
         /// <summary>
-        /// Saves position and angle of the last timestep
+        /// Saves position and angle of the last timestep.
         /// </summary>
         public void SavePositionAndAngleOfPreviousTimestep() {
             Aux.SaveMultidimValueOfLastTimestep(m_Position);
@@ -251,7 +339,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Saves translational and rotational velocities of the last timestep
+        /// Saves translational and rotational velocities of the last timestep.
         /// </summary>
         public void SaveVelocityOfPreviousTimestep() {
             Aux.SaveMultidimValueOfLastTimestep(m_TranslationalVelocity);
@@ -261,53 +349,62 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Saves force and torque of the previous timestep
+        /// Saves force and torque of the previous iteration.
         /// </summary>
         public void SaveHydrodynamicsOfPreviousIteration() {
-            m_ForcesPreviousIter = m_HydrodynamicForces[0].CloneAs();
-            TorquePreviousIter = m_HydrodynamicTorque[0];
+            m_ForcesPreviousIteration = m_HydrodynamicForces[0].CloneAs();
+            m_TorquePreviousIteration = m_HydrodynamicTorque[0];
         }
 
         /// <summary>
-        /// Saves force and torque of the previous timestep
+        /// Saves force and torque of the previous timestep.
         /// </summary>
         public void SaveHydrodynamicsOfPreviousTimestep() {
             Aux.SaveMultidimValueOfLastTimestep(m_HydrodynamicForces);
             Aux.SaveValueOfLastTimestep(m_HydrodynamicTorque);
         }
 
-        public void InitializeParticlePositionAndAngle(double[] positionP, double angleP) {
+        /// <summary>
+        /// Used during init of the particle. Sets the position and the angle.
+        /// </summary>
+        /// <param name="initialPosition">
+        /// The initial position.
+        /// </param>
+        /// <param name="initialAngle">
+        /// The initial angle.
+        /// </param>
+        public void InitializeParticlePositionAndAngle(double[] initialPosition, double initialAngle) {
             for (int i = 0; i < historyLength; i++) {
-                m_Position[i] = positionP.CloneAs();
-                m_Angle[i] = angleP * 2 * Math.PI / 360;
+                m_Position[i] = initialPosition.CloneAs();
+                Aux.TestArithmeticException(m_Position[i], "initial particle position");
+                m_Angle[i] = initialAngle * 2 * Math.PI / 360;
+                Aux.TestArithmeticException(m_Angle[i], "initial particle angle");
             }
         }
 
-        public void InitializeParticleVelocity(double[] translationalVelocityP, double rotationalVelocityP) {
-            if (translationalVelocityP == null)
-                m_TranslationalVelocity[0] = new double[spatialDim];
-            else
-                m_TranslationalVelocity[0] = translationalVelocityP.CloneAs();
-
-            m_RotationalVelocity[0] = rotationalVelocityP;
+        /// <summary>
+        /// Used during init of the particle. Sets the translational and rotational velocity.
+        /// </summary>
+        /// <param name="initalTranslation">
+        /// The initial translational velocity.
+        /// </param>
+        /// <param name="initalRotation">
+        /// The initial rotational velocity.
+        /// </param>
+        public void InitializeParticleVelocity(double[] initalTranslation, double initalRotation) {
+            for (int i = 0; i < historyLength; i++) {
+                m_TranslationalVelocity[i] = initalTranslation == null ? (new double[spatialDim]) : initalTranslation.CloneAs();
+                Aux.TestArithmeticException(m_TranslationalVelocity[i], "initial particle translational velocity");
+                m_RotationalVelocity[i] = initalRotation;
+                Aux.TestArithmeticException(m_RotationalVelocity[i], "initial particle rotational velocity");
+            }
         }
 
         /// <summary>
-        /// Init of the particle mass.
+        /// Init of the particle area.
         /// </summary>
-        /// <param name="mass"></param>
+        /// <param name="area"></param>
         public void GetParticleArea(double area) => ParticleArea = area;
-
-        /// <summary>
-        /// Mass of the current particle.
-        /// </summary>
-        public double Mass_P {
-            get {
-                Aux.TestArithmeticException(ParticleArea, "particle area");
-                Aux.TestArithmeticException(Density, "particle density");
-                return ParticleArea * Density;
-            }
-        }
 
         /// <summary>
         /// Init of the moment of inertia.
@@ -316,27 +413,18 @@ namespace BoSSS.Application.FSI_Solver {
         public void GetParticleLengthscale(double lengthscale) => MaxParticleLengthScale = lengthscale;
 
         /// <summary>
-        /// Mass of the current particle.
-        /// </summary>
-        public double ParticleMass {
-            get {
-                Aux.TestArithmeticException(ParticleArea, "particle area");
-                Aux.TestArithmeticException(Density, "particle density");
-                return ParticleArea * Density;
-            }
-        }
-        
-        /// <summary>
         /// Init of the moment of inertia.
         /// </summary>
         /// <param name="moment"></param>
-        public void GetParticleMomentOfInertia(double moment) {
-            MomentOfInertia = moment;
-        }
+        public void GetParticleMomentOfInertia(double moment) => MomentOfInertia = moment;
 
-        public void SetCollisionTimestep(double collisionTimestep) {
-            m_CollisionTimestep = collisionTimestep;
-        }
+        /// <summary>
+        /// Sets the collision timestep.
+        /// </summary>
+        /// <param name="collisionTimestep">
+        /// The physical time consumend by the collision procedure.
+        /// </param>
+        public void SetCollisionTimestep(double collisionTimestep) => m_CollisionTimestep = collisionTimestep;
 
         /// <summary>
         /// Calls the calculation of the position and angle.
@@ -394,16 +482,23 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="U"></param>
         /// <param name="P"></param>
-        /// <param name="LsTrk"></param>
+        /// <param name="levelSetTracker"></param>
         /// <param name="fluidViscosity"></param>
-        public virtual void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double fluidViscosity, double fluidDensity, bool firstIteration, double dt = 0) {
-            double[] tempForces = CalculateHydrodynamicForces(U, P, LsTrk, CutCells_P, fluidViscosity, fluidDensity);
-            double tempTorque = CalculateHydrodynamicTorque(U, P, LsTrk, CutCells_P, fluidViscosity);
+        public virtual void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker levelSetTracker, CellMask cutCells, double fluidViscosity, double fluidDensity, bool firstIteration, double dt = 0) {
+            double[] tempForces = CalculateHydrodynamicForces(U, P, levelSetTracker, cutCells, fluidViscosity, fluidDensity);
+            double tempTorque = CalculateHydrodynamicTorque(U, P, levelSetTracker, cutCells, fluidViscosity);
             HydrodynamicsPostprocessing(tempForces, tempTorque, firstIteration);
         }
 
-        public virtual void PredictForceAndTorque(double activeStress, int TimestepInt) {
-            if (TimestepInt == 1) {
+        /// <summary>
+        /// Predicts the hydrodynamics at the beginning of the iteration loop in each timestep.
+        /// </summary>
+        /// <param name="activeStress"></param>
+        /// <param name="timestepID">
+        /// The timestep ID. Used to distinguish between the first timestep and all other steps.
+        /// </param>
+        public virtual void PredictForceAndTorque(double activeStress, int timestepID) {
+            if (timestepID == 1) {
                 m_HydrodynamicForces[0][0] = MaxParticleLengthScale * Math.Cos(m_Angle[0]) * activeStress / 2 + Gravity[0] * Density * ParticleArea / 10;
                 m_HydrodynamicForces[0][1] = MaxParticleLengthScale * Math.Sin(m_Angle[0]) * activeStress / 2 + Gravity[1] * Density * ParticleArea / 10;
                 m_HydrodynamicTorque[0] = 0;
@@ -422,14 +517,28 @@ namespace BoSSS.Application.FSI_Solver {
             Aux.TestArithmeticException(m_HydrodynamicTorque[0], "hydrodynamic torque");
         }
 
-        public virtual void CalculateDampingTensor(Particle particle, LevelSetTracker LsTrk, double muA, double rhoA, double dt) {
+        /// <summary>
+        /// Calculate the tensors to implement the added damping model (Banks et.al. 2017)
+        /// </summary>
+        /// <param name="particle"></param>
+        /// <param name="levelSetTracker"></param>
+        /// <param name="fluidViscosity"></param>
+        /// <param name="fluidDensity"></param>
+        /// <param name="dt"></param>
+        public virtual void CalculateDampingTensor(Particle particle, LevelSetTracker levelSetTracker, double fluidViscosity, double fluidDensity, double dt) {
             throw new Exception("Added damping tensors should only be used if added damping is active.");
         }
 
+        /// <summary>
+        /// Updates the tensors to implement the added damping model (Banks et.al. 2017)
+        /// </summary>
         public virtual void UpdateDampingTensors() {
             throw new Exception("Added damping tensors should only be used if added damping is active.");
         }
 
+        /// <summary>
+        /// Exchange of the added damping tensors between the MPI-processes.
+        /// </summary>
         public virtual void ExchangeAddedDampingTensors() {
             throw new Exception("Added damping tensors should only be used if added damping is active.");
         }
@@ -448,7 +557,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calculate the new particle position
+        /// Calculate the new particle position during the collision procedure.
         /// </summary>
         /// <param name="dt"></param>
         protected virtual double[] CalculateParticlePosition(double dt, bool collisionProcedure) {
@@ -461,7 +570,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calculate the new particle position
+        /// Calculate the new particle position after a collision
         /// </summary>
         /// <param name="dt"></param>
         /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
@@ -485,7 +594,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calculate the new particle angle
+        /// Calculate the new particle angle during the collision procedure.
         /// </summary>
         /// <param name="dt"></param>
         protected virtual double CalculateParticleAngle(double dt, bool collisionProcedure) {
@@ -506,7 +615,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
+        /// Calculate the new translational velocity of the particle.
         /// </summary>
         /// <param name="dt">Timestep</param>
         protected virtual double[] CalculateTranslationalVelocity(double dt) {
@@ -519,7 +628,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
+        /// Calculate the new translational velocity of the particle after a collision.
         /// </summary>
         /// <param name="dt">Timestep</param>
         /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
@@ -533,7 +642,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calculate the new angular velocity of the particle using explicit Euler scheme.
+        /// Calculate the new angular velocity of the particle.
         /// </summary>
         /// <param name="dt">Timestep</param>
         /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
@@ -544,7 +653,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calculate the new angular velocity of the particle using explicit Euler scheme.
+        /// Calculate the new angular velocity of the particle after a collision.
         /// </summary>
         /// <param name="dt">Timestep</param>
         /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
@@ -554,6 +663,9 @@ namespace BoSSS.Application.FSI_Solver {
             return l_RotationalVelocity;
         }
 
+        /// <summary>
+        /// Calculates the velocities along the normal and the tangential vector of a collision.
+        /// </summary>
         internal void CalculateNormalAndTangentialVelocity() {
             double[] normalVector = m_CollisionNormalVector.Last();
             double[] TangentialVector = new double[] { -normalVector[1], normalVector[0] };
@@ -563,7 +675,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calculate the new acceleration
+        /// Calculate the new tranlational acceleration.
         /// </summary>
         /// <param name="dt"></param>
         protected virtual double[] CalculateTranslationalAcceleration(double dt) {
@@ -576,7 +688,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calculate the new acceleration (translational and rotational)
+        /// Calculate the new rotational acceleration.
         /// </summary>
         /// <param name="dt"></param>
         protected virtual double CalculateRotationalAcceleration(double dt) {
@@ -584,19 +696,22 @@ namespace BoSSS.Application.FSI_Solver {
             Aux.TestArithmeticException(l_Acceleration, "particle rotational acceleration");
             return l_Acceleration;
         }
-                
+
         /// <summary>
         /// Update Forces and Torque acting from fluid onto the particle
         /// </summary>
         /// <param name="U"></param>
         /// <param name="P"></param>
-        /// <param name="LsTrk"></param>
-        /// <param name="muA"></param>
-        protected virtual double[] CalculateHydrodynamicForces(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double muA, double fluidDensity, double dt = 0) {
-            int RequiredOrder = U[0].Basis.Degree * 3 + 2;
-            SinglePhaseField[] UA = U.ToArray();
+        /// <param name="levelSetTracker"></param>
+        /// <param name="fluidViscosity"></param>
+        /// <param name="cutCells"></param>
+        /// <param name="fluidDensity"></param>
+        /// <param name="dt"></param>
+        protected virtual double[] CalculateHydrodynamicForces(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker levelSetTracker, CellMask cutCells, double fluidViscosity, double fluidDensity, double dt = 0) {
+            int requiredOrder = U[0].Basis.Degree * 3 + 2;
+            SinglePhaseField[] uA = U.ToArray();
             ConventionalDGField pA = P;
-            double[] tempForces = ForcesIntegration(UA, pA, LsTrk, CutCells_P, RequiredOrder, muA);
+            double[] tempForces = ForcesIntegration(uA, pA, levelSetTracker, cutCells, requiredOrder, fluidViscosity);
             Force_MPISum(ref tempForces);
             for (int d = 0; d < spatialDim; d++) {
                 tempForces[d] += (Density - fluidDensity) * ParticleArea * Gravity[d];
@@ -604,7 +719,16 @@ namespace BoSSS.Application.FSI_Solver {
             return tempForces;
         }
 
-        protected double[] ForcesIntegration(SinglePhaseField[] UA, ConventionalDGField pA, LevelSetTracker LsTrk, CellMask CutCells_P, int RequiredOrder, double FluidViscosity) {
+        /// <summary>
+        /// Calculate Forces acting from fluid onto the particle
+        /// </summary>
+        /// <param name="UA"></param>
+        /// <param name="pA"></param>
+        /// <param name="levelSetTracker"></param>
+        /// <param name="cutCells"></param>
+        /// <param name="requiredOrder"></param>
+        /// <param name="fluidViscosity"></param>
+        protected double[] ForcesIntegration(SinglePhaseField[] UA, ConventionalDGField pA, LevelSetTracker levelSetTracker, CellMask cutCells, int requiredOrder, double fluidViscosity) {
             double[] tempForces = new double[spatialDim];
             double[] IntegrationForces = tempForces.CloneAs();
             for (int d = 0; d < spatialDim; d++) {
@@ -613,20 +737,20 @@ namespace BoSSS.Application.FSI_Solver {
                     int K = result.GetLength(1);
                     MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Length, K, spatialDim, spatialDim);
                     MultidimensionalArray pARes = MultidimensionalArray.Create(Length, K);
-                    MultidimensionalArray Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(Ns, CurrentCellID, Length);
+                    MultidimensionalArray Normals = levelSetTracker.DataHistories[0].Current.GetLevelSetNormals(Ns, CurrentCellID, Length);
                     for (int i = 0; i < spatialDim; i++) {
                         UA[i].EvaluateGradient(CurrentCellID, Length, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
                     }
                     pA.Evaluate(CurrentCellID, Length, Ns, pARes);
                     for (int j = 0; j < Length; j++) {
                         for (int k = 0; k < K; k++) {
-                            result[j, k] = ForceIntegration.CalculateStressTensor(Grad_UARes, pARes, Normals, FluidViscosity, k, j, spatialDim, d);
+                            result[j, k] = ForceIntegration.CalculateStressTensor(Grad_UARes, pARes, Normals, fluidViscosity, k, j, spatialDim, d);
                         }
                     }
                 }
-                var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, CutCells_P);
-                CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat, cqs.Compile(LsTrk.GridDat, RequiredOrder),
+                var SchemeHelper = levelSetTracker.GetXDGSpaceMetrics(new[] { levelSetTracker.GetSpeciesId("A") }, requiredOrder, 1).XQuadSchemeHelper;
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, cutCells);
+                CellQuadrature.GetQuadrature(new int[] { 1 }, levelSetTracker.GridDat, cqs.Compile(levelSetTracker.GridDat, requiredOrder),
                     delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
                         ErrFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
                     },
@@ -638,6 +762,10 @@ namespace BoSSS.Application.FSI_Solver {
             return tempForces = IntegrationForces.CloneAs();
         }
 
+        /// <summary>
+        /// Summation of the hydrodynamic forces over all MPI-processes
+        /// </summary>
+        /// <param name="forces"></param>
         protected void Force_MPISum(ref double[] forces) {
             double[] stateBuffer = forces.CloneAs();
             double[] globalStateBuffer = stateBuffer.MPISum();
@@ -646,37 +774,55 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        protected virtual double CalculateHydrodynamicTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double muA, double dt = 0) {
-            int RequiredOrder = U[0].Basis.Degree * 3 + 2;
-            SinglePhaseField[] UA = U.ToArray();
+        /// <summary>
+        /// Update Forces and Torque acting from fluid onto the particle
+        /// </summary>
+        /// <param name="U"></param>
+        /// <param name="P"></param>
+        /// <param name="levelSetTracker"></param>
+        /// <param name="fluidViscosity"></param>
+        /// <param name="cutCells"></param>
+        /// <param name="dt"></param>
+        protected virtual double CalculateHydrodynamicTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker levelSetTracker, CellMask cutCells, double fluidViscosity, double dt = 0) {
+            int requiredOrder = U[0].Basis.Degree * 3 + 2;
+            SinglePhaseField[] uA = U.ToArray();
             ConventionalDGField pA = P;
-            double tempTorque = TorqueIntegration(UA, pA, LsTrk, CutCells_P, RequiredOrder, muA);
+            double tempTorque = TorqueIntegration(uA, pA, levelSetTracker, cutCells, requiredOrder, fluidViscosity);
             Torque_MPISum(ref tempTorque);
             return tempTorque;
         }
 
-        protected double TorqueIntegration(SinglePhaseField[] UA, ConventionalDGField pA, LevelSetTracker LsTrk, CellMask CutCells_P, int RequiredOrder, double FluidViscosity) {
+        /// <summary>
+        /// Calculate Forces acting from fluid onto the particle
+        /// </summary>
+        /// <param name="uA"></param>
+        /// <param name="pA"></param>
+        /// <param name="levelSetTracker"></param>
+        /// <param name="cutCells"></param>
+        /// <param name="requiredOrder"></param>
+        /// <param name="fluidViscosity"></param>
+        protected double TorqueIntegration(SinglePhaseField[] uA, ConventionalDGField pA, LevelSetTracker levelSetTracker, CellMask cutCells, int requiredOrder, double fluidViscosity) {
             double tempTorque = new double();
             void ErrFunc2(int j0, int Len, NodeSet Ns, MultidimensionalArray result) {
                 int K = result.GetLength(1);
                 MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Len, K, spatialDim, spatialDim); ;
                 MultidimensionalArray pARes = MultidimensionalArray.Create(Len, K);
-                MultidimensionalArray Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(Ns, j0, Len);
+                MultidimensionalArray Normals = levelSetTracker.DataHistories[0].Current.GetLevelSetNormals(Ns, j0, Len);
                 for (int i = 0; i < spatialDim; i++) {
-                    UA[i].EvaluateGradient(j0, Len, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
+                    uA[i].EvaluateGradient(j0, Len, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
                 }
                 pA.Evaluate(j0, Len, Ns, pARes);
                 for (int j = 0; j < Len; j++) {
                     MultidimensionalArray Ns_Global = Ns.CloneAs();
-                    LsTrk.GridDat.TransformLocal2Global(Ns, Ns_Global, j0 + j);
+                    levelSetTracker.GridDat.TransformLocal2Global(Ns, Ns_Global, j0 + j);
                     for (int k = 0; k < K; k++) {
-                        result[j, k] = ForceIntegration.CalculateTorqueFromStressTensor2D(Grad_UARes, pARes, Normals, Ns_Global, FluidViscosity, k, j, m_Position[0]);
+                        result[j, k] = ForceIntegration.CalculateTorqueFromStressTensor2D(Grad_UARes, pARes, Normals, Ns_Global, fluidViscosity, k, j, m_Position[0]);
                     }
                 }
             }
-            var SchemeHelper2 = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs2 = SchemeHelper2.GetLevelSetquadScheme(0, CutCells_P);
-            CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat, cqs2.Compile(LsTrk.GridDat, RequiredOrder),
+            var SchemeHelper2 = levelSetTracker.GetXDGSpaceMetrics(new[] { levelSetTracker.GetSpeciesId("A") }, requiredOrder, 1).XQuadSchemeHelper;
+            CellQuadratureScheme cqs2 = SchemeHelper2.GetLevelSetquadScheme(0, cutCells);
+            CellQuadrature.GetQuadrature(new int[] { 1 }, levelSetTracker.GridDat, cqs2.Compile(levelSetTracker.GridDat, requiredOrder),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
                     ErrFunc2(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
                 },
@@ -687,20 +833,30 @@ namespace BoSSS.Application.FSI_Solver {
             return tempTorque;
         }
 
+        /// <summary>
+        /// Summation of the hydrodynamic torque over all MPI-processes
+        /// </summary>
+        /// <param name="torque"></param>
         protected void Torque_MPISum(ref double torque) {
             double stateBuffer = torque;
             double globalStateBuffer = stateBuffer.MPISum();
             torque = globalStateBuffer;
         }
 
+        /// <summary>
+        /// Post-processing of the hydrodynamics. If desired the underrelaxation is applied to the forces and torque.
+        /// </summary>
+        /// <param name="tempForces"></param>
+        /// <param name="tempTorque"></param>
+        /// <param name="firstIteration"></param>
         protected virtual void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque, bool firstIteration) {
             if (m_UnderrelaxationParam != null && !firstIteration) {
                 double forceAndTorqueConvergence = m_UnderrelaxationParam.hydroDynConvergenceLimit;
                 double underrelaxationFactor = m_UnderrelaxationParam.underrelaxationFactor;
                 bool useAddaptiveUnderrelaxation = m_UnderrelaxationParam.useAddaptiveUnderrelaxation;
                 Underrelaxation.CalculateAverageForces(tempForces, tempTorque, MaxParticleLengthScale, out double averagedForces);
-                Underrelaxation.Forces(ref tempForces, m_ForcesPreviousIter, forceAndTorqueConvergence, underrelaxationFactor, useAddaptiveUnderrelaxation, averagedForces);
-                Underrelaxation.Torque(ref tempTorque, TorquePreviousIter, forceAndTorqueConvergence, underrelaxationFactor, useAddaptiveUnderrelaxation, averagedForces);
+                Underrelaxation.Forces(ref tempForces, m_ForcesPreviousIteration, forceAndTorqueConvergence, underrelaxationFactor, useAddaptiveUnderrelaxation, averagedForces);
+                Underrelaxation.Torque(ref tempTorque, GetTorquePreviousIteration(), forceAndTorqueConvergence, underrelaxationFactor, useAddaptiveUnderrelaxation, averagedForces);
             }
             for (int d = 0; d < spatialDim; d++) {
                 m_HydrodynamicForces[0][d] = tempForces[d];
@@ -713,26 +869,26 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// This method performs the Neumaier algorithm form the sum of the entries of an array.
         /// </summary>
-        /// <param name="ResultVariable">
+        /// <param name="resultVariable">
         /// The variable where  the sum will be saved.
         /// </param>
-        /// <param name="Summands">
+        /// <param name="summands">
         /// The array of summands
         /// </param>
-        /// <param name="Length">
+        /// <param name="noOfSummands">
         /// The number of summands.
         /// </param>
-        private double ForceTorqueSummationWithNeumaierArray(double ResultVariable, MultidimensionalArray Summands, double Length) {
-            double sum = ResultVariable;
+        private double ForceTorqueSummationWithNeumaierArray(double resultVariable, MultidimensionalArray summands, double noOfSummands) {
+            double sum = resultVariable;
             double naiveSum;
             double c = 0.0;
-            for (int i = 0; i < Length; i++) {
-                naiveSum = sum + Summands[i, 0];
-                if (Math.Abs(sum) >= Math.Abs(Summands[i, 0])) {
-                    c += (sum - naiveSum) + Summands[i, 0];
+            for (int i = 0; i < noOfSummands; i++) {
+                naiveSum = sum + summands[i, 0];
+                if (Math.Abs(sum) >= Math.Abs(summands[i, 0])) {
+                    c += (sum - naiveSum) + summands[i, 0];
                 }
                 else {
-                    c += (Summands[i, 0] - naiveSum) + sum;
+                    c += (summands[i, 0] - naiveSum) + sum;
                 }
                 sum = naiveSum;
             }
@@ -742,15 +898,18 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Calculating the particle Reynolds number
         /// </summary>
-        public double ComputeParticleRe(double ViscosityFluid) {
-            return m_TranslationalVelocity[0].L2Norm() * MaxParticleLengthScale / ViscosityFluid;
+        /// <param name="fluidViscosity"></param>
+        public double ComputeParticleRe(double fluidViscosity) {
+            return m_TranslationalVelocity[0].L2Norm() * MaxParticleLengthScale / fluidViscosity;
         }
 
         /// <summary>
         /// Calculating the particle Stokes number
         /// </summary>
-        public double ComputeParticleSt(double ViscosityFluid, double DensityFluid) {
-            return ComputeParticleRe(ViscosityFluid) * Density / (9 * DensityFluid);
+        /// <param name="fluidViscosity"></param>
+        /// <param name="fluidDensity"></param>
+        public double ComputeParticleSt(double fluidViscosity, double fluidDensity) {
+            return ComputeParticleRe(fluidViscosity) * Density / (9 * fluidDensity);
         }
 
         /// <summary>
@@ -778,7 +937,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Deletes the complete history of the translational velocity
+        /// Deletes the complete history of the translational velocity and acceleration.
         /// </summary>
         public void ClearParticleHistoryTranslation() {
             for (int i = 0; i < m_TranslationalVelocity.Count; i++) {
@@ -790,7 +949,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Deletes the complete history of the rotational velocity
+        /// Deletes the complete history of the rotational velocity and acceleration.
         /// </summary>
         public void ClearParticleHistoryRotational() {
             for (int i = 0; i < m_RotationalVelocity.Count; i++) {
@@ -799,11 +958,22 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
+        /// <summary>
+        /// Sets the normal and tangential vectors related to the current collision.
+        /// </summary>
+        /// <param name="normalVector"></param>
+        /// <param name="tangentialVector"></param>
         public void SetCollisionVectors(double[] normalVector, double[] tangentialVector) {
             m_CollisionNormalVector.Add(normalVector);
             m_CollisionTangentialVector.Add(tangentialVector);
         }
 
+        /// <summary>
+        /// Sets the normal, tangential and rotational velocity after the current collision.
+        /// </summary>
+        /// <param name="normalVelocity"></param>
+        /// <param name="tangentialVelocity"></param>
+        /// <param name="rotationalVelocity"></param>
         public void SetCollisionVelocities(double normalVelocity, double tangentialVelocity, double rotationalVelocity) {
             m_CollisionTranslationalVelocity.Add(new double[] { normalVelocity, tangentialVelocity });
             m_CollisionRotationalVelocity.Add(rotationalVelocity);
@@ -814,35 +984,35 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         public void PostProcessCollisionTranslation() {
             if (m_CollisionTranslationalVelocity.Count >= 1) {
-                double[] Normal = new double[spatialDim];
-                double[] Tangential = new double[spatialDim];
+                double[] normal = new double[spatialDim];
+                double[] tangential = new double[spatialDim];
                 for (int t = 0; t < m_CollisionTranslationalVelocity.Count; t++) {
                     for (int d = 0; d < spatialDim; d++) {
-                        Normal[d] += m_CollisionNormalVector[t][d];
-                        Tangential[d] += m_CollisionTangentialVector[t][d];
+                        normal[d] += m_CollisionNormalVector[t][d];
+                        tangential[d] += m_CollisionTangentialVector[t][d];
                     }
                 }
 
-                Normal.ScaleV(1 / Math.Sqrt(Normal[0].Pow2() + Normal[1].Pow2()));
-                Tangential.ScaleV(1 / Math.Sqrt(Tangential[0].Pow2() + Tangential[1].Pow2()));
+                normal.ScaleV(1 / Math.Sqrt(normal[0].Pow2() + normal[1].Pow2()));
+                tangential.ScaleV(1 / Math.Sqrt(tangential[0].Pow2() + tangential[1].Pow2()));
                 double temp_NormalVel = 0;
                 double temp_TangentialVel = 0;
                 for (int t = 0; t < m_CollisionTranslationalVelocity.Count; t++) {
                     double cos = new double();
                     for (int d = 0; d < spatialDim; d++) {
-                        cos += Normal[d] * m_CollisionNormalVector[t][d];
+                        cos += normal[d] * m_CollisionNormalVector[t][d];
                     }
-                    double sin = cos == 1 ? 0 : m_CollisionNormalVector[t][0] > Normal[0] ? Math.Sqrt(1 + 1e-15 - cos.Pow2()) : -Math.Sqrt(1 + 1e-15 - cos.Pow2());
+                    double sin = cos == 1 ? 0 : m_CollisionNormalVector[t][0] > normal[0] ? Math.Sqrt(1 + 1e-15 - cos.Pow2()) : -Math.Sqrt(1 + 1e-15 - cos.Pow2());
                     temp_NormalVel += m_CollisionTranslationalVelocity[t][0] * cos - m_CollisionTranslationalVelocity[t][1] * sin;
                     temp_TangentialVel += m_CollisionTranslationalVelocity[t][0] * sin + m_CollisionTranslationalVelocity[t][1] * cos;
 
                 }
                 temp_NormalVel /= m_CollisionTranslationalVelocity.Count;
-                temp_TangentialVel /=m_CollisionTranslationalVelocity.Count;
+                temp_TangentialVel /= m_CollisionTranslationalVelocity.Count;
 
                 ClearParticleHistoryTranslation();
                 for (int d = 0; d < spatialDim; d++) {
-                    m_TranslationalVelocity[0][d] = Normal[d] * temp_NormalVel + Tangential[d] * temp_TangentialVel;
+                    m_TranslationalVelocity[0][d] = normal[d] * temp_NormalVel + tangential[d] * temp_TangentialVel;
                 }
                 m_CollisionTranslationalVelocity.Clear();
                 m_CollisionNormalVector.Clear();
@@ -851,7 +1021,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Collision post-processing. Sums up the results for the angular velocity of the multiple binary collisions of one timestep
+        /// Collision post-processing. Sums up the results for the rotatinal velocity of the multiple binary collisions of one timestep
         /// </summary>
         public void PostProcessCollisionRotation() {
             if (m_CollisionRotationalVelocity.Count >= 1) {
@@ -863,6 +1033,9 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
+        /// <summary>
+        /// Builds the array for the post-collision communication between MPI-processes.
+        /// </summary>
         public double[] BuildSendArray() {
             double[] dataSend = new double[13];
             dataSend[0] = m_RotationalVelocity[0];
@@ -881,20 +1054,23 @@ namespace BoSSS.Application.FSI_Solver {
             return dataSend;
         }
 
-        public void WriteReceiveArray(double[] dataReceive, int Offset) {
-            m_RotationalVelocity[0] = dataReceive[0 + Offset];
-            m_TranslationalVelocity[0][0] = dataReceive[1 + Offset];
-            m_TranslationalVelocity[0][1] = dataReceive[2 + Offset];
-            m_Angle[0] = dataReceive[3 + Offset];
-            m_Position[0][0] = dataReceive[4 + Offset];
-            m_Position[0][1] = dataReceive[5 + Offset];
-            m_CollisionTimestep = dataReceive[6 + Offset];
-            m_RotationalVelocity[1] = dataReceive[7 + Offset];
-            m_TranslationalVelocity[1][0] = dataReceive[8 + Offset];
-            m_TranslationalVelocity[1][1] = dataReceive[9 + Offset];
-            m_Angle[1] = dataReceive[10 + Offset];
-            m_Position[1][0] = dataReceive[11 + Offset];
-            m_Position[1][1] = dataReceive[12 + Offset];
+        /// <summary>
+        /// Overwrites the particles parameters with the values received during the post-collision MPI-communication.
+        /// </summary>
+        public void WriteReceiveArray(double[] dataReceive, int offset) {
+            m_RotationalVelocity[0] = dataReceive[0 + offset];
+            m_TranslationalVelocity[0][0] = dataReceive[1 + offset];
+            m_TranslationalVelocity[0][1] = dataReceive[2 + offset];
+            m_Angle[0] = dataReceive[3 + offset];
+            m_Position[0][0] = dataReceive[4 + offset];
+            m_Position[0][1] = dataReceive[5 + offset];
+            m_CollisionTimestep = dataReceive[6 + offset];
+            m_RotationalVelocity[1] = dataReceive[7 + offset];
+            m_TranslationalVelocity[1][0] = dataReceive[8 + offset];
+            m_TranslationalVelocity[1][1] = dataReceive[9 + offset];
+            m_Angle[1] = dataReceive[10 + offset];
+            m_Position[1][0] = dataReceive[11 + offset];
+            m_Position[1][1] = dataReceive[12 + offset];
         }
     }
 }

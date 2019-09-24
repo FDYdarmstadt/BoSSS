@@ -21,6 +21,15 @@ using BoSSS.Foundation.XDG;
 namespace BoSSS.Application.FSI_Solver {
     public class Motion_Fixed : Motion_Wet {
 
+        /// <summary>
+        /// No motion
+        /// </summary>
+        /// <param name="gravity">
+        /// The gravity (volume forces) acting on the particle.
+        /// </param>
+        /// <param name="density">
+        /// The density of the particle.
+        /// </param>
         public Motion_Fixed(double[] gravity = null, double density = 0) : base(gravity, density) {
             IncludeRotation = false;
             IncludeTranslation = false;
@@ -29,12 +38,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Include rotation?
         /// </summary>
-        public override bool IncludeRotation { get; } = false;
+        internal override bool IncludeRotation { get; } = false;
 
         /// <summary>
         /// Include translation?
         /// </summary>
-        public override bool IncludeTranslation { get; } = false;
+        internal override bool IncludeTranslation { get; } = false;
 
         /// <summary>
         /// Calculate the new particle position
@@ -126,7 +135,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Overrides the calculation of hydrodynamics for fixed particles, so that nothing happens.
         /// </summary>
-        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U = null, SinglePhaseField P = null, LevelSetTracker LsTrk = null, CellMask CutCells_P = null, double fluidViscosity = 0, double fluidDensity = 0, bool firstIteration = false, double dt = 0) {
+        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U = null, SinglePhaseField P = null, LevelSetTracker levelSetTracker = null, CellMask cutCells = null, double fluidViscosity = 0, double fluidDensity = 0, bool firstIteration = false, double dt = 0) {
             double[] tempForces = new double[spatialDim];
             for (int d = 0; d < spatialDim; d++) {
                 tempForces[d] = 0;
