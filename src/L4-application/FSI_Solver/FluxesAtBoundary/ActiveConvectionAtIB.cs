@@ -27,32 +27,27 @@ using BoSSS.Foundation;
 
 namespace BoSSS.Solution.NSECommon.Operator.Convection {
     public class ActiveConvectionAtIB : ILevelSetForm {
-        public ActiveConvectionAtIB(int _d, int _D, LevelSetTracker LsTrk, double _LFFA, IncompressibleBoundaryCondMap _bcmap, Func<double[], double,double[]> getParticleParams, double fluidDensity, bool UseMovingMesh){
+        public ActiveConvectionAtIB(int currentDim, int spatialDim, LevelSetTracker LsTrk, IncompressibleBoundaryCondMap _bcmap, Func<double[], double[]> getParticleParams, bool useMovingMesh) {
             m_LsTrk = LsTrk;
-            m_D = _D;
-            m_d = _d;
-            LFFA = _LFFA;
-            this.m_getParticleParams = getParticleParams;
-            fDensity = fluidDensity;
-            m_UseMovingMesh = UseMovingMesh;
-            NegFlux = new LinearizedConvection(_D, _bcmap, _d);
+            m_D = spatialDim;
+            m_d = currentDim;
+            m_getParticleParams = getParticleParams;
+            m_UseMovingMesh = useMovingMesh;
+            NegFlux = new LinearizedConvection(spatialDim, _bcmap, currentDim);
         }
-        LevelSetTracker m_LsTrk;
-        int m_D;
-        int m_d;
+
+        private readonly LevelSetTracker m_LsTrk;
+        private readonly int m_D;
+        private readonly int m_d;
 
         /// <summary>
         /// Describes: 0: velX, 1: velY, 2: rotVel, 3: particle radius, 4: scaling paramete for active particles 
         /// </summary>
-        Func<double[], double,double[]> m_getParticleParams;
-
-        double fDensity;
-        double LFFA;
-        bool m_UseMovingMesh;
+        private readonly Func<double[], double[]> m_getParticleParams;
+        private readonly bool m_UseMovingMesh;
 
         // Use Fluxes as in Bulk Convection
-        LinearizedConvection NegFlux;
-
+        private readonly LinearizedConvection NegFlux;
 
         public IList<string> ArgumentOrdering {
             get { return new string[] { VariableNames.Velocity_d(m_d) }; }
@@ -84,7 +79,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
 
         public double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
 
-            BoSSS.Foundation.CommonParams inp; 
+            BoSSS.Foundation.CommonParams inp;
 
             // Input parameters
             // =============================
@@ -98,7 +93,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
 
             // Particle parameters
             // =============================
-            double[] parameters_P = m_getParticleParams(inp.X, inp.time);
+            double[] parameters_P = m_getParticleParams(inp.X);
             double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
             double wLevSet = parameters_P[2];
             double[] RadialNormalVector = new double[] { parameters_P[3], parameters_P[4] };

@@ -32,8 +32,8 @@ namespace BoSSS.Application.FSI_Solver {
             };
             int sqrtPart = 3;
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 7, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel: 2);
+            C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 6.5, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(amrLevel: 4);
             C.hydrodynamicsConvergenceCriterion = 1e-2;
 
             // Fluid Properties
@@ -45,7 +45,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Particle Properties
             // =============================
             double particleDensity = 1.1;
-            C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.hydrodynamicsConvergenceCriterion, underrelaxationFactorIn: 5.0, useAddaptiveUnderrelaxationIn: true);
+            C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.hydrodynamicsConvergenceCriterion, underrelaxationFactorIn: 3.0, useAddaptiveUnderrelaxationIn: true);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 1);
             for (int x = 0; x < sqrtPart; x++) {
                 for (int y = 0; y < sqrtPart; y++) {

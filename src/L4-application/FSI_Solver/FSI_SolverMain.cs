@@ -232,22 +232,18 @@ namespace BoSSS.Application.FSI_Solver {
                         // Immersed boundary
                         // -----------------------------
                         if (((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.None) {
-                            var convectionAtIB = new Solution.NSECommon.Operator.Convection.ActiveConvectionAtIB(d, spatialDim, LsTrk,
-                                this.Control.AdvancedDiscretizationOptions.LFFA, boundaryCondMap,
-                                delegate (double[] X, double time) {
+                            var convectionAtIB = new Solution.NSECommon.Operator.Convection.ActiveConvectionAtIB(d, spatialDim, LsTrk, boundaryCondMap,
+                                delegate (double[] X) {
                                     throw new NotImplementedException("Currently not implemented for fixed motion");
                                 },
-                                FluidDensity,
                                 UseMovingMesh);
                             comps.Add(convectionAtIB);
                         }
                         else {
-                            var convectionAtIB = new Solution.NSECommon.Operator.Convection.ActiveConvectionAtIB(d, spatialDim, LsTrk,
-                                Control.AdvancedDiscretizationOptions.LFFA, boundaryCondMap,
-                                    delegate (double[] X, double time) {
+                            var convectionAtIB = new Solution.NSECommon.Operator.Convection.ActiveConvectionAtIB(d, spatialDim, LsTrk, boundaryCondMap,
+                                    delegate (double[] X) {
                                         return CreateCouplingAtParticleBoundary(X);
                                     },
-                                FluidDensity,
                                 UseMovingMesh);
                             comps.Add(convectionAtIB);
                         }
@@ -296,7 +292,7 @@ namespace BoSSS.Application.FSI_Solver {
                     var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.ActiveViscosityAtIB(d, spatialDim, LsTrk,
                         penalty, this.ComputePenaltyIB,
                         FluidViscosity / FluidDensity,
-                        delegate (double[] X, double time) {
+                        delegate (double[] X) {
                             throw new NotImplementedException("Currently not implemented for fixed motion");
                         });
                     comps.Add(viscousAtIB);
@@ -305,7 +301,7 @@ namespace BoSSS.Application.FSI_Solver {
                     var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.ActiveViscosityAtIB(d, spatialDim, LsTrk,
                         penalty, this.ComputePenaltyIB,
                         FluidViscosity / FluidDensity,
-                        delegate (double[] X, double time) {
+                        delegate (double[] X) {
                             return CreateCouplingAtParticleBoundary(X);
                         }
                      );
@@ -332,7 +328,7 @@ namespace BoSSS.Application.FSI_Solver {
                     IBM_Op.EquationComponents["div"].Add(divPen);  // immersed boundary component
                 }
                 else {
-                    var divPen = new Solution.NSECommon.Operator.Continuity.ActiveDivergenceAtIB(spatialDim, LsTrk, 1,
+                    var divPen = new Solution.NSECommon.Operator.Continuity.ActiveDivergenceAtIB(spatialDim, LsTrk,
                        delegate (double[] X, double time) {
                            return CreateCouplingAtParticleBoundary(X);
                        });

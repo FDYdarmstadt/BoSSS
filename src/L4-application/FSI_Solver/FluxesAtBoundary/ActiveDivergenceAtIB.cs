@@ -16,52 +16,39 @@ limitations under the License.
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using BoSSS.Foundation.XDG;
-using BoSSS.Solution.NSECommon;
-using System.Diagnostics;
 using ilPSP.Utils;
-using BoSSS.Platform;
-using ilPSP;
 using BoSSS.Foundation;
 
-namespace BoSSS.Solution.NSECommon.Operator.Continuity
-{
+namespace BoSSS.Solution.NSECommon.Operator.Continuity {
     /// <summary>
     /// velocity jump penalty for the divergence operator, on the level set
     /// </summary>
-    public class ActiveDivergenceAtIB : ILevelSetForm
-    {
+    public class ActiveDivergenceAtIB : ILevelSetForm {
 
-        LevelSetTracker m_LsTrk;
-
-        public ActiveDivergenceAtIB(int _D, LevelSetTracker lsTrk,
-            double vorZeichen, Func<double[], double, double[]> getParticleParams)
-        {
-            this.D = _D;
-            this.m_LsTrk = lsTrk;
-            this.m_getParticleParams = getParticleParams;
+        public ActiveDivergenceAtIB(int _D, LevelSetTracker lsTrk, Func<double[], double, double[]> getParticleParams) {
+            D = _D;
+            m_LsTrk = lsTrk;
+            m_getParticleParams = getParticleParams;
         }
 
-        int D;
+        private readonly LevelSetTracker m_LsTrk;
 
+        private readonly int D;
 
         /// <summary>
         /// Describes: 0: velX, 1: velY, 2:rotVel,3:particleradius
         /// </summary>
-        Func<double[], double, double[]> m_getParticleParams;
+        private readonly Func<double[], double, double[]> m_getParticleParams;
 
         /// <summary>
         /// the penalty flux
         /// </summary>
-        static double DirichletFlux(double UxN_in, double UxN_out)
-        {
+        static double DirichletFlux(double UxN_in, double UxN_out) {
             return (UxN_in - UxN_out);
         }
 
-        public double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB)
-        {
+        public double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
             double uAxN = GenericBlas.InnerProd(U_Neg, cp.n);
 
             var parameters_P = m_getParticleParams(cp.x, cp.time);
@@ -87,44 +74,34 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity
             return FlxNeg * v_Neg;
         }
 
-        public IList<string> ArgumentOrdering
-        {
-            get
-            {
+        public IList<string> ArgumentOrdering {
+            get {
                 return VariableNames.VelocityVector(this.D);
             }
         }
 
-        public IList<string> ParameterOrdering
-        {
-            get
-            {
+        public IList<string> ParameterOrdering {
+            get {
                 return null;
             }
         }
 
-        public int LevelSetIndex
-        {
-            get
-            {
+        public int LevelSetIndex {
+            get {
                 return 0;
             }
         }
 
-        public SpeciesId PositiveSpecies
-        {
+        public SpeciesId PositiveSpecies {
             get { return this.m_LsTrk.GetSpeciesId("B"); }
         }
 
-        public SpeciesId NegativeSpecies
-        {
+        public SpeciesId NegativeSpecies {
             get { return this.m_LsTrk.GetSpeciesId("A"); }
         }
 
-        public TermActivationFlags LevelSetTerms
-        {
-            get
-            {
+        public TermActivationFlags LevelSetTerms {
+            get {
                 return TermActivationFlags.V | TermActivationFlags.UxV;
             }
         }
