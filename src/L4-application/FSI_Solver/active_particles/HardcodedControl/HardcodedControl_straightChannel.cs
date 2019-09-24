@@ -41,8 +41,8 @@ namespace BoSSS.Application.FSI_Solver {
                 "Wall_upper"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 20, lengthY: 8, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel: 4);
+            C.SetGrid(lengthX: 30, lengthY: 8, cellsPerUnitLength: 0.5, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(amrLevel: 6);
 
             // Coupling Properties
             // =============================
@@ -62,7 +62,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================   
             C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.hydrodynamicsConvergenceCriterion, underrelaxationFactorIn: 3.0, useAddaptiveUnderrelaxationIn: true);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 1);
-            double particleRadius = 0.2;
+            double particleRadius = 0.1;
             C.Particles = new List<Particle> {
                 new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { 0.0, 0.0 }, startAngl: 0, activeStress: 1)
             };   

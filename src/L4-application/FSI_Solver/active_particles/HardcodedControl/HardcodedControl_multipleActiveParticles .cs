@@ -44,12 +44,12 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Particle Properties
             // =============================
-            double particleDensity = 1.01;
+            double particleDensity = 1.1;
             C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.hydrodynamicsConvergenceCriterion, underrelaxationFactorIn: 5.0, useAddaptiveUnderrelaxationIn: true);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 1);
             for (int x = 0; x < sqrtPart; x++) {
                 for (int y = 0; y < sqrtPart; y++) {
-                    C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { -0.625 + 0.625 * x, 0.625 - 0.625 * y }, startAngl: Math.Pow(-1, x * y) * x * y - 121 * x + 83 * y, activeStress: 1));
+                    C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { -0.625 + 0.625 * x, 0.625 - 0.625 * y }, startAngl: Math.Pow(-1, x * y) * x * y - 121 * x + 83 * y, activeStress: 100));
                 }
             }
 
