@@ -167,7 +167,7 @@ namespace MPI.Wrappers.Utils {
                 CurrentSys = PlatformID.MacOSX;
 
 
-            List<DirectoryInfo> LibrarySearchPath = GetLibrarySearchDirs(CurrentSys);
+            var LibrarySearchPath = GetLibrarySearchDirs(CurrentSys);
 
             Info("Pointer size: " + IntPtr.Size);
 
@@ -291,7 +291,7 @@ namespace MPI.Wrappers.Utils {
             return ret.ToString();
         }
 
-        private List<string> GetLibraryFiles(IEnumerable<string> LibNames, List<DirectoryInfo> LibrarySearchPath) {
+        private List<string> GetLibraryFiles(IEnumerable<string> LibNames, IEnumerable<DirectoryInfo> LibrarySearchPath) {
             List<string> ret = new List<string>();
             foreach (var ln in LibNames) {
                 ret.AddRange(GetLibraryFiles(ln, LibrarySearchPath));
@@ -299,7 +299,7 @@ namespace MPI.Wrappers.Utils {
             return ret;
         }
 
-        private List<string> GetLibraryFiles(string _LibName, List<DirectoryInfo> LibrarySearchPath) {
+        private List<string> GetLibraryFiles(string _LibName, IEnumerable<DirectoryInfo> LibrarySearchPath) {
 			List<string> LibNames = new List<string>();
 
             if(Path.IsPathRooted(_LibName)) {
@@ -394,7 +394,7 @@ namespace MPI.Wrappers.Utils {
         /// <summary>
         /// all directories in "PATH" or "LD_LIBRARY_PATH"
         /// </summary>
-        private List<DirectoryInfo> GetLibrarySearchDirs(PlatformID CurrentSys) {
+        private DirectoryInfo[] GetLibrarySearchDirs(PlatformID CurrentSys) {
             List<DirectoryInfo> LibrarySearchPath = new List<DirectoryInfo>();
             {
                 switch (CurrentSys) {
@@ -428,7 +428,19 @@ namespace MPI.Wrappers.Utils {
                         break;
                 }
             }
-            return LibrarySearchPath;
+
+            // eliminate duplicates
+            List<string> filtered = new List<string>();
+            foreach(var di in LibrarySearchPath) {
+                string abspath = di.FullName;
+                abspath = abspath.TrimEnd(Path.DirectorySeparatorChar);
+
+                if (!filtered.Contains(abspath))
+                    filtered.Add(abspath);
+            }
+
+            // return
+            return filtered.Select(p => new DirectoryInfo(p)).ToArray(); ;
         }
 
         private void AddDirsFromSystemEnvironment(List<DirectoryInfo> LibrarySearchPath, string varName, char[] splitChars) {
