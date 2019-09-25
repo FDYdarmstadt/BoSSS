@@ -1766,11 +1766,12 @@ namespace BoSSS.Solution {
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                 int i = i0.MajorNumber;
-                for (int s = 0; s < this.Control.AMR_startUpSweeps; s++) 
+                for (int s = 0; s < this.Control.AMR_startUpSweeps; s++) {
                     this.MpiRedistributeAndMeshAdapt(i, physTime);
 
-                if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
-                    PlotCurrentState(physTime, i0, this.Control.SuperSampling);
+                    if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
+                        PlotCurrentState(physTime, new TimestepNumber(i, s + 1), this.Control.SuperSampling);
+                }
 
                 for (i = i0.MajorNumber + 1; (i <= i0.MajorNumber + (long)NoOfTimesteps) && EndTime - physTime > 1.0E-10 && !TerminationKey; i++) {
                     tr.Info("performing timestep " + i + ", physical time = " + physTime);

@@ -57,6 +57,8 @@ namespace BoSSS.Application.XdgPoisson3 {
             //BoSSS.Application.XdgPoisson3.Tests.SolverTest(Code.exp_softpcg_mg);
             //Assert.IsTrue(false, "remove me");
 
+            Debugger.Launch();
+
             BoSSS.Solution.Application<XdgPoisson3Control>._Main(args, false, delegate () {
                 return new XdgPoisson3Main();
             });
@@ -209,12 +211,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 double penalty_base = (p + 1) * (p + D) / D;
                 double penalty_multiplyer = base.Control.penalty_multiplyer;
 
-                XQuadFactoryHelper.MomentFittingVariants momentFittingVariant;
-                if (D == 3)
-                    momentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
-
-                momentFittingVariant = this.Control.CutCellQuadratureType;
-
+                
                 int order = this.u.Basis.Degree * 2;
 
                 XSpatialOperatorMk2 Op = new XSpatialOperatorMk2(1, 1, (A, B, C) => order, this.LsTrk.SpeciesIdS.ToArray(), "u", "c1");
@@ -222,7 +219,6 @@ namespace BoSSS.Application.XdgPoisson3 {
                 var lap = new XLaplace_Bulk(this.LsTrk, penalty_multiplyer * penalty_base, "u", this.Control.xLaplaceBCs, 1.0, MU_A, MU_B, lengthScales, this.Control.ViscosityMode);
                 Op.EquationComponents["c1"].Add(lap);      // Bulk form
                 Op.EquationComponents["c1"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_base * 2, this.Control.ViscosityMode));   // coupling form
-
                 Op.Commit();
 
                 // create agglomeration
@@ -230,12 +226,6 @@ namespace BoSSS.Application.XdgPoisson3 {
 
                 var map = new UnsetteledCoordinateMapping(u.Basis);
 
-                //agg = new MultiphaseCellAgglomerator(
-                //    new CutCellMetrics(momentFittingVariant,
-                //        QuadOrderFunc.SumOfMaxDegrees(RoundUp: true)(map.BasisS.Select(bs => bs.Degree).ToArray(), new int[0], map.BasisS.Select(bs => bs.Degree).ToArray()),
-                //        //this.HMFDegree,
-                //        LsTrk, this.LsTrk.SpeciesIdS.ToArray()),
-                //    this.Control.AgglomerationThreshold, false);
                 agg = LsTrk.GetAgglomerator(this.LsTrk.SpeciesIdS.ToArray(), order, this.Control.AgglomerationThreshold);
 
                 // compute matrix
@@ -243,6 +233,12 @@ namespace BoSSS.Application.XdgPoisson3 {
                 using (new BlockTrace("XdgMatrixAssembly", tr)) {
                     M = new BlockMsrMatrix(map, map);
                     b = new double[M.RowPartitioning.LocalLength];
+
+                    int dofTot = 0;
+                    for (int j = 0; j < this.GridData.CellPartitioning.LocalLength; j++)
+                        dofTot += u.Basis.GetLength(j);
+                    dofTot = dofTot.MPISum();
+                    Console.WriteLine("Creating system for " + dofTot + " degrees-of-freedom ...");
 
                     //Op.ComputeMatrixEx(LsTrk,
                     //    map, null, map,
@@ -257,6 +253,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                     mtxBuilder.time = 0.0;
                     mtxBuilder.MPITtransceive = true;
                     mtxBuilder.ComputeMatrix(M, b);
+                    Console.WriteLine("done.");
                 }
                 // compare with linear evaluation
                 // ==============================
@@ -308,6 +305,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                         S, agg.GetAgglomerator(this.LsTrk.GetSpeciesId(S)).AggInfo.SourceCells.NoOfItemsLocally);
                 }
 
+                /*
                 // performance comp
                 // =================
                 {
@@ -376,9 +374,9 @@ namespace BoSSS.Application.XdgPoisson3 {
                     Console.WriteLine("Matlab SpMV time: [sec]   " + MatlabSpMVtime);
                     Console.WriteLine("BoSSS  SpMV time: [sec]   " + BoSSsSpMVtime.Elapsed.TotalSeconds);
 
-                    System.Environment.Exit(2);
+                    
                 }
-
+                //*/
 
                 // mass matrix factory
                 // ===================

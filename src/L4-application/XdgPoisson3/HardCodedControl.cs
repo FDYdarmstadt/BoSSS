@@ -470,23 +470,16 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// <summary>
         /// A spherical interface in the 3D domain \f$ (-2, 2)^3 \f$.
         /// </summary>
-        public static XdgPoisson3Control Ball3D() {
+        public static XdgPoisson3Control Ball3D(int pDeg = 2, int Res = 6) {
             XdgPoisson3Control R = new XdgPoisson3Control();
 
             R.ProjectName = "XdgPoisson3/Ball3D";
             R.savetodb = false;
 
-            R.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            R.FieldOptions.Add("u", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            R.SetDGdegree(pDeg);
 
             R.GridFunc = delegate () {
-                return Grid3D.Cartesian3DGrid(GenericBlas.Linspace(-2, 2, 6), GenericBlas.Linspace(-2, 2, 6), GenericBlas.Linspace(-2, 2, 6));
+                return Grid3D.Cartesian3DGrid(GenericBlas.Linspace(-2, 2, Res + 1), GenericBlas.Linspace(-2, 2, Res + 1), GenericBlas.Linspace(-2, 2, Res + 1));
             };
 
 
@@ -506,11 +499,15 @@ namespace BoSSS.Application.XdgPoisson3 {
             R.xLaplaceBCs.g_Diri = ((CommonParamsBnd inp) => 0.0);
             R.xLaplaceBCs.IsDirichlet = (inp => true);
 
-            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;//R.solverName = "direct";
+            R.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+#if DEBUG
+            R.LinearSolver.TargetBlockSize = 100; // enforces the use of multigrid, even for small grids
+#endif
             R.AgglomerationThreshold = 0.1;
             R.PrePreCond = MultigridOperator.Mode.DiagBlockEquilib;
             R.penalty_multiplyer = 1.1;
             R.ViscosityMode = XLaplace_Interface.Mode.SIP;
+            
 
             return R;
         }
@@ -571,7 +568,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             //C.SuppressExceptionPrompt = true;
 
             C.LinearSolver.TargetBlockSize = blocksize;
-            C.SetDGdegree(5);
+            C.SetDGdegree(2);
 
             //C.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_mg;
             //C.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_schwarz_directcoarse;
