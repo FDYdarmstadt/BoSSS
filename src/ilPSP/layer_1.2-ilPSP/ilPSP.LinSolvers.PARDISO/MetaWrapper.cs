@@ -83,6 +83,7 @@ namespace ilPSP.LinSolvers.PARDISO {
 
 
         public string PARDISOerror2string(int error) {
+            throw new Exception("PARDISO error occured");
             if (mkl != null) {
                 return mkl.PARDISOerror2string(error);
             } else if (v5 != null) {

@@ -19,25 +19,35 @@ using BoSSS.Application.XdgPoisson3;
 ==============
 **************
 ==============
-string WFlowName = "Xdg_SFB_Performance_r2";
+string WFlowName = "Xdg_SFB_4cores_r0";
 WorkflowMgm.Init(WFlowName);
 WorkflowMgm.AllJobs;
 **************
-Project name is set to 'Xdg_SFB_Performance_r2'.
-List of 0 instances of KeyValuePair{String,Job} {
-}
-==============
-//var tempDB = OpenOrCreateDatabase(@"\\dc1\userspace\weber\Performance_oldLibs_DB");
-//var tempDB = OpenOrCreateDatabase(@"W:\work\scratch\jw52xeqa\DB_SFB_Paper");
-var tempDB = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\weber\SFB_DB");
-**************
-Opening existing database '\\hpccluster\hpccluster-scratch\weber\SFB_DB'.
+Project name is set to 'Xdg_SFB_4cores_r0'.
+System.Reflection.TargetInvocationException occurred: Exception has been thrown by the target of an invocation.. Type 'LastError' for details.
 
 ==============
-//var myBatch = new MiniBatchProcessorClient(@"G:\deploy-Mini");
-//var myBatch = new SlurmClient(@"X:\Deployerie","lcluster3.hrz.tu-darmstadt.de","jw52xeqa");
-var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\weber\dply","hpccluster",ComputeNodes : new[] {"hpccluster"});
+//var tempDB = OpenOrCreateDatabase(@"\\dc1\userspace\weber\Performance_oldLibs_DB");
+var tempDB = OpenOrCreateDatabase(@"W:\work\scratch\jw52xeqa\DB_SFB_Paper");
+//var tempDB = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\weber\SFB_DB");
 **************
+Creating database 'W:\work\scratch\jw52xeqa\DB_SFB_Paper'.
+
+==============
+//on HHLR path has to be something, which linux can work with e.g. /work/scratch/...
+string DBpathLinux = @"/work/scratch/jw52xeqa/DB_SFB_Paper";
+**************
+==============
+//var myBatch = new MiniBatchProcessorClient(@"G:\deploy-Mini");
+var myBatch = new SlurmClient(@"X:\Deployerie","lcluster8.hrz.tu-darmstadt.de","jw52xeqa");
+//var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\weber\dply","hpccluster",ComputeNodes : new[] {"hpccluster"});
+**************
+
+Please enter your password...
+*************
+Connecting to lcluster8.hrz.tu-darmstadt.de...
+
+
 ==============
 //MiniBatchProcessor.Server.StartIfNotRunning();
 **************
@@ -77,16 +87,10 @@ static class Utils {
 ==============
 tempDB.Grids;
 **************
-List of 6 instances of IGridInfo {
-  0: { Guid = 2cdb0b83-3a94-4d39-a26d-a73d7ab8c809; Name = Xdg_SFB_Performance_test_J262144; Cell Count = 262144; Dim = 3 }
-  1: { Guid = a9249da7-9129-40f6-b3bd-69d7de23c033; Name = Xdg_SFB_Performance_test_J32768; Cell Count = 32768; Dim = 3 }
-  2: { Guid = 7ff74a97-a6cf-49ac-a0bb-db2d322afa29; Name = Xdg_SFB_Performance_test_J4096; Cell Count = 4096; Dim = 3 }
-  3: { Guid = f8944ba0-bb66-4233-bdee-df17524403c9; Name = Xdg_SFB_Performance_test_J512; Cell Count = 512; Dim = 3 }
-  4: { Guid = 6415f7ec-6647-49f7-b80a-716bd80439ac; Name = Xdg_SFB_Performance_test_J64; Cell Count = 64; Dim = 3 }
-  5: { Guid = 62946a66-0f6b-4027-8473-e99c4725b302; Name = Xdg_SFB_Performance_test_J8; Cell Count = 8; Dim = 3 }
+List of 0 instances of IGridInfo {
 }
 ==============
-int[] Resolutions_3D = new int[] { 2 ,4,8,16,32,64 };
+int[] Resolutions_3D = new int[] { 2,4,8,16,32,64 };
 //int[] Resolutions_3D = new int[] { 2 };
 IGridInfo[] grids = new IGridInfo[Resolutions_3D.Length];
 for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
@@ -143,23 +147,23 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
     }
 }
 **************
-Found Grid: { Guid = 62946a66-0f6b-4027-8473-e99c4725b302; Name = Xdg_SFB_Performance_test_J8; Cell Count = 8; Dim = 3 }
-Found Grid: { Guid = 6415f7ec-6647-49f7-b80a-716bd80439ac; Name = Xdg_SFB_Performance_test_J64; Cell Count = 64; Dim = 3 }
-Found Grid: { Guid = f8944ba0-bb66-4233-bdee-df17524403c9; Name = Xdg_SFB_Performance_test_J512; Cell Count = 512; Dim = 3 }
-Found Grid: { Guid = 7ff74a97-a6cf-49ac-a0bb-db2d322afa29; Name = Xdg_SFB_Performance_test_J4096; Cell Count = 4096; Dim = 3 }
-Found Grid: { Guid = a9249da7-9129-40f6-b3bd-69d7de23c033; Name = Xdg_SFB_Performance_test_J32768; Cell Count = 32768; Dim = 3 }
-Found Grid: { Guid = 2cdb0b83-3a94-4d39-a26d-a73d7ab8c809; Name = Xdg_SFB_Performance_test_J262144; Cell Count = 262144; Dim = 3 }
+Creating grid with 8 cells.
+Creating grid with 64 cells.
+Creating grid with 512 cells.
+Creating grid with 4096 cells.
+Creating grid with 32768 cells.
+Creating grid with 262144 cells.
 
 ==============
 grids;
 **************
 List of 6 instances of IGridInfo {
-  0: { Guid = 62946a66-0f6b-4027-8473-e99c4725b302; Name = Xdg_SFB_Performance_test_J8; Cell Count = 8; Dim = 3 }
-  1: { Guid = 6415f7ec-6647-49f7-b80a-716bd80439ac; Name = Xdg_SFB_Performance_test_J64; Cell Count = 64; Dim = 3 }
-  2: { Guid = f8944ba0-bb66-4233-bdee-df17524403c9; Name = Xdg_SFB_Performance_test_J512; Cell Count = 512; Dim = 3 }
-  3: { Guid = 7ff74a97-a6cf-49ac-a0bb-db2d322afa29; Name = Xdg_SFB_Performance_test_J4096; Cell Count = 4096; Dim = 3 }
-  4: { Guid = a9249da7-9129-40f6-b3bd-69d7de23c033; Name = Xdg_SFB_Performance_test_J32768; Cell Count = 32768; Dim = 3 }
-  5: { Guid = 2cdb0b83-3a94-4d39-a26d-a73d7ab8c809; Name = Xdg_SFB_Performance_test_J262144; Cell Count = 262144; Dim = 3 }
+  0: { Guid = 88ecaf1f-eb88-45cb-b559-79fb16980b91; Name = Xdg_SFB_4cores_r0_J8; Cell Count = 8; Dim = 3 }
+  1: { Guid = c2de8a77-f58b-4cd7-95ca-057c20f5cd50; Name = Xdg_SFB_4cores_r0_J64; Cell Count = 64; Dim = 3 }
+  2: { Guid = 80ce8bfb-bf7a-47b3-a161-d969c6b099fd; Name = Xdg_SFB_4cores_r0_J512; Cell Count = 512; Dim = 3 }
+  3: { Guid = 5b4acd9c-6996-435a-96e5-d18b748cec74; Name = Xdg_SFB_4cores_r0_J4096; Cell Count = 4096; Dim = 3 }
+  4: { Guid = 27ca9a74-e92e-4d3e-94ef-3ac7ba013be1; Name = Xdg_SFB_4cores_r0_J32768; Cell Count = 32768; Dim = 3 }
+  5: { Guid = 73cfd10a-5f09-4ebb-91fd-90334a539ea1; Name = Xdg_SFB_4cores_r0_J262144; Cell Count = 262144; Dim = 3 }
 }
 ==============
 **************
@@ -242,9 +246,18 @@ using BoSSS.Foundation.XDG;
 **************
 ==============
 //IGridInfo tmp_grd = 
-//IGridInfo[] t_grids=new IGridInfo[] {grids.Pick(0), grids.Pick(4)};
+//IGridInfo[] t_grids=new IGridInfo[] {grids.Pick(0),grids.Pick(7)};
 IGridInfo[] t_grids = grids;
+t_grids;
 **************
+List of 6 instances of IGridInfo {
+  0: { Guid = 88ecaf1f-eb88-45cb-b559-79fb16980b91; Name = Xdg_SFB_4cores_r0_J8; Cell Count = 8; Dim = 3 }
+  1: { Guid = c2de8a77-f58b-4cd7-95ca-057c20f5cd50; Name = Xdg_SFB_4cores_r0_J64; Cell Count = 64; Dim = 3 }
+  2: { Guid = 80ce8bfb-bf7a-47b3-a161-d969c6b099fd; Name = Xdg_SFB_4cores_r0_J512; Cell Count = 512; Dim = 3 }
+  3: { Guid = 5b4acd9c-6996-435a-96e5-d18b748cec74; Name = Xdg_SFB_4cores_r0_J4096; Cell Count = 4096; Dim = 3 }
+  4: { Guid = 27ca9a74-e92e-4d3e-94ef-3ac7ba013be1; Name = Xdg_SFB_4cores_r0_J32768; Cell Count = 32768; Dim = 3 }
+  5: { Guid = 73cfd10a-5f09-4ebb-91fd-90334a539ea1; Name = Xdg_SFB_4cores_r0_J262144; Cell Count = 262144; Dim = 3 }
+}
 ==============
 controls.Clear();
 foreach(LinearSolverCode solver_name in solver_nameS) {
@@ -273,8 +286,9 @@ foreach(IGridInfo grd in t_grids) {
     //ctrl.SessionName = caseName;
     
     ctrl.savetodb = true; //for debug's sake
-    ctrl.SetDatabase(tempDB);
-    ctrl.SetGrid(grd);
+    ctrl.DbPath   = DBpathLinux;
+    //ctrl.SetDatabase(tmpDB); 
+    ctrl.GridGuid = grd.ID;
     //ctrl.SetDGdegree(k);
     
     ctrl.FieldOptions.Add("Phi", new FieldOpts() {
@@ -286,7 +300,6 @@ foreach(IGridInfo grd in t_grids) {
          SaveToDB = FieldOpts.SaveToDBOpt.TRUE
     });
 
-    ctrl.SuppressExceptionPrompt           = true;
     ctrl.LinearSolver.SolverCode           = solver_name;
     ctrl.LinearSolver.NoOfMultigridLevels  = 10;
     ctrl.LinearSolver.ConvergenceCriterion = 1e-8;
@@ -405,531 +418,1162 @@ setting up: J32768_k5_exp_Kcycle_schwarz
 ==============
 foreach(var ctrl in controls) {
     Console.WriteLine(" Submitting: " + ctrl.SessionName); 
-    ctrl.RunBatch(myBatch);
+    var aJob = new Job(ctrl.SessionName, typeof(XdgPoisson3Main));
+    aJob.SetControlObject(ctrl);
+    aJob.NumberOfMPIProcs         = 4;
+    aJob.ExecutionTime            = "02:00:00";
+    aJob.HHLR_project             = "project00880";
+    aJob.MemPerCPU                = "5000";
+    aJob.UseComputeNodesExclusive = true;
+    aJob.Activate(myBatch);
+    //ctrl.RunBatch(myBatch);
 }
 **************
  Submitting: XdgPoissonVelocity_J8_k2_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-15-41
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-01-39
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-01-39/batch.sh to Unix format ...
+
+Submitted batch job 13125991
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J64_k2_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-16-01
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-01-58
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-01-58/batch.sh to Unix format ...
+
+Submitted batch job 13125992
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J512_k2_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-16-21
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-02-15
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-02-15/batch.sh to Unix format ...
+
+Submitted batch job 13125995
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J4096_k2_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-16-40
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-02-33
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-02-33/batch.sh to Unix format ...
+
+Submitted batch job 13125996
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J32768_k2_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-16-59
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-02-49
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-02-49/batch.sh to Unix format ...
+
+Submitted batch job 13125997
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J262144_k2_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-17-18
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-03-06
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-03-06/batch.sh to Unix format ...
+
+Submitted batch job 13125998
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J8_k3_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-17-38
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-03-23
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-03-23/batch.sh to Unix format ...
+
+Submitted batch job 13126001
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J64_k3_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-17-58
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-03-39
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-03-39/batch.sh to Unix format ...
+
+Submitted batch job 13126002
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J512_k3_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-18-21
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-03-55
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-03-55/batch.sh to Unix format ...
+
+Submitted batch job 13126003
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J4096_k3_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-18-42
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-04-12
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-04-12/batch.sh to Unix format ...
+
+Submitted batch job 13126004
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J32768_k3_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-19-01
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-04-28
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-04-28/batch.sh to Unix format ...
+
+Submitted batch job 13126007
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J8_k5_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-19-32
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-04-49
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-04-49/batch.sh to Unix format ...
+
+Submitted batch job 13126008
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J64_k5_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-20-26
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-05-07
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-05-07/batch.sh to Unix format ...
+
+Submitted batch job 13126009
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J512_k5_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-20-58
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-05-24
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-05-24/batch.sh to Unix format ...
+
+Submitted batch job 13126012
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J4096_k5_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-21-25
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-05-40
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-05-40/batch.sh to Unix format ...
+
+Submitted batch job 13126013
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J32768_k5_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-22-58
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-05-57
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-05-57/batch.sh to Unix format ...
+
+Submitted batch job 13126014
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J8_k2_exp_gmres_levelpmg
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-23-17
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-06-16
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-06-16/batch.sh to Unix format ...
+
+Submitted batch job 13126017
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J64_k2_exp_gmres_levelpmg
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-23-52
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-06-33
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-06-33/batch.sh to Unix format ...
+
+Submitted batch job 13126018
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-25-18
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-06-49
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-06-49/batch.sh to Unix format ...
+
+Submitted batch job 13126019
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J4096_k2_exp_gmres_levelpmg
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-26-14
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-07-07
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-07-07/batch.sh to Unix format ...
+
+Submitted batch job 13126020
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J32768_k2_exp_gmres_levelpmg
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-28-07
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-07-25
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish..
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-07-25/batch.sh to Unix format ...
+
+Submitted batch job 13126023
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J262144_k2_exp_gmres_levelpmg
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-30-18
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-07-59
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish..
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-07-59/batch.sh to Unix format ...
+
+Submitted batch job 13126024
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J8_k3_exp_gmres_levelpmg
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-32-05
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-08-30
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-08-30/batch.sh to Unix format ...
+
+Submitted batch job 13126027
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J64_k3_exp_gmres_levelpmg
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-34-01
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-08-48
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-08-48/batch.sh to Unix format ...
+
+Submitted batch job 13126030
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J512_k3_exp_gmres_levelpmg
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-34-41
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-09-05
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-09-05/batch.sh to Unix format ...
+
+Submitted batch job 13126032
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J4096_k3_exp_gmres_levelpmg
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-35-01
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-09-21
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-09-21/batch.sh to Unix format ...
+
+Submitted batch job 13126035
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J32768_k3_exp_gmres_levelpmg
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-35-37
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-09-38
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-09-38/batch.sh to Unix format ...
+
+Submitted batch job 13126037
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-35-58
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-09-57
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-09-57/batch.sh to Unix format ...
+
+Submitted batch job 13126040
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J64_k5_exp_gmres_levelpmg
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-36-35
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-10-16
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-10-16/batch.sh to Unix format ...
+
+Submitted batch job 13126042
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-38-30
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-10-32
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-10-32/batch.sh to Unix format ...
+
+Submitted batch job 13126046
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-40-32
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-10-51
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish...
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-10-51/batch.sh to Unix format ...
+
+Submitted batch job 13126049
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J32768_k5_exp_gmres_levelpmg
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-42-36
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-11-33
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-11-33/batch.sh to Unix format ...
+
+Submitted batch job 13126053
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-43-01
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-11-50
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-11-50/batch.sh to Unix format ...
+
+Submitted batch job 13126054
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-43-41
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-12-06
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-12-06/batch.sh to Unix format ...
+
+Submitted batch job 13126055
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-45-29
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-12-23
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-12-23/batch.sh to Unix format ...
+
+Submitted batch job 13126058
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J4096_k2_exp_Kcycle_schwarz
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-48-27
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-12-42
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-12-42/batch.sh to Unix format ...
+
+Submitted batch job 13126060
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J32768_k2_exp_Kcycle_schwarz
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-49-38
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-13-01
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish..
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-13-01/batch.sh to Unix format ...
+
+Submitted batch job 13126064
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-49-57
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-13-34
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-13-34/batch.sh to Unix format ...
+
+Submitted batch job 13126068
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-50-39
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-13-50
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-13-50/batch.sh to Unix format ...
+
+Submitted batch job 13126071
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-53-14
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-14-07
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-14-07/batch.sh to Unix format ...
+
+Submitted batch job 13126072
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-53-42
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-14-23
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-14-23/batch.sh to Unix format ...
+
+Submitted batch job 13126077
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J4096_k3_exp_Kcycle_schwarz
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-56-01
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-14-40
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish..
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-14-40/batch.sh to Unix format ...
+
+Submitted batch job 13126078
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J32768_k3_exp_Kcycle_schwarz
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-58-05
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-15-12
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-15-12/batch.sh to Unix format ...
+
+Submitted batch job 13126080
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_02-00-32
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-15-31
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-15-31/batch.sh to Unix format ...
+
+Submitted batch job 13126084
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_02-02-41
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-15-51
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish..
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-15-51/batch.sh to Unix format ...
+
+Submitted batch job 13126085
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_02-05-05
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-16-21
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-16-21/batch.sh to Unix format ...
+
+Submitted batch job 13126088
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_02-07-11
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-16-38
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-16-38/batch.sh to Unix format ...
+
+Submitted batch job 13126089
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
  Submitting: XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_02-10-41
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_13-16-55
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
-   copied 'amd64' runtime.
 deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_13-16-55/batch.sh to Unix format ...
+
+Submitted batch job 13126090
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
 
 ==============
 **************
+Incomplete statement - missing closing parentheses?.
+
 ==============
-WorkflowMgm.AllJobs;
+LastError
 **************
-List of 48 instances of KeyValuePair{String,Job} {
-  0: [XdgPoissonVelocity_J8_k2_classic_pardiso, XdgPoissonVelocity_J8_k2_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  1: [XdgPoissonVelocity_J64_k2_classic_pardiso, XdgPoissonVelocity_J64_k2_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  2: [XdgPoissonVelocity_J512_k2_classic_pardiso, XdgPoissonVelocity_J512_k2_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  3: [XdgPoissonVelocity_J4096_k2_classic_pardiso, XdgPoissonVelocity_J4096_k2_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  4: [XdgPoissonVelocity_J32768_k2_classic_pardiso, XdgPoissonVelocity_J32768_k2_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  5: [XdgPoissonVelocity_J262144_k2_classic_pardiso, XdgPoissonVelocity_J262144_k2_classic_pardiso: InProgress (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  6: [XdgPoissonVelocity_J8_k3_classic_pardiso, XdgPoissonVelocity_J8_k3_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  7: [XdgPoissonVelocity_J64_k3_classic_pardiso, XdgPoissonVelocity_J64_k3_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  8: [XdgPoissonVelocity_J512_k3_classic_pardiso, XdgPoissonVelocity_J512_k3_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  9: [XdgPoissonVelocity_J4096_k3_classic_pardiso, XdgPoissonVelocity_J4096_k3_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  10: [XdgPoissonVelocity_J32768_k3_classic_pardiso, XdgPoissonVelocity_J32768_k3_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  11: [XdgPoissonVelocity_J8_k5_classic_pardiso, XdgPoissonVelocity_J8_k5_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  12: [XdgPoissonVelocity_J64_k5_classic_pardiso, XdgPoissonVelocity_J64_k5_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  13: [XdgPoissonVelocity_J512_k5_classic_pardiso, XdgPoissonVelocity_J512_k5_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  14: [XdgPoissonVelocity_J4096_k5_classic_pardiso, XdgPoissonVelocity_J4096_k5_classic_pardiso: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  15: [XdgPoissonVelocity_J32768_k5_classic_pardiso, XdgPoissonVelocity_J32768_k5_classic_pardiso: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  16: [XdgPoissonVelocity_J8_k2_exp_gmres_levelpmg, XdgPoissonVelocity_J8_k2_exp_gmres_levelpmg: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  17: [XdgPoissonVelocity_J64_k2_exp_gmres_levelpmg, XdgPoissonVelocity_J64_k2_exp_gmres_levelpmg: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  18: [XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg, XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  19: [XdgPoissonVelocity_J4096_k2_exp_gmres_levelpmg, XdgPoissonVelocity_J4096_k2_exp_gmres_levelpmg: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  20: [XdgPoissonVelocity_J32768_k2_exp_gmres_levelpmg, XdgPoissonVelocity_J32768_k2_exp_gmres_levelpmg: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  21: [XdgPoissonVelocity_J262144_k2_exp_gmres_levelpmg, XdgPoissonVelocity_J262144_k2_exp_gmres_levelpmg: InProgress (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  22: [XdgPoissonVelocity_J8_k3_exp_gmres_levelpmg, XdgPoissonVelocity_J8_k3_exp_gmres_levelpmg: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  23: [XdgPoissonVelocity_J64_k3_exp_gmres_levelpmg, XdgPoissonVelocity_J64_k3_exp_gmres_levelpmg: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  24: [XdgPoissonVelocity_J512_k3_exp_gmres_levelpmg, XdgPoissonVelocity_J512_k3_exp_gmres_levelpmg: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  25: [XdgPoissonVelocity_J4096_k3_exp_gmres_levelpmg, XdgPoissonVelocity_J4096_k3_exp_gmres_levelpmg: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  26: [XdgPoissonVelocity_J32768_k3_exp_gmres_levelpmg, XdgPoissonVelocity_J32768_k3_exp_gmres_levelpmg: InProgress (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  27: [XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg, XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  28: [XdgPoissonVelocity_J64_k5_exp_gmres_levelpmg, XdgPoissonVelocity_J64_k5_exp_gmres_levelpmg: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  29: [XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg, XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  30: [XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg, XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  31: [XdgPoissonVelocity_J32768_k5_exp_gmres_levelpmg, XdgPoissonVelocity_J32768_k5_exp_gmres_levelpmg: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  32: [XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz, XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  33: [XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz, XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  34: [XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz, XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  35: [XdgPoissonVelocity_J4096_k2_exp_Kcycle_schwarz, XdgPoissonVelocity_J4096_k2_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  36: [XdgPoissonVelocity_J32768_k2_exp_Kcycle_schwarz, XdgPoissonVelocity_J32768_k2_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  37: [XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz, XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  38: [XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz, XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  39: [XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz, XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  40: [XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz, XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  41: [XdgPoissonVelocity_J4096_k3_exp_Kcycle_schwarz, XdgPoissonVelocity_J4096_k3_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  42: [XdgPoissonVelocity_J32768_k3_exp_Kcycle_schwarz, XdgPoissonVelocity_J32768_k3_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  43: [XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz, XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  44: [XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz, XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  45: [XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz, XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  46: [XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz, XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  47: [XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz, XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-}
+Renci.SshNet.Common.SshConnectionException: Client not connected.
+   at Renci.SshNet.Session.SendMessage(Message message)
+   at Renci.SshNet.Channels.ChannelSession.Open()
+   at Renci.SshNet.SshCommand.BeginExecute(AsyncCallback callback, Object state)
+   at BoSSS.Application.BoSSSpad.SlurmClient.EvaluateStatus(Job myJob, Int32& SubmitCount, Boolean& isRunning, Boolean& wasSuccessful, Boolean& isFailed, String& DeployDir) in G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\SlurmClient.cs:line 74
+   at BoSSS.Application.BoSSSpad.Job.GetStatus(Int32& SubmitCount, String& DD) in G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\Job.cs:line 534
+   at <InteractiveExpressionClass>.<Host>m__0(KeyValuePair`2 s)
+   at ilPSP.IEnumerableExtensions.ForEach[T](IEnumerable`1 source, Action`1 action) in G:\BoSSS-HHLR\public\src\ilPSP\layer_1.2-ilPSP\ilPSP\IEnumerableExtensions.cs:line 437
+   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:line 345
+==============
+var somelist = WorkflowMgm.AllJobs;
+somelist.ForEach(s=>Console.WriteLine(s.Value.Name +"Status: "+s.Value.Status));
+//somelist.ForEach(s=>Console.WriteLine(s.Value.Name));
+**************
+Renci.SshNet.Common.SshConnectionException occurred: Client not connected.. Type 'LastError' for details.
+
 ==============
 WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.Failed)).Where(s=>s.Value.Name.Contains("Kcycle_schwarz"))
 **************
-List of 3 instances of KeyValuePair{String,Job} {
-  0: [XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz, XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  1: [XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz, XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  2: [XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz, XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-}
+System.Reflection.TargetInvocationException occurred: Exception has been thrown by the target of an invocation.. Type 'LastError' for details.
+
 ==============
 using System.IO
 **************
 ==============
 //write out stout
 Dictionary<string, string> Stoutlist = new Dictionary<string, string>();
-//var somelist = WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.Failed));
+//var somelist = WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.FinishedSuccess));
 var somelist = WorkflowMgm.AllJobs;
-somelist.ForEach(j=>Stoutlist.Add(j.Value.Name ,j.Value.Stdout.ToString()));
+somelist.ForEach(j=>Stoutlist.Add(j.Value.Name ,j.Value.Stderr.ToString()));
 foreach(KeyValuePair<string,string> stout in Stoutlist){
-    using(StreamWriter sw = new StreamWriter("G:\\Stout_"+stout.Key+".txt")){
-    Console.Write("writing {0} ...",stout.Key);
-    sw.WriteLine(stout.Value);
-    Console.WriteLine("done.");
-    }
-}
-**************
-No. of errors|warnings: 1|0.
-
-==============
-//write out stdout of Failed Jobs
-Dictionary<string, string> Stoutlist = new Dictionary<string, string>();
-var somelist = WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.FinishedSuccessful));
-somelist.ForEach(j=>Stoutlist.Add(j.Value.Name ,j.Value.Stdout.ToString()));
-foreach(KeyValuePair<string,string> stout in Stoutlist){
-    using(StreamWriter sw = new StreamWriter("G:\\Stout_"+stout.Key+".txt")){
+    using(StreamWriter sw = new StreamWriter("G:\\Stderr_"+stout.Key+".txt")){
     Console.Write("writing {0} ...",stout.Key);
     sw.WriteLine(stout.Value);
     Console.WriteLine("done.");
@@ -941,6 +1585,7 @@ writing XdgPoissonVelocity_J64_k2_classic_pardiso ...done.
 writing XdgPoissonVelocity_J512_k2_classic_pardiso ...done.
 writing XdgPoissonVelocity_J4096_k2_classic_pardiso ...done.
 writing XdgPoissonVelocity_J32768_k2_classic_pardiso ...done.
+writing XdgPoissonVelocity_J262144_k2_classic_pardiso ...done.
 writing XdgPoissonVelocity_J8_k3_classic_pardiso ...done.
 writing XdgPoissonVelocity_J64_k3_classic_pardiso ...done.
 writing XdgPoissonVelocity_J512_k3_classic_pardiso ...done.
@@ -949,8 +1594,11 @@ writing XdgPoissonVelocity_J32768_k3_classic_pardiso ...done.
 writing XdgPoissonVelocity_J8_k5_classic_pardiso ...done.
 writing XdgPoissonVelocity_J64_k5_classic_pardiso ...done.
 writing XdgPoissonVelocity_J512_k5_classic_pardiso ...done.
+writing XdgPoissonVelocity_J4096_k5_classic_pardiso ...done.
+writing XdgPoissonVelocity_J32768_k5_classic_pardiso ...done.
 writing XdgPoissonVelocity_J8_k2_exp_gmres_levelpmg ...done.
 writing XdgPoissonVelocity_J64_k2_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg ...done.
 writing XdgPoissonVelocity_J4096_k2_exp_gmres_levelpmg ...done.
 writing XdgPoissonVelocity_J32768_k2_exp_gmres_levelpmg ...done.
 writing XdgPoissonVelocity_J262144_k2_exp_gmres_levelpmg ...done.
@@ -960,12 +1608,16 @@ writing XdgPoissonVelocity_J512_k3_exp_gmres_levelpmg ...done.
 writing XdgPoissonVelocity_J4096_k3_exp_gmres_levelpmg ...done.
 writing XdgPoissonVelocity_J32768_k3_exp_gmres_levelpmg ...done.
 writing XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J64_k5_exp_gmres_levelpmg ...done.
 writing XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J32768_k5_exp_gmres_levelpmg ...done.
 writing XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz ...done.
 writing XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz ...done.
 writing XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz ...done.
 writing XdgPoissonVelocity_J4096_k2_exp_Kcycle_schwarz ...done.
 writing XdgPoissonVelocity_J32768_k2_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz ...done.
 writing XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz ...done.
 writing XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz ...done.
 writing XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz ...done.
@@ -974,6 +1626,28 @@ writing XdgPoissonVelocity_J32768_k3_exp_Kcycle_schwarz ...done.
 writing XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz ...done.
 writing XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz ...done.
 writing XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz ...done.
+
+==============
+WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.Failed))
+**************
+System.Reflection.TargetInvocationException occurred: Exception has been thrown by the target of an invocation.. Type 'LastError' for details.
+
+==============
+//write out stdout of Failed Jobs
+Dictionary<string, string> Stoutlist = new Dictionary<string, string>();
+var somelist = WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.Failed));
+somelist.ForEach(j=>Stoutlist.Add(j.Value.Name ,j.Value.Stdout.ToString()));
+foreach(KeyValuePair<string,string> stout in Stoutlist){
+    using(StreamWriter sw = new StreamWriter("G:\\Stout_"+stout.Key+".txt")){
+    Console.Write("writing {0} ...",stout.Key);
+    sw.WriteLine(stout.Value);
+    Console.WriteLine("done.");
+    }
+}
+**************
+Renci.SshNet.Common.SshConnectionException occurred: Client not connected.. Type 'LastError' for details.
 
 ==============
 tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value;
@@ -1034,70 +1708,15 @@ tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.RunningOrCrash
 ==============
 tempDB.Projects.Where(p=>p.Key.Contains(WFlowName+"_failed")).Pick(0).Value
 **************
-List of 19 instances of ISessionInfo {
-  0: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J32768_k5_classic_pardiso*	09/22/2019 13:04:02	6a7bc838...
-  1: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz*	09/22/2019 13:04:01	8aeb3f74...
-  2: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J32768_k5_exp_gmres_levelpmg*	09/22/2019 13:04:02	8f664514...
-  3: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz*	09/22/2019 13:04:00	40ba4ea4...
-  4: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J4096_k5_classic_pardiso*	09/22/2019 13:04:02	b964d61f...
-  5: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg*	09/22/2019 13:04:01	7ce23584...
-  6: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz*	09/22/2019 13:04:01	8fc1f40d...
-  7: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J64_k5_exp_gmres_levelpmg*	09/22/2019 13:04:02	07195f20...
-  8: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz*	09/22/2019 02:12:53	83ebb30a...
-  9: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg*	09/22/2019 13:04:02	dabf5f03...
-  10: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz*	09/22/2019 01:50:40	c3dc7077...
-  11: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz*	09/22/2019 02:09:30	8ccd3eb0...
-  12: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J64_k5_exp_gmres_levelpmg*	09/22/2019 01:37:59	37746796...
-  13: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J32768_k5_exp_gmres_levelpmg*	09/22/2019 01:43:03	5a7f531f...
-  14: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg*	09/22/2019 01:42:14	5fae9fa3...
-  15: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J32768_k5_classic_pardiso*	09/22/2019 01:23:18	a5bfdbbd...
-  16: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg*	09/22/2019 01:25:59	faa590e0...
-  17: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J262144_k2_classic_pardiso*	09/22/2019 01:17:39	43d605c2...
-  18: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J4096_k5_classic_pardiso*	09/22/2019 01:22:28	0d8eaf5f...
-}
+System.ArgumentOutOfRangeException occurred: Specified argument was out of the range of valid values.
+Parameter name: index. Type 'LastError' for details.
+
 ==============
 tempDB.Projects.Where(p=>p.Key.Equals(WFlowName)).Pick(0).Value
 **************
-List of 38 instances of ISessionInfo {
-  0: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J262144_k2_exp_gmres_levelpmg	09/22/2019 01:31:37	65050523...
-  1: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J32768_k3_classic_pardiso	09/22/2019 01:19:27	05e72a36...
-  2: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J32768_k3_exp_Kcycle_schwarz	09/22/2019 01:59:30	ecf2ccd9...
-  3: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J32768_k3_exp_gmres_levelpmg	09/22/2019 01:35:59	a47d74a1...
-  4: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J32768_k2_exp_Kcycle_schwarz	09/22/2019 01:49:59	32f5e382...
-  5: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz	09/22/2019 02:06:26	d074a34d...
-  6: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz	09/22/2019 02:04:16	bcc5b933...
-  7: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz	09/22/2019 02:02:02	73a9ec0c...
-  8: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J4096_k3_exp_Kcycle_schwarz	09/22/2019 01:57:24	c6096787...
-  9: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz	09/22/2019 01:55:13	0a4fe4c1...
-  10: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz	09/22/2019 01:53:43	54a6ac45...
-  11: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz	09/22/2019 01:52:32	1eda0e69...
-  12: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J32768_k2_exp_gmres_levelpmg	09/22/2019 01:29:37	527d2189...
-  13: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J4096_k2_exp_Kcycle_schwarz	09/22/2019 01:49:39	1a20fbee...
-  14: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J32768_k2_classic_pardiso	09/22/2019 01:17:20	9042da0b...
-  15: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz	09/22/2019 01:47:38	8c195c15...
-  16: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz	09/22/2019 01:45:30	54cc0109...
-  17: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz	09/22/2019 01:43:37	c29e64aa...
-  18: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg	09/22/2019 01:40:03	76bac5ab...
-  19: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J4096_k3_exp_gmres_levelpmg	09/22/2019 01:35:38	b07b4b49...
-  20: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg	09/22/2019 01:36:34	14588493...
-  21: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J512_k3_exp_gmres_levelpmg	09/22/2019 01:35:02	cfe8ad2b...
-  22: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J64_k3_exp_gmres_levelpmg	09/22/2019 01:34:42	ffbdcf78...
-  23: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J8_k3_exp_gmres_levelpmg	09/22/2019 01:33:13	75fe9d50...
-  24: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J4096_k2_exp_gmres_levelpmg	09/22/2019 01:27:35	b12547d4...
-  25: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J64_k2_exp_gmres_levelpmg	09/22/2019 01:24:59	3ccbfed3...
-  26: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J8_k2_exp_gmres_levelpmg	09/22/2019 01:23:53	ebd90302...
-  27: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J512_k5_classic_pardiso	09/22/2019 01:21:26	e9704b0d...
-  28: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J4096_k3_classic_pardiso	09/22/2019 01:19:03	ca4a83cb...
-  29: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J64_k5_classic_pardiso	09/22/2019 01:20:59	72f03bbb...
-  30: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J8_k5_classic_pardiso	09/22/2019 01:20:23	1234ba19...
-  31: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J512_k3_classic_pardiso	09/22/2019 01:18:44	f543fb19...
-  32: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J64_k3_classic_pardiso	09/22/2019 01:18:21	ee9034bc...
-  33: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J4096_k2_classic_pardiso	09/22/2019 01:17:00	522ce051...
-  34: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J8_k3_classic_pardiso	09/22/2019 01:17:59	33d2375e...
-  35: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J512_k2_classic_pardiso	09/22/2019 01:16:41	5760c0cd...
-  36: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J64_k2_classic_pardiso	09/22/2019 01:16:23	1a206df2...
-  37: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J8_k2_classic_pardiso	09/22/2019 01:16:03	38c16ef1...
-}
+System.ArgumentOutOfRangeException occurred: Specified argument was out of the range of valid values.
+Parameter name: index. Type 'LastError' for details.
+
 ==============
 //tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.RunningOrCrashed();
 //tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.RunningOrCrashed().DeleteAll();
@@ -1114,7 +1733,7 @@ List of 38 instances of ISessionInfo {
 ==============
 WorkflowMgm.SessionTable.Rows.Count;
 **************
-38
+0
 ==============
 //tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4);
 //tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4).OpenSessionDirectory();
@@ -1135,85 +1754,9 @@ tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4).Timest
 //tempDB.Projects.Pick(0).Value.Pick(0).KeysAndQueries;
 tempDB.Projects.Where(p=>p.Key.Equals(WFlowName)).Pick(0).Value.Pick(0).KeysAndQueries
 **************
-List of 77 instances of KeyValuePair{String,Object} {
-  0: [SessionName, XdgPoissonVelocity_J262144_k2_exp_gmres_levelpmg]
-  1: [DGdegree:Phi, 2]
-  2: [DGdegree:u, 2]
-  3: [GeneratedFromCode, False]
-  4: [ControlFileText_Index, 0]
-  5: [dtFixed, -1]
-  6: [SetDefaultDiriBndCnd, True]
-  7: [ViscosityMode, 1]
-  8: [MU_A, -1]
-  9: [MU_B, -1000]
-  10: [ExcactSolSupported, False]
-  11: [PrePreCond, 4]
-  12: [AgglomerationThreshold, 0.1]
-  13: [penalty_multiplyer, 2]
-  14: [pOff, 2]
-  15: [SuppressExceptionPrompt, True]
-  16: [GridPartType, 5]
-  17: [ProjectName, Xdg_SFB_Performance_r2]
-  18: [NoOfTimesteps, -1]
-  19: [Endtime, 1.79769313486232E+308]
-  20: [saveperiod, 1]
-  21: [rollingSaves, 0]
-  22: [dtMin, -1]
-  23: [dtMax, -1]
-  24: [CompMode, 0]
-  25: [ImmediatePlotPeriod, -1]
-  26: [SuperSampling, 0]
-  27: [savetodb, True]
-  28: [logFileDirectory, .]
-  29: [Paramstudy_ContinueOnError, True]
-  30: [LinearSolver.verbose, True]
-  31: [LinearSolver.MaxKrylovDim, 30]
-  32: [LinearSolver.MaxSolverIterations, 2000]
-  33: [LinearSolver.MinSolverIterations, 2]
-  34: [LinearSolver.ConvergenceCriterion, 1E-08]
-  35: [LinearSolver.SolverCode, 47]
-  36: [LinearSolver.NoOfMultigridLevels, 10]
-  37: [LinearSolver.exp_localPrec_muA, 1]
-  38: [LinearSolver.exp_localPrec_Min_dt, 0]
-  39: [LinearSolver.TargetBlockSize, 10000]
-  40: [NonLinearSolver.verbose, False]
-  41: [NonLinearSolver.PrecondSolver.verbose, False]
-  42: [NonLinearSolver.PrecondSolver.MaxKrylovDim, 30]
-  43: [NonLinearSolver.PrecondSolver.MaxSolverIterations, 2000]
-  44: [NonLinearSolver.PrecondSolver.MinSolverIterations, 2]
-  45: [NonLinearSolver.PrecondSolver.ConvergenceCriterion, 1E-10]
-  46: [NonLinearSolver.PrecondSolver.SolverCode, 1]
-  47: [NonLinearSolver.PrecondSolver.NoOfMultigridLevels, 1]
-  48: [NonLinearSolver.PrecondSolver.exp_localPrec_muA, 1]
-  49: [NonLinearSolver.PrecondSolver.exp_localPrec_Min_dt, 0]
-  50: [NonLinearSolver.PrecondSolver.TargetBlockSize, 10000]
-  51: [NonLinearSolver.MaxSolverIterations, 2000]
-  52: [NonLinearSolver.MinSolverIterations, 2]
-  53: [NonLinearSolver.ConvergenceCriterion, 1E-08]
-  54: [NonLinearSolver.UnderRelax, 1]
-  55: [NonLinearSolver.SolverCode, 1]
-  56: [DynamicLoadBalancing_RedistributeAtStartup, False]
-  57: [DynamicLoadBalancing_Period, -1]
-  58: [DynamicLoadBalancing_ImbalanceThreshold, 0.12]
-  59: [DynamicLoadBalancing_On, False]
-  60: [AdaptiveMeshRefinement, False]
-  61: [AMR_startUpSweeps, 1]
-  62: [CutCellQuadratureType, 5]
-  63: [ContinueOnIoError, True]
-  64: [Grid:NoOfCells, 262144]
-  65: [Grid:hMax, 0.0541265877365274]
-  66: [Grid:hMin, 0.03125]
-  67: [UsedNoOfMultigridLevels, 7]
-  68: [maxBlkSize, 20]
-  69: [minBlkSize, 10]
-  70: [NumberOfMatrixBlox, 1810432]
-  71: [DOFs, 2671600]
-  72: [minSolRunT, 3543.8054746]
-  73: [maxSolRunT, 3543.8054746]
-  74: [Conv, 1]
-  75: [NoIter, 178]
-  76: [maxMultigridlvl, 0]
-}
+System.ArgumentOutOfRangeException occurred: Specified argument was out of the range of valid values.
+Parameter name: index. Type 'LastError' for details.
+
 ==============
 static class AddCols {
     static public object SipMatrixAssembly_time(ISessionInfo SI) {
@@ -1296,6 +1839,42 @@ SessTab.SaveToFile(docpath);
 **************
 ==============
 LastError;
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

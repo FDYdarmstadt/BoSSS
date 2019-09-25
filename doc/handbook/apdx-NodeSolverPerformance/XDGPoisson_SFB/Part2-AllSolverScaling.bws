@@ -24,7 +24,7 @@ using System.IO;
 using BoSSS.Application.SipPoisson;
 **************
 ==============
-string dateString = "2019-9-20";
+string dateString = "2019-9-23";
 string File       = "SolverRuns--" + dateString + ".json";
 string FilePath   = Path.Combine(CurrentDocDir, File);
 var SessTab       = TableExtensions.LoadFromFile(FilePath);
@@ -139,35 +139,45 @@ var SubTab = SubTab_2.ExtractColumns("SessionName","DGdegree:u", "Grid:NoOfCells
 ==============
 SubTab.Print();
 **************
-    SessionName                                     DGdegree:u Grid:NoOfCells LinearSolver.SolverCode DOFs   minSolRunT   maxSolRunT   NoIter 
-0:  XdgPoissonVelocity_J32768_k3_classic_pardiso    3          32768          2                       678080 7474.7656433 7474.7656433 1      
-1:  XdgPoissonVelocity_J32768_k2_exp_Kcycle_schwarz 2          32768          41                      339040 119.5412206  119.5412206  8      
-2:  XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz    5          64             41                      4928   1.8388327    1.8388327    1      
-3:  XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz     5          8              41                      896    0.5166903    0.5166903    1      
-4:  XdgPoissonVelocity_J32768_k2_exp_gmres_levelpmg 2          32768          47                      339040 176.1591577  176.1591577  152    
-5:  XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz    3          64             41                      1760   0.3325719    0.3325719    1      
-6:  XdgPoissonVelocity_J32768_k2_classic_pardiso    2          32768          2                       339040 767.2806587  767.2806587  1      
-7:  XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz     3          8              41                      320    0.2269022    0.2269022    1      
-8:  XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz   2          512            41                      5920   0.6934921    0.6934921    1      
-9:  XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz    2          64             41                      880    0.2247915    0.2247915    1      
-10: XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz     2          8              41                      160    0.4661312    0.4661312    1      
-11: XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg   5          512            47                      33152  107.4395684  107.4395684  1185   
-12: XdgPoissonVelocity_J4096_k3_exp_gmres_levelpmg  3          4096           47                      87680  50.4995927   50.4995927   306    
-13: XdgPoissonVelocity_J512_k3_exp_gmres_levelpmg   3          512            47                      11840  3.0388523    3.0388523    95     
-14: XdgPoissonVelocity_J8_k3_exp_gmres_levelpmg     3          8              47                      320    0.4753072    0.4753072    41     
-15: XdgPoissonVelocity_J64_k2_exp_gmres_levelpmg    2          64             47                      880    0.5074377    0.5074377    35     
-16: XdgPoissonVelocity_J8_k2_exp_gmres_levelpmg     2          8              47                      160    0.4584302    0.4584302    14     
-17: XdgPoissonVelocity_J512_k5_classic_pardiso      5          512            2                       33152  26.9058707   26.9058707   1      
-18: XdgPoissonVelocity_J4096_k3_classic_pardiso     3          4096           2                       87680  85.6159709   85.6159709   1      
-19: XdgPoissonVelocity_J64_k5_classic_pardiso       5          64             2                       4928   1.8014944    1.8014944    1      
-20: XdgPoissonVelocity_J8_k5_classic_pardiso        5          8              2                       896    0.4364679    0.4364679    1      
-21: XdgPoissonVelocity_J512_k3_classic_pardiso      3          512            2                       11840  2.1267044    2.1267044    1      
-22: XdgPoissonVelocity_J64_k3_classic_pardiso       3          64             2                       1760   0.3109482    0.3109482    1      
-23: XdgPoissonVelocity_J8_k3_classic_pardiso        3          8              2                       320    0.2252675    0.2252675    1      
-24: XdgPoissonVelocity_J4096_k2_classic_pardiso     2          4096           2                       43840  12.7883562   12.7883562   1      
-25: XdgPoissonVelocity_J512_k2_classic_pardiso      2          512            2                       5920   0.8089553    0.8089553    1      
-26: XdgPoissonVelocity_J64_k2_classic_pardiso       2          64             2                       880    0.230206     0.230206     1      
-27: XdgPoissonVelocity_J8_k2_classic_pardiso        2          8              2                       160    0.3169032    0.3169032    1      
+    SessionName                                      DGdegree:u Grid:NoOfCells LinearSolver.SolverCode DOFs    minSolRunT   maxSolRunT   NoIter 
+0:  XdgPoissonVelocity_J262144_k2_exp_gmres_levelpmg 2          262144         47                      2671600 3543.8054746 3543.8054746 178    
+1:  XdgPoissonVelocity_J32768_k3_classic_pardiso     3          32768          2                       678080  6804.8049859 6804.8049859 1      
+2:  XdgPoissonVelocity_J32768_k3_exp_Kcycle_schwarz  3          32768          41                      678080  300.9553897  300.9553897  24     
+3:  XdgPoissonVelocity_J32768_k3_exp_gmres_levelpmg  3          32768          47                      678080  581.8206366  581.8206366  220    
+4:  XdgPoissonVelocity_J32768_k2_exp_Kcycle_schwarz  2          32768          41                      339040  122.0623058  122.0623058  14     
+5:  XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz    5          512            41                      33152   115.9100117  115.9100117  28     
+6:  XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz     5          64             41                      4928    2.9806594    2.9806594    1      
+7:  XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz      5          8              41                      896     0.7084633    0.7084633    1      
+8:  XdgPoissonVelocity_J4096_k3_exp_Kcycle_schwarz   3          4096           41                      87680   28.7918868   28.7918868   19     
+9:  XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz    3          512            41                      11840   5.4398521    5.4398521    19     
+10: XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz     3          64             41                      1760    0.338826     0.338826     1      
+11: XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz      3          8              41                      320     0.2539047    0.2539047    1      
+12: XdgPoissonVelocity_J32768_k2_exp_gmres_levelpmg  2          32768          47                      339040  170.1946053  170.1946053  132    
+13: XdgPoissonVelocity_J4096_k2_exp_Kcycle_schwarz   2          4096           41                      43840   12.384433    12.384433    13     
+14: XdgPoissonVelocity_J32768_k2_classic_pardiso     2          32768          2                       339040  756.772999   756.772999   1      
+15: XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz    2          512            41                      5920    0.6344345    0.6344345    1      
+16: XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz     2          64             41                      880     0.2105673    0.2105673    1      
+17: XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz      2          8              41                      160     0.2513277    0.2513277    1      
+18: XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg    5          512            47                      33152   24.7139631   24.7139631   199    
+19: XdgPoissonVelocity_J4096_k3_exp_gmres_levelpmg   3          4096           47                      87680   28.282994    28.282994    143    
+20: XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg      5          8              47                      896     0.9900172    0.9900172    236    
+21: XdgPoissonVelocity_J512_k3_exp_gmres_levelpmg    3          512            47                      11840   4.5794108    4.5794108    122    
+22: XdgPoissonVelocity_J64_k3_exp_gmres_levelpmg     3          64             47                      1760    2.9747727    2.9747727    531    
+23: XdgPoissonVelocity_J8_k3_exp_gmres_levelpmg      3          8              47                      320     0.4276469    0.4276469    52     
+24: XdgPoissonVelocity_J4096_k2_exp_gmres_levelpmg   2          4096           47                      43840   16.1498889   16.1498889   118    
+25: XdgPoissonVelocity_J64_k2_exp_gmres_levelpmg     2          64             47                      880     0.5080667    0.5080667    46     
+26: XdgPoissonVelocity_J8_k2_exp_gmres_levelpmg      2          8              47                      160     0.4943768    0.4943768    18     
+27: XdgPoissonVelocity_J512_k5_classic_pardiso       5          512            2                       33152   30.4016778   30.4016778   1      
+28: XdgPoissonVelocity_J4096_k3_classic_pardiso      3          4096           2                       87680   85.4827172   85.4827172   1      
+29: XdgPoissonVelocity_J64_k5_classic_pardiso        5          64             2                       4928    1.9340731    1.9340731    1      
+30: XdgPoissonVelocity_J8_k5_classic_pardiso         5          8              2                       896     0.4394875    0.4394875    1      
+31: XdgPoissonVelocity_J512_k3_classic_pardiso       3          512            2                       11840   2.1390644    2.1390644    1      
+32: XdgPoissonVelocity_J64_k3_classic_pardiso        3          64             2                       1760    0.3210994    0.3210994    1      
+33: XdgPoissonVelocity_J4096_k2_classic_pardiso      2          4096           2                       43840   13.1995807   13.1995807   1      
+34: XdgPoissonVelocity_J8_k3_classic_pardiso         3          8              2                       320     0.2246612    0.2246612    1      
+35: XdgPoissonVelocity_J512_k2_classic_pardiso       2          512            2                       5920    0.7342041    0.7342041    1      
+36: XdgPoissonVelocity_J64_k2_classic_pardiso        2          64             2                       880     0.2195707    0.2195707    1      
+37: XdgPoissonVelocity_J8_k2_classic_pardiso         2          8              2                       160     0.2584649    0.2584649    1      
 ==============
 //Extract to excel-File
 //SubTab.ToCSVFile(WFlowName);
@@ -292,7 +302,7 @@ List of 3 instances of Int32 {
 ==============
 **************
 ==============
-int rows    = 3;
+int rows    = 4;
 int columns = 1;
 LinearSolverCode[] ignore_solvers = {LinearSolverCode.classic_cg, LinearSolverCode.exp_softpcg_schwarz, LinearSolverCode.exp_direct_lapack};
 
@@ -300,19 +310,23 @@ Plot2Ddata[,] multiplots = new Plot2Ddata[rows,columns];
 int pDegree = 0;
 for(int iRow = 0; iRow < rows; iRow++) {
 for(int iCol = 0; iCol < columns; iCol++) {
-    
+
     if(pDegree > rows*columns-1)
         continue;
     int tmpDG = -1;
     if(pDegree < DGdegrees.Length)
         tmpDG = DGdegrees[pDegree];
     
+    if(iRow == rows-1){
+        multiplots[iRow,iCol] = null;
+        }
+    
     //Create Graphs
     multiplots[iRow,iCol] = SubTab.ToPlot("DOFs", "minSolRunT", // column for x- and y
        delegate (int iTabRow, 
                  IDictionary<string, object> Row, 
                  out string Nmn, 
-                 out PlotFormat Fmt) { 
+                 out PlotFormat Fmt) {
            // - - - - - - - - - - - - - - - - - - - - - - - - 
            // PlotRowSelector:
            // selects, which table row goes to which graph,
@@ -336,7 +350,7 @@ for(int iCol = 0; iCol < columns; iCol++) {
                return;
                }
            }
-           
+
            //process the other solvers
            Fmt = new PlotFormat();
            switch(solver_name) {
@@ -422,28 +436,26 @@ for(int iCol = 0; iCol < columns; iCol++) {
     }
 
     //and i am special ...
-    if(iRow == rows-1)
+    if(iRow == rows-2){
         multiplots[iRow,iCol].ShowXtics=true;
+    }
     pDegree++;
+    
+    
+
 }                        
 }
 ;
 //multiplots.AddDummyPlotsForLegend(3,0);
+
 multiplots.PlotNow()
 **************
+name is: exp_gmres_levelpmg
 name is: exp_Kcycle_schwarz
 name is: exp_gmres_levelpmg
+name is: exp_Kcycle_schwarz
 name is: classic_pardiso
 name is: exp_Kcycle_schwarz
-name is: exp_Kcycle_schwarz
-name is: exp_Kcycle_schwarz
-name is: exp_gmres_levelpmg
-name is: exp_gmres_levelpmg
-name is: classic_pardiso
-name is: classic_pardiso
-name is: classic_pardiso
-name is: classic_pardiso
-name is: classic_pardiso
 name is: exp_Kcycle_schwarz
 name is: exp_Kcycle_schwarz
 name is: exp_gmres_levelpmg
@@ -453,8 +465,25 @@ name is: classic_pardiso
 name is: classic_pardiso
 name is: classic_pardiso
 name is: classic_pardiso
+name is: classic_pardiso
+name is: exp_Kcycle_schwarz
+name is: exp_gmres_levelpmg
 name is: exp_Kcycle_schwarz
 name is: exp_Kcycle_schwarz
+name is: exp_Kcycle_schwarz
+name is: exp_Kcycle_schwarz
+name is: exp_gmres_levelpmg
+name is: exp_gmres_levelpmg
+name is: exp_gmres_levelpmg
+name is: exp_gmres_levelpmg
+name is: classic_pardiso
+name is: classic_pardiso
+name is: classic_pardiso
+name is: classic_pardiso
+name is: exp_Kcycle_schwarz
+name is: exp_Kcycle_schwarz
+name is: exp_Kcycle_schwarz
+name is: exp_gmres_levelpmg
 name is: exp_gmres_levelpmg
 name is: classic_pardiso
 name is: classic_pardiso
@@ -496,6 +525,8 @@ System.ComponentModel.Win32Exception (0x80004005): Das System kann die angegeben
 CL.WriteMinimalCompileableExample(
    Path.Combine(CurrentDocDir, "plots", "MainXdgPoissonScaling.tex"),
    "XdgPoissonScaling.tex");
+**************
+==============
 **************
 ==============
 **************
