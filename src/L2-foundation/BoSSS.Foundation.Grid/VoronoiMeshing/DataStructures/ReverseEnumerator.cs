@@ -7,14 +7,15 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
-    class BackwardsEnumerator<T> : IEnumerator<T>
+    class ReverseEnumerator<T> : IEnumerator<T>
     {
         int pointer; 
 
         readonly IList<T> array;
 
-        public BackwardsEnumerator(IList<T> array)
+        public ReverseEnumerator(IList<T> array)
         {
+            pointer = array.Count;
             this.array = array;
         }
 

@@ -152,7 +152,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 ridge.Twin = twinRidge;
                 ridges[i] = ridge;
                 twinEdges[count - 1 - i] = twinRidge;
-                boundaryCount.Next();
+                boundaryCount.Previous();
             }
         }
     }

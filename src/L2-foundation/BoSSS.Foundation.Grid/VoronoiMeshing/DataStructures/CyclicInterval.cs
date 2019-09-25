@@ -35,5 +35,14 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 index = start;
             }
         }
+
+        public void Previous()
+        {
+            --index;
+            if(index < start)
+            {
+                index = end;
+            }
+        }
     }
 }

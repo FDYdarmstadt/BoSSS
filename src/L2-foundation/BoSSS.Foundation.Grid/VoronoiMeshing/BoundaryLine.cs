@@ -41,5 +41,15 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
             return lines;
         }
+
+        public static BoundaryLine GetReverse(BoundaryLine line)
+        {
+            BoundaryLine reverse = new BoundaryLine
+            {
+                Start = line.End,
+                End = line.Start
+            };
+            return reverse;
+        }
     }
 }

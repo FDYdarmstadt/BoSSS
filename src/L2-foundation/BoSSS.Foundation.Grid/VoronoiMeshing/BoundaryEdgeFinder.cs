@@ -5,11 +5,11 @@ using System.Collections.Generic;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
-    class BoundaryEdgeEnumerator<T>
+    class BoundaryEdgeFinder<T>
     {
         InsideCellEnumerator<T> cells;
 
-        public BoundaryEdgeEnumerator(Mesh<T> mesh)
+        public BoundaryEdgeFinder(Mesh<T> mesh)
         {
             cells = new InsideCellEnumerator<T>(mesh);
         }
@@ -24,16 +24,27 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         static IEnumerable<Edge<T>> IterativeYieldBoundaryCells(MeshCell<T> cell)
         {
             Edge<T> currentEdge = FindFirstBoundaryEdge(cell);
+            yield return currentEdge;
+
+            bool abort = false;
             int startID = currentEdge.Start.ID;
             do
             {
-                CyclicArray<Edge<T>> edges = EdgeCycleAfterEdge(currentEdge);
+                CyclicArray<Edge<T>> edges = CycleThroughEdgesAfterEdge(currentEdge);
                 for (int i = 0; i < edges.Length; ++i)
                 {
                     currentEdge = edges[i];
                     if (currentEdge.IsBoundary)
                     {
-                        yield return currentEdge;
+                        if(currentEdge.Start.ID != startID)
+                        {
+                            yield return currentEdge;
+                        }
+                        else
+                        {
+                            abort = true;
+                            break;
+                        }
                     }
                     else
                     {
@@ -42,7 +53,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                     }
                 }
             }
-            while (currentEdge.Start.ID != startID);
+            while (!abort);
         }
 
         static Edge<T> FindFirstBoundaryEdge(MeshCell<T> cell)
@@ -57,7 +68,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             throw new Exception("Cell does not neighbor boundary.");
         }
 
-        static CyclicArray<Edge<T>> EdgeCycleAfterEdge(Edge<T> edge)
+        static CyclicArray<Edge<T>> CycleThroughEdgesAfterEdge(Edge<T> edge)
         {
             Edge<T>[] edges = edge.Cell.Edges;
             CyclicArray<Edge<T>> reorderedEdges = new CyclicArray<Edge<T>>(edges);

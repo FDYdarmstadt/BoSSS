@@ -1,17 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BoSSS.Platform.LinAlg;
+﻿using BoSSS.Platform.LinAlg;
 using ilPSP;
+using System;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
-    class BoundaryTransformation : AffineTrafo
+    class BoundaryTransformation : Transformation
     {
         public BoundaryTransformation(BoundaryLine source, BoundaryLine target)
-            :base(2)
+            : base(2)
         {
             if(source.Length() != target.Length())
             {
@@ -21,9 +17,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             this.Matrix = GetRotationMatrixFrom(
                 source.Start.Position - source.End.Position, 
                 target.Start.Position - target.End.Position);
-            Vector affineTransformation = 
+            this.AffineTransformation = 
                 (target.Start.Position + target.End.Position - source.Start.Position - source.End.Position) / 2;
-            this.Affine = new double[] { affineTransformation.x, affineTransformation.y };
         }
 
         static MultidimensionalArray GetRotationMatrixFrom(Vector source, Vector target)
@@ -45,12 +40,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             rotation[1, 0] = dotProduct;
             rotation[1, 1] = crossProduct;
             return rotation;
-        }
-
-        public Vector Transform(Vector vtx)
-        {
-            double[] result = base.Transform();
-            return new Vector(result);
         }
     }
 }

@@ -25,19 +25,19 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             public int FirstCellNode_indice = 0;
         }
 
-        static void AssertCorrectness(Settings settings)
+        static void AssertCorrectness<T>(Settings settings, IList<T> nodes)
         {
             Debug.Assert(settings.BoundingBox.Length == 4);
             Debug.Assert(settings.Boundary.Length > 2);
+            Debug.Assert(settings.FirstCellNode_indice > -1 && settings.FirstCellNode_indice < nodes.Count);
         }
 
         public static Mesh<T> ComputeMesh<T>(IList<T> nodes, Settings settings)
             where T : IMesherNode, new()
         {
-            AssertCorrectness(settings);
+            AssertCorrectness(settings, nodes);
             Mesh<T> mesh = null;
             MeshGenerator<T> voronoiMesher = new MeshGenerator<T>(settings);
-            
 
             for (int iLloyd = 0; iLloyd <= settings.NumberOfLloydIterations; ++iLloyd)
             {

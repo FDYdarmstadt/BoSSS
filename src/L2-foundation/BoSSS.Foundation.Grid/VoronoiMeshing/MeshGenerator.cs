@@ -11,15 +11,15 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
     class MeshGenerator<T>
          where T : IMesherNode, new()
     {
-        BoundaryCutter<T> cutter;
+        readonly BoundaryCutter<T> cutter;
 
-        Vector[] boundingBox;
+        readonly Vector[] boundingBox;
 
-        BoundaryLine[] boundary;
+        readonly BoundaryLine[] boundary;
 
-        int firstCellNode_indice;
+        readonly int firstCellNode_indice;
 
-        BoundaryHandler<T> boundaryHandler;
+        readonly BoundaryHandler<T> boundaryHandler;
 
         public MeshGenerator(MeshingAlgorithm.Settings settings)
         {
@@ -36,7 +36,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             Mesh<T> mesh = CreateMeshFrom(nodes);
             if (boundaryHandler.ContainsPeriodicBoundaries)
             {
-                boundaryHandler.CloneNodesAlongPeriodicBoundaries(mesh, nodes);
+                nodes = boundaryHandler.CloneNodesAlongPeriodicBoundaries(mesh);
                 mesh = CreateMeshFrom(nodes);
                 boundaryHandler.RecomposePeriodicEdges(mesh);
             }

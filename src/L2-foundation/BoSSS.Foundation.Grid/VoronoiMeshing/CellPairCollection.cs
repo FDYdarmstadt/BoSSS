@@ -92,7 +92,12 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         public IEnumerable<EdgeCombo> GetCollectedEdgeCombos()
         {
-            return (IEnumerable<EdgeCombo>)periodicEdges;
+            EdgeCombo[] combos = new EdgeCombo[periodicEdges.Count];
+            foreach((int i, KeyValuePair<int, EdgeCombo> combo) in CountingEnumerable.Wrap(periodicEdges))
+            {
+                combos[i] = combo.Value;
+            }
+            return combos;
         }
     }
 }

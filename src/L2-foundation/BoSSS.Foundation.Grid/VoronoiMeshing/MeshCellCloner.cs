@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
-    static class MeshCloner
+    static class MeshCellCloner
     {
         public static MeshCell<T>[] Clone<T>(IList<MeshCell<T>> cells)
         {

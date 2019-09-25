@@ -25,6 +25,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             this.sourceBoundaryEdgeNumber = sourceBoundaryEdgeNumber;
             this.targetBoundaryEdgeNumber = targetBoundaryEdgeNumber;
         }
+
         public static void MergeAtBoundary(
         IList<MeshCell<T>> source,
         int sourceBoundaryEdgeNumber,
@@ -58,7 +59,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             AssertCorrectness(source, target);
             newEdges.Clear();
             sourceEdgeEnumerator = new ArrayEnumerator<Edge<T>>(source.Edges);
-            targetEdgeEnumerator = new BackwardsEnumerator<Edge<T>>(target.Edges);
+            targetEdgeEnumerator = new ReverseEnumerator<Edge<T>>(target.Edges);
         }
 
         void AssertCorrectness(MeshCell<T> source, MeshCell<T> target)
@@ -74,7 +75,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 Edge<T> edge = sourceEdgeEnumerator.Current;
                 if (edge.BoundaryEdgeNumber != sourceBoundaryEdgeNumber)
                 {
-                    ToTargetBoundary(edge);
+                    SetToTargetBoundary(edge);
                     newEdges.AddLast(edge);
                 }
                 else
@@ -113,7 +114,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             if (sourceEdgeEnumerator.MoveNext())
             {
                 Edge<T> sourceEdgeAfterWeld = sourceEdgeEnumerator.Current;
-                ToTargetBoundary(sourceEdgeAfterWeld);
+                SetToTargetBoundary(sourceEdgeAfterWeld);
                 newEdges.AddFirst(sourceEdgeAfterWeld);
             }
             if (targetEdgeEnumerator.MoveNext())
@@ -188,7 +189,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             }
         }
 
-        void ToTargetBoundary(Edge<T> edge)
+        void SetToTargetBoundary(Edge<T> edge)
         {
             edge.BoundaryEdgeNumber = targetBoundaryEdgeNumber;
         }

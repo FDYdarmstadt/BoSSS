@@ -75,20 +75,29 @@ namespace VoronoiTests.Grid
         [Test]
         public void SetPeriodicBoundaryConditions()
         {
-            byte[] tags = { 181, 182, 181, 182 };
-            SortedList<byte, string> tagNames = new SortedList<byte, string>(2);
-            tagNames.Add(181, "Periodic-X");
-            tagNames.Add(182, "Periodic-Y");
+            byte[] tags = { 1, 182, 1, 182 };
+            SortedList<byte, string> tagNames = new SortedList<byte, string>(2)
+            {
+                { 181, "Periodic-X" },
+                { 1, "Dirichlet" }
+            };
 
             VoronoiBoundary gridBoundary = new VoronoiBoundary
             {
-                Polygon = GridShapes.Rectangle(20, 20),
+                Polygon = GridShapes.Rectangle(2, 2),
                 EdgeTags = tags,
                 EdgeTagNames = tagNames
             };
 
-            VoronoiGrid grid = VoronoiGrid2D.Polygonal(gridBoundary, 10, 10);
+            MultidimensionalArray nodes = MultidimensionalArray.Create(6, 2);
+            nodes.SetRow(0, new double[] { -0.5, 0.5 });
+            nodes.SetRow(1, new double[] { -0.8, -0.4 });
+            nodes.SetRow(2, new double[] { 0, 0 });
+            nodes.SetRow(3, new double[] { 0.8, 0.4 });
+            nodes.SetRow(4, new double[] { 0.9, 0.0 });
+            nodes.SetRow(5, new double[] { 0.5, -0.5 });
 
+            VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 10, 0);
         }
     }
 }
