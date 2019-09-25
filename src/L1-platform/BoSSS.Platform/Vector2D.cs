@@ -439,6 +439,25 @@ namespace BoSSS.Platform.LinAlg {
         }
 
         /// <summary>
+        /// multiplication by a matrix
+        /// </summary>
+        /// <param name="s">the scalar</param>
+        /// <param name="v">the vector</param>
+        /// <returns>clear;</returns>
+        public static Vector operator *(MultidimensionalArray m, Vector s)
+        {
+            Vector result = new Vector(s.Dim);
+            for (int i = 0; i < s.Dim; ++i)
+            {
+                for(int j = 0; j < s.Dim; ++j)
+                {
+                    result[i] += m[i, j] * s[j];
+                }
+            }
+            return s;
+        }
+
+        /// <summary>
         /// Division by a scalar
         /// </summary>
         /// <param name="v">The vector</param>
