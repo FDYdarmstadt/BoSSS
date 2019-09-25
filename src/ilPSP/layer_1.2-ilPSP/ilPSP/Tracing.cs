@@ -51,18 +51,6 @@ namespace ilPSP.Tracing {
             }
         }
 
-        /// <summary>
-        /// Setting <see cref="NamespacesToLog"/>;
-        /// </summary>
-        public static void SetTracingNamespaces(string TracingNamespaces) {
-            if (TracingNamespaces == null) {
-                Tracer.NamespacesToLog = new string[0];
-            } else {
-                Tracer.NamespacesToLog = TracingNamespaces.Split(
-                    new char[] { ',', ' ', '\n', '\t', '\r' },
-                    StringSplitOptions.RemoveEmptyEntries);
-            }
-        }
 
         /// <summary>
         /// Explicit switch for turning cone instrumentation on/off; this is useful when to much overhead is caused by instrumentation.

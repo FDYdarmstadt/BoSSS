@@ -57,7 +57,7 @@ namespace MPI.Wrappers.Utils {
                 if (errStr == IntPtr.Zero)
                     return null;
                 else
-                    return Marshal.PtrToStringAnsi((IntPtr)errStr);
+                    return "dlerror: " + Marshal.PtrToStringAnsi((IntPtr)errStr);
             }
         }
 

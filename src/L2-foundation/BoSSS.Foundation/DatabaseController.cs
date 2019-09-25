@@ -58,6 +58,7 @@ namespace BoSSS.Foundation.IO {
         /// <see cref="StandardFsDriver"/>
         /// </returns>
         public static IFileSystemDriver GetFileSystemDriver(string path) {
+
             if (fsDrivers.ContainsKey(path)) {
                 if (fsDrivers[path].IsDisposed) {
                     fsDrivers.Remove(path);
@@ -65,8 +66,7 @@ namespace BoSSS.Foundation.IO {
                     return fsDrivers[path];
                 }
             }
-
-            IFileSystemDriver fsDriver;
+            IFileSystemDriver fsDriver = null;
             string sftpString = "sftp://";
             if (path.StartsWith(sftpString)) {
                 try {
@@ -102,14 +102,20 @@ namespace BoSSS.Foundation.IO {
                     throw new ArgumentException(String.Format(
                         "Given path '{0}' has an invalid format", path));
                 }
-            } else if (File.Exists(path) || Directory.Exists(path)) {
-                fsDriver = new StandardFsDriver(path);
-            } else if (path == null) {
-                fsDriver = NullFileSystemDriver.Instance;
             } else {
-                throw new IOException(String.Format(
-                    "Could not find or access a database located at '{0}'", path));
+                bool fi = File.Exists(path);
+                bool di = Directory.Exists(path);
+                if (fi || di) {
+                    fsDriver = new StandardFsDriver(path);
+                } else if (path == null) {
+                    fsDriver = NullFileSystemDriver.Instance;
+                } else {
+                    string ErrMsg = String.Format("Could not find or access a database located at '{0}'", path);
+                    throw new IOException(ErrMsg);
+                    //Console.WriteLine("GetFilesystemDriver: 10 ");
+                }
             }
+
 
             fsDrivers.Add(path, fsDriver);
             return fsDriver;
