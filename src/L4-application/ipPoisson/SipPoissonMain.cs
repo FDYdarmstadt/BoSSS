@@ -143,6 +143,14 @@ namespace BoSSS.Application.SipPoisson {
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(2, 40, 2, LinearSolverCode.exp_Kcycle_schwarz);
             //Assert.AreEqual(1, 2, "Remove Me!!");
 
+            string si3 = System.Environment.GetEnvironmentVariable ("BOSSS_INSTALL");
+            string pp = System.Environment.GetEnvironmentVariable ("PATH");
+            si3 = si3 != null ? si3 : "NIX";
+            pp = pp != null ? pp : "NIX";
+
+          
+            Console.WriteLine ("BOSSS_INSTALL : " + si3);
+
 
             if (System.Environment.MachineName.ToLowerInvariant().EndsWith("terminal03")
                 //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")

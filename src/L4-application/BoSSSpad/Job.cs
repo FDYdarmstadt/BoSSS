@@ -356,7 +356,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public string DeploymentDirectory {
             get;
-            private set;
+            private set;            
         }
 
         int m_NumberOfMPIProcs = 1;
