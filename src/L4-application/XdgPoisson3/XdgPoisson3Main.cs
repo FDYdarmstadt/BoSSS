@@ -308,6 +308,77 @@ namespace BoSSS.Application.XdgPoisson3 {
                         S, agg.GetAgglomerator(this.LsTrk.GetSpeciesId(S)).AggInfo.SourceCells.NoOfItemsLocally);
                 }
 
+                // performance comp
+                // =================
+                {
+                    var M2 = M.CloneAs();
+
+                    double MatlabSpMMtime, MatlabSpMVtime;
+                    using (var MatlabRef = new BatchmodeConnector()) {
+                        MultidimensionalArray CheckRes = MultidimensionalArray.Create(1, 4);
+
+                        MatlabRef.PutSparseMatrix(M, "M");
+                        MatlabRef.Cmd("M2 = M;");
+
+                        // bench SpMM
+                        MatlabRef.Cmd("Mprod1 = M * M2;");
+                        MatlabRef.Cmd("tic");
+                        MatlabRef.Cmd("Mprod = M * M2;");
+                        MatlabRef.Cmd("SpMMtime = toc;");
+
+                        // bench SpMV
+                        MatlabRef.Cmd("[L,I] = size(M);");
+                        MatlabRef.Cmd("x = sin(1:L)';");
+                        MatlabRef.Cmd("a1 = M*x;");
+                        MatlabRef.Cmd("tic");
+                        MatlabRef.Cmd("a = M*x;");
+                        MatlabRef.Cmd("SpMVtime = toc;");
+
+                        MatlabRef.Cmd("CheckRes = [0, 0, SpMVtime, SpMMtime];");
+                        MatlabRef.Cmd("CheckRes");
+                        MatlabRef.GetMatrix(CheckRes, "CheckRes");
+
+                        MatlabRef.Execute();
+
+                        MatlabSpMMtime = CheckRes[0, 3];
+                        MatlabSpMVtime= CheckRes[0, 2];
+
+
+
+                    }
+
+
+                    BlockMsrMatrix.Multiply(M, M2);
+
+
+                    Stopwatch BoSSsSpMMtime = new Stopwatch();
+                    BoSSsSpMMtime.Start();
+                    BlockMsrMatrix.Multiply(M, M2);
+                    BoSSsSpMMtime.Stop();
+
+
+                    double[] accu = new double[M.RowPartitioning.LocalLength];
+                    double[] x = new double[M.ColPartition.LocalLength];
+                    for(int i = 0; i < x.Length; i++) {
+                        x[i] = Math.Sin(i);
+                    }
+                    M.SpMV(1.0, x, 0.0, accu);
+
+                    Stopwatch BoSSsSpMVtime = new Stopwatch();
+                    BoSSsSpMVtime.Start();
+                    M.SpMV(1.0, x, 0.0, accu);
+                    BoSSsSpMVtime.Stop();
+
+
+                    Console.WriteLine("Matlab SpMM time: [sec]   " + MatlabSpMMtime);
+                    Console.WriteLine("BoSSS  SpMM time: [sec]   " + BoSSsSpMMtime.Elapsed.TotalSeconds);
+
+                    Console.WriteLine("Matlab SpMV time: [sec]   " + MatlabSpMVtime);
+                    Console.WriteLine("BoSSS  SpMV time: [sec]   " + BoSSsSpMVtime.Elapsed.TotalSeconds);
+
+                    System.Environment.Exit(2);
+                }
+
 
                 // mass matrix factory
                 // ===================
