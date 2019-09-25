@@ -213,7 +213,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if (NoOfPartsPerProcess > 1) {
                         int ncon = 1;
                         int edgecut = 0;
-                        int[] options = new int[] { 1 };//null; //new int[] { 0, 0, 0, 0, 0 };                    
+                        int[] options = default(int[]);//null; //new int[] { 0, 0, 0, 0, 0 };                    
                         METIS.PARTGRAPHKWAY(
                             ref JComp, ref ncon,
                             xadj,
@@ -444,8 +444,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // ===============
 
                 var _Blocks = this.m_BlockingStrategy.GetBlocking(op);
+                foreach(var b in _Blocks) {
+                    if (b.Count <= 0)
+                        throw new ArithmeticException("block without cells.");
+                }
                 int NoOfSchwzBlocks = _Blocks.Count();
-
+                Console.WriteLine("NoOfSchwzBlocks :"+ NoOfSchwzBlocks);
                 // test cell blocks
                 // ================
 #if DEBUG
@@ -804,6 +808,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         var l1 = TempRowIdx_gI[iPart];
 
+                        int BlockSize = bi.Count + l1.Count;
+                        if (BlockSize <= 0)
+                            throw new ArithmeticException();
+
                         //if (M.RowPartitioning.MpiSize > 1) {
                         //    int i0Proc = M.RowPartitioning.i0;
                         //    bi = bi.CloneAs();
@@ -813,7 +821,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //}
 
                         BlockPartitioning localBlocking = new BlockPartitioning(bi.Count + l1.Count, LocalBlocks_i0[iPart], LocalBlocks_N[iPart], csMPI.Raw._COMM.SELF);
-
+                        
                         if (l1.Count > 0) {
                             // convert the indices into 'ExternalRowsTemp' to global indices
                             int l1L = l1.Count;
@@ -1424,8 +1432,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 double[] biLo = new double[Llo];
                                 biLo.AccV(1.0, bi, default(int[]), ciLo);
                                 double[] xiLo = new double[Llo];
-                                blockSolvers[iPart].Solve(xiLo, biLo);
-
+                                try {
+                                    blockSolvers[iPart].Solve(xiLo, biLo);
+                                } catch (ArithmeticException ae) {
+                                    Console.Error.WriteLine(ae.Message);
+                                    this.BlockMatrices[iPart].SaveToTextFileSparse("C:\\tmp\\Part_" + iPart + ".txt");
+                                    Console.WriteLine("NoParts :"+NoParts);
+                                    throw ae;
+                                }
                                 xi.AccV(1.0, xiLo, ciLo, default(int[]));
 
                                 {

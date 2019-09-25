@@ -550,7 +550,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.savetodb = false;
             //C.DbPath = @"E:\\XdgPerformance";
 
-            int Res = 2;
+            int Res = 4;
 
             C.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
@@ -571,7 +571,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             //C.SuppressExceptionPrompt = true;
 
             C.LinearSolver.TargetBlockSize = blocksize;
-            C.SetDGdegree(2);
+            C.SetDGdegree(5);
 
             //C.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_mg;
             //C.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_schwarz_directcoarse;
