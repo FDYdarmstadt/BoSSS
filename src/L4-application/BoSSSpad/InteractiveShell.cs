@@ -34,7 +34,7 @@ namespace BoSSS.Application.BoSSSpad {
     /// Extends/replaces the standard commands provided by
     /// <see cref="InteractiveBase"/> by some BoSSSPad-specific stuff.
     /// </summary>
-    public class InteactiveBase {
+    public class InteractiveShell : InteractiveBase {
 
         /// <summary>
         /// Provides a help text
