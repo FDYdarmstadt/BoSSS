@@ -603,10 +603,13 @@ namespace BoSSS.Solution {
                     break;
 
                 case LinearSolverCode.exp_gmres_levelpmg:
-                    templinearSolve = new SoftGMRES() {
+                    _precond = new LevelPmg() { UseHiOrderSmoothing = true };
+                    SetLinItCallback(_precond, isNonLinPrecond, IsLinPrecond: true);
+                    templinearSolve = new SoftGMRES()
+                    {
                         m_Tolerance = lc.ConvergenceCriterion,
                         m_MaxIterations = lc.MaxSolverIterations,
-                        Precond = new LevelPmg() { UseHiOrderSmoothing = true }
+                        Precond = _precond
                     };
 
 
