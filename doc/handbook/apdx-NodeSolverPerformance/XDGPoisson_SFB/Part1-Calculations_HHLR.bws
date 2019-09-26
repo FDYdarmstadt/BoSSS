@@ -19,23 +19,23 @@ using BoSSS.Application.XdgPoisson3;
 ==============
 **************
 ==============
-string WFlowName = "Xdg_SFB_Performance_r3";
+string WFlowName = "Xdg_SFB_Singlecore_test";
 WorkflowMgm.Init(WFlowName);
 WorkflowMgm.AllJobs;
 **************
-Project name is set to 'Xdg_SFB_Performance_r3'.
+Project name is set to 'Xdg_SFB_Singlecore_test'.
 List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
 //var tempDB = OpenOrCreateDatabase(@"\\dc1\userspace\weber\Performance_oldLibs_DB");
-var tempDB = OpenOrCreateDatabase(@"W:\work\scratch\jw52xeqa\DB_SFB_Paper");
+var tempDB = OpenOrCreateDatabase(@"W:\work\scratch\jw52xeqa\DB_SFB_Paper_1");
 //var tempDB = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\weber\SFB_DB");
 **************
-Opening existing database 'W:\work\scratch\jw52xeqa\DB_SFB_Paper'.
+Opening existing database 'W:\work\scratch\jw52xeqa\DB_SFB_Paper_1'.
 
 ==============
 //on HHLR path has to be something, which linux can work with e.g. /work/scratch/...
-string DBpathLinux = @"/work/scratch/jw52xeqa/DB_SFB_Paper";
+string DBpathLinux = @"/work/scratch/jw52xeqa/DB_SFB_Paper_1";
 **************
 ==============
 //var myBatch = new MiniBatchProcessorClient(@"G:\deploy-Mini");
@@ -87,7 +87,13 @@ static class Utils {
 ==============
 tempDB.Grids;
 **************
-List of 0 instances of IGridInfo {
+List of 6 instances of IGridInfo {
+  0: { Guid = 52840df9-96d8-45b5-9a1e-f7f902d3c969; Name = Xdg_SFB_Performance_r4_J262144; Cell Count = 262144; Dim = 3 }
+  1: { Guid = 1606fa14-f972-4fd3-8a6c-737e12c36ae5; Name = Xdg_SFB_Performance_r4_J32768; Cell Count = 32768; Dim = 3 }
+  2: { Guid = 9e982bad-e526-4eb3-bc4f-e36d633bc851; Name = Xdg_SFB_Performance_r4_J4096; Cell Count = 4096; Dim = 3 }
+  3: { Guid = a20fe648-29b7-47f9-9fcc-01cac85412e5; Name = Xdg_SFB_Performance_r4_J64; Cell Count = 64; Dim = 3 }
+  4: { Guid = adc3671d-f09b-46dc-9d08-bf0330e7a49f; Name = Xdg_SFB_Performance_r4_J8; Cell Count = 8; Dim = 3 }
+  5: { Guid = f20c044e-ae8a-4fbf-9948-3592b2dba757; Name = Xdg_SFB_Performance_r4_J512; Cell Count = 512; Dim = 3 }
 }
 ==============
 int[] Resolutions_3D = new int[] { 2,4,8,16,32,64 };
@@ -147,23 +153,23 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
     }
 }
 **************
-Creating grid with 8 cells.
-Creating grid with 64 cells.
-Creating grid with 512 cells.
-Creating grid with 4096 cells.
-Creating grid with 32768 cells.
-Creating grid with 262144 cells.
+Found Grid: { Guid = adc3671d-f09b-46dc-9d08-bf0330e7a49f; Name = Xdg_SFB_Performance_r4_J8; Cell Count = 8; Dim = 3 }
+Found Grid: { Guid = a20fe648-29b7-47f9-9fcc-01cac85412e5; Name = Xdg_SFB_Performance_r4_J64; Cell Count = 64; Dim = 3 }
+Found Grid: { Guid = f20c044e-ae8a-4fbf-9948-3592b2dba757; Name = Xdg_SFB_Performance_r4_J512; Cell Count = 512; Dim = 3 }
+Found Grid: { Guid = 9e982bad-e526-4eb3-bc4f-e36d633bc851; Name = Xdg_SFB_Performance_r4_J4096; Cell Count = 4096; Dim = 3 }
+Found Grid: { Guid = 1606fa14-f972-4fd3-8a6c-737e12c36ae5; Name = Xdg_SFB_Performance_r4_J32768; Cell Count = 32768; Dim = 3 }
+Found Grid: { Guid = 52840df9-96d8-45b5-9a1e-f7f902d3c969; Name = Xdg_SFB_Performance_r4_J262144; Cell Count = 262144; Dim = 3 }
 
 ==============
 grids;
 **************
 List of 6 instances of IGridInfo {
-  0: { Guid = df2a26e4-da49-4503-b99e-958a5b0c24cc; Name = Xdg_SFB_Performance_r3_J8; Cell Count = 8; Dim = 3 }
-  1: { Guid = 2c6fc27a-0766-4045-ab34-da37d9f38621; Name = Xdg_SFB_Performance_r3_J64; Cell Count = 64; Dim = 3 }
-  2: { Guid = 567be16b-5f7b-4efa-bfa2-79c6c29d0d4e; Name = Xdg_SFB_Performance_r3_J512; Cell Count = 512; Dim = 3 }
-  3: { Guid = 199e198f-b036-4813-9b73-d47529fdc88b; Name = Xdg_SFB_Performance_r3_J4096; Cell Count = 4096; Dim = 3 }
-  4: { Guid = 2d925309-f864-4d17-84fc-4aca2e6be4e0; Name = Xdg_SFB_Performance_r3_J32768; Cell Count = 32768; Dim = 3 }
-  5: { Guid = 8819601c-4183-4c10-ac58-74830399ecbe; Name = Xdg_SFB_Performance_r3_J262144; Cell Count = 262144; Dim = 3 }
+  0: { Guid = 88ecaf1f-eb88-45cb-b559-79fb16980b91; Name = Xdg_SFB_4cores_r0_J8; Cell Count = 8; Dim = 3 }
+  1: { Guid = c2de8a77-f58b-4cd7-95ca-057c20f5cd50; Name = Xdg_SFB_4cores_r0_J64; Cell Count = 64; Dim = 3 }
+  2: { Guid = 80ce8bfb-bf7a-47b3-a161-d969c6b099fd; Name = Xdg_SFB_4cores_r0_J512; Cell Count = 512; Dim = 3 }
+  3: { Guid = 5b4acd9c-6996-435a-96e5-d18b748cec74; Name = Xdg_SFB_4cores_r0_J4096; Cell Count = 4096; Dim = 3 }
+  4: { Guid = 27ca9a74-e92e-4d3e-94ef-3ac7ba013be1; Name = Xdg_SFB_4cores_r0_J32768; Cell Count = 32768; Dim = 3 }
+  5: { Guid = 73cfd10a-5f09-4ebb-91fd-90334a539ea1; Name = Xdg_SFB_4cores_r0_J262144; Cell Count = 262144; Dim = 3 }
 }
 ==============
 **************
@@ -219,8 +225,8 @@ List<XdgPoisson3Control> controls = new List<XdgPoisson3Control>();
 ==============
 // polynomial degrees to test
 //int[] PolyDegS = new int[] {2, 3, 4, 5, 6};
-int[] PolyDegS = new int[] {2, 3 ,5};
-//int[] PolyDegS = new int[] {2};
+//int[] PolyDegS = new int[] {2, 3 ,5};
+int[] PolyDegS = new int[] {2};
 **************
 ==============
 // Solvers which we want to instrument:
@@ -246,8 +252,8 @@ using BoSSS.Foundation.XDG;
 **************
 ==============
 //IGridInfo tmp_grd = 
-//IGridInfo[] t_grids=new IGridInfo[] {grids.Pick(2)};
-IGridInfo[] t_grids = grids;
+IGridInfo[] t_grids=new IGridInfo[] {grids.Pick(2)};
+//IGridInfo[] t_grids = grids;
 **************
 ==============
 controls.Clear();
@@ -276,7 +282,7 @@ foreach(IGridInfo grd in t_grids) {
     
     //ctrl.SessionName = caseName;
     
-    ctrl.savetodb = false; //for debug's sake
+    ctrl.savetodb = false;
     ctrl.DbPath   = DBpathLinux;
     //ctrl.SetDatabase(tmpDB); 
     ctrl.GridGuid = grd.ID;
@@ -413,7 +419,7 @@ foreach(var ctrl in controls) {
     var aJob = new Job(ctrl.SessionName, typeof(XdgPoisson3Main));
     aJob.SetControlObject(ctrl);
     aJob.NumberOfMPIProcs         = 1;
-    aJob.ExecutionTime            = "02:00:00";
+    aJob.ExecutionTime            = "04:00:00";
     aJob.HHLR_project             = "project00880";
     aJob.MemPerCPU                = "5000";
     aJob.UseComputeNodesExclusive = false;
@@ -424,13 +430,13 @@ foreach(var ctrl in controls) {
  Submitting: XdgPoissonVelocity_J8_k2_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-05-16
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-00-57
 Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
 deployment finished.
 
-Waiting for file transfer to finish.
+Waiting for file transfer to finish..
 Lmod: loading git 2.22.0 
 Lmod: loading gcc 8.3.0 
 Lmod: loading cmake 3.14.4 
@@ -438,16 +444,16 @@ Lmod: loading mono 6.0.0
 Lmod: loading openblas 0.2.20 
 Lmod: loading openucx 1.5.2 
 Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-05-16/batch.sh to Unix format ...
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-00-57/batch.sh to Unix format ...
 
-Submitted batch job 13123404
+Submitted batch job 13126751
 [1;37m[I][0m Selected project: project00880
 [1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
 
  Submitting: XdgPoissonVelocity_J64_k2_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-05-33
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-07-53
 Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
@@ -461,22 +467,22 @@ Lmod: loading mono 6.0.0
 Lmod: loading openblas 0.2.20 
 Lmod: loading openucx 1.5.2 
 Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-05-33/batch.sh to Unix format ...
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-07-53/batch.sh to Unix format ...
 
-Submitted batch job 13123405
+Submitted batch job 13126775
 [1;37m[I][0m Selected project: project00880
 [1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
 
  Submitting: XdgPoissonVelocity_J512_k2_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-05-50
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-08-11
 Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
 deployment finished.
 
-Waiting for file transfer to finish.
+Waiting for file transfer to finish..
 Lmod: loading git 2.22.0 
 Lmod: loading gcc 8.3.0 
 Lmod: loading cmake 3.14.4 
@@ -484,16 +490,16 @@ Lmod: loading mono 6.0.0
 Lmod: loading openblas 0.2.20 
 Lmod: loading openucx 1.5.2 
 Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-05-50/batch.sh to Unix format ...
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-08-11/batch.sh to Unix format ...
 
-Submitted batch job 13123408
+Submitted batch job 13126778
 [1;37m[I][0m Selected project: project00880
 [1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
 
  Submitting: XdgPoissonVelocity_J4096_k2_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-06-07
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-08-44
 Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
@@ -507,16 +513,16 @@ Lmod: loading mono 6.0.0
 Lmod: loading openblas 0.2.20 
 Lmod: loading openucx 1.5.2 
 Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-06-07/batch.sh to Unix format ...
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-08-44/batch.sh to Unix format ...
 
-Submitted batch job 13123409
+Submitted batch job 13126779
 [1;37m[I][0m Selected project: project00880
 [1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
 
  Submitting: XdgPoissonVelocity_J32768_k2_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-06-25
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-09-00
 Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
@@ -530,16 +536,16 @@ Lmod: loading mono 6.0.0
 Lmod: loading openblas 0.2.20 
 Lmod: loading openucx 1.5.2 
 Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-06-25/batch.sh to Unix format ...
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-09-00/batch.sh to Unix format ...
 
-Submitted batch job 13123410
+Submitted batch job 13126780
 [1;37m[I][0m Selected project: project00880
 [1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
 
  Submitting: XdgPoissonVelocity_J262144_k2_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-06-42
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-09-17
 Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
@@ -553,16 +559,16 @@ Lmod: loading mono 6.0.0
 Lmod: loading openblas 0.2.20 
 Lmod: loading openucx 1.5.2 
 Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-06-42/batch.sh to Unix format ...
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-09-17/batch.sh to Unix format ...
 
-Submitted batch job 13123413
+Submitted batch job 13126781
 [1;37m[I][0m Selected project: project00880
 [1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
 
  Submitting: XdgPoissonVelocity_J8_k3_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-07-00
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-09-33
 Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
@@ -576,16 +582,16 @@ Lmod: loading mono 6.0.0
 Lmod: loading openblas 0.2.20 
 Lmod: loading openucx 1.5.2 
 Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-07-00/batch.sh to Unix format ...
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-09-33/batch.sh to Unix format ...
 
-Submitted batch job 13123414
+Submitted batch job 13126784
 [1;37m[I][0m Selected project: project00880
 [1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
 
  Submitting: XdgPoissonVelocity_J64_k3_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-07-18
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-09-58
 Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
@@ -599,16 +605,16 @@ Lmod: loading mono 6.0.0
 Lmod: loading openblas 0.2.20 
 Lmod: loading openucx 1.5.2 
 Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-07-18/batch.sh to Unix format ...
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-09-58/batch.sh to Unix format ...
 
-Submitted batch job 13123415
+Submitted batch job 13126785
 [1;37m[I][0m Selected project: project00880
 [1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
 
  Submitting: XdgPoissonVelocity_J512_k3_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-07-35
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-10-16
 Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
@@ -622,22 +628,22 @@ Lmod: loading mono 6.0.0
 Lmod: loading openblas 0.2.20 
 Lmod: loading openucx 1.5.2 
 Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-07-35/batch.sh to Unix format ...
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-10-16/batch.sh to Unix format ...
 
-Submitted batch job 13123416
+Submitted batch job 13126787
 [1;37m[I][0m Selected project: project00880
 [1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
 
  Submitting: XdgPoissonVelocity_J4096_k3_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-07-53
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-10-32
 Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
 deployment finished.
 
-Waiting for file transfer to finish.
+Waiting for file transfer to finish..
 Lmod: loading git 2.22.0 
 Lmod: loading gcc 8.3.0 
 Lmod: loading cmake 3.14.4 
@@ -645,22 +651,22 @@ Lmod: loading mono 6.0.0
 Lmod: loading openblas 0.2.20 
 Lmod: loading openucx 1.5.2 
 Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-07-53/batch.sh to Unix format ...
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-10-32/batch.sh to Unix format ...
 
-Submitted batch job 13123419
+Submitted batch job 13126791
 [1;37m[I][0m Selected project: project00880
 [1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
 
  Submitting: XdgPoissonVelocity_J32768_k3_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-08-10
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-11-10
 Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
 deployment finished.
 
-Waiting for file transfer to finish.
+Waiting for file transfer to finish..
 Lmod: loading git 2.22.0 
 Lmod: loading gcc 8.3.0 
 Lmod: loading cmake 3.14.4 
@@ -668,16 +674,16 @@ Lmod: loading mono 6.0.0
 Lmod: loading openblas 0.2.20 
 Lmod: loading openucx 1.5.2 
 Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-08-10/batch.sh to Unix format ...
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-11-10/batch.sh to Unix format ...
 
-Submitted batch job 13123420
+Submitted batch job 13126794
 [1;37m[I][0m Selected project: project00880
 [1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
 
  Submitting: XdgPoissonVelocity_J8_k5_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-08-27
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-11-42
 Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
@@ -691,16 +697,16 @@ Lmod: loading mono 6.0.0
 Lmod: loading openblas 0.2.20 
 Lmod: loading openucx 1.5.2 
 Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-08-27/batch.sh to Unix format ...
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-11-42/batch.sh to Unix format ...
 
-Submitted batch job 13123421
+Submitted batch job 13126795
 [1;37m[I][0m Selected project: project00880
 [1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
 
  Submitting: XdgPoissonVelocity_J64_k5_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-08-43
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-11-59
 Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
@@ -714,22 +720,22 @@ Lmod: loading mono 6.0.0
 Lmod: loading openblas 0.2.20 
 Lmod: loading openucx 1.5.2 
 Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-08-43/batch.sh to Unix format ...
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-11-59/batch.sh to Unix format ...
 
-Submitted batch job 13123424
+Submitted batch job 13126796
 [1;37m[I][0m Selected project: project00880
 [1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
 
  Submitting: XdgPoissonVelocity_J512_k5_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-09-26
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-12-15
 Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
 deployment finished.
 
-Waiting for file transfer to finish..
+Waiting for file transfer to finish.
 Lmod: loading git 2.22.0 
 Lmod: loading gcc 8.3.0 
 Lmod: loading cmake 3.14.4 
@@ -737,16 +743,16 @@ Lmod: loading mono 6.0.0
 Lmod: loading openblas 0.2.20 
 Lmod: loading openucx 1.5.2 
 Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-09-26/batch.sh to Unix format ...
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-12-15/batch.sh to Unix format ...
 
-Submitted batch job 13123427
+Submitted batch job 13126797
 [1;37m[I][0m Selected project: project00880
 [1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
 
  Submitting: XdgPoissonVelocity_J4096_k5_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-10-02
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-12-31
 Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
@@ -760,614 +766,16 @@ Lmod: loading mono 6.0.0
 Lmod: loading openblas 0.2.20 
 Lmod: loading openucx 1.5.2 
 Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-10-02/batch.sh to Unix format ...
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-12-31/batch.sh to Unix format ...
 
-Submitted batch job 13123428
+Submitted batch job 13126800
 [1;37m[I][0m Selected project: project00880
 [1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
 
  Submitting: XdgPoissonVelocity_J32768_k5_classic_pardiso
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-10-20
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-10-20/batch.sh to Unix format ...
-
-Submitted batch job 13123430
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J8_k2_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-10-37
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-10-37/batch.sh to Unix format ...
-
-Submitted batch job 13123432
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J64_k2_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-10-54
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-10-54/batch.sh to Unix format ...
-
-Submitted batch job 13123436
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-11-11
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-11-11/batch.sh to Unix format ...
-
-Submitted batch job 13123438
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J4096_k2_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-11-28
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-11-28/batch.sh to Unix format ...
-
-Submitted batch job 13123441
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J32768_k2_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-11-44
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-11-44/batch.sh to Unix format ...
-
-Submitted batch job 13123446
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J262144_k2_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-12-01
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-12-01/batch.sh to Unix format ...
-
-Submitted batch job 13123448
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J8_k3_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-12-18
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-12-18/batch.sh to Unix format ...
-
-Submitted batch job 13123450
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J64_k3_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-12-37
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-12-37/batch.sh to Unix format ...
-
-Submitted batch job 13123452
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J512_k3_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-12-56
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-12-56/batch.sh to Unix format ...
-
-Submitted batch job 13123456
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J4096_k3_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-13-13
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-13-13/batch.sh to Unix format ...
-
-Submitted batch job 13123459
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J32768_k3_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-13-29
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-13-29/batch.sh to Unix format ...
-
-Submitted batch job 13123461
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-13-46
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-13-46/batch.sh to Unix format ...
-
-Submitted batch job 13123464
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J64_k5_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-14-03
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-14-03/batch.sh to Unix format ...
-
-Submitted batch job 13123465
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-14-20
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-14-20/batch.sh to Unix format ...
-
-Submitted batch job 13123466
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-14-36
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-14-36/batch.sh to Unix format ...
-
-Submitted batch job 13123467
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J32768_k5_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-14-53
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-14-53/batch.sh to Unix format ...
-
-Submitted batch job 13123470
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-15-09
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-15-09/batch.sh to Unix format ...
-
-Submitted batch job 13123471
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-15-26
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-15-26/batch.sh to Unix format ...
-
-Submitted batch job 13123472
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-15-43
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-15-43/batch.sh to Unix format ...
-
-Submitted batch job 13123476
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J4096_k2_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-16-00
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-16-00/batch.sh to Unix format ...
-
-Submitted batch job 13123477
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J32768_k2_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-16-19
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-16-19/batch.sh to Unix format ...
-
-Submitted batch job 13123478
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-16-36
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-16-36/batch.sh to Unix format ...
-
-Submitted batch job 13123479
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-16-52
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-16-52/batch.sh to Unix format ...
-
-Submitted batch job 13123482
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-17-09
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-17-09/batch.sh to Unix format ...
-
-Submitted batch job 13123483
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-17-27
-Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-deployment finished.
-
-Waiting for file transfer to finish.
-Lmod: loading git 2.22.0 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.14.4 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.5.2 
-Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-17-27/batch.sh to Unix format ...
-
-Submitted batch job 13123484
-[1;37m[I][0m Selected project: project00880
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: XdgPoissonVelocity_J4096_k3_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-17-47
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-12-48
 Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
@@ -1381,16 +789,614 @@ Lmod: loading mono 6.0.0
 Lmod: loading openblas 0.2.20 
 Lmod: loading openucx 1.5.2 
 Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-17-47/batch.sh to Unix format ...
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-12-48/batch.sh to Unix format ...
 
-Submitted batch job 13123487
+Submitted batch job 13126801
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J8_k2_exp_gmres_levelpmg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-13-18
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-13-18/batch.sh to Unix format ...
+
+Submitted batch job 13126802
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J64_k2_exp_gmres_levelpmg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-13-34
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-13-34/batch.sh to Unix format ...
+
+Submitted batch job 13126805
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-13-51
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-13-51/batch.sh to Unix format ...
+
+Submitted batch job 13126806
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J4096_k2_exp_gmres_levelpmg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-14-08
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-14-08/batch.sh to Unix format ...
+
+Submitted batch job 13126809
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J32768_k2_exp_gmres_levelpmg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-14-37
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-14-37/batch.sh to Unix format ...
+
+Submitted batch job 13126812
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J262144_k2_exp_gmres_levelpmg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-15-17
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-15-17/batch.sh to Unix format ...
+
+Submitted batch job 13126813
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J8_k3_exp_gmres_levelpmg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-15-34
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-15-34/batch.sh to Unix format ...
+
+Submitted batch job 13126816
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J64_k3_exp_gmres_levelpmg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-15-50
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-15-50/batch.sh to Unix format ...
+
+Submitted batch job 13126818
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J512_k3_exp_gmres_levelpmg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-16-06
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-16-06/batch.sh to Unix format ...
+
+Submitted batch job 13126819
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J4096_k3_exp_gmres_levelpmg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-16-23
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-16-23/batch.sh to Unix format ...
+
+Submitted batch job 13126820
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J32768_k3_exp_gmres_levelpmg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-16-40
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-16-40/batch.sh to Unix format ...
+
+Submitted batch job 13126824
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-16-57
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-16-57/batch.sh to Unix format ...
+
+Submitted batch job 13126825
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J64_k5_exp_gmres_levelpmg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-17-14
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-17-14/batch.sh to Unix format ...
+
+Submitted batch job 13126827
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-17-30
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-17-30/batch.sh to Unix format ...
+
+Submitted batch job 13126830
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-17-50
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-17-50/batch.sh to Unix format ...
+
+Submitted batch job 13126831
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J32768_k5_exp_gmres_levelpmg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-18-09
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-18-09/batch.sh to Unix format ...
+
+Submitted batch job 13126833
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-18-26
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish..
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-18-26/batch.sh to Unix format ...
+
+Submitted batch job 13126836
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-18-57
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-18-57/batch.sh to Unix format ...
+
+Submitted batch job 13126837
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-19-13
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-19-13/batch.sh to Unix format ...
+
+Submitted batch job 13126838
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J4096_k2_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-19-29
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-19-29/batch.sh to Unix format ...
+
+Submitted batch job 13126841
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J32768_k2_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-19-49
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-19-49/batch.sh to Unix format ...
+
+Submitted batch job 13126842
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-20-10
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-20-10/batch.sh to Unix format ...
+
+Submitted batch job 13126844
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-20-27
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-20-27/batch.sh to Unix format ...
+
+Submitted batch job 13126847
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-20-44
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-20-44/batch.sh to Unix format ...
+
+Submitted batch job 13126848
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-21-00
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-21-00/batch.sh to Unix format ...
+
+Submitted batch job 13126855
+[1;37m[I][0m Selected project: project00880
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+
+ Submitting: XdgPoissonVelocity_J4096_k3_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-21-17
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+deployment finished.
+
+Waiting for file transfer to finish.
+Lmod: loading git 2.22.0 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.14.4 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.5.2 
+Lmod: loading openmpi 4.0.1 
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-21-17/batch.sh to Unix format ...
+
+Submitted batch job 13126856
 [1;37m[I][0m Selected project: project00880
 [1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
 
  Submitting: XdgPoissonVelocity_J32768_k3_exp_Kcycle_schwarz
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-18-19
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-21-33
 Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
@@ -1404,16 +1410,16 @@ Lmod: loading mono 6.0.0
 Lmod: loading openblas 0.2.20 
 Lmod: loading openucx 1.5.2 
 Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-18-19/batch.sh to Unix format ...
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-21-33/batch.sh to Unix format ...
 
-Submitted batch job 13123488
+Submitted batch job 13126859
 [1;37m[I][0m Selected project: project00880
 [1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
 
  Submitting: XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-18-36
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-21-50
 Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
@@ -1427,16 +1433,16 @@ Lmod: loading mono 6.0.0
 Lmod: loading openblas 0.2.20 
 Lmod: loading openucx 1.5.2 
 Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-18-36/batch.sh to Unix format ...
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-21-50/batch.sh to Unix format ...
 
-Submitted batch job 13123489
+Submitted batch job 13126860
 [1;37m[I][0m Selected project: project00880
 [1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
 
  Submitting: XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-18-53
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-22-07
 Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
@@ -1450,16 +1456,16 @@ Lmod: loading mono 6.0.0
 Lmod: loading openblas 0.2.20 
 Lmod: loading openucx 1.5.2 
 Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-18-53/batch.sh to Unix format ...
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-22-07/batch.sh to Unix format ...
 
-Submitted batch job 13123492
+Submitted batch job 13126861
 [1;37m[I][0m Selected project: project00880
 [1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
 
  Submitting: XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-19-10
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-22-24
 Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
@@ -1473,16 +1479,16 @@ Lmod: loading mono 6.0.0
 Lmod: loading openblas 0.2.20 
 Lmod: loading openucx 1.5.2 
 Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-19-10/batch.sh to Unix format ...
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-22-24/batch.sh to Unix format ...
 
-Submitted batch job 13123493
+Submitted batch job 13126862
 [1;37m[I][0m Selected project: project00880
 [1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
 
  Submitting: XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-19-26
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-22-40
 Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
@@ -1496,22 +1502,22 @@ Lmod: loading mono 6.0.0
 Lmod: loading openblas 0.2.20 
 Lmod: loading openucx 1.5.2 
 Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-19-26/batch.sh to Unix format ...
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-22-40/batch.sh to Unix format ...
 
-Submitted batch job 13123494
+Submitted batch job 13126865
 [1;37m[I][0m Selected project: project00880
 [1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
 
  Submitting: XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\XdgPoisson32019Sep24_23-19-43
+Deployment directory: X:\Deployerie\XdgPoisson32019Sep25_15-22-57
 Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
 deployment finished.
 
-Waiting for file transfer to finish.
+Waiting for file transfer to finish..
 Lmod: loading git 2.22.0 
 Lmod: loading gcc 8.3.0 
 Lmod: loading cmake 3.14.4 
@@ -1519,9 +1525,9 @@ Lmod: loading mono 6.0.0
 Lmod: loading openblas 0.2.20 
 Lmod: loading openucx 1.5.2 
 Lmod: loading openmpi 4.0.1 
-dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep24_23-19-43/batch.sh to Unix format ...
+dos2unix: converting file /home/jw52xeqa/Deployerie/XdgPoisson32019Sep25_15-22-57/batch.sh to Unix format ...
 
-Submitted batch job 13123495
+Submitted batch job 13126866
 [1;37m[I][0m Selected project: project00880
 [1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
 
@@ -1910,6 +1916,12 @@ SessTab.SaveToFile(docpath);
 **************
 ==============
 LastError;
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

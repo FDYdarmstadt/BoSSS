@@ -264,7 +264,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 }
                 // compare with linear evaluation
                 // ==============================
-                /*
+                /*             
                 DGField[] testDomainFieldS = map.BasisS.Select(bb => new XDGField(bb as XDGBasis)).ToArray();
                 CoordinateVector test = new CoordinateVector(testDomainFieldS);
 

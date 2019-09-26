@@ -1609,7 +1609,6 @@ namespace BoSSS.Solution {
                         WhichSolver = SparseSolver._whichSolver.PARDISO,
                         TestSolution = false
                     };
-
                 } else {
 
                     var smoother1 = new Schwarz() {
@@ -1621,7 +1620,7 @@ namespace BoSSS.Solution {
                         //m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                         //    Depth = 1
                         //},
-                        Overlap = 2, // overlap seems to help; more overlap seems to help more
+                        Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
                         UsePMGinBlocks = true
                     };

@@ -24,14 +24,15 @@ WorkflowMgm.Init(WFlowName);
 WorkflowMgm.AllJobs;
 **************
 Project name is set to 'Xdg_SFB_4cores_r0'.
-System.Reflection.TargetInvocationException occurred: Exception has been thrown by the target of an invocation.. Type 'LastError' for details.
-
+List of 0 instances of KeyValuePair{String,Job} {
+}
 ==============
 //var tempDB = OpenOrCreateDatabase(@"\\dc1\userspace\weber\Performance_oldLibs_DB");
-var tempDB = OpenOrCreateDatabase(@"W:\work\scratch\jw52xeqa\DB_SFB_Paper");
+//var tempDB = OpenOrCreateDatabase(@"W:\work\scratch\jw52xeqa\DB_SFB_Paper");
+var tempDB = OpenOrCreateDatabase(@"G:\DB_SFB_Paper");
 //var tempDB = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\weber\SFB_DB");
 **************
-Creating database 'W:\work\scratch\jw52xeqa\DB_SFB_Paper'.
+Opening existing database 'G:\DB_SFB_Paper'.
 
 ==============
 //on HHLR path has to be something, which linux can work with e.g. /work/scratch/...
@@ -42,7 +43,6 @@ string DBpathLinux = @"/work/scratch/jw52xeqa/DB_SFB_Paper";
 var myBatch = new SlurmClient(@"X:\Deployerie","lcluster8.hrz.tu-darmstadt.de","jw52xeqa");
 //var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\weber\dply","hpccluster",ComputeNodes : new[] {"hpccluster"});
 **************
-
 Please enter your password...
 *************
 Connecting to lcluster8.hrz.tu-darmstadt.de...
@@ -87,7 +87,13 @@ static class Utils {
 ==============
 tempDB.Grids;
 **************
-List of 0 instances of IGridInfo {
+List of 6 instances of IGridInfo {
+  0: { Guid = 73cfd10a-5f09-4ebb-91fd-90334a539ea1; Name = Xdg_SFB_4cores_r0_J262144; Cell Count = 262144; Dim = 3 }
+  1: { Guid = 27ca9a74-e92e-4d3e-94ef-3ac7ba013be1; Name = Xdg_SFB_4cores_r0_J32768; Cell Count = 32768; Dim = 3 }
+  2: { Guid = 5b4acd9c-6996-435a-96e5-d18b748cec74; Name = Xdg_SFB_4cores_r0_J4096; Cell Count = 4096; Dim = 3 }
+  3: { Guid = 80ce8bfb-bf7a-47b3-a161-d969c6b099fd; Name = Xdg_SFB_4cores_r0_J512; Cell Count = 512; Dim = 3 }
+  4: { Guid = 88ecaf1f-eb88-45cb-b559-79fb16980b91; Name = Xdg_SFB_4cores_r0_J8; Cell Count = 8; Dim = 3 }
+  5: { Guid = c2de8a77-f58b-4cd7-95ca-057c20f5cd50; Name = Xdg_SFB_4cores_r0_J64; Cell Count = 64; Dim = 3 }
 }
 ==============
 int[] Resolutions_3D = new int[] { 2,4,8,16,32,64 };
@@ -157,14 +163,9 @@ Creating grid with 262144 cells.
 ==============
 grids;
 **************
-List of 6 instances of IGridInfo {
-  0: { Guid = 88ecaf1f-eb88-45cb-b559-79fb16980b91; Name = Xdg_SFB_4cores_r0_J8; Cell Count = 8; Dim = 3 }
-  1: { Guid = c2de8a77-f58b-4cd7-95ca-057c20f5cd50; Name = Xdg_SFB_4cores_r0_J64; Cell Count = 64; Dim = 3 }
-  2: { Guid = 80ce8bfb-bf7a-47b3-a161-d969c6b099fd; Name = Xdg_SFB_4cores_r0_J512; Cell Count = 512; Dim = 3 }
-  3: { Guid = 5b4acd9c-6996-435a-96e5-d18b748cec74; Name = Xdg_SFB_4cores_r0_J4096; Cell Count = 4096; Dim = 3 }
-  4: { Guid = 27ca9a74-e92e-4d3e-94ef-3ac7ba013be1; Name = Xdg_SFB_4cores_r0_J32768; Cell Count = 32768; Dim = 3 }
-  5: { Guid = 73cfd10a-5f09-4ebb-91fd-90334a539ea1; Name = Xdg_SFB_4cores_r0_J262144; Cell Count = 262144; Dim = 3 }
-}
+(1,2): error CS0103: The name `grids' does not exist in the current context
+No. of errors|warnings: 1|0.
+
 ==============
 **************
 ==============
@@ -1632,8 +1633,8 @@ writing XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz ...done.
 ==============
 WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.Failed))
 **************
-System.Reflection.TargetInvocationException occurred: Exception has been thrown by the target of an invocation.. Type 'LastError' for details.
-
+List of 0 instances of KeyValuePair{String,Job} {
+}
 ==============
 //write out stdout of Failed Jobs
 Dictionary<string, string> Stoutlist = new Dictionary<string, string>();
@@ -1650,57 +1651,43 @@ foreach(KeyValuePair<string,string> stout in Stoutlist){
 Renci.SshNet.Common.SshConnectionException occurred: Client not connected.. Type 'LastError' for details.
 
 ==============
-tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value;
+tempDB.Projects.Where(p=>p.Key.Equals(WFlowName)).Pick(0).Value;
 **************
-List of 48 instances of ISessionInfo {
-  0: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J32768_k3_classic_pardiso	09/20/2019 13:10:41	67c6d31d...
-  1: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J32768_k2_exp_Kcycle_schwarz	09/20/2019 13:35:55	6519c7d1...
-  2: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz*	09/20/2019 13:48:59	22bfc33d...
-  3: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz*	09/20/2019 13:47:47	ab0e8fed...
-  4: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz*	09/20/2019 13:45:08	345ff9a3...
-  5: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz	09/20/2019 13:43:57	51e47a15...
-  6: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz	09/20/2019 13:43:18	23d2324b...
-  7: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J32768_k3_exp_Kcycle_schwarz*	09/20/2019 13:42:35	0b3de28a...
-  8: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J32768_k2_exp_gmres_levelpmg	09/20/2019 13:19:59	2bc41150...
-  9: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J4096_k3_exp_Kcycle_schwarz*	09/20/2019 13:42:10	ff9c45c2...
-  10: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz*	09/20/2019 13:41:32	fe0e0067...
-  11: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz	09/20/2019 13:41:08	835d9b8c...
-  12: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J32768_k2_classic_pardiso	09/20/2019 13:08:35	bdd45988...
-  13: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz*	09/20/2019 13:36:36	f1ae6888...
-  14: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz	09/20/2019 13:38:37	efd57668...
-  15: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J4096_k2_exp_Kcycle_schwarz*	09/20/2019 13:35:34	797ce98f...
-  16: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz	09/20/2019 13:35:05	1a9a2c02...
-  17: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz	09/20/2019 13:34:37	d5e2cf3f...
-  18: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz	09/20/2019 13:34:10	f7074fe2...
-  19: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J32768_k5_exp_gmres_levelpmg*	09/20/2019 13:33:28	35970154...
-  20: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg	09/20/2019 13:30:05	b584632b...
-  21: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg*	09/20/2019 13:31:21	dafda96f...
-  22: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J4096_k3_exp_gmres_levelpmg	09/20/2019 13:26:18	f0440ca9...
-  23: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J64_k5_exp_gmres_levelpmg*	09/20/2019 13:29:04	c47d20aa...
-  24: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg*	09/20/2019 13:27:53	4cc1739c...
-  25: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J32768_k3_exp_gmres_levelpmg*	09/20/2019 13:26:44	ede2ded4...
-  26: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J512_k3_exp_gmres_levelpmg	09/20/2019 13:25:57	418a1594...
-  27: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J262144_k2_exp_gmres_levelpmg*	09/20/2019 13:21:16	3bbc274b...
-  28: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J64_k3_exp_gmres_levelpmg*	09/20/2019 13:24:41	5216abc5...
-  29: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J8_k3_exp_gmres_levelpmg	09/20/2019 13:22:55	af980db3...
-  30: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J4096_k2_exp_gmres_levelpmg*	09/20/2019 13:18:21	74d48047...
-  31: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg*	09/20/2019 13:16:57	7c7cfb83...
-  32: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J64_k2_exp_gmres_levelpmg	09/20/2019 13:16:14	d36ac0ae...
-  33: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J8_k2_exp_gmres_levelpmg	09/20/2019 13:15:02	2791bbbb...
-  34: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J512_k5_classic_pardiso	09/20/2019 13:12:39	dcf95286...
-  35: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J32768_k5_classic_pardiso*	09/20/2019 13:14:26	2a8fffe0...
-  36: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J4096_k3_classic_pardiso	09/20/2019 13:10:17	fd9091a8...
-  37: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J4096_k5_classic_pardiso*	09/20/2019 13:13:40	54713536...
-  38: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J64_k5_classic_pardiso	09/20/2019 13:12:08	4a2d2b58...
-  39: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J262144_k2_classic_pardiso*	09/20/2019 13:08:53	5b33d87b...
-  40: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J8_k5_classic_pardiso	09/20/2019 13:11:37	b5db42b3...
-  41: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J512_k3_classic_pardiso	09/20/2019 13:09:58	adcdc7c7...
-  42: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J64_k3_classic_pardiso	09/20/2019 13:09:35	eda4e02d...
-  43: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J8_k3_classic_pardiso	09/20/2019 13:09:15	1ff0f9d6...
-  44: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J4096_k2_classic_pardiso	09/20/2019 13:08:15	14b7de1d...
-  45: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J512_k2_classic_pardiso	09/20/2019 13:07:56	e38f4983...
-  46: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J64_k2_classic_pardiso	09/20/2019 13:07:38	663b75d8...
-  47: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J8_k2_classic_pardiso	09/20/2019 13:07:19	76a019e9...
+List of 34 instances of ISessionInfo {
+  0: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg	09/25/2019 13:44:17	2dcf442a...
+  1: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J4096_k3_exp_gmres_levelpmg	09/25/2019 13:44:26	58009ffb...
+  2: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J262144_k2_classic_pardiso	09/25/2019 13:44:18	88ee3f0f...
+  3: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J32768_k2_classic_pardiso	09/25/2019 13:44:32	1b539afd...
+  4: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J4096_k2_exp_gmres_levelpmg	09/25/2019 13:44:37	ee35ed70...
+  5: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J32768_k3_classic_pardiso	09/25/2019 13:44:36	9b791f07...
+  6: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz	09/25/2019 13:45:54	74b760ac...
+  7: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k3_exp_gmres_levelpmg	09/25/2019 13:44:20	a7a8fbbe...
+  8: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J4096_k3_exp_Kcycle_schwarz	09/25/2019 13:45:55	6f448b74...
+  9: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J4096_k3_classic_pardiso	09/25/2019 13:44:34	0a32be87...
+  10: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz	09/25/2019 13:45:55	c929070f...
+  11: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz	09/25/2019 13:45:53	d73019f4...
+  12: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz	09/25/2019 13:45:54	7276072c...
+  13: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz	09/25/2019 13:45:54	96a883c8...
+  14: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz	09/25/2019 13:45:54	fb0f4712...
+  15: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J64_k3_exp_gmres_levelpmg	09/25/2019 13:44:27	0d3f9ff8...
+  16: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k5_classic_pardiso	09/25/2019 13:44:31	304eb1fa...
+  17: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz	09/25/2019 13:45:18	dfa7fb6a...
+  18: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz	09/25/2019 13:45:15	5c3061f6...
+  19: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J4096_k2_classic_pardiso	09/25/2019 13:44:25	75c41085...
+  20: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg	09/25/2019 13:44:24	7638d9d5...
+  21: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k3_classic_pardiso	09/25/2019 13:44:29	9ebd0cc1...
+  22: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg	09/25/2019 13:44:22	c8a0d77d...
+  23: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J8_k3_exp_gmres_levelpmg	09/25/2019 13:44:27	ea3c6f1a...
+  24: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J64_k5_classic_pardiso	09/25/2019 13:44:27	53ba3149...
+  25: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J64_k2_exp_gmres_levelpmg	09/25/2019 13:44:23	5dde8013...
+  26: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k2_classic_pardiso	09/25/2019 13:44:37	9046a326...
+  27: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J64_k2_classic_pardiso	09/25/2019 13:44:21	789273cc...
+  28: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J64_k3_classic_pardiso	09/25/2019 13:44:28	28ac2aa5...
+  29: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J8_k5_classic_pardiso	09/25/2019 13:44:38	0236e761...
+  30: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz	09/25/2019 13:44:27	1507c2d1...
+  31: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J8_k2_exp_gmres_levelpmg	09/25/2019 13:44:16	84dbd686...
+  32: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J8_k2_classic_pardiso	09/25/2019 13:44:34	dd13971c...
+  33: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J8_k3_classic_pardiso	09/25/2019 13:44:19	bd1c062e...
 }
 ==============
 tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.RunningOrCrashed().ForEach(s=>s.ProjectName=WFlowName+"_failed");
@@ -1733,7 +1720,7 @@ Parameter name: index. Type 'LastError' for details.
 ==============
 WorkflowMgm.SessionTable.Rows.Count;
 **************
-0
+34
 ==============
 //tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4);
 //tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4).OpenSessionDirectory();
@@ -1752,50 +1739,64 @@ tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4).Timest
 // Additional/user-defined columns
 // -------------------------------
 //tempDB.Projects.Pick(0).Value.Pick(0).KeysAndQueries;
-tempDB.Projects.Where(p=>p.Key.Equals(WFlowName)).Pick(0).Value.Pick(0).KeysAndQueries
+//tempDB.Projects.Where(p=>p.Key.Equals(WFlowName)).Pick(0).Value.Pick(0).KeysAndQueries;
 **************
-System.ArgumentOutOfRangeException occurred: Specified argument was out of the range of valid values.
-Parameter name: index. Type 'LastError' for details.
-
+==============
+using ilPSP.Tracing;
+**************
 ==============
 static class AddCols {
+        static public double _getMaxTime(ISessionInfo SI, string method, bool exclusive) {
+         double maxTime = 0.0;
+         var mcr        = SI.GetProfiling();
+                // Iterate over MPIs
+                for (int j = 0; j < mcr.Count(); j++) {
+                    MethodCallRecord value;
+                    // Iterate over methods
+                        // Get execution time of current method for current processor
+                        double tempTime;
+                        //double tempFractions;
+                        int occurence        = 1;
+
+                        value = mcr[j].FindChild(method);
+                        if (value == null) {
+                            value = mcr[j];
+                        }
+                        if (exclusive) {
+                            tempTime = value.FindChildren(method).OrderByDescending(s => s.TimeExclusive.TotalSeconds).Pick(occurence-1).TimeExclusive.TotalSeconds;
+                             
+                        } else {
+                             tempTime = value.FindChildren(method).OrderByDescending(s => s.TimeSpentInMethod.TotalSeconds).Pick(occurence-1).TimeSpentInMethod.TotalSeconds;
+                               
+         
+                        }
+                        // Only save execution time if it is the highest value of all processor times
+                        if (tempTime > maxTime) {
+                            maxTime = tempTime;
+                        }
+                    }
+                    return maxTime;
+    }
     static public object SipMatrixAssembly_time(ISessionInfo SI) {
-        var mcr = SI.GetProfiling()[0];
-        var ndS = mcr.FindChildren("SipMatrixAssembly");
-        var nd  = ndS.ElementAt(0);
-        return nd.TimeSpentInMethod.TotalSeconds  / nd.CallCount;
+        return (double)_getMaxTime(SI,"SipMatrixAssembly",false);
     }
     static public object Aggregation_basis_init_time(ISessionInfo SI) {
-        var mcr = SI.GetProfiling()[0];
-        var ndS = mcr.FindChildren("Aggregation_basis_init");
-        var nd  = ndS.ElementAt(0);
-        return nd.TimeSpentInMethod.TotalSeconds  / nd.CallCount;
+        return (double)_getMaxTime(SI,"Aggregation_basis_init",false);
     }
     static public object Solver_Init_time(ISessionInfo SI) {
-        var mcr = SI.GetProfiling()[0];
-        var ndS = mcr.FindChildren("Solver_Init");
-        var nd  = ndS.ElementAt(0);
-        //Console.WriteLine("Number of nodes: " + ndS.Count() + " cc " + nd.CallCount );
-        return nd.TimeSpentInMethod.TotalSeconds / nd.CallCount;
+        return (double)_getMaxTime(SI,"Solver_Init",false);
     }
     static public object Solver_Run_time(ISessionInfo SI) {
-        var mcr = SI.GetProfiling()[0];
-        var ndS = mcr.FindChildren("Solver_Run");
-        var nd  = ndS.ElementAt(0);
-        return nd.TimeSpentInMethod.TotalSeconds  / nd.CallCount;
-    }
+        return (double)_getMaxTime(SI,"Solver_Run",false);
+    } 
 }
 **************
 ==============
 WorkflowMgm.AdditionalSessionTableColums.Clear();
-WorkflowMgm.AdditionalSessionTableColums.Add(
-    "SipMatrixAssembly_time", AddCols.SipMatrixAssembly_time);
-WorkflowMgm.AdditionalSessionTableColums.Add(
-    "Aggregation_basis_init_time", AddCols.Aggregation_basis_init_time);
-WorkflowMgm.AdditionalSessionTableColums.Add(
-    "Solver_Init_time", AddCols.Solver_Init_time);
-WorkflowMgm.AdditionalSessionTableColums.Add(
-    "Solver_Run_time", AddCols.Solver_Run_time);
+WorkflowMgm.AdditionalSessionTableColums.Add("SipMatrixAssembly_time", AddCols.SipMatrixAssembly_time);
+WorkflowMgm.AdditionalSessionTableColums.Add("Aggregation_basis_init_time", AddCols.Aggregation_basis_init_time);
+WorkflowMgm.AdditionalSessionTableColums.Add("Solver_Init_time", AddCols.Solver_Init_time);
+WorkflowMgm.AdditionalSessionTableColums.Add("Solver_Run_time", AddCols.Solver_Run_time);
 **************
 ==============
 // --------------------------
@@ -1805,10 +1806,35 @@ WorkflowMgm.AdditionalSessionTableColums.Add(
 ==============
 var SessTab = WorkflowMgm.SessionTable;
 **************
+WARNING: mismatch between number of MPI ranks (4) for session and max rank of profiling information (1).
+WARNING: mismatch between number of MPI ranks (4) for session and max rank of profiling information (1).
+WARNING: mismatch between number of MPI ranks (4) for session and max rank of profiling information (1).
+WARNING: mismatch between number of MPI ranks (4) for session and max rank of profiling information (1).
+WARNING: mismatch between number of MPI ranks (4) for session and max rank of profiling information (1).
+WARNING: mismatch between number of MPI ranks (4) for session and max rank of profiling information (1).
+WARNING: mismatch between number of MPI ranks (4) for session and max rank of profiling information (1).
+WARNING: mismatch between number of MPI ranks (4) for session and max rank of profiling information (1).
+WARNING: mismatch between number of MPI ranks (4) for session and max rank of profiling information (1).
+WARNING: mismatch between number of MPI ranks (4) for session and max rank of profiling information (1).
+WARNING: mismatch between number of MPI ranks (4) for session and max rank of profiling information (1).
+WARNING: mismatch between number of MPI ranks (4) for session and max rank of profiling information (1).
+WARNING: mismatch between number of MPI ranks (4) for session and max rank of profiling information (1).
+WARNING: mismatch between number of MPI ranks (4) for session and max rank of profiling information (1).
+WARNING: mismatch between number of MPI ranks (4) for session and max rank of profiling information (1).
+WARNING: mismatch between number of MPI ranks (4) for session and max rank of profiling information (1).
+WARNING: mismatch between number of MPI ranks (4) for session and max rank of profiling information (1).
+WARNING: mismatch between number of MPI ranks (4) for session and max rank of profiling information (1).
+WARNING: mismatch between number of MPI ranks (4) for session and max rank of profiling information (1).
+WARNING: mismatch between number of MPI ranks (4) for session and max rank of profiling information (1).
+WARNING: mismatch between number of MPI ranks (4) for session and max rank of profiling information (1).
+WARNING: mismatch between number of MPI ranks (4) for session and max rank of profiling information (1).
+WARNING: mismatch between number of MPI ranks (4) for session and max rank of profiling information (1).
+WARNING: mismatch between number of MPI ranks (4) for session and max rank of profiling information (1).
+
 ==============
 SessTab.Rows.Count;
 **************
-38
+34
 ==============
 // The Session column can't be serialized,
 // we have to remove it
@@ -1822,8 +1848,6 @@ SessTab = SessTab.ExtractColumns(AllCols.ToArray());
 ==============
 using System.IO;
 **************
-No. of errors|warnings: 0|1.
-
 ==============
 // Filename
 var now           = DateTime.Now;
@@ -1839,6 +1863,10 @@ SessTab.SaveToFile(docpath);
 **************
 ==============
 LastError;
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

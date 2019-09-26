@@ -321,25 +321,30 @@ List of 3 instances of Int32 {
 ==============
 int rows    = 3;
 int columns = 1;
-LinearSolverCode[] ignore_solvers = { LinearSolverCode.classic_cg, LinearSolverCode.exp_softpcg_schwarz, LinearSolverCode.exp_direct_lapack};
+LinearSolverCode[] ignore_solvers = {LinearSolverCode.classic_cg, LinearSolverCode.exp_softpcg_schwarz, LinearSolverCode.exp_direct_lapack};
 
 Plot2Ddata[,] multiplots = new Plot2Ddata[rows,columns];
 int pDegree = 0;
 for(int iRow = 0; iRow < rows; iRow++) {
 for(int iCol = 0; iCol < columns; iCol++) {
-    
+
     if(pDegree > rows*columns-1)
         continue;
     int tmpDG = -1;
     if(pDegree < DGdegrees.Length)
         tmpDG = DGdegrees[pDegree];
     
+    //if(iRow == rows-1){
+    //    multiplots[iRow,iCol] = null;
+    //    continue;
+    //    }
+    
     //Create Graphs
-    multiplots[iRow,iCol] = SubTab.ToPlot("DOFs", "minSolRunT", // column for x- and y
+    multiplots[iRow,iCol] = SubTab.ToPlot("DOFs", "NoIter", // column for x- and y
        delegate (int iTabRow, 
                  IDictionary<string, object> Row, 
                  out string Nmn, 
-                 out PlotFormat Fmt) { 
+                 out PlotFormat Fmt) {
            // - - - - - - - - - - - - - - - - - - - - - - - - 
            // PlotRowSelector:
            // selects, which table row goes to which graph,
@@ -363,7 +368,7 @@ for(int iCol = 0; iCol < columns; iCol++) {
                return;
                }
            }
-           
+       
            //process the other solvers
            Fmt = new PlotFormat();
            switch(solver_name) {
@@ -373,12 +378,13 @@ for(int iCol = 0; iCol < columns; iCol++) {
                Fmt.DashType  = DashTypes.Dotted;
                break;
            case LinearSolverCode.exp_Kcycle_schwarz: 
-               Nmn           = "Kcycle w. add.-schwarz"; 
-               Fmt.PointType = PointTypes.UpperTriangle;
+               Nmn           = "Kcycle schwarz"; 
+               Fmt.PointType = PointTypes.OpenUpperTriangle;
+               //Fmt.DashType  = DashTypes.Dotted;
                break;
            case LinearSolverCode.exp_gmres_levelpmg: 
-               Nmn           = "GMRES p-multigrid"; 
-               Fmt.PointType = PointTypes.Box;
+               Nmn           = "gmres levelpmg"; 
+               Fmt.PointType = PointTypes.Asterisk;
                break;
 //           case LinearSolverConfig.Code.exp_direct: 
 //               Fmt.PointType = PointTypes.OpenBox;
@@ -423,7 +429,7 @@ for(int iCol = 0; iCol < columns; iCol++) {
     multiplots[iRow,iCol].LogX = true;
     multiplots[iRow,iCol].LogY = true;
     //specify range of axis
-    multiplots[iRow,iCol].YrangeMin = 1e-1;
+    multiplots[iRow,iCol].YrangeMin = 1e-2;
     multiplots[iRow,iCol].YrangeMax = 1e+5;
     multiplots[iRow,iCol].XrangeMin = 1e1;
     multiplots[iRow,iCol].XrangeMax = 1e7;
@@ -441,21 +447,26 @@ for(int iCol = 0; iCol < columns; iCol++) {
     multiplots[iRow,iCol].ShowXtics=false;
 
     //I am legend ...
-    if(iRow == rows-1){
+    if(iRow == 0){
     multiplots[iRow,iCol].ShowLegend = true;
     multiplots[iRow,iCol].LegendAlignment=new string[]{"i","t","l"};
     multiplots[iRow,iCol].LegendSwap=true;
-    multiplots[iRow,iCol].LegendFont=12;
     }
 
     //and i am special ...
-    if(iRow == rows-1)
+    if(iRow == rows-1){
         multiplots[iRow,iCol].ShowXtics=true;
+    }
+    
     pDegree++;
+    
+    
+
 }                        
 }
 ;
 //multiplots.AddDummyPlotsForLegend(3,0);
+
 multiplots.PlotNow()
 **************
 name is: exp_Kcycle_schwarz
@@ -514,7 +525,7 @@ name is: classic_pardiso
 name is: classic_pardiso
 name is: classic_pardiso
 Using gnuplot: G:\BoSSS-BIN\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
-set key font ",12"inside top left Left reverse 
+set key font ",16"inside top left Left reverse 
 System.Drawing.Bitmap
 ==============
 LastError
@@ -530,7 +541,7 @@ Using gnuplot: G:\BoSSS-BIN\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gn
 set key font ",16"inside top left Left reverse 
 
 ==============
-//CL.SaveTo(Path.Combine(CurrentDocDir, "XdgPoissonScaling.tex"));
+//CL.SaveTo(Path.Combine(CurrentDocDir, "XdgPoissonIterations.tex"));
 **************
 ==============
 CL.PlotNow();
@@ -538,13 +549,13 @@ CL.PlotNow();
 System.ComponentModel.Win32Exception occurred: The system cannot find the file specified. Type 'LastError' for details.
 
 ==============
-Path.Combine(CurrentDocDir, "plots", "MainXdgPoissonScaling.tex")
+Path.Combine(CurrentDocDir, "plots", "MainXdgPoissonIterations.tex")
 **************
-G:\BoSSS-HHLR\public\doc\handbook\apdx-NodeSolverPerformance\XDGPoisson_SFB\plots\MainXdgPoissonScaling.tex
+G:\BoSSS-HHLR\public\doc\handbook\apdx-NodeSolverPerformance\XDGPoisson_SFB\plots\MainXdgPoissonIterations.tex
 ==============
 CL.WriteMinimalCompileableExample(
-   Path.Combine(CurrentDocDir, "plots", "MainXdgPoissonScaling.tex"),
-   "XdgPoissonScaling.tex");
+   Path.Combine(CurrentDocDir, "plots", "MainXdgPoissonIterations.tex"),
+   "XdgPoissonIterations.tex");
 **************
 ==============
 **************

@@ -19,11 +19,11 @@ using BoSSS.Application.XdgPoisson3;
 ==============
 **************
 ==============
-string WFlowName = "Xdg_SFB_Performance_r2";
+string WFlowName = "Xdg_SFB_Performance_r3";
 WorkflowMgm.Init(WFlowName);
 WorkflowMgm.AllJobs;
 **************
-Project name is set to 'Xdg_SFB_Performance_r2'.
+Project name is set to 'Xdg_SFB_Performance_r3'.
 List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
@@ -77,16 +77,18 @@ static class Utils {
 ==============
 tempDB.Grids;
 **************
-List of 6 instances of IGridInfo {
-  0: { Guid = 2cdb0b83-3a94-4d39-a26d-a73d7ab8c809; Name = Xdg_SFB_Performance_test_J262144; Cell Count = 262144; Dim = 3 }
-  1: { Guid = a9249da7-9129-40f6-b3bd-69d7de23c033; Name = Xdg_SFB_Performance_test_J32768; Cell Count = 32768; Dim = 3 }
-  2: { Guid = 7ff74a97-a6cf-49ac-a0bb-db2d322afa29; Name = Xdg_SFB_Performance_test_J4096; Cell Count = 4096; Dim = 3 }
-  3: { Guid = f8944ba0-bb66-4233-bdee-df17524403c9; Name = Xdg_SFB_Performance_test_J512; Cell Count = 512; Dim = 3 }
-  4: { Guid = 6415f7ec-6647-49f7-b80a-716bd80439ac; Name = Xdg_SFB_Performance_test_J64; Cell Count = 64; Dim = 3 }
-  5: { Guid = 62946a66-0f6b-4027-8473-e99c4725b302; Name = Xdg_SFB_Performance_test_J8; Cell Count = 8; Dim = 3 }
+List of 8 instances of IGridInfo {
+  0: { Guid = ab94737f-267d-4344-acfd-84138c0fafd7; Name = Xdg_SFB_Performance_r3_J110592; Cell Count = 110592; Dim = 3 }
+  1: { Guid = 5b89411c-7ec2-4cdc-8518-af2afd13ed84; Name = Xdg_SFB_Performance_r3_J13824; Cell Count = 13824; Dim = 3 }
+  2: { Guid = 2cdb0b83-3a94-4d39-a26d-a73d7ab8c809; Name = Xdg_SFB_Performance_test_J262144; Cell Count = 262144; Dim = 3 }
+  3: { Guid = a9249da7-9129-40f6-b3bd-69d7de23c033; Name = Xdg_SFB_Performance_test_J32768; Cell Count = 32768; Dim = 3 }
+  4: { Guid = 7ff74a97-a6cf-49ac-a0bb-db2d322afa29; Name = Xdg_SFB_Performance_test_J4096; Cell Count = 4096; Dim = 3 }
+  5: { Guid = f8944ba0-bb66-4233-bdee-df17524403c9; Name = Xdg_SFB_Performance_test_J512; Cell Count = 512; Dim = 3 }
+  6: { Guid = 6415f7ec-6647-49f7-b80a-716bd80439ac; Name = Xdg_SFB_Performance_test_J64; Cell Count = 64; Dim = 3 }
+  7: { Guid = 62946a66-0f6b-4027-8473-e99c4725b302; Name = Xdg_SFB_Performance_test_J8; Cell Count = 8; Dim = 3 }
 }
 ==============
-int[] Resolutions_3D = new int[] { 2 ,4,8,16,32,64 };
+int[] Resolutions_3D = new int[] { 2,4,8,16,24,32,48,64 };
 //int[] Resolutions_3D = new int[] { 2 };
 IGridInfo[] grids = new IGridInfo[Resolutions_3D.Length];
 for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
@@ -147,19 +149,23 @@ Found Grid: { Guid = 62946a66-0f6b-4027-8473-e99c4725b302; Name = Xdg_SFB_Perfor
 Found Grid: { Guid = 6415f7ec-6647-49f7-b80a-716bd80439ac; Name = Xdg_SFB_Performance_test_J64; Cell Count = 64; Dim = 3 }
 Found Grid: { Guid = f8944ba0-bb66-4233-bdee-df17524403c9; Name = Xdg_SFB_Performance_test_J512; Cell Count = 512; Dim = 3 }
 Found Grid: { Guid = 7ff74a97-a6cf-49ac-a0bb-db2d322afa29; Name = Xdg_SFB_Performance_test_J4096; Cell Count = 4096; Dim = 3 }
+Found Grid: { Guid = 5b89411c-7ec2-4cdc-8518-af2afd13ed84; Name = Xdg_SFB_Performance_r3_J13824; Cell Count = 13824; Dim = 3 }
 Found Grid: { Guid = a9249da7-9129-40f6-b3bd-69d7de23c033; Name = Xdg_SFB_Performance_test_J32768; Cell Count = 32768; Dim = 3 }
+Found Grid: { Guid = ab94737f-267d-4344-acfd-84138c0fafd7; Name = Xdg_SFB_Performance_r3_J110592; Cell Count = 110592; Dim = 3 }
 Found Grid: { Guid = 2cdb0b83-3a94-4d39-a26d-a73d7ab8c809; Name = Xdg_SFB_Performance_test_J262144; Cell Count = 262144; Dim = 3 }
 
 ==============
 grids;
 **************
-List of 6 instances of IGridInfo {
+List of 8 instances of IGridInfo {
   0: { Guid = 62946a66-0f6b-4027-8473-e99c4725b302; Name = Xdg_SFB_Performance_test_J8; Cell Count = 8; Dim = 3 }
   1: { Guid = 6415f7ec-6647-49f7-b80a-716bd80439ac; Name = Xdg_SFB_Performance_test_J64; Cell Count = 64; Dim = 3 }
   2: { Guid = f8944ba0-bb66-4233-bdee-df17524403c9; Name = Xdg_SFB_Performance_test_J512; Cell Count = 512; Dim = 3 }
   3: { Guid = 7ff74a97-a6cf-49ac-a0bb-db2d322afa29; Name = Xdg_SFB_Performance_test_J4096; Cell Count = 4096; Dim = 3 }
-  4: { Guid = a9249da7-9129-40f6-b3bd-69d7de23c033; Name = Xdg_SFB_Performance_test_J32768; Cell Count = 32768; Dim = 3 }
-  5: { Guid = 2cdb0b83-3a94-4d39-a26d-a73d7ab8c809; Name = Xdg_SFB_Performance_test_J262144; Cell Count = 262144; Dim = 3 }
+  4: { Guid = 5b89411c-7ec2-4cdc-8518-af2afd13ed84; Name = Xdg_SFB_Performance_r3_J13824; Cell Count = 13824; Dim = 3 }
+  5: { Guid = a9249da7-9129-40f6-b3bd-69d7de23c033; Name = Xdg_SFB_Performance_test_J32768; Cell Count = 32768; Dim = 3 }
+  6: { Guid = ab94737f-267d-4344-acfd-84138c0fafd7; Name = Xdg_SFB_Performance_r3_J110592; Cell Count = 110592; Dim = 3 }
+  7: { Guid = 2cdb0b83-3a94-4d39-a26d-a73d7ab8c809; Name = Xdg_SFB_Performance_test_J262144; Cell Count = 262144; Dim = 3 }
 }
 ==============
 **************
@@ -215,17 +221,17 @@ List<XdgPoisson3Control> controls = new List<XdgPoisson3Control>();
 ==============
 // polynomial degrees to test
 //int[] PolyDegS = new int[] {2, 3, 4, 5, 6};
-int[] PolyDegS = new int[] {2, 3 ,5};
-//int[] PolyDegS = new int[] {2};
+//int[] PolyDegS = new int[] {2, 3 ,5};
+int[] PolyDegS = new int[] {5};
 **************
 ==============
 // Solvers which we want to instrument:
 LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
-    LinearSolverCode.classic_pardiso,
+    //LinearSolverCode.classic_pardiso,
     //LinearSolverCode.exp_OrthoS_pMG,
     LinearSolverCode.exp_gmres_levelpmg,
     //LinearSolverCode.exp_softgmres_schwarz_directcoarse_overlap,
-    LinearSolverCode.exp_Kcycle_schwarz,
+    //LinearSolverCode.exp_Kcycle_schwarz,
     //LinearSolverConfig.Code.classic_mumps, 
     //LinearSolverConfig.Code.classic_cg,
     //LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse,
@@ -242,9 +248,13 @@ using BoSSS.Foundation.XDG;
 **************
 ==============
 //IGridInfo tmp_grd = 
-//IGridInfo[] t_grids=new IGridInfo[] {grids.Pick(0), grids.Pick(4)};
-IGridInfo[] t_grids = grids;
+IGridInfo[] t_grids=new IGridInfo[] {grids.Pick(4)};
+//IGridInfo[] t_grids = grids;
+t_grids;
 **************
+List of 1 instances of IGridInfo {
+  0: { Guid = 5b89411c-7ec2-4cdc-8518-af2afd13ed84; Name = Xdg_SFB_Performance_r3_J13824; Cell Count = 13824; Dim = 3 }
+}
 ==============
 controls.Clear();
 foreach(LinearSolverCode solver_name in solver_nameS) {
@@ -272,7 +282,7 @@ foreach(IGridInfo grd in t_grids) {
     
     //ctrl.SessionName = caseName;
     
-    ctrl.savetodb = true; //for debug's sake
+    ctrl.savetodb = true;
     ctrl.SetDatabase(tempDB);
     ctrl.SetGrid(grd);
     //ctrl.SetDGdegree(k);
@@ -285,8 +295,12 @@ foreach(IGridInfo grd in t_grids) {
          Degree = k,
          SaveToDB = FieldOpts.SaveToDBOpt.TRUE
     });
+    
+    //provoke Multigrid descend ...
+    if(solver_name==LinearSolverCode.exp_Kcycle_schwarz){
+        ctrl.LinearSolver.TargetBlockSize = J*Np-1;
+    }
 
-    ctrl.SuppressExceptionPrompt           = true;
     ctrl.LinearSolver.SolverCode           = solver_name;
     ctrl.LinearSolver.NoOfMultigridLevels  = 10;
     ctrl.LinearSolver.ConvergenceCriterion = 1e-8;
@@ -321,54 +335,7 @@ foreach(IGridInfo grd in t_grids) {
 }
 }
 **************
-setting up: J8_k2_classic_pardiso
-setting up: J64_k2_classic_pardiso
-setting up: J512_k2_classic_pardiso
-setting up: J4096_k2_classic_pardiso
-setting up: J32768_k2_classic_pardiso
-setting up: J262144_k2_classic_pardiso
-setting up: J8_k3_classic_pardiso
-setting up: J64_k3_classic_pardiso
-setting up: J512_k3_classic_pardiso
-setting up: J4096_k3_classic_pardiso
-setting up: J32768_k3_classic_pardiso
-setting up: J8_k5_classic_pardiso
-setting up: J64_k5_classic_pardiso
-setting up: J512_k5_classic_pardiso
-setting up: J4096_k5_classic_pardiso
-setting up: J32768_k5_classic_pardiso
-setting up: J8_k2_exp_gmres_levelpmg
-setting up: J64_k2_exp_gmres_levelpmg
-setting up: J512_k2_exp_gmres_levelpmg
-setting up: J4096_k2_exp_gmres_levelpmg
-setting up: J32768_k2_exp_gmres_levelpmg
-setting up: J262144_k2_exp_gmres_levelpmg
-setting up: J8_k3_exp_gmres_levelpmg
-setting up: J64_k3_exp_gmres_levelpmg
-setting up: J512_k3_exp_gmres_levelpmg
-setting up: J4096_k3_exp_gmres_levelpmg
-setting up: J32768_k3_exp_gmres_levelpmg
-setting up: J8_k5_exp_gmres_levelpmg
-setting up: J64_k5_exp_gmres_levelpmg
-setting up: J512_k5_exp_gmres_levelpmg
-setting up: J4096_k5_exp_gmres_levelpmg
-setting up: J32768_k5_exp_gmres_levelpmg
-setting up: J8_k2_exp_Kcycle_schwarz
-setting up: J64_k2_exp_Kcycle_schwarz
-setting up: J512_k2_exp_Kcycle_schwarz
-setting up: J4096_k2_exp_Kcycle_schwarz
-setting up: J32768_k2_exp_Kcycle_schwarz
-setting up: J262144_k2_exp_Kcycle_schwarz
-setting up: J8_k3_exp_Kcycle_schwarz
-setting up: J64_k3_exp_Kcycle_schwarz
-setting up: J512_k3_exp_Kcycle_schwarz
-setting up: J4096_k3_exp_Kcycle_schwarz
-setting up: J32768_k3_exp_Kcycle_schwarz
-setting up: J8_k5_exp_Kcycle_schwarz
-setting up: J64_k5_exp_Kcycle_schwarz
-setting up: J512_k5_exp_Kcycle_schwarz
-setting up: J4096_k5_exp_Kcycle_schwarz
-setting up: J32768_k5_exp_Kcycle_schwarz
+setting up: J13824_k5_exp_gmres_levelpmg
 
 ==============
 **************
@@ -405,437 +372,18 @@ setting up: J32768_k5_exp_Kcycle_schwarz
 ==============
 foreach(var ctrl in controls) {
     Console.WriteLine(" Submitting: " + ctrl.SessionName); 
-    ctrl.RunBatch(myBatch);
+    var aJob = new Job(ctrl.SessionName, typeof(XdgPoisson3Main));
+    aJob.SetControlObject(ctrl);
+    aJob.NumberOfMPIProcs = 1;
+    aJob.Activate(myBatch);
+    //ctrl.RunBatch(myBatch);
 }
 **************
- Submitting: XdgPoissonVelocity_J8_k2_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
+ Submitting: XdgPoissonVelocity_J13824_k5_exp_gmres_levelpmg
+Job is marked as success by job manager, but no session info in database is found; performing new deployment and submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-15-41
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J64_k2_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-16-01
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J512_k2_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-16-21
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J4096_k2_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-16-40
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J32768_k2_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-16-59
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J262144_k2_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-17-18
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J8_k3_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-17-38
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J64_k3_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-17-58
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J512_k3_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-18-21
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J4096_k3_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-18-42
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J32768_k3_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-19-01
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J8_k5_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-19-32
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J64_k5_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-20-26
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J512_k5_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-20-58
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J4096_k5_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-21-25
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J32768_k5_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-22-58
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J8_k2_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-23-17
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J64_k2_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-23-52
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-25-18
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J4096_k2_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-26-14
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J32768_k2_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-28-07
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J262144_k2_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-30-18
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J8_k3_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-32-05
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J64_k3_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-34-01
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J512_k3_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-34-41
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J4096_k3_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-35-01
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J32768_k3_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-35-37
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-35-58
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J64_k5_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-36-35
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-38-30
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-40-32
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J32768_k5_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-42-36
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-43-01
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-43-41
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-45-29
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J4096_k2_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-48-27
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J32768_k2_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-49-38
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-49-57
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-50-39
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-53-14
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-53-42
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J4096_k3_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-56-01
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J32768_k3_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_01-58-05
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_02-00-32
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_02-02-41
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_02-05-05
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_02-07-11
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-copied 28 files.
-   writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep22_02-10-41
-Source directory: G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep26_18-01-52
+Source directory: G:\BoSSS-BIN\bin\Release
 copied 28 files.
    writing file: control.obj
    copied 'amd64' runtime.
@@ -846,63 +394,12 @@ deployment finished.
 ==============
 WorkflowMgm.AllJobs;
 **************
-List of 48 instances of KeyValuePair{String,Job} {
-  0: [XdgPoissonVelocity_J8_k2_classic_pardiso, XdgPoissonVelocity_J8_k2_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  1: [XdgPoissonVelocity_J64_k2_classic_pardiso, XdgPoissonVelocity_J64_k2_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  2: [XdgPoissonVelocity_J512_k2_classic_pardiso, XdgPoissonVelocity_J512_k2_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  3: [XdgPoissonVelocity_J4096_k2_classic_pardiso, XdgPoissonVelocity_J4096_k2_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  4: [XdgPoissonVelocity_J32768_k2_classic_pardiso, XdgPoissonVelocity_J32768_k2_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  5: [XdgPoissonVelocity_J262144_k2_classic_pardiso, XdgPoissonVelocity_J262144_k2_classic_pardiso: InProgress (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  6: [XdgPoissonVelocity_J8_k3_classic_pardiso, XdgPoissonVelocity_J8_k3_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  7: [XdgPoissonVelocity_J64_k3_classic_pardiso, XdgPoissonVelocity_J64_k3_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  8: [XdgPoissonVelocity_J512_k3_classic_pardiso, XdgPoissonVelocity_J512_k3_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  9: [XdgPoissonVelocity_J4096_k3_classic_pardiso, XdgPoissonVelocity_J4096_k3_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  10: [XdgPoissonVelocity_J32768_k3_classic_pardiso, XdgPoissonVelocity_J32768_k3_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  11: [XdgPoissonVelocity_J8_k5_classic_pardiso, XdgPoissonVelocity_J8_k5_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  12: [XdgPoissonVelocity_J64_k5_classic_pardiso, XdgPoissonVelocity_J64_k5_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  13: [XdgPoissonVelocity_J512_k5_classic_pardiso, XdgPoissonVelocity_J512_k5_classic_pardiso: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  14: [XdgPoissonVelocity_J4096_k5_classic_pardiso, XdgPoissonVelocity_J4096_k5_classic_pardiso: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  15: [XdgPoissonVelocity_J32768_k5_classic_pardiso, XdgPoissonVelocity_J32768_k5_classic_pardiso: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  16: [XdgPoissonVelocity_J8_k2_exp_gmres_levelpmg, XdgPoissonVelocity_J8_k2_exp_gmres_levelpmg: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  17: [XdgPoissonVelocity_J64_k2_exp_gmres_levelpmg, XdgPoissonVelocity_J64_k2_exp_gmres_levelpmg: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  18: [XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg, XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  19: [XdgPoissonVelocity_J4096_k2_exp_gmres_levelpmg, XdgPoissonVelocity_J4096_k2_exp_gmres_levelpmg: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  20: [XdgPoissonVelocity_J32768_k2_exp_gmres_levelpmg, XdgPoissonVelocity_J32768_k2_exp_gmres_levelpmg: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  21: [XdgPoissonVelocity_J262144_k2_exp_gmres_levelpmg, XdgPoissonVelocity_J262144_k2_exp_gmres_levelpmg: InProgress (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  22: [XdgPoissonVelocity_J8_k3_exp_gmres_levelpmg, XdgPoissonVelocity_J8_k3_exp_gmres_levelpmg: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  23: [XdgPoissonVelocity_J64_k3_exp_gmres_levelpmg, XdgPoissonVelocity_J64_k3_exp_gmres_levelpmg: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  24: [XdgPoissonVelocity_J512_k3_exp_gmres_levelpmg, XdgPoissonVelocity_J512_k3_exp_gmres_levelpmg: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  25: [XdgPoissonVelocity_J4096_k3_exp_gmres_levelpmg, XdgPoissonVelocity_J4096_k3_exp_gmres_levelpmg: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  26: [XdgPoissonVelocity_J32768_k3_exp_gmres_levelpmg, XdgPoissonVelocity_J32768_k3_exp_gmres_levelpmg: InProgress (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  27: [XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg, XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  28: [XdgPoissonVelocity_J64_k5_exp_gmres_levelpmg, XdgPoissonVelocity_J64_k5_exp_gmres_levelpmg: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  29: [XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg, XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  30: [XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg, XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  31: [XdgPoissonVelocity_J32768_k5_exp_gmres_levelpmg, XdgPoissonVelocity_J32768_k5_exp_gmres_levelpmg: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  32: [XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz, XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  33: [XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz, XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  34: [XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz, XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  35: [XdgPoissonVelocity_J4096_k2_exp_Kcycle_schwarz, XdgPoissonVelocity_J4096_k2_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  36: [XdgPoissonVelocity_J32768_k2_exp_Kcycle_schwarz, XdgPoissonVelocity_J32768_k2_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  37: [XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz, XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  38: [XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz, XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  39: [XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz, XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  40: [XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz, XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  41: [XdgPoissonVelocity_J4096_k3_exp_Kcycle_schwarz, XdgPoissonVelocity_J4096_k3_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  42: [XdgPoissonVelocity_J32768_k3_exp_Kcycle_schwarz, XdgPoissonVelocity_J32768_k3_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  43: [XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz, XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  44: [XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz, XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz: FinishedSuccessful (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  45: [XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz, XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  46: [XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz, XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  47: [XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz, XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
+List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
 WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.Failed)).Where(s=>s.Value.Name.Contains("Kcycle_schwarz"))
 **************
-List of 3 instances of KeyValuePair{String,Job} {
-  0: [XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz, XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  1: [XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz, XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
-  2: [XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz, XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz: Failed (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
+List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
 using System.IO
@@ -910,23 +407,8 @@ using System.IO
 ==============
 //write out stout
 Dictionary<string, string> Stoutlist = new Dictionary<string, string>();
-//var somelist = WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.Failed));
-var somelist = WorkflowMgm.AllJobs;
-somelist.ForEach(j=>Stoutlist.Add(j.Value.Name ,j.Value.Stdout.ToString()));
-foreach(KeyValuePair<string,string> stout in Stoutlist){
-    using(StreamWriter sw = new StreamWriter("G:\\Stout_"+stout.Key+".txt")){
-    Console.Write("writing {0} ...",stout.Key);
-    sw.WriteLine(stout.Value);
-    Console.WriteLine("done.");
-    }
-}
-**************
-No. of errors|warnings: 1|0.
-
-==============
-//write out stdout of Failed Jobs
-Dictionary<string, string> Stoutlist = new Dictionary<string, string>();
 var somelist = WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.FinishedSuccessful));
+//var somelist = WorkflowMgm.AllJobs;
 somelist.ForEach(j=>Stoutlist.Add(j.Value.Name ,j.Value.Stdout.ToString()));
 foreach(KeyValuePair<string,string> stout in Stoutlist){
     using(StreamWriter sw = new StreamWriter("G:\\Stout_"+stout.Key+".txt")){
@@ -936,45 +418,42 @@ foreach(KeyValuePair<string,string> stout in Stoutlist){
     }
 }
 **************
-writing XdgPoissonVelocity_J8_k2_classic_pardiso ...done.
-writing XdgPoissonVelocity_J64_k2_classic_pardiso ...done.
-writing XdgPoissonVelocity_J512_k2_classic_pardiso ...done.
-writing XdgPoissonVelocity_J4096_k2_classic_pardiso ...done.
-writing XdgPoissonVelocity_J32768_k2_classic_pardiso ...done.
-writing XdgPoissonVelocity_J8_k3_classic_pardiso ...done.
-writing XdgPoissonVelocity_J64_k3_classic_pardiso ...done.
-writing XdgPoissonVelocity_J512_k3_classic_pardiso ...done.
-writing XdgPoissonVelocity_J4096_k3_classic_pardiso ...done.
-writing XdgPoissonVelocity_J32768_k3_classic_pardiso ...done.
-writing XdgPoissonVelocity_J8_k5_classic_pardiso ...done.
-writing XdgPoissonVelocity_J64_k5_classic_pardiso ...done.
-writing XdgPoissonVelocity_J512_k5_classic_pardiso ...done.
-writing XdgPoissonVelocity_J8_k2_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J64_k2_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J4096_k2_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J32768_k2_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J262144_k2_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J8_k3_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J64_k3_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J512_k3_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J4096_k3_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J32768_k3_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg ...done.
 writing XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz ...done.
 writing XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz ...done.
 writing XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J4096_k2_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J32768_k2_exp_Kcycle_schwarz ...done.
 writing XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz ...done.
 writing XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz ...done.
 writing XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J4096_k3_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J32768_k3_exp_Kcycle_schwarz ...done.
 writing XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz ...done.
 writing XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz ...done.
 writing XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz ...done.
 
+==============
+//write out stdout of Failed Jobs
+Dictionary<string, string> Stoutlist = new Dictionary<string, string>();
+Dictionary<string, string> Stderrlist = new Dictionary<string, string>();
+var somelist = WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.Failed));
+somelist.ForEach(j=>{
+Stoutlist.Add(j.Value.Name ,j.Value.Stdout.ToString());
+Stderrlist.Add(j.Value.Name ,j.Value.Stderr.ToString());
+});
+
+
+foreach(KeyValuePair<string,string> stout in Stoutlist){
+    using(StreamWriter sw = new StreamWriter("G:\\Stdout_"+stout.Key+".txt")){
+    Console.Write("writing {0} ...",stout.Key);
+    sw.WriteLine(stout.Value);
+    Console.WriteLine("done.");
+    }
+};
+foreach(KeyValuePair<string,string> sterr in Stderrlist){
+    using(StreamWriter sw = new StreamWriter("G:\\Stderr_"+sterr.Key+".txt")){
+    Console.Write("writing {0} ...",sterr.Key);
+    sw.WriteLine(sterr.Value);
+    Console.WriteLine("done.");
+    }
+};
+**************
 ==============
 tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value;
 **************
@@ -1056,48 +535,10 @@ List of 19 instances of ISessionInfo {
   18: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J4096_k5_classic_pardiso*	09/22/2019 01:22:28	0d8eaf5f...
 }
 ==============
-tempDB.Projects.Where(p=>p.Key.Equals(WFlowName)).Pick(0).Value
+tempDB.Projects.Where(p=>p.Key.Equals(WFlowName)).Pick(0).Value.Where(s=>s.Name.Contains("J13824_k5_exp_gmres_levelpmg")).Pick(0).Delete(true)
 **************
-List of 38 instances of ISessionInfo {
-  0: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J262144_k2_exp_gmres_levelpmg	09/22/2019 01:31:37	65050523...
-  1: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J32768_k3_classic_pardiso	09/22/2019 01:19:27	05e72a36...
-  2: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J32768_k3_exp_Kcycle_schwarz	09/22/2019 01:59:30	ecf2ccd9...
-  3: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J32768_k3_exp_gmres_levelpmg	09/22/2019 01:35:59	a47d74a1...
-  4: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J32768_k2_exp_Kcycle_schwarz	09/22/2019 01:49:59	32f5e382...
-  5: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz	09/22/2019 02:06:26	d074a34d...
-  6: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz	09/22/2019 02:04:16	bcc5b933...
-  7: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz	09/22/2019 02:02:02	73a9ec0c...
-  8: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J4096_k3_exp_Kcycle_schwarz	09/22/2019 01:57:24	c6096787...
-  9: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz	09/22/2019 01:55:13	0a4fe4c1...
-  10: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz	09/22/2019 01:53:43	54a6ac45...
-  11: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz	09/22/2019 01:52:32	1eda0e69...
-  12: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J32768_k2_exp_gmres_levelpmg	09/22/2019 01:29:37	527d2189...
-  13: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J4096_k2_exp_Kcycle_schwarz	09/22/2019 01:49:39	1a20fbee...
-  14: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J32768_k2_classic_pardiso	09/22/2019 01:17:20	9042da0b...
-  15: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz	09/22/2019 01:47:38	8c195c15...
-  16: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz	09/22/2019 01:45:30	54cc0109...
-  17: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz	09/22/2019 01:43:37	c29e64aa...
-  18: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg	09/22/2019 01:40:03	76bac5ab...
-  19: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J4096_k3_exp_gmres_levelpmg	09/22/2019 01:35:38	b07b4b49...
-  20: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg	09/22/2019 01:36:34	14588493...
-  21: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J512_k3_exp_gmres_levelpmg	09/22/2019 01:35:02	cfe8ad2b...
-  22: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J64_k3_exp_gmres_levelpmg	09/22/2019 01:34:42	ffbdcf78...
-  23: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J8_k3_exp_gmres_levelpmg	09/22/2019 01:33:13	75fe9d50...
-  24: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J4096_k2_exp_gmres_levelpmg	09/22/2019 01:27:35	b12547d4...
-  25: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J64_k2_exp_gmres_levelpmg	09/22/2019 01:24:59	3ccbfed3...
-  26: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J8_k2_exp_gmres_levelpmg	09/22/2019 01:23:53	ebd90302...
-  27: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J512_k5_classic_pardiso	09/22/2019 01:21:26	e9704b0d...
-  28: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J4096_k3_classic_pardiso	09/22/2019 01:19:03	ca4a83cb...
-  29: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J64_k5_classic_pardiso	09/22/2019 01:20:59	72f03bbb...
-  30: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J8_k5_classic_pardiso	09/22/2019 01:20:23	1234ba19...
-  31: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J512_k3_classic_pardiso	09/22/2019 01:18:44	f543fb19...
-  32: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J64_k3_classic_pardiso	09/22/2019 01:18:21	ee9034bc...
-  33: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J4096_k2_classic_pardiso	09/22/2019 01:17:00	522ce051...
-  34: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J8_k3_classic_pardiso	09/22/2019 01:17:59	33d2375e...
-  35: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J512_k2_classic_pardiso	09/22/2019 01:16:41	5760c0cd...
-  36: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J64_k2_classic_pardiso	09/22/2019 01:16:23	1a206df2...
-  37: Xdg_SFB_Performance_r2	XdgPoissonVelocity_J8_k2_classic_pardiso	09/22/2019 01:16:03	38c16ef1...
-}
+Session 13cea05b-d20e-41b4-8b76-8b787e54e35d deleted.
+
 ==============
 //tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.RunningOrCrashed();
 //tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.RunningOrCrashed().DeleteAll();
@@ -1114,7 +555,7 @@ List of 38 instances of ISessionInfo {
 ==============
 WorkflowMgm.SessionTable.Rows.Count;
 **************
-38
+55
 ==============
 //tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4);
 //tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4).OpenSessionDirectory();
@@ -1136,9 +577,9 @@ tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4).Timest
 tempDB.Projects.Where(p=>p.Key.Equals(WFlowName)).Pick(0).Value.Pick(0).KeysAndQueries
 **************
 List of 77 instances of KeyValuePair{String,Object} {
-  0: [SessionName, XdgPoissonVelocity_J262144_k2_exp_gmres_levelpmg]
+  0: [SessionName, XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz]
   1: [DGdegree:Phi, 2]
-  2: [DGdegree:u, 2]
+  2: [DGdegree:u, 5]
   3: [GeneratedFromCode, False]
   4: [ControlFileText_Index, 0]
   5: [dtFixed, -1]
@@ -1151,9 +592,9 @@ List of 77 instances of KeyValuePair{String,Object} {
   12: [AgglomerationThreshold, 0.1]
   13: [penalty_multiplyer, 2]
   14: [pOff, 2]
-  15: [SuppressExceptionPrompt, True]
+  15: [SuppressExceptionPrompt, False]
   16: [GridPartType, 5]
-  17: [ProjectName, Xdg_SFB_Performance_r2]
+  17: [ProjectName, Xdg_SFB_Performance_r3]
   18: [NoOfTimesteps, -1]
   19: [Endtime, 1.79769313486232E+308]
   20: [saveperiod, 1]
@@ -1171,11 +612,11 @@ List of 77 instances of KeyValuePair{String,Object} {
   32: [LinearSolver.MaxSolverIterations, 2000]
   33: [LinearSolver.MinSolverIterations, 2]
   34: [LinearSolver.ConvergenceCriterion, 1E-08]
-  35: [LinearSolver.SolverCode, 47]
+  35: [LinearSolver.SolverCode, 41]
   36: [LinearSolver.NoOfMultigridLevels, 10]
   37: [LinearSolver.exp_localPrec_muA, 1]
   38: [LinearSolver.exp_localPrec_Min_dt, 0]
-  39: [LinearSolver.TargetBlockSize, 10000]
+  39: [LinearSolver.TargetBlockSize, 28671]
   40: [NonLinearSolver.verbose, False]
   41: [NonLinearSolver.PrecondSolver.verbose, False]
   42: [NonLinearSolver.PrecondSolver.MaxKrylovDim, 30]
@@ -1200,25 +641,25 @@ List of 77 instances of KeyValuePair{String,Object} {
   61: [AMR_startUpSweeps, 1]
   62: [CutCellQuadratureType, 5]
   63: [ContinueOnIoError, True]
-  64: [Grid:NoOfCells, 262144]
-  65: [Grid:hMax, 0.0541265877365274]
-  66: [Grid:hMin, 0.03125]
-  67: [UsedNoOfMultigridLevels, 7]
-  68: [maxBlkSize, 20]
-  69: [minBlkSize, 10]
-  70: [NumberOfMatrixBlox, 1810432]
-  71: [DOFs, 2671600]
-  72: [minSolRunT, 3543.8054746]
-  73: [maxSolRunT, 3543.8054746]
+  64: [Grid:NoOfCells, 512]
+  65: [Grid:hMax, 0.433012701892219]
+  66: [Grid:hMin, 0.25]
+  67: [UsedNoOfMultigridLevels, 4]
+  68: [maxBlkSize, 112]
+  69: [minBlkSize, 56]
+  70: [NumberOfMatrixBlox, 3200]
+  71: [DOFs, 33152]
+  72: [minSolRunT, 50.3617869]
+  73: [maxSolRunT, 50.3617869]
   74: [Conv, 1]
-  75: [NoIter, 178]
+  75: [NoIter, 27]
   76: [maxMultigridlvl, 0]
 }
 ==============
 static class AddCols {
     static public object SipMatrixAssembly_time(ISessionInfo SI) {
         var mcr = SI.GetProfiling()[0];
-        var ndS = mcr.FindChildren("SipMatrixAssembly");
+        var ndS = mcr.FindChildren("XdgMatrixAssembly");
         var nd  = ndS.ElementAt(0);
         return nd.TimeSpentInMethod.TotalSeconds  / nd.CallCount;
     }
@@ -1246,7 +687,7 @@ static class AddCols {
 ==============
 WorkflowMgm.AdditionalSessionTableColums.Clear();
 WorkflowMgm.AdditionalSessionTableColums.Add(
-    "SipMatrixAssembly_time", AddCols.SipMatrixAssembly_time);
+    "XdgMatrixAssembly", AddCols.SipMatrixAssembly_time);
 WorkflowMgm.AdditionalSessionTableColums.Add(
     "Aggregation_basis_init_time", AddCols.Aggregation_basis_init_time);
 WorkflowMgm.AdditionalSessionTableColums.Add(
@@ -1265,7 +706,7 @@ var SessTab = WorkflowMgm.SessionTable;
 ==============
 SessTab.Rows.Count;
 **************
-38
+54
 ==============
 // The Session column can't be serialized,
 // we have to remove it
@@ -1279,8 +720,6 @@ SessTab = SessTab.ExtractColumns(AllCols.ToArray());
 ==============
 using System.IO;
 **************
-No. of errors|warnings: 0|1.
-
 ==============
 // Filename
 var now           = DateTime.Now;
@@ -1296,6 +735,18 @@ SessTab.SaveToFile(docpath);
 **************
 ==============
 LastError;
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************
