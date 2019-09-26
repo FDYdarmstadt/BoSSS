@@ -628,23 +628,14 @@ namespace BoSSS.Application.SipPoisson {
             }
         }
 
-        private int m_maxMlevel;
-
-        public int MaxMlevel {
-            get {
-                return m_maxMlevel;
-            }
-            set {
-                if (value > m_maxMlevel)
-                    m_maxMlevel = value;
-            }
-        }
+        
 
         protected void CustomItCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
             //+1 because of startindex=0 and +1 because lowest level, does not count as mlevel
-            MaxMlevel = Mgop.LevelIndex + 2;
+            
         }
 
+        /*
         protected void GimmeKondnumber(MultigridOperator Mgop, out double[] condests, out int[] DOFs, out int[] Level) {
             MultigridOperator Mgop_ptr = Mgop;
 
@@ -673,6 +664,7 @@ namespace BoSSS.Application.SipPoisson {
             DOFs = _DOFs.ToArray();
             Level = _Level.ToArray();
         }
+        */
 
         /// <summary>
         /// Single run of the solver
@@ -742,8 +734,7 @@ namespace BoSSS.Application.SipPoisson {
                 base.QueryHandler.ValueQuery("DOFs", T.Mapping.TotalLength, true);
                 base.QueryHandler.ValueQuery("BlockSize", T.Basis.Length, true);
 
-                Console.WriteLine("maximal Multigridlevel: {0}", MaxMlevel);
-                base.QueryHandler.ValueQuery("maxMultigridlvl", MaxMlevel, true);
+                
 
                 if (base.Control.ExactSolution_provided) {
                     Error.Clear();
