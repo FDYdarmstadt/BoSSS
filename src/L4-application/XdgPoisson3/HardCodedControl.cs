@@ -470,7 +470,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// <summary>
         /// A spherical interface in the 3D domain \f$ (-2, 2)^3 \f$.
         /// </summary>
-        public static XdgPoisson3Control Ball3D(int pDeg = 2, int Res = 6) {
+        public static XdgPoisson3Control Ball3D(int pDeg = 2, int Res = 6, LinearSolverCode solverCode = LinearSolverCode.exp_Kcycle_schwarz) {
             XdgPoisson3Control R = new XdgPoisson3Control();
 
             R.ProjectName = "XdgPoisson3/Ball3D";
@@ -499,7 +499,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             R.xLaplaceBCs.g_Diri = ((CommonParamsBnd inp) => 0.0);
             R.xLaplaceBCs.IsDirichlet = (inp => true);
 
-            R.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            R.LinearSolver.SolverCode = solverCode;
 #if DEBUG
             R.LinearSolver.TargetBlockSize = 100; // enforces the use of multigrid, even for small grids
 #endif

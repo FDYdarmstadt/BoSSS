@@ -46,17 +46,24 @@ namespace BoSSS.Application.XdgPoisson3 {
 
 
         [Test]
-        public static void SolverTest([Values(Code.exp_softpcg_mg
-            //, "pcg+schwarz", "pcg+mg+schwarz", "gmres+mg+schwarz", "ono+mg+schwarz"
-            )] Code SolverName) {
-        using (var solver = new XdgPoisson3Main()) {
-            var C = HardCodedControl.Circle(solver: SolverName);
+        public static void SolverTest([Values(Code.exp_Kcycle_schwarz, Code.exp_gmres_levelpmg)] Code SolverName) {
+            using (var solver = new XdgPoisson3Main()) {
+
+                int Res, p;
+#if DEBUG
+                Res = 6;
+                p = 2;
+#else
+                RES = 12;
+                p = 3;
+#endif
+                var C = HardCodedControl.Ball3D(pDeg: p, Res: Res, solverCode: SolverName);
 
 
-            solver.Init(C);
-            solver.RunSolverMode();
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
         }
-    }
 
 
     }
