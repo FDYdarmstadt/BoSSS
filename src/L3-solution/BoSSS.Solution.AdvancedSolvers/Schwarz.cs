@@ -892,10 +892,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             CacheFactorization = true,
                             UseDoublePrecision = false
                         };
-                        //blockSolvers[iPart] = new FullDirectSolver();
-                        //blockSolvers[iPart] = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
-
-
+                        
 
                         if (UsePMGinBlocks) {
                             // define low-order solver

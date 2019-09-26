@@ -336,6 +336,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                 float* pa_S = (float*)aPtr;
                                 double* pa_D = (double*)aPtr;
 
+
                                 int* displs = stackalloc int[size];
                                 int* recvcounts = stackalloc int[size];
                                 for (int i = 0; i < size; i++)
