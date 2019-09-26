@@ -97,6 +97,11 @@ namespace ilPSP.Kraypis {
         }
 
 
+        static public int SETDEFAULTOPTIONS(int[] options) {
+            return m_METIS.SetDefaultOptions(options);
+        }
+
+
     }
 
     public sealed class UnsafeMETIS : DynLibLoader
@@ -125,6 +130,7 @@ namespace ilPSP.Kraypis {
 #pragma warning disable 649
         _PartGraphKway METIS_PartGraphKway;
         _PartGraphRecursive METIS_PartGraphRecursive;
+        _SetDefaultOptions METIS_SetDefaultOptions;
 #pragma warning restore 649
 
         /// <summary>
@@ -140,6 +146,8 @@ namespace ilPSP.Kraypis {
             get { return METIS_PartGraphKway; }
         }
 
+        
+
         /// <summary>
         /// see METIS manual;
         /// </summary>
@@ -151,6 +159,17 @@ namespace ilPSP.Kraypis {
         public unsafe _PartGraphRecursive PartGraphRecursive
         {
             get { return METIS_PartGraphRecursive; }
+        }
+
+
+        /// <summary>
+        /// see METIS manual;
+        /// </summary>
+        public unsafe delegate int _SetDefaultOptions(int[] options);
+
+        public unsafe _SetDefaultOptions SetDefaultOptions
+        {
+            get { return METIS_SetDefaultOptions; }
         }
     }
     

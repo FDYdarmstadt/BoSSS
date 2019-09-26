@@ -57,7 +57,6 @@ namespace BoSSS.Application.XdgPoisson3 {
             //BoSSS.Application.XdgPoisson3.Tests.SolverTest(Code.exp_softpcg_mg);
             //Assert.IsTrue(false, "remove me");
 
-            Debugger.Launch();
 
             BoSSS.Solution.Application<XdgPoisson3Control>._Main(args, false, delegate () {
                 return new XdgPoisson3Main();

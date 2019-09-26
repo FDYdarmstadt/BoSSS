@@ -189,17 +189,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int[] xadj = new int[JComp + 1];
                 List<int> adjncy = new List<int>();
                 for (int j = 0; j < JComp; j++) {
+                    Debug.Assert(xadj[j] == adjncy.Count);
+
                     int[] neigh_j = ag.iLogicalCells.CellNeighbours[j];
+                    int nCnt = 0;
                     foreach (int jNeigh in neigh_j) {
                         //adjncy.AddRange(neigh_j);
                         if (jNeigh < JComp) {
                             adjncy.Add(jNeigh);
+                            nCnt++;
                         } else {
                             //Console.WriteLine("Skipping external cell");
                         }
                     }
-                    xadj[j + 1] = xadj[j] + neigh_j.Length;
+                    xadj[j + 1] = xadj[j] + nCnt;
                 }
+                Debug.Assert(xadj[JComp] == adjncy.Count);
 
                 int MPIrank, MPIsize;
                 MPI.Wrappers.csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out MPIrank);
@@ -213,33 +218,63 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if (NoOfPartsPerProcess > 1) {
                         int ncon = 1;
                         int edgecut = 0;
-                        int[] options = null; //new int[] { 0, 0, 0, 0, 0 };                    
+                        int[] options = new int[METIS.METIS_NOPTIONS]; 
+                        METIS.SETDEFAULTOPTIONS(options);
+
+                        options[(int)METIS.OptionCodes.METIS_OPTION_NCUTS] = 1; // 
+                        options[(int)METIS.OptionCodes.METIS_OPTION_NITER] = 10; // This is the default refinement iterations
+                        options[(int)METIS.OptionCodes.METIS_OPTION_UFACTOR] = 30; // Maximum imbalance of 3 percent (this is the default kway clustering)
+                        options[(int)METIS.OptionCodes.METIS_OPTION_NUMBERING] = 0;
+
+                        Debug.Assert(xadj.Where(idx => idx > adjncy.Count).Count() == 0);
+                        Debug.Assert(adjncy.Where(j => j >= JComp).Count() == 0);
+
+                        //ilPSP.Environment.StdoutOnlyOnRank0 = false;
+                        //string xadjName = "xadj-" + MPIrank + ".txt";
+                        //string adjncyName = "adjncy-" + MPIrank + ".txt";
+                        //Console.WriteLine("Rank " + MPIrank + ": NoOfPartsPerProcess = " + NoOfPartsPerProcess + ",  JComp = " + JComp);
+
+                        //xadj.SaveToTextFile(xadjName);
+                        //adjncy.SaveToTextFile(adjncyName);
+                        
                         METIS.PARTGRAPHKWAY(
-                            ref JComp, ref ncon,
-                            xadj,
-                            adjncy.ToArray(),
-                            null,
-                            null,
-                            null,
-                            ref NoOfPartsPerProcess,
-                            null,
-                            null,
-                            options,
-                            ref edgecut,
-                            part);
+                                ref JComp, ref ncon,
+                                xadj,
+                                adjncy.ToArray(),
+                                null,
+                                null,
+                                null,
+                                ref NoOfPartsPerProcess,
+                                null,
+                                null,
+                                options,
+                                ref edgecut,
+                                part);
+
+                        //System.IO.File.Delete(xadjName);
+                        //System.IO.File.Delete(adjncyName);
                     } else {
                         part.SetAll(0);
                     }
                 }
 
                 {
-                    var _Blocks = NoOfPartsPerProcess.ForLoop(i => new List<int>((int)Math.Ceiling(1.1 * JComp / NoOfPartsPerProcess)));
+                    List<List<int>> _Blocks = NoOfPartsPerProcess.ForLoop(i => new List<int>((int)Math.Ceiling(1.1 * JComp / NoOfPartsPerProcess))).ToList();
                     for (int j = 0; j < JComp; j++) {
                         _Blocks[part[j]].Add(j);
-
+                    }
+                    
+                    for(int iB = 0; iB < _Blocks.Count; iB++) {
+                        if(_Blocks[iB].Count <= 0) {
+                            _Blocks.RemoveAt(iB);
+                            iB--;
+                        }
                     }
 
-                    return _Blocks;
+                    if(_Blocks.Count < NoOfPartsPerProcess)
+                        Console.WriteLine("METIS WARNING: requested " + NoOfPartsPerProcess + " blocks, but got " + _Blocks.Count);
+
+                    return _Blocks.ToArray();
                 }
             }
 
@@ -444,6 +479,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // ===============
 
                 var _Blocks = this.m_BlockingStrategy.GetBlocking(op);
+                foreach(var _bloc in _Blocks) {
+                    Debug.Assert(_bloc.Count > 0);
+                }
                 int NoOfSchwzBlocks = _Blocks.Count();
 
                 // test cell blocks
@@ -512,7 +550,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // Index lists and sub-blocking for the Schwarz blocks:
                 List<int>[] BlkIdx_gI_lR; //  (global) indices in the local range 
                 List<int>[] BlkIdx_gI_eR; //  (global) indices of external rows and columns
-                List<int>[] TempRowIdx_gI; // (global) indices into the temporary matrix
+                List<int>[] TempRowIdx_gI; // (global) row indices into the temporary matrix
                 List<int>[] BlkIdx_lI_eR; //  (local)  indices of external rows and columns
                 List<int>[] LocalBlocks_i0, LocalBlocks_N; // sub-blocking of the Schwarz-Blocks.
 
@@ -602,6 +640,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                                                            //LEBi0.Add(LocalizedBlockCounter);
                                                                            //LEBn.Add(N);
 
+                                ExternalRows_BlockI0.Add(ExternalRowsIndices.Count);
+                                ExternalRows_BlockN.Add(Nj);
 
                                 for (int n = 0; n < Nj; n++) {
                                     biE.Add(i0E + n);
@@ -610,12 +650,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     l2.Add(i0L + n);
                                     Debug.Assert(Mop._RowPartitioning.FindProcess(i0E + n) != myMpiRank);
                                 }
+                                LocalizedBlockCounter += Nj;
 
                             }
 
-                            LocalizedBlockCounter += Nj;
-                            ExternalRows_BlockI0.Add(LocalizedBlockCounter);
-                            ExternalRows_BlockN.Add(Nj);
+                            Debug.Assert(ExternalRows_BlockI0.Count == ExternalRows_BlockN.Count);
+                            Debug.Assert(ExternalRows_BlockI0.Count <= 1 ||
+                                ExternalRows_BlockI0[ExternalRows_BlockI0.Count - 1] == ExternalRows_BlockI0[ExternalRows_BlockI0.Count - 2] + ExternalRows_BlockN[ExternalRows_BlockI0.Count - 2]);
+
+
 
                             LBBi0.Add(anotherCounter);
                             LBBN.Add(Nj);
@@ -753,7 +796,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     BlockPartitioning PermRow = new BlockPartitioning(ExternalRowsIndices.Count, ExternalRows_BlockI0, ExternalRows_BlockN, Mop.MPI_Comm, i0isLocal: true);
 
                     // Remark: we use a permutation matrix for MPI-exchange of rows
-
+                    //  set   Perm[l,m] = I;
+                    //  then  ExternalRowsTemp[l,-]  =  Mop[m,-]
+                    //
                     BlockMsrMatrix Perm = new BlockMsrMatrix(PermRow, Mop._RowPartitioning);
                     for (int iRow = 0; iRow < ExternalRowsIndices.Count; iRow++) {
                         Debug.Assert(Mop._RowPartitioning.IsInLocalRange(ExternalRowsIndices[iRow]) == false);
@@ -818,8 +863,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             // convert the indices into 'ExternalRowsTemp' to global indices
                             int l1L = l1.Count;
                             int offset = ExternalRowsTemp._RowPartitioning.i0;
-                            for (int i = 0; i < l1L; i++)
+                            for (int i = 0; i < l1L; i++) {
+                                Debug.Assert(l1[i] >= 0);
+                                Debug.Assert(l1[i] < ExternalRowsTemp._RowPartitioning.LocalLength);
                                 l1[i] += offset;
+                                Debug.Assert(ExternalRowsTemp._RowPartitioning.IsInLocalRange(l1[i]));
+                            }
                         }
 
                         BlockMsrMatrix Block = new BlockMsrMatrix(localBlocking, localBlocking);// bi.Length, bi.Length, Bsz, Bsz);

@@ -336,8 +336,6 @@ namespace ilPSP.LinSolvers.PARDISO {
                                 float* pa_S = (float*)aPtr;
                                 double* pa_D = (double*)aPtr;
 
-
-                                Console.WriteLine("in unsafe");
                                 int* displs = stackalloc int[size];
                                 int* recvcounts = stackalloc int[size];
                                 for (int i = 0; i < size; i++)
