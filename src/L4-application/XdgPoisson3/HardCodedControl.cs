@@ -499,7 +499,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             R.xLaplaceBCs.g_Diri = ((CommonParamsBnd inp) => 0.0);
             R.xLaplaceBCs.IsDirichlet = (inp => true);
 
-            R.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
 #if DEBUG
             R.LinearSolver.TargetBlockSize = 100; // enforces the use of multigrid, even for small grids
 #endif
