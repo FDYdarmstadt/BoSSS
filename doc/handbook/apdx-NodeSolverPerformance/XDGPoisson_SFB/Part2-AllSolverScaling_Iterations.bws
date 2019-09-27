@@ -1,6 +1,5 @@
 restart
 **************
-
   BoSSSpad C# interpreter
   _______________________
 
@@ -368,6 +367,7 @@ for(int iCol = 0; iCol < columns; iCol++) {
                }
            }
        
+           //All sessions with #cells equal to 8 are dismissed
            if(Convert.ToInt32(Row["Grid:NoOfCells"])==8){
                System.Console.WriteLine("skipped");
                    Nmn = null;
@@ -565,6 +565,8 @@ G:\BoSSS-HHLR\public\doc\handbook\apdx-NodeSolverPerformance\XDGPoisson_SFB\plot
 CL.WriteMinimalCompileableExample(
    Path.Combine(CurrentDocDir, "plots", "MainXdgPoissonIterations.tex"),
    "XdgPoissonIterations.tex");
+**************
+==============
 **************
 ==============
 **************
