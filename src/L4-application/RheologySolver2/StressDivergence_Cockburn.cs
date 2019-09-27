@@ -58,9 +58,9 @@ namespace BoSSS.Application.Rheology {
             get {
                 switch (Component) {
                     case 0:
-                        return new string[] { VariableNames.StressXX, VariableNames.StressXY, VariableNames.VelocityX};
+                        return new string[] { VariableNames.StressXX, VariableNames.StressXY, VariableNames.VelocityX, VariableNames.StressYY};
                     case 1:
-                        return new string[] { VariableNames.StressXY, VariableNames.StressYY, VariableNames.VelocityY};
+                        return new string[] { VariableNames.StressXY, VariableNames.StressYY, VariableNames.VelocityY, VariableNames.StressXX};
                     default:
                         throw new NotImplementedException();
                 }
@@ -169,27 +169,27 @@ namespace BoSSS.Application.Rheology {
                     //double VelocityX2 = VelFunction[inp.EdgeTag, 0](inp.X, inp.time);
                     //double VelocityY2 = VelFunction[inp.EdgeTag, 1](inp.X, inp.time);
 
-                    res += inp.Normale[0] * Tin[0] * inp.Normale[0] * inp.Normale[0];
-                    res += inp.Normale[1] * Tin[1] * inp.Normale[1] * inp.Normale[1];
+                    //res += inp.Normale[0] * Tin[0] * inp.Normale[0] * inp.Normale[0];
+                    //res += inp.Normale[1] * Tin[1] * inp.Normale[0] * inp.Normale[0];
 
-                    //switch (Component) {
-                    //    case 0:
-                    //        res += inp.Normale[0] * Tin[0] * inp.Normale[0] * inp.Normale[0];
-                    //        res += inp.Normale[1] * Tin[1] * inp.Normale[1] * inp.Normale[1];
-                    //        //alpha penalty for boundary (no beta penalty)
-                    //        res += -pen2 / h * (Tin[2] - VelocityX2);
+                    switch (Component) {
+                        case 0:
+                            res += inp.Normale[0] * Tin[0] * inp.Normale[0] * inp.Normale[0];
+                            res += inp.Normale[1] * Tin[1] * inp.Normale[0] * inp.Normale[0];
+                            res += inp.Normale[0] * Tin[1] * inp.Normale[0] * inp.Normale[1];
+                            res += inp.Normale[1] * Tin[3] * inp.Normale[0] * inp.Normale[1];
 
-                    //        break;
-                    //    case 1:
-                    //        res += inp.Normale[0] * Tin[0] * inp.Normale[0] * inp.Normale[0];
-                    //        res += inp.Normale[1] * Tin[1] * inp.Normale[1] * inp.Normale[1];
-                    //        //alpha penalty for boundary (no beta penalty)
-                    //        res += -pen2 / h * (Tin[2] - VelocityY2);
+                            break;
+                        case 1:
+                            res += inp.Normale[0] * Tin[0] * inp.Normale[1] * inp.Normale[1];
+                            res += inp.Normale[1] * Tin[1] * inp.Normale[1] * inp.Normale[1];
+                            res += inp.Normale[0] * Tin[3] * inp.Normale[1] * inp.Normale[0];
+                            res += inp.Normale[1] * Tin[0] * inp.Normale[1] * inp.Normale[0];
 
-                    //        break;
-                    //    default:
-                    //        throw new NotImplementedException();
-                    //}
+                            break;
+                        default:
+                            throw new NotImplementedException();
+                    }
 
                     break;
 
