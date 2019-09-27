@@ -1599,9 +1599,18 @@ namespace BoSSS.Solution {
                 useDirect |= iLevel == _lc.NoOfMultigridLevels - 1;
                 useDirect |= NoOfBlocks.MPISum() <= 1;
 
+                //if(iLevel == 0) {
+                //    useDirect = false;
+                //    NoOfBlocks = 3;
+                //} else {
+                //    useDirect = true;
+                //}
 
-                if (iLevel == 0)
-                    Console.WriteLine("No of block on level 0 : " + NoOfBlocks);
+
+                //if(useDirect)
+                //    Console.WriteLine("   KcycleMultiSchwarz: lv {0}, Direct solver ", iLevel);
+                //else 
+                //    Console.WriteLine("   KcycleMultiSchwarz: lv {0}, no of blocks {1} : ", iLevel, NoOfBlocks);
 
                 ISolverSmootherTemplate levelSolver;
                 if (useDirect) {

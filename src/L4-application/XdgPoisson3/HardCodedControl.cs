@@ -468,9 +468,9 @@ namespace BoSSS.Application.XdgPoisson3 {
 
 
         /// <summary>
-        /// A spherical interface in the 3D domain \f$ (-2, 2)^3 \f$.
+        /// A spherical interface of redius <paramref name="Radius"/> in the 3D domain \f$ (-e, +e)^3 \f$, where \f$ e \f$ is <paramref name="DomainExtend"/>.
         /// </summary>
-        public static XdgPoisson3Control Ball3D(int pDeg = 2, int Res = 6, LinearSolverCode solverCode = LinearSolverCode.exp_Kcycle_schwarz) {
+        public static XdgPoisson3Control Ball3D(int pDeg = 2, int Res = 6, LinearSolverCode solverCode = LinearSolverCode.exp_Kcycle_schwarz, double Radius = 1, double DomainExtend = 2.0) {
             XdgPoisson3Control R = new XdgPoisson3Control();
 
             R.ProjectName = "XdgPoisson3/Ball3D";

@@ -425,7 +425,7 @@ namespace BoSSS.Application.SipPoisson {
                 Console.WriteLine("   Alloc. matrix storage (MB): {0}", AllocatedMem/(1024.0*1024));
 
 
-                MatrixOpPerf();
+                //MatrixOpPerf();
 
 
             }
@@ -510,6 +510,7 @@ namespace BoSSS.Application.SipPoisson {
 
             Console.WriteLine("entering infinte loop...");
             while (true) ;
+            
         }
 
         /*

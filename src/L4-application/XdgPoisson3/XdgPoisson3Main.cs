@@ -456,9 +456,6 @@ namespace BoSSS.Application.XdgPoisson3 {
             base.QueryHandler.ValueQuery("Conv", converged ? 1.0 : 0.0, true);
             base.QueryHandler.ValueQuery("NoIter", NoOfIterations, true);
 
-            Console.WriteLine("maximal Multigridlevel: {0}", MaxMlevel);
-            base.QueryHandler.ValueQuery("maxMultigridlvl", MaxMlevel, true);
-
             Console.WriteLine("done.");
 
             if (this.Control.ExcactSolSupported) {
@@ -565,20 +562,10 @@ namespace BoSSS.Application.XdgPoisson3 {
 
         protected void CustomItCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
             //noch nix ...
-            MaxMlevel=Mgop.LevelIndex;
+            //MaxMlevel=Mgop.LevelIndex;
         }
 
-        private int m_maxMlevel;
-
-        public int MaxMlevel {
-            get{
-                return m_maxMlevel;
-            }
-            set{
-                if (value > m_maxMlevel)
-                    m_maxMlevel = value;
-            }
-        }
+       
 
         private void ExperimentalSolver(out double mintime, out double maxtime, out bool Converged, out int NoOfIter, out int DOFs) {
             using (var tr = new FuncTrace()) {
