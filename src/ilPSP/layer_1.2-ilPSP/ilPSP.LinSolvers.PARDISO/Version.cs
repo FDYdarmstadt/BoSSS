@@ -31,11 +31,7 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// </summary>
         MKL,
 
-        /// <summary>
-        /// Version 4 from Schenk/Gärtner
-        /// </summary>
-        v4,
-
+        
         /// <summary>
         /// Version 5 from Schenk/Gärtner
         /// </summary>
