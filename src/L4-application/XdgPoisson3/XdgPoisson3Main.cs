@@ -307,11 +307,12 @@ namespace BoSSS.Application.XdgPoisson3 {
                 
                 // performance comp
                 // =================
+                /*
                 {
                     var M2 = M.CloneAs();
 
                     double MatlabSpMMtime = 0, MatlabSpMVtime = 0;
-                    /*
+                    
                     using (var MatlabRef = new BatchmodeConnector()) {
                         MultidimensionalArray CheckRes = MultidimensionalArray.Create(1, 4);
 
@@ -344,7 +345,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
 
                     }
-                    */
+                    
 
                     //BlockMsrMatrix.Multiply(M, M2);
 
@@ -378,9 +379,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 }
                 //*/
 
-                Console.WriteLine("entering infinte loop...");
-                while (true) ;
-
+     
                 // mass matrix factory
                 // ===================
 
