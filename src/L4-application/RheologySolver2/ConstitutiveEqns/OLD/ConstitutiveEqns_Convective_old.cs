@@ -33,7 +33,7 @@ namespace BoSSS.Application.Rheology {
     /// Fluxes for convective part of extra stress tensor in the constitutive equations.
     /// </summary>
     /// 
-    public class ConstitutiveEqns_Convective : LinearFlux {
+    public class ConstitutiveEqns_Convective_old : LinearFlux {
 
         int Component;           // equation index (0: xx, 1: xy, 2: yy)
         BoundaryCondMap<IncompressibleBcType> m_BcMap;
@@ -54,7 +54,7 @@ namespace BoSSS.Application.Rheology {
         /// </summary>
         protected Func<double[], double, double>[,] velFunction;
 
-        public ConstitutiveEqns_Convective(int Component, BoundaryCondMap<IncompressibleBcType> _BcMap, double Weissenberg, double alpha) {
+        public ConstitutiveEqns_Convective_old(int Component, BoundaryCondMap<IncompressibleBcType> _BcMap, double Weissenberg, double alpha) {
             this.Component = Component;
             this.m_BcMap = _BcMap;
             this.m_Weissenberg = Weissenberg;
