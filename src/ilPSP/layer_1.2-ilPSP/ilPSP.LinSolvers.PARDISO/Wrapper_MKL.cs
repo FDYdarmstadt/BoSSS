@@ -57,11 +57,7 @@ namespace ilPSP.LinSolvers.PARDISO {
     /// wrapper for loading the PARDISO solver from the Intel MKL libraries
     /// </summary>
     /// <remarks>
-    /// <b>IMPORTANT: Licencing issues:</b><br/>
-    /// PARDISO does not ship with free licence, neither source nor 
-    /// binaries compiled from it can be shiped with this software;<br/>
-    /// PARDISO is ether distributed with the INTEL MKL library, or it may be downloaded
-    /// from http://www.pardiso-project.org/;
+    /// Licensing: despite being closed software, PARDISO form Intel MKL can be redistributed.
     /// </remarks>
     public class Wrapper_MKL : DynLibLoader {
 
@@ -70,11 +66,11 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// </summary>
         public Wrapper_MKL()
             : base(
-                new string[] { "PARDISO.dll" },
-                new string[1][][],
-                new GetNameMangling[] { SmallLetters_TrailingUnderscore},
-                new PlatformID[] { PlatformID.Win32NT },
-                new int[] { -1 }) { }
+                new string[] { "PARDISO.dll", "libBoSSSnative_seq.so" },
+                new string[2][][],
+                new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix },
+                new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix },
+                new int[] { -1, -1 }) { }
 
         /// <summary>
         /// PARDISO interface, see PARDISO documentation

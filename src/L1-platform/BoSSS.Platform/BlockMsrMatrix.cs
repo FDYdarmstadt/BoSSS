@@ -2110,6 +2110,25 @@ namespace ilPSP.LinSolvers {
             public MultidimensionalArray Mem;
 
             /// <summary>
+            /// Number of rows in each sub-block
+            /// </summary>
+            public int SubblockNoRows {
+                get {
+                    return Mem.GetLength(1);
+                }
+            }
+
+            /// <summary>
+            /// Number of columns in each sub-block
+            /// </summary>
+            public int SubblockNoCols {
+                get {
+                    return Mem.GetLength(2);
+                }
+            }
+
+
+            /// <summary>
             /// Marks which parts of <see cref="Mem"/> are occupied (true).
             /// Index correlates with first index of <see cref="Mem"/>,
             /// </summary>
@@ -2291,34 +2310,55 @@ namespace ilPSP.LinSolvers {
                         Allocated += BlockPointerMem;
 
 
-                        int j0 = this._ColPartitioning.GetBlockI0(jBlockGlb);
+                        if (_ColPartitioning.IsLocalBlock(jBlockGlb)) {
+                            int j0 = this._ColPartitioning.GetBlockI0(jBlockGlb);
+                            
+                            int NoOfSblk_rows = Block.InMembnk.GetLength(0);
+                            int NoOfSblk_cols = Block.InMembnk.GetLength(1);
+                            int RowBlockType = _RowPartitioning.GetBlockType(iBlockGlb);
+                            int ColBlockType = _ColPartitioning.GetBlockType(jBlockGlb);
+                            
+                            int[] RowSblkLen = _RowPartitioning.GetSubblkLen(RowBlockType);
+                            Debug.Assert(RowSblkLen.Length == NoOfSblk_rows);
 
+                            int[] ColSblkLen = _ColPartitioning.GetSubblkLen(ColBlockType);
+                            Debug.Assert(ColSblkLen.Length == NoOfSblk_cols);
 
-                        
-                        int NoOfSblk_rows = Block.InMembnk.GetLength(0);
-                        int NoOfSblk_cols = Block.InMembnk.GetLength(1);
-                        int RowBlockType = _RowPartitioning.GetBlockType(iBlockGlb);
-                        int ColBlockType = _ColPartitioning.GetBlockType(jBlockGlb);
+                            for (int sblkRow = 0; sblkRow < NoOfSblk_rows; sblkRow++) {
+                                for (int sblkCol = 0; sblkCol < NoOfSblk_cols; sblkCol++) {
+                                    if (Block.InMembnk[sblkCol, sblkRow] < 0 || Block.MembnkIdx[sblkCol, sblkRow] < 0)
+                                        continue;
 
+                                    int M = RowSblkLen[sblkRow];
+                                    int N = ColSblkLen[sblkCol];
 
-                        int[] RowSblkLen = _RowPartitioning.GetSubblkLen(RowBlockType);
-                        Debug.Assert(RowSblkLen.Length == NoOfSblk_rows);
-
-                        int[] ColSblkLen = _ColPartitioning.GetSubblkLen(ColBlockType);
-                        Debug.Assert(ColSblkLen.Length == NoOfSblk_cols);
-
-                        for (int sblkRow = 0; sblkRow < NoOfSblk_rows; sblkRow++) {
-                            for (int sblkCol = 0; sblkCol < NoOfSblk_cols; sblkCol++) {
-                                if (Block.InMembnk[sblkCol, sblkRow] < 0 || Block.MembnkIdx[sblkCol, sblkRow] < 0)
-                                    continue;
-
-                                int M = RowSblkLen[sblkRow];
-                                int N = ColSblkLen[sblkCol];
-
-                                Used += M * N * sizeof(double);
+                                    Used += M * N * sizeof(double);
+                                }
                             }
-                        }
+                        } else {
+                            // todo 
 
+                            GetExternalSubblockIndices(_ColPartitioning, jBlockGlb, out int j0, out int jE);
+
+                            int NoOfSblk_rows = Block.InMembnk.GetLength(0);
+                            int NoOfSblk_cols = Block.InMembnk.GetLength(1);
+
+                            for (int sblkRow = 0; sblkRow < NoOfSblk_rows; sblkRow++) {
+                                for (int sblkCol = 0; sblkCol < NoOfSblk_cols; sblkCol++) {
+                                    int MembnkIdx = Block.MembnkIdx[sblkCol, sblkRow];
+                                    int InMembnk = Block.InMembnk[sblkCol, sblkRow];
+
+                                    if (MembnkIdx < 0 || InMembnk < 0)
+                                        continue;
+
+                                    int M = m_Membanks[MembnkIdx].SubblockNoRows;
+                                    int N = m_Membanks[MembnkIdx].SubblockNoCols;
+
+                                    Used += M * N * sizeof(double);
+                                }
+                            }
+
+                        }
 
 
                     }
@@ -2542,33 +2582,17 @@ namespace ilPSP.LinSolvers {
                                                                         pCol++;
                                                                         pRow += CJ;
                                                                     }
-
                                                                     VecAccu[iRowBlockLoc] += Accu;
                                                                     iRowLoc++;
                                                                     iRowBlockLoc++;
                                                                 }
                                                             } else {
-                                                                //if (I != J || CI != I)
-                                                                //    Console.Write("");
-
                 SPMV_inner.Start();
                                                                 BLAS.dgemv('t', J, I, 1.0, pRawMem + Offset, CI, pa + _jColLoc, 1, 1.0,
-                                                                    //arschKakke, 
                                                                     pVecAccu + _iRowBlockLoc, 
                                                                     1);
                 SPMV_inner.Stop();
                                                             }
-
-                                                            //for (int i = 0; i < I; i++) {
-                                                            //    double zahl1 = arschKakke[i];
-                                                            //    double zahl2 = pVecAccu[_iRowBlockLoc + i];
-                                                            //    double tol = Math.Max(Math.Abs(zahl1), Math.Abs(zahl2))*1e-3;
-                                                            //    double dist = Math.Abs(zahl1 - zahl2);
-
-                                                            //    if (dist > tol)
-                                                            //        throw new ArithmeticException();
-                                                            //}
-                                                            
 
                                                         }
 

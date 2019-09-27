@@ -2366,12 +2366,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                 //}
                 double hrFinest = ximax / (NoOfXinodes0 * Math.Pow(XiRefinementGrades, NoOfXiRefinements - 1));
                 double sum = hrList.Sum();
-                double numberOfMissingCells = Math.Round((1.0 - sum) / hrFinest)+1;
+                double numberOfMissingCells = Math.Round((rmax - sum) / hrFinest)+1;
 
                 //for (int j = 0; j < (int)numberOfMissingCells; j++) {
                 //    hrList.Add(hrFinest);
                 //}
-                while (sum <= 1.0){
+                while (sum <= rmax){
                     hrList.Add(hrFinest);
                     sum += hrFinest;
                 }
