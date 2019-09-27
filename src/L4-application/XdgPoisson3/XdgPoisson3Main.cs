@@ -304,13 +304,14 @@ namespace BoSSS.Application.XdgPoisson3 {
                         S, agg.GetAgglomerator(this.LsTrk.GetSpeciesId(S)).AggInfo.SourceCells.NoOfItemsLocally);
                 }
 
-                /*
+                
                 // performance comp
                 // =================
                 {
                     var M2 = M.CloneAs();
 
-                    double MatlabSpMMtime, MatlabSpMVtime;
+                    double MatlabSpMMtime = 0, MatlabSpMVtime = 0;
+                    /*
                     using (var MatlabRef = new BatchmodeConnector()) {
                         MultidimensionalArray CheckRes = MultidimensionalArray.Create(1, 4);
 
@@ -335,7 +336,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                         MatlabRef.Cmd("CheckRes");
                         MatlabRef.GetMatrix(CheckRes, "CheckRes");
 
-                        MatlabRef.Execute();
+                        //MatlabRef.Execute();
 
                         MatlabSpMMtime = CheckRes[0, 3];
                         MatlabSpMVtime= CheckRes[0, 2];
@@ -343,14 +344,14 @@ namespace BoSSS.Application.XdgPoisson3 {
 
 
                     }
+                    */
 
-
-                    BlockMsrMatrix.Multiply(M, M2);
+                    //BlockMsrMatrix.Multiply(M, M2);
 
 
                     Stopwatch BoSSsSpMMtime = new Stopwatch();
                     BoSSsSpMMtime.Start();
-                    BlockMsrMatrix.Multiply(M, M2);
+                    //BlockMsrMatrix.Multiply(M, M2);
                     BoSSsSpMMtime.Stop();
 
 
@@ -376,6 +377,9 @@ namespace BoSSS.Application.XdgPoisson3 {
                     
                 }
                 //*/
+
+                Console.WriteLine("entering infinte loop...");
+                while (true) ;
 
                 // mass matrix factory
                 // ===================

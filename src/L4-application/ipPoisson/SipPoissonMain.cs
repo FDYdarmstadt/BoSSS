@@ -425,10 +425,91 @@ namespace BoSSS.Application.SipPoisson {
                 Console.WriteLine("   Alloc. matrix storage (MB): {0}", AllocatedMem/(1024.0*1024));
 
 
-                
+                MatrixOpPerf();
 
 
             }
+        }
+
+        void MatrixOpPerf() {
+            var M = LaplaceMtx;
+            var M2 = M.CloneAs();
+
+            double MatlabSpMMtime = 0.0, MatlabSpMVtime = 0.0;
+            /*
+            using (var MatlabRef = new BatchmodeConnector()) {
+                MultidimensionalArray CheckRes = MultidimensionalArray.Create(1, 4);
+
+                MatlabRef.PutSparseMatrix(M, "M");
+                MatlabRef.Cmd("M2 = M;");
+
+                // bench SpMM
+                MatlabRef.Cmd("Mprod1 = M * M2;");
+                MatlabRef.Cmd("tic");
+                MatlabRef.Cmd("Mprod = M * M2;");
+                MatlabRef.Cmd("SpMMtime = toc;");
+
+                // bench SpMV
+                MatlabRef.Cmd("[L,I] = size(M);");
+                MatlabRef.Cmd("x = sin(1:L)';");
+                MatlabRef.Cmd("a1 = M*x;");
+                MatlabRef.Cmd("tic");
+                MatlabRef.Cmd("a = M*x;");
+                MatlabRef.Cmd("SpMVtime = toc;");
+
+                MatlabRef.Cmd("CheckRes = [0, 0, SpMVtime, SpMMtime];");
+                MatlabRef.Cmd("CheckRes");
+                MatlabRef.GetMatrix(CheckRes, "CheckRes");
+
+                MatlabRef.Execute();
+
+                MatlabSpMMtime = CheckRes[0, 3];
+                MatlabSpMVtime = CheckRes[0, 2];
+
+
+
+            }
+            */
+
+            //BlockMsrMatrix.Multiply(M, M2);
+
+
+            Stopwatch BoSSsSpMMtime = new Stopwatch();
+            BoSSsSpMMtime.Start();
+            //BlockMsrMatrix.Multiply(M, M2);
+            BoSSsSpMMtime.Stop();
+
+
+            double[] accu = new double[M.RowPartitioning.LocalLength];
+            double[] x = new double[M.ColPartition.LocalLength];
+            for (int i = 0; i < x.Length; i++) {
+                x[i] = Math.Sin(i);
+            }
+            M.SpMV(1.0, x, 0.0, accu);
+
+            Stopwatch BoSSsSpMVtime = new Stopwatch();
+            BoSSsSpMVtime.Start();
+            M.SpMV(1.0, x, 0.0, accu);
+            BoSSsSpMVtime.Stop();
+
+
+            Console.WriteLine("Matlab SpMM time: [sec]   " + MatlabSpMMtime);
+            Console.WriteLine("BoSSS  SpMM time: [sec]   " + BoSSsSpMMtime.Elapsed.TotalSeconds);
+
+            Console.WriteLine("Matlab SpMV time: [sec]   " + MatlabSpMVtime);
+            Console.WriteLine("BoSSS  SpMV time: [sec]   " + BoSSsSpMVtime.Elapsed.TotalSeconds);
+
+            Console.WriteLine("    SpMV total      : [msec] " + BlockMsrMatrix.SPMV_tot.Elapsed.TotalMilliseconds);
+            Console.WriteLine("    SpMV   sending  : [msec]    " + BlockMsrMatrix.SpMV_initSending.Elapsed.TotalMilliseconds);
+            Console.WriteLine("    SpMV   local    : [msec]    " + BlockMsrMatrix.SpMV_local.Elapsed.TotalMilliseconds);
+            Console.WriteLine("    SpMV     inner  : [msec]        " + BlockMsrMatrix.SPMV_inner.Elapsed.TotalMilliseconds);
+            Console.WriteLine("    SpMV   receive  : [msec]    " + BlockMsrMatrix.SpMV_receive.Elapsed.TotalMilliseconds);
+            Console.WriteLine("    SpMV   external : [msec]    " + BlockMsrMatrix.SpMV_external.Elapsed.TotalMilliseconds);
+            Console.WriteLine("    SpMV     idx trf: [msec]        " + BlockMsrMatrix.SpMV_indextrans.Elapsed.TotalMilliseconds);
+
+
+            Console.WriteLine("entering infinte loop...");
+            while (true) ;
         }
 
         /*
@@ -1000,7 +1081,7 @@ namespace BoSSS.Application.SipPoisson {
                     Console.WriteLine("  spmm core " + BlockMsrMatrix.multiply_core.Elapsed.TotalSeconds);
                     Console.WriteLine("  spmv total " + BlockMsrMatrix.SPMV_tot.Elapsed.TotalSeconds);
                     Console.WriteLine("  spmv inner " + BlockMsrMatrix.SPMV_inner.Elapsed.TotalSeconds);
-                    Console.WriteLine("  spmv outer " + BlockMsrMatrix.SPMV_outer.Elapsed.TotalSeconds);
+                    Console.WriteLine("  spmv outer " + BlockMsrMatrix.SpMV_local.Elapsed.TotalSeconds);
 
                     Console.WriteLine("  dgetrf core " + dgetrf_time);
 

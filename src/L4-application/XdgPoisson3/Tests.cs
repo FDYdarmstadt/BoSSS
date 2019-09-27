@@ -54,7 +54,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 Res = 6;
                 p = 2;
 #else
-                RES = 12;
+                Res = 12;
                 p = 3;
 #endif
                 var C = HardCodedControl.Ball3D(pDeg: p, Res: Res, solverCode: SolverName);
