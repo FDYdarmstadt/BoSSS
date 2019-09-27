@@ -446,10 +446,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var _Blocks = this.m_BlockingStrategy.GetBlocking(op);
                 foreach(var b in _Blocks) {
                     if (b.Count <= 0)
-                        throw new ArithmeticException("block without cells.");
+                        throw new ArithmeticException("Empty Schwarz-Block found");
                 }
                 int NoOfSchwzBlocks = _Blocks.Count();
-                Console.WriteLine("NoOfSchwzBlocks :"+ NoOfSchwzBlocks);
+     
                 // test cell blocks
                 // ================
 #if DEBUG
@@ -810,7 +810,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         int BlockSize = bi.Count + l1.Count;
                         if (BlockSize <= 0)
-                            throw new ArithmeticException();
+                            throw new ArithmeticException("Empty Schwarz-Block found");
 
                         //if (M.RowPartitioning.MpiSize > 1) {
                         //    int i0Proc = M.RowPartitioning.i0;
@@ -1436,8 +1436,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     blockSolvers[iPart].Solve(xiLo, biLo);
                                 } catch (ArithmeticException ae) {
                                     Console.Error.WriteLine(ae.Message);
-                                    this.BlockMatrices[iPart].SaveToTextFileSparse("C:\\tmp\\Part_" + iPart + ".txt");
-                                    Console.WriteLine("NoParts :"+NoParts);
                                     throw ae;
                                 }
                                 xi.AccV(1.0, xiLo, ciLo, default(int[]));

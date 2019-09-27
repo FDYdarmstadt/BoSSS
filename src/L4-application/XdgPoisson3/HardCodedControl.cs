@@ -579,7 +579,9 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             C.LinearSolver.NoOfMultigridLevels = 4;
             C.LinearSolver.ConvergenceCriterion = 1e-6;
-            C.ExcactSolSupported = false;
+            C.LinearSolver.MaxSolverIterations = 20;
+            C.LinearSolver.TargetBlockSize = 79;
+           C.ExcactSolSupported = false;
             double radius = 0.7;
             C.InitialValues_Evaluators.Add("Phi", X => X[0].Pow2() + X[1].Pow2() + X[2].Pow2() - radius.Pow2());
             C.MU_A = -1;

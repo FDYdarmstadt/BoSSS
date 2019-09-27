@@ -261,8 +261,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                     mtxBuilder.ComputeMatrix(M, b);
                 }
                 // compare with linear evaluation
-                // ==============================
-                /*
+                // ==============================               
                 DGField[] testDomainFieldS = map.BasisS.Select(bb => new XDGField(bb as XDGBasis)).ToArray();
                 CoordinateVector test = new CoordinateVector(testDomainFieldS);
 
@@ -299,7 +298,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 double Ref = test.L2NormPow2().MPISum().Sqrt();
 
                 Assert.LessOrEqual(ErrDist, Ref * 1.0e-5, "Mismatch between explicit evaluation of XDG operator and matrix.");
-                */
+
 
                 // agglomeration wahnsinn
                 // ======================
@@ -340,26 +339,13 @@ namespace BoSSS.Application.XdgPoisson3 {
 
 
             // direct solver 
-            //this.ReferenceSolve();
+            this.ReferenceSolve();
             //this.ConsistencyTest();
 
 
             // new solver framework: multigrid, blablablah ...
-            try
-            {
-                ExperimentalSolver(out mintime, out maxtime, out converged, out NoOfIterations, out DOFs);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("MyHandler caught : " + e.Message);
-                u.CoordinateVector.SaveToTextFile("u_vec");
-                rhs.CoordinateVector.SaveToTextFile("rhs_vec");
-                using (var bla = new StreamWriter("Callstack.txt"))
-                {
-                    bla.Write(e.ToString());
-                }
-                return 0;
-            };
+
+            ExperimentalSolver(out mintime, out maxtime, out converged, out NoOfIterations, out DOFs);           
             this.Op_Agglomeration.Extrapolate(this.u.Mapping);
 
             //Stats:
@@ -451,7 +437,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             return dt;
         }
 
-        /*
+
         private void OperatorAnalysis() {
             AggregationGridBasis[][] XAggB = AggregationGridBasis.CreateSequence(base.MultigridSequence, u.Mapping.BasisS);
 
@@ -496,7 +482,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             base.QueryHandler.ValueQuery("eigMini", eigMini, false);
             base.QueryHandler.ValueQuery("posDef", posDef, false);
         }
-        */
+
         MultigridOperator.ChangeOfBasisConfig[][] OpConfig {
             get {
                 int p = this.u.Basis.Degree;
@@ -509,7 +495,8 @@ namespace BoSSS.Application.XdgPoisson3 {
         }
 
         protected void CustomItCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
-            //noch nix ...
+            currentSol.SaveToTextFile("X_"+ iterIndex);
+            currentRes.SaveToTextFile("Res_" + iterIndex);
             MaxMlevel=Mgop.LevelIndex;
         }
 
@@ -567,7 +554,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 ISolverSmootherTemplate exsolver;
 
                 SolverFactory SF = new SolverFactory(this.Control.NonLinearSolver, this.Control.LinearSolver);
-                List<Action<int, double[], double[], MultigridOperator>> Callbacks=new List<Action<int, double[], double[], MultigridOperator>>();
+                var Callbacks=new List<Action<int, double[], double[], MultigridOperator>>();
                 Callbacks.Add(CustomItCallback);
                 SF.GenerateLinear(out exsolver, MultigridSequence, OpConfig, Callbacks);
 
@@ -612,7 +599,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 ErrField.Acc(-1.0, u);
                 double ERR = ErrField.L2Norm();
                 double RelERR = ERR / u.L2Norm();
-                //Assert.LessOrEqual(RelERR, 1.0e-6, "Result from iterative solver above threshold.");
+                Assert.LessOrEqual(RelERR, 1.0e-6, "Result from iterative solver above threshold.");
            
             }
         }
