@@ -411,6 +411,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set;
         }
 
+        int pLow = 1;
+
 
         /// <summary>
         /// ~
@@ -447,6 +449,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 var Mop = op.OperatorMatrix;
                 var MgMap = op.Mapping;
+                
                 this.m_MgOp = op;
                 int myMpiRank = MgMap.MpiRank;
                 int myMpisize = MgMap.MpiSize;
@@ -547,6 +550,36 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // convert cell blocks to DOF blocks
                 // =================================
 
+                /*
+                {
+                    Console.WriteLine("test code");
+                    Mop = Mop.CloneAs();
+                    Mop.Clear();
+                    int Jup = MgMap.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+
+                    AggregationGridBasis[] BS = MgMap.AggBasis;
+                    for(int j = 0; j < Jup; j++) {
+                        int NoOfSpc = BS[0].GetNoOfSpecies(j);
+                        int p = MgMap.DgDegree[0];
+                        int Np = BS[0].GetLength(j, p) / NoOfSpc;
+
+
+                        for (int iSpc = 0; iSpc < NoOfSpc; iSpc++) {
+                            for (int jSpc = 0; jSpc < NoOfSpc; jSpc++) {
+                                for (int n = 0; n < Np; n++) {
+                                    for (int m = 0; m < Np; m++) {
+                                        double marker = (j + 1) + (iSpc + 1) * 0.1 + (jSpc + 1) * 0.01 + n * 0.001 + m * 0.0001;
+
+                                        int irow = MgMap.LocalUniqueIndex(0, j, n + iSpc * Np);
+                                        int icol = MgMap.LocalUniqueIndex(0, j, m + jSpc * Np);
+                                        Mop[irow, icol] = marker;                                        
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                */
                 // Index lists and sub-blocking for the Schwarz blocks:
                 List<int>[] BlkIdx_gI_lR; //  (global) indices in the local range 
                 List<int>[] BlkIdx_gI_eR; //  (global) indices of external rows and columns
@@ -680,7 +713,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     int p = Degrees[iVar];
                                     int NoOfSpc = BS[iVar].GetNoOfSpecies(j);
                                     int Np = BS[iVar].GetLength(j, p);
-                                    int NpLo = BS[iVar].GetLength(j, 1);
+                                    int NpLo = BS[iVar].GetLength(j, pLow);
                                     NpLoTot += NpLo;
 
                                     int NpBase = Np / NoOfSpc; // DOFs in cell *per species*
@@ -827,7 +860,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // create solvers
                 // ==============
 
-
+                BlockMsrMatrix[] LoBlocks = new BlockMsrMatrix[NoOfSchwzBlocks];
                 {
                     blockSolvers = new ISparseSolver[NoOfSchwzBlocks];
                     if (UsePMGinBlocks) {
@@ -900,6 +933,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             var LoBlock = new BlockMsrMatrix(lo_block, lo_block);
                             Block.AccSubMatrixTo(1.0, LoBlock, Blk_LoModes[iPart], default(int[]), Blk_LoModes[iPart], default(int[]));
                             blockSolvers[iPart].DefineMatrix(LoBlock);
+                            LoBlocks[iPart] = LoBlock;
 
                             // record matrix
                             BlockMatrices[iPart] = Block;
@@ -919,33 +953,33 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             int ptrHiModes = 0;
                             for (int iSubBlock = 0; iSubBlock < NoOfSubblocks; iSubBlock++) {
-                                int Np = Nhi[iSubBlock];
+                                int Np_hi = Nhi[iSubBlock];
                                 int i0 = i0Hi[iSubBlock];
                                 int NoOfSpc = NspcHi[iSubBlock];
-                                int NpBase = Np / NoOfSpc;
+                                int Np_hiBase = Np_hi / NoOfSpc;
                                 Debug.Assert(i0 == HiModes[ptrHiModes]);
 
-                                HiModeSolvers[iSubBlock] = MultidimensionalArray.Create(Np, Np);
+                                HiModeSolvers[iSubBlock] = MultidimensionalArray.Create(Np_hi, Np_hi);
 
                                 for (int iSpcRow = 0; iSpcRow < NoOfSpc; iSpcRow++) {
-                                    int i0_spc = HiModes[ptrHiModes + NpBase * iSpcRow];
+                                    int i0_spc = HiModes[ptrHiModes + Np_hiBase * iSpcRow];
 
                                     for (int iSpcCol = 0; iSpcCol < NoOfSpc; iSpcCol++) {
-                                        int j0_spc = HiModes[ptrHiModes + NpBase * iSpcCol];
+                                        int j0_spc = HiModes[ptrHiModes + Np_hiBase * iSpcCol];
 #if DEBUG
-                                        for(int n = 0; n < NpBase; n++) {
-                                            Debug.Assert(HiModes[ptrHiModes + NpBase * iSpcRow + n] - i0_spc == n);
-                                            Debug.Assert(HiModes[ptrHiModes + NpBase * iSpcCol + n] - j0_spc == n);
+                                        for(int n = 0; n < Np_hiBase; n++) {
+                                            Debug.Assert(HiModes[ptrHiModes + Np_hiBase * iSpcRow + n] - i0_spc == n);
+                                            Debug.Assert(HiModes[ptrHiModes + Np_hiBase * iSpcCol + n] - j0_spc == n);
                                         }
 #endif
-                                        var HiModeSolver_spc = HiModeSolvers[iSubBlock].ExtractSubArrayShallow(new[] { iSpcRow * NpBase, iSpcCol * NpBase },
-                                            new[] { (iSpcRow + 1) * NpBase - 1, (iSpcCol + 1) * NpBase - 1 });
+                                        var HiModeSolver_spc = HiModeSolvers[iSubBlock].ExtractSubArrayShallow(new[] { iSpcRow * Np_hiBase, iSpcCol * Np_hiBase },
+                                            new[] { (iSpcRow + 1) * Np_hiBase - 1, (iSpcCol + 1) * Np_hiBase - 1 });
 
                                         Block.ReadBlock(i0_spc, j0_spc, HiModeSolver_spc);
 
                                     }
                                 }
-                                ptrHiModes += Np;
+                                ptrHiModes += Np_hi;
 
                                 HiModeSolvers[iSubBlock].Invert();
                             }
@@ -1196,6 +1230,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     matlab.Dispose();
                 }
 #endif
+
+                //Mop.SaveToTextFileSparse("Mop.txt");
+                //for(int iBlock = 0; iBlock < NoOfSchwzBlocks; iBlock++) {
+                //    this.BlockMatrices[iBlock].SaveToTextFileSparse("Block" + iBlock + ".txt");
+                //    LoBlocks[iBlock].SaveToTextFileSparse("LoBlock" + iBlock + ".txt");
+                //    for(int i = 0; i < PmgBlock_HiModeSolvers[iBlock].Length; i++) {
+                //        PmgBlock_HiModeSolvers[iBlock][i].SaveToTextFile("HiBlock" + iBlock + "-" + i + ".txt");
+                //    }
+                //}
+
+
+
             }
         }
 
@@ -1249,12 +1295,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         int[][] PmgBlock_HiModes;
 
-        /// <summary>
-        /// - 1st index: Schwarz block
-        /// - 2nd index: sub-block within the respective Schwarz block (there is one sub-block for each cell and each variable)
-        /// - content: the offset of the respective sub-block within the Schwarz-block
-        /// </summary>
-        int[][] PmgBlock_HiModeSolverI0;
+        // <summary>
+        // - 1st index: Schwarz block
+        // - 2nd index: sub-block within the respective Schwarz block (there is one sub-block for each cell and each variable)
+        // - content: the offset of the respective sub-block within the Schwarz-block
+        // </summary>
+        //int[][] PmgBlock_HiModeSolverI0;
 
         /// <summary>
         /// Cell-local solvers for the high-order modes 
@@ -1405,6 +1451,36 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #endif
                 }
 
+                double[] chackScheiss = new double[Res.Length];
+                {
+                    var MgMap = m_MgOp.Mapping;
+                    int Jup = MgMap.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+                    var BS = MgMap.AggBasis;
+
+                    for (int j = 0; j < Jup; j++) {
+                        int NoOfSpc = BS[0].GetNoOfSpecies(j);
+                        int p = MgMap.DgDegree[0];
+                        int Np = BS[0].GetLength(j, p) / NoOfSpc;
+
+
+                        for (int iSpc = 0; iSpc < NoOfSpc; iSpc++) {
+
+                            for (int n = 0; n < Np; n++) {
+
+                                double marker = (j + 1) + (iSpc + 1) * 0.1 +  n * 0.001;
+
+                                int irow = MgMap.LocalUniqueIndex(0, j, n + iSpc * Np);
+                                
+                                chackScheiss[irow] = marker;
+
+                            }
+
+                        }
+                    }
+                }
+
+
+
                 int LocLength = m_MgOp.Mapping.LocalLength;
 
                 for (int iIter = 0; iIter < m_MaxIterations; iIter++) {
@@ -1453,8 +1529,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             double[] bi = new double[L];
                             double[] xi = new double[L];
 
+                            double[] chackScheiss_iPart = new double[L];
+
                             // extract block part of residual
                             bi.AccV(1.0, Res, default(int[]), ci);
+                            chackScheiss_iPart.AccV(1.0, chackScheiss, default(int[]), ci);
+                            chackScheiss_iPart.SaveToTextFile("chackScheiss" + iPart + ".txt");
                             if (ciE != null && ciE.Length > 0)
                                 bi.AccV(1.0, ResExchange.Vector_Ext, default(int[]), ciE, acc_index_shift: ci.Length, b_index_shift: (-LocLength));
 
@@ -1491,14 +1571,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                         var HiModeSolver = HiModeSolvers[j];
                                         int Np = HiModeSolver.NoOfRows;
 
+
                                         if (xiHi == null || xiHi.Length != Np)
                                             xiHi = new double[Np];
                                         if (biHi == null || biHi.Length != Np)
                                             biHi = new double[Np];
 
+                                        double[] chackScheiss_iPart_j = new double[Np];
                                         for (int n = 0; n < Np; n++) {
                                             biHi[n] = bi[ciHi[ptr_CiHi + n]];
+                                            chackScheiss_iPart_j[n] = chackScheiss_iPart[ciHi[ptr_CiHi + n]];
                                         }
+                                        chackScheiss_iPart_j.SaveToTextFile("chackScheiss" + iPart + "-" + j + ".txt");
+
 
                                         HiModeSolver.GEMV(1.0, biHi, 0.0, xiHi);
 
@@ -1539,6 +1624,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         for (int l = 0; l < LocLength; l++) {
                             X[l] *= SolScale[l];
                         }
+
+                        SolScale.SaveToTextFile("SolScale.txt");
                     }
 
                     /*

@@ -186,14 +186,14 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// <summary>
         /// A piecewise linear solution.
         /// </summary>
-        public static XdgPoisson3Control PiecewiseLinear(double delta = 0.5) {
+        public static XdgPoisson3Control PiecewiseLinear(double delta = 0.0) {
             XdgPoisson3Control R = new XdgPoisson3Control();
 
             R.ProjectName = "XdgPoisson3/PiecewiseLinear";
             R.savetodb = false;
             //R.DbPath = "C:\\BoSSS-db";
 
-            R.SetDGdegree(1);
+            R.SetDGdegree(3);
 
 
 
@@ -237,7 +237,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                     return false;
             };
 
-            R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_schwarz;//R.solverName = "pcg+schwarz";
+            R.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;//R.solverName = "pcg+schwarz";
             R.LinearSolver.NoOfMultigridLevels = 2;
             R.AgglomerationThreshold = 0.0;
 
