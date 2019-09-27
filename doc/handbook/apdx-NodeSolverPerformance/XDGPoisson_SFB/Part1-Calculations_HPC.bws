@@ -222,16 +222,16 @@ List<XdgPoisson3Control> controls = new List<XdgPoisson3Control>();
 // polynomial degrees to test
 //int[] PolyDegS = new int[] {2, 3, 4, 5, 6};
 //int[] PolyDegS = new int[] {2, 3 ,5};
-int[] PolyDegS = new int[] {5};
+int[] PolyDegS = new int[] {3};
 **************
 ==============
 // Solvers which we want to instrument:
 LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
     //LinearSolverCode.classic_pardiso,
     //LinearSolverCode.exp_OrthoS_pMG,
-    LinearSolverCode.exp_gmres_levelpmg,
+    //LinearSolverCode.exp_gmres_levelpmg,
     //LinearSolverCode.exp_softgmres_schwarz_directcoarse_overlap,
-    //LinearSolverCode.exp_Kcycle_schwarz,
+    LinearSolverCode.exp_Kcycle_schwarz,
     //LinearSolverConfig.Code.classic_mumps, 
     //LinearSolverConfig.Code.classic_cg,
     //LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse,
@@ -246,6 +246,10 @@ int MaxDof = 5000000;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.XDG;
 **************
+(1,2): warning CS0105: The using directive for `BoSSS.Solution.XNSECommon' appeared previously in this namespace
+(2,1): warning CS0105: The using directive for `BoSSS.Foundation.XDG' appeared previously in this namespace
+No. of errors|warnings: 0|2.
+
 ==============
 //IGridInfo tmp_grd = 
 IGridInfo[] t_grids=new IGridInfo[] {grids.Pick(4)};
@@ -335,7 +339,7 @@ foreach(IGridInfo grd in t_grids) {
 }
 }
 **************
-setting up: J13824_k5_exp_gmres_levelpmg
+setting up: J13824_k3_exp_Kcycle_schwarz
 
 ==============
 **************
@@ -379,11 +383,11 @@ foreach(var ctrl in controls) {
     //ctrl.RunBatch(myBatch);
 }
 **************
- Submitting: XdgPoissonVelocity_J13824_k5_exp_gmres_levelpmg
+ Submitting: XdgPoissonVelocity_J13824_k3_exp_Kcycle_schwarz
 Job is marked as success by job manager, but no session info in database is found; performing new deployment and submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep26_18-01-52
-Source directory: G:\BoSSS-BIN\bin\Release
+Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep26_18-48-52
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
    copied 'amd64' runtime.
@@ -537,7 +541,7 @@ List of 19 instances of ISessionInfo {
 ==============
 tempDB.Projects.Where(p=>p.Key.Equals(WFlowName)).Pick(0).Value.Where(s=>s.Name.Contains("J13824_k5_exp_gmres_levelpmg")).Pick(0).Delete(true)
 **************
-Session 13cea05b-d20e-41b4-8b76-8b787e54e35d deleted.
+Session 9d684405-2826-4ba5-b33d-75a7dfe04725 deleted.
 
 ==============
 //tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.RunningOrCrashed();
@@ -555,7 +559,7 @@ Session 13cea05b-d20e-41b4-8b76-8b787e54e35d deleted.
 ==============
 WorkflowMgm.SessionTable.Rows.Count;
 **************
-55
+54
 ==============
 //tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4);
 //tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4).OpenSessionDirectory();
@@ -576,8 +580,8 @@ tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4).Timest
 //tempDB.Projects.Pick(0).Value.Pick(0).KeysAndQueries;
 tempDB.Projects.Where(p=>p.Key.Equals(WFlowName)).Pick(0).Value.Pick(0).KeysAndQueries
 **************
-List of 77 instances of KeyValuePair{String,Object} {
-  0: [SessionName, XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz]
+List of 67 instances of KeyValuePair{String,Object} {
+  0: [SessionName, XdgPoissonVelocity_J13824_k5_exp_gmres_levelpmg]
   1: [DGdegree:Phi, 2]
   2: [DGdegree:u, 5]
   3: [GeneratedFromCode, False]
@@ -612,11 +616,11 @@ List of 77 instances of KeyValuePair{String,Object} {
   32: [LinearSolver.MaxSolverIterations, 2000]
   33: [LinearSolver.MinSolverIterations, 2]
   34: [LinearSolver.ConvergenceCriterion, 1E-08]
-  35: [LinearSolver.SolverCode, 41]
+  35: [LinearSolver.SolverCode, 47]
   36: [LinearSolver.NoOfMultigridLevels, 10]
   37: [LinearSolver.exp_localPrec_muA, 1]
   38: [LinearSolver.exp_localPrec_Min_dt, 0]
-  39: [LinearSolver.TargetBlockSize, 28671]
+  39: [LinearSolver.TargetBlockSize, 10000]
   40: [NonLinearSolver.verbose, False]
   41: [NonLinearSolver.PrecondSolver.verbose, False]
   42: [NonLinearSolver.PrecondSolver.MaxKrylovDim, 30]
@@ -641,19 +645,9 @@ List of 77 instances of KeyValuePair{String,Object} {
   61: [AMR_startUpSweeps, 1]
   62: [CutCellQuadratureType, 5]
   63: [ContinueOnIoError, True]
-  64: [Grid:NoOfCells, 512]
-  65: [Grid:hMax, 0.433012701892219]
-  66: [Grid:hMin, 0.25]
-  67: [UsedNoOfMultigridLevels, 4]
-  68: [maxBlkSize, 112]
-  69: [minBlkSize, 56]
-  70: [NumberOfMatrixBlox, 3200]
-  71: [DOFs, 33152]
-  72: [minSolRunT, 50.3617869]
-  73: [maxSolRunT, 50.3617869]
-  74: [Conv, 1]
-  75: [NoIter, 27]
-  76: [maxMultigridlvl, 0]
+  64: [Grid:NoOfCells, 13824]
+  65: [Grid:hMax, 0.144337567297407]
+  66: [Grid:hMin, 0.0833333333333333]
 }
 ==============
 static class AddCols {
@@ -735,6 +729,10 @@ SessTab.SaveToFile(docpath);
 **************
 ==============
 LastError;
+**************
+==============
+**************
+==============
 **************
 ==============
 **************
