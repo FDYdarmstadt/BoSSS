@@ -965,6 +965,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     int i0_spc = HiModes[ptrHiModes + Np_hiBase * iSpcRow];
 
                                     for (int iSpcCol = 0; iSpcCol < NoOfSpc; iSpcCol++) {
+                                    //{ int iSpcCol = iSpcRow;
                                         int j0_spc = HiModes[ptrHiModes + Np_hiBase * iSpcCol];
 #if DEBUG
                                         for(int n = 0; n < Np_hiBase; n++) {
@@ -1451,6 +1452,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #endif
                 }
 
+                /*
                 double[] chackScheiss = new double[Res.Length];
                 {
                     var MgMap = m_MgOp.Mapping;
@@ -1478,8 +1480,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                     }
                 }
-
-
+                chackScheiss.SaveToTextFile("chackScheiss.txt");
+                */
 
                 int LocLength = m_MgOp.Mapping.LocalLength;
 
@@ -1529,12 +1531,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             double[] bi = new double[L];
                             double[] xi = new double[L];
 
-                            double[] chackScheiss_iPart = new double[L];
+                            //double[] chackScheiss_iPart = new double[L];
 
                             // extract block part of residual
                             bi.AccV(1.0, Res, default(int[]), ci);
-                            chackScheiss_iPart.AccV(1.0, chackScheiss, default(int[]), ci);
-                            chackScheiss_iPart.SaveToTextFile("chackScheiss" + iPart + ".txt");
+                            //chackScheiss_iPart.AccV(1.0, chackScheiss, default(int[]), ci);
+                            //chackScheiss_iPart.SaveToTextFile("chackScheiss" + iPart + ".txt");
                             if (ciE != null && ciE.Length > 0)
                                 bi.AccV(1.0, ResExchange.Vector_Ext, default(int[]), ciE, acc_index_shift: ci.Length, b_index_shift: (-LocLength));
 
@@ -1577,12 +1579,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                         if (biHi == null || biHi.Length != Np)
                                             biHi = new double[Np];
 
-                                        double[] chackScheiss_iPart_j = new double[Np];
+                                        //double[] chackScheiss_iPart_j = new double[Np];
                                         for (int n = 0; n < Np; n++) {
                                             biHi[n] = bi[ciHi[ptr_CiHi + n]];
-                                            chackScheiss_iPart_j[n] = chackScheiss_iPart[ciHi[ptr_CiHi + n]];
+                                            //chackScheiss_iPart_j[n] = chackScheiss_iPart[ciHi[ptr_CiHi + n]];
                                         }
-                                        chackScheiss_iPart_j.SaveToTextFile("chackScheiss" + iPart + "-" + j + ".txt");
+                                        //chackScheiss_iPart_j.SaveToTextFile("chackScheiss" + iPart + "-" + j + ".txt");
 
 
                                         HiModeSolver.GEMV(1.0, biHi, 0.0, xiHi);
@@ -1625,7 +1627,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             X[l] *= SolScale[l];
                         }
 
-                        SolScale.SaveToTextFile("SolScale.txt");
+                        //SolScale.SaveToTextFile("SolScale.txt");
                     }
 
                     /*
