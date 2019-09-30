@@ -138,11 +138,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// Minimal cell length. Used to specify the number of surface points.
         /// </param>
         override public MultidimensionalArray GetSurfacePoints(double hMin) {
-            if (spatialDim != 2)
+            if (SpatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
 
             int NoOfSurfacePoints = Convert.ToInt32(20 * Circumference / hMin) + 1;
-            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSubParticles, NoOfSurfacePoints, spatialDim);
+            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSubParticles, NoOfSurfacePoints, SpatialDim);
             double[] InfinitisemalAngle = GenericBlas.Linspace(-Math.PI / 4, 5 * Math.PI / 4, NoOfSurfacePoints + 1);
             double[] InfinitisemalLength = GenericBlas.Linspace(0, m_Length / 4, NoOfSurfacePoints + 1);
             if (Math.Abs(10 * Circumference / hMin + 1) >= int.MaxValue)

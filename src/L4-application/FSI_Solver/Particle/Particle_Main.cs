@@ -63,7 +63,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// The inital rotational velocity.
         /// </param>
         public Particle(ParticleMotionInit motionInit, double[] startPos, double startAngl = 0.0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) {
-            spatialDim = startPos.Length;
+            SpatialDim = startPos.Length;
             ActiveStress = activeStress;
             m_MotionInit = motionInit;
             Aux = new FSI_Auxillary();
@@ -75,13 +75,15 @@ namespace BoSSS.Application.FSI_Solver {
             particleDensity = Motion.Density;
         }
 
+        [NonSerialized]
         protected readonly FSI_Auxillary Aux;
-
-        /// <summary>
-        /// Initialize particle motion.
-        /// </summary>
         [DataMember]
         private readonly ParticleMotionInit m_MotionInit;
+        [DataMember]
+        private readonly double particleDensity;
+
+        [DataMember]
+        protected int SpatialDim { get; }
 
         /// <summary>
         /// Instantiate object for particle motion.
@@ -89,28 +91,22 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         public Motion_Wet Motion { get; private set; } = new Motion_Wet(gravity: new double[] { 0, 9.81 }, density: 1);
 
-        protected int spatialDim;
-
-        /// <summary>
-        /// Density of the particle.
-        /// </summary>
-        [DataMember]
-        private readonly double particleDensity;
-
-
         /// <summary>
         /// Mass of the current particle.
         /// </summary>
+        [DataMember]
         protected double Mass_P => Area * particleDensity;
 
         /// <summary>
         /// Check whether any particles is collided with another particle
         /// </summary>
+        [DataMember]
         public bool IsCollided { get; set; }
 
         /// <summary>
         /// No of convex (!) sub-particles (for GJK algorithm, distance calc)
         /// </summary>
+        [DataMember]
         public virtual int NoOfSubParticles => 1;
         
         /// <summary>
@@ -134,17 +130,19 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Active stress on the current particle.
         /// </summary>
+        [DataMember]
         public double ActiveStress { get; private set; } = 0;
-
-        /// <summary>
-        /// Level set function describing the particle.
-        /// </summary>       
-        public abstract double LevelSetFunction(double[] X);
 
         /// <summary>
         /// Area of the current particle.
         /// </summary>
+        [DataMember]
         public virtual double Area => throw new NotImplementedException();
+
+        /// <summary>
+        /// Level set function describing the particle.
+        /// </summary>   
+        public abstract double LevelSetFunction(double[] X);
 
         /// <summary>
         /// Necessary for active particles. Returns 0 for the non active boundary region and a number between 0 and 1 for the active region.

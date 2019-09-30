@@ -140,12 +140,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// Minimal cell length. Used to specify the number of surface points.
         /// </param>
         override public MultidimensionalArray GetSurfacePoints(double hMin) {
-            if (spatialDim != 2)
+            if (SpatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported.");
             double angle = Motion.GetAngle(0);
             double[] position = Motion.GetPosition(0);
             int NoOfSurfacePoints = Convert.ToInt32(5 * Circumference / hMin);
-            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSubParticles, NoOfSurfacePoints, spatialDim);
+            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSubParticles, NoOfSurfacePoints, SpatialDim);
             double[] InfinitisemalAngle = GenericBlas.Linspace(0, Math.PI * 2, NoOfSurfacePoints + 1);
             if (Math.Abs(10 * Circumference / hMin + 1) >= int.MaxValue)
                 throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");
@@ -170,7 +170,7 @@ namespace BoSSS.Application.FSI_Solver {
             if (vector.L2Norm() == 0)
                 throw new ArithmeticException("The given vector has no length");
 
-            double[] SupportPoint = new double[spatialDim];
+            double[] SupportPoint = new double[SpatialDim];
             double angle = Motion.GetAngle(0);
             double[] position = Motion.GetPosition(0);
 
