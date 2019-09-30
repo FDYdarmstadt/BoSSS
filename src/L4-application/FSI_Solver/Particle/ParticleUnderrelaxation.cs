@@ -27,23 +27,23 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="parameter">
         /// <see cref="ParticleUnderrelaxationParam"/>
         /// </param>
-        /// <param name="averageForceIn">
+        /// <param name="averageForce">
         /// A mean value for the forces used to reduce the impact of computation errors.
         /// </param>
-        internal ParticleUnderrelaxation(ParticleUnderrelaxationParam parameter, double averageForceIn) {
-            convergenceLimit = parameter.ConvergenceLimit;
-            relaxationFactor = parameter.UnderrelaxationFactor;
-            useAdaptiveUnderrelaxation = parameter.UsaAddaptiveUnderrelaxation;
-            averageForce = averageForceIn;
+        internal ParticleUnderrelaxation(ParticleUnderrelaxationParam parameter, double averageForce) {
+            m_ConvergenceLimit = parameter.ConvergenceLimit;
+            m_RelaxationFactor = parameter.UnderrelaxationFactor;
+            m_UseAdaptiveUnderrelaxation = parameter.UsaAddaptiveUnderrelaxation;
+            m_AverageForce = averageForce;
         }
         [DataMember]
-        private readonly double convergenceLimit;
+        private readonly double m_ConvergenceLimit;
         [DataMember]
-        private readonly double relaxationFactor;
+        private readonly double m_RelaxationFactor;
         [DataMember]
-        private readonly double averageForce;
+        private readonly double m_AverageForce;
         [DataMember]
-        private readonly bool useAdaptiveUnderrelaxation;
+        private readonly bool m_UseAdaptiveUnderrelaxation;
 
         /// <summary>
         /// This method underrelaxates the hydrodynamic forces. The Underrelaxation
@@ -52,15 +52,15 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="forces">
         /// The hydrodynamic forces.
         /// </param>
-        /// <param name="forcesAtPrevIteration">
+        /// <param name="forcesPreviousIteration">
         /// The hydrodynamic forces at the previous iteration.
         /// </param>
-        internal void Forces(ref double[] forces, double[] forcesAtPrevIteration) {
+        internal void Forces(ref double[] forces, double[] forcesPreviousIteration) {
             for (int d = 0; d < forces.Length; d++) {
-                double underrelaxationCoeff = useAdaptiveUnderrelaxation == true
-                    ? CalculateAdaptiveUnderrelaxation(forces[d], forcesAtPrevIteration[d], averageForce, convergenceLimit, relaxationFactor)
-                    : relaxationFactor;
-                forces[d] = underrelaxationCoeff * forces[d] + (1 - underrelaxationCoeff) * forcesAtPrevIteration[d];
+                double underrelaxationCoeff = m_UseAdaptiveUnderrelaxation == true
+                    ? CalculateAdaptiveUnderrelaxation(forces[d], forcesPreviousIteration[d], m_AverageForce, m_ConvergenceLimit, m_RelaxationFactor)
+                    : m_RelaxationFactor;
+                forces[d] = underrelaxationCoeff * forces[d] + (1 - underrelaxationCoeff) * forcesPreviousIteration[d];
             }
         }
 
@@ -71,14 +71,14 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="torque">
         /// The hydrodynamic torque.
         /// </param>
-        /// <param name="torqueAtPrevIteration">
+        /// <param name="torquePreviousIteration">
         /// The hydrodynamic torque at the previous iteration.
         /// </param>
-        internal void Torque(ref double torque, double torqueAtPrevIteration) {
-            double underrelaxationCoeff = useAdaptiveUnderrelaxation == true
-                ? CalculateAdaptiveUnderrelaxation(torque, torqueAtPrevIteration, averageForce, convergenceLimit, relaxationFactor)
-                : relaxationFactor;
-            torque = underrelaxationCoeff * torque + (1 - underrelaxationCoeff) * torqueAtPrevIteration;
+        internal void Torque(ref double torque, double torquePreviousIteration) {
+            double underrelaxationCoeff = m_UseAdaptiveUnderrelaxation == true
+                ? CalculateAdaptiveUnderrelaxation(torque, torquePreviousIteration, m_AverageForce, m_ConvergenceLimit, m_RelaxationFactor)
+                : m_RelaxationFactor;
+            torque = underrelaxationCoeff * torque + (1 - underrelaxationCoeff) * torquePreviousIteration;
 
         }
 

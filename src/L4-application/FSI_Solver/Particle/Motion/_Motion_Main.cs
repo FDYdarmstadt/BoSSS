@@ -62,8 +62,6 @@ namespace BoSSS.Application.FSI_Solver {
         [NonSerialized]
         internal readonly FSI_Auxillary Aux = new FSI_Auxillary();
         [NonSerialized]
-        private readonly ParticleHydrodynamicsIntegration HydrodynamicsIntegration = new ParticleHydrodynamicsIntegration();
-        [NonSerialized]
         private readonly ParticleUnderrelaxationParam m_UnderrelaxationParam = null;
 
         [DataMember]
@@ -482,9 +480,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="P"></param>
         /// <param name="levelSetTracker"></param>
         /// <param name="fluidViscosity"></param>
-        public virtual void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker levelSetTracker, CellMask cutCells, double fluidViscosity, double fluidDensity, bool firstIteration, double dt = 0) {
-            double[] tempForces = CalculateHydrodynamicForces(U, P, levelSetTracker, cutCells, fluidViscosity, fluidDensity);
-            double tempTorque = CalculateHydrodynamicTorque(U, P, levelSetTracker, cutCells, fluidViscosity);
+        public virtual void UpdateForcesAndTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, bool firstIteration, double dt = 0) {
+            double[] tempForces = CalculateHydrodynamicForces(hydrodynamicsIntegration, fluidDensity);
+            double tempTorque = CalculateHydrodynamicTorque(hydrodynamicsIntegration);
             HydrodynamicsPostprocessing(tempForces, tempTorque, firstIteration);
         }
 
@@ -698,73 +696,31 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Update Forces and Torque acting from fluid onto the particle
         /// </summary>
-        /// <param name="U"></param>
-        /// <param name="P"></param>
-        /// <param name="levelSetTracker"></param>
-        /// <param name="fluidViscosity"></param>
-        /// <param name="cutCells"></param>
+        /// <param name="hydrodynamicsIntegration"></param>
         /// <param name="fluidDensity"></param>
-        /// <param name="dt"></param>
-        protected virtual double[] CalculateHydrodynamicForces(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker levelSetTracker, CellMask cutCells, double fluidViscosity, double fluidDensity, double dt = 0) {
-            int requiredOrder = U[0].Basis.Degree * 3 + 2;
-            SinglePhaseField[] uA = U.ToArray();
-            ConventionalDGField pA = P;
-            double[] tempForces = ForcesIntegration(uA, pA, levelSetTracker, cutCells, requiredOrder, fluidViscosity);
+        protected virtual double[] CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity) {
+            double[] tempForces = hydrodynamicsIntegration.Forces();
             Force_MPISum(ref tempForces);
-            for (int d = 0; d < spatialDim; d++) {
-                tempForces[d] += (Density - fluidDensity) * ParticleArea * Gravity[d];
-            }
+            CalculateGravity(fluidDensity, tempForces);
             return tempForces;
         }
 
         /// <summary>
-        /// Calculate Forces acting from fluid onto the particle
+        /// Calculates the gravitational forces.
         /// </summary>
-        /// <param name="UA"></param>
-        /// <param name="pA"></param>
-        /// <param name="levelSetTracker"></param>
-        /// <param name="cutCells"></param>
-        /// <param name="requiredOrder"></param>
-        /// <param name="fluidViscosity"></param>
-        protected double[] ForcesIntegration(SinglePhaseField[] UA, ConventionalDGField pA, LevelSetTracker levelSetTracker, CellMask cutCells, int requiredOrder, double fluidViscosity) {
-            double[] tempForces = new double[spatialDim];
-            double[] IntegrationForces = tempForces.CloneAs();
+        /// <param name="fluidDensity"></param>
+        /// <param name="tempForces"></param>
+        private void CalculateGravity(double fluidDensity, double[] tempForces) {
             for (int d = 0; d < spatialDim; d++) {
-                void ErrFunc(int CurrentCellID, int Length, NodeSet Ns, MultidimensionalArray result) {
-
-                    int K = result.GetLength(1);
-                    MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Length, K, spatialDim, spatialDim);
-                    MultidimensionalArray pARes = MultidimensionalArray.Create(Length, K);
-                    MultidimensionalArray Normals = levelSetTracker.DataHistories[0].Current.GetLevelSetNormals(Ns, CurrentCellID, Length);
-                    for (int i = 0; i < spatialDim; i++) {
-                        UA[i].EvaluateGradient(CurrentCellID, Length, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
-                    }
-                    pA.Evaluate(CurrentCellID, Length, Ns, pARes);
-                    for (int j = 0; j < Length; j++) {
-                        for (int k = 0; k < K; k++) {
-                            result[j, k] = HydrodynamicsIntegration.Force(Grad_UARes, pARes, Normals, fluidViscosity, k, j, spatialDim, d);
-                        }
-                    }
-                }
-                var SchemeHelper = levelSetTracker.GetXDGSpaceMetrics(new[] { levelSetTracker.GetSpeciesId("A") }, requiredOrder, 1).XQuadSchemeHelper;
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, cutCells);
-                CellQuadrature.GetQuadrature(new int[] { 1 }, levelSetTracker.GridDat, cqs.Compile(levelSetTracker.GridDat, requiredOrder),
-                    delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-                        ErrFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
-                    },
-                    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                        IntegrationForces[d] = ForceTorqueSummationWithNeumaierArray(IntegrationForces[d], ResultsOfIntegration, Length);
-                    }
-                ).Execute();
+                tempForces[d] += (Density - fluidDensity) * ParticleArea * Gravity[d];
             }
-            return tempForces = IntegrationForces.CloneAs();
         }
 
         /// <summary>
         /// Summation of the hydrodynamic forces over all MPI-processes
         /// </summary>
         /// <param name="forces"></param>
-        protected void Force_MPISum(ref double[] forces) {
+        private void Force_MPISum(ref double[] forces) {
             double[] stateBuffer = forces.CloneAs();
             double[] globalStateBuffer = stateBuffer.MPISum();
             for (int d = 0; d < spatialDim; d++) {
@@ -781,53 +737,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="fluidViscosity"></param>
         /// <param name="cutCells"></param>
         /// <param name="dt"></param>
-        protected virtual double CalculateHydrodynamicTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker levelSetTracker, CellMask cutCells, double fluidViscosity, double dt = 0) {
-            int requiredOrder = U[0].Basis.Degree * 3 + 2;
-            SinglePhaseField[] uA = U.ToArray();
-            ConventionalDGField pA = P;
-            double tempTorque = TorqueIntegration(uA, pA, levelSetTracker, cutCells, requiredOrder, fluidViscosity);
+        protected virtual double CalculateHydrodynamicTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration) {
+            double tempTorque = hydrodynamicsIntegration.Torque(m_Position[0]);
             Torque_MPISum(ref tempTorque);
-            return tempTorque;
-        }
-
-        /// <summary>
-        /// Calculate Forces acting from fluid onto the particle
-        /// </summary>
-        /// <param name="uA"></param>
-        /// <param name="pA"></param>
-        /// <param name="levelSetTracker"></param>
-        /// <param name="cutCells"></param>
-        /// <param name="requiredOrder"></param>
-        /// <param name="fluidViscosity"></param>
-        protected double TorqueIntegration(SinglePhaseField[] uA, ConventionalDGField pA, LevelSetTracker levelSetTracker, CellMask cutCells, int requiredOrder, double fluidViscosity) {
-            double tempTorque = new double();
-            void ErrFunc2(int j0, int Len, NodeSet Ns, MultidimensionalArray result) {
-                int K = result.GetLength(1);
-                MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Len, K, spatialDim, spatialDim); ;
-                MultidimensionalArray pARes = MultidimensionalArray.Create(Len, K);
-                MultidimensionalArray Normals = levelSetTracker.DataHistories[0].Current.GetLevelSetNormals(Ns, j0, Len);
-                for (int i = 0; i < spatialDim; i++) {
-                    uA[i].EvaluateGradient(j0, Len, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
-                }
-                pA.Evaluate(j0, Len, Ns, pARes);
-                for (int j = 0; j < Len; j++) {
-                    MultidimensionalArray Ns_Global = Ns.CloneAs();
-                    levelSetTracker.GridDat.TransformLocal2Global(Ns, Ns_Global, j0 + j);
-                    for (int k = 0; k < K; k++) {
-                        result[j, k] = HydrodynamicsIntegration.Torque(Grad_UARes, pARes, Normals, Ns_Global, fluidViscosity, k, j, m_Position[0]);
-                    }
-                }
-            }
-            var SchemeHelper2 = levelSetTracker.GetXDGSpaceMetrics(new[] { levelSetTracker.GetSpeciesId("A") }, requiredOrder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs2 = SchemeHelper2.GetLevelSetquadScheme(0, cutCells);
-            CellQuadrature.GetQuadrature(new int[] { 1 }, levelSetTracker.GridDat, cqs2.Compile(levelSetTracker.GridDat, requiredOrder),
-                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-                    ErrFunc2(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
-                },
-                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    tempTorque = ForceTorqueSummationWithNeumaierArray(tempTorque, ResultsOfIntegration, Length);
-                }
-            ).Execute();
             return tempTorque;
         }
 
@@ -835,7 +747,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Summation of the hydrodynamic torque over all MPI-processes
         /// </summary>
         /// <param name="torque"></param>
-        protected void Torque_MPISum(ref double torque) {
+        private void Torque_MPISum(ref double torque) {
             double stateBuffer = torque;
             double globalStateBuffer = stateBuffer.MPISum();
             torque = globalStateBuffer;
@@ -847,7 +759,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="tempForces"></param>
         /// <param name="tempTorque"></param>
         /// <param name="firstIteration"></param>
-        protected virtual void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque, bool firstIteration) {
+        protected void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque, bool firstIteration) {
             if (m_UnderrelaxationParam != null && !firstIteration) {
                 ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation(m_UnderrelaxationParam, CalculateAverageForces(tempForces, tempTorque));
                 Underrelaxation.Forces(ref tempForces, m_ForcesPreviousIteration);
@@ -879,35 +791,6 @@ namespace BoSSS.Application.FSI_Solver {
                 averageForces += forces[d];
             }
             return averageForces /= 3;
-        }
-
-        /// <summary>
-        /// This method performs the Neumaier algorithm form the sum of the entries of an array.
-        /// </summary>
-        /// <param name="resultVariable">
-        /// The variable where  the sum will be saved.
-        /// </param>
-        /// <param name="summands">
-        /// The array of summands
-        /// </param>
-        /// <param name="noOfSummands">
-        /// The number of summands.
-        /// </param>
-        private double ForceTorqueSummationWithNeumaierArray(double resultVariable, MultidimensionalArray summands, double noOfSummands) {
-            double sum = resultVariable;
-            double naiveSum;
-            double c = 0.0;
-            for (int i = 0; i < noOfSummands; i++) {
-                naiveSum = sum + summands[i, 0];
-                if (Math.Abs(sum) >= Math.Abs(summands[i, 0])) {
-                    c += (sum - naiveSum) + summands[i, 0];
-                }
-                else {
-                    c += (summands[i, 0] - naiveSum) + sum;
-                }
-                sum = naiveSum;
-            }
-            return sum + c;
         }
 
         /// <summary>

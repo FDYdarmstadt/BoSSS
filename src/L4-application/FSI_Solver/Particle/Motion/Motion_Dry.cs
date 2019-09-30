@@ -94,7 +94,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Overrides the calculation of hydrodynamics for fixed particles, so that nothing happens.
         /// </summary>
-        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U = null, SinglePhaseField P = null, LevelSetTracker levelSetTracker = null, CellMask cutCells = null, double fluidViscosity = 0, double fluidDensity = 0, bool firstIteration = false, double dt = 0) {
+        public override void UpdateForcesAndTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration = null, double fluidDensity = 0, bool firstIteration = false, double dt = 0) {
             double[] tempForces = new double[spatialDim];
             for (int d = 0; d < spatialDim; d++) {
                 tempForces[d] = Gravity[d] * Density * ParticleArea;

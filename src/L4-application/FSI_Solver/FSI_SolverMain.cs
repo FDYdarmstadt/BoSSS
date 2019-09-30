@@ -953,7 +953,8 @@ namespace BoSSS.Application.FSI_Solver {
                 Particle currentParticle = particles[p];
                 if (firstIteration)
                     currentParticle.Motion.SaveHydrodynamicsOfPreviousTimestep();
-                currentParticle.Motion.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, currentParticle.CutCells_P(LsTrk), FluidViscosity, FluidDensity, firstIteration, dt);
+                ParticleHydrodynamicsIntegration hydrodynamicsIntegration = new ParticleHydrodynamicsIntegration(2, Velocity, Pressure, LsTrk, currentParticle.CutCells_P(LsTrk), FluidViscosity);
+                currentParticle.Motion.UpdateForcesAndTorque(hydrodynamicsIntegration, FluidDensity, firstIteration, dt);
             }
         }
 

@@ -92,8 +92,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="P"></param>
         /// <param name="levelSetTracker"></param>
         /// <param name="fluidViscosity"></param>
-        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker levelSetTracker, CellMask cutCells, double fluidViscosity, double fluidDensity, bool firstIteration, double dt = 0) {
-            double[] tempForces = CalculateHydrodynamicForces(U, P, levelSetTracker, cutCells, fluidViscosity, fluidDensity);
+        public override void UpdateForcesAndTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, bool firstIteration, double dt = 0) {
+            double[] tempForces = CalculateHydrodynamicForces(hydrodynamicsIntegration, fluidDensity);
             double tempTorque = 0;
             HydrodynamicsPostprocessing(tempForces, tempTorque, firstIteration);
         }
