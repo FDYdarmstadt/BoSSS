@@ -86,11 +86,11 @@ namespace BoSSS.Application.Rheology {
                 switch (Component)
                 {
                     case 0:
-                        return new string[] { VariableNames.VelocityX, VariableNames.VelocityX };
+                        return new string[] { VariableNames.VelocityX, VariableNames.VelocityX, VariableNames.VelocityY };
                     case 1:
                         return new string[] { VariableNames.VelocityX, VariableNames.VelocityY };
                     case 2:
-                        return new string[] { VariableNames.VelocityY, VariableNames.VelocityY };
+                        return new string[] { VariableNames.VelocityY, VariableNames.VelocityY, VariableNames.VelocityX };
                     default:
                         throw new NotImplementedException();
                 }
@@ -139,8 +139,7 @@ namespace BoSSS.Application.Rheology {
 
             double res = 0;
 
-            switch (Component)
-            {
+            switch (Component) {
                 case 0:
                     res = 0.5 * ((Uin[0] + Uout[0]) * inp.Normale[0] + (Uin[1] + Uout[1]) * inp.Normale[0]) // central difference fo grad(u) and grad(u)^T
                             + pen1[0] * ((Uin[0] - Uout[0]) * inp.Normale[0]) + pen1[1] * ((Uin[0] - Uout[0]) * inp.Normale[1]) // beta Penalty for grad(u)
@@ -210,14 +209,38 @@ namespace BoSSS.Application.Rheology {
                 case IncompressibleBcType.Pressure_Outlet:
 
                     // Atmospheric outlet/pressure outflow: hom. Neumann
-                    res += Uin[0] * n1 + Uin[1] * n2;
+                    res += Uin[0] * n1 + Uin[1] * n2;           
                     break;
 
                 case IncompressibleBcType.FreeSlip:
-                    if (Component == 1)
-                    {
-                        res += Uin[0] * n1 + Uin[1] * n2;
+
+                    //Free slip wall for symmetry line of symmetric channel
+                    switch (Component) {
+                        case 0:
+                            //res += inp.Normale[0] * (2 * Uin[0] - Uin[0] * inp.Normale[0] * inp.Normale[0] - Uin[2] * inp.Normale[1] * inp.Normale[0]);// - Uin[0] * inp.Normale[1] * inp.Normale[1]);
+                            //res += 2 * Uin[0] * inp.Normale[0] * inp.Normale[0] * inp.Normale[0] + (Uin[0] * inp.Normale[1] + Uin[2] * inp.Normale[0]) * inp.Normale[1] * inp.Normale[0];
+                            res += Uin[0] * n1 + Uin[1] * n2;
+                            break;
+                        case 1:
+                            //res += 2 * Uin[0] * inp.Normale[1] + 2 * Uin[1] * inp.Normale[0] - Uin[0] * inp.Normale[1] * inp.Normale[1] * inp.Normale[1] + Uin[0] * inp.Normale[0] * inp.Normale[0] * inp.Normale[1];// - Uin[1] * inp.Normale[0] * inp.Normale[0] * inp.Normale[0];
+                            //res += 2 * (Uin[0] * inp.Normale[0] + Uin[1] * inp.Normale[1]) * inp.Normale[0] * inp.Normale[1] + (Uin[1] * inp.Normale[0] + Uin[0] * inp.Normale[1]) * inp.Normale[0] * inp.Normale[0] + (Uin[1] * inp.Normale[0] + Uin[0] * inp.Normale[1]) * inp.Normale[1] * inp.Normale[1];
+                            res += Uin[0] * n1 + Uin[1] * n2;
+                            break;
+                        case 2:
+                            //res += inp.Normale[1] * (2 * Uin[0] - Uin[2] * inp.Normale[1] * inp.Normale[1] - Uin[0] * inp.Normale[1] * inp.Normale[0]);// - Uin[2] * inp.Normale[0] * inp.Normale[0]); 
+                            res += 0;// 2 * Uin[0] * inp.Normale[1] * inp.Normale[1] * inp.Normale[1] + (Uin[2] * inp.Normale[1] + Uin[0] * inp.Normale[0]) * inp.Normale[0] * inp.Normale[1];
+                            //res += Uin[0] * n1 + Uin[1] * n2;
+                            break;
+                        default:
+                            throw new NotImplementedException();
                     }
+
+
+                    //res += Uin[0] * n1 + Uin[1] * n2;
+                    //res += n1 * n2 * (Uin[0] * n1 + Uin[1] * n2) * n1 * n2;
+                    //res += n2 *0.5 * ((Uin[0] + Vel1) * n1 + (Uin[1] + Vel2) * n2) *n1;
+                    //res += n1 * n2 * (Uin[0] * n1 + Uin[1] * n2) * n1 * n2;
+                    //res += 0;
 
                     break;
 
