@@ -20,70 +20,87 @@ using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Application.FSI_Solver {
     public class Motion_Dry : Motion_Wet {
-        public Motion_Dry(double[] gravity) : base(gravity) {
+
+        /// <summary>
+        /// The dry description of motion without hydrodynamics.
+        /// </summary>
+        /// <param name="gravity">
+        /// The gravity (volume forces) acting on the particle.
+        /// </param>
+        /// <param name="density">
+        /// The density of the particle.
+        /// </param>
+        public Motion_Dry(double[] gravity, double density) : base(gravity, density) {
         }
 
         /// <summary>
-        /// Calculate the new translational velocity of the particle.
+        /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
-        /// <returns></returns>
-        protected override void CalculateTranslationalVelocity(double dt) {
-            CalculateTranslationalAcceleration(dt);
+        protected override double[] CalculateTranslationalVelocity(double dt) {
+            double[] l_TranslationalVelocity = new double[spatialDim];
             for (int d = 0; d < spatialDim; d++) {
-                translationalVelocity[0][d] = translationalVelocity[1][d] + translationalAcceleration[0][d] * dt;
+                l_TranslationalVelocity[d] = GetTranslationalVelocity(1)[d] + GetTranslationalAcceleration(0)[d] * dt;
             }
-            Aux.TestArithmeticException(translationalVelocity[0], "particle translational velocity");
+            Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
+            return l_TranslationalVelocity;
         }
 
         /// <summary>
-        /// Calculate the new translational velocity of the particle.
+        /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
-        protected override void CalculateTranslationalVelocity(double dt, double collisionTimestep) {
-            CalculateTranslationalAcceleration(dt);
+        protected override double[] CalculateTranslationalVelocity(double dt, double collisionTimestep) {
+            double[] l_TranslationalVelocity = new double[spatialDim];
             for (int d = 0; d < spatialDim; d++) {
-                translationalVelocity[0][d] = translationalVelocity[1][d] + translationalAcceleration[0][d] * (dt - collisionTimestep);
+                l_TranslationalVelocity[d] = GetTranslationalVelocity(1)[d] + GetTranslationalAcceleration(0)[d] * (dt - collisionTimestep);
             }
-            Aux.TestArithmeticException(translationalVelocity[0], "particle translational velocity");
+            Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
+            return l_TranslationalVelocity;
         }
 
         /// <summary>
-        /// Calculate the new angular velocity of the particle.
+        /// Calculate the new angular velocity of the particle using explicit Euler scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
-        /// <returns></returns>
-        protected override void CalculateAngularVelocity(double dt = 0) {
-            rotationalVelocity[0] = rotationalVelocity[1];
-            Aux.TestArithmeticException(rotationalVelocity[0], "particle rotational velocity");
+        /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
+        protected override double CalculateAngularVelocity(double dt) {
+            double l_RotationalVelocity = GetRotationalVelocity(1);
+            Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
+            return l_RotationalVelocity;
         }
 
         /// <summary>
-        /// Calculate the new angular velocity of the particle.
+        /// Calculate the new angular velocity of the particle using explicit Euler scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
-        protected override void CalculateAngularVelocity(double dt = 0, double collisionTimestep = 0) {
-            rotationalVelocity[0] = rotationalVelocity[1];
-            Aux.TestArithmeticException(rotationalVelocity[0], "particle rotational velocity");
+        /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
+        protected override double CalculateAngularVelocity(double dt, double collisionTimestep) {
+            double l_RotationalVelocity = GetRotationalVelocity(1);
+            Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
+            return l_RotationalVelocity;
         }
 
         /// <summary>
         /// Calculate the new acceleration (translational and rotational)
         /// </summary>
         /// <param name="dt"></param>
-        protected override void CalculateRotationalAcceleration(double dt) {
-            rotationalAcceleration[0] = 0;
-            Aux.TestArithmeticException(rotationalAcceleration[0], "particle rotational acceleration");
+        protected override double CalculateRotationalAcceleration(double dt) {
+            double l_Acceleration = 0;
+            Aux.TestArithmeticException(l_Acceleration, "particle rotational acceleration");
+            return l_Acceleration;
         }
 
         /// <summary>
         /// Overrides the calculation of hydrodynamics for fixed particles, so that nothing happens.
         /// </summary>
-        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U = null, SinglePhaseField P = null, LevelSetTracker LsTrk = null, CellMask CutCells_P = null, double fluidViscosity = 0, double fluidDensity = 0, bool firstIteration = false, double dt = 0) {
+        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U = null, SinglePhaseField P = null, LevelSetTracker levelSetTracker = null, CellMask cutCells = null, double fluidViscosity = 0, double fluidDensity = 0, bool firstIteration = false, double dt = 0) {
+            double[] tempForces = new double[spatialDim];
             for (int d = 0; d < spatialDim; d++) {
-                hydrodynamicForces[0][d] = m_Gravity[d] * particleDensity * particleArea;
+                tempForces[d] = Gravity[d] * Density * ParticleArea;
             }
-            hydrodynamicTorque[0] = 0;
+            double tempTorque = 0;
+            HydrodynamicsPostprocessing(tempForces, tempTorque, true);
         }
     }
 }

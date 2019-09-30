@@ -23,73 +23,55 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 
-namespace BoSSS.Solution.NSECommon.Operator.Pressure
-{
-    public class ActivePressureAtIB : ILevelSetForm
-    {
-        public ActivePressureAtIB(int _d, int _D, LevelSetTracker LsTrk)
-        {
-            m_d = _d;
-            m_D = _D;
+namespace BoSSS.Solution.NSECommon.Operator.Pressure {
+    public class ActivePressureAtIB : ILevelSetForm {
+        public ActivePressureAtIB(int currentDim, int spatialDim, LevelSetTracker LsTrk) {
+            m_d = currentDim;
             m_LsTrk = LsTrk;
-            if (_d >= _D)
+            if (currentDim >= spatialDim)
                 throw new ArgumentException();
         }
-        
-        LevelSetTracker m_LsTrk;
-        int m_d;
-        int m_D;
 
-        public IList<string> ArgumentOrdering
-        {
-            get
-            {
+        private readonly LevelSetTracker m_LsTrk;
+        private readonly int m_d;
+
+        public IList<string> ArgumentOrdering {
+            get {
                 return new string[] { VariableNames.Pressure };
             }
         }
 
-        public int LevelSetIndex
-        {
-            get
-            {
+        public int LevelSetIndex {
+            get {
                 return 0;
             }
         }
 
-        public SpeciesId NegativeSpecies
-        {
-            get
-            {
+        public SpeciesId NegativeSpecies {
+            get {
                 return this.m_LsTrk.GetSpeciesId("A");
             }
         }
 
-        public SpeciesId PositiveSpecies
-        {
-            get
-            {
+        public SpeciesId PositiveSpecies {
+            get {
                 return this.m_LsTrk.GetSpeciesId("B");
             }
         }
 
-        public TermActivationFlags LevelSetTerms
-        {
-            get
-            {
+        public TermActivationFlags LevelSetTerms {
+            get {
                 return TermActivationFlags.UxV;
             }
         }
 
-        public IList<string> ParameterOrdering
-        {
-            get
-            {
+        public IList<string> ParameterOrdering {
+            get {
                 return null;
             }
         }
 
-        public double LevelSetForm(ref CommonParamsLs inp, double[] pA, double[] pB, double[,] Grad_pA, double[,] Grad_pB, double vA, double vB, double[] Grad_vA, double[] Grad_vB)
-        {
+        public double LevelSetForm(ref CommonParamsLs inp, double[] pA, double[] pB, double[,] Grad_pA, double[,] Grad_pB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             return vA * pA[0] * inp.n[m_d];
         }
     }
