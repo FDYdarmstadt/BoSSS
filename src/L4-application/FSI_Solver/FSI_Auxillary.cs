@@ -29,7 +29,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace FSI_Solver {
-    class FSI_Auxillary {
+    public class FSI_Auxillary {
         /// <summary>
         /// This method saves the list value at list position "0" to the next position.
         /// Use this method for onedimensional vars.
@@ -386,7 +386,7 @@ namespace FSI_Solver {
                 totalKE[2] += SingleParticleKineticEnergy[SingleParticleMomentum.Length - 1];
                 ParticleReynoldsNumber[Particles.IndexOf(CurrentParticle)] = CurrentParticle.Motion.ComputeParticleRe(FluidViscosity);
                 ParticleStokesNumber[Particles.IndexOf(CurrentParticle)] = CurrentParticle.Motion.ComputeParticleSt(FluidViscosity, FluidDensity);
-                volumeFraction += CurrentParticle.Area_P();
+                volumeFraction += CurrentParticle.Area;
             }
 
             volumeFraction /= FluidDomainVolume;

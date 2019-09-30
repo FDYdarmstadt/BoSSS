@@ -821,19 +821,6 @@ namespace BoSSS.Application.FSI_Solver {
             {
                 C.Particles.Add(new Particle_Ellipsoid(motion, 1, 0.4, new double[] { 0.0, 0.0 }, startAngl: 0, activeStress: 1e5));
             }
-            //Define level-set
-            double phiComplete(double[] X, double t)
-            {
-                //Generating the correct sign
-                int exp = C.Particles.Count - 1;
-                double ret = Math.Pow(-1, exp);
-                //Level-set function depending on # of particles
-                for (int i = 0; i < C.Particles.Count; i++)
-                {
-                    ret *= C.Particles[i].LevelSetFunction(X);
-                }
-                return ret;
-            }
             
             // Quadrature rules
             // =============================   

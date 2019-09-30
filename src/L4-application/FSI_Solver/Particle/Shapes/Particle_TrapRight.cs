@@ -30,51 +30,100 @@ namespace BoSSS.Application.FSI_Solver {
 
         }
 
+        /// <summary>
+        /// Constructor for the trap used in the masters thesis if E. Deriabina (2019)
+        /// </summary>
+        /// <param name="motionInit">
+        /// Initializes the motion parameters of the particle (which model to use, whether it is a dry simulation etc.)
+        /// </param>
+        /// <param name="width">
+        /// The main lengthscale.
+        /// </param>
+        /// <param name="startPos">
+        /// The initial position.
+        /// </param>
+        /// <param name="startAngl">
+        /// The inital anlge.
+        /// </param>
+        /// <param name="activeStress">
+        /// The active stress excerted on the fluid by the particle. Zero for passive particles.
+        /// </param>
+        /// <param name="startTransVelocity">
+        /// The inital translational velocity.
+        /// </param>
+        /// <param name="startRotVelocity">
+        /// The inital rotational velocity.
+        /// </param>
         public Particle_TrapRight(ParticleMotionInit motionInit, double width, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
-            width_P = width;
+            m_Length = width;
+            Aux.TestArithmeticException(width, "Particle width");
+
             Motion.GetParticleLengthscale(width);
-            Motion.GetParticleArea(Area_P());
-            Motion.GetParticleMomentOfInertia(MomentOfInertia_P);
+            Motion.GetParticleArea(Area);
+            Motion.GetParticleMomentOfInertia(MomentOfInertia);
 
         }
+
+        [DataMember]
+        private readonly double m_Length;
 
         /// <summary>
-        /// Radius of the particle. Not necessary for particles defined by their length and thickness
+        /// The trap is devided into two convex sub particles. Necesarry for the GJK-algorithm in the collision model.
         /// </summary>
-        private readonly double width_P;
-
         public override int NoOfSubParticles => 2;
 
-        public override double Area_P() {
-            return (7 * width_P * width_P) / 8;
-        }
+        /// <summary>
+        /// Area occupied by the particle. 
+        /// </summary>
+        public override double Area => (7 * m_Length * m_Length) / 8;
 
-        protected override double Circumference_P {
-            get {
-                return width_P * 5;
-            }
-        }
-        override public double MomentOfInertia_P {
-            get {
-                return Math.Pow(width_P, 4) * 0.301627768;
-            }
-        }
-        
+        /// <summary>
+        /// Circumference.
+        /// </summary>
+        protected override double Circumference => m_Length * 5;
+
+        /// <summary>
+        /// Moment of inertia.
+        /// </summary>
+        override public double MomentOfInertia => Math.Pow(m_Length, 4) * 0.301627768;
+
+        /// <summary>
+        /// Level set function of the particle.
+        /// </summary>
+        /// <param name="X">
+        /// The current point.
+        /// </param>
         public override double LevelSetFunction(double[] X) {
             double r;
             // Falle_Rechts:
             r = Math.Abs(Motion.GetPosition(0)[1] - X[1]);
-            r = Math.Max(r, Math.Abs(-X[1] - 0.5 * X[0] + Motion.GetPosition(0)[1] + Motion.GetPosition(0)[0] - width_P) - Math.Abs(X[1] - Motion.GetPosition(0)[1]));
-            r = Math.Max(r, Math.Abs(Motion.GetPosition(0)[0] - X[0] + 0.5 * width_P));
-            r -= 4.5 * width_P;
+            r = Math.Max(r, Math.Abs(-X[1] - 0.5 * X[0] + Motion.GetPosition(0)[1] + Motion.GetPosition(0)[0] - m_Length) - Math.Abs(X[1] - Motion.GetPosition(0)[1]));
+            r = Math.Max(r, Math.Abs(Motion.GetPosition(0)[0] - X[0] + 0.5 * m_Length));
+            r -= 4.5 * m_Length;
             r = -r;
             return r;
         }
+
+        /// <summary>
+        /// Returns true if a point is withing the particle.
+        /// </summary>
+        /// <param name="point">
+        /// The point to be tested.
+        /// </param>
+        /// <param name="minTolerance">
+        /// Minimum tolerance length.
+        /// </param>
+        /// <param name="maxTolerance">
+        /// Maximal tolerance length. Equal to h_min if not specified.
+        /// </param>
+        /// <param name="WithoutTolerance">
+        /// No tolerance.
+        /// </param>
         public override bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false) {
             // only for rectangular cells
             if (h_max == 0)
                 h_max = h_min;
-            double radiusTolerance = !WithoutTolerance ? 5 * width_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
+            double radiusTolerance = !WithoutTolerance ? 5 * m_Length + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
             var distance = point.L2Distance(Motion.GetPosition(0));
             if (distance < (radiusTolerance)) {
                 return true;
@@ -82,35 +131,44 @@ namespace BoSSS.Application.FSI_Solver {
             return false;
         }
 
+        /// <summary>
+        /// Returns an array with points on the surface of the particle.
+        /// </summary>
+        /// <param name="hMin">
+        /// Minimal cell length. Used to specify the number of surface points.
+        /// </param>
         override public MultidimensionalArray GetSurfacePoints(double hMin) {
             if (spatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
 
-            int NoOfSurfacePoints = Convert.ToInt32(20 * Circumference_P / hMin) + 1;
+            int NoOfSurfacePoints = Convert.ToInt32(20 * Circumference / hMin) + 1;
             MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSubParticles, NoOfSurfacePoints, spatialDim);
             double[] InfinitisemalAngle = GenericBlas.Linspace(-Math.PI / 4, 5 * Math.PI / 4, NoOfSurfacePoints + 1);
-            double[] InfinitisemalLength = GenericBlas.Linspace(0, width_P / 4, NoOfSurfacePoints + 1);
-            if (Math.Abs(10 * Circumference_P / hMin + 1) >= int.MaxValue)
+            double[] InfinitisemalLength = GenericBlas.Linspace(0, m_Length / 4, NoOfSurfacePoints + 1);
+            if (Math.Abs(10 * Circumference / hMin + 1) >= int.MaxValue)
                 throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");
 
             for (int k = 0; k < NoOfSurfacePoints; k++) {
-                SurfacePoints[0, k, 0] = Motion.GetPosition(0)[0] + width_P / 2 - InfinitisemalLength[k];
-                SurfacePoints[0, k, 1] = Motion.GetPosition(0)[1] - width_P / 2 + 1.5 * SurfacePoints[0, k, 0] + width_P / 2;
+                SurfacePoints[0, k, 0] = Motion.GetPosition(0)[0] + m_Length / 2 - InfinitisemalLength[k];
+                SurfacePoints[0, k, 1] = Motion.GetPosition(0)[1] - m_Length / 2 + 1.5 * SurfacePoints[0, k, 0] + m_Length / 2;
             }
 
             for (int j = 0; j < NoOfSurfacePoints; j++) {
-                SurfacePoints[0, j, 0] = Math.Sign(Math.Cos(InfinitisemalAngle[j])) * width_P * 7 + Motion.GetPosition(0)[0] + 7 * width_P / 4;
-                SurfacePoints[0, j, 1] = Math.Sign(Math.Sin(InfinitisemalAngle[j])) * width_P * 7 + Motion.GetPosition(0)[1] + 7 * width_P / 2;
+                SurfacePoints[0, j, 0] = Math.Sign(Math.Cos(InfinitisemalAngle[j])) * m_Length * 7 + Motion.GetPosition(0)[0] + 7 * m_Length / 4;
+                SurfacePoints[0, j, 1] = Math.Sign(Math.Sin(InfinitisemalAngle[j])) * m_Length * 7 + Motion.GetPosition(0)[1] + 7 * m_Length / 2;
             }
             for (int j = 0; j < NoOfSurfacePoints; j++) {
-                SurfacePoints[1, j, 0] = -Math.Sign(Math.Cos(InfinitisemalAngle[j])) * width_P * 2.5 + Motion.GetPosition(0)[0];
-                SurfacePoints[1, j, 1] = -Math.Sign(Math.Sin(InfinitisemalAngle[j])) * width_P * 2.5 + Motion.GetPosition(0)[1];
+                SurfacePoints[1, j, 0] = -Math.Sign(Math.Cos(InfinitisemalAngle[j])) * m_Length * 2.5 + Motion.GetPosition(0)[0];
+                SurfacePoints[1, j, 1] = -Math.Sign(Math.Sin(InfinitisemalAngle[j])) * m_Length * 2.5 + Motion.GetPosition(0)[1];
             }
             return SurfacePoints;
         }
 
+        /// <summary>
+        /// Returns the legnthscales of a particle.
+        /// </summary>
         override public double[] GetLengthScales() {
-            return new double[] { width_P, width_P };
+            return new double[] { m_Length, m_Length };
         }
     }
 }

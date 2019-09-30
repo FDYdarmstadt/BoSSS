@@ -516,7 +516,7 @@ namespace FSI_Solver {
             SupportPoint = new double[SpatialDim];
             // A direct formulation of the support function for a sphere exists, thus it is also possible to map it to an ellipsoid.
             if (particle is Particle_Ellipsoid || particle is Particle_Sphere) {
-                particle.GetSupportPoint(SpatialDim, Vector, out SupportPoint);
+                SupportPoint = particle.GetSupportPoint(Vector);
             }
 
             // Binary search in all other cases.
@@ -730,7 +730,7 @@ namespace FSI_Solver {
             for (int p = 0; p < collidedParticles.Count(); p++) {
                 double tempCollisionVn = collidedParticles[p].Motion.IncludeTranslation ? collidedParticles[p].Motion.GetPreCollisionVelocity()[0] + Math.Pow(-1, p + 1) * collisionCoefficient / collidedParticles[p].Motion.Mass_P : 0;
                 double tempCollisionVt = collidedParticles[p].Motion.IncludeTranslation ? collidedParticles[p].Motion.GetPreCollisionVelocity()[1] * m_CoefficientOfRestitution : 0;
-                double tempCollisionRot = collidedParticles[p].Motion.IncludeRotation ? collidedParticles[p].Motion.GetRotationalVelocity(0) + Math.Pow(-1, p) * collidedParticles[p].Eccentricity * collisionCoefficient / collidedParticles[p].MomentOfInertia_P : 0;
+                double tempCollisionRot = collidedParticles[p].Motion.IncludeRotation ? collidedParticles[p].Motion.GetRotationalVelocity(0) + Math.Pow(-1, p) * collidedParticles[p].Eccentricity * collisionCoefficient / collidedParticles[p].MomentOfInertia : 0;
                 collidedParticles[p].Motion.SetCollisionVelocities(tempCollisionVn, tempCollisionVt, tempCollisionRot);
             }
         }
@@ -747,7 +747,7 @@ namespace FSI_Solver {
 
             double tempCollisionVn = particle.Motion.IncludeTranslation ? particle.Motion.GetPreCollisionVelocity()[0] - collisionCoefficient / particle.Motion.Mass_P : 0;
             double tempCollisionVt = particle.Motion.IncludeTranslation ? particle.Motion.GetPreCollisionVelocity()[1] : 0;
-            double tempCollisionRot = particle.Motion.IncludeRotation ? particle.Motion.GetRotationalVelocity(0) + particle.Eccentricity * collisionCoefficient / particle.MomentOfInertia_P : 0;
+            double tempCollisionRot = particle.Motion.IncludeRotation ? particle.Motion.GetRotationalVelocity(0) + particle.Eccentricity * collisionCoefficient / particle.MomentOfInertia : 0;
             particle.Motion.SetCollisionVelocities(tempCollisionVn, tempCollisionVt, tempCollisionRot);
         }
 
@@ -761,7 +761,7 @@ namespace FSI_Solver {
             double[] momentOfInertiaReciprocal = new double[2];
             for (int p = 0; p < collidedParticles.Count(); p++) {
                 massReciprocal[p] = collidedParticles[p].Motion.IncludeTranslation ? 1 / collidedParticles[p].Motion.Mass_P : 0;
-                momentOfInertiaReciprocal[p] = collidedParticles[p].Motion.IncludeRotation ? collidedParticles[p].Eccentricity.Pow2() / collidedParticles[p].MomentOfInertia_P : 0;
+                momentOfInertiaReciprocal[p] = collidedParticles[p].Motion.IncludeRotation ? collidedParticles[p].Eccentricity.Pow2() / collidedParticles[p].MomentOfInertia : 0;
             }
             collisionCoefficient = (1 + m_CoefficientOfRestitution) * ((collidedParticles[0].Motion.GetPreCollisionVelocity()[0] - collidedParticles[1].Motion.GetPreCollisionVelocity()[0]) / (massReciprocal[0] + massReciprocal[1] + momentOfInertiaReciprocal[0] + momentOfInertiaReciprocal[1]));
             collisionCoefficient += (1 + m_CoefficientOfRestitution) * ((-collidedParticles[0].Eccentricity * collidedParticles[0].Motion.GetRotationalVelocity(0) + collidedParticles[1].Eccentricity * collidedParticles[1].Motion.GetRotationalVelocity(0)) / (massReciprocal[0] + massReciprocal[1] + momentOfInertiaReciprocal[0] + momentOfInertiaReciprocal[1]));
@@ -773,8 +773,8 @@ namespace FSI_Solver {
         /// <param name="particle"></param>
         /// <param name="collisionCoefficient"></param>
         private void CalculateCollisionCoefficient(Particle particle, out double collisionCoefficient) {
-            collisionCoefficient = (1 + m_CoefficientOfRestitution) * (particle.Motion.GetPreCollisionVelocity()[0] / (1 / particle.Motion.Mass_P + particle.Eccentricity.Pow2() / particle.MomentOfInertia_P));
-            collisionCoefficient += -(1 + m_CoefficientOfRestitution) * particle.Eccentricity * particle.Motion.GetRotationalVelocity(0) / (1 / particle.Motion.Mass_P + particle.Eccentricity.Pow2() / particle.MomentOfInertia_P);
+            collisionCoefficient = (1 + m_CoefficientOfRestitution) * (particle.Motion.GetPreCollisionVelocity()[0] / (1 / particle.Motion.Mass_P + particle.Eccentricity.Pow2() / particle.MomentOfInertia));
+            collisionCoefficient += -(1 + m_CoefficientOfRestitution) * particle.Eccentricity * particle.Motion.GetRotationalVelocity(0) / (1 / particle.Motion.Mass_P + particle.Eccentricity.Pow2() / particle.MomentOfInertia);
         }
 
         /// <summary>

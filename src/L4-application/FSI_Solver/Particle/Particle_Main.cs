@@ -35,17 +35,38 @@ namespace BoSSS.Application.FSI_Solver {
     abstract public class Particle : ICloneable {
 
         /// <summary>
-        /// <summary>
         /// Empty constructor used during de-serialization
         /// </summary>
         protected Particle() {
             // noop
         }
 
+        /// <summary>
+        /// Constructor for an arbitrary particle to be implemented in the Particle_Shape classes.
+        /// </summary>
+        /// <param name="motionInit">
+        /// Initializes the motion parameters of the particle (which model to use, whether it is a dry simulation etc.)
+        /// </param>
+        /// <param name="startPos">
+        /// The initial position.
+        /// </param>
+        /// <param name="startAngl">
+        /// The inital anlge.
+        /// </param>
+        /// <param name="activeStress">
+        /// The active stress excerted on the fluid by the particle. Zero for passive particles.
+        /// </param>
+        /// <param name="startTransVelocity">
+        /// The inital translational velocity.
+        /// </param>
+        /// <param name="startRotVelocity">
+        /// The inital rotational velocity.
+        /// </param>
         public Particle(ParticleMotionInit motionInit, double[] startPos, double startAngl = 0.0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) {
             spatialDim = startPos.Length;
             ActiveStress = activeStress;
             m_MotionInit = motionInit;
+            Aux = new FSI_Auxillary();
 
             m_MotionInit.CheckInput();
             Motion = m_MotionInit.ParticleMotion;
@@ -54,7 +75,7 @@ namespace BoSSS.Application.FSI_Solver {
             particleDensity = Motion.Density;
         }
 
-        private readonly FSI_Auxillary Aux = new FSI_Auxillary();
+        protected readonly FSI_Auxillary Aux;
 
         /// <summary>
         /// Initialize particle motion.
@@ -80,12 +101,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Mass of the current particle.
         /// </summary>
-        protected double Mass_P {
-            get {
-                Aux.TestArithmeticException(Area_P(), "particle area");
-                return Area_P() * particleDensity;
-            }
-        }
+        protected double Mass_P => Area * particleDensity;
 
         /// <summary>
         /// Check whether any particles is collided with another particle
@@ -128,7 +144,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Area of the current particle.
         /// </summary>
-        public virtual double Area_P() => throw new NotImplementedException();
+        public virtual double Area => throw new NotImplementedException();
 
         /// <summary>
         /// Necessary for active particles. Returns 0 for the non active boundary region and a number between 0 and 1 for the active region.
@@ -142,12 +158,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Circumference of the current particle.
         /// </summary>
-        protected abstract double Circumference_P { get; }
+        protected abstract double Circumference { get; }
 
         /// <summary>
         /// Moment of inertia of the current particle.
         /// </summary>
-        public abstract double MomentOfInertia_P { get; }
+        public abstract double MomentOfInertia { get; }
 
         /// <summary>
         /// get cut cells describing the boundary of this particle
@@ -194,7 +210,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="SpatialDim"></param>
         /// <param name="Vector"></param>
         /// <param name="SupportPoint"></param>
-        public virtual void GetSupportPoint(int SpatialDim, double[] Vector, out double[] SupportPoint) => throw new NotImplementedException();
+        public virtual double[] GetSupportPoint(double[] Vector) => throw new NotImplementedException();
 
         /// <summary>
         /// Calculates the radial vector (SurfacePoint-ParticleReadOnlyPosition)
