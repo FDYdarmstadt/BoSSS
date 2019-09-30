@@ -111,8 +111,8 @@
     <Compile Include="Particle\ParticleAddedDamping.cs" />
     <Compile Include="Particle\ParticleForceIntegration.cs" />
     <Compile Include="Particle\Motion\_Motion_Main.cs" />
-    <Compile Include="Particle\ParticlePhysicalParameters.cs" />
     <Compile Include="Particle\ParticleUnderrelaxation.cs" />
+    <Compile Include="Particle\ParticleUnderrelaxationParam.cs" />
     <Compile Include="Particle\Shapes\Particle_TrapRight.cs" />
     <Compile Include="Particle\Shapes\Particle_TrapLeft.cs" />
     <Compile Include="Particle\Shapes\Particle_Pentagone.cs" />
@@ -120,7 +120,6 @@
     <Compile Include="Particle\Shapes\Particle_superEllipsoid.cs" />
     <Compile Include="Particle\Shapes\Particle_Sphere.cs" />
     <Compile Include="Particle\Shapes\Particle_Hippopede.cs" />
-    <Compile Include="Particle\Shapes\Particle_Squircle.cs" />
     <Compile Include="Particle\Shapes\Particle_Ellipsoid.cs" />
     <Compile Include="FSI_Control.cs" />
     <Compile Include="FSI_SolverMain.cs" />

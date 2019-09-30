@@ -129,14 +129,14 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="WithoutTolerance">
         /// No tolerance.
         /// </param>
-        public override bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false) {
+        public override bool Contains(double[] point, double minTolerance, double maxTolerance = 0, bool WithoutTolerance = false) {
             WithoutTolerance = false;
             // only for rectangular cells
-            if (h_max == 0)
-                h_max = h_min;
+            if (maxTolerance == 0)
+                maxTolerance = minTolerance;
             double radiusTolerance = 1;
-            double a = !WithoutTolerance ? m_Length + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : m_Length;
-            double b = !WithoutTolerance ? m_Thickness + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : m_Thickness;
+            double a = !WithoutTolerance ? m_Length + Math.Sqrt(maxTolerance.Pow2() + minTolerance.Pow2()) : m_Length;
+            double b = !WithoutTolerance ? m_Thickness + Math.Sqrt(maxTolerance.Pow2() + minTolerance.Pow2()) : m_Thickness;
             double Superellipsoid = Math.Pow(((point[0] - Motion.GetPosition(0)[0]) * Math.Cos(Motion.GetAngle(0)) + (point[1] - Motion.GetPosition(0)[1]) * Math.Sin(Motion.GetAngle(0))) / a, m_Exponent) + (Math.Pow((-(point[0] - Motion.GetPosition(0)[0]) * Math.Sin(Motion.GetAngle(0)) + (point[1] - Motion.GetPosition(0)[1]) * Math.Cos(Motion.GetAngle(0))) / b, m_Exponent));
             if (Superellipsoid < radiusTolerance)
                 return true;

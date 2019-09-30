@@ -109,13 +109,13 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="WithoutTolerance">
         /// No tolerance.
         /// </param>
-        public override bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false) {
+        public override bool Contains(double[] point, double minTolerance, double maxTolerance = 0, bool WithoutTolerance = false) {
             double alpha = Motion.GetAngle(0);
             double[] position = Motion.GetPosition(0);
             // only for rectangular cells
-            if (h_max == 0)
-                h_max = h_min;
-            double radiusTolerance = !WithoutTolerance ? 1.0 + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
+            if (maxTolerance == 0)
+                maxTolerance = minTolerance;
+            double radiusTolerance = !WithoutTolerance ? 1.0 + Math.Sqrt(maxTolerance.Pow2() + minTolerance.Pow2()) : 1;
             double a = 4.0 * radiusTolerance.Pow2();
             double b = 1.0 * radiusTolerance.Pow2();
             if (-((((point[0] - position[0]) * Math.Cos(alpha) - (point[1] - position[1]) * Math.Sin(alpha)).Pow(2) + ((point[0] - position[0]) * Math.Sin(alpha) + (point[1] - position[1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((point[0] - position[0]) * Math.Cos(alpha) - (point[1] - position[1]) * Math.Sin(alpha)).Pow(3) - b * ((point[0] - position[0]) * Math.Sin(alpha) + (point[1] - position[1]) * Math.Cos(alpha)).Pow2()) > 0) {

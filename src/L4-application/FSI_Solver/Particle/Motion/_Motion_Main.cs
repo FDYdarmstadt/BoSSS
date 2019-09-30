@@ -62,9 +62,7 @@ namespace BoSSS.Application.FSI_Solver {
         [NonSerialized]
         internal readonly FSI_Auxillary Aux = new FSI_Auxillary();
         [NonSerialized]
-        private readonly ParticleForceIntegration ForceIntegration = new ParticleForceIntegration();
-        [NonSerialized]
-        private readonly ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation();
+        private readonly ParticleHydrodynamicsIntegration HydrodynamicsIntegration = new ParticleHydrodynamicsIntegration();
         [NonSerialized]
         private readonly ParticleUnderrelaxationParam m_UnderrelaxationParam = null;
 
@@ -304,7 +302,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Returns the force of the previous iteration.
         /// </summary>
-        internal double[] GetForcesPreviousIter() {
+        internal double[] GetForcesPreviousIteration() {
             return m_ForcesPreviousIteration;
         }
 
@@ -744,7 +742,7 @@ namespace BoSSS.Application.FSI_Solver {
                     pA.Evaluate(CurrentCellID, Length, Ns, pARes);
                     for (int j = 0; j < Length; j++) {
                         for (int k = 0; k < K; k++) {
-                            result[j, k] = ForceIntegration.CalculateStressTensor(Grad_UARes, pARes, Normals, fluidViscosity, k, j, spatialDim, d);
+                            result[j, k] = HydrodynamicsIntegration.Force(Grad_UARes, pARes, Normals, fluidViscosity, k, j, spatialDim, d);
                         }
                     }
                 }
@@ -816,7 +814,7 @@ namespace BoSSS.Application.FSI_Solver {
                     MultidimensionalArray Ns_Global = Ns.CloneAs();
                     levelSetTracker.GridDat.TransformLocal2Global(Ns, Ns_Global, j0 + j);
                     for (int k = 0; k < K; k++) {
-                        result[j, k] = ForceIntegration.CalculateTorqueFromStressTensor2D(Grad_UARes, pARes, Normals, Ns_Global, fluidViscosity, k, j, m_Position[0]);
+                        result[j, k] = HydrodynamicsIntegration.Torque(Grad_UARes, pARes, Normals, Ns_Global, fluidViscosity, k, j, m_Position[0]);
                     }
                 }
             }
@@ -851,12 +849,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="firstIteration"></param>
         protected virtual void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque, bool firstIteration) {
             if (m_UnderrelaxationParam != null && !firstIteration) {
-                double forceAndTorqueConvergence = m_UnderrelaxationParam.hydroDynConvergenceLimit;
-                double underrelaxationFactor = m_UnderrelaxationParam.underrelaxationFactor;
-                bool useAddaptiveUnderrelaxation = m_UnderrelaxationParam.useAddaptiveUnderrelaxation;
-                Underrelaxation.CalculateAverageForces(tempForces, tempTorque, MaxParticleLengthScale, out double averagedForces);
-                Underrelaxation.Forces(ref tempForces, m_ForcesPreviousIteration, forceAndTorqueConvergence, underrelaxationFactor, useAddaptiveUnderrelaxation, averagedForces);
-                Underrelaxation.Torque(ref tempTorque, GetTorquePreviousIteration(), forceAndTorqueConvergence, underrelaxationFactor, useAddaptiveUnderrelaxation, averagedForces);
+                ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation(m_UnderrelaxationParam, CalculateAverageForces(tempForces, tempTorque));
+                Underrelaxation.Forces(ref tempForces, m_ForcesPreviousIteration);
+                Underrelaxation.Torque(ref tempTorque, m_TorquePreviousIteration);
             }
             for (int d = 0; d < spatialDim; d++) {
                 m_HydrodynamicForces[0][d] = tempForces[d];
@@ -864,6 +859,26 @@ namespace BoSSS.Application.FSI_Solver {
             m_HydrodynamicTorque[0] = tempTorque;
             Aux.TestArithmeticException(m_HydrodynamicForces[0], "hydrodynamic forces");
             Aux.TestArithmeticException(m_HydrodynamicTorque[0], "hydrodynamic torque");
+        }
+
+        /// <summary>
+        /// Does what it says.
+        /// </summary>
+        /// <param name="forces">
+        /// The hydrodynamic forces.
+        /// </param>
+        /// <param name="torque">
+        /// The hydrodynamic torque.
+        /// </param>
+        /// <param name="averageDistance">
+        /// The average Lengthscale of the particle.
+        /// </param>
+        private double CalculateAverageForces(double[] forces, double torque) {
+            double averageForces = Math.Abs(torque) / MaxParticleLengthScale;
+            for (int d = 0; d < forces.Length; d++) {
+                averageForces += forces[d];
+            }
+            return averageForces /= 3;
         }
 
         /// <summary>

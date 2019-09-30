@@ -16,24 +16,37 @@ limitations under the License.
 
 using MPI.Wrappers;
 using System;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Application.FSI_Solver {
 
-    public class ParticleUnderrelaxationParam {
-        public ParticleUnderrelaxationParam(double convergenceLimit, double underrelaxationFactorIn, bool useAddaptiveUnderrelaxationIn) {
-            hydroDynConvergenceLimit = convergenceLimit;
-            underrelaxationFactor = underrelaxationFactorIn;
-            useAddaptiveUnderrelaxation = useAddaptiveUnderrelaxationIn;
-        }
-
-        public double hydroDynConvergenceLimit;
-        public double underrelaxationFactor;
-        public bool useAddaptiveUnderrelaxation;
-    }
-
     class ParticleUnderrelaxation {
         /// <summary>
-        /// This method underrelaxates the hydrodynamic forces and torque. The Underrelaxation
+        /// Constructor for the underrelaxation. 
+        /// </summary>
+        /// <param name="parameter">
+        /// <see cref="ParticleUnderrelaxationParam"/>
+        /// </param>
+        /// <param name="averageForceIn">
+        /// A mean value for the forces used to reduce the impact of computation errors.
+        /// </param>
+        internal ParticleUnderrelaxation(ParticleUnderrelaxationParam parameter, double averageForceIn) {
+            convergenceLimit = parameter.ConvergenceLimit;
+            relaxationFactor = parameter.UnderrelaxationFactor;
+            useAdaptiveUnderrelaxation = parameter.UsaAddaptiveUnderrelaxation;
+            averageForce = averageForceIn;
+        }
+        [DataMember]
+        private readonly double convergenceLimit;
+        [DataMember]
+        private readonly double relaxationFactor;
+        [DataMember]
+        private readonly double averageForce;
+        [DataMember]
+        private readonly bool useAdaptiveUnderrelaxation;
+
+        /// <summary>
+        /// This method underrelaxates the hydrodynamic forces. The Underrelaxation
         /// factor is either predefined or is calculated dynamically.
         /// </summary>
         /// <param name="forces">
@@ -42,56 +55,31 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="forcesAtPrevIteration">
         /// The hydrodynamic forces at the previous iteration.
         /// </param>
-        /// <param name="convergenceLimit">
-        /// The predefined convergence limit for the fully coupled system.
-        /// </param>
-        /// <param name="relaxationFactor">
-        /// The predefined relaxation factor, either used directly or as a base to calculate
-        /// a dynamic factor.
-        /// </param>
-        /// <param name="UseAdaptiveUnderrelaxation">
-        /// Bool to check whether the relaxation factor should be calculated dynamically or not.
-        /// </param>
-        internal void Forces(ref double[] forces, double[] forcesAtPrevIteration, double convergenceLimit, double relaxationFactor, bool UseAdaptiveUnderrelaxation, double averageForce) {
-            int spatialDim = forces.Length;
-            double[] underrelaxationCoeff = new double[spatialDim];
-
-            for (int d = 0; d < spatialDim; d++) {
-                underrelaxationCoeff[d] = UseAdaptiveUnderrelaxation == true
+        internal void Forces(ref double[] forces, double[] forcesAtPrevIteration) {
+            for (int d = 0; d < forces.Length; d++) {
+                double underrelaxationCoeff = useAdaptiveUnderrelaxation == true
                     ? CalculateAdaptiveUnderrelaxation(forces[d], forcesAtPrevIteration[d], averageForce, convergenceLimit, relaxationFactor)
                     : relaxationFactor;
-            }
-            for (int d = 0; d < spatialDim; d++) {
-                forces[d] = underrelaxationCoeff[d] * forces[d] + (1 - underrelaxationCoeff[d]) * forcesAtPrevIteration[d];
+                forces[d] = underrelaxationCoeff * forces[d] + (1 - underrelaxationCoeff) * forcesAtPrevIteration[d];
             }
         }
 
-        internal void Torque(ref double torque, double torqueAtPrevIteration, double convergenceLimit, double relaxationFactor, bool UseAdaptiveUnderrelaxation, double averageForce) {
-            double underrelaxationCoeff = UseAdaptiveUnderrelaxation == true
+        /// <summary>
+        /// This method underrelaxates the hydrodynamic torque. The Underrelaxation
+        /// factor is either predefined or is calculated dynamically.
+        /// </summary>
+        /// <param name="torque">
+        /// The hydrodynamic torque.
+        /// </param>
+        /// <param name="torqueAtPrevIteration">
+        /// The hydrodynamic torque at the previous iteration.
+        /// </param>
+        internal void Torque(ref double torque, double torqueAtPrevIteration) {
+            double underrelaxationCoeff = useAdaptiveUnderrelaxation == true
                 ? CalculateAdaptiveUnderrelaxation(torque, torqueAtPrevIteration, averageForce, convergenceLimit, relaxationFactor)
                 : relaxationFactor;
             torque = underrelaxationCoeff * torque + (1 - underrelaxationCoeff) * torqueAtPrevIteration;
 
-        }
-
-        /// <summary>
-        /// Does what it says.
-        /// </summary>
-        /// <param name="forces">
-        /// The hydrodynamic forces.
-        /// </param>
-        /// <param name="torque">
-        /// The hydrodynamic torque.
-        /// </param>
-        /// <param name="averageDistance">
-        /// The average Lengthscale of the particle.
-        /// </param>
-        public void CalculateAverageForces(double[] forces, double torque, double averageDistance, out double averageForces) {
-            averageForces = Math.Abs(torque) / averageDistance;
-            for (int d = 0; d < forces.Length; d++) {
-                averageForces += forces[d];
-            }
-            averageForces /= 3;
         }
 
         /// <summary>

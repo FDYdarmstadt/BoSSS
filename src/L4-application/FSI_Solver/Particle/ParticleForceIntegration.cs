@@ -14,18 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Application.FSI_Solver;
 using ilPSP;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace BoSSS.Application.FSI_Solver
-{
-    internal class ParticleForceIntegration
-    {
+namespace BoSSS.Application.FSI_Solver {
+    internal class ParticleHydrodynamicsIntegration {
         /// <summary>
         /// Main method the integral over the level set to obtain the hydrodynamic forces.
         /// </summary>
@@ -54,11 +47,9 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="currentDimension">
         /// The current dimension to be calculated.
         /// </param>
-        public double CalculateStressTensor(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j, int SpatialDim, int currentDimension)
-        {
+        internal double Force(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j, int SpatialDim, int currentDimension) {
             double temp;
-            switch (SpatialDim)
-            {
+            switch (SpatialDim) {
                 case 2:
                     temp = CalculateStressTensor2D(Grad_UARes, pARes, NormalVector, FluidViscosity, k, j, currentDimension);
                     break;
@@ -71,6 +62,48 @@ namespace BoSSS.Application.FSI_Solver
             if (double.IsNaN(temp) || double.IsInfinity(temp))
                 throw new ArithmeticException("Error trying to calculate the particle stress tensor");
             return temp;
+        }
+
+        /// <summary>
+        /// Main method the integral over the level set to obtain the hydrodynamic torque.
+        /// </summary>
+        /// <param name="Grad_UARes">
+        /// The gradient of the velocity.
+        /// </param>
+        /// <param name="pARes">
+        /// The pressure.
+        /// </param>
+        /// <param name="NormalVector">
+        /// The normal vector at the current node in the current cell.
+        /// </param>
+        /// <param name="FluidViscosity">
+        /// The viscosity of the fluid.
+        /// </param>
+        /// <param name="k">
+        /// The current node ID.
+        /// </param>
+        /// <param name="j">
+        /// The current cell ID
+        /// </param>
+        /// <param name="NodeSetClone">
+        /// The node set.
+        /// simulation).
+        /// </param>
+        /// <param name="currentPosition">
+        /// The current position of the particle.
+        /// </param>
+        internal double Torque(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, MultidimensionalArray NodeSetClone, double FluidViscosity, int k, int j, double[] currentPosition) {
+            double temp1;
+            double temp2;
+            temp1 = CalculateStressTensorX(Grad_UARes, pARes, NormalVector, FluidViscosity, k, j);
+            temp1 *= -NormalVector[j, k, 1] * (currentPosition[1] - NodeSetClone[k, 1]).Abs();
+            if (double.IsNaN(temp1) || double.IsInfinity(temp1))
+                throw new ArithmeticException("Error trying to calculate the particle torque");
+            temp2 = CalculateStressTensorY(Grad_UARes, pARes, NormalVector, FluidViscosity, k, j);
+            temp2 *= NormalVector[j, k, 0] * (currentPosition[0] - NodeSetClone[k, 0]).Abs();
+            if (double.IsNaN(temp2) || double.IsInfinity(temp2))
+                throw new ArithmeticException("Error trying to calculate the particle torque");
+            return temp1 + temp2;
         }
 
         /// <summary>
@@ -98,11 +131,9 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="currentDimension">
         /// The current dimension to be calculated.
         /// </param>
-        private double CalculateStressTensor2D(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j, int currentDimension)
-        {
+        private double CalculateStressTensor2D(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j, int currentDimension) {
             double acc;
-            switch (currentDimension)
-            {
+            switch (currentDimension) {
                 case 0:
                     acc = CalculateStressTensorX(Grad_UARes, pARes, NormalVector, FluidViscosity, k, j);
                     break;
@@ -138,8 +169,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="j">
         /// The current cell ID
         /// </param>
-        private double CalculateStressTensorX(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j)
-        {
+        private double CalculateStressTensorX(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j) {
             double[] SummandsVelGradient = new double[3];
             double SummandsPressure;
             SummandsVelGradient[0] = -2 * Grad_UARes[j, k, 0, 0] * NormalVector[j, k, 0];
@@ -171,8 +201,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="j">
         /// The current cell ID
         /// </param>
-        private double CalculateStressTensorY(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j)
-        {
+        private double CalculateStressTensorY(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j) {
             double[] SummandsVelGradient = new double[3];
             double SummandsPressure;
             SummandsVelGradient[0] = -2 * Grad_UARes[j, k, 1, 1] * NormalVector[j, k, 1];
@@ -207,13 +236,11 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="currentDimension">
         /// The current dimension to be calculated.
         /// </param>
-        private double CalculateStressTensor3D(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j, int currentDimension)
-        {
+        private double CalculateStressTensor3D(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j, int currentDimension) {
             double acc = 0.0;
             double[] SummandsVelGradient = new double[5];
             double SummandsPressure;
-            switch (currentDimension)
-            {
+            switch (currentDimension) {
                 case 0:
                     SummandsPressure = pARes[j, k] * NormalVector[j, k, 0];
                     SummandsVelGradient[0] = -2 * Grad_UARes[j, k, 0, 0] * NormalVector[j, k, 0];
@@ -246,50 +273,7 @@ namespace BoSSS.Application.FSI_Solver
             }
             return acc;
         }
-
-        /// <summary>
-        /// Main method the integral over the level set to obtain the hydrodynamic torque.
-        /// </summary>
-        /// <param name="Grad_UARes">
-        /// The gradient of the velocity.
-        /// </param>
-        /// <param name="pARes">
-        /// The pressure.
-        /// </param>
-        /// <param name="NormalVector">
-        /// The normal vector at the current node in the current cell.
-        /// </param>
-        /// <param name="FluidViscosity">
-        /// The viscosity of the fluid.
-        /// </param>
-        /// <param name="k">
-        /// The current node ID.
-        /// </param>
-        /// <param name="j">
-        /// The current cell ID
-        /// </param>
-        /// <param name="NodeSetClone">
-        /// The node set.
-        /// simulation).
-        /// </param>
-        /// <param name="currentPosition">
-        /// The current position of the particle.
-        /// </param>
-        public double CalculateTorqueFromStressTensor2D(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, MultidimensionalArray NodeSetClone, double FluidViscosity, int k, int j, double[] currentPosition)
-        {
-            double temp1;
-            double temp2;
-            temp1 = CalculateStressTensorX(Grad_UARes, pARes, NormalVector, FluidViscosity, k, j);
-            temp1 *= -NormalVector[j, k, 1] * (currentPosition[1] - NodeSetClone[k, 1]).Abs();
-            if (double.IsNaN(temp1) || double.IsInfinity(temp1))
-                throw new ArithmeticException("Error trying to calculate the particle torque");
-            temp2 = CalculateStressTensorY(Grad_UARes, pARes, NormalVector, FluidViscosity, k, j);
-            temp2 *= NormalVector[j, k, 0] * (currentPosition[0] - NodeSetClone[k, 0]).Abs();
-            if (double.IsNaN(temp2) || double.IsInfinity(temp2))
-                throw new ArithmeticException("Error trying to calculate the particle torque");
-            return temp1 + temp2;
-        }
-
+                
         /// <summary>
         /// This method performs the Neumaier algorithm form the sum of the entries of an array.
         /// It is specifically designed to sum up the velocity gradient and the pressure to 
@@ -304,20 +288,16 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="muA">
         /// The fluid viscosity.
         /// </param>
-        static internal double SummationWithNeumaier(double[] SummandsVelGradient, double SummandsPressure, double muA)
-        {
+        static internal double SummationWithNeumaier(double[] SummandsVelGradient, double SummandsPressure, double muA) {
             double sum = SummandsVelGradient[0];
             double naiveSum;
             double c = 0;
-            for (int i = 1; i < SummandsVelGradient.Length; i++)
-            {
+            for (int i = 1; i < SummandsVelGradient.Length; i++) {
                 naiveSum = sum + SummandsVelGradient[i];
-                if (Math.Abs(sum) >= SummandsVelGradient[i])
-                {
+                if (Math.Abs(sum) >= SummandsVelGradient[i]) {
                     c += (sum - naiveSum) + SummandsVelGradient[i];
                 }
-                else
-                {
+                else {
                     c += (SummandsVelGradient[i] - naiveSum) + sum;
                 }
                 sum = naiveSum;
@@ -325,12 +305,10 @@ namespace BoSSS.Application.FSI_Solver
             sum *= muA;
             c *= muA;
             naiveSum = sum + SummandsPressure;
-            if (Math.Abs(sum) >= SummandsPressure)
-            {
+            if (Math.Abs(sum) >= SummandsPressure) {
                 c += (sum - naiveSum) + SummandsPressure;
             }
-            else
-            {
+            else {
                 c += (SummandsPressure - naiveSum) + sum;
             }
             sum = naiveSum;
