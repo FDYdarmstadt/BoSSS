@@ -700,6 +700,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="fluidDensity"></param>
         protected virtual double[] CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity) {
             double[] tempForces = hydrodynamicsIntegration.Forces();
+            Aux.TestArithmeticException(tempForces, "temporal forces during calculation of hydrodynamics");
             Force_MPISum(ref tempForces);
             CalculateGravity(fluidDensity, tempForces);
             return tempForces;
@@ -714,6 +715,7 @@ namespace BoSSS.Application.FSI_Solver {
             for (int d = 0; d < spatialDim; d++) {
                 tempForces[d] += (Density - fluidDensity) * ParticleArea * Gravity[d];
             }
+            Aux.TestArithmeticException(tempForces, "temporal forces during calculation of hydrodynamics after adding gravity");
         }
 
         /// <summary>
@@ -726,6 +728,7 @@ namespace BoSSS.Application.FSI_Solver {
             for (int d = 0; d < spatialDim; d++) {
                 forces[d] = globalStateBuffer[d];
             }
+            Aux.TestArithmeticException(forces, "temporal forces during calculation of hydrodynamics after mpi-summation");
         }
 
         /// <summary>
@@ -739,6 +742,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="dt"></param>
         protected virtual double CalculateHydrodynamicTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration) {
             double tempTorque = hydrodynamicsIntegration.Torque(m_Position[0]);
+            Aux.TestArithmeticException(tempTorque, "temporal torque during calculation of hydrodynamics");
             Torque_MPISum(ref tempTorque);
             return tempTorque;
         }
@@ -751,6 +755,7 @@ namespace BoSSS.Application.FSI_Solver {
             double stateBuffer = torque;
             double globalStateBuffer = stateBuffer.MPISum();
             torque = globalStateBuffer;
+            Aux.TestArithmeticException(torque, "temporal torque during calculation of hydrodynamics after mpi-summation");
         }
 
         /// <summary>
