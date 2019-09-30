@@ -30,10 +30,10 @@ namespace BoSSS.Application.FSI_Solver {
                 "Wall_lower",
                 "Wall_upper"
             };
-            int sqrtPart = 3;
+            int sqrtPart = 4;
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 6.5, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel: 4);
+            C.SetGrid(lengthX: 4, lengthY: 4, cellsPerUnitLength: 5, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(amrLevel: 3);
             C.hydrodynamicsConvergenceCriterion = 1e-2;
 
             // Fluid Properties
@@ -45,11 +45,11 @@ namespace BoSSS.Application.FSI_Solver {
             // Particle Properties
             // =============================
             double particleDensity = 1.1;
-            C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.hydrodynamicsConvergenceCriterion, underrelaxationFactorIn: 3.0, useAddaptiveUnderrelaxationIn: true);
+            C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.hydrodynamicsConvergenceCriterion, underrelaxationFactorIn: 1.0, useAddaptiveUnderrelaxationIn: true);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 1);
             for (int x = 0; x < sqrtPart; x++) {
                 for (int y = 0; y < sqrtPart; y++) {
-                    C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.1, new double[] { -0.625 + 0.625 * x, 0.625 - 0.625 * y }, startAngl: Math.Pow(-1, x * y) * x * y - 121 * x + 83 * y, activeStress: 100));
+                    C.Particles.Add(new Particle_Ellipsoid(motion, 0.25, 0.1, new double[] { -1.5 + 1 * x, 1.5 - 1 * y }, startAngl: Math.Pow(-1, x * y) * 160, activeStress: 10));
                 }
             }
 
