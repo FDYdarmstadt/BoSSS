@@ -34,7 +34,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         public void Reset()
         {
-            pointer = array.Count + 1;
+            pointer = array.Count;
         }
     }
 }

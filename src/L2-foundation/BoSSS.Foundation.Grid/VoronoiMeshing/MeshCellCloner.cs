@@ -23,6 +23,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             MeshCell<T> clone = new MeshCell<T>()
             {
                 Node = cell.Node,
+                type = cell.type,
             };
             clone.Vertices = Clone(cell.Vertices);
             clone.Edges = Clone(cell.Edges);

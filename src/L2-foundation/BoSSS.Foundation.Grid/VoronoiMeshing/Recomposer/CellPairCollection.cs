@@ -18,11 +18,14 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 EdgeNumber = edgeNumber;
                 Inner = new List<MeshCell<T>>();
                 Outer = new List<MeshCell<T>>();
+                GlueMap = new List<(int outerEdge, int innerEdge)>();
             }
 
             public List<MeshCell<T>> Inner;
 
             public List<MeshCell<T>> Outer;
+
+            public List<(int outerEdge, int innerEdge)> GlueMap;
         }
 
         public CellPairCollection()
@@ -87,6 +90,36 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 edgeCells = new EdgeCombo(boundaryEdgeNumber);
                 periodicEdges.Add(boundaryEdgeNumber, edgeCells);
                 edgeCells.Outer.AddRange(cells);
+            }
+        }
+
+        public void AddGlueMap(IList<(int outerEdge, int innerEdge)> glueMap, int boundaryEdgeNumber)
+        {
+            EdgeCombo edgeCells;
+            if (periodicEdges.TryGetValue(boundaryEdgeNumber, out edgeCells))
+            {
+                edgeCells.GlueMap.AddRange(glueMap);
+            }
+            else
+            {
+                edgeCells = new EdgeCombo(boundaryEdgeNumber);
+                periodicEdges.Add(boundaryEdgeNumber, edgeCells);
+                edgeCells.GlueMap.AddRange(glueMap);
+            }
+        }
+
+        public void AddGlueMapEntry((int outerEdge, int innerEdge) edge2EdgeMap, int boundaryEdgeNumber)
+        {
+            EdgeCombo edgeCells;
+            if (periodicEdges.TryGetValue(boundaryEdgeNumber, out edgeCells))
+            {
+                edgeCells.GlueMap.Add(edge2EdgeMap);
+            }
+            else
+            {
+                edgeCells = new EdgeCombo(boundaryEdgeNumber);
+                periodicEdges.Add(boundaryEdgeNumber, edgeCells);
+                edgeCells.GlueMap.Add(edge2EdgeMap);
             }
         }
 

@@ -59,14 +59,22 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         IEnumerable<Edge<T>> PeriodicEdgesOf(Mesh<T> mesh)
         {
-            BoundaryEdgeFinder<T> edgeCells = new BoundaryEdgeFinder<T>(mesh);
-            Vector startFromEnclosingCell = boundary[0].Start.Position;
-            foreach (Edge<T> edge in edgeCells.Edges(startFromEnclosingCell, firstCellNodeIndice))
+            foreach (Edge<T> edge in BoundaryEdgesOf(mesh))
             {
                 if (periodicTrafoMap.ContainsKey(edge.BoundaryEdgeNumber))
                 {
                     yield return edge;
                 }
+            }
+        }
+
+        IEnumerable<Edge<T>> BoundaryEdgesOf(Mesh<T> mesh)
+        {
+            BoundaryEdgeFinder<T> edgeCells = new BoundaryEdgeFinder<T>(mesh);
+            Vector startFromEnclosingCell = boundary[0].Start.Position;
+            foreach (Edge<T> edge in edgeCells.Edges(startFromEnclosingCell, firstCellNodeIndice))
+            {
+                yield return edge;
             }
         }
 
@@ -86,7 +94,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             Debug.Assert(ContainsPeriodicBoundaries == true);
 
             IEnumerable<Edge<T>> periodicEdges = PeriodicEdgesOf(mesh);
-            recomposer.RecomposePeriodicEdges(mesh, periodicEdges);
+            recomposer.RecomposePeriodicEdges(mesh, periodicEdges); 
         }
     }
 }

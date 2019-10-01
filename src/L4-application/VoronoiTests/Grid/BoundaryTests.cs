@@ -97,7 +97,7 @@ namespace VoronoiTests.Grid
             nodes.SetRow(4, new double[] { 0.9, 0.0 });
             nodes.SetRow(5, new double[] { 0.5, -0.5 });
 
-            VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 10, 0);
+            VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
         }
     }
 }

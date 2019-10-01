@@ -22,6 +22,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 throw new IndexOutOfRangeException();
             }
         }
+
         public int Current()
         {
             return index;

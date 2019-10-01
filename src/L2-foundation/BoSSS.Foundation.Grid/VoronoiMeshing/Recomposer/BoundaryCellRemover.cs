@@ -15,19 +15,31 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             insideCells = new InsideCellEnumerator<T>(mesh, firstCellNodeIndice);
         }
 
-        public void Remove(IList<MeshCell<T>> cells)
+        public void SetAsBoundary(IList<MeshCell<T>> cells, int boundaryEdgeNumber)
         {
-            foreach(MeshCell<T> cell in cells)
+            foreach (MeshCell<T> cell in cells)
             {
-                SetAllEdgeTwinsToBoundaryEdge(cell.Edges);
+                SetAllEdgesToBoundary(cell.Edges, boundaryEdgeNumber);
             }
-            RemoveCellsFromMesh();
         }
 
-        void RemoveCellsFromMesh()
+        void SetAllEdgesToBoundary(Edge<T>[] edges, int boundaryEdgeNumber)
+        {
+            foreach (Edge<T> edge in edges)
+            {
+                edge.IsBoundary = true;
+                if (edge.Twin != null)
+                {
+                    edge.Twin.BoundaryEdgeNumber = boundaryEdgeNumber;
+                    edge.Twin.IsBoundary = true;
+                }
+            }
+        }
+
+        public void RemoveOuterCellsFromMesh()
         {
             List<MeshCell<T>> cells = new List<MeshCell<T>>(mesh.Cells.Count);
-            foreach(MeshCell<T> cell in insideCells.Cells())
+            foreach (MeshCell<T> cell in insideCells.Cells())
             {
                 cells.Add(cell);
             }
@@ -36,17 +48,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             foreach (MeshCell<T> cell in mesh.Cells)
             {
                 mesh.Nodes.Add(cell.Node);
-            }
-        }
-
-        void SetAllEdgeTwinsToBoundaryEdge(Edge<T>[] edges)
-        {
-            foreach (Edge<T> edge in edges)
-            {
-                if (edge.Twin != null)
-                {
-                    edge.Twin.IsBoundary = true;
-                }
             }
         }
     }

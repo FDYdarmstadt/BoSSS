@@ -107,15 +107,16 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                         List<FaceAndEdgeTag> tags = GetBoundaryIndices(cell, iV0, iV1, iV2);
                         foreach (FaceAndEdgeTag tag in tags)
                         {
-                            DefineEdgeTags(Cj, boundary.GetEdgeTagOfPolygonEdge(tag.BoundaryEdgeNumber), tag.Face);
+                            DefineEdgeTagsOfCell(Cj, boundary.GetEdgeTagOfPolygonEdge(tag.BoundaryEdgeNumber), tag.Face);
                         }
                     }
                 }
                 aggregation.Add(Agg2Pt);
             }
-            GridCommons grid;
-            grid = new Grid2D(Triangle.Instance);
-            grid.Cells = cells_GridCommons.ToArray();
+            GridCommons grid = new Grid2D(Triangle.Instance)
+            {
+                Cells = cells_GridCommons.ToArray()
+            };
 
             return (grid, aggregation.ToArray());
         }
@@ -170,7 +171,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return false;
         }
 
-        static void DefineEdgeTags(Cell cell, byte edgeTag, int faceIndice)
+        static void DefineEdgeTagsOfCell(Cell cell, byte edgeTag, int faceIndice)
         {
                 CellFaceTag CFT = new CellFaceTag()
                 {

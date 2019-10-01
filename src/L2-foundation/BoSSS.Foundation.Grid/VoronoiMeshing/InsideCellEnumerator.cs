@@ -18,9 +18,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             this.mesh = mesh;
         }
 
-        public InsideCellEnumerator(Mesh<T> mesh, int firstCell_NodeIndice)
+        public InsideCellEnumerator(Mesh<T> mesh, int firstCellNodeIndice)
         {
-            this.firstCell = mesh.Cells[firstCell_NodeIndice];
+            this.firstCell = mesh.Cells[firstCellNodeIndice];
             this.mesh = mesh;
         }
 
@@ -29,10 +29,15 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             SetFirstCellToCellContaining(start);
         }
 
-        public void SetFirstCell(Vector start, int firstCell_NodeIndice)
+        public void SetFirstCell(Vector start, int firstCellNodeIndice)
         {
-            this.firstCell = mesh.Cells[firstCell_NodeIndice];
+            this.firstCell = mesh.Cells[firstCellNodeIndice];
             SetFirstCellToCellContaining(start);
+        }
+
+        public void SetFirstCell(int firstCellNodeIndice)
+        {
+            this.firstCell = mesh.Cells[firstCellNodeIndice];
         }
 
         public MeshCell<T> GetFirstCell()

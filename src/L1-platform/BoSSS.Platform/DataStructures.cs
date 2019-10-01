@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Platform
 {
-    public class CyclicArray<T>
+    public class CyclicArray<T> : IList<T>
     {
         protected readonly T[] data;
 
@@ -43,9 +43,13 @@ namespace BoSSS.Platform
             }
         }
 
+        public int Count => Length;
+
+        public bool IsReadOnly => false;
+
         public T this[int i] {
             get {
-                if (i >= Length)
+                if (i >= Length || i < 0)
                 {
                     throw new IndexOutOfRangeException();
                 }
@@ -56,7 +60,7 @@ namespace BoSSS.Platform
                 }
             }
             set {
-                if (i >= Length)
+                if (i >= Length || i < 0)
                 {
                     throw new IndexOutOfRangeException();
                 }
@@ -75,5 +79,87 @@ namespace BoSSS.Platform
             indice = Math.Abs(indice);
             return indice;
         }
+
+        public int IndexOf(T item)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Insert(int index, T item)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RemoveAt(int index)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Add(T item)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Clear()
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Contains(T item)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void CopyTo(T[] array, int arrayIndex)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Remove(T item)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            return new CyclicArrayEnumerator<T>(this);
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
     }
+
+    public class CyclicArrayEnumerator<T> : IEnumerator<T>
+    {
+        int pointer;
+
+        readonly CyclicArray<T> array;
+
+        public CyclicArrayEnumerator(CyclicArray<T> array)
+        {
+            this.array = array;
+            pointer = -1;
+        }
+
+        public T Current => array[pointer];
+
+        object IEnumerator.Current => Current;
+
+        public void Dispose()
+        {
+        }
+
+        public bool MoveNext()
+        {
+            return (++pointer < array.Length);
+        }
+
+        public void Reset()
+        {
+            pointer = -1;
+        }
+    }
+
 }

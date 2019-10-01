@@ -18,10 +18,17 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         {
             cells.SetFirstCell(start, firstCellNodeIndice);
             MeshCell<T> firstCell = cells.GetFirstCell();
-            return IterativeYieldBoundaryCells(firstCell);
+            return IterativeYieldBoundaryEdges(firstCell);
         }
 
-        static IEnumerable<Edge<T>> IterativeYieldBoundaryCells(MeshCell<T> cell)
+        public IEnumerable<Edge<T>> Edges(int firstCellNodeIndice)
+        {
+            cells.SetFirstCell(firstCellNodeIndice);
+            MeshCell<T> firstCell = cells.GetFirstCell();
+            return IterativeYieldBoundaryEdges(firstCell);
+        }
+
+        static IEnumerable<Edge<T>> IterativeYieldBoundaryEdges(MeshCell<T> cell)
         {
             Edge<T> currentEdge = FindFirstBoundaryEdge(cell);
             yield return currentEdge;
