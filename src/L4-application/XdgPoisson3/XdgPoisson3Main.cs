@@ -104,19 +104,21 @@ namespace BoSSS.Application.XdgPoisson3 {
         MultiphaseCellAgglomerator Op_Agglomeration;
         MassMatrixFactory Op_mass;
 
+        /*
         static void MyHandler(object sender, UnhandledExceptionEventArgs args) {
             Exception e = (Exception)args.ExceptionObject;
             Console.WriteLine("MyHandler caught : " + e.Message);
             Console.WriteLine("Runtime terminating: {0}", args.IsTerminating);
             System.Environment.Exit(-1234);
         }
+        */
 
         protected override void SetInitial() {
             //this will suppress exception prompts
             //Workaround to prevent distrubance while executing batchclient
             if (this.Control.SuppressExceptionPrompt) {
                 AppDomain currentDomain = AppDomain.CurrentDomain;
-                currentDomain.UnhandledException += new UnhandledExceptionEventHandler(MyHandler);
+                //currentDomain.UnhandledException += new UnhandledExceptionEventHandler(MyHandler);
             }
 
             base.SetInitial();
@@ -145,7 +147,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             Console.WriteLine("Matrix norm: {0}", Op_Matrix.InfNorm());
             Console.WriteLine("Symm. diff: {0}", Op_Matrix.SymmetryDeviation());
         }
-
+        /*
         protected void BlockTest() {
             double MU_A = 0.1;
 
@@ -193,7 +195,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             Console.WriteLine("Symm. diff: {0}", Msc.SymmetryDeviation());
         }
-
+        */
         private void AssembleMatrix(double MU_A, double MU_B, out BlockMsrMatrix M, out double[] b, out MultiphaseCellAgglomerator agg, out MassMatrixFactory massFact) {
             using (var tr = new FuncTrace()) {
                 // create operator
@@ -259,7 +261,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                     mtxBuilder.ComputeMatrix(M, b);
                 }
                 // compare with linear evaluation
-                // ==============================
+                // ==============================               
                 DGField[] testDomainFieldS = map.BasisS.Select(bb => new XDGField(bb as XDGBasis)).ToArray();
                 CoordinateVector test = new CoordinateVector(testDomainFieldS);
 
@@ -343,7 +345,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             // new solver framework: multigrid, blablablah ...
 
-            ExperimentalSolver(out mintime, out maxtime, out converged, out NoOfIterations, out DOFs);
+            ExperimentalSolver(out mintime, out maxtime, out converged, out NoOfIterations, out DOFs);           
             this.Op_Agglomeration.Extrapolate(this.u.Mapping);
 
             //Stats:
@@ -493,7 +495,8 @@ namespace BoSSS.Application.XdgPoisson3 {
         }
 
         protected void CustomItCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
-            //noch nix ...
+            currentSol.SaveToTextFile("X_"+ iterIndex);
+            currentRes.SaveToTextFile("Res_" + iterIndex);
             MaxMlevel=Mgop.LevelIndex;
         }
 
@@ -551,7 +554,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 ISolverSmootherTemplate exsolver;
 
                 SolverFactory SF = new SolverFactory(this.Control.NonLinearSolver, this.Control.LinearSolver);
-                List<Action<int, double[], double[], MultigridOperator>> Callbacks=new List<Action<int, double[], double[], MultigridOperator>>();
+                var Callbacks=new List<Action<int, double[], double[], MultigridOperator>>();
                 Callbacks.Add(CustomItCallback);
                 SF.GenerateLinear(out exsolver, MultigridSequence, OpConfig, Callbacks);
 

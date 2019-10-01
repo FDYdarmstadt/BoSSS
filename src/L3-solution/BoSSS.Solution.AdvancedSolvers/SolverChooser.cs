@@ -603,10 +603,13 @@ namespace BoSSS.Solution {
                     break;
 
                 case LinearSolverCode.exp_gmres_levelpmg:
-                    templinearSolve = new SoftGMRES() {
+                    _precond = new LevelPmg() { UseHiOrderSmoothing = true };
+                    SetLinItCallback(_precond, isNonLinPrecond, IsLinPrecond: true);
+                    templinearSolve = new SoftGMRES()
+                    {
                         m_Tolerance = lc.ConvergenceCriterion,
                         m_MaxIterations = lc.MaxSolverIterations,
-                        Precond = new LevelPmg() { UseHiOrderSmoothing = true }
+                        Precond = _precond
                     };
 
 
@@ -1618,7 +1621,7 @@ namespace BoSSS.Solution {
                         //m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                         //    Depth = 1
                         //},
-                        Overlap = 2, // overlap seems to help; more overlap seems to help more
+                        Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
                         UsePMGinBlocks = true
                     };
