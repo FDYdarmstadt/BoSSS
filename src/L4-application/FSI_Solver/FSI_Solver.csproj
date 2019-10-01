@@ -113,6 +113,7 @@
     <Compile Include="Particle\Motion\_Motion_Main.cs" />
     <Compile Include="Particle\ParticleUnderrelaxation.cs" />
     <Compile Include="Particle\ParticleUnderrelaxationParam.cs" />
+    <Compile Include="Particle\Shapes\Particle_Rectangle.cs" />
     <Compile Include="Particle\Shapes\Particle_TrapRight.cs" />
     <Compile Include="Particle\Shapes\Particle_TrapLeft.cs" />
     <Compile Include="Particle\Shapes\Particle_Pentagone.cs" />
