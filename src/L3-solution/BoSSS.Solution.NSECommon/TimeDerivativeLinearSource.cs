@@ -84,7 +84,8 @@ namespace BoSSS.Solution.NSECommon {
             if (m_energy == true) {
                 double gamma = EoS.GetHeatCapacityRatio(parameters[0]);
                 Debug.Assert(gamma > 0);
-                mult = 1 / gamma;
+                //mult = 1 / gamma;
+                mult = 1;
             }
             return mult * rho * U[0];  
         }
