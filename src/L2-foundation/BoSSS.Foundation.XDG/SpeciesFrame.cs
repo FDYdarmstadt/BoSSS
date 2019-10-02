@@ -328,7 +328,8 @@ namespace BoSSS.Foundation.XDG {
                 throw new IndexOutOfRangeException();
             
             int iGlob = Frame2Full_Lookup[iFrame];
-            iGlob -= FullMap.i0;
+            if(iGlob >= 0)
+                iGlob -= FullMap.i0;
             return iGlob;
         }
 

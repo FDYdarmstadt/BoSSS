@@ -16,6 +16,7 @@ limitations under the License.
 
 using System;
 using System.Runtime.InteropServices;
+using ilPSP.Utils;
 using MPI.Wrappers.Utils;
 
 namespace ilPSP.Kraypis {
@@ -74,26 +75,33 @@ namespace ilPSP.Kraypis {
             METIS_ERROR = -4    /*!< Some other errors */
         }
 
-        static public int PARTGRAPHKWAY(ref int nvtxs, ref int ncon, int[] xadj,
+        static public METIS.ReturnCodes PARTGRAPHKWAY(ref int nvtxs, ref int ncon, int[] xadj,
                                                 int[] adjncy, int[] vwgt, int[] vsize,
                                                 int[] adjwgt, ref int nparts, double[] tpwgts,
                                                 double[] ubvec, int[] options, ref int objval, int[] part)
         {
-            return m_METIS.PartGraphKway(ref nvtxs, ref ncon, xadj,
+            return (METIS.ReturnCodes) m_METIS.PartGraphKway(ref nvtxs, ref ncon, xadj,
                                                 adjncy, vwgt, vsize,
                                                 adjwgt, ref nparts, tpwgts,
                                                 ubvec, options, ref objval, part);
         }
 
-        static public int PARTGRAPHRECURSIVE(ref int nvtxs, ref int ncon, int[] xadj,
+        static public METIS.ReturnCodes PARTGRAPHRECURSIVE(ref int nvtxs, ref int ncon, int[] xadj,
                                                 int[] adjncy, int[] vwgt, int[] vsize,
                                                 int[] adjwgt, ref int nparts, double[] tpwgts,
                                                 double[] ubvec, int[] options, ref int objval, int[] part)
         {
-            return m_METIS.PartGraphRecursive(ref nvtxs, ref ncon, xadj,
+            return (METIS.ReturnCodes) m_METIS.PartGraphRecursive(ref nvtxs, ref ncon, xadj,
                                                 adjncy, vwgt, vsize,
                                                 adjwgt, ref nparts, tpwgts,
                                                 ubvec, options, ref objval, part);
+        }
+
+
+        static public METIS.ReturnCodes SETDEFAULTOPTIONS(int[] options) {
+            //return m_METIS.SetDefaultOptions(options);
+            options.SetAll(-1);
+            return METIS.ReturnCodes.METIS_OK;
         }
 
 
@@ -125,6 +133,7 @@ namespace ilPSP.Kraypis {
 #pragma warning disable 649
         _PartGraphKway METIS_PartGraphKway;
         _PartGraphRecursive METIS_PartGraphRecursive;
+        //_SetDefaultOptions METIS_SetDefaultOptions;
 #pragma warning restore 649
 
         /// <summary>
@@ -140,6 +149,8 @@ namespace ilPSP.Kraypis {
             get { return METIS_PartGraphKway; }
         }
 
+        
+
         /// <summary>
         /// see METIS manual;
         /// </summary>
@@ -152,6 +163,18 @@ namespace ilPSP.Kraypis {
         {
             get { return METIS_PartGraphRecursive; }
         }
+
+        
+        // <summary>
+        // see METIS manual;
+        // </summary>
+        //public unsafe delegate int _SetDefaultOptions(int[] options);
+        /*
+        public unsafe _SetDefaultOptions SetDefaultOptions
+        {
+            get { return METIS_SetDefaultOptions; }
+        }
+        */
     }
     
 }

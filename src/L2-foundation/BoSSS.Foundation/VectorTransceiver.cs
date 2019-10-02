@@ -103,11 +103,6 @@ namespace BoSSS.Foundation.Comm {
             }
         }
 
-        ///// <summary>
-        ///// it would be much faster to use something else ...
-        ///// </summary>
-        //SerialisationMessenger sms;
-
         V[][] SendBuffers;
 
         GCHandle[] SendBufferPin;
