@@ -1598,16 +1598,15 @@ namespace BoSSS.Solution {
                 useDirect |= (SysSize < DirectKickIn);
                 useDirect |= iLevel == _lc.NoOfMultigridLevels - 1;
                 useDirect |= NoOfBlocks.MPISum() <= 1;
-
-                Console.WriteLine("KcycleMultiSchwarz: REMOVE HARDCODED LEVEL SETTINGS");
-                if (iLevel == 0) {
-                    useDirect = false;
-                    NoOfBlocks = 3;
-                } else {
-                    useDirect = true;
-                }
-
-
+                
+                //Console.WriteLine("KcycleMultiSchwarz: REMOVE HARDCODED LEVEL SETTINGS");
+                //if (iLevel == 0) {
+                //    useDirect = false;
+                //    NoOfBlocks = 3;
+                //} else {
+                //    useDirect = true;
+                //}
+                
                 if (useDirect)
                     Console.WriteLine("   KcycleMultiSchwarz: lv {0}, Direct solver ", iLevel);
                 else

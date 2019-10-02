@@ -162,7 +162,7 @@ namespace BoSSS.Solution.NSECommon {
                             break;
                         case PhysicsMode.Combustion:
                             throw new NotImplementedException("TODO");
-                            break;
+                            //break;
                         default:
                             throw new NotImplementedException("should not happen");
                     }

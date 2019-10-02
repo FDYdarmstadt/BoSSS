@@ -66,12 +66,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
             var rvcProc = Para.ProcessesToReceiveFrom;
             var sndProc = Para.ProcessesToSendTo;
             rqst = new MPI_Request[sndProc.Length + rvcProc.Length];
-            
+
+
+
             // allocate send buffers
             // =====================
             {
                 SendBuffers = new double[sndProc.Length][];
                 for (int i = 0; i < SendBuffers.Length; i++) {
+
                     int p = sndProc[i];
 
                     // compute length of send list
@@ -87,6 +90,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
                 SendBufferPin = new GCHandle[sndProc.Length];
             }
+            
 
             // allocate receive buffers
             // ========================
@@ -114,6 +118,48 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 m_Vector_Ext = new double[totL];
             }
+
+#if DEBUG
+            // verify send and receive lengths
+            // ===============================
+            {
+                var RcvSizes = new Dictionary<int, int[]>();
+                
+
+                for (int i = 0; i < SendBuffers.Length; i++) {
+                    //Console.WriteLine("P{0}: to proc {1}: {2} items ", map.MpiRank, sndProc[i], SendBuffers[i].Length);
+
+                    int source = map.MpiRank;
+                    int target = sndProc[i];
+                    int L = SendBuffers[i].Length;
+
+                    RcvSizes.Add(target, new[] { source, L });
+                }
+
+
+                var _RcvSizes = ilPSP.Utils.SerialisationMessenger.ExchangeData(RcvSizes);
+
+
+                foreach(var kv in _RcvSizes) {
+                    int source = kv.Key;
+
+                    int sourceR = kv.Value[0];
+                    int L = kv.Value[1];
+
+                    int idxSrs = Array.IndexOf(rvcProc, source);
+                    Debug.Assert(idxSrs >= 0);
+                    int _L = RcvBuffer[idxSrs].Length;
+
+                    Debug.Assert(source == sourceR);
+                    Debug.Assert(L == _L, "mismatch in receive buffer size on multigrid level" + map.AggGrid.MgLevel);
+                }
+
+                csMPI.Raw.Barrier(map.MPI_Comm);
+            }
+#endif
+
+
+
         }
 
         /// <summary>

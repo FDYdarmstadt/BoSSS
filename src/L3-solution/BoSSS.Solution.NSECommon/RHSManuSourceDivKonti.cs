@@ -91,9 +91,9 @@ namespace BoSSS.Solution.NSECommon {
             double p0 = 1.0;// ThermodynamicPressure.GetMeanValue(3);
 
             double M1 = MolarMasses[0]; double M2 = MolarMasses[1]; double M3 = MolarMasses[2]; double M4 = MolarMasses[3];
-            double alpha1 = 0.3;
-            double alpha2 = 0.6;
-            double alpha3 = 0.1;
+            //double alpha1 = 0.3;
+            //double alpha2 = 0.6;
+            //double alpha3 = 0.1;
             double man1;
 
 
