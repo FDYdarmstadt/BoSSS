@@ -217,6 +217,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// </param>
         internal void CalculateRadialVector(double[] SurfacePoint, out double[] RadialVector, out double RadialLength) {
             RadialVector = new double[] { SurfacePoint[0] - Motion.GetPosition(0)[0], SurfacePoint[1] - Motion.GetPosition(0)[1] };
+            if (RadialVector.L2Norm() == 0)
+                throw new ArithmeticException("The given vector has no length");
             RadialLength = RadialVector.L2Norm();
             RadialVector.ScaleV(1 / RadialLength);
             Aux.TestArithmeticException(RadialVector, "particle radial vector");

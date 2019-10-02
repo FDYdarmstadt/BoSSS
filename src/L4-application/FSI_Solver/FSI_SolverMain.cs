@@ -1352,19 +1352,23 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
+        double h_maxStart = 0;
+
         /// <summary>
         /// Creates the cellmask which should be refined.
         /// </summary>
         private List<Tuple<int, CellMask>> GetCellMaskWithRefinementLevels() {
+            h_maxStart = h_maxStart == 0 ? LsTrk.GridDat.Cells.h_maxGlobal : h_maxStart;
             int refinementLevel = ((FSI_Control)Control).RefinementLevel;
+            double h_minStart = h_maxStart / (2 * refinementLevel);
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
             BitArray mediumCells = new BitArray(noOfLocalCells);
             BitArray fineCells = new BitArray(noOfLocalCells);
             BitArray collisionFineCells = new BitArray(noOfLocalCells);
-            double radiusMediumCells = 3 * LsTrk.GridDat.Cells.h_maxGlobal / refinementLevel;
-            double radiusFineCells = 2 * LsTrk.GridDat.Cells.h_maxGlobal / refinementLevel;
-            double radiusCollision = LsTrk.GridDat.Cells.h_maxGlobal / (refinementLevel);
+            double radiusMediumCells = 3 * h_minStart;
+            double radiusFineCells = 2 * h_minStart;
+            double radiusCollision = h_minStart;
             for (int p = 0; p < m_Particles.Count; p++) {
                 Particle particle = m_Particles[p];
                 for (int j = 0; j < noOfLocalCells; j++) {

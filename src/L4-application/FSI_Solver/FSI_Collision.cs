@@ -235,10 +235,20 @@ namespace FSI_Solver {
         ///  <param name="normalVector"></param>
         /// <param name="distance"></param>
         private double DynamicTimestep(Particle particle0, Particle particle1, double[] closestPoint0, double[] closestPoint1, double[] normalVector, double distance) {
-            CalculatePointVelocity(particle0, closestPoint0, out double[] pointVelocity0);
-            ProjectVelocityOnVector(normalVector, pointVelocity0, out double detectCollisionVn_P0);
-            CalculatePointVelocity(particle1, closestPoint1, out double[] pointVelocity1);
-            ProjectVelocityOnVector(normalVector, pointVelocity1, out double detectCollisionVn_P1);
+            double detectCollisionVn_P0;
+            double detectCollisionVn_P1;
+            if (particle0.Motion.IncludeTranslation || particle0.Motion.IncludeRotation) {
+                CalculatePointVelocity(particle0, closestPoint0, out double[] pointVelocity0);
+                ProjectVelocityOnVector(normalVector, pointVelocity0, out detectCollisionVn_P0);
+            }
+            else
+                detectCollisionVn_P0 = 0;
+            if (particle1.Motion.IncludeTranslation || particle1.Motion.IncludeRotation) {
+                CalculatePointVelocity(particle1, closestPoint1, out double[] pointVelocity1);
+                ProjectVelocityOnVector(normalVector, pointVelocity1, out detectCollisionVn_P1);
+            }
+            else
+                detectCollisionVn_P1 = 0;
             return (detectCollisionVn_P1 - detectCollisionVn_P0 == 0) ? double.MaxValue : 0.9 * distance / (detectCollisionVn_P1 - detectCollisionVn_P0);
         }
 

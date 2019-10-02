@@ -201,6 +201,7 @@ namespace BoSSS.Application.FSI_Solver {
             double angle = Motion.GetAngle(0);
             double[] subPosition = position.CloneAs();
             double[] length = position.CloneAs();
+
             switch (SubParticleID) {
                 case 1:
                     subPosition[0] = position[0] - (m_Height - m_Thickness) / 2 * Math.Sin(angle);

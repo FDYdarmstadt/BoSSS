@@ -16,14 +16,8 @@ limitations under the License.
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using BoSSS.Foundation.XDG;
 using System.Diagnostics;
-using BoSSS.Solution.NSECommon;
-using ilPSP.Utils;
-using BoSSS.Platform;
-using ilPSP;
 using BoSSS.Foundation;
 
 namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
@@ -84,6 +78,19 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             Debug.Assert(Grad_uA.GetLength(1) == D);
             Debug.Assert(Grad_uB.GetLength(1) == D);
 
+            double[,] P = new double[D, D];
+            for (int d1 = 0; d1 < D; d1++) {
+                for (int d2 = 0; d2 < D; d2++) {
+                    double nn = N[d1] * N[d2];
+                    if (d1 == d2) {
+                        P[d1, d2] = 1 - nn;
+                    }
+                    else {
+                        P[d1, d2] = -nn;
+                    }
+                }
+            }
+
             // Gradient of u and v 
             // ============================= 
             double Grad_uA_xN = 0, Grad_vA_xN = 0;
@@ -120,11 +127,30 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             }
             double f_xN = component == 0 ? active_stress * Math.Cos(Ang_P) * Math.Abs(inp.n[1]) : active_stress * Math.Sin(Ang_P) * Math.Abs(inp.n[0]);
 
-            //Computing flux
-            Ret -= Grad_uA_xN * (vA) * muA * (1 - scale);                   // consistency term 
-            Ret -= Grad_vA_xN * (uA[component] - uAFict) * muA;             // symmetry term 
-            Ret += _penalty * (uA[component] - uAFict) * (vA) * muA;       // penalty term
-            Ret += f_xN * (vA) * scale;                                     // active term (Neumann boundary condition)
+            if (scale == 0) {
+                Ret -= Grad_uA_xN * (vA) * muA;                                // consistency term 
+                Ret -= Grad_vA_xN * (uA[component] - uAFict) * muA;            // symmetry term 
+                Ret += _penalty * (uA[component] - uAFict) * (vA) * muA;       // penalty term
+            }
+            else {
+                for (int dN = 0; dN < D; dN++) {
+                    for (int dD = 0; dD < D; dD++) {
+                        // consistency
+                        Ret -= muA * (N[dN] * Grad_uA[dN, dD] * N[dD]) * (vA * N[component]);
+                    }
+                }
+                Ret += f_xN * (vA) * scale;
+                //for (int d1 = 0; d1 < D; d1++) {
+                //    for (int d2 = 0; d2 < D; d2++) {
+                //        Ret += P[d1, d2] * f_xN * scale * (P[d1, component] * vA);
+                //    }
+                //}
+
+                //Ret -= Grad_uA_xN * (vA) * muA;                                // consistency term 
+                //Ret -= Grad_vA_xN * (uA[component] - uAFict) * muA;            // symmetry term 
+                //Ret += _penalty * (uA[component] - uAFict) * (vA) * muA;       // penalty term
+                //Ret += f_xN * (vA) * scale;
+            }
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
             return Ret;
