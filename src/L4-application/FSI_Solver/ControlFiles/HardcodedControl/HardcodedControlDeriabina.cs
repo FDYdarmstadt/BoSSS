@@ -43,16 +43,16 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.IncludeConvection = true;
-            C.pureDryCollisions = false;
+            C.pureDryCollisions = true;
             C.gravity = new double[] { 0, -9.81 };
 
             // Particle Properties
             // =============================
             double particleDensity = 20;
             ParticleMotionInit motion1 = new ParticleMotionInit(C.gravity, particleDensity, false, false, false);
-            ParticleMotionInit motion2 = new ParticleMotionInit(C.gravity, particleDensity, false, true, true);
-            C.Particles.Add(new Particle_Rectangle(motion1, 0.25, 0.1, new double[] { 0.4, 0.5}, startAngl: 0));
-            C.Particles.Add(new Particle_Rectangle(motion2, 0.25, 0.1, new double[] { 0, 0 }, startAngl: 0));
+            ParticleMotionInit motion2 = new ParticleMotionInit(C.gravity, particleDensity, true, true, true);
+            C.Particles.Add(new Particle_Shell(motion2, 0.25, 0.1, new double[] { 0, 0}, startAngl: 0));
+            //C.Particles.Add(new Particle_Rectangle(motion2, 0.25, 0.1, new double[] { 0, 0 }, startAngl: 0));
 
             // misc. solver options
             // =============================  

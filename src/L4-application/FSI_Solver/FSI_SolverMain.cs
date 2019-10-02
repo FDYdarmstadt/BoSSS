@@ -1360,15 +1360,18 @@ namespace BoSSS.Application.FSI_Solver {
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
             BitArray superFineCells = new BitArray(noOfLocalCells);
-            double superFineRadius = 2 * LsTrk.GridDat.Cells.h_minGlobal;
+            BitArray collisionFineCells = new BitArray(noOfLocalCells);
+            double superFineRadius = 2 * LsTrk.GridDat.Cells.h_maxGlobal / refinementLevel;
             BitArray mediumFineCells = new BitArray(noOfLocalCells);
-            double mediumFineRadius = LsTrk.GridDat.Cells.h_maxGlobal / 2;
+            double mediumFineRadius = 3 * LsTrk.GridDat.Cells.h_maxGlobal / refinementLevel;
             for (int p = 0; p < m_Particles.Count; p++) {
                 Particle particle = m_Particles[p];
                 for (int j = 0; j < noOfLocalCells; j++) {
                     double[] centerPoint = new double[] { CellCenters[j, 0], CellCenters[j, 1] };
                     if (!superFineCells[j])
                         superFineCells[j] = particle.Contains(centerPoint, superFineRadius);
+                    else if (particle.Contains(centerPoint, superFineRadius))
+                        collisionFineCells[j] = true;
                     if (!mediumFineCells[j])
                         mediumFineCells[j] = particle.Contains(centerPoint, mediumFineRadius);
                 }
@@ -1378,7 +1381,8 @@ namespace BoSSS.Application.FSI_Solver {
                 coarseRefinementLevel += 1;
             List<Tuple<int, CellMask>> AllCellsWithMaxRefineLevel = new List<Tuple<int, CellMask>> {
                 new Tuple<int, CellMask>(refinementLevel, new CellMask(GridData, superFineCells)),
-                new Tuple<int, CellMask>(coarseRefinementLevel, new CellMask(GridData, mediumFineCells))
+                new Tuple<int, CellMask>(coarseRefinementLevel, new CellMask(GridData, mediumFineCells)),
+                new Tuple<int, CellMask>(refinementLevel + 2, new CellMask(GridData, collisionFineCells))
             };
             return AllCellsWithMaxRefineLevel;
         }
