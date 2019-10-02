@@ -34,7 +34,7 @@ namespace BoSSS.Application.FSI_Solver {
                 "Wall_upper"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 3, lengthY: 3, cellsPerUnitLength: 10, periodicX: false, periodicY: false);
+            C.SetGrid(lengthX: 3, lengthY: 3, cellsPerUnitLength: 5, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel: 2);
             C.hydrodynamicsConvergenceCriterion = 1e-2;
 
@@ -42,16 +42,16 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 1;
-            C.PhysicalParameters.IncludeConvection = false;
-            C.pureDryCollisions = true;
+            C.PhysicalParameters.IncludeConvection = true;
+            C.pureDryCollisions = false;
             C.gravity = new double[] { 0, -9.81 };
 
             // Particle Properties
             // =============================
-            double particleDensity = 1.1;
-            ParticleMotionInit motion1 = new ParticleMotionInit(C.gravity, particleDensity, true, false, false);
-            ParticleMotionInit motion2 = new ParticleMotionInit(C.gravity, particleDensity, true, true, true);
-            C.Particles.Add(new Particle_Rectangle(motion1, 0.25, 0.1, new double[] { 0.1, 1}, startAngl: 0));
+            double particleDensity = 20;
+            ParticleMotionInit motion1 = new ParticleMotionInit(C.gravity, particleDensity, false, false, false);
+            ParticleMotionInit motion2 = new ParticleMotionInit(C.gravity, particleDensity, false, true, true);
+            C.Particles.Add(new Particle_Rectangle(motion1, 0.25, 0.1, new double[] { 0.4, 0.5}, startAngl: 0));
             C.Particles.Add(new Particle_Rectangle(motion2, 0.25, 0.1, new double[] { 0, 0 }, startAngl: 0));
 
             // misc. solver options

@@ -82,7 +82,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Moment of inertia of an elliptic particle.
         /// </summary>
-        override public double MomentOfInertia => (1 / 12) * (Mass_P * (m_Length.Pow2() + m_Thickness.Pow2()));
+        override public double MomentOfInertia => (Mass_P * (m_Length.Pow2() + m_Thickness.Pow2())) / 12;
 
         /// <summary>
         /// Area occupied by the particle.

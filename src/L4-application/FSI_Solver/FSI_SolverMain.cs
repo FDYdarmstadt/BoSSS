@@ -1360,7 +1360,7 @@ namespace BoSSS.Application.FSI_Solver {
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
             BitArray superFineCells = new BitArray(noOfLocalCells);
-            double superFineRadius = 4 * LsTrk.GridDat.Cells.h_minGlobal;
+            double superFineRadius = 2 * LsTrk.GridDat.Cells.h_minGlobal;
             BitArray mediumFineCells = new BitArray(noOfLocalCells);
             double mediumFineRadius = LsTrk.GridDat.Cells.h_maxGlobal / 2;
             for (int p = 0; p < m_Particles.Count; p++) {
