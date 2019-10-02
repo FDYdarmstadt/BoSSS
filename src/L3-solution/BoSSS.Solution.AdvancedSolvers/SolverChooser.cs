@@ -144,6 +144,7 @@ namespace BoSSS.Solution {
                         GMRESConvCrit = lc.ConvergenceCriterion,
                         ConvCrit = nc.ConvergenceCriterion,
                         m_SessionPath = SessionPath,
+                        constant_newton_it = nc.constantNewtonIterations
                     };
                     break;
 
