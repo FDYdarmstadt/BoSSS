@@ -21,6 +21,7 @@ using System.Linq;
 using ilPSP.Utils;
 
 namespace BoSSS.Application.FSI_Solver {
+
     [DataContract]
     [Serializable]
     public class Particle_Shell : Particle {
