@@ -39,7 +39,7 @@ namespace BoSSS.Solution.NSECommon {
         PhysicsMode physMode;
         double phystime;
         bool unsteady;
-
+    
         /// <summary>
         /// <param name="Reynolds"></param>
         /// <param name="Froude"></param>
@@ -79,7 +79,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// None
         /// </summary>
-         public TermActivationFlags VolTerms {
+        public TermActivationFlags VolTerms {
             get {
                 return TermActivationFlags.AllOn;
             }
@@ -88,14 +88,13 @@ namespace BoSSS.Solution.NSECommon {
 
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
-            // throw new NotImplementedException();
-            //}
+
 
             ////Manufactured solution for T = cos(x*y), Y0 = 0.3 cos(x*y), Y1 = 0.6 cos(x*y), Y2 = 0.1 cos(x*y), u = cos(x*y), v = cos(x*y), p = sin(x*y).
-            //protected override double Source(double[] x, double[] parameters, double[] U) {
+
             double[] x = cpv.Xglobal;
 
-            double p0 = 1.0; // ThermodynamicPressure.GetMeanValue(3);
+            double p0 = 1.0;
             double M1 = MolarMasses[0]; double M2 = MolarMasses[1]; double M3 = MolarMasses[2]; double M4 = MolarMasses[3];
             double x_ = x[0];
             double y_ = x[1];
@@ -110,22 +109,11 @@ namespace BoSSS.Solution.NSECommon {
             double BouyancyTerm;
             double unsteadyTerm = 0.0;
             double t_ = cpv.time;
-           
-            //double myMS = 0;
-            //if (direction == "x") {
-            //    myMS = p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Pow(Math.Cos(x_ * t_), 0.2e1) * y_ * t_ * Math.Sin(x_ * y_ * t_) - 0.2e1 * p0 / Math.Cos(x_ * y_ * t_) * Math.Cos(x_ * t_) * t_ * Math.Sin(x_ * t_) + p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Cos(x_ * t_) * Math.Cos(y_ * t_) * x_ * t_ * Math.Sin(x_ * y_ * t_) - p0 / Math.Cos(x_ * y_ * t_) * Math.Cos(x_ * t_) * t_ * Math.Sin(y_ * t_) + y_ * t_ * Math.Cos(x_ * y_ * t_) + 0.4e1 / 0.3e1 / Reynolds * t_ * t_ * Math.Cos(x_ * t_);
-
-            //}
-            //else if (direction == "y") {
-            //    myMS = p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Cos(y_ * t_) * Math.Cos(x_ * t_) * y_ * t_ * Math.Sin(x_ * y_ * t_) - p0 / Math.Cos(x_ * y_ * t_) * Math.Cos(y_ * t_) * t_ * Math.Sin(x_ * t_) + p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Pow(Math.Cos(y_ * t_), 0.2e1) * x_ * t_ * Math.Sin(x_ * y_ * t_) - 0.2e1 * p0 / Math.Cos(x_ * y_ * t_) * Math.Cos(y_ * t_) * t_ * Math.Sin(y_ * t_) + x_ * t_ * Math.Cos(x_ * y_ * t_) + 0.4e1 / 0.3e1 / Reynolds * t_ * t_ * Math.Cos(y_ * t_);
-
-            //}
-
-            //return -myMS;
-        
 
 
- 
+
+
+
 
             ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -135,7 +123,7 @@ namespace BoSSS.Solution.NSECommon {
 
                     switch (physMode) {
                         case PhysicsMode.LowMach:
-                            unsteadyTerm = -p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Cos(x_ * t_) * x_ * y_ * Math.Sin(x_ * y_ * t_) + p0 / Math.Cos(x_ * y_ * t_) * x_ * Math.Sin(x_ * t_); 
+                            unsteadyTerm = -p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Cos(x_ * t_) * x_ * y_ * Math.Sin(x_ * y_ * t_) + p0 / Math.Cos(x_ * y_ * t_) * x_ * Math.Sin(x_ * t_);
                             ConvectionTerm = p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Pow(Math.Cos(x_ * t_), 0.2e1) * y_ * t_ * Math.Sin(x_ * y_ * t_) - 0.2e1 * p0 / Math.Cos(x_ * y_ * t_) * Math.Cos(x_ * t_) * t_ * Math.Sin(x_ * t_) + p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Cos(x_ * t_) * Math.Cos(y_ * t_) * x_ * t_ * Math.Sin(x_ * y_ * t_) - p0 / Math.Cos(x_ * y_ * t_) * Math.Cos(x_ * t_) * t_ * Math.Sin(y_ * t_);
                             break;
                         case PhysicsMode.Combustion:
@@ -162,7 +150,6 @@ namespace BoSSS.Solution.NSECommon {
                             break;
                         case PhysicsMode.Combustion:
                             throw new NotImplementedException("TODO");
-                            //break;
                         default:
                             throw new NotImplementedException("should not happen");
                     }
@@ -223,7 +210,7 @@ namespace BoSSS.Solution.NSECommon {
             }
 
 
-            return -( unsteadyTerm*1 + ConvectionTerm + ViscTerm + PressureGradientTerm + BouyancyTerm * -1)*V;
+            return -(unsteadyTerm * 1 + ConvectionTerm + ViscTerm + PressureGradientTerm + BouyancyTerm * -1) * V;
         }
     }
 }
