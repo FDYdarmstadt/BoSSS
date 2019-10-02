@@ -21,7 +21,6 @@ using System.Linq;
 using ilPSP.Utils;
 
 namespace BoSSS.Application.FSI_Solver {
-
     [DataContract]
     [Serializable]
     public class Particle_Shell : Particle {
@@ -79,6 +78,11 @@ namespace BoSSS.Application.FSI_Solver {
         private readonly double m_Height;
 
         /// <summary>
+        /// The shell is devided into two convex sub particles. Necesarry for the GJK-algorithm in the collision model.
+        /// </summary>
+        public override int NoOfSubParticles => 3;
+
+        /// <summary>
         /// Circumference of an elliptic particle. Approximated with Ramanujan.
         /// </summary>
         protected override double Circumference => 2 * m_Length + 4 * m_Height - 2 * m_Thickness;
@@ -109,17 +113,18 @@ namespace BoSSS.Application.FSI_Solver {
             double[] subPosition = position.CloneAs();
             subPosition[0] = position[0] - (m_Height - m_Thickness) / 2 * Math.Sin(angle);
             subPosition[1] = position[1] - (m_Height - m_Thickness) / 2 * Math.Cos(angle);
-            double subR1 = Math.Max(Math.Abs(tempX[0] - subPosition[0]) - m_Length, Math.Abs(tempX[1] - subPosition[1]) - m_Thickness);
+            double subR1 = -Math.Max(Math.Abs(tempX[0] - subPosition[0]) - (m_Length - 2 * m_Thickness) / 2, Math.Abs(tempX[1] - subPosition[1]) - m_Thickness / 2);
             // subparticle | left
             subPosition[0] = position[0] - (m_Length - m_Thickness) / 2 * Math.Cos(angle);
             subPosition[1] = position[1] - (m_Length - m_Thickness) / 2 * Math.Sin(angle);
-            double subR2 = Math.Max(Math.Abs(tempX[0] - subPosition[0]) - m_Height, Math.Abs(tempX[1] - subPosition[1]) - m_Thickness);
+            double subR2 = -Math.Max(Math.Abs(tempX[0] - subPosition[0]) - m_Thickness / 2, Math.Abs(tempX[1] - subPosition[1]) - m_Height / 2);
             // subparticle | right
             subPosition[0] = position[0] - (-m_Length + m_Thickness) / 2 * Math.Cos(angle);
             subPosition[1] = position[1] - (-m_Length + m_Thickness) / 2 * Math.Sin(angle);
-            double subR3 = Math.Max(Math.Abs(tempX[0] - subPosition[0]) - m_Height, Math.Abs(tempX[1] - subPosition[1]) - m_Thickness);
+            double subR3 = -Math.Max(Math.Abs(tempX[0] - subPosition[0]) - m_Thickness / 2, Math.Abs(tempX[1] - subPosition[1]) - m_Height / 2);
             // complete
-            double r = -Math.Max(Math.Max(subR1, subR2), subR3);
+            double r = Math.Max(subR2, subR3);
+            r = Math.Max(r, subR1);
             if (double.IsNaN(r) || double.IsInfinity(r))
                 throw new ArithmeticException();
             return r;
@@ -145,15 +150,30 @@ namespace BoSSS.Application.FSI_Solver {
             double[] position = Motion.GetPosition(0);
             if (maxTolerance == 0)
                 maxTolerance = minTolerance;
-            double a = !WithoutTolerance ? m_Length + Math.Sqrt(maxTolerance.Pow2() + minTolerance.Pow2()) : m_Length;
-            double b = !WithoutTolerance ? m_Thickness + Math.Sqrt(maxTolerance.Pow2() + minTolerance.Pow2()) : m_Thickness;
+            double a = !WithoutTolerance ? (m_Length - 2 * m_Thickness) / 2 + Math.Sqrt(maxTolerance.Pow2() + minTolerance.Pow2()) : (m_Length - 2 * m_Thickness) / 2;
+            double b = !WithoutTolerance ? m_Height / 2 + Math.Sqrt(maxTolerance.Pow2() + minTolerance.Pow2()) : m_Height / 2;
+            double c = !WithoutTolerance ? m_Thickness / 2 + Math.Sqrt(maxTolerance.Pow2() + minTolerance.Pow2()) : m_Thickness / 2;
             double[] tempX = point.CloneAs();
             tempX[0] = point[0] * Math.Cos(angle) - point[1] * Math.Sin(angle);
             tempX[1] = point[0] * Math.Sin(angle) + point[1] * Math.Cos(angle);
-            if (Math.Abs(tempX[0] - position[0]) < a && Math.Abs(tempX[1] - position[1]) < b)
+            // subparticle _
+            double[] subPosition = position.CloneAs();
+            subPosition[0] = position[0] - (m_Height - m_Thickness) / 2 * Math.Sin(angle);
+            subPosition[1] = position[1] - (m_Height - m_Thickness) / 2 * Math.Cos(angle);
+            if (Math.Abs(tempX[0] - subPosition[0]) < a && Math.Abs(tempX[1] - subPosition[1]) < c)
+                return true;
+            // subparticle | left
+            subPosition[0] = position[0] - (m_Length - m_Thickness) / 2 * Math.Cos(angle);
+            subPosition[1] = position[1] - (m_Length - m_Thickness) / 2 * Math.Sin(angle);
+            if (Math.Abs(tempX[0] - subPosition[0]) < c && Math.Abs(tempX[1] - subPosition[1]) < b)
+                return true;
+            // subparticle | right
+            subPosition[0] = position[0] - (-m_Length + m_Thickness) / 2 * Math.Cos(angle);
+            subPosition[1] = position[1] - (-m_Length + m_Thickness) / 2 * Math.Sin(angle);
+            if (Math.Abs(tempX[0] - subPosition[0]) < c && Math.Abs(tempX[1] - subPosition[1]) < b)
                 return true;
             else
-               return true;
+               return false;
         }
 
         /// <summary>
@@ -172,22 +192,42 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="vector">
         /// A vector. 
         /// </param>
-        override public double[] GetSupportPoint(double[] vector) {
+        override public double[] GetSupportPoint(double[] vector, int SubParticleID) {
             Aux.TestArithmeticException(vector, "vector in calc of support point");
             if (vector.L2Norm() == 0)
                 throw new ArithmeticException("The given vector has no length");
-            
-            double[] supportPoint = vector.CloneAs();
-            double angle = Motion.GetAngle(0);
+
             double[] position = Motion.GetPosition(0);
+            double angle = Motion.GetAngle(0);
+            double[] subPosition = position.CloneAs();
+            double[] length = position.CloneAs();
+            switch (SubParticleID) {
+                case 1:
+                    subPosition[0] = position[0] - (m_Height - m_Thickness) / 2 * Math.Sin(angle);
+                    subPosition[1] = position[1] - (m_Height - m_Thickness) / 2 * Math.Cos(angle);
+                    length[0] = ((m_Length - 2 * m_Thickness) * Math.Cos(angle) - m_Thickness * Math.Sin(angle)) / 2;
+                    length[1] = ((m_Length - 2 * m_Thickness) * Math.Sin(angle) + m_Thickness * Math.Cos(angle)) / 2;
+                    break;
+                case 2:
+                    subPosition[0] = position[0] - (m_Length - m_Thickness) / 2 * Math.Cos(angle);
+                    subPosition[1] = position[1] - (m_Length - m_Thickness) / 2 * Math.Sin(angle);
+                    length[0] = (m_Thickness * Math.Cos(angle) - m_Height * Math.Sin(angle)) / 2;
+                    length[1] = (m_Thickness * Math.Sin(angle) + m_Height * Math.Cos(angle)) / 2;
+                    break;
+                case 3:
+                    subPosition[0] = position[0] - (-m_Length + m_Thickness) / 2 * Math.Cos(angle);
+                    subPosition[1] = position[1] - (-m_Length + m_Thickness) / 2 * Math.Sin(angle);
+                    length[0] = (m_Thickness * Math.Cos(angle) - m_Height * Math.Sin(angle)) / 2;
+                    length[1] = (m_Thickness * Math.Sin(angle) + m_Height * Math.Cos(angle)) / 2;
+                    break;
+            }
+
+            double[] supportPoint = vector.CloneAs();
             double[] rotVector = vector.CloneAs();
             rotVector[0] = vector[0] * Math.Cos(angle) - vector[1] * Math.Sin(angle);
             rotVector[1] = vector[0] * Math.Sin(angle) + vector[1] * Math.Cos(angle);
-            double[] length = position.CloneAs();
-            length[0] = m_Length * Math.Cos(angle) - m_Thickness * Math.Sin(angle);
-            length[1] = m_Length * Math.Sin(angle) + m_Thickness * Math.Cos(angle);
             for(int d = 0; d < position.Length; d++) {
-                supportPoint[d] = Math.Sign(rotVector[d]) * length[d] + position[d];
+                supportPoint[d] = Math.Sign(rotVector[d]) * length[d] + subPosition[d];
             }
             return supportPoint;
         }

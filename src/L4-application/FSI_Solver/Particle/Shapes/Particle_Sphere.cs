@@ -150,7 +150,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="vector">
         /// A vector. 
         /// </param>
-        override public double[] GetSupportPoint(double[] vector) {
+        override public double[] GetSupportPoint(double[] vector, int SubParticleID) {
             double length = Math.Sqrt(vector[0].Pow2() + vector[1].Pow2());
             double CosT = vector[0] / length;
             double SinT = vector[1] / length;

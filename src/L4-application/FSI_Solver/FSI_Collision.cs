@@ -515,8 +515,8 @@ namespace FSI_Solver {
             int SpatialDim = particle.Motion.GetPosition(0).Count();
             SupportPoint = new double[SpatialDim];
             // A direct formulation of the support function for a sphere exists, thus it is also possible to map it to an ellipsoid.
-            if (particle is Particle_Ellipsoid || particle is Particle_Sphere || particle is Particle_Rectangle) {
-                SupportPoint = particle.GetSupportPoint(Vector);
+            if (particle is Particle_Ellipsoid || particle is Particle_Sphere || particle is Particle_Rectangle || particle is Particle_Shell) {
+                SupportPoint = particle.GetSupportPoint(Vector, SubParticleID);
             }
 
             // Binary search in all other cases.

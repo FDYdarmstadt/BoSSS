@@ -204,7 +204,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Calculates the support point with an analytic formula (if applicable)
         /// </summary>
         /// <param name="Vector"></param>
-        public virtual double[] GetSupportPoint(double[] Vector) => throw new NotImplementedException();
+        public virtual double[] GetSupportPoint(double[] Vector, int SubParticleID) => throw new NotImplementedException();
 
         /// <summary>
         /// Calculates the radial vector (SurfacePoint-ParticleReadOnlyPosition)

@@ -154,7 +154,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="vector">
         /// A vector. 
         /// </param>
-        override public double[] GetSupportPoint(double[] vector) {
+        override public double[] GetSupportPoint(double[] vector, int SubParticleID) {
             Aux.TestArithmeticException(vector, "vector in calc of support point");
             if (vector.L2Norm() == 0)
                 throw new ArithmeticException("The given vector has no length");
