@@ -229,14 +229,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Debug.Assert(xadj.Where(idx => idx > adjncy.Count).Count() == 0);
                         Debug.Assert(adjncy.Where(j => j >= JComp).Count() == 0);
 
-                        //ilPSP.Environment.StdoutOnlyOnRank0 = false;
-                        //string xadjName = "xadj-" + MPIrank + ".txt";
-                        //string adjncyName = "adjncy-" + MPIrank + ".txt";
-                        //Console.WriteLine("Rank " + MPIrank + ": NoOfPartsPerProcess = " + NoOfPartsPerProcess + ",  JComp = " + JComp);
-
-                        //xadj.SaveToTextFile(xadjName);
-                        //adjncy.SaveToTextFile(adjncyName);
-                        
                         METIS.PARTGRAPHKWAY(
                                 ref JComp, ref ncon,
                                 xadj,
@@ -250,9 +242,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 options,
                                 ref edgecut,
                                 part);
-
-                        //System.IO.File.Delete(xadjName);
-                        //System.IO.File.Delete(adjncyName);
                     } else {
                         part.SetAll(0);
                     }
@@ -482,11 +471,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // ===============
 
                 var _Blocks = this.m_BlockingStrategy.GetBlocking(op);
-                foreach(var _bloc in _Blocks) {
-                    Debug.Assert(_bloc.Count > 0);
+
+                foreach(var b in _Blocks) {
+                    if (b.Count <= 0)
+                        throw new ArithmeticException("Empty Schwarz-Block found");
                 }
                 int NoOfSchwzBlocks = _Blocks.Count();
-
+     
                 // test cell blocks
                 // ================
 #if DEBUG
@@ -882,6 +873,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         var l1 = TempRowIdx_gI[iPart];
 
+                        int BlockSize = bi.Count + l1.Count;
+                        if (BlockSize <= 0)
+                            throw new ArithmeticException("Empty Schwarz-Block found");
+
                         //if (M.RowPartitioning.MpiSize > 1) {
                         //    int i0Proc = M.RowPartitioning.i0;
                         //    bi = bi.CloneAs();
@@ -891,7 +886,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //}
 
                         BlockPartitioning localBlocking = new BlockPartitioning(bi.Count + l1.Count, LocalBlocks_i0[iPart], LocalBlocks_N[iPart], csMPI.Raw._COMM.SELF);
-
+                        
                         if (l1.Count > 0) {
                             // convert the indices into 'ExternalRowsTemp' to global indices
                             int l1L = l1.Count;
@@ -1552,8 +1547,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 double[] biLo = new double[Llo];
                                 biLo.AccV(1.0, bi, default(int[]), ciLo);
                                 double[] xiLo = new double[Llo];
-                                blockSolvers[iPart].Solve(xiLo, biLo);
-
+                                try {
+                                    blockSolvers[iPart].Solve(xiLo, biLo);
+                                } catch (ArithmeticException ae) {
+                                    Console.Error.WriteLine(ae.Message);
+                                    throw ae;
+                                }
                                 xi.AccV(1.0, xiLo, ciLo, default(int[]));
 
                                 {

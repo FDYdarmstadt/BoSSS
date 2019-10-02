@@ -1,0 +1,401 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 3 instances of IDatabaseInfo {
+  0: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+  1: { Session Count = 45; Grid Count = 132; Path = G:\DB_Cube }
+  2: { Session Count = 4; Grid Count = 1; Path = G:\Performance_DB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+var DB= OpenOrCreateDatabase(@"G:\DB_SFB_Paper")
+**************
+Opening existing database 'G:\DB_SFB_Paper'.
+
+==============
+DB.Projects
+**************
+List of 3 instances of KeyValuePair{String,IEnumerable{ISessionInfo}} {
+  0: [Xdg_SFB_4cores_r0_failed, System.Collections.Generic.List`1[BoSSS.Foundation.IO.ISessionInfo]]
+  1: [Xdg_SFB_4cores_r0, System.Collections.Generic.List`1[BoSSS.Foundation.IO.ISessionInfo]]
+  2: [Xdg_SFB_4cores_test, System.Collections.Generic.List`1[BoSSS.Foundation.IO.ISessionInfo]]
+}
+==============
+DB.Projects.Pick(1).Value
+**************
+List of 34 instances of ISessionInfo {
+  0: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg	09/25/2019 13:44:17	2dcf442a...
+  1: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J4096_k3_exp_gmres_levelpmg	09/25/2019 13:44:26	58009ffb...
+  2: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J262144_k2_classic_pardiso	09/25/2019 13:44:18	88ee3f0f...
+  3: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J32768_k2_classic_pardiso	09/25/2019 13:44:32	1b539afd...
+  4: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J4096_k2_exp_gmres_levelpmg	09/25/2019 13:44:37	ee35ed70...
+  5: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J32768_k3_classic_pardiso	09/25/2019 13:44:36	9b791f07...
+  6: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz	09/25/2019 13:45:54	74b760ac...
+  7: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k3_exp_gmres_levelpmg	09/25/2019 13:44:20	a7a8fbbe...
+  8: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J4096_k3_exp_Kcycle_schwarz	09/25/2019 13:45:55	6f448b74...
+  9: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J4096_k3_classic_pardiso	09/25/2019 13:44:34	0a32be87...
+  10: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz	09/25/2019 13:45:55	c929070f...
+  11: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz	09/25/2019 13:45:53	d73019f4...
+  12: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz	09/25/2019 13:45:54	7276072c...
+  13: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz	09/25/2019 13:45:54	96a883c8...
+  14: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz	09/25/2019 13:45:54	fb0f4712...
+  15: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J64_k3_exp_gmres_levelpmg	09/25/2019 13:44:27	0d3f9ff8...
+  16: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k5_classic_pardiso	09/25/2019 13:44:31	304eb1fa...
+  17: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz	09/25/2019 13:45:18	dfa7fb6a...
+  18: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz	09/25/2019 13:45:15	5c3061f6...
+  19: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J4096_k2_classic_pardiso	09/25/2019 13:44:25	75c41085...
+  20: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg	09/25/2019 13:44:24	7638d9d5...
+  21: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k3_classic_pardiso	09/25/2019 13:44:29	9ebd0cc1...
+  22: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg	09/25/2019 13:44:22	c8a0d77d...
+  23: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J8_k3_exp_gmres_levelpmg	09/25/2019 13:44:27	ea3c6f1a...
+  24: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J64_k5_classic_pardiso	09/25/2019 13:44:27	53ba3149...
+  25: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J64_k2_exp_gmres_levelpmg	09/25/2019 13:44:23	5dde8013...
+  26: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k2_classic_pardiso	09/25/2019 13:44:37	9046a326...
+  27: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J64_k2_classic_pardiso	09/25/2019 13:44:21	789273cc...
+  28: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J64_k3_classic_pardiso	09/25/2019 13:44:28	28ac2aa5...
+  29: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J8_k5_classic_pardiso	09/25/2019 13:44:38	0236e761...
+  30: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz	09/25/2019 13:44:27	1507c2d1...
+  31: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J8_k2_exp_gmres_levelpmg	09/25/2019 13:44:16	84dbd686...
+  32: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J8_k2_classic_pardiso	09/25/2019 13:44:34	dd13971c...
+  33: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J8_k3_classic_pardiso	09/25/2019 13:44:19	bd1c062e...
+}
+==============
+DB.Projects.Pick(0).Value.ForEach(s=>Console.WriteLine(s.ComputeNodeNames.Count))
+**************
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
+
+==============
+DB.Projects.Pick(0).Value.RunningOrCrashed().ForEach(s=>s.ProjectName=s.ProjectName+"_failed");
+**************
+==============
+DB.Projects.Pick(1).Value
+**************
+List of 34 instances of ISessionInfo {
+  0: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg	09/25/2019 13:44:17	2dcf442a...
+  1: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J4096_k3_exp_gmres_levelpmg	09/25/2019 13:44:26	58009ffb...
+  2: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J262144_k2_classic_pardiso	09/25/2019 13:44:18	88ee3f0f...
+  3: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J32768_k2_classic_pardiso	09/25/2019 13:44:32	1b539afd...
+  4: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J4096_k2_exp_gmres_levelpmg	09/25/2019 13:44:37	ee35ed70...
+  5: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J32768_k3_classic_pardiso	09/25/2019 13:44:36	9b791f07...
+  6: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz	09/25/2019 13:45:54	74b760ac...
+  7: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k3_exp_gmres_levelpmg	09/25/2019 13:44:20	a7a8fbbe...
+  8: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J4096_k3_exp_Kcycle_schwarz	09/25/2019 13:45:55	6f448b74...
+  9: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J4096_k3_classic_pardiso	09/25/2019 13:44:34	0a32be87...
+  10: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz	09/25/2019 13:45:55	c929070f...
+  11: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz	09/25/2019 13:45:53	d73019f4...
+  12: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz	09/25/2019 13:45:54	7276072c...
+  13: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz	09/25/2019 13:45:54	96a883c8...
+  14: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz	09/25/2019 13:45:54	fb0f4712...
+  15: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J64_k3_exp_gmres_levelpmg	09/25/2019 13:44:27	0d3f9ff8...
+  16: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k5_classic_pardiso	09/25/2019 13:44:31	304eb1fa...
+  17: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz	09/25/2019 13:45:18	dfa7fb6a...
+  18: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz	09/25/2019 13:45:15	5c3061f6...
+  19: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J4096_k2_classic_pardiso	09/25/2019 13:44:25	75c41085...
+  20: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg	09/25/2019 13:44:24	7638d9d5...
+  21: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k3_classic_pardiso	09/25/2019 13:44:29	9ebd0cc1...
+  22: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg	09/25/2019 13:44:22	c8a0d77d...
+  23: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J8_k3_exp_gmres_levelpmg	09/25/2019 13:44:27	ea3c6f1a...
+  24: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J64_k5_classic_pardiso	09/25/2019 13:44:27	53ba3149...
+  25: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J64_k2_exp_gmres_levelpmg	09/25/2019 13:44:23	5dde8013...
+  26: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J512_k2_classic_pardiso	09/25/2019 13:44:37	9046a326...
+  27: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J64_k2_classic_pardiso	09/25/2019 13:44:21	789273cc...
+  28: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J64_k3_classic_pardiso	09/25/2019 13:44:28	28ac2aa5...
+  29: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J8_k5_classic_pardiso	09/25/2019 13:44:38	0236e761...
+  30: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz	09/25/2019 13:44:27	1507c2d1...
+  31: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J8_k2_exp_gmres_levelpmg	09/25/2019 13:44:16	84dbd686...
+  32: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J8_k2_classic_pardiso	09/25/2019 13:44:34	dd13971c...
+  33: Xdg_SFB_4cores_r0	XdgPoissonVelocity_J8_k3_classic_pardiso	09/25/2019 13:44:19	bd1c062e...
+}
+==============
+var DB = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\weber\SFB_DB");
+**************
+Opening existing database '\\hpccluster\hpccluster-scratch\weber\SFB_DB'.
+
+==============
+DB.Projects
+**************
+List of 10 instances of KeyValuePair{String,IEnumerable{ISessionInfo}} {
+  0: [Xdg_SFB_Performance_r3, System.Collections.Generic.List`1[BoSSS.Foundation.IO.ISessionInfo]]
+  1: [Xdg_SFB_Performance_r3_ignored_2, System.Collections.Generic.List`1[BoSSS.Foundation.IO.ISessionInfo]]
+  2: [Xdg_SFB_Performance_r3_ignored, System.Collections.Generic.List`1[BoSSS.Foundation.IO.ISessionInfo]]
+  3: [Xdg_SFB_Performance_test3, System.Collections.Generic.List`1[BoSSS.Foundation.IO.ISessionInfo]]
+  4: [Xdg_SFB_Performance_r2_failed, System.Collections.Generic.List`1[BoSSS.Foundation.IO.ISessionInfo]]
+  5: [Xdg_SFB_Performance_r2, System.Collections.Generic.List`1[BoSSS.Foundation.IO.ISessionInfo]]
+  6: [Xdg_SFB_Performance_r1, System.Collections.Generic.List`1[BoSSS.Foundation.IO.ISessionInfo]]
+  7: [Xdg_SFB_Performance_r0, System.Collections.Generic.List`1[BoSSS.Foundation.IO.ISessionInfo]]
+  8: [Xdg_SFB_Performance_test2, System.Collections.Generic.List`1[BoSSS.Foundation.IO.ISessionInfo]]
+  9: [Xdg_SFB_Performance_test, System.Collections.Generic.List`1[BoSSS.Foundation.IO.ISessionInfo]]
+}
+==============
+DB.Projects.Pick(1).Value
+**************
+List of 13 instances of ISessionInfo {
+  0: Xdg_SFB_Performance_r3_ignored_2	XdgPoissonVelocity_J8_k5_classic_pardiso	09/25/2019 17:45:14	02c60996...
+  1: Xdg_SFB_Performance_r3_ignored_2	XdgPoissonVelocity_J64_k5_classic_pardiso	09/25/2019 17:45:31	9107934d...
+  2: Xdg_SFB_Performance_r3_ignored_2	XdgPoissonVelocity_J512_k5_classic_pardiso	09/25/2019 17:45:50	f52c6608...
+  3: Xdg_SFB_Performance_r3_ignored_2	XdgPoissonVelocity_J4096_k5_classic_pardiso	09/25/2019 17:46:11	4571bcae...
+  4: Xdg_SFB_Performance_r3_ignored_2	XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg	09/25/2019 18:09:06	a50f16d1...
+  5: Xdg_SFB_Performance_r3_ignored_2	XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg	09/25/2019 18:15:28	b24782af...
+  6: Xdg_SFB_Performance_r3_ignored_2	XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg	09/25/2019 18:17:10	4a1a0daa...
+  7: Xdg_SFB_Performance_r3_ignored_2	XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz	09/25/2019 18:55:59	2a2a92a3...
+  8: Xdg_SFB_Performance_r3_ignored_2	XdgPoissonVelocity_J13824_k5_exp_Kcycle_schwarz	09/25/2019 18:57:42	d3efe543...
+  9: Xdg_SFB_Performance_r3_ignored_2	XdgPoissonVelocity_J13824_k5_classic_pardiso	09/25/2019 17:46:31	5a478008...
+  10: Xdg_SFB_Performance_r3_ignored_2	XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz	09/26/2019 12:09:55	2f238e20...
+  11: Xdg_SFB_Performance_r3_ignored_2	XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz	09/26/2019 12:10:13	772adcf3...
+  12: Xdg_SFB_Performance_r3_ignored_2	XdgPoissonVelocity_J13824_k5_exp_gmres_levelpmg	09/26/2019 18:29:04	28748875...
+}
+==============
+IEnumerable<ISessionInfo> bla = DB.Projects.Pick(1).Value.Where(s=>s.Name.Contains("classic_pardiso"));
+bla;
+**************
+List of 5 instances of ISessionInfo {
+  0: Xdg_SFB_Performance_r3_ignored_2	XdgPoissonVelocity_J8_k5_classic_pardiso	09/25/2019 17:45:14	02c60996...
+  1: Xdg_SFB_Performance_r3_ignored_2	XdgPoissonVelocity_J64_k5_classic_pardiso	09/25/2019 17:45:31	9107934d...
+  2: Xdg_SFB_Performance_r3_ignored_2	XdgPoissonVelocity_J512_k5_classic_pardiso	09/25/2019 17:45:50	f52c6608...
+  3: Xdg_SFB_Performance_r3_ignored_2	XdgPoissonVelocity_J4096_k5_classic_pardiso	09/25/2019 17:46:11	4571bcae...
+  4: Xdg_SFB_Performance_r3_ignored_2	XdgPoissonVelocity_J13824_k5_classic_pardiso	09/25/2019 17:46:31	5a478008...
+}
+==============
+//bla.Value.ForEach(s=>s.ProjectName=Xdg_SFB_Performance_r3);
+bla.ForEach(s=>s.ProjectName="Xdg_SFB_Performance_r3");
+**************
+==============
+bla.Pick(2).KeysAndQueries
+**************
+List of 77 instances of KeyValuePair{String,Object} {
+  0: [SessionName, XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz]
+  1: [DGdegree:Phi, 2]
+  2: [DGdegree:u, 2]
+  3: [GeneratedFromCode, False]
+  4: [ControlFileText_Index, 0]
+  5: [dtFixed, -1]
+  6: [SetDefaultDiriBndCnd, True]
+  7: [ViscosityMode, 1]
+  8: [MU_A, -1]
+  9: [MU_B, -1000]
+  10: [ExcactSolSupported, False]
+  11: [PrePreCond, 4]
+  12: [AgglomerationThreshold, 0.1]
+  13: [penalty_multiplyer, 2]
+  14: [pOff, 2]
+  15: [SuppressExceptionPrompt, True]
+  16: [GridPartType, 5]
+  17: [ProjectName, Xdg_SFB_Performance_r3]
+  18: [NoOfTimesteps, -1]
+  19: [Endtime, 1.79769313486232E+308]
+  20: [saveperiod, 1]
+  21: [rollingSaves, 0]
+  22: [dtMin, -1]
+  23: [dtMax, -1]
+  24: [CompMode, 0]
+  25: [ImmediatePlotPeriod, -1]
+  26: [SuperSampling, 0]
+  27: [savetodb, True]
+  28: [logFileDirectory, .]
+  29: [Paramstudy_ContinueOnError, True]
+  30: [LinearSolver.verbose, True]
+  31: [LinearSolver.MaxKrylovDim, 30]
+  32: [LinearSolver.MaxSolverIterations, 2000]
+  33: [LinearSolver.MinSolverIterations, 2]
+  34: [LinearSolver.ConvergenceCriterion, 1E-08]
+  35: [LinearSolver.SolverCode, 41]
+  36: [LinearSolver.NoOfMultigridLevels, 10]
+  37: [LinearSolver.exp_localPrec_muA, 1]
+  38: [LinearSolver.exp_localPrec_Min_dt, 0]
+  39: [LinearSolver.TargetBlockSize, 10000]
+  40: [NonLinearSolver.verbose, False]
+  41: [NonLinearSolver.PrecondSolver.verbose, False]
+  42: [NonLinearSolver.PrecondSolver.MaxKrylovDim, 30]
+  43: [NonLinearSolver.PrecondSolver.MaxSolverIterations, 2000]
+  44: [NonLinearSolver.PrecondSolver.MinSolverIterations, 2]
+  45: [NonLinearSolver.PrecondSolver.ConvergenceCriterion, 1E-10]
+  46: [NonLinearSolver.PrecondSolver.SolverCode, 1]
+  47: [NonLinearSolver.PrecondSolver.NoOfMultigridLevels, 1]
+  48: [NonLinearSolver.PrecondSolver.exp_localPrec_muA, 1]
+  49: [NonLinearSolver.PrecondSolver.exp_localPrec_Min_dt, 0]
+  50: [NonLinearSolver.PrecondSolver.TargetBlockSize, 10000]
+  51: [NonLinearSolver.MaxSolverIterations, 2000]
+  52: [NonLinearSolver.MinSolverIterations, 2]
+  53: [NonLinearSolver.ConvergenceCriterion, 1E-08]
+  54: [NonLinearSolver.UnderRelax, 1]
+  55: [NonLinearSolver.SolverCode, 1]
+  56: [DynamicLoadBalancing_RedistributeAtStartup, False]
+  57: [DynamicLoadBalancing_Period, -1]
+  58: [DynamicLoadBalancing_ImbalanceThreshold, 0.12]
+  59: [DynamicLoadBalancing_On, False]
+  60: [AdaptiveMeshRefinement, False]
+  61: [AMR_startUpSweeps, 1]
+  62: [CutCellQuadratureType, 5]
+  63: [ContinueOnIoError, True]
+  64: [Grid:NoOfCells, 262144]
+  65: [Grid:hMax, 0.0541265877365274]
+  66: [Grid:hMin, 0.03125]
+  67: [UsedNoOfMultigridLevels, 7]
+  68: [maxBlkSize, 20]
+  69: [minBlkSize, 10]
+  70: [NumberOfMatrixBlox, 1810432]
+  71: [DOFs, 2671600]
+  72: [minSolRunT, 865.4956143]
+  73: [maxSolRunT, 865.4956143]
+  74: [Conv, 1]
+  75: [NoIter, 16]
+  76: [maxMultigridlvl, 0]
+}
+==============
+bla.Pick(3)
+**************
+Xdg_SFB_Performance_r3	XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz	09/25/2019 19:07:09	7553016f...
+==============
+bla.Pick(3).KeysAndQueries.Pick(76)
+**************
+System.ArgumentOutOfRangeException occurred: Specified argument was out of the range of valid values.
+Parameter name: index. Type 'LastError' for details.
+
+==============
+//move ignored cases to other project
+string[] ignoredcases=new string[]{
+//"J8_k2_exp_Kcycle_schwarz",
+//"J64_k2_exp_Kcycle_schwarz",
+//"J512_k2_exp_Kcycle_schwarz",
+//"J8_k3_exp_Kcycle_schwarz",
+"J8"
+};
+List<ISessionInfo> getit=new List<ISessionInfo>();
+foreach(string icase in ignoredcases){
+    Console.WriteLine(DB.Where(s=>s.Name.Contains(icase)).Pick(0));
+    bla.Where(s=>s.Name.Contains(icase)).ForEach(s=>getit.Add(s));
+   }
+//getit.ForEach(s=>s.ProjectName=s.ProjectName+"_ignored");
+getit;
+**************
+Xdg_SFB_Performance_r3  XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz 09/26/2019 12:08:36 0dfedb3c...
+List of 2 instances of ISessionInfo {
+  0: Xdg_SFB_Performance_r3 XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz 09/26/2019 12:08:36 0dfedb3c...
+  1: Xdg_SFB_Performance_r3 XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz 09/26/2019 12:07:37 d4ede9e7...
+}
+==============
+DB.Projects
+**************
+List of 9 instances of KeyValuePair{String,IEnumerable{ISessionInfo}} {
+  0: [Xdg_SFB_Performance_r3_ignored, System.Collections.Generic.List`1[BoSSS.Foundation.IO.ISessionInfo]]
+  1: [Xdg_SFB_Performance_r3, System.Collections.Generic.List`1[BoSSS.Foundation.IO.ISessionInfo]]
+  2: [Xdg_SFB_Performance_test3, System.Collections.Generic.List`1[BoSSS.Foundation.IO.ISessionInfo]]
+  3: [Xdg_SFB_Performance_r2_failed, System.Collections.Generic.List`1[BoSSS.Foundation.IO.ISessionInfo]]
+  4: [Xdg_SFB_Performance_r2, System.Collections.Generic.List`1[BoSSS.Foundation.IO.ISessionInfo]]
+  5: [Xdg_SFB_Performance_r1, System.Collections.Generic.List`1[BoSSS.Foundation.IO.ISessionInfo]]
+  6: [Xdg_SFB_Performance_r0, System.Collections.Generic.List`1[BoSSS.Foundation.IO.ISessionInfo]]
+  7: [Xdg_SFB_Performance_test2, System.Collections.Generic.List`1[BoSSS.Foundation.IO.ISessionInfo]]
+  8: [Xdg_SFB_Performance_test, System.Collections.Generic.List`1[BoSSS.Foundation.IO.ISessionInfo]]
+}
+==============
+//move failed cases to other project
+string[] failedcases=new string[]{
+    //"32768_k5",
+    "J64_k5_exp_gmres_levelpmg",
+//"J110592_k3_classic_pardiso"
+};
+List<ISessionInfo> getit=new List<ISessionInfo>();
+foreach(string ifail in failedcases){
+    Console.WriteLine(bla.Where(s=>s.Name.Contains(ifail)).Pick(0));
+    bla.Where(s=>s.Name.Contains(ifail)).ForEach(s=>getit.Add(s));
+   }
+//getit.ForEach(s=>s.ProjectName=s.ProjectName+"_failed");
+getit;
+**************
+System.ArgumentOutOfRangeException occurred: Specified argument was out of the range of valid values.
+Parameter name: index. Type 'LastError' for details.
+
+==============
+//bla.Where(s=>s.Name.Contains("J32768_k5"))
+DB.Projects.Pick(0).Value
+**************
+List of 10 instances of ISessionInfo {
+  0: Xdg_SFB_Performance_r3_ignored	XdgPoissonVelocity_J13824_k3_exp_Kcycle_schwarz	09/25/2019 18:40:39	19128016...
+  1: Xdg_SFB_Performance_r3_ignored	XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz	09/25/2019 18:55:17	0dc88d57...
+  2: Xdg_SFB_Performance_r3_ignored	XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz	09/25/2019 18:55:33	2297ca5e...
+  3: Xdg_SFB_Performance_r3_ignored	XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz	09/25/2019 18:36:44	5bfd485a...
+  4: Xdg_SFB_Performance_r3_ignored	XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz	09/25/2019 18:37:16	ddc57308...
+  5: Xdg_SFB_Performance_r3_ignored	XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz	09/25/2019 18:55:10	f923a087...
+  6: Xdg_SFB_Performance_r3_ignored	XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz	09/25/2019 18:36:15	4cfc534e...
+  7: Xdg_SFB_Performance_r3_ignored	XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz	09/25/2019 18:23:49	f35e9dbb...
+  8: Xdg_SFB_Performance_r3_ignored	XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz	09/25/2019 18:23:29	ac1afd73...
+  9: Xdg_SFB_Performance_r3_ignored	XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz	09/25/2019 18:23:10	b3d6f323...
+}
+==============
+string lastentry = DB.Projects.Pick(0).Value.Pick(1).KeysAndQueries.Last().Key;
+DB.Projects.Pick(0).Value.Pick(1).KeysAndQueries.Last().Key;
+**************
+maxMultigridlvl
+==============
+//check for broken ones ...
+//ArgumentOutOfRangeException
+IEnumerable<ISessionInfo> canidates=DB.Projects.Pick(0).Value.Where(s=>!s.KeysAndQueries.Last().Key.Equals(lastentry));
+//canidates.ForEach(b=>Console.WriteLine(b.KeysAndQueries.Last().Key))
+//canidates.ForEach(b=>b.Delete(true));
+canidates;
+**************
+List of 0 instances of ISessionInfo {
+}
+==============
+//DB.Projects.Pick(1).Value.Pick(41).ForEach(s=>s.Delete(true));
+//DB.Projects.Pick(1).Value.Pick(24).Delete(true);
+DB.Projects.Pick(0).Value.Pick(0)
+**************
+Xdg_SFB_Performance_r3	XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz	09/26/2019 12:10:13	772adcf3...
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
