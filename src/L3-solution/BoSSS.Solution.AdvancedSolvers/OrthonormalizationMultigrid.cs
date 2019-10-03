@@ -314,46 +314,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double[] rl = new double[L];
                 double[] rlc = new double[Lc];
 
-                /*
-                {
-                    Stopwatch test = new Stopwatch();
-                    double[] ot = new double[L];
+                //double[] Xex = _B.ToArray();
+                //Xex.ClearEntries();
+                //m_MgOperator.MassMatrix.Solve_Direct(Xex, _B);
 
-                    BlockMsrMatrix Fut = this.OpMatrix;
-                    for (int iA = 0; iA < 10; iA++) {
-                        Fut.SpMV(1.0, B, 1.0, ot);                        
-                    }
-                    test.Start();
-                    for (int iA = 0; iA < 100; iA++) {
-                        Fut.SpMV(1.0, B, 1.0, ot);                        
-                    }
-                    test.Stop();
-
-                    Console.WriteLine("   BlockMsr.Spmv: " + test.Elapsed.TotalSeconds);
-
-                    test.Reset();
-
-                    test = new Stopwatch();
-                    ilPSP.LinSolvers.monkey.CPU.RefMatrix refMatrix = new ilPSP.LinSolvers.monkey.CPU.RefMatrix(Fut.ToMsrMatrix());
-                    var ___B = new ilPSP.LinSolvers.monkey.CPU.RefVector(Fut.RowPartitioning, B);
-                    var __B = ___B.CreateCommVector(refMatrix);
-                    var __ot = new ilPSP.LinSolvers.monkey.CPU.RefVector(Fut.RowPartitioning, ot);
-                    refMatrix.Lock();
-                    ___B.Lock();
-                    __ot.Lock();
-                    for (int iA = 0; iA < 10; iA++) {
-                        refMatrix.SpMV_Expert(1.0, __B, 1.0, __ot);                        
-                    }
-                    test.Start();
-                    for (int iA = 0; iA < 100; iA++) {
-                        refMatrix.SpMV_Expert(1.0, __B, 1.0, __ot);                        
-                    }
-                    test.Stop();
-
-                    Console.WriteLine("   monkey.Spmv: " + test.Elapsed.TotalSeconds);
-
-                }
-                */
 
                 double[] Sol0 = X.CloneAs();
                 double[] Res0 = new double[L];
@@ -413,8 +377,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //    this.viz.PlotVectors(new double[][] { _xl.ToArray(), this.SolHistory.Last(), rl.ToArray() }, new[] { "Solution", "LastCorrection", "Residual" });
                     }
 
-                    /*
-                    if (this.m_MgOperator.LevelIndex == 0) {
+                    
+                    /*if (this.m_MgOperator.LevelIndex == 0) {
                         double[] Err = Xex.CloneAs();
                         Err.AccV(-1.0, X);
                         double[] rlcc = rl.CloneAs();
@@ -444,15 +408,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
 
-                    //if (this.m_MgOperator.LevelIndex == 0) {
-                    //    double[] Err = Xex.CloneAs();
-                    //    Err.AccV(-1.0, X);
-                    //    double[] rlcc = rl.CloneAs();
-                    //    rlcc.Normalize();
-                    //    Err.Normalize();
+                    /*if (this.m_MgOperator.LevelIndex == 0) {
+                        double[] Err = Xex.CloneAs();
+                        Err.AccV(-1.0, X);
+                        double[] rlcc = rl.CloneAs();
+                        rlcc.Normalize();
+                        Err.Normalize();
 
-                    //    this.viz.PlotVectors(new[] { X, rlcc, Err}, new[] { "sol", "res", "err" });
-                    //}
+                        this.viz.PlotVectors(new[] { X, rlcc, Err }, new[] { "sol", "res", "err" });
+                    }*/
 
                     // iteration callback
                     // ------------------
@@ -462,30 +426,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     IterationCallback?.Invoke(iIter + 1, X, rl, this.m_MgOperator);
 
                 }
-
-                /*
-                if (m_MgOperator.LevelIndex == 0) {
-                    EndStat();
-                    GC.Collect();
-
-                    
-                    
-
-                    
-
-                    for(var mgop = m_MgOperator; mgop != null; mgop = mgop.CoarserLevel) {
-                        var Basis = mgop.Mapping.AggBasis[0];
-                        double MemBs = (double)Basis.UsedMemory / (1024.0 * 1024.0);
-                        Console.WriteLine("   Agg Basis lv {0} mem use : {1:F2} MB", mgop.LevelIndex, MemBs);
-                    }
-
-                    //Console.WriteLine("    MldimArry: " + (((double)MultidimensionalArray.AllocatedBytes)/ (1024.0 * 1024.0)) + "MB");
-                    //MultidimensionalArray.ListHugeOnes();
-                    
-                    Console.WriteLine("Entering infinity loop.");
-                    while (true) ;
-                }
-                */
+                                
 
                 // solution copy
                 // =============

@@ -33,10 +33,8 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// Ctor.
         /// </summary>
         public XdgPoisson3Control() {
-            base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
-            base.LinearSolver.NoOfMultigridLevels = 1;
-            base.LinearSolver.SolverCode = LinearSolverCode.classic_mumps; //public string solverName = "direct";
             base.LinearSolver.verbose = true;
+            base.LinearSolver.NoOfMultigridLevels = 10000;
         }
 
         /// <summary>
