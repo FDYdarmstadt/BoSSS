@@ -25,12 +25,12 @@ namespace BoSSS.Application.FSI_Solver {
             C.SetSaveOptions(@"D:\BoSSS_databases\multipleActiveParticles", 1);
 
             List<string> boundaryValues = new List<string> {
-                "Wall_left",
-                "Wall_right",
-                "Wall_lower",
-                "Wall_upper"
+                "Pressure_Outlet_left",
+                "Pressure_Outlet_right",
+                "Pressure_Outlet_lower",
+                "Pressure_Outlet_upper"
             };
-            int sqrtPart = 3;
+            int sqrtPart = 1;
             C.SetBoundaries(boundaryValues);
             C.SetGrid(lengthX: 3, lengthY: 3, cellsPerUnitLength: 4, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel: 3);
@@ -49,14 +49,14 @@ namespace BoSSS.Application.FSI_Solver {
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 1);
             for (int x = 0; x < sqrtPart; x++) {
                 for (int y = 0; y < sqrtPart; y++) {
-                    C.Particles.Add(new Particle_Ellipsoid(motion, 0.25, 0.1, new double[] { -1 + 1 * x, 1 - 1 * y }, startAngl: Math.Pow(-1, x * y) * 45 + x * 45, activeStress: 50));
+                    C.Particles.Add(new Particle_Ellipsoid(motion, 0.25, 0.1, new double[] { -1 * 0 + 1 * x, 1 * 0 - 1 * y }, startAngl: Math.Pow(-1, x * y) * 45 * 0 + x * 45 + 45, activeStress: 50));
                 }
             }
 
             // misc. solver options
             // =============================  
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
-            double dt = 1e-3;
+            double dt = 1e-4;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000000;
