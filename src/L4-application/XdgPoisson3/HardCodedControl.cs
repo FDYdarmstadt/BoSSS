@@ -571,14 +571,14 @@ namespace BoSSS.Application.XdgPoisson3 {
             //C.SuppressExceptionPrompt = true;
 
             C.LinearSolver.TargetBlockSize = blocksize;
-            C.SetDGdegree(2);
+            C.SetDGdegree(5);
 
             //C.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_mg;
             //C.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_schwarz_directcoarse;
             //C.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_jacobi_mg;
 
             C.LinearSolver.NoOfMultigridLevels = 4;
-            C.LinearSolver.TargetBlockSize = 100;
+            //C.LinearSolver.TargetBlockSize = 100;
             C.LinearSolver.ConvergenceCriterion = 1e-6;
             C.ExcactSolSupported = false;
             double radius = 0.7;
@@ -596,7 +596,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             //C.xLaplaceBCs.IsDirichlet = (inp => true);
             C.ViscosityMode = XLaplace_Interface.Mode.SIP;
 
-            C.AgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.3;
 
             return C;
         }

@@ -189,6 +189,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     int pReq;
                     if (degs[iVar] == 1)
                         pReq = 0;
+                    else if(degs[iVar] > 4)
+                        pReq = 2;
                     else
                         pReq = 1;
 
@@ -321,6 +323,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (Cor_c == null || Cor_c.Length != Lc) {
                 Cor_c = new double[Lc];
             }
+            Cor_c.ClearEntries();
 
             var Mtx = m_op.OperatorMatrix;
 
@@ -374,7 +377,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Res_f.SetV(B);
             Mtx.SpMV(-1.0, X, 1.0, Res_f);
             if (IterationCallback != null)
-                IterationCallback(0, X.ToArray(), Res_f, m_op);
+                IterationCallback(0, X.ToArray(), Res_f.CloneAs(), m_op);
         }
         public Action<int, double[], double[], MultigridOperator> IterationCallback {
             get;

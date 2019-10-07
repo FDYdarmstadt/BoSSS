@@ -637,7 +637,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     int p = Degrees[iVar];
                                     int NoOfSpc = BS[iVar].GetNoOfSpecies(j);
                                     int Np = BS[iVar].GetLength(j, p);
-                                    int NpLo = BS[iVar].GetLength(j, 1);
+                                    int p_low;
+                                    if (Degrees[iVar] == 1)
+                                        p_low = 0;
+                                    else if (Degrees[iVar] > 4)
+                                        p_low = 2;
+                                    else
+                                        p_low = 1;
+
+                                    int NpLo = BS[iVar].GetLength(j, p_low);
                                     NpLoTot += NpLo;
 
                                     int NpBase = Np / NoOfSpc; // DOFs in cell *per species*
