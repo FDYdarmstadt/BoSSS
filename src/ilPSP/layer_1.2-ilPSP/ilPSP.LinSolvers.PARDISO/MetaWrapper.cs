@@ -20,8 +20,8 @@ using System.Linq;
 using System.Text;
 
 namespace ilPSP.LinSolvers.PARDISO {
-    
-    
+
+
     /// <summary>
     /// Another wrapper layer that encapsulates 
     /// </summary>
@@ -36,15 +36,15 @@ namespace ilPSP.LinSolvers.PARDISO {
 
         private void Init(Version __V) {
             switch (__V) {
-                case Version.MKL: if(mkl == null) mkl = new Wrapper_MKL(); break;
-                case Version.v5: if(v5 == null) v5 = new Wrapper_v5(); break;
+                case Version.MKL: if (mkl == null) mkl = new Wrapper_MKL(); break;
+                case Version.v5: if (v5 == null) v5 = new Wrapper_v5(); break;
             }
         }
 
 
         static Wrapper_MKL mkl;
 
-         static Wrapper_v5 v5;
+        static Wrapper_v5 v5;
 
 
         /// <summary>
@@ -83,13 +83,15 @@ namespace ilPSP.LinSolvers.PARDISO {
 
 
         public string PARDISOerror2string(int error) {
-            throw new Exception("PARDISO error occured");
+            string errStr = "";
             if (mkl != null) {
-                return mkl.PARDISOerror2string(error);
+                errStr = mkl.PARDISOerror2string(error);
             } else if (v5 != null) {
-                return v5.PARDISOerror2string(error);
+                errStr = v5.PARDISOerror2string(error);
+            } else {
+                errStr = "unknown error, unknown PARDISO version.";
             }
-            throw new NotImplementedException();
+            throw new ArithmeticException("PARDISO error occured: " + errStr);
         }
     }
 }

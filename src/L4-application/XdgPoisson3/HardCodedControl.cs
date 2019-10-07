@@ -186,14 +186,14 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// <summary>
         /// A piecewise linear solution.
         /// </summary>
-        public static XdgPoisson3Control PiecewiseLinear(double delta = 0.5) {
+        public static XdgPoisson3Control PiecewiseLinear(double delta = 0.0) {
             XdgPoisson3Control R = new XdgPoisson3Control();
 
             R.ProjectName = "XdgPoisson3/PiecewiseLinear";
             R.savetodb = false;
             //R.DbPath = "C:\\BoSSS-db";
 
-            R.SetDGdegree(1);
+            R.SetDGdegree(3);
 
 
 
@@ -237,7 +237,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                     return false;
             };
 
-            R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_schwarz;//R.solverName = "pcg+schwarz";
+            R.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;//R.solverName = "pcg+schwarz";
             R.LinearSolver.NoOfMultigridLevels = 2;
             R.AgglomerationThreshold = 0.0;
 
@@ -468,25 +468,18 @@ namespace BoSSS.Application.XdgPoisson3 {
 
 
         /// <summary>
-        /// A spherical interface in the 3D domain \f$ (-2, 2)^3 \f$.
+        /// A spherical interface of redius <paramref name="Radius"/> in the 3D domain \f$ (-e, +e)^3 \f$, where \f$ e \f$ is <paramref name="DomainExtend"/>.
         /// </summary>
-        public static XdgPoisson3Control Ball3D() {
+        public static XdgPoisson3Control Ball3D(int pDeg = 2, int Res = 6, LinearSolverCode solverCode = LinearSolverCode.exp_Kcycle_schwarz, double Radius = 1, double DomainExtend = 2.0) {
             XdgPoisson3Control R = new XdgPoisson3Control();
 
             R.ProjectName = "XdgPoisson3/Ball3D";
             R.savetodb = false;
 
-            R.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            R.FieldOptions.Add("u", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            R.SetDGdegree(pDeg);
 
             R.GridFunc = delegate () {
-                return Grid3D.Cartesian3DGrid(GenericBlas.Linspace(-2, 2, 6), GenericBlas.Linspace(-2, 2, 6), GenericBlas.Linspace(-2, 2, 6));
+                return Grid3D.Cartesian3DGrid(GenericBlas.Linspace(-2, 2, Res + 1), GenericBlas.Linspace(-2, 2, Res + 1), GenericBlas.Linspace(-2, 2, Res + 1));
             };
 
 
@@ -506,11 +499,15 @@ namespace BoSSS.Application.XdgPoisson3 {
             R.xLaplaceBCs.g_Diri = ((CommonParamsBnd inp) => 0.0);
             R.xLaplaceBCs.IsDirichlet = (inp => true);
 
-            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;//R.solverName = "direct";
+            R.LinearSolver.SolverCode = solverCode;
+#if DEBUG
+            R.LinearSolver.TargetBlockSize = 100; // enforces the use of multigrid, even for small grids
+#endif
             R.AgglomerationThreshold = 0.1;
             R.PrePreCond = MultigridOperator.Mode.DiagBlockEquilib;
             R.penalty_multiplyer = 1.1;
             R.ViscosityMode = XLaplace_Interface.Mode.SIP;
+            
 
             return R;
         }
@@ -550,7 +547,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.savetodb = false;
             //C.DbPath = @"E:\\XdgPerformance";
 
-            int Res = 8;
+            int Res = 4;
 
             C.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
@@ -578,9 +575,10 @@ namespace BoSSS.Application.XdgPoisson3 {
             //C.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_jacobi_mg;
 
             C.LinearSolver.NoOfMultigridLevels = 4;
-            //C.LinearSolver.TargetBlockSize = 100;
             C.LinearSolver.ConvergenceCriterion = 1e-6;
-            C.ExcactSolSupported = false;
+            C.LinearSolver.MaxSolverIterations = 20;
+            C.LinearSolver.TargetBlockSize = 79;
+           C.ExcactSolSupported = false;
             double radius = 0.7;
             C.InitialValues_Evaluators.Add("Phi", X => X[0].Pow2() + X[1].Pow2() + X[2].Pow2() - radius.Pow2());
             C.MU_A = -1;
@@ -596,7 +594,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             //C.xLaplaceBCs.IsDirichlet = (inp => true);
             C.ViscosityMode = XLaplace_Interface.Mode.SIP;
 
-            C.AgglomerationThreshold = 0.3;
+            C.AgglomerationThreshold = 0.1;
 
             return C;
         }

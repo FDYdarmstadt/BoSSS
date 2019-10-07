@@ -397,11 +397,11 @@ namespace BoSSS.Application.Rheology {
 
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MinSolverIterations = 1;
-            C.NonLinearSolver.ConvergenceCriterion = 1E-6;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-7;
 
             C.LinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MinSolverIterations = 1;          
-            C.LinearSolver.ConvergenceCriterion = 1E-6;
+            C.LinearSolver.ConvergenceCriterion = 1E-7;
 
             //C.UnderRelax = 1.0;
             C.dt = 1e6;
@@ -440,7 +440,7 @@ namespace BoSSS.Application.Rheology {
             C.beta = 0.59;
             C.Reynolds = 1;
             C.Weissenberg = 0.1; //aim Weissenberg number!
-            C.RaiseWeissenberg = false;
+            C.RaiseWeissenberg = true;
             C.WeissenbergIncrement = 0.1;
 
             //Penalties

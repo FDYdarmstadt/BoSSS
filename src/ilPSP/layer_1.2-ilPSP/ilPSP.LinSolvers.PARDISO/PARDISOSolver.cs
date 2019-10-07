@@ -56,7 +56,7 @@ namespace ilPSP.LinSolvers.PARDISO {
             get {
                 System.Environment.SetEnvironmentVariable("PARDISOLICMESSAGE", "1");
                 if (m_wrapper == null) {
-                    if ((this.Version == PARDISO.Version.v4 || this.Version == PARDISO.Version.v5) && this.LicenseCode != null && this.LicenseCode.Length > 0) {
+                    if ((this.Version == PARDISO.Version.v5) && this.LicenseCode != null && this.LicenseCode.Length > 0) {
                         string appDir = AppDomain.CurrentDomain.BaseDirectory;
 
                         StreamWriter licfile = new StreamWriter(Path.Combine(appDir, "pardiso.lic"));
@@ -64,7 +64,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                         licfile.Close();
 
                     }
-                    if (this.Version == PARDISO.Version.v4 || this.Version == PARDISO.Version.v5)
+                    if (this.Version == PARDISO.Version.v5)
                         System.Environment.SetEnvironmentVariable("PARDISOLICMESSAGE", "1");
                     m_wrapper = new MetaWrapper(this.Version);
                 }
@@ -654,7 +654,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                         //If this is true: MKL determines the number of OMP threads automatically, based on proc information
                                         //System.Environment.SetEnvironmentVariable("MKL_DYNAMIC", "false");
 
-                                    } else if ((this.Version == PARDISO.Version.v4) || (this.Version == PARDISO.Version.v5)) {
+                                    } else if (this.Version == PARDISO.Version.v5) {
                                         // Get Value for IPARM(3) from the Environment Variable
                                         int NumOfProcs = Convert.ToInt32(System.Environment.GetEnvironmentVariable("OMP_NUM_THREADS"));
                                         iparm[2] = NumOfProcs;
@@ -701,7 +701,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                     }
                                     if (error != 0) {
                                         PARDISODispose();
-                                        Console.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
+                                        Console.Error.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
                                         return false;
                                     }
                                     //Console.Write("\nReordering completed ... ");
@@ -725,7 +725,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                     if (error != 0) {
                                         // some error occured: release mem, dispose objects...
                                         PARDISODispose();
-                                        Console.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
+                                        Console.Error.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
                                         //InitAndSolve.Stop();
                                         return false;
                                     }
@@ -750,7 +750,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                 if (error != 0) {
                                     // some error occurred: release mem, dispose objects...
                                     PARDISODispose();
-                                    Console.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
+                                    Console.Error.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
                                     //InitAndSolve.Stop();
                                     return false;
                                 }

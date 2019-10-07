@@ -33,11 +33,10 @@ namespace BoSSS.Application.FSI_Solver {
 
         [TestFixtureSetUp]
         public static void Init() {
-            bool dummy;
             ilPSP.Environment.Bootstrap(
                 new string[0],
                 BoSSS.Solution.Application<FSI_Control>.GetBoSSSInstallDir(),
-                out dummy);
+                out _);
         }
 
         [TestFixtureTearDown]
@@ -58,10 +57,10 @@ namespace BoSSS.Application.FSI_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double p0_area = p.Particles[0].Area_P();
+                double p0_area = p.GetParticles()[0].Area_P();
                 double p0_area_soll = Math.PI;
-                double p0_Mass = p.Particles[0].Mass_P;
-                double p1_area = p.Particles[1].Area_P();
+                double p0_Mass = p.GetParticles()[0].Motion.Mass_P;
+                double p1_area = p.GetParticles()[1].Area_P();
 
 
                 double diff_Area1 = Math.Abs(p0_area - p0_area_soll);
@@ -114,7 +113,7 @@ namespace BoSSS.Application.FSI_Solver {
                 else
                     Dest_Should = new Vector(-0.0505473360771058, 0.751747291863557); 
 
-                Vector Dest_Is = new Vector(p.Particles[0].Motion.position[0]);
+                Vector Dest_Is = new Vector((double[])p.GetParticles()[0].Motion.GetPosition(0));
 
                 double dist = (Dest_Should - Dest_Is).L2Norm();
 
@@ -137,7 +136,7 @@ namespace BoSSS.Application.FSI_Solver {
                 Vector Dest_Should;
                 Dest_Should = new Vector(0.0, 0.865886176125762);
 
-                Vector Dest_Is = new Vector(p.Particles[0].Motion.position[0]);
+                Vector Dest_Is = new Vector((double[])p.GetParticles()[0].Motion.GetPosition(0));
 
                 double dist = (Dest_Should - Dest_Is).L2Norm();
 
@@ -162,8 +161,8 @@ namespace BoSSS.Application.FSI_Solver {
                 Dest_Should = new Vector(0.0, 0.0761459999999999);
                 double VelY_Should = 0;
 
-                Vector Dest_Is = new Vector(p.Particles[0].Motion.position[0]);
-                double VelY_Is = p.Particles[0].Motion.translationalVelocity[0][0];
+                Vector Dest_Is = new Vector((double[])p.GetParticles()[0].Motion.GetPosition(0));
+                double VelY_Is = p.GetParticles()[0].Motion.GetTranslationalVelocity(0)[0];
 
                 double dist = (Dest_Should - Dest_Is).L2Norm();
                 double Vel_Div = Math.Abs(VelY_Should - VelY_Is);
@@ -185,9 +184,9 @@ namespace BoSSS.Application.FSI_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double ForcesSoll = 30251.7764996821;
+                double ForcesSoll = 30753.7101679592;
 
-                double Forces = p.Particles[0].Motion.hydrodynamicForces[0][0];
+                double Forces = p.GetParticles()[0].Motion.GetHydrodynamicForces(0)[0];
 
                 double DiffForces = Math.Abs(ForcesSoll - Forces); 
 
@@ -204,9 +203,9 @@ namespace BoSSS.Application.FSI_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double ForcesSoll = 5.62199895597732;
+                double ForcesSoll = 6.80321642752613;
 
-                double Forces = p.Particles[0].Motion.hydrodynamicForces[0][0];
+                double Forces = p.GetParticles()[0].Motion.GetHydrodynamicForces(0)[0];
 
                 double DiffForces = Math.Abs(ForcesSoll - Forces);
 

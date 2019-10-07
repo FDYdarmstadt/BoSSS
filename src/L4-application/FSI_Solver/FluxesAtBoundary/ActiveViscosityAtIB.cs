@@ -28,62 +28,47 @@ using BoSSS.Foundation;
 
 namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
-    public class ActiveViscosityAtIB : BoSSS.Foundation.XDG.ILevelSetForm {
-
-        LevelSetTracker m_LsTrk;
-
-        public ActiveViscosityAtIB(int _d, int _D, LevelSetTracker t, double penalty, Func<double, int, double> _PenaltyFunc, double _muA,
-            Func<double[], double, double[]> getParticleParams) {
-
-            this.m_penalty = penalty;
-            this.m_PenaltyFunc = _PenaltyFunc;
-            this.m_LsTrk = t;
-            this.muA = _muA;
-            this.component = _d;
-            this.m_getParticleParams = getParticleParams;
-            this.m_D = _D;
+    public class ActiveViscosityAtIB : ILevelSetForm {
+        public ActiveViscosityAtIB(int currentDim, int spatialDim, LevelSetTracker levelSetTracker, double penalty, Func<double, int, double> penaltyFunction, double fluidViscosity,
+            Func<double[], double[]> getParticleParams) {
+            m_penalty = penalty;
+            m_PenaltyFunc = penaltyFunction;
+            m_LsTrk = levelSetTracker;
+            muA = fluidViscosity;
+            component = currentDim;
+            m_GetParticleParams = getParticleParams;
+            m_D = spatialDim;
         }
 
-        readonly int component;
-        readonly int m_D;
+        private readonly int component;
+        private readonly int m_D;
+        private readonly LevelSetTracker m_LsTrk;
 
         /// <summary>
         /// Describes: 0: velX, 1: velY, 2: rotVel, 3: particleradius, 4: active_stress, 5: first scaling parameter, 6: second scaling parameter, 7: current angle
         /// </summary>
-        readonly Func<double[], double, double[]> m_getParticleParams;
+        private readonly Func<double[], double[]> m_GetParticleParams;
 
         /// <summary>
         /// Viscosity in species A
         /// </summary>
-        readonly double muA;
-        readonly double m_penalty;
-        readonly Func<double, int, double> m_PenaltyFunc;
+        private readonly double muA;
+        private readonly double m_penalty;
+        private readonly Func<double, int, double> m_PenaltyFunc;
 
         /// <summary>
         /// default-implementation
         /// </summary>
         public double LevelSetForm(ref CommonParamsLs inp,
-        //public override double EdgeForm(ref Linear2ndDerivativeCouplingFlux.CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double[] N = inp.n;
-
-
-            //Debug.Assert(!double.IsNaN(inp.PosCellLengthScale));
-            //double hCutCellMin = Math.Min(inp.PosCellLengthScale, inp.NegCellLengthScale);
-            //double hCutCellMin = inp.NegCellLengthScale; // for IBM, there is no positive species!
-            //if (hCutCellMin <= 1.0e-10 * hCellMin)
-            //    // very small cell -- clippling
-            //    hCutCellMin = hCellMin;
-            //double _penalty = penalty(hCutCellMin);
             double _penalty = m_PenaltyFunc(m_penalty, inp.jCell);
-
             int D = N.Length;
-
 
             // Particle parameters
             // ============================= 
-            var parameters_P = m_getParticleParams(inp.x, inp.time);
+            var parameters_P = m_GetParticleParams(inp.x);
             double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
             double wLevSet = parameters_P[2];
 
@@ -99,7 +84,6 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             Debug.Assert(Grad_uA.GetLength(1) == D);
             Debug.Assert(Grad_uB.GetLength(1) == D);
 
-
             // Gradient of u and v 
             // ============================= 
             double Grad_uA_xN = 0, Grad_vA_xN = 0;
@@ -108,17 +92,15 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
                 Grad_vA_xN += Grad_vA[d] * N[d];
             }
 
-
             // Evaluate the complete velocity as a sum of translation and angular velocity
             // ============================= 
             double uAFict;
             double Ret = 0.0;
-            double[] active_stress_visc = new double[2];
 
             // 3D for IBM_Solver
             // ============================= 
             if (inp.x.Length == 3) {
-                
+
                 Ret -= Grad_uA_xN * (vA);                                     // consistency term
                 Ret -= Grad_vA_xN * (uA[component] - 0) * (1 - scale);        // symmetry term
                 Ret += _penalty * (uA[component] - 0) * (vA) * (1 - scale);   // penalty term
@@ -133,37 +115,20 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             if (component == 0) {
                 uAFict = (uLevSet[component] + RadialLength * wLevSet * RadialNormalVector[0]) * (1 - scale) + uA[component] * scale;
             }
-            else
-            {
+            else {
                 uAFict = (uLevSet[component] + RadialLength * wLevSet * RadialNormalVector[1]) * (1 - scale) + uA[component] * scale;
             }
-            active_stress_visc[0] = active_stress * Math.Cos(Ang_P);
-            active_stress_visc[1] = active_stress * Math.Sin(Ang_P);
-            double f_xN;
+            double f_xN = component == 0 ? active_stress * Math.Cos(Ang_P) * Math.Abs(inp.n[1]) : active_stress * Math.Sin(Ang_P) * Math.Abs(inp.n[0]);
 
-            //Defining active stress
-            if (component == 0)
-            {
-                //active_stress_visc =  - inp.n[0] / Math.Abs(inp.n[0]) * active_stress * scale * Math.Abs(inp.n[1]);
-                f_xN = active_stress_visc[0] * Math.Abs(inp.n[1]);
-            }
-            else
-            {
-                //active_stress_visc = inp.n[1] / Math.Abs(inp.n[1]) * active_stress * scale * Math.Abs(inp.n[0]);
-                f_xN = active_stress_visc[1] * Math.Abs(inp.n[0]);
-                //active_stress_visc = 0;
-            }
-            
             //Computing flux
             Ret -= Grad_uA_xN * (vA) * muA * (1 - scale);                   // consistency term 
             Ret -= Grad_vA_xN * (uA[component] - uAFict) * muA;             // symmetry term 
-            Ret += _penalty * (uA[component] - uAFict) * (vA) * muA ;        // penalty term
+            Ret += _penalty * (uA[component] - uAFict) * (vA) * muA;       // penalty term
             Ret += f_xN * (vA) * scale;                                     // active term (Neumann boundary condition)
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
             return Ret;
         }
-
 
         public int LevelSetIndex {
             get { return 0; }

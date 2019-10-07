@@ -70,16 +70,7 @@ namespace BoSSS.Application.Rheology {
         /// </summary>
         public double VolumeForm(ref CommonParamsVol cpv, double[] T, double[,] Grad_T, double V, double[] GradV) {
 
-            double res = 0.0;
-            if (component == 1)
-            {
-                res = T[0];
-            }
-            else {
-                res = T[0];
-            }
-
-            return res * V;
+            return T[0] * V;
         }
 
     }
