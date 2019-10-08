@@ -154,7 +154,7 @@ namespace BoSSS.Application.FSI_Solver {
             if (SpatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
 
-            int NoOfSurfacePoints = Convert.ToInt32(10 * Circumference / hMin);
+            int NoOfSurfacePoints = Convert.ToInt32(1000 * Circumference / hMin);
             int QuarterSurfacePoints = NoOfSurfacePoints / 4;
             MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSubParticles, 4 * QuarterSurfacePoints - 2, SpatialDim);
             double[] Infinitisemalangle = GenericBlas.Linspace(0, Math.PI / 2, QuarterSurfacePoints + 2);

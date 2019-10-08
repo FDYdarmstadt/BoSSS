@@ -771,9 +771,11 @@ namespace BoSSS.Application.FSI_Solver {
                 Underrelaxation.Torque(ref tempTorque, m_TorquePreviousIteration);
             }
             for (int d = 0; d < spatialDim; d++) {
-                m_HydrodynamicForces[0][d] = tempForces[d];
+                //if(tempForces[d] > 1e-15)
+                    m_HydrodynamicForces[0][d] = tempForces[d];
             }
-            m_HydrodynamicTorque[0] = tempTorque;
+            //if (tempTorque > 1e-15)
+                m_HydrodynamicTorque[0] = tempTorque;
             Aux.TestArithmeticException(m_HydrodynamicForces[0], "hydrodynamic forces");
             Aux.TestArithmeticException(m_HydrodynamicTorque[0], "hydrodynamic torque");
         }

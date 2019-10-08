@@ -68,11 +68,12 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
             double[] RadialNormalVector = new double[] { parameters_P[3], parameters_P[4] };
             double RadialLength = parameters_P[5];
+
             double active_stress = parameters_P[6];
-            double scale = parameters_P[7];
+            double scaleActiveBoundary = parameters_P[7];
             double Ang_P = parameters_P[8];
 
-            Debug.Assert(this.ArgumentOrdering.Count == D);
+            Debug.Assert(ArgumentOrdering.Count == D);
             Debug.Assert(Grad_uA.GetLength(0) == this.ArgumentOrdering.Count);
             Debug.Assert(Grad_uB.GetLength(0) == this.ArgumentOrdering.Count);
             Debug.Assert(Grad_uA.GetLength(1) == D);
@@ -86,9 +87,6 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
                 Grad_vA_xN += Grad_vA[d] * N[d];
             }
 
-            // Evaluate the complete velocity as a sum of translation and angular velocity
-            // ============================= 
-            double uAFict;
             double Ret = 0.0;
 
             // 3D for IBM_Solver
@@ -96,8 +94,8 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             if (inp.x.Length == 3) {
 
                 Ret -= Grad_uA_xN * (vA);                                     // consistency term
-                Ret -= Grad_vA_xN * (uA[component] - 0) * (1 - scale);        // symmetry term
-                Ret += _penalty * (uA[component] - 0) * (vA) * (1 - scale);   // penalty term
+                Ret -= Grad_vA_xN * (uA[component] - 0) * (1 - scaleActiveBoundary);        // symmetry term
+                Ret += _penalty * (uA[component] - 0) * (vA) * (1 - scaleActiveBoundary);   // penalty term
 
                 Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
                 return Ret * muA;
@@ -105,31 +103,27 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
             // 2D
             // ============================= 
-            //Defining boundary conditions (no slip/slip)
-            if (component == 0) {
-                uAFict = (uLevSet[component] + RadialLength * wLevSet * RadialNormalVector[0]) * (1 - scale) + uA[component] * scale;
-            }
-            else {
-                uAFict = (uLevSet[component] + RadialLength * wLevSet * RadialNormalVector[1]) * (1 - scale) + uA[component] * scale;
-            }
+            double uAFict = uLevSet[component] + RadialLength * wLevSet * RadialNormalVector[component];
             double f_xN = component == 0 ? active_stress * Math.Cos(Ang_P) * Math.Abs(inp.n[1]) : active_stress * Math.Sin(Ang_P) * Math.Abs(inp.n[0]);
 
-            if (scale == 0) {
+            // Dirichlet
+            if (scaleActiveBoundary == 0) {
                 Ret -= Grad_uA_xN * (vA) * muA;                                // consistency term 
                 Ret -= Grad_vA_xN * (uA[component] - uAFict) * muA;            // symmetry term 
                 Ret += _penalty * (uA[component] - uAFict) * (vA) * muA;       // penalty term
             }
+            // Active boundary
             else {
                 // normal
                 for (int dN = 0; dN < D; dN++) {
                     for (int dD = 0; dD < D; dD++) {
-                        Ret -= muA * (N[dN] * Grad_uA[dN, dD] * N[dD]) * (vA * N[component]); // consistency term 
-                        Ret -= muA * (N[component] * Grad_vA[dD] * N[dD]) * uA[dN] * N[dN]; // symmetry term 
-                    }
-                    Ret += muA * (uA[dN] * N[dN]) * (vA * N[component]) * _penalty; // penalty term
-                }
-                //tangential
-                Ret += f_xN * (vA) * muA * scale;
+                        Ret -= muA * (N[dN] * Grad_uA[dN, dD] * N[dD]) * (vA * N[component]);   // consistency term 
+                        Ret -= muA * (N[component] * Grad_vA[dD] * N[dD]) * uA[dN] * N[dN];     // symmetry term 
+                    }                                                                           //
+                    Ret += muA * (uA[dN] * N[dN]) * (vA * N[component]) * _penalty;             // penalty term
+                }                                                                               //
+                //tangential                                                                    //
+                Ret += f_xN * (vA) * muA * scaleActiveBoundary;                                 // active force term
             }
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));

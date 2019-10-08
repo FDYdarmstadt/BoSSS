@@ -144,7 +144,7 @@ namespace BoSSS.Application.FSI_Solver {
                 throw new NotImplementedException("Only two dimensions are supported.");
             double angle = Motion.GetAngle(0);
             double[] position = Motion.GetPosition(0);
-            int NoOfSurfacePoints = Convert.ToInt32(5 * Circumference / hMin);
+            int NoOfSurfacePoints = Convert.ToInt32(10 * Circumference / hMin);
             MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSubParticles, NoOfSurfacePoints, SpatialDim);
             double[] InfinitisemalAngle = GenericBlas.Linspace(0, Math.PI * 2, NoOfSurfacePoints + 1);
             if (Math.Abs(10 * Circumference / hMin + 1) >= int.MaxValue)
@@ -154,8 +154,8 @@ namespace BoSSS.Application.FSI_Solver {
                 double temp1 = Math.Sin(InfinitisemalAngle[j]) * m_Thickness;
                 SurfacePoints[0, j, 0] = (temp0 * Math.Cos(angle) - temp1 * Math.Sin(angle)) + position[0];
                 SurfacePoints[0, j, 1] = (temp0 * Math.Sin(angle) + temp1 * Math.Cos(angle)) + position[1];
-
             }
+            Console.WriteLine("No of surface points: " + NoOfSurfacePoints);
             return SurfacePoints;
         }
 
@@ -189,7 +189,7 @@ namespace BoSSS.Application.FSI_Solver {
                     rotVector[i] += transposeRotMatrix[i, j] * vector[j];
                 }
             }
-            rotVector.ScaleV(rotVector.L2Norm());
+            rotVector.ScaleV(1 / rotVector.L2Norm());
 
             for (int i = 0; i < 2; i++) {
                 for (int j = 0; j < 2; j++) {

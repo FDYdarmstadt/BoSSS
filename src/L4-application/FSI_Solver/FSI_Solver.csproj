@@ -85,6 +85,7 @@
     <Compile Include="ControlFiles\HardcodedControl\FourCellsTest.cs" />
     <Compile Include="ControlFiles\HardcodedControl\DryParticles.cs" />
     <Compile Include="ControlFiles\HardcodedControl\HardcodedControlDeussen.cs" />
+    <Compile Include="ControlFiles\HardcodedControl\HC_CollisionRuntime.cs" />
     <Compile Include="ControlFiles\HardcodedControl\HardcodedControl_multipleActiveParticles .cs" />
     <Compile Include="ControlFiles\HardcodedControl\HardcodedControl_tiltedChannel.cs" />
     <Compile Include="ControlFiles\HardcodedControl\HardcodedControl_straightChannel.cs" />

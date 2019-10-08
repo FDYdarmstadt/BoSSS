@@ -23,7 +23,10 @@ using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using FSI_Solver;
 
 namespace FSI_Solver {
     class FSI_Collision {
@@ -338,6 +341,9 @@ namespace FSI_Solver {
             Overlapping = false;
             int NoOfSubParticles1 = Particle1 == null ? 1 : Particle1.NoOfSubParticles;
 
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
+
             for (int i = 0; i < Particle0.NoOfSubParticles; i++) {
                 for (int j = 0; j < NoOfSubParticles1; j++) {
                     GJK_DistanceAlgorithm(Particle0, i, Particle1, j, out double temp_Distance, out double[] temp_DistanceVector, out double[] temp_ClosestPoint_P0, out double[] temp_ClosestPoint_P1, out Overlapping);
@@ -353,6 +359,15 @@ namespace FSI_Solver {
                     }
                 }
             }
+
+            stopWatch.Stop();
+            TimeSpan timeSpan = stopWatch.Elapsed;
+            double printMillis = (double)timeSpan.Ticks / 10000;
+            Console.WriteLine("Milliseconds of GJK: " + printMillis);
+            Console.WriteLine("Distance: " + Distance);
+            Console.WriteLine("ClosestPoint P0, 0: " + ClosestPoint_P0[0] + ", 1: " + ClosestPoint_P0[1]);
+            Console.WriteLine("ClosestPoint P1, 0: " + ClosestPoint_P1[0] + ", 1: " + ClosestPoint_P1[1]);
+
         }
 
         /// <summary>
@@ -380,6 +395,9 @@ namespace FSI_Solver {
             ClosestPoint_P0 = MultidimensionalArray.Create(SpatialDim);
             Overlapping = false;
 
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
+
             for (int i = 0; i < Particle0.NoOfSubParticles; i++) {
                 GJK_DistanceAlgorithm(Particle0, i, null, 1, out double temp_Distance, out double[] temp_DistanceVector, out double[] temp_ClosestPoint_P0, out _, out Overlapping);
                 if (Overlapping)
@@ -392,6 +410,10 @@ namespace FSI_Solver {
                     }
                 }
             }
+            stopWatch.Stop();
+            TimeSpan ts = stopWatch.Elapsed;
+            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
+            Console.WriteLine("Runtime of GJK: " + elapsedTime);
         }
 
         /// <summary>
