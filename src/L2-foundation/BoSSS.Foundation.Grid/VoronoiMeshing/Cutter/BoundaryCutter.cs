@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
     class BoundaryCutter<T>
-        where T :IMesherNode, new()
+        where T :ILocatable, new()
     {
         BoundaryLineEnumerator boundary;
 

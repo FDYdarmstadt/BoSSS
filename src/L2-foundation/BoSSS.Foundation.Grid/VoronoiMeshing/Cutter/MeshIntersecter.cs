@@ -9,7 +9,7 @@ using BoSSS.Foundation.Grid.Aggregation;
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
     class MeshIntersecter<T>
-        where T: IMesherNode, new()
+        where T: ILocatable, new()
     {
         IDMesh<T> mesh;
 

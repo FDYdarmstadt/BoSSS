@@ -6,10 +6,10 @@ using System.Linq;
 using BoSSS.Platform;
 using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
 
-namespace BoSSS.Foundation.Grid.Voronoi.Meshing
+namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
 {
     class BoundaryCellMerger<T>
-       where T : IMesherNode
+       where T : ILocatable
     {
         readonly LinkedList<Edge<T>> newEdges;
 
@@ -47,7 +47,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             newEdges.Clear();
 
             //Todo: Add convolution stuff, if weld is longer than 1.
-            SetupBeforeWeld(source.Edges, sourceEdgeIndice, target.Edges, targetEdgeIndice);
+            Setup(source.Edges, sourceEdgeIndice, target.Edges, targetEdgeIndice);
             ConstructNewEdges();
             ReshapeCell(target);
         }
@@ -58,7 +58,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             Debug.Assert(target.Edges.Length > 2 && target.Edges.Length > targetIndice);
         }
 
-        void SetupBeforeWeld(Edge<T>[] sourceEdges, int sourceEdgeIndice, Edge<T>[] targetEdges, int targetEdgeIndice)
+        void Setup(Edge<T>[] sourceEdges, int sourceEdgeIndice, Edge<T>[] targetEdges, int targetEdgeIndice)
         {
             targetBoundaryEdgeNumber = targetEdges[targetEdgeIndice].BoundaryEdgeNumber;
 
@@ -73,29 +73,30 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         void ConstructNewEdges()
         {
-            MergeBoundaryEdges();
-            WeldEdgesAfterMerge();
-            AddFollowingEdges();
-            WeldEdgesBeforeMerge();
+            SkipEdgesWhereCellsAreGlued();
+            WeldFirstEdges();
+            AddCommonEdges();
+            WeldLastEdges();
         }
 
-        void MergeBoundaryEdges()
+        void SkipEdgesWhereCellsAreGlued()
         {
             //Remove boundary edges
             sourceEdgeEnumerator.MoveNext();
             targetEdgeEnumerator.MoveNext();
         }
 
-        void WeldEdgesAfterMerge()
+        void WeldFirstEdges()
         {
             //Weld edges After weld
             sourceEdgeEnumerator.MoveNext();
             targetEdgeEnumerator.MoveNext();
             AddSourceEdge(sourceEdgeEnumerator.Current);
+            
             AddTargetEdge(targetEdgeEnumerator.Current);
             LinkedListNode<Edge<T>> sourceNodeAfterWeld = newEdges.First;
             LinkedListNode<Edge<T>> targetNodeAfterWeld = newEdges.Last;
-            WeldEdges(sourceNodeAfterWeld, targetNodeAfterWeld);
+            TargetFirstWeldEdges(sourceNodeAfterWeld, targetNodeAfterWeld);
         }
 
         void AddTargetEdge(Edge<T> targetEdge)
@@ -105,19 +106,21 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         void AddSourceEdge(Edge<T> sourceEdge)
         {
-            sourceEdge.IsBoundary = true;
-            sourceEdge.BoundaryEdgeNumber = targetBoundaryEdgeNumber;
             newEdges.AddFirst(sourceEdge);
         }
 
-        void AddFollowingEdges()
+        void AddCommonEdges()
         {
             //Add common edges and set source to target boundary
+            BoundaryEdgeHandler<T> boundaryEdgeHandler = new BoundaryEdgeHandler<T>(targetBoundaryEdgeNumber); 
             while (sourceEdgeEnumerator.MoveNext())
             {
                 Edge<T> sourceEdge = sourceEdgeEnumerator.Current;
+                boundaryEdgeHandler.AddCandidate(sourceEdge);
                 AddSourceEdge(sourceEdge);
             }
+            boundaryEdgeHandler.ConvertCandidatesToBoundary();
+
             while (targetEdgeEnumerator.MoveNext())
             {
                 Edge<T> targetEdge = targetEdgeEnumerator.Current;
@@ -125,22 +128,32 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             }
         }
 
-        void WeldEdgesBeforeMerge()
+        void WeldLastEdges()
         {
-            //Last edge and fist edge are edges before weld
+            //Attach last source Edge behind last target Edge 
             var firstNode = newEdges.First;
             newEdges.RemoveFirst();
             newEdges.AddLast(firstNode);
-            WeldEdges(newEdges.Last.Previous, newEdges.Last);
+            //Weld last source Edge and last target Edge
+            SourceFirstWeldEdges(newEdges.Last, newEdges.Last.Previous);
         }
 
-        void WeldEdges(LinkedListNode<Edge<T>> source, LinkedListNode<Edge<T>> target)
+        void TargetFirstWeldEdges(LinkedListNode<Edge<T>> source, LinkedListNode<Edge<T>> target)
         {
             if (OnLine(source.Value.Start, source.Value.End, target.Value.Start))
             {
-                target.Value.IsBoundary = false;
+                target.Value = TargetFirstEdgeMerge(source.Value, target.Value);
                 target.Value.BoundaryEdgeNumber = source.Value.BoundaryEdgeNumber;
-                target.Value = EdgeMerge(source.Value, target.Value);
+                MergeNodes(source, target);
+            }
+        }
+
+        void SourceFirstWeldEdges(LinkedListNode<Edge<T>> source, LinkedListNode<Edge<T>> target)
+        {
+            if (OnLine(source.Value.Start, source.Value.End, target.Value.Start))
+            {
+                target.Value = SourceFirstEdgeMerge(source.Value, target.Value);
+                target.Value.BoundaryEdgeNumber = source.Value.BoundaryEdgeNumber;
                 MergeNodes(source, target);
             }
         }
@@ -152,11 +165,23 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             source.List.Remove(source);
         }
 
-        static Edge<T> EdgeMerge(Edge<T> source, Edge<T> target)
+        static Edge<T> SourceFirstEdgeMerge(Edge<T> source, Edge<T> target)
         {
-            Debug.Assert((source.Start.Position - target.End.Position).Abs() < 1e-12,
+            Debug.Assert((source.End.Position - target.Start.Position).Abs() < 1e-12,
                 "Edges do not touch.");
+            int ID = target.Start.ID;
+            target.Start = source.Start;
+            target.Start.ID = ID; 
+            return target;
+        }
+
+        static Edge<T> TargetFirstEdgeMerge(Edge<T> source, Edge<T> target)
+        {
+            Debug.Assert((target.End.Position - source.Start.Position).Abs() < 1e-12,
+                "Edges do not touch.");
+            int ID = target.End.ID;
             target.End = source.End;
+            target.End.ID = ID;
             return target;
         }
 

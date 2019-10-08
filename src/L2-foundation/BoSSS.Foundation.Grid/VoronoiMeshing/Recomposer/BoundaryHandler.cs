@@ -4,10 +4,10 @@ using ilPSP;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace BoSSS.Foundation.Grid.Voronoi.Meshing
+namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
 {
     class BoundaryHandler<T>
-        where T : IMesherNode, new()
+        where T : ILocatable, new()
     {
         readonly IDictionary<int, BoundaryTransformation> periodicTrafoMap;
 

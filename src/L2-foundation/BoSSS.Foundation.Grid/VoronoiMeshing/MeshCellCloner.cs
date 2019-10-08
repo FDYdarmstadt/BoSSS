@@ -24,28 +24,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             {
                 Node = cell.Node,
                 type = cell.type,
+                ID = cell.ID
             };
             clone.Vertices = Clone(cell.Vertices);
             clone.Edges = Clone(cell.Edges);
-            return clone;
-        }
-
-        public static Vertex[] Clone(IList<Vertex> vertices)
-        {
-            Vertex[] clones = new Vertex[vertices.Count];
-            for (int i = 0; i < vertices.Count; ++i)
-            {
-                clones[i] = Clone(vertices[i]);
-            }
-            return clones;
-        }
-
-        public static Vertex Clone(Vertex vertex)
-        {
-            Vertex clone = new Vertex
-            {
-                Position = vertex.Position
-            };
             return clone;
         }
 
@@ -67,7 +49,28 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 Cell = edge.Cell,
                 BoundaryEdgeNumber = edge.BoundaryEdgeNumber,
                 Start = Clone(edge.Start),
-                End = Clone(edge.End)
+                End = Clone(edge.End),
+                Twin = edge.Twin
+            };
+            return clone;
+        }
+
+        public static Vertex[] Clone(IList<Vertex> vertices)
+        {
+            Vertex[] clones = new Vertex[vertices.Count];
+            for (int i = 0; i < vertices.Count; ++i)
+            {
+                clones[i] = Clone(vertices[i]);
+            }
+            return clones;
+        }
+
+        public static Vertex Clone(Vertex vertex)
+        {
+            Vertex clone = new Vertex
+            {
+                Position = vertex.Position,
+                ID = vertex.ID
             };
             return clone;
         }

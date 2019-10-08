@@ -1,15 +1,12 @@
-﻿using BoSSS.Platform.LinAlg;
-using System;
+﻿using BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer;
+using BoSSS.Platform.LinAlg;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
     class MeshGenerator<T>
-         where T : IMesherNode, new()
+         where T : ILocatable, new()
     {
         readonly BoundaryCutter<T> cutter;
 
@@ -38,7 +35,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             {
                 nodes = boundaryHandler.CloneNodesAlongPeriodicBoundaries(mesh);
                 mesh = CreateMeshFrom(nodes);
+                MatlabPlotter plotter = new MatlabPlotter();
+                plotter.Plot(mesh, "clonedNodes");
                 boundaryHandler.RecomposePeriodicEdges(mesh);
+                plotter.Plot(mesh, "recomposed");
             }
             return mesh;
         }

@@ -2,7 +2,7 @@
 using ilPSP;
 using System;
 
-namespace BoSSS.Foundation.Grid.Voronoi.Meshing
+namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
 {
     class BoundaryTransformation : Transformation
     {

@@ -91,7 +91,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                     {
                         GlobalID = cells_GridCommons.Count,
                         Type = CellType.Triangle_3,
-                        NodeIndices = new int[] { cell.Vertices[iV0].ID, cell.Vertices[iV1].ID, cell.Vertices[iV2].ID },
+                        
                     };
                     Cj.TransformationParams = MultidimensionalArray.Create(3, 2);
                     Cj.TransformationParams.SetRowPt(0, V0);
@@ -109,6 +109,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                         {
                             DefineEdgeTagsOfCell(Cj, boundary.GetEdgeTagOfPolygonEdge(tag.BoundaryEdgeNumber), tag.Face);
                         }
+                        Cj.NodeIndices = new int[] { cell.Vertices[iV0].ID, cell.Vertices[iV1].ID, cell.Vertices[iV2].ID };
+                    }
+                    else
+                    {
+                        Cj.NodeIndices = new int[] { cell.Vertices[iV0].ID, cell.Vertices[iV1].ID, cell.Vertices[iV2].ID };
                     }
                 }
                 aggregation.Add(Agg2Pt);
@@ -179,7 +184,13 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                     FaceIndex = faceIndice,
                     NeighCell_GlobalID = long.MinValue
                 };
-                CFT.AddToArray(ref cell.CellFaceTags);
+            if(edgeTag >= GridCommons.FIRST_PERIODIC_BC_TAG)
+            {
+                CFT.ConformalNeighborship = true;
+                CFT.PeriodicInverse = false; //Todo
+                CFT.NeighCell_GlobalID = 0; //Todo
+            }
+            CFT.AddToArray(ref cell.CellFaceTags);
         }
 
         private static void RegisterEdgeTagNames(GridCommons grid, IDictionary<byte, string> EdgeTagNames)

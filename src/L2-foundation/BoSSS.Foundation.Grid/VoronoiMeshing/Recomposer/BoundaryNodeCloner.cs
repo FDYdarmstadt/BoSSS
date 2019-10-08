@@ -10,10 +10,10 @@ using System.Diagnostics;
 using System.Collections.Specialized;
 using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
 
-namespace BoSSS.Foundation.Grid.Voronoi.Meshing
+namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
 {
     class BoundaryNodeCloner<T>
-        where T : IMesherNode, new()
+        where T : ILocatable, new()
     {
         IDictionary<int, BoundaryTransformation> periodicTrafoMap;
 

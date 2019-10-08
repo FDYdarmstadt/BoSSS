@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
     class OnEdgeCutter<T>
-        where T : IMesherNode, new()
+        where T : ILocatable, new()
     {
         MeshIntersecter<T> meshIntersecter;
 

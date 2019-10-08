@@ -3,7 +3,7 @@ using BoSSS.Platform.LinAlg;
 using System;
 using System.Collections.Generic;
 
-namespace BoSSS.Foundation.Grid.Voronoi.Meshing
+namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
 {
     class BoundaryEdgeFinder<T>
     {

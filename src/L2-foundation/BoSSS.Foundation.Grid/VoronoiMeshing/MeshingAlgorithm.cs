@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
-    public interface IMesherNode
+    public interface ILocatable
     {
         Vector Position { get; set; }
     }
@@ -33,7 +33,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         }
 
         public static Mesh<T> ComputeMesh<T>(IList<T> nodes, Settings settings)
-            where T : IMesherNode, new()
+            where T : ILocatable, new()
         {
             AssertCorrectness(settings, nodes);
             Mesh<T> mesh = null;
@@ -54,7 +54,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         }
 
         static void MoveNodesTowardsCellCenter<T>(IReadOnlyList<MeshCell<T>> Cells, ref int FirstCellNode_indice)
-            where T : IMesherNode, new()
+            where T : ILocatable, new()
         {
             for (int i = 0; i < Cells.Count; ++i)
             {

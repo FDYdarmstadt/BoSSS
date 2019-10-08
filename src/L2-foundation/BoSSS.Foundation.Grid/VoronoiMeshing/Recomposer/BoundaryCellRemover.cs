@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 
-namespace BoSSS.Foundation.Grid.Voronoi.Meshing
+namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
 {
     class BoundaryCellRemover<T>
-        where T : IMesherNode
+        where T : ILocatable
     {
         readonly Mesh<T> mesh;
 

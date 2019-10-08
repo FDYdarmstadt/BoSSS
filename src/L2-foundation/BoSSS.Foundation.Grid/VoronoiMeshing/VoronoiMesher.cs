@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
     public class VoronoiMesher<T>
-        where T : IMesherNode, IVoronoiNodeCastable, new()
+        where T : ILocatable, IVoronoiNodeCastable, new()
     {
         internal Mesh<T> mesh;
 

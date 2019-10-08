@@ -11,7 +11,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
     static class MIConvexHullMeshGenerator
     {
         public static IDMesh<T> CreateMesh<T>(IList<T> nodes)
-            where T : IMesherNode, new()
+            where T : ILocatable, new()
         {
             ResetDataIDCounters<T>();
             MICHVertex<T>[] startNodes = Wrap(nodes);
@@ -20,7 +20,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         }
 
         static MICHVertex<T>[] Wrap<T>(IList<T> nodes)
-            where T : IMesherNode
+            where T : ILocatable
         {
             MICHVertex<T>[] startNodes = new MICHVertex<T>[nodes.Count];
             for (int i = 0; i < nodes.Count; ++i)
