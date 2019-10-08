@@ -17,12 +17,11 @@ namespace BoSSS.Application.ExternalBinding {
     /// <summary>
     /// Instantiation of BoSSS grids
     /// </summary>
-    public static class Grid_ {
+    public class GridServer {
 
         /// <summary>
         /// Create a BoSSS grid from an OpenFOAM mesh
         /// </summary>
-        /// <param name="_ref"></param>
         /// <param name="ierr">output, error code; on success, set to 0</param>
         /// <param name="faces">
         /// point labels (indices) of faces, according to OpenFOAM polymesh description (array of arrays)
@@ -49,7 +48,7 @@ namespace BoSSS.Application.ExternalBinding {
         /// <param name="points">
         /// point coordinates, array of <paramref name="nPoints"/>*3
         /// </param>
-        unsafe public static void CreateGrid(out int _ref, 
+        unsafe public static GridServer FromOpenFOAMPolymesh(
             ref int nPoints, ref int nCells, ref int nFaces, ref int nInternalFaces,
             int** faces,
             int* vertices_per_face,
@@ -89,17 +88,25 @@ namespace BoSSS.Application.ExternalBinding {
                 
                 // create BoSSS grid
                 GridData g = FOAMmesh_to_BoSSS(nCells, _faces, _neighbour, _owner, _points);
+                var ret = new GridServer(g);
 
                 // register object
-                _ref = Infrastructure.RegisterObject(g);
                 ierr = 0;
-                return;
+                return ret;
 
             } catch(Exception e) {
                 ierr = Infrastructure.ErrorHandler(e);
-                _ref = -1;
-                return;
+                return null;
             }
+        }
+
+        internal GridServer(GridData __g) {
+            this.GridDataObject = __g;
+        }
+        
+        public GridData GridDataObject {
+            get;
+            private set;
         }
 
 
