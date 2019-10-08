@@ -144,6 +144,7 @@ namespace BoSSS.Solution {
                         GMRESConvCrit = lc.ConvergenceCriterion,
                         ConvCrit = nc.ConvergenceCriterion,
                         m_SessionPath = SessionPath,
+                        constant_newton_it = nc.constantNewtonIterations
                     };
                     break;
 
@@ -1598,10 +1599,19 @@ namespace BoSSS.Solution {
                 useDirect |= (SysSize < DirectKickIn);
                 useDirect |= iLevel == _lc.NoOfMultigridLevels - 1;
                 useDirect |= NoOfBlocks.MPISum() <= 1;
-
-
-                if (iLevel == 0)
-                    Console.WriteLine("No of block on level 0 : " + NoOfBlocks);
+                
+                //Console.WriteLine("KcycleMultiSchwarz: REMOVE HARDCODED LEVEL SETTINGS");
+                //if (iLevel == 0) {
+                //    useDirect = false;
+                //    NoOfBlocks = 3;
+                //} else {
+                //    useDirect = true;
+                //}
+                
+                if (useDirect)
+                    Console.WriteLine("   KcycleMultiSchwarz: lv {0}, Direct solver ", iLevel);
+                else
+                    Console.WriteLine("   KcycleMultiSchwarz: lv {0}, no of blocks {1} : ", iLevel, NoOfBlocks);
 
                 ISolverSmootherTemplate levelSolver;
                 if (useDirect) {
@@ -1621,7 +1631,7 @@ namespace BoSSS.Solution {
                         //m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                         //    Depth = 1
                         //},
-                        Overlap = 2, // overlap seems to help; more overlap seems to help more
+                        Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
                         UsePMGinBlocks = true
                     };

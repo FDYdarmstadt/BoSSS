@@ -20,17 +20,36 @@ using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Application.FSI_Solver {
     public class Motion_Wet_NoRotation : Motion_Wet {
-        public Motion_Wet_NoRotation(double[] gravity, ParticleUnderrelaxationParam underrelaxationParam = null) : base(gravity, underrelaxationParam) {
-            includeRotation = false;
+
+        /// <summary>
+        /// The dry description of motion including hydrodynamics without rotation.
+        /// </summary>
+        /// <param name="gravity">
+        /// The gravity (volume forces) acting on the particle.
+        /// </param>
+        /// <param name="density">
+        /// The density of the particle.
+        /// </param>
+        /// /// <param name="underrelaxationParam">
+        /// The underrelaxation parameters (convergence limit, prefactor and a bool whether to use addaptive underrelaxation) defined in <see cref="ParticleUnderrelaxationParam"/>.
+        /// </param>
+        public Motion_Wet_NoRotation(double[] gravity, double density, ParticleUnderrelaxationParam underrelaxationParam = null) : base(gravity, density, underrelaxationParam) {
+            IncludeRotation = false;
         }
+
+        /// <summary>
+        /// Include translation?
+        /// </summary>
+        internal override bool IncludeRotation { get; } = false;
 
         /// <summary>
         /// Calculate the new particle angle
         /// </summary>
         /// <param name="dt"></param>
-        protected override void CalculateParticleAngle(double dt) {
-            angle[0] = angle[1];
-            Aux.TestArithmeticException(angle[0], "particle angle");
+        protected override double CalculateParticleAngle(double dt) {
+            double l_Angle = GetAngle(1);
+            Aux.TestArithmeticException(l_Angle, "particle angle");
+            return l_Angle;
         }
 
         /// <summary>
@@ -38,18 +57,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
-        protected override void CalculateParticleAngle(double dt, double collisionTimestep) {
-            angle[0] = angle[1];
-            Aux.TestArithmeticException(angle[0], "particle angle");
-        }
-
-        /// <summary>
-        /// Calculate the new angular velocity of the particle using explicit Euler scheme.
-        /// </summary>
-        /// <param name="dt">Timestep</param>
-        protected override void CalculateAngularVelocity(double dt) {
-            rotationalVelocity[0] = 0;
-            Aux.TestArithmeticException(rotationalVelocity[0], "particle rotational velocity");
+        protected override double CalculateParticleAngle(double dt, double collisionTimestep) {
+            double l_Angle = GetAngle(1);
+            Aux.TestArithmeticException(l_Angle, "particle angle");
+            return l_Angle;
         }
 
         /// <summary>
@@ -57,9 +68,21 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt">Timestep</param>
         /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
-        protected override void CalculateAngularVelocity(double dt, double collisionTimestep) {
-            rotationalVelocity[0] = 0;
-            Aux.TestArithmeticException(rotationalVelocity[0], "particle rotational velocity");
+        protected override double CalculateAngularVelocity(double dt) {
+            double l_RotationalVelocity = 0;
+            Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
+            return l_RotationalVelocity;
+        }
+
+        /// <summary>
+        /// Calculate the new angular velocity of the particle using explicit Euler scheme.
+        /// </summary>
+        /// <param name="dt">Timestep</param>
+        /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
+        protected override double CalculateAngularVelocity(double dt, double collisionTimestep) {
+            double l_RotationalVelocity = 0;
+            Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
+            return l_RotationalVelocity;
         }
 
         /// <summary>
@@ -67,10 +90,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="U"></param>
         /// <param name="P"></param>
-        /// <param name="LsTrk"></param>
+        /// <param name="levelSetTracker"></param>
         /// <param name="fluidViscosity"></param>
-        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, CellMask CutCells_P, double fluidViscosity, double fluidDensity, bool firstIteration, double dt = 0) {
-            double[] tempForces = CalculateHydrodynamicForces(U, P, LsTrk, CutCells_P, fluidViscosity, fluidDensity);
+        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker levelSetTracker, CellMask cutCells, double fluidViscosity, double fluidDensity, bool firstIteration, double dt = 0) {
+            double[] tempForces = CalculateHydrodynamicForces(U, P, levelSetTracker, cutCells, fluidViscosity, fluidDensity);
             double tempTorque = 0;
             HydrodynamicsPostprocessing(tempForces, tempTorque, firstIteration);
         }

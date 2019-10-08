@@ -200,15 +200,10 @@ namespace BoSSS.Foundation.Grid {
             int i0 = cellPartitioning.i0;
             int globalJ = cellPartitioning.TotalLength;
             int[] levelIndicator = new int[globalJ];
-            int[] globalCurrentLevel = GetGlobalCurrentLevel(currentGrid);
 
             for (int j = 0; j < oldJ; j++) {
                 int globalIndex = j + i0;
                 levelIndicator[globalIndex] = CellsWithMaxRefineLevel[globalIndex];
-                //if (globalCurrentLevel[globalIndex] <= CellsWithMaxRefineLevel[globalIndex]) {
-                //    levelIndicator[globalIndex] = CellsWithMaxRefineLevel[globalIndex];// globalCurrentLevel[globalIndex] + 1;
-                //    //GetLevelIndicatiorRecursive(globalIndex, levelIndicator[globalIndex] - 1, globalNeighbourship, levelIndicator);
-                //}
             }
 
             for (int j = 0; j < globalJ; j++) {
