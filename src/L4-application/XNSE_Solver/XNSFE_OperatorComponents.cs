@@ -59,50 +59,27 @@ namespace BoSSS.Application.XNSE_Solver {
             ThermalParameters thermParams = config.getThermParams;
             DoNotTouchParameters dntParams = config.getDntParams;
 
-            // set species arguments
-            double rhoA = physParams.rho_A;
-            double rhoB = physParams.rho_B;
-            double muA = physParams.mu_A;
-            double muB = physParams.mu_B;
             double sigma = physParams.Sigma;
 
-
-            // compute further arguments
-            double hVapA = thermParams.hVap_A;
-            double hVapB = thermParams.hVap_B;
-
-            double Tsat = thermParams.T_sat;
-
-            double f = config.thermParams.fc;
-            double R = config.thermParams.Rc;
-            double R_int = 0.0;
-            if (config.thermParams.hVap_A > 0 && config.thermParams.hVap_B < 0) {
-                R_int = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (rhoB * hVapA.Pow2());
-                //T_intMin = Tsat * (1 + (pc / (rhoA * hVapA.Pow2())));
-            } else if (config.thermParams.hVap_A < 0 && config.thermParams.hVap_B > 0) {
-                R_int = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (rhoA * hVapB.Pow2());
-                //T_intMin = Tsat * (1 + (pc / (rhoB * hVapB.Pow2())));
-            }
-            //double prescrbM = config.prescribedMassflux;
 
             // set components
             var comps = XOp.EquationComponents[CodName];
 
 
             if (config.isTransport) {
-                comps.Add(new ConvectionAtLevelSet_nonMaterialLLF(d, D, LsTrk, rhoA, rhoB, thermParams, R_int, sigma));
-                comps.Add(new ConvectionAtLevelSet_Consistency(d, D, LsTrk, rhoA, rhoB, dntParams.ContiSign, dntParams.RescaleConti, thermParams, R_int, sigma));
+                comps.Add(new ConvectionAtLevelSet_nonMaterialLLF(d, D, LsTrk, thermParams, sigma));
+                comps.Add(new ConvectionAtLevelSet_Consistency(d, D, LsTrk, dntParams.ContiSign, dntParams.RescaleConti, thermParams, sigma));
             }
 
             if (config.isMovingMesh) {
-                comps.Add(new ConvectionAtLevelSet_MovingMesh(d, D, LsTrk, rhoA, rhoB, thermParams));
+                comps.Add(new ConvectionAtLevelSet_MovingMesh(d, D, LsTrk, thermParams, sigma));
             }
 
             if (config.isViscous) {
-                comps.Add(new ViscosityAtLevelSet_FullySymmetric_withEvap(LsTrk, muA, muB, dntParams.PenaltySafety, d, rhoA, rhoB, thermParams, R_int, sigma));
+                comps.Add(new ViscosityAtLevelSet_FullySymmetric_withEvap(LsTrk, physParams.mu_A, physParams.mu_B, dntParams.PenaltySafety, d, thermParams, sigma));
             }
 
-            comps.Add(new MassFluxAtInterface(d, D, LsTrk, rhoA, rhoB, thermParams, R_int, sigma));
+            comps.Add(new MassFluxAtInterface(d, D, LsTrk, thermParams, sigma));
 
 
         }
@@ -140,117 +117,17 @@ namespace BoSSS.Application.XNSE_Solver {
             if (!XOp.CodomainVar.Contains(CodName))
                 throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 
-            PhysicalParameters physParams = config.getPhysParams;
+
             ThermalParameters thermParams = config.getThermParams;
             DoNotTouchParameters dntParams = config.getDntParams;
-
-            // set species arguments
-            double rhoA = physParams.rho_A;
-            double rhoB = physParams.rho_B;
-            double sigma = physParams.Sigma;
-
-
-            // compute further arguments
-            double hVapA = thermParams.hVap_A;
-            double hVapB = thermParams.hVap_B;
-
-            double Tsat = thermParams.T_sat;
-
-            double f = config.thermParams.fc;
-            double R = config.thermParams.Rc;
-            double R_int = 0.0;
-            if (config.thermParams.hVap_A > 0 && config.thermParams.hVap_B < 0) {
-                R_int = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (rhoB * hVapA.Pow2());
-                //T_intMin = Tsat * (1 + (pc / (rhoA * hVapA.Pow2())));
-            } else if (config.thermParams.hVap_A < 0 && config.thermParams.hVap_B > 0) {
-                R_int = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (rhoA * hVapB.Pow2());
-                //T_intMin = Tsat * (1 + (pc / (rhoB * hVapB.Pow2())));
-            }
-            //double prescrbM = config.prescribedMassflux;
 
             // set components
             var comps = XOp.EquationComponents[CodName];
 
-            var divEvap = new DivergenceAtLevelSet_withEvaporation(D, LsTrk, rhoA, rhoB, dntParams.ContiSign, dntParams.RescaleConti, thermParams, R_int, sigma);
+            var divEvap = new DivergenceAtLevelSet_withEvaporation(D, LsTrk, dntParams.ContiSign, dntParams.RescaleConti, thermParams, config.getPhysParams.Sigma);
             comps.Add(divEvap);
 
         }
 
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="XOp"></param>
-        /// <param name="config"></param>
-        /// <param name="D"></param>
-        /// <param name="LsTrk"></param>
-        public static void AddInterfaceHeatEq_withEvaporation(XSpatialOperatorMk2 XOp, XNSFE_OperatorConfiguration config, int D, LevelSetTracker LsTrk) {
-
-            // check input
-            if (XOp.IsCommited)
-                throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
-
-            string CodName = EquationNames.HeatEquation;
-            if (!XOp.CodomainVar.Contains(CodName))
-                throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
-
-            if (config.getConductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
-                foreach (string cn in EquationNames.AuxHeatFlux(D)) {
-                    if (!XOp.CodomainVar.Contains(cn))
-                        throw new ArgumentException("CoDomain variable \"" + cn + "\" is not defined in Spatial Operator");
-                }
-            }
-
-            PhysicalParameters physParams = config.getPhysParams;
-            ThermalParameters thermParams = config.getThermParams;
-
-            // set species arguments
-            double rhoA = physParams.rho_A;
-            double rhoB = physParams.rho_B;
-            double sigma = physParams.Sigma;
-
-
-            // compute further arguments
-            double hVapA = thermParams.hVap_A;
-            double hVapB = thermParams.hVap_B;
-
-            double Tsat = thermParams.T_sat;
-
-            double f = config.thermParams.fc;
-            double R = config.thermParams.Rc;
-            double rho_l = 0.0;
-            double R_int = 0.0;
-            if (config.thermParams.hVap_A > 0 && config.thermParams.hVap_B < 0) {
-                rho_l = rhoA;
-                R_int = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (rhoB * hVapA.Pow2());
-                //T_intMin = Tsat * (1 + (pc / (rhoA * hVapA.Pow2())));
-            } else if (config.thermParams.hVap_A < 0 && config.thermParams.hVap_B > 0) {
-                rho_l = rhoB;
-                R_int = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (rhoA * hVapB.Pow2());
-                //T_intMin = Tsat * (1 + (pc / (rhoB * hVapB.Pow2())));
-            }
-
-
-            // set components
-            var comps = XOp.EquationComponents[CodName];
-
-
-            // mass flux at interface
-            // ======================
-            //if (!config.isSeparated) {
-            //    comps.Add(new HeatFluxAtLevelSet(LsTrk, rho_l, thermParams, R_int, sigma));
-            //}
-
-
-            // convective part
-            // ================
-            if (thermParams.IncludeConvection) 
-                comps.Add(new HeatConvectionAtLevelSet_Divergence(D, LsTrk, rhoA, rhoB, thermParams, R_int, sigma));
-
-
-        }
-
-        
     }
 }

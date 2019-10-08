@@ -27,6 +27,7 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Utils;
+using ilPSP.Utils;
 
 namespace BoSSS.Solution.XheatCommon {
 
@@ -48,13 +49,8 @@ namespace BoSSS.Solution.XheatCommon {
             /// <summary>
             /// splitting into two first order differential equations, explicit computation of the heat flux
             /// </summary>
-            LDG,
+            LDG
 
-            /// <summary>
-            /// splitting into two first order differential equations, explicit computation of the heat flux
-            /// additional stabilization via penalty terms
-            /// </summary>
-            LDGstabi
         }
 
 
@@ -122,6 +118,12 @@ namespace BoSSS.Solution.XheatCommon {
         /// </summary>
         protected Func<double[], double, double>[][] fluxFunction;
 
+        /// <summary>
+        /// Dirichlet boundary values; <br/>
+        ///  - 1st index: edge tag
+        /// </summary>
+        protected Func<double[], double, double>[] tempFunction;
+
 
         public HeatFluxDivergenceInSpeciesBulk(int D, ThermalMultiphaseBoundaryCondMap bcMap, string spcName, SpeciesId spcId) {
 
@@ -131,6 +133,7 @@ namespace BoSSS.Solution.XheatCommon {
             //this.ksqrt = Math.Sqrt(_k);
 
             fluxFunction = D.ForLoop(d => bcMap.bndFunction[VariableNames.HeatFluxVectorComponent(d) + "#" + spcName]);
+            tempFunction = bcMap.bndFunction[VariableNames.Temperature + "#" + spcName];
             EdgeTag2Type = bcMap.EdgeTag2Type;
         }
 
@@ -144,7 +147,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         public IList<string> ArgumentOrdering {
             get {
-                return VariableNames.HeatFluxVector(m_D);
+                return ArrayTools.Cat(VariableNames.HeatFluxVector(m_D), VariableNames.Temperature);
             }
         }
 
@@ -176,7 +179,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         public double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double Acc = 0;
-            for (int d = 0; d < cpv.D; d++)
+            for (int d = 0; d < m_D; d++)
                 Acc += U[d] * GradV[d];
 
             return -Acc;
@@ -188,7 +191,18 @@ namespace BoSSS.Solution.XheatCommon {
             double Acc = 0.0;
 
             for (int d = 0; d < m_D; d++) {
+                // consistency term
                 Acc += 0.5 * (_uIN[d] + _uOUT[d]) * inp.Normale[d];
+
+                // penalty terms
+                Acc += C_11 * (_uIN[m_D] - _uOUT[m_D]) * inp.Normale[d];
+                //
+                double qn = 0.0;
+                for (int dd = 0; dd < m_D; dd++) {
+                    qn += (_uIN[dd] - _uOUT[dd]) * inp.Normale[dd];
+                }
+                //Acc -= C_12[d] * qn * inp.Normale[d];
+                Acc += C_12 * qn;
             }
 
             return Acc * (_vIN - _vOUT);
@@ -204,7 +218,19 @@ namespace BoSSS.Solution.XheatCommon {
                 case ThermalBcType.ConstantTemperature: {
 
                         for (int d = 0; d < m_D; d++) {
-                            Acc += (_uA[d]) * _vA * inp.Normale[d];
+                            // consistency term
+                            Acc += (_uA[d]) * inp.Normale[d];
+
+                            // penalty terms
+                            double T_D = tempFunction[inp.EdgeTag](inp.X, inp.time);
+                            //Acc += C_11 * (_uA[m_D] - T_D) * inp.Normale[d];
+                            //
+                            double qn = 0.0;
+                            //for (int dd = 0; dd < m_D; dd++) {
+                            //    qn += _uA[dd] * inp.Normale[dd];
+                            //}
+                            //Acc -= C_12[d] * qn * inp.Normale[d];
+                            //Acc += C_12 * qn;
                         }
 
                         break;
@@ -219,10 +245,19 @@ namespace BoSSS.Solution.XheatCommon {
                     }
                 case ThermalBcType.ConstantHeatFlux: {
 
-                        for (int d = 0; d < inp.D; d++) {
+                        for (int d = 0; d < m_D; d++) {
                             double g_D = this.fluxFunction[d][inp.EdgeTag](inp.X, inp.time);
+                            // consistency term
+                            Acc += (g_D) * inp.Normale[d];
 
-                            Acc += (g_D) * (_vA) * inp.Normale[d];
+                            // penalty terms
+                            double qn = 0.0;
+                            for (int dd = 0; dd < m_D; dd++) {
+                                g_D = this.fluxFunction[dd][inp.EdgeTag](inp.X, inp.time);
+                                qn += g_D * inp.Normale[dd];
+                            }
+                            //Acc -= C_12[d] * qn * inp.Normale[d];
+                            //Acc += C_12 * qn;
                         }
 
                         break;
@@ -231,9 +266,12 @@ namespace BoSSS.Solution.XheatCommon {
                     throw new NotImplementedException();
             }
 
-            return Acc;
+            return Acc * _vA;
         }
 
+        double C_11 = 0.0;
+        //double[] C_12 = new double[] { 0.0, 0.0 };
+        double C_12 = -0.5;
 
         //public void CoefficientUpdate(CoefficientSet cs, Int32[] DomainDGdeg, Int32 TestDGdeg) {
         //    throw new NotImplementedException();
@@ -315,7 +353,7 @@ namespace BoSSS.Solution.XheatCommon {
                 Acc += (_uIN[d] - _uOUT[d]) * inp.Normale[d];
             }
 
-            return -Acc * (_vIN - _vOUT);
+            return Acc * (_vIN - _vOUT);
         }
 
 
@@ -424,6 +462,7 @@ namespace BoSSS.Solution.XheatCommon {
     /// </summary>
     public class TemperatureGradientInSpeciesBulk : LinearFlux, ISpeciesFilter {
 
+        int m_D;
         int m_d;    // component
 
         /// <summary>
@@ -433,18 +472,27 @@ namespace BoSSS.Solution.XheatCommon {
 
         /// <summary>
         /// Dirichlet boundary values; <br/>
+        ///  - 1st index: spatial dimension <br/>
+        ///  - 2nd index: edge tag
+        /// </summary>
+        //protected Func<double[], double, double>[][] fluxFunction;
+
+        /// <summary>
+        /// Dirichlet boundary values; <br/>
         ///  - 1st index: edge tag
         /// </summary>
         protected Func<double[], double, double>[] tempFunction;
 
 
-        public TemperatureGradientInSpeciesBulk(int _d, ThermalMultiphaseBoundaryCondMap bcMap, string spcName, SpeciesId spcId, double _k) {
+        public TemperatureGradientInSpeciesBulk(int _D, int _d, ThermalMultiphaseBoundaryCondMap bcMap, string spcName, SpeciesId spcId, double _k) {
 
+            this.m_D = _D;
             this.m_d = _d;
 
             this.m_spcId = spcId;
             this.k = _k;
 
+            //fluxFunction = m_D.ForLoop(d => bcMap.bndFunction[VariableNames.HeatFluxVectorComponent(d) + "#" + spcName]);
             tempFunction = bcMap.bndFunction[VariableNames.Temperature + "#" + spcName];
             EdgeTag2Type = bcMap.EdgeTag2Type;
         }
@@ -479,7 +527,22 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
         protected override double InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout) {
-            return 0.5 * k * (Uin[0] + Uout[0]) * inp.Normale[m_d];
+
+            double Acc = 0.0;
+
+            // consistency term
+            Acc += 0.5 * (Uin[0] + Uout[0]) * inp.Normale[m_d];
+
+            // penalty term
+            double Tn = 0.0;
+            //for (int d = 0; d < m_D; d++) {
+            //    Tn += C_12[d] * (Uin[0] - Uout[0]) * inp.Normale[d];
+            //}
+            Tn += C_12 * (Uin[0] - Uout[0]);
+            
+            Acc += Tn * inp.Normale[m_d];
+
+            return k * Acc;
         }
 
         protected override double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
@@ -488,20 +551,35 @@ namespace BoSSS.Solution.XheatCommon {
             switch (edgType) {
                 case ThermalBcType.ConstantTemperature:
 
-                    double T_D = tempFunction[inp.EdgeTag](inp.X, inp.time);
+                    double Acc = 0.0;
 
-                    return k * T_D * inp.Normale[m_d];
+                    double T_D = tempFunction[inp.EdgeTag](inp.X, inp.time);
+                    // consistency term
+                    Acc += T_D * inp.Normale[m_d];
+
+                    // penalty term
+                    double Tn = 0.0;
+                    //for (int d = 0; d < m_D; d++) {
+                    //    Tn += C_12[d] * (Uin[0] - T_D) * inp.Normale[d];
+                    //}
+                    Tn += C_12 * (Uin[0] - T_D);
+
+                    //Acc += Tn * inp.Normale[m_d];
+
+                    return k * Acc;
 
                 case ThermalBcType.ZeroGradient:
                 case ThermalBcType.ConstantHeatFlux:
 
                     return k * Uin[0] * inp.Normale[m_d];
+
                 default:
                     throw new NotImplementedException();
             }
         }
 
-
+        //double[] C_12 = new double[] { 0.0, 0.0 };
+        double C_12 = 0.5;
 
         //public void CoefficientUpdate(CoefficientSet cs, Int32[] DomainDGdeg, Int32 TestDGdeg) {
         //    throw new NotImplementedException();
@@ -577,7 +655,7 @@ namespace BoSSS.Solution.XheatCommon {
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT,
             double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
 
-            return (_uIN[0] - _uOUT[0]) * (_vIN - _vOUT) * inp.Normale[m_d];
+            return -(_uIN[0] - _uOUT[0]) * (_vIN - _vOUT) * inp.Normale[m_d];
         }
 
 

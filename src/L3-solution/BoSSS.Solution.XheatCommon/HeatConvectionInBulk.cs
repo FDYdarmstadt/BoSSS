@@ -47,7 +47,7 @@ namespace BoSSS.Solution.XheatCommon {
             this.LFFA = _LFFA;
             this.LFFB = _LFFB;
             this.m_bcmap = _bcmap;
-            base.VelFunction = null;
+            //base.VelFunction = null;
             base.TempFunction = null;
         }
 
@@ -71,10 +71,10 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
         void SetBndfunc(string S) {
-            int SpatDim = base.m_SpatialDimension;
-            base.VelFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, SpatDim];
-            for(int d = 0; d < SpatDim; d++)
-                base.VelFunction.SetColumn(m_bcmap.bndFunction[VariableNames.Velocity_d(d) + "#" + S], d);
+            //int SpatDim = base.m_SpatialDimension;
+            //base.VelFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, SpatDim];
+            //for(int d = 0; d < SpatDim; d++)
+            //    base.VelFunction.SetColumn(m_bcmap.bndFunction[VariableNames.Velocity_d(d) + "#" + S], d);
 
             base.TempFunction = m_bcmap.bndFunction[VariableNames.Temperature + "#" + S];
         }
@@ -178,7 +178,7 @@ namespace BoSSS.Solution.XheatCommon {
         /// 1st index: edge tag;<br/>
         /// 2nd index: spatial direction
         /// </summary>
-        protected Func<double[], double, double>[,] VelFunction;
+        //protected Func<double[], double, double>[,] VelFunction;
 
         protected Func<double[], double, double>[] TempFunction;
 
@@ -187,9 +187,9 @@ namespace BoSSS.Solution.XheatCommon {
             m_SpatialDimension = SpatDim;
             m_bcmap = _bcmap;
 
-            VelFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, SpatDim];
-            for(int d = 0; d < m_SpatialDimension; d++)
-                VelFunction.SetColumn(m_bcmap.bndFunction[VariableNames.Velocity_d(d)], d);
+            //VelFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, SpatDim];
+            //for(int d = 0; d < m_SpatialDimension; d++)
+            //    VelFunction.SetColumn(m_bcmap.bndFunction[VariableNames.Velocity_d(d)], d);
 
             TempFunction = m_bcmap.bndFunction[VariableNames.Temperature];
 

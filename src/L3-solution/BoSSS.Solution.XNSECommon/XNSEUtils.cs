@@ -1191,7 +1191,7 @@ namespace BoSSS.Solution.XNSECommon {
 
 
 
-        static public void ComputeGradientForParam(DGField f, DGField[] fGrad, LevelSetTracker LsTrk, Dictionary<string, double> a = null) {
+        static public void ComputeGradientForParam(DGField f, DGField[] fGrad, LevelSetTracker LsTrk, Dictionary<string, double> a = null, SubGrid optionalSubGrid = null) {
             using(FuncTrace ft = new FuncTrace()) {
 
                 int D = LsTrk.GridDat.SpatialDimension;
@@ -1202,7 +1202,13 @@ namespace BoSSS.Solution.XNSECommon {
                         DGField f_Spc = ((f as XDGField).GetSpeciesShadowField(Spc));
 
                         double aSpc = (a != null && a.ContainsKey(Spc)) ? a[Spc] : 1.0;
-                        (fGrad[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(aSpc, f_Spc, d);
+                        SubGrid optSgrd;
+                        if (optionalSubGrid == null) {
+                            optSgrd = LsTrk.Regions.GetSpeciesSubGrid(Spc);
+                        } else {
+                            optSgrd = optionalSubGrid;
+                        }
+                        (fGrad[d] as XDGField).GetSpeciesShadowField(Spc).DerivativeByFlux(aSpc, f_Spc, d, optSgrd);
                     }
                 }
 

@@ -33,6 +33,7 @@ using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.LevelSetTools.EllipticExtension;
 using BoSSS.Solution.LevelSetTools.EllipticReInit;
 using BoSSS.Solution.Timestepping;
+using Newtonsoft.Json;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -243,9 +244,14 @@ namespace BoSSS.Application.XNSE_Solver {
             CapillaryHeight,
 
             /// <summary>
-            /// Evaporative mass flux and speed of displacement 
+            /// Evaporative mass flux and speed of displacement (Line interface)
             /// </summary>
-            Evaporation
+            EvaporationL,
+
+            /// <summary>
+            /// Evaporative mass flux and speed of displacement (circle interface)
+            /// </summary>
+            EvaporationC
         }
 
         /// <summary>
@@ -349,6 +355,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// array of additional parameter values for some testcases
         /// </summary>
+        [DataMember]
         public double[] AdditionalParameters;
 
         ///// <summary>
@@ -507,16 +514,27 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// switch for the computation of the coupled heat solver
         /// </summary>
+        [DataMember]
         public bool solveCoupledHeatEquation = false;
+
+        /// <summary>
+        /// switch for advanced parameter Update for nonlinear solver
+        /// </summary>
+        [DataMember]
+        public bool useSolutionParamUpdate = false;
 
         /// <summary>
         /// only available if no heat equation is solved
         /// </summary>
-        public Func<double, double> prescribedMassflux;
+        public Func<double[], double, double> prescribedMassflux_Evaluator;
+
+        [DataMember]
+        public IBoundaryAndInitialData prescribedMassflux;
 
         /// <summary>
         /// implementations for the conductivity part (laplace operator) of the heat equation 
         /// </summary>
+        [DataMember]
         public ConductivityInSpeciesBulk.ConductivityMode conductMode = ConductivityInSpeciesBulk.ConductivityMode.SIP;
 
         /// <summary>

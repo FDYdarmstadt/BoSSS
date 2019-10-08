@@ -100,6 +100,10 @@ namespace BoSSS.Solution.XheatCommon {
                 Ret -= (kA * Grad_vA_xN) * (uA[0] - Tsat);                     // symmetry term
                 Ret -= (kB * Grad_vB_xN) * (Tsat - uB[0]);                     // symmetry term
 
+                //Ret -= 0.5 * (kA * Grad_uA_xN + kB * Grad_uB_xN) * (vA - vB);
+                //Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (uA[0] - Tsat);
+                //Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (Tsat - uB[0]);
+
                 Ret += (2.0 * penalty / hCutCellMin) * (uA[0] - Tsat) * (vA - 0) * kA; // penalty term
                 Ret += (2.0 * penalty / hCutCellMin) * (Tsat - uB[0]) * (0 - vB) * kB; // penalty term
 
@@ -270,11 +274,11 @@ namespace BoSSS.Solution.XheatCommon {
             // transform from species A to B: we call this the "B-fictitious" value
             double uBxN_fict = uAxN;
 
-            double FlxNeg = (DirichletCond) ? 0.0 : Flux(uAxN, uAxN_fict); // flux on A-side
+            double FlxNeg = (DirichletCond) ? 0.0 : -Flux(uAxN, uAxN_fict); // flux on A-side
             double FlxPos = (DirichletCond) ? 0.0 : Flux(uBxN_fict, uBxN);  // flux on B-side
 
 
-            return -(FlxNeg * vA - FlxPos * vB);
+            return (FlxNeg * vA - FlxPos * vB);
 
         }
 
@@ -347,10 +351,22 @@ namespace BoSSS.Solution.XheatCommon {
         public double LevelSetForm(ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
+            double FlxNeg = 0.0;
+            double FlxPos = 0.0;
+            if (DirichletCond) {
+                double Avg = Tsat;
+                FlxNeg += kA * Avg; // + 0.5 * uB[0] * (kA - kB);
+                FlxPos += kB * Avg; // + 0.5 * uA[0] * (kA - kB);
+            } else {
+                double Avg = 0.5 * (uB[0] + uA[0]);
+                FlxNeg += kA * Avg; // + 0.5 * uB[0] * (kA - kB);
+                FlxPos += kB * Avg; // + 0.5 * uA[0] * (kA - kB);
+            }
 
-            double Acc = (DirichletCond) ? Tsat : 0.5 * (uB[0] + uA[0]);
+            return (FlxNeg * vA - FlxPos * vB) * inp.n[m_d];
 
-            return -Acc * (kB * vB - kA * vA) * inp.n[m_d];
+            //double Acc = (DirichletCond) ? Tsat : 0.5 * (uB[0] + uA[0]);
+            //return Acc * (kA * vA - kB * vB) * inp.n[m_d];
         }
 
 
@@ -394,14 +410,20 @@ namespace BoSSS.Solution.XheatCommon {
 
         LevelSetTracker m_LsTrk;
 
-        public TemperatureStabilizationFormAtLevelSet(int _d, LevelSetTracker lstrk, bool _DiriCond, double _Tsat) {
+        public TemperatureStabilizationFormAtLevelSet(int _d, LevelSetTracker lstrk, double _kA, double _kB, bool _DiriCond, double _Tsat) {
 
             this.m_d = _d;
             m_LsTrk = lstrk;
 
+            this.kA = _kA;
+            this.kB = _kB;
+
             this.DirichletCond = _DiriCond;
             this.Tsat = _Tsat;
         }
+
+        double kA;
+        double kB;
 
         bool DirichletCond;
         double Tsat;
@@ -420,10 +442,10 @@ namespace BoSSS.Solution.XheatCommon {
                 Acc += 2.0 * (uA[0] - Tsat) * inp.n[m_d] * (vA - 0.0);
                 Acc += 2.0 * (Tsat - uB[0]) * inp.n[m_d] * (0.0 - vB);
             } else {
-                Acc += (uA[0] - uB[0]) * inp.n[m_d] * (vA - vB);
+                Acc += (kA * uA[0] - kB * uB[0]) * inp.n[m_d] * (vA - vB);
             }
 
-            return Acc;
+            return -Acc;
         }
 
 

@@ -960,6 +960,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
                         break;
                     }
+                case IncompressibleBcType.FreeSlip:
                 case IncompressibleBcType.SlipSymmetry:
                 case IncompressibleBcType.NavierSlip_Linear: {
 

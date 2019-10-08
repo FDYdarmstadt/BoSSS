@@ -33,10 +33,11 @@ using BoSSS.Solution.Utils;
 
 namespace BoSSS.Solution.XheatCommon {
 
-    public class HeatConvectionInSpeciesBulk : LinearizedHeatConvection, ISpeciesFilter, IEquationComponentCoefficient {
+    public class HeatConvectionInSpeciesBulk_LLF : LinearizedHeatConvection, ISpeciesFilter, IEquationComponentCoefficient {
 
+        
 
-        public HeatConvectionInSpeciesBulk(int SpatDim, ThermalMultiphaseBoundaryCondMap _bcmap, string spcName, SpeciesId spcId, 
+        public HeatConvectionInSpeciesBulk_LLF(int SpatDim, ThermalMultiphaseBoundaryCondMap _bcmap, string spcName, SpeciesId spcId, 
             double _cap, double _LFF, LevelSetTracker _lsTrk)
             : base(SpatDim, _bcmap) {
 
@@ -48,9 +49,9 @@ namespace BoSSS.Solution.XheatCommon {
             this.m_bcmap = _bcmap;
 
 
-            base.VelFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, SpatDim];
-            for (int d = 0; d < SpatDim; d++)
-                base.VelFunction.SetColumn(m_bcmap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName], d);
+            //base.VelFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, SpatDim];
+            //for (int d = 0; d < SpatDim; d++)
+            //    base.VelFunction.SetColumn(m_bcmap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName], d);
 
             base.TempFunction = m_bcmap.bndFunction[VariableNames.Temperature + "#" + spcName];
 
@@ -159,5 +160,104 @@ namespace BoSSS.Solution.XheatCommon {
     }
 
 
+    public class HeatConvectionInSpeciesBulk_Upwind : LinearFlux, ISpeciesFilter {
 
+        /// <summary>
+        /// Spatial dimension;
+        /// </summary>
+        protected int m_SpatialDimension;
+
+        ThermalMultiphaseBoundaryCondMap m_bcmap;
+
+        /// <summary>
+        /// Mapping from edge tags to boundary values.<br/>
+        /// 1st index: edge tag;<br/>
+        /// 2nd index: spatial direction
+        /// </summary>
+        protected Func<double[], double, double>[,] VelFunction;
+
+        protected Func<double[], double, double>[] TempFunction;
+
+        public HeatConvectionInSpeciesBulk_Upwind(int SpatDim, ThermalMultiphaseBoundaryCondMap _bcmap, string spcName, SpeciesId spcId, double _cap) {
+
+            this.m_SpatialDimension = SpatDim;
+
+            this.cap = _cap;
+            this.m_spcId = spcId;
+
+            this.m_bcmap = _bcmap;
+
+            this.VelFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, SpatDim];
+            for (int d = 0; d < SpatDim; d++)
+                this.VelFunction.SetColumn(m_bcmap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName], d);
+
+            this.TempFunction = m_bcmap.bndFunction[VariableNames.Temperature + "#" + spcName];
+        }
+
+        double cap;
+
+        SpeciesId m_spcId;
+
+        public SpeciesId validSpeciesId {
+            get { return m_spcId; }
+        }
+
+
+        public override IList<string> ArgumentOrdering {
+            get {
+                return new string[] { VariableNames.Temperature };
+            }
+        }
+
+        public override IList<string> ParameterOrdering {
+            get {
+                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_SpatialDimension)); //, VariableNames.Velocity0MeanVector(m_SpatialDimension));
+            }
+        }
+
+
+        protected override void Flux(ref CommonParamsVol inp, double[] U, double[] output) {
+
+            for(int d = 0; d < m_SpatialDimension; d++)
+                output[d] = cap * U[0] * inp.Parameters[d];
+
+        }
+
+
+        protected override double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
+
+            double c = 0.0;
+            for (int d = 0; d < m_SpatialDimension; d++)
+                c += inp.Parameters_IN[d] * inp.Normale[d];
+
+            ThermalBcType edgeType = m_bcmap.EdgeTag2Type[inp.EdgeTag];
+
+            switch (edgeType) {
+                case ThermalBcType.ConstantTemperature: {
+                        return (c * cap * TempFunction[inp.EdgeTag](inp.X, inp.time));
+                    }
+                case ThermalBcType.ZeroGradient:
+                case ThermalBcType.ConstantHeatFlux: {
+                        return (c * cap * Uin[0]);
+                    }
+                default:
+                    throw new NotImplementedException("Boundary condition not implemented!");
+            }
+        }
+
+
+        protected override double InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout) {
+
+            double c = 0.0;
+            for (int d = 0; d < m_SpatialDimension; d++)
+                c += 0.5 * (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * inp.Normale[d];
+
+            if (c > 0)
+                return (c * cap * Uin[0]);
+            else
+                return (c * cap * Uout[0]);
+
+
+        }
+    }
 }

@@ -438,365 +438,365 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
     //}
 
 
-    class ConvectionAtLevelSet_weightedLLF : ILevelSetForm {
+    //class ConvectionAtLevelSet_weightedLLF : ILevelSetForm {
 
-        LevelSetTracker m_LsTrk;
+    //    LevelSetTracker m_LsTrk;
 
-        public ConvectionAtLevelSet_weightedLLF(int _d, int _D, LevelSetTracker LsTrk, double _rhoA, double _rhoB, double _LFFA, double _LFFB, IncompressibleMultiphaseBoundaryCondMap _bcmap, bool _movingmesh) {
+    //    public ConvectionAtLevelSet_weightedLLF(int _d, int _D, LevelSetTracker LsTrk, double _rhoA, double _rhoB, double _LFFA, double _LFFB, IncompressibleMultiphaseBoundaryCondMap _bcmap, bool _movingmesh) {
 
-            m_D = _D;
-            m_d = _d;
-            rhoA = _rhoA;
-            rhoB = _rhoB;
+    //        m_D = _D;
+    //        m_d = _d;
+    //        rhoA = _rhoA;
+    //        rhoB = _rhoB;
 
-            m_LsTrk = LsTrk;
-            //MaterialInterface = _MaterialInterface;
-            movingmesh = _movingmesh;
-            LFF = 0.5 * (_LFFA + _LFFB);
+    //        m_LsTrk = LsTrk;
+    //        //MaterialInterface = _MaterialInterface;
+    //        movingmesh = _movingmesh;
+    //        LFF = 0.5 * (_LFFA + _LFFB);
 
-            //NegFlux = new ConvectionInBulk_weightedLLF(_D, _bcmap, _d, _rhoA, _rhoB, _LFFA, double.NaN, LsTrk);
-            //NegFlux.SetParameter("A", LsTrk.GetSpeciesId("A"));
-            //PosFlux = new ConvectionInBulk_weightedLLF(_D, _bcmap, _d, _rhoA, _rhoB, double.NaN, _LFFB, LsTrk);
-            //PosFlux.SetParameter("B", LsTrk.GetSpeciesId("B"));
+    //        //NegFlux = new ConvectionInBulk_weightedLLF(_D, _bcmap, _d, _rhoA, _rhoB, _LFFA, double.NaN, LsTrk);
+    //        //NegFlux.SetParameter("A", LsTrk.GetSpeciesId("A"));
+    //        //PosFlux = new ConvectionInBulk_weightedLLF(_D, _bcmap, _d, _rhoA, _rhoB, double.NaN, _LFFB, LsTrk);
+    //        //PosFlux.SetParameter("B", LsTrk.GetSpeciesId("B"));
 
-        }
+    //    }
 
-        double rhoA;
-        double rhoB;
-        bool movingmesh;
-        double LFF;
+    //    double rhoA;
+    //    double rhoB;
+    //    bool movingmesh;
+    //    double LFF;
 
-        int m_D;
-        int m_d;
+    //    int m_D;
+    //    int m_d;
 
-        // Use Fluxes as in Bulk Convection
-        //ConvectionInBulk_weightedLLF NegFlux;
-        //ConvectionInBulk_weightedLLF PosFlux;
+    //    // Use Fluxes as in Bulk Convection
+    //    //ConvectionInBulk_weightedLLF NegFlux;
+    //    //ConvectionInBulk_weightedLLF PosFlux;
 
 
-        //void TransformU(ref double[] U_Neg, ref double[] U_Pos, out double[] U_NegFict, out double[] U_PosFict) {
-        //    U_NegFict = U_Pos; 
-        //    U_PosFict = U_Neg; 
-        //}
+    //    //void TransformU(ref double[] U_Neg, ref double[] U_Pos, out double[] U_NegFict, out double[] U_PosFict) {
+    //    //    U_NegFict = U_Pos; 
+    //    //    U_PosFict = U_Neg; 
+    //    //}
 
-        public Double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+    //    public Double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
 
-            double UinBkUp = U_Neg[0];
-            double UoutBkUp = U_Pos[0];
-            double[] InParamsBkup = cp.ParamsNeg;
-            double[] OutParamsBkup = cp.ParamsPos;
+    //        double UinBkUp = U_Neg[0];
+    //        double UoutBkUp = U_Pos[0];
+    //        double[] InParamsBkup = cp.ParamsNeg;
+    //        double[] OutParamsBkup = cp.ParamsPos;
 
 
-            // evaluate flux function
-            // ----------------------
+    //        // evaluate flux function
+    //        // ----------------------
 
-            double flx = 0.0;
+    //        double flx = 0.0;
 
-            double[] Uint = new double[] { 0.0, 0.0 };
+    //        double[] Uint = new double[] { 0.0, 0.0 };
 
-            // Calculate central part
-            // ======================
+    //        // Calculate central part
+    //        // ======================
 
-            //// 2 * {u_i * u_j} * n_j,
-            //// resp. 2 * {rho * u_i * u_j} * n_j for variable density
-            flx += rhoA * U_Neg[0] * ((cp.ParamsNeg[0] - Uint[0]) * cp.n[0] + (cp.ParamsNeg[1] - Uint[1]) * cp.n[1]);
-            flx += rhoB * U_Pos[0] * ((cp.ParamsPos[0] - Uint[0]) * cp.n[0] + (cp.ParamsPos[1] - Uint[1]) * cp.n[1]);
-            //if (m_D == 3) {
-            //    flx += rhoA * U_Neg[0] * cp.ParamsNeg[2] * cp.n[2] + rhoB * U_Pos[0] * cp.ParamsPos[2] * cp.n[2];
-            //}
+    //        //// 2 * {u_i * u_j} * n_j,
+    //        //// resp. 2 * {rho * u_i * u_j} * n_j for variable density
+    //        flx += rhoA * U_Neg[0] * ((cp.ParamsNeg[0] - Uint[0]) * cp.n[0] + (cp.ParamsNeg[1] - Uint[1]) * cp.n[1]);
+    //        flx += rhoB * U_Pos[0] * ((cp.ParamsPos[0] - Uint[0]) * cp.n[0] + (cp.ParamsPos[1] - Uint[1]) * cp.n[1]);
+    //        //if (m_D == 3) {
+    //        //    flx += rhoA * U_Neg[0] * cp.ParamsNeg[2] * cp.n[2] + rhoB * U_Pos[0] * cp.ParamsPos[2] * cp.n[2];
+    //        //}
 
-            // Calculate dissipative part
-            // ==========================
+    //        // Calculate dissipative part
+    //        // ==========================
 
-            double[] VelocityMeanIn = new double[m_D];
-            double[] VelocityMeanOut = new double[m_D];
-            for (int d = 0; d < m_D; d++) {
-                VelocityMeanIn[d] = cp.ParamsNeg[m_D + d] - Uint[d];
-                VelocityMeanOut[d] = cp.ParamsPos[m_D + d] - Uint[d];
-            }
+    //        double[] VelocityMeanIn = new double[m_D];
+    //        double[] VelocityMeanOut = new double[m_D];
+    //        for (int d = 0; d < m_D; d++) {
+    //            VelocityMeanIn[d] = cp.ParamsNeg[m_D + d] - Uint[d];
+    //            VelocityMeanOut[d] = cp.ParamsPos[m_D + d] - Uint[d];
+    //        }
 
-            double LambdaIn;
-            double LambdaOut;
+    //        double LambdaIn;
+    //        double LambdaOut;
 
-            LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.n, true);
-            LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.n, true);
+    //        LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.n, true);
+    //        LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.n, true);
 
-            LambdaIn *= rhoA;
-            LambdaOut *= rhoB;
+    //        LambdaIn *= rhoA;
+    //        LambdaOut *= rhoB;
 
-            double Lambda = Math.Max(LambdaIn, LambdaOut);
+    //        double Lambda = Math.Max(LambdaIn, LambdaOut);
 
-            double uJump = U_Neg[0] - U_Pos[0];
+    //        double uJump = U_Neg[0] - U_Pos[0];
 
-            flx += Lambda * uJump * LFF;
+    //        flx += Lambda * uJump * LFF;
 
-            flx *= 0.5;
+    //        flx *= 0.5;
 
-            //flx *= rho_in;
+    //        //flx *= rho_in;
 
-            // cleanup mess and return
-            // -----------------------
+    //        // cleanup mess and return
+    //        // -----------------------
 
-            U_Pos[0] = UoutBkUp;
-            U_Neg[0] = UinBkUp;
-            cp.ParamsNeg = InParamsBkup;
-            cp.ParamsPos = OutParamsBkup;
+    //        U_Pos[0] = UoutBkUp;
+    //        U_Neg[0] = UinBkUp;
+    //        cp.ParamsNeg = InParamsBkup;
+    //        cp.ParamsPos = OutParamsBkup;
 
-            // ====================================
+    //        // ====================================
 
-            double Flx = flx * v_Neg - flx * v_Pos;
+    //        double Flx = flx * v_Neg - flx * v_Pos;
 
-            return Flx;
+    //        return Flx;
 
-        }
+    //    }
 
 
-        public IList<string> ArgumentOrdering {
-            get {
-                return new string[] { VariableNames.Velocity_d(m_d) };
-            }
-        }
+    //    public IList<string> ArgumentOrdering {
+    //        get {
+    //            return new string[] { VariableNames.Velocity_d(m_d) };
+    //        }
+    //    }
 
-        public IList<string> ParameterOrdering {
-            get {
-                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.Velocity0MeanVector(m_D));
-            }
-        }
+    //    public IList<string> ParameterOrdering {
+    //        get {
+    //            return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.Velocity0MeanVector(m_D));
+    //        }
+    //    }
 
-        public int LevelSetIndex {
-            get { return 0; }
-        }
+    //    public int LevelSetIndex {
+    //        get { return 0; }
+    //    }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
-        }
+    //    public SpeciesId PositiveSpecies {
+    //        get { return this.m_LsTrk.GetSpeciesId("B"); }
+    //    }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
-        }
+    //    public SpeciesId NegativeSpecies {
+    //        get { return this.m_LsTrk.GetSpeciesId("A"); }
+    //    }
 
-        public TermActivationFlags LevelSetTerms {
-            get {
-                return TermActivationFlags.UxV;
-            }
-        }
+    //    public TermActivationFlags LevelSetTerms {
+    //        get {
+    //            return TermActivationFlags.UxV;
+    //        }
+    //    }
 
-    }
+    //}
 
 
-    class ConvectionAtLevelSet_nonMaterial : ILevelSetForm, ILevelSetEquationComponentCoefficient {
+    //class ConvectionAtLevelSet_nonMaterial : ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
-        LevelSetTracker m_lsTrk;
+    //    LevelSetTracker m_lsTrk;
 
-        public ConvectionAtLevelSet_nonMaterial(int _d, int _D, LevelSetTracker lsTrk, double _rhoA, double _rhoB,
-            double _kA, double _kB, double _hVapA, double _Rint, double _Tsat, double _sigma, double _pc) {
-            this.D = _D;
-            this.m_d = _d;
-            this.rhoA = _rhoA;
-            this.rhoB = _rhoB;
-            this.m_lsTrk = lsTrk;
+    //    public ConvectionAtLevelSet_nonMaterial(int _d, int _D, LevelSetTracker lsTrk, double _rhoA, double _rhoB,
+    //        double _kA, double _kB, double _hVapA, double _Rint, double _Tsat, double _sigma, double _pc) {
+    //        this.D = _D;
+    //        this.m_d = _d;
+    //        this.rhoA = _rhoA;
+    //        this.rhoB = _rhoB;
+    //        this.m_lsTrk = lsTrk;
 
-            this.kA = _kA;
-            this.kB = _kB;
-            this.hVapA = _hVapA;
-            this.Rint = _Rint;
+    //        this.kA = _kA;
+    //        this.kB = _kB;
+    //        this.hVapA = _hVapA;
+    //        this.Rint = _Rint;
 
-            this.Tsat = _Tsat;
-            this.sigma = _sigma;
-            this.pc = _pc;
-        }
+    //        this.Tsat = _Tsat;
+    //        this.sigma = _sigma;
+    //        this.pc = _pc;
+    //    }
 
-        int D;
-        int m_d;
-        double rhoA;
-        double rhoB;
+    //    int D;
+    //    int m_d;
+    //    double rhoA;
+    //    double rhoB;
 
 
-        double kA;
-        double kB;
-        double hVapA;   // for the identification of the liquid phase
-        double Rint;
+    //    double kA;
+    //    double kB;
+    //    double hVapA;   // for the identification of the liquid phase
+    //    double Rint;
 
-        double Tsat;
-        double sigma;
-        double pc;
+    //    double Tsat;
+    //    double sigma;
+    //    double pc;
 
 
 
-        public TermActivationFlags LevelSetTerms {
-            get {
-                return TermActivationFlags.V;
-            }
-        }
+    //    public TermActivationFlags LevelSetTerms {
+    //        get {
+    //            return TermActivationFlags.V;
+    //        }
+    //    }
 
 
-        private double ComputeEvaporationMass_Macro(double[] GradT_A, double[] GradT_B, double[] n) {
+    //    private double ComputeEvaporationMass_Macro(double[] GradT_A, double[] GradT_B, double[] n) {
 
-            double hVap = 0.0;
-            double qEvap = 0.0;
-            if (hVapA > 0) {
-                hVap = hVapA;
-                for (int d = 0; d < D; d++)
-                    qEvap += (kA * GradT_A[d] - kB * GradT_B[d]) * n[d];
-            } else {
-                hVap = -hVapA;
-                for (int d = 0; d < D; d++)
-                    qEvap += (kB * GradT_B[d] - kA * GradT_A[d]) * n[d];
-            }
+    //        double hVap = 0.0;
+    //        double qEvap = 0.0;
+    //        if (hVapA > 0) {
+    //            hVap = hVapA;
+    //            for (int d = 0; d < D; d++)
+    //                qEvap += (kA * GradT_A[d] - kB * GradT_B[d]) * n[d];
+    //        } else {
+    //            hVap = -hVapA;
+    //            for (int d = 0; d < D; d++)
+    //                qEvap += (kB * GradT_B[d] - kA * GradT_A[d]) * n[d];
+    //        }
 
-            return qEvap / hVap;
-        }
+    //        return qEvap / hVap;
+    //    }
 
-        private double ComputeEvaporationMass_Micro(double T_A, double T_B, double curv, double p_disp) {
+    //    private double ComputeEvaporationMass_Micro(double T_A, double T_B, double curv, double p_disp) {
 
-            if (hVapA == 0.0)
-                return 0.0;
+    //        if (hVapA == 0.0)
+    //            return 0.0;
 
-            double pc0 = (pc < 0.0) ? sigma * curv + p_disp : pc;      // augmented capillary pressure (without nonlinear evaporative masss part)
+    //        double pc0 = (pc < 0.0) ? sigma * curv + p_disp : pc;      // augmented capillary pressure (without nonlinear evaporative masss part)
 
-            double TintMin = 0.0;
-            double hVap = 0.0;
-            double qEvap = 0.0;
-            if (hVapA > 0) {
-                hVap = hVapA;
-                TintMin = Tsat * (1 + (pc0 / (hVap * rhoA)));
-                if (T_A > TintMin)
-                    qEvap = -(T_A - TintMin) / Rint;
-            } else if (hVapA < 0) {
-                hVap = -hVapA;
-                TintMin = Tsat * (1 + (pc0 / (hVap * rhoB)));
-                if (T_B > TintMin)
-                    qEvap = (T_B - TintMin) / Rint;
-            }
+    //        double TintMin = 0.0;
+    //        double hVap = 0.0;
+    //        double qEvap = 0.0;
+    //        if (hVapA > 0) {
+    //            hVap = hVapA;
+    //            TintMin = Tsat * (1 + (pc0 / (hVap * rhoA)));
+    //            if (T_A > TintMin)
+    //                qEvap = -(T_A - TintMin) / Rint;
+    //        } else if (hVapA < 0) {
+    //            hVap = -hVapA;
+    //            TintMin = Tsat * (1 + (pc0 / (hVap * rhoB)));
+    //            if (T_B > TintMin)
+    //                qEvap = (T_B - TintMin) / Rint;
+    //        }
 
-            return qEvap / hVap;
-        }
+    //        return qEvap / hVap;
+    //    }
 
 
-        private double ComputeEvaporationMass(double[] paramsNeg, double[] paramsPos, double[] N, bool microRegion) {
+    //    private double ComputeEvaporationMass(double[] paramsNeg, double[] paramsPos, double[] N, bool microRegion) {
 
-            double M = 0.0;
-            if (microRegion) {
-                M = ComputeEvaporationMass_Micro(paramsNeg[D], paramsPos[D], paramsNeg[D + 1], paramsNeg[D + 2]);
-            } else {
-                M = ComputeEvaporationMass_Macro(paramsNeg.GetSubVector(0, D), paramsPos.GetSubVector(0, D), N);
-            }
+    //        double M = 0.0;
+    //        if (microRegion) {
+    //            M = ComputeEvaporationMass_Micro(paramsNeg[D], paramsPos[D], paramsNeg[D + 1], paramsNeg[D + 2]);
+    //        } else {
+    //            M = ComputeEvaporationMass_Macro(paramsNeg.GetSubVector(0, D), paramsPos.GetSubVector(0, D), N);
+    //        }
 
-            return M;
+    //        return M;
 
-        }
+    //    }
 
 
-        public double LevelSetForm(ref Foundation.XDG.CommonParamsLs cp,
-            double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
-            double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+    //    public double LevelSetForm(ref Foundation.XDG.CommonParamsLs cp,
+    //        double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
+    //        double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-            //Debug.Assert(cp.ParamsPos[D + 1] == cp.ParamsNeg[D + 1], "curvature must be continuous across interface");
-            //Debug.Assert(cp.ParamsPos[D + 2] == cp.ParamsNeg[D + 2], "disjoining pressure must be continuous across interface");
+    //        //Debug.Assert(cp.ParamsPos[D + 1] == cp.ParamsNeg[D + 1], "curvature must be continuous across interface");
+    //        //Debug.Assert(cp.ParamsPos[D + 2] == cp.ParamsNeg[D + 2], "disjoining pressure must be continuous across interface");
 
-            //double M = ComputeEvaporationMass_Macro(cp.ParamsNeg.GetSubVector(0, D), cp.ParamsPos.GetSubVector(0, D), cp.n);
-            //double M = ComputeEvaporationMass_Micro(cp.ParamsNeg[D], cp.ParamsPos[D], cp.ParamsNeg[D + 1], cp.ParamsNeg[D + 2]);
-            double M = -0.1; // ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.n, evapMicroRegion[cp.jCell]);
+    //        //double M = ComputeEvaporationMass_Macro(cp.ParamsNeg.GetSubVector(0, D), cp.ParamsPos.GetSubVector(0, D), cp.n);
+    //        //double M = ComputeEvaporationMass_Micro(cp.ParamsNeg[D], cp.ParamsPos[D], cp.ParamsNeg[D + 1], cp.ParamsNeg[D + 2]);
+    //        double M = -0.1; // ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.n, evapMicroRegion[cp.jCell]);
 
-            double[] Uint = new double[] { 0.0, 0.0 };
-            double UintxN = 0.0;
+    //        double[] Uint = new double[] { 0.0, 0.0 };
+    //        double UintxN = 0.0;
 
-            double uAxN = 0.0;
-            double uBxN = 0.0;
+    //        double uAxN = 0.0;
+    //        double uBxN = 0.0;
 
-            // [[ rho(u*n) ]] {{u}} * {{v}}
-            // ============================
+    //        // [[ rho(u*n) ]] {{u}} * {{v}}
+    //        // ============================
 
-            //for (int d = 0; d < D; d++) {
-            //    uAxN += rhoA * cp.ParamsNeg[d] * cp.n[d];
-            //    uBxN += rhoB * cp.ParamsPos[d] * cp.n[d];
-            //}
+    //        //for (int d = 0; d < D; d++) {
+    //        //    uAxN += rhoA * cp.ParamsNeg[d] * cp.n[d];
+    //        //    uBxN += rhoB * cp.ParamsPos[d] * cp.n[d];
+    //        //}
 
-            uAxN += -rhoA * UintxN;
-            uBxN += -rhoB * UintxN;
+    //        uAxN += -rhoA * UintxN;
+    //        uBxN += -rhoB * UintxN;
 
-            double Uaver = 0.5 * (U_Neg[0] + U_Pos[0]);
+    //        double Uaver = 0.5 * (U_Neg[0] + U_Pos[0]);
 
-            uAxN *= Uaver;
-            uBxN *= Uaver;
+    //        uAxN *= Uaver;
+    //        uBxN *= Uaver;
 
 
-            // {{ rho(u*n) }} [[u]] * {{v}}
-            // ============================
+    //        // {{ rho(u*n) }} [[u]] * {{v}}
+    //        // ============================
 
-            double UnCentral = 0.0;
-            for (int d = 0; d < D; d++) {
-                UnCentral += 0.5 * (rhoA * (cp.ParamsNeg[d] - Uint[d]) + rhoB * (cp.ParamsPos[d] - Uint[d])) * cp.n[d];
-            }
+    //        double UnCentral = 0.0;
+    //        for (int d = 0; d < D; d++) {
+    //            UnCentral += 0.5 * (rhoA * (cp.ParamsNeg[d] - Uint[d]) + rhoB * (cp.ParamsPos[d] - Uint[d])) * cp.n[d];
+    //        }
 
-            uAxN += UnCentral * (0.0 - (-M * (1 / rhoA) * cp.n[m_d]));
-            uBxN += UnCentral * (0.0 - (-M * (1 / rhoB) * cp.n[m_d]));
+    //        uAxN += UnCentral * (0.0 - (-M * (1 / rhoA) * cp.n[m_d]));
+    //        uBxN += UnCentral * (0.0 - (-M * (1 / rhoB) * cp.n[m_d]));
 
 
-            // ====================================================================
+    //        // ====================================================================
 
 
-            // transform from species B to A: we call this the "A-fictitious" value
-            double uAxN_fict = uBxN;
+    //        // transform from species B to A: we call this the "A-fictitious" value
+    //        double uAxN_fict = uBxN;
 
-            // transform from species A to B: we call this the "B-fictitious" value
-            double uBxN_fict = uAxN;
+    //        // transform from species A to B: we call this the "B-fictitious" value
+    //        double uBxN_fict = uAxN;
 
-            double FlxNeg = -Flux(uAxN, uAxN_fict); // flux on A-side
-            double FlxPos = +Flux(uBxN_fict, uBxN);  // flux on B-side
+    //        double FlxNeg = -Flux(uAxN, uAxN_fict); // flux on A-side
+    //        double FlxPos = +Flux(uBxN_fict, uBxN);  // flux on B-side
 
 
-            double Ret = FlxNeg * vA - FlxPos * vB;
+    //        double Ret = FlxNeg * vA - FlxPos * vB;
 
-            return Ret;
-        }
+    //        return Ret;
+    //    }
 
 
-        /// <summary>
-        /// the penalty flux
-        /// </summary>
-        static double Flux(double UxN_in, double UxN_out) {
-            return 0.5 * (UxN_in - UxN_out);
-        }
+    //    /// <summary>
+    //    /// the penalty flux
+    //    /// </summary>
+    //    static double Flux(double UxN_in, double UxN_out) {
+    //        return 0.5 * (UxN_in - UxN_out);
+    //    }
 
 
-        BitArray evapMicroRegion;
+    //    BitArray evapMicroRegion;
 
-        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+    //    public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
 
-            if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
-                evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
-        }
+    //        if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
+    //            evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
+    //    }
 
 
-        public IList<string> ArgumentOrdering {
-            get {
-                return new string[] { VariableNames.Velocity_d(m_d) };
-            }
-        }
+    //    public IList<string> ArgumentOrdering {
+    //        get {
+    //            return new string[] { VariableNames.Velocity_d(m_d) };
+    //        }
+    //    }
 
 
-        public IList<string> ParameterOrdering {
-            get {
-                return ArrayTools.Cat(VariableNames.Velocity0Vector(D), VariableNames.Velocity0MeanVector(D),
-                    VariableNames.HeatFlux0Vector(D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure);
-            }
-        }
+    //    public IList<string> ParameterOrdering {
+    //        get {
+    //            return ArrayTools.Cat(VariableNames.Velocity0Vector(D), VariableNames.Velocity0MeanVector(D),
+    //                VariableNames.HeatFlux0Vector(D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure);
+    //        }
+    //    }
 
 
-        public int LevelSetIndex {
-            get { return 0; }
-        }
+    //    public int LevelSetIndex {
+    //        get { return 0; }
+    //    }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_lsTrk.GetSpeciesId("B"); }
-        }
+    //    public SpeciesId PositiveSpecies {
+    //        get { return this.m_lsTrk.GetSpeciesId("B"); }
+    //    }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_lsTrk.GetSpeciesId("A"); }
-        }
+    //    public SpeciesId NegativeSpecies {
+    //        get { return this.m_lsTrk.GetSpeciesId("A"); }
+    //    }
 
-    }
+    //}
 
 
 

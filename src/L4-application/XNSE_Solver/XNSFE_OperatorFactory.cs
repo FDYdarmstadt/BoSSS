@@ -56,7 +56,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// ctor for the operator factory, where the equation compnents are set
         /// </summary>
-        /// <param name="config"></param>
+        /// <param name="_config"></param>
         /// <param name="_LsTrk"></param>
         /// <param name="_HMFdegree"></param>
         /// <param name="BcMap"></param>
@@ -93,9 +93,11 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 if (_LsTrk.SpeciesNames.Count != 2)
                     throw new ArgumentException();
+
                 if (!(_LsTrk.SpeciesNames.Contains("A") && _LsTrk.SpeciesNames.Contains("B")))
                     throw new ArgumentException();
             }
+
 
             // full operator:
             // ==============
@@ -177,20 +179,18 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // add Heat equation components
             // ============================
+            if (config.solveHeat) {
 
-            // species bulk components
-            for (int spc = 0; spc < LsTrk.TotalNoOfSpecies; spc++) {
-                // heat equation
-                Solution.XheatCommon.XOperatorComponentsFactory.AddSpeciesHeatEq(m_XOp, config,
-                     D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], thermBcMap, LsTrk);
+                // species bulk components
+                for (int spc = 0; spc < LsTrk.TotalNoOfSpecies; spc++) {
+                    // heat equation
+                    Solution.XheatCommon.XOperatorComponentsFactory.AddSpeciesHeatEq(m_XOp, config,
+                         D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], thermBcMap, LsTrk);
+                }
+
+                // interface components
+                Solution.XheatCommon.XOperatorComponentsFactory.AddInterfaceHeatEq(m_XOp, config, D, thermBcMap, LsTrk);
             }
-
-            // interface components
-            Solution.XheatCommon.XOperatorComponentsFactory.AddInterfaceHeatEq(m_XOp, config, D, thermBcMap, LsTrk);
-
-
-            //if (XOpConfig.isEvaporation)
-            //    XOperatorComponentsFactory.AddInterfaceHeatEq_withEvaporation(Xheat_Operator, XOpConfig, D, LsTrk);
 
 
             // add Evaporation interface components
@@ -199,7 +199,6 @@ namespace BoSSS.Application.XNSE_Solver {
             if (config.isEvaporation) {
 
                 XOperatorComponentsFactory.AddInterfaceNSE_withEvaporation(m_XOp, config, D, LsTrk);
-
                 if (config.isContinuity)
                     XOperatorComponentsFactory.AddInterfaceContinuityEq_withEvaporation(m_XOp, config, D, LsTrk);
 
@@ -239,7 +238,7 @@ namespace BoSSS.Application.XNSE_Solver {
             IEnumerable<T> CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time,
             int CutCellQuadOrder, VectorField<SinglePhaseField> SurfaceForce,
             VectorField<SinglePhaseField> LevelSetGradient, SinglePhaseField ExternalyProvidedCurvature,
-            bool[] updateSolutionParams = null) where T : DGField {
+            bool[] updateSolutionParams = null, DGField[] ExtParams = null) where T : DGField {
             //IEnumerable<T> CoupledCurrentState = null, IEnumerable<T> CoupledParams = null) where T : DGField {
 
             // checks:
@@ -380,7 +379,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     Dictionary<string, double> kSpc = new Dictionary<string, double>();
                     kSpc.Add("A", -thermParams.k_A);
                     kSpc.Add("B", -thermParams.k_B);
-                    XNSEUtils.ComputeGradientForParam(CurrentState.ToArray()[D + 1], HeatFluxParam, this.LsTrk, kSpc);
+                    XNSEUtils.ComputeGradientForParam(CurrentState.ToArray()[D + 1], HeatFluxParam, this.LsTrk, kSpc, this.LsTrk.Regions.GetCutCellSubGrid());
                 } else if (config.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP && updateSolutionParams[D+2]) {
                     var HeatFluxMap = new CoordinateMapping(CurrentState.ToArray().GetSubVector(D + 2, D));
                     HeatFluxParam = HeatFluxMap.Fields.ToArray();
@@ -388,7 +387,9 @@ namespace BoSSS.Application.XNSE_Solver {
                     HeatFluxParam = storedParams.GetSubVector(2 * D + 4, D);
                 }
             }
-
+            if (ExtParams != null) {
+                HeatFluxParam = ExtParams;
+            }
 
             // concatenate everything
             var Params = ArrayTools.Cat<DGField>(
@@ -426,7 +427,8 @@ namespace BoSSS.Application.XNSE_Solver {
                     mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
                     mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
                     if (config.prescribedMassflux != null) {
-                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("prescribedMassflux", config.prescribedMassflux(time));
+                        double[] dummyX = new double[] { 0.0, 0.0 };
+                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("prescribedMassflux", config.prescribedMassflux(dummyX, time));
                     }
                 }
 
@@ -450,7 +452,8 @@ namespace BoSSS.Application.XNSE_Solver {
                     eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
                     eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
                     if (config.prescribedMassflux != null) {
-                        eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("prescribedMassflux", config.prescribedMassflux(time));
+                        double[] dummyX = new double[] { 0.0, 0.0 };
+                        eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("prescribedMassflux", config.prescribedMassflux(dummyX, time));
                     }
                 }
 

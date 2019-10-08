@@ -73,7 +73,12 @@ namespace BoSSS.Solution.XheatCommon {
             // ================
             if (thermParams.IncludeConvection) {
 
-                var conv = new HeatConvectionInSpeciesBulk(D, BcMap, spcName, spcId, capSpc, LFFSpc, LsTrk);
+                IEquationComponent conv;
+                if (config.useUpwind)
+                    conv = new HeatConvectionInSpeciesBulk_Upwind(D, BcMap, spcName, spcId, capSpc);
+                else
+                    conv = new HeatConvectionInSpeciesBulk_LLF(D, BcMap, spcName, spcId, capSpc, LFFSpc, LsTrk);
+
                 comps.Add(conv);
 
             }
@@ -99,16 +104,16 @@ namespace BoSSS.Solution.XheatCommon {
             } else {
 
                 comps.Add(new HeatFluxDivergenceInSpeciesBulk(D, BcMap, spcName, spcId));
-                if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.LDGstabi)
-                    comps.Add(new AuxiliaryStabilizationForm(D, BcMap, spcName, spcId));
+                //if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.LDGstabi)
+                //    comps.Add(new AuxiliaryStabilizationForm(D, BcMap, spcName, spcId));
 
                 for (int d = 0; d < D; d++) {
                     comps = XOp.EquationComponents[EquationNames.AuxHeatFluxComponent(d)];
 
                     comps.Add(new AuxiliaryHeatFlux_Identity(d, spcId));   // cell local
-                    comps.Add(new TemperatureGradientInSpeciesBulk(d, BcMap, spcName, spcId, kSpc));
-                    if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.LDGstabi)
-                        comps.Add(new TemperatureStabilizationForm(d, BcMap, spcName, spcId));
+                    comps.Add(new TemperatureGradientInSpeciesBulk(D, d, BcMap, spcName, spcId, kSpc));
+                    //if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.LDGstabi)
+                    //    comps.Add(new TemperatureStabilizationForm(d, BcMap, spcName, spcId));
                 }
 
             }
@@ -148,7 +153,6 @@ namespace BoSSS.Solution.XheatCommon {
 
             double Tsat = thermParams.T_sat;
 
-
             // set components
             var comps = XOp.EquationComponents[CodName];
 
@@ -157,9 +161,12 @@ namespace BoSSS.Solution.XheatCommon {
             // ================
             if (thermParams.IncludeConvection) {
 
-                var conv = new HeatConvectionAtLevelSet(D, LsTrk, capA, capB, LFFA, LFFB, BcMap, config.isMovingMesh, config.isEvaporation, Tsat);
-                comps.Add(conv);
+                ILevelSetForm conv;
+                conv = new HeatConvectionAtLevelSet_LLF(D, LsTrk, capA, capB, LFFA, LFFB, BcMap, config.isMovingMesh, config.isEvaporation, Tsat);
+                //conv = new HeatConvectionAtLevelSet_WithEvaporation(D, LsTrk, LFFA, LFFB, thermParams, config.getPhysParams.Sigma);
+                //conv = new HeatConvectionAtLevelSet_Upwind(D, LsTrk, capA, capB, thermParams, config.isMovingMesh, config.isEvaporation, Tsat);
 
+                comps.Add(conv);
             }
 
 
@@ -175,15 +182,15 @@ namespace BoSSS.Solution.XheatCommon {
             } else {
 
                 comps.Add(new HeatFluxDivergencetAtLevelSet(LsTrk, config.isEvaporation)); 
-                if(config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.LDGstabi)
-                    comps.Add(new AuxiliaryStabilizationFormAtLevelSet(LsTrk, config.isEvaporation));
+                //if(config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.LDGstabi)
+                //    comps.Add(new AuxiliaryStabilizationFormAtLevelSet(LsTrk, config.isEvaporation));
 
                 for (int d = 0; d < D; d++) {
                     comps = XOp.EquationComponents[EquationNames.AuxHeatFluxComponent(d)];
 
                     comps.Add(new TemperatureGradientAtLevelSet(d, LsTrk, kA, kB, config.isEvaporation, Tsat));
-                    if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.LDGstabi)
-                        comps.Add(new TemperatureStabilizationFormAtLevelSet(d, LsTrk, config.isEvaporation, Tsat));
+                    //if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.LDGstabi)
+                    //    comps.Add(new TemperatureStabilizationFormAtLevelSet(d, LsTrk, kA, kB, config.isEvaporation, Tsat));
                 }
 
             }
@@ -213,6 +220,11 @@ namespace BoSSS.Solution.XheatCommon {
         /// include transport operator
         /// </summary>
         bool isHeatTransport { get; }
+
+        /// <summary>
+        /// use upwind discretization for convective term
+        /// </summary>
+        bool useUpwind { get; }
 
     }
 

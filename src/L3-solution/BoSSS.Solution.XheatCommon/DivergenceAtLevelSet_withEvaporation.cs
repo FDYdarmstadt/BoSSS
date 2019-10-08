@@ -34,59 +34,21 @@ namespace BoSSS.Solution.XheatCommon {
     /// </summary>
     public class DivergenceAtLevelSet_withEvaporation : EvaporationAtLevelSet {
 
-        public DivergenceAtLevelSet_withEvaporation(int _D, LevelSetTracker lsTrk, double _rhoA, double _rhoB,
-            double vorZeichen, bool RescaleConti, ThermalParameters thermParams, double _Rint, double _sigma) {
-            //double _kA, double _kB, double _hVapA, double _Rint, double _Tsat, double _sigma, double _pc) {
-            this.D = _D;
-            this.rhoA = _rhoA;
-            this.rhoB = _rhoB;
-            this.m_LsTrk = lsTrk;
+        public DivergenceAtLevelSet_withEvaporation(int _D, LevelSetTracker lsTrk,
+            double vorZeichen, bool RescaleConti, ThermalParameters thermParams, double _sigma) 
+            : base(_D, lsTrk, thermParams, _sigma) {
 
             scaleA = vorZeichen;
             scaleB = vorZeichen;
 
             if (RescaleConti) {
-                scaleA /= rhoA;
-                scaleB /= rhoB;
+                scaleA /= m_rhoA;
+                scaleB /= m_rhoB;
             }
-
-            this.kA = thermParams.k_A;
-            this.kB = thermParams.k_B;
-            this.hVapA = thermParams.hVap_A;
-            this.Rint = _Rint;
-
-            this.Tsat = thermParams.T_sat;
-            this.sigma = _sigma;
-            this.pc = thermParams.pc;
-
-            //this.prescrbM = _prescrbM;
         }
-
-
-        double rhoA;
-        double rhoB;
 
         double scaleA;
         double scaleB;
-
-
-
-        private double ComputeEvaporationMass(double[] paramsNeg, double[] paramsPos, double[] N, int jCell) {
-
-            double qEvap = ComputeHeatFlux(paramsNeg, paramsPos, N, jCell);
-
-            if (qEvap == 0.0)
-                return 0.0;
-
-            double hVap = (hVapA > 0) ? hVapA : -hVapA;
-            double M = qEvap / hVap;
-
-            //if (M > -0.099 || M < -0.101)
-            //    Console.WriteLine("mEvap - DivergenceAtLevelSet_withEvaporatio: {0}", M);
-
-            return M;
-
-        }
 
 
         public override double LevelSetForm(ref Foundation.XDG.CommonParamsLs cp,
@@ -98,9 +60,8 @@ namespace BoSSS.Solution.XheatCommon {
             if (M == 0.0)
                 return 0.0;
 
-
-            double uAxN = -M * (1 / rhoA);
-            double uBxN = -M * (1 / rhoB);
+            double uAxN = -M * (1 / m_rhoA);
+            double uBxN = -M * (1 / m_rhoB);
 
             // transform from species B to A: we call this the "A-fictitious" value
             double uAxN_fict;
@@ -136,11 +97,11 @@ namespace BoSSS.Solution.XheatCommon {
 
 
 
-        public override IList<string> ParameterOrdering {
-            get {
-                return ArrayTools.Cat(VariableNames.HeatFlux0Vector(D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure);
-            }
-        }
+        //public override IList<string> ParameterOrdering {
+        //    get {
+        //        return ArrayTools.Cat(VariableNames.HeatFlux0Vector(m_D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure);
+        //    }
+        //}
 
     }
 

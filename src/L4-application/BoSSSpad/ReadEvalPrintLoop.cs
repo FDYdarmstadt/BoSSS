@@ -31,6 +31,7 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using ilPSP.LinSolvers;
 
+
 namespace BoSSS.Application.BoSSSpad {
 
     /// <summary>
@@ -106,12 +107,14 @@ namespace BoSSS.Application.BoSSSpad {
             eval.ReferenceAssembly(typeof(BoSSS.Solution.ASCIIExport.CurveExportDriver).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.AdvancedSolvers.MultigridOperator).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.XNSECommon.CurvatureAlgorithms).Assembly);
+            eval.ReferenceAssembly(typeof(BoSSS.Solution.XheatCommon.AuxiliaryHeatFlux_Identity).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.XdgTimestepping.LevelSetHandling).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.LevelSetTools.ContinuityProjection).Assembly);
             eval.ReferenceAssembly(typeof(BoSSSpad.BoSSSpadMain).Assembly);
             eval.ReferenceAssembly(typeof(Renci.SshNet.SftpClient).Assembly);
             eval.ReferenceAssembly(typeof(MiniBatchProcessor.Client).Assembly);
             eval.ReferenceAssembly(typeof(System.Numerics.Complex).Assembly);
+            eval.ReferenceAssembly(typeof(MathNet.Numerics.Complex32).Assembly);
             eval.ReferenceAssembly(typeof(Mono.CSharp.Evaluator).Assembly);
             eval.ReferenceAssembly(typeof(CNS.Program).Assembly);
             eval.ReferenceAssembly(typeof(IBM_Solver.IBM_SolverMain).Assembly);

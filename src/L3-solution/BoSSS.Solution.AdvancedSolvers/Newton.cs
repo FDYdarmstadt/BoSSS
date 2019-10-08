@@ -142,6 +142,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 using (new BlockTrace("Slv Iter", tr)) {
                     while ((fnorm > ConvCrit && itc < MaxIter) || itc < MinIter) {
                         rat = fnorm / fNormo;
+                        //if (Math.Abs(fNormo - fnorm) < 1e-12)
+                        //    break;
                         fNormo = fnorm;
                         itc++;
 

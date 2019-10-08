@@ -220,8 +220,11 @@ namespace BoSSS.Application.XNSE_Solver {
             thermParams = control.ThermalParameters;
 
             solveHeat = control.solveCoupledHeatEquation;
-            Evaporation = (control.ThermalParameters.hVap_A != 0.0 && control.ThermalParameters.hVap_B != 0.0);
-            prescribedMassflux = control.prescribedMassflux;
+            Evaporation = (control.ThermalParameters.hVap > 0.0);
+            if(control.prescribedMassflux_Evaluator != null)
+                prescribedMassflux = control.prescribedMassflux_Evaluator;
+            if (control.prescribedMassflux != null)
+                prescribedMassflux = control.prescribedMassflux.Evaluate;
             MatInt = !Evaporation;
 
             if (solveHeat) {
@@ -250,6 +253,11 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool HeatTransport;
 
         /// <summary>
+        /// ujse upwind discreitzation
+        /// </summary>
+        public bool HeatUpwinding = false;
+
+        /// <summary>
         /// include evaporation
         /// </summary>
         public bool Evaporation;
@@ -257,7 +265,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// 
         /// </summary>
-        public Func<double, double> prescribedMassflux;
+        public Func<double[], double, double> prescribedMassflux;
 
         public ThermalParameters getThermParams {
             get { return thermParams; }
@@ -266,10 +274,13 @@ namespace BoSSS.Application.XNSE_Solver {
         public ConductivityInSpeciesBulk.ConductivityMode getConductMode {
             get { return conductMode; }
         }
-
-
+        
         public bool isHeatTransport {
             get { return HeatTransport; }
+        }
+
+        public bool useUpwind {
+            get { return HeatUpwinding;  }
         }
 
         public bool isEvaporation {
