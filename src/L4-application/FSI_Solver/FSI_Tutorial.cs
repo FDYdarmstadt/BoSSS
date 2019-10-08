@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Application.FSI_Solver {
     public static class FSI_Tutorial {
-
+        // Just an unfinished idea
         public static void Start() {
             Console.WriteLine("Hello! You started the FSI tutorial.");
             Console.WriteLine("Wir beginnen damit ein Kontrollobjekt für den Solver anzulegen.");

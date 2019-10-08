@@ -44,7 +44,7 @@ namespace BoSSS.Application.Rheology
         /// <summary>
         /// Channel Flow
         /// </summary>
-        static public RheologyControl Channel(string path = @"C:\Users\kikker\AnnesBoSSSdb\Channel", int degree = 2, int GridLevel = 6)
+        static public RheologyControl Channel(string path = @"C:\Users\kikker\AnnesBoSSSdb\Channel", int degree = 2, int GridLevel = 5)
         {
             RheologyControl C = new RheologyControl();
 
@@ -53,9 +53,9 @@ namespace BoSSS.Application.Rheology
             C.savetodb = false;
             //C.DbPath = path;
             C.ProjectName = "Channel";
-            C.NonLinearSolver.MaxSolverIterations = 100;
-            C.NonLinearSolver.ConvergenceCriterion = 1E-6;
-            C.LinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MaxSolverIterations = 30;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-10;
+            C.LinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MinSolverIterations = 3;
             C.LinearSolver.ConvergenceCriterion = 1E-8;
             C.dt = 1e6;
@@ -63,13 +63,13 @@ namespace BoSSS.Application.Rheology
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            //C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            //C.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
             // Maximum analytical output ...
-            C.NonLinearSolver.verbose = true;
-            C.LinearSolver.verbose = true;
-            C.NonLinearSolver.PrecondSolver.verbose = true;
-            C.GridPartType = GridPartType.METIS;
+            //C.NonLinearSolver.verbose = true;
+            //C.LinearSolver.verbose = true;
+            //C.NonLinearSolver.PrecondSolver.verbose = true;
+            //C.GridPartType = GridPartType.METIS;
 
             C.ObjectiveParam = 1.0;
 
@@ -96,12 +96,12 @@ namespace BoSSS.Application.Rheology
             C.GravityY = (X, t) => 0;
 
             //Physical Params
-            C.Stokes = true;
+            C.Stokes = false;
             C.FixedStreamwisePeriodicBC = false;
-            C.beta = 0.59;
+            C.beta = 0;// 0.59;
             C.Reynolds = 1;
             C.Weissenberg = 0.5; //aim Weissenberg number!
-            C.RaiseWeissenberg = false;
+            C.RaiseWeissenberg = true;
             C.WeissenbergIncrement = 0.1;
 
             //Grid Params
@@ -124,8 +124,8 @@ namespace BoSSS.Application.Rheology
             //Exact Solution Channel
             Func<double[], double, double> VelocityXfunction = (X, t) => 1 - (X[1] * X[1]);
             Func<double[], double, double> VelocityYfunction = (X, t) => 0;
-            Func<double[], double, double> Pressurefunction = (X, t) => 2* C.Reynolds * (20 - X[0]);
-            Func<double[], double, double> StressXXfunction = (X, t) => 0;// 2  * (1 - C.beta) * (((-2 * X[1])) * ((-2 * X[1])));
+            Func<double[], double, double> Pressurefunction = (X, t) =>  2* C.Reynolds * (20 - X[0]);
+            Func<double[], double, double> StressXXfunction = (X, t) => 2  * C.Weissenberg * (1 - C.beta) * ((-2 * X[1]) * (-2 * X[1]));
             Func<double[], double, double> StressXYfunction = (X, t) => (1 - C.beta) * (-2 * X[1]);
             Func<double[], double, double> StressYYfunction = (X, t) => (0.0);
 
@@ -148,7 +148,8 @@ namespace BoSSS.Application.Rheology
             // Create Grid
             C.GridFunc = delegate {
                 var _xNodes = GenericBlas.Linspace(0, 20, cells2 + 1);
-                var _yNodes = GenericBlas.Linspace(-1, 1, (cells2 / 4) + 1);
+                //var _yNodes = GenericBlas.Linspace(-1, 1, (cells2 / 4) + 1);
+                var _yNodes = GenericBlas.Linspace(0, 1, (cells2 / 4) + 1);
 
                 var grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes, CellType.Square_Linear, C.FixedStreamwisePeriodicBC);
 
@@ -158,16 +159,17 @@ namespace BoSSS.Application.Rheology
                     grd.EdgeTagNames.Add(4, "Pressure_Outlet");
                 }
 
-                grd.EdgeTagNames.Add(2, "Wall_bottom");
+                //grd.EdgeTagNames.Add(2, "Wall_bottom");
                 grd.EdgeTagNames.Add(3, "Wall_top");
-                //grd.EdgeTagNames.Add(2, "FreeSlip");
+                grd.EdgeTagNames.Add(2, "FreeSlip");
 
                 grd.DefineEdgeTags(delegate (double[] _X) {
                     var X = _X;
                     double x = X[0];
                     double y = X[1];
 
-                    if (Math.Abs(y - (-1)) < 1.0e-6)
+                    //if (Math.Abs(y - (-1)) < 1.0e-6)
+                    if (Math.Abs(y - (0)) < 1.0e-6)
                         // bottom
                         return 2;
 
@@ -218,15 +220,15 @@ namespace BoSSS.Application.Rheology
             C.InitialValues_Evaluators.Add("Phi", X => -1);
 
             // Set Boundary Conditions
-            C.AddBoundaryValue("Wall_bottom", "VelocityX", VelocityXfunction);
+            //C.AddBoundaryValue("Wall_bottom", "VelocityX", VelocityXfunction);
             C.AddBoundaryValue("Wall_top", "VelocityX", VelocityXfunction);
             //C.AddBoundaryValue("Wall_bottom", "VelocityY", VelocityYfunction);
-            //C.AddBoundaryValue("Wall_top", "VelocityY", VelocityYfunction);
+            C.AddBoundaryValue("Wall_top", "VelocityY", VelocityYfunction);
             //C.AddBoundaryValue("Wall_bottom", "VelocityX", X => 0);
             //C.AddBoundaryValue("Wall_top", "VelocityX", X => 0);
             //C.AddBoundaryValue("Wall_bottom", "VelocityY", X => 0);
             //C.AddBoundaryValue("Wall_top", "VelocityY", X => 0);
-            //C.AddBoundaryCondition("FreeSlip");
+            C.AddBoundaryValue("FreeSlip");//, "VelocityX", VelocityXfunction);
 
             if (!C.FixedStreamwisePeriodicBC)
             {
@@ -245,19 +247,19 @@ namespace BoSSS.Application.Rheology
         /// <summary>
         /// Consistency Constitutive equation
         /// </summary>
-        static public RheologyControl ConsistencyConstitutive(string path = @"C:\Users\kikker\AnnesBoSSSdb\ConsistencyConstitutive_withDiv", int degree = 1, int GridLevel = 5)
+        static public RheologyControl ConsistencyConstitutive(string path = @"C:\Users\kikker\AnnesBoSSSdb\ConsistencyConstitutive_withDiv", int degree = 2, int GridLevel = 5)
         {
 
 
             RheologyControl C = new RheologyControl();
 
             // Solver Options
-            C.NoOfTimesteps = 10;
+            C.NoOfTimesteps = 1;
             C.savetodb = false;
             C.DbPath = path;
             C.SessionName = "Degree" + degree + ", GridLevel" + GridLevel;
             C.ProjectName = "ConsistencyStudyConstitutive";
-            C.NonLinearSolver.MaxSolverIterations = 30;
+            C.NonLinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MinSolverIterations = 1;
             C.NonLinearSolver.ConvergenceCriterion= 1E-7;
             C.LinearSolver.MaxSolverIterations = 30;
@@ -268,7 +270,8 @@ namespace BoSSS.Application.Rheology
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.NewtonGMRES;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.ObjectiveParam = 1.0;
 
             //Grid Params
@@ -289,10 +292,10 @@ namespace BoSSS.Application.Rheology
             C.Stokes = false;
             C.FixedStreamwisePeriodicBC = false;
             C.GravitySource = true;
-            C.beta = 1;
+            C.beta = 1; //0.59
             C.Reynolds = 1;
             C.Weissenberg = 0;
-            C.RaiseWeissenberg = true;
+            C.RaiseWeissenberg = false;
 
             //Penalties
             C.ViscousPenaltyScaling = 1;
@@ -393,10 +396,11 @@ namespace BoSSS.Application.Rheology
 
                 var grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes, CellType.Square_Linear, C.FixedStreamwisePeriodicBC); //C.FixedStreamwisePeriodicBC periodicX:true
 
-                if (!C.FixedStreamwisePeriodicBC)
-                {
+                if (!C.FixedStreamwisePeriodicBC) {
                     grd.EdgeTagNames.Add(1, "Velocity_inlet");
+                    grd.EdgeTagNames.Add(3, "Pressure_Outlet");
                 }
+                grd.EdgeTagNames.Add(2, "Freeslip");
 
                 grd.DefineEdgeTags(delegate (double[] _X) {
                     var X = _X;
@@ -405,11 +409,11 @@ namespace BoSSS.Application.Rheology
 
                     if (Math.Abs(y - (-1)) < 1.0e-6)
                         // bottom
-                        return 1;
+                        return 2;
 
                     if (Math.Abs(y - (+1)) < 1.0e-6)
                         // top
-                        return 1;
+                        return 2;
 
                     if (!C.FixedStreamwisePeriodicBC)
                     {
@@ -419,7 +423,7 @@ namespace BoSSS.Application.Rheology
 
                         if (Math.Abs(x - (+1)) < 1.0e-6)
                             // right
-                            return 1;
+                            return 3;
                     }
 
                     throw new ArgumentOutOfRangeException();
@@ -462,8 +466,7 @@ namespace BoSSS.Application.Rheology
 
             // Set Boundary Conditions
 
-            if (!C.FixedStreamwisePeriodicBC)
-            {
+            if (!C.FixedStreamwisePeriodicBC) {
                 C.AddBoundaryValue("Velocity_inlet", "VelocityX", VelocityXfunction);
                 C.AddBoundaryValue("Velocity_inlet", "VelocityY", VelocityYfunction);
                 C.AddBoundaryValue("Velocity_inlet", "StressXX", StressXXfunction);
@@ -475,8 +478,10 @@ namespace BoSSS.Application.Rheology
                 C.AddBoundaryValue("Velocity_inlet", "GravityXX", C.GravityXX);
                 C.AddBoundaryValue("Velocity_inlet", "GravityXY", C.GravityXY);
                 C.AddBoundaryValue("Velocity_inlet", "GravityYY", C.GravityYY);
+                C.AddBoundaryValue("FreeSlip");
 
-                //C.AddBoundaryCondition("Pressure_Outlet", "Pressure", Pressurefunction);
+
+                C.AddBoundaryValue("Pressure_Outlet", "Pressure", Pressurefunction);
 
             }
             return C;

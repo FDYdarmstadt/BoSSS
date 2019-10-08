@@ -1507,6 +1507,8 @@ namespace BoSSS.Foundation {
                 DelParamUpdate = __delParameterUpdate;
 
                 BuildGridColoring();
+
+                //Console.WriteLine("FDJac: no of color lists: " + ColorLists.Length);
             }
 
             /// <summary>
@@ -2231,6 +2233,8 @@ namespace BoSSS.Foundation {
                 // ====================================
                 U0.SetV(U0backup);
                 DelParamUpdate(domFields, Eval.Parameters.ToArray());
+
+
                 //Console.WriteLine("Total number of evaluations: " + NoOfEvals);
 
                 // correct the affine offset

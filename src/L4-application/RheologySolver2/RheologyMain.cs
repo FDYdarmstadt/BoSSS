@@ -204,19 +204,19 @@ namespace BoSSS.Application.Rheology {
                     IOListOption.ControlFileDetermined)]
         public VectorField<SinglePhaseField> Gravity;
 
-        //// Gravity source constitutive
-        //[InstantiateFromControlFile("GravityXX", "StressXX", IOListOption.ControlFileDetermined)]
-        //public SinglePhaseField GravityXX;
+        // Gravity source constitutive
+        [InstantiateFromControlFile("GravityXX", "StressXX", IOListOption.ControlFileDetermined)]
+        public SinglePhaseField GravityXX;
 
-        //[InstantiateFromControlFile("GravityXY", "StressXY", IOListOption.ControlFileDetermined)]
-        //public SinglePhaseField GravityXY;
+        [InstantiateFromControlFile("GravityXY", "StressXY", IOListOption.ControlFileDetermined)]
+        public SinglePhaseField GravityXY;
 
-        //[InstantiateFromControlFile("GravityYY", "StressYY", IOListOption.ControlFileDetermined)]
-        //public SinglePhaseField GravityYY;
+        [InstantiateFromControlFile("GravityYY", "StressYY", IOListOption.ControlFileDetermined)]
+        public SinglePhaseField GravityYY;
 
-        ////Gravity source for divergence of u
-        //[InstantiateFromControlFile("GravityDiv", VariableNames.Pressure, IOListOption.ControlFileDetermined)]
-        //public SinglePhaseField GravityDiv;
+        //Gravity source for divergence of u
+        [InstantiateFromControlFile("GravityDiv", VariableNames.Pressure, IOListOption.ControlFileDetermined)]
+        public SinglePhaseField GravityDiv;
 
         // Parameters: Velocity Gradient
         VectorField<SinglePhaseField> VelocityXGradient;
@@ -500,9 +500,12 @@ namespace BoSSS.Application.Rheology {
                     XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Identity(2));
 
                     //Convective part
-                    XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_CellWiseForm(0, 0, BcMap, this.Control.Weissenberg, this.Control.alpha));
-                    XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_CellWiseForm(0, 1, BcMap, this.Control.Weissenberg, this.Control.alpha));
-                    XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_CellWiseForm(1, 1, BcMap, this.Control.Weissenberg, this.Control.alpha));
+                    XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Convective(0, BcMap, this.Control.Weissenberg, this.Control.alpha));
+                    XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Convective(1, BcMap, this.Control.Weissenberg, this.Control.alpha));
+                    XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Convective(2, BcMap, this.Control.Weissenberg, this.Control.alpha));
+                    //XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_CellWiseForm(0, 0, BcMap, this.Control.Weissenberg, this.Control.alpha));
+                    //XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_CellWiseForm(0, 1, BcMap, this.Control.Weissenberg, this.Control.alpha));
+                    //XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_CellWiseForm(1, 1, BcMap, this.Control.Weissenberg, this.Control.alpha));
 
                     //Objective Part
 
@@ -512,9 +515,9 @@ namespace BoSSS.Application.Rheology {
                     XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Objective(2, BcMap, this.Control.Weissenberg, this.Control.ObjectiveParam, this.Control.StressPenalty));
 
                     //T as params
-                    XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Objective_Tparam(0, BcMap, this.Control.Weissenberg, this.Control.ObjectiveParam));
-                    XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Objective_Tparam(1, BcMap, this.Control.Weissenberg, this.Control.ObjectiveParam));
-                    XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Objective_Tparam(2, BcMap, this.Control.Weissenberg, this.Control.ObjectiveParam));
+                    //XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Objective_Tparam(0, BcMap, this.Control.Weissenberg, this.Control.ObjectiveParam));
+                    //XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Objective_Tparam(1, BcMap, this.Control.Weissenberg, this.Control.ObjectiveParam));
+                    //XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Objective_Tparam(2, BcMap, this.Control.Weissenberg, this.Control.ObjectiveParam));
 
                     // Viscous Part
                     XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Viscosity(0, BcMap, this.Control.beta, this.Control.Penalty1));
@@ -650,29 +653,27 @@ namespace BoSSS.Application.Rheology {
                     test = true;
                 }
 
-                //if (this.Control.GravityXX != null && this.Control.GravityXY != null && this.Control.GravityYY != null)
-                //{
-                //    GravityXX.ProjectField(this.Control.GravityXX.Vectorize(0.0));
-                //    int[] ConstEqIdx1 = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 3);
-                //    OpAffine.AccV(-1.0, this.GravityXX.CoordinateVector, ConstEqIdx1, default(int[]));
+                if (this.Control.GravityXX != null && this.Control.GravityXY != null && this.Control.GravityYY != null) {
+                    GravityXX.ProjectField(this.Control.GravityXX.Vectorize(0.0));
+                    int[] ConstEqIdx1 = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 3);
+                    OpAffine.AccV(-1.0, this.GravityXX.CoordinateVector, ConstEqIdx1, default(int[]));
 
-                //    GravityXY.ProjectField(this.Control.GravityXY.Vectorize(0.0));
-                //    int[] ConstEqIdx2 = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 4);
-                //    OpAffine.AccV(-1.0, this.GravityXY.CoordinateVector, ConstEqIdx2, default(int[]));
+                    GravityXY.ProjectField(this.Control.GravityXY.Vectorize(0.0));
+                    int[] ConstEqIdx2 = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 4);
+                    OpAffine.AccV(-1.0, this.GravityXY.CoordinateVector, ConstEqIdx2, default(int[]));
 
-                //    GravityYY.ProjectField(this.Control.GravityYY.Vectorize(0.0));
-                //    int[] ConstEqIdx3 = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 5);
-                //    OpAffine.AccV(-1.0, this.GravityYY.CoordinateVector, ConstEqIdx3, default(int[]));
-                //    test = true;
-                //}
+                    GravityYY.ProjectField(this.Control.GravityYY.Vectorize(0.0));
+                    int[] ConstEqIdx3 = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 5);
+                    OpAffine.AccV(-1.0, this.GravityYY.CoordinateVector, ConstEqIdx3, default(int[]));
+                    test = true;
+                }
 
-                //if (this.Control.GravityDiv != null)
-                //{
-                //    GravityDiv.ProjectField(this.Control.GravityDiv.Vectorize(0.0));
-                //    int[] ContiEqIdx = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 2);
-                //    OpAffine.AccV(-1.0, this.GravityDiv.CoordinateVector, ContiEqIdx, default(int[]));
-                //    test = true;
-                //}
+                if (this.Control.GravityDiv != null) {
+                    GravityDiv.ProjectField(this.Control.GravityDiv.Vectorize(0.0));
+                    int[] ContiEqIdx = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 2);
+                    OpAffine.AccV(-1.0, this.GravityDiv.CoordinateVector, ContiEqIdx, default(int[]));
+                    test = true;
+                }
 
                 if (!test) {
                     throw new ApplicationException("Gravity is true, but no values set!");
@@ -963,7 +964,7 @@ namespace BoSSS.Application.Rheology {
             if (U0.Count != D)
                 throw new ArgumentException("Spatial dimesion and number of velocity parameter components does not match!");
 
-            if (Stress0.Count != D + 1)
+            if (Stress0.Count != (D*D + D)/2)
                 throw new ArgumentException("Spatial dimesion and number of stress parameter components does not match!");
 
 

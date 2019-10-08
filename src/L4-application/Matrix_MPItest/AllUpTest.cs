@@ -82,7 +82,7 @@ namespace BoSSS.Application.Matrix_MPItest {
 
 
             //BoSSS.Application.Matrix_MPItest.AllUpTest.MultiplyTest(XDGusage.none, 3, true, false);
-            MultiplyTest(XDGusage.none, 2, false, false);
+            MultiplyTest(XDGusage.none, 5, false, false);
             //SubMatrixTest(XDGusage.none, 2, false, false);
             //MultiplyTest(XDGusage.none, 2, false, false);
             //SpMVTest(XDGusage.none, 2, false, false);
@@ -223,18 +223,21 @@ namespace BoSSS.Application.Matrix_MPItest {
                 */
 
                 // test multipliation (later verified by matlab)
+                Stopwatch compstw = new Stopwatch();
                 BlockMsrMatrix M11xM12 = new BlockMsrMatrix(M11._RowPartitioning, M12._ColPartitioning);
                 M11xM12.Acc(1.0, M12);
                 BlockMsrMatrix.Multiply(M11xM12, M11, M12);
 
+                compstw.Start();
                 BlockMsrMatrix M22xM21 = new BlockMsrMatrix(M22._RowPartitioning, M21._ColPartitioning);
                 BlockMsrMatrix.Multiply(M22xM21, M22, M21);
+                compstw.Stop();
                 double ProdNorm = M22xM21.InfNorm();
                 
 
 
                 stw.Stop();
-                
+
                 //M.SaveToTextFileSparse(@"C:\tmp\M.txt");
                 //M11.SaveToTextFileSparse(@"C:\tmp\M11.txt");
                 //M12.SaveToTextFileSparse(@"C:\tmp\M12.txt");
@@ -242,7 +245,7 @@ namespace BoSSS.Application.Matrix_MPItest {
                 //M22.SaveToTextFileSparse(@"C:\tmp\M22.txt");
                 //M22xM21.SaveToTextFileSparse(@"C:\tmp\M22xM21.txt");
 
-                
+                double SpMMtime;
                 using(var MatlabRef = new BatchmodeConnector()) {
                     MultidimensionalArray CheckRes = MultidimensionalArray.Create(1, 4);
 
@@ -254,16 +257,20 @@ namespace BoSSS.Application.Matrix_MPItest {
                     MatlabRef.PutSparseMatrix(M22xM21, "M22xM21");
 
                     MatlabRef.Cmd("refM11xM12 = M12 + M11*M12;");
+                    MatlabRef.Cmd("tic");
                     MatlabRef.Cmd("refM22xM21 = M22*M21;");
+                    MatlabRef.Cmd("SpMMtime = toc;");
 
                     MatlabRef.Cmd("err1112 = norm(refM11xM12 - M11xM12, inf);");
                     MatlabRef.Cmd("err2221 = norm(refM22xM21 - M22xM21, inf);");
 
-                    MatlabRef.Cmd("CheckRes = [err1112, err2221, 0, 0];");
+                    MatlabRef.Cmd("CheckRes = [err1112, err2221, 0, SpMMtime];");
                     MatlabRef.Cmd("CheckRes");
                     MatlabRef.GetMatrix(CheckRes, "CheckRes");
 
                     MatlabRef.Execute();
+
+                    SpMMtime = CheckRes[0, 3];
 
                     Console.WriteLine("Matlab check M11*M12: " + CheckRes[0, 0]);
                     Console.WriteLine("Matlab check M22*M21: " + CheckRes[0, 1]);
@@ -274,7 +281,9 @@ namespace BoSSS.Application.Matrix_MPItest {
                     //Assert.IsTrue(CheckRes[0, 3] == 0.0);
                 }
 
-               
+                Console.WriteLine("Matlab SpMM time: [sec]   " + SpMMtime);
+                Console.WriteLine("BoSSS  SpMM time: [sec]   " + compstw.Elapsed.TotalSeconds);
+
                 Console.WriteLine("Time spend in matrix operations: " + stw.Elapsed.TotalSeconds + " sec.");
 
                 TotTime_MatrixOp += stw.Elapsed;

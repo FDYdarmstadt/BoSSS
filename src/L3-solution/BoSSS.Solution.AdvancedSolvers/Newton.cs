@@ -29,13 +29,15 @@ using ilPSP.Tracing;
 using System.IO;
 using System.Diagnostics;
 
-namespace BoSSS.Solution.AdvancedSolvers {
+namespace BoSSS.Solution.AdvancedSolvers
+{
     /// <summary>
     /// Implementation based on presudocode from Kelley, C. 
     /// Solving Nonlinear Equations with Newton’s Method. Fundamentals of Algorithms. 
     /// Society for Industrial and Applied Mathematics, 2003. https://doi.org/10.1137/1.9780898718898.
     /// </summary>
-    public class Newton : NonlinearSolver {
+    public class Newton : NonlinearSolver
+    {
         public Newton(OperatorEvalOrLin __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq, MultigridOperator.ChangeOfBasisConfig[][] __MultigridOperatorConfig) :
             base(__AssembleMatrix, __AggBasisSeq, __MultigridOperatorConfig) //
         {
@@ -56,6 +58,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public int restart_limit = 1000;
 
+        /// <summary>
+        /// Number of iterations, where jacobi is not updated. Also known as constant newton method. Default 1, means regular newton.
+        /// </summary>
+        public int constant_newton_it = 1;
 
         /// <summary>
         /// Maximum dimension of the krylov subspace. Equals m in GMRES(m)
@@ -111,7 +117,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //double gamma = 0.9;
 
                 // Eval_F0 
-                
+
                 using (new BlockTrace("Slv Init", tr)) {
                     base.Init(SolutionVec, RHS, out x, out f0);
                 };
@@ -127,7 +133,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 EvaluateOperator(1, SolutionVec.Mapping.ToArray(), f0);
 
                 Console.WriteLine("Residual base.init:   " + f0.L2NormPow2().MPISum().Sqrt());
-               //base.EvalResidual(x, ref f0);
+                //base.EvalResidual(x, ref f0);
 
                 // fnorm
                 double fnorm = f0.L2NormPow2().MPISum().Sqrt();
@@ -153,8 +159,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             //base.EvalResidual(x, ref f0); 
                             f0.ScaleV(-1.0);
                             step = Krylov(SolutionVec, x, f0, out errstep);
-                        }
-                        else if (ApproxJac == ApproxInvJacobianOptions.DirectSolver) {
+                        } else if (ApproxJac == ApproxInvJacobianOptions.DirectSolver) {
                             /*
                             double[] _step = step.ToArray();
                             double[] _f0 = f0.ToArray();
@@ -198,11 +203,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             //if (solver.Converged == false)
                             //    Debugger.Launch();
-                            
-                        }
-                        else {
+
+                        } else {
                             throw new NotImplementedException("Your approximation option for the jacobian seems not to be existent.");
                         }
+
+     
 
 
                         // Start line search
@@ -214,14 +220,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         xt = x.CloneAs();
                         xt.AccV(lambda, step);
                         this.CurrentLin.TransformSolFrom(SolutionVec, xt);
-
                         EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
-
+                        
                         double nft = ft.L2NormPow2().MPISum().Sqrt();
                         double nf0 = f0.L2NormPow2().MPISum().Sqrt();
                         double ff0 = nf0 * nf0;
                         double ffc = nft * nft;
                         double ffm = nft * nft;
+
+                    //    Console.WriteLine("    Residuum 0:" + nf0);
 
                         // Control of the the step size
                         while (nft >= (1 - alpha * lambda) * nf0 && iarm < maxStep) {
@@ -239,7 +246,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             lamc = lambda;
 
                             this.CurrentLin.TransformSolFrom(SolutionVec, xt);
-
                             EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
 
                             nft = ft.L2NormPow2().MPISum().Sqrt();
@@ -247,7 +253,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             ffc = nft * nft;
                             iarm++;
 #if DEBUG
-                            Console.WriteLine("Step size:  " + lambda + "with Residuum:  " + nft);
+                            Console.WriteLine("    Residuum:  " + nft + " lambda = " + lambda);
 #endif 
                         }
                         // transform solution back to 'original domain'
@@ -255,8 +261,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         // (and for Level-Set-Updates ...)
                         this.CurrentLin.TransformSolFrom(SolutionVec, xt);
 
+
                         // update linearization
-                        base.Update(SolutionVec.Mapping.Fields, ref xt);
+                        if (itc  % constant_newton_it == 0) {
+                            base.Update(SolutionVec.Mapping.Fields, ref xt);
+                            if(constant_newton_it !=1) { 
+                            Console.WriteLine("Jacobian is updated: it {0}", itc);
+                            }
+                        }
 
                         // residual evaluation & callback
                         base.EvalResidual(xt, ref ft);
@@ -269,7 +281,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         f0 = ft.CloneAs();
 
                         OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
-                    
+
 
                     }
                 }
@@ -312,7 +324,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     x = xinit.CloneAs();
                     r.AccV(-1, dirder(SolutionVec, currentX, x, f0));
                 }
-               // Precond = null;
+                // Precond = null;
                 if (Precond != null) {
                     var temp2 = r.CloneAs();
                     r.ClearEntries();
@@ -347,7 +359,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // Call directional derivative
                     //V[k].SetV(f0);
 
-                    if (Precond != null) {                   
+                    if (Precond != null) {
                         var temp3 = V[k].CloneAs();
                         V[k].ClearEntries();
                         //this.OpMtxRaw.InvertBlocks(false,false).SpMV(1, temp3, 0, V[k]);
@@ -433,7 +445,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 k--;
 
-           
+
 
                 // update approximation and exit
                 //y = H(1:i,1:i) \ g(1:i);    
@@ -525,7 +537,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //CurrentLin.TransformRhsInto(OpAffineRaw, fx);
                 if (linearization == false) {
                     EvaluateOperator(1.0, SolutionVec.Mapping.Fields, fx);
-                } 
+                }
                 //else {
                 //    this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, SolutionVec.Mapping.Fields.ToArray(), true);
                 //    OpMtxRaw.SpMV(1.0, new CoordinateVector(SolutionVec.Mapping.Fields.ToArray()), 1.0, OpAffineRaw);
@@ -575,11 +587,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (b == 0.0) {
                 c = 1.0;
                 s = 0.0;
-            } else if (Math.Abs(b) > Math.Abs(a)) {
+            }
+            else if (Math.Abs(b) > Math.Abs(a)) {
                 temp = a / b;
                 s = 1.0 / Math.Sqrt(1.0 + temp * temp);
                 c = temp * s;
-            } else {
+            }
+            else {
                 temp = b / a;
                 c = 1.0 / Math.Sqrt(1.0 + temp * temp);
                 s = temp * c;
@@ -625,7 +639,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-       
+
 
         /// <summary>
         /// Computes a forward difference jacobian and returns the dense jacobian
@@ -730,10 +744,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     degree_StressXY = SolutionVec.Mapping.Fields[4].Basis.Degree;
                     degree_StressYY = SolutionVec.Mapping.Fields[5].Basis.Degree;
                 }
-            } else if (dimension == 3) {
+            }
+            else if (dimension == 3) {
                 degree_VelocityZ = SolutionVec.Mapping.Fields[2].Basis.Degree;
                 degree_Pressure = SolutionVec.Mapping.Fields[3].Basis.Degree;
-            } else throw new ArgumentException();
+            }
+            else throw new ArgumentException();
 
 
             int factor = 1;

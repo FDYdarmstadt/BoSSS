@@ -593,8 +593,6 @@ namespace BoSSS.Application.IBM_Solver {
 
         }
 
-
-
         public virtual double DelUpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
 
             //this.LevSet.ProjectField(X => this.Control.Ph(X, phystime + dt));
