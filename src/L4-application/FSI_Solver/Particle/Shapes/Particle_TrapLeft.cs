@@ -137,7 +137,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="hMin">
         /// Minimal cell length. Used to specify the number of surface points.
         /// </param>
-        override public MultidimensionalArray GetSurfacePoints(double hMin) {
+        override public MultidimensionalArray GetSurfacePoints(double hMin, double searchAngle, int subParticleID) {
             if (SpatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
 

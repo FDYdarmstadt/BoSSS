@@ -198,7 +198,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Returns surface points (for distance calc)
         /// </summary>
         /// <param name="hMin"></param>
-        public virtual MultidimensionalArray GetSurfacePoints(double hMin) => throw new NotImplementedException();
+        public virtual MultidimensionalArray GetSurfacePoints(double hMin, double searchAngle, int subParticleID) => throw new NotImplementedException();
 
         /// <summary>
         /// Calculates the support point with an analytic formula (if applicable)

@@ -27,10 +27,10 @@ namespace BoSSS.Application.FSI_Solver {
             List<string> boundaryValues = new List<string> {
                 "Wall"
             };
-            int sqrtPart = 2;
+            int sqrtPart = 3;
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 4, lengthY: 4, cellsPerUnitLength: 2, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel: 4);
+            C.SetGrid(lengthX: 4, lengthY: 4, cellsPerUnitLength: 4, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(amrLevel: 3);
             C.hydrodynamicsConvergenceCriterion = 1e-3;
 
             // Fluid Properties
@@ -46,7 +46,7 @@ namespace BoSSS.Application.FSI_Solver {
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 1);
             for (int x = 0; x < sqrtPart; x++) {
                 for (int y = 0; y < sqrtPart; y++) {
-                    C.Particles.Add(new Particle_Ellipsoid(motion, 0.25, 0.1, new double[] { -1 + 2 * x, 1 - 2 * y }, startAngl: 180 -45 - 90 * (x - y) + 180 * (1 - x * y), activeStress: 50));
+                    C.Particles.Add(new Particle_Ellipsoid(motion, 0.25, 0.1, new double[] { -1 + 1 * x, 1 - 1 * y }, startAngl: 180 -45 - 90 * (x - y) + 180 * (1 - x * y), activeStress: 50));
                 }
             }
 

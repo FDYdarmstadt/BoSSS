@@ -547,31 +547,34 @@ namespace FSI_Solver {
             int SpatialDim = particle.Motion.GetPosition(0).Count();
             SupportPoint = new double[SpatialDim];
             // A direct formulation of the support function for a sphere exists, thus it is also possible to map it to an ellipsoid.
-            if (particle is Particle_Ellipsoid || particle is Particle_Sphere || particle is Particle_Rectangle || particle is Particle_Shell) {
-                SupportPoint = particle.GetSupportPoint(Vector, SubParticleID);
-            }
+            //if (particle is Particle_Ellipsoid || particle is Particle_Sphere || particle is Particle_Rectangle || particle is Particle_Shell) {
+            //    SupportPoint = particle.GetSupportPoint(Vector, SubParticleID);
+            //}
 
             // Binary search in all other cases.
-            else {
-                MultidimensionalArray SurfacePoints = particle.GetSurfacePoints(m_hMin);
-                MultidimensionalArray SurfacePointsSubParticle = SurfacePoints.ExtractSubArrayShallow(new int[] { SubParticleID, -1, -1 });
-                int L = 1;
-                int R = SurfacePointsSubParticle.GetLength(0) - 2;
-                while (L <= R && L > 0 && R < SurfacePointsSubParticle.GetLength(0) - 1) {
-                    int Index = (L + R) / 2;
+            //else 
+            {
+                double angle = particle.Motion.GetAngle(0);
+                double[] particleDirection = new double[] { Math.Cos(angle), Math.Sin(angle) };
+                double searchStartAngle = 2 * Math.PI - Math.Acos(Aux.DotProduct(Vector, particleDirection) / Vector.L2Norm());
+                double L = searchStartAngle - Math.PI;
+                double R = searchStartAngle + Math.PI;
+                while (L <= R) {
+                    searchStartAngle = (L + R) / 2;
+                    MultidimensionalArray SurfacePoints = particle.GetSurfacePoints(m_hMin, searchStartAngle, SubParticleID);
                     double[] RightNeighbour = new double[2];
                     double[] LeftNeighbour = new double[2];
                     for (int d = 0; d < 2; d++) {
-                        SupportPoint[d] = SurfacePointsSubParticle[Index, d];
-                        LeftNeighbour[d] = SurfacePointsSubParticle[Index - 1, d];
-                        RightNeighbour[d] = SurfacePointsSubParticle[Index + 1, d];
+                        SupportPoint[d] = SurfacePoints[1, d];
+                        LeftNeighbour[d] = SurfacePoints[0, d];
+                        RightNeighbour[d] = SurfacePoints[2, d];
                     }
                     if (Aux.DotProduct(SupportPoint, Vector) > Aux.DotProduct(RightNeighbour, Vector) && Aux.DotProduct(SupportPoint, Vector) > Aux.DotProduct(LeftNeighbour, Vector))
                         break; // The current temp_supportPoint is the actual support point.
                     else if (Aux.DotProduct(RightNeighbour, Vector) > Aux.DotProduct(LeftNeighbour, Vector))
-                        L = Index + 1; // Search on the right side of the current point.
+                        L = searchStartAngle; // Search on the right side of the current point.
                     else
-                        R = Index - 1; // Search on the left side.
+                        R = searchStartAngle; // Search on the left side.
                 }
             }
         }

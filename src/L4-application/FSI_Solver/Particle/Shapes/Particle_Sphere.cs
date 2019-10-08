@@ -122,29 +122,6 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Returns an array with points on the surface of the particle.
-        /// </summary>
-        /// <param name="hMin">
-        /// Minimal cell length. Used to specify the number of surface points.
-        /// </param>
-        override public MultidimensionalArray GetSurfacePoints(double hMin) {
-            if (SpatialDim != 2)
-                throw new NotImplementedException("Only two dimensions are supported at the moment");
-
-            int NoOfSurfacePoints = Convert.ToInt32(10 * Circumference / hMin) + 1;
-            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSubParticles, NoOfSurfacePoints, SpatialDim);
-            double[] InfinitisemalAngle = GenericBlas.Linspace(0, 2 * Math.PI, NoOfSurfacePoints + 1);
-            if (Math.Abs(10 * Circumference / hMin + 1) >= int.MaxValue)
-                throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");
-
-            for (int j = 0; j < NoOfSurfacePoints; j++) {
-                SurfacePoints[0, j, 0] = Math.Cos(InfinitisemalAngle[j]) * m_Radius + Motion.GetPosition(0)[0];
-                SurfacePoints[0, j, 1] = Math.Sin(InfinitisemalAngle[j]) * m_Radius + Motion.GetPosition(0)[1];
-            }
-            return SurfacePoints;
-        }
-
-        /// <summary>
         /// Returns the support point of the particle in the direction specified by a vector.
         /// </summary>
         /// <param name="vector">
