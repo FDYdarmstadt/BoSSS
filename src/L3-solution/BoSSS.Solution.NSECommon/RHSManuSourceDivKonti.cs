@@ -91,9 +91,9 @@ namespace BoSSS.Solution.NSECommon {
             double p0 = 1.0;// ThermodynamicPressure.GetMeanValue(3);
 
             double M1 = MolarMasses[0]; double M2 = MolarMasses[1]; double M3 = MolarMasses[2]; double M4 = MolarMasses[3];
-            double alpha1 = 0.3;
-            double alpha2 = 0.6;
-            double alpha3 = 0.1;
+            //double alpha1 = 0.3;
+            //double alpha2 = 0.6;
+            //double alpha3 = 0.1;
             double man1;
 
 
@@ -122,7 +122,7 @@ namespace BoSSS.Solution.NSECommon {
                         double dRhodt = p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * x_ * y_ * Math.Sin(x_ * y_ * t_);
                         double dRhoUdx = -p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Cos(x_ * t_) * y_ * t_ * Math.Sin(x_ * y_ * t_) + p0 / Math.Cos(x_ * y_ * t_) * t_ * Math.Sin(x_ * t_);
                         double dRhoVdy = -p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Cos(y_ * t_) * x_ * t_ * Math.Sin(x_ * y_ * t_) + p0 / Math.Cos(x_ * y_ * t_) * t_ * Math.Sin(y_ * t_);
-                        man1 = -1 * (dRhodt*1 + dRhoUdx + dRhoVdy);
+                        man1 = -1 * (dRhodt*0 + dRhoUdx + dRhoVdy);
                         break;
                     case PhysicsMode.Combustion:
                         throw new NotImplementedException("TODO");

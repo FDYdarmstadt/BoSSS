@@ -27,36 +27,27 @@ using BoSSS.Foundation;
 
 namespace BoSSS.Solution.NSECommon.Operator.Convection {
     public class ActiveConvectionAtIB : ILevelSetForm {
-        public ActiveConvectionAtIB(int _d, int _D, LevelSetTracker LsTrk, double _LFFA, IncompressibleBoundaryCondMap _bcmap, Func<double[], double,double[]> getParticleParams, double fluidDensity, bool UseMovingMesh){
+        public ActiveConvectionAtIB(int currentDim, int spatialDim, LevelSetTracker LsTrk, IncompressibleBoundaryCondMap _bcmap, Func<double[], double[]> getParticleParams, bool useMovingMesh) {
             m_LsTrk = LsTrk;
-            m_D = _D;
-            m_d = _d;
-            LFFA = _LFFA;
-            this.m_getParticleParams = getParticleParams;
-            //varMode = _varMode;
-            fDensity = fluidDensity;
-            m_UseMovingMesh = UseMovingMesh;
-
-            NegFlux = new LinearizedConvection(_D, _bcmap, _d);
-            //NegFlux = new ConvectionInBulk_LLF(_D, _bcmap, _d, fluidDensity, 0, _LFFA, double.NaN, LsTrk);
-            //NegFlux.SetParameter("A", LsTrk.GetSpeciesId("A"), null);
+            m_D = spatialDim;
+            m_d = currentDim;
+            m_getParticleParams = getParticleParams;
+            m_UseMovingMesh = useMovingMesh;
+            NegFlux = new LinearizedConvection(spatialDim, _bcmap, currentDim);
         }
-        LevelSetTracker m_LsTrk;
-        int m_D;
-        int m_d;
+
+        private readonly LevelSetTracker m_LsTrk;
+        private readonly int m_D;
+        private readonly int m_d;
 
         /// <summary>
         /// Describes: 0: velX, 1: velY, 2: rotVel, 3: particle radius, 4: scaling paramete for active particles 
         /// </summary>
-        Func<double[], double,double[]> m_getParticleParams;
-
-        double fDensity;
-        double LFFA;
-        bool m_UseMovingMesh;
+        private readonly Func<double[], double[]> m_getParticleParams;
+        private readonly bool m_UseMovingMesh;
 
         // Use Fluxes as in Bulk Convection
-        LinearizedConvection NegFlux;
-
+        private readonly LinearizedConvection NegFlux;
 
         public IList<string> ArgumentOrdering {
             get { return new string[] { VariableNames.Velocity_d(m_d) }; }
@@ -86,57 +77,9 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
             }
         }
 
-        /*
-
-        // Flux over interface
-        public override void DerivativVar_LevelSetFlux(out double FlxNeg, out double FlxPos,
-            ref CommonParamsLs cp,
-            double[] U_Neg, double[] U_Pos, double[,] GradU_Neg, double[,] GradU_Pos) {
-
-            double[] _uLevSet = new double[2];
-
-            //_uLevSet[0] = (uLevSet[m_d])(cp.time, cp.x);
-
-            for (int d = 0; d < m_D; d++) {
-                _uLevSet[d] = (uLevSet[d])(cp.time);
-            }
-
-            double[] uLevSet_temp = new double[1];
-            uLevSet_temp[0] = (uLevSet[m_d])(cp.time);
-
-            BoSSS.Foundation.CommonParams inp; // = default(BoSSS.Foundation.InParams);
-            inp.Parameters_IN = cp.ParamsNeg;
-            inp.Normale = cp.n;
-            inp.iEdge = int.MinValue;
-            inp.GridDat = this.m_LsTrk.GridDat;
-            inp.X = cp.x;
-            inp.time = cp.time;
-            //inp.jCellIn = cp.jCell;
-            //inp.jCellOut = cp.jCell;
-
-            inp.Parameters_OUT = new double[inp.Parameters_IN.Length];
-
-            //Outer values for Velocity and VelocityMean
-            for (int j = 0; j < m_D; j++) {
-                inp.Parameters_OUT[j] = (uLevSet[j])(cp.time);
-                // Velocity0MeanVectorOut is set to zero, i.e. always LambdaIn is used.
-                inp.Parameters_OUT[m_D + j] = 0;
-            }
-
-            //FlxNeg = -this.NegFlux.IEF(ref inp, U_Neg, uLevSet_temp);
-
-            FlxNeg = 0;
-
-            FlxPos = 0;
-
-
-        }
-        */
-
         public double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
 
-            BoSSS.Foundation.CommonParams inp; // = default(BoSSS.Foundation.InParams);
-
+            BoSSS.Foundation.CommonParams inp;
 
             // Input parameters
             // =============================
@@ -148,16 +91,14 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
             inp.time = cp.time;
             inp.Parameters_OUT = new double[inp.Parameters_IN.Length];
 
-
             // Particle parameters
             // =============================
-            double[] parameters_P = m_getParticleParams(inp.X, inp.time);
+            double[] parameters_P = m_getParticleParams(inp.X);
             double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
             double wLevSet = parameters_P[2];
             double[] RadialNormalVector = new double[] { parameters_P[3], parameters_P[4] };
             double RadialLength = parameters_P[5];
-            double scale = parameters_P[6];
-
+            double scale = parameters_P[7];
 
             // Level-set velocity
             // =============================
@@ -169,7 +110,6 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
                 uLevSet_temp[0] = (uLevSet[1] + RadialLength * wLevSet * RadialNormalVector[1]);
             }
 
-
             // Outer values for Velocity and VelocityMean
             // =============================
             inp.Parameters_OUT[0] = uLevSet[0] + RadialLength * wLevSet * RadialNormalVector[0];
@@ -178,19 +118,11 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
             inp.Parameters_OUT[2] = 0;
             inp.Parameters_OUT[3] = 0;
 
-
             // Computing Flux
             // =============================
-            // Moving mesh
-            double FlxNeg;
-            if (m_UseMovingMesh == true) {
-                FlxNeg = 0;
-            }
-            // Splitting
-            else
-            {
-                FlxNeg = (this.NegFlux.InnerEdgeForm(ref inp, U_Neg, uLevSet_temp, null, null, v_Neg, 0, null, null)) * (1 - scale); //Flux in case of Neumann bndy condition is zero
-            }
+            double FlxNeg = m_UseMovingMesh == true
+                ? 0 // Moving mesh
+                : (this.NegFlux.InnerEdgeForm(ref inp, U_Neg, uLevSet_temp, null, null, v_Neg, 0, null, null)) * (1 - scale);// Splitting
             return FlxNeg;
         }
     }

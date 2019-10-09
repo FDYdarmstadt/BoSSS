@@ -24,7 +24,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace FSI_Solver {
-    class FSI_LevelSetUpdate {
+    internal class FSI_LevelSetUpdate {
 
         internal FSI_LevelSetUpdate(LevelSetTracker levelSetTracker) {
             m_LevelSetTracker = levelSetTracker;
@@ -222,7 +222,7 @@ namespace FSI_Solver {
                 double h_min = m_LevelSetTracker.GridDat.Cells.h_minGlobal > Particles[p].GetLengthScales().Min()
                     ? 1.5 * m_LevelSetTracker.GridDat.Cells.h_minGlobal
                     : 2 * m_LevelSetTracker.GridDat.Cells.h_minGlobal;
-                double[] ParticlePos = Particles[p].Motion.position[0];
+                double[] ParticlePos = (double[])Particles[p].Motion.GetPosition(0);
                 double Upperedge = ParticlePos[1] + h_min;
                 double Loweredge = ParticlePos[1] - h_min;
                 double Leftedge = ParticlePos[0] - h_min;

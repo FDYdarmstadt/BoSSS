@@ -123,15 +123,12 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.rho_A = 1.0;
             C.PhysicalParameters.mu_A = 0.1;
             C.CoefficientOfRestitution = 0;
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, C.pureDryCollisions);
-            C.Particles.Add(new Particle_Sphere(motion, 1, new double[] { 0.0, 0.0 })
-            {
-                particleDensity = 2,
-            });
-            C.Particles.Add(new Particle_Ellipsoid(motion, 1, 1, new double[] { 0.0, 4.0 }, startAngl: 0)
-            {
-                particleDensity = 1,
-            });
+            double particleDensity1 = 2;
+            ParticleMotionInit motion1 = new ParticleMotionInit(C.gravity, particleDensity1, C.pureDryCollisions);
+            double particleDensity2 = 1;
+            ParticleMotionInit motion2 = new ParticleMotionInit(C.gravity, particleDensity2, C.pureDryCollisions);
+            C.Particles.Add(new Particle_Sphere(motion1, 1, new double[] { 0.0, 0.0 }));
+            C.Particles.Add(new Particle_Ellipsoid(motion2, 1, 1, new double[] { 0.0, 4.0 }, startAngl: 0));
 
             C.InitialValues_Evaluators.Add("VelocityX", X => 0);
             C.InitialValues_Evaluators.Add("VelocityY", X => 0);
@@ -166,7 +163,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
 
-        public static FSI_Control Test_ParticleInShearFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0) {
+        public static FSI_Control Test_ParticleInShearFlow(int k = 2) {
             FSI_Control C = new FSI_Control();
 
             const double BaseSize = 1.0;
@@ -221,10 +218,9 @@ namespace BoSSS.Application.FSI_Solver {
             // ==============
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.gravity = new double[] { 0, 0 };
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, C.pureDryCollisions, false, true);
-            C.Particles.Add(new Particle_Sphere(motion, 0.4, new double[] { 0.0, 0.0 }) {
-                particleDensity = 1.0,
-            });
+            double particleDensity = 1;
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, false, true);
+            C.Particles.Add(new Particle_Sphere(motion, 0.4, new double[] { 0.0, 0.0 }));
 
             // For restart
             //C.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("fec14187-4e12-43b6-af1e-e9d535c78668"), -1);
@@ -273,16 +269,17 @@ namespace BoSSS.Application.FSI_Solver {
         /// Testing of particle/wall interactions using a single particle
         /// </summary>
         public static FSI_Control Test_SingleDryParticleAgainstWall(string _DbPath = null, bool MeshRefine = true) {
-            FSI_Control C = new FSI_Control();
+            FSI_Control C = new FSI_Control {
 
-            // basic database options
-            // ======================
+                // basic database options
+                // ======================
 
-            C.DbPath = _DbPath;
-            C.savetodb = _DbPath != null;
-            C.saveperiod = 1;
-            C.ProjectName = "ParticleCollisionTest";
-            C.ProjectDescription = "Gravity";
+                DbPath = _DbPath,
+                savetodb = _DbPath != null,
+                saveperiod = 1,
+                ProjectName = "ParticleCollisionTest",
+                ProjectDescription = "Gravity"
+            };
             C.SessionName = C.ProjectName;
             C.Tags.Add("with immersed boundary method");
             C.AdaptiveMeshRefinement = true;
@@ -325,18 +322,16 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.mu_A = 0.1;
             C.pureDryCollisions = true;
             C.gravity = new double[] { 0, 0 };
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, C.pureDryCollisions);
+            double particleDensity = 1.0;
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions);
             // Particles
             // =========
-            C.Particles.Add(new Particle_Sphere(motion, 0.1, new double[] { -0.5, -0.5 }, startAngl: 90.0, startTransVelocity: new double[] { 1, -1 }, startRotVelocity: 0)
-            {
-                particleDensity = 1.0,
-            });
+            C.Particles.Add(new Particle_Sphere(motion, 0.1, new double[] { -0.5, -0.5 }, startAngl: 90.0, startTransVelocity: new double[] { 1, -1 }, startRotVelocity: 0));
             C.collisionModel = FSI_Control.CollisionModel.MomentumConservation;
 
             double V = 0;
             foreach (var p in C.Particles) {
-                V = Math.Max(V, p.Motion.translationalVelocity[0].L2Norm());
+                V = Math.Max(V, p.Motion.GetTranslationalVelocity(0).L2Norm());
             }
 
             if (V <= 0)
@@ -385,16 +380,17 @@ namespace BoSSS.Application.FSI_Solver {
         /// Testing of particle/wall interactions using a single particle
         /// </summary>
         public static FSI_Control Test_DryParticleCollision(string _DbPath = null, bool MeshRefine = false) {
-            FSI_Control C = new FSI_Control();
+            FSI_Control C = new FSI_Control {
 
-            // basic database options
-            // ======================
+                // basic database options
+                // ======================
 
-            C.DbPath = _DbPath;
-            C.savetodb = _DbPath != null;
-            C.saveperiod = 1;
-            C.ProjectName = "ParticleCollisionTest";
-            C.ProjectDescription = "Gravity";
+                DbPath = _DbPath,
+                savetodb = _DbPath != null,
+                saveperiod = 1,
+                ProjectName = "ParticleCollisionTest",
+                ProjectDescription = "Gravity"
+            };
             C.SessionName = C.ProjectName;
             C.Tags.Add("with immersed boundary method");
             C.AdaptiveMeshRefinement = true;
@@ -445,20 +441,17 @@ namespace BoSSS.Application.FSI_Solver {
             // =========
 
             C.pureDryCollisions = true;
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, C.pureDryCollisions);
-            C.Particles.Add(new Particle_Sphere(motion, 0.15, new double[] { -0.6, +0.1 }, startAngl: 90.0, startTransVelocity: new double[] { 1, 0 }, startRotVelocity: 0) {
-                particleDensity = 1.0,
-            });
+            double particleDensity = 1.0;
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions);
+            C.Particles.Add(new Particle_Sphere(motion, 0.15, new double[] { -0.6, +0.1 }, startAngl: 90.0, startTransVelocity: new double[] { 1, 0 }, startRotVelocity: 0));
 
-            C.Particles.Add(new Particle_Sphere(motion, 0.15, new double[] { +0.6, -0.1 }, startAngl: 90.0, startTransVelocity: new double[] { -1, 0 }, startRotVelocity: 0) {
-                particleDensity = 1.0,
-            });
+            C.Particles.Add(new Particle_Sphere(motion, 0.15, new double[] { +0.6, -0.1 }, startAngl: 90.0, startTransVelocity: new double[] { -1, 0 }, startRotVelocity: 0));
             
             C.collisionModel = FSI_Control.CollisionModel.MomentumConservation;
 
             double V = 0;
             foreach (var p in C.Particles) {
-                V = Math.Max(V, p.Motion.translationalVelocity[0].L2Norm());
+                V = Math.Max(V, p.Motion.GetTranslationalVelocity(0).L2Norm());
             }
 
             if (V <= 0)
@@ -506,16 +499,17 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         public static FSI_Control Test_DryParticleBounce(string _DbPath = null)
         {
-            FSI_Control C = new FSI_Control();
+            FSI_Control C = new FSI_Control {
 
-            // basic database options
-            // ======================
+                // basic database options
+                // ======================
 
-            C.DbPath = _DbPath;
-            C.savetodb = _DbPath != null;
-            C.saveperiod = 1;
-            C.ProjectName = "ParticleCollisionTest";
-            C.ProjectDescription = "Gravity";
+                DbPath = _DbPath,
+                savetodb = _DbPath != null,
+                saveperiod = 1,
+                ProjectName = "ParticleCollisionTest",
+                ProjectDescription = "Gravity"
+            };
             C.SessionName = C.ProjectName;
             C.Tags.Add("with immersed boundary method");
 
@@ -560,11 +554,9 @@ namespace BoSSS.Application.FSI_Solver {
             // Particles
             // =========
             C.pureDryCollisions = true;
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, C.pureDryCollisions);
-            C.Particles.Add(new Particle_Sphere(motion, 0.15, new double[] { 0.0, 0.8 }, 0.0, new double[] { 0, 0 } , 0) {
-                
-                particleDensity = 1.0,
-            });
+            double particleDensity = 1.0;
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions);
+            C.Particles.Add(new Particle_Sphere(motion, 0.15, new double[] { 0.0, 0.8 }, 0.0));
 
             C.collisionModel = FSI_Control.CollisionModel.MomentumConservation;
 
@@ -598,7 +590,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control Test_StickyTrap(string _DbPath = null, int k = 2, double VelXBase = 0.0, double angle = 0.0)
+        public static FSI_Control Test_StickyTrap(int k = 2)
         {
             FSI_Control C = new FSI_Control();
 
@@ -693,25 +685,15 @@ namespace BoSSS.Application.FSI_Solver {
             // Particle Properties
             //C.PhysicalParameters.mu_B = 0.1;
             //C.particleMass = 1;
+            double particleDensity1 = 4.0;
+            ParticleMotionInit motion1 = new ParticleMotionInit(C.gravity, particleDensity1, C.pureDryCollisions, true);
+            double particleDensity2 = 1.0;
+            ParticleMotionInit motion2 = new ParticleMotionInit(C.gravity, particleDensity2, C.pureDryCollisions, true, true);
 
-            ParticleMotionInit motion1 = new ParticleMotionInit(C.gravity, C.pureDryCollisions, true);
-            ParticleMotionInit motion2 = new ParticleMotionInit(C.gravity, C.pureDryCollisions, true, true);
+            C.Particles.Add(new Particle_Sphere(motion1, 0.18, new double[] { 0.0, 0.6 }));
+            C.Particles.Add(new Particle_superEllipsoid(motion2, 0.4, 0.2, 4, new double[] { 0.45, 0 }, startAngl: 45));
+            C.Particles.Add(new Particle_superEllipsoid(motion2, 0.4,  0.2, 4, new double[] { -0.45, 0 }, startAngl: -45));
 
-            C.Particles.Add(new Particle_Sphere(motion1, 0.18, new double[] { 0.0, 0.6 })
-            {
-                particleDensity = 4,
-            });
-
-            C.Particles.Add(new Particle_superEllipsoid(motion2, 0.4, 0.2, 4, new double[] { 0.45, 0 }, startAngl: 45)
-            {
-                particleDensity = 1,
-            });
-
-
-            C.Particles.Add(new Particle_superEllipsoid(motion2, 0.4,  0.2, 4, new double[] { -0.45, 0 }, startAngl: -45)
-            {
-                particleDensity = 1,
-            });
             C.InitialValues_Evaluators.Add("VelocityX", X => 0);
             C.InitialValues_Evaluators.Add("VelocityY", X => 0);
             C.PhysicalParameters.IncludeConvection = false;
@@ -721,7 +703,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.LevelSetSmoothing = true;
+            C.LevelSetSmoothing = false;
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
@@ -747,15 +729,16 @@ namespace BoSSS.Application.FSI_Solver {
 
         public static FSI_Control Test_ActiveForce(int k = 2)
         {
-            FSI_Control C = new FSI_Control();
+            FSI_Control C = new FSI_Control {
 
-            // basic database options
-            // =============================
-            //C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\straightChannel";
-            C.savetodb = false;
-            C.saveperiod = 1;
-            C.ProjectName = "Test_singleActiveParticle";
-            C.ProjectDescription = "Test_singleActiveParticle";
+                // basic database options
+                // =============================
+                //C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\straightChannel";
+                savetodb = false,
+                saveperiod = 1,
+                ProjectName = "Test_singleActiveParticle",
+                ProjectDescription = "Test_singleActiveParticle"
+            };
             C.SessionName = C.ProjectName;
             C.Tags.Add("activeParticle");
             
@@ -826,19 +809,17 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.rho_A = 1;//pg/(mum^3)
             C.PhysicalParameters.mu_A = 1e4;//pg(mum*s)
             C.PhysicalParameters.Material = true;
-            ParticleUnderrelaxationParam underrelaxationParam = new ParticleUnderrelaxationParam(1e-2, 1, true);
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, C.pureDryCollisions, false, false, underrelaxationParam, 1);
+            double particleDensity = 1.0;
+            C.hydrodynamicsConvergenceCriterion = 1e-3;
+            ParticleUnderrelaxationParam underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, 1, true);
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, false, false, underrelaxationParam, 1);
             // Particle Properties
             // =============================   
             C.Particles = new List<Particle>();
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Ellipsoid(motion, 1, 0.4, new double[] { 0.0, 0.0 }, startAngl: 0)
-                {
-                    particleDensity = 1,
-                    activeStress = 1e5,
-                });
+                C.Particles.Add(new Particle_Ellipsoid(motion, 1, 0.4, new double[] { 0.0, 0.0 }, startAngl: 0, activeStress: 1e5));
             }
             //Define level-set
             double phiComplete(double[] X, double t)
@@ -849,7 +830,7 @@ namespace BoSSS.Application.FSI_Solver {
                 //Level-set function depending on # of particles
                 for (int i = 0; i < C.Particles.Count; i++)
                 {
-                    ret *= C.Particles[i].Phi_P(X);
+                    ret *= C.Particles[i].LevelSetFunction(X);
                 }
                 return ret;
             }
@@ -878,7 +859,6 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.hydrodynamicsConvergenceCriterion = 1e-2;
             C.LSunderrelax = 1.0;
             
             // Coupling Properties
@@ -906,15 +886,16 @@ namespace BoSSS.Application.FSI_Solver {
 
         public static FSI_Control Test_HydrodynamicForces(int k = 2)
         {
-            FSI_Control C = new FSI_Control();
+            FSI_Control C = new FSI_Control {
 
-            // basic database options
-            // =============================
-            //C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\straightChannel";
-            C.savetodb = false;
-            C.saveperiod = 1;
-            C.ProjectName = "Test_singleActiveParticle";
-            C.ProjectDescription = "Test_singleActiveParticle";
+                // basic database options
+                // =============================
+                //C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\straightChannel";
+                savetodb = false,
+                saveperiod = 1,
+                ProjectName = "Test_singleActiveParticle",
+                ProjectDescription = "Test_singleActiveParticle"
+            };
             C.SessionName = C.ProjectName;
             C.Tags.Add("activeParticle");
 
@@ -986,31 +967,17 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.mu_A = 1e-1;//pg(mum*s)
             C.PhysicalParameters.Material = true;
             C.gravity = new double[] { 0, 0 };
-            ParticleUnderrelaxationParam underrelaxationParam = new ParticleUnderrelaxationParam(1e-2, 9, true);
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, C.pureDryCollisions, false, false, underrelaxationParam, 1);
+            double particleDensity = 1.0;
+            C.hydrodynamicsConvergenceCriterion = 1e-2;
+            ParticleUnderrelaxationParam underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, 9, true);
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, false, false, underrelaxationParam, 1);
             // Particle Properties
             // =============================   
             C.Particles = new List<Particle>();
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Sphere(motion, 0.5, new double[] { 0.0, 0.0 }, startAngl: 0)
-                {
-                    particleDensity = 1,
-                });
-            }
-            //Define level-set
-            double phiComplete(double[] X, double t)
-            {
-                //Generating the correct sign
-                int exp = C.Particles.Count - 1;
-                double ret = Math.Pow(-1, exp);
-                //Level-set function depending on # of particles
-                for (int i = 0; i < C.Particles.Count; i++)
-                {
-                    ret *= C.Particles[i].Phi_P(X);
-                }
-                return ret;
+                C.Particles.Add(new Particle_Sphere(motion, 0.5, new double[] { 0.0, 0.0 }, startAngl: 0));
             }
 
             // Quadrature rules
@@ -1019,7 +986,6 @@ namespace BoSSS.Application.FSI_Solver {
 
             //Initial Values
             // =============================   
-            C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
             C.InitialValues_Evaluators.Add("VelocityX", X => 0);
             C.InitialValues_Evaluators.Add("VelocityY", X => 0);
 
@@ -1037,7 +1003,6 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.hydrodynamicsConvergenceCriterion = 1e-2;
             C.LSunderrelax = 1.0;
 
             // Coupling Properties

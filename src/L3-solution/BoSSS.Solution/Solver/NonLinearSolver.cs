@@ -44,6 +44,11 @@ namespace BoSSS.Solution.Control {
 
         PicardGMRES = 3,
 
+        /// <summary>
+        /// Mixed sequence of nonlinear solvers. Useful for example if one wishes to start a simulation with Picard and then change to Newton.
+        /// </summary>
+        NLSolverSequence = 4, 
+
         selfmade = 999,
     }
 
@@ -93,6 +98,12 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [DataMember]
         public NonLinearSolverCode SolverCode = NonLinearSolverCode.Picard;
+
+        /// <summary>
+        /// Number of iterations, where jacobi is not updated. Also known as constant newton method. Default 1, means regular newton.
+        /// </summary>
+        [DataMember]
+        public int constantNewtonIterations = 1;
     }
 
 }

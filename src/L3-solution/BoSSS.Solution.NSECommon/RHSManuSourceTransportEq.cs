@@ -222,7 +222,8 @@ namespace BoSSS.Solution.NSECommon {
             else {
                 switch (physicsMode) {
                     case PhysicsMode.LowMach:
-                        ConvectionTerm = p0 * Math.Sin(x_) + p0 * Math.Sin(y_);
+                        ConvectionTerm = p0 * Math.Sin(x_) + p0 * Math.Sin(y_); // This would be the MS if the discretized convective term of the energy equation is div(rho*u*T)
+                        //ConvectionTerm = p0 / Math.Cos(x_ * y_) * Math.Cos(x_) * y_ * Math.Sin(x_ * y_) + p0 / Math.Cos(x_ * y_) * Math.Cos(y_) * x_ * Math.Sin(x_ * y_);
                         ReactionRate = 0;
                         break;
                     case PhysicsMode.Combustion:
