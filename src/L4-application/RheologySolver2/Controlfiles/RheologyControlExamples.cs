@@ -380,7 +380,7 @@ namespace BoSSS.Application.Rheology {
         /// <summary>
         /// Confined cylinder in a channel flow
         /// </summary>
-        static public RheologyControl ConfinedCylinder(string path = @"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder", int degree = 2) {
+        static public RheologyControl ConfinedCylinder(string path = @"G:\Test4Anne\DB_Rheology", int degree = 1) {
             RheologyControl C = new RheologyControl();
 
             //Path für cluster
@@ -499,7 +499,8 @@ namespace BoSSS.Application.Rheology {
 
 
             //coarser grid - works without cluster!
-            string grid = "f9aa12dc-53bb-4e2c-81b3-ffccc251a3f7";
+            //string grid = "f9aa12dc-53bb-4e2c-81b3-ffccc251a3f7";
+            string grid = "444cccb7-65e2-4249-9eaa-e109616f97e5"; //test_grid can be deleted
 
             //very coarse grid as starting point for refinement
             //string grid = "e296a1b2-98f9-4fdf-8a32-04e0954ff369";
