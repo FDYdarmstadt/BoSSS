@@ -409,7 +409,7 @@ namespace BoSSS.Application.Rheology {
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
             C.ObjectiveParam = 1.0;
             C.useJacobianForOperatorMatrix = false;
 
