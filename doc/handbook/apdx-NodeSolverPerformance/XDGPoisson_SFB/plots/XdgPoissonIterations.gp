@@ -7,13 +7,13 @@ set origin 0.01,0.67
 set lmargin 1e01
 set rmargin 5e00
 set tmargin 0e00
-set bmargin 1e00
+set bmargin 2e00
 set logscale x 10
 unset logscale y
 unset logscale x2
 unset logscale y2
 set xrange [10:10000000]
-set yrange [0:600]
+set yrange [0:300]
 set autoscale x2
 set autoscale y2
 unset xlabel
@@ -33,13 +33,13 @@ set origin 0.01,0.336666666666667
 set lmargin 1e01
 set rmargin 5e00
 set tmargin 0e00
-set bmargin 1e00
+set bmargin 2e00
 set logscale x 10
 unset logscale y
 unset logscale x2
 unset logscale y2
 set xrange [10:10000000]
-set yrange [0:600]
+set yrange [0:300]
 set autoscale x2
 set autoscale y2
 unset xlabel
@@ -58,13 +58,13 @@ set origin 0.01,0.00333333333333333
 set lmargin 1e01
 set rmargin 5e00
 set tmargin 0e00
-set bmargin 1e00
+set bmargin 2e00
 set logscale x 10
 unset logscale y
 unset logscale x2
 unset logscale y2
 set xrange [10:10000000]
-set yrange [0:600]
+set yrange [0:300]
 set autoscale x2
 set autoscale y2
 unset xlabel
@@ -79,7 +79,7 @@ set xtics font "sans, 16"
 set x2tics format " " 
 set ytics 
 set y2tics format " " 
-plot "XdgPoissonIterations_data_4.csv" title "Kcycle schwarz" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 11 pointsize 0.5, "XdgPoissonIterations_data_5.csv" title "gmres levelpmg" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 5 pointsize 0.5
+plot "XdgPoissonIterations_data_4.csv" title "gmres levelpmg" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 5 pointsize 0.5, "XdgPoissonIterations_data_5.csv" title "Kcycle schwarz" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 11 pointsize 0.5
 
 
 exit

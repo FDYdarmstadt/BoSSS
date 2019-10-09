@@ -205,7 +205,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             double uAxN = GenericBlas.InnerProd(U_Neg, cp.n);
             double uBxN = GenericBlas.InnerProd(U_Pos, cp.n);
 
-            double s = 0;//cp.ParamsNeg[0];
+            //double s = 0;//cp.ParamsNeg[0];
                          //if (!MaterialInterface) {
                          //    Debug.Assert(cp.ParamsNeg[0] == cp.ParamsPos[0], "The interface velocity must be continuous across the level set!");
                          //    throw new NotImplementedException();

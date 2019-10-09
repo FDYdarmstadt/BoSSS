@@ -85,7 +85,7 @@ set ytics format "$10^{%L}$"
 set ytics font "sans, 16" 
 set y2tics format " " 
 set termoption dashed
-plot "XdgPoissonScaling_data_8.csv" title "Kcycle w. add.-schwarz" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 11 pointsize 0.5, "XdgPoissonScaling_data_9.csv" title "Pardiso" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "XdgPoissonScaling_data_10.csv" title "GMRES p-multigrid" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 5 pointsize 0.5, "XdgPoissonScaling_data_11.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
+plot "XdgPoissonScaling_data_8.csv" title "Pardiso" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "XdgPoissonScaling_data_9.csv" title "GMRES p-multigrid" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 5 pointsize 0.5, "XdgPoissonScaling_data_10.csv" title "Kcycle w. add.-schwarz" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 11 pointsize 0.5, "XdgPoissonScaling_data_11.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
 
 
 exit

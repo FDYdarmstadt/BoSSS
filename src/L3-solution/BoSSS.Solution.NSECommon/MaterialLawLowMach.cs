@@ -221,9 +221,19 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="phi"></param>
         /// <returns></returns>
         public double GetHeatCapacity(double phi) {
-            // double gamma = 1.4;
-            double cp = 1.4;//  gamma / (gamma - 1);
+            double cp = 1.0;
             return cp;
+        }
+
+
+        /// <summary>
+        /// Returns the value of the heat capacity ratio Gamma (Cp/Cv)
+        /// </summary>
+        /// <param name="phi"></param>
+        /// <returns></returns>
+        public double GetHeatCapacityRatio(double phi) {
+            double gamma = 1.4;            
+            return gamma;
         }
 
         /// <summary>

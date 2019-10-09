@@ -964,7 +964,7 @@ namespace BoSSS.Application.Rheology {
             if (U0.Count != D)
                 throw new ArgumentException("Spatial dimesion and number of velocity parameter components does not match!");
 
-            if (Stress0.Count != D + 1)
+            if (Stress0.Count != (D*D + D)/2)
                 throw new ArgumentException("Spatial dimesion and number of stress parameter components does not match!");
 
 

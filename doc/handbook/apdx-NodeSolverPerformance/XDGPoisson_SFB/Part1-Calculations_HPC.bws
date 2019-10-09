@@ -221,14 +221,14 @@ List<XdgPoisson3Control> controls = new List<XdgPoisson3Control>();
 // polynomial degrees to test
 //int[] PolyDegS = new int[] {2, 3, 4, 5, 6};
 //int[] PolyDegS = new int[] {2, 3 ,5};
-int[] PolyDegS = new int[] {3};
+int[] PolyDegS = new int[] {5};
 **************
 ==============
 // Solvers which we want to instrument:
 LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
-    //LinearSolverCode.classic_pardiso,
+    LinearSolverCode.classic_pardiso,
     //LinearSolverCode.exp_OrthoS_pMG,
-    //LinearSolverCode.exp_gmres_levelpmg,
+    LinearSolverCode.exp_gmres_levelpmg,
     //LinearSolverCode.exp_softgmres_schwarz_directcoarse_overlap,
     LinearSolverCode.exp_Kcycle_schwarz,
     //LinearSolverConfig.Code.classic_mumps, 
@@ -245,18 +245,21 @@ int MaxDof = 5000000;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.XDG;
 **************
-(1,2): warning CS0105: The using directive for `BoSSS.Solution.XNSECommon' appeared previously in this namespace
-(2,1): warning CS0105: The using directive for `BoSSS.Foundation.XDG' appeared previously in this namespace
-No. of errors|warnings: 0|2.
-
 ==============
 //IGridInfo tmp_grd = 
-IGridInfo[] t_grids=new IGridInfo[] {grids.Pick(4)};
-//IGridInfo[] t_grids = grids;
+//IGridInfo[] t_grids=new IGridInfo[] {grids.Pick(4)};
+IGridInfo[] t_grids = grids;
 t_grids;
 **************
-List of 1 instances of IGridInfo {
-  0: { Guid = 5b89411c-7ec2-4cdc-8518-af2afd13ed84; Name = Xdg_SFB_Performance_r3_J13824; Cell Count = 13824; Dim = 3 }
+List of 8 instances of IGridInfo {
+  0: { Guid = 62946a66-0f6b-4027-8473-e99c4725b302; Name = Xdg_SFB_Performance_test_J8; Cell Count = 8; Dim = 3 }
+  1: { Guid = 6415f7ec-6647-49f7-b80a-716bd80439ac; Name = Xdg_SFB_Performance_test_J64; Cell Count = 64; Dim = 3 }
+  2: { Guid = f8944ba0-bb66-4233-bdee-df17524403c9; Name = Xdg_SFB_Performance_test_J512; Cell Count = 512; Dim = 3 }
+  3: { Guid = 7ff74a97-a6cf-49ac-a0bb-db2d322afa29; Name = Xdg_SFB_Performance_test_J4096; Cell Count = 4096; Dim = 3 }
+  4: { Guid = 5b89411c-7ec2-4cdc-8518-af2afd13ed84; Name = Xdg_SFB_Performance_r3_J13824; Cell Count = 13824; Dim = 3 }
+  5: { Guid = a9249da7-9129-40f6-b3bd-69d7de23c033; Name = Xdg_SFB_Performance_test_J32768; Cell Count = 32768; Dim = 3 }
+  6: { Guid = ab94737f-267d-4344-acfd-84138c0fafd7; Name = Xdg_SFB_Performance_r3_J110592; Cell Count = 110592; Dim = 3 }
+  7: { Guid = 2cdb0b83-3a94-4d39-a26d-a73d7ab8c809; Name = Xdg_SFB_Performance_test_J262144; Cell Count = 262144; Dim = 3 }
 }
 ==============
 controls.Clear();
@@ -331,14 +334,25 @@ foreach(IGridInfo grd in t_grids) {
     ctrl.SessionName           = "XdgPoissonVelocity_"+caseName;
     ctrl.ProjectName           = WFlowName;
     
-    ctrl.AgglomerationThreshold = 0.1;
+    ctrl.AgglomerationThreshold = 0.3;
     
     controls.Add(ctrl);
 }
 }
 }
 **************
-setting up: J13824_k3_exp_Kcycle_schwarz
+setting up: J8_k5_exp_gmres_levelpmg
+setting up: J64_k5_exp_gmres_levelpmg
+setting up: J512_k5_exp_gmres_levelpmg
+setting up: J4096_k5_exp_gmres_levelpmg
+setting up: J13824_k5_exp_gmres_levelpmg
+setting up: J32768_k5_exp_gmres_levelpmg
+setting up: J8_k5_exp_Kcycle_schwarz
+setting up: J64_k5_exp_Kcycle_schwarz
+setting up: J512_k5_exp_Kcycle_schwarz
+setting up: J4096_k5_exp_Kcycle_schwarz
+setting up: J13824_k5_exp_Kcycle_schwarz
+setting up: J32768_k5_exp_Kcycle_schwarz
 
 ==============
 **************
@@ -382,10 +396,109 @@ foreach(var ctrl in controls) {
     //ctrl.RunBatch(myBatch);
 }
 **************
- Submitting: XdgPoissonVelocity_J13824_k3_exp_Kcycle_schwarz
-Job is marked as success by job manager, but no session info in database is found; performing new deployment and submission.
+ Submitting: XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg
+Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep26_18-48-52
+Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep27_18-05-43
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+ Submitting: XdgPoissonVelocity_J64_k5_exp_gmres_levelpmg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep27_18-06-02
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+ Submitting: XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep27_18-06-22
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+ Submitting: XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep27_18-06-41
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+ Submitting: XdgPoissonVelocity_J13824_k5_exp_gmres_levelpmg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep27_18-07-01
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+ Submitting: XdgPoissonVelocity_J32768_k5_exp_gmres_levelpmg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep27_18-07-21
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+ Submitting: XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep27_18-07-41
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+ Submitting: XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep27_18-08-00
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+ Submitting: XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep27_18-08-21
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+ Submitting: XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep27_18-08-42
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+ Submitting: XdgPoissonVelocity_J13824_k5_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep27_18-09-02
+Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 28 files.
+   writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+ Submitting: XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\XdgPoisson32019Sep27_18-09-22
 Source directory: G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
 copied 28 files.
    writing file: control.obj
@@ -408,7 +521,7 @@ List of 0 instances of KeyValuePair{String,Job} {
 using System.IO
 **************
 ==============
-//write out stout
+//write out stdout
 Dictionary<string, string> Stoutlist = new Dictionary<string, string>();
 var somelist = WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.FinishedSuccessful));
 //var somelist = WorkflowMgm.AllJobs;
@@ -511,34 +624,34 @@ List of 48 instances of ISessionInfo {
   47: Xdg_SFB_Performance_r0	XdgPoissonVelocity_J8_k2_classic_pardiso	09/20/2019 13:07:19	76a019e9...
 }
 ==============
-tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.RunningOrCrashed().ForEach(s=>s.ProjectName=WFlowName+"_failed");
+//tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.RunningOrCrashed().ForEach(s=>s.ProjectName=WFlowName+"_failed");
 **************
 ==============
-tempDB.Projects.Where(p=>p.Key.Contains(WFlowName+"_failed")).Pick(0).Value
+//tempDB.Projects.Where(p=>p.Key.Contains(WFlowName+"_failed")).Pick(0).Value
 **************
 List of 19 instances of ISessionInfo {
-  0: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J32768_k5_classic_pardiso*	09/22/2019 13:04:02	6a7bc838...
-  1: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz*	09/22/2019 13:04:01	8aeb3f74...
-  2: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J32768_k5_exp_gmres_levelpmg*	09/22/2019 13:04:02	8f664514...
-  3: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz*	09/22/2019 13:04:00	40ba4ea4...
-  4: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J4096_k5_classic_pardiso*	09/22/2019 13:04:02	b964d61f...
-  5: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg*	09/22/2019 13:04:01	7ce23584...
-  6: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz*	09/22/2019 13:04:01	8fc1f40d...
-  7: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J64_k5_exp_gmres_levelpmg*	09/22/2019 13:04:02	07195f20...
-  8: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz*	09/22/2019 02:12:53	83ebb30a...
-  9: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg*	09/22/2019 13:04:02	dabf5f03...
-  10: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz*	09/22/2019 01:50:40	c3dc7077...
-  11: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz*	09/22/2019 02:09:30	8ccd3eb0...
-  12: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J64_k5_exp_gmres_levelpmg*	09/22/2019 01:37:59	37746796...
-  13: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J32768_k5_exp_gmres_levelpmg*	09/22/2019 01:43:03	5a7f531f...
-  14: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg*	09/22/2019 01:42:14	5fae9fa3...
-  15: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J32768_k5_classic_pardiso*	09/22/2019 01:23:18	a5bfdbbd...
-  16: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg*	09/22/2019 01:25:59	faa590e0...
-  17: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J262144_k2_classic_pardiso*	09/22/2019 01:17:39	43d605c2...
-  18: Xdg_SFB_Performance_r2_failed	XdgPoissonVelocity_J4096_k5_classic_pardiso*	09/22/2019 01:22:28	0d8eaf5f...
+  0: Xdg_SFB_Performance_r2_failed  XdgPoissonVelocity_J32768_k5_classic_pardiso*   09/22/2019 13:04:02 6a7bc838...
+  1: Xdg_SFB_Performance_r2_failed  XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz*   09/22/2019 13:04:01 8aeb3f74...
+  2: Xdg_SFB_Performance_r2_failed  XdgPoissonVelocity_J32768_k5_exp_gmres_levelpmg*    09/22/2019 13:04:02 8f664514...
+  3: Xdg_SFB_Performance_r2_failed  XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz*    09/22/2019 13:04:00 40ba4ea4...
+  4: Xdg_SFB_Performance_r2_failed  XdgPoissonVelocity_J4096_k5_classic_pardiso*    09/22/2019 13:04:02 b964d61f...
+  5: Xdg_SFB_Performance_r2_failed  XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg* 09/22/2019 13:04:01 7ce23584...
+  6: Xdg_SFB_Performance_r2_failed  XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz* 09/22/2019 13:04:01 8fc1f40d...
+  7: Xdg_SFB_Performance_r2_failed  XdgPoissonVelocity_J64_k5_exp_gmres_levelpmg*   09/22/2019 13:04:02 07195f20...
+  8: Xdg_SFB_Performance_r2_failed  XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz*    09/22/2019 02:12:53 83ebb30a...
+  9: Xdg_SFB_Performance_r2_failed  XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg*  09/22/2019 13:04:02 dabf5f03...
+  10: Xdg_SFB_Performance_r2_failed XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz*   09/22/2019 01:50:40 c3dc7077...
+  11: Xdg_SFB_Performance_r2_failed XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz* 09/22/2019 02:09:30 8ccd3eb0...
+  12: Xdg_SFB_Performance_r2_failed XdgPoissonVelocity_J64_k5_exp_gmres_levelpmg*   09/22/2019 01:37:59 37746796...
+  13: Xdg_SFB_Performance_r2_failed XdgPoissonVelocity_J32768_k5_exp_gmres_levelpmg*    09/22/2019 01:43:03 5a7f531f...
+  14: Xdg_SFB_Performance_r2_failed XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg* 09/22/2019 01:42:14 5fae9fa3...
+  15: Xdg_SFB_Performance_r2_failed XdgPoissonVelocity_J32768_k5_classic_pardiso*   09/22/2019 01:23:18 a5bfdbbd...
+  16: Xdg_SFB_Performance_r2_failed XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg*  09/22/2019 01:25:59 faa590e0...
+  17: Xdg_SFB_Performance_r2_failed XdgPoissonVelocity_J262144_k2_classic_pardiso*  09/22/2019 01:17:39 43d605c2...
+  18: Xdg_SFB_Performance_r2_failed XdgPoissonVelocity_J4096_k5_classic_pardiso*    09/22/2019 01:22:28 0d8eaf5f...
 }
 ==============
-tempDB.Projects.Where(p=>p.Key.Equals(WFlowName)).Pick(0).Value.Where(s=>s.Name.Contains("J13824_k5_exp_gmres_levelpmg")).Pick(0).Delete(true)
+//tempDB.Projects.Where(p=>p.Key.Equals(WFlowName)).Pick(0).Value.Where(s=>s.Name.Contains("J13824_k5_exp_gmres_levelpmg")).Pick(0).Delete(true)
 **************
 Session 9d684405-2826-4ba5-b33d-75a7dfe04725 deleted.
 
@@ -558,7 +671,7 @@ Session 9d684405-2826-4ba5-b33d-75a7dfe04725 deleted.
 ==============
 WorkflowMgm.SessionTable.Rows.Count;
 **************
-54
+53
 ==============
 //tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4);
 //tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4).OpenSessionDirectory();
@@ -580,7 +693,7 @@ tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value.Pick(4).Timest
 tempDB.Projects.Where(p=>p.Key.Equals(WFlowName)).Pick(0).Value.Pick(0).KeysAndQueries
 **************
 List of 67 instances of KeyValuePair{String,Object} {
-  0: [SessionName, XdgPoissonVelocity_J13824_k5_exp_gmres_levelpmg]
+  0: [SessionName, XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg]
   1: [DGdegree:Phi, 2]
   2: [DGdegree:u, 5]
   3: [GeneratedFromCode, False]
@@ -592,12 +705,12 @@ List of 67 instances of KeyValuePair{String,Object} {
   9: [MU_B, -1000]
   10: [ExcactSolSupported, False]
   11: [PrePreCond, 4]
-  12: [AgglomerationThreshold, 0.1]
+  12: [AgglomerationThreshold, 0.3]
   13: [penalty_multiplyer, 2]
   14: [pOff, 2]
   15: [SuppressExceptionPrompt, False]
   16: [GridPartType, 5]
-  17: [ProjectName, Xdg_SFB_Performance_r3]
+  17: [ProjectName, Xdg_SFB_Performance_r4_1]
   18: [NoOfTimesteps, -1]
   19: [Endtime, 1.79769313486232E+308]
   20: [saveperiod, 1]
@@ -644,9 +757,9 @@ List of 67 instances of KeyValuePair{String,Object} {
   61: [AMR_startUpSweeps, 1]
   62: [CutCellQuadratureType, 5]
   63: [ContinueOnIoError, True]
-  64: [Grid:NoOfCells, 13824]
-  65: [Grid:hMax, 0.144337567297407]
-  66: [Grid:hMin, 0.0833333333333333]
+  64: [Grid:NoOfCells, 8]
+  65: [Grid:hMax, 1.73205080756888]
+  66: [Grid:hMin, 1]
 }
 ==============
 static class AddCols {
@@ -699,7 +812,7 @@ var SessTab = WorkflowMgm.SessionTable;
 ==============
 SessTab.Rows.Count;
 **************
-54
+53
 ==============
 // The Session column can't be serialized,
 // we have to remove it
@@ -728,6 +841,12 @@ SessTab.SaveToFile(docpath);
 **************
 ==============
 LastError;
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************
