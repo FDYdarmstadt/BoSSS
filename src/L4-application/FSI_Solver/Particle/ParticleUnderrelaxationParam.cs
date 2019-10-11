@@ -22,15 +22,15 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="convergenceLimit">
         /// The convergence limit for the hydrodynamic forces.
         /// </param>
-        /// <param name="underrelaxationFactor">
+        /// <param name="relaxationFactor">
         /// The underrelaxation factor.
         /// </param>
         /// <param name="useAddaptiveUnderrelaxation">
         /// Set true if you want addaptive underrelaxation.
         /// </param>
-        public ParticleUnderrelaxationParam(double convergenceLimit, double underrelaxationFactor, bool useAddaptiveUnderrelaxation) {
+        public ParticleUnderrelaxationParam(double convergenceLimit, double relaxationFactor, bool useAddaptiveUnderrelaxation) {
             ConvergenceLimit = convergenceLimit;
-            UnderrelaxationFactor = underrelaxationFactor;
+            UnderrelaxationFactor = relaxationFactor;
             UsaAddaptiveUnderrelaxation = useAddaptiveUnderrelaxation;
         }
 

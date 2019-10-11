@@ -80,7 +80,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Circumference.
         /// </summary>
-        protected override double Circumference => m_Length * 5;
+        public override double Circumference => m_Length * 5;
 
         /// <summary>
         /// Moment of inertia.

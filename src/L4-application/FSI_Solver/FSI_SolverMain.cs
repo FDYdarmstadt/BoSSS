@@ -353,12 +353,12 @@ namespace BoSSS.Application.FSI_Solver {
             MassMatrixShapeandDependence MassMatrixShape;
             switch (((FSI_Control)Control).Timestepper_LevelSetHandling) {
                 case LevelSetHandling.Coupled_Iterative:
+                case LevelSetHandling.FSI_LieSplittingFullyCoupled:
                     MassMatrixShape = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
                     break;
 
                 case LevelSetHandling.Coupled_Once:
                 case LevelSetHandling.LieSplitting:
-                case LevelSetHandling.FSI_LieSplittingFullyCoupled:
                 case LevelSetHandling.StrangSplitting:
                 case LevelSetHandling.None:
                     MassMatrixShape = MassMatrixShapeandDependence.IsTimeDependent;
@@ -580,15 +580,6 @@ namespace BoSSS.Application.FSI_Solver {
             // Update level set tracker
             // =======================================================
             LsTrk.UpdateTracker(__NearRegionWith: 2);
-
-            if (!setupLevelSet) {
-                foreach (Particle p in m_Particles) {
-                    if (p.Motion.UseAddedDamping) {
-                        p.Motion.CalculateDampingTensor(p, LsTrk, FluidViscosity, FluidDensity, DtMax);
-                        p.Motion.ExchangeAddedDampingTensors();
-                    }
-                }
-            }
             setupLevelSet = true;
         }
 
@@ -777,7 +768,7 @@ namespace BoSSS.Application.FSI_Solver {
                 }
             }
         }
-
+        bool testAddedDamping = true;
         /// <summary>
         /// runs solver one step?!
         /// </summary>
@@ -796,6 +787,15 @@ namespace BoSSS.Application.FSI_Solver {
                 ResLogger.TimeStep = TimestepInt;
                 dt = GetFixedTimestep();
                 Console.WriteLine("Starting time-step " + TimestepInt + "...");
+                if (testAddedDamping) {
+                    foreach (Particle p in m_Particles) {
+                        if (p.Motion.UseAddedDamping) {
+                            p.Motion.CalculateDampingTensor(p, LsTrk, FluidViscosity, FluidDensity, DtMax);
+                            p.Motion.ExchangeAddedDampingTensors();
+                        }
+                    }
+                    testAddedDamping = false;
+                }
                 // used later to check if there is exactly one push per timestep
                 int OldPushCount = LsTrk.PushCount;
 
@@ -834,7 +834,8 @@ namespace BoSSS.Application.FSI_Solver {
                         int iterationCounter = 0;
                         double hydroDynForceTorqueResidual = double.MaxValue;
                         while (hydroDynForceTorqueResidual > HydrodynConvergenceCriterion) {
-                            Console.WriteLine("Auxillary stuff");
+                            Stopwatch stopWatch = new Stopwatch();
+                            stopWatch.Start();
                             Auxillary.CheckForMaxIterations(iterationCounter, ((FSI_Control)Control).maxIterationsFullyCoupled);
                             Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
                             Auxillary.SaveOldParticleState(m_Particles);
@@ -842,16 +843,12 @@ namespace BoSSS.Application.FSI_Solver {
                             // actual physics
                             // -------------------------------------------------
                             if (IsFullyCoupled && iterationCounter == 0) {
-                                Console.WriteLine("Init");
                                 InitializeParticlePerIteration(m_Particles, TimestepInt);
                             }
                             else {
-                                Console.WriteLine("bdf timestepper");
                                 m_BDF_Timestepper.Solve(phystime, dt, false);
-                                Console.WriteLine("Hydrodynamcs");
                                 CalculateHydrodynamicForces(m_Particles, dt, !IsFullyCoupled);
                             }
-                            Console.WriteLine("Particle Velocity");
                             CalculateParticleVelocity(m_Particles, dt, iterationCounter);
 
                             // not a fully coupled system? -> no iteration
@@ -861,42 +858,39 @@ namespace BoSSS.Application.FSI_Solver {
 
                             // residual
                             // -------------------------------------------------
-                            Console.WriteLine("Residual");
                             hydroDynForceTorqueResidual = Auxillary.CalculateParticleResidual(m_Particles, ref iterationCounter);
 
                             // print iteration status
                             // -------------------------------------------------
-                            Console.WriteLine("Print1");
                             Auxillary.PrintResultToConsole(m_Particles, phystime, hydroDynForceTorqueResidual, iterationCounter);
-                            Console.WriteLine("Log1");
+                            //Auxillary.PrintResultToConsole(phystime, hydroDynForceTorqueResidual, iterationCounter);
                             LogResidual(phystime, iterationCounter, hydroDynForceTorqueResidual);
+                            stopWatch.Stop();
+                            TimeSpan timeSpan = stopWatch.Elapsed;
+                            double printMillis = (double)timeSpan.Ticks / 10000;
+                            Console.WriteLine("Milliseconds per iteration: " + printMillis);
+                            Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count().MPISum());
                         }
 
                         // collision
                         // -------------------------------------------------
-                        Console.WriteLine("Collision");
                         CalculateCollision(m_Particles, cellColor, dt);
 
                         // particle position
                         // -------------------------------------------------
-                        Console.WriteLine("Position");
                         CalculateParticlePosition(dt);
 
                         // print
                         // -------------------------------------------------
-                        Console.WriteLine("Print2");
                         Auxillary.PrintResultToConsole(m_Particles, FluidViscosity, FluidDensity, phystime, TimestepInt, ((FSI_Control)Control).FluidDomainVolume, out double Test_RotationalVelocity, out Test_Force);
-                        Console.WriteLine("Log2");
                         LogPhysicalData(phystime);
 
                         // Save for NUnit Test
                         // -------------------------------------------------
-                        Console.WriteLine("NUnit");
                         SaveForNUnitTest(Test_RotationalVelocity);
 
                         // level set tracker 
                         // -------------------------------------------------
-                        Console.WriteLine("LsTrk push");
                         if (IsFullyCoupled) {// in other branches, called by the BDF timestepper
                             LsTrk.IncreaseHistoryLength(1);
                             LsTrk.PushStacks();
@@ -913,7 +907,6 @@ namespace BoSSS.Application.FSI_Solver {
                     throw new ApplicationException("Illegal number of level-set push actions in time-step." + (LsTrk.PushCount - OldPushCount) + " It is important that LevelSetTracker.PushStacks() is called *exactly once per time-step*, at the beginning.");
                 }
                 ResLogger.NextTimestep(false);
-                Console.WriteLine("Done with time-step " + TimestepInt + ".");
                 return dt;
             }
         }
@@ -975,7 +968,7 @@ namespace BoSSS.Application.FSI_Solver {
                     currentParticle.Motion.UpdateDampingTensors();
                 }
                 currentParticle.Motion.SaveHydrodynamicsOfPreviousTimestep();
-                currentParticle.Motion.PredictForceAndTorque(currentParticle.ActiveStress, TimestepInt);
+                currentParticle.Motion.PredictForceAndTorque(currentParticle.ActiveStress, currentParticle.Circumference, TimestepInt);
             }
         }
 

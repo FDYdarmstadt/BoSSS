@@ -340,9 +340,7 @@ namespace FSI_Solver {
             ClosestPoint_P1 = MultidimensionalArray.Create(SpatialDim);
             Overlapping = false;
             int NoOfSubParticles1 = Particle1 == null ? 1 : Particle1.NoOfSubParticles;
-
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
+;
 
             for (int i = 0; i < Particle0.NoOfSubParticles; i++) {
                 for (int j = 0; j < NoOfSubParticles1; j++) {
@@ -359,15 +357,6 @@ namespace FSI_Solver {
                     }
                 }
             }
-
-            stopWatch.Stop();
-            TimeSpan timeSpan = stopWatch.Elapsed;
-            double printMillis = (double)timeSpan.Ticks / 10000;
-            Console.WriteLine("Milliseconds of GJK: " + printMillis);
-            Console.WriteLine("Distance: " + Distance);
-            Console.WriteLine("ClosestPoint P0, 0: " + ClosestPoint_P0[0] + ", 1: " + ClosestPoint_P0[1]);
-            Console.WriteLine("ClosestPoint P1, 0: " + ClosestPoint_P1[0] + ", 1: " + ClosestPoint_P1[1]);
-
         }
 
         /// <summary>
@@ -547,21 +536,21 @@ namespace FSI_Solver {
             int SpatialDim = particle.Motion.GetPosition(0).Count();
             SupportPoint = new double[SpatialDim];
             // A direct formulation of the support function for a sphere exists, thus it is also possible to map it to an ellipsoid.
-            //if (particle is Particle_Ellipsoid || particle is Particle_Sphere || particle is Particle_Rectangle || particle is Particle_Shell) {
-            //    SupportPoint = particle.GetSupportPoint(Vector, SubParticleID);
-            //}
-
-            // Binary search in all other cases.
-            //else 
-            {
+            if (particle is Particle_Ellipsoid || particle is Particle_Sphere || particle is Particle_Rectangle || particle is Particle_Shell) {
+                SupportPoint = particle.GetSupportPoint(Vector, SubParticleID);
+            }
+            // Interpolated binary search in all other cases.
+            else {
                 double angle = particle.Motion.GetAngle(0);
                 double[] particleDirection = new double[] { Math.Cos(angle), Math.Sin(angle) };
-                double searchStartAngle = 2 * Math.PI - Math.Acos(Aux.DotProduct(Vector, particleDirection) / Vector.L2Norm());
+                double testSign = particleDirection[0] * Vector[1] - particleDirection[1] * Vector[0];
+                double searchStartAngle = (1 - Math.Sign(testSign)) * Math.PI / 2 + Math.Acos(Aux.DotProduct(Vector, particleDirection) / Vector.L2Norm());
                 double L = searchStartAngle - Math.PI;
                 double R = searchStartAngle + Math.PI;
-                while (L <= R) {
+                while (L < R) {
                     searchStartAngle = (L + R) / 2;
-                    MultidimensionalArray SurfacePoints = particle.GetSurfacePoints(m_hMin, searchStartAngle, SubParticleID);
+                    double dAngle = 1e-8;
+                    MultidimensionalArray SurfacePoints = particle.GetSurfacePoints(dAngle, searchStartAngle, SubParticleID);
                     double[] RightNeighbour = new double[2];
                     double[] LeftNeighbour = new double[2];
                     for (int d = 0; d < 2; d++) {
@@ -575,6 +564,10 @@ namespace FSI_Solver {
                         L = searchStartAngle; // Search on the right side of the current point.
                     else
                         R = searchStartAngle; // Search on the left side.
+                }
+                double[] position = particle.Motion.GetPosition(0);
+                for (int d = 0; d < 2; d++) {
+                    SupportPoint[d] += position[d];
                 }
             }
         }

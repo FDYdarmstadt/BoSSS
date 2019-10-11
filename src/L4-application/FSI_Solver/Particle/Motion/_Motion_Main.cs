@@ -493,19 +493,19 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="timestepID">
         /// The timestep ID. Used to distinguish between the first timestep and all other steps.
         /// </param>
-        public virtual void PredictForceAndTorque(double activeStress, int timestepID) {
+        public virtual void PredictForceAndTorque(double activeStress, double circumference, int timestepID) {
             if (timestepID == 1) {
-                m_HydrodynamicForces[0][0] = MaxParticleLengthScale * Math.Cos(m_Angle[0]) * activeStress / 2 + Gravity[0] * Density * ParticleArea / 10;
-                m_HydrodynamicForces[0][1] = MaxParticleLengthScale * Math.Sin(m_Angle[0]) * activeStress / 2 + Gravity[1] * Density * ParticleArea / 10;
+                m_HydrodynamicForces[0][0] = circumference * Math.Cos(m_Angle[0]) * activeStress + Gravity[0] * Density * ParticleArea / 10;
+                m_HydrodynamicForces[0][1] = circumference * Math.Sin(m_Angle[0]) * activeStress + Gravity[1] * Density * ParticleArea / 10;
                 m_HydrodynamicTorque[0] = 0;
             }
             else {
                 for (int d = 0; d < spatialDim; d++) {
-                    m_HydrodynamicForces[0][d] = (m_HydrodynamicForces[1][d] + 4 * m_HydrodynamicForces[2][d] + m_HydrodynamicForces[3][d]) / 6;
+                    m_HydrodynamicForces[0][d] = 2 * m_HydrodynamicForces[1][d] - m_HydrodynamicForces[2][d];
                     if (Math.Abs(m_HydrodynamicForces[0][d]) < 1e-20)
                         m_HydrodynamicForces[0][d] = 0;
                 }
-                m_HydrodynamicTorque[0] = (m_HydrodynamicTorque[1] + 4 * m_HydrodynamicTorque[2] + m_HydrodynamicTorque[3]) / 6;
+                m_HydrodynamicTorque[0] = 2 * m_HydrodynamicTorque[1] - m_HydrodynamicTorque[2];
                 if (Math.Abs(m_HydrodynamicTorque[0]) < 1e-20)
                     m_HydrodynamicTorque[0] = 0;
             }
@@ -617,7 +617,7 @@ namespace BoSSS.Application.FSI_Solver {
         protected virtual double[] CalculateTranslationalVelocity(double dt) {
             double[] l_TranslationalVelocity = new double[spatialDim];
             for (int d = 0; d < spatialDim; d++) {
-                l_TranslationalVelocity[d] = m_TranslationalVelocity[1][d] + (m_TranslationalAcceleration[0][d] + 4 * m_TranslationalAcceleration[1][d] + m_TranslationalAcceleration[2][d]) * dt / 6;
+                l_TranslationalVelocity[d] = m_TranslationalVelocity[1][d] + (4 * m_TranslationalAcceleration[0][d] + m_TranslationalAcceleration[1][d] + m_TranslationalAcceleration[2][d]) * dt / 6;
             }
             Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
             return l_TranslationalVelocity;

@@ -77,7 +77,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Circumference of an elliptic particle. Approximated with Ramanujan.
         /// </summary>
-        protected override double Circumference => Math.PI * ((m_Length + m_Thickness) + (3 * (m_Length - m_Thickness).Pow2()) / (10 * (m_Length + m_Thickness) + Math.Sqrt(m_Length.Pow2() + 14 * m_Length * m_Thickness + m_Thickness.Pow2())));
+        public override double Circumference => Math.PI * ((m_Length + m_Thickness) + (3 * (m_Length - m_Thickness).Pow2()) / (10 * (m_Length + m_Thickness) + Math.Sqrt(m_Length.Pow2() + 14 * m_Length * m_Thickness + m_Thickness.Pow2())));
 
         /// <summary>
         /// Moment of inertia of an elliptic particle.
@@ -139,31 +139,18 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="hMin">
         /// Minimal cell length. Used to specify the number of surface points.
         /// </param>
-        override public MultidimensionalArray GetSurfacePoints(double hMin, double searchAngle, int subParticleID) {
+        override public MultidimensionalArray GetSurfacePoints(double dAngle, double searchAngle, int subParticleID) {
             if (SpatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported.");
             double angle = Motion.GetAngle(0);
-            double[] position = Motion.GetPosition(0);
-
-            double noOfSurfacePoints = 10000 * Circumference / hMin;
-            double inifinitisemalAngle = 2 * Math.PI / noOfSurfacePoints;
             int noOfCurrentPointWithNeighbours = 3;
             MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(noOfCurrentPointWithNeighbours, SpatialDim);
             for (int j = 0; j < noOfCurrentPointWithNeighbours; j++) {
-                double verticalAxis = m_Length * Math.Cos(searchAngle + inifinitisemalAngle * (j - 1));
-                double horizontalAxis = m_Thickness * Math.Sin(searchAngle + inifinitisemalAngle * (j - 1));
-                SurfacePoints[j, 0] = (verticalAxis * Math.Cos(angle) - horizontalAxis * Math.Sin(angle)) + position[0];
-                SurfacePoints[j, 1] = (verticalAxis * Math.Sin(angle) + horizontalAxis * Math.Cos(angle)) + position[1];
+                double verticalAxis = m_Length * Math.Cos(searchAngle + dAngle * (j - 1));
+                double horizontalAxis = m_Thickness * Math.Sin(searchAngle + dAngle * (j - 1));
+                SurfacePoints[j, 0] = (verticalAxis * Math.Cos(angle) - horizontalAxis * Math.Sin(angle));// + position[0];
+                SurfacePoints[j, 1] = (verticalAxis * Math.Sin(angle) + horizontalAxis * Math.Cos(angle));// + position[1];
             }
-            //double[] InfinitisemalAngle = GenericBlas.Linspace(0, Math.PI * 2, currentPointWithNeighbours + 1);
-            //if (Math.Abs(10 * Circumference / hMin + 1) >= int.MaxValue)
-            //    throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");
-            //for (int j = 0; j < currentPointWithNeighbours; j++) {
-            //    double temp0 = Math.Cos(InfinitisemalAngle[j]) * m_Length;
-            //    double temp1 = Math.Sin(InfinitisemalAngle[j]) * m_Thickness;
-            //    SurfacePoints[0, j, 0] = (temp0 * Math.Cos(angle) - temp1 * Math.Sin(angle)) + position[0];
-            //    SurfacePoints[0, j, 1] = (temp0 * Math.Sin(angle) + temp1 * Math.Cos(angle)) + position[1];
-            //}
             return SurfacePoints;
         }
 

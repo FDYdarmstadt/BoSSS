@@ -75,7 +75,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Circumference. Approximated with sphere.
         /// </summary>
-        protected override double Circumference => Math.PI * m_Length * m_Thickness;
+        public override double Circumference => Math.PI * m_Length * m_Thickness;
 
         /// <summary>
         /// Area occupied by the particle. Approximated with sphere.

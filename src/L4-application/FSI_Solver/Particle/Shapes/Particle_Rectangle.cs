@@ -77,7 +77,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Circumference of an elliptic particle. Approximated with Ramanujan.
         /// </summary>
-        protected override double Circumference => 2 * m_Length + 2 * m_Thickness;
+        public override double Circumference => 2 * m_Length + 2 * m_Thickness;
 
         /// <summary>
         /// Moment of inertia of an elliptic particle.

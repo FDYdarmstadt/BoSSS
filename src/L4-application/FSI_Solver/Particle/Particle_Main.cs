@@ -154,7 +154,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Circumference of the current particle.
         /// </summary>
-        protected abstract double Circumference { get; }
+        public abstract double Circumference { get; }
 
         /// <summary>
         /// Moment of inertia of the current particle.

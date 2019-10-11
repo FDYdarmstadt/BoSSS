@@ -354,6 +354,21 @@ namespace FSI_Solver {
         /// <param name="Particles">
         /// A list of all particles
         /// </param>
+        /// <param name="phystime"></param>
+        /// <param name="IterationCounter"> </param>
+        internal void PrintResultToConsole(double phystime, double residual, int IterationCounter) {
+            StringBuilder OutputBuilder = new StringBuilder();
+            OutputBuilder.AppendLine("Force and torque residual: " + residual + ", Time: " + phystime + ", Iteration #" + IterationCounter);
+            OutputBuilder.AppendLine("=======================================================");
+            Console.WriteLine(OutputBuilder.ToString());
+        }
+
+        /// <summary>
+        /// Residual for fully coupled system
+        /// </summary>
+        /// <param name="Particles">
+        /// A list of all particles
+        /// </param>
         /// <param name="FluidViscosity"></param>
         /// <param name="phystime"></param>
         /// <param name="TimestepInt"></param>

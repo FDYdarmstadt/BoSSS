@@ -85,7 +85,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Circumference. Approximated with sphere.
         /// </summary>
-        protected override double Circumference => (2 * m_Length + 2 * m_Thickness + 2 * Math.PI * m_Thickness) / 2;
+        public override double Circumference => (2 * m_Length + 2 * m_Thickness + 2 * Math.PI * m_Thickness) / 2;
 
         /// <summary>
         /// Area occupied by the particle. 
@@ -150,29 +150,25 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="hMin">
         /// Minimal cell length. Used to specify the number of surface points.
         /// </param>
-        override public MultidimensionalArray GetSurfacePoints(double hMin, double searchAngle, int subParticleID) {
+        override public MultidimensionalArray GetSurfacePoints(double dAngle, double searchAngle, int subParticleID) {
             if (SpatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
-
-            int NoOfSurfacePoints = Convert.ToInt32(1000 * Circumference / hMin);
-            int QuarterSurfacePoints = NoOfSurfacePoints / 4;
-            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSubParticles, 4 * QuarterSurfacePoints - 2, SpatialDim);
-            double[] Infinitisemalangle = GenericBlas.Linspace(0, Math.PI / 2, QuarterSurfacePoints + 2);
-            if (Math.Abs(10 * Circumference / hMin + 1) >= int.MaxValue)
-                throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");
-            for (int j = 0; j < QuarterSurfacePoints; j++) {
-                SurfacePoints[0, j, 0] = (Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_Exponent) * m_Length * Math.Cos(Motion.GetAngle(0)) - Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_Exponent) * m_Thickness * Math.Sin(Motion.GetAngle(0))) + Motion.GetPosition(0)[0];
-                SurfacePoints[0, j, 1] = (Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_Exponent) * m_Length * Math.Sin(Motion.GetAngle(0)) + Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_Exponent) * m_Thickness * Math.Cos(Motion.GetAngle(0))) + Motion.GetPosition(0)[1];
-                SurfacePoints[0, 2 * QuarterSurfacePoints + j - 1, 0] = (-(Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_Exponent) * m_Length) * Math.Cos(Motion.GetAngle(0)) + Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_Exponent) * m_Thickness * Math.Sin(Motion.GetAngle(0))) + Motion.GetPosition(0)[0];
-                SurfacePoints[0, 2 * QuarterSurfacePoints + j - 1, 1] = (-(Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_Exponent) * m_Length) * Math.Sin(Motion.GetAngle(0)) - Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_Exponent) * m_Thickness * Math.Cos(Motion.GetAngle(0))) + Motion.GetPosition(0)[1]; ;
-            }
-            for (int j = 1; j < QuarterSurfacePoints; j++) {
-                SurfacePoints[0, 2 * QuarterSurfacePoints - j - 1, 0] = (-(Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_Exponent) * m_Length) * Math.Cos(Motion.GetAngle(0)) - Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_Exponent) * m_Thickness * Math.Sin(Motion.GetAngle(0))) + Motion.GetPosition(0)[0];
-                SurfacePoints[0, 2 * QuarterSurfacePoints - j - 1, 1] = (-(Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_Exponent) * m_Length) * Math.Sin(Motion.GetAngle(0)) + Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_Exponent) * m_Thickness * Math.Cos(Motion.GetAngle(0))) + Motion.GetPosition(0)[1];
-                SurfacePoints[0, 4 * QuarterSurfacePoints - j - 2, 0] = (Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_Exponent) * m_Length * Math.Cos(Motion.GetAngle(0)) + Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_Exponent) * m_Thickness * Math.Sin(Motion.GetAngle(0))) + Motion.GetPosition(0)[0];
-                SurfacePoints[0, 4 * QuarterSurfacePoints - j - 2, 1] = (Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_Exponent) * m_Length * Math.Sin(Motion.GetAngle(0)) - Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_Exponent) * m_Thickness * Math.Cos(Motion.GetAngle(0))) + Motion.GetPosition(0)[1];
-            }
-            return SurfacePoints;
+            throw new NotImplementedException("ToDo");
+            //int noOfCurrentPointWithNeighbours = 3;
+            //MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(noOfCurrentPointWithNeighbours, SpatialDim);
+            //for (int j = 0; j < QuarterSurfacePoints; j++) {
+            //    SurfacePoints[0, j, 0] = (Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_Exponent) * m_Length * Math.Cos(Motion.GetAngle(0)) - Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_Exponent) * m_Thickness * Math.Sin(Motion.GetAngle(0))) + Motion.GetPosition(0)[0];
+            //    SurfacePoints[0, j, 1] = (Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_Exponent) * m_Length * Math.Sin(Motion.GetAngle(0)) + Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_Exponent) * m_Thickness * Math.Cos(Motion.GetAngle(0))) + Motion.GetPosition(0)[1];
+            //    SurfacePoints[0, 2 * QuarterSurfacePoints + j - 1, 0] = (-(Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_Exponent) * m_Length) * Math.Cos(Motion.GetAngle(0)) + Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_Exponent) * m_Thickness * Math.Sin(Motion.GetAngle(0))) + Motion.GetPosition(0)[0];
+            //    SurfacePoints[0, 2 * QuarterSurfacePoints + j - 1, 1] = (-(Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_Exponent) * m_Length) * Math.Sin(Motion.GetAngle(0)) - Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_Exponent) * m_Thickness * Math.Cos(Motion.GetAngle(0))) + Motion.GetPosition(0)[1]; ;
+            //}
+            //for (int j = 1; j < QuarterSurfacePoints; j++) {
+            //    SurfacePoints[0, 2 * QuarterSurfacePoints - j - 1, 0] = (-(Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_Exponent) * m_Length) * Math.Cos(Motion.GetAngle(0)) - Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_Exponent) * m_Thickness * Math.Sin(Motion.GetAngle(0))) + Motion.GetPosition(0)[0];
+            //    SurfacePoints[0, 2 * QuarterSurfacePoints - j - 1, 1] = (-(Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_Exponent) * m_Length) * Math.Sin(Motion.GetAngle(0)) + Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_Exponent) * m_Thickness * Math.Cos(Motion.GetAngle(0))) + Motion.GetPosition(0)[1];
+            //    SurfacePoints[0, 4 * QuarterSurfacePoints - j - 2, 0] = (Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_Exponent) * m_Length * Math.Cos(Motion.GetAngle(0)) + Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_Exponent) * m_Thickness * Math.Sin(Motion.GetAngle(0))) + Motion.GetPosition(0)[0];
+            //    SurfacePoints[0, 4 * QuarterSurfacePoints - j - 2, 1] = (Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_Exponent) * m_Length * Math.Sin(Motion.GetAngle(0)) - Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_Exponent) * m_Thickness * Math.Cos(Motion.GetAngle(0))) + Motion.GetPosition(0)[1];
+            //}
+            //return SurfacePoints;
         }
 
         /// <summary>

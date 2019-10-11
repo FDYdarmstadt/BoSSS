@@ -20,29 +20,29 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HardcodedControl_multipleActiveParticles : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control ActiveRods_noBackroundFlow(int k = 3) {
+        public static FSI_Control ActiveRods_noBackroundFlow(int k = 2) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "9_active_Rods");
-            C.SetSaveOptions(@"D:\BoSSS_databases\multipleActiveParticles", 1);
+            C.SetSaveOptions(@"\\hpccluster\hpccluster-scratch\deussen\cluster_db\25_particles", 1);
 
             List<string> boundaryValues = new List<string> {
                 "Wall"
             };
-            int sqrtPart = 3;
+            int sqrtPart = 1;
             C.SetBoundaries(boundaryValues);
             C.SetGrid(lengthX: 4, lengthY: 4, cellsPerUnitLength: 4, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel: 3);
-            C.hydrodynamicsConvergenceCriterion = 1e-3;
+            C.hydrodynamicsConvergenceCriterion = 1e-4;
 
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.mu_A = 0.01;
             C.PhysicalParameters.IncludeConvection = false;
 
             // Particle Properties
             // =============================
-            double particleDensity = 2.5;
-            C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.hydrodynamicsConvergenceCriterion, underrelaxationFactor: 3.0, useAddaptiveUnderrelaxation: true);
+            double particleDensity = 2;
+            C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.hydrodynamicsConvergenceCriterion, relaxationFactor: 3.0, useAddaptiveUnderrelaxation: true);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 1);
             for (int x = 0; x < sqrtPart; x++) {
                 for (int y = 0; y < sqrtPart; y++) {
