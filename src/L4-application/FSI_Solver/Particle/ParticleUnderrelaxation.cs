@@ -104,25 +104,30 @@ namespace BoSSS.Application.FSI_Solver {
         /// No. of iterations.
         /// </param>
         private double CalculateAdaptiveUnderrelaxation(double variable, double variableAtPrevIteration, double averageValueOfVar, double convergenceLimit, double predefinedFactor) {
-            double ConvergenceHelperFactor = 1;
             double UnderrelaxationCoeff = predefinedFactor * 1e-1;
             double UnderrelaxationExponent = 0;
 
-            while (Math.Abs(UnderrelaxationCoeff * variable) > 0.75 * Math.Abs(variableAtPrevIteration) && UnderrelaxationCoeff > 1e-20) {
-                UnderrelaxationExponent -= 1;
-                UnderrelaxationCoeff = predefinedFactor * Math.Pow(10, UnderrelaxationExponent);
+            if (Math.Abs(averageValueOfVar) > 1e6 * Math.Abs(variable) || Math.Abs(variable) < 1e-10) {
+                UnderrelaxationCoeff = 0;
             }
+            else {
+                while (Math.Abs(UnderrelaxationCoeff * variable) > 0.75 * Math.Abs(variableAtPrevIteration) && UnderrelaxationCoeff > 1e-15) {
+                    UnderrelaxationExponent -= 1;
+                    UnderrelaxationCoeff = predefinedFactor * Math.Pow(10, UnderrelaxationExponent);
+                }
+            }
+            
+            //if (Math.Abs(UnderrelaxationCoeff) < convergenceLimit * 1 && 1000 * Math.Abs(variable) > Math.Abs(averageValueOfVar))
+            //    UnderrelaxationCoeff = predefinedFactor * convergenceLimit * 1;
 
-            if (Math.Abs(UnderrelaxationCoeff) < convergenceLimit * 1 && 1000 * Math.Abs(variable) > Math.Abs(averageValueOfVar))
-                UnderrelaxationCoeff = predefinedFactor * convergenceLimit * 1;
-
-            if (UnderrelaxationCoeff >= predefinedFactor * 1e-1)
-                UnderrelaxationCoeff = predefinedFactor * 1e-1;
+            //if (UnderrelaxationCoeff >= predefinedFactor * 1e-1)
+            //    UnderrelaxationCoeff = predefinedFactor * 1e-1;
 
             double GlobalStateBuffer = UnderrelaxationCoeff.MPIMin();
             UnderrelaxationCoeff = GlobalStateBuffer;
 
-            return UnderrelaxationCoeff * ConvergenceHelperFactor;
+            Console.WriteLine("Underrelaxation coefficient: " + UnderrelaxationCoeff + " average value: " + averageValueOfVar + " value " + variable + " agbdbf " + (averageValueOfVar > 1e3 * variable));
+            return UnderrelaxationCoeff;
         }
     }
 }

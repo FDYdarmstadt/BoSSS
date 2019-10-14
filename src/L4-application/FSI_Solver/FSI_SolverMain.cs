@@ -842,10 +842,12 @@ namespace BoSSS.Application.FSI_Solver {
 
                             // actual physics
                             // -------------------------------------------------
-                            if (IsFullyCoupled && iterationCounter == 0) {
+                            //if (IsFullyCoupled && iterationCounter == 0) 
+                            {
                                 InitializeParticlePerIteration(m_Particles, TimestepInt);
                             }
-                            else {
+                            //else 
+                            {
                                 m_BDF_Timestepper.Solve(phystime, dt, false);
                                 CalculateHydrodynamicForces(m_Particles, dt, !IsFullyCoupled);
                             }
@@ -871,7 +873,6 @@ namespace BoSSS.Application.FSI_Solver {
                             Console.WriteLine("Milliseconds per iteration: " + printMillis);
                             Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count().MPISum());
                         }
-
                         // collision
                         // -------------------------------------------------
                         CalculateCollision(m_Particles, cellColor, dt);
@@ -968,7 +969,7 @@ namespace BoSSS.Application.FSI_Solver {
                     currentParticle.Motion.UpdateDampingTensors();
                 }
                 currentParticle.Motion.SaveHydrodynamicsOfPreviousTimestep();
-                currentParticle.Motion.PredictForceAndTorque(currentParticle.ActiveStress, currentParticle.Circumference, TimestepInt);
+                //currentParticle.Motion.PredictForceAndTorque(currentParticle.ActiveStress, currentParticle.Circumference, TimestepInt);
             }
         }
 

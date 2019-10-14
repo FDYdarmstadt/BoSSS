@@ -495,8 +495,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// </param>
         public virtual void PredictForceAndTorque(double activeStress, double circumference, int timestepID) {
             if (timestepID == 1) {
-                m_HydrodynamicForces[0][0] = circumference * Math.Cos(m_Angle[0]) * activeStress + Gravity[0] * Density * ParticleArea / 10;
-                m_HydrodynamicForces[0][1] = circumference * Math.Sin(m_Angle[0]) * activeStress + Gravity[1] * Density * ParticleArea / 10;
+                m_HydrodynamicForces[0][0] = circumference * Math.Cos(m_Angle[0]) * activeStress / 10 + Gravity[0] * Density * ParticleArea / 10;
+                m_HydrodynamicForces[0][1] = circumference * Math.Sin(m_Angle[0]) * activeStress / 10 + Gravity[1] * Density * ParticleArea / 10;
                 m_HydrodynamicTorque[0] = 0;
             }
             else {

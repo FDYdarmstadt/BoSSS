@@ -104,7 +104,26 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             // 2D
             // ============================= 
             double uAFict = uLevSet[component] + RadialLength * wLevSet * RadialNormalVector[component];
-            double f_xN = component == 0 ? active_stress * Math.Cos(Ang_P) * Math.Abs(inp.n[1]) : active_stress * Math.Sin(Ang_P) * Math.Abs(inp.n[0]);
+            //double f_xT = component == 0 ? active_stress * Math.Cos(Ang_P) * Math.Abs(inp.n[1]) : active_stress * Math.Sin(Ang_P) * Math.Abs(inp.n[0]);
+            //double f_xT = component == 0 ? active_stress * Math.Cos(Ang_P) * Math.Abs(inp.n[1])
+            //                             : active_stress * Math.Cos(Ang_P) * Math.Abs(inp.n[0]);
+            double f_xT = 0;
+            double[] test = new double[] { -Math.Sin(Ang_P), Math.Cos(Ang_P) };
+            if (test[0] * inp.n[0] + test[1] * inp.n[1] > 0) {
+                f_xT = component == 0 ? -active_stress * (inp.n[1]) : active_stress * (inp.n[0]);
+            }
+            else {
+                f_xT = component == 0 ? active_stress * (inp.n[1]) : -active_stress * (inp.n[0]);
+            }
+            //f_xT = component == 0 ? -active_stress * (inp.n[1]) : active_stress * (inp.n[0]);
+            //if (Math.Cos(Ang_P) * inp.n[1] - Math.Sin(Ang_P) * inp.n[0] > 0) {
+            //    f_xT = component == 0 ? -Math.Cos(Ang_P) * active_stress * inp.n[1] - Math.Sin(Ang_P) * active_stress * inp.n[0] : -Math.Sin(Ang_P) * active_stress * inp.n[1] + Math.Cos(Ang_P) * active_stress * inp.n[0];
+            //}
+            //else if (Math.Cos(Ang_P) * inp.n[1] - Math.Sin(Ang_P) * inp.n[0] < 0) {
+            //    f_xT = component == 0 ? Math.Cos(Ang_P) * active_stress * inp.n[1] + Math.Sin(Ang_P) * active_stress * inp.n[0] : Math.Sin(Ang_P) * active_stress * inp.n[1] - Math.Cos(Ang_P) * active_stress * inp.n[0];
+            //}
+            //else
+            //    f_xT = 0;
 
             // Dirichlet
             if (scaleActiveBoundary == 0) {
@@ -122,8 +141,42 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
                     }                                                                           //
                     Ret += muA * (uA[dN] * N[dN]) * (vA * N[component]) * _penalty;             // penalty term
                 }                                                                               //
-                //tangential                                                                    //
-                Ret += f_xN * (vA) * muA * scaleActiveBoundary;                                 // active force term
+                                                                                                //tangential         
+                double[,] P = new double[D, D];
+                for (int d1 = 0; d1 < D; d1++) {
+                    for (int d2 = 0; d2 < D; d2++) {
+                        double nn = 0;
+                        //if (test[0] * inp.n[0] + test[1] * inp.n[1] > 0) {
+                        //    f_xT = component == 0 ? -active_stress * (inp.n[1]) : active_stress * (inp.n[0]);
+                        //}
+                        //else {
+                        //    f_xT = component == 0 ? active_stress * (inp.n[1]) : -active_stress * (inp.n[0]);
+                        //}
+                        if (d1 == d2) {
+                            nn = Math.Abs(N[d1] * N[d2]);
+                        }
+                        if (d1 != d2) {
+                            nn = -Math.Abs((N[d1]) * (N[d2]));
+                        }
+                        if (d1 == d2) {
+                            P[d1, d2] = 1 - nn;
+                        }
+                        else {
+                            P[d1, d2] = -nn;
+                        }
+                    }
+                }
+                //for (int d1 = 0; d1 < D; d1++) {
+                //    for (int d2 = 0; d2 < D; d2++) {
+                //        Ret += (P[d1, d2] * f_xT * muA * scaleActiveBoundary) * (P[d1, component] * vA);
+                //    }
+                //}
+                for (int d1 = 0; d1 < D; d1++) {
+                    for (int d2 = 0; d2 < D; d2++) {
+                        Ret -= (P[d1, d2] * f_xT * muA) * (P[d1, component] * vA);
+                    }
+                }
+                //Ret += f_xT * (vA) * muA * scaleActiveBoundary;                                 // active force term
             }
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
