@@ -162,7 +162,7 @@ namespace BoSSS.Solution.XheatCommon {
             if (thermParams.IncludeConvection) {
 
                 ILevelSetForm conv;
-                conv = new HeatConvectionAtLevelSet_LLF(D, LsTrk, capA, capB, LFFA, LFFB, BcMap, config.isMovingMesh, config.isEvaporation, Tsat);
+                conv = new HeatConvectionAtLevelSet_LLF(D, LsTrk, capA, capB, LFFA, LFFB, BcMap, config.isMovingMesh, Tsat);
                 //conv = new HeatConvectionAtLevelSet_WithEvaporation(D, LsTrk, LFFA, LFFB, thermParams, config.getPhysParams.Sigma);
                 //conv = new HeatConvectionAtLevelSet_Upwind(D, LsTrk, capA, capB, thermParams, config.isMovingMesh, config.isEvaporation, Tsat);
 
@@ -176,19 +176,22 @@ namespace BoSSS.Solution.XheatCommon {
 
                 double penalty = dntParams.PenaltySafety;
 
-                var Visc = new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0, config.isEvaporation, Tsat);
+                var Visc = new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0, Tsat);
                 comps.Add(Visc);
+
+                var qJump = new HeatFluxAtLevelSet(D, LsTrk, thermParams, config.getPhysParams.Sigma);
+                comps.Add(qJump);
 
             } else {
 
-                comps.Add(new HeatFluxDivergencetAtLevelSet(LsTrk, config.isEvaporation)); 
+                comps.Add(new HeatFluxDivergencetAtLevelSet(LsTrk)); 
                 //if(config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.LDGstabi)
                 //    comps.Add(new AuxiliaryStabilizationFormAtLevelSet(LsTrk, config.isEvaporation));
 
                 for (int d = 0; d < D; d++) {
                     comps = XOp.EquationComponents[EquationNames.AuxHeatFluxComponent(d)];
 
-                    comps.Add(new TemperatureGradientAtLevelSet(d, LsTrk, kA, kB, config.isEvaporation, Tsat));
+                    comps.Add(new TemperatureGradientAtLevelSet(d, LsTrk, kA, kB, Tsat));
                     //if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.LDGstabi)
                     //    comps.Add(new TemperatureStabilizationFormAtLevelSet(d, LsTrk, kA, kB, config.isEvaporation, Tsat));
                 }

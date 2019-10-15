@@ -32,14 +32,14 @@ using System.Collections;
 namespace BoSSS.Solution.XheatCommon {
 
 
-    public class HeatConvectionAtLevelSet_LLF : ILevelSetForm {
+    public class HeatConvectionAtLevelSet_LLF : ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
         LevelSetTracker m_LsTrk;
 
         bool movingmesh;
 
         public HeatConvectionAtLevelSet_LLF(int _D, LevelSetTracker LsTrk, double _capA, double _capB, double _LFFA, double _LFFB, 
-            ThermalMultiphaseBoundaryCondMap _bcmap, bool _movingmesh, bool _DiriCond, double _Tsat) {
+            ThermalMultiphaseBoundaryCondMap _bcmap, bool _movingmesh, double _Tsat) {
 
             m_D = _D;
 
@@ -54,7 +54,7 @@ namespace BoSSS.Solution.XheatCommon {
             PosFlux.SetParameter("B", LsTrk.GetSpeciesId("B"));
 
 
-            DirichletCond = _DiriCond;
+            //DirichletCond = _DiriCond;
             Tsat = _Tsat;
 
             capA = _capA;
@@ -72,7 +72,7 @@ namespace BoSSS.Solution.XheatCommon {
         double LFFA;
         double LFFB;
 
-        bool DirichletCond;
+        //bool DirichletCond;
         double Tsat;
 
         // Use Fluxes as in Bulk Convection
@@ -101,7 +101,7 @@ namespace BoSSS.Solution.XheatCommon {
 
             //Flux for negativ side
             double FlxNeg;
-            if (DirichletCond) {
+            if (!evapMicroRegion[cp.jCell]) {
 
                 double r = 0.0;
 
@@ -147,7 +147,7 @@ namespace BoSSS.Solution.XheatCommon {
 
             // Flux for positive side
             double FlxPos;
-            if (DirichletCond) {
+            if (!evapMicroRegion[cp.jCell]) {
 
                 double r = 0.0;
 
@@ -195,6 +195,17 @@ namespace BoSSS.Solution.XheatCommon {
             else
                 return FlxNeg * v_Neg - FlxPos * v_Pos;
         }
+
+
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+
+            if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
+                evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
+
+        }
+
+        BitArray evapMicroRegion;
+
 
         public IList<string> ArgumentOrdering {
             get {

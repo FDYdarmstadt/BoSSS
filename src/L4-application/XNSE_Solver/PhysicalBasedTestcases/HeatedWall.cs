@@ -391,7 +391,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             bool solveHeat = true;
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
             //_DbPath = @"\\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB";
-            _DbPath = @"D:\local\local_Testcase_databases\Testcase_HeatedWall";
+            //_DbPath = @"D:\local\local_Testcase_databases\Testcase_HeatedWall";
 
             // basic database options
             // ======================
@@ -462,73 +462,91 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             // numerical values for various testing (A:liquid and B:vapor state)
-            double rho_l = 1.0;
-            C.PhysicalParameters.rho_A = rho_l;
-            C.PhysicalParameters.rho_B = 1.0e-1;
-            double mu_l = 0.5;
-            C.PhysicalParameters.mu_A = mu_l;
-            C.PhysicalParameters.mu_B = 0.25e-1;
-            C.PhysicalParameters.Sigma = 7.5e-1;
+            //double rho_l = 1.0;
+            //C.PhysicalParameters.rho_A = rho_l;
+            //C.PhysicalParameters.rho_B = 1.0e-1;
+            //double mu_l = 0.5;
+            //C.PhysicalParameters.mu_A = mu_l;
+            //C.PhysicalParameters.mu_B = 0.25e-1;
+            //C.PhysicalParameters.Sigma = 7.5e-1;
 
-            C.solveCoupledHeatEquation = solveHeat;
-            C.ThermalParameters.rho_A = C.PhysicalParameters.rho_A;
-            C.ThermalParameters.rho_B = C.PhysicalParameters.rho_B;
-            double c_l = 1.0e+4;
-            C.ThermalParameters.c_A = c_l;
-            C.ThermalParameters.c_B = 1.0e+3;
-            double k_l = 1.0e-1;
-            C.ThermalParameters.k_A = k_l;
-            C.ThermalParameters.k_B = 1e-2;
-
-            if(C.solveCoupledHeatEquation) {
-                C.ThermalParameters.hVap = 1.0e6; 
-                //C.ThermalParameters.hVap_B = -1.0e6; 
-            }
-            double Tsat = 329.75;  
-            C.ThermalParameters.T_sat = Tsat;
-
-            //C.ThermalParameters.pc = 0.0;
-            //C.ThermalParameters.fc = 1.0;
-            //C.ThermalParameters.Rc = 1e7;
-
-            double Lslip = 1e-2;
-            C.PhysicalParameters.betaL = 1.1/(2*Lslip);
-            C.PhysicalParameters.theta_e = Math.PI * (1.0 / 3.0);
-
-
-            // FC-72 (A:liquid and B:vapor state)
-            //C.PhysicalParameters.rho_A = 1.6198e-3;     // 1.6198e-3;
-            //C.PhysicalParameters.rho_B = 1.336e-5;       // 1.336e-5;
-            //C.PhysicalParameters.mu_A = 4.5306e-4;      // 4.5306e-6;
-            //C.PhysicalParameters.mu_B = 9.4602e-6;      // 9.4602e-8;
-            //C.PhysicalParameters.Sigma = 8.273e-3;
+            //double g = 29.81;
 
             //C.solveCoupledHeatEquation = solveHeat;
             //C.ThermalParameters.rho_A = C.PhysicalParameters.rho_A;
             //C.ThermalParameters.rho_B = C.PhysicalParameters.rho_B;
-            //C.ThermalParameters.c_A = 1.0984e+7;
-            //C.ThermalParameters.c_B = 8.8504e+6;
-            //C.ThermalParameters.k_A = 5.216;
-            //C.ThermalParameters.k_B = 0.864;
+            //double c_l = 1.0e+4;
+            //C.ThermalParameters.c_A = c_l;
+            //C.ThermalParameters.c_B = 1.0e+3;
+            //double k_l = 1.0e-1;
+            //C.ThermalParameters.k_A = k_l;
+            //C.ThermalParameters.k_B = 1e-2;
 
-            //if(C.solveCoupledHeatEquation) {
-            //    C.ThermalParameters.hVap_A = 8.4515e+8;
-            //    C.ThermalParameters.hVap_B = -8.4515e+8;
-            //} 
-            //C.ThermalParameters.pc = 0.0;
-            //double Tsat = 329.75;    // for pc=0, T_intMin = T_sat
+            //if (C.solveCoupledHeatEquation) {
+            //    C.ThermalParameters.hVap = 1.0e6;
+            //    //C.ThermalParameters.hVap_B = -1.0e6; 
+            //}
+            //double Tsat = 329.75;
             //C.ThermalParameters.T_sat = Tsat;
-            //C.ThermalParameters.p_sat = 1000;   // 1bar
-            //C.ThermalParameters.Rc = 2.445e+5;
-            //C.ThermalParameters.fc = 0.5;
+
+            ////C.ThermalParameters.pc = 0.0;
+            ////C.ThermalParameters.fc = 1.0;
+            ////C.ThermalParameters.Rc = 1e7;
+
+            //double Lslip = 1e-2;
+            //C.PhysicalParameters.betaL = 1.1 / (2 * Lslip);
+            //C.PhysicalParameters.theta_e = Math.PI * (1.0 / 3.0);
+
+            //double L = 1.0;
+
+
+            // FC-72 (A:liquid and B:vapor state)
+            double rho_l = 1.6198e-1;   //1.6198e-3;
+            C.PhysicalParameters.rho_A = rho_l;    
+            double rho_v = 1.336e-3;    //1.336e-5;
+            C.PhysicalParameters.rho_B = rho_v;  
+            double mu_l = 4.5306e-4;      // 4.5306e-6;
+            C.PhysicalParameters.mu_A = mu_l;
+            double mu_v = 9.4602e-6;      // 9.4602e-8;
+            C.PhysicalParameters.mu_B = mu_v;
+
+            C.PhysicalParameters.Sigma = 0.0; // 8.273e-1;
+            double g = 9.81;
+
+            C.solveCoupledHeatEquation = true;
+            C.ThermalParameters.rho_A = rho_l;
+            C.ThermalParameters.rho_B = rho_v;
+            double c_l = 1.0984e+5;     //1.0984e+7;
+            C.ThermalParameters.c_A = c_l;
+            double c_v = 8.8504e+4;     //8.8504e+6;
+            C.ThermalParameters.c_B = c_v;
+            double k_l = 5.216;
+            C.ThermalParameters.k_A = k_l;
+            double k_v = 0.864;
+            C.ThermalParameters.k_B = k_v;
+
+            if (C.solveCoupledHeatEquation) {
+                C.ThermalParameters.hVap = 8.4515e+8;
+                //C.ThermalParameters.hVap_B = -8.4515e+8;
+            }
+
+            double Tsat = 329.75;   
+            C.ThermalParameters.T_sat = Tsat;
+            C.ThermalParameters.p_sat = 1000;   // 1bar
+            C.ThermalParameters.Rc = 2.445e+5;
+            C.ThermalParameters.fc = 0.5;
 
             //double A = 4.37e-17; //4.37e-17;    // dispersion constant
 
-            //C.PhysicalParameters.betaS_A = 0.0;
-            //C.PhysicalParameters.betaS_B = 0.0;
+            C.PhysicalParameters.betaS_A = 0.0;
+            C.PhysicalParameters.betaS_B = 0.0;
 
-            //C.PhysicalParameters.betaL = 0.0;
-            //C.PhysicalParameters.theta_e = Math.PI * (5.0 / 36.0);
+            C.PhysicalParameters.betaL = 0.0;
+            C.PhysicalParameters.theta_e = Math.PI * (1.0 / 2.0); // Math.PI * (5.0 / 36.0);
+            double Lslip = 1e-4;
+
+            double L = 1e-2;
+
 
             C.PhysicalParameters.IncludeConvection = true;
             C.ThermalParameters.IncludeConvection = false;
@@ -541,20 +559,20 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===============
             #region grid
 
-            double R = 1.0;
-            double H = 6.0;
+            double R = 1.0 * L;
+            double H = 10.0 * L;
 
             C.GridFunc = delegate () {
                 double[] Xnodes = GenericBlas.Linspace(0, R, kelemR + 1);
-                double[] Ynodes = GenericBlas.Linspace(-H/4.0, H*3.0/4.0, (6*kelemR) + 1);
+                double[] Ynodes = GenericBlas.Linspace(0, H, (8*kelemR) + 1);
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
 
                 if(solveHeat) {
                     grd.EdgeTagNames.Add(1, "wall_ZeroGradient_lower");
                     grd.EdgeTagNames.Add(2, "pressure_outlet_ZeroGradient_upper");
                     grd.EdgeTagNames.Add(3, "slipsymmetry_ConstantTemperature_left");
-                    grd.EdgeTagNames.Add(4, "navierslip_linear_ConstantTemperature_right");
-                    //grd.EdgeTagNames.Add(4, "navierslip_linear_ConstantHeatFlux_right");
+                    //grd.EdgeTagNames.Add(4, "navierslip_linear_ConstantTemperature_right");
+                    grd.EdgeTagNames.Add(4, "navierslip_linear_ConstantHeatFlux_right");
                 } else {
                     grd.EdgeTagNames.Add(1, "wall_lower");
                     //grd.EdgeTagNames.Add(1, "pressure_outlet_lower");
@@ -566,9 +584,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte et = 0;
-                    if(Math.Abs(X[1] + H/4.0) <= 1.0e-8)
+                    if(Math.Abs(X[1]) <= 1.0e-8)
                         et = 1;
-                    if(Math.Abs(X[1] - H*3.0/4.0) <= 1.0e-8)
+                    if(Math.Abs(X[1] - H) <= 1.0e-8)
                         et = 2;
                     if(Math.Abs(X[0]) <= 1.0e-8)
                         et = 3;
@@ -581,6 +599,16 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 return grd;
             };
 
+
+            C.AdaptiveMeshRefinement = true;
+            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            C.RefineNavierSlipBoundary = true;
+            C.BaseRefinementLevel = 1;
+            C.AMR_startUpSweeps = 1;
+
+            double hmicro = (R / kelemR) / 2.0;
+
+
             #endregion
 
 
@@ -588,46 +616,53 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ==============
             #region init
 
-            double h0 = 0.4;
+            double h0 = 4.2*L;
 
             Func<double[], double> PhiFunc = (X => X[1] - h0);
 
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
-            double g = 29.81;
+
             C.InitialValues_Evaluators.Add("GravityY#A", X => -g);
             C.InitialValues_Evaluators.Add("GravityY#B", X => -g);
 
             // disjoining pressure field
-            double A = 1e-2;
-            double delta = 1e-2;
+            //double A = 1e-2;
+            //double delta = 1e-2;
             //C.DisjoiningPressureFunc = (X => A / (Math.Abs(X[0] - (R+delta))).Pow(3));
 
-            double deltaK = 5;
-            double Twall = Tsat + deltaK;
+            double U = 0.0;
+            double HeatFluxA = 500;
+            double HeatFluxB = HeatFluxA * (k_v / k_l);
+
             if (C.solveCoupledHeatEquation) {
 
-                double alpha_l = k_l / (rho_l * c_l);
-                //double g = 9.81;
-                double beta_l = 7.52e-4;
-                double KCval = mu_l * alpha_l / (rho_l * g * beta_l * (Twall - Tsat));
-
-                double dKC_l = 7.14 * Math.Pow((KCval), (1.0 / 3.0));
-                Console.WriteLine("dKC_l = {0}", dKC_l);
+                double Twall = Tsat + (HeatFluxA / k_l) * hmicro;
 
                 Func<double[], double> TempAFunc = delegate (double[] X) {
 
                     double Temp = Tsat;
 
-                    if (X[0] > (R-dKC_l)) {
-                        Temp += (deltaK / dKC_l) * (dKC_l + (X[0] - R));
+                    if (X[0] > (R-hmicro)) {
+                        Temp += (HeatFluxA / k_l) * (hmicro + (X[0] - R));
                     }
 
                     return Temp;
                 };
                 C.InitialValues_Evaluators.Add("Temperature#A", TempAFunc);
 
-                C.InitialValues_Evaluators.Add("Temperature#B", X => Tsat);
+                Func<double[], double> TempBFunc = delegate (double[] X) {
+
+                    //double Twall = Tsat + (HeatFluxB / k_v) * hmicro;
+                    double Temp = Tsat;
+
+                    //if (X[0] > (R - hmicro)) {
+                    //    Temp += (HeatFluxB / k_v) * (hmicro + (X[0] - R));
+                    //}
+
+                    return Temp;
+                };
+                C.InitialValues_Evaluators.Add("Temperature#B", TempBFunc);
             }
 
             //C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, null);
@@ -640,7 +675,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region BC
 
-            double U = 1.0;
+
 
             if(solveHeat) {
                 C.AddBoundaryValue("wall_ZeroGradient_lower");
@@ -649,14 +684,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 C.AddBoundaryValue("slipsymmetry_ConstantTemperature_left", "Temperature#A", (X, t) => Tsat);
                 C.AddBoundaryValue("slipsymmetry_ConstantTemperature_left", "Temperature#B", (X, t) => Tsat);
 
-                C.AddBoundaryValue("navierslip_linear_ConstantTemperature_right", "VelocityY#A", (X, t) => U);
-                C.AddBoundaryValue("navierslip_linear_ConstantTemperature_right", "VelocityY#B", (X, t) => U);
-                C.AddBoundaryValue("navierslip_linear_ConstantTemperature_right", "Temperature#A", (X, t) => Twall);
-                C.AddBoundaryValue("navierslip_linear_ConstantTemperature_right", "Temperature#B", (X, t) => Tsat);
-                //C.AddBoundaryValue("navierslip_linear_ConstantHeatFlux_right", "VelocityY#A", (X, t) => U);
-                //C.AddBoundaryValue("navierslip_linear_ConstantHeatFlux_right", "VelocityY#B", (X, t) => U);
-                //C.AddBoundaryValue("navierslip_linear_ConstantHeatFlux_right", "HeatFlux#A", (X, t) => HeatFlux);
-                //C.AddBoundaryValue("navierslip_linear_ConstantHeatFlux_right", "HeatFlux#B", (X, t) => HeatFlux);
+                //C.AddBoundaryValue("navierslip_linear_ConstantTemperature_right", "VelocityY#A", (X, t) => U);
+                //C.AddBoundaryValue("navierslip_linear_ConstantTemperature_right", "VelocityY#B", (X, t) => U);
+                //C.AddBoundaryValue("navierslip_linear_ConstantTemperature_right", "Temperature#A", (X, t) => Twall);
+                //C.AddBoundaryValue("navierslip_linear_ConstantTemperature_right", "Temperature#B", (X, t) => Tsat);
+                C.AddBoundaryValue("navierslip_linear_ConstantHeatFlux_right", "VelocityY#A", (X, t) => U);
+                C.AddBoundaryValue("navierslip_linear_ConstantHeatFlux_right", "VelocityY#B", (X, t) => U);
+                C.AddBoundaryValue("navierslip_linear_ConstantHeatFlux_right", "HeatFluxX#A", (X, t) => HeatFluxA);
+                //C.AddBoundaryValue("navierslip_linear_ConstantHeatFlux_right", "HeatFluxX#B", (X, t) => HeatFluxB);
             } else {
 
                 C.AddBoundaryValue("wall_lower");
@@ -691,10 +726,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
-            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MaxSolverIterations = 20;
             C.LinearSolver.MaxSolverIterations = 50;
             //C.Solver_MaxIterations = 50;
-            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-6;
             C.LinearSolver.ConvergenceCriterion = 1e-8;
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
@@ -709,12 +744,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             C.AdvancedDiscretizationOptions.CurvatureNeeded = false;
 
-
-            C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefineNavierSlipBoundary = true;
-            C.BaseRefinementLevel = 2;
-            C.AMR_startUpSweeps = 2;
 
             #endregion
 
@@ -737,11 +766,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
             C.CompMode = AppControl._CompMode.Transient;
-            C.dtMax = 1e-4;
-            C.dtMin = 1e-4;
-            C.Endtime = 10000;
+            C.dtMax = 1e-3;
+            C.dtMin = 1e-3;
+            C.Endtime = 1;
             C.NoOfTimesteps = 10000;
-            C.saveperiod = 10;
+            C.saveperiod = 100;
 
             #endregion
 

@@ -80,22 +80,20 @@ namespace BoSSS.Solution.XheatCommon {
 
         private double ComputeHeatFlux_Micro(double T_A, double T_B, double curv, double p_disp) {
 
-            throw new NotImplementedException("Check consistency");
-
-            double pc0 = (m_pc < 0.0) ? m_sigma * curv + p_disp : m_pc;      // augmented capillary pressure (without nonlinear evaporative masss part)
+            double pc = m_sigma * curv + p_disp;      // augmented capillary pressure (without nonlinear evaporative masss part)
 
             double Rint = 0.0;
             double TintMin = 0.0;
             double qEvap = 0.0;
             if (m_rhoA > m_rhoB) {
                 Rint = ((2.0 - m_fc) / (2 * m_fc)) * m_Tsat * Math.Sqrt(2 * Math.PI * m_Rc * m_Tsat) / (m_rhoB * m_hVap.Pow2());
-                TintMin = m_Tsat * (1 + (pc0 / (m_hVap * m_rhoA)));
-                if (T_A > TintMin)
-                    qEvap = -(T_A - TintMin) / Rint;
+                TintMin = m_Tsat * (1 + (pc / (m_hVap * m_rhoA)));
+                //if (T_A > TintMin)
+                    qEvap = (T_A - TintMin) / Rint;
             } else {
                 Rint = ((2.0 - m_fc) / (2 * m_fc)) * m_Tsat * Math.Sqrt(2 * Math.PI * m_Rc * m_Tsat) / (m_rhoA * m_hVap.Pow2());
-                TintMin = m_Tsat * (1 + (pc0 / (m_hVap * m_rhoB)));
-                if (T_B > TintMin)
+                TintMin = m_Tsat * (1 + (pc / (m_hVap * m_rhoB)));
+                //if (T_B > TintMin)
                     qEvap = (T_B - TintMin) / Rint;
             }
 
@@ -163,7 +161,7 @@ namespace BoSSS.Solution.XheatCommon {
 
 
         protected LevelSetTracker m_LsTrk;
-        BitArray evapMicroRegion;
+        protected BitArray evapMicroRegion;
 
         bool MEvapIsPrescribd = false;
         double prescrbMEvap;
