@@ -1,4 +1,5 @@
 ﻿using BoSSS.Foundation;
+using BoSSS.Foundation.XDG;
 using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.LinSolvers.PARDISO;
@@ -35,12 +36,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return -1;
         }
 
-        public SinglePhaseField ProlongateToDg(double[] V, string name) {
+        public DGField ProlongateToDg(double[] V, string name) {
             double[] Curr = ProlongateToTop(V);
 
             var gdat = m_op.BaseGridProblemMapping.GridDat;
             var basis = m_op.BaseGridProblemMapping.BasisS[0];
-            var dgCurrentSol = new SinglePhaseField(basis, name);
+            DGField dgCurrentSol;
+            if (basis is XDGBasis)
+                dgCurrentSol = new XDGField((XDGBasis)basis, name);
+            else 
+                dgCurrentSol = new SinglePhaseField(basis, name);
             m_op.FinestLevel.TransformSolFrom(dgCurrentSol.CoordinateVector, Curr);
             return dgCurrentSol;
         }

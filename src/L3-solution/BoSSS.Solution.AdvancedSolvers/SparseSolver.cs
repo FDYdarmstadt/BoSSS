@@ -271,8 +271,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             stw.WriteLine("Dumping text versions of Matrix, Solution and RHS.");
                             ErrMsg = stw.ToString();
                         }
-                        Console.WriteLine(ErrMsg);
-
+                        Console.Error.WriteLine(ErrMsg);
                     }
                 }
 

@@ -28,6 +28,8 @@ using BoSSS.Foundation.XDG;
 using System.Collections;
 using ilPSP.Tracing;
 using BoSSS.Foundation.Grid.Aggregation;
+using BoSSS.Foundation.Comm;
+using MPI.Wrappers;
 
 namespace BoSSS.Solution.AdvancedSolvers {
     public class XdgAggregationBasis : AggregationGridBasis {
@@ -190,6 +192,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             var agg = base.AggGrid;
             int[][] compCells = agg.iLogicalCells.AggregateCellToParts;
             int JAGG = compCells.Length;
+            Debug.Assert(JAGG == agg.iLogicalCells.Count);
+            int JAGGup = agg.iLogicalCells.NoOfLocalUpdatedCells;
 
             this.UsedSpecies = Agglomerator.SpeciesList.ToArray();
 
@@ -218,7 +222,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             SpeciesId[] allPresentSpecies = new SpeciesId[LsTrk.TotalNoOfSpecies];
 
             // loop over all aggregate (multigrid) cells...
-            for(int jagg = 0; jagg < JAGG; jagg++) {
+            for(int jagg = 0; jagg < JAGGup; jagg++) {
+                
+
                 int[] compCell = compCells[jagg];
                 int K = compCell.Length;
 
@@ -301,6 +307,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Debug.Assert(this.NoOfSpecies[jagg] >= 0);
                 Debug.Assert(this.NoOfSpecies[jagg] <= this.UsedSpecies.Length);
             }
+
+            // MPI exchange for external cells
+            // note: external aggregation cells may be incomplete, i.e. not have all parts, only those known to parent
+            NoOfSpecies.MPIExchange(this.AggGrid);
         }
 
 
