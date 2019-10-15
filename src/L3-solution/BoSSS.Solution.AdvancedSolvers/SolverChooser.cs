@@ -148,6 +148,45 @@ namespace BoSSS.Solution {
                     };
                     break;
 
+
+                case NonLinearSolverCode.NLSolverSequence:
+
+                    var myFixPoint = new FixpointIterator(
+                        ts_AssembleMatrixCallback,
+                        ts_MultigridBasis,
+                        MultigridOperatorConfig) {
+                        MaxIter = nc.MinSolverIterations,
+                        MinIter = nc.MinSolverIterations,
+                        m_LinearSolver = LinSolver,
+                        m_SessionPath = SessionPath, //is needed for Debug purposes, output of inter-timesteps
+                        ConvCrit = nc.ConvergenceCriterion,
+                        UnderRelax = nc.UnderRelax,
+                    };
+                    SetNonLinItCallback(myFixPoint);
+                    var myNewton = new Newton(
+                        ts_AssembleMatrixCallback,
+                        ts_MultigridBasis,
+                        MultigridOperatorConfig) {
+                        maxKrylovDim = lc.MaxKrylovDim,
+                        MaxIter = nc.MaxSolverIterations,
+                        MinIter = nc.MinSolverIterations,
+                        ApproxJac = Newton.ApproxInvJacobianOptions.DirectSolver, //MUMPS is taken, todo: enable all linear solvers
+                        linsolver = LinSolver,
+                        Precond = PrecondSolver,
+                        GMRESConvCrit = lc.ConvergenceCriterion,
+                        ConvCrit = nc.ConvergenceCriterion,
+                        m_SessionPath = SessionPath,
+                        constant_newton_it = nc.constantNewtonIterations
+                    };
+                    SetNonLinItCallback(myNewton);
+                    nonlinSolver = new NLSolverSequence(
+                        ts_AssembleMatrixCallback,
+                        ts_MultigridBasis,
+                        MultigridOperatorConfig) {
+                        m_NLSequence = new NonlinearSolver[] { myFixPoint, myNewton }
+                    };           
+
+            break;
                 //in NewtonGMRES Newton is merged with GMRES, this is an optimized algorithm
                 //NonLinearSolver and LinearSolver can not be separated in this case
                 case NonLinearSolverCode.NewtonGMRES:
