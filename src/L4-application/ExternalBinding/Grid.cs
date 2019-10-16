@@ -67,26 +67,26 @@ namespace BoSSS.Application.ExternalBinding {
                 int[] _owner = new int[nFaces];
                 double[,] _points = new double[nPoints, 3];
 
-                Debug.Assert(nFaces == GridImportTest.faces.Length, "mism nFaces len");
+                //Debug.Assert(nFaces == GridImportTest.faces.Length, "mism nFaces len");
                 for (int i = 0; i < nFaces; i++) {
                     int N = vertices_per_face[i];
-                    Debug.Assert(N == GridImportTest.faces[i].Length, "mism nVerts face " + i);
+                    //Debug.Assert(N == GridImportTest.faces[i].Length, "mism nVerts face " + i);
                     _faces[i] = new int[N];
                     for (int n = 0; n < N; n++) {
                         _faces[i][n] = faces[i][n];
-                        Debug.Assert(_faces[i][n] == GridImportTest.faces[i][n], "mism face " + i + " vert " + n);
+                        //Debug.Assert(_faces[i][n] == GridImportTest.faces[i][n], "mism face " + i + " vert " + n);
                     }
                 }
 
-                Debug.Assert(nInternalFaces == GridImportTest.neighbour.Length, "mismatch neighbour length");
+                //Debug.Assert(nInternalFaces == GridImportTest.neighbour.Length, "mismatch neighbour length");
                 for (int i = 0; i < nInternalFaces; i++) {
                     _neighbour[i] = neighbour[i];
-                    Debug.Assert(_neighbour[i] == GridImportTest.neighbour[i], "neighbour " + i + " mismatch ");
+                    //Debug.Assert(_neighbour[i] == GridImportTest.neighbour[i], "neighbour " + i + " mismatch ");
                 }
 
                 for (int i = 0; i < nFaces; i++) {
                     _owner[i] = owner[i];
-                    Debug.Assert(_owner[i] == GridImportTest.owner[i], "owner " + i + " mismatch ");
+                    //Debug.Assert(_owner[i] == GridImportTest.owner[i], "owner " + i + " mismatch ");
                 }
 
                 for (int i = 0; i < nPoints; i++) {
