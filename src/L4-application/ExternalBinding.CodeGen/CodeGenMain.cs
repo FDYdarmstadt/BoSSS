@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using BoSSS.Application.ExternalBinding;
 
@@ -31,6 +32,7 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
 
             // add includes to C++ file
             // ========================
+            Cfile.IncludeDirectives.Add("#include \"" + t.Name + CodeGenHeaderFile.HeaderFileSuffix + "\"");
             Cfile.IncludeDirectives.Add("#include \"" + t.Name + CodeGenHeaderFile.HeaderFileSuffix + "\"");
 
             // create namespaces
@@ -75,6 +77,13 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
             BracedSection ClassDecl = new BracedSection();
             ClassDecl.OutsideCode.Add("class " + t.Name);
             Cnmnsp.Children.Add(ClassDecl);
+
+
+            var methods = t.GetMethods(BindingFlags.Public);
+            foreach(var m in methods) {
+                m.Attributes.
+            }
+
 
 
         }

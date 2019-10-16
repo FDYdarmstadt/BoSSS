@@ -30,6 +30,7 @@ namespace BoSSS.Application.ExternalBinding {
 		}
         */
 
+            /*
         /// <summary>
         /// A test function to verify that the interface is working; withes a hello message.
         /// </summary>
@@ -44,8 +45,8 @@ namespace BoSSS.Application.ExternalBinding {
             Console.WriteLine("Hello from Test: " + (dummy));
         }
 		
+		*/
 		static bool mustFinalizeMPI;
-		
 
         /// <summary>
         /// 

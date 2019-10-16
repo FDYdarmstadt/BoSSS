@@ -48,55 +48,63 @@ namespace BoSSS.Application.ExternalBinding {
         /// <param name="points">
         /// point coordinates, array of <paramref name="nPoints"/>*3
         /// </param>
-        unsafe public static GridServer FromOpenFOAMPolymesh(
-            ref int nPoints, ref int nCells, ref int nFaces, ref int nInternalFaces,
+        unsafe public GridServer(
+            int nPoints, int nCells, int nFaces, int nInternalFaces,
             int** faces,
             int* vertices_per_face,
             int* neighbour,
             int* owner,
-            double* points,
-            out int ierr) {
+            double* points) {
+
+            Common_.BoSSSInitialize();
+            Console.WriteLine("nPoints = {0}, nCells = {1}, nFaces = {2}, nInternalFaces = {3}", nPoints, nCells, nFaces, nInternalFaces);
 
             try {
+
                 // copy data (unmanaged to managed)
                 int[][] _faces = new int[nFaces][];
                 int[] _neighbour = new int[nInternalFaces];
                 int[] _owner = new int[nFaces];
                 double[,] _points = new double[nPoints, 3];
 
-                for(int i = 0; i < nFaces; i++) {
+                Debug.Assert(nFaces == GridImportTest.faces.Length, "mism nFaces len");
+                for (int i = 0; i < nFaces; i++) {
                     int N = vertices_per_face[i];
+                    Debug.Assert(N == GridImportTest.faces[i].Length, "mism nVerts face " + i);
                     _faces[i] = new int[N];
-                    for (int n = 0; n < N; n++)
+                    for (int n = 0; n < N; n++) {
                         _faces[i][n] = faces[i][n];
+                        Debug.Assert(_faces[i][n] == GridImportTest.faces[i][n], "mism face " + i + " vert " + n);
+                    }
                 }
 
+                Debug.Assert(nInternalFaces == GridImportTest.neighbour.Length, "mismatch neighbour length");
                 for (int i = 0; i < nInternalFaces; i++) {
                     _neighbour[i] = neighbour[i];
+                    Debug.Assert(_neighbour[i] == GridImportTest.neighbour[i], "neighbour " + i + " mismatch ");
                 }
 
                 for (int i = 0; i < nFaces; i++) {
                     _owner[i] = owner[i];
+                    Debug.Assert(_owner[i] == GridImportTest.owner[i], "owner " + i + " mismatch ");
                 }
 
                 for (int i = 0; i < nPoints; i++) {
                     _points[i, 0] = points[i * 3 + 0];
-                    _points[i, 0] = points[i * 3 + 1];
-                    _points[i, 0] = points[i * 3 + 2];
+                    _points[i, 1] = points[i * 3 + 1];
+                    _points[i, 2] = points[i * 3 + 2];
                 }
 
-                
+
                 // create BoSSS grid
                 GridData g = FOAMmesh_to_BoSSS(nCells, _faces, _neighbour, _owner, _points);
-                var ret = new GridServer(g);
-
-                // register object
-                ierr = 0;
-                return ret;
-
-            } catch(Exception e) {
-                ierr = Infrastructure.ErrorHandler(e);
-                return null;
+                this.GridDataObject = g;
+            } catch (Exception e) {
+                Console.Error.WriteLine(e.GetType().FullName);
+                Console.Error.WriteLine(e.Message);
+                Console.Error.WriteLine(e.StackTrace);
+            } finally {
+                Console.WriteLine("this is C#");
             }
         }
 
@@ -115,7 +123,7 @@ namespace BoSSS.Application.ExternalBinding {
             // Checks
             // ======
 
-            Common_.BoSSSInitialize();
+            
             int nFaces = faces.Length;
             int nInternalFaces = neighbour.Length;
             Debug.Assert(nFaces == owner.Length);
@@ -129,9 +137,9 @@ namespace BoSSS.Application.ExternalBinding {
                 int[] pts = faces[i];
 
                 foreach(int iVtx in pts) {
-                    if (i < 0)
+                    if (iVtx < 0)
                         throw new ArgumentException("negative vertex index for face " + i);
-                    if (i >= points.GetLength(0))
+                    if (iVtx >= points.GetLength(0))
                         throw new ArgumentException("vertex index out-of-range for face " + i);
 
                 }
