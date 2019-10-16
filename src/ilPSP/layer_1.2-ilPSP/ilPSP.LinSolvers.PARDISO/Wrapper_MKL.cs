@@ -66,11 +66,11 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// </summary>
         public Wrapper_MKL()
             : base(
-                new string[] { "PARDISO.dll", "libBoSSSnative_seq.so" },
-                new string[2][][],
-                new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix },
-                new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix },
-                new int[] { -1, -1 }) { }
+                new string[] { "PARDISO.dll", "libBoSSSnative_seq.so", "libBoSSSnative_omp.so" },
+                new string[3][][],
+                new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix, DynLibLoader.BoSSS_Prefix },
+                new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix },
+                new int[] { -1, -1, -1 }) { }
 
         /// <summary>
         /// PARDISO interface, see PARDISO documentation

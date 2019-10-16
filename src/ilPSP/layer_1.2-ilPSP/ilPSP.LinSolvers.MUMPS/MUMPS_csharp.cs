@@ -443,9 +443,10 @@ namespace ilPSP.LinSolvers.MUMPS
         // https://connect.microsoft.com/VisualStudio/feedback/details/635365/runtimehelpers-initializearray-fails-on-64b-framework
         static PlatformID[] Helper()
         {
-            PlatformID[] p = new PlatformID[2];
+            PlatformID[] p = new PlatformID[3];
             p[0] = PlatformID.Win32NT;
             p[1] = PlatformID.Unix;
+            p[2] = PlatformID.Unix;
             return p;
         }
 
@@ -453,11 +454,11 @@ namespace ilPSP.LinSolvers.MUMPS
         /// ctor
         /// </summary>
         public UnsafeMUMPS() :
-            base(new string[] { "dmumps-mpi.dll", "libBoSSSnative_mpi.so" },
-                  new string[2][][],
-                  new GetNameMangling[] { DynLibLoader.Identity, DynLibLoader.BoSSS_Prefix },
+            base(new string[] { "dmumps-mpi.dll", "libBoSSSnative_mpi.so", "libBoSSSnative_seq.so" },
+                  new string[3][][],
+                  new GetNameMangling[] { DynLibLoader.Identity, DynLibLoader.BoSSS_Prefix, DynLibLoader.BoSSS_Prefix },
                   Helper(), //new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix },
-                  new int[] { -1, -1 })
+                  new int[] { -1, -1, -1 })
         { }
 
 #pragma warning disable 649
