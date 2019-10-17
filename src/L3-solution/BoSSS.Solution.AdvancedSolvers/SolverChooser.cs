@@ -867,7 +867,6 @@ namespace BoSSS.Solution {
                                 EnableOverlapScaling=false,
                                 pLow=1,
                             },
-                            new ILU(),
                         },
                         MaxKrylovDim = lc.MaxKrylovDim,
                         MaxIter = lc.MaxSolverIterations,

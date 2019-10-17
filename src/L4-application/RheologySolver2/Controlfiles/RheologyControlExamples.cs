@@ -405,7 +405,7 @@ namespace BoSSS.Application.Rheology {
             C.LinearSolver.MaxKrylovDim = 100;
 
             //C.UnderRelax = 1.0;
-            C.dt = 1e6;
+            C.dt = 1e-3;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
