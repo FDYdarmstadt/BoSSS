@@ -571,7 +571,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             //C.SuppressExceptionPrompt = true;
 
             C.LinearSolver.TargetBlockSize = blocksize;
-            C.SetDGdegree(5);
+            C.SetDGdegree(2);
 
             //C.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_mg;
             //C.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_schwarz_directcoarse;

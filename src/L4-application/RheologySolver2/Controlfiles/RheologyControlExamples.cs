@@ -380,7 +380,7 @@ namespace BoSSS.Application.Rheology {
         /// <summary>
         /// Confined cylinder in a channel flow
         /// </summary>
-        static public RheologyControl ConfinedCylinder(string path = @"G:\Test4Anne\DB_Rheology", int degree = 1) {
+        static public RheologyControl ConfinedCylinder(string path = @"G:\Test4Anne\DB_Rheology", int degree = 4) {
             RheologyControl C = new RheologyControl();
 
             //Path für cluster
@@ -395,13 +395,14 @@ namespace BoSSS.Application.Rheology {
             C.DbPath = path;
             C.ProjectName = "Cylinder";
 
-            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MaxSolverIterations = 20;
             C.NonLinearSolver.MinSolverIterations = 1;
-            C.NonLinearSolver.ConvergenceCriterion = 1E-7;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-6;
 
-            C.LinearSolver.MaxSolverIterations = 50;
+            C.LinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MinSolverIterations = 1;          
             C.LinearSolver.ConvergenceCriterion = 1E-7;
+            C.LinearSolver.MaxKrylovDim = 100;
 
             //C.UnderRelax = 1.0;
             C.dt = 1e6;
@@ -409,7 +410,11 @@ namespace BoSSS.Application.Rheology {
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
+            //C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_schwarz_pmg;
+            //C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
+            C.LinearSolver.verbose = true;
+            C.NonLinearSolver.PrecondSolver.verbose = true;
             C.ObjectiveParam = 1.0;
             C.useJacobianForOperatorMatrix = false;
 
@@ -487,8 +492,8 @@ namespace BoSSS.Application.Rheology {
             C.FieldOptions.Add("ResidualStressXY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             C.FieldOptions.Add("ResidualStressYY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
 
-            C.FieldOptions.Add("PhiDG", new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("Phi", new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            C.FieldOptions.Add("PhiDG", new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            C.FieldOptions.Add("Phi", new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
 
             // Create Grid
             //fine grid - only on cluster!           

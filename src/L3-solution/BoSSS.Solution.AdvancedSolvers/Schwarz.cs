@@ -400,7 +400,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set;
         }
 
-        int pLow = 1;
+        /// <summary>
+        /// DG degree at low order subblocks. This degree is the border, which divides into low order and high order blocks
+        /// </summary>
+        public int pLow = 1;
 
 
         /// <summary>
