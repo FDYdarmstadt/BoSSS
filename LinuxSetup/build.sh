@@ -2,16 +2,16 @@
 
 if [ -z $BUILD_NUMBER ]
 then
-      echo "BUILD_NUMBER  is empty, setting to 0\n"
+      echo "BUILD_NUMBER  is empty, setting to 0"
       BUILD_NUMBER=0
 else
-      echo "BUILD_NUMBER  is $BUILD_NUMBER\n"
+      echo "BUILD_NUMBER  is $BUILD_NUMBER"
 fi
 
 rm -rf ./BoSSS-Install
 rm -rf ./bin
 rm -rf ./doc
-rm *.run
+rm -f *.run
 mono ../src/Utils/bcl/bin/Debug/bcl.exe deploy-at ../src/Utils/bcl/bin/Debug/bcl.exe                                            ./bin/Debug    1
 mono ../src/Utils/bcl/bin/Debug/bcl.exe deploy-at ../src/Utils/bcl/bin/Release/bcl.exe                                           ./bin/Release  1
 mono ../src/Utils/bcl/bin/Debug/bcl.exe deploy-at ../src/Utils/AllSpark/bin/Debug/AllSpark.exe                                             ./bin/Debug    1
@@ -53,4 +53,4 @@ cp -R ./bin ./BoSSS-Install
 cp -R ./doc ./BoSSS-Install
 cp ./Setup.sh ./BoSSS-Install
 makeself --notemp ./BoSSS-Install BoSSS-setup-$BUILD_NUMBER.run "BoSSS by Chair of Fluid Dynamics (FDY), TU Darmstadt" echo "BoSSS successfully extracted, please proceed by sourcing Setup.sh"
-rm -R BoSSS-Install
+rm -r ./BoSSS-Install
