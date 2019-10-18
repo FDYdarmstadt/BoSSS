@@ -518,9 +518,9 @@ namespace BoSSS.Application.FSI_Solver {
                 while (residual > 1e-15) {
                     for (int d = 0; d < spatialDim; d++) {
                         drag[d] = 6 * Math.PI * MinParticleLengthScale * fluidViscosity * Math.Abs(m_TranslationalVelocity[0][d]);
-                        m_HydrodynamicForces[1][d] = m_HydrodynamicForces[0][d] = -orientation[d];// (1.6 * Math.Pow(0.65, epsilon) + 1) * activeStress * MaxParticleLengthScale * orientation[d] - drag[d] + Gravity[d] * Density * ParticleArea;
+                        m_HydrodynamicForces[1][d] = m_HydrodynamicForces[0][d] = orientation[d];// (1.6 * Math.Pow(0.65, epsilon) + 1) * activeStress * MaxParticleLengthScale * orientation[d] - drag[d] + Gravity[d] * Density * ParticleArea;
                         m_TranslationalVelocity[1][d] = m_TranslationalVelocity[0][d];
-                        m_TranslationalVelocity[0][d] = (1.6 * Math.Pow(0.65, epsilon) + 1) * activeStress * MaxParticleLengthScale * orientation[d] / (6 * Math.PI * MinParticleLengthScale * fluidViscosity);
+                        m_TranslationalVelocity[0][d] = (1.6 * Math.Pow(0.65, epsilon) + 1) * activeStress * MaxParticleLengthScale * orientation[d] / (60 * Math.PI * MinParticleLengthScale * fluidViscosity);
                     }
                     residual = Math.Sqrt((m_TranslationalVelocity[0][0] - m_TranslationalVelocity[1][0]).Pow2() + (m_TranslationalVelocity[0][1] - m_TranslationalVelocity[1][1]).Pow2());
                     Console.WriteLine("m_TranslationalVelocity " + m_TranslationalVelocity[0][0]);
@@ -819,8 +819,8 @@ namespace BoSSS.Application.FSI_Solver {
         protected void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque, bool firstIteration) {
             if (m_UnderrelaxationParam != null && !firstIteration) {
                 ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation(m_UnderrelaxationParam, CalculateAverageForces(tempForces, tempTorque));
-                Underrelaxation.Forces(ref tempForces, m_ForcesPreviousIteration[0]);
-                Underrelaxation.Torque(ref tempTorque, m_TorquePreviousIteration[0]);
+                Underrelaxation.Forces(ref tempForces, m_ForcesPreviousIteration);
+                Underrelaxation.Torque(ref tempTorque, m_TorquePreviousIteration);
             }
             for (int d = 0; d < spatialDim; d++) {
                 //if(tempForces[d] > 1e-15)

@@ -16,6 +16,7 @@ limitations under the License.
 
 using MPI.Wrappers;
 using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace BoSSS.Application.FSI_Solver {
@@ -55,12 +56,16 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="forcesPreviousIteration">
         /// The hydrodynamic forces at the previous iteration.
         /// </param>
-        internal void Forces(ref double[] forces, double[] forcesPreviousIteration) {
+        internal void Forces(ref double[] forces, List<double[]> forcesPreviousIteration) {
             for (int d = 0; d < forces.Length; d++) {
+                List<double> tempForcesPrev = new List<double>();
+                for (int i = 0; i < forcesPreviousIteration.Count; i++) {
+                    tempForcesPrev.Add(forcesPreviousIteration[i][d]);
+                }
                 double underrelaxationCoeff = m_UseAdaptiveUnderrelaxation == true
-                    ? CalculateAdaptiveUnderrelaxation(forces[d], forcesPreviousIteration[d], m_AverageForce, m_ConvergenceLimit, m_RelaxationFactor)
+                    ? CalculateAdaptiveUnderrelaxation(forces[d], tempForcesPrev, m_AverageForce, m_ConvergenceLimit, m_RelaxationFactor)
                     : m_RelaxationFactor;
-                forces[d] = underrelaxationCoeff * forces[d] + (1 - underrelaxationCoeff) * forcesPreviousIteration[d];
+                forces[d] = underrelaxationCoeff * forces[d] + (1 - underrelaxationCoeff) * forcesPreviousIteration[0][d];
             }
         }
 
@@ -74,11 +79,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="torquePreviousIteration">
         /// The hydrodynamic torque at the previous iteration.
         /// </param>
-        internal void Torque(ref double torque, double torquePreviousIteration) {
+        internal void Torque(ref double torque, List<double> torquePreviousIteration) {
             double underrelaxationCoeff = m_UseAdaptiveUnderrelaxation == true
                 ? CalculateAdaptiveUnderrelaxation(torque, torquePreviousIteration, m_AverageForce, m_ConvergenceLimit, m_RelaxationFactor)
                 : m_RelaxationFactor;
-            torque = underrelaxationCoeff * torque + (1 - underrelaxationCoeff) * torquePreviousIteration;
+            torque = underrelaxationCoeff * torque + (1 - underrelaxationCoeff) * torquePreviousIteration[0];
 
         }
 
@@ -103,25 +108,56 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="iterationCounter">
         /// No. of iterations.
         /// </param>
-        private double CalculateAdaptiveUnderrelaxation(double variable, double variableAtPrevIteration, double averageValueOfVar, double convergenceLimit, double predefinedFactor) {
-            double UnderrelaxationCoeff = predefinedFactor * 1e-1;
-            double UnderrelaxationExponent = 0;
+        //private double CalculateAdaptiveUnderrelaxation(double variable, double variableAtPrevIteration, double averageValueOfVar, double convergenceLimit, double predefinedFactor) {
+        //    double UnderrelaxationCoeff = predefinedFactor * 1e-1;
+        //    double UnderrelaxationExponent = 0;
+
+        //    if (Math.Abs(averageValueOfVar) > 1e4 * Math.Abs(variable) || Math.Abs(variable) < 1e-10) {
+        //        UnderrelaxationCoeff = 1e-20;
+        //    }
+        //    else {
+        //        while (Math.Abs(UnderrelaxationCoeff * variable) > 0.75 * Math.Abs(variableAtPrevIteration) && UnderrelaxationCoeff > 1e-15) {
+        //            UnderrelaxationExponent -= 1;
+        //            UnderrelaxationCoeff = predefinedFactor * Math.Pow(10, UnderrelaxationExponent);
+        //        }
+        //    }
+            
+        //    //if (Math.Abs(UnderrelaxationCoeff) < convergenceLimit * 1 && 1000 * Math.Abs(variable) > Math.Abs(averageValueOfVar))
+        //    //    UnderrelaxationCoeff = predefinedFactor * convergenceLimit * 1;
+
+        //    //if (UnderrelaxationCoeff >= predefinedFactor * 1e-1)
+        //    //    UnderrelaxationCoeff = predefinedFactor * 1e-1;
+
+        //    double GlobalStateBuffer = UnderrelaxationCoeff.MPIMin();
+        //    UnderrelaxationCoeff = GlobalStateBuffer;
+
+        //    Console.WriteLine("Underrelaxation coefficient: " + UnderrelaxationCoeff + " average value: " + averageValueOfVar + " value " + variable + " agbdbf " + (averageValueOfVar > 1e3 * variable));
+        //    return UnderrelaxationCoeff;
+        //}
+
+        private double CalculateAdaptiveUnderrelaxation(double variable, List<double> variableAtPrevIteration, double averageValueOfVar, double convergenceLimit, double predefinedFactor) {
+            double UnderrelaxationCoeff;
+            double denominator = variableAtPrevIteration.Count;
+            for (int i = 0; i < variableAtPrevIteration.Count - 1; i++) {
+                if (Math.Sign(variable - variableAtPrevIteration[i]) != Math.Sign(variable - variableAtPrevIteration[i + 1])) {
+                    predefinedFactor /= denominator;
+                    break;
+                }
+                else
+                    denominator -= 1;
+            }
+            UnderrelaxationCoeff = predefinedFactor * 1 / (Math.Abs((variable - variableAtPrevIteration[0]) / variableAtPrevIteration[0]));
+            if (UnderrelaxationCoeff >= 10 * predefinedFactor)
+                UnderrelaxationCoeff = 10 * predefinedFactor;
+
+            if (UnderrelaxationCoeff >= 1.4)
+                UnderrelaxationCoeff = 1.4;
 
             if (Math.Abs(averageValueOfVar) > 1e4 * Math.Abs(variable) || Math.Abs(variable) < 1e-10) {
                 UnderrelaxationCoeff = 1e-20;
             }
-            else {
-                while (Math.Abs(UnderrelaxationCoeff * variable) > 0.75 * Math.Abs(variableAtPrevIteration) && UnderrelaxationCoeff > 1e-15) {
-                    UnderrelaxationExponent -= 1;
-                    UnderrelaxationCoeff = predefinedFactor * Math.Pow(10, UnderrelaxationExponent);
-                }
-            }
-            
-            //if (Math.Abs(UnderrelaxationCoeff) < convergenceLimit * 1 && 1000 * Math.Abs(variable) > Math.Abs(averageValueOfVar))
-            //    UnderrelaxationCoeff = predefinedFactor * convergenceLimit * 1;
-
-            //if (UnderrelaxationCoeff >= predefinedFactor * 1e-1)
-            //    UnderrelaxationCoeff = predefinedFactor * 1e-1;
+            else if (UnderrelaxationCoeff < predefinedFactor * 1e-3)
+                UnderrelaxationCoeff = predefinedFactor * 1e-3;
 
             double GlobalStateBuffer = UnderrelaxationCoeff.MPIMin();
             UnderrelaxationCoeff = GlobalStateBuffer;

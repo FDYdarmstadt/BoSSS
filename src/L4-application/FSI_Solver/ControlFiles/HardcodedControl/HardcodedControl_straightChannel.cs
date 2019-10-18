@@ -28,7 +28,7 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control ActiveRod_noBackroundFlow(int k = 3, int amrLevel = 3, double aspectRatio = 5, double relaxationFactor = 5, bool addaptiveUnderrelaxation = true) {
+        public static FSI_Control ActiveRod_noBackroundFlow(int k = 3, int amrLevel = 3, double aspectRatio = 5, double relaxationFactor = 5, bool addaptiveUnderrelaxation = true, double conv = 1e-4) {
             FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
 
@@ -50,7 +50,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LevelSetSmoothing = false;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.hydrodynamicsConvergenceCriterion = 1e-4;
+            C.hydrodynamicsConvergenceCriterion = conv;
 
             // Fluid Properties
             // =============================
@@ -81,7 +81,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(dt: 1e-3, noOfTimesteps: int.MaxValue);
+            C.SetTimesteps(dt: 1e-3, noOfTimesteps: 3000);
 
             return C;
         }
