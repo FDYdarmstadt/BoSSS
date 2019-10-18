@@ -26,6 +26,7 @@ namespace ilPSP.LinSolvers.MUMPS
 {
 	public unsafe class MUMPS_csharp
 	{
+ 
         static UnsafeMUMPS m_MUMPS = new UnsafeMUMPS();                
 
 		public unsafe struct DMUMPS_STRUC_CS {
@@ -451,14 +452,42 @@ namespace ilPSP.LinSolvers.MUMPS
         }
 
         /// <summary>
+        /// Read from Environment which type of parallel library should be used.
+        /// Returns a list of libraries in specific order to search for.
+        /// </summary>
+        static string[] SelectLibrary(string si)
+        {
+            string[] liborder;
+            switch (si)
+            {
+                case "MPI":
+                case "OMP,MPI":
+                case "MPI,OMP":
+                case "MPI,SEQ":
+                case "OMP,MPI,SEQ":
+                case "MPI,OMP,SEQ":
+                case "MPI,SEQ,OMP":
+                    liborder = new string[] { "dmumps-mpi.dll", "libBoSSSnative_mpi.so", "libBoSSSnative_seq.so" };
+                    break;
+
+                default:
+                    liborder = new string[] { "dmumps-mpi.dll", "libBoSSSnative_seq.so", "libBoSSSnative_mpi.so" };
+                    break;
+            }
+            return liborder;
+
+        }
+
+        /// <summary>
         /// ctor
         /// </summary>
-        public UnsafeMUMPS() :
-            base(new string[] { "dmumps-mpi.dll", "libBoSSSnative_mpi.so", "libBoSSSnative_seq.so" },
-                  new string[3][][],
-                  new GetNameMangling[] { DynLibLoader.Identity, DynLibLoader.BoSSS_Prefix, DynLibLoader.BoSSS_Prefix },
-                  Helper(), //new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix },
-                  new int[] { -1, -1, -1 })
+        public UnsafeMUMPS(string si = "SEQ") :
+            base(
+                SelectLibrary(si),
+                new string[3][][],
+                new GetNameMangling[] { DynLibLoader.Identity, DynLibLoader.BoSSS_Prefix, DynLibLoader.BoSSS_Prefix },
+                Helper(), //new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix },
+                new int[] { -1, -1, -1 })
         { }
 
 #pragma warning disable 649

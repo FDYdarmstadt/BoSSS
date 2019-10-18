@@ -62,11 +62,39 @@ namespace ilPSP.LinSolvers.PARDISO {
     public class Wrapper_MKL : DynLibLoader {
 
         /// <summary>
+        /// Read from Environment which type of parallel library should be used.
+        /// Returns a list of libraries in specific order to search for.
+        /// </summary>
+        static string[] SelectLibrary(string si)
+        {
+            string[] liborder;
+            switch (si)
+            {
+                case "OMP":
+                case "OMP,MPI":
+                case "MPI,OMP":
+                case "OMP,SEQ":
+                case "OMP,MPI,SEQ":
+                case "OMP,SEQ,MPI":
+                case "MPI,OMP,SEQ":
+                    liborder = new string[] { "PARDISO.dll", "libBoSSSnative_omp.so", "libBoSSSnative_seq.so" };
+                    break;
+
+                default:
+                    liborder = new string[] { "PARDISO.dll", "libBoSSSnative_seq.so", "libBoSSSnative_omp.so" };
+                    break;
+            }
+            return liborder;
+
+        }
+
+
+        /// <summary>
         /// ctor
         /// </summary>
-        public Wrapper_MKL()
-            : base(
-                new string[] { "PARDISO.dll", "libBoSSSnative_seq.so", "libBoSSSnative_omp.so" },
+        public Wrapper_MKL(string si = "SEQ")
+            : base(                
+                SelectLibrary(si),
                 new string[3][][],
                 new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix, DynLibLoader.BoSSS_Prefix },
                 new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix },
