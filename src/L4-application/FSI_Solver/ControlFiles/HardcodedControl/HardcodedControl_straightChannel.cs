@@ -28,7 +28,7 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control ActiveRod_noBackroundFlow(int k = 3, int amrLevel = 2, double aspectRatio = 3, double relaxationFactor = 0.1, bool addaptiveUnderrelaxation = false) {
+        public static FSI_Control ActiveRod_noBackroundFlow(int k = 3, int amrLevel = 3, double aspectRatio = 5, double relaxationFactor = 5, bool addaptiveUnderrelaxation = true) {
             FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
 
@@ -41,7 +41,7 @@ namespace BoSSS.Application.FSI_Solver {
                 "Pressure_Outlet_upper"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 10, lengthY: 4, cellsPerUnitLength: 3, periodicX: false, periodicY: false);
+            C.SetGrid(lengthX: 10, lengthY: 10, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel);
 
             // Coupling Properties
@@ -50,14 +50,14 @@ namespace BoSSS.Application.FSI_Solver {
             C.LevelSetSmoothing = false;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.hydrodynamicsConvergenceCriterion = 1e-2;
+            C.hydrodynamicsConvergenceCriterion = 1e-4;
 
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.IncludeConvection = false;
-            double particleDensity = 2;
+            double particleDensity = 1;
             C.gravity = new double[] { 0, 0 };
 
             // Particle Properties
@@ -81,7 +81,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(dt: 1e-3, noOfTimesteps: 100000);
+            C.SetTimesteps(dt: 1e-3, noOfTimesteps: int.MaxValue);
 
             return C;
         }

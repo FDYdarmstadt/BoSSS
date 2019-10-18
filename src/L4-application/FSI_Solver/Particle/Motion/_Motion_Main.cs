@@ -57,6 +57,11 @@ namespace BoSSS.Application.FSI_Solver {
                 m_HydrodynamicForces.Add(new double[spatialDim]);
                 m_HydrodynamicTorque.Add(new double());
             }
+
+            for (int i = 0; i < 10; i++) {
+                m_ForcesPreviousIteration.Add(new double[spatialDim]);
+                m_TorquePreviousIteration.Add(new double());
+            }
         }
 
         [NonSerialized]
@@ -85,9 +90,9 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         private readonly List<double> m_HydrodynamicTorque = new List<double>();
         [DataMember]
-        private double[] m_ForcesPreviousIteration = new double[spatialDim];
+        private readonly List<double[]> m_ForcesPreviousIteration = new List<double[]>();
         [DataMember]
-        private double m_TorquePreviousIteration = new double();
+        private readonly List<double> m_TorquePreviousIteration = new List<double>();
         [DataMember]
         private double m_CollisionTimestep = 0;
         [DataMember]
@@ -301,14 +306,14 @@ namespace BoSSS.Application.FSI_Solver {
         /// Returns the force of the previous iteration.
         /// </summary>
         internal double[] GetForcesPreviousIteration() {
-            return m_ForcesPreviousIteration;
+            return m_ForcesPreviousIteration[0];
         }
 
         /// <summary>
         /// Returns the torque of the previous iteration.
         /// </summary>
         internal double GetTorquePreviousIteration() {
-            return m_TorquePreviousIteration;
+            return m_TorquePreviousIteration[0];
         }
 
         /// <summary>
@@ -348,8 +353,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// Saves force and torque of the previous iteration.
         /// </summary>
         public void SaveHydrodynamicsOfPreviousIteration() {
-            m_ForcesPreviousIteration = m_HydrodynamicForces[0].CloneAs();
-            m_TorquePreviousIteration = m_HydrodynamicTorque[0];
+            Aux.SaveMultidimValueOfLastTimestep(m_ForcesPreviousIteration);
+            Aux.SaveValueOfLastTimestep(m_TorquePreviousIteration);
+            m_ForcesPreviousIteration[0] = m_HydrodynamicForces[0].CloneAs();
+            m_TorquePreviousIteration[0] = m_HydrodynamicTorque[0];
         }
 
         /// <summary>
@@ -407,6 +414,14 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="moment"></param>
         public void GetParticleLengthscale(double lengthscale) => MaxParticleLengthScale = lengthscale;
+
+        /// <summary>
+        /// Init of the moment of inertia.
+        /// </summary>
+        /// <param name="moment"></param>
+        public void GetParticleMinimalLengthscale(double lengthscale) => MinParticleLengthScale = lengthscale;
+
+        private double MinParticleLengthScale;
 
         /// <summary>
         /// Init of the moment of inertia.
@@ -493,10 +508,23 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="timestepID">
         /// The timestep ID. Used to distinguish between the first timestep and all other steps.
         /// </param>
-        public virtual void PredictForceAndTorque(double activeStress, double circumference, int timestepID) {
+        public virtual void PredictForceAndTorque(double activeStress, double circumference, int timestepID, double fluidViscosity, double dt) {
+
             if (timestepID == 1) {
-                m_HydrodynamicForces[0][0] = circumference * Math.Cos(m_Angle[0]) * activeStress / 10 + Gravity[0] * Density * ParticleArea / 10;
-                m_HydrodynamicForces[0][1] = circumference * Math.Sin(m_Angle[0]) * activeStress / 10 + Gravity[1] * Density * ParticleArea / 10;
+                double epsilon = MaxParticleLengthScale / MinParticleLengthScale;
+                double[] drag = new double[spatialDim];
+                double[] orientation = new double[] { Math.Cos(m_Angle[0]), Math.Sin(m_Angle[0]) };
+                double residual = double.MaxValue;
+                while (residual > 1e-15) {
+                    for (int d = 0; d < spatialDim; d++) {
+                        drag[d] = 6 * Math.PI * MinParticleLengthScale * fluidViscosity * Math.Abs(m_TranslationalVelocity[0][d]);
+                        m_HydrodynamicForces[1][d] = m_HydrodynamicForces[0][d] = -orientation[d];// (1.6 * Math.Pow(0.65, epsilon) + 1) * activeStress * MaxParticleLengthScale * orientation[d] - drag[d] + Gravity[d] * Density * ParticleArea;
+                        m_TranslationalVelocity[1][d] = m_TranslationalVelocity[0][d];
+                        m_TranslationalVelocity[0][d] = (1.6 * Math.Pow(0.65, epsilon) + 1) * activeStress * MaxParticleLengthScale * orientation[d] / (6 * Math.PI * MinParticleLengthScale * fluidViscosity);
+                    }
+                    residual = Math.Sqrt((m_TranslationalVelocity[0][0] - m_TranslationalVelocity[1][0]).Pow2() + (m_TranslationalVelocity[0][1] - m_TranslationalVelocity[1][1]).Pow2());
+                    Console.WriteLine("m_TranslationalVelocity " + m_TranslationalVelocity[0][0]);
+                }
                 m_HydrodynamicTorque[0] = 0;
             }
             else {
@@ -509,6 +537,30 @@ namespace BoSSS.Application.FSI_Solver {
                 if (Math.Abs(m_HydrodynamicTorque[0]) < 1e-20)
                     m_HydrodynamicTorque[0] = 0;
             }
+            Aux.TestArithmeticException(m_HydrodynamicForces[0], "hydrodynamic forces");
+            Aux.TestArithmeticException(m_HydrodynamicTorque[0], "hydrodynamic torque");
+        }
+
+        /// <summary>
+        /// Predicts the hydrodynamics at the beginning of the iteration loop in each timestep.
+        /// </summary>
+        /// <param name="activeStress"></param>
+        /// <param name="timestepID">
+        /// The timestep ID. Used to distinguish between the first timestep and all other steps.
+        /// </param>
+        public virtual void PredictFromPreviousIteration(double fluidViscosity, double activeStress) {
+            double[] drag = new double[spatialDim];
+            double epsilon = MaxParticleLengthScale / MinParticleLengthScale;
+            double[] orientation = new double[] { Math.Cos(m_Angle[0]), Math.Sin(m_Angle[0]) };
+            for (int d = 0; d < spatialDim; d++) {
+                drag[d] = 6 * Math.PI * MinParticleLengthScale * fluidViscosity * m_TranslationalVelocity[0][d];
+                //m_HydrodynamicForces[0][d] = (m_ForcesPreviousIteration[0][d] + (2.686919167 * Math.Pow(0.410149621, epsilon) + 1.02) * activeStress * MaxParticleLengthScale * orientation[d] - drag[d]) / 2;
+                //m_HydrodynamicForces[0][d] = (m_ForcesPreviousIteration[0][d].Pow2() - m_ForcesPreviousIteration[0][d] * (m_ForcesPreviousIteration[1][d] + m_ForcesPreviousIteration[2][d]) + m_ForcesPreviousIteration[1][d].Pow2()) / (m_ForcesPreviousIteration[1][d] - m_ForcesPreviousIteration[2][d]);
+                m_ForcesPreviousIteration[0][d] = m_HydrodynamicForces[0][d] = m_ForcesPreviousIteration[0][d] + m_ForcesPreviousIteration[0][d] * (m_ForcesPreviousIteration[0][d] - m_ForcesPreviousIteration[2][d]);
+            }
+            Console.WriteLine("prediction: " + m_ForcesPreviousIteration[0][0]);
+            //m_HydrodynamicTorque[0] = (m_TorquePreviousIteration[0].Pow2() - m_TorquePreviousIteration[0] * (m_TorquePreviousIteration[1] + m_TorquePreviousIteration[2]) + m_TorquePreviousIteration[1].Pow2()) / (m_TorquePreviousIteration[1] - m_TorquePreviousIteration[2]);
+            m_HydrodynamicTorque[0] = m_TorquePreviousIteration[0] + (m_TorquePreviousIteration[0] - m_TorquePreviousIteration[1]) / 2;
             Aux.TestArithmeticException(m_HydrodynamicForces[0], "hydrodynamic forces");
             Aux.TestArithmeticException(m_HydrodynamicTorque[0], "hydrodynamic torque");
         }
@@ -767,8 +819,8 @@ namespace BoSSS.Application.FSI_Solver {
         protected void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque, bool firstIteration) {
             if (m_UnderrelaxationParam != null && !firstIteration) {
                 ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation(m_UnderrelaxationParam, CalculateAverageForces(tempForces, tempTorque));
-                Underrelaxation.Forces(ref tempForces, m_ForcesPreviousIteration);
-                Underrelaxation.Torque(ref tempTorque, m_TorquePreviousIteration);
+                Underrelaxation.Forces(ref tempForces, m_ForcesPreviousIteration[0]);
+                Underrelaxation.Torque(ref tempTorque, m_TorquePreviousIteration[0]);
             }
             for (int d = 0; d < spatialDim; d++) {
                 //if(tempForces[d] > 1e-15)

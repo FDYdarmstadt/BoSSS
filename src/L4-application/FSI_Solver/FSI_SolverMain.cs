@@ -431,7 +431,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
             return couplingArray;
         }
-        
+
         /// <summary>
         /// Calls level set update depending on level set handling method.
         /// </summary>
@@ -723,7 +723,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
             cellsExchange.MPIExchange(GridData);
             FixNeighbourColoring(cellsExchange);
-            for(int j = 0; j < J; j++) {
+            for (int j = 0; j < J; j++) {
                 cells[j] = cellsExchange[j];
             }
             return cells;
@@ -839,20 +839,18 @@ namespace BoSSS.Application.FSI_Solver {
                             Auxillary.CheckForMaxIterations(iterationCounter, ((FSI_Control)Control).maxIterationsFullyCoupled);
                             Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
                             Auxillary.SaveOldParticleState(m_Particles);
-
+                            //int PredictFreq = 5;
                             // actual physics
                             // -------------------------------------------------
-                            //if (IsFullyCoupled && iterationCounter == 0) 
-                            {
+                            if (IsFullyCoupled && iterationCounter == 0) {
                                 InitializeParticlePerIteration(m_Particles, TimestepInt);
                             }
-                            //else 
-                            {
+                            else {
                                 m_BDF_Timestepper.Solve(phystime, dt, false);
                                 CalculateHydrodynamicForces(m_Particles, dt, !IsFullyCoupled);
                             }
-                            CalculateParticleVelocity(m_Particles, dt, iterationCounter);
-
+                            if (TimestepInt != 1 || iterationCounter != 0)
+                                CalculateParticleVelocity(m_Particles, dt, iterationCounter);
                             // not a fully coupled system? -> no iteration
                             // -------------------------------------------------
                             if (!IsFullyCoupled)
@@ -912,6 +910,10 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
+        public bool IsMultiple(int a, int b) {
+            return (a % b) == 0;
+        }
+
         /// <summary>
         /// Saves forces and rotational velocity for NUnit test.
         /// </summary>
@@ -969,7 +971,7 @@ namespace BoSSS.Application.FSI_Solver {
                     currentParticle.Motion.UpdateDampingTensors();
                 }
                 currentParticle.Motion.SaveHydrodynamicsOfPreviousTimestep();
-                //currentParticle.Motion.PredictForceAndTorque(currentParticle.ActiveStress, currentParticle.Circumference, TimestepInt);
+                currentParticle.Motion.PredictForceAndTorque(currentParticle.ActiveStress, currentParticle.Circumference, TimestepInt, FluidViscosity, DtMax);
             }
         }
 
@@ -1006,7 +1008,7 @@ namespace BoSSS.Application.FSI_Solver {
                 particle.Motion.UpdateParticlePositionAndAngle(dt);
             }
         }
-        
+
         /// <summary>
         /// Creates a log file for the residum of the hydrodynamic forces.
         /// </summary>
@@ -1026,7 +1028,7 @@ namespace BoSSS.Application.FSI_Solver {
                 logHydrodynamicsResidual.Flush();
             }
         }
-        
+
         /// <summary>
         /// Creates a log file for the physical data of the particles. Only active if a database is specified.
         /// </summary>
@@ -1362,7 +1364,7 @@ namespace BoSSS.Application.FSI_Solver {
             BitArray collisionFineCells = new BitArray(noOfLocalCells);
             double radiusMediumCells = 3 * h_minStart;
             double radiusFineCells = 2 * h_minStart;
-            double radiusCollision = h_minStart;
+            double radiusCollision = LsTrk.GridDat.Cells.h_minGlobal;
             for (int p = 0; p < m_Particles.Count; p++) {
                 Particle particle = m_Particles[p];
                 for (int j = 0; j < noOfLocalCells; j++) {
@@ -1383,7 +1385,7 @@ namespace BoSSS.Application.FSI_Solver {
             List<Tuple<int, CellMask>> AllCellsWithMaxRefineLevel = new List<Tuple<int, CellMask>> {
                 new Tuple<int, CellMask>(refinementLevel, new CellMask(GridData, fineCells)),
                 new Tuple<int, CellMask>(coarseRefinementLevel, new CellMask(GridData, mediumCells)),
-                new Tuple<int, CellMask>(refinementLevel + 2, new CellMask(GridData, collisionFineCells)),
+                new Tuple<int, CellMask>(refinementLevel + 1, new CellMask(GridData, collisionFineCells)),
             };
             return AllCellsWithMaxRefineLevel;
         }

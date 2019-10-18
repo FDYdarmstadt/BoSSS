@@ -107,8 +107,8 @@ namespace BoSSS.Application.FSI_Solver {
             double UnderrelaxationCoeff = predefinedFactor * 1e-1;
             double UnderrelaxationExponent = 0;
 
-            if (Math.Abs(averageValueOfVar) > 1e6 * Math.Abs(variable) || Math.Abs(variable) < 1e-10) {
-                UnderrelaxationCoeff = 0;
+            if (Math.Abs(averageValueOfVar) > 1e4 * Math.Abs(variable) || Math.Abs(variable) < 1e-10) {
+                UnderrelaxationCoeff = 1e-20;
             }
             else {
                 while (Math.Abs(UnderrelaxationCoeff * variable) > 0.75 * Math.Abs(variableAtPrevIteration) && UnderrelaxationCoeff > 1e-15) {

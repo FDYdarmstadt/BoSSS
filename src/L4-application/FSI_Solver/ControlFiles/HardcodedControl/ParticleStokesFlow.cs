@@ -24,9 +24,9 @@ using BoSSS.Solution.XdgTimestepping;
 namespace BoSSS.Application.FSI_Solver {
     public class ParticleStokesFlow : IBM_Solver.HardcodedTestExamples {
 
-        public static FSI_Control WetParticleWallCollision(int k = 3, double DensityFactor = 1000) {
+        public static FSI_Control WetParticleWallCollision(int k = 3, double DensityFactor = 2500, int amrLevel = 4) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "wetParticleWallCollision");
-            C.SetSaveOptions(@"\\hpccluster\hpccluster-scratch\deussen\cluster_db\Channel", 1);
+            C.SetSaveOptions(@"D:\BoSSS_databases\wetParticleCollision", 1);
 
             List<string> boundaryValues = new List<string> {
                 "Pressure_Outlet_left",
@@ -35,16 +35,16 @@ namespace BoSSS.Application.FSI_Solver {
                 "Pressure_Outlet_upper"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 10, lengthY: 10, cellsPerUnitLength: 0.5, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel: 6);
-            C.hydrodynamicsConvergenceCriterion = 1e-2;
+            C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(amrLevel);
+            C.hydrodynamicsConvergenceCriterion = 1e-3;
 
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.Material = true;
-            C.gravity = new double[] { 0, -9.81 };
+            C.gravity = new double[] { 0, -5 };
             double particleDensity = 1 * DensityFactor;
             // Particle Properties
             // =============================   
@@ -52,7 +52,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles = new List<Particle>();
             C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.hydrodynamicsConvergenceCriterion, relaxationFactor: 1.0, useAddaptiveUnderrelaxation: true);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 1);
-            C.Particles.Add(new Particle_Sphere(motion, 0.5, new double[] { 0.0, 0.0 }, startAngl: 0));
+            C.Particles.Add(new Particle_Sphere(motion, 0.25, new double[] { 0.0, 0.0 }, startAngl: 0, 0, new double[] { 0, 0}));
 
             // Quadrature rules
             // =============================   
@@ -77,15 +77,15 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Coupling Properties
             // =============================
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.LSunderrelax = 1;
-            C.maxIterationsFullyCoupled = 1000000;
+            C.maxIterationsFullyCoupled = 2000;
 
 
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(dt: 1e-3, noOfTimesteps: 50000);
+            C.SetTimesteps(dt: 1e-3, noOfTimesteps: 2500);
 
             // haben fertig...
             // ===============
