@@ -28,7 +28,7 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HC_2ParticleInteraction : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control Main(int k = 2, int amrLevel = 3, double aspectRatio = 2, double relaxationFactor = 0.1, bool addaptiveUnderrelaxation = true, double conv = 1e-4) {
+        public static FSI_Control Main(int k = 3, int amrLevel = 3, double aspectRatio = 2, double relaxationFactor = 0.1, bool addaptiveUnderrelaxation = true, double conv = 1e-5) {
             FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
 
@@ -41,7 +41,7 @@ namespace BoSSS.Application.FSI_Solver {
                 "Pressure_Outlet_upper"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 10, lengthY: 10, cellsPerUnitLength: 1, periodicX: true, periodicY: true);
+            C.SetGrid(lengthX: 10, lengthY: 10, cellsPerUnitLength: 2, periodicX: true, periodicY: true);
             C.SetAddaptiveMeshRefinement(amrLevel);
 
             // Coupling Properties

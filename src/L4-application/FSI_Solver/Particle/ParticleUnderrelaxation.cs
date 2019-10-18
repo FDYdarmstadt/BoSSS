@@ -156,8 +156,9 @@ namespace BoSSS.Application.FSI_Solver {
             if (Math.Abs(averageValueOfVar) > 1e4 * Math.Abs(variable) || Math.Abs(variable) < 1e-10) {
                 UnderrelaxationCoeff = 1e-20;
             }
-            else if (UnderrelaxationCoeff < predefinedFactor * 1e-3)
-                UnderrelaxationCoeff = predefinedFactor * 1e-3;
+            else if (UnderrelaxationCoeff < predefinedFactor * 1e-2)
+                UnderrelaxationCoeff = predefinedFactor * 1e-2;
+
 
             double GlobalStateBuffer = UnderrelaxationCoeff.MPIMin();
             UnderrelaxationCoeff = GlobalStateBuffer;
