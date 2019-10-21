@@ -108,6 +108,13 @@ namespace BoSSS.Application.ExternalBinding {
             }
         }
 
+
+        public void TestMethod(int a, out int b, ref int c) {
+
+            b = 0;
+        }
+
+
         internal GridServer(GridData __g) {
             this.GridDataObject = __g;
         }

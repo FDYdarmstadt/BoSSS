@@ -7,7 +7,13 @@ using System.Threading.Tasks;
 namespace BoSSS.Application.ExternalBinding.CodeGen {
     class CodeGenHeaderFile : CodeGenBase {
 
-        public const string HeaderFileSuffix = ".H";
+        public const string HeaderFileSuffix = ".h";
 
+
+        protected override string FilenameExt {
+            get {
+                return HeaderFileSuffix;
+            }
+        }
     }
 }
