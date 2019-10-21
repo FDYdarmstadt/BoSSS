@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using ilPSP;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
@@ -56,16 +57,19 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="forcesPreviousIteration">
         /// The hydrodynamic forces at the previous iteration.
         /// </param>
-        internal void Forces(ref double[] forces, List<double[]> forcesPreviousIteration) {
+        internal void Forces(ref double[] forces, List<double[]> forcesPreviousIteration, ref double[] oldOmega, double[] rawForcesPrev) {
             for (int d = 0; d < forces.Length; d++) {
                 List<double> tempForcesPrev = new List<double>();
                 for (int i = 0; i < forcesPreviousIteration.Count; i++) {
                     tempForcesPrev.Add(forcesPreviousIteration[i][d]);
                 }
-                double underrelaxationCoeff = m_UseAdaptiveUnderrelaxation == true
-                    ? CalculateAdaptiveUnderrelaxation(forces[d], tempForcesPrev, m_AverageForce, m_ConvergenceLimit, m_RelaxationFactor)
-                    : m_RelaxationFactor;
-                forces[d] = underrelaxationCoeff * forces[d] + (1 - underrelaxationCoeff) * forcesPreviousIteration[0][d];
+                //double underrelaxationCoeff = m_UseAdaptiveUnderrelaxation == true
+                //    ? CalculateAdaptiveUnderrelaxation(forces[d], tempForcesPrev, m_AverageForce, m_ConvergenceLimit, m_RelaxationFactor)
+                //    : m_RelaxationFactor;
+                //forces[d] = underrelaxationCoeff * forces[d] + (1 - underrelaxationCoeff) * forcesPreviousIteration[0][d];
+                double[] Omega = new double[] { 0, oldOmega[d] };
+                AitkenUnderrelaxation(ref forces[d], tempForcesPrev, Omega, 0, rawForcesPrev[d]);
+                oldOmega[d] = Omega[0];
             }
         }
 
@@ -138,8 +142,8 @@ namespace BoSSS.Application.FSI_Solver {
         private double CalculateAdaptiveUnderrelaxation(double variable, List<double> variableAtPrevIteration, double averageValueOfVar, double convergenceLimit, double predefinedFactor) {
             double UnderrelaxationCoeff;
             double denominator = variableAtPrevIteration.Count;
-            for (int i = 0; i < variableAtPrevIteration.Count - 1; i++) {
-                if (Math.Sign(variable - variableAtPrevIteration[i]) != Math.Sign(variable - variableAtPrevIteration[i + 1])) {
+            for (int i = 1; i < variableAtPrevIteration.Count; i++) {
+                if (Math.Sign(variable - variableAtPrevIteration[0]) != Math.Sign(variableAtPrevIteration[i-1] - variableAtPrevIteration[i])) {
                     predefinedFactor /= denominator;
                     break;
                 }
@@ -150,8 +154,8 @@ namespace BoSSS.Application.FSI_Solver {
             if (UnderrelaxationCoeff >= 10 * predefinedFactor)
                 UnderrelaxationCoeff = 10 * predefinedFactor;
 
-            if (UnderrelaxationCoeff >= 1.4)
-                UnderrelaxationCoeff = 1.4;
+            if (UnderrelaxationCoeff >= 2)
+                UnderrelaxationCoeff = 2;
 
             if (Math.Abs(averageValueOfVar) > 1e4 * Math.Abs(variable) || Math.Abs(variable) < 1e-10) {
                 UnderrelaxationCoeff = 1e-20;
@@ -165,6 +169,14 @@ namespace BoSSS.Application.FSI_Solver {
 
             Console.WriteLine("Underrelaxation coefficient: " + UnderrelaxationCoeff + " average value: " + averageValueOfVar + " value " + variable + " agbdbf " + (averageValueOfVar > 1e3 * variable));
             return UnderrelaxationCoeff;
+        }
+
+        private void AitkenUnderrelaxation(ref double variable, List<double> variableAtPrevIteration, double[] Omega, int counter, double rawForcesPrev) {
+            Console.WriteLine(" value pre relax " + variable);
+            double[] residual = new double[] { (variable - variableAtPrevIteration[0]), (rawForcesPrev - variableAtPrevIteration[1]) };
+            Omega[0] = -Omega[1] * residual[1] / (residual[0] - residual[1]);
+            variable = Omega[0] * (variable - variableAtPrevIteration[0]) + variableAtPrevIteration[0];
+            Console.WriteLine(" value psot relax " + variable +  " Realxation coefficient " + Omega[0]);
         }
     }
 }

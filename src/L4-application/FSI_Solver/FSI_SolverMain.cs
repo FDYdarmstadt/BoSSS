@@ -842,12 +842,21 @@ namespace BoSSS.Application.FSI_Solver {
                             //int PredictFreq = 5;
                             // actual physics
                             // -------------------------------------------------
+                            //if (IsMultiple(iterationCounter, 3)) 
+                            //{
+                            //    foreach (Particle p in m_Particles) {
+                            //        p.Motion.PredictFromPreviousIteration(FluidViscosity, p.ActiveStress);
+                            //    }
+                            //}
                             if (IsFullyCoupled && iterationCounter == 0) {
                                 InitializeParticlePerIteration(m_Particles, TimestepInt);
                             }
                             else {
                                 m_BDF_Timestepper.Solve(phystime, dt, false);
-                                CalculateHydrodynamicForces(m_Particles, dt, !IsFullyCoupled);
+                                if (iterationCounter <= 1)
+                                    CalculateHydrodynamicForces(m_Particles, dt, true);
+                                else
+                                    CalculateHydrodynamicForces(m_Particles, dt, false);
                             }
                             if (TimestepInt != 1 || iterationCounter != 0)
                                 CalculateParticleVelocity(m_Particles, dt, iterationCounter);
@@ -859,6 +868,7 @@ namespace BoSSS.Application.FSI_Solver {
                             // residual
                             // -------------------------------------------------
                             hydroDynForceTorqueResidual = Auxillary.CalculateParticleResidual(m_Particles, ref iterationCounter);
+                            //hydroDynForceTorqueResidual = Auxillary.CalculateParticleVELResidual(m_Particles, ref iterationCounter);
 
                             // print iteration status
                             // -------------------------------------------------
@@ -1385,7 +1395,7 @@ namespace BoSSS.Application.FSI_Solver {
             List<Tuple<int, CellMask>> AllCellsWithMaxRefineLevel = new List<Tuple<int, CellMask>> {
                 new Tuple<int, CellMask>(refinementLevel, new CellMask(GridData, fineCells)),
                 new Tuple<int, CellMask>(coarseRefinementLevel, new CellMask(GridData, mediumCells)),
-                new Tuple<int, CellMask>(refinementLevel + 1, new CellMask(GridData, collisionFineCells)),
+                //new Tuple<int, CellMask>(refinementLevel + 1, new CellMask(GridData, collisionFineCells)),
             };
             return AllCellsWithMaxRefineLevel;
         }

@@ -68,9 +68,9 @@ namespace BoSSS.Application.FSI_Solver {
             if (m_IsDry && m_UnderrelaxationParam != null)
                 throw new Exception("Error in control file: Cannot perform a dry simulation with full coupling between the particles and the (non-existing) fluid");
 
-            if (m_AddedDampingCoefficient != -1 && m_AddedDampingCoefficient < 0.5 && m_AddedDampingCoefficient > 1.5)
+            if (m_AddedDampingCoefficient != 0 && m_AddedDampingCoefficient < 0.5 && m_AddedDampingCoefficient > 1.5)
                 throw new Exception("Error in control file: Added damping coefficient should be between 0.5 and 1.5! See for reference Banks et al.");
-            if (m_AddedDampingCoefficient != -1 && (m_NoRotation || m_NoTranslation))
+            if (m_AddedDampingCoefficient != 0 && (m_NoRotation || m_NoTranslation))
                 throw new Exception("Error in control file: The added damping model is designed to contain all possible motion types (translation and rotation).");
 
             Aux.TestArithmeticException(m_Gravity, "gravity");
@@ -92,8 +92,8 @@ namespace BoSSS.Application.FSI_Solver {
                 if (m_AddedDampingCoefficient != 0)
                     return new Motion_AddedDamping(m_Gravity, m_Density, m_UnderrelaxationParam, m_AddedDampingCoefficient);
                 else
-                    return m_NoRotation ? new Motion_Wet_NoRotation(m_Gravity, m_Density)
-                        : m_NoTranslation ? new Motion_Wet_NoTranslation(m_Gravity, m_Density)
+                    return m_NoRotation ? new Motion_Wet_NoRotation(m_Gravity, m_Density, m_UnderrelaxationParam)
+                        : m_NoTranslation ? new Motion_Wet_NoTranslation(m_Gravity, m_Density, m_UnderrelaxationParam)
                         : new Motion_Wet(m_Gravity, m_Density, m_UnderrelaxationParam);
             }
         }

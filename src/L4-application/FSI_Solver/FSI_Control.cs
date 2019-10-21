@@ -109,8 +109,8 @@ namespace BoSSS.Application.FSI_Solver {
                 q = (int)(cellsPerUnitLength * lengthX);
                 r = (int)(cellsPerUnitLength * lengthY);
 
-                double[] Xnodes = GenericBlas.Linspace(-lengthX / 2, lengthX / 2, q);
-                double[] Ynodes = GenericBlas.Linspace(-lengthY / 2, lengthY / 2, r);
+                double[] Xnodes = GenericBlas.Linspace(-lengthX / 2, lengthX / 2, q + 1);
+                double[] Ynodes = GenericBlas.Linspace(-lengthY / 2, lengthY / 2, r + 1);
 
                 Grid2D grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: periodicX, periodicY: periodicY);
 

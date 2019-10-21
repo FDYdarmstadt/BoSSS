@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using ilPSP;
@@ -31,6 +32,7 @@ namespace BoSSS.Application.FSI_Solver {
             m_U = U.ToArray();
             m_P = P;
             m_LevelSetTracker = levelSetTracker;
+            m_GridData = m_LevelSetTracker.GridDat;
             m_CutCells = cutCells;
             m_FluidViscosity = fluidViscosity;
         }
@@ -46,6 +48,8 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         private readonly LevelSetTracker m_LevelSetTracker;
         [DataMember]
+        private readonly GridData m_GridData;
+        [DataMember]
         private readonly CellMask m_CutCells;
         [DataMember]
         private readonly double m_FluidViscosity;
@@ -58,7 +62,6 @@ namespace BoSSS.Application.FSI_Solver {
             double[] IntegrationForces = tempForces.CloneAs();
             for (int d = 0; d < m_SpatialDim; d++) {
                 void ErrFunc(int CurrentCellID, int Length, NodeSet Ns, MultidimensionalArray result) {
-
                     int K = result.GetLength(1);
                     MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Length, K, m_SpatialDim, m_SpatialDim);
                     MultidimensionalArray pARes = MultidimensionalArray.Create(Length, K);
@@ -73,15 +76,15 @@ namespace BoSSS.Application.FSI_Solver {
                         }
                     }
                 }
-                var SchemeHelper = m_LevelSetTracker.GetXDGSpaceMetrics(new[] { m_LevelSetTracker.GetSpeciesId("A") }, m_RequiredOrder, 1).XQuadSchemeHelper;
+
+                int[] noOfIntegrals = new int[] { 1 };
+                XQuadSchemeHelper SchemeHelper = m_LevelSetTracker.GetXDGSpaceMetrics(new[] { m_LevelSetTracker.GetSpeciesId("A") }, m_RequiredOrder, 1).XQuadSchemeHelper;
                 CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, m_CutCells);
-                CellQuadrature.GetQuadrature(new int[] { 1 }, m_LevelSetTracker.GridDat, cqs.Compile(m_LevelSetTracker.GridDat, m_RequiredOrder),
-                    delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-                        ErrFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
-                    },
-                    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                        IntegrationForces[d] = ForceTorqueSummationWithNeumaierArray(IntegrationForces[d], ResultsOfIntegration, Length);
-                    }
+                ICompositeQuadRule<QuadRule> surfaceRule = cqs.Compile(m_LevelSetTracker.GridDat, m_RequiredOrder);
+
+                CellQuadrature.GetQuadrature(noOfIntegrals, m_GridData, surfaceRule,
+                    delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) { ErrFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0)); },
+                    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) { IntegrationForces[d] = ForceTorqueSummationWithNeumaierArray(IntegrationForces[d], ResultsOfIntegration, Length); }
                 ).Execute();
             }
             return tempForces = IntegrationForces.CloneAs();
