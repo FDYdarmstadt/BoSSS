@@ -98,7 +98,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                 new string[3][][],
                 new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix, DynLibLoader.BoSSS_Prefix },
                 new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix },
-                new int[] { -1, -1, -1 }) { }
+                new int[] { -1, -1, -1 }) { Console.WriteLine("searching for library variants of PARDISO in following order: {0}", si); }
 
         /// <summary>
         /// PARDISO interface, see PARDISO documentation

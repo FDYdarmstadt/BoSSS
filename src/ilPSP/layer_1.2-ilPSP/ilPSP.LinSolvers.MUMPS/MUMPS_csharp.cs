@@ -24,10 +24,30 @@ using MPI.Wrappers.Utils;
 
 namespace ilPSP.LinSolvers.MUMPS
 {
+    /// <summary>
+    /// Singleton pattern to control the Instantiation of the Mumps wrapper.
+    /// </summary>
+    public static class SingletonMumps
+    {
+        static private string parallelism = "SEQ";
+
+        public static void SetParallelism(string si)
+        {
+            parallelism = si;            
+        }
+
+        public static UnsafeMUMPS Instance
+        {
+            get {
+                return new UnsafeMUMPS(parallelism);
+            }
+        }
+    }
+
 	public unsafe class MUMPS_csharp
 	{
- 
-        static UnsafeMUMPS m_MUMPS = new UnsafeMUMPS();                
+
+        static UnsafeMUMPS m_MUMPS = SingletonMumps.Instance;
 
 		public unsafe struct DMUMPS_STRUC_CS {
 
@@ -488,7 +508,7 @@ namespace ilPSP.LinSolvers.MUMPS
                 new GetNameMangling[] { DynLibLoader.Identity, DynLibLoader.BoSSS_Prefix, DynLibLoader.BoSSS_Prefix },
                 Helper(), //new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix },
                 new int[] { -1, -1, -1 })
-        { }
+        { Console.WriteLine("searching for library variants of PARDISO in following order: {0}", si); }
 
 #pragma warning disable 649
         _MUMPS_GET_MAPPING mumps_get_mapping;
