@@ -43,6 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CodeGenExportAttribute.cs" />
     <Compile Include="ExternalBinding.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="FixedOperators.cs" />
