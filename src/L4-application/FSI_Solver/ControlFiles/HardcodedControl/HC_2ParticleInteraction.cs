@@ -28,7 +28,7 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HC_2ParticleInteraction : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control Main(int k = 2, int amrLevel = 3, double aspectRatio = 2, double relaxationFactor = 0.3, bool addaptiveUnderrelaxation = true, double conv = 1e-6) {
+        public static FSI_Control Main(int k = 2, int amrLevel = 2, double aspectRatio = 2, double relaxationFactor = 0.3, bool addaptiveUnderrelaxation = true, double conv = 1e-6) {
             FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
 

@@ -94,8 +94,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="fluidViscosity"></param>
         public override void UpdateForcesAndTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, bool firstIteration, double dt = 0) {
             double[] tempForces = CalculateHydrodynamicForces(hydrodynamicsIntegration, fluidDensity);
-            double tempTorque = 0;
-            HydrodynamicsPostprocessing(tempForces, tempTorque, firstIteration);
+            HydrodynamicsPostprocessing(tempForces, firstIteration);
         }
     }
 }

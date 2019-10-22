@@ -94,10 +94,10 @@
     <Compile Include="ControlFiles\HardcodedControl\ParticleStokesFlow.cs" />
     <Compile Include="ControlFiles\Tests\HardcodedTestExamples.cs" />
     <Compile Include="ControlFiles\Tests\TestProgram.cs" />
-    <Compile Include="FluxesAtBoundary\ActiveConvectionAtIB.cs" />
-    <Compile Include="FluxesAtBoundary\ActiveDivergenceAtIB.cs" />
-    <Compile Include="FluxesAtBoundary\ActivePressureAtIB.cs" />
-    <Compile Include="FluxesAtBoundary\ActiveViscosityAtIB.cs" />
+    <Compile Include="FluxesAtBoundary\FSI_ConvectionAtIB.cs" />
+    <Compile Include="FluxesAtBoundary\FSI_DivergenceAtIB.cs" />
+    <Compile Include="FluxesAtBoundary\FSI_PressureAtIB.cs" />
+    <Compile Include="FluxesAtBoundary\FSI_ViscosityAtIB.cs" />
     <Compile Include="FSI_Collision.cs" />
     <Compile Include="FSI_TimestepInfo.cs" />
     <Compile Include="FSI_LevelSetUpdate.cs" />

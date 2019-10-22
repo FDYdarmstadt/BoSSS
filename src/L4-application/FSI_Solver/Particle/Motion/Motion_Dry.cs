@@ -38,8 +38,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt">Timestep</param>
         protected override double[] CalculateTranslationalVelocity(double dt) {
-            double[] l_TranslationalVelocity = new double[spatialDim];
-            for (int d = 0; d < spatialDim; d++) {
+            double[] l_TranslationalVelocity = new double[m_Dim];
+            for (int d = 0; d < m_Dim; d++) {
                 l_TranslationalVelocity[d] = GetTranslationalVelocity(1)[d] + GetTranslationalAcceleration(0)[d] * dt;
             }
             Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
@@ -51,8 +51,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt">Timestep</param>
         protected override double[] CalculateTranslationalVelocity(double dt, double collisionTimestep) {
-            double[] l_TranslationalVelocity = new double[spatialDim];
-            for (int d = 0; d < spatialDim; d++) {
+            double[] l_TranslationalVelocity = new double[m_Dim];
+            for (int d = 0; d < m_Dim; d++) {
                 l_TranslationalVelocity[d] = GetTranslationalVelocity(1)[d] + GetTranslationalAcceleration(0)[d] * (dt - collisionTimestep);
             }
             Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
@@ -95,8 +95,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// Overrides the calculation of hydrodynamics for fixed particles, so that nothing happens.
         /// </summary>
         public override void UpdateForcesAndTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration = null, double fluidDensity = 0, bool firstIteration = false, double dt = 0) {
-            double[] tempForces = new double[spatialDim];
-            for (int d = 0; d < spatialDim; d++) {
+            double[] tempForces = new double[m_Dim];
+            for (int d = 0; d < m_Dim; d++) {
                 tempForces[d] = Gravity[d] * Density * ParticleArea;
             }
             double tempTorque = 0;

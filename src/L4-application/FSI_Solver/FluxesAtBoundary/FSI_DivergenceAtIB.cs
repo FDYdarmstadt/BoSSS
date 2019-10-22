@@ -24,9 +24,9 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
     /// <summary>
     /// velocity jump penalty for the divergence operator, on the level set
     /// </summary>
-    public class ActiveDivergenceAtIB : ILevelSetForm {
+    public class FSI_DivergenceAtIB : ILevelSetForm {
 
-        public ActiveDivergenceAtIB(int _D, LevelSetTracker lsTrk, Func<double[], double, double[]> getParticleParams) {
+        public FSI_DivergenceAtIB(int _D, LevelSetTracker lsTrk, Func<double[], double, double[]> getParticleParams) {
             D = _D;
             m_LsTrk = lsTrk;
             m_getParticleParams = getParticleParams;
@@ -49,9 +49,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
         }
 
         public double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
-            double uAxN = GenericBlas.InnerProd(U_Neg, cp.n);
-
-            var parameters_P = m_getParticleParams(cp.x, cp.time);
+            double[] parameters_P = m_getParticleParams(cp.x, cp.time);
             double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
             double wLevSet = parameters_P[2];
             double[] RadialNormalVector = new double[] { parameters_P[3], parameters_P[4] };
@@ -62,15 +60,9 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
             _uLevSet[0] = uLevSet[0] + RadialLength * wLevSet * RadialNormalVector[0];
             _uLevSet[1] = uLevSet[1] + RadialLength * wLevSet * RadialNormalVector[1];
 
+            double uAxN = GenericBlas.InnerProd(U_Neg, cp.n);
             double uBxN = GenericBlas.InnerProd(_uLevSet, cp.n);
-
-            // transform from species B to A: we call this the "A-fictitious" value
-            double uAxN_fict;
-            uAxN_fict = uBxN;
-
-            double FlxNeg = -DirichletFlux(uAxN, uAxN_fict); // flux on A-side
-            //double FlxPos = 0;
-
+            double FlxNeg = -DirichletFlux(uAxN, uBxN); 
             return FlxNeg * v_Neg;
         }
 

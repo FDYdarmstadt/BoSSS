@@ -22,8 +22,8 @@ using BoSSS.Foundation;
 
 namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
-    public class ActiveViscosityAtIB : ILevelSetForm {
-        public ActiveViscosityAtIB(int currentDim, int spatialDim, LevelSetTracker levelSetTracker, double penalty, Func<double, int, double> penaltyFunction, double fluidViscosity,
+    public class FSI_ViscosityAtIB : ILevelSetForm {
+        public FSI_ViscosityAtIB(int currentDim, int spatialDim, LevelSetTracker levelSetTracker, double penalty, Func<double, int, double> penaltyFunction, double fluidViscosity,
             Func<double[], double[]> getParticleParams) {
             m_penalty = penalty;
             m_PenaltyFunc = penaltyFunction;
@@ -104,32 +104,22 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             // 2D
             // ============================= 
             double uAFict = uLevSet[component] + RadialLength * wLevSet * RadialNormalVector[component];
-            //double f_xT = component == 0 ? active_stress * Math.Cos(Ang_P) * Math.Abs(inp.n[1]) : active_stress * Math.Sin(Ang_P) * Math.Abs(inp.n[0]);
-            //double f_xT = component == 0 ? active_stress * Math.Cos(Ang_P) * Math.Abs(inp.n[1])
-            //                             : active_stress * Math.Cos(Ang_P) * Math.Abs(inp.n[0]);
-            double f_xT = 0;
-            double[] test = new double[] { -Math.Sin(Ang_P), Math.Cos(Ang_P) };
-            if (test[0] * inp.n[0] + test[1] * inp.n[1] > 0) {
+            double[] orientation = new double[] { -Math.Sin(Ang_P), Math.Cos(Ang_P) };
+            double f_xT;
+            if (orientation[0] * inp.n[0] + orientation[1] * inp.n[1] > 0) {
                 f_xT = component == 0 ? -active_stress * (inp.n[1]) : active_stress * (inp.n[0]);
             }
             else {
                 f_xT = component == 0 ? active_stress * (inp.n[1]) : -active_stress * (inp.n[0]);
             }
-            //f_xT = component == 0 ? -active_stress * (inp.n[1]) : active_stress * (inp.n[0]);
-            //if (Math.Cos(Ang_P) * inp.n[1] - Math.Sin(Ang_P) * inp.n[0] > 0) {
-            //    f_xT = component == 0 ? -Math.Cos(Ang_P) * active_stress * inp.n[1] - Math.Sin(Ang_P) * active_stress * inp.n[0] : -Math.Sin(Ang_P) * active_stress * inp.n[1] + Math.Cos(Ang_P) * active_stress * inp.n[0];
-            //}
-            //else if (Math.Cos(Ang_P) * inp.n[1] - Math.Sin(Ang_P) * inp.n[0] < 0) {
-            //    f_xT = component == 0 ? Math.Cos(Ang_P) * active_stress * inp.n[1] + Math.Sin(Ang_P) * active_stress * inp.n[0] : Math.Sin(Ang_P) * active_stress * inp.n[1] - Math.Cos(Ang_P) * active_stress * inp.n[0];
-            //}
-            //else
-            //    f_xT = 0;
 
             // Dirichlet
             if (scaleActiveBoundary == 0) {
-                Ret -= Grad_uA_xN * (vA) * muA;                                // consistency term 
-                Ret -= Grad_vA_xN * (uA[component] - uAFict) * muA;            // symmetry term 
-                Ret += _penalty * (uA[component] - uAFict) * (vA) * muA;       // penalty term
+                for (int d = 0; d < D; d++) {
+                    Ret -= muA * Grad_uA[component, d] * vA * N[d];
+                    Ret -= muA * Grad_vA[d] * (uA[component] - uAFict) * N[d];
+                }
+                Ret += muA * (uA[component] - uAFict) * vA * _penalty;
             }
             // Active boundary
             else {
@@ -146,12 +136,6 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
                 for (int d1 = 0; d1 < D; d1++) {
                     for (int d2 = 0; d2 < D; d2++) {
                         double nn = 0;
-                        //if (test[0] * inp.n[0] + test[1] * inp.n[1] > 0) {
-                        //    f_xT = component == 0 ? -active_stress * (inp.n[1]) : active_stress * (inp.n[0]);
-                        //}
-                        //else {
-                        //    f_xT = component == 0 ? active_stress * (inp.n[1]) : -active_stress * (inp.n[0]);
-                        //}
                         if (d1 == d2) {
                             nn = Math.Abs(N[d1] * N[d2]);
                         }

@@ -63,6 +63,7 @@ namespace BoSSS.Application.FSI_Solver {
             Aux.TestArithmeticException(length, "Particle length");
             Aux.TestArithmeticException(thickness, "Particle thickness");
             Motion.GetParticleLengthscale(GetLengthScales().Max());
+            Motion.GetParticleMinimalLengthscale(GetLengthScales().Min());
             Motion.GetParticleArea(Area);
             Motion.GetParticleMomentOfInertia(MomentOfInertia);
         }

@@ -232,7 +232,7 @@ namespace BoSSS.Application.FSI_Solver {
                         // Immersed boundary
                         // -----------------------------
                         if (((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.None) {
-                            var convectionAtIB = new Solution.NSECommon.Operator.Convection.ActiveConvectionAtIB(d, spatialDim, LsTrk, boundaryCondMap,
+                            var convectionAtIB = new Solution.NSECommon.Operator.Convection.FSI_ConvectionAtIB(d, spatialDim, LsTrk, boundaryCondMap,
                                 delegate (double[] X) {
                                     throw new NotImplementedException("Currently not implemented for fixed motion");
                                 },
@@ -240,7 +240,7 @@ namespace BoSSS.Application.FSI_Solver {
                             comps.Add(convectionAtIB);
                         }
                         else {
-                            var convectionAtIB = new Solution.NSECommon.Operator.Convection.ActiveConvectionAtIB(d, spatialDim, LsTrk, boundaryCondMap,
+                            var convectionAtIB = new Solution.NSECommon.Operator.Convection.FSI_ConvectionAtIB(d, spatialDim, LsTrk, boundaryCondMap,
                                     delegate (double[] X) {
                                         return CreateCouplingAtParticleBoundary(X);
                                     },
@@ -264,7 +264,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 // Immersed boundary
                 // -----------------------------
-                Solution.NSECommon.Operator.Pressure.ActivePressureAtIB pressureAtIB = new Solution.NSECommon.Operator.Pressure.ActivePressureAtIB(d, spatialDim, LsTrk);
+                Solution.NSECommon.Operator.Pressure.FSI_PressureAtIB pressureAtIB = new Solution.NSECommon.Operator.Pressure.FSI_PressureAtIB(d, spatialDim, LsTrk);
                 comps.Add(pressureAtIB);
 
                 // if periodic boundary conditions are applied a fixed pressure gradient drives the flow
@@ -289,7 +289,7 @@ namespace BoSSS.Application.FSI_Solver {
                 // -----------------------------
                 if (((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.None) {
 
-                    var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.ActiveViscosityAtIB(d, spatialDim, LsTrk,
+                    var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk,
                         penalty, this.ComputePenaltyIB,
                         FluidViscosity / FluidDensity,
                         delegate (double[] X) {
@@ -298,7 +298,7 @@ namespace BoSSS.Application.FSI_Solver {
                     comps.Add(viscousAtIB);
                 }
                 else {
-                    var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.ActiveViscosityAtIB(d, spatialDim, LsTrk,
+                    var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk,
                         penalty, this.ComputePenaltyIB,
                         FluidViscosity / FluidDensity,
                         delegate (double[] X) {
@@ -328,7 +328,7 @@ namespace BoSSS.Application.FSI_Solver {
                     IBM_Op.EquationComponents["div"].Add(divPen);  // immersed boundary component
                 }
                 else {
-                    var divPen = new Solution.NSECommon.Operator.Continuity.ActiveDivergenceAtIB(spatialDim, LsTrk,
+                    var divPen = new Solution.NSECommon.Operator.Continuity.FSI_DivergenceAtIB(spatialDim, LsTrk,
                        delegate (double[] X, double time) {
                            return CreateCouplingAtParticleBoundary(X);
                        });
@@ -957,8 +957,8 @@ namespace BoSSS.Application.FSI_Solver {
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             for (int p = 0; p < particles.Count(); p++) {
                 Particle currentParticle = particles[p];
-                if (firstIteration)
-                    currentParticle.Motion.SaveHydrodynamicsOfPreviousTimestep();
+                //if (firstIteration)
+                //    currentParticle.Motion.SaveHydrodynamicsOfPreviousTimestep();
                 ParticleHydrodynamicsIntegration hydrodynamicsIntegration = new ParticleHydrodynamicsIntegration(2, Velocity, Pressure, LsTrk, currentParticle.CutCells_P(LsTrk), FluidViscosity);
                 currentParticle.Motion.UpdateForcesAndTorque(hydrodynamicsIntegration, FluidDensity, firstIteration, dt);
             }
@@ -981,7 +981,8 @@ namespace BoSSS.Application.FSI_Solver {
                     currentParticle.Motion.UpdateDampingTensors();
                 }
                 currentParticle.Motion.SaveHydrodynamicsOfPreviousTimestep();
-                currentParticle.Motion.PredictForceAndTorque(currentParticle.ActiveStress, currentParticle.Circumference, TimestepInt, FluidViscosity, DtMax);
+                currentParticle.Motion.ClearPreviousIterations();
+                currentParticle.Motion.PredictForceAndTorque(currentParticle.ActiveStress, currentParticle.Circumference, TimestepInt, FluidViscosity, FluidDensity,DtMax);
             }
         }
 

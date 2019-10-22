@@ -283,25 +283,6 @@ namespace FSI_Solver {
             return residual;
         }
 
-        internal double CalculateParticleVELResidual(List<Particle> Particles, ref int iterationCounter) {
-            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            double residual = 0;
-            if (iterationCounter == 0)
-                residual = double.MaxValue;
-            else {
-                foreach (Particle p in Particles) {
-                    double diffForcesX = (p.Motion.m_TranslationPreviousIteration[0] - p.Motion.GetTranslationalVelocity(0)[0]).Pow2();
-                    double diffForcesY = (p.Motion.m_TranslationPreviousIteration[1] - p.Motion.GetTranslationalVelocity(0)[1]).Pow2();
-                    double diffTorque = (p.Motion.m_RotationalPreviousIteration - p.Motion.GetRotationalVelocity(0)).Pow2();
-                    double absSolution = Math.Sqrt(p.Motion.GetTranslationalVelocity(0)[0].Pow2() + p.Motion.GetTranslationalVelocity(0)[1].Pow2() + p.Motion.GetRotationalVelocity(0).Pow2());
-                    residual += Math.Sqrt(diffForcesX + diffForcesY + diffTorque) / absSolution;
-                }
-            }
-            residual /= Particles.Count();
-            iterationCounter += 1;
-            return residual;
-        }
-
         internal void CheckForMaxIterations(int iterationCounter, int maximumIterations) {
             if (iterationCounter > maximumIterations)
                 throw new ApplicationException("No convergence in coupled iterative solver, number of iterations: " + iterationCounter);

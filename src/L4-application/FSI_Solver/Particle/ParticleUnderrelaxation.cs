@@ -18,6 +18,7 @@ using ilPSP;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 
 namespace BoSSS.Application.FSI_Solver {
@@ -57,19 +58,31 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="forcesPreviousIteration">
         /// The hydrodynamic forces at the previous iteration.
         /// </param>
-        internal void Forces(ref double[] forces, List<double[]> forcesPreviousIteration, ref double[] oldOmega, double[] rawForcesPrev) {
+        internal void Forces(ref double[] forces, List<double[]> forcesPreviousIteration, ref double[] oldOmega, List<double[]> rawForcesPrev) {
+            for (int d = 0; d < forces.Length; d++) {
+                List<double> tempForcesPrev = new List<double>();
+                List<double> tempRawForcesPrev = new List<double>();
+                for (int i = 0; i < forcesPreviousIteration.Count; i++) {
+                    tempForcesPrev.Add(forcesPreviousIteration[i][d]);
+                    tempRawForcesPrev.Add(rawForcesPrev[i][d]);
+                }
+                //MinimalPolynomialExtrapolation(ref forces[d], tempRawForcesPrev);
+                double[] Omega = new double[] { 0, oldOmega[d]};
+                AitkenUnderrelaxation(ref forces[d], tempForcesPrev, Omega, rawForcesPrev[1][d]);
+                oldOmega[d] = Omega[0];
+            }
+        }
+
+        internal void Forces(ref double[] forces, List<double[]> forcesPreviousIteration) {
             for (int d = 0; d < forces.Length; d++) {
                 List<double> tempForcesPrev = new List<double>();
                 for (int i = 0; i < forcesPreviousIteration.Count; i++) {
                     tempForcesPrev.Add(forcesPreviousIteration[i][d]);
                 }
-                //double underrelaxationCoeff = m_UseAdaptiveUnderrelaxation == true
-                //    ? CalculateAdaptiveUnderrelaxation(forces[d], tempForcesPrev, m_AverageForce, m_ConvergenceLimit, m_RelaxationFactor)
-                //    : m_RelaxationFactor;
-                //forces[d] = underrelaxationCoeff * forces[d] + (1 - underrelaxationCoeff) * forcesPreviousIteration[0][d];
-                double[] Omega = new double[] { 0, oldOmega[d] };
-                AitkenUnderrelaxation(ref forces[d], tempForcesPrev, Omega, 0, rawForcesPrev[d]);
-                oldOmega[d] = Omega[0];
+                double underrelaxationCoeff = m_UseAdaptiveUnderrelaxation == true
+                    ? CalculateAdaptiveUnderrelaxation(forces[d], tempForcesPrev, m_AverageForce, m_ConvergenceLimit, m_RelaxationFactor)
+                    : m_RelaxationFactor;
+                forces[d] = underrelaxationCoeff * forces[d] + (1 - underrelaxationCoeff) * forcesPreviousIteration[0][d];
             }
         }
 
@@ -83,6 +96,13 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="torquePreviousIteration">
         /// The hydrodynamic torque at the previous iteration.
         /// </param>
+        internal void Torque(ref double torque, List<double> torquePreviousIteration, ref double[] oldOmega, List<double> rawTorquePrev) {
+            //if (torquePreviousIteration.Count > 10)
+                MinimalPolynomialExtrapolation(ref torque, rawTorquePrev);
+            double[] Omega = new double[] { 0, oldOmega[2] };
+            AitkenUnderrelaxation(ref torque, torquePreviousIteration, Omega, rawTorquePrev[1]);
+            oldOmega[2] = Omega[0];
+        }
         internal void Torque(ref double torque, List<double> torquePreviousIteration) {
             double underrelaxationCoeff = m_UseAdaptiveUnderrelaxation == true
                 ? CalculateAdaptiveUnderrelaxation(torque, torquePreviousIteration, m_AverageForce, m_ConvergenceLimit, m_RelaxationFactor)
@@ -112,33 +132,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="iterationCounter">
         /// No. of iterations.
         /// </param>
-        //private double CalculateAdaptiveUnderrelaxation(double variable, double variableAtPrevIteration, double averageValueOfVar, double convergenceLimit, double predefinedFactor) {
-        //    double UnderrelaxationCoeff = predefinedFactor * 1e-1;
-        //    double UnderrelaxationExponent = 0;
-
-        //    if (Math.Abs(averageValueOfVar) > 1e4 * Math.Abs(variable) || Math.Abs(variable) < 1e-10) {
-        //        UnderrelaxationCoeff = 1e-20;
-        //    }
-        //    else {
-        //        while (Math.Abs(UnderrelaxationCoeff * variable) > 0.75 * Math.Abs(variableAtPrevIteration) && UnderrelaxationCoeff > 1e-15) {
-        //            UnderrelaxationExponent -= 1;
-        //            UnderrelaxationCoeff = predefinedFactor * Math.Pow(10, UnderrelaxationExponent);
-        //        }
-        //    }
-            
-        //    //if (Math.Abs(UnderrelaxationCoeff) < convergenceLimit * 1 && 1000 * Math.Abs(variable) > Math.Abs(averageValueOfVar))
-        //    //    UnderrelaxationCoeff = predefinedFactor * convergenceLimit * 1;
-
-        //    //if (UnderrelaxationCoeff >= predefinedFactor * 1e-1)
-        //    //    UnderrelaxationCoeff = predefinedFactor * 1e-1;
-
-        //    double GlobalStateBuffer = UnderrelaxationCoeff.MPIMin();
-        //    UnderrelaxationCoeff = GlobalStateBuffer;
-
-        //    Console.WriteLine("Underrelaxation coefficient: " + UnderrelaxationCoeff + " average value: " + averageValueOfVar + " value " + variable + " agbdbf " + (averageValueOfVar > 1e3 * variable));
-        //    return UnderrelaxationCoeff;
-        //}
-
         private double CalculateAdaptiveUnderrelaxation(double variable, List<double> variableAtPrevIteration, double averageValueOfVar, double convergenceLimit, double predefinedFactor) {
             double UnderrelaxationCoeff;
             double denominator = variableAtPrevIteration.Count;
@@ -171,12 +164,42 @@ namespace BoSSS.Application.FSI_Solver {
             return UnderrelaxationCoeff;
         }
 
-        private void AitkenUnderrelaxation(ref double variable, List<double> variableAtPrevIteration, double[] Omega, int counter, double rawForcesPrev) {
+        private void AitkenUnderrelaxation(ref double variable, List<double> variableAtPrevIteration, double[] Omega, double rawForcesPrev) {
             Console.WriteLine(" value pre relax " + variable);
             double[] residual = new double[] { (variable - variableAtPrevIteration[0]), (rawForcesPrev - variableAtPrevIteration[1]) };
             Omega[0] = -Omega[1] * residual[1] / (residual[0] - residual[1]);
             variable = Omega[0] * (variable - variableAtPrevIteration[0]) + variableAtPrevIteration[0];
             Console.WriteLine(" value psot relax " + variable +  " Realxation coefficient " + Omega[0]);
+        }
+
+        private void MinimalPolynomialExtrapolation(ref double variable, List<double> variableAtPrevIteration) {
+            Console.WriteLine("variable pre: " + variable);
+            double[] polynomialCoefficiants = new double[variableAtPrevIteration.Count];
+            polynomialCoefficiants[0] = NewPolynomialCoefficiant(variable, variableAtPrevIteration);
+            for (int p = 1; p < polynomialCoefficiants.Length; p++) {
+                polynomialCoefficiants[p] = 2 / (double)p;
+            }
+            double[] normalizedCoefficients = polynomialCoefficiants.CloneAs();
+            for (int p = 0; p < normalizedCoefficients.Length; p++) {
+                normalizedCoefficients[p] /= polynomialCoefficiants.Sum();
+            }
+            double test = normalizedCoefficients.Sum();
+            variable = normalizedCoefficients[0] * variable;
+            for (int k = 1; k < variableAtPrevIteration.Count; k++) {
+                variable += normalizedCoefficients[k] * variableAtPrevIteration[k];
+            }
+            Console.WriteLine("variable post: " + variable);
+        }
+
+        private double NewPolynomialCoefficiant(double variable, List<double> variableAtPrevIteration) {
+            double[] residual = new double[variableAtPrevIteration.Count];
+            residual[0] = variable - variableAtPrevIteration[1];
+            double residualSum = residual[0];
+            for (int r = 2; r < variableAtPrevIteration.Count; r++) {
+                residual[r] = variableAtPrevIteration[r - 1] - variableAtPrevIteration[r];
+                residualSum += Math.Pow(-1, r) * residual[r] / r;
+            }
+            return -residualSum / residual[0] - 1;
         }
     }
 }

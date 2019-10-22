@@ -205,7 +205,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="dt"></param>
         /// <param name="forces"></param>
         private void ForceAddedDamping(ref double[] forces, double dt) {
-            for (int d = 0; d < spatialDim; d++) {
+            for (int d = 0; d < m_Dim; d++) {
                 forces[d] += m_AddedDampingCoefficient * dt * (AddedDampingTensor[0, d] * GetTranslationalAcceleration(0)[0] + AddedDampingTensor[1, d] * GetTranslationalAcceleration(0)[1] + AddedDampingTensor[d, 2] * GetRotationalAcceleration(0));
             }
         }
