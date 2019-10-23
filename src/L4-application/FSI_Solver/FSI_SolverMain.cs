@@ -881,6 +881,12 @@ namespace BoSSS.Application.FSI_Solver {
                             Console.WriteLine("Milliseconds per iteration: " + printMillis);
                             Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count().MPISum());
                         }
+                        if (TimestepInt == 1 || IsMultiple(TimestepInt, 1)) {
+                            for (int p = 0; p < m_Particles.Count(); p++) {
+                                m_Particles[p].Motion.CreateStressLogger(CurrentSessionInfo, DatabaseDriver, phystime, p);
+                                m_Particles[p].Motion.LogStress(phystime);
+                            }
+                        }
                         // collision
                         // -------------------------------------------------
                         CalculateCollision(m_Particles, cellColor, dt);
@@ -1028,6 +1034,7 @@ namespace BoSSS.Application.FSI_Solver {
                 logHydrodynamicsResidual = DatabaseDriver.FsDriver.GetNewLog("HydrodynamicResidual", CurrentSessionInfo.ID);
                 logHydrodynamicsResidual.WriteLine(string.Format("{0}\t{1}\t{2}", "Time", "Iteration", "Residual"));
             }
+            IDatabaseDriver test = DatabaseDriver;
         }
 
         /// <summary>

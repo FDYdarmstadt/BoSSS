@@ -21,6 +21,7 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using ilPSP;
 using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace BoSSS.Application.FSI_Solver {
@@ -57,9 +58,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Calculate Forces acting from fluid onto the particle
         /// </summary>
-        internal double[] Forces() {
+        internal double[] Forces(out List<double[]>[] stressToPrintOut) {
             double[] tempForces = new double[m_SpatialDim];
             double[] IntegrationForces = tempForces.CloneAs();
+            List<double[]>[] stressToPrint = new List<double[]>[m_SpatialDim];
+            stressToPrint[0] = new List<double[]>();
+            stressToPrint[1] = new List<double[]>();
             for (int d = 0; d < m_SpatialDim; d++) {
                 void ErrFunc(int CurrentCellID, int Length, NodeSet Ns, MultidimensionalArray result) {
                     int K = result.GetLength(1);
@@ -73,6 +77,8 @@ namespace BoSSS.Application.FSI_Solver {
                     for (int j = 0; j < Length; j++) {
                         for (int k = 0; k < K; k++) {
                             result[j, k] = StressTensor(Grad_UARes, pARes, Normals, m_FluidViscosity, k, j, m_SpatialDim, d);
+                            double t = Math.PI * (1 - Math.Sign(Normals[j, k, 1])) / 2 + Math.Acos(Normals[j, k, 0]);
+                            stressToPrint[d].Add(new double[] { t, result[j, k] });
                         }
                     }
                 }
@@ -87,6 +93,7 @@ namespace BoSSS.Application.FSI_Solver {
                     delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) { IntegrationForces[d] = ForceTorqueSummationWithNeumaierArray(IntegrationForces[d], ResultsOfIntegration, Length); }
                 ).Execute();
             }
+            stressToPrintOut = stressToPrint.CloneAs();
             return tempForces = IntegrationForces.CloneAs();
         }
 

@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using FSI_Solver;
 using ilPSP;
@@ -21,6 +22,7 @@ using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 
@@ -519,8 +521,8 @@ namespace BoSSS.Application.FSI_Solver {
             double[] orientation = new double[] { Math.Cos(m_Angle[0]), Math.Sin(m_Angle[0]) };
             if (timestepID == 1) {
                 for (int d = 0; d < m_Dim; d++) {
-                    m_TranslationalVelocity[1][d] = m_TranslationalVelocity[0][d] = 0;// (1.6 * Math.Pow(0.65, epsilon) + 1) * activeStress * MaxParticleLengthScale * orientation[d] / (6 * Math.PI * MinParticleLengthScale * fluidViscosity)
-                                                   // + Gravity[d] * (Density - fluidDensity) * ParticleArea / (6 * Math.PI * MinParticleLengthScale * fluidViscosity);
+                    m_TranslationalVelocity[1][d] = 0;// m_TranslationalVelocity[0][d] = (1.6 * Math.Pow(0.65, epsilon) + 1) * activeStress * MaxParticleLengthScale * orientation[d] / (6 * Math.PI * MinParticleLengthScale * fluidViscosity)
+                                                    //+ Gravity[d] * (Density - fluidDensity) * ParticleArea / (6 * Math.PI * MinParticleLengthScale * fluidViscosity);
                 }
                 m_HydrodynamicTorque[0] = 0;
             }
@@ -709,6 +711,34 @@ namespace BoSSS.Application.FSI_Solver {
             return l_Acceleration;
         }
 
+        private double[][] TransformStressToPrint(List<double[]>[] stressToPrintOut) {
+            if (stressToPrintOut[0].Count() != stressToPrintOut[1].Count())
+                throw new Exception("Something strange happend!");
+            double[][] output = new double[stressToPrintOut[0].Count()][];
+            for (int d = 0; d < m_Dim; d++) {
+                for (int i = stressToPrintOut[d].Count() - 1; i > 0; i--) {
+                    for (int j = 0; j < i - 1; j++) {
+                        if (stressToPrintOut[d][j][0] > stressToPrintOut[d][j + 1][0]) {
+                            double[] temp = stressToPrintOut[d][j].CloneAs();
+                            stressToPrintOut[d][j] = stressToPrintOut[d][j + 1].CloneAs();
+                            stressToPrintOut[d][j + 1] = temp;
+                        }
+                    }
+                }
+            }
+            for (int i = 0; i < output.Length; i++) {
+                if (Math.Abs(stressToPrintOut[0][i][0] - stressToPrintOut[1][i][0]) > 1e-15)
+                    throw new Exception("Something strange happend!");
+                double surfaceParam = stressToPrintOut[0][i][0];
+                double normalStress = Math.Cos(surfaceParam) * stressToPrintOut[0][i][1] + Math.Sin(stressToPrintOut[0][i][0]) * stressToPrintOut[1][i][1];
+                double tangentialStress = -Math.Sin(surfaceParam) * stressToPrintOut[0][i][1] + Math.Cos(stressToPrintOut[0][i][0]) * stressToPrintOut[1][i][1];
+                surfaceParam = Math.PI * (1 - Math.Sign(-Math.Sin(m_Angle[0]) * Math.Cos(surfaceParam) + Math.Cos(m_Angle[0]) * Math.Sin(surfaceParam))) / 2 + Math.Acos(Math.Cos(m_Angle[0]) * Math.Cos(surfaceParam) + Math.Sin(m_Angle[0]) * Math.Sin(surfaceParam));
+                double[] insert = new double[] { surfaceParam, normalStress, tangentialStress };
+                output[i] = insert;
+            }
+            return output;
+        }
+
         /// <summary>
         /// Calculate the new rotational acceleration.
         /// </summary>
@@ -719,18 +749,48 @@ namespace BoSSS.Application.FSI_Solver {
             return l_Acceleration;
         }
 
+        private TextWriter logStress;
+
+        /// <summary>
+        /// Creates a log file for the residum of the hydrodynamic forces.
+        /// </summary>
+        public void CreateStressLogger(SessionInfo CurrentSessionInfo, IDatabaseDriver DatabaseDriver, double phystime, int particleID) {
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int MPIRank);
+            if ((MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
+                string name = "stress_Time_" + phystime.ToString() + "_particle_" + particleID.ToString();
+                logStress = DatabaseDriver.FsDriver.GetNewLog(name, CurrentSessionInfo.ID);
+                logStress.WriteLine(string.Format("{0},{1},{2},{3}", "Time", "surfaceParam", "stressNormal", "stressTangential"));
+            }
+        }
+
+        /// <summary>
+        /// Creates a log file for the residum of the hydrodynamic forces.
+        /// </summary>
+        public void LogStress(double phystime) {
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int MPIRank);
+            if ((MPIRank == 0) && (logStress != null)) {
+                for (int i = 0; i <  currentStress.Length; i++) {
+                    logStress.WriteLine(string.Format("{0},{1},{2},{3}", phystime, currentStress[i][0], currentStress[i][1], currentStress[i][2]));
+                    logStress.Flush();
+                }
+            }
+        }
+
         /// <summary>
         /// Update Forces and Torque acting from fluid onto the particle
         /// </summary>
         /// <param name="hydrodynamicsIntegration"></param>
         /// <param name="fluidDensity"></param>
         protected virtual double[] CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity) {
-            double[] tempForces = hydrodynamicsIntegration.Forces();
+            double[] tempForces = hydrodynamicsIntegration.Forces(out List<double[]>[] stressToPrintOut);
+            currentStress = TransformStressToPrint(stressToPrintOut);
             Aux.TestArithmeticException(tempForces, "temporal forces during calculation of hydrodynamics");
             Force_MPISum(ref tempForces);
             CalculateGravity(fluidDensity, tempForces);
             return tempForces;
         }
+
+        double[][] currentStress;
 
         /// <summary>
         /// Calculates the gravitational forces.
