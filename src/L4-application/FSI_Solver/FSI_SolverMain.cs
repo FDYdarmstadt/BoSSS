@@ -1380,8 +1380,8 @@ namespace BoSSS.Application.FSI_Solver {
             BitArray mediumCells = new BitArray(noOfLocalCells);
             BitArray fineCells = new BitArray(noOfLocalCells);
             BitArray collisionFineCells = new BitArray(noOfLocalCells);
-            double radiusMediumCells = 3 * h_minStart;
-            double radiusFineCells = 2 * h_minStart;
+            double radiusMediumCells = 3 * Math.Max(h_minStart, LsTrk.GridDat.Cells.h_minGlobal);
+            double radiusFineCells = 2 * Math.Max(h_minStart, LsTrk.GridDat.Cells.h_minGlobal);
             double radiusCollision = LsTrk.GridDat.Cells.h_minGlobal;
             for (int p = 0; p < m_Particles.Count; p++) {
                 Particle particle = m_Particles[p];

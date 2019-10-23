@@ -24,7 +24,7 @@ using BoSSS.Solution.XdgTimestepping;
 namespace BoSSS.Application.FSI_Solver {
     public class ParticleStokesFlow : IBM_Solver.HardcodedTestExamples {
 
-        public static FSI_Control StokesFlow(int k = 3, int amrLevel = 2) {
+        public static FSI_Control StokesFlow(int k = 3, int amrLevel = 4) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "wetParticleWallCollision");
             C.SetSaveOptions(@"D:\BoSSS_databases\wetParticleCollision", 1);
 
@@ -35,23 +35,23 @@ namespace BoSSS.Application.FSI_Solver {
                 "Pressure_Outlet_upper"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 6, lengthY: 30, cellsPerUnitLength: 1, periodicX: false, periodicY: true);
+            C.SetGrid(lengthX: 10, lengthY: 30, cellsPerUnitLength: 1, periodicX: false, periodicY: true);
             C.SetAddaptiveMeshRefinement(amrLevel);
-            C.hydrodynamicsConvergenceCriterion = 1e5;
+            C.hydrodynamicsConvergenceCriterion = 1e-5;
 
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 1e-3;
             C.PhysicalParameters.Material = true;
-            C.gravity = new double[] { 0, -9.81e-6 * 0 };
+            C.gravity = new double[] { 0, -9.81e-6 };
             // Particle Properties
             // =============================   
             double particleDensity = 2;
             C.Particles = new List<Particle>();
             C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.hydrodynamicsConvergenceCriterion, relaxationFactor: 0.1, useAddaptiveUnderrelaxation: true);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, true, false, C.underrelaxationParam, 0);
-            C.Particles.Add(new Particle_Sphere(motion, 0.5, new double[] { 0.0, 0.0 }, startAngl: 0, 10, new double[] { 0, 0 }));
+            C.Particles.Add(new Particle_Sphere(motion, 0.1, new double[] { 0.0, 0.0 }, startAngl: 0, 0, new double[] { 0, 0 }));
 
             // Quadrature rules
             // =============================   

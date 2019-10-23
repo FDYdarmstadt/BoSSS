@@ -153,8 +153,37 @@ namespace BoSSS.Application.FSI_Solver {
         /// </param>
         override public MultidimensionalArray GetSurfacePoints(double dAngle, double searchAngle, int subParticleID) {
             if (SpatialDim != 2)
-                throw new NotImplementedException("Only two dimensions are supported at the moment");
-            throw new NotImplementedException("ToDo");
+                throw new NotImplementedException("Only two dimensions are supported.");
+            double angle = Motion.GetAngle(0);
+            int noOfCurrentPointWithNeighbours = 3;
+            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(noOfCurrentPointWithNeighbours, SpatialDim);
+            for (int j = 0; j < noOfCurrentPointWithNeighbours; j++) {
+                double verticalAxis;
+                double horizontalAxis;
+                double currentAngle = searchAngle + dAngle * (j - 1);
+                if (currentAngle < 0)
+                    currentAngle += 2 * Math.PI;
+                if (currentAngle > 2 * Math.PI)
+                    currentAngle -= 2 * Math.PI;
+                if (searchAngle + dAngle * (j - 1) <= Math.PI / 2) {
+                    verticalAxis = m_Length * Math.Pow(Math.Abs(Math.Cos(searchAngle + dAngle * (j - 1))), 2 / m_Exponent);
+                    horizontalAxis = m_Thickness * Math.Pow(Math.Abs(Math.Sin(searchAngle + dAngle * (j - 1))), 2 / m_Exponent);
+                }
+                else if (searchAngle + dAngle * (j - 1) > Math.PI / 2 && searchAngle + dAngle * (j - 1) <= Math.PI) {
+                    verticalAxis = -m_Length * Math.Pow(Math.Abs(Math.Cos(searchAngle + dAngle * (j - 1))), 2 / m_Exponent);
+                    horizontalAxis = m_Thickness * Math.Pow(Math.Abs(Math.Sin(searchAngle + dAngle * (j - 1))), 2 / m_Exponent);
+                }
+                else if (searchAngle + dAngle * (j - 1) > Math.PI && searchAngle + dAngle * (j - 1) <= 3 * Math.PI / 2) {
+                    verticalAxis = -m_Length * Math.Pow(Math.Abs(Math.Cos(searchAngle + dAngle * (j - 1))), 2 / m_Exponent);
+                    horizontalAxis = -m_Thickness * Math.Pow(Math.Abs(Math.Sin(searchAngle + dAngle * (j - 1))), 2 / m_Exponent);
+                }
+                else  {
+                    verticalAxis = m_Length * Math.Pow(Math.Abs(Math.Cos(searchAngle + dAngle * (j - 1))), 2 / m_Exponent);
+                    horizontalAxis = -m_Thickness * Math.Pow(Math.Abs(Math.Sin(searchAngle + dAngle * (j - 1))), 2 / m_Exponent);
+                }
+                SurfacePoints[j, 0] = (verticalAxis * Math.Cos(angle) - horizontalAxis * Math.Sin(angle));
+                SurfacePoints[j, 1] = (verticalAxis * Math.Sin(angle) + horizontalAxis * Math.Cos(angle));
+            }
             //int noOfCurrentPointWithNeighbours = 3;
             //MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(noOfCurrentPointWithNeighbours, SpatialDim);
             //for (int j = 0; j < QuarterSurfacePoints; j++) {
@@ -169,7 +198,7 @@ namespace BoSSS.Application.FSI_Solver {
             //    SurfacePoints[0, 4 * QuarterSurfacePoints - j - 2, 0] = (Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_Exponent) * m_Length * Math.Cos(Motion.GetAngle(0)) + Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_Exponent) * m_Thickness * Math.Sin(Motion.GetAngle(0))) + Motion.GetPosition(0)[0];
             //    SurfacePoints[0, 4 * QuarterSurfacePoints - j - 2, 1] = (Math.Pow(Math.Cos(Infinitisemalangle[j]), 2 / m_Exponent) * m_Length * Math.Sin(Motion.GetAngle(0)) - Math.Pow(Math.Sin(Infinitisemalangle[j]), 2 / m_Exponent) * m_Thickness * Math.Cos(Motion.GetAngle(0))) + Motion.GetPosition(0)[1];
             //}
-            //return SurfacePoints;
+            return SurfacePoints;
         }
 
         /// <summary>
