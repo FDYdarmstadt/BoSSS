@@ -610,16 +610,17 @@ namespace ilPSP.Utils {
             // Determine optimal workspace size
             int INFO;
             int LWORK = -1;
-            double* pLENGTH = stackalloc double[1];
-            dgeqp3(ref M, ref N, A, ref M, JPVT, TAU, pLENGTH, ref LWORK, out INFO);
-
+            double LENGTH;
+            unsafe {
+                dgeqp3(ref M, ref N, A, ref M, JPVT, TAU, &LENGTH, ref LWORK, out INFO);
+            }
             if (INFO != 0) {
                 throw new ApplicationException("Failed to determine optimal work size");
             }
 
             // Don't use stackalloc for $work since its size may be so
             // large that the stack overflows!
-            LWORK = (int)*pLENGTH;
+            LWORK = (int)LENGTH;
             double[] work = new double[LWORK];
 
             // Actual computation
