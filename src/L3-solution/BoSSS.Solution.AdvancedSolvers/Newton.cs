@@ -144,9 +144,10 @@ namespace BoSSS.Solution.AdvancedSolvers
                 //BlockMsrMatrix CurrentJac;
 
                 OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
-
+                double fnorminit = fnorm;
                 using (new BlockTrace("Slv Iter", tr)) {
-                    while ((fnorm > ConvCrit * fNormo*0 + ConvCrit && itc < MaxIter) || itc < MinIter) {
+                    while ((fnorm > ConvCrit * fnorminit*0 + ConvCrit && itc < MaxIter) || itc < MinIter) {
+                        //Console.WriteLine("The convergence criterion is {0}", ConvCrit * fnorminit + ConvCrit);
                         rat = fnorm / fNormo;
                         fNormo = fnorm;
                         itc++;
