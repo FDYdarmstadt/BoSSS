@@ -874,7 +874,7 @@ namespace BoSSS.Application.FSI_Solver {
                             //Auxillary.PrintResultToConsole(phystime, hydroDynForceTorqueResidual, iterationCounter);
                             LogResidual(phystime, iterationCounter, hydroDynForceTorqueResidual);
                         }
-                        if (TimestepInt == 1 || IsMultiple(TimestepInt, 100)) {
+                        if (TimestepInt == 1 || IsMultiple(TimestepInt, 10)) {
                             for (int p = 0; p < m_Particles.Count(); p++) {
                                 m_Particles[p].Motion.CreateStressLogger(CurrentSessionInfo, DatabaseDriver, phystime, p);
                                 m_Particles[p].Motion.LogStress(phystime);
@@ -1025,7 +1025,7 @@ namespace BoSSS.Application.FSI_Solver {
         private void CreateResidualLogger() {
             if ((MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
                 logHydrodynamicsResidual = DatabaseDriver.FsDriver.GetNewLog("HydrodynamicResidual", CurrentSessionInfo.ID);
-                logHydrodynamicsResidual.WriteLine(string.Format("{0}\t{1}\t{2}", "Time", "Iteration", "Residual"));
+                logHydrodynamicsResidual.WriteLine(string.Format("{0},{1},{2}", "Time", "Iteration", "Residual"));
             }
             IDatabaseDriver test = DatabaseDriver;
         }
@@ -1035,7 +1035,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         private void LogResidual(double phystime, int iterationCounter, double residual) {
             if ((MPIRank == 0) && (logPhysicalDataParticles != null)) {
-                logHydrodynamicsResidual.WriteLine(string.Format("{0}\t{1}\t{2}", phystime, iterationCounter, residual));
+                logHydrodynamicsResidual.WriteLine(string.Format("{0},{1},{2}", phystime, iterationCounter, residual));
                 logHydrodynamicsResidual.Flush();
             }
         }
@@ -1046,7 +1046,7 @@ namespace BoSSS.Application.FSI_Solver {
         private void CreatePhysicalDataLogger() {
             if ((MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
                 logPhysicalDataParticles = DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
-                logPhysicalDataParticles.WriteLine(string.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}", "#Particle", "#Time", "Position X", "Position Y", "Angle", "Transl. Velocity X", "Transl. Velocity Y", "Rot. Velocity", "Force X", "Force Y", "Angular Momentum"));
+                logPhysicalDataParticles.WriteLine(string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10}", "particle", "time", "posX", "posY", "angle", "velX", "velY", "rot", "fX", "fY", "T"));
             }
         }
 
@@ -1058,7 +1058,7 @@ namespace BoSSS.Application.FSI_Solver {
         private void LogPhysicalData(double phystime) {
             if ((MPIRank == 0) && (logPhysicalDataParticles != null)) {
                 for (int p = 0; p < m_Particles.Count(); p++) {
-                    logPhysicalDataParticles.WriteLine(string.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}", p, phystime, m_Particles[p].Motion.GetPosition(0)[0], m_Particles[p].Motion.GetPosition(0)[1], m_Particles[p].Motion.GetAngle(0), m_Particles[p].Motion.GetTranslationalVelocity(0)[0], m_Particles[p].Motion.GetTranslationalVelocity(0)[1], m_Particles[p].Motion.GetRotationalVelocity(0), m_Particles[p].Motion.GetHydrodynamicForces(0)[0], m_Particles[p].Motion.GetHydrodynamicForces(0)[1], m_Particles[p].Motion.GetHydrodynamicTorque(0)));
+                    logPhysicalDataParticles.WriteLine(string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10}", p, phystime, m_Particles[p].Motion.GetPosition(0)[0], m_Particles[p].Motion.GetPosition(0)[1], m_Particles[p].Motion.GetAngle(0), m_Particles[p].Motion.GetTranslationalVelocity(0)[0], m_Particles[p].Motion.GetTranslationalVelocity(0)[1], m_Particles[p].Motion.GetRotationalVelocity(0), m_Particles[p].Motion.GetHydrodynamicForces(0)[0], m_Particles[p].Motion.GetHydrodynamicForces(0)[1], m_Particles[p].Motion.GetHydrodynamicTorque(0)));
                     logPhysicalDataParticles.Flush();
                 }
             }
@@ -1373,8 +1373,8 @@ namespace BoSSS.Application.FSI_Solver {
             BitArray mediumCells = new BitArray(noOfLocalCells);
             BitArray fineCells = new BitArray(noOfLocalCells);
             BitArray collisionFineCells = new BitArray(noOfLocalCells);
-            double radiusMediumCells = 2* Math.Max(h_minStart, LsTrk.GridDat.Cells.h_minGlobal);
-            double radiusFineCells = Math.Max(h_minStart, LsTrk.GridDat.Cells.h_minGlobal);
+            double radiusMediumCells = 3 * LsTrk.GridDat.Cells.h_minGlobal;
+            double radiusFineCells = 2 * LsTrk.GridDat.Cells.h_minGlobal;
             double radiusCollision = LsTrk.GridDat.Cells.h_minGlobal;
             for (int p = 0; p < m_Particles.Count; p++) {
                 Particle particle = m_Particles[p];

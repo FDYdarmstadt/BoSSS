@@ -857,6 +857,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="tempTorque"></param>
         /// <param name="firstIteration"></param>
         protected void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque, bool firstIteration) {
+            for (int d= 0; d < m_Dim; d++) {
+                if (tempForces[d] < 1e-14)
+                    tempForces[d] = 0;
+            }
+            if (tempTorque < 1e-14)
+                tempTorque = 0;
             m_ForcesWithoutRelaxation.Insert(0, tempForces.CloneAs());
             m_TorqueWithoutRelaxation.Insert(0, tempTorque);
             double[] temp = new double[] { tempForces[0], tempForces[1], tempTorque };

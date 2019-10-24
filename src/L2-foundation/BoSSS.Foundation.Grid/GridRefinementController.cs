@@ -134,17 +134,14 @@ namespace BoSSS.Foundation.Grid {
                     }
                 }
             }
-
             int[][] exchangeCellsMaxRefineLvl = localCellsMaxRefineLvl.MPIGatherO(0);
             exchangeCellsMaxRefineLvl = exchangeCellsMaxRefineLvl.MPIBroadcast(0);
-
             int[] globalCellsMaxRefineLvl = new int[globalJ];
             for (int m = 0; m < exchangeCellsMaxRefineLvl.Length; m++) {
                 for (int j = 0; j < exchangeCellsMaxRefineLvl[m].Length; j++) {
                     globalCellsMaxRefineLvl[j + i0[m]] = exchangeCellsMaxRefineLvl[m][j];
                 }
             }
-
             return globalCellsMaxRefineLvl;
         }
 
