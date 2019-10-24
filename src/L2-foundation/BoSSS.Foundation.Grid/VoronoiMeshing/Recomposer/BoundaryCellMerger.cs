@@ -1,4 +1,4 @@
-﻿using BoSSS.Platform.LinAlg;
+﻿
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -96,7 +96,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             AddTargetEdge(targetEdgeEnumerator.Current);
             LinkedListNode<Edge<T>> sourceNodeAfterWeld = newEdges.First;
             LinkedListNode<Edge<T>> targetNodeAfterWeld = newEdges.Last;
-            TargetFirstWeldEdges(sourceNodeAfterWeld, targetNodeAfterWeld);
+            Welder.TargetFirstWeldEdges(sourceNodeAfterWeld, targetNodeAfterWeld);
         }
 
         void AddTargetEdge(Edge<T> targetEdge)
@@ -106,6 +106,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
 
         void AddSourceEdge(Edge<T> sourceEdge)
         {
+            if (newEdges.Count != 0)
+            {
+                sourceEdge.Start = newEdges.First.Value.End;
+            }
+            sourceEdge.BoundaryEdgeNumber = targetBoundaryEdgeNumber;
             newEdges.AddFirst(sourceEdge);
         }
 
@@ -116,10 +121,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             while (sourceEdgeEnumerator.MoveNext())
             {
                 Edge<T> sourceEdge = sourceEdgeEnumerator.Current;
-                boundaryEdgeHandler.AddCandidate(sourceEdge);
+                //boundaryEdgeHandler.AddCandidate(sourceEdge);
                 AddSourceEdge(sourceEdge);
             }
-            boundaryEdgeHandler.ConvertCandidatesToBoundary();
+            //boundaryEdgeHandler.ConvertCandidatesToBoundary();
 
             while (targetEdgeEnumerator.MoveNext())
             {
@@ -135,73 +140,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             newEdges.RemoveFirst();
             newEdges.AddLast(firstNode);
             //Weld last source Edge and last target Edge
-            SourceFirstWeldEdges(newEdges.Last, newEdges.Last.Previous);
-        }
-
-        void TargetFirstWeldEdges(LinkedListNode<Edge<T>> source, LinkedListNode<Edge<T>> target)
-        {
-            if (OnLine(source.Value.Start, source.Value.End, target.Value.Start))
-            {
-                target.Value = TargetFirstEdgeMerge(source.Value, target.Value);
-                target.Value.BoundaryEdgeNumber = source.Value.BoundaryEdgeNumber;
-                MergeNodes(source, target);
-            }
-        }
-
-        void SourceFirstWeldEdges(LinkedListNode<Edge<T>> source, LinkedListNode<Edge<T>> target)
-        {
-            if (OnLine(source.Value.Start, source.Value.End, target.Value.Start))
-            {
-                target.Value = SourceFirstEdgeMerge(source.Value, target.Value);
-                target.Value.BoundaryEdgeNumber = source.Value.BoundaryEdgeNumber;
-                MergeNodes(source, target);
-            }
-        }
-
-        static void MergeNodes(LinkedListNode<Edge<T>> source, LinkedListNode<Edge<T>> target)
-        {
-            Debug.Assert(source.List.First.Value.Start.ID == target.List.First.Value.Start.ID, 
-                "Nodes must be from same list.");
-            source.List.Remove(source);
-        }
-
-        static Edge<T> SourceFirstEdgeMerge(Edge<T> source, Edge<T> target)
-        {
-            Debug.Assert((source.End.Position - target.Start.Position).Abs() < 1e-12,
-                "Edges do not touch.");
-            int ID = target.Start.ID;
-            target.Start = source.Start;
-            target.Start.ID = ID; 
-            return target;
-        }
-
-        static Edge<T> TargetFirstEdgeMerge(Edge<T> source, Edge<T> target)
-        {
-            Debug.Assert((target.End.Position - source.Start.Position).Abs() < 1e-12,
-                "Edges do not touch.");
-            int ID = target.End.ID;
-            target.End = source.End;
-            target.End.ID = ID;
-            return target;
-        }
-
-        const double accuracy = 1e-12;
-
-        static bool OnLine(Vertex a, Vertex b, Vertex c)
-        {
-            Vector vA = a.Position;
-            Vector vB = b.Position;
-            Vector vC = c.Position;
-            double orientation = (vB.x - vA.x) * (vC.y - vA.y) - (vB.y - vA.y) * (vC.x - vA.x);
-
-            if (Math.Abs(orientation) < accuracy)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            Welder.SourceFirstWeldEdges(newEdges.Last, newEdges.Last.Previous);
         }
 
         void ReshapeCell(MeshCell<T> cell)

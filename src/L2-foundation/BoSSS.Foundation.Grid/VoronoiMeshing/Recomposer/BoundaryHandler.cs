@@ -89,7 +89,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             return nodes;
         }
 
-        public void RecomposePeriodicEdges(Mesh<T> mesh)
+        public void RecomposePeriodicEdges(IDMesh<T> mesh)
         {
             Debug.Assert(ContainsPeriodicBoundaries == true);
 

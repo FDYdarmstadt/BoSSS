@@ -30,7 +30,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         public Mesh<T> Generate(IList<T> nodes)
         {
             Debug.Assert(nodes.Count > 0);
-            Mesh<T> mesh = CreateMeshFrom(nodes);
+            IDMesh<T> mesh = CreateMeshFrom(nodes);
             if (boundaryHandler.ContainsPeriodicBoundaries)
             {
                 nodes = boundaryHandler.CloneNodesAlongPeriodicBoundaries(mesh);
@@ -43,7 +43,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return mesh;
         }
 
-        Mesh<T> CreateMeshFrom(IList<T> nodes)
+        IDMesh<T> CreateMeshFrom(IList<T> nodes)
         {
             AddDistantBoundingNodes(nodes, boundingBox);
             IDMesh<T> mesh = MIConvexHullMeshGenerator.CreateMesh(nodes);

@@ -31,10 +31,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             this.firstCellNodeIndice = firstCellNodeIndice;
         }
 
-        public void RecomposePeriodicEdges(Mesh<T> mesh, IEnumerable<Edge<T>> periodicEdges)
+        public void RecomposePeriodicEdges(IDMesh<T> mesh, IEnumerable<Edge<T>> periodicEdges)
         {
             CellPairCollection<T> candidates = FollowBoundaryAndCollectCandidates(periodicEdges);
-            CellPairCollection<T> pairsForMerging = CloneAndTransformOuterCells(candidates);
+            MeshCellCopier<T> cellCopier = new MeshCellCopier<T>(mesh);
+            CellPairCollection<T> pairsForMerging = CopyAndTransformOuterCells(candidates, cellCopier);
             Debug.Assert(CellNodePositionsMatch(pairsForMerging));
             ExtractEdgeGlueMap(pairsForMerging);
 
@@ -115,14 +116,16 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             return ((end.x - start.x) * (node.y - start.y) - (end.y - start.y) * (node.x - start.x)) < 0;
         }
 
-        CellPairCollection<T> CloneAndTransformOuterCells(CellPairCollection<T> candidateCollecter)
+        CellPairCollection<T> CopyAndTransformOuterCells(
+            CellPairCollection<T> candidates, 
+            MeshCellCopier<T> cellCopier)
         {
             CellPairCollection<T> pairCollecter = new CellPairCollection<T>();
-            foreach (CellPairCollection<T>.EdgeCombo cellsOfABoundary in candidateCollecter.GetCollectedEdgeCombos())
+            foreach (CellPairCollection<T>.EdgeCombo cellsOfABoundary in candidates.GetCollectedEdgeCombos())
             {
                 //CloneAndTransformOuterCells
                 periodicTrafoMap.TryGetValue(cellsOfABoundary.EdgeNumber, out BoundaryTransformation trafo);
-                MeshCell<T>[] clones = MeshCellCloner.Clone(cellsOfABoundary.Outer);
+                MeshCell<T>[] clones = cellCopier.Copy(cellsOfABoundary.Outer);
                 TransformCells(clones, trafo);
 
                 //Collect pairs
@@ -197,7 +200,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             remover.RemoveOuterCellsFromMesh();
         }
 
-        void MergeAtBoundary(CellPairCollection<T> pairsForMerging)
+        static void MergeAtBoundary(CellPairCollection<T> pairsForMerging)
         {
             // 4) Merge cloned and transformed outer cells to corresponding innner cells
             foreach (CellPairCollection<T>.EdgeCombo cellsOfABoundary in pairsForMerging.GetCollectedEdgeCombos())

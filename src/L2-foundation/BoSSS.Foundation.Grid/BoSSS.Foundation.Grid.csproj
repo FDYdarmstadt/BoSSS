@@ -65,6 +65,7 @@
     <Compile Include="Grid3D.cs" />
     <Compile Include="GridRefinementController.cs" />
     <Compile Include="VoronoiMeshing\MatlabPlotter.cs" />
+    <Compile Include="VoronoiMeshing\MeshCellCopier.cs" />
     <Compile Include="VoronoiMeshing\Recomposer\BoundaryCellMerger.cs" />
     <Compile Include="VoronoiMeshing\Recomposer\BoundaryEdgeFinder.cs" />
     <Compile Include="VoronoiMeshing\Recomposer\BoundaryEdgeHandler.cs" />
@@ -100,6 +101,7 @@
     <Compile Include="VoronoiMeshing\MICHMesher\MICMesher.cs" />
     <Compile Include="VoronoiMeshing\MICHMesher\VariableCell.cs" />
     <Compile Include="VoronoiMeshing\Recomposer\BoundaryNodeCloner.cs" />
+    <Compile Include="VoronoiMeshing\Recomposer\Welder.cs" />
     <Compile Include="VoronoiMeshing\Transformation.cs" />
     <Compile Include="VoronoiMeshing\VoronoiMesher.cs" />
     <Compile Include="VoronoiMeshing\GridConverter.cs" />
