@@ -834,8 +834,6 @@ namespace BoSSS.Application.FSI_Solver {
                         int iterationCounter = 0;
                         double hydroDynForceTorqueResidual = double.MaxValue;
                         while (hydroDynForceTorqueResidual > HydrodynConvergenceCriterion) {
-                            Stopwatch stopWatch = new Stopwatch();
-                            stopWatch.Start();
                             Auxillary.CheckForMaxIterations(iterationCounter, ((FSI_Control)Control).maxIterationsFullyCoupled);
                             Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
                             Auxillary.SaveOldParticleState(m_Particles);
@@ -875,13 +873,8 @@ namespace BoSSS.Application.FSI_Solver {
                             Auxillary.PrintResultToConsole(m_Particles, phystime, hydroDynForceTorqueResidual, iterationCounter);
                             //Auxillary.PrintResultToConsole(phystime, hydroDynForceTorqueResidual, iterationCounter);
                             LogResidual(phystime, iterationCounter, hydroDynForceTorqueResidual);
-                            stopWatch.Stop();
-                            TimeSpan timeSpan = stopWatch.Elapsed;
-                            double printMillis = (double)timeSpan.Ticks / 10000;
-                            Console.WriteLine("Milliseconds per iteration: " + printMillis);
-                            Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count().MPISum());
                         }
-                        if (TimestepInt == 1 || IsMultiple(TimestepInt, 1)) {
+                        if (TimestepInt == 1 || IsMultiple(TimestepInt, 100)) {
                             for (int p = 0; p < m_Particles.Count(); p++) {
                                 m_Particles[p].Motion.CreateStressLogger(CurrentSessionInfo, DatabaseDriver, phystime, p);
                                 m_Particles[p].Motion.LogStress(phystime);
@@ -1371,7 +1364,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Creates the cellmask which should be refined.
         /// </summary>
-        private List<Tuple<int, CellMask>> GetCellMaskWithRefinementLevels() {
+        private List<Tuple<int, BitArray>> GetCellMaskWithRefinementLevels() {
             h_maxStart = h_maxStart == 0 ? LsTrk.GridDat.Cells.h_maxGlobal : h_maxStart;
             int refinementLevel = ((FSI_Control)Control).RefinementLevel;
             double h_minStart = h_maxStart / (2 * refinementLevel);
@@ -1380,8 +1373,8 @@ namespace BoSSS.Application.FSI_Solver {
             BitArray mediumCells = new BitArray(noOfLocalCells);
             BitArray fineCells = new BitArray(noOfLocalCells);
             BitArray collisionFineCells = new BitArray(noOfLocalCells);
-            double radiusMediumCells = 3 * Math.Max(h_minStart, LsTrk.GridDat.Cells.h_minGlobal);
-            double radiusFineCells = 2 * Math.Max(h_minStart, LsTrk.GridDat.Cells.h_minGlobal);
+            double radiusMediumCells = 2* Math.Max(h_minStart, LsTrk.GridDat.Cells.h_minGlobal);
+            double radiusFineCells = Math.Max(h_minStart, LsTrk.GridDat.Cells.h_minGlobal);
             double radiusCollision = LsTrk.GridDat.Cells.h_minGlobal;
             for (int p = 0; p < m_Particles.Count; p++) {
                 Particle particle = m_Particles[p];
@@ -1398,11 +1391,11 @@ namespace BoSSS.Application.FSI_Solver {
                 }
             }
             int coarseRefinementLevel = refinementLevel > 2 ? refinementLevel / 2 : 1;
-            if (refinementLevel - coarseRefinementLevel > coarseRefinementLevel)
-                coarseRefinementLevel += 1;
-            List<Tuple<int, CellMask>> AllCellsWithMaxRefineLevel = new List<Tuple<int, CellMask>> {
-                new Tuple<int, CellMask>(refinementLevel, new CellMask(GridData, fineCells)),
-                new Tuple<int, CellMask>(coarseRefinementLevel, new CellMask(GridData, mediumCells)),
+            //if (refinementLevel - coarseRefinementLevel > coarseRefinementLevel)
+            //    coarseRefinementLevel += 1;
+            List<Tuple<int, BitArray>> AllCellsWithMaxRefineLevel = new List<Tuple<int, BitArray>> {
+                new Tuple<int, BitArray>(refinementLevel, fineCells),
+                new Tuple<int, BitArray>(coarseRefinementLevel, mediumCells),
                 //new Tuple<int, CellMask>(refinementLevel + 1, new CellMask(GridData, collisionFineCells)),
             };
             return AllCellsWithMaxRefineLevel;

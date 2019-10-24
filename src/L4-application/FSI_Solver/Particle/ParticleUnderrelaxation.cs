@@ -111,6 +111,12 @@ namespace BoSSS.Application.FSI_Solver {
 
         }
 
+        internal void ForcesAndTorque(ref double[] forces, List<double[]> forcesPreviousIteration, ref double oldOmega, List<double[]> rawForcesPrev) {
+            double[] Omega = new double[] { 0, oldOmega };
+            AitkenUnderrelaxation(ref forces, forcesPreviousIteration, Omega, rawForcesPrev[1]);
+            oldOmega = Omega[0];
+        }
+
         /// <summary>
         /// This method calculates the underrelaxation factor dynamically.
         /// </summary>
@@ -155,25 +161,35 @@ namespace BoSSS.Application.FSI_Solver {
             }
             else if (UnderrelaxationCoeff < predefinedFactor * 1e-2)
                 UnderrelaxationCoeff = predefinedFactor * 1e-2;
-
-
             double GlobalStateBuffer = UnderrelaxationCoeff.MPIMin();
             UnderrelaxationCoeff = GlobalStateBuffer;
-
-            Console.WriteLine("Underrelaxation coefficient: " + UnderrelaxationCoeff + " average value: " + averageValueOfVar + " value " + variable + " agbdbf " + (averageValueOfVar > 1e3 * variable));
             return UnderrelaxationCoeff;
         }
 
         private void AitkenUnderrelaxation(ref double variable, List<double> variableAtPrevIteration, double[] Omega, double rawForcesPrev) {
-            Console.WriteLine(" value pre relax " + variable);
             double[] residual = new double[] { (variable - variableAtPrevIteration[0]), (rawForcesPrev - variableAtPrevIteration[1]) };
             Omega[0] = -Omega[1] * residual[1] / (residual[0] - residual[1]);
             variable = Omega[0] * (variable - variableAtPrevIteration[0]) + variableAtPrevIteration[0];
-            Console.WriteLine(" value psot relax " + variable +  " Realxation coefficient " + Omega[0]);
+        }
+
+        private void AitkenUnderrelaxation(ref double[] variable, List<double[]> variableAtPrevIteration, double[] Omega, double[] rawForcesPrev) {
+            double[][] residual = new double[variable.Length][];
+            double[] residualDiff = new double[variable.Length];
+            double residualScalar = 0;
+            for (int i = 0; i < variable.Length; i++) {
+                residual[i] = new double[] { (variable[i] - variableAtPrevIteration[0][i]), (rawForcesPrev[i] - variableAtPrevIteration[1][i]) };
+                residualDiff[i] = residual[i][0] - residual[i][1];
+                residualScalar += residual[i][1] * residualDiff[i];
+            }
+            Omega[0] = -Omega[1] * residualScalar / residualDiff.L2Norm().Pow2();
+            Console.WriteLine("OmegaOld: " + Omega[1] + " OmegaNew: " + Omega[0] + " forcesOld 0: " + variable[0] + " forcesOld 1: " + variable[1] + " torqueOld: " + variable[2]);
+            for (int i = 0; i < variable.Length; i++) {
+                variable[i] = Omega[0] * (variable[i] - variableAtPrevIteration[0][i]) + variableAtPrevIteration[0][i];
+            }
+            Console.WriteLine("forcesNew 0: " + variable[0] + " forcesNew 1: " + variable[1] + " torqueNew: " + variable[2]);
         }
 
         private void MinimalPolynomialExtrapolation(ref double variable, List<double> variableAtPrevIteration) {
-            Console.WriteLine("variable pre: " + variable);
             double[] polynomialCoefficiants = new double[variableAtPrevIteration.Count];
             polynomialCoefficiants[0] = NewPolynomialCoefficiant(variable, variableAtPrevIteration);
             for (int p = 1; p < polynomialCoefficiants.Length; p++) {
@@ -188,7 +204,6 @@ namespace BoSSS.Application.FSI_Solver {
             for (int k = 1; k < variableAtPrevIteration.Count; k++) {
                 variable += normalizedCoefficients[k] * variableAtPrevIteration[k];
             }
-            Console.WriteLine("variable post: " + variable);
         }
 
         private double NewPolynomialCoefficiant(double variable, List<double> variableAtPrevIteration) {

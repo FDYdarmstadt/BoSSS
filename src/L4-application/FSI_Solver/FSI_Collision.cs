@@ -547,7 +547,7 @@ namespace FSI_Solver {
                 double searchStartAngle = (1 - Math.Sign(testSign)) * Math.PI / 2 + Math.Acos(Aux.DotProduct(Vector, particleDirection) / Vector.L2Norm());
                 double L = searchStartAngle - Math.PI;
                 double R = searchStartAngle + Math.PI;
-                while (L < R) {
+                while (L < R && Math.Abs(L-R) > 1e-15) {
                     searchStartAngle = (L + R) / 2;
                     double dAngle = 1e-8;
                     MultidimensionalArray SurfacePoints = particle.GetSurfacePoints(dAngle, searchStartAngle, SubParticleID);

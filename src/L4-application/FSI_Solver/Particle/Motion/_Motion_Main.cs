@@ -88,6 +88,8 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         private readonly List<double> m_TorquePreviousIteration = new List<double>();
         [DataMember]
+        private readonly List<double[]> m_ForcesAndTorquePreviousIteration = new List<double[]>();
+        [DataMember]
         private double m_CollisionTimestep = 0;
         [DataMember]
         private double[] m_PreCollisionVelocity = new double[m_Dim];
@@ -115,6 +117,8 @@ namespace BoSSS.Application.FSI_Solver {
         private List<double[]> m_ForcesWithoutRelaxation = new List<double[]>();
         [DataMember]
         private List<double> m_TorqueWithoutRelaxation = new List<double>();
+        [DataMember]
+        private List<double[]> m_ForcesAndTorqueWithoutRelaxation = new List<double[]>();
 
         /// <summary>
         /// Gravity (volume force) acting on the particle.
@@ -355,6 +359,8 @@ namespace BoSSS.Application.FSI_Solver {
         public void SaveHydrodynamicsOfPreviousIteration() {
             //Aux.SaveMultidimValueOfLastTimestep(m_ForcesPreviousIteration);
             //Aux.SaveValueOfLastTimestep(m_TorquePreviousIteration);
+            double[] temp = new double[] { m_HydrodynamicForces[0][0], m_HydrodynamicForces[0][1], m_HydrodynamicTorque[0] };
+            m_ForcesAndTorquePreviousIteration.Insert(0, temp.CloneAs());
             m_ForcesPreviousIteration.Insert(0, m_HydrodynamicForces[0].CloneAs());
             m_TorquePreviousIteration.Insert(0, m_HydrodynamicTorque[0]);
         }
@@ -799,7 +805,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="tempForces"></param>
         private void CalculateGravity(double fluidDensity, double[] tempForces) {
             for (int d = 0; d < m_Dim; d++) {
-                Console.WriteLine("Forces y pre gravity: " + tempForces[1] + ", gravity: " + ((Density - fluidDensity) * ParticleArea * Gravity[d]));
                 tempForces[d] += (Density - fluidDensity) * ParticleArea * Gravity[d];
             }
             Aux.TestArithmeticException(tempForces, "temporal forces during calculation of hydrodynamics after adding gravity");
@@ -844,7 +849,7 @@ namespace BoSSS.Application.FSI_Solver {
             torque = globalStateBuffer;
             Aux.TestArithmeticException(torque, "temporal torque during calculation of hydrodynamics after mpi-summation");
         }
-
+        double testRelaxation = 1;
         /// <summary>
         /// Post-processing of the hydrodynamics. If desired the underrelaxation is applied to the forces and torque.
         /// </summary>
@@ -854,6 +859,8 @@ namespace BoSSS.Application.FSI_Solver {
         protected void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque, bool firstIteration) {
             m_ForcesWithoutRelaxation.Insert(0, tempForces.CloneAs());
             m_TorqueWithoutRelaxation.Insert(0, tempTorque);
+            double[] temp = new double[] { tempForces[0], tempForces[1], tempTorque };
+            m_ForcesAndTorqueWithoutRelaxation.Insert(0, temp);
             if (m_UnderrelaxationParam != null) {
                 ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation(m_UnderrelaxationParam, CalculateAverageForces(tempForces, tempTorque));
                 if (m_ForcesPreviousIteration.Count < 3) {
@@ -861,8 +868,13 @@ namespace BoSSS.Application.FSI_Solver {
                     Underrelaxation.Torque(ref tempTorque, m_TorquePreviousIteration);
                 }
                 else {
-                    Underrelaxation.Forces(ref tempForces, m_ForcesPreviousIteration, ref m_OldRelaxation, m_ForcesWithoutRelaxation);
-                    Underrelaxation.Torque(ref tempTorque, m_TorquePreviousIteration, ref m_OldRelaxation, m_TorqueWithoutRelaxation);
+                    //Underrelaxation.Forces(ref tempForces, m_ForcesPreviousIteration, ref m_OldRelaxation, m_ForcesWithoutRelaxation);
+                    //Underrelaxation.Torque(ref tempTorque, m_TorquePreviousIteration, ref m_OldRelaxation, m_TorqueWithoutRelaxation);
+                    double[] test1 = new double[] { tempForces[0], tempForces[1], tempTorque };
+                    Underrelaxation.ForcesAndTorque(ref test1, m_ForcesAndTorquePreviousIteration, ref testRelaxation, m_ForcesAndTorqueWithoutRelaxation);
+                    tempForces[0] = test1[0];
+                    tempForces[1] = test1[1];
+                    tempTorque = test1[2]; 
                 }
             }
             m_HydrodynamicForces[0] = tempForces.CloneAs();

@@ -32,25 +32,25 @@ namespace BoSSS.Application.FSI_Solver {
                 "Pressure_Outlet_left",
                 "Pressure_Outlet_right",
                 "Pressure_Outlet_lower",
-                "Pressure_Outlet_upper"
+                "Wall_upper"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 10, lengthY: 30, cellsPerUnitLength: 1, periodicX: false, periodicY: true);
+            C.SetGrid(lengthX: 30, lengthY: 30, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel);
-            C.hydrodynamicsConvergenceCriterion = 1e-5;
+            C.hydrodynamicsConvergenceCriterion = 1e-12;
 
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.mu_A = 1e-3;
+            C.PhysicalParameters.mu_A = 1e6;
             C.PhysicalParameters.Material = true;
-            C.gravity = new double[] { 0, -9.81e-6 };
+            C.gravity = new double[] { 0, -9.81 };
             // Particle Properties
             // =============================   
             double particleDensity = 2;
             C.Particles = new List<Particle>();
             C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.hydrodynamicsConvergenceCriterion, relaxationFactor: 0.1, useAddaptiveUnderrelaxation: true);
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, true, false, C.underrelaxationParam, 0);
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 1);
             C.Particles.Add(new Particle_Sphere(motion, 0.1, new double[] { 0.0, 0.0 }, startAngl: 0, 0, new double[] { 0, 0 }));
 
             // Quadrature rules

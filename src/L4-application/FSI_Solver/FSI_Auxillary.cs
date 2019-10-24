@@ -268,7 +268,7 @@ namespace FSI_Solver {
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             double residual = 0;
             if (iterationCounter == 0)
-                residual = 1e12;
+                residual = double.MaxValue;
             else {
                 foreach (Particle p in Particles) {
                     double diffForcesX = (p.Motion.GetForcesPreviousIteration()[0] - p.Motion.GetHydrodynamicForces(0)[0]).Pow2();
@@ -357,10 +357,7 @@ namespace FSI_Solver {
         /// <param name="phystime"></param>
         /// <param name="IterationCounter"> </param>
         internal void PrintResultToConsole(double phystime, double residual, int IterationCounter) {
-            StringBuilder OutputBuilder = new StringBuilder();
-            OutputBuilder.AppendLine("Force and torque residual: " + residual + ", Time: " + phystime + ", Iteration #" + IterationCounter);
-            OutputBuilder.AppendLine("=======================================================");
-            Console.WriteLine(OutputBuilder.ToString());
+            Console.WriteLine("Iteration, Residual: {1}, {0}", residual, IterationCounter);
         }
 
         /// <summary>
