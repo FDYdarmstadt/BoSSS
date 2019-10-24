@@ -14,7 +14,7 @@ namespace VoronoiTests.Grid
     {
         public override void Run()
         {
-            SetPeriodicBoundaryConditions();
+            PeriodicBoundaryPairLarge();
         }
 
         [Test]
@@ -73,7 +73,7 @@ namespace VoronoiTests.Grid
         }
 
         [Test]
-        public void SetPeriodicBoundaryConditions()
+        public void PeriodicBoundaryPair()
         {
             byte[] tags = { 1, 182, 1, 182 };
             SortedList<byte, string> tagNames = new SortedList<byte, string>(2)
@@ -98,6 +98,26 @@ namespace VoronoiTests.Grid
             nodes.SetRow(5, new double[] { 0.5, -0.5 });
 
             VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
+        }
+
+        [Test]
+        public void PeriodicBoundaryPairLarge()
+        {
+            byte[] tags = { 1, 182, 1, 182 };
+            SortedList<byte, string> tagNames = new SortedList<byte, string>(2)
+            {
+                { 181, "Periodic-X" },
+                { 1, "Dirichlet" }
+            };
+
+            VoronoiBoundary gridBoundary = new VoronoiBoundary
+            {
+                Polygon = GridShapes.Rectangle(2, 2),
+                EdgeTags = tags,
+                EdgeTagNames = tagNames
+            };
+
+            VoronoiGrid grid = VoronoiGrid2D.Polygonal(gridBoundary, 50, 500);
         }
     }
 }

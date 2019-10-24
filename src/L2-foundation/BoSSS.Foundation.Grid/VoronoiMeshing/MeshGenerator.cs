@@ -35,10 +35,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             {
                 nodes = boundaryHandler.CloneNodesAlongPeriodicBoundaries(mesh);
                 mesh = CreateMeshFrom(nodes);
-                MatlabPlotter plotter = new MatlabPlotter();
-                plotter.Plot(mesh, "clonedNodes");
                 boundaryHandler.RecomposePeriodicEdges(mesh);
-                plotter.Plot(mesh, "recomposed");
             }
             return mesh;
         }

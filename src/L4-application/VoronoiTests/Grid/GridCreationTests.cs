@@ -12,32 +12,7 @@ namespace VoronoiTests.Grid
     {
         public override void Run()
         {
-            PeriodicBoundaryPair();
-        }
-
-        [Test]
-        public void PeriodicBoundaryPair()
-        {
-            byte[] tags = { 1, 155, 1, 155 };
-            SortedList<byte, string> tagNames = new SortedList<byte, string>(1);
-            tagNames.Add(1, "A");
-            tagNames.Add(155, "B");
-
-            VoronoiBoundary rectangle = new VoronoiBoundary
-            {
-                Polygon = GridShapes.Rectangle(2, 2),
-                EdgeTags = tags,
-                EdgeTagNames = tagNames
-            };
-
-            MultidimensionalArray nodes = MultidimensionalArray.Create(5, 2);
-            nodes.SetRow(0, new double[] { -0.5, 0.5 });
-            nodes.SetRow(1, new double[] { -0.8, -0.4 });
-            nodes.SetRow(2, new double[] { 0, 0 });
-            nodes.SetRow(3, new double[] { 0.8, 0.4 });
-            nodes.SetRow(4, new double[] { 0.5, -0.5 });
-
-            VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, rectangle, 10, 0);
+            FiveNodesInRectangle();
         }
 
         [Test]

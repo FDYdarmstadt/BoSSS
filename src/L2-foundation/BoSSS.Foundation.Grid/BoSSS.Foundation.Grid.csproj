@@ -68,7 +68,6 @@
     <Compile Include="VoronoiMeshing\MeshCellCopier.cs" />
     <Compile Include="VoronoiMeshing\Recomposer\BoundaryCellMerger.cs" />
     <Compile Include="VoronoiMeshing\Recomposer\BoundaryEdgeFinder.cs" />
-    <Compile Include="VoronoiMeshing\Recomposer\BoundaryEdgeHandler.cs" />
     <Compile Include="VoronoiMeshing\Recomposer\BoundaryRecomposer.cs" />
     <Compile Include="VoronoiMeshing\Recomposer\BoundaryTransformation.cs" />
     <Compile Include="VoronoiMeshing\Recomposer\BoundaryCellRemover.cs" />

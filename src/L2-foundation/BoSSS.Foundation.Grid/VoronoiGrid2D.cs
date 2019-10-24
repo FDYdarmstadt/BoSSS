@@ -78,7 +78,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
         static VoronoiNodes GetVoronoiNodesIn(VoronoiBoundary boundary, int amount)
         {
             MultidimensionalArray nodePositions = RandomVoronoiNodesInBoundingBox(boundary.BoundingBox, amount);
-            nodePositions.SetRowPt(0, boundary.Polygon[0]);
+            nodePositions.SetRowPt(0, boundary.Polygon[0] + new Vector(0.000001, 0.000001));
             VoronoiNodes nodes = new VoronoiNodes(nodePositions);
             return nodes;
         }
@@ -252,7 +252,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             Debug.Assert(boundingBox.Length > 0);
             int dim = boundingBox[0].Dim;
             MultidimensionalArray positions = MultidimensionalArray.Create(nSeedVoronois, dim);
-            Random rnd = new Random();
+            Random rnd = new Random(0);
 
             double[] scales = ScalesFromRandomIntervalToBoundingBox(boundingBox);
             Vector center = CenterOfBoundingBox(boundingBox);

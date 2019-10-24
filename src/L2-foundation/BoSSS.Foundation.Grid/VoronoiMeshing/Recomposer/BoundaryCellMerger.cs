@@ -117,14 +117,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
         void AddCommonEdges()
         {
             //Add common edges and set source to target boundary
-            BoundaryEdgeHandler<T> boundaryEdgeHandler = new BoundaryEdgeHandler<T>(targetBoundaryEdgeNumber); 
             while (sourceEdgeEnumerator.MoveNext())
             {
                 Edge<T> sourceEdge = sourceEdgeEnumerator.Current;
-                //boundaryEdgeHandler.AddCandidate(sourceEdge);
                 AddSourceEdge(sourceEdge);
             }
-            //boundaryEdgeHandler.ConvertCandidatesToBoundary();
 
             while (targetEdgeEnumerator.MoveNext())
             {

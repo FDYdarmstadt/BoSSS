@@ -39,7 +39,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
         {
             Debug.Assert((source.End.Position - target.Start.Position).Abs() < 1e-12,
                 "Edges do not touch.");
+            int ID = target.Start.ID;
             target.Start = source.Start;
+            target.Start.ID = ID;
             return target;
         }
 
@@ -47,7 +49,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
         {
             Debug.Assert((target.End.Position - source.Start.Position).Abs() < 1e-12,
                 "Edges do not touch.");
+            int ID = target.End.ID;
             target.End = source.End;
+            target.End.ID = ID;
             return target;
         }
 
