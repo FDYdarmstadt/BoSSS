@@ -128,7 +128,7 @@ namespace BoSSS.Foundation.Grid {
             
             for (int i = 0; i < CellsMaxRefineLevel.Count(); i++) {
                 BitArray currentArray = CellsMaxRefineLevel[i].Item2;
-                for (int j = 0; j < localJ_withExternal; j++) {
+                for (int j = 0; j < localJ; j++) {
                     if (currentArray[j] && localCellsMaxRefineLvl[j] < CellsMaxRefineLevel[i].Item1) {
                         localCellsMaxRefineLvl[j] = CellsMaxRefineLevel[i].Item1;
                     }
