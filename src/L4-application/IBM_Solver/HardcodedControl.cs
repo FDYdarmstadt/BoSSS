@@ -45,7 +45,6 @@ namespace BoSSS.Application.IBM_Solver {
         /// <returns></returns>
         static public IBM_Control ChannelFlow(int k = 2, bool periodic = false, int xCells = 10, int yCells = 10, string dbpath = null) {
             IBM_Control C = new IBM_Control();
-
             // Solver Options
             C.NoOfTimesteps = 100;
             C.LinearSolver.MaxSolverIterations = 100;
@@ -69,7 +68,12 @@ namespace BoSSS.Application.IBM_Solver {
             C.NoOfTimesteps = 1;
             C.LinearSolver.MaxKrylovDim = 1000;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.NewtonGMRES;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_localPrec;
+            //C.LinearSolver.SolverCode = LinearSolverCode.exp_localPrec;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            C.NonLinearSolver.PrecondSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LinearSolver.Parallelism = "OMP,MPI";
+            C.NonLinearSolver.PrecondSolver.Parallelism = "OMP,MPI,SEQ";
+
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
 
             // Physical values

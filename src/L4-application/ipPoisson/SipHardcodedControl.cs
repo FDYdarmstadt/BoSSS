@@ -186,9 +186,9 @@ namespace BoSSS.Application.SipPoisson {
 
             //R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_jacobi_mg;
             //R.LinearSolver.SolverCode = LinearSolverCode.exp_decomposedMG_OrthoScheme;
-            //R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             //R.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
-            R.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
+            //R.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
             R.LinearSolver.NoOfMultigridLevels = 10;
             R.LinearSolver.TargetBlockSize = 40;
             R.LinearSolver.ConvergenceCriterion = 1e-8;
