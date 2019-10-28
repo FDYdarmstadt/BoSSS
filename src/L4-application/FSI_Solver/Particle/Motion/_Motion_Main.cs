@@ -857,11 +857,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="tempTorque"></param>
         /// <param name="firstIteration"></param>
         protected void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque, bool firstIteration) {
-            for (int d= 0; d < m_Dim; d++) {
-                if (tempForces[d] < 1e-14)
+            for (int d = 0; d < m_Dim; d++) {
+                if (tempForces[d] * 1000 < CalculateAverageForces(tempForces, tempTorque))
                     tempForces[d] = 0;
             }
-            if (tempTorque < 1e-14)
+            if (tempTorque * 1000 < CalculateAverageForces(tempForces, tempTorque))
                 tempTorque = 0;
             m_ForcesWithoutRelaxation.Insert(0, tempForces.CloneAs());
             m_TorqueWithoutRelaxation.Insert(0, tempTorque);
@@ -874,8 +874,6 @@ namespace BoSSS.Application.FSI_Solver {
                     Underrelaxation.Torque(ref tempTorque, m_TorquePreviousIteration);
                 }
                 else {
-                    //Underrelaxation.Forces(ref tempForces, m_ForcesPreviousIteration, ref m_OldRelaxation, m_ForcesWithoutRelaxation);
-                    //Underrelaxation.Torque(ref tempTorque, m_TorquePreviousIteration, ref m_OldRelaxation, m_TorqueWithoutRelaxation);
                     double[] test1 = new double[] { tempForces[0], tempForces[1], tempTorque };
                     Underrelaxation.ForcesAndTorque(ref test1, m_ForcesAndTorquePreviousIteration, ref testRelaxation, m_ForcesAndTorqueWithoutRelaxation);
                     tempForces[0] = test1[0];
@@ -895,19 +893,27 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="tempTorque"></param>
         /// <param name="firstIteration"></param>
         protected void HydrodynamicsPostprocessing(double tempTorque, bool firstIteration) {
+            if (tempTorque < 1e-14)
+                tempTorque = 0;
             m_TorqueWithoutRelaxation.Insert(0, tempTorque);
+            double[] temp = new double[] { 0, 0, tempTorque };
+            m_ForcesAndTorqueWithoutRelaxation.Insert(0, temp);
             if (m_UnderrelaxationParam != null) {
                 ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation(m_UnderrelaxationParam, CalculateAverageForces(new double[] { 0, 0 }, tempTorque));
                 if (m_TorquePreviousIteration.Count < 3) {
                     Underrelaxation.Torque(ref tempTorque, m_TorquePreviousIteration);
                 }
                 else {
-                    Underrelaxation.Torque(ref tempTorque, m_TorquePreviousIteration, ref m_OldRelaxation, m_TorqueWithoutRelaxation);
+                    double[] test1 = new double[] { 0, 0, tempTorque };
+                    Underrelaxation.ForcesAndTorque(ref test1, m_ForcesAndTorquePreviousIteration, ref testRelaxation, m_ForcesAndTorqueWithoutRelaxation);
+                    tempTorque = test1[2];
                 }
             }
             for (int d = 0; d < m_Dim; d++) {
                 m_HydrodynamicForces[0][d] = 0;
             }
+            if (tempTorque < 1e-14)
+                tempTorque = 0;
             m_HydrodynamicTorque[0] = tempTorque;
             Aux.TestArithmeticException(m_HydrodynamicForces[0], "hydrodynamic forces");
             Aux.TestArithmeticException(m_HydrodynamicTorque[0], "hydrodynamic torque");
@@ -919,15 +925,28 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="tempForces"></param>
         /// <param name="firstIteration"></param>
         protected void HydrodynamicsPostprocessing(double[] tempForces, bool firstIteration) {
+            for (int d = 0; d < m_Dim; d++) {
+                if (tempForces[d] < 1e-14)
+                    tempForces[d] = 0;
+            }
             m_ForcesWithoutRelaxation.Insert(0, tempForces.CloneAs());
+            double[] temp = new double[] { tempForces[0], tempForces[1], 0 };
+            m_ForcesAndTorqueWithoutRelaxation.Insert(0, temp);
             if (m_UnderrelaxationParam != null) {
                 ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation(m_UnderrelaxationParam, CalculateAverageForces(tempForces, 0));
                 if (m_ForcesPreviousIteration.Count < 3) {
                     Underrelaxation.Forces(ref tempForces, m_ForcesPreviousIteration);
                 }
                 else {
-                    Underrelaxation.Forces(ref tempForces, m_ForcesPreviousIteration, ref m_OldRelaxation, m_ForcesWithoutRelaxation);
+                    double[] test1 = new double[] { tempForces[0], tempForces[1], 0 };
+                    Underrelaxation.ForcesAndTorque(ref test1, m_ForcesAndTorquePreviousIteration, ref testRelaxation, m_ForcesAndTorqueWithoutRelaxation);
+                    tempForces[0] = test1[0];
+                    tempForces[1] = test1[1];
                 }
+            }
+            for (int d = 0; d < m_Dim; d++) {
+                if (tempForces[d] < 1e-14)
+                    tempForces[d] = 0;
             }
             for (int d = 0; d < m_Dim; d++) {
                 m_HydrodynamicForces[0][d] = tempForces[d];

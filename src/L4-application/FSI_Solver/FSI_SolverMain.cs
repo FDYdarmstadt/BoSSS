@@ -833,7 +833,8 @@ namespace BoSSS.Application.FSI_Solver {
                         }
                         int iterationCounter = 0;
                         double hydroDynForceTorqueResidual = double.MaxValue;
-                        while (hydroDynForceTorqueResidual > HydrodynConvergenceCriterion) {
+                        int minIteration = 5;
+                        while (hydroDynForceTorqueResidual > HydrodynConvergenceCriterion || iterationCounter < minIteration) {
                             Auxillary.CheckForMaxIterations(iterationCounter, ((FSI_Control)Control).maxIterationsFullyCoupled);
                             Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
                             Auxillary.SaveOldParticleState(m_Particles);

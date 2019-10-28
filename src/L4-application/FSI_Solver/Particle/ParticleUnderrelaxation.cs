@@ -58,20 +58,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="forcesPreviousIteration">
         /// The hydrodynamic forces at the previous iteration.
         /// </param>
-        internal void Forces(ref double[] forces, List<double[]> forcesPreviousIteration, ref double[] oldOmega, List<double[]> rawForcesPrev) {
-            for (int d = 0; d < forces.Length; d++) {
-                List<double> tempForcesPrev = new List<double>();
-                List<double> tempRawForcesPrev = new List<double>();
-                for (int i = 0; i < forcesPreviousIteration.Count; i++) {
-                    tempForcesPrev.Add(forcesPreviousIteration[i][d]);
-                    tempRawForcesPrev.Add(rawForcesPrev[i][d]);
-                }
-                //MinimalPolynomialExtrapolation(ref forces[d], tempRawForcesPrev);
-                double[] Omega = new double[] { 0, oldOmega[d]};
-                AitkenUnderrelaxation(ref forces[d], tempForcesPrev, Omega, rawForcesPrev[1][d]);
-                oldOmega[d] = Omega[0];
-            }
-        }
 
         internal void Forces(ref double[] forces, List<double[]> forcesPreviousIteration) {
             for (int d = 0; d < forces.Length; d++) {
@@ -96,13 +82,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="torquePreviousIteration">
         /// The hydrodynamic torque at the previous iteration.
         /// </param>
-        internal void Torque(ref double torque, List<double> torquePreviousIteration, ref double[] oldOmega, List<double> rawTorquePrev) {
-            //if (torquePreviousIteration.Count > 10)
-                MinimalPolynomialExtrapolation(ref torque, rawTorquePrev);
-            double[] Omega = new double[] { 0, oldOmega[2] };
-            AitkenUnderrelaxation(ref torque, torquePreviousIteration, Omega, rawTorquePrev[1]);
-            oldOmega[2] = Omega[0];
-        }
         internal void Torque(ref double torque, List<double> torquePreviousIteration) {
             double underrelaxationCoeff = m_UseAdaptiveUnderrelaxation == true
                 ? CalculateAdaptiveUnderrelaxation(torque, torquePreviousIteration, m_AverageForce, m_ConvergenceLimit, m_RelaxationFactor)
@@ -164,12 +143,6 @@ namespace BoSSS.Application.FSI_Solver {
             double GlobalStateBuffer = UnderrelaxationCoeff.MPIMin();
             UnderrelaxationCoeff = GlobalStateBuffer;
             return UnderrelaxationCoeff;
-        }
-
-        private void AitkenUnderrelaxation(ref double variable, List<double> variableAtPrevIteration, double[] Omega, double rawForcesPrev) {
-            double[] residual = new double[] { (variable - variableAtPrevIteration[0]), (rawForcesPrev - variableAtPrevIteration[1]) };
-            Omega[0] = -Omega[1] * residual[1] / (residual[0] - residual[1]);
-            variable = Omega[0] * (variable - variableAtPrevIteration[0]) + variableAtPrevIteration[0];
         }
 
         private void AitkenUnderrelaxation(ref double[] variable, List<double[]> variableAtPrevIteration, double[] Omega, double[] rawForcesPrev) {
