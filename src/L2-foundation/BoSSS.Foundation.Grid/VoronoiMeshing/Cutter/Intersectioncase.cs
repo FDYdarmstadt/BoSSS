@@ -11,7 +11,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         NotIntersecting,
         InMiddle,
         EndOfLine,
-        EndOfRidge,
-        EndOfRidgeAndLine
+        EndOfEdge,
+        EndOfEdgeAndLine,
+        StartOfLine
     }
 }

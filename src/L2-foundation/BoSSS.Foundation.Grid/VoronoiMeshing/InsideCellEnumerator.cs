@@ -50,7 +50,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             //Find cell that contains boundaryLine.Start;
             bool foundFirstCell = false;
             //Check if boundaryLine.Start is still in cell, else search neighborhood
-            foreach (MeshCell<T> cell in Cells())
+            foreach (MeshCell<T> cell in EnumerateCellsInConcentricCircles())
             {
                 Vector[] verts = Array.ConvertAll(cell.Vertices, item => (Vector)item);
                 //At this point, every cell is convex!
@@ -68,7 +68,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             }
         }
 
-        public virtual IEnumerable<MeshCell<T>> Cells()
+        public virtual IEnumerable<MeshCell<T>> EnumerateCellsInConcentricCircles()
         {
             Debug.Assert( firstCell != null, "Initialize before calling Cells()");
             HashSet<int> visited = new HashSet<int>();//mesh.Cells.Count);

@@ -64,7 +64,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         void IdentifyInsideCells()
         {
-            foreach (MeshCell<T> cell in insideCells.Cells())
+            foreach (MeshCell<T> cell in insideCells.EnumerateCellsInConcentricCircles())
             {
                 cell.type = MeshCellType.Inside;
             }

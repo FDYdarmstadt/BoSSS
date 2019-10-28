@@ -8,7 +8,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
     class MeshGenerator<T>
          where T : ILocatable, new()
     {
-        readonly BoundaryCutter<T> cutter;
+        readonly Cutter<T> cutter;
 
         readonly Vector[] boundingBox;
 
@@ -20,7 +20,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         public MeshGenerator(MeshingAlgorithm.Settings settings)
         {
-            cutter = new BoundaryCutter<T>();
+            cutter = new Cutter<T>();
             boundingBox = settings.BoundingBox;
             boundary = BoundaryLine.ToLines(settings.Boundary);
             firstCellNode_indice = settings.FirstCellNode_indice;
@@ -31,11 +31,15 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         {
             Debug.Assert(nodes.Count > 0);
             IDMesh<T> mesh = CreateMeshFrom(nodes);
+            MatlabPlotter plotter = new MatlabPlotter();
+            
             if (boundaryHandler.ContainsPeriodicBoundaries)
             {
                 nodes = boundaryHandler.CloneNodesAlongPeriodicBoundaries(mesh);
                 mesh = CreateMeshFrom(nodes);
+                plotter.Plot(mesh, "mirrored");
                 boundaryHandler.RecomposePeriodicEdges(mesh);
+                plotter.Plot(mesh, "recomposed");
             }
             return mesh;
         }
@@ -43,6 +47,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         IDMesh<T> CreateMeshFrom(IList<T> nodes)
         {
             AddDistantBoundingNodes(nodes, boundingBox);
+            
             IDMesh<T> mesh = MIConvexHullMeshGenerator.CreateMesh(nodes);
             cutter.CutOut(mesh, boundary, firstCellNode_indice);
 

@@ -8,8 +8,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
     public class CyclicInterval
     {
-        int start;
-        int end;
+        readonly int start;
+        readonly int end;
         int index;
 
         public CyclicInterval(int start, int end, int index)

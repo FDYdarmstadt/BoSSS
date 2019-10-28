@@ -32,6 +32,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         public void Plot<T>(Mesh<T> mesh, string name)
             where T : ILocatable
         {
+
             using (BatchmodeConnector bmc = new BatchmodeConnector(Path))
             {
                 bmc.Cmd("hold on");
@@ -48,11 +49,18 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             string matlabFillArgument = default(string);
             foreach (MeshCell<T> cell in cells)
             {
-                (double[] x, double[] y) cellCoordinates = GetCoordinatesOf(cell);
-                string x = ToMatlabArray(cellCoordinates.x);
-                string y = ToMatlabArray(cellCoordinates.y);
-
-                matlabFillArgument += x + "," + y + "," + CellColor + ",";
+                try
+                {
+                    (double[] x, double[] y) cellCoordinates = GetCoordinatesOf(cell);
+                    string x = ToMatlabArray(cellCoordinates.x);
+                    string y = ToMatlabArray(cellCoordinates.y);
+                    matlabFillArgument += x + "," + y + "," + CellColor + ",";
+                }
+                catch(Exception e)
+                {
+                    Console.WriteLine($"Can not plot cell {cell.ID}. {e}");
+                }
+                
             }
             matlabFillArgument = matlabFillArgument.Remove(matlabFillArgument.Length - 1);
             
@@ -87,10 +95,17 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         void Plot<T>(BatchmodeConnector bmc, IList<T> nodes)
             where T : ILocatable
         {
-            (double[] x, double[] y) nodeCoordinates = GetCoordinatesOf(nodes);
-            string x = ToMatlabArray(nodeCoordinates.x);
-            string y = ToMatlabArray(nodeCoordinates.y);
-            bmc.Cmd($"scatter({x}, {y}, {NodePlotSettings})");
+            try
+            {
+                (double[] x, double[] y) nodeCoordinates = GetCoordinatesOf(nodes);
+                string x = ToMatlabArray(nodeCoordinates.x);
+                string y = ToMatlabArray(nodeCoordinates.y);
+                bmc.Cmd($"scatter({x}, {y}, {NodePlotSettings})");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Can not plot nodes. {e}");
+            }
         }
 
         static (double[] x, double[] y) GetCoordinatesOf<T>(IList<T> nodes)

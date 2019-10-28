@@ -88,7 +88,7 @@
     <Compile Include="VoronoiMeshing\DataStructures\ArrayMap.cs" />
     <Compile Include="VoronoiMeshing\DataStructures\CountingEnumerator.cs" />
     <Compile Include="VoronoiMeshing\DataStructures\CyclicInterval.cs" />
-    <Compile Include="VoronoiMeshing\Cutter\BoundaryCutter.cs" />
+    <Compile Include="VoronoiMeshing\Cutter\Cutter.cs" />
     <Compile Include="VoronoiMeshing\Cutter\OnEdgeCutter.cs" />
     <Compile Include="VoronoiMeshing\DataStructures\LinkedListDictionary.cs" />
     <Compile Include="VoronoiMeshing\IDMesh.cs" />
@@ -100,6 +100,7 @@
     <Compile Include="VoronoiMeshing\MICHMesher\MICMesher.cs" />
     <Compile Include="VoronoiMeshing\MICHMesher\VariableCell.cs" />
     <Compile Include="VoronoiMeshing\Recomposer\BoundaryNodeCloner.cs" />
+    <Compile Include="VoronoiMeshing\Recomposer\CellPairCollecter.cs" />
     <Compile Include="VoronoiMeshing\Recomposer\Welder.cs" />
     <Compile Include="VoronoiMeshing\Transformation.cs" />
     <Compile Include="VoronoiMeshing\VoronoiMesher.cs" />

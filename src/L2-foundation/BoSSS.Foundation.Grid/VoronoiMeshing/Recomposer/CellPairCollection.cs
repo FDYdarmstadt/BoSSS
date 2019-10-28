@@ -48,7 +48,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             }
         }
 
-        public void AddInnerCells(IList<MeshCell<T>> cells, int boundaryEdgeNumber)
+        public void AddInnerCells(IEnumerable<MeshCell<T>> cells, int boundaryEdgeNumber)
         {
             EdgeCombo edgeCells;
             if (periodicEdges.TryGetValue(boundaryEdgeNumber, out edgeCells))
@@ -78,7 +78,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             }
         }
 
-        public void AddOuterCells(IList<MeshCell<T>> cells, int boundaryEdgeNumber)
+        public void AddOuterCells(IEnumerable<MeshCell<T>> cells, int boundaryEdgeNumber)
         {
             EdgeCombo edgeCells;
             if (periodicEdges.TryGetValue(boundaryEdgeNumber, out edgeCells))

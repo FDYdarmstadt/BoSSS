@@ -13,7 +13,7 @@ using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
 {
     class BoundaryRecomposer<T>
-        where T : ILocatable
+        where T : ILocatable, new()
     {
         readonly IDictionary<int, BoundaryTransformation> periodicTrafoMap;
 
@@ -33,7 +33,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
 
         public void RecomposePeriodicEdges(IDMesh<T> mesh, IEnumerable<Edge<T>> periodicEdges)
         {
-            CellPairCollection<T> candidates = FollowBoundaryAndCollectCandidates(periodicEdges);
+            CellPairCollection<T> candidates = CellPairCollecter<T>.FollowBoundaryAndCollectCandidates(periodicEdges);
+
             MeshCellCopier<T> cellCopier = new MeshCellCopier<T>(mesh);
             CellPairCollection<T> pairsForMerging = CopyAndTransformOuterCells(candidates, cellCopier);
             Debug.Assert(CellNodePositionsMatch(pairsForMerging));
@@ -86,36 +87,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             return map;
         }
 
-        CellPairCollection<T> FollowBoundaryAndCollectCandidates(IEnumerable<Edge<T>> periodicEdges)
-        {
-            CellPairCollection<T> candidates = new CellPairCollection<T>();
-            foreach (Edge<T> edge in periodicEdges)
-            {
-                if (NodeOfEdgeIsOutsideOfBoundary(edge))
-                {
-                    candidates.AddOuterCell(edge.Cell, edge.BoundaryEdgeNumber);
-                }
-                else
-                {
-                    candidates.AddInnerCell(edge.Cell, edge.BoundaryEdgeNumber);
-                }
-            }
-            return candidates;
-        }
-
-        bool NodeOfEdgeIsOutsideOfBoundary(Edge<T> edge)
-        {
-            Vector position = edge.Cell.Node.Position;
-            return IsOnRightSide(position, edge);
-        }
-
-        static bool IsOnRightSide(Vector node, Line line)
-        {
-            Vector start = line.Start.Position;
-            Vector end = line.End.Position;
-            return ((end.x - start.x) * (node.y - start.y) - (end.y - start.y) * (node.x - start.x)) < 0;
-        }
-
         CellPairCollection<T> CopyAndTransformOuterCells(
             CellPairCollection<T> candidates, 
             MeshCellCopier<T> cellCopier)
@@ -130,7 +101,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
 
                 //Collect pairs
                 pairCollecter.AddOuterCells(clones, periodicBoundaryMap[cellsOfABoundary.EdgeNumber]);
-                MeshCell<T>[] reversedInner = ArrayMethods.GetCopyInReverseOrder(cellsOfABoundary.Inner);
+                MeshCell<T>[] reversedInner = ArrayMethods.GetReverseOrderArray(cellsOfABoundary.Inner);
                 pairCollecter.AddInnerCells(reversedInner, cellsOfABoundary.EdgeNumber);
 
             }
@@ -205,8 +176,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             // 4) Merge cloned and transformed outer cells to corresponding innner cells
             foreach (CellPairCollection<T>.EdgeCombo cellsOfABoundary in pairsForMerging.GetCollectedEdgeCombos())
             {
-                //periodicBoundaryMap[cellsOfABoundary.EdgeNumber],
-                //cellsOfABoundary.EdgeNumber,
+
                 BoundaryCellMerger<T>.MergeAtBoundary(
                     cellsOfABoundary.Outer,
                     cellsOfABoundary.Inner,

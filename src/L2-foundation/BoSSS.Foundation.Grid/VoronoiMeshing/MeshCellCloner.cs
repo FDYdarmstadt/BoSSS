@@ -9,6 +9,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
     static class MeshCellCloner
     {
         public static MeshCell<T>[] Clone<T>(IList<MeshCell<T>> cells)
+            where T : ILocatable, new()
         {
             MeshCell<T>[] clones = new MeshCell<T>[cells.Count];
             for (int i = 0; i < cells.Count; ++i)
@@ -19,15 +20,24 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         }
 
         public static MeshCell<T> Clone<T>(MeshCell<T> cell)
+            where T : ILocatable, new()
         {
             MeshCell<T> clone = new MeshCell<T>()
             {
-                Node = cell.Node,
+                Node = Clone(cell.Node),
                 type = cell.type,
                 ID = cell.ID
             };
             clone.Vertices = Clone(cell.Vertices);
             clone.Edges = Clone(cell.Edges);
+            return clone;
+        }
+
+        public static T Clone<T>(T node)
+            where T : ILocatable, new()
+        {
+            T clone = new T();
+            clone.Position = node.Position;
             return clone;
         }
 

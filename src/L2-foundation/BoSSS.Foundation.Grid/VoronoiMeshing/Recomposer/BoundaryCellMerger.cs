@@ -65,7 +65,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             CyclicArray<Edge<T>> sourceEdgesStartingAtWeld = new CyclicArray<Edge<T>>(sourceEdges, sourceEdgeIndice);
             sourceEdgeEnumerator = new CyclicArrayEnumerator<Edge<T>>(sourceEdgesStartingAtWeld);
 
-            Edge<T>[] reversedTargetEdges = ArrayMethods.GetCopyInReverseOrder(targetEdges);
+            Edge<T>[] reversedTargetEdges = ArrayMethods.GetReverseOrderArray(targetEdges);
             int reversedInidce = targetEdges.Length - 1 - targetEdgeIndice;
             CyclicArray<Edge<T>> targetEdgesStartingAtWeld = new CyclicArray<Edge<T>>(reversedTargetEdges, reversedInidce);
             targetEdgeEnumerator = new CyclicArrayEnumerator<Edge<T>>(targetEdgesStartingAtWeld);

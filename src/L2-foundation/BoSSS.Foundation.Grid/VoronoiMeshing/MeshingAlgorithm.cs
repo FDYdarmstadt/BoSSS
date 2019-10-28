@@ -39,13 +39,15 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             Mesh<T> mesh = null;
             MeshGenerator<T> voronoiMesher = new MeshGenerator<T>(settings);
 
-            MatlabPlotter plotter = new MatlabPlotter();
+            //MatlabPlotter plotter = new MatlabPlotter();
             
             for (int iLloyd = 0; iLloyd <= settings.NumberOfLloydIterations; ++iLloyd)
             {
                 mesh = voronoiMesher.Generate(nodes);
                 if(iLloyd%10 == 0)
-                    plotter.Plot(mesh, $"Mesh{iLloyd}");
+                {
+                    //plotter.Plot(mesh, $"Mesh{iLloyd}");
+                }
                 // Lloyds algorithm (Voronoi relaxation)
                 if (iLloyd != settings.NumberOfLloydIterations)
                 {

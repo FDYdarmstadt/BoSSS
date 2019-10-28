@@ -37,41 +37,42 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 while (edgeEnum.MoveNext() && !keepOnRunning)
                 {
                     activeEdge = edgeEnum.Current;
-                    keepOnRunning = LineIntersection.Intersect(activeEdge, activeLine, ref intersectionCase, out alphaCut);
+                    keepOnRunning = LineIntersect.Find(activeEdge, activeLine, ref intersectionCase, out alphaCut);
                 }
                 switch (intersectionCase)
                 {
                     case IntersectionCase.NotIntersecting:
                         break;
                     case IntersectionCase.EndOfLine:
-                        activeEdge = meshIntersecter.AddLineSegment(activeEdge, alphaCut, boundary.LineIndex);
-                        edgeEnum = meshIntersecter.GetConnectedRidgeEnum(activeEdge);
+                        activeEdge = meshIntersecter.AddLineSegment(activeEdge, alphaCut, boundary.LineIndex());
+                        edgeEnum = meshIntersecter.GetConnectedEdgeEnum(activeEdge);
                         outerEdge = activeEdge;
                         if (!boundary.MoveNext())
                         {
                             keepOnRunning = false;
                         }
                         break;
-                    case IntersectionCase.EndOfRidge:
-                        meshIntersecter.AddEdge(activeEdge, boundary.LineIndex);
-                        edgeEnum = meshIntersecter.GetConnectedRidgeEnum(activeEdge);
+                    case IntersectionCase.EndOfEdge:
+                        meshIntersecter.AddEdge(activeEdge, boundary.LineIndex());
+                        edgeEnum = meshIntersecter.GetConnectedEdgeEnum(activeEdge);
                         outerEdge = activeEdge;
                         break;
-                    case IntersectionCase.EndOfRidgeAndLine:
-                        meshIntersecter.AddEdge(activeEdge, boundary.LineIndex);
-                        edgeEnum = meshIntersecter.GetConnectedRidgeEnum(activeEdge);
+                    case IntersectionCase.EndOfEdgeAndLine:
+                        meshIntersecter.AddEdge(activeEdge, boundary.LineIndex());
+                        edgeEnum = meshIntersecter.GetConnectedEdgeEnum(activeEdge);
                         outerEdge = activeEdge;
                         if (!boundary.MoveNext())
                         {
                             keepOnRunning = false;
                         }
                         break;
+                    case IntersectionCase.StartOfLine:
                     case IntersectionCase.InMiddle:
                     default:
                         throw new InvalidOperationException();
                 }
             }
-            edgeEnum = meshIntersecter.getNeighborFromLineDirection(outerEdge, activeLine);
+            edgeEnum = meshIntersecter.GetNeighborFromLineDirection(outerEdge, activeLine);
             return edgeEnum;
         }
     }

@@ -19,10 +19,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             }
         }
 
-        public CyclicInterval LineIndex {
-            get {
-                return new CyclicInterval(0, Length - 1, Counter);
-            }
+        public CyclicInterval LineIndex()
+        {
+            return new CyclicInterval(0, Length - 1, Counter);
         }
 
         public static BoundaryLineEnumerator GetEnumerator(

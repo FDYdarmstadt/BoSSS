@@ -14,7 +14,7 @@ namespace VoronoiTests.Grid
     {
         public override void Run()
         {
-            PeriodicBoundaryPairLarge();
+            AllPeriodicBoundaries();
         }
 
         [Test]
@@ -75,7 +75,7 @@ namespace VoronoiTests.Grid
         [Test]
         public void PeriodicBoundaryPair()
         {
-            byte[] tags = { 1, 182, 1, 182 };
+            byte[] tags = { 1, 181, 1, 181 };
             SortedList<byte, string> tagNames = new SortedList<byte, string>(2)
             {
                 { 181, "Periodic-X" },
@@ -103,7 +103,7 @@ namespace VoronoiTests.Grid
         [Test]
         public void PeriodicBoundaryPairLarge()
         {
-            byte[] tags = { 1, 182, 1, 182 };
+            byte[] tags = { 1, 181, 1, 181 };
             SortedList<byte, string> tagNames = new SortedList<byte, string>(2)
             {
                 { 181, "Periodic-X" },
@@ -117,7 +117,55 @@ namespace VoronoiTests.Grid
                 EdgeTagNames = tagNames
             };
 
-            VoronoiGrid grid = VoronoiGrid2D.Polygonal(gridBoundary, 50, 500);
+            VoronoiGrid grid = VoronoiGrid2D.Polygonal(gridBoundary, 50, 2000);
+        }
+
+        [Test]
+        public void AllPeriodicBoundaries()
+        {
+            byte[] tags = { 182, 181, 182, 181 };
+            SortedList<byte, string> tagNames = new SortedList<byte, string>(2)
+            {
+                { 181, "Periodic-X" },
+                { 182, "Periodic-Y" }
+            };
+
+            VoronoiBoundary gridBoundary = new VoronoiBoundary
+            {
+                Polygon = GridShapes.Rectangle(2, 2),
+                EdgeTags = tags,
+                EdgeTagNames = tagNames
+            };
+
+            MultidimensionalArray nodes = MultidimensionalArray.Create(6, 2);
+            nodes.SetRow(0, new double[] { -0.5, 0.5 });
+            nodes.SetRow(1, new double[] { -0.8, -0.4 });
+            nodes.SetRow(2, new double[] { 0, 0 });
+            nodes.SetRow(3, new double[] { 0.8, 0.8 });
+            nodes.SetRow(4, new double[] { 0.9, 0.2 });
+            nodes.SetRow(5, new double[] { 0.5, -0.6 });
+
+            VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
+        }
+
+        [Test]
+        public void AllPeriodicBoundariesLarge()
+        {
+            byte[] tags = { 182, 181, 182, 181 };
+            SortedList<byte, string> tagNames = new SortedList<byte, string>(2)
+            {
+                { 181, "Periodic-X" },
+                { 182, "Periodic-Y" }
+            };
+
+            VoronoiBoundary gridBoundary = new VoronoiBoundary
+            {
+                Polygon = GridShapes.Rectangle(2, 2),
+                EdgeTags = tags,
+                EdgeTagNames = tagNames
+            };
+
+            VoronoiGrid grid = VoronoiGrid2D.Polygonal(gridBoundary, 0, 10);
         }
     }
 }

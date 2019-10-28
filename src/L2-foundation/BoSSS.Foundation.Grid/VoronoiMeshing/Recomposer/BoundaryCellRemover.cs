@@ -39,7 +39,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
         public void RemoveOuterCellsFromMesh()
         {
             List<MeshCell<T>> cells = new List<MeshCell<T>>(mesh.Cells.Count);
-            foreach (MeshCell<T> cell in insideCells.Cells())
+            foreach (MeshCell<T> cell in insideCells.EnumerateCellsInConcentricCircles())
             {
                 cells.Add(cell);
             }

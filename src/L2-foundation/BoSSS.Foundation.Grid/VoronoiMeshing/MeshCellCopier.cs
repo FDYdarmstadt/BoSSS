@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
     class MeshCellCopier<T>
+        where T : ILocatable, new()
     {
         readonly IDMesh<T> mesh;
 
@@ -40,7 +41,5 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             RegisterToMesh(copy);
             return copy;
         }
-
-
     }
 }

@@ -2,9 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Diagnostics;
 using BoSSS.Platform.LinAlg;
-using BoSSS.Platform;
-using BoSSS.Foundation.Grid.Aggregation;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
@@ -192,16 +191,44 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 1 - i] = lines[i - 1].End;
                 ID = mesh.AddVertex(verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 1 - i]);
             }
-            //New Ridges
-            Edge<T>[] newEdges;
-            Edge<T>[] newNeighborEdges;
+
+            //New Edges
             MeshCell<T> newCell = new MeshCell<T>();
             mesh.AddCell(newCell);
-            MeshMethods.CreateBoundaryEdge(verticesOfNewRidgeBoundary, cell, newCell, out newEdges, out newNeighborEdges, boundaryCount);
+            MeshMethods.CreateBoundaryEdge(
+               verticesOfNewRidgeBoundary,
+               cell,
+               newCell,
+               out Edge<T>[] newEdges,
+               out Edge<T>[] newNeighborEdges,
+               boundaryCount);
             MeshMethods.InsertEdgesAndVertices(newEdges, newNeighborEdges);
         }
 
-        public IEnumerator<Edge<T>> GetConnectedRidgeEnum(Edge<T> edge)
+        public void CloseMesh(Edge<T> firstCutEdge, CyclicInterval boundaryCount)
+        {
+            MeshCell<T> cell = firstCutEdge.Cell;
+            //Divide this cell
+            //================================================================
+            //NewVertices
+            Vertex[] verticesOfNewRidgeBoundary = new Vertex[2];
+            verticesOfNewRidgeBoundary[0] = firstCutEdge.End;
+            verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 1] = mesh.Vertices[cell.IntersectionVertex];
+
+            //New Edges
+            MeshCell<T> newCell = new MeshCell<T>();
+            mesh.AddCell(newCell);
+            MeshMethods.CreateBoundaryEdge(
+                verticesOfNewRidgeBoundary, 
+                cell, 
+                newCell, 
+                out Edge<T>[] newEdges, 
+                out Edge<T>[] newNeighborEdges,
+                boundaryCount);
+            MeshMethods.InsertEdgesAndVertices(newEdges, newNeighborEdges);
+        }
+
+        public IEnumerator<Edge<T>> GetConnectedEdgeEnum(Edge<T> edge)
         {
             List<Edge<T>> outgoingEdges = new List<Edge<T>>();
             bool newNeighbor = true;
@@ -239,9 +266,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             cell.IntersectionVertex = newOldVertex.ID;
         }
 
-        public IEnumerator<Edge<T>> getNeighborFromLineDirection(Edge<T> edge, BoundaryLine line)
+        public IEnumerator<Edge<T>> GetNeighborFromLineDirection(Edge<T> edge, BoundaryLine line)
         {
-            IEnumerator<Edge<T>> outgoingEdges = GetConnectedRidgeEnum(edge);
+            IEnumerator<Edge<T>> outgoingEdges = GetConnectedEdgeEnum(edge);
             Edge<T> A = null;
             Edge<T> B = null;
             if (outgoingEdges.MoveNext())
@@ -265,35 +292,35 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                     A = B;
                 }
             }
-
+            A.Cell.IntersectionVertex = A.Start.ID;
             return new AfterCutEdgeEnumerator(A.Cell.Edges, A);
+        }
 
-            //Check if in positive rotation a, c, b order
-            bool IsBetween(Edge<T> a, BoundaryLine b, Edge<T> c)
+        //Check if in positive rotation a, c, b order
+        static bool IsBetween(Edge<T> a, BoundaryLine b, Edge<T> c)
+        {
+            Vector A1 = a.End.Position - a.Start.Position;
+            Vector C1 = b.End.Position - a.Start.Position;
+            Vector B1 = c.End.Position - a.Start.Position;
+
+            double crossAB = A1.CrossProduct2D(B1);
+            double crossCB = C1.CrossProduct2D(B1);
+            double crossAC = A1.CrossProduct2D(C1);
+            if (crossAC > 0)
             {
-                Vector A1 = a.End.Position - a.Start.Position;
-                Vector C1 = b.End.Position - a.Start.Position;
-                Vector B1 = c.End.Position - a.Start.Position;
-
-                double crossAB = A1.CrossProduct2D(B1);
-                double crossCB = C1.CrossProduct2D(B1);
-                double crossAC = A1.CrossProduct2D(C1);
-                if (crossAC > 0)
+                if (crossCB > 0 || crossAB < 0)
                 {
-                    if (crossCB > 0 || crossAB < 0)
-                    {
-                        return true;
-                    }
-                    return false;
+                    return true;
                 }
-                else
+                return false;
+            }
+            else
+            {
+                if (crossCB > 0 && crossAB < 0)
                 {
-                    if (crossCB > 0 && crossAB < 0)
-                    {
-                        return true;
-                    }
-                    return false;
+                    return true;
                 }
+                return false;
             }
         }
 
@@ -358,7 +385,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         {
             MeshCell<T> cell = edge.Cell;
             Vertex cutVertex = edge.End;
-            IEnumerator<Edge<T>> neighEdges = GetConnectedRidgeEnum(edge);
+            IEnumerator<Edge<T>> neighEdges = GetConnectedEdgeEnum(edge);
             while (neighEdges.MoveNext())
             {
                 MeshCell<T> neighbor = neighEdges.Current.Cell;
