@@ -106,8 +106,10 @@ namespace BoSSS.Application.BoSSSpad {
                 CheckDynamicLibrary("Tecplot", () => new UnsafeTECIO(), isOptional: true);
 
                 CheckDynamicLibrary("MUMPS", () => new UnsafeMUMPS(), isOptional: true);
+                CheckDynamicLibrary("MUMPS (MPI)", () => new UnsafeMUMPS("MPI"), isOptional: true);
 
                 CheckDynamicLibrary("PARDISO (Intel MKL)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_MKL(), isOptional: true);
+                CheckDynamicLibrary("PARDISO (Intel MKL, OMP)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_MKL("OMP"), isOptional: true);
 
                 CheckDynamicLibrary("PARDISO (v5)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_v5(), isOptional: true);
 
