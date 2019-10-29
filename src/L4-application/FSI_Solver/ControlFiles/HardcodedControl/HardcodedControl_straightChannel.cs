@@ -62,7 +62,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Particle Properties
             // =============================   
-            C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.hydrodynamicsConvergenceCriterion, 0.1, true);
+            C.underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, 0.1, true);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 1);
             double particleRadius = 0.125;
             C.Particles = new List<Particle> {
@@ -114,7 +114,7 @@ namespace BoSSS.Application.FSI_Solver {
             double particleDensity = 1;
             // Particle Properties
             // =============================   
-            C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.hydrodynamicsConvergenceCriterion, relaxationFactor: 3.0, useAddaptiveUnderrelaxation: true);
+            C.underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, relaxationFactor: 3.0, useAddaptiveUnderrelaxation: true);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 1);
             C.Particles = new List<Particle> {
                 new Particle_Ellipsoid(motion, 0.5, 0.05, new double[] { 0.0, 0.0 }, startAngl: 0, activeStress: 1) 
