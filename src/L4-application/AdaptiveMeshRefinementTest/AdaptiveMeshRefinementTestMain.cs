@@ -291,7 +291,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             List<int> CellsToRefineList;
             List<int[]> Coarsening;
             if (MPISize > 1) {
-                List<Tuple<int, CellMask>> cellMaskRefinementLevel = GetCellMaskWithRefinementLevels();
+                List<Tuple<int, BitArray>> cellMaskRefinementLevel = GetCellMaskWithRefinementLevels();
                 AnyChange = GridRefinementController.ComputeGridChange((GridData)this.GridData, LsTrk.Regions.GetCutCellMask(), cellMaskRefinementLevel, out CellsToRefineList, out Coarsening);
             }
             else
