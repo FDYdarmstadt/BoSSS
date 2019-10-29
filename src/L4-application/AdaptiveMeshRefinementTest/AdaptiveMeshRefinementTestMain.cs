@@ -257,7 +257,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         /// <summary>
         /// Creates the cellmask which should be refined.
         /// </summary>
-        private List<Tuple<int, CellMask>> GetCellMaskWithRefinementLevels() {
+        private List<Tuple<int, BitArray>> GetCellMaskWithRefinementLevels() {
             int refinementLevel = 2;
             int coarseRefinementLevel = 1;
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
@@ -270,11 +270,10 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 else if (GradMag > 0.6)
                     coarse[j] = true;
             }
-            CellMask coarseMask = new CellMask(GridData, coarse);
-            CellMask fineMask = new CellMask(GridData, fine);
-            List<Tuple<int, CellMask>> AllCellsWithMaxRefineLevel = new List<Tuple<int, CellMask>>();
-            AllCellsWithMaxRefineLevel.Add(new Tuple<int, CellMask>(refinementLevel, fineMask));
-            AllCellsWithMaxRefineLevel.Add(new Tuple<int, CellMask>(coarseRefinementLevel, coarseMask));
+            List<Tuple<int, BitArray>> AllCellsWithMaxRefineLevel = new List<Tuple<int, BitArray>> {
+                new Tuple<int, BitArray>(refinementLevel, fine),
+                new Tuple<int, BitArray>(coarseRefinementLevel, coarse)
+            };
             return AllCellsWithMaxRefineLevel;
         }
 

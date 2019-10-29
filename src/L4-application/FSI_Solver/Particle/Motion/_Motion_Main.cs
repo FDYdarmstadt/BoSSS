@@ -857,12 +857,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="tempTorque"></param>
         /// <param name="firstIteration"></param>
         protected void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque, bool firstIteration) {
-            for (int d = 0; d < m_Dim; d++) {
-                if (tempForces[d] * 1000 < CalculateAverageForces(tempForces, tempTorque))
-                    tempForces[d] = 0;
-            }
-            if (tempTorque * 1000 < CalculateAverageForces(tempForces, tempTorque))
-                tempTorque = 0;
             m_ForcesWithoutRelaxation.Insert(0, tempForces.CloneAs());
             m_TorqueWithoutRelaxation.Insert(0, tempTorque);
             double[] temp = new double[] { tempForces[0], tempForces[1], tempTorque };
@@ -878,7 +872,7 @@ namespace BoSSS.Application.FSI_Solver {
                     Underrelaxation.ForcesAndTorque(ref test1, m_ForcesAndTorquePreviousIteration, ref testRelaxation, m_ForcesAndTorqueWithoutRelaxation);
                     tempForces[0] = test1[0];
                     tempForces[1] = test1[1];
-                    tempTorque = test1[2]; 
+                    tempTorque = test1[2];
                 }
             }
             m_HydrodynamicForces[0] = tempForces.CloneAs();
@@ -893,8 +887,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="tempTorque"></param>
         /// <param name="firstIteration"></param>
         protected void HydrodynamicsPostprocessing(double tempTorque, bool firstIteration) {
-            if (tempTorque < 1e-14)
-                tempTorque = 0;
             m_TorqueWithoutRelaxation.Insert(0, tempTorque);
             double[] temp = new double[] { 0, 0, tempTorque };
             m_ForcesAndTorqueWithoutRelaxation.Insert(0, temp);
@@ -909,11 +901,6 @@ namespace BoSSS.Application.FSI_Solver {
                     tempTorque = test1[2];
                 }
             }
-            for (int d = 0; d < m_Dim; d++) {
-                m_HydrodynamicForces[0][d] = 0;
-            }
-            if (tempTorque < 1e-14)
-                tempTorque = 0;
             m_HydrodynamicTorque[0] = tempTorque;
             Aux.TestArithmeticException(m_HydrodynamicForces[0], "hydrodynamic forces");
             Aux.TestArithmeticException(m_HydrodynamicTorque[0], "hydrodynamic torque");
@@ -925,10 +912,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="tempForces"></param>
         /// <param name="firstIteration"></param>
         protected void HydrodynamicsPostprocessing(double[] tempForces, bool firstIteration) {
-            for (int d = 0; d < m_Dim; d++) {
-                if (tempForces[d] < 1e-14)
-                    tempForces[d] = 0;
-            }
             m_ForcesWithoutRelaxation.Insert(0, tempForces.CloneAs());
             double[] temp = new double[] { tempForces[0], tempForces[1], 0 };
             m_ForcesAndTorqueWithoutRelaxation.Insert(0, temp);
@@ -943,10 +926,6 @@ namespace BoSSS.Application.FSI_Solver {
                     tempForces[0] = test1[0];
                     tempForces[1] = test1[1];
                 }
-            }
-            for (int d = 0; d < m_Dim; d++) {
-                if (tempForces[d] < 1e-14)
-                    tempForces[d] = 0;
             }
             for (int d = 0; d < m_Dim; d++) {
                 m_HydrodynamicForces[0][d] = tempForces[d];

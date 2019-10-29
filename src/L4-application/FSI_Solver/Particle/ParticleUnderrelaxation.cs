@@ -58,6 +58,19 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="forcesPreviousIteration">
         /// The hydrodynamic forces at the previous iteration.
         /// </param>
+        internal void Forces(ref double[] forces, List<double[]> forcesPreviousIteration, ref double[] oldOmega, List<double[]> rawForcesPrev) {
+            for (int d = 0; d < forces.Length; d++) {
+                List<double> tempForcesPrev = new List<double>();
+                List<double> tempRawForcesPrev = new List<double>();
+                for (int i = 0; i < forcesPreviousIteration.Count; i++) {
+                    tempForcesPrev.Add(forcesPreviousIteration[i][d]);
+                    tempRawForcesPrev.Add(rawForcesPrev[i][d]);
+                }
+                double[] Omega = new double[] { 0, oldOmega[d]};
+                AitkenUnderrelaxation(ref forces[d], tempForcesPrev, Omega, rawForcesPrev[1][d]);
+                oldOmega[d] = Omega[0];
+            }
+        }
 
         internal void Forces(ref double[] forces, List<double[]> forcesPreviousIteration) {
             for (int d = 0; d < forces.Length; d++) {
@@ -82,6 +95,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="torquePreviousIteration">
         /// The hydrodynamic torque at the previous iteration.
         /// </param>
+        internal void Torque(ref double torque, List<double> torquePreviousIteration, ref double[] oldOmega, List<double> rawTorquePrev) {
+            double[] Omega = new double[] { 0, oldOmega[2] };
+            AitkenUnderrelaxation(ref torque, torquePreviousIteration, Omega, rawTorquePrev[1]);
+            oldOmega[2] = Omega[0];
+        }
         internal void Torque(ref double torque, List<double> torquePreviousIteration) {
             double underrelaxationCoeff = m_UseAdaptiveUnderrelaxation == true
                 ? CalculateAdaptiveUnderrelaxation(torque, torquePreviousIteration, m_AverageForce, m_ConvergenceLimit, m_RelaxationFactor)
@@ -145,18 +163,28 @@ namespace BoSSS.Application.FSI_Solver {
             return UnderrelaxationCoeff;
         }
 
+        private void AitkenUnderrelaxation(ref double variable, List<double> variableAtPrevIteration, double[] Omega, double rawForcesPrev) {
+            double[] residual = new double[] { (variable - variableAtPrevIteration[0]), (rawForcesPrev - variableAtPrevIteration[1]) };
+            Omega[0] = -Omega[1] * residual[1] / (residual[0] - residual[1]);
+            variable = Omega[0] * (variable - variableAtPrevIteration[0]) + variableAtPrevIteration[0];
+        }
+
         private void AitkenUnderrelaxation(ref double[] variable, List<double[]> variableAtPrevIteration, double[] Omega, double[] rawForcesPrev) {
             double[][] residual = new double[variable.Length][];
             double[] residualDiff = new double[variable.Length];
             double residualScalar = 0;
+            double sumVariable = 0;
             for (int i = 0; i < variable.Length; i++) {
                 residual[i] = new double[] { (variable[i] - variableAtPrevIteration[0][i]), (rawForcesPrev[i] - variableAtPrevIteration[1][i]) };
                 residualDiff[i] = residual[i][0] - residual[i][1];
                 residualScalar += residual[i][1] * residualDiff[i];
+                sumVariable += variable[i];
             }
             Omega[0] = -Omega[1] * residualScalar / residualDiff.L2Norm().Pow2();
             Console.WriteLine("OmegaOld: " + Omega[1] + " OmegaNew: " + Omega[0] + " forcesOld 0: " + variable[0] + " forcesOld 1: " + variable[1] + " torqueOld: " + variable[2]);
             for (int i = 0; i < variable.Length; i++) {
+                //double convergenceHelper = variable[i] < 1e-6 ? variable[i] * variable.Length / sumVariable : 1;
+                //variable[i] = Omega[0] * convergenceHelper * (variable[i] - variableAtPrevIteration[0][i]) + variableAtPrevIteration[0][i];
                 variable[i] = Omega[0] * (variable[i] - variableAtPrevIteration[0][i]) + variableAtPrevIteration[0][i];
             }
             Console.WriteLine("forcesNew 0: " + variable[0] + " forcesNew 1: " + variable[1] + " torqueNew: " + variable[2]);
