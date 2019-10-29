@@ -34,9 +34,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// A mean value for the forces used to reduce the impact of computation errors.
         /// </param>
         internal ParticleUnderrelaxation(ParticleUnderrelaxationParam parameter, double averageForce) {
-            m_ConvergenceLimit = parameter.ConvergenceLimit;
-            m_RelaxationFactor = parameter.UnderrelaxationFactor;
-            m_UseAdaptiveUnderrelaxation = parameter.UsaAddaptiveUnderrelaxation;
+            m_ConvergenceLimit = parameter.m_ConvergenceLimit;
+            m_RelaxationFactor = parameter.m_UnderrelaxationFactor;
+            m_UseAdaptiveUnderrelaxation = parameter.m_UseAdaptiveUnderrelaxation;
             m_AverageForce = averageForce;
         }
         [DataMember]
@@ -183,8 +183,6 @@ namespace BoSSS.Application.FSI_Solver {
             Omega[0] = -Omega[1] * residualScalar / residualDiff.L2Norm().Pow2();
             Console.WriteLine("OmegaOld: " + Omega[1] + " OmegaNew: " + Omega[0] + " forcesOld 0: " + variable[0] + " forcesOld 1: " + variable[1] + " torqueOld: " + variable[2]);
             for (int i = 0; i < variable.Length; i++) {
-                //double convergenceHelper = variable[i] < 1e-6 ? variable[i] * variable.Length / sumVariable : 1;
-                //variable[i] = Omega[0] * convergenceHelper * (variable[i] - variableAtPrevIteration[0][i]) + variableAtPrevIteration[0][i];
                 variable[i] = Omega[0] * (variable[i] - variableAtPrevIteration[0][i]) + variableAtPrevIteration[0][i];
             }
             Console.WriteLine("forcesNew 0: " + variable[0] + " forcesNew 1: " + variable[1] + " torqueNew: " + variable[2]);

@@ -227,7 +227,7 @@ namespace BoSSS.Application.FSI_Solver {
         public double CoefficientOfRestitution = 1.0;
 
         [DataMember]
-        public ParticleUnderrelaxationParam underrelaxationParam = new ParticleUnderrelaxationParam(1e-8, 1, false);
+        public ParticleUnderrelaxationParam underrelaxationParam = new ParticleUnderrelaxationParam(1e-8, ParticleUnderrelaxationParam.UnderrelaxationMethod.ProcentualRelaxation, 1, false);
 
         /// <summary>
         /// Gravity acting on the particles, zero by default.

@@ -28,7 +28,7 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, int amrLevel = 3, double aspectRatio = 2) {
+        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, int amrLevel = 5, double aspectRatio = 2) {
             FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
 
@@ -41,7 +41,7 @@ namespace BoSSS.Application.FSI_Solver {
                 "Wall_upper"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 15, lengthY: 4, cellsPerUnitLength: 4, periodicX: false, periodicY: false);
+            C.SetGrid(lengthX: 15, lengthY: 4, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel);
 
             // Coupling Properties
@@ -62,7 +62,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Particle Properties
             // =============================   
-            C.underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, 0.1, true);
+            C.underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, ParticleUnderrelaxationParam.UnderrelaxationMethod.AitkenRelaxation, 0.5, true);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 1);
             double particleRadius = 0.125;
             C.Particles = new List<Particle> {
@@ -114,7 +114,7 @@ namespace BoSSS.Application.FSI_Solver {
             double particleDensity = 1;
             // Particle Properties
             // =============================   
-            C.underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, relaxationFactor: 3.0, useAddaptiveUnderrelaxation: true);
+            C.underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, ParticleUnderrelaxationParam.UnderrelaxationMethod.ProcentualRelaxation, relaxationFactor: 3.0, useAddaptiveUnderrelaxation: true);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 1);
             C.Particles = new List<Particle> {
                 new Particle_Ellipsoid(motion, 0.5, 0.05, new double[] { 0.0, 0.0 }, startAngl: 0, activeStress: 1) 

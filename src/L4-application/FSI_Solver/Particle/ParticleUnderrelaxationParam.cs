@@ -28,25 +28,37 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="useAddaptiveUnderrelaxation">
         /// Set true if you want addaptive underrelaxation.
         /// </param>
-        public ParticleUnderrelaxationParam(double convergenceLimit, double relaxationFactor, bool useAddaptiveUnderrelaxation) {
-            ConvergenceLimit = convergenceLimit;
-            UnderrelaxationFactor = relaxationFactor;
-            UsaAddaptiveUnderrelaxation = useAddaptiveUnderrelaxation;
+        public ParticleUnderrelaxationParam(double convergenceLimit, UnderrelaxationMethod underrelaxationMethod = UnderrelaxationMethod.ProcentualRelaxation, double relaxationFactor = 0.1, bool useAddaptiveUnderrelaxation = true) {
+            m_ConvergenceLimit = convergenceLimit;
+            m_UnderrelaxationFactor = relaxationFactor;
+            m_UseAdaptiveUnderrelaxation = useAddaptiveUnderrelaxation;
+            m_Method = underrelaxationMethod;
         }
+
+        public enum UnderrelaxationMethod {
+            ProcentualRelaxation = 0,
+
+            AitkenRelaxation = 1,
+
+            //MinimalPolynomial = 2
+
+        }
+
+        public UnderrelaxationMethod m_Method = UnderrelaxationMethod.ProcentualRelaxation;
 
         /// <summary>
         /// The convergence limit for the hydrodynamic forces.
         /// </summary>
-        public double ConvergenceLimit { get; }
+        public double m_ConvergenceLimit { get; }
 
         /// <summary>
         /// The underrelaxation factor.
         /// </summary>
-        public double UnderrelaxationFactor { get; }
+        public double m_UnderrelaxationFactor { get; }
 
         /// <summary>
         /// True if the underrelaxation procedure is addaptive.
         /// </summary>
-        public bool UsaAddaptiveUnderrelaxation { get; }
+        public bool m_UseAdaptiveUnderrelaxation { get; }
     }
 }

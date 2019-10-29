@@ -857,13 +857,20 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="tempTorque"></param>
         /// <param name="firstIteration"></param>
         protected void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque, bool firstIteration) {
+            double averageForcesAndTorque = Math.Abs(CalculateAverageForces(tempForces, tempTorque));
+            for (int d = 0; d < m_Dim; d++) {
+                if (Math.Abs(tempForces[d] * 1e4) < averageForcesAndTorque || Math.Abs(tempForces[d]) < 1e-10)
+                    tempForces[d] = 0;
+            }
+            if (Math.Abs(tempTorque * 1e4) < averageForcesAndTorque || Math.Abs(tempTorque) < 1e-10)
+                tempTorque = 0;
             m_ForcesWithoutRelaxation.Insert(0, tempForces.CloneAs());
             m_TorqueWithoutRelaxation.Insert(0, tempTorque);
             double[] temp = new double[] { tempForces[0], tempForces[1], tempTorque };
             m_ForcesAndTorqueWithoutRelaxation.Insert(0, temp);
             if (m_UnderrelaxationParam != null) {
                 ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation(m_UnderrelaxationParam, CalculateAverageForces(tempForces, tempTorque));
-                if (m_ForcesPreviousIteration.Count < 3) {
+                if (m_ForcesPreviousIteration.Count < 3 || m_UnderrelaxationParam.m_Method == ParticleUnderrelaxationParam.UnderrelaxationMethod.ProcentualRelaxation) {
                     Underrelaxation.Forces(ref tempForces, m_ForcesPreviousIteration);
                     Underrelaxation.Torque(ref tempTorque, m_TorquePreviousIteration);
                 }
@@ -892,7 +899,7 @@ namespace BoSSS.Application.FSI_Solver {
             m_ForcesAndTorqueWithoutRelaxation.Insert(0, temp);
             if (m_UnderrelaxationParam != null) {
                 ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation(m_UnderrelaxationParam, CalculateAverageForces(new double[] { 0, 0 }, tempTorque));
-                if (m_TorquePreviousIteration.Count < 3) {
+                if (m_TorquePreviousIteration.Count < 3 || m_UnderrelaxationParam.m_Method == ParticleUnderrelaxationParam.UnderrelaxationMethod.ProcentualRelaxation) {
                     Underrelaxation.Torque(ref tempTorque, m_TorquePreviousIteration);
                 }
                 else {
@@ -917,7 +924,7 @@ namespace BoSSS.Application.FSI_Solver {
             m_ForcesAndTorqueWithoutRelaxation.Insert(0, temp);
             if (m_UnderrelaxationParam != null) {
                 ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation(m_UnderrelaxationParam, CalculateAverageForces(tempForces, 0));
-                if (m_ForcesPreviousIteration.Count < 3) {
+                if (m_ForcesPreviousIteration.Count < 3 || m_UnderrelaxationParam.m_Method == ParticleUnderrelaxationParam.UnderrelaxationMethod.ProcentualRelaxation) {
                     Underrelaxation.Forces(ref tempForces, m_ForcesPreviousIteration);
                 }
                 else {

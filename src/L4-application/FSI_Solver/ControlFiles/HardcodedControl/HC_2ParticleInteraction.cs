@@ -62,7 +62,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Particle Properties
             // =============================   
-            C.underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, relaxationFactor, addaptiveUnderrelaxation);
+            C.underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, ParticleUnderrelaxationParam.UnderrelaxationMethod.ProcentualRelaxation, relaxationFactor, addaptiveUnderrelaxation);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 1.5);
             double particleRadius = 0.5;
             C.Particles = new List<Particle> {
