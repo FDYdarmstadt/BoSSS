@@ -8898,7 +8898,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             
             foreach(var qr in this.m_QuadRules)
                 qr.Nodes.LockForever();
-            
+
             // ==============================
             // define orthonormal polynomials
             // ==============================
@@ -8974,7 +8974,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             p.AddCoeff(3.0155043922595447e+00, new int[] { 1, 1 });
             p.AddCoeff(-1.1308141470973292e+00, new int[] { 1, 2 });
             p.AddCoeff(5.6540707354866462e+00, new int[] { 3, 0 });
-
+            
             //----------------------------------------------------------------------------------------
             p = new Polynomial(new Guid("{0C5CDBD8-3619-4b00-BCEE-1593A355814D}"));
             OrthonormalPolynomials[10] = p;
@@ -14114,8 +14114,6 @@ namespace BoSSS.Foundation.Grid.RefElements {
             p.AddCoeff(1.4311148383483661e+04, new int[] { 16, 0 });
 
             //----------------------------------------------------------------------------------------
-
-
 
             #endregion POLYS_DEF
 #pragma warning restore 612

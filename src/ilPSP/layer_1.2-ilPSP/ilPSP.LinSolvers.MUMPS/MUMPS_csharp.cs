@@ -24,9 +24,30 @@ using MPI.Wrappers.Utils;
 
 namespace ilPSP.LinSolvers.MUMPS
 {
+    /// <summary>
+    /// Singleton pattern to control the Instantiation of the Mumps wrapper.
+    /// </summary>
+    public static class SingletonMumps
+    {
+        static private string parallelism = "SEQ";
+
+        public static void SetParallelism(string si)
+        {
+            parallelism = si;            
+        }
+
+        public static UnsafeMUMPS Instance
+        {
+            get {
+                return new UnsafeMUMPS(parallelism);
+            }
+        }
+    }
+
 	public unsafe class MUMPS_csharp
 	{
-        static UnsafeMUMPS m_MUMPS = new UnsafeMUMPS();                
+
+        static UnsafeMUMPS m_MUMPS = SingletonMumps.Instance;
 
 		public unsafe struct DMUMPS_STRUC_CS {
 
@@ -443,22 +464,51 @@ namespace ilPSP.LinSolvers.MUMPS
         // https://connect.microsoft.com/VisualStudio/feedback/details/635365/runtimehelpers-initializearray-fails-on-64b-framework
         static PlatformID[] Helper()
         {
-            PlatformID[] p = new PlatformID[2];
+            PlatformID[] p = new PlatformID[3];
             p[0] = PlatformID.Win32NT;
             p[1] = PlatformID.Unix;
+            p[2] = PlatformID.Unix;
             return p;
+        }
+
+        /// <summary>
+        /// Read from Environment which type of parallel library should be used.
+        /// Returns a list of libraries in specific order to search for.
+        /// </summary>
+        static string[] SelectLibrary(string si)
+        {
+            string[] liborder;
+            switch (si)
+            {
+                case "MPI":
+                case "OMP,MPI":
+                case "MPI,OMP":
+                case "MPI,SEQ":
+                case "OMP,MPI,SEQ":
+                case "MPI,OMP,SEQ":
+                case "MPI,SEQ,OMP":
+                    liborder = new string[] { "dmumps-mpi.dll", "libBoSSSnative_mpi.so", "libBoSSSnative_seq.so" };
+                    break;
+
+                default:
+                    liborder = new string[] { "dmumps-mpi.dll", "libBoSSSnative_seq.so", "libBoSSSnative_mpi.so" };
+                    break;
+            }
+            return liborder;
+
         }
 
         /// <summary>
         /// ctor
         /// </summary>
-        public UnsafeMUMPS() :
-            base(new string[] { "dmumps-mpi.dll", "libBoSSSnative_mpi.so" },
-                  new string[2][][],
-                  new GetNameMangling[] { DynLibLoader.Identity, DynLibLoader.BoSSS_Prefix },
-                  Helper(), //new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix },
-                  new int[] { -1, -1 })
-        { }
+        public UnsafeMUMPS(string si = "SEQ") :
+            base(
+                SelectLibrary(si),
+                new string[3][][],
+                new GetNameMangling[] { DynLibLoader.Identity, DynLibLoader.BoSSS_Prefix, DynLibLoader.BoSSS_Prefix },
+                Helper(), //new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix },
+                new int[] { -1, -1, -1 })
+        { Console.WriteLine("searching for library variants of PARDISO in following order: {0}", si); }
 
 #pragma warning disable 649
         _MUMPS_GET_MAPPING mumps_get_mapping;

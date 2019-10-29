@@ -944,7 +944,7 @@ namespace ilPSP {
                 throw new ArgumentException();
             if(mp.DB != B.Dimension)
                 throw new ArgumentException();
-
+            // this is a routine where mono on windows crashes
             unsafe {
                 int DT = mp.DT;
                 //int DA = mp.DA;

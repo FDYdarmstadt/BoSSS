@@ -8,7 +8,7 @@ using MPI.Wrappers;
 
 namespace BoSSS.Application.ExternalBinding
 {
-	public static  class Infrastructure {
+	public static class Infrastructure {
 
 
 		/*
@@ -44,6 +44,7 @@ namespace BoSSS.Application.ExternalBinding
         }
 		*/
 		
+        /*
 		/// <summary>
 		/// all objects; in future, maybe a smarter thing than an infinity growing list should be used
 		/// </summary>
@@ -64,6 +65,7 @@ namespace BoSSS.Application.ExternalBinding
 		internal static object GetObject(int oIndex) {
 			return objects[oIndex];	
 		}
+        */
 		
 		internal static int ErrorHandler(Exception e) {
             int rank, size;
