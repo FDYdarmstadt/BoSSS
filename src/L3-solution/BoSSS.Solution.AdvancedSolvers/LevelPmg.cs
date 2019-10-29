@@ -186,9 +186,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
             var lowLocalBlocks__N = new List<int>();
             int cnt = 0;
 
+            /*
             var debugerSW = new StreamWriter(String.Concat("debug_of_", ilPSP.Environment.MPIEnv.MPI_Rank));
             debugerSW.WriteLine("proc {0} reporting ...",ilPSP.Environment.MPIEnv.MPI_Rank);
             debugerSW.WriteLine("Num of Blocks {0}",HighOrderBlocks_LUpivots.Length);
+            */
 
             for (int jLoc = 0; jLoc < J; jLoc++) {
                 lowLocalBlocks_i0.Add(cnt);
@@ -198,12 +200,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var LhiIdx = new List<int>();
                 var IdxHighBlockOffset = new int[NoVars][];
                 var IdxHighOffset = new int[NoVars][];
-
-                //if (UseHiOrderSmoothing) {
-                //    HighOrderBlocks_LU[jLoc] = new MultidimensionalArray[NoVars];
-                //    HighLoOrderBlocks[jLoc] = new MultidimensionalArray[NoVars];
-                //    HighOrderBlocks_LUpivots[jLoc] = new int[NoVars][];
-                //}
 
                 int NpHiTot = 0;
                 for (int iVar = 0; iVar < NoVars; iVar++) {
@@ -225,14 +221,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     for (int iSpc = 0; iSpc < NoOfSpc; iSpc++)
                     {
-
                         int n = 0;
                         int cellOffset = NpBase * iSpc;
                         IdxHighOffset[iVar][iSpc] = Map.GlobalUniqueIndex(iVar, jLoc, cellOffset+ NpBaseLow);
 
                         for (; n < NpBaseLow; n++)
                         {
-
                             int Lidx = Map.LocalUniqueIndex(iVar, jLoc, n + cellOffset);
                             LsubIdx.Add(Lidx); //local block mapping Coarse Matrix (low order entries) to original matrix
 
@@ -269,7 +263,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             for (int jVar = 0; jVar < NoVars; jVar++) {
 
                                 for (int iSpc = 0; iSpc < BS[jVar].GetNoOfSpecies(jLoc); iSpc++) {
-                                    //try {
+
                                     int i0_hi = IdxHighOffset[iVar][iSpc];
                                     int j0_hi = IdxHighOffset[jVar][iSpc];
                                     int Row_i0 = IdxHighBlockOffset[iVar][iSpc];
@@ -277,18 +271,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     int Row_ie = IdxHighBlockOffset[iVar][iSpc + 1];
                                     int col_ie = IdxHighBlockOffset[jVar][iSpc + 1];
 
-                                debugerSW.WriteLine("Block {0}: i0={1} j0={2} iVar={3}", jLoc, i0_hi, j0_hi, iVar);
+                                //debugerSW.WriteLine("Block {0}: i0={1} j0={2} iVar={3}", jLoc, i0_hi, j0_hi, iVar);
 
                                     m_op.OperatorMatrix.ReadBlock(i0_hi, j0_hi,
                                             HighOrderBlocks_LU[jLoc].ExtractSubArrayShallow(new int[] { Row_i0, Col_i0 }, new int[] { Row_ie - 1, col_ie - 1 }));
 
-                                    //} catch (ArgumentException e) {
-                                    //ilPSP.Environment.StdoutOnlyOnRank0 = false;
-                                    //Console.WriteLine("proc: {0}", ilPSP.Environment.MPIEnv.MPI_Rank);
-                                    //Console.WriteLine("iVar: {0}", iVar);
-                                    //Console.WriteLine("jVar: {0}", jVar);
-                                    //throw new Exception(e.Message);
-                                    //}
+                                  
                                 }
                             }
                         }
@@ -315,17 +303,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
             };
             intSolver.DefineMatrix(P01SubMatrix);
 
-            // write out shit ...
-            //LsubIdx.SaveToTextFileDebug("LsubIdx");
-            //GsubIdx.SaveToTextFileDebug("GsubIdx");
-            //P01SubMatrix.SaveToTextFileSparseDebug("lowM");
-            //m_op.OperatorMatrix.SaveToTextFileSparseDebug("M");
-            //P01SubMatrix.SaveToTextFileSparse("lowM_full");
-            //m_op.OperatorMatrix.SaveToTextFileSparse("M_full");
+            /*
+            LsubIdx.SaveToTextFileDebug("LsubIdx");
+            GsubIdx.SaveToTextFileDebug("GsubIdx");
+            P01SubMatrix.SaveToTextFileSparseDebug("lowM");
+            m_op.OperatorMatrix.SaveToTextFileSparseDebug("M");
+            P01SubMatrix.SaveToTextFileSparse("lowM_full");
+            m_op.OperatorMatrix.SaveToTextFileSparse("M_full");
 
             debugerSW.WriteLine("Dim of lowMatrix: {0}",GsubIdx.Count);
             debugerSW.Flush();
             debugerSW.Close();
+            */
         }
 
         //BlockMsrMatrix P01SubMatrix;
