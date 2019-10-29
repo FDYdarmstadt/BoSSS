@@ -2,7 +2,7 @@
 using ilPSP;
 using System;
 
-namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
+namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
     class BoundaryTransformation : Transformation
     {
@@ -14,11 +14,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
                 throw new Exception("There is something rotten in the state of the boundary lengths");
             }
 
-            this.Matrix = GetRotationMatrixFrom(
-                source.Start.Position - source.End.Position, 
-                target.Start.Position - target.End.Position);
-            this.AffineTransformation = 
-                (target.Start.Position + target.End.Position - source.Start.Position - source.End.Position) / 2;
+            Matrix = GetRotationMatrixFrom(
+                source.End.Position - source.Start.Position,
+                target.End.Position - target.Start.Position);
+            AffineTransformation = (-1) * (Matrix * source.Start.Position) + source.Start.Position + (target.Start.Position - source.Start.Position);
         }
 
         static MultidimensionalArray GetRotationMatrixFrom(Vector source, Vector target)
@@ -37,8 +36,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             MultidimensionalArray rotation = MultidimensionalArray.Create(2, 2);
             rotation[0, 0] = dotProduct;
             rotation[0, 1] = -crossProduct;
-            rotation[1, 0] = dotProduct;
-            rotation[1, 1] = crossProduct;
+            rotation[1, 0] = crossProduct; 
+            rotation[1, 1] = dotProduct;
             return rotation;
         }
     }

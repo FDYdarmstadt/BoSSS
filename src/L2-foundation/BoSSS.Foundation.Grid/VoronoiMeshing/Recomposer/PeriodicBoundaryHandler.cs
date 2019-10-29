@@ -6,10 +6,10 @@ using System.Diagnostics;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
 {
-    class BoundaryHandler<T>
+    class PeriodicBoundaryHandler<T>
         where T : ILocatable, new()
     {
-        readonly IDictionary<int, BoundaryTransformation> periodicTrafoMap;
+        readonly IDictionary<int, Transformation> periodicTrafoMap;
 
         readonly BoundaryLine[] boundary;
 
@@ -21,17 +21,20 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
 
         public bool ContainsPeriodicBoundaries { get; private set; }
 
-        public BoundaryHandler(
+        public PeriodicBoundaryHandler(
             BoundaryLine[] boundary,
-            IDictionary<int, int> periodicBoundaryMap,
-            int firstCellNodeIndice)
+            int firstCellNodeIndice,
+            IDictionary<int, int> periodicBoundaryMap  = null,
+            IDictionary<int, Transformation> periodicTrafoMap = null
+            )
         {
             if (periodicBoundaryMap != null)
             {
+                ContainsPeriodicBoundaries = true;
+
                 this.boundary = boundary;
                 this.firstCellNodeIndice = firstCellNodeIndice;
-                ContainsPeriodicBoundaries = true;
-                periodicTrafoMap = CreatePeriodicTransformationMapFrom(boundary, periodicBoundaryMap);
+                this.periodicTrafoMap = periodicTrafoMap;
                 nodeCloner = new BoundaryNodeCloner<T>(periodicTrafoMap);
                 recomposer = new BoundaryRecomposer<T>(periodicBoundaryMap, periodicTrafoMap, firstCellNodeIndice); 
             }
@@ -39,22 +42,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             {
                 ContainsPeriodicBoundaries = false;
             }
-        }
-
-        static IDictionary<int, BoundaryTransformation> CreatePeriodicTransformationMapFrom(
-            BoundaryLine[] boundary, 
-            IDictionary<int, int> periodicBoundaryMap)
-        {
-            IDictionary<int, BoundaryTransformation> periodicTrafoMap = new LinkedListDictionary< int, BoundaryTransformation>();
-            foreach(var boundaryPair in periodicBoundaryMap)
-            {
-                BoundaryLine source = boundary[boundaryPair.Key];
-                BoundaryLine target = BoundaryLine.GetReverse(boundary[boundaryPair.Value]);
-                
-                BoundaryTransformation transformation = new BoundaryTransformation(source, target);
-                periodicTrafoMap.Add(boundaryPair.Key, transformation);
-            }
-            return periodicTrafoMap;
         }
 
         IEnumerable<Edge<T>> PeriodicEdgesOf(Mesh<T> mesh)

@@ -19,6 +19,17 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return clones;
         }
 
+        public static List<MeshCell<T>> Clone<T>(List<MeshCell<T>> cells)
+            where T : ILocatable, new()
+        {
+            List<MeshCell<T>> clones = new List<MeshCell<T>>(cells.Count);
+            for (int i = 0; i < cells.Count; ++i)
+            {
+                clones.Add(Clone(cells[i]));
+            }
+            return clones;
+        }
+
         public static MeshCell<T> Clone<T>(MeshCell<T> cell)
             where T : ILocatable, new()
         {

@@ -476,6 +476,29 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         /// <summary>
+        /// Periodic boundary conditions are treated by connecting an "outlet"
+        /// with some "inlet". Beside the cell neighborship relations (see
+        /// <see cref="GridData.CellData.CellNeighbours"/>) an linear
+        /// transformation must be provided which maps an affine-linear
+        /// manifold A (the "outlet") of dimension D-1 (D denotes the spatial
+        /// dimension) to another affine-linear manifold B (the "inlet"). (Note
+        /// that the terms "outlet" and "inlet" are exchangeable.)
+        /// </summary>
+        /// <param name="periodicTrafo">
+        /// Transformation from "inlet" to "outlet" pair
+        /// </param>
+        /// <returns></returns>
+        public byte AddPeriodicEdgeTrafo(AffineTrafo periodicTrafo)
+        {
+            int tag = FIRST_PERIODIC_BC_TAG + m_PeriodicTrafo.Count;
+            if (tag >= (byte.MaxValue - 1))
+                throw new ApplicationException("Can't handle more than " + (byte.MaxValue - FIRST_PERIODIC_BC_TAG + 1) + "periodic boundary conditions.");
+
+            m_PeriodicTrafo.Add(periodicTrafo);
+            return (byte)tag;
+        }
+
+        /// <summary>
         /// list of transformations which describe how some edges should be
         /// transformed to other edges;
         /// </summary>

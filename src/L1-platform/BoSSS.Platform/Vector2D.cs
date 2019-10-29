@@ -454,7 +454,7 @@ namespace BoSSS.Platform.LinAlg {
                     result[i] += m[i, j] * s[j];
                 }
             }
-            return s;
+            return result;
         }
 
         /// <summary>

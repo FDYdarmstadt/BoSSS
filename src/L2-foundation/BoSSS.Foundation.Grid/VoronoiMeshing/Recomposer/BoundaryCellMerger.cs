@@ -1,10 +1,9 @@
 ﻿
+using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
+using BoSSS.Platform;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using BoSSS.Platform;
-using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
 {

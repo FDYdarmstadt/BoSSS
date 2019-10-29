@@ -1,68 +1,76 @@
-﻿using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
     public class VoronoiMesher<T>
         where T : ILocatable, IVoronoiNodeCastable, new()
     {
-        internal Mesh<T> mesh;
-
         public class Settings
         {
             public VoronoiBoundary Boundary;
+
             public int NumberOfLloydIterations = 10;
+
             public int FirstCellNode_indice = 0;
         }
 
-        MeshingAlgorithm.Settings ConvertToMeshingAlgoSettings(Settings settings)
+        internal Mesh<T> mesh;
+
+        MeshingAlgorithm.Settings mesherSettings;
+
+        Settings settings;
+
+        GridConverter<T> gridConverter; 
+
+        public VoronoiMesher(VoronoiBoundary boundary)
         {
-            MeshingAlgorithm.Settings mesherSettings = new MeshingAlgorithm.Settings
+            settings = new Settings()
+            {
+                Boundary = boundary
+            };
+            Initialize();
+        }
+
+        public VoronoiMesher(Settings settings)
+        {
+            this.settings = settings;
+            Initialize();
+        }
+
+        void Initialize()
+        {
+            CreateSetupForMeshingAlgorithm();
+            CreateGridConverter();
+        }
+
+        void CreateSetupForMeshingAlgorithm()
+        {
+            mesherSettings = new MeshingAlgorithm.Settings
             {
                 Boundary = settings.Boundary.Polygon,
                 BoundingBox = settings.Boundary.BoundingBox,
                 NumberOfLloydIterations = settings.NumberOfLloydIterations,
                 FirstCellNode_indice = settings.FirstCellNode_indice,
-                PeriodicBoundaryMap = ExtractPeriodicBoundaryMap(settings.Boundary)
             };
-            return mesherSettings;
+            PeriodicDataExtracter periodicDataExtracter = new PeriodicDataExtracter(settings.Boundary);
+            periodicDataExtracter.InitializePeriodic(mesherSettings);
         }
 
-        IDictionary<int,int> ExtractPeriodicBoundaryMap(VoronoiBoundary boundary)
+        void CreateGridConverter()
         {
-            byte[] tags = boundary.EdgeTags;
-            IDictionary<int, int> periodicBoundaryMap = new Dictionary<int, int>();
-            IDictionary<byte, int> usedTags = new LinkedListDictionary<byte, int>(); 
-            for(int i = 0; i < tags.Length; ++i)
-            {
-                byte tag = tags[i];
-                if(tag >= GridCommons.FIRST_PERIODIC_BC_TAG && tag < 255)
-                {
-                    if (usedTags.TryGetValue(tag, out int index))
-                    {
-                        periodicBoundaryMap.Add(i, index);
-                        periodicBoundaryMap.Add(index, i);
-                    }
-                    else
-                    {
-                        usedTags.Add(tag, i);
-                    };
-                }
-            }
-            return periodicBoundaryMap;
+            gridConverter = new GridConverter<T>(settings.Boundary);
         }
 
-        protected void CreateMesh(List<T> nodes, Settings settings)
+        protected void CreateMesh(List<T> nodes)
         {
-            MeshingAlgorithm.Settings meshingSettings = ConvertToMeshingAlgoSettings(settings);
-            mesh = MeshingAlgorithm.ComputeMesh(nodes, meshingSettings);
+            mesh = MeshingAlgorithm.ComputeMesh(nodes, mesherSettings);
         }
 
-        public VoronoiGrid CreateGrid(List<T> nodes, Settings settings)
+        public VoronoiGrid CreateGrid(List<T> nodes)
         {
-            CreateMesh(nodes, settings); 
-            VoronoiGrid grid = GridConverter.Convert2VoronoiGrid(mesh, settings.Boundary);
+            CreateMesh(nodes); 
+            VoronoiGrid grid = gridConverter.Convert(mesh);
             return grid;
         }
     }

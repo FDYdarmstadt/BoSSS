@@ -1,7 +1,5 @@
 ﻿using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
 {
@@ -120,6 +118,21 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
                 edgeCells = new EdgeCombo(boundaryEdgeNumber);
                 periodicEdges.Add(boundaryEdgeNumber, edgeCells);
                 edgeCells.GlueMap.Add(edge2EdgeMap);
+            }
+        }
+
+        public bool TryGetOuterCells(int boundaryEdgeNumber, out List<MeshCell<T>> cells)
+        {
+            EdgeCombo edgeCells;
+            if (periodicEdges.TryGetValue(boundaryEdgeNumber, out edgeCells))
+            {
+                cells = edgeCells.Outer;
+                return true;
+            }
+            else
+            {
+                cells = null;
+                return false;
             }
         }
 

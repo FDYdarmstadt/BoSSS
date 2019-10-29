@@ -9,16 +9,15 @@ namespace VoronoiTests.Grid
 {
     static class GridShapes
     {
-        public static Vector[] LShape()
+        public static Vector[] LShape(double scale = 1)
         {
-            double a = 1;
             Vector[] LShapedPolygon = new[] {
-                    new Vector(-a,a),
-                    new Vector(a,a),
-                    new Vector(a,-a),
-                    new Vector(0,-a),
+                    new Vector(-scale,scale),
+                    new Vector(scale,scale),
+                    new Vector(scale,-scale),
+                    new Vector(0,-scale),
                     new Vector(0,0),
-                    new Vector(-a,0)
+                    new Vector(-scale,0)
                 };
             return LShapedPolygon;
         }
@@ -33,6 +32,11 @@ namespace VoronoiTests.Grid
                 new Vector(-width / 2, -height / 2)
             };
             return polygonBoundary;
+        }
+
+        public static Vector[] NGon(double radius)
+        {
+            throw new NotImplementedException();
         }
     }
 }

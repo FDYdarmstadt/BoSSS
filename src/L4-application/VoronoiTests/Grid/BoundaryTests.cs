@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Voronoi;
 using ilPSP;
 using NUnit.Framework;
-using BoSSS.Foundation.Grid.Voronoi;
-using BoSSS.Foundation.Grid;
+using System;
+using System.Collections.Generic;
 
 namespace VoronoiTests.Grid
 {
@@ -14,7 +11,7 @@ namespace VoronoiTests.Grid
     {
         public override void Run()
         {
-            AllPeriodicBoundaries();
+            LShapePeriodicBoundariesLarge();
         }
 
         [Test]
@@ -165,7 +162,57 @@ namespace VoronoiTests.Grid
                 EdgeTagNames = tagNames
             };
 
-            VoronoiGrid grid = VoronoiGrid2D.Polygonal(gridBoundary, 0, 10);
+            VoronoiGrid grid = VoronoiGrid2D.Polygonal(gridBoundary, 10, 500);
+        }
+
+        [Test]
+        public void LShapePeriodicBoundaries()
+        {
+
+            byte[] tags = { 1, 1, 181, 1, 1, 181};
+            SortedList<byte, string> tagNames = new SortedList<byte, string>(2)
+            {
+                { 1, "Dirichlet" },
+                { 181, "Periodic" }
+            };
+
+            MultidimensionalArray nodes = MultidimensionalArray.Create(6, 2);
+            nodes.SetRow(0, new double[] { -0.5, 0.5 });
+            nodes.SetRow(1, new double[] { -0.8, -0.4 });
+            nodes.SetRow(2, new double[] { 0, 0 });
+            nodes.SetRow(3, new double[] { 0.8, 0.8 });
+            nodes.SetRow(4, new double[] { 0.9, 0.2 });
+            nodes.SetRow(5, new double[] { 0.5, -0.6 });
+
+            VoronoiBoundary gridBoundary = new VoronoiBoundary
+            {
+                Polygon = GridShapes.LShape(),
+                EdgeTags = tags,
+                EdgeTagNames = tagNames
+            };
+
+            VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 1);
+        }
+
+        [Test]
+        public void LShapePeriodicBoundariesLarge()
+        {
+
+            byte[] tags = { 1, 1, 181, 1, 1, 181 };
+            SortedList<byte, string> tagNames = new SortedList<byte, string>(2)
+            {
+                { 1, "Dirichlet" },
+                { 181, "Periodic" }
+            };
+
+            VoronoiBoundary gridBoundary = new VoronoiBoundary
+            {
+                Polygon = GridShapes.LShape(),
+                EdgeTags = tags,
+                EdgeTagNames = tagNames
+            };
+
+            VoronoiGrid grid = VoronoiGrid2D.Polygonal(gridBoundary, 10, 500);
         }
     }
 }

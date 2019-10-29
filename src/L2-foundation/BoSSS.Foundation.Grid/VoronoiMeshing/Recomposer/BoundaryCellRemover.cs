@@ -9,13 +9,21 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
 
         readonly InsideCellEnumerator<T> insideCells;
 
+        readonly Queue<(IList<MeshCell<T>>, int)> meshCellsToRemove;
+
         public BoundaryCellRemover(Mesh<T> mesh, int firstCellNodeIndice)
         {
             this.mesh = mesh;
             insideCells = new InsideCellEnumerator<T>(mesh, firstCellNodeIndice);
+            meshCellsToRemove = new Queue<(IList<MeshCell<T>>, int)>();
         }
 
-        public void SetAsBoundary(IList<MeshCell<T>> cells, int boundaryEdgeNumber)
+        public void EnqueueForRemoval(IList<MeshCell<T>> cells, int boundaryEdgeNumber)
+        {
+            meshCellsToRemove.Enqueue((cells, boundaryEdgeNumber));
+        }
+
+        void SetAsBoundary(IList<MeshCell<T>> cells, int boundaryEdgeNumber)
         {
             foreach (MeshCell<T> cell in cells)
             {
@@ -36,7 +44,17 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             }
         }
 
-        public void RemoveOuterCellsFromMesh()
+        public void RemoveQueuedCells()
+        {
+            while(meshCellsToRemove.Count > 0)
+            {
+                (IList<MeshCell<T>> cells, int boundaryNumber) = meshCellsToRemove.Dequeue();
+                SetAsBoundary(cells, boundaryNumber);
+            }
+            RemoveOuterCellsFromMesh();
+        }
+
+        void RemoveOuterCellsFromMesh()
         {
             List<MeshCell<T>> cells = new List<MeshCell<T>>(mesh.Cells.Count);
             foreach (MeshCell<T> cell in insideCells.EnumerateCellsInConcentricCircles())

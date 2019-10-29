@@ -1,23 +1,15 @@
-﻿using BoSSS.Platform.LinAlg;
-using System;
+﻿using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BoSSS.Foundation.Voronoi;
-using ilPSP;
 using System.Diagnostics;
-using System.Collections.Specialized;
-using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
 {
     class BoundaryNodeCloner<T>
         where T : ILocatable, new()
     {
-        IDictionary<int, BoundaryTransformation> periodicTrafoMap;
+        IDictionary<int, Transformation> periodicTrafoMap;
 
-        public BoundaryNodeCloner(IDictionary<int, BoundaryTransformation> periodicTrafoMap)
+        public BoundaryNodeCloner(IDictionary<int, Transformation> periodicTrafoMap)
         {
             this.periodicTrafoMap = periodicTrafoMap;
         }
@@ -27,13 +19,13 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             List<T> clones = new List<T>();
             foreach (Pair<Edge<T>> edgePair in new Convolution<Edge<T>>(edges))
             {
-                BoundaryTransformation transformation = GetBoundaryTransformationOf(edgePair.Current);
+                Transformation transformation = GetBoundaryTransformationOf(edgePair.Current);
                 T transformedClone = CloneAndTransFormAssociatedNodeOf(edgePair.Current, transformation);
                 clones.Add(transformedClone);
 
                 if (IsCorner(edgePair.Current, edgePair.Previous))
                 {
-                    BoundaryTransformation previousTransformation = GetBoundaryTransformationOf(edgePair.Previous);
+                    Transformation previousTransformation = GetBoundaryTransformationOf(edgePair.Previous);
                     T doublyTransformedClone = CloneAndTransform(transformedClone, previousTransformation);
                     clones.Add(doublyTransformedClone);
                 }
@@ -41,22 +33,21 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             return clones;
         }
 
-        BoundaryTransformation GetBoundaryTransformationOf(Edge<T> edge)
+        Transformation GetBoundaryTransformationOf(Edge<T> edge)
         {
-            Debug.Assert(periodicTrafoMap.TryGetValue(edge.BoundaryEdgeNumber, out BoundaryTransformation debug));
+            Debug.Assert(periodicTrafoMap.TryGetValue(edge.BoundaryEdgeNumber, out Transformation debug));
 
-            periodicTrafoMap.TryGetValue(edge.BoundaryEdgeNumber, out BoundaryTransformation transformation);
+            periodicTrafoMap.TryGetValue(edge.BoundaryEdgeNumber, out Transformation transformation);
             return transformation;
         }
 
-        static T CloneAndTransFormAssociatedNodeOf(Edge<T> edge, BoundaryTransformation transformation)
+        static T CloneAndTransFormAssociatedNodeOf(Edge<T> edge, Transformation transformation)
         {
-            
             MeshCell<T> cell = edge.Cell;
             return CloneAndTransform(cell.Node, transformation);
         }
 
-        static T CloneAndTransform(T node, BoundaryTransformation transformation)
+        static T CloneAndTransform(T node, Transformation transformation)
         {
             T transformedClone = new T
             {

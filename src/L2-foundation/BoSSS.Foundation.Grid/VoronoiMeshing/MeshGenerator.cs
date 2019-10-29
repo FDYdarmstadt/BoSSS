@@ -16,7 +16,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         readonly int firstCellNode_indice;
 
-        readonly BoundaryHandler<T> boundaryHandler;
+        readonly PeriodicBoundaryHandler<T> boundaryHandler;
 
         public MeshGenerator(MeshingAlgorithm.Settings settings)
         {
@@ -24,22 +24,22 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             boundingBox = settings.BoundingBox;
             boundary = BoundaryLine.ToLines(settings.Boundary);
             firstCellNode_indice = settings.FirstCellNode_indice;
-            boundaryHandler = new BoundaryHandler<T>(boundary, settings.PeriodicBoundaryMap, settings.FirstCellNode_indice);
+            boundaryHandler = new PeriodicBoundaryHandler<T>(
+                boundary, 
+                settings.FirstCellNode_indice,
+                settings.PeriodicBoundaryMap,
+                settings.PeriodicTransformations);
         }
 
         public Mesh<T> Generate(IList<T> nodes)
         {
             Debug.Assert(nodes.Count > 0);
             IDMesh<T> mesh = CreateMeshFrom(nodes);
-            MatlabPlotter plotter = new MatlabPlotter();
-            
             if (boundaryHandler.ContainsPeriodicBoundaries)
             {
                 nodes = boundaryHandler.CloneNodesAlongPeriodicBoundaries(mesh);
                 mesh = CreateMeshFrom(nodes);
-                plotter.Plot(mesh, "mirrored");
                 boundaryHandler.RecomposePeriodicEdges(mesh);
-                plotter.Plot(mesh, "recomposed");
             }
             return mesh;
         }

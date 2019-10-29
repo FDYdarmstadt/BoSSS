@@ -1,5 +1,4 @@
-﻿using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
-using BoSSS.Platform.LinAlg;
+﻿using BoSSS.Platform.LinAlg;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -20,6 +19,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
             public IDictionary<int, int> PeriodicBoundaryMap = null;
 
+            public IDictionary<int, Transformation> PeriodicTransformations = null;
+
             public int NumberOfLloydIterations = 10;
 
             public int FirstCellNode_indice = 0;
@@ -38,17 +39,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             AssertCorrectness(settings, nodes);
             Mesh<T> mesh = null;
             MeshGenerator<T> voronoiMesher = new MeshGenerator<T>(settings);
-
-            //MatlabPlotter plotter = new MatlabPlotter();
             
             for (int iLloyd = 0; iLloyd <= settings.NumberOfLloydIterations; ++iLloyd)
             {
                 mesh = voronoiMesher.Generate(nodes);
-                if(iLloyd%10 == 0)
-                {
-                    //plotter.Plot(mesh, $"Mesh{iLloyd}");
-                }
-                // Lloyds algorithm (Voronoi relaxation)
                 if (iLloyd != settings.NumberOfLloydIterations)
                 {
                     MoveNodesTowardsCellCenter(mesh.Cells, ref settings.FirstCellNode_indice);

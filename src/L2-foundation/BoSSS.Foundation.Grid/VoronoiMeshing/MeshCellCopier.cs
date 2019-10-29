@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
@@ -20,6 +16,16 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         {
             MeshCell<T>[] copies = MeshCellCloner.Clone(cells);
             foreach(MeshCell<T> cell in copies)
+            {
+                RegisterToMesh(cell);
+            }
+            return copies;
+        }
+
+        public List<MeshCell<T>> Copy(List<MeshCell<T>> cells)
+        {
+            List<MeshCell<T>> copies = MeshCellCloner.Clone(cells);
+            foreach (MeshCell<T> cell in copies)
             {
                 RegisterToMesh(cell);
             }
