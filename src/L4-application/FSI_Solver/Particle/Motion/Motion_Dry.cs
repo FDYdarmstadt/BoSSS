@@ -100,7 +100,7 @@ namespace BoSSS.Application.FSI_Solver {
                 tempForces[d] = Gravity[d] * Density * ParticleArea;
             }
             double tempTorque = 0;
-            HydrodynamicsPostprocessing(tempForces, tempTorque, true);
+            HydrodynamicsPostprocessing(tempForces, tempTorque);
         }
     }
 }

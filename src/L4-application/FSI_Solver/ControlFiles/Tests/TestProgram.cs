@@ -175,24 +175,24 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        [Test]
-        public static void Test_ActiveForce()
-        {
-            using (FSI_SolverMain p = new FSI_SolverMain())
-            {
-                var ctrl = HardcodedTestExamples.Test_ActiveForce();
-                p.Init(ctrl);
-                p.RunSolverMode();
+        //[Test]
+        //public static void Test_ActiveForce()
+        //{
+        //    using (FSI_SolverMain p = new FSI_SolverMain())
+        //    {
+        //        var ctrl = HardcodedTestExamples.Test_ActiveForce();
+        //        p.Init(ctrl);
+        //        p.RunSolverMode();
 
-                double ForcesSoll = 30753.7101679592;
+        //        double ForcesSoll = 30753.7101679592;
 
-                double Forces = p.GetParticles()[0].Motion.GetHydrodynamicForces(0)[0];
+        //        double Forces = p.GetParticles()[0].Motion.GetHydrodynamicForces(0)[0];
 
-                double DiffForces = Math.Abs(ForcesSoll - Forces); 
+        //        double DiffForces = Math.Abs(ForcesSoll - Forces); 
 
-                Assert.LessOrEqual(DiffForces, 20);
-            }
-        }
+        //        Assert.LessOrEqual(DiffForces, 20);
+        //    }
+        //}
 
         [Test]
         public static void Test_HydrodynamicForces()

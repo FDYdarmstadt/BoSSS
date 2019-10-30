@@ -110,7 +110,7 @@ namespace BoSSS.Application.FSI_Solver {
         public override void UpdateForcesAndTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, bool firstIteration, double dt = 0) {
             double[] tempForces = new double[m_Dim];
             double tempTorque = CalculateHydrodynamicTorque(hydrodynamicsIntegration);
-            HydrodynamicsPostprocessing(tempTorque, firstIteration);
+            HydrodynamicsPostprocessing(tempTorque);
         }
     }
 }

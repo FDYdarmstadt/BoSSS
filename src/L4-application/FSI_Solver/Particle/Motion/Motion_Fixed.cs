@@ -141,7 +141,7 @@ namespace BoSSS.Application.FSI_Solver {
                 tempForces[d] = 0;
             }
             double tempTorque = 0;
-            HydrodynamicsPostprocessing(tempForces, tempTorque, true);
+            HydrodynamicsPostprocessing(tempForces, tempTorque);
         }
     }
 }

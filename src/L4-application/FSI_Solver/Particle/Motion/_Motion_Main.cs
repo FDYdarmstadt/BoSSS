@@ -512,7 +512,7 @@ namespace BoSSS.Application.FSI_Solver {
         public virtual void UpdateForcesAndTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, bool firstIteration, double dt = 0) {
             double[] tempForces = CalculateHydrodynamicForces(hydrodynamicsIntegration, fluidDensity);
             double tempTorque = CalculateHydrodynamicTorque(hydrodynamicsIntegration);
-            HydrodynamicsPostprocessing(tempForces, tempTorque, firstIteration);
+            HydrodynamicsPostprocessing(tempForces, tempTorque);
         }
 
         /// <summary>
@@ -580,7 +580,8 @@ namespace BoSSS.Application.FSI_Solver {
         protected virtual double[] CalculateParticlePosition(double dt) {
             double[] l_Position = new double[m_Dim];
             for (int d = 0; d < m_Dim; d++) {
-                l_Position[d] = m_Position[1][d] + (m_TranslationalVelocity[0][d] + 4 * m_TranslationalVelocity[1][d] + m_TranslationalVelocity[2][d]) * dt / 6;
+               // l_Position[d] = m_Position[0][d] + (2 * m_TranslationalVelocity[0][d] - m_TranslationalVelocity[1][d]) * dt;
+               l_Position[d] = m_Position[1][d] + (m_TranslationalVelocity[0][d] + 4 * m_TranslationalVelocity[1][d] + m_TranslationalVelocity[2][d]) * dt / 6;
             }
             Aux.TestArithmeticException(l_Position, "particle position");
             return l_Position;
@@ -593,6 +594,7 @@ namespace BoSSS.Application.FSI_Solver {
         protected virtual double[] CalculateParticlePosition(double dt, bool collisionProcedure) {
             double[] l_Position = new double[m_Dim];
             for (int d = 0; d < m_Dim; d++) {
+                //l_Position[d] = m_Position[0][d] + (2 * m_TranslationalVelocity[0][d] - m_TranslationalVelocity[1][d]) * dt;
                 l_Position[d] = m_Position[0][d] + (m_TranslationalVelocity[0][d] + 4 * m_TranslationalVelocity[1][d] + m_TranslationalVelocity[2][d]) * dt / 6;
             }
             Aux.TestArithmeticException(l_Position, "particle position");
@@ -651,6 +653,8 @@ namespace BoSSS.Application.FSI_Solver {
         protected virtual double[] CalculateTranslationalVelocity(double dt) {
             double[] l_TranslationalVelocity = new double[m_Dim];
             for (int d = 0; d < m_Dim; d++) {
+                //l_TranslationalVelocity[d] = m_TranslationalVelocity[1][d] + m_TranslationalAcceleration[0][d] * dt;
+                //l_TranslationalVelocity[d] = m_TranslationalVelocity[1][d] + (2 * m_TranslationalAcceleration[0][d] - m_TranslationalAcceleration[1][d]) * dt;
                 l_TranslationalVelocity[d] = m_TranslationalVelocity[1][d] + (4 * m_TranslationalAcceleration[0][d] + m_TranslationalAcceleration[1][d] + m_TranslationalAcceleration[2][d]) * dt / 6;
             }
             Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
@@ -856,14 +860,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="tempForces"></param>
         /// <param name="tempTorque"></param>
         /// <param name="firstIteration"></param>
-        protected void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque, bool firstIteration) {
-            double averageForcesAndTorque = Math.Abs(CalculateAverageForces(tempForces, tempTorque));
-            for (int d = 0; d < m_Dim; d++) {
-                if (Math.Abs(tempForces[d] * 1e4) < averageForcesAndTorque || Math.Abs(tempForces[d]) < 1e-10)
-                    tempForces[d] = 0;
-            }
-            if (Math.Abs(tempTorque * 1e4) < averageForcesAndTorque || Math.Abs(tempTorque) < 1e-10)
-                tempTorque = 0;
+        protected void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque) {
+            StabilizeHydrodynamics(ref tempForces, ref tempTorque);
+
             m_ForcesWithoutRelaxation.Insert(0, tempForces.CloneAs());
             m_TorqueWithoutRelaxation.Insert(0, tempTorque);
             double[] temp = new double[] { tempForces[0], tempForces[1], tempTorque };
@@ -888,12 +887,22 @@ namespace BoSSS.Application.FSI_Solver {
             Aux.TestArithmeticException(m_HydrodynamicTorque[0], "hydrodynamic torque");
         }
 
+        private void StabilizeHydrodynamics(ref double[] tempForces, ref double tempTorque) {
+            double averageForcesAndTorque = Math.Abs(CalculateAverageForces(tempForces, tempTorque));
+            for (int d = 0; d < m_Dim; d++) {
+                if (Math.Abs(tempForces[d] * 1e4) < averageForcesAndTorque || Math.Abs(tempForces[d]) < 1e-10)
+                    tempForces[d] = 0;
+            }
+            if (Math.Abs(tempTorque * 1e4) < averageForcesAndTorque || Math.Abs(tempTorque) < 1e-10)
+                tempTorque = 0;
+        }
+
         /// <summary>
         /// Post-processing of the hydrodynamics, only torque! If desired the underrelaxation is applied to the torque.
         /// </summary>
         /// <param name="tempTorque"></param>
         /// <param name="firstIteration"></param>
-        protected void HydrodynamicsPostprocessing(double tempTorque, bool firstIteration) {
+        protected void HydrodynamicsPostprocessing(double tempTorque) {
             m_TorqueWithoutRelaxation.Insert(0, tempTorque);
             double[] temp = new double[] { 0, 0, tempTorque };
             m_ForcesAndTorqueWithoutRelaxation.Insert(0, temp);
@@ -918,7 +927,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="tempForces"></param>
         /// <param name="firstIteration"></param>
-        protected void HydrodynamicsPostprocessing(double[] tempForces, bool firstIteration) {
+        protected void HydrodynamicsPostprocessing(double[] tempForces) {
             m_ForcesWithoutRelaxation.Insert(0, tempForces.CloneAs());
             double[] temp = new double[] { tempForces[0], tempForces[1], 0 };
             m_ForcesAndTorqueWithoutRelaxation.Insert(0, temp);

@@ -196,7 +196,7 @@ namespace BoSSS.Application.FSI_Solver {
             ForceAddedDamping(ref tempForces, dt);
             double tempTorque = CalculateHydrodynamicTorque(hydrodynamicsIntegration);
             TorqueAddedDamping(ref tempTorque, dt);
-            HydrodynamicsPostprocessing(tempForces, tempTorque, firstIteration);
+            HydrodynamicsPostprocessing(tempForces, tempTorque);
         }
 
         /// <summary>
