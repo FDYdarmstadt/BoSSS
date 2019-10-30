@@ -22,7 +22,7 @@ namespace BoSSS.Application.ExternalBinding {
                 // grid, etc
                 // =========
 
-                GridData grd = (GridData)(Infrastructure.GetObject(GridRef));
+                GridData grd = null;// (GridData)(Infrastructure.GetObject(GridRef));
 
                 var b = new Basis(grd, DgDegree);
                 var map = new UnsetteledCoordinateMapping(b);

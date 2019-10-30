@@ -55,6 +55,23 @@ namespace BoSSS.Solution {
         }
 
 
+        public OpAnalysisBase(BlockMsrMatrix Mtx, double[] RHS, UnsetteledCoordinateMapping Mapping) {
+
+            //System.Threading.Thread.Sleep(10000);
+
+            m_OpMtx = new BlockMsrMatrix(Mapping, Mapping); //operator matrix
+            localRHS = new double[Mapping.LocalLength]; //right hand side
+            RHSlen = Mapping.TotalLength;
+            m_map = Mapping; // mapping
+
+            VarGroup = m_map.BasisS.Count.ForLoop(i => i); //default: all dependent variables are included in operator matrix
+            m_OpMtx = Mtx;
+            localRHS = RHS;
+
+
+        }
+
+
         BlockMsrMatrix m_OpMtx;
         int RHSlen;
         UnsetteledCoordinateMapping m_map;
@@ -95,10 +112,12 @@ namespace BoSSS.Solution {
         /// </summary>
         public void Analyse() {
 
+            Console.WriteLine("Starting matrix Analysis");
+            Console.WriteLine("Calculating condition number");
             double[] CondNum_Write = CondNum();
-
+            Console.WriteLine("Doing symmetry test");
             bool[] Symmetry_Write = Symmetry();
-
+            Console.WriteLine("Doing eigenvalues test");
             double[] Eigenval_Write = Eigenval();
 
             Console.WriteLine("");
@@ -166,7 +185,10 @@ namespace BoSSS.Solution {
                 Console.WriteLine("Results of rank analysis:");
                 if (rnkAugmentedMtx > rnkMtx)
                 {
-                    throw new Exception("The rank of the augmented matrix shouldn't be greater than the one of the original matrix!!");
+                    //throw new Exception("The rank of the augmented matrix shouldn't be greater than the one of the original matrix!!"); 
+                    Console.WriteLine("======================================================");
+                    Console.WriteLine("WARNING!!!!!!! The rank of the augmented matrix shouldn't be greater than the one of the original matrix!!");
+                    Console.WriteLine("This means that the system doesnt have a solution!");
                 }
 
                 if (rnkAugmentedMtx == rnkMtx)

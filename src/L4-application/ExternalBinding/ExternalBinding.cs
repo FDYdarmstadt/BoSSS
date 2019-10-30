@@ -12,6 +12,8 @@ using ilPSP;
 namespace BoSSS.Application.ExternalBinding {
 	public static class Common_ {
 				
+
+        /*
 		/// <summary>
 		/// releases all C# - references on an object, making it ready for garbage-collection.
 		/// </summary>
@@ -26,7 +28,9 @@ namespace BoSSS.Application.ExternalBinding {
 				ierr = Infrastructure.ErrorHandler(e);
 			}
 		}
+        */
 
+            /*
         /// <summary>
         /// A test function to verify that the interface is working; withes a hello message.
         /// </summary>
@@ -41,8 +45,8 @@ namespace BoSSS.Application.ExternalBinding {
             Console.WriteLine("Hello from Test: " + (dummy));
         }
 		
+		*/
 		static bool mustFinalizeMPI;
-		
 
         /// <summary>
         /// 
@@ -57,7 +61,8 @@ namespace BoSSS.Application.ExternalBinding {
 				MPI.Wrappers.csMPI.Raw.mpiFinalize();
 		}
 	}
-	
+
+	/*
 	public static class MsrMatrix_ {
 		
 		#region MsrMatrix_Bindings

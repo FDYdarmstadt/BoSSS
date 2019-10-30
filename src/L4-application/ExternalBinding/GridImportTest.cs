@@ -13,16 +13,7 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Application.ExternalBinding {
     public class GridImportTest {
-
-        public static void Main() {
-
-            Common_.BoSSSInitialize();
-
-            int nCells = 9;
-
-
-
-            int[][] faces = new int[][] {
+        internal static int[][] faces = new int[][] {
             new int[] {1, 5, 21, 17},
             new int[] {4, 20, 21, 5},
             new int[] {2, 6, 22, 18},
@@ -67,7 +58,7 @@ namespace BoSSS.Application.ExternalBinding {
             new int[] {26, 27, 31, 30}
         };
 
-            int[] neighbour = new int[] {
+        internal static int[] neighbour = new int[] {
             1,
             3,
             2,
@@ -82,7 +73,7 @@ namespace BoSSS.Application.ExternalBinding {
             8
         };
 
-            int[] owner = new int[] {
+        internal static int[] owner = new int[] {
             0,
             0,
             1,
@@ -127,7 +118,7 @@ namespace BoSSS.Application.ExternalBinding {
             8
         };
 
-            double[,] points = new double[,] {
+        internal static double[,] points = new double[,] {
              {0,0,0},
              {0.03333333333,0,0},
              {0.06666666667,0,0},
@@ -161,20 +152,38 @@ namespace BoSSS.Application.ExternalBinding {
              {0.06666666667,0.1,0.01},
              {0.1,0.1,0.01}
             };
-            
-            Grid_.FOAMmesh_to_BoSSS(nCells, faces, neighbour, owner, points);
+
+        public static void Main() {
+
+            Common_.BoSSSInitialize();
+
+            int nCells = 9;
 
 
-            Common_.BoSSSFinalize();
+
+
+            int nPoints = points.GetLength(0);
+            int nFaces = owner.Length;
+            int nInternalFaces = neighbour.Length;
+
+
+
+
+            var g = GridServer.FOAMmesh_to_BoSSS(nCells, faces, neighbour, owner, points);
+            Console.WriteLine("");
+
+            //var gd = new GridData(g);
+
+
         }
 
 
-        
+
 
         // ---------------------------------
         // test data from OpenFOAM tutorials
         //
 
-        
+
     }
 }
