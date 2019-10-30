@@ -110,7 +110,7 @@ namespace BoSSS.Application.FSI_Solver {
 
         internal void ForcesAndTorque(ref double[] forces, List<double[]> forcesPreviousIteration, ref double oldOmega, List<double[]> rawForcesPrev) {
             double[] Omega = new double[] { 0, oldOmega };
-            AitkenUnderrelaxation(ref forces, forcesPreviousIteration, Omega, rawForcesPrev[1]);
+            JacobianUnderrelaxation(ref forces, forcesPreviousIteration, Omega, rawForcesPrev);
             oldOmega = Omega[0];
         }
 
@@ -169,23 +169,21 @@ namespace BoSSS.Application.FSI_Solver {
             variable = Omega[0] * (variable - variableAtPrevIteration[0]) + variableAtPrevIteration[0];
         }
 
-        private void AitkenUnderrelaxation(ref double[] variable, List<double[]> variableAtPrevIteration, double[] Omega, double[] rawForcesPrev) {
+        private void AitkenUnderrelaxation(ref double[] variable, List<double[]> variableAtPrevIteration, double[] Omega, List<double[]> rawForcesPrev) {
             double[][] residual = new double[variable.Length][];
             double[] residualDiff = new double[variable.Length];
             double residualScalar = 0;
             double sumVariable = 0;
             for (int i = 0; i < variable.Length; i++) {
-                residual[i] = new double[] { (variable[i] - variableAtPrevIteration[0][i]), (rawForcesPrev[i] - variableAtPrevIteration[1][i]) };
+                residual[i] = new double[] { (variable[i] - variableAtPrevIteration[0][i]), (rawForcesPrev[1][i] - variableAtPrevIteration[1][i]) };
                 residualDiff[i] = residual[i][0] - residual[i][1];
                 residualScalar += residual[i][1] * residualDiff[i];
                 sumVariable += variable[i];
             }
             Omega[0] = -Omega[1] * residualScalar / residualDiff.L2Norm().Pow2();
-            Console.WriteLine("OmegaOld: " + Omega[1] + " OmegaNew: " + Omega[0] + " forcesOld 0: " + variable[0] + " forcesOld 1: " + variable[1] + " torqueOld: " + variable[2]);
             for (int i = 0; i < variable.Length; i++) {
                 variable[i] = Omega[0] * (variable[i] - variableAtPrevIteration[0][i]) + variableAtPrevIteration[0][i];
             }
-            Console.WriteLine("forcesNew 0: " + variable[0] + " forcesNew 1: " + variable[1] + " torqueNew: " + variable[2]);
         }
 
         private void MinimalPolynomialExtrapolation(ref double variable, List<double> variableAtPrevIteration) {
@@ -214,6 +212,52 @@ namespace BoSSS.Application.FSI_Solver {
                 residualSum += Math.Pow(-1, r) * residual[r] / r;
             }
             return -residualSum / residual[0] - 1;
+        }
+
+        private void JacobianUnderrelaxation(ref double[] variable, List<double[]> variableAtPrevIteration, double[] Omega, List<double[]> rawForcesPrev) {
+            // ursprüngliche idee: Fixed-point fluid–structure interaction solvers with dynamic relaxation Ulrich Küttler, Wolfgang Wall
+            double[,] jacobian = ApproximateRelaxJacobian(ref variable, variableAtPrevIteration, rawForcesPrev);
+            double[] residual = new double[variable.Length];
+            double residualScalar = 0;
+            double[] residualJacFirst = new double[variable.Length];
+            double residualJacSecond = 0;
+            for (int i = 0; i < variable.Length; i++) {
+                residual[i] = variable[i] - variableAtPrevIteration[0][i];
+                residualScalar += residual[i].Pow2();
+            }
+            for (int i = 0; i < variable.Length; i++) {
+                for (int j = 0; j < variable.Length; j++) {
+                    residualJacFirst[i] += residual[j] * jacobian[j, i];
+                }
+            }
+            for (int i = 0; i < variable.Length; i++) {
+                residualJacSecond += residualJacFirst[i] * residual[i];
+            }
+            Omega[0] = -residualScalar / residualJacSecond;
+            for (int i = 0; i < variable.Length; i++) {
+                variable[i] = Omega[0] * (variable[i] - variableAtPrevIteration[0][i]) + variableAtPrevIteration[0][i];
+            }
+        }
+
+        private double[,] ApproximateRelaxJacobian(ref double[] variable, List<double[]> variableAtPrevIteration, List<double[]> rawForcesPrev) {
+            double[][] residual = new double[variable.Length][];
+            double[] residualDiff = new double[variable.Length];
+            double[] forceDiff = new double[variable.Length];
+            for (int i = 0; i < variable.Length; i++) {
+                residual[i] = new double[] { (variable[i] - variableAtPrevIteration[0][i]), (rawForcesPrev[1][i] - variableAtPrevIteration[1][i]), (rawForcesPrev[2][i] - variableAtPrevIteration[2][i]) };//n+1, n, n-1
+                residualDiff[i] = residual[i][1] - residual[i][2];
+                forceDiff[i] = variableAtPrevIteration[1][i] - variableAtPrevIteration[2][i];
+            }
+            double[,] jacobian = new double[variable.Length, variable.Length];
+            for (int i = 0; i < variable.Length; i++) {
+                for (int j = 0; j < variable.Length; j++) {
+                    if (forceDiff[j] == 0)
+                        jacobian[i, j] = 0; // residualDiff should be 0 in this case anyway
+                    else
+                        jacobian[i,j] = residualDiff[i] / forceDiff[j];
+                }
+            }
+            return jacobian;
         }
     }
 }

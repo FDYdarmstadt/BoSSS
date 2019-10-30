@@ -527,7 +527,7 @@ namespace BoSSS.Application.FSI_Solver {
             double[] orientation = new double[] { Math.Cos(m_Angle[0]), Math.Sin(m_Angle[0]) };
             if (timestepID == 1) {
                 for (int d = 0; d < m_Dim; d++) {
-                    m_TranslationalVelocity[1][d] =  m_TranslationalVelocity[0][d] = (1.6 * Math.Pow(0.65, epsilon) + 1) * activeStress * MaxParticleLengthScale * orientation[d] / (6 * Math.PI * MinParticleLengthScale * fluidViscosity)
+                    m_TranslationalVelocity[1][d] = m_TranslationalVelocity[0][d] = (1.6 * Math.Pow(0.65, epsilon) + 1) * activeStress * MaxParticleLengthScale * orientation[d] / (6 * Math.PI * MinParticleLengthScale * fluidViscosity)
                                                     + Gravity[d] * (Density - fluidDensity) * ParticleArea / (6 * Math.PI * MinParticleLengthScale * fluidViscosity);
                 }
                 m_HydrodynamicTorque[0] = 0;
@@ -869,11 +869,11 @@ namespace BoSSS.Application.FSI_Solver {
             m_ForcesAndTorqueWithoutRelaxation.Insert(0, temp);
             if (m_UnderrelaxationParam != null) {
                 ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation(m_UnderrelaxationParam, CalculateAverageForces(tempForces, tempTorque));
-                if (m_ForcesPreviousIteration.Count < 3 || m_UnderrelaxationParam.m_Method == ParticleUnderrelaxationParam.UnderrelaxationMethod.ProcentualRelaxation) {
+                if (m_UnderrelaxationParam.m_Method == ParticleUnderrelaxationParam.UnderrelaxationMethod.ProcentualRelaxation) {
                     Underrelaxation.Forces(ref tempForces, m_ForcesPreviousIteration);
                     Underrelaxation.Torque(ref tempTorque, m_TorquePreviousIteration);
                 }
-                else {
+                else if (m_ForcesPreviousIteration.Count >= 3) {
                     double[] test1 = new double[] { tempForces[0], tempForces[1], tempTorque };
                     Underrelaxation.ForcesAndTorque(ref test1, m_ForcesAndTorquePreviousIteration, ref testRelaxation, m_ForcesAndTorqueWithoutRelaxation);
                     tempForces[0] = test1[0];
@@ -886,6 +886,90 @@ namespace BoSSS.Application.FSI_Solver {
             Aux.TestArithmeticException(m_HydrodynamicForces[0], "hydrodynamic forces");
             Aux.TestArithmeticException(m_HydrodynamicTorque[0], "hydrodynamic torque");
         }
+
+        //protected void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque) {
+        //    StabilizeHydrodynamics(ref tempForces, ref tempTorque);
+
+        //    m_ForcesWithoutRelaxation.Insert(0, tempForces.CloneAs());
+        //    m_TorqueWithoutRelaxation.Insert(0, tempTorque);
+        //    double[] temp = new double[] { tempForces[0], tempForces[1], tempTorque };
+        //    m_ForcesAndTorqueWithoutRelaxation.Insert(0, temp);
+        //    if (m_UnderrelaxationParam != null) {
+        //        ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation(m_UnderrelaxationParam, CalculateAverageForces(tempForces, tempTorque));
+        //        if (m_ForcesPreviousIteration.Count < 4 || m_UnderrelaxationParam.m_Method == ParticleUnderrelaxationParam.UnderrelaxationMethod.ProcentualRelaxation) {
+        //            Underrelaxation.Forces(ref tempForces, m_ForcesPreviousIteration);
+        //            Underrelaxation.Torque(ref tempTorque, m_TorquePreviousIteration);
+        //        }
+        //        else {
+        //            double[] test1 = new double[] { tempForces[0], tempForces[1], tempTorque };
+        //            Underrelaxation.ForcesAndTorque2H(ref test1, m_ForcesAndTorquePreviousIteration, ref testRelaxation, m_ForcesAndTorqueWithoutRelaxation);
+        //            tempForces[0] = test1[0];
+        //            tempForces[1] = test1[1];
+        //            tempTorque = test1[2];
+        //        }
+        //    }
+        //    m_HydrodynamicForces[0] = tempForces.CloneAs();
+        //    m_HydrodynamicTorque[0] = tempTorque;
+        //    Aux.TestArithmeticException(m_HydrodynamicForces[0], "hydrodynamic forces");
+        //    Aux.TestArithmeticException(m_HydrodynamicTorque[0], "hydrodynamic torque");
+        //}
+
+        //List<double[]> fPlus = new List<double[]>();
+        //List<double[]> fMinus = new List<double[]>();
+        //protected void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque) {
+        //    StabilizeHydrodynamics(ref tempForces, ref tempTorque);
+
+        //    m_ForcesWithoutRelaxation.Insert(0, tempForces.CloneAs());
+        //    m_TorqueWithoutRelaxation.Insert(0, tempTorque);
+        //    double[] temp = new double[] { tempForces[0], tempForces[1], tempTorque };
+        //    m_ForcesAndTorqueWithoutRelaxation.Insert(0, temp);
+        //    if (m_UnderrelaxationParam != null) {
+        //        double[] testForce = new double[m_Dim + 1];
+        //        if (m_ForcesAndTorquePreviousIteration.Count == 2) {
+        //            fPlus.Add(temp.CloneAs());
+        //            for (int i = 0; i < m_Dim + 1; i++) {
+        //                temp[i] = 0;
+        //            }
+        //        }
+        //        else if (m_ForcesAndTorquePreviousIteration.Count == 3) {
+        //            fMinus.Add(temp.CloneAs());
+        //            for (int i = 0; i < m_Dim + 1; i++) {
+        //                if (fMinus[0][i] > fPlus[0][i]) {
+        //                    double tmp = fMinus[0][i];
+        //                    fMinus[0][i] = fPlus[0][i];
+        //                    fPlus[0][i] = tmp;
+        //                }
+        //                temp[i] = (fPlus[0][i] + fMinus[0][i]) / 2;
+        //            }
+        //        }
+        //        else if (m_ForcesAndTorquePreviousIteration.Count > 3) {
+        //            double[] plus = fPlus[0].CloneAs();
+        //            double[] minus = fMinus[0].CloneAs();
+        //            fPlus.Insert(0, plus.CloneAs());
+        //            fMinus.Insert(0, minus.CloneAs());
+        //            for (int i = 0; i < m_Dim; i++) {
+        //                if (temp[i] > m_HydrodynamicForces[1][i]) {
+        //                    fMinus[0][i] = m_HydrodynamicForces[1][i];
+        //                }
+        //                else
+        //                    fPlus[0][i] = m_HydrodynamicForces[1][i];
+        //            }
+        //            if (temp[2] > m_HydrodynamicTorque[1]) {
+        //                fMinus[0][2] = m_HydrodynamicTorque[1];
+        //            }
+        //            else
+        //                fPlus[0][2] = m_HydrodynamicTorque[1];
+        //            for (int i = 0; i < m_Dim + 1; i++) {
+        //                temp[i] = (fPlus[0][i] + fMinus[0][i]) / 2;
+        //            }
+        //        }
+        //    }
+        //    m_HydrodynamicForces[0][0] = temp[0];
+        //    m_HydrodynamicForces[0][1] = temp[1];
+        //    m_HydrodynamicTorque[0] = temp[2];
+        //    Aux.TestArithmeticException(m_HydrodynamicForces[0], "hydrodynamic forces");
+        //    Aux.TestArithmeticException(m_HydrodynamicTorque[0], "hydrodynamic torque");
+        //}
 
         private void StabilizeHydrodynamics(ref double[] tempForces, ref double tempTorque) {
             double averageForcesAndTorque = Math.Abs(CalculateAverageForces(tempForces, tempTorque));

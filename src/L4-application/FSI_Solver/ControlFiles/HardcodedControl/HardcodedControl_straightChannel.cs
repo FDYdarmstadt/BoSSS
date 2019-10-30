@@ -37,8 +37,8 @@ namespace BoSSS.Application.FSI_Solver {
             List<string> boundaryValues = new List<string> {
                 "Pressure_Outlet_left",
                 "Pressure_Outlet_right",
-                "Pressure_Outlet_lower",
-                "Pressure_Outlet_upper"
+                "Wall_lower",
+                "Wall_upper"
             };
             C.SetBoundaries(boundaryValues);
             C.SetGrid(lengthX: 15, lengthY: 4, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
@@ -50,7 +50,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LevelSetSmoothing = false;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.hydrodynamicsConvergenceCriterion = 1e-10;
+            C.hydrodynamicsConvergenceCriterion = 1e-8;
 
             // Fluid Properties
             // =============================
@@ -62,7 +62,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Particle Properties
             // =============================   
-            C.underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, ParticleUnderrelaxationParam.UnderrelaxationMethod.AitkenRelaxation, 0.5, true);
+            C.underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, ParticleUnderrelaxationParam.UnderrelaxationMethod.AitkenRelaxation, 0.01, true);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 1);
             double particleRadius = 0.125;
             C.Particles = new List<Particle> {
@@ -81,7 +81,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(dt: 1e-2, noOfTimesteps: int.MaxValue);
+            C.SetTimesteps(dt: 1e-3, noOfTimesteps: int.MaxValue);
 
             return C;
         }
