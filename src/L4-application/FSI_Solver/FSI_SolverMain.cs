@@ -1401,5 +1401,65 @@ namespace BoSSS.Application.FSI_Solver {
             };
             return AllCellsWithMaxRefineLevel;
         }
+
+        /// <summary>
+        /// Creates the cellmask which should be refined.
+        /// </summary>
+        private List<Tuple<int, BitArray>> GetRefinemmentPressure() {
+            int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
+            BitArray fineCells = new BitArray(noOfLocalCells);
+            BitArray mediumCells = new BitArray(noOfLocalCells);
+            BitArray coarseCells = new BitArray(noOfLocalCells);
+            h_maxStart = h_maxStart == 0 ? LsTrk.GridDat.Cells.h_maxGlobal : h_maxStart;
+            int currentCoarseRef = 2;
+            int currentMediumRef = 2;
+            int currentFineRef = 2;
+            double meanVorticityTotal = 0;
+            for (int i = 0; i < noOfLocalCells; i++) {
+                meanVorticityTotal += Math.Abs(Pressure.GetMeanValue(i));
+            }
+            meanVorticityTotal /= noOfLocalCells;
+            for (int j = 0; j < noOfLocalCells; j++) {
+                double meanVorticity = Math.Abs(Pressure.GetMeanValue(j));
+                Pressure.GetExtremalValuesInCell(out double min, out double max, j);
+                double pressureDiff = Math.Abs(max - min);
+                double check = pressureDiff / meanVorticity;
+                GridData grdDat = (GridData)GridData;
+                int currentLevel = grdDat.Cells.GetCell(j).RefinementLevel;
+                if (check > 1) {
+                    if (currentFineRef < currentLevel + 1)
+                        currentFineRef = currentLevel + 1;
+                    fineCells[j] = true;
+                }
+                else if (check > 0.66) {
+                    if (currentMediumRef < currentLevel + 1)
+                        currentMediumRef = currentLevel + 1;
+                    mediumCells[j] = true;
+                }
+                else if (check > 0.25) {
+                    if (currentCoarseRef < currentLevel + 1)
+                        currentCoarseRef = currentLevel + 1;
+                    coarseCells[j] = true;
+                }
+            }
+
+            double radiusFineCells = 2 * LsTrk.GridDat.Cells.h_minGlobal;
+
+            for (int p = 0; p < m_Particles.Count; p++) {
+                Particle particle = m_Particles[p];
+                for (int j = 0; j < noOfLocalCells; j++) {
+                    double[] centerPoint = new double[] { CellCenters[j, 0], CellCenters[j, 1] };
+                    if (!coarseCells[j])
+                        coarseCells[j] = particle.Contains(centerPoint, radiusFineCells);
+                }
+            }
+            List<Tuple<int, BitArray>> AllCellsWithMaxRefineLevel = new List<Tuple<int, BitArray>> {
+                new Tuple<int, BitArray>(currentCoarseRef, coarseCells),
+                new Tuple<int, BitArray>(currentMediumRef, mediumCells),
+                new Tuple<int, BitArray>(currentFineRef, fineCells),
+            };
+            return AllCellsWithMaxRefineLevel;
+        }
     }
 }

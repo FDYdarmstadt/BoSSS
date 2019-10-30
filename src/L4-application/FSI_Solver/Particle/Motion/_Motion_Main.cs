@@ -527,8 +527,8 @@ namespace BoSSS.Application.FSI_Solver {
             double[] orientation = new double[] { Math.Cos(m_Angle[0]), Math.Sin(m_Angle[0]) };
             if (timestepID == 1) {
                 for (int d = 0; d < m_Dim; d++) {
-                    m_TranslationalVelocity[1][d] = 0;// m_TranslationalVelocity[0][d] = (1.6 * Math.Pow(0.65, epsilon) + 1) * activeStress * MaxParticleLengthScale * orientation[d] / (6 * Math.PI * MinParticleLengthScale * fluidViscosity)
-                                                    //+ Gravity[d] * (Density - fluidDensity) * ParticleArea / (6 * Math.PI * MinParticleLengthScale * fluidViscosity);
+                    m_TranslationalVelocity[1][d] =  m_TranslationalVelocity[0][d] = (1.6 * Math.Pow(0.65, epsilon) + 1) * activeStress * MaxParticleLengthScale * orientation[d] / (6 * Math.PI * MinParticleLengthScale * fluidViscosity)
+                                                    + Gravity[d] * (Density - fluidDensity) * ParticleArea / (6 * Math.PI * MinParticleLengthScale * fluidViscosity);
                 }
                 m_HydrodynamicTorque[0] = 0;
             }
