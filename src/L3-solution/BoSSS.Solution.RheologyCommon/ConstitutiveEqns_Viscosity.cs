@@ -222,11 +222,7 @@ namespace BoSSS.Solution.RheologyCommon
                     break;
 
                 case IncompressibleBcType.FreeSlip:
-                    if (Component == 1)
-                    {
                         res += Uin[0] * n1 + Uin[1] * n2;
-                    }
-
                     break;
 
                 case IncompressibleBcType.Velocity_Inlet:
@@ -234,18 +230,8 @@ namespace BoSSS.Solution.RheologyCommon
 
                     // Dirichlet value for Velocity
                     // ============================
-                    if (Component == 1)
-                    {
-                        res += 0.5 * ((Uin[0] + Vel1) * n1 + (Uin[1] + Vel2) * n2);
-                        //res += Vel1 * n1 + Vel2 * n2;// + Vel1 * n2 + Vel2 * n1;
-                    }
-                    else
-                    {
-
-                        res += 0.5 * ((Uin[0] + Vel1) * n1 + (Uin[1] + Vel2) * n2);
-                        //res += Vel1 * n1 + Vel2 * n2;
-                    }
-
+                    res += 0.5 * ((Uin[0] + Vel1) * n1 + (Uin[1] + Vel2) * n2);
+                    //res += Vel1 * n1 + Vel2 * n2;
                     break;
 
                 default:
