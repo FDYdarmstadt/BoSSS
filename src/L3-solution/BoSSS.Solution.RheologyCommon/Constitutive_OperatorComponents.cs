@@ -44,7 +44,7 @@ namespace BoSSS.Solution.RheologyCommon {
         /// <param name="config"></param>
         /// <param name="LsTrk"></param>
         /// <param name="U0meanrequired"></param>
-        public static void AddSpeciesConstitutive_component(XSpatialOperatorMk2 XOp, IRheology_Configuration config, int compRow, int compCol, int D, int stressDegree, string spcName, SpeciesId spcId,
+        public static void AddSpeciesConstitutive_component(XSpatialOperatorMk2 XOp, IRheology_Configuration config, int d, int D, int stressDegree, string spcName, SpeciesId spcId,
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, out bool U0meanrequired) {
 
             // check input
@@ -52,22 +52,15 @@ namespace BoSSS.Solution.RheologyCommon {
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
 
             string CodName;
-            int d;
 
-            if (compRow == 0 && compCol == 0) {
+            if (d == 0) {
                 CodName = EquationNames.ConstitutiveXX;
-                d = 0;
-            } else if (compRow == 0 && compCol == 1) {
+            } else if (d == 1) {
                 CodName = EquationNames.ConstitutiveXY;
-                d = 1;
-            } else if (compRow == 1 && compCol == 0) {
-                CodName = EquationNames.ConstitutiveXY;
-                d = 1;
-            } else if (compRow == 1 && compCol == 1) {
+            } else if (d == 2) {
                 CodName = EquationNames.ConstitutiveYY;
-                d = 2;
             } else {
-                throw new NotSupportedException("Invalid column or row index (3D not supported). Row: " + compRow + " Col:" + compCol);
+                throw new NotSupportedException("Invalid index (3D not supported), d is: " + d);
             }
 
 
@@ -100,7 +93,7 @@ namespace BoSSS.Solution.RheologyCommon {
 
                 // convective operator
                 // ===================
-                var convective = new ConvectiveInBulk(compRow, compCol, BcMap, physParams.Weissenberg_a, physParams.Weissenberg_b, dntParams.alpha, spcName, spcId);
+                var convective = new ConvectiveInBulk(d, BcMap, physParams.Weissenberg_a, physParams.Weissenberg_b, dntParams.alpha, spcName, spcId);
                 comps.Add(convective);
                 U0meanrequired = true;
 
@@ -158,24 +151,9 @@ namespace BoSSS.Solution.RheologyCommon {
             }
 
             U0meanrequired = false;
-            int compRow;
-            int compCol;
 
             for (int d = 0; d < 3; d++) {
-
-                if (d == 0) {
-                    compRow = 0;
-                    compCol = 0;
-                    AddSpeciesConstitutive_component(XOp, config, compRow, compCol, D, stressDegree, spcName, spcId, BcMap, LsTrk, out U0meanrequired);
-                } else if (d == 1) {
-                    compRow = 0;
-                    compCol = 1;
-                    AddSpeciesConstitutive_component(XOp, config, compRow, compCol, D, stressDegree, spcName, spcId, BcMap, LsTrk, out U0meanrequired);
-                } else if (d == 2) {
-                    compRow = 1;
-                    compCol = 1;
-                    AddSpeciesConstitutive_component(XOp, config, compRow, compCol, D, stressDegree, spcName, spcId, BcMap, LsTrk, out U0meanrequired);
-                }
+                    AddSpeciesConstitutive_component(XOp, config, d, D, stressDegree, spcName, spcId, BcMap, LsTrk, out U0meanrequired);
             }
         }
 
@@ -189,84 +167,71 @@ namespace BoSSS.Solution.RheologyCommon {
         /// <param name="D"></param>
         /// <param name="BcMap"></param>
         /// <param name="LsTrk"></param>
-        //public static void AddInterfaceNSE_component(XSpatialOperatorMk2 XOp, IXNSE_Configuration config, int d, int D,
-        //    IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk) {
+        public static void AddInterfaceConstitutive_component(XSpatialOperatorMk2 XOp, IXNSE_Configuration config, int d, int D,
+            IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk) {
 
-        //    // check input
-        //    if (XOp.IsCommited)
-        //        throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
-
-        //    string CodName = EquationNames.MomentumEquationComponent(d);
-        //    if (!XOp.CodomainVar.Contains(CodName))
-        //        throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
-
-        //    PhysicalParameters physParams = config.getPhysParams;
-        //    DoNotTouchParameters dntParams = config.getDntParams;
-
-        //    // set species arguments
-        //    double rhoA = physParams.rho_A;
-        //    double rhoB = physParams.rho_B;
-        //    double LFFA = dntParams.LFFA;
-        //    double LFFB = dntParams.LFFB;
-        //    double muA = physParams.mu_A;
-        //    double muB = physParams.mu_B;
+            // check input
+            if (XOp.IsCommited)
+                throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
 
 
-        //    // set components
-        //    var comps = XOp.EquationComponents[CodName];
+            string CodName;
 
-        //    // convective operator
-        //    // ===================
-        //    if(physParams.IncludeConvection && config.isTransport) {
-        //        var conv = new Operator.Convection.ConvectionAtLevelSet_LLF(d, D, LsTrk, rhoA, rhoB, LFFA, LFFB, physParams.Material, BcMap, config.isMovingMesh);
-        //        comps.Add(conv);
-        //    }
+            if (d == 0) {
+                CodName = EquationNames.ConstitutiveXX;
+            } else if (d == 1) {
+                CodName = EquationNames.ConstitutiveXY;
+            } else if (d == 2) {
+                CodName = EquationNames.ConstitutiveYY;
+            } else {
+                throw new NotSupportedException("Invalid index (3D not supported), d is: " + d);
+            }
 
-        //    // pressure gradient
-        //    // =================
-        //    if(config.isPressureGradient) {
-        //        var presLs = new Operator.Pressure.PressureFormAtLevelSet(d, D, LsTrk);
-        //        comps.Add(presLs);
-        //    }
+            if (!XOp.CodomainVar.Contains(CodName))
+                throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 
-        //    // viscous operator
-        //    // ================
-        //    if(config.isViscous && (!(muA == 0.0) && !(muB == 0.0))) {
+            PhysicalParameters physParams = config.getPhysParams;
+            DoNotTouchParameters dntParams = config.getDntParams;
 
-        //        double penalty = dntParams.PenaltySafety;
-        //        switch(dntParams.ViscosityMode) {
-        //            case ViscosityMode.Standard:
-        //                comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, muA, muB, penalty * 1.0, d, true));
-        //                break;
-        //            case ViscosityMode.TransposeTermMissing:
-        //                comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, muA, muB, penalty * 1.0, d, false));
-        //                break;                   
-        //            case ViscosityMode.FullySymmetric:
-        //                comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d, dntParams.UseWeightedAverages));
-        //                break;
+            // set species arguments
+            //double rhoA = physParams.rho_A;
+            //double rhoB = physParams.rho_B;
+            //double LFFA = dntParams.LFFA;
+            //double LFFB = dntParams.LFFB;
+            //double muA = physParams.mu_A;
+            //double muB = physParams.mu_B;
 
-        //            default:
-        //                throw new NotImplementedException();
-        //        }
-        //    }
 
-        //}
+            // set components
+            var comps = XOp.EquationComponents[CodName];
+
+            // identity part
+            // ===================
+            var identity = new IdentityAtLevelSet(LsTrk, d);
+            comps.Add(identity);
+
+            // viscous operator
+            // ==================
+            var viscosity = new ViscosityAtLevelSet(LsTrk, d, physParams.beta_a, physParams.beta_b, dntParams.Penalty1);
+            comps.Add(viscosity);
+
+        }
 
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="XOp"></param>
-        /// <param name="config"></param>
-        /// <param name="BcMap"></param>
-        /// <param name="LsTrk"></param>
-        //public static void AddInterfaceNSE(XSpatialOperatorMk2 XOp, IXNSE_Configuration config, int D,
-        //    IncompressibleMultiphaseBoundaryCondMap BcMap,  LevelSetTracker LsTrk) {
+        /// <param name = "XOp" ></ param >
+        /// < param name="config"></param>
+        /// <param name = "BcMap" ></ param >
+        /// < param name="LsTrk"></param>
+        public static void AddInterfaceConstitutive(XSpatialOperatorMk2 XOp, IXNSE_Configuration config, int D,
+            IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk) {
 
-        //    for(int d = 0; d < D; d++) {
-        //        AddInterfaceNSE_component(XOp, config, d, D, BcMap, LsTrk);
-        //    }
-        //}
+            for (int d = 0; d < 3; d++) {
+                AddInterfaceConstitutive_component(XOp, config, d, D, BcMap, LsTrk);
+            }
+        }
 
 
     }

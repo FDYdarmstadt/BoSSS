@@ -181,6 +181,7 @@ namespace BoSSS.Application.XRheology_Solver {
             // interface components
             XOperatorComponentsFactory.AddInterfaceNSE(m_XOp, config, this.D, BcMap, LsTrk);    // surface stress tensor
             XOperatorComponentsFactory.AddSurfaceTensionForce(m_XOp, config, this.D, BcMap, LsTrk, degU, out NormalsRequired, out CurvatureRequired);     // surface tension force
+            XConstitutiveOperatorComponentsFactory.AddInterfaceConstitutive(m_XOp, config, this.D, BcMap, LsTrk); //viscosity of stresses at constitutive
 
             if (config.isContinuity)
                 XOperatorComponentsFactory.AddInterfaceContinuityEq(m_XOp, config, this.D, LsTrk);       // continuity equation
