@@ -19,10 +19,68 @@ using BoSSS.Foundation.Grid;
 using ilPSP.Utils;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.XdgTimestepping;
+using System.Collections.Generic;
 
 namespace BoSSS.Application.FSI_Solver {
-    public class HardcodedControlDeriabina : IBM_Solver.HardcodedTestExamples
-    {
+    public class HardcodedControlDeriabina : IBM_Solver.HardcodedTestExamples {
+        public static FSI_Control RectangleTest(int k = 3) {
+            FSI_Control C = new FSI_Control(degree: k, projectName: "9_active_Rods");
+            //C.SetSaveOptions(@"D:\BoSSS_databases\multipleActiveParticles", 1);
+
+            List<string> boundaryValues = new List<string> {
+                "Wall_left",
+                "Wall_right",
+                "Wall_lower",
+                "Wall_upper"
+            };
+            C.SetBoundaries(boundaryValues);
+            C.SetGrid(lengthX: 3, lengthY: 3, cellsPerUnitLength: 30, periodicX: false, periodicY: false);
+            //C.SetAddaptiveMeshRefinement(amrLevel: 2);
+            C.hydrodynamicsConvergenceCriterion = 1e-2;
+
+            // Fluid Properties
+            // =============================
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.IncludeConvection = true;
+            C.pureDryCollisions = true;
+            C.gravity = new double[] { 0, -9.81 };
+
+            // Particle Properties
+            // =============================
+            double particleDensity = 20;
+            ParticleMotionInit motion1 = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, false, false);
+            ParticleMotionInit motion2 = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, true, true);
+            C.Particles.Add(new Particle_Shell(motion2, 1, 0.5, 0.2, new double[] { 0, 0}, startAngl: 0));
+            C.Particles.Add(new Particle_Sphere(motion1, 0.1, new double[] { 0, 1 }, startAngl: 0));
+
+            // misc. solver options
+            // =============================  
+            C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
+            double dt = 1e-3;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 1000000;
+            C.NoOfTimesteps = 1000000;
+            C.AdvancedDiscretizationOptions.PenaltySafety = 4;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            C.LevelSetSmoothing = false;
+            C.NonLinearSolver.MaxSolverIterations = 1000;
+            C.NonLinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.LinearSolver.MaxSolverIterations = 1000;
+            C.LinearSolver.MinSolverIterations = 1;
+            C.LSunderrelax = 1.0;
+
+            // Coupling Properties
+            // =============================
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.LSunderrelax = 1;
+            C.maxIterationsFullyCoupled = 1000000;
+
+            return C;
+        }
         public static FSI_Control DeriabinaPentagoneFalle(int k = 2) {
             FSI_Control C = new FSI_Control();
 

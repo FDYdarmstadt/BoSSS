@@ -24,8 +24,8 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 
 namespace BoSSS.Solution.NSECommon.Operator.Pressure {
-    public class ActivePressureAtIB : ILevelSetForm {
-        public ActivePressureAtIB(int currentDim, int spatialDim, LevelSetTracker LsTrk) {
+    public class FSI_PressureAtIB : ILevelSetForm {
+        public FSI_PressureAtIB(int currentDim, int spatialDim, LevelSetTracker LsTrk) {
             m_d = currentDim;
             m_LsTrk = LsTrk;
             if (currentDim >= spatialDim)

@@ -19,36 +19,31 @@ using System.Collections.Generic;
 using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
-    public class HardcodedControl_multipleActiveParticles : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control ActiveRods_noBackroundFlow(int k = 2) {
-            FSI_Control C = new FSI_Control(degree: k, projectName: "9_active_Rods");
-            C.SetSaveOptions(@"\\hpccluster\hpccluster-scratch\deussen\cluster_db\25_particles", 1);
+    public class HC_CollisionRuntime : IBM_Solver.HardcodedTestExamples {
+        public static FSI_Control TwoSpheres(int k = 2) {
+            FSI_Control C = new FSI_Control(degree: k, projectName: "TwoSpheres");
 
             List<string> boundaryValues = new List<string> {
                 "Wall"
             };
-            int sqrtPart = 2;
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: sqrtPart + 1, lengthY: sqrtPart + 1, cellsPerUnitLength: 4, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel: 1);
-            C.hydrodynamicsConvergenceCriterion = 1e-3;
-
+            C.SetGrid(lengthX: 4, lengthY: 4, cellsPerUnitLength: 20, periodicX: false, periodicY: false);
+            
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.mu_A = 0.01;
+            C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.IncludeConvection = false;
+            C.pureDryCollisions = true;
+            C.gravity = new double[] { 0, -9.81 };
 
             // Particle Properties
             // =============================
-            double particleDensity = 2;
-            C.underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, ParticleUnderrelaxationParam.UnderrelaxationMethod.ProcentualRelaxation, relaxationFactor: 3.0, useAddaptiveUnderrelaxation: true);
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 1);
-            for (int x = 0; x < sqrtPart; x++) {
-                for (int y = 0; y < sqrtPart; y++) {
-                    C.Particles.Add(new Particle_Ellipsoid(motion, 0.25, 0.1, new double[] { -0.5 + 1 * x, 0.5 - 1 * y }, startAngl: 180 -30 - 90 * (x - y) + 180 * (1 - x * y), activeStress: 50));
-                }
-            }
+            double particleDensity = 1;
+            ParticleMotionInit motion1 = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, false, false);
+            ParticleMotionInit motion2 = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, true, true);
+            C.Particles.Add(new Particle_Ellipsoid(motion1, 0.25, 0.1, new double[] { 0 , 0.5 }, startAngl: 45, activeStress: 0));
+            C.Particles.Add(new Particle_Ellipsoid(motion2, 0.25, 0.1, new double[] { 0, 0 }, startAngl: 0, activeStress: 0));
 
             // misc. solver options
             // =============================  
@@ -56,8 +51,8 @@ namespace BoSSS.Application.FSI_Solver {
             double dt = 1e-3;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.Endtime = 100000000;
-            C.NoOfTimesteps = 1000000;
+            C.Endtime = 1000000;
+            C.NoOfTimesteps = 100;
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
@@ -71,7 +66,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Coupling Properties
             // =============================
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.LSunderrelax = 1;
             C.maxIterationsFullyCoupled = 1000000;
 

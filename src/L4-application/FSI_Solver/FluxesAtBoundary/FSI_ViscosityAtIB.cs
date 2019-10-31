@@ -16,20 +16,14 @@ limitations under the License.
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using BoSSS.Foundation.XDG;
 using System.Diagnostics;
-using BoSSS.Solution.NSECommon;
-using ilPSP.Utils;
-using BoSSS.Platform;
-using ilPSP;
 using BoSSS.Foundation;
 
 namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
-    public class ActiveViscosityAtIB : ILevelSetForm {
-        public ActiveViscosityAtIB(int currentDim, int spatialDim, LevelSetTracker levelSetTracker, double penalty, Func<double, int, double> penaltyFunction, double fluidViscosity,
+    public class FSI_ViscosityAtIB : ILevelSetForm {
+        public FSI_ViscosityAtIB(int currentDim, int spatialDim, LevelSetTracker levelSetTracker, double penalty, Func<double, int, double> penaltyFunction, double fluidViscosity,
             Func<double[], double[]> getParticleParams) {
             m_penalty = penalty;
             m_PenaltyFunc = penaltyFunction;
@@ -74,16 +68,17 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
             double[] RadialNormalVector = new double[] { parameters_P[3], parameters_P[4] };
             double RadialLength = parameters_P[5];
+
             double active_stress = parameters_P[6];
-            double scale = parameters_P[7];
+            double scaleActiveBoundary = parameters_P[7];
             double Ang_P = parameters_P[8];
 
-            Debug.Assert(this.ArgumentOrdering.Count == D);
+            Debug.Assert(ArgumentOrdering.Count == D);
             Debug.Assert(Grad_uA.GetLength(0) == this.ArgumentOrdering.Count);
             Debug.Assert(Grad_uB.GetLength(0) == this.ArgumentOrdering.Count);
             Debug.Assert(Grad_uA.GetLength(1) == D);
             Debug.Assert(Grad_uB.GetLength(1) == D);
-
+            
             // Gradient of u and v 
             // ============================= 
             double Grad_uA_xN = 0, Grad_vA_xN = 0;
@@ -92,9 +87,6 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
                 Grad_vA_xN += Grad_vA[d] * N[d];
             }
 
-            // Evaluate the complete velocity as a sum of translation and angular velocity
-            // ============================= 
-            double uAFict;
             double Ret = 0.0;
 
             // 3D for IBM_Solver
@@ -102,8 +94,8 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             if (inp.x.Length == 3) {
 
                 Ret -= Grad_uA_xN * (vA);                                     // consistency term
-                Ret -= Grad_vA_xN * (uA[component] - 0) * (1 - scale);        // symmetry term
-                Ret += _penalty * (uA[component] - 0) * (vA) * (1 - scale);   // penalty term
+                Ret -= Grad_vA_xN * (uA[component] - 0) * (1 - scaleActiveBoundary);        // symmetry term
+                Ret += _penalty * (uA[component] - 0) * (vA) * (1 - scaleActiveBoundary);   // penalty term
 
                 Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
                 return Ret * muA;
@@ -111,20 +103,65 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
             // 2D
             // ============================= 
-            //Defining boundary conditions (no slip/slip)
-            if (component == 0) {
-                uAFict = (uLevSet[component] + RadialLength * wLevSet * RadialNormalVector[0]) * (1 - scale) + uA[component] * scale;
+            double uAFict = uLevSet[component] + RadialLength * wLevSet * RadialNormalVector[component];
+            double[] orientation = new double[] { -Math.Sin(Ang_P), Math.Cos(Ang_P) };
+            double f_xT;
+            if (orientation[0] * inp.n[0] + orientation[1] * inp.n[1] > 0) {
+                f_xT = component == 0 ? -active_stress * (inp.n[1]) : active_stress * (inp.n[0]);
             }
             else {
-                uAFict = (uLevSet[component] + RadialLength * wLevSet * RadialNormalVector[1]) * (1 - scale) + uA[component] * scale;
+                f_xT = component == 0 ? active_stress * (inp.n[1]) : -active_stress * (inp.n[0]);
             }
-            double f_xN = component == 0 ? active_stress * Math.Cos(Ang_P) * Math.Abs(inp.n[1]) : active_stress * Math.Sin(Ang_P) * Math.Abs(inp.n[0]);
 
-            //Computing flux
-            Ret -= Grad_uA_xN * (vA) * muA * (1 - scale);                   // consistency term 
-            Ret -= Grad_vA_xN * (uA[component] - uAFict) * muA;             // symmetry term 
-            Ret += _penalty * (uA[component] - uAFict) * (vA) * muA;       // penalty term
-            Ret += f_xN * (vA) * scale;                                     // active term (Neumann boundary condition)
+            // Dirichlet
+            if (scaleActiveBoundary == 0) {
+                for (int d = 0; d < D; d++) {
+                    Ret -= muA * Grad_uA[component, d] * vA * N[d];
+                    Ret -= muA * Grad_vA[d] * (uA[component] - uAFict) * N[d];
+                }
+                Ret += muA * (uA[component] - uAFict) * vA * _penalty;
+            }
+            // Active boundary
+            else {
+                // normal
+                for (int dN = 0; dN < D; dN++) {
+                    for (int dD = 0; dD < D; dD++) {
+                        Ret -= muA * (N[dN] * Grad_uA[dN, dD] * N[dD]) * (vA * N[component]);   // consistency term 
+                        Ret -= muA * (N[component] * Grad_vA[dD] * N[dD]) * uA[dN] * N[dN];     // symmetry term 
+                    }                                                                           //
+                    Ret += muA * (uA[dN] * N[dN]) * (vA * N[component]) * _penalty;             // penalty term
+                }                                                                               //
+                                                                                                //tangential         
+                double[,] P = new double[D, D];
+                for (int d1 = 0; d1 < D; d1++) {
+                    for (int d2 = 0; d2 < D; d2++) {
+                        double nn = 0;
+                        if (d1 == d2) {
+                            nn = Math.Abs(N[d1] * N[d2]);
+                        }
+                        if (d1 != d2) {
+                            nn = -Math.Abs((N[d1]) * (N[d2]));
+                        }
+                        if (d1 == d2) {
+                            P[d1, d2] = 1 - nn;
+                        }
+                        else {
+                            P[d1, d2] = -nn;
+                        }
+                    }
+                }
+                //for (int d1 = 0; d1 < D; d1++) {
+                //    for (int d2 = 0; d2 < D; d2++) {
+                //        Ret += (P[d1, d2] * f_xT * muA * scaleActiveBoundary) * (P[d1, component] * vA);
+                //    }
+                //}
+                for (int d1 = 0; d1 < D; d1++) {
+                    for (int d2 = 0; d2 < D; d2++) {
+                        Ret -= (P[d1, d2] * f_xT * muA) * (P[d1, component] * vA);
+                    }
+                }
+                //Ret += f_xT * (vA) * muA * scaleActiveBoundary;                                 // active force term
+            }
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
             return Ret;

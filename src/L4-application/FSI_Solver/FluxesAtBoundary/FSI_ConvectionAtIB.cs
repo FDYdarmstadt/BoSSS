@@ -26,8 +26,8 @@ using System.Diagnostics;
 using BoSSS.Foundation;
 
 namespace BoSSS.Solution.NSECommon.Operator.Convection {
-    public class ActiveConvectionAtIB : ILevelSetForm {
-        public ActiveConvectionAtIB(int currentDim, int spatialDim, LevelSetTracker LsTrk, IncompressibleBoundaryCondMap _bcmap, Func<double[], double[]> getParticleParams, bool useMovingMesh) {
+    public class FSI_ConvectionAtIB : ILevelSetForm {
+        public FSI_ConvectionAtIB(int currentDim, int spatialDim, LevelSetTracker LsTrk, IncompressibleBoundaryCondMap _bcmap, Func<double[], double[]> getParticleParams, bool useMovingMesh) {
             m_LsTrk = LsTrk;
             m_D = spatialDim;
             m_d = currentDim;
