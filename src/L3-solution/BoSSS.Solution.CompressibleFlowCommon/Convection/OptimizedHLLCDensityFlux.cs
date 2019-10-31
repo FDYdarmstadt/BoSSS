@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using System;
+using System.Diagnostics;
 using BoSSS.Foundation;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
@@ -80,6 +81,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
                     double pIn = (gamma - 1.0) * (energyIn - MachScaling * 0.5 * momentumSquareIn / densityIn);
                     double pOut = (gamma - 1.0) * (energyOut - MachScaling * 0.5 * momentumSquareOut / densityOut);
+                    pIn = Math.Max(pIn, ilPSP.Utils.BLAS.MachineEps);
+                    pOut = Math.Max(pOut, ilPSP.Utils.BLAS.MachineEps);
+
 
                     double speedOfSoundIn = Math.Sqrt(pIn / densityIn) / Mach;
                     double speedOfSoundOut = Math.Sqrt(pOut / densityOut) / Mach;
@@ -134,6 +138,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
                         }
                     }
 
+                    Debug.Assert(!double.IsNaN(edgeFlux) || double.IsInfinity(edgeFlux));
                     Output[e + Offset, n] += edgeFlux;
                 }
             }
@@ -157,6 +162,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
                 for (int n = 0; n < NoOfNodes; n++) {
                     for (int d = 0; d < D; d++) {
                         // state.Momentum
+                        Debug.Assert(!double.IsNaN(U[d + 1][e + Offset, n]) || double.IsInfinity(U[d + 1][e + Offset, n]));
                         Output[e + Offset, n, d] += U[d + 1][e + Offset, n];
                     }
                 }
