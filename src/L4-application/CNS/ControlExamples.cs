@@ -70,20 +70,19 @@ namespace CNS {
         /// <param name="dgDegree"></param>
         /// <param name="advectionVelocity"></param>
         /// <returns></returns>
-        public static CNSControl IsentropicVortex(string dbPath = null, int noOfCellsPerDirection = 20, int dgDegree = 2, double advectionVelocity = 0.1) {
+        public static CNSControl IsentropicVortex(string dbPath, int noOfCellsPerDirection, int dgDegree, double advectionVelocity) {
             CNSControl c = new CNSControl();
 
             c.dtMin = 0.0;
             c.dtMax = 5.0e-1;
-            //c.CFLFraction = 0.9;
-            c.dtFixed = 1e-2;
+            c.CFLFraction = 0.9;
             c.Endtime = 2.0;
             c.NoOfTimesteps = int.MaxValue;
 
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
             c.saveperiod = 1000;
-            c.PrintInterval = 1;
+            c.PrintInterval = 10;
             c.ProjectDescription = String.Format(
                 "Isentropic vortex in a periodic domain with {0}x{0} cells using polynomials of order {1}",
                 noOfCellsPerDirection,
@@ -97,7 +96,7 @@ namespace CNS {
             c.MachNumber = 0.2;
 
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
-            c.ExplicitOrder = 1;
+            c.ExplicitOrder = 4;
 
             c.AddVariable(CompressibleVariables.Density, dgDegree);
             c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
