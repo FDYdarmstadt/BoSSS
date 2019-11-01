@@ -25,20 +25,18 @@ namespace BoSSS.Solution.RheologyCommon {
     /// <summary>
     /// Volume integral of identity part of constitutive equations.
     /// </summary>
-    public class ConvectiveInBulk : ConstitutiveEqns_CellWiseForm, ISpeciesFilter {
+    public class ConvectiveInBulk : ConstitutiveEqns_Convective, ISpeciesFilter {
 
         SpeciesId m_spcId;
-        int ComponentRow;
-        int ComponentCol;
+        int Component;
         IncompressibleMultiphaseBoundaryCondMap m_bcMap;
         double m_alpha; // upwind-paramter
 
         /// <summary>
         /// Initialize Convection
         /// </summary>
-        public ConvectiveInBulk(int _ComponentRow, int _ComponentCol, IncompressibleMultiphaseBoundaryCondMap _BcMap, double WeissenbergA, double WeissenbergB, double alpha, string spcName, SpeciesId spcId) : base(_ComponentRow, _ComponentCol, _BcMap, 0.0, alpha = 1.0) {
-            this.ComponentRow = _ComponentRow;
-            this.ComponentCol = _ComponentCol;
+        public ConvectiveInBulk(int _Component, IncompressibleMultiphaseBoundaryCondMap _BcMap, double WeissenbergA, double WeissenbergB, double alpha, string spcName, SpeciesId spcId) : base(_Component, _BcMap, 0.0, alpha = 1.0) {
+            this.Component= _Component;
             this.m_spcId = spcId;
             this.m_bcMap = _BcMap;
             this.m_alpha = alpha;

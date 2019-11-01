@@ -51,8 +51,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         protected override double[] CalculateParticlePosition(double dt) {
-            double[] l_Position = new double[spatialDim];
-            for (int d = 0; d < spatialDim; d++) {
+            double[] l_Position = new double[m_Dim];
+            for (int d = 0; d < m_Dim; d++) {
                 l_Position[d] = GetPosition(1)[d];
             }
             Aux.TestArithmeticException(l_Position, "particle position");
@@ -65,8 +65,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="dt"></param>
         /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
         protected override double[] CalculateParticlePosition(double dt, double collisionTimestep) {
-            double[] l_Position = new double[spatialDim];
-            for (int d = 0; d < spatialDim; d++) {
+            double[] l_Position = new double[m_Dim];
+            for (int d = 0; d < m_Dim; d++) {
                 l_Position[d] = GetPosition(1)[d];
             }
             Aux.TestArithmeticException(l_Position, "particle position");
@@ -78,8 +78,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt">Timestep</param>
         protected override double[] CalculateTranslationalVelocity(double dt) {
-            double[] l_TranslationalVelocity = new double[spatialDim];
-            for (int d = 0; d < spatialDim; d++) {
+            double[] l_TranslationalVelocity = new double[m_Dim];
+            for (int d = 0; d < m_Dim; d++) {
                 l_TranslationalVelocity[d] = 0;
             }
             Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
@@ -92,8 +92,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="dt">Timestep</param>
         /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
         protected override double[] CalculateTranslationalVelocity(double dt, double collisionTimestep) {
-            double[] l_TranslationalVelocity = new double[spatialDim];
-            for (int d = 0; d < spatialDim; d++) {
+            double[] l_TranslationalVelocity = new double[m_Dim];
+            for (int d = 0; d < m_Dim; d++) {
                 l_TranslationalVelocity[d] = 0;
             }
             Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
@@ -107,10 +107,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="P"></param>
         /// <param name="levelSetTracker"></param>
         /// <param name="muA"></param>
-        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker levelSetTracker, CellMask cutCells, double muA, double relativeParticleMass, bool firstIteration, double dt = 0) {
-            double[] tempForces = new double[spatialDim];
-            double tempTorque = CalculateHydrodynamicTorque(U, P, levelSetTracker, cutCells, muA);
-            HydrodynamicsPostprocessing(tempForces, tempTorque, firstIteration);
+        public override void UpdateForcesAndTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, bool firstIteration, double dt = 0) {
+            double[] tempForces = new double[m_Dim];
+            double tempTorque = CalculateHydrodynamicTorque(hydrodynamicsIntegration);
+            HydrodynamicsPostprocessing(tempTorque);
         }
     }
 }

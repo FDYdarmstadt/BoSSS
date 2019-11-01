@@ -67,14 +67,7 @@ namespace BoSSS.Solution.RheologyCommon
         {
 
             double res = 0.0;
-            if (component == 1)
-            {
-                res = T[0];
-            }
-            else
-            {
-                res = T[0];
-            }
+            res = T[0];
 
             return res * V;
         }

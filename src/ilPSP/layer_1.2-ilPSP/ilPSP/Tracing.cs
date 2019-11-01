@@ -84,7 +84,13 @@ namespace ilPSP.Tracing {
 
         static private MethodCallRecord _Root;
 
-        private static MethodCallRecord Current;
+        /// <summary>
+        /// The record corresponding to the current function.
+        /// </summary>
+        public static MethodCallRecord Current {
+            get;
+            private set;
+        }
 
         internal static void Push_MethodCallRecord(string _name) {
             Debug.Assert(InstrumentationSwitch == true);

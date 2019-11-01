@@ -1,0 +1,527 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 5 instances of IDatabaseInfo {
+  0: { Session Count = 40; Grid Count = 4; Path = \\dc1\userspace\kikker\cluster\cluster_db\Channel_ConvergenceStudy_Wi=0.0 }
+  1: { Session Count = 61; Grid Count = 4; Path = \\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_ConvergenceStudy_Wi=0.0 }
+  2: { Session Count = 45; Grid Count = 4; Path = \\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_ConvergenceStudy_Wi=0.5 }
+  3: { Session Count = 59; Grid Count = 11; Path = \\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag }
+  4: { Session Count = 45; Grid Count = 6; Path = \\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_unsteady }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+databases.Pick(1).Sessions
+**************
+List of 61 instances of ISessionInfo {
+  0: ConfinedCylinder_ConvergenceStudy_Wi=0.0_levelPMG_2	ConfinedCylinder_ConvergenceStudy_p1_meshNo3_Wi0.0_half_levelPMG_2	10/09/2019 11:41:50	8199d2cf...
+  1: ConfinedCylinder_ConvergenceStudy_Wi=0.0_levelPMG_2	ConfinedCylinder_ConvergenceStudy_p1_meshNo2_Wi0.0_half_levelPMG_2	10/09/2019 11:41:20	f88ec6d5...
+  2: ConfinedCylinder_ConvergenceStudy_Wi=0.0_levelPMG_2	ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0.0_half_levelPMG_2	10/09/2019 11:40:51	8a198ce1...
+  3: ConfinedCylinder_ConvergenceStudy_Wi=0.0_levelPMG_2	ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0.0_half_levelPMG_2	10/09/2019 11:40:10	64d662ab...
+  4: ConfinedCylinder_ConvergenceStudy_Wi=0.0_levelPMG	ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0.0_half_levelPMG	10/09/2019 11:33:54	3b73acfc...
+  5: ConfinedCylinder_ConvergenceStudy_Wi=0.0_levelPMG	ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0.0_half_levelPMG	10/09/2019 11:33:14	68503dc7...
+  6: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0.0_half	10/08/2019 15:32:39	982f97be...
+  7: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.0_half	10/08/2019 15:28:28	61d9e8e7...
+  8: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0.0_half	10/08/2019 15:27:18	ebad71a6...
+  9: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0.0_half	10/08/2019 15:26:39	782fa67c...
+  10: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0.0_half	10/08/2019 15:20:18	73a6df90...
+  11: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0.0_half	10/08/2019 15:18:48	561d782c...
+  12: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0.0_half	10/08/2019 15:18:08	1409fe33...
+  13: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p3_meshNo0_Wi0.0_half	10/08/2019 15:17:38	6f34183d...
+  14: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p2_meshNo3_Wi0.0_half	10/08/2019 15:15:28	e52053ab...
+  15: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p2_meshNo2_Wi0.0_half	10/08/2019 15:14:38	7db059c1...
+  16: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p2_meshNo1_Wi0.0_half	10/08/2019 15:13:58	65b4c8f2...
+  17: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p2_meshNo0_Wi0.0_half	10/08/2019 15:13:28	dca6eb66...
+  18: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p1_meshNo3_Wi0.0_half	10/08/2019 15:12:18	a8010bc1...
+  19: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p1_meshNo2_Wi0.0_half	10/08/2019 15:11:38	6b1cc2d2...
+  20: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0.0_half	10/08/2019 15:11:08	5117b7cc...
+  21: ConfinedCylinder_ConvergenceStudy_Wi=0.0_6	ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0.0_half	10/08/2019 15:10:19	57f21990...
+  22: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.0_half*	10/08/2019 14:42:12	10eadcee...
+  23: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0.0_half	10/08/2019 14:41:31	c04ad404...
+  24: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0.0_half	10/08/2019 14:40:52	3ac0cef7...
+  25: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0.0_half*	10/08/2019 11:57:58	5007c38d...
+  26: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0.0_half	10/08/2019 11:56:38	88ab91ca...
+  27: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0.0_half	10/08/2019 11:55:58	bd6528ac...
+  28: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p3_meshNo0_Wi0.0_half	10/08/2019 11:55:25	7fe53084...
+  29: ConfinedCylinder_ConvergenceStudy_Wi=0.0_3	ConfinedCylinder_ConvergenceStudy_p2_meshNo3_Wi0.0_half	10/08/2019 11:52:14	4850a747...
+  30: ConfinedCylinder_ConvergenceStudy_Wi=0.0_3	ConfinedCylinder_ConvergenceStudy_p2_meshNo2_Wi0.0_half	10/08/2019 11:51:13	0b61893d...
+  31: ConfinedCylinder_ConvergenceStudy_Wi=0.0_3	ConfinedCylinder_ConvergenceStudy_p2_meshNo1_Wi0.0_half	10/08/2019 11:50:42	32f08a51...
+  32: ConfinedCylinder_ConvergenceStudy_Wi=0.0_3	ConfinedCylinder_ConvergenceStudy_p2_meshNo0_Wi0.0_half	10/08/2019 11:50:24	4baaf0ce...
+  33: ConfinedCylinder_ConvergenceStudy_Wi=0.0_3	ConfinedCylinder_ConvergenceStudy_p1_meshNo3_Wi0.0_half	10/08/2019 11:48:47	e7390e13...
+  34: ConfinedCylinder_ConvergenceStudy_Wi=0.0_3	ConfinedCylinder_ConvergenceStudy_p1_meshNo2_Wi0.0_half	10/08/2019 11:48:10	32183fd0...
+  35: ConfinedCylinder_ConvergenceStudy_Wi=0.0_3	ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0.0_half	10/08/2019 11:47:47	d5200770...
+  36: ConfinedCylinder_ConvergenceStudy_Wi=0.0_3	ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0.0_half	10/08/2019 11:47:29	58d7acad...
+  37: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p2_meshNo3_Wi0.0_half	10/07/2019 16:27:16	7313cbc6...
+  38: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p2_meshNo2_Wi0.0_half	10/07/2019 16:26:26	f2875652...
+  39: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p2_meshNo1_Wi0.0_half	10/07/2019 16:25:56	2979e42b...
+  40: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p2_meshNo0_Wi0.0_half	10/07/2019 16:25:26	1d22e1ae...
+  41: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p1_meshNo3_Wi0.0_half	10/07/2019 16:24:16	2da9103c...
+  42: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p1_meshNo2_Wi0.0_half	10/07/2019 16:23:36	57e19fd8...
+  43: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0.0_half	10/07/2019 16:23:05	7a184db8...
+  44: ConfinedCylinder_ConvergenceStudy_Wi=0.0_4	ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0.0_half	10/07/2019 16:22:29	a18999ed...
+  45: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0.0_half	10/01/2019 14:05:16	c473726f...
+  46: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0.0_half	10/01/2019 13:56:21	1b604bf4...
+  47: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.0_half	10/01/2019 13:58:59	e11d6e11...
+  48: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0.0_half	10/01/2019 13:57:34	b591172c...
+  49: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0.0_half	10/01/2019 13:57:01	71866c9c...
+  50: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0.0_half	10/01/2019 13:54:59	33f66b88...
+  51: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p2_meshNo3_Wi0.0_half	10/01/2019 13:52:54	c04b3d92...
+  52: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0.0_half	10/01/2019 13:54:14	b4921067...
+  53: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p3_meshNo0_Wi0.0_half	10/01/2019 13:53:48	99662822...
+  54: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p2_meshNo2_Wi0.0_half	10/01/2019 13:52:44	6c93fb08...
+  55: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p1_meshNo3_Wi0.0_half	10/01/2019 13:51:22	3b898027...
+  56: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p2_meshNo1_Wi0.0_half	10/01/2019 13:52:12	61f600fd...
+  57: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p2_meshNo0_Wi0.0_half	10/01/2019 13:51:51	cb96a06c...
+  58: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p1_meshNo2_Wi0.0_half	10/01/2019 13:51:14	efecdf9a...
+  59: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0.0_half	10/01/2019 13:49:37	f3ba6cd6...
+  60: ConfinedCylinder_ConvergenceStudy_Wi=0.0	ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0.0_half	10/01/2019 13:49:30	ab4cb68b...
+}
+==============
+WorkflowMgm.Init("ConfinedCylinder_ConvergenceStudy_Wi=0.0_6");
+**************
+Project name is set to 'ConfinedCylinder_ConvergenceStudy_Wi=0.0_6'.
+
+==============
+//####################//
+//Plot for Velocity X //
+//####################//
+**************
+==============
+var ExpPlotS_velX = new List<Plot2Ddata>();
+int[] pOrder = new int[] {1, 2, 3, 4};
+**************
+==============
+foreach (int p in pOrder){ // loop over polynomial degrees
+    // extract sessions with DG degree pDeg
+    var pDegSessions = WorkflowMgm.Sessions.Where(
+    // function which is true on all sessions we are interested in:
+    Si => Convert.ToInt32(Si.KeysAndQueries["DGdegree:VelocityX"]) == p).ToArray();
+
+    // now , create a plot from the selected sessions :
+    // (we could also do other things )
+    Plot2Ddata pDegPlot = pDegSessions.ToEstimatedGridConvergenceData("VelocityX", xAxis_Is_hOrDof:false, // false selects DOFs for x- axis
+      normType:NormType.L2_approximate);//H1_approximate); // use the H1 - Sobolev norm
+
+    // remember the freshly created plot object in a list :
+    ExpPlotS_velX.Add(pDegPlot);
+}
+**************
+==============
+ExpPlotS_velX[0].dataGroups[0].Format.PointType = PointTypes.Diamond ;
+ExpPlotS_velX[1].dataGroups[0].Format.PointType = PointTypes.Box;
+ExpPlotS_velX[2].dataGroups[0].Format.PointType = PointTypes.LowerTriangle ;
+ExpPlotS_velX[3].dataGroups[0].Format.PointType = PointTypes.Asterisk ;
+ExpPlotS_velX[0].dataGroups[0].Name = "$k = 1$";
+ExpPlotS_velX[1].dataGroups[0].Name = "$k = 2$";
+ExpPlotS_velX[2].dataGroups[0].Name = "$k = 3$";
+ExpPlotS_velX[3].dataGroups[0].Name = "$k = 4$";
+foreach (var p in ExpPlotS_velX ){
+  p.dataGroups[0].Format.PointSize = 0.8;
+  p.dataGroups[0].Format.DashType = DashTypes.Dotted ;
+  p.dataGroups[0].Format.LineWidth = 2;
+}
+**************
+==============
+LastError
+**************
+==============
+var ExpPlot_velX = ExpPlotS_velX[0]; // select 0-th object
+foreach (var p in ExpPlotS_velX.Skip (1)) { // loop over other ( skip 0-th entry )
+  ExpPlot_velX = ExpPlot_velX.Merge(p); // merge
+}
+**************
+==============
+ExpPlot_velX.Regression();
+**************
+List of 4 instances of KeyValuePair{String,Double} {
+  0: [$k = 1$, -1.99376455174553]
+  1: [$k = 2$, -2.09995742702845]
+  2: [$k = 3$, -1.6753516354969]
+  3: [$k = 4$, -1.65073018526717]
+}
+==============
+var velX = ExpPlot_velX.ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
+velX.SaveTo(@"\\dc1\userspace\kikker\BoSSSResults\ConfinedCylinder_Convergence\velX_Convergence.tex");
+ExpPlot_velX.PlotNow();
+
+**************
+Using gnuplot: C:\Users\kikker\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"Left reverse 
+Using gnuplot: C:\Users\kikker\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"Left reverse 
+System.Drawing.Bitmap
+==============
+//####################//
+//Plot for Velocity Y //
+//####################//
+**************
+==============
+var ExpPlotS_velY = new List<Plot2Ddata>();
+**************
+==============
+foreach (int p in pOrder){ // loop over polynomial degrees
+    // extract sessions with DG degree pDeg
+    var pDegSessions = WorkflowMgm.Sessions.Where(
+    // function which is true on all sessions we are interested in:
+    Si => Convert.ToInt32(Si.KeysAndQueries["DGdegree:VelocityY"]) == p).ToArray();
+
+    // now , create a plot from the selected sessions :
+    // (we could also do other things )
+    Plot2Ddata pDegPlot = pDegSessions.ToEstimatedGridConvergenceData("VelocityY", xAxis_Is_hOrDof:false, // false selects DOFs for x- axis
+      normType:NormType.L2_approximate);//H1_approximate); // use the H1 - Sobolev norm
+
+    // remember the freshly created plot object in a list :
+    ExpPlotS_velY.Add(pDegPlot);
+}
+**************
+==============
+ExpPlotS_velY[0].dataGroups[0].Format.PointType = PointTypes.Diamond ;
+ExpPlotS_velY[1].dataGroups[0].Format.PointType = PointTypes.Box;
+//ExpPlotS_velY[2].dataGroups[0].Format.PointType = PointTypes.LowerTriangle ;
+//ExpPlotS_velY[3].dataGroups[0].Format.PointType = PointTypes.Asterisk ;
+ExpPlotS_velY[0].dataGroups[0].Name = "$k = 1$";
+ExpPlotS_velY[1].dataGroups[0].Name = "$k = 2$";
+//ExpPlotS_velY[2].dataGroups[0].Name = "$k = 3$";
+//ExpPlotS_velY[3].dataGroups[0].Name = "$k = 4$";
+foreach (var p in ExpPlotS_velY ){
+  p.dataGroups[0].Format.PointSize = 0.8;
+  p.dataGroups[0].Format.DashType = DashTypes.Dotted ;
+  p.dataGroups[0].Format.LineWidth = 2;
+}
+**************
+==============
+var ExpPlot_velY = ExpPlotS_velY[0]; // select 0-th object
+foreach (var p in ExpPlotS_velY.Skip (1)) { // loop over other ( skip 0-th entry )
+  ExpPlot_velY = ExpPlot_velY.Merge(p); // merge
+}
+**************
+==============
+ExpPlot_velY.Regression();
+**************
+List of 2 instances of KeyValuePair{String,Double} {
+  0: [$k = 1$, -1.76910743207725]
+  1: [$k = 2$, -2.36876573946159]
+}
+==============
+var velY = ExpPlot_velY.ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
+velY.SaveTo(@"\\dc1\userspace\kikker\BoSSSResults\ConfinedCylinder_Convergence\velY_Convergence.tex");
+ExpPlot_velY.PlotNow();
+//ExpPlot_vely.SavePgfplotsFile();
+**************
+Using gnuplot: C:\Users\kikker\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"Left reverse 
+Using gnuplot: C:\Users\kikker\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"Left reverse 
+System.Drawing.Bitmap
+==============
+//####################//
+//Plot for Pressure   //#
+//####################//
+**************
+==============
+var ExpPlotS_pres = new List<Plot2Ddata>();
+int[] pOrder2 = new int[] {0, 1, 2, 3};
+**************
+==============
+foreach (int p in pOrder2){ // loop over polynomial degrees
+    // extract sessions with DG degree pDeg
+    var pDegSessions = WorkflowMgm.Sessions.Where(
+    // function which is true on all sessions we are interested in:
+    Si => Convert.ToInt32(Si.KeysAndQueries["DGdegree:Pressure"]) == p).ToArray();
+
+    // now , create a plot from the selected sessions :
+    // (we could also do other things )
+    Plot2Ddata pDegPlot = pDegSessions.ToEstimatedGridConvergenceData("Pressure", xAxis_Is_hOrDof:false, // false selects DOFs for x- axis
+      normType:NormType.L2noMean_approximate);//H1_approximate); // use the H1 - Sobolev norm
+
+    // remember the freshly created plot object in a list :
+    ExpPlotS_pres.Add(pDegPlot);
+}
+**************
+==============
+ExpPlotS_pres[0].dataGroups[0].Format.PointType = PointTypes.Diamond ;
+ExpPlotS_pres[1].dataGroups[0].Format.PointType = PointTypes.Box;
+ExpPlotS_pres[2].dataGroups[0].Format.PointType = PointTypes.LowerTriangle ;
+ExpPlotS_pres[3].dataGroups[0].Format.PointType = PointTypes.Asterisk ;
+ExpPlotS_pres[0].dataGroups[0].Name = "$k = 0$";
+ExpPlotS_pres[1].dataGroups[0].Name = "$k = 1$";
+ExpPlotS_pres[2].dataGroups[0].Name = "$k = 2$";
+ExpPlotS_pres[3].dataGroups[0].Name = "$k = 3$";
+foreach (var p in ExpPlotS_pres ){
+  p.dataGroups[0].Format.PointSize = 0.8;
+  p.dataGroups[0].Format.DashType = DashTypes.Dotted ;
+  p.dataGroups[0].Format.LineWidth = 2;
+}
+**************
+==============
+var ExpPlot_pres = ExpPlotS_pres[0]; // select 0-th object
+foreach (var p in ExpPlotS_pres.Skip (1)) { // loop over other ( skip 0-th entry )
+  ExpPlot_pres = ExpPlot_pres.Merge(p); // merge
+}
+**************
+==============
+ExpPlot_pres.Regression();
+**************
+List of 4 instances of KeyValuePair{String,Double} {
+  0: [$k = 0$, -2.42825494230232]
+  1: [$k = 1$, -1.82575462972501]
+  2: [$k = 2$, -2.69139923777633]
+  3: [$k = 3$, -3.78448322244049]
+}
+==============
+var pres = ExpPlot_pres.ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
+pres.SaveTo(@"\\dc1\userspace\kikker\BoSSSResults\ConfinedCylinder_Convergence\pres_Convergence.tex");
+ExpPlot_pres.PlotNow();
+**************
+Using gnuplot: C:\Users\kikker\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"Left reverse 
+Using gnuplot: C:\Users\kikker\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"Left reverse 
+System.Drawing.Bitmap
+==============
+//####################//
+//Plot for StressXX   //
+//####################//
+**************
+==============
+var ExpPlotS_strXX = new List<Plot2Ddata>();
+**************
+==============
+foreach (int p in pOrder){ // loop over polynomial degrees
+    // extract sessions with DG degree pDeg
+    var pDegSessions = WorkflowMgm.Sessions.Where(
+    // function which is true on all sessions we are interested in:
+    Si => Convert.ToInt32(Si.KeysAndQueries["DGdegree:StressXX"]) == p).ToArray();
+
+    // now , create a plot from the selected sessions :
+    // (we could also do other things )
+    Plot2Ddata pDegPlot = pDegSessions.ToEstimatedGridConvergenceData("StressXX", xAxis_Is_hOrDof:false, // false selects DOFs for x- axis
+      normType:NormType.L2_approximate);//H1_approximate); // use the H1 - Sobolev norm
+
+    // remember the freshly created plot object in a list :
+    ExpPlotS_strXX.Add(pDegPlot);
+}
+**************
+==============
+//ExpPlotS_strXX
+**************
+==============
+ExpPlotS_strXX[0].dataGroups[0].Format.PointType = PointTypes.Diamond ;
+ExpPlotS_strXX[1].dataGroups[0].Format.PointType = PointTypes.Box;
+ExpPlotS_strXX[2].dataGroups[0].Format.PointType = PointTypes.LowerTriangle ;
+ExpPlotS_strXX[3].dataGroups[0].Format.PointType = PointTypes.Asterisk ;
+ExpPlotS_strXX[0].dataGroups[0].Name = "$k = 1$";
+ExpPlotS_strXX[1].dataGroups[0].Name = "$k = 2$";
+ExpPlotS_strXX[2].dataGroups[0].Name = "$k = 3$";
+ExpPlotS_strXX[3].dataGroups[0].Name = "$k = 4$";
+foreach (var p in ExpPlotS_strXX ){
+  p.dataGroups[0].Format.PointSize = 0.8;
+  p.dataGroups[0].Format.DashType = DashTypes.Dotted ;
+  p.dataGroups[0].Format.LineWidth = 2;
+}
+**************
+==============
+var ExpPlot_strXX = ExpPlotS_strXX[0]; // select 0-th object
+foreach (var p in ExpPlotS_strXX.Skip (1)) { // loop over other ( skip 0-th entry )
+  ExpPlot_strXX = ExpPlot_strXX.Merge(p); // merge
+}
+**************
+==============
+ExpPlot_strXX.Regression();
+**************
+List of 4 instances of KeyValuePair{String,Double} {
+  0: [$k = 1$, -1.07366090163624]
+  1: [$k = 2$, -1.95885244424299]
+  2: [$k = 3$, -2.18729382288372]
+  3: [$k = 4$, -1.71937944858717]
+}
+==============
+var strXX = ExpPlot_strXX.ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
+strXX.SaveTo(@"\\dc1\userspace\kikker\BoSSSResults\ConfinedCylinder_Convergence\strXX_Convergence.tex");
+ExpPlot_strXX.PlotNow();
+**************
+Using gnuplot: C:\Users\kikker\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"Left reverse 
+Using gnuplot: C:\Users\kikker\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"Left reverse 
+System.Drawing.Bitmap
+==============
+//####################//
+//Plot for StressXY   //
+//####################//
+**************
+==============
+var ExpPlotS_strXY = new List<Plot2Ddata>();
+**************
+==============
+foreach (int p in pOrder){ // loop over polynomial degrees
+    // extract sessions with DG degree pDeg
+    var pDegSessions = WorkflowMgm.Sessions.Where(
+    // function which is true on all sessions we are interested in:
+    Si => Convert.ToInt32(Si.KeysAndQueries["DGdegree:StressXY"]) == p).ToArray();
+
+    // now , create a plot from the selected sessions :
+    // (we could also do other things )
+    Plot2Ddata pDegPlot = pDegSessions.ToEstimatedGridConvergenceData("StressXY", xAxis_Is_hOrDof:false, // false selects DOFs for x- axis
+      normType:NormType.L2_approximate);//H1_approximate); // use the H1 - Sobolev norm
+
+    // remember the freshly created plot object in a list :
+    ExpPlotS_strXY.Add(pDegPlot);
+}
+**************
+==============
+//ExpPlotS_strXX
+**************
+==============
+ExpPlotS_strXY[0].dataGroups[0].Format.PointType = PointTypes.Diamond ;
+ExpPlotS_strXY[1].dataGroups[0].Format.PointType = PointTypes.Box;
+ExpPlotS_strXY[2].dataGroups[0].Format.PointType = PointTypes.LowerTriangle ;
+ExpPlotS_strXY[3].dataGroups[0].Format.PointType = PointTypes.Asterisk ;
+ExpPlotS_strXY[0].dataGroups[0].Name = "$k = 1$";
+ExpPlotS_strXY[1].dataGroups[0].Name = "$k = 2$";
+ExpPlotS_strXY[2].dataGroups[0].Name = "$k = 3$";
+ExpPlotS_strXY[3].dataGroups[0].Name = "$k = 4$";
+foreach (var p in ExpPlotS_strXY ){
+  p.dataGroups[0].Format.PointSize = 0.8;
+  p.dataGroups[0].Format.DashType = DashTypes.Dotted ;
+  p.dataGroups[0].Format.LineWidth = 2;
+}
+**************
+==============
+LastError
+**************
+==============
+var ExpPlot_strXY = ExpPlotS_strXY[0]; // select 0-th object
+foreach (var p in ExpPlotS_strXY.Skip (1)) { // loop over other ( skip 0-th entry )
+  ExpPlot_strXY = ExpPlot_strXY.Merge(p); // merge
+}
+**************
+==============
+**************
+==============
+ExpPlot_strXY.Regression();
+**************
+List of 4 instances of KeyValuePair{String,Double} {
+  0: [$k = 1$, -1.15383940568174]
+  1: [$k = 2$, -2.27923962526027]
+  2: [$k = 3$, -3.00174724829502]
+  3: [$k = 4$, -4.10912690343707]
+}
+==============
+var strXY = ExpPlot_strXY.ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
+strXY.SaveTo(@"\\dc1\userspace\kikker\BoSSSResults\ConfinedCylinder_Convergence\strXY_Convergence.tex");
+ExpPlot_strXY.PlotNow();
+**************
+Using gnuplot: C:\Users\kikker\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"Left reverse 
+Using gnuplot: C:\Users\kikker\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"Left reverse 
+System.Drawing.Bitmap
+==============
+//####################//
+//Plot for StressYY   //
+//####################//
+**************
+==============
+var ExpPlotS_strYY = new List<Plot2Ddata>();
+**************
+==============
+foreach (int p in pOrder){ // loop over polynomial degrees
+    // extract sessions with DG degree pDeg
+    var pDegSessions = WorkflowMgm.Sessions.Where(
+    // function which is true on all sessions we are interested in:
+    Si => Convert.ToInt32(Si.KeysAndQueries["DGdegree:StressYY"]) == p).ToArray();
+
+    // now , create a plot from the selected sessions :
+    // (we could also do other things )
+    Plot2Ddata pDegPlot = pDegSessions.ToEstimatedGridConvergenceData("StressYY", xAxis_Is_hOrDof:false, // false selects DOFs for x- axis
+      normType:NormType.L2_approximate);//H1_approximate); // use the H1 - Sobolev norm
+
+    // remember the freshly created plot object in a list :
+    ExpPlotS_strYY.Add(pDegPlot);
+}
+**************
+==============
+ExpPlotS_strYY[0].dataGroups[0].Format.PointType = PointTypes.Diamond ;
+ExpPlotS_strYY[1].dataGroups[0].Format.PointType = PointTypes.Box;
+ExpPlotS_strYY[2].dataGroups[0].Format.PointType = PointTypes.LowerTriangle ;
+ExpPlotS_strYY[3].dataGroups[0].Format.PointType = PointTypes.Asterisk ;
+ExpPlotS_strYY[0].dataGroups[0].Name = "$k = 1$";
+ExpPlotS_strYY[1].dataGroups[0].Name = "$k = 2$";
+ExpPlotS_strYY[2].dataGroups[0].Name = "$k = 3$";
+ExpPlotS_strYY[3].dataGroups[0].Name = "$k = 4$";
+foreach (var p in ExpPlotS_strYY ){
+  p.dataGroups[0].Format.PointSize = 0.8;
+  p.dataGroups[0].Format.DashType = DashTypes.Dotted ;
+  p.dataGroups[0].Format.LineWidth = 2;
+}
+**************
+==============
+var ExpPlot_strYY = ExpPlotS_strYY[0]; // select 0-th object
+foreach (var p in ExpPlotS_strYY.Skip (1)) { // loop over other ( skip 0-th entry )
+  ExpPlot_strYY = ExpPlot_strYY.Merge(p); // merge
+}
+**************
+==============
+ExpPlot_strYY.Regression();
+**************
+List of 4 instances of KeyValuePair{String,Double} {
+  0: [$k = 1$, -1.19336693428142]
+  1: [$k = 2$, -2.21152885321262]
+  2: [$k = 3$, -2.86264111713273]
+  3: [$k = 4$, -4.15329487511775]
+}
+==============
+var strYY = ExpPlot_strYY.ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
+strYY.SaveTo(@"\\dc1\userspace\kikker\BoSSSResults\ConfinedCylinder_Convergence\strYY_Convergence.tex");
+ExpPlot_strYY.PlotNow();
+**************
+Using gnuplot: C:\Users\kikker\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"Left reverse 
+Using gnuplot: C:\Users\kikker\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"Left reverse 
+System.Drawing.Bitmap
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
