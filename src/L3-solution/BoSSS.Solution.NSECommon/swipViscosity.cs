@@ -811,7 +811,7 @@ namespace BoSSS.Solution.NSECommon {
                             }
                         case IncompressibleBcType.FreeSlip:
                         case IncompressibleBcType.SlipSymmetry: {
-                                throw new NotImplementedException("TODO");
+                                break;
                             }
                         case IncompressibleBcType.NavierSlip_Linear: {
                                 throw new NotImplementedException("TODO");
@@ -822,7 +822,8 @@ namespace BoSSS.Solution.NSECommon {
                                 break;
                             }
                         case IncompressibleBcType.Pressure_Dirichlet: {
-                                throw new NotImplementedException("TODO");
+                                // do nothing
+                                break;
                             }
                         default:
                             throw new NotImplementedException();
@@ -938,7 +939,8 @@ namespace BoSSS.Solution.NSECommon {
                             }
                         case IncompressibleBcType.FreeSlip:
                         case IncompressibleBcType.SlipSymmetry: {
-                                throw new NotImplementedException("TODO");
+
+                                break;
                             }
                         case IncompressibleBcType.NavierSlip_Linear: {
                                 throw new NotImplementedException("TODO");
@@ -953,12 +955,15 @@ namespace BoSSS.Solution.NSECommon {
                                 flux += viscosity * g_N * base.m_alpha;
                                 fin[edge, node] += flux;
                                 break;
-
-
-
                             }
                         case IncompressibleBcType.Pressure_Dirichlet: {
-                                throw new NotImplementedException("TODO");
+                                double flux = 0.0;
+                                for(int d = 0; d < m_D; d++) {
+                                    double n = efp.Normals[edge, node, d];
+                                    flux -= viscosity * GradUin[m_iComp][edge, node, d] * n * base.m_alpha;    // Consistency term                          
+                                }
+                                fin[edge, node] += flux;
+                                break;
                             }
                         default:
                             throw new NotImplementedException();
@@ -1301,13 +1306,11 @@ namespace BoSSS.Solution.NSECommon {
                         case IncompressibleBcType.NavierSlip_Linear: {
                                 throw new NotImplementedException("TODO");
                             }
+                        case IncompressibleBcType.Pressure_Dirichlet:
                         case IncompressibleBcType.Outflow:
                         case IncompressibleBcType.Pressure_Outlet: {
                                 // do nothing
                                 break;
-                            }
-                        case IncompressibleBcType.Pressure_Dirichlet: {
-                                throw new NotImplementedException("TODO");
                             }
                         default:
                             throw new NotImplementedException();
@@ -1423,6 +1426,7 @@ namespace BoSSS.Solution.NSECommon {
                         case IncompressibleBcType.NavierSlip_Linear: {
                                 throw new NotImplementedException("TODO");
                             }
+                        case IncompressibleBcType.Pressure_Dirichlet:
                         case IncompressibleBcType.Outflow:
                         case IncompressibleBcType.Pressure_Outlet: {
                                 // Atmospheric outlet/pressure outflow: hom. Neumann
@@ -1444,9 +1448,6 @@ namespace BoSSS.Solution.NSECommon {
                                 }
                                break;
 
-                            }
-                        case IncompressibleBcType.Pressure_Dirichlet: {
-                                throw new NotImplementedException("TODO");
                             }
                         default:
                             throw new NotImplementedException();
@@ -1717,6 +1718,13 @@ namespace BoSSS.Solution.NSECommon {
 
                                 break;
                             }
+                        case IncompressibleBcType.Pressure_Dirichlet:
+                        case IncompressibleBcType.Outflow:
+                        case IncompressibleBcType.Pressure_Outlet: {
+                                // do nothing
+                                break;
+                            }
+
                         case IncompressibleBcType.FreeSlip:
                         case IncompressibleBcType.SlipSymmetry: {
                                 throw new NotImplementedException("TODO");
@@ -1724,14 +1732,7 @@ namespace BoSSS.Solution.NSECommon {
                         case IncompressibleBcType.NavierSlip_Linear: {
                                 throw new NotImplementedException("TODO");
                             }
-                        case IncompressibleBcType.Outflow:
-                        case IncompressibleBcType.Pressure_Outlet: {
-                                // do nothing
-                                break;
-                            }
-                        case IncompressibleBcType.Pressure_Dirichlet: {
-                                throw new NotImplementedException("TODO");
-                            }
+                       
                         default:
                             throw new NotImplementedException();
                     }
@@ -1832,13 +1833,8 @@ namespace BoSSS.Solution.NSECommon {
                                 fin[edge, node] += flux  * (-2.0 / 3.0);
                                 break;
                             }
-                        case IncompressibleBcType.FreeSlip:
-                        case IncompressibleBcType.SlipSymmetry: {
-                                throw new NotImplementedException("TODO");
-                            }
-                        case IncompressibleBcType.NavierSlip_Linear: {
-                                throw new NotImplementedException("TODO");
-                            }
+
+                        case IncompressibleBcType.Pressure_Dirichlet:
                         case IncompressibleBcType.Outflow:
                         case IncompressibleBcType.Pressure_Outlet: {
                                 // Atmospheric outlet/pressure outflow: hom. Neumann
@@ -1849,7 +1845,7 @@ namespace BoSSS.Solution.NSECommon {
                                     // no boundary condition for the velocity (resp. velocity gradient) is imposed.
                                     double flux = 0.0;
                                     for(int d = 0; d < m_D; d++) {
-                                        flux -= viscosity * GradUin[d][edge, node, d] * efp.Normals[edge, node, m_iComp]* (-2.0 / 3.0);
+                                        flux -= viscosity * GradUin[d][edge, node, d] * efp.Normals[edge, node, m_iComp] * (-2.0 / 3.0);
                                     }
                                     fin[edge, node] += flux * base.m_alpha;
                                 } else {
@@ -1863,9 +1859,17 @@ namespace BoSSS.Solution.NSECommon {
 
 
                             }
-                        case IncompressibleBcType.Pressure_Dirichlet: {
+
+                        case IncompressibleBcType.FreeSlip:
+                        case IncompressibleBcType.SlipSymmetry: {
                                 throw new NotImplementedException("TODO");
                             }
+                        case IncompressibleBcType.NavierSlip_Linear: {
+                                throw new NotImplementedException("TODO");
+                            }
+
+                      
+                        
                         default:
                             throw new NotImplementedException();
                     }
