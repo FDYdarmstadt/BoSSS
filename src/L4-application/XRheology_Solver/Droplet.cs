@@ -145,8 +145,6 @@ namespace BoSSS.Application.XRheology_Solver {
             //C.PhysicalParameters.mu_B = 1;
             C.PhysicalParameters.beta_a = 0.0;
             C.PhysicalParameters.beta_b = 0.0;
-            C.AdvancedDiscretizationOptions.Penalty2 = 10;
-            //C.AdvancedDiscretizationOptions.PresPenalty2 = 10;
             double sigma = 1.0;
             C.PhysicalParameters.Sigma = sigma;
 
@@ -353,16 +351,19 @@ namespace BoSSS.Application.XRheology_Solver {
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 10;
-            C.NonLinearSolver.MinSolverIterations = 5;
+            C.NonLinearSolver.MinSolverIterations = 3;
             C.LinearSolver.MaxSolverIterations = 80;
-            C.LinearSolver.MinSolverIterations = 5;
+            C.LinearSolver.MinSolverIterations = 3;
             //C.Solver_MaxIterations = 80;
             C.NonLinearSolver.ConvergenceCriterion = 1e-9;
             C.LinearSolver.ConvergenceCriterion = 1e-9;
             //C.Solver_ConvergenceCriterion = 1e-9;
             C.LevelSet_ConvergenceCriterion = 1e-7;
 
-            // C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Viscoelastic;
+            C.AdvancedDiscretizationOptions.Penalty2 = 10;
+            //C.AdvancedDiscretizationOptions.PresPenalty2 = 10;
+
+            //C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Viscoelastic;
 
             //C.LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.PARDISO };
 

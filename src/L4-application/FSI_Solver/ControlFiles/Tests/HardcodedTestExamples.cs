@@ -811,7 +811,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.Material = true;
             double particleDensity = 1.0;
             C.hydrodynamicsConvergenceCriterion = 1e-3;
-            ParticleUnderrelaxationParam underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, 1, true);
+            ParticleUnderrelaxationParam underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, ParticleUnderrelaxationParam.UnderrelaxationMethod.ProcentualRelaxation, 1, true);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, false, false, underrelaxationParam, 1);
             // Particle Properties
             // =============================   
@@ -821,19 +821,6 @@ namespace BoSSS.Application.FSI_Solver {
             {
                 C.Particles.Add(new Particle_Ellipsoid(motion, 1, 0.4, new double[] { 0.0, 0.0 }, startAngl: 0, activeStress: 1e5));
             }
-            //Define level-set
-            double phiComplete(double[] X, double t)
-            {
-                //Generating the correct sign
-                int exp = C.Particles.Count - 1;
-                double ret = Math.Pow(-1, exp);
-                //Level-set function depending on # of particles
-                for (int i = 0; i < C.Particles.Count; i++)
-                {
-                    ret *= C.Particles[i].LevelSetFunction(X);
-                }
-                return ret;
-            }
             
             // Quadrature rules
             // =============================   
@@ -841,7 +828,6 @@ namespace BoSSS.Application.FSI_Solver {
             
             //Initial Values
             // =============================   
-            C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
             C.InitialValues_Evaluators.Add("VelocityX", X => 0);
             C.InitialValues_Evaluators.Add("VelocityY", X => 0);
 
@@ -969,7 +955,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.gravity = new double[] { 0, 0 };
             double particleDensity = 1.0;
             C.hydrodynamicsConvergenceCriterion = 1e-2;
-            ParticleUnderrelaxationParam underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, 9, true);
+            ParticleUnderrelaxationParam underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, ParticleUnderrelaxationParam.UnderrelaxationMethod.ProcentualRelaxation, 9, true);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, false, false, underrelaxationParam, 1);
             // Particle Properties
             // =============================   

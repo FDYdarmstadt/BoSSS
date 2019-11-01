@@ -600,6 +600,7 @@ namespace BoSSS.Solution.NSECommon {
 
                             // penalty
                             Acc -= muA * ((_uA[dN] - g_D) * inp.Normale[dN]) * ((_vA - 0) * inp.Normale[m_iComp]) * pnlty;
+                            Acc = 0;
                         }
                         break;
                     }

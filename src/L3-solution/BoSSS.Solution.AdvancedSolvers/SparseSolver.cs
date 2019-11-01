@@ -174,14 +174,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             switch (WhichSolver) {
                 case _whichSolver.PARDISO:
-                    SingletonPARDISO.SetParallelism(LinConfig.Parallelism);
+                    if (LinConfig != null) { SingletonPARDISO.SetParallelism(LinConfig.Parallelism); }
                     solver = new PARDISOSolver();
                     ((PARDISOSolver)solver).CacheFactorization = true;
                     ((PARDISOSolver)solver).UseDoublePrecision = true;
                     break;
 
                 case _whichSolver.MUMPS:
-                    SingletonMumps.SetParallelism(LinConfig.Parallelism);
+                    if (LinConfig != null) { SingletonMumps.SetParallelism(LinConfig.Parallelism); }
                     solver = new MUMPSSolver();
                     break;
 

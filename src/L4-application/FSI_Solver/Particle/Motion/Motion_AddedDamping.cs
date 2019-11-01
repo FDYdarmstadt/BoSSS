@@ -191,32 +191,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="P"></param>
         /// <param name="levelSetTracker"></param>
         /// <param name="fluidViscosity"></param>
-        public override void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker levelSetTracker, CellMask cutCells, double fluidViscosity, double fluidDensity, bool firstIteration, double dt) {
-            double[] tempForces = CalculateHydrodynamicForces(U, P, levelSetTracker, cutCells, fluidViscosity, fluidDensity, dt);
-            double tempTorque = CalculateHydrodynamicTorque(U, P, levelSetTracker, cutCells, fluidViscosity, dt);
-            HydrodynamicsPostprocessing(tempForces, tempTorque, firstIteration);
-        }
-
-        /// <summary>
-        /// Update Forces acting from fluid onto the particle
-        /// </summary>
-        /// <param name="U"></param>
-        /// <param name="P"></param>
-        /// <param name="levelSetTracker"></param>
-        /// <param name="cutCells"></param>
-        /// <param name="fluidViscosity"></param>
-        /// <param name="dt"></param>
-        protected override double[] CalculateHydrodynamicForces(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker levelSetTracker, CellMask cutCells, double fluidViscosity, double fluidDensity, double dt) {
-            int requiredOrder = U[0].Basis.Degree * 3 + 2;
-            SinglePhaseField[] uA = U.ToArray();
-            ConventionalDGField pA = P;
-            double[] tempForces = ForcesIntegration(uA, pA, levelSetTracker, cutCells, requiredOrder, fluidViscosity);
-            Force_MPISum(ref tempForces);
-            for (int d = 0; d < spatialDim; d++) {
-                tempForces[d] += (Density - fluidDensity) * ParticleArea * Gravity[d];
-            }
+        public override void UpdateForcesAndTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, bool firstIteration, double dt) {
+            double[] tempForces = CalculateHydrodynamicForces(hydrodynamicsIntegration, fluidDensity);
             ForceAddedDamping(ref tempForces, dt);
-            return tempForces;
+            double tempTorque = CalculateHydrodynamicTorque(hydrodynamicsIntegration);
+            TorqueAddedDamping(ref tempTorque, dt);
+            HydrodynamicsPostprocessing(tempForces, tempTorque);
         }
 
         /// <summary>
@@ -225,28 +205,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="dt"></param>
         /// <param name="forces"></param>
         private void ForceAddedDamping(ref double[] forces, double dt) {
-            for (int d = 0; d < spatialDim; d++) {
+            for (int d = 0; d < m_Dim; d++) {
                 forces[d] += m_AddedDampingCoefficient * dt * (AddedDampingTensor[0, d] * GetTranslationalAcceleration(0)[0] + AddedDampingTensor[1, d] * GetTranslationalAcceleration(0)[1] + AddedDampingTensor[d, 2] * GetRotationalAcceleration(0));
             }
-        }
-
-        /// <summary>
-        /// Update Torque acting from fluid onto the particle.
-        /// </summary>
-        /// <param name="U"></param>
-        /// <param name="P"></param>
-        /// <param name="levelSetTracker"></param>
-        /// <param name="cutCells"></param>
-        /// <param name="fluidViscosity"></param>
-        /// <param name="dt"></param>
-        protected override double CalculateHydrodynamicTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker levelSetTracker, CellMask cutCells, double fluidViscosity, double dt) {
-            int requiredOrder = U[0].Basis.Degree * 3 + 2;
-            SinglePhaseField[] UA = U.ToArray();
-            ConventionalDGField pA = P;
-            double tempTorque = TorqueIntegration(UA, pA, levelSetTracker, cutCells, requiredOrder, fluidViscosity);
-            Torque_MPISum(ref tempTorque);
-            TorqueAddedDamping(ref tempTorque, dt);
-            return tempTorque;
         }
 
         /// <summary>
