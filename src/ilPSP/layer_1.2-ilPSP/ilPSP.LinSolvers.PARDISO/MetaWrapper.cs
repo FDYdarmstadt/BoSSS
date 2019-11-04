@@ -21,6 +21,26 @@ using System.Text;
 
 namespace ilPSP.LinSolvers.PARDISO {
 
+    /// <summary>
+    /// Singleton pattern to control the instantiation of the PARDISO wrapper
+    /// </summary>
+    public static class SingletonPARDISO
+    {
+        static private string parallelism = "SEQ";
+
+        public static void SetParallelism(string si)
+        {
+            parallelism = si;
+        }
+
+        public static Wrapper_MKL Instance
+        {
+            get
+            {
+                return new Wrapper_MKL(parallelism);
+            }
+        }
+    }
 
     /// <summary>
     /// Another wrapper layer that encapsulates 
@@ -36,7 +56,7 @@ namespace ilPSP.LinSolvers.PARDISO {
 
         private void Init(Version __V) {
             switch (__V) {
-                case Version.MKL: if (mkl == null) mkl = new Wrapper_MKL(); break;
+                case Version.MKL: if (mkl == null) mkl = SingletonPARDISO.Instance; break;
                 case Version.v5: if (v5 == null) v5 = new Wrapper_v5(); break;
             }
         }
