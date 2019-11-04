@@ -21,39 +21,35 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
     {
         readonly VoronoiBoundary boundary;
 
-        readonly PeriodicBoundaryConverter periodicBoundaryConverter;
+        readonly BoundaryConverter boundaryConverter;
 
-        public GridConverter(VoronoiBoundary boundary, PeriodicBoundaryConverter converter = null)
+        public GridConverter(VoronoiBoundary boundary, PeriodicBoundary periodicBoundary = null)
         {
             this.boundary = boundary;
-            this.periodicBoundaryConverter = converter;
+            boundaryConverter = new BoundaryConverter(boundary, periodicBoundary);
         }
 
         public VoronoiGrid ConvertToVoronoiGrid(
             Mesh<T> mesh)
         {
-            (GridCommons grid, int[][] aggregation) = SetupGridCommonsAndAggregation(mesh.Cells);
-
-            IList<T> nodeList = mesh.Nodes;
-            IList<VoronoiNode> voronoiNodeList = CastAsVoronoiNodes(nodeList);
-            VoronoiNodes nodes = new VoronoiNodes(voronoiNodeList);
+            (GridCommons grid, int[][] aggregation) = ExtractGridCommonsAndCellAggregation(mesh.Cells, boundaryConverter);
+            VoronoiNodes nodes = ExtractVoronoiNodes(mesh);
             VoronoiGrid voronoiGrid = new VoronoiGrid(grid, aggregation, nodes, boundary);
 
             return voronoiGrid;
         }
 
-        (GridCommons, int[][]) SetupGridCommonsAndAggregation(IReadOnlyList<MeshCell<T>> cells)
+        static VoronoiNodes ExtractVoronoiNodes(Mesh<T> mesh)
         {
-            (GridCommons grid, int[][] aggregation) = ExtractGridCommonsAndCellAggregation(cells);
-            if (boundary.EdgeTagNames != null)
-            {
-                RegisterEdgeTagNames(grid, boundary.EdgeTagNames);
-                periodicBoundaryConverter.RegisterPeriodicBoundariesTo(grid);
-            }
-            return (grid, aggregation);
+            IList<T> nodeList = mesh.Nodes;
+            IList<VoronoiNode> voronoiNodeList = CastAsVoronoiNodes(nodeList);
+            VoronoiNodes nodes = new VoronoiNodes(voronoiNodeList);
+            return nodes;
         }
 
-        (GridCommons, int[][]) ExtractGridCommonsAndCellAggregation(IEnumerable<MeshCell<T>> cells)
+        static (GridCommons, int[][]) ExtractGridCommonsAndCellAggregation(
+            IEnumerable<MeshCell<T>> cells,
+            BoundaryConverter boundaryConverter)
         {
             List<BoSSS.Foundation.Grid.Classic.Cell> cells_GridCommons = new List<BoSSS.Foundation.Grid.Classic.Cell>();
             List<int[]> aggregation = new List<int[]>();
@@ -112,35 +108,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
                     //Save BoundaryInformation
                     if (isBoundaryCell)
                     {
-                        List<FaceAndEdgeTag> tags = GetBoundaryIndices(cell, iV0, iV1, iV2);
-                        foreach (FaceAndEdgeTag tag in tags)
-                        {
-                            byte edgeTag = boundary.GetEdgeTagOfPolygonEdge(tag.BoundaryEdgeNumber);
-                            int faceIndice = tag.Face;
-                            CellFaceTag CFT = new CellFaceTag()
-                            {
-                                EdgeTag = edgeTag,
-                                FaceIndex = faceIndice,
-                                NeighCell_GlobalID = long.MinValue
-                            };
-                            CFT.AddToArray(ref Cj.CellFaceTags);
-                        }
-                        for(int i = 0; i < tags.Count; ++i)
-                        {
-                            CellFaceTag CFT = Cj.CellFaceTags[i];
-                            FaceAndEdgeTag FET = tags[i];
-                            if (CFT.EdgeTag >= GridCommons.FIRST_PERIODIC_BC_TAG)
-                            {
-                                Debug.Assert(periodicBoundaryConverter != null);
-                                periodicBoundaryConverter.SetPeriodicData(
-                                    i,
-                                    Cj.CellFaceTags,
-                                    FET.BoundaryEdgeNumber,
-                                    Cj.GlobalID,
-                                    cell.Edges[iVtxTri[iTri, FET.Face]].Start.ID,
-                                    cell.Edges[iVtxTri[iTri, FET.Face]].Twin.Start.ID);
-                            }
-                        }
+                        List<BoundaryFace> tags = GetBoundaryFacesOf(cell, iV0, iV1, iV2);
+                        boundaryConverter.RegisterBoundaries(Cj, tags);
                     }
                     Cj.NodeIndices = new int[]
                     {
@@ -155,19 +124,14 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
             {
                 Cells = cells_GridCommons.ToArray()
             };
+            boundaryConverter.RegisterEdgesTo(grid);
             return (grid, aggregation.ToArray());
         }
 
-        struct FaceAndEdgeTag
-        {
-            public int Face;
-            public int BoundaryEdgeNumber;
-        }
-
-        static List<FaceAndEdgeTag> GetBoundaryIndices(MeshCell<T> cell, int iV0, int iV1, int iV2)
+        static List<BoundaryFace> GetBoundaryFacesOf(MeshCell<T> cell, int iV0, int iV1, int iV2)
         {
             //Indices are debug magic. FML
-            List<FaceAndEdgeTag> tags = new List<FaceAndEdgeTag>(3);
+            List<BoundaryFace> tags = new List<BoundaryFace>(3);
             int max = cell.Edges.Length;
             if (iV0 + 1 == iV1 || iV0 - max + 1 == iV1)
             {
@@ -188,10 +152,12 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
                 Edge<T> edge = cell.Edges[iV];
                 if (edge.IsBoundary)
                 {
-                    FaceAndEdgeTag tag = new FaceAndEdgeTag
+                    BoundaryFace tag = new BoundaryFace
                     {
                         Face = iFace,
-                        BoundaryEdgeNumber = edge.BoundaryEdgeNumber
+                        BoundaryEdgeNumber = edge.BoundaryEdgeNumber,
+                        ID = edge.Start.ID,
+                        NeighborID = edge.Twin.Start.ID
                     };
                     tags.Add(tag);
                 }
@@ -206,14 +172,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
                     return true;
             }
             return false;
-        }
-
-        private static void RegisterEdgeTagNames(GridCommons grid, IDictionary<byte, string> EdgeTagNames)
-        {
-            foreach (KeyValuePair<byte, string> tagName in EdgeTagNames)
-            {
-                grid.EdgeTagNames.Add(tagName);
-            }
         }
         
         static IList<VoronoiNode> CastAsVoronoiNodes(IList<T> nodes)

@@ -64,6 +64,8 @@
     <Compile Include="Grid2D.cs" />
     <Compile Include="Grid3D.cs" />
     <Compile Include="GridRefinementController.cs" />
+    <Compile Include="VoronoiMeshing\Converter\BoundaryConverter.cs" />
+    <Compile Include="VoronoiMeshing\Converter\BoundaryFace.cs" />
     <Compile Include="VoronoiMeshing\Converter\EdgePairer.cs" />
     <Compile Include="VoronoiMeshing\MatlabColorPalette.cs" />
     <Compile Include="VoronoiMeshing\MatlabPlotter.cs" />

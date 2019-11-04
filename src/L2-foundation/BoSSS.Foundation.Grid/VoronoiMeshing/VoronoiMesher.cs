@@ -62,7 +62,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         {
             if(mesherSettings.PeriodicBoundaryMap != null)
             {
-                PeriodicBoundaryConverter converter = new PeriodicBoundaryConverter(
+                PeriodicBoundary converter = new PeriodicBoundary(
                     settings.Boundary.EdgeTags,
                     mesherSettings.PeriodicBoundaryMap,
                     mesherSettings.PeriodicTransformations);

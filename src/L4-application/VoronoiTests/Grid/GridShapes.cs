@@ -34,6 +34,28 @@ namespace VoronoiTests.Grid
             return polygonBoundary;
         }
 
+        public static Vector[] FShape()
+        {
+            Vector[] F = new[]
+            {
+                new Vector(0, 2.5),
+                new Vector(2.5, 2.5),
+                new Vector(2.5, 1),
+                new Vector(1.5, 1),
+                new Vector(1.5, 0),
+                new Vector(2, 0),
+                new Vector(2, -1),
+                new Vector(1.5, -1),
+                new Vector(1.5, -3),
+                new Vector(0, -3),
+                new Vector(0, -1),
+                new Vector(-0.5, -1),
+                new Vector(-0.5, 0),
+                new Vector(0, 0.0)
+            };
+            return F;
+        }
+
         public static Vector[] NGon(double radius)
         {
             throw new NotImplementedException();
