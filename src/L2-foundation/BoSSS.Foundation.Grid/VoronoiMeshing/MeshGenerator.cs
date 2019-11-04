@@ -50,7 +50,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             
             IDMesh<T> mesh = MIConvexHullMeshGenerator.CreateMesh(nodes);
             cutter.CutOut(mesh, boundary, firstCellNode_indice);
-
+            
             return mesh;
         }
 

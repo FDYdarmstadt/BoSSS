@@ -14,7 +14,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             this.boundary = boundary;
         }
 
-        public void InitializePeriodic(MeshingAlgorithm.Settings settings)
+        public void InitializePeriodicFields(MeshingAlgorithm.Settings settings)
         {
             IDictionary<int, int> periodicBoundaryMap = ExtractPeriodicBoundaryMap(boundary);
             if (periodicBoundaryMap.Count > 0)

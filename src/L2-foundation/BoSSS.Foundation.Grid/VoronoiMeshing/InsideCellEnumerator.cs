@@ -120,7 +120,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 foreach (Edge<T> edge in current.Edges)
                 {
                     Edge<T> newEdge = edge.Twin;
-                    if (!visited.Contains(newEdge.Cell.ID) && !newEdge.IsBoundary)
+                    if (newEdge != null && !newEdge.IsBoundary && !visited.Contains(newEdge.Cell.ID) )
                     {
                         cells.Enqueue(newEdge.Cell);
                         visited.Add(newEdge.Cell.ID);

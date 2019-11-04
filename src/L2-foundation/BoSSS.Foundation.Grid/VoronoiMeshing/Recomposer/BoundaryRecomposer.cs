@@ -36,13 +36,18 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             CellPairCollection<T> candidates = CellPairCollecter<T>.FollowBoundaryAndCollectCandidates(periodicEdges);
             MeshCellCopier<T> cellCopier = new MeshCellCopier<T>(mesh);
             BoundaryCellRemover<T> remover = new BoundaryCellRemover<T>(mesh, firstCellNodeIndice);
+            //MatlabPlotter plotter = new MatlabPlotter();
+            //int i = 0;
 
-            foreach (CellPairCollection<T>.EdgeCombo mergePair in MergePairsOfEachEdge(candidates, cellCopier, remover))
+            foreach (CellPairCollection<T>.EdgeCombo mergePair in CreateMergePairsOfEachEdge(candidates, cellCopier, remover))
             {
                 Debug.Assert(CellNodePositionsMatch(mergePair));
                 InitializeGlueMapOf(mergePair);
                 MergeAtBoundary(mergePair);
+                //plotter.Plot(mesh, "intermediate" + i);
+                //++i;
             }
+            //plotter.Plot(mesh, "final");
         }
 
         void ExtractEdgeGlueMap(CellPairCollection<T> pairsForMerging)
@@ -94,7 +99,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             return map;
         }
 
-        IEnumerable<CellPairCollection<T>.EdgeCombo> MergePairsOfEachEdge(
+        IEnumerable<CellPairCollection<T>.EdgeCombo> CreateMergePairsOfEachEdge(
             CellPairCollection<T> candidates,
             MeshCellCopier<T> cellCopier,
             BoundaryCellRemover<T> remover)
@@ -138,11 +143,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             for (int i = 0; i < cell.Vertices.Length; ++i)
             {
                 cell.Vertices[i].Position = transformation.Transform(cell.Vertices[i].Position);
-            }
-            foreach (Edge<T> edge in cell.Edges)
-            {
-                edge.Start.Position = transformation.Transform(edge.Start.Position);
-                edge.End.Position = transformation.Transform(edge.End.Position);
             }
             cell.Node.Position = transformation.Transform(cell.Node.Position);
         }

@@ -64,8 +64,12 @@
     <Compile Include="Grid2D.cs" />
     <Compile Include="Grid3D.cs" />
     <Compile Include="GridRefinementController.cs" />
+    <Compile Include="VoronoiMeshing\Converter\EdgePairer.cs" />
+    <Compile Include="VoronoiMeshing\MatlabColorPalette.cs" />
     <Compile Include="VoronoiMeshing\MatlabPlotter.cs" />
     <Compile Include="VoronoiMeshing\MeshCellCopier.cs" />
+    <Compile Include="VoronoiMeshing\Converter\PeriodicBoundary.cs" />
+    <Compile Include="VoronoiMeshing\Converter\PeriodicBoundaryConverter.cs" />
     <Compile Include="VoronoiMeshing\PeriodicDataExtracter.cs" />
     <Compile Include="VoronoiMeshing\Recomposer\BoundaryCellMerger.cs" />
     <Compile Include="VoronoiMeshing\Recomposer\BoundaryEdgeFinder.cs" />
@@ -105,7 +109,7 @@
     <Compile Include="VoronoiMeshing\Recomposer\Welder.cs" />
     <Compile Include="VoronoiMeshing\Transformation.cs" />
     <Compile Include="VoronoiMeshing\VoronoiMesher.cs" />
-    <Compile Include="VoronoiMeshing\GridConverter.cs" />
+    <Compile Include="VoronoiMeshing\Converter\GridConverter.cs" />
     <Compile Include="VoronoiMeshing\Cutter\LineIntersection.cs" />
     <Compile Include="VoronoiMeshing\Cutter\MeshIntersecter.cs" />
     <Compile Include="VoronoiMeshing\Cutter\MeshMethods.cs" />

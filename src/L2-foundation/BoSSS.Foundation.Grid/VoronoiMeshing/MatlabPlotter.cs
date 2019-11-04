@@ -13,7 +13,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         /// <summary>
         /// MatlabColor 
         /// </summary>
-        public string CellColor;
+        public MatlabColor CellColor;
 
         /// <summary>
         /// https://de.mathworks.com/help/matlab/ref/scatter.html
@@ -24,7 +24,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         public MatlabPlotter()
         {
-            CellColor = "[0 0.4470 0.7410]";
+            CellColor = MatlabColorPalette.Silver();
             NodePlotSettings = "30, 'k'";
             Path = "./";
         }
@@ -32,7 +32,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         public void Plot<T>(Mesh<T> mesh, string name)
             where T : ILocatable
         {
-
             using (BatchmodeConnector bmc = new BatchmodeConnector(Path))
             {
                 bmc.Cmd("hold on");

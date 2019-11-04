@@ -6,7 +6,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
     public class MappedVoronoiGrid
     {
         public VoronoiGrid Result;
+
         public ConnectionMap InputNodesToResultNodes;
+
         public ConnectionMap ResultNodesToInputNodes;
     }
 

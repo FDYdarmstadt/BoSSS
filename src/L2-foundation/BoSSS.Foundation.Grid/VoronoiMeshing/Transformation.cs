@@ -48,5 +48,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             Vector result = Matrix * vtx + AffineTransformation;
             return result;
         }
+
+        public static Transformation Combine(Transformation a, Transformation b)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

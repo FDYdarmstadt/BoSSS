@@ -18,6 +18,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
 
         int targetBoundaryEdgeNumber;
 
+        MeshCell<T> targetCell;
+
         public BoundaryCellMerger()
         {
             newEdges = new LinkedList<Edge<T>>();
@@ -44,6 +46,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             //Wer ist der coolste hier?
             AssertCorrectness(source, sourceEdgeIndice, target, targetEdgeIndice);
             newEdges.Clear();
+            targetCell = target;
 
             //Todo: Add convolution stuff, if weld is longer than 1.
             Setup(source.Edges, sourceEdgeIndice, target.Edges, targetEdgeIndice);
@@ -105,11 +108,36 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
 
         void AddSourceEdge(Edge<T> sourceEdge)
         {
+            sourceEdge.Cell = targetCell;
             if (newEdges.Count != 0)
             {
                 sourceEdge.Start = newEdges.First.Value.End;
             }
-            sourceEdge.BoundaryEdgeNumber = targetBoundaryEdgeNumber;
+            Edge<T> neighborInUntransformed = sourceEdge.Twin.Twin.Twin;
+            Edge<T> neighbor = sourceEdge.Twin;
+            if (neighborInUntransformed.Start.ID != neighbor.Start.ID)
+            {
+                //pointer magic
+                sourceEdge.Twin.Twin.Twin = sourceEdge.Twin;
+
+                sourceEdge.Twin = neighborInUntransformed;
+                //sourceEdge.Cell = sourceEdge.Twin.Twin.Cell;
+                sourceEdge.Twin.Twin = sourceEdge;
+
+                sourceEdge.Start.ID = sourceEdge.Twin.End.ID;
+                sourceEdge.End.ID = sourceEdge.Twin.Start.ID;
+
+                sourceEdge.IsBoundary = false;
+                sourceEdge.BoundaryEdgeNumber = -1;
+                sourceEdge.Twin.IsBoundary = false;
+                sourceEdge.Twin.BoundaryEdgeNumber = -1;
+            }
+            else
+            {
+                sourceEdge.Twin.Twin = sourceEdge;
+                sourceEdge.BoundaryEdgeNumber = targetBoundaryEdgeNumber;
+                sourceEdge.IsBoundary = true;
+            }
             newEdges.AddFirst(sourceEdge);
         }
 

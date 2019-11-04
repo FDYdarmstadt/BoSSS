@@ -37,11 +37,21 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             {
                 Node = Clone(cell.Node),
                 type = cell.type,
-                ID = cell.ID
+                ID = cell.ID,
+                Vertices = Clone(cell.Vertices),
+                Edges = Clone(cell.Edges)
             };
-            clone.Vertices = Clone(cell.Vertices);
-            clone.Edges = Clone(cell.Edges);
+            FuseEdgeVertices(clone.Edges, clone.Vertices);
             return clone;
+        }
+
+        static void FuseEdgeVertices<T>(Edge<T>[] edges, Vertex[] vertices)
+        {
+            for(int i = 0; i < edges.Length; ++i)
+            {
+                edges[i].Start = vertices[i];
+                edges[i].End = vertices[( i + 1 ) % edges.Length];
+            }
         }
 
         public static T Clone<T>(T node)
@@ -52,7 +62,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return clone;
         }
 
-        public static Edge<T>[] Clone<T>(IList<Edge<T>> edges)
+        static Edge<T>[] Clone<T>(IList<Edge<T>> edges)
         {
             Edge<T>[] clones = new Edge<T>[edges.Count];
             for (int i = 0; i < edges.Count; ++i)
@@ -62,21 +72,21 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return clones;
         }
 
-        public static Edge<T> Clone<T>(Edge<T> edge)
+        static Edge<T> Clone<T>(Edge<T> edge)
         {
             Edge<T> clone = new Edge<T>()
             {
                 IsBoundary = edge.IsBoundary,
                 Cell = edge.Cell,
                 BoundaryEdgeNumber = edge.BoundaryEdgeNumber,
-                Start = Clone(edge.Start),
-                End = Clone(edge.End),
+                Start = edge.Start,
+                End = edge.End,
                 Twin = edge.Twin
             };
             return clone;
         }
 
-        public static Vertex[] Clone(IList<Vertex> vertices)
+        static Vertex[] Clone(IList<Vertex> vertices)
         {
             Vertex[] clones = new Vertex[vertices.Count];
             for (int i = 0; i < vertices.Count; ++i)
@@ -86,7 +96,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return clones;
         }
 
-        public static Vertex Clone(Vertex vertex)
+        static Vertex Clone(Vertex vertex)
         {
             Vertex clone = new Vertex
             {

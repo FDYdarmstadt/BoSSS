@@ -23,6 +23,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             meshCellsToRemove.Enqueue((cells, boundaryEdgeNumber));
         }
 
+        public void SetCellsAsBoundary(IList<MeshCell<T>> cells, int boundaryEdgeNumber)
+        {
+            SetAsBoundary(cells, boundaryEdgeNumber);
+        }
+
         void SetAsBoundary(IList<MeshCell<T>> cells, int boundaryEdgeNumber)
         {
             foreach (MeshCell<T> cell in cells)
@@ -36,10 +41,14 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             foreach (Edge<T> edge in edges)
             {
                 edge.IsBoundary = true;
+                edge.BoundaryEdgeNumber = boundaryEdgeNumber;
                 if (edge.Twin != null)
                 {
-                    edge.Twin.BoundaryEdgeNumber = boundaryEdgeNumber;
-                    edge.Twin.IsBoundary = true;
+                    if(edge.Twin.Start.ID == edge.End.ID || edge.Twin.End.ID == edge.Start.ID)
+                    {
+                        edge.Twin.BoundaryEdgeNumber = boundaryEdgeNumber;
+                        edge.Twin.IsBoundary = true;
+                    }
                 }
             }
         }

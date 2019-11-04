@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System;
+using BoSSS.Foundation.Grid.Voronoi.Meshing.Converter;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
@@ -19,7 +20,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         MeshingAlgorithm.Settings mesherSettings;
 
-        Settings settings;
+        readonly Settings settings;
 
         GridConverter<T> gridConverter; 
 
@@ -54,12 +55,23 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 FirstCellNode_indice = settings.FirstCellNode_indice,
             };
             PeriodicDataExtracter periodicDataExtracter = new PeriodicDataExtracter(settings.Boundary);
-            periodicDataExtracter.InitializePeriodic(mesherSettings);
+            periodicDataExtracter.InitializePeriodicFields(mesherSettings);
         }
 
         void CreateGridConverter()
         {
-            gridConverter = new GridConverter<T>(settings.Boundary);
+            if(mesherSettings.PeriodicBoundaryMap != null)
+            {
+                PeriodicBoundaryConverter converter = new PeriodicBoundaryConverter(
+                    settings.Boundary.EdgeTags,
+                    mesherSettings.PeriodicBoundaryMap,
+                    mesherSettings.PeriodicTransformations);
+                gridConverter = new GridConverter<T>(settings.Boundary, converter);
+            }
+            else
+            {
+                gridConverter = new GridConverter<T>(settings.Boundary);
+            }
         }
 
         protected void CreateMesh(List<T> nodes)
@@ -70,7 +82,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         public VoronoiGrid CreateGrid(List<T> nodes)
         {
             CreateMesh(nodes); 
-            VoronoiGrid grid = gridConverter.Convert(mesh);
+            VoronoiGrid grid = gridConverter.ConvertToVoronoiGrid(mesh);
             return grid;
         }
     }

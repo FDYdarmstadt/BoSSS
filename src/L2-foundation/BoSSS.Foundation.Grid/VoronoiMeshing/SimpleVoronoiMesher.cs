@@ -1,4 +1,4 @@
-﻿using BoSSS.Foundation.Voronoi;
+﻿using BoSSS.Foundation.Grid.Voronoi.Meshing.Converter;
 using BoSSS.Platform.LinAlg;
 using System.Collections.Generic;
 
