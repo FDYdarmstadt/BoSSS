@@ -1197,20 +1197,26 @@ namespace BoSSS.Application.FSI_Solver {
         /// Builds the array for the post-collision communication between MPI-processes.
         /// </summary>
         public double[] BuildSendArray() {
-            double[] dataSend = new double[13];
+            double[] dataSend = new double[19];
             dataSend[0] = m_RotationalVelocity[0];
-            dataSend[1] = m_TranslationalVelocity[0][0];
-            dataSend[2] = m_TranslationalVelocity[0][1];
-            dataSend[3] = m_Angle[0];
-            dataSend[4] = m_Position[0][0];
-            dataSend[5] = m_Position[0][1];
-            dataSend[6] = m_CollisionTimestep;
-            dataSend[7] = m_RotationalVelocity[1];
-            dataSend[8] = m_TranslationalVelocity[1][0];
-            dataSend[9] = m_TranslationalVelocity[1][1];
-            dataSend[10] = m_Angle[1];
-            dataSend[11] = m_Position[1][0];
-            dataSend[12] = m_Position[1][1];
+            dataSend[1] = m_RotationalAcceleration[0];
+            dataSend[2] = m_TranslationalVelocity[0][0];
+            dataSend[3] = m_TranslationalVelocity[0][1];
+            dataSend[4] = m_TranslationalAcceleration[0][0];
+            dataSend[5] = m_TranslationalAcceleration[0][1];
+            dataSend[6] = m_Angle[0];
+            dataSend[7] = m_Position[0][0];
+            dataSend[8] = m_Position[0][1];
+            dataSend[9] = m_CollisionTimestep;
+            dataSend[10] = m_RotationalVelocity[1];
+            dataSend[11] = m_TranslationalVelocity[1][0];
+            dataSend[12] = m_TranslationalVelocity[1][1];
+            dataSend[13] = m_Angle[1];
+            dataSend[14] = m_Position[1][0];
+            dataSend[15] = m_Position[1][1];
+            dataSend[16] = m_RotationalAcceleration[1];
+            dataSend[17] = m_TranslationalAcceleration[1][0];
+            dataSend[18] = m_TranslationalAcceleration[1][1];
             return dataSend;
         }
 
@@ -1219,18 +1225,24 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         public void WriteReceiveArray(double[] dataReceive, int offset) {
             m_RotationalVelocity[0] = dataReceive[0 + offset];
-            m_TranslationalVelocity[0][0] = dataReceive[1 + offset];
-            m_TranslationalVelocity[0][1] = dataReceive[2 + offset];
-            m_Angle[0] = dataReceive[3 + offset];
-            m_Position[0][0] = dataReceive[4 + offset];
-            m_Position[0][1] = dataReceive[5 + offset];
-            m_CollisionTimestep = dataReceive[6 + offset];
-            m_RotationalVelocity[1] = dataReceive[7 + offset];
-            m_TranslationalVelocity[1][0] = dataReceive[8 + offset];
-            m_TranslationalVelocity[1][1] = dataReceive[9 + offset];
-            m_Angle[1] = dataReceive[10 + offset];
-            m_Position[1][0] = dataReceive[11 + offset];
-            m_Position[1][1] = dataReceive[12 + offset];
+            m_RotationalAcceleration[0] = dataReceive[1 + offset];
+            m_TranslationalVelocity[0][0] = dataReceive[2 + offset];
+            m_TranslationalVelocity[0][1] = dataReceive[3 + offset];
+            m_TranslationalAcceleration[0][0] = dataReceive[4 + offset];
+            m_TranslationalAcceleration[0][1] = dataReceive[5 + offset];
+            m_Angle[0] = dataReceive[6 + offset];
+            m_Position[0][0] = dataReceive[7 + offset];
+            m_Position[0][1] = dataReceive[8 + offset];
+            m_CollisionTimestep = dataReceive[9 + offset];
+            m_RotationalVelocity[1] = dataReceive[10 + offset];
+            m_TranslationalVelocity[1][0] = dataReceive[11 + offset];
+            m_TranslationalVelocity[1][1] = dataReceive[12 + offset];
+            m_Angle[1] = dataReceive[13 + offset];
+            m_Position[1][0] = dataReceive[14 + offset];
+            m_Position[1][1] = dataReceive[15 + offset];
+            m_RotationalAcceleration[1] = dataReceive[16 + offset];
+            m_TranslationalAcceleration[1][0] = dataReceive[17 + offset];
+            m_TranslationalAcceleration[1][1] = dataReceive[18 + offset];
         }
     }
 }

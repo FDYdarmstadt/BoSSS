@@ -28,7 +28,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="useAddaptiveUnderrelaxation">
         /// Set true if you want addaptive underrelaxation.
         /// </param>
-        public ParticleUnderrelaxationParam(double convergenceLimit, UnderrelaxationMethod underrelaxationMethod = UnderrelaxationMethod.ProcentualRelaxation, double relaxationFactor = 0.1, bool useAddaptiveUnderrelaxation = true) {
+        public ParticleUnderrelaxationParam(double convergenceLimit, UnderrelaxationMethod underrelaxationMethod = UnderrelaxationMethod.Jacobian, double relaxationFactor = 0.1, bool useAddaptiveUnderrelaxation = true) {
             m_ConvergenceLimit = convergenceLimit;
             m_UnderrelaxationFactor = relaxationFactor;
             m_UseAdaptiveUnderrelaxation = useAddaptiveUnderrelaxation;
@@ -40,7 +40,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             AitkenRelaxation = 1,
 
-            //MinimalPolynomial = 2
+            Jacobian = 2
 
         }
 

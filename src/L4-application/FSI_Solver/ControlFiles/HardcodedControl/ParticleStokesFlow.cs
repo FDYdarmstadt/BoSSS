@@ -89,7 +89,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control WetParticleWallCollision(int k = 3, double DensityFactor = 2500, int amrLevel = 4) {
+        public static FSI_Control WetParticleWallCollision(int k = 3, double DensityFactor = 2, int amrLevel = 4) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "wetParticleWallCollision");
             C.SetSaveOptions(@"D:\BoSSS_databases\wetParticleCollision", 1);
 
@@ -100,7 +100,7 @@ namespace BoSSS.Application.FSI_Solver {
                 "Pressure_Outlet_upper"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
+            C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 2, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel);
             C.hydrodynamicsConvergenceCriterion = 1e-6;
 
@@ -142,7 +142,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Coupling Properties
             // =============================
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
             C.maxIterationsFullyCoupled = 2000;
 

@@ -55,9 +55,9 @@ namespace BoSSS.Application.FSI_Solver {
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.mu_A = 100;
+            C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.IncludeConvection = false;
-            double particleDensity = 1.01;
+            double particleDensity = 1;
             C.gravity = new double[] { 0, 0 };
 
             // Particle Properties
@@ -81,7 +81,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(dt: 1e-3, noOfTimesteps: int.MaxValue);
+            C.SetTimesteps(dt: 1e-4, noOfTimesteps: int.MaxValue);
 
             return C;
         }
