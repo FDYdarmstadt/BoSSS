@@ -155,6 +155,11 @@ namespace BoSSS.Solution.XheatCommon {
             }
         }
 
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
+
         public TermActivationFlags VolTerms {
             get {
                 return TermActivationFlags.UxGradV;
@@ -292,7 +297,10 @@ namespace BoSSS.Solution.XheatCommon {
                 return TermActivationFlags.UxV;
             }
         }
-
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
         public IList<string> ArgumentOrdering {
             get {
                 return VariableNames.HeatFluxVector(m_D);
@@ -381,7 +389,10 @@ namespace BoSSS.Solution.XheatCommon {
         public SpeciesId validSpeciesId {
             get { return m_spcId; }
         }
-
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
         /// <summary>
         /// Choosing the required terms (These Flags control, whether certain terms are evaluated during quadrature of the forms)
@@ -572,7 +583,10 @@ namespace BoSSS.Solution.XheatCommon {
                 return new string[] { };
             }
         }
-
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT,
             double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {

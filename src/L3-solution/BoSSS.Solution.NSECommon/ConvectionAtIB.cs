@@ -68,7 +68,14 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
                 return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.Velocity0MeanVector(m_D));
             }
         }
-
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation {
+            get {
+                return false;
+            }
+        }
         public int LevelSetIndex {
             get { return 0; }
         }

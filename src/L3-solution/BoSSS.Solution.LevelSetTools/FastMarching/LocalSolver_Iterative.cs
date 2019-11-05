@@ -98,6 +98,10 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                     return new string[] { "Phi0", "dPhi0_dx", "dPhi0_dy" };
                 }
             }
+            /// <summary>
+            /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+            /// </summary>
+            bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
             public TermActivationFlags BoundaryEdgeTerms {
                 get {
@@ -240,6 +244,11 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                     return new string[] { "dPhi_dx0", "dPhi_dx1" };
                 }
             }
+            /// <summary>
+            /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+            /// </summary>
+            bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
+
         }
 
         /// <summary>

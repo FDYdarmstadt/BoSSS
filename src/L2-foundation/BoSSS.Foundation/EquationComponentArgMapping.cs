@@ -95,7 +95,7 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
                 }
 #else
 
-                if (eqComp is T) {
+                if (eqComp is T && !eqComp.IgnoreVectorizedImplementation) {
                     T _eqComp = (T)eqComp;
 
                     if (F == null || F(_eqComp)) {

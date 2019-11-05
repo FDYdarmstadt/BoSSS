@@ -74,6 +74,11 @@ namespace CNS.IBM {
                 return CompressibleEnvironment.PrimalArgumentOrdering;
             }
         }
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
+
 
         /// <summary>
         /// The level set gradient

@@ -150,6 +150,11 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
                 return new string[] { "Extension" };
             }
         }
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
+
 
         /// <summary>
         /// <see cref="IEquationComponent.ParameterOrdering"/>
