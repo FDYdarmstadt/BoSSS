@@ -228,6 +228,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
                 return null;
             }
         }
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
         /*
 
@@ -391,7 +395,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             }
         } */
 
-        
+
     }
 
 

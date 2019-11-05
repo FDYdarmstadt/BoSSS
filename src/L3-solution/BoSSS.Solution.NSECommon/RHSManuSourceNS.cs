@@ -75,7 +75,14 @@ namespace BoSSS.Solution.NSECommon {
             get { return null; }
         }
 
-
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation {
+            get {
+                return false;
+            }
+        }
         /// <summary>
         /// None
         /// </summary>

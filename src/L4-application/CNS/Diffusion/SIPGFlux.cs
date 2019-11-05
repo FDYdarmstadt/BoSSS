@@ -176,6 +176,10 @@ namespace CNS.Diffusion {
             }
         }
 
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
         /// <summary>
         /// Implementation of the SIPG volume fluxes

@@ -115,6 +115,10 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                     return null;
                 }
             }
+            /// <summary>
+            /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+            /// </summary>
+            bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
             public TermActivationFlags VolTerms {
                 get {
@@ -198,6 +202,10 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                     return null;
                 }
             }
+            /// <summary>
+            /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+            /// </summary>
+            bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
             public TermActivationFlags VolTerms {
                 get {

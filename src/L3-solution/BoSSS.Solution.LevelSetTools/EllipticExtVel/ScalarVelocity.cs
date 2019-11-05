@@ -88,6 +88,10 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
                 return ArrayTools.Cat<string>(VariableNames.VelocityVector(D));
             }
         }
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
         public int LevelSetIndex {
             get { return 0; }

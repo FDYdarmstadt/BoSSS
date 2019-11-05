@@ -76,6 +76,10 @@ namespace BoSSS.Solution.RheologyCommon {
             }
         }
 
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
         /// <summary>
         /// default-implementation

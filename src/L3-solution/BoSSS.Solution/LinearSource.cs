@@ -54,7 +54,11 @@ namespace BoSSS.Solution.Utils {
             get;
         }
 
-
+        bool IEquationComponent.IgnoreVectorizedImplementation {
+            get {
+                return false;
+            }
+        }
         /// <summary>
         /// override this method to implement the linear source
         /// </summary>

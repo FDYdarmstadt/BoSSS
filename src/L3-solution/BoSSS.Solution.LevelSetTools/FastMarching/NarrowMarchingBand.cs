@@ -553,6 +553,11 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                     return new string[] { "ExtVelX", "ExtVelY" }; 
                 }
             }
+            /// <summary>
+            /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+            /// </summary>
+            bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
+
         }
 
         class LevelSetEvoTerm_Vector : IVolumeForm {
@@ -582,6 +587,11 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                     return new string[] { "dPhi_dx", "dPhi_dy", "ExtVelX", "ExtVelY" }; 
                 }
             }
+            /// <summary>
+            /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+            /// </summary>
+            bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
+
         }
 
 
@@ -612,6 +622,11 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                     return new string[] { "Src" };
                 }
             }
+            /// <summary>
+            /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+            /// </summary>
+            bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
+
 
         }
 
