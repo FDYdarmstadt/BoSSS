@@ -181,6 +181,10 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                             var solver = linsolver;
                             //var mgo = new MultigridOperator(m_AggBasisSeq, SolutionVec.Mapping, CurrentJac, null, m_MultigridOperatorConfig);
+                            //if (Precond != null) {
+                            //    Precond.Init(CurrentLin);
+                            //}
+
                             solver.Init(CurrentLin);
                             step.ClearEntries();
                             var check = f0.CloneAs();
