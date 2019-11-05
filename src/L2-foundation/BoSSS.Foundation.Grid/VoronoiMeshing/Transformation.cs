@@ -53,5 +53,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         {
             throw new NotImplementedException();
         }
+
+        public static Transformation GetReverse(Transformation a)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

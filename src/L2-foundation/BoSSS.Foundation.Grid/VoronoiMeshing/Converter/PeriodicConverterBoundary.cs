@@ -6,26 +6,25 @@ using System.Diagnostics;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
 {
-    class PeriodicBoundary
+    class PeriodicBoundaryConverter
     {
         readonly EdgePairer edgePairer;
 
-        readonly PeriodicBoundaryMap boundaryMap;
+        readonly PeriodicBoundaryConverterMap boundaryMap;
 
-        public PeriodicBoundary(
-            byte[] edgeTags,
-            IDictionary<int, int> periodicBoundaryMap,
-            IDictionary<int, Transformation> periodicTransformations)
+        public PeriodicBoundaryConverter(
+            VoronoiBoundary boundary,
+            PeriodicMap map)
         {
             edgePairer = new EdgePairer();
             this.boundaryMap = CreatePeriodicBoundaryMap
                 <SortedList<byte, AffineTrafo>, LinkedListDictionary<int, bool>>(
-                    edgeTags, 
-                    periodicBoundaryMap, 
-                    periodicTransformations);
+                    boundary.EdgeTags, 
+                    map.PeriodicBoundaryMap, 
+                    map.PeriodicTransformationMap);
         }
 
-        static PeriodicBoundaryMap CreatePeriodicBoundaryMap<TtrafoDictionary, TinverseDictionary>(
+        static PeriodicBoundaryConverterMap CreatePeriodicBoundaryMap<TtrafoDictionary, TinverseDictionary>(
             byte[] edgeTags,
             IDictionary<int, int> periodicBoundaryMap,
             IDictionary<int, Transformation> periodicTransformations)
@@ -38,7 +37,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
                     edgeTags,
                     periodicInverseMap,
                     periodicTransformations);
-            var boundaryMap = new PeriodicBoundaryMap()
+            var boundaryMap = new PeriodicBoundaryConverterMap()
             {
                 PeriodicInverseMap = periodicInverseMap,
                 PeriodicTrafos = periodicTrafos

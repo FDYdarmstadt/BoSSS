@@ -14,11 +14,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
     {
         VoronoiBoundary boundary;
 
-        readonly PeriodicBoundary periodicBoundary;
+        readonly PeriodicBoundaryConverter periodicBoundary;
 
-        public BoundaryConverter(VoronoiBoundary boundary, PeriodicBoundary periodicBoundary = null)
+        public BoundaryConverter(VoronoiBoundary boundary, PeriodicMap periodicMap = null)
         {
-            this.periodicBoundary = periodicBoundary;
+            this.periodicBoundary = new PeriodicBoundaryConverter(boundary, periodicMap);
             this.boundary = boundary;
         }
 

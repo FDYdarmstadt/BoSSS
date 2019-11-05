@@ -2,16 +2,17 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
+namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 {
     class BoundaryNodeCloner<T>
         where T : ILocatable, new()
     {
-        IDictionary<int, Transformation> periodicTrafoMap;
+        PeriodicMap map;
 
-        public BoundaryNodeCloner(IDictionary<int, Transformation> periodicTrafoMap)
+        public BoundaryNodeCloner(
+            PeriodicMap map)
         {
-            this.periodicTrafoMap = periodicTrafoMap;
+            this.map = map;
         }
 
         public List<T> CloneAndMirrorNodesOf(IEnumerable<Edge<T>> edges)
@@ -27,6 +28,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
                 {
                     Transformation previousTransformation = GetBoundaryTransformationOf(edgePair.Previous);
                     T doublyTransformedClone = CloneAndTransform(transformedClone, previousTransformation);
+
                     clones.Add(doublyTransformedClone);
                 }
             }
@@ -35,9 +37,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
 
         Transformation GetBoundaryTransformationOf(Edge<T> edge)
         {
-            Debug.Assert(periodicTrafoMap.TryGetValue(edge.BoundaryEdgeNumber, out Transformation debug));
+            Debug.Assert(map.PeriodicTransformationMap.TryGetValue(edge.BoundaryEdgeNumber, out Transformation debug));
 
-            periodicTrafoMap.TryGetValue(edge.BoundaryEdgeNumber, out Transformation transformation);
+            map.PeriodicTransformationMap.TryGetValue(edge.BoundaryEdgeNumber, out Transformation transformation);
             return transformation;
         }
 

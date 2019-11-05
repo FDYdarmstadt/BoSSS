@@ -1,4 +1,4 @@
-﻿using BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer;
+﻿using BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler;
 using BoSSS.Platform.LinAlg;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -27,14 +27,15 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             boundaryHandler = new PeriodicBoundaryHandler<T>(
                 boundary, 
                 settings.FirstCellNode_indice,
-                settings.PeriodicBoundaryMap,
-                settings.PeriodicTransformations);
+                settings.PeriodicMap);
         }
 
         public Mesh<T> Generate(IList<T> nodes)
         {
             Debug.Assert(nodes.Count > 0);
             IDMesh<T> mesh = CreateMeshFrom(nodes);
+            MatlabPlotter plotter = new MatlabPlotter();
+            plotter.Plot(mesh, "first");
             if (boundaryHandler.ContainsPeriodicBoundaries)
             {
                 nodes = boundaryHandler.CloneNodesAlongPeriodicBoundaries(mesh);

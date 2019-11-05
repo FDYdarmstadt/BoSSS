@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
 {
-    class PeriodicBoundaryMap
+    class PeriodicBoundaryConverterMap
     {
         public IDictionary<byte, AffineTrafo> PeriodicTrafos;
 

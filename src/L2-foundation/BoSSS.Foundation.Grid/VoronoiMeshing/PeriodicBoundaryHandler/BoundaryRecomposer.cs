@@ -1,34 +1,26 @@
-﻿using System;
+﻿using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BoSSS.Platform.LinAlg;
-using BoSSS.Foundation.Voronoi;
-using ilPSP;
 using System.Diagnostics;
-using System.Collections.Specialized;
-using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
 
-namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
+namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 {
     class BoundaryRecomposer<T>
         where T : ILocatable, new()
     {
-        readonly IDictionary<int, Transformation> periodicTrafoMap;
-
-        readonly IDictionary<int, int> periodicBoundaryMap;
+        readonly PeriodicMap map;
 
         readonly int firstCellNodeIndice;
 
+        readonly CornerMapper<T> cornerMapper;
+
         public BoundaryRecomposer(
-            IDictionary<int, int> periodicBoundaryMap, 
-            IDictionary<int, Transformation> periodicTrafoMap,
+            PeriodicMap map,
             int firstCellNodeIndice)
         {
-            this.periodicBoundaryMap = periodicBoundaryMap;
-            this.periodicTrafoMap = periodicTrafoMap;
+            this.map = map;
             this.firstCellNodeIndice = firstCellNodeIndice;
+            cornerMapper = new CornerMapper<T>(map);
         }
 
         public void RecomposePeriodicEdges(IDMesh<T> mesh, IEnumerable<Edge<T>> periodicEdges)
@@ -36,18 +28,21 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             CellPairCollection<T> candidates = CellPairCollecter<T>.FollowBoundaryAndCollectCandidates(periodicEdges);
             MeshCellCopier<T> cellCopier = new MeshCellCopier<T>(mesh);
             BoundaryCellRemover<T> remover = new BoundaryCellRemover<T>(mesh, firstCellNodeIndice);
-            //MatlabPlotter plotter = new MatlabPlotter();
-            //int i = 0;
+            
+
+            MatlabPlotter plotter = new MatlabPlotter();
+            int i = 0;
 
             foreach (CellPairCollection<T>.EdgeCombo mergePair in CreateMergePairsOfEachEdge(candidates, cellCopier, remover))
             {
                 Debug.Assert(CellNodePositionsMatch(mergePair));
                 InitializeGlueMapOf(mergePair);
                 MergeAtBoundary(mergePair);
-                //plotter.Plot(mesh, "intermediate" + i);
-                //++i;
+                plotter.Plot(mesh, "intermediate" + i);
+                ++i;
             }
-            //plotter.Plot(mesh, "final");
+            plotter.Plot(mesh, "final");
+            cornerMapper.ConnectPeriodicCorners(candidates);
         }
 
         void ExtractEdgeGlueMap(CellPairCollection<T> pairsForMerging)
@@ -67,9 +62,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
 
         (int outerEdge, int innerEdge)[] ExtractEdgeGlueMap(CellPairCollection<T>.EdgeCombo cellsOfABoundary)
         {
-            int outerBoundaryNumber = periodicBoundaryMap[cellsOfABoundary.EdgeNumber];
+            int outerBoundaryNumber = map.PeriodicBoundaryMap[cellsOfABoundary.EdgeNumber];
             int innerBoundaryNumber = cellsOfABoundary.EdgeNumber;
-            (int outerEdge, int innerEdge)[] map = new (int outerEdge, int innerEdge)[cellsOfABoundary.Outer.Count];
+            (int outerEdge, int innerEdge)[] glueMap = new (int outerEdge, int innerEdge)[cellsOfABoundary.Outer.Count];
             for(int i = 0; i < cellsOfABoundary.Outer.Count; ++i)
             {
                 int outerIndice = default(int);
@@ -94,9 +89,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
                     }
                 }
                 
-                map[i] = (outerIndice, innerIndice);
+                glueMap[i] = (outerIndice, innerIndice);
             }
-            return map;
+            return glueMap;
         }
 
         IEnumerable<CellPairCollection<T>.EdgeCombo> CreateMergePairsOfEachEdge(
@@ -107,7 +102,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             foreach (CellPairCollection<T>.EdgeCombo edgePair in candidates.GetCollectedEdgeCombos())
             {
                 CellPairCollection<T>.EdgeCombo mergePair = new CellPairCollection<T>.EdgeCombo(edgePair.EdgeNumber);
-                int pairedBoundary = periodicBoundaryMap[edgePair.EdgeNumber];
+                int pairedBoundary = map.PeriodicBoundaryMap[edgePair.EdgeNumber];
                 candidates.TryGetOuterCells(pairedBoundary, out List<MeshCell<T>> pairedOuterCells);
                 mergePair.Outer = TransformedCopyOfOuter(pairedOuterCells, pairedBoundary, cellCopier);
                 mergePair.Inner = new List<MeshCell<T>>(ArrayMethods.GetReverseOrderArray(edgePair.Inner));
@@ -124,7 +119,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
             MeshCellCopier<T> cellCopier)
         {
             //CloneAndTransformOuterCells
-            periodicTrafoMap.TryGetValue(boundaryNumber, out Transformation trafo);
+            map.PeriodicTransformationMap.TryGetValue(boundaryNumber, out Transformation trafo);
             List<MeshCell<T>> clones = cellCopier.Copy(candidates);
             TransformCells(clones, trafo);
             return clones;

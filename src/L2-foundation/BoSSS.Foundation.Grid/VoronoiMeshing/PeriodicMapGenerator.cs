@@ -5,23 +5,21 @@ using System.Collections.Generic;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
-    class PeriodicDataExtracter
+    static class PeriodicMapGenerator
     {
-        VoronoiBoundary boundary;
-
-        public PeriodicDataExtracter(VoronoiBoundary boundary)
-        {
-            this.boundary = boundary;
-        }
-
-        public void InitializePeriodicFields(MeshingAlgorithm.Settings settings)
+        public static PeriodicMap GeneratePeriodicMap(MeshingAlgorithm.Settings settings, VoronoiBoundary boundary)
         {
             IDictionary<int, int> periodicBoundaryMap = ExtractPeriodicBoundaryMap(boundary);
+            PeriodicMap map = null;
             if (periodicBoundaryMap.Count > 0)
             {
-                settings.PeriodicBoundaryMap = periodicBoundaryMap;
-                settings.PeriodicTransformations = CreatePeriodicTransformationMapFrom(settings.Boundary, periodicBoundaryMap);
+                map = new PeriodicMap
+                {
+                    PeriodicBoundaryMap = periodicBoundaryMap,
+                    PeriodicTransformationMap = CreatePeriodicTransformationMapFrom(settings.Boundary, periodicBoundaryMap),
+                };
             }
+            return map;
         }
 
         static IDictionary<int, int> ExtractPeriodicBoundaryMap(VoronoiBoundary boundary)

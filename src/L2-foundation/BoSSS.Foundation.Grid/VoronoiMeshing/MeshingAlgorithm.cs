@@ -17,9 +17,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
             public Vector[] Boundary;
 
-            public IDictionary<int, int> PeriodicBoundaryMap = null;
-
-            public IDictionary<int, Transformation> PeriodicTransformations = null;
+            public PeriodicMap PeriodicMap = null;
 
             public int NumberOfLloydIterations = 10;
 

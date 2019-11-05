@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using BoSSS.Platform.LinAlg;
 
-namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
+namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 {
     class Welder
     {

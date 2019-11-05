@@ -1,7 +1,7 @@
 ﻿using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
 using System.Collections.Generic;
 
-namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
+namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 {
     class CellPairCollection<T>
     {

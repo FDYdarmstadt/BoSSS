@@ -4,7 +4,7 @@ using ilPSP;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
+namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 {
     class PeriodicBoundaryHandler<T>
         where T : ILocatable, new()
@@ -24,19 +24,18 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
         public PeriodicBoundaryHandler(
             BoundaryLine[] boundary,
             int firstCellNodeIndice,
-            IDictionary<int, int> periodicBoundaryMap  = null,
-            IDictionary<int, Transformation> periodicTrafoMap = null
+            PeriodicMap map = null
             )
         {
-            if (periodicBoundaryMap != null)
+            if (map != null)
             {
                 ContainsPeriodicBoundaries = true;
 
                 this.boundary = boundary;
                 this.firstCellNodeIndice = firstCellNodeIndice;
-                this.periodicTrafoMap = periodicTrafoMap;
-                nodeCloner = new BoundaryNodeCloner<T>(periodicTrafoMap);
-                recomposer = new BoundaryRecomposer<T>(periodicBoundaryMap, periodicTrafoMap, firstCellNodeIndice); 
+                periodicTrafoMap = map.PeriodicTransformationMap;
+                nodeCloner = new BoundaryNodeCloner<T>(map);
+                recomposer = new BoundaryRecomposer<T>(map, firstCellNodeIndice); 
             }
             else
             {

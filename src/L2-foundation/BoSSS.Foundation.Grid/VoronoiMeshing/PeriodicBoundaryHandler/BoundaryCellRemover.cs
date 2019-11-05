@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Recomposer
+namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 {
     class BoundaryCellRemover<T>
         where T : ILocatable

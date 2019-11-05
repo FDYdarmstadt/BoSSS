@@ -23,10 +23,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
 
         readonly BoundaryConverter boundaryConverter;
 
-        public GridConverter(VoronoiBoundary boundary, PeriodicBoundary periodicBoundary = null)
+        public GridConverter(VoronoiBoundary boundary, PeriodicMap periodicMap = null)
         {
             this.boundary = boundary;
-            boundaryConverter = new BoundaryConverter(boundary, periodicBoundary);
+            boundaryConverter = new BoundaryConverter(boundary, periodicMap);
         }
 
         public VoronoiGrid ConvertToVoronoiGrid(

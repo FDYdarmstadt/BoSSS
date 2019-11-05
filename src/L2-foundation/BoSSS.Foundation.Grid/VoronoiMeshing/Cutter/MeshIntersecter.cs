@@ -137,7 +137,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return edge;
         }
 
-        public Vertex DivideEdge<T>(Edge<T> edge, double alpha, out Edge<T> newEdge)
+        public Vertex DivideEdge(Edge<T> edge, double alpha, out Edge<T> newEdge)
         {
             Vector start = edge.Start.Position;
             Vector end = edge.End.Position;

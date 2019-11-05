@@ -54,19 +54,16 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 NumberOfLloydIterations = settings.NumberOfLloydIterations,
                 FirstCellNode_indice = settings.FirstCellNode_indice,
             };
-            PeriodicDataExtracter periodicDataExtracter = new PeriodicDataExtracter(settings.Boundary);
-            periodicDataExtracter.InitializePeriodicFields(mesherSettings);
+            mesherSettings.PeriodicMap = PeriodicMapGenerator.GeneratePeriodicMap(
+                mesherSettings, 
+                settings.Boundary);
         }
 
         void CreateGridConverter()
         {
-            if(mesherSettings.PeriodicBoundaryMap != null)
+            if(mesherSettings.PeriodicMap != null)
             {
-                PeriodicBoundary converter = new PeriodicBoundary(
-                    settings.Boundary.EdgeTags,
-                    mesherSettings.PeriodicBoundaryMap,
-                    mesherSettings.PeriodicTransformations);
-                gridConverter = new GridConverter<T>(settings.Boundary, converter);
+                gridConverter = new GridConverter<T>(settings.Boundary, mesherSettings.PeriodicMap);
             }
             else
             {
