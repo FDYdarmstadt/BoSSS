@@ -14,84 +14,104 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using ilPSP;
 using MPI.Wrappers;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Application.FSI_Solver {
 
-    public class ParticleUnderrelaxationParam {
-        public ParticleUnderrelaxationParam(double convergenceLimit, double underrelaxationFactorIn, bool useAddaptiveUnderrelaxationIn) {
-            hydroDynConvergenceLimit = convergenceLimit;
-            underrelaxationFactor = underrelaxationFactorIn;
-            useAddaptiveUnderrelaxation = useAddaptiveUnderrelaxationIn;
-        }
-
-        public double hydroDynConvergenceLimit;
-        public double underrelaxationFactor;
-        public bool useAddaptiveUnderrelaxation;
-    }
-
     class ParticleUnderrelaxation {
         /// <summary>
-        /// This method underrelaxates the hydrodynamic forces and torque. The Underrelaxation
+        /// Constructor for the underrelaxation. 
+        /// </summary>
+        /// <param name="parameter">
+        /// <see cref="ParticleUnderrelaxationParam"/>
+        /// </param>
+        /// <param name="averageForce">
+        /// A mean value for the forces used to reduce the impact of computation errors.
+        /// </param>
+        internal ParticleUnderrelaxation(ParticleUnderrelaxationParam parameter, double averageForce) {
+            m_ConvergenceLimit = parameter.m_ConvergenceLimit;
+            m_RelaxationFactor = parameter.m_UnderrelaxationFactor;
+            m_UseAdaptiveUnderrelaxation = parameter.m_UseAdaptiveUnderrelaxation;
+            m_AverageForce = averageForce;
+        }
+        [DataMember]
+        private readonly double m_ConvergenceLimit;
+        [DataMember]
+        private readonly double m_RelaxationFactor;
+        [DataMember]
+        private readonly double m_AverageForce;
+        [DataMember]
+        private readonly bool m_UseAdaptiveUnderrelaxation;
+
+        /// <summary>
+        /// This method underrelaxates the hydrodynamic forces. The Underrelaxation
         /// factor is either predefined or is calculated dynamically.
         /// </summary>
         /// <param name="forces">
         /// The hydrodynamic forces.
         /// </param>
-        /// <param name="forcesAtPrevIteration">
+        /// <param name="forcesPreviousIteration">
         /// The hydrodynamic forces at the previous iteration.
         /// </param>
-        /// <param name="convergenceLimit">
-        /// The predefined convergence limit for the fully coupled system.
-        /// </param>
-        /// <param name="relaxationFactor">
-        /// The predefined relaxation factor, either used directly or as a base to calculate
-        /// a dynamic factor.
-        /// </param>
-        /// <param name="UseAdaptiveUnderrelaxation">
-        /// Bool to check whether the relaxation factor should be calculated dynamically or not.
-        /// </param>
-        internal void Forces(ref double[] forces, double[] forcesAtPrevIteration, double convergenceLimit, double relaxationFactor, bool UseAdaptiveUnderrelaxation, double averageForce) {
-            int spatialDim = forces.Length;
-            double[] underrelaxationCoeff = new double[spatialDim];
-
-            for (int d = 0; d < spatialDim; d++) {
-                underrelaxationCoeff[d] = UseAdaptiveUnderrelaxation == true
-                    ? CalculateAdaptiveUnderrelaxation(forces[d], forcesAtPrevIteration[d], averageForce, convergenceLimit, relaxationFactor)
-                    : relaxationFactor;
-            }
-            for (int d = 0; d < spatialDim; d++) {
-                forces[d] = underrelaxationCoeff[d] * forces[d] + (1 - underrelaxationCoeff[d]) * forcesAtPrevIteration[d];
+        internal void Forces(ref double[] forces, List<double[]> forcesPreviousIteration, ref double[] oldOmega, List<double[]> rawForcesPrev) {
+            for (int d = 0; d < forces.Length; d++) {
+                List<double> tempForcesPrev = new List<double>();
+                List<double> tempRawForcesPrev = new List<double>();
+                for (int i = 0; i < forcesPreviousIteration.Count; i++) {
+                    tempForcesPrev.Add(forcesPreviousIteration[i][d]);
+                    tempRawForcesPrev.Add(rawForcesPrev[i][d]);
+                }
+                double[] Omega = new double[] { 0, oldOmega[d]};
+                AitkenUnderrelaxation(ref forces[d], tempForcesPrev, Omega, rawForcesPrev[1][d]);
+                oldOmega[d] = Omega[0];
             }
         }
 
-        internal void Torque(ref double torque, double torqueAtPrevIteration, double convergenceLimit, double relaxationFactor, bool UseAdaptiveUnderrelaxation, double averageForce) {
-            double underrelaxationCoeff = UseAdaptiveUnderrelaxation == true
-                ? CalculateAdaptiveUnderrelaxation(torque, torqueAtPrevIteration, averageForce, convergenceLimit, relaxationFactor)
-                : relaxationFactor;
-            torque = underrelaxationCoeff * torque + (1 - underrelaxationCoeff) * torqueAtPrevIteration;
-
+        internal void Forces(ref double[] forces, List<double[]> forcesPreviousIteration) {
+            for (int d = 0; d < forces.Length; d++) {
+                List<double> tempForcesPrev = new List<double>();
+                for (int i = 0; i < forcesPreviousIteration.Count; i++) {
+                    tempForcesPrev.Add(forcesPreviousIteration[i][d]);
+                }
+                double underrelaxationCoeff = m_UseAdaptiveUnderrelaxation == true
+                    ? CalculateAdaptiveUnderrelaxation(forces[d], tempForcesPrev, m_AverageForce, m_ConvergenceLimit, m_RelaxationFactor)
+                    : m_RelaxationFactor;
+                forces[d] = underrelaxationCoeff * forces[d] + (1 - underrelaxationCoeff) * forcesPreviousIteration[0][d];
+            }
         }
 
         /// <summary>
-        /// Does what it says.
+        /// This method underrelaxates the hydrodynamic torque. The Underrelaxation
+        /// factor is either predefined or is calculated dynamically.
         /// </summary>
-        /// <param name="forces">
-        /// The hydrodynamic forces.
-        /// </param>
         /// <param name="torque">
         /// The hydrodynamic torque.
         /// </param>
-        /// <param name="averageDistance">
-        /// The average Lengthscale of the particle.
+        /// <param name="torquePreviousIteration">
+        /// The hydrodynamic torque at the previous iteration.
         /// </param>
-        public void CalculateAverageForces(double[] forces, double torque, double averageDistance, out double averageForces) {
-            averageForces = Math.Abs(torque) / averageDistance;
-            for (int d = 0; d < forces.Length; d++) {
-                averageForces += forces[d];
-            }
-            averageForces /= 3;
+        internal void Torque(ref double torque, List<double> torquePreviousIteration, ref double[] oldOmega, List<double> rawTorquePrev) {
+            double[] Omega = new double[] { 0, oldOmega[2] };
+            AitkenUnderrelaxation(ref torque, torquePreviousIteration, Omega, rawTorquePrev[1]);
+            oldOmega[2] = Omega[0];
+        }
+        internal void Torque(ref double torque, List<double> torquePreviousIteration) {
+            double underrelaxationCoeff = m_UseAdaptiveUnderrelaxation == true
+                ? CalculateAdaptiveUnderrelaxation(torque, torquePreviousIteration, m_AverageForce, m_ConvergenceLimit, m_RelaxationFactor)
+                : m_RelaxationFactor;
+            torque = underrelaxationCoeff * torque + (1 - underrelaxationCoeff) * torquePreviousIteration[0];
+
+        }
+
+        internal void ForcesAndTorque(ref double[] forces, List<double[]> forcesPreviousIteration, ref double oldOmega, List<double[]> rawForcesPrev) {
+            double[] Omega = new double[] { 0, oldOmega };
+            JacobianUnderrelaxation(ref forces, forcesPreviousIteration, Omega, rawForcesPrev);
+            oldOmega = Omega[0];
         }
 
         /// <summary>
@@ -115,26 +135,129 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="iterationCounter">
         /// No. of iterations.
         /// </param>
-        private double CalculateAdaptiveUnderrelaxation(double variable, double variableAtPrevIteration, double averageValueOfVar, double convergenceLimit, double predefinedFactor) {
-            double ConvergenceHelperFactor = 1;
-            double UnderrelaxationCoeff = predefinedFactor * 1e-1;
-            double UnderrelaxationExponent = 0;
-
-            while (Math.Abs(UnderrelaxationCoeff * variable) > 0.75 * Math.Abs(variableAtPrevIteration) && UnderrelaxationCoeff > 1e-20) {
-                UnderrelaxationExponent -= 1;
-                UnderrelaxationCoeff = predefinedFactor * Math.Pow(10, UnderrelaxationExponent);
+        private double CalculateAdaptiveUnderrelaxation(double variable, List<double> variableAtPrevIteration, double averageValueOfVar, double convergenceLimit, double predefinedFactor) {
+            double UnderrelaxationCoeff;
+            double denominator = variableAtPrevIteration.Count;
+            for (int i = 1; i < variableAtPrevIteration.Count; i++) {
+                if (Math.Sign(variable - variableAtPrevIteration[0]) != Math.Sign(variableAtPrevIteration[i-1] - variableAtPrevIteration[i])) {
+                    predefinedFactor /= denominator;
+                    break;
+                }
+                else
+                    denominator -= 1;
             }
+            UnderrelaxationCoeff = predefinedFactor * 1 / (Math.Abs((variable - variableAtPrevIteration[0]) / variableAtPrevIteration[0]));
+            if (UnderrelaxationCoeff >= 10 * predefinedFactor)
+                UnderrelaxationCoeff = 10 * predefinedFactor;
 
-            if (Math.Abs(UnderrelaxationCoeff * variable) < convergenceLimit * 100 && 1000 * Math.Abs(variable) > Math.Abs(averageValueOfVar))
-                UnderrelaxationCoeff = predefinedFactor * convergenceLimit * 10;
+            if (UnderrelaxationCoeff >= 2)
+                UnderrelaxationCoeff = 2;
 
-            if (UnderrelaxationCoeff >= predefinedFactor * 1e-1)
-                UnderrelaxationCoeff = predefinedFactor * 1e-1;
-
+            if (Math.Abs(averageValueOfVar) > 1e4 * Math.Abs(variable) || Math.Abs(variable) < 1e-10) {
+                UnderrelaxationCoeff = 1e-20;
+            }
+            else if (UnderrelaxationCoeff < predefinedFactor * 1e-2)
+                UnderrelaxationCoeff = predefinedFactor * 1e-2;
             double GlobalStateBuffer = UnderrelaxationCoeff.MPIMin();
             UnderrelaxationCoeff = GlobalStateBuffer;
+            return UnderrelaxationCoeff;
+        }
 
-            return UnderrelaxationCoeff * ConvergenceHelperFactor;
+        private void AitkenUnderrelaxation(ref double variable, List<double> variableAtPrevIteration, double[] Omega, double rawForcesPrev) {
+            double[] residual = new double[] { (variable - variableAtPrevIteration[0]), (rawForcesPrev - variableAtPrevIteration[1]) };
+            Omega[0] = -Omega[1] * residual[1] / (residual[0] - residual[1]);
+            variable = Omega[0] * (variable - variableAtPrevIteration[0]) + variableAtPrevIteration[0];
+        }
+
+        private void AitkenUnderrelaxation(ref double[] variable, List<double[]> variableAtPrevIteration, double[] Omega, List<double[]> rawForcesPrev) {
+            double[][] residual = new double[variable.Length][];
+            double[] residualDiff = new double[variable.Length];
+            double residualScalar = 0;
+            double sumVariable = 0;
+            for (int i = 0; i < variable.Length; i++) {
+                residual[i] = new double[] { (variable[i] - variableAtPrevIteration[0][i]), (rawForcesPrev[1][i] - variableAtPrevIteration[1][i]) };
+                residualDiff[i] = residual[i][0] - residual[i][1];
+                residualScalar += residual[i][1] * residualDiff[i];
+                sumVariable += variable[i];
+            }
+            Omega[0] = -Omega[1] * residualScalar / residualDiff.L2Norm().Pow2();
+            for (int i = 0; i < variable.Length; i++) {
+                variable[i] = Omega[0] * (variable[i] - variableAtPrevIteration[0][i]) + variableAtPrevIteration[0][i];
+            }
+        }
+
+        private void MinimalPolynomialExtrapolation(ref double variable, List<double> variableAtPrevIteration) {
+            double[] polynomialCoefficiants = new double[variableAtPrevIteration.Count];
+            polynomialCoefficiants[0] = NewPolynomialCoefficiant(variable, variableAtPrevIteration);
+            for (int p = 1; p < polynomialCoefficiants.Length; p++) {
+                polynomialCoefficiants[p] = 2 / (double)p;
+            }
+            double[] normalizedCoefficients = polynomialCoefficiants.CloneAs();
+            for (int p = 0; p < normalizedCoefficients.Length; p++) {
+                normalizedCoefficients[p] /= polynomialCoefficiants.Sum();
+            }
+            double test = normalizedCoefficients.Sum();
+            variable = normalizedCoefficients[0] * variable;
+            for (int k = 1; k < variableAtPrevIteration.Count; k++) {
+                variable += normalizedCoefficients[k] * variableAtPrevIteration[k];
+            }
+        }
+
+        private double NewPolynomialCoefficiant(double variable, List<double> variableAtPrevIteration) {
+            double[] residual = new double[variableAtPrevIteration.Count];
+            residual[0] = variable - variableAtPrevIteration[1];
+            double residualSum = residual[0];
+            for (int r = 2; r < variableAtPrevIteration.Count; r++) {
+                residual[r] = variableAtPrevIteration[r - 1] - variableAtPrevIteration[r];
+                residualSum += Math.Pow(-1, r) * residual[r] / r;
+            }
+            return -residualSum / residual[0] - 1;
+        }
+
+        private void JacobianUnderrelaxation(ref double[] variable, List<double[]> variableAtPrevIteration, double[] Omega, List<double[]> rawForcesPrev) {
+            // ursprüngliche idee: Fixed-point fluid–structure interaction solvers with dynamic relaxation Ulrich Küttler, Wolfgang Wall
+            double[,] jacobian = ApproximateRelaxJacobian(ref variable, variableAtPrevIteration, rawForcesPrev);
+            double[] residual = new double[variable.Length];
+            double residualScalar = 0;
+            double[] residualJacFirst = new double[variable.Length];
+            double residualJacSecond = 0;
+            for (int i = 0; i < variable.Length; i++) {
+                residual[i] = variable[i] - variableAtPrevIteration[0][i];
+                residualScalar += residual[i].Pow2();
+            }
+            for (int i = 0; i < variable.Length; i++) {
+                for (int j = 0; j < variable.Length; j++) {
+                    residualJacFirst[i] += residual[j] * jacobian[j, i];
+                }
+            }
+            for (int i = 0; i < variable.Length; i++) {
+                residualJacSecond += residualJacFirst[i] * residual[i];
+            }
+            Omega[0] = -residualScalar / residualJacSecond;
+            for (int i = 0; i < variable.Length; i++) {
+                variable[i] = Omega[0] * (variable[i] - variableAtPrevIteration[0][i]) + variableAtPrevIteration[0][i];
+            }
+        }
+
+        private double[,] ApproximateRelaxJacobian(ref double[] variable, List<double[]> variableAtPrevIteration, List<double[]> rawForcesPrev) {
+            double[][] residual = new double[variable.Length][];
+            double[] residualDiff = new double[variable.Length];
+            double[] forceDiff = new double[variable.Length];
+            for (int i = 0; i < variable.Length; i++) {
+                residual[i] = new double[] { (variable[i] - variableAtPrevIteration[0][i]), (rawForcesPrev[1][i] - variableAtPrevIteration[1][i]), (rawForcesPrev[2][i] - variableAtPrevIteration[2][i]) };//n+1, n, n-1
+                residualDiff[i] = residual[i][1] - residual[i][2];
+                forceDiff[i] = variableAtPrevIteration[1][i] - variableAtPrevIteration[2][i];
+            }
+            double[,] jacobian = new double[variable.Length, variable.Length];
+            for (int i = 0; i < variable.Length; i++) {
+                for (int j = 0; j < variable.Length; j++) {
+                    if (forceDiff[j] == 0)
+                        jacobian[i, j] = 0; // residualDiff should be 0 in this case anyway
+                    else
+                        jacobian[i,j] = residualDiff[i] / forceDiff[j];
+                }
+            }
+            return jacobian;
         }
     }
 }

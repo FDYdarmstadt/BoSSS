@@ -274,6 +274,8 @@ namespace CNS {
                     Console.Write("Starting time step #" + TimestepNo + "...");
                 }
 
+
+
                 // Update shock-capturing variables before performing a time step
                 // as the time step constraints (could) depend on artificial viscosity.
                 // If not doing so, the artificial viscosity values from the previous

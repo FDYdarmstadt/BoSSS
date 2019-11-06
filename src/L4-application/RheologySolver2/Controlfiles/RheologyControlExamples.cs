@@ -380,7 +380,7 @@ namespace BoSSS.Application.Rheology {
         /// <summary>
         /// Confined cylinder in a channel flow
         /// </summary>
-        static public RheologyControl ConfinedCylinder(string path = @"V:\Test4Anne\DB_Rheology", int degree = 4) {
+        static public RheologyControl ConfinedCylinder(string path = @"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag", int degree = 2) {
             RheologyControl C = new RheologyControl();
 
             //Path für cluster
@@ -395,14 +395,13 @@ namespace BoSSS.Application.Rheology {
             C.DbPath = path;
             C.ProjectName = "Cylinder";
 
-            C.NonLinearSolver.MaxSolverIterations = 20;
+            C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MinSolverIterations = 1;
-            C.NonLinearSolver.ConvergenceCriterion = 1E-6;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-7;
 
-            C.LinearSolver.MaxSolverIterations = 1000;
+            C.LinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MinSolverIterations = 1;          
             C.LinearSolver.ConvergenceCriterion = 1E-7;
-            C.LinearSolver.MaxKrylovDim = 100;
 
             //C.UnderRelax = 1.0;
             C.dt = 1e6;
@@ -410,15 +409,11 @@ namespace BoSSS.Application.Rheology {
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
-            //C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_schwarz_pmg;
-            //C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
-            C.LinearSolver.verbose = true;
-            C.NonLinearSolver.PrecondSolver.verbose = true;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.ObjectiveParam = 1.0;
-            C.useJacobianForOperatorMatrix = false;
+            C.useJacobianForOperatorMatrix = true;
 
-            C.UsePerssonSensor = true;
+            C.UsePerssonSensor = false;
             C.SensorLimit = 1e-4;
 
             C.AdaptiveMeshRefinement = false;
@@ -429,8 +424,8 @@ namespace BoSSS.Application.Rheology {
             C.Bodyforces = true;
 
             //Debugging and Solver Analysis
-            C.OperatorMatrixAnalysis = false;
-            C.SkipSolveAndEvaluateResidual = false;
+            C.OperatorMatrixAnalysis = true;
+            C.SkipSolveAndEvaluateResidual = true;
             C.SetInitialConditions = true;
             C.SetInitialPressure = false;
             C.SetParamsAnalyticalSol = false;
@@ -444,8 +439,8 @@ namespace BoSSS.Application.Rheology {
             C.FixedStreamwisePeriodicBC = false;
             C.beta = 0.59;
             C.Reynolds = 1;
-            C.Weissenberg = 0.1; //aim Weissenberg number!
-            C.RaiseWeissenberg = true;
+            C.Weissenberg = 0.0; //aim Weissenberg number!
+            C.RaiseWeissenberg = false;
             C.WeissenbergIncrement = 0.1;
 
             //Penalties
@@ -492,10 +487,20 @@ namespace BoSSS.Application.Rheology {
             C.FieldOptions.Add("ResidualStressXY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             C.FieldOptions.Add("ResidualStressYY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
 
-            C.FieldOptions.Add("PhiDG", new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("Phi", new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            C.FieldOptions.Add("PhiDG", new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            C.FieldOptions.Add("Phi", new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
 
             // Create Grid
+
+            // half channel mesh3 for cond tests
+            string grid = " 962bc97f-0298-4e2f-ac18-06940cb84956";
+
+            // half channel mesh0 for cond tests - schneller?
+            //string grid = "55c34774-1769-4f6b-bfc8-cc6c4d74076a";
+
+            // full channel mesh0 for cond tests comparison - schneller?
+            //string grid = "ecd6444f-ddfe-46c4-9df5-a1390f9371d7";
+
             //fine grid - only on cluster!           
             //string grid = "70797022-eba0-4c77-b179-334c665044b5";
 
@@ -505,8 +510,6 @@ namespace BoSSS.Application.Rheology {
 
             //coarser grid - works without cluster!
             //string grid = "f9aa12dc-53bb-4e2c-81b3-ffccc251a3f7";
-            string grid = "444cccb7-65e2-4249-9eaa-e109616f97e5"; //test_grid can be deleted
-            //string grid = "d0266699-70c0-4064-9985-ecf8d52ebdff"; //test_grid can be deleted
 
             //very coarse grid as starting point for refinement
             //string grid = "e296a1b2-98f9-4fdf-8a32-04e0954ff369";
@@ -565,12 +568,13 @@ namespace BoSSS.Application.Rheology {
             C.InitialValues_Evaluators.Add("Phi", X => -1);
 
             // Set Boundary Conditions
-            C.AddBoundaryValue("Wall_bottom", "VelocityX", X => 0);
+            //C.AddBoundaryValue("Wall_bottom", "VelocityX", X => 0);
             C.AddBoundaryValue("Wall_top", "VelocityX", X => 0);
-            C.AddBoundaryValue("Wall_bottom", "VelocityY", X => 0);
+            //C.AddBoundaryValue("Wall_bottom", "VelocityY", X => 0);
             C.AddBoundaryValue("Wall_top", "VelocityY", X => 0);
             C.AddBoundaryValue("Wall_cylinder", "VelocityX", X => 0);
             C.AddBoundaryValue("Wall_cylinder", "VelocityY", X => 0);
+            C.AddBoundaryValue("Freeslip");
 
 
             if (!C.FixedStreamwisePeriodicBC)
