@@ -380,7 +380,7 @@ namespace BoSSS.Application.Rheology {
         /// <summary>
         /// Confined cylinder in a channel flow
         /// </summary>
-        static public RheologyControl ConfinedCylinder(string path = @"G:\Test4Anne\DB_Rheology", int degree = 4) {
+        static public RheologyControl ConfinedCylinder(string path = @"V:\Test4Anne\DB_Rheology", int degree = 4) {
             RheologyControl C = new RheologyControl();
 
             //Path für cluster
@@ -399,13 +399,13 @@ namespace BoSSS.Application.Rheology {
             C.NonLinearSolver.MinSolverIterations = 1;
             C.NonLinearSolver.ConvergenceCriterion = 1E-6;
 
-            C.LinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;          
             C.LinearSolver.ConvergenceCriterion = 1E-7;
             C.LinearSolver.MaxKrylovDim = 100;
 
             //C.UnderRelax = 1.0;
-            C.dt = 1e-3;
+            C.dt = 1e6;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
@@ -506,6 +506,7 @@ namespace BoSSS.Application.Rheology {
             //coarser grid - works without cluster!
             //string grid = "f9aa12dc-53bb-4e2c-81b3-ffccc251a3f7";
             string grid = "444cccb7-65e2-4249-9eaa-e109616f97e5"; //test_grid can be deleted
+            //string grid = "d0266699-70c0-4064-9985-ecf8d52ebdff"; //test_grid can be deleted
 
             //very coarse grid as starting point for refinement
             //string grid = "e296a1b2-98f9-4fdf-8a32-04e0954ff369";
