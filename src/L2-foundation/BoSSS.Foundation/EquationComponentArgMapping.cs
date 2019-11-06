@@ -79,27 +79,25 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
             List<T> AllComponentsofMyType = new List<T>();
 
             foreach (IEquationComponent eqComp in eqCompS) {
+                if(eqComp is T) {
+
+                    T _VeqComp;
 #if DEBUG
-                if ((eqComp is T) || (vectorizer != null)) {
-                    // in DEBUG mode, we always create a vectorizer
-                    // because it implements a verification 
-                    IEquationComponent VeqComp = vectorizer(eqComp);
-
-                    if (VeqComp != null && VeqComp is T) {
-                        T _VeqComp = (T)VeqComp;
-
-                        if (F == null || F(_VeqComp)) {
-                            AllComponentsofMyType.Add(_VeqComp);
-                        }
+                    if(vectorizer != null) {
+                        // in DEBUG mode, we always create a vectorizer (if supported)
+                        // because it implements a verification 
+                        _VeqComp = (T)vectorizer(eqComp);
+                        if(_VeqComp == null)
+                            _VeqComp = (T)eqComp;
+                    } else {
+                        _VeqComp = (T) eqComp;
                     }
-                }
 #else
+                    _VeqComp = (T) eqComp;
+#endif
 
-                if (eqComp is T) {
-                    T _eqComp = (T)eqComp;
-
-                    if (F == null || F(_eqComp)) {
-                        AllComponentsofMyType.Add(_eqComp);
+                    if(F == null || F(_VeqComp)) {
+                        AllComponentsofMyType.Add(_VeqComp);
                     }
                 } else if (vectorizer != null) {
                     IEquationComponent VeqComp = vectorizer(eqComp);
@@ -112,7 +110,6 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
                         }
                     }
                 }
-#endif
             }
 
             m_AllComponentsOfMyType = AllComponentsofMyType.ToArray();
