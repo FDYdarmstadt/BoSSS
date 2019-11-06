@@ -85,10 +85,6 @@ namespace CNS.Source {
                 return null;
             }
         }
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
         #endregion
     }

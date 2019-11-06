@@ -174,10 +174,6 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         public IList<string> ArgumentOrdering {
             get { return VariableNames.VelocityVector(this.m_D); }
         }
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
         public SpeciesId PositiveSpecies {
             get { return m_LsTrk.GetSpeciesId("B"); }

@@ -89,11 +89,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 return new string[] { "artificialViscosity" };
             }
         }
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
-
         #endregion
 
         #region IEdgeForm Members

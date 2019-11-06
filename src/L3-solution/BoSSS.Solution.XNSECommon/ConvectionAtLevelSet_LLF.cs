@@ -231,10 +231,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
                 return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.Velocity0MeanVector(m_D));  
             }
         }
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
         public int LevelSetIndex {
             get { return 0; }
@@ -567,11 +563,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             }
         }
 
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
-
         public int LevelSetIndex {
             get { return 0; }
         }
@@ -791,11 +782,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
                     VariableNames.HeatFlux0Vector(D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure);
             }
         }
-
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
 
         public int LevelSetIndex {

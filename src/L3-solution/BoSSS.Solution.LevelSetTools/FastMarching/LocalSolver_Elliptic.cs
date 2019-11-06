@@ -176,10 +176,6 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                     return new string[] { "Phi0", "dPhi0_dx0", "dPhi0_dx1" };
                 }
             }
-            /// <summary>
-            /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-            /// </summary>
-            bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
             MultidimensionalArray cj;
 

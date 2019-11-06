@@ -392,11 +392,6 @@ namespace BoSSS.Foundation {
                 }
             }
 
-            bool IEquationComponent.IgnoreVectorizedImplementation {
-                get {
-                    return false;
-                }
-            }
             #endregion
         }
 
@@ -493,11 +488,7 @@ namespace BoSSS.Foundation {
                     return new string[] { "f" };
                 }
             }
-            bool IEquationComponent.IgnoreVectorizedImplementation {
-                get {
-                    return false;
-                }
-            }
+
             #endregion
 
             /// <summary>
@@ -558,11 +549,6 @@ namespace BoSSS.Foundation {
                 }
             }
 
-            bool IEquationComponent.IgnoreVectorizedImplementation {
-                get {
-                    return false;
-                }
-            }
             /// <summary>
             /// Applies the given in each evaluation point.
             /// </summary>
@@ -772,11 +758,6 @@ namespace BoSSS.Foundation {
                     return null;
                 }
             }
-            bool IEquationComponent.IgnoreVectorizedImplementation {
-                get {
-                    return false;
-                }
-            }
         }
 
         /// <summary>
@@ -899,11 +880,6 @@ namespace BoSSS.Foundation {
             public IList<string> ParameterOrdering {
                 get {
                     return null;
-                }
-            }
-            bool IEquationComponent.IgnoreVectorizedImplementation {
-                get {
-                    return false;
                 }
             }
         }

@@ -114,14 +114,7 @@ namespace BoSSS.Solution.Utils {
         public abstract IList<string> ArgumentOrdering {
             get;
         }
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation {
-            get {
-                return false;
-            }
-        }
+
         #endregion
     }
 }

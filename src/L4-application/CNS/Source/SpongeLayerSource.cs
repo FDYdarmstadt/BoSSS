@@ -117,11 +117,5 @@ namespace CNS.Source {
                 return new string[] { };
             }
         }
-
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
-
     }
 }

@@ -84,11 +84,6 @@ namespace BoSSS.Application.LoadBalancingTest {
             }
         }
 
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
-
         public double LevelSetForm(ref CommonParamsLs inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double FlxNeg = -U_Neg[0] * inp.n[0] * alpha_A;
             double FlxPos = -U_Pos[0] * inp.n[0] * alpha_B;

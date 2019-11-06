@@ -40,13 +40,6 @@ namespace BoSSS.Foundation {
         /// parameter variables are sorted for this flux;
         /// </summary>
         IList<string> ParameterOrdering { get; }
-
-        /// <summary>
-        /// Only for performance measurments of the vectorized implementations (e.g. <see cref="INonlinVolumeForm_V"/>, <see cref="IVolumeForm_UxV"/>, etc.)
-        /// against the base implementation (<see cref="IVolumeForm"/>, <see cref="IEdgeForm"/>):
-        /// If true, the base implementaion will be used even if a vectorized verion is provided.
-        /// </summary>
-        bool IgnoreVectorizedImplementation { get; }
     }
 
 

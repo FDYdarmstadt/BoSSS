@@ -181,14 +181,5 @@ namespace BoSSS.Solution.NSECommon {
                 return new string[] { VariableNames.Temperature0 };
             }
         }
-
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation {
-            get {
-                return false;
-            }
-        }
     }
 }

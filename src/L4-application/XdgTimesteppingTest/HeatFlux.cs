@@ -40,11 +40,6 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             }
         }
 
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
-
         public void SetParameter(string speciesName, SpeciesId SpcId) {
             switch (speciesName) {
                 case "A": Viscosity = m_muA; rhs = m_rhsA; complementViscosity = m_muB; break;
@@ -292,11 +287,6 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 return null;
             }
         }
-
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
     }
 }

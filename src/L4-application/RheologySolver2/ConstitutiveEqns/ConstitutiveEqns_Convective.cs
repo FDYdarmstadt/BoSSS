@@ -109,7 +109,6 @@ namespace BoSSS.Application.Rheology {
             }
         }
 
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] Tin, double[,] Grad_Tin, double Vin, double[] Grad_Vin) {
