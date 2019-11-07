@@ -1,13 +1,15 @@
 restart
 **************
+
   BoSSSpad C# interpreter
   _______________________
 
 Databases loaded:
-List of 3 instances of IDatabaseInfo {
+List of 4 instances of IDatabaseInfo {
   0: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
   1: { Session Count = 45; Grid Count = 132; Path = G:\DB_Cube }
   2: { Session Count = 4; Grid Count = 1; Path = G:\Performance_DB }
+  3: { Session Count = 0; Grid Count = 1; Path = G:\Test4Anne\DB_Rheology }
 }
 
  Console ready for input. Type 'help' for help.
@@ -472,63 +474,10 @@ for(int iCol = 0; iCol < columns; iCol++) {
 //multiplots.AddDummyPlotsForLegend(3,0);
 multiplots.PlotNow()
 **************
-name is: exp_Kcycle_schwarz
-name is: exp_Kcycle_schwarz
-skipped
-name is: classic_pardiso
-name is: exp_gmres_levelpmg
-name is: exp_Kcycle_schwarz
-name is: exp_Kcycle_schwarz
-name is: exp_Kcycle_schwarz
-name is: exp_Kcycle_schwarz
-name is: exp_Kcycle_schwarz
-name is: exp_gmres_levelpmg
-name is: exp_gmres_levelpmg
-name is: classic_pardiso
-name is: exp_gmres_levelpmg
-name is: exp_gmres_levelpmg
-name is: exp_gmres_levelpmg
-name is: exp_gmres_levelpmg
-skipped
-name is: classic_pardiso
-name is: classic_pardiso
-name is: classic_pardiso
-name is: classic_pardiso
-skipped
-name is: exp_Kcycle_schwarz
-name is: exp_Kcycle_schwarz
-skipped
-name is: exp_Kcycle_schwarz
-name is: classic_pardiso
-name is: exp_gmres_levelpmg
-name is: exp_Kcycle_schwarz
-name is: exp_Kcycle_schwarz
-name is: exp_gmres_levelpmg
-name is: exp_gmres_levelpmg
-name is: classic_pardiso
-name is: exp_gmres_levelpmg
-name is: exp_gmres_levelpmg
-skipped
-name is: classic_pardiso
-name is: classic_pardiso
-name is: classic_pardiso
-skipped
-name is: classic_pardiso
-name is: classic_pardiso
-name is: classic_pardiso
-name is: classic_pardiso
-skipped
-name is: exp_gmres_levelpmg
-name is: exp_gmres_levelpmg
-name is: exp_gmres_levelpmg
-name is: exp_Kcycle_schwarz
-name is: exp_Kcycle_schwarz
-name is: exp_gmres_levelpmg
-name is: exp_Kcycle_schwarz
-name is: exp_Kcycle_schwarz
-Using gnuplot: G:\BoSSS-BIN\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
-set key font ",12"inside top left Left reverse 
-System.Drawing.Bitmap
+(143,27): error CS1061: Type `BoSSS.Application.BoSSSpad.Plot2Ddata' does not contain a definition for `LegendFont' and no extension method `LegendFont' of type `BoSSS.Application.BoSSSpad.Plot2Ddata' could be found. Are you missing an assembly reference?
+G:\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release\BoSSSpad.exe (Location of the symbol related to previous error)
+No. of errors|warnings: 1|0.
+
 ==============
 LastError
 **************
@@ -558,6 +507,8 @@ G:\BoSSS-HHLR\public\doc\handbook\apdx-NodeSolverPerformance\XDGPoisson_SFB\plot
 CL.WriteMinimalCompileableExample(
    Path.Combine(CurrentDocDir, "plots", "MainXdgPoissonScaling.tex"),
    "XdgPoissonScaling.tex");
+**************
+==============
 **************
 ==============
 **************
