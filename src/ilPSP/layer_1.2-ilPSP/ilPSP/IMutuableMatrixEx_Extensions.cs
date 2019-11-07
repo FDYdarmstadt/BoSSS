@@ -561,6 +561,60 @@ namespace ilPSP.LinSolvers {
         }
 
         /// <summary>
+        /// Writes locally stored Matrix to individual outputfiles. Outputfiles are named with MPI rank. For Debugging purposes ...
+        /// </summary>
+        /// <param name="M"></param>
+        /// <param name="path"></param>
+        static public void SaveToTextFileSparseDebug(this IMutableMatrixEx M, string path) {
+            using (new FuncTrace()) {
+                int rank, size;
+
+                csMPI.Raw.Comm_Rank(M.MPI_Comm, out rank);
+                csMPI.Raw.Comm_Size(M.MPI_Comm, out size);
+
+                var entries = M.GetAllEntries();
+
+                int NoOfNonZeros = M.GetTotalNoOfNonZerosPerProcess();
+
+                    // open file
+                    StreamWriter stw = new StreamWriter(String.Concat(path,"_",rank));
+
+                    // serialize matrix data
+                    stw.WriteLine(M.RowPartitioning.LocalLength); // number of rows
+                    stw.WriteLine(M.NoOfCols);           // number of columns
+                    stw.WriteLine(NoOfNonZeros);                 // number of non-zero entries in Matrix (over all MPI-processors)
+
+                    for (int i = 0; i < entries.Length; i++) {
+                        MsrMatrix.MatrixEntry[] row = entries[i];
+
+                        int NonZPRow = 0;
+                        foreach (MsrMatrix.MatrixEntry e in row) {
+                            if (e.ColIndex >= 0 && e.Value != 0.0) NonZPRow++;
+                        }
+                        stw.Write(NonZPRow);
+                        stw.Write(" ");
+
+                        foreach (MsrMatrix.MatrixEntry e in row) {
+                            if (e.ColIndex >= 0 && e.Value != 0.0) {
+                                stw.Write(e.ColIndex);
+                                stw.Write(" ");
+                                stw.Write(e.Value.ToString("E16", NumberFormatInfo.InvariantInfo));
+                                stw.Write(" ");
+                            }
+                        }
+
+                        stw.WriteLine();
+                    }
+
+                    // finalize
+                    stw.Flush();
+                    stw.Close();
+
+            }
+        }
+
+
+        /// <summary>
         /// Adds <paramref name="factor"/> to all diagonal entries of <paramref name="M"/>.
         /// </summary>
         static public void AccEyeSp(this ISparseMatrix M, double factor = 1.0) {
