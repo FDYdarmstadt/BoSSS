@@ -525,13 +525,13 @@ namespace BoSSS.Solution.NSECommon {
             for(int d = 0; d < inp.D; d++) {
                 //Acc += 0.5 * (muA * _Grad_uA[0, d] + muB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
                 //Acc += 0.5 * (muA * _Grad_vA[d] + muB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
-                Acc += 0.5 * (muA * _Grad_uA[m_iComp, d] + muB * _Grad_uB[m_iComp, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term  
+                 Acc += 0.5 * (muA * _Grad_uA[m_iComp, d] + muB * _Grad_uB[m_iComp, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term  
                 Acc += 0.5 * (muA * _Grad_vA[d] + muB * _Grad_vB[d]) * (_uA[m_iComp] - _uB[m_iComp]) * inp.Normale[d];  // symmetry term
             }
             Acc *= base.m_alpha;
 
             double muMax = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
-            //Acc -= (_uA[0] - _uB[0]) * (_vA - _vB) * pnlty * muMax; // penalty term
+                               //Acc -= (_uA[0] - _uB[0]) * (_vA - _vB) * pnlty * muMax; // penalty term
             Acc -= (_uA[m_iComp] - _uB[m_iComp]) * (_vA - _vB) * pnlty * muMax; // penalty term 
 
             return -Acc;
@@ -693,7 +693,7 @@ namespace BoSSS.Solution.NSECommon {
             return -Acc;
         }
 
-        void INonlinVolumeForm_GradV.Form(ref VolumFormParams prm, MultidimensionalArray[] U, MultidimensionalArray[] GradU, MultidimensionalArray f) { 
+        void INonlinVolumeForm_GradV.Form(ref VolumFormParams prm, MultidimensionalArray[] U, MultidimensionalArray[] GradU, MultidimensionalArray f) {
 
             int NumofCells = prm.Len;
             int NumOfNodes = f.GetLength(1); // no of nodes per cell
@@ -761,75 +761,68 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         void INonlinEdgeForm_GradV.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray f) {
-            int NumOfEdges = efp.Len;
-            Debug.Assert(f.GetLength(0) == NumOfEdges);
-            int NumOfNodes = f.GetLength(1); // no of nodes per cell
+            int L = efp.Len;
+            Debug.Assert(f.GetLength(0) == L);
+            int K = f.GetLength(1); // no of nodes per cell
+            int D = efp.GridDat.SpatialDimension;
             int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
-            double[] Parameters = new double[_NOParams];
+            Debug.Assert(_NOParams == efp.ParameterVars_IN.Length);
+            int _NOargs = this.ArgumentOrdering.Count;
+            Debug.Assert(_NOargs == Uin.Length);
+            Debug.Assert(_NOargs == GradUin.Length);
 
-            for(int edge = 0; edge < NumOfEdges; edge++) { // loop over edges...
-                int iEdge = efp.e0 + edge;
-                byte edgeTag = efp.GridDat.iGeomEdges.EdgeTags[iEdge];
-                IncompressibleBcType edgeType = base.EdgeTag2Type[edgeTag];
+            CommonParamsBnd cpv;
+            cpv.GridDat = efp.GridDat;
+            cpv.Parameters_IN = new double[_NOParams];
+            cpv.Normale = new double[D];
+            cpv.X = new double[D];
+            cpv.time = efp.time;
 
-                for(int node = 0; node < NumOfNodes; node++) { // loop over nodes...
-                    // Global node coordinates
-                    double[] X = new double[efp.GridDat.SpatialDimension];
-                    for(int i = 0; i < efp.GridDat.SpatialDimension; i++) {
-                        X[i] = efp.NodesGlobal[edge, node, i];
-                    }
+            double[] _GradV_in = new double[D];
+            double[,] _GradU_in = new double[_NOargs, D];
+            double[] _U_in = new double[_NOargs];
+            double _V_in = 0.0;
+            byte[] EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
 
-                    double uJump;
-                    double fluxIn;
+            for(int l = 0; l < L; l++) { // loop over edges ...
+                cpv.iEdge = efp.e0 + l;
+                cpv.EdgeTag = EdgeTags[cpv.iEdge];
+
+                for(int k = 0; k < K; k++) { // loop over nodes...
 
                     for(int np = 0; np < _NOParams; np++) {
-                        Parameters[np] = efp.ParameterVars_IN[np][edge, node];
+                        cpv.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
                     }
 
-                    double viscosity = Viscosity(Parameters);
-                    switch(edgeType) {
-                        case IncompressibleBcType.Velocity_Inlet:
-                        case IncompressibleBcType.Wall:
-                        case IncompressibleBcType.NoSlipNeumann: {
-                                // inhom. Dirichlet b.c.
-                                // +++++++++++++++++++++
+                    for(int d = 0; d < D; d++) {
+                        cpv.Normale[d] = efp.Normals[l, k, d];
+                        cpv.X[d] = efp.NodesGlobal[l, k, d];
+                    }
 
-                                double g_D = base.g_Diri(X, efp.time, edgeTag, m_iComp); // Velocity boundary condition 
-
-                                uJump = (Uin[m_iComp][edge, node] - g_D);
-                                fluxIn = viscosity * uJump * base.m_alpha;
-
-                                for(int d = 0; d < efp.GridDat.SpatialDimension; d++) {
-                                    double n = efp.Normals[edge, node, d];
-                                    f[edge, node, d] -= fluxIn * n ;
-                                }
-
-
-                                break;
-
-
+                    for(int na = 0; na < _NOargs; na++) {
+                        if(Uin[na] != null) {
+                            _U_in[na] = Uin[na][l, k];
+                        } else {
+                            _U_in[na] = 0;
+                        }
+                        if(GradUin[na] != null) {
+                            for(int d = 0; d < D; d++) {
+                                _GradU_in[na, d] = GradUin[na][l, k, d];
                             }
-                        case IncompressibleBcType.FreeSlip:
-                        case IncompressibleBcType.SlipSymmetry: {
-                                break;
+                        } else {
+                            for(int d = 0; d < D; d++) {
+                                _GradU_in[na, d] = 0;
                             }
-                        case IncompressibleBcType.NavierSlip_Linear: {
-                                throw new NotImplementedException("TODO");
-                            }
-                        case IncompressibleBcType.Outflow:
-                        case IncompressibleBcType.Pressure_Outlet: {
-                                // do nothing
-                                break;
-                            }
-                        case IncompressibleBcType.Pressure_Dirichlet: {
-                                // do nothing
-                                break;
-                            }
-                        default:
-                            throw new NotImplementedException();
+                        }
+                    }
+
+                    for(int d = 0; d < D; d++) {
+                        _GradV_in[d] = 1;
+                        f[l, k, d] += this.BoundaryEdgeForm(ref cpv, _U_in, _GradU_in, _V_in, _GradV_in);
+                        _GradV_in[d] = 0;
                     }
                 }
-            }
+            } 
         }
 
         void INonlinEdgeForm_V.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout, MultidimensionalArray fin, MultidimensionalArray fot) {
@@ -866,111 +859,85 @@ namespace BoSSS.Solution.NSECommon {
                         flux -= 0.5 * (viscosityIN * GradUin[m_iComp][cell, node, d] + viscosityOT * GradUout[m_iComp][cell, node, d]) * n * base.m_alpha;
                     }
                     flux += Math.Max(viscosityIN, viscosityOT) * (Uin[m_iComp][cell, node] - Uout[m_iComp][cell, node]) * pnlty;
-
+                
                     fin[cell, node] += flux;
                     fot[cell, node] -= flux;
                 }
             }
         }
 
-        void INonlinEdgeForm_V.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray fin) {
-            int NumOfEdges = efp.Len;
-            Debug.Assert(fin.GetLength(0) == NumOfEdges);
-            int NumOfNodes = fin.GetLength(1); // no of nodes per cell
+        void INonlinEdgeForm_V.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray f) {
+            int L = efp.Len;
+            Debug.Assert(f.GetLength(0) == L);
+            int K = f.GetLength(1); // no of nodes per cell
+            int D = efp.GridDat.SpatialDimension;
             int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
-            double[] Parameters = new double[_NOParams];
-            int NumOfArguments = ArgumentOrdering.Count();
+            Debug.Assert(_NOParams == efp.ParameterVars_IN.Length);
+            int _NOargs = this.ArgumentOrdering.Count;
+            Debug.Assert(_NOargs == Uin.Length);
+            Debug.Assert(_NOargs == GradUin.Length);
 
+            CommonParamsBnd cpv;
+            cpv.GridDat = efp.GridDat;
+            cpv.Parameters_IN = new double[_NOParams];
+            cpv.Normale = new double[D];
+            cpv.X = new double[D];
+            cpv.time = efp.time;
 
-            for(int edge = 0; edge < NumOfEdges; edge++) { // loop over edges...
-                int iEdge = efp.e0 + edge;
-                byte edgeTag = efp.GridDat.iGeomEdges.EdgeTags[iEdge];
-                IncompressibleBcType edgeType = base.EdgeTag2Type[edgeTag];
+            double[] _GradV_in = new double[D];
+            double[,] _GradU_in = new double[_NOargs, D];
+            double[] _U_in = new double[_NOargs];
+            double _V_in = 0.0;
+            byte[] EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
 
-                int jCellIn = efp.GridDat.iGeomEdges.CellIndices[iEdge, 0];
-                double pnlty = 2 * penalty(jCellIn, -1);
+ 
 
+            for(int l = 0; l < L; l++) { // loop over edges...
+                cpv.iEdge = efp.e0 + l;
+                cpv.EdgeTag = EdgeTags[cpv.iEdge];
 
-                for(int node = 0; node < NumOfNodes; node++) { // loop over nodes...
-
-                    double[] X = new double[m_D]; // Global node coordinates
-                    double[,] GradU_in = new double[m_D, NumOfArguments];
-
-                    for(int i = 0; i < m_D; i++) {
-                        X[i] = efp.NodesGlobal[edge, node, i];
-                        GradU_in[i, m_iComp] = GradUin[m_iComp][edge, node, i];
-                    }
-
+                for(int k = 0; k < K; k++) { // loop over nodes...
 
                     for(int np = 0; np < _NOParams; np++) {
-                        Parameters[np] = efp.ParameterVars_IN[np][edge, node];
-                    }
-                    double viscosity = Viscosity(Parameters);
-
-
-                    double[] normale = new double[m_D];
-
-                    for(int d = 0; d < m_D; d++) {
-                        normale[d] = efp.Normals[edge, node, d];
+                        cpv.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
                     }
 
-
-                    switch(edgeType) {
-                        case IncompressibleBcType.Velocity_Inlet:
-                        case IncompressibleBcType.Wall:
-                        case IncompressibleBcType.NoSlipNeumann: {
-                                // inhom. Dirichlet b.c.
-                                // +++++++++++++++++++++
-
-                                double g_D = base.g_Diri(X, efp.time, edgeTag, m_iComp); // Velocity boundary condition 
-
-                                double flux = 0.0;
-                                for(int d = 0; d < m_D; d++) {
-                                    double n = efp.Normals[edge, node, d];
-                                    flux -= viscosity * GradUin[m_iComp][edge, node, d] * n * base.m_alpha;    // Consistency term
-                                }
-                                flux += viscosity * (Uin[m_iComp][edge, node] - g_D) * pnlty; // Penalty term
-                                fin[edge, node] += flux;
-
-
-                                break;
-
-
-                            }
-                        case IncompressibleBcType.FreeSlip:
-                        case IncompressibleBcType.SlipSymmetry: {
-
-                                break;
-                            }
-                        case IncompressibleBcType.NavierSlip_Linear: {
-                                throw new NotImplementedException("TODO");
-                            }
-                        case IncompressibleBcType.Outflow:
-                        case IncompressibleBcType.Pressure_Outlet: {
-                                // Atmospheric outlet/pressure outflow: hom. Neumann
-                                // +++++++++++++++++++++++++++++++++++++++++++++++++
-
-                                double g_N = g_Neu(X, normale, edgeTag);
-                                double flux = 0.0;
-                                flux += viscosity * g_N * base.m_alpha;
-                                fin[edge, node] += flux;
-                                break;
-                            }
-                        case IncompressibleBcType.Pressure_Dirichlet: {
-                                double flux = 0.0;
-                                for(int d = 0; d < m_D; d++) {
-                                    double n = efp.Normals[edge, node, d];
-                                    flux -= viscosity * GradUin[m_iComp][edge, node, d] * n * base.m_alpha;    // Consistency term                          
-                                }
-                                fin[edge, node] += flux;
-                                break;
-                            }
-                        default:
-                            throw new NotImplementedException();
+                    for(int d = 0; d < D; d++) {
+                        cpv.Normale[d] = efp.Normals[l, k, d];
+                        cpv.X[d] = efp.NodesGlobal[l, k, d];
                     }
+
+                    for(int na = 0; na < _NOargs; na++) {
+                        if(Uin[na] != null) {
+                            _U_in[na] = Uin[na][l, k];
+                        } else {
+                            _U_in[na] = 0;
+                        }
+                        if(GradUin[na] != null) {
+                            for(int d = 0; d < D; d++) {
+                                _GradU_in[na, d] = GradUin[na][l, k, d];
+                            }
+                        } else {
+                            for(int d = 0; d < D; d++) {
+                                _GradU_in[na, d] = 0;
+                            }
+                        }
+                    }
+
+                    _V_in = 1;
+                    f[l, k] += this.BoundaryEdgeForm(ref cpv, _U_in, _GradU_in, _V_in, _GradV_in);
                 }
             }
+
+ 
+
+
+
         }
+
+
+
+
 
     }
 
@@ -1250,70 +1217,65 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         void INonlinEdgeForm_GradV.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray f) {
-
-            int NumOfEdges = efp.Len;
-            Debug.Assert(f.GetLength(0) == NumOfEdges);
-            int NumOfNodes = f.GetLength(1); // no of nodes per cell
+            int L = efp.Len;
+            Debug.Assert(f.GetLength(0) == L);
+            int K = f.GetLength(1); // no of nodes per cell
+            int D = efp.GridDat.SpatialDimension;
             int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
-            double[] Parameters = new double[_NOParams];
+            Debug.Assert(_NOParams == efp.ParameterVars_IN.Length);
+            int _NOargs = this.ArgumentOrdering.Count;
+            Debug.Assert(_NOargs == Uin.Length);
+            Debug.Assert(_NOargs == GradUin.Length);
 
-            for(int edge = 0; edge < NumOfEdges; edge++) { // loop over edges...
-                int iEdge = efp.e0 + edge;
-                byte edgeTag = efp.GridDat.iGeomEdges.EdgeTags[iEdge];
-                IncompressibleBcType edgeType = base.EdgeTag2Type[edgeTag];
+            CommonParamsBnd cpv;
+            cpv.GridDat = efp.GridDat;
+            cpv.Parameters_IN = new double[_NOParams];
+            cpv.Normale = new double[D];
+            cpv.X = new double[D];
+            cpv.time = efp.time;
 
-                for(int node = 0; node < NumOfNodes; node++) { // loop over nodes...
-                    // Global node coordinates
-                    double[] X = new double[efp.GridDat.SpatialDimension];
-                    for(int i = 0; i < efp.GridDat.SpatialDimension; i++) {
-                        X[i] = efp.NodesGlobal[edge, node, i];
-                    }
+            double[] _GradV_in = new double[D];
+            double[,] _GradU_in = new double[_NOargs, D];
+            double[] _U_in = new double[_NOargs];
+            double _V_in = 0.0;
+            byte[] EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
+
+            for(int l = 0; l < L; l++) { // loop over edges ...
+                cpv.iEdge = efp.e0 + l;
+                cpv.EdgeTag = EdgeTags[cpv.iEdge];
+
+                for(int k = 0; k < K; k++) { // loop over nodes...
 
                     for(int np = 0; np < _NOParams; np++) {
-                        Parameters[np] = efp.ParameterVars_IN[np][edge, node];
+                        cpv.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
                     }
 
-                    double viscosity = Viscosity(Parameters);
-                    switch(edgeType) {
-                        case IncompressibleBcType.Velocity_Inlet:
-                        case IncompressibleBcType.Wall:
-                        case IncompressibleBcType.NoSlipNeumann: {
-                                // inhom. Dirichlet b.c.
-                                // +++++++++++++++++++++
+                    for(int d = 0; d < D; d++) {
+                        cpv.Normale[d] = efp.Normals[l, k, d];
+                        cpv.X[d] = efp.NodesGlobal[l, k, d];
+                    }
 
-               
+                    for(int na = 0; na < _NOargs; na++) {
+                        if(Uin[na] != null) {
+                            _U_in[na] = Uin[na][l, k];
+                        } else {
+                            _U_in[na] = 0;
+                        }
+                        if(GradUin[na] != null) {
+                            for(int d = 0; d < D; d++) {
+                                _GradU_in[na, d] = GradUin[na][l, k, d];
+                            }
+                        } else {
+                            for(int d = 0; d < D; d++) {
+                                _GradU_in[na, d] = 0;
+                            }
+                        }
+                    }
 
-                                switch(ViscSolverMode) {
-                                    case ViscositySolverMode.FullyCoupled:
-                                        for(int d = 0; d < efp.GridDat.SpatialDimension; d++) {
-                                            f[edge, node, d] -= viscosity * (Uin[d][edge, node] - base.g_Diri(X, efp.time, edgeTag, d)) * efp.Normals[edge, node, m_iComp] * base.m_alpha;
-                                        }
-                                        break;
-                                    case ViscositySolverMode.Segregated:
-                                        f[edge, node, m_iComp] -= viscosity * (Uin[m_iComp][edge, node] - base.g_Diri(X, efp.time, edgeTag, m_iComp)) * efp.Normals[edge, node, m_iComp] * base.m_alpha;
-                                        break;
-                                    default:
-                                        throw new NotImplementedException();
-
-                                }
-
-                                break;
-                            }
-                        case IncompressibleBcType.FreeSlip:
-                        case IncompressibleBcType.SlipSymmetry: {
-                                throw new NotImplementedException("TODO");
-                            }
-                        case IncompressibleBcType.NavierSlip_Linear: {
-                                throw new NotImplementedException("TODO");
-                            }
-                        case IncompressibleBcType.Pressure_Dirichlet:
-                        case IncompressibleBcType.Outflow:
-                        case IncompressibleBcType.Pressure_Outlet: {
-                                // do nothing
-                                break;
-                            }
-                        default:
-                            throw new NotImplementedException();
+                    for(int d = 0; d < D; d++) {
+                        _GradV_in[d] = 1;
+                        f[l, k, d] += this.BoundaryEdgeForm(ref cpv, _U_in, _GradU_in, _V_in, _GradV_in);
+                        _GradV_in[d] = 0;
                     }
                 }
             }
@@ -1360,100 +1322,72 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
-        void INonlinEdgeForm_V.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray fin) {
-            int NumOfEdges = efp.Len;
-            Debug.Assert(fin.GetLength(0) == NumOfEdges);
-            int NumOfNodes = fin.GetLength(1); // no of nodes per cell
+        void INonlinEdgeForm_V.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray f) {
+            int L = efp.Len;
+            Debug.Assert(f.GetLength(0) == L);
+            int K = f.GetLength(1); // no of nodes per cell
+            int D = efp.GridDat.SpatialDimension;
             int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
-            double[] Parameters = new double[_NOParams];
-            int NumOfArguments = ArgumentOrdering.Count();
+            Debug.Assert(_NOParams == efp.ParameterVars_IN.Length);
+            int _NOargs = this.ArgumentOrdering.Count;
+            Debug.Assert(_NOargs == Uin.Length);
+            Debug.Assert(_NOargs == GradUin.Length);
+
+            CommonParamsBnd cpv;
+            cpv.GridDat = efp.GridDat;
+            cpv.Parameters_IN = new double[_NOParams];
+            cpv.Normale = new double[D];
+            cpv.X = new double[D];
+            cpv.time = efp.time;
+
+            double[] _GradV_in = new double[D];
+            double[,] _GradU_in = new double[_NOargs, D];
+            double[] _U_in = new double[_NOargs];
+            double _V_in = 0.0;
+            byte[] EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
 
 
-            for(int edge = 0; edge < NumOfEdges; edge++) { // loop over edges...
-                int iEdge = efp.e0 + edge;
-                byte edgeTag = efp.GridDat.iGeomEdges.EdgeTags[iEdge];
-                IncompressibleBcType edgeType = base.EdgeTag2Type[edgeTag];
 
-                int jCellIn = efp.GridDat.iGeomEdges.CellIndices[iEdge, 0];
-                double pnlty = 2 * penalty(jCellIn, -1);
+            for(int l = 0; l < L; l++) { // loop over edges...
+                cpv.iEdge = efp.e0 + l;
+                cpv.EdgeTag = EdgeTags[cpv.iEdge];
 
-
-                for(int node = 0; node < NumOfNodes; node++) { // loop over nodes...
-
-                    double[] X = new double[m_D]; // Global node coordinates
-                    double[,] GradU_in = new double[m_D, NumOfArguments];
-
-                    for(int i = 0; i < m_D; i++) {
-                        X[i] = efp.NodesGlobal[edge, node, i];
-                        GradU_in[i, m_iComp] = GradUin[m_iComp][edge, node, i];
-                    }
-
+                for(int k = 0; k < K; k++) { // loop over nodes...
 
                     for(int np = 0; np < _NOParams; np++) {
-                        Parameters[np] = efp.ParameterVars_IN[np][edge, node];
-                    }
-                    double viscosity = Viscosity(Parameters);
-
-
-                    double[] normale = new double[m_D];
-
-                    for(int d = 0; d < m_D; d++) {
-                        normale[d] = efp.Normals[edge, node, d];
+                        cpv.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
                     }
 
-
-                    switch(edgeType) {
-                        case IncompressibleBcType.Velocity_Inlet:
-                        case IncompressibleBcType.Wall:
-                        case IncompressibleBcType.NoSlipNeumann: {
-                                // inhom. Dirichlet b.c.
-                                // +++++++++++++++++++++
-
-                                double g_D = base.g_Diri(X, efp.time, edgeTag, m_iComp); // Velocity boundary condition 
-
-                                double flux = 0.0;
-                                for(int d = 0; d < m_D; d++) {
-                                    flux -= viscosity * GradUin[d][edge, node, m_iComp] * efp.Normals[edge, node, d] * base.m_alpha;    // Consistency term
-                                }
-                                flux += viscosity * (Uin[m_iComp][edge, node] - g_D) * pnlty; // Penalty term
-                                fin[edge, node] += flux;
-                                break;
-                            }
-                        case IncompressibleBcType.FreeSlip:
-                        case IncompressibleBcType.SlipSymmetry: {
-                                throw new NotImplementedException("TODO");
-                            }
-                        case IncompressibleBcType.NavierSlip_Linear: {
-                                throw new NotImplementedException("TODO");
-                            }
-                        case IncompressibleBcType.Pressure_Dirichlet:
-                        case IncompressibleBcType.Outflow:
-                        case IncompressibleBcType.Pressure_Outlet: {
-                                // Atmospheric outlet/pressure outflow: hom. Neumann
-                                // +++++++++++++++++++++++++++++++++++++++++++++++++
-
-                                if(base.g_Neu_Override == null) {
-                                    // Inner values of velocity gradient are taken, i.e.
-                                    // no boundary condition for the velocity (resp. velocity gradient) is imposed.
-                                    double flux = 0.0;
-                                    for(int d = 0; d < m_D; d++) {
-                                        flux -= viscosity * GradUin[d][edge, node, m_iComp] * efp.Normals[edge, node, d];   
-                                    }
-                                    fin[edge, node] += flux * base.m_alpha;
-                                } else {
-                                    double g_N = g_Neu(X, normale, edgeTag);
-                                    double flux = 0.0;
-                                    flux += viscosity * g_N * base.m_alpha;
-                                    fin[edge, node] += flux;
-                                }
-                               break;
-
-                            }
-                        default:
-                            throw new NotImplementedException();
+                    for(int d = 0; d < D; d++) {
+                        cpv.Normale[d] = efp.Normals[l, k, d];
+                        cpv.X[d] = efp.NodesGlobal[l, k, d];
                     }
+
+                    for(int na = 0; na < _NOargs; na++) {
+                        if(Uin[na] != null) {
+                            _U_in[na] = Uin[na][l, k];
+                        } else {
+                            _U_in[na] = 0;
+                        }
+                        if(GradUin[na] != null) {
+                            for(int d = 0; d < D; d++) {
+                                _GradU_in[na, d] = GradUin[na][l, k, d];
+                            }
+                        } else {
+                            for(int d = 0; d < D; d++) {
+                                _GradU_in[na, d] = 0;
+                            }
+                        }
+                    }
+
+                    _V_in = 1;
+                    f[l, k] += this.BoundaryEdgeForm(ref cpv, _U_in, _GradU_in, _V_in, _GradV_in);
                 }
             }
+
+
+
+
 
         }
 
@@ -1672,73 +1606,70 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         void INonlinEdgeForm_GradV.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray f) {
-            int NumOfEdges = efp.Len;
-            Debug.Assert(f.GetLength(0) == NumOfEdges);
-            int NumOfNodes = f.GetLength(1); // no of nodes per cell
+            int L = efp.Len;
+            Debug.Assert(f.GetLength(0) == L);
+            int K = f.GetLength(1); // no of nodes per cell
+            int D = efp.GridDat.SpatialDimension;
             int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
-            double[] Parameters = new double[_NOParams];
+            Debug.Assert(_NOParams == efp.ParameterVars_IN.Length);
+            int _NOargs = this.ArgumentOrdering.Count;
+            Debug.Assert(_NOargs == Uin.Length);
+            Debug.Assert(_NOargs == GradUin.Length);
 
-            for(int edge = 0; edge < NumOfEdges; edge++) { // loop over edges...
-                int iEdge = efp.e0 + edge;
-                byte edgeTag = efp.GridDat.iGeomEdges.EdgeTags[iEdge];
-                IncompressibleBcType edgeType = base.EdgeTag2Type[edgeTag];
+            CommonParamsBnd cpv;
+            cpv.GridDat = efp.GridDat;
+            cpv.Parameters_IN = new double[_NOParams];
+            cpv.Normale = new double[D];
+            cpv.X = new double[D];
+            cpv.time = efp.time;
 
-                for(int node = 0; node < NumOfNodes; node++) { // loop over nodes...
-                    // Global node coordinates
-                    double[] X = new double[efp.GridDat.SpatialDimension];
-                    for(int i = 0; i < efp.GridDat.SpatialDimension; i++) {
-                        X[i] = efp.NodesGlobal[edge, node, i];
-                    }
+            double[] _GradV_in = new double[D];
+            double[,] _GradU_in = new double[_NOargs, D];
+            double[] _U_in = new double[_NOargs];
+            double _V_in = 0.0;
+            byte[] EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
+
+            for(int l = 0; l < L; l++) { // loop over edges ...
+                cpv.iEdge = efp.e0 + l;
+                cpv.EdgeTag = EdgeTags[cpv.iEdge];
+
+                for(int k = 0; k < K; k++) { // loop over nodes...
 
                     for(int np = 0; np < _NOParams; np++) {
-                        Parameters[np] = efp.ParameterVars_IN[np][edge, node];
+                        cpv.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
                     }
 
-                    double viscosity = Viscosity(Parameters);
-                    switch(edgeType) {
-                        case IncompressibleBcType.Velocity_Inlet:
-                        case IncompressibleBcType.Wall:
-                        case IncompressibleBcType.NoSlipNeumann: {
-                                // inhom. Dirichlet b.c.
-                                // +++++++++++++++++++++
-                             
-                                switch(ViscSolverMode) {
-                                    case ViscositySolverMode.FullyCoupled:
-                                        for(int d = 0; d < efp.GridDat.SpatialDimension; d++) {
-                                            f[edge, node, m_iComp] -= viscosity * (Uin[d][edge, node] - base.g_Diri(X, efp.time, edgeTag, d)) * efp.Normals[edge, node, d] * base.m_alpha * (-2.0 / 3.0);
-                                        }
-                                        break;
-                                    case ViscositySolverMode.Segregated:
-                                        f[edge, node, m_iComp] -= viscosity * (Uin[m_iComp][edge, node] - base.g_Diri(X, efp.time, edgeTag, m_iComp)) * efp.Normals[edge, node, m_iComp] * base.m_alpha * (-2.0 / 3.0);
-                                        break;
-                                    default:
-                                        throw new NotImplementedException();
+                    for(int d = 0; d < D; d++) {
+                        cpv.Normale[d] = efp.Normals[l, k, d];
+                        cpv.X[d] = efp.NodesGlobal[l, k, d];
+                    }
 
-                                }
+                    for(int na = 0; na < _NOargs; na++) {
+                        if(Uin[na] != null) {
+                            _U_in[na] = Uin[na][l, k];
+                        } else {
+                            _U_in[na] = 0;
+                        }
+                        if(GradUin[na] != null) {
+                            for(int d = 0; d < D; d++) {
+                                _GradU_in[na, d] = GradUin[na][l, k, d];
+                            }
+                        } else {
+                            for(int d = 0; d < D; d++) {
+                                _GradU_in[na, d] = 0;
+                            }
+                        }
+                    }
 
-                                break;
-                            }
-                        case IncompressibleBcType.Pressure_Dirichlet:
-                        case IncompressibleBcType.Outflow:
-                        case IncompressibleBcType.Pressure_Outlet: {
-                                // do nothing
-                                break;
-                            }
-
-                        case IncompressibleBcType.FreeSlip:
-                        case IncompressibleBcType.SlipSymmetry: {
-                                throw new NotImplementedException("TODO");
-                            }
-                        case IncompressibleBcType.NavierSlip_Linear: {
-                                throw new NotImplementedException("TODO");
-                            }
-                       
-                        default:
-                            throw new NotImplementedException();
+                    for(int d = 0; d < D; d++) {
+                        _GradV_in[d] = 1;
+                        f[l, k, d] += this.BoundaryEdgeForm(ref cpv, _U_in, _GradU_in, _V_in, _GradV_in);
+                        _GradV_in[d] = 0;
                     }
                 }
             }
         }
+
 
         void INonlinEdgeForm_V.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout, MultidimensionalArray fin, MultidimensionalArray fot) {
             int NumOfCells = efp.Len;
@@ -1780,103 +1711,73 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
-        void INonlinEdgeForm_V.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray fin) {
-           
-            int NumOfEdges = efp.Len;
-            Debug.Assert(fin.GetLength(0) == NumOfEdges);
-            int NumOfNodes = fin.GetLength(1); // no of nodes per cell
+        void INonlinEdgeForm_V.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray f) {
+            int L = efp.Len;
+            Debug.Assert(f.GetLength(0) == L);
+            int K = f.GetLength(1); // no of nodes per cell
+            int D = efp.GridDat.SpatialDimension;
             int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
-            double[] Parameters = new double[_NOParams];
-            int NumOfArguments = ArgumentOrdering.Count();
+            Debug.Assert(_NOParams == efp.ParameterVars_IN.Length);
+            int _NOargs = this.ArgumentOrdering.Count;
+            Debug.Assert(_NOargs == Uin.Length);
+            Debug.Assert(_NOargs == GradUin.Length);
 
-            for(int edge = 0; edge < NumOfEdges; edge++) { // loop over edges...
-                int iEdge = efp.e0 + edge;
-                byte edgeTag = efp.GridDat.iGeomEdges.EdgeTags[iEdge];
-                IncompressibleBcType edgeType = base.EdgeTag2Type[edgeTag];
+            CommonParamsBnd cpv;
+            cpv.GridDat = efp.GridDat;
+            cpv.Parameters_IN = new double[_NOParams];
+            cpv.Normale = new double[D];
+            cpv.X = new double[D];
+            cpv.time = efp.time;
 
-                int jCellIn = efp.GridDat.iGeomEdges.CellIndices[iEdge, 0];
-                double pnlty = 2 * penalty(jCellIn, -1);
+            double[] _GradV_in = new double[D];
+            double[,] _GradU_in = new double[_NOargs, D];
+            double[] _U_in = new double[_NOargs];
+            double _V_in = 0.0;
+            byte[] EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
 
 
-                for(int node = 0; node < NumOfNodes; node++) { // loop over nodes...
 
-                    double[] X = new double[m_D]; // Global node coordinates
-                    double[,] GradU_in = new double[m_D, NumOfArguments];
+            for(int l = 0; l < L; l++) { // loop over edges...
+                cpv.iEdge = efp.e0 + l;
+                cpv.EdgeTag = EdgeTags[cpv.iEdge];
 
-                    for(int i = 0; i < m_D; i++) {
-                        X[i] = efp.NodesGlobal[edge, node, i];
-                        GradU_in[i, m_iComp] = GradUin[m_iComp][edge, node, i];
-                    }
+                for(int k = 0; k < K; k++) { // loop over nodes...
 
                     for(int np = 0; np < _NOParams; np++) {
-                        Parameters[np] = efp.ParameterVars_IN[np][edge, node];
-                    }
-                    double viscosity = Viscosity(Parameters);
-                    double[] normale = new double[m_D];
-
-                    for(int d = 0; d < m_D; d++) {
-                        normale[d] = efp.Normals[edge, node, d];
+                        cpv.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
                     }
 
-
-                    switch(edgeType) {
-                        case IncompressibleBcType.Velocity_Inlet:
-                        case IncompressibleBcType.Wall:
-                        case IncompressibleBcType.NoSlipNeumann: {
-                                // inhom. Dirichlet b.c.
-                                // +++++++++++++++++++++
-                                double flux = 0.0;
-                                for(int d = 0; d < m_D; d++) {
-                                    flux -= viscosity * GradUin[d][edge, node, d] * efp.Normals[edge, node, m_iComp] * base.m_alpha;    // Consistency term
-                                }
-                                flux += viscosity * (Uin[m_iComp][edge, node] - base.g_Diri(X, efp.time, edgeTag, m_iComp)) * pnlty; // Penalty term
-                                fin[edge, node] += flux  * (-2.0 / 3.0);
-                                break;
-                            }
-
-                        case IncompressibleBcType.Pressure_Dirichlet:
-                        case IncompressibleBcType.Outflow:
-                        case IncompressibleBcType.Pressure_Outlet: {
-                                // Atmospheric outlet/pressure outflow: hom. Neumann
-                                // +++++++++++++++++++++++++++++++++++++++++++++++++
-
-                                if(base.g_Neu_Override == null) {
-                                    // Inner values of velocity gradient are taken, i.e.
-                                    // no boundary condition for the velocity (resp. velocity gradient) is imposed.
-                                    double flux = 0.0;
-                                    for(int d = 0; d < m_D; d++) {
-                                        flux -= viscosity * GradUin[d][edge, node, d] * efp.Normals[edge, node, m_iComp] * (-2.0 / 3.0);
-                                    }
-                                    fin[edge, node] += flux * base.m_alpha;
-                                } else {
-                                    double g_N = g_Neu(X, normale, edgeTag);
-                                    double flux = 0.0;
-                                    flux += viscosity * g_N * base.m_alpha;
-                                    fin[edge, node] += flux;
-                                }
-                                break;
-
-
-
-                            }
-
-                        case IncompressibleBcType.FreeSlip:
-                        case IncompressibleBcType.SlipSymmetry: {
-                                throw new NotImplementedException("TODO");
-                            }
-                        case IncompressibleBcType.NavierSlip_Linear: {
-                                throw new NotImplementedException("TODO");
-                            }
-
-                      
-                        
-                        default:
-                            throw new NotImplementedException();
+                    for(int d = 0; d < D; d++) {
+                        cpv.Normale[d] = efp.Normals[l, k, d];
+                        cpv.X[d] = efp.NodesGlobal[l, k, d];
                     }
+
+                    for(int na = 0; na < _NOargs; na++) {
+                        if(Uin[na] != null) {
+                            _U_in[na] = Uin[na][l, k];
+                        } else {
+                            _U_in[na] = 0;
+                        }
+                        if(GradUin[na] != null) {
+                            for(int d = 0; d < D; d++) {
+                                _GradU_in[na, d] = GradUin[na][l, k, d];
+                            }
+                        } else {
+                            for(int d = 0; d < D; d++) {
+                                _GradU_in[na, d] = 0;
+                            }
+                        }
+                    }
+
+                    _V_in = 1;
+                    f[l, k] += this.BoundaryEdgeForm(ref cpv, _U_in, _GradU_in, _V_in, _GradV_in);
                 }
             }
 
-        }
 
+
+
+
+        }
     }
 }

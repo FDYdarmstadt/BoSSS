@@ -136,7 +136,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 #if DEBUG
             if (f_check != null) {
                 double f_RelErr = f_check.L2Dist(f) / Math.Max(f.L2Norm(), 1);
-                Debug.Assert(f_RelErr < 1e-15);
+                Debug.Assert(f_RelErr < 1e-14);
             }
 #endif
 
@@ -259,7 +259,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 #if DEBUG
             if (f_check != null) {
                 double f_RelErr = f_check.L2Dist(f) / Math.Max(f.L2Norm(), 1);
-                Debug.Assert(f_RelErr < 1e-15);
+                Debug.Assert(f_RelErr < 1e-14);
             }
 #endif
         }
@@ -420,7 +420,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             if (fin_check != null) {
                 double fin_RelErr = fin_check.L2Dist(fin) / Math.Max(Math.Max(fin.L2Norm(), fin_check.L2Norm()), 1);
                 double fot_RelErr = fot_check.L2Dist(fot) / Math.Max(Math.Max(fot.L2Norm(), fot_check.L2Norm()), 1);
-                Debug.Assert(fin_RelErr < 1e-15 && fot_RelErr < 1e-15);
+                Debug.Assert(fin_RelErr < 1e-14 && fot_RelErr < 1e-14);
 
             }
 #endif
@@ -503,7 +503,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 #if DEBUG
             if (f_check != null) { 
                 double f_RelErr = f_check.L2Dist(f) / Math.Max(f.L2Norm(), 1); 
-                Debug.Assert(f_RelErr < 1e-15);
+                Debug.Assert(f_RelErr < 1e-14);
             }
 #endif
         }
@@ -613,7 +613,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             if (fin_check != null) {
                 double fin_RelErr = fin_check.L2Dist(fin) / Math.Max(Math.Max(fin.L2Norm(), fin_check.L2Norm()), 1);
                 double fot_RelErr = fot_check.L2Dist(fot) / Math.Max(Math.Max(fot.L2Norm(), fot_check.L2Norm()), 1);               
-                Debug.Assert(fin_RelErr < 1e-15 && fot_RelErr < 1e-15);
+                Debug.Assert(fin_RelErr < 1e-14 && fot_RelErr < 1e-14);
 
             }
 #endif
@@ -698,7 +698,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 #if DEBUG
             if (f_check != null) {
                 double f_RelErr = f_check.L2Dist(f) / Math.Max(f.L2Norm(), 1);              
-                Debug.Assert(f_RelErr < 1e-15);
+                Debug.Assert(f_RelErr < 1e-14);
             }
 #endif
         }
