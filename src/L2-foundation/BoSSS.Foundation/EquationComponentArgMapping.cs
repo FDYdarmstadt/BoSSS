@@ -79,7 +79,7 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
             List<T> AllComponentsofMyType = new List<T>();
 
             foreach (IEquationComponent eqComp in eqCompS) {
-                if(eqComp is T) {
+                if(eqComp is T && !eqComp.IgnoreVectorizedImplementation) {
 
                     T _VeqComp;
 #if DEBUG
