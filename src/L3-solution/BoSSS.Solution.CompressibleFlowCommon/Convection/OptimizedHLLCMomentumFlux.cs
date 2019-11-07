@@ -19,6 +19,7 @@ using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using ilPSP;
 using System;
+using System.Diagnostics;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
@@ -153,6 +154,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
                         }
                     }
 
+                    Debug.Assert(!double.IsNaN(edgeFlux) || double.IsInfinity(edgeFlux));
                     Output[e + Offset, n] += edgeFlux;
                 }
             }
@@ -188,8 +190,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
                             U[d + 1][e + Offset, n] / density;
                         momentumSquared += U[d + 1][e + Offset, n] * U[d + 1][e + Offset, n];
                     }
-                    Output[e + Offset, n, component] +=
-                        ((gamma - 1.0) * (energy - gammaMachSquared * 0.5 * momentumSquared / density)) / gammaMachSquared;
+
+                    double flux = (gamma - 1.0) * (energy - gammaMachSquared * 0.5 * momentumSquared / density) / gammaMachSquared;
+                    Debug.Assert(!double.IsNaN(flux) || double.IsInfinity(flux));
+                    Output[e + Offset, n, component] += flux;
                 }
             }
         }
