@@ -663,6 +663,26 @@ namespace BoSSS.Solution {
                     //};
                     break;
 
+                case LinearSolverCode.exp_gmres_schwarz_pmg:
+                    _precond = new Schwarz() {
+                        m_MaxIterations = 1,
+                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                            NoOfPartsPerProcess = NoOfBlocks
+                        },
+                        CoarseSolver=null,
+                        Overlap = 1,
+                        EnableOverlapScaling = false,
+                        UsePMGinBlocks = false,
+
+                    };
+                    templinearSolve = new SoftGMRES() {
+                        m_Tolerance = lc.ConvergenceCriterion,
+                        m_MaxIterations = lc.MaxSolverIterations,
+                        Precond = _precond
+                    };
+
+                    break;
+
                 //testing area, please wear a helmet ...
                 case LinearSolverCode.exp_softpcg_jacobi_mg:
 
@@ -809,8 +829,11 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_softpcg_schwarz_mg:
                     _precond = new Schwarz() {
                         m_MaxIterations = 1,
-                        CoarseSolver = DetermineMGSquence(MultigridSeqLength - 2, lc),
-                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                        CoarseSolver = new SparseSolver() {
+                            WhichSolver = SparseSolver._whichSolver.MUMPS,
+                            LinConfig = lc
+                        },
+                    m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsPerProcess = NoOfBlocks
                         },
                         Overlap = 1,
@@ -826,16 +849,24 @@ namespace BoSSS.Solution {
 
                 case LinearSolverCode.exp_OrthoS_pMG:
 
-                    templinearSolve=new OrthonormalizationScheme()
-                    {
+                    templinearSolve = new OrthonormalizationScheme() {
                         PrecondS = new ISolverSmootherTemplate[]{
-                            //new Schwarz() { CoarseSolver = new SparseSolver()
-                            //{ WhichSolver = SparseSolver._whichSolver.PARDISO,TestSolution = false},
-                            //Overlap=1,
-                            //m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                            //NoOfPartsPerProcess = NoOfBlocks},},
-                            new LevelPmg() {UseHiOrderSmoothing=true},
-                            new BlockJacobi() {NoOfIterations=1},
+                            new LevelPmg() {
+                                UseHiOrderSmoothing =true,
+                                CoarseLowOrder=1
+                            },
+                            
+                            new Schwarz() {
+                                m_MaxIterations = 1,
+                                CoarseSolver = null,
+                                Overlap=1,
+                                m_BlockingStrategy = new Schwarz.METISBlockingStrategy()          {
+                                    NoOfPartsPerProcess = NoOfBlocks
+                                },
+                                UsePMGinBlocks=false,
+                                EnableOverlapScaling=false,
+                                pLow=1,
+                            },
                         },
                         MaxKrylovDim = lc.MaxKrylovDim,
                         MaxIter = lc.MaxSolverIterations,
