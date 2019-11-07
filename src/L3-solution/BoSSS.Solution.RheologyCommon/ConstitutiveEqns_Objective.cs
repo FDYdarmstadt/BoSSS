@@ -118,14 +118,7 @@ namespace BoSSS.Solution.RheologyCommon
             double Grad4 = cpv.Parameters[3];
 
             double res = 0.0;
-            if (Component == 1)
-            {
-                res = ((Grad1 * T[0] + Grad2 * T[1]) + (Grad3 * T[2] + Grad4 * T[3]));
-            }
-            else
-            {
-                res = ((Grad1 * T[0] + Grad2 * T[1]) + (Grad3 * T[2] + Grad4 * T[3]));
-            }
+            res = ((Grad1 * T[0] + Grad2 * T[1]) + (Grad3 * T[2] + Grad4 * T[3]));
 
             return m_ObjectiveParam * -m_Weissenberg * res * V;
         }

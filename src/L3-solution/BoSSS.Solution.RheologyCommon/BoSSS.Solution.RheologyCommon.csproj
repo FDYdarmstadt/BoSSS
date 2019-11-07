@@ -43,6 +43,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ArtificialViscosity.cs" />
+    <Compile Include="IdentityAtLevelSet.cs" />
+    <Compile Include="ViscosityAtLevelSet.cs" />
     <Compile Include="Constitutive_OperatorComponents.cs" />
     <Compile Include="DiffusionInBulk.cs" />
     <Compile Include="ObjectiveInBulk_Tparam.cs" />
@@ -55,7 +57,7 @@
     <Compile Include="ConstitutiveEqns_Objective.cs" />
     <Compile Include="ConstitutiveEqns_Identity.cs" />
     <Compile Include="ConstitutiveEqns_Diffusion.cs" />
-    <Compile Include="ConstitutiveEqns_CellWiseForm.cs" />
+    <Compile Include="ConstitutiveEqns_Convective.cs" />
     <Compile Include="PerssonSensor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

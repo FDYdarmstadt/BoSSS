@@ -487,8 +487,8 @@ namespace BoSSS.Application.Rheology {
                         XOP.EquationComponents["div"].Add(new Divergence_DerivativeSource_Flux(d, BcMap));
 
                         //Pressure stabilization for LDG
-                        //var presStab = new PressureStabilization(this.Control.PresPenalty2, this.Control.Reynolds);
-                        //XOP.EquationComponents["div"].Add(presStab);
+                        var presStab = new PressureStabilization(this.Control.PresPenalty2, this.Control.Reynolds);
+                        XOP.EquationComponents["div"].Add(presStab);
                     }
 
                     // Constitutive equations
@@ -694,7 +694,7 @@ namespace BoSSS.Application.Rheology {
             return 0.0;
         }
 
-
+        
         // Build and solve system
         //=================================================================
         /// <summary>
@@ -706,8 +706,11 @@ namespace BoSSS.Application.Rheology {
                 if (this.Control.OperatorMatrixAnalysis == true) {
 
                     OpAnalysisBase myAnalysis = new OpAnalysisBase(DelComputeOperatorMatrix, CurrentSolution.Mapping, CurrentSolution.Mapping.Fields.ToArray(), null, phystime);
-                    //myAnalysis.VarGroup = new int[] { 0};
-                    myAnalysis.Analyse();
+                    myAnalysis.VarGroup = new int[] { 0,1,2};
+                    double[] cond = myAnalysis.CondNum();//Analyse();
+                    Console.WriteLine("Condition number for full matrix is " + cond[0] + ". Condition number for inner matrix is " + cond[1] + ".");
+                    base.QueryHandler.ValueQuery("condFull", cond[0], true);
+                    base.QueryHandler.ValueQuery("condInner", cond[1], true);
                 }
 
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
@@ -964,7 +967,7 @@ namespace BoSSS.Application.Rheology {
             if (U0.Count != D)
                 throw new ArgumentException("Spatial dimesion and number of velocity parameter components does not match!");
 
-            if (Stress0.Count != D + 1)
+            if (Stress0.Count != (D*D + D)/2)
                 throw new ArgumentException("Spatial dimesion and number of stress parameter components does not match!");
 
 

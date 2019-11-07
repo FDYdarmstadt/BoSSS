@@ -394,13 +394,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             int S;
             if(this.m_i0 != null) {
-                
+
                 S = this.m_i0[jCell];
             } else {
                 Debug.Assert(this.MaximalLength == this.MinimalLength);
                 S = jCell * this.MaximalLength;
             }
-            for(int iF = 0; iF < ifld; iF++)
+            //if (ilPSP.Environment.MPIEnv.MPI_Rank == 1) {
+                //Console.WriteLine("proc:{0}, iVar:{1}, iCell:{2}, {3}", ilPSP.Environment.MPIEnv.MPI_Rank, ifld, jCell, S);
+            //}
+
+            
+            for (int iF = 0; iF < ifld; iF++)
                 S += this.AggBasis[iF].GetLength(jCell, this.m_DgDegree[iF]);
             S += n;
             return S;
@@ -408,7 +413,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public int GlobalUniqueIndex(int ifld, int jCell, int n) {
             Debug.Assert(ifld >= 0 && ifld < this.m_DgDegree.Length);
-            Debug.Assert(jCell >= 0 && jCell < (this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells + this.AggGrid.iLogicalCells.NoOfExternalCells));
+            Debug.Assert(jCell >= 0 && jCell < (this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells + this.AggGrid.iLogicalCells.NoOfExternalCells));        
             Debug.Assert(n >= 0 && n < this.AggBasis[ifld].GetLength(jCell, this.m_DgDegree[ifld]));
 
             int Jup = this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;

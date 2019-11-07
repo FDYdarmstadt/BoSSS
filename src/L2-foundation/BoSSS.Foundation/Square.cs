@@ -251,7 +251,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 OrthonormalPolynomials[9] = p;
                 p.AddCoeff(-1.9843134832984429e+00, new int[] { 1, 0 });
                 p.AddCoeff(3.3071891388307382e+00, new int[] { 3, 0 });
-
+                
                 //----------------------------------------------------------------------------------------
                 p = new Polynomial(new Guid("{8DA5F391-6E93-4fac-AFDC-CA6FC2D2B095}"));
                 OrthonormalPolynomials[10] = p;
@@ -6491,6 +6491,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 p.AddCoeff(4.6189017018818942e+07, new int[] { 19, 0 });
                 p.AddCoeff(-1.8915502207706805e+07, new int[] { 21, 0 });
                 p.AddCoeff(3.3644173887225542e+06, new int[] { 23, 0 });
+               
             #endregion POLY_DEF
 #pragma warning restore 612
             }

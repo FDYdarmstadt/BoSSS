@@ -30,8 +30,6 @@ namespace BoSSS.Solution.RheologyCommon {
         SpeciesId m_spcId;
         int Component;
         IncompressibleMultiphaseBoundaryCondMap m_bcMap;
-        double[] Penalty1;
-        double beta;
 
         /// <summary>
         /// Initialize Viscosity

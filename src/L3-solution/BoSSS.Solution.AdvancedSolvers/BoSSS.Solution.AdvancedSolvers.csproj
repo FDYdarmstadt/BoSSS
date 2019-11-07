@@ -56,6 +56,7 @@
     <Compile Include="ConvergenceObserver.cs" />
     <Compile Include="DynamicMultigrid.cs" />
     <Compile Include="LevelPmg.cs" />
+    <Compile Include="NLSolverSequence.cs" />
     <Compile Include="OrthonormalizationMultigrid.cs" />
     <Compile Include="SolverChooser.cs" />
     <Compile Include="SparseSolver.cs" />

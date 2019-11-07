@@ -216,7 +216,7 @@ namespace BoSSS.Application.Rheology {
         /// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
         /// </summary>
         [DataMember]
-        public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite; //.LeftInverse_DiagBlock; // SymPart_DiagBlockEquilib;
+        public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib; //.LeftInverse_DiagBlock; // SymPart_DiagBlockEquilib_DropIndefinite;
 
         /// <summary>
         /// Block-Preconditiond for the pressure/continuity-block of the saddle-point system
