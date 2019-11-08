@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using System;
+using System.Diagnostics;
 using BoSSS.Foundation;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
@@ -123,7 +124,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
                         edgeFlux = normalVelocityIn * (energyIn + pIn);
                         if (waveSpeedIn <= 0.0) {
                             double factor = densityIn * intermediateWaveSpeed * MachScaling
-                                + pIn  / (waveSpeedIn - normalVelocityIn);
+                                + pIn / (waveSpeedIn - normalVelocityIn);
                             double modifiedEnergy = (waveSpeedIn - normalVelocityIn) /
                                 (waveSpeedIn - intermediateWaveSpeed) *
                                 (energyIn + factor * (intermediateWaveSpeed - normalVelocityIn));
@@ -141,6 +142,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
                         }
                     }
 
+                    Debug.Assert(!double.IsNaN(edgeFlux) || double.IsInfinity(edgeFlux));
                     Output[e + Offset, n] += edgeFlux;
                 }
             }
@@ -172,12 +174,13 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
                     for (int d = 0; d < D; d++) {
                         momentumSquared += U[d + 1][e + Offset, n] * U[d + 1][e + Offset, n];
                     }
-                    double pressure = (gamma - 1.0) * (energy - gammaMachSquared *  0.5 * momentumSquared / density);
+                    double pressure = (gamma - 1.0) * (energy - gammaMachSquared * 0.5 * momentumSquared / density);
 
                     //return state.Velocity * (state.Energy + state.Pressure);
                     for (int d = 0; d < D; d++) {
-                        Output[e + Offset, n, d] += U[d + 1][e + Offset, n] / density *
-                            (energy + pressure);
+                        double flux = U[d + 1][e + Offset, n] / density * (energy + pressure);
+                        Debug.Assert(!double.IsNaN(flux) || double.IsInfinity(flux));
+                        Output[e + Offset, n, d] += flux;
                     }
                 }
             }
