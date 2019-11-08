@@ -336,7 +336,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             double mintime, maxtime;
             bool converged;
             int NoOfIterations, DOFs;
-
+            MultigridOperator mgo;
 
             // direct solver 
             this.ReferenceSolve();
@@ -345,7 +345,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             // new solver framework: multigrid, blablablah ...
 
-            ExperimentalSolver(out mintime, out maxtime, out converged, out NoOfIterations, out DOFs);           
+            ExperimentalSolver(out mintime, out maxtime, out converged, out NoOfIterations, out DOFs,out mgo);           
             this.Op_Agglomeration.Extrapolate(this.u.Mapping);
 
             //Stats:
@@ -362,11 +362,23 @@ namespace BoSSS.Application.XdgPoisson3 {
                 int MtxBlockSize = BlkSize_max * BlkSize_max;
                 int MtxSize = MtxBlockSize * NoOfMtxBlocks;
 
+
+                var Map = mgo.Mapping;
+                var BS = Map.AggBasis;
+                int J = Map.LocalNoOfBlocks;
+                int cntCutCellBlocks = 0;
+                for (int jLoc = 0; jLoc < J; jLoc++) {
+                    if (BS[0].GetNoOfSpecies(jLoc) > 1)
+                        cntCutCellBlocks++;
+                }
+
+
                 double MtxStorage = MtxSize * (8.0 + 4.0) / (1024 * 1024); // 12 bytes (double+int) per entry
 
                 Console.WriteLine("   System size:                 {0}", u.Mapping.TotalLength);
                 Console.WriteLine("   No of blocks:                {0}", u.Mapping.TotalNoOfBlocks);
                 Console.WriteLine("   No of blocks in matrix:      {0}", NoOfMtxBlocks);
+                Console.WriteLine("   No of blocks with Cutcell    {0}", cntCutCellBlocks);
                 Console.WriteLine("   DG coordinates per cell:     {0}", BlkSize_max);
                 Console.WriteLine("   Non-zeros per matrix block:  {0}", MtxBlockSize);
                 Console.WriteLine("   Total non-zeros in matrix:   {0}", MtxSize);
@@ -379,6 +391,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 base.QueryHandler.ValueQuery("maxBlkSize", u.Mapping.MaxTotalNoOfCoordinatesPerCell, true);
                 base.QueryHandler.ValueQuery("minBlkSize", u.Mapping.MinTotalNoOfCoordinatesPerCell, true);
                 base.QueryHandler.ValueQuery("NumberOfMatrixBlox", NoOfMtxBlocks, true);
+                base.QueryHandler.ValueQuery("NoOfCutCellBlocks", cntCutCellBlocks, true);
                 base.QueryHandler.ValueQuery("DOFs", DOFs, true);
             }
 
@@ -495,9 +508,10 @@ namespace BoSSS.Application.XdgPoisson3 {
         }
 
         protected void CustomItCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
-            //currentSol.SaveToTextFile("X_"+ iterIndex);
-            //currentRes.SaveToTextFile("Res_" + iterIndex);
             MaxMlevel=Mgop.LevelIndex;
+            currentRes.SaveToTextFileDebug(String.Format("Res_{0}_proc",iterIndex));
+            currentSol.SaveToTextFileDebug(String.Format("Sol_{0}_proc",iterIndex));
+            //Console.WriteLine("Callback executed {0} times",iterIndex);
         }
 
         private int m_maxMlevel;
@@ -512,7 +526,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             }
         }
 
-        private void ExperimentalSolver(out double mintime, out double maxtime, out bool Converged, out int NoOfIter, out int DOFs) {
+        private void ExperimentalSolver(out double mintime, out double maxtime, out bool Converged, out int NoOfIter, out int DOFs, out MultigridOperator MultigridOp) {
             using (var tr = new FuncTrace()) {
                 mintime = double.MaxValue;
                 maxtime = 0;
@@ -538,7 +552,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 Console.WriteLine("Setting up multigrid operator...");
 
                 int p = this.u.Basis.Degree;
-                var MultigridOp = new MultigridOperator(XAggB, this.u.Mapping,
+                MultigridOp = new MultigridOperator(XAggB, this.u.Mapping,
                     this.Op_Matrix,
                     this.Op_mass.GetMassMatrix(new UnsetteledCoordinateMapping(this.u.Basis), false),
                     OpConfig);
