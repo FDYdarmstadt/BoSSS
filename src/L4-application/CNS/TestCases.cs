@@ -1416,7 +1416,7 @@ namespace CNS {
             // Start of the bottom wall, x = 1/6 = 0.166666, (Woodward and Colella 1984)
             // Practical choice: Should be on a cell boundary, because the boundary condition changes from
             // supersonic inflow to adiabatic wall
-            double xWall = 0.16;
+            double xWall = 0.2;
             double temp = xWall / ((xMax - xMin) / numOfCellsX);
             bool resolutionOk = (temp == Math.Truncate(temp));
             if (!resolutionOk) {
@@ -1459,6 +1459,7 @@ namespace CNS {
             c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
             c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
             c.AddVariable(CompressibleVariables.Energy, dgDegree);
+            c.AddVariable(CNSVariables.Rank, 0);
 
             //c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
             //c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
@@ -1489,8 +1490,8 @@ namespace CNS {
 
             //Partitioning
             c.GridPartType = GridPartType.Predefined;
-            c.GridPartOptions = "equaldist";
-
+            c.GridPartOptions = "hallo";
+            //ilPSP.Environment.StdoutOnlyOnRank0 = false;
             Func<double[], int> MakeMyPartioning = delegate (double[] X) {
                 double x = X[0];
                 double y = X[1];
@@ -1517,21 +1518,23 @@ namespace CNS {
                         break;
                 }
 
-                double xspan = (xMin - xMax) / separation[0];
-                double yspan = (yMin - yMax) / separation[1];
-
+                double xspan = (xMax - xMin) / separation[0];
+                double yspan = (yMax - yMin) / separation[1];
+                int rank=int.MaxValue;
                 int icore = 0;
-                for(int i=0; i < cores; i++) {
-                    for (int j = 0; j < cores; j++) {
-                        bool xtrue = x <= xspan * i && x > xspan * (i + 1);
-                        bool ytrue = y <= yspan * j && y > yspan * (j + 1);
-                        if (xtrue && ytrue)
-                            break;
+                for(int i=0; i < separation[0]; i++) {
+                    for (int j = 0; j < separation[1]; j++) {
+                        bool xtrue =  x <= xspan * (i + 1)+xMin;
+                        bool ytrue =  y <= yspan * (j + 1)+yMin;
+                        if (xtrue && ytrue) {
+                            rank = icore;
+                            return rank;
+                        }
                         icore++;
                     }
                 }
 
-                return icore;
+                return rank;
             };
 
             // Grid
@@ -1545,6 +1548,7 @@ namespace CNS {
                     double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
                     var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
                     //var grid = Grid2D.UnstructuredTriangleGrid(xNodes, yNodes);
+                    grid.AddPredefinedPartitioning("hallo", MakeMyPartioning);
 
                     grid.EdgeTagNames.Add(1, "SupersonicInlet");
                     grid.EdgeTagNames.Add(2, "SupersonicOutlet");
@@ -1572,7 +1576,6 @@ namespace CNS {
                         MPI.Wrappers.csMPI.Raw.Barrier(MPI.Wrappers.csMPI.Raw._COMM.WORLD);
                         Console.WriteLine("done.");
                     }
-                    grid.AddPredefinedPartitioning("hallo", MakeMyPartioning);
                     return grid;
                 };
             }
@@ -1685,12 +1688,12 @@ namespace CNS {
             //string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr_run3_test";
             //string dbPath = @"C:\bosss_db_paper_ibmdmr_scratch_run3_test";
             //string dbPath = @"/work/scratch/jw52xeqa/DB_Cube";
-            string dbPath = @"./bosss_db_performance_3";
+            string dbPath = @"V:\testDB";
             string restart = "False";
 
-            CNSControl c = DoubleMachReflection(dbPath, savePeriod, dgDegree, xMax, yMax, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, endTime, restart, cores);
+            CNSControl c = DMR_Cube(dbPath, savePeriod, dgDegree, xMax, yMax, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, endTime, restart, cores);
 
-            c.ProjectName = "dmr_serialisation_debugging";
+            c.ProjectName = "dmr_cube_test";
             c.NoOfTimesteps = timeSteps;
 
             return c;
