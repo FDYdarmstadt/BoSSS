@@ -428,7 +428,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         {
             int Lf = m_op.Mapping.LocalLength;
             int Lc = m_LsubIdx.Length;
-            int Hc = m_HiIdx.Length;
 
             if (Res_f == null || Res_f.Length != Lf) {
                 Res_f = new double[Lf];
@@ -488,6 +487,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 }
             } else {
+                int Hc = m_HiIdx.Length;
                 if (m_HiIdx.Length != 0) {
                     // project to low-p/coarse
                     double[] hi_Res_c = new double[Hc];
