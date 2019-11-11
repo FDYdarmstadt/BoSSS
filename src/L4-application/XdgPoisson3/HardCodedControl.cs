@@ -550,7 +550,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.savetodb = false;
             //C.DbPath = @"E:\\XdgPerformance";
 
-            int Res = 2;
+            int Res = 4;
 
             C.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
@@ -566,20 +566,14 @@ namespace BoSSS.Application.XdgPoisson3 {
                 return grid;
             };
 
-            //these are parameters for batchprocessing. They are here for testing ...
-            //C.PerformanceModeON = true;
-            //C.SuppressExceptionPrompt = true;
-
+            C.GridPartType = GridPartType.directHilbert;
             C.LinearSolver.TargetBlockSize = blocksize;
             C.SetDGdegree(5);
 
-            //C.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_mg;
-            //C.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_schwarz_directcoarse;
-            //C.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_jacobi_mg;
-
             C.LinearSolver.NoOfMultigridLevels = 4;
             C.LinearSolver.ConvergenceCriterion = 1e-6;
-            //C.LinearSolver.MaxSolverIterations = 20;
+            C.LinearSolver.MaxSolverIterations = 10;
+            C.LinearSolver.MaxKrylovDim = 50;
             //C.LinearSolver.TargetBlockSize = 79;
            C.ExcactSolSupported = false;
             double radius = 0.7;

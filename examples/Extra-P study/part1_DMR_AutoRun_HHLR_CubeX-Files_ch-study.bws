@@ -5,32 +5,21 @@ restart
   _______________________
 
 Databases loaded:
-List of 13 instances of IDatabaseInfo {
-  0: { Session Count = 16; Grid Count = 15; Path = C:\bosss_db }
-  1: { Session Count = 5; Grid Count = 73; Path = P:\bosss_db }
-  2: { Session Count = 0; Grid Count = 0; Path = P:\bosss_db_test }
-  3: { Session Count = 3; Grid Count = 5; Path = P:\bosss_db_gb }
-  4: { Session Count = 22; Grid Count = 44; Path = P:\bosss_db_paper }
-  5: { Session Count = 10; Grid Count = 14; Path = P:\bosss_db_paper_svi }
-  6: { Session Count = 34; Grid Count = 55; Path = P:\bosss_db_paper_ibmst }
-  7: { Session Count = 18; Grid Count = 40; Path = P:\bosss_db_paper_ibmdmr }
-  8: { Session Count = 6; Grid Count = 8; Path = C:\bosss_db_paper_ibmdmr_scratch }
-  9: { Session Count = 8; Grid Count = 1; Path = C:\bosss_db_paper_ibmdmr_scratch_run3 }
-  10: { Session Count = 3; Grid Count = 3; Path = E:\dmr_movie\bosss_db_dmr_video_coarse }
-  11: { Session Count = 39; Grid Count = 62; Path = H:\geisenhofer\bosss_db_bowShock }
-  12: { Session Count = 1; Grid Count = 134; Path = Z:\weber\Performance_Kram\bosss_db_performance }
+List of 2 instances of IDatabaseInfo {
+  0: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+  1: { Session Count = 0; Grid Count = 2; Path = V:\Test4Anne\DB_Rheology }
 }
 
  Console ready for input. Type 'help' for help.
 
 ==============
 // Does not matter for submission on HHLR (is set in source code)
-string WFlowName = "testRound_3";
+string WFlowName = "testCNS";
 **************
 ==============
 WorkflowMgm.Init(WFlowName);
 **************
-Project name is set to 'testRound_3'.
+Project name is set to 'testCNS'.
 
 ==============
 WorkflowMgm.AllJobs;
@@ -46,17 +35,22 @@ List of 0 instances of KeyValuePair{String,Job} {
 //string dbPath = @"T:\bosss_db_paper_ibmdmr";
 //string dbPath = @"S:\work\scratch\yp19ysog\bosss_db_performance";
 //string dbPath = @"S:\home\yp19ysog\bosss_db_paper_ibmdmr2";
-//var myDb = OpenOrCreateDatabase(dbPath);
+string dbPath = @"V:\testDB";
+var myDb      = OpenOrCreateDatabase(dbPath);
 **************
+Opening existing database 'V:\testDB'.
+
 ==============
 //var myAutoRunJob = new SlurmClient(@"S:\home\yp19ysog\BoSSS","lcluster2.hrz.tu-darmstadt.de","yp19ysog");
-var myAutoRunJob = new SlurmClient(@"T:\BoSSS","lcluster3.hrz.tu-darmstadt.de","yp19ysog");
+//var myAutoRunJob = new SlurmClient(@"T:\BoSSS","lcluster3.hrz.tu-darmstadt.de","yp19ysog");
 //var myAutoRunJob = new MsHPC2012Client(@"\\dc1\userspace\weber\deploy_testDB","hpccluster",ComputeNodes : new[] {"hpccluster"});
+var myAutoRunJob = new MiniBatchProcessorClient(@"V:\deploy");
 **************
-Please enter your password...
-*********
-Connecting to lcluster3.hrz.tu-darmstadt.de...
-
+==============
+MiniBatchProcessor.Server.StartIfNotRunning();
+**************
+Starting mini batch processor in external process...
+Started mini batch processor on local machine, process id is 21844.
 
 ==============
 using CNS;
@@ -67,9 +61,6 @@ using System.Text;
 using System.Threading.Tasks;
 using ilPSP.Tracing;
 **************
-(4,22): error CS0234: The type or namespace name `Multigrid' does not exist in the namespace `BoSSS.Solution'. Are you missing an assembly reference?
-No. of errors|warnings: 1|0.
-
 ==============
 Type solver = typeof(CNS.Program);
 **************
@@ -77,7 +68,7 @@ Type solver = typeof(CNS.Program);
 // Use the self-compiled BoSSSpad (release mode)
 solver.Assembly.Location;
 **************
-C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release\CNS.exe
+V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release\CNS.exe
 ==============
 //------------------------------------------------
 //   Parameter study - Time to make changes 
@@ -114,29 +105,28 @@ int bla = 7;
 //for(int ct=0;ct < bla-2;ct++)
 //    gridscale[ct]=Math.Pow(2,ct-2);
 
-int timeSteps = 10;
+int timeSteps = 100;
 
-int[] cores = new int[] {1, 32, 64};
-double[] gridscale = new double[] {0.25, 4};
+int[] cores = new int[] {4};
+//double[] gridscale = new double[] {1,2,4,8,16,32};
+double[] gridscale = new double[] {1};
 **************
 ==============
 cores
 **************
-List of 2 instances of Int32 {
-  0: 32
-  1: 64
+List of 1 instances of Int32 {
+  0: 4
 }
 ==============
 gridscale
 **************
-List of 2 instances of Double {
-  0: 0.25
-  1: 8
+List of 1 instances of Double {
+  0: 1
 }
 ==============
 // Feed the machine
-int numOfCellsX_0 = _numOfCellsX;
-int numOfCellsY_0 = _numOfCellsY;
+double numOfCellsX_0 = 40;
+double numOfCellsY_0 = 10;
 for (int c = 0; c < cores.Length; c++){
 for (int dg = 0; dg < dgDegree.Length; dg++){
         for(int sl = 0; sl < sensorLimit.Length; sl++){
@@ -144,8 +134,8 @@ for (int dg = 0; dg < dgDegree.Length; dg++){
                 for(int sg = 0; sg < numberOfSubGrids.Length; sg++){
                     for(int gr=0;gr< gridscale.Length; gr++){
         
-                        int numOfCellsX = (int)(numOfCellsX_0*gridscale[gr]);
-                        int numOfCellsY = (int)(numOfCellsY_0*gridscale[gr]);
+                        int numOfCellsX = (int)(numOfCellsX_0*gridscale[gr]*cores[c]);
+                        int numOfCellsY = (int)(numOfCellsY_0*gridscale[gr]*cores[c]);
                         // Shock Tube
         string jobName = null;
         if (myScheme == ExplicitSchemes.RungeKutta){
@@ -162,7 +152,7 @@ for (int dg = 0; dg < dgDegree.Length; dg++){
         string StartupString = string.Format("cs:CNS.TestCases.DoubleMachReflectionHHLR({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}, {14},{15})",
         savePeriod, dgDegree[dg], xMax, yMax, numOfCellsX, numOfCellsY, sensorLimit[sl], CFLFraction, explicitScheme, explicitOrder[or], numberOfSubGrids[sg], reclusteringInterval, maxNumOfSubSteps, endTime, timeSteps, cores[c]);
         
-        var oneJob = new Job(jobName, solver);
+        var oneJob = new Job(jobName+"4", solver);
         oneJob.SetCommandLineArguments(StartupString);
         oneJob.NumberOfMPIProcs = cores[c];
         
@@ -174,13 +164,13 @@ for (int dg = 0; dg < dgDegree.Length; dg++){
         //oneJob.ExecutionTime = "168:00:00"; // 7 days
         
         //oneJob.HHLR_project = "project00747";  // Markus
-        oneJob.HHLR_project = "project00717";  // Dennis
-        //oneJob.HHLR_project = "project00880";  // Jens
+        //oneJob.HHLR_project = "project00717";  // Dennis
+        //oneJob.HHLR_project = "project01217";  // Jens
         
         oneJob.MemPerCPU = "5000";
         //oneJob.MemPerCPU    = "1600";
-        oneJob.EmailAddress = "geisenhofer@fdy.tu-darmstadt.de";
-        //oneJob.UseComputeNodesExclusive = true;
+        //oneJob.EmailAddress = "geisenhofer@fdy.tu-darmstadt.de";
+        oneJob.UseComputeNodesExclusive = true;
         oneJob.Activate(myAutoRunJob);
 }
 }
@@ -191,772 +181,10 @@ for (int dg = 0; dg < dgDegree.Length; dg++){
 **************
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-50-59
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-50-59/batch.sh to Unix format ...
-
-Submitted batch job 10392116
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-51-13
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-51-13/batch.sh to Unix format ...
-
-Submitted batch job 10392118
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-51-26
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-51-26/batch.sh to Unix format ...
-
-Submitted batch job 10392126
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-51-41
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-51-41/batch.sh to Unix format ...
-
-Submitted batch job 10392127
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-51-54
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-51-54/batch.sh to Unix format ...
-
-Submitted batch job 10392129
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-52-07
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-52-07/batch.sh to Unix format ...
-
-Submitted batch job 10392130
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-52-20
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-52-20/batch.sh to Unix format ...
-
-Submitted batch job 10392131
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-52-34
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-52-34/batch.sh to Unix format ...
-
-Submitted batch job 10392148
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-52-49
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-52-49/batch.sh to Unix format ...
-
-Submitted batch job 10392149
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-53-02
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-53-02/batch.sh to Unix format ...
-
-Submitted batch job 10392179
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-53-14
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-53-14/batch.sh to Unix format ...
-
-Submitted batch job 10392181
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-53-27
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-53-27/batch.sh to Unix format ...
-
-Submitted batch job 10392182
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-53-40
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-53-40/batch.sh to Unix format ...
-
-Submitted batch job 10392188
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-53-54
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-53-54/batch.sh to Unix format ...
-
-Submitted batch job 10392191
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-54-07
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-54-07/batch.sh to Unix format ...
-
-Submitted batch job 10392193
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-54-20
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-54-20/batch.sh to Unix format ...
-
-Submitted batch job 10392194
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-54-33
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-54-33/batch.sh to Unix format ...
-
-Submitted batch job 10392195
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-54-47
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-54-47/batch.sh to Unix format ...
-
-Submitted batch job 10392196
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-54-59
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-54-59/batch.sh to Unix format ...
-
-Submitted batch job 10392197
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-55-12
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-55-12/batch.sh to Unix format ...
-
-Submitted batch job 10392198
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-55-27
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-55-27/batch.sh to Unix format ...
-
-Submitted batch job 10392199
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-55-41
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-55-41/batch.sh to Unix format ...
-
-Submitted batch job 10392200
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-55-54
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-55-54/batch.sh to Unix format ...
-
-Submitted batch job 10392201
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-56-07
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-56-07/batch.sh to Unix format ...
-
-Submitted batch job 10392202
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-56-19
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-56-19/batch.sh to Unix format ...
-
-Submitted batch job 10392203
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-56-32
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-56-32/batch.sh to Unix format ...
-
-Submitted batch job 10392205
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-56-45
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-56-45/batch.sh to Unix format ...
-
-Submitted batch job 10392206
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-56-58
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-56-58/batch.sh to Unix format ...
-
-Submitted batch job 10392214
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-57-13
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-57-13/batch.sh to Unix format ...
-
-Submitted batch job 10392216
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-57-25
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-57-25/batch.sh to Unix format ...
-
-Submitted batch job 10392217
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-57-38
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-57-38/batch.sh to Unix format ...
-
-Submitted batch job 10392219
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Enforcing --exclusive
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-57-51
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-57-51/batch.sh to Unix format ...
-
-Submitted batch job 10392220
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Enforcing --exclusive
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-58-04
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-58-04/batch.sh to Unix format ...
-
-Submitted batch job 10392221
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Enforcing --exclusive
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-58-16
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-58-16/batch.sh to Unix format ...
-
-Submitted batch job 10392225
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Enforcing --exclusive
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-58-32
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-58-32/batch.sh to Unix format ...
-
-Submitted batch job 10392230
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Enforcing --exclusive
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-58-45
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-58-45/batch.sh to Unix format ...
-
-Submitted batch job 10392231
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Enforcing --exclusive
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-58-58
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-58-58/batch.sh to Unix format ...
-
-Submitted batch job 10392232
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Enforcing --exclusive
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-59-11
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-59-11/batch.sh to Unix format ...
-
-Submitted batch job 10392234
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Enforcing --exclusive
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-59-24
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-59-24/batch.sh to Unix format ...
-
-Submitted batch job 10392239
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Enforcing --exclusive
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-59-39
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-59-39/batch.sh to Unix format ...
-
-Submitted batch job 10392241
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Enforcing --exclusive
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_10-59-52
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_10-59-52/batch.sh to Unix format ...
-
-Submitted batch job 10392247
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Enforcing --exclusive
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: T:\BoSSS\CNS2019Jan18_11-00-05
-Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
-   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
-
-Waiting for file transfer to finish.
-Modules: loading gcc/4.9.4 
-Modules: loading openmpi/gcc/1.6.6 
-Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
-version) 
-Modules: loading acml/5.3.1 
-dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan18_11-00-05/batch.sh to Unix format ...
-
-Submitted batch job 10392248
-[1;37m[I][0m Selected project: project00717
-[1;37m[I][0m Enforcing --exclusive
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
+Deployment directory: V:\deploy\CNS2019Nov07_11-40-28
+Source directory: V:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\bin\Release
+copied 25 files.
+deployment finished.
 
 ==============
 WorkflowMgm.AllJobs;
@@ -1005,6 +233,12 @@ List of 42 instances of KeyValuePair{String,Job} {
   40: [DMR_p3_xCells1600_yCells400_s0=1.0E-03_CFLFrac0.1_RK1_64cores, DMR_p3_xCells1600_yCells400_s0=1.0E-03_CFLFrac0.1_RK1_64cores: FinishedSuccessful (BoSSS.Application.BoSSSpad.SlurmClient)]
   41: [DMR_p3_xCells3200_yCells800_s0=1.0E-03_CFLFrac0.1_RK1_64cores, DMR_p3_xCells3200_yCells800_s0=1.0E-03_CFLFrac0.1_RK1_64cores: FinishedSuccessful (BoSSS.Application.BoSSSpad.SlurmClient)]
 }
+==============
+**************
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============
