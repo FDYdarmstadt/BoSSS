@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace BoSSS.Application.ExternalBinding.CodeGen {
 
 
-    class CodeGenCppFile : CodeGenBase {
+    class CodeGenCppFile : CodeFileBase {
 
         public CodeGenCppFile() {
             IncludeDirectives.Add("#include <stdlib.h>");

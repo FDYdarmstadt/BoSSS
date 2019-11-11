@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Application.ExternalBinding.CodeGen {
-    class CodeGenHeaderFile : CodeGenBase {
+    class CodeGenHeaderFile : CodeFileBase {
 
         public const string HeaderFileSuffix = ".h";
 

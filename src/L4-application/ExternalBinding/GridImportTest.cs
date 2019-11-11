@@ -159,9 +159,6 @@ namespace BoSSS.Application.ExternalBinding {
 
             int nCells = 9;
 
-
-
-
             int nPoints = points.GetLength(0);
             int nFaces = owner.Length;
             int nInternalFaces = neighbour.Length;

@@ -10,15 +10,16 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
 
 
 
-    abstract class CodeGenBase {
+    abstract class CodeFileBase {
 
         public string FileName;
         
         public List<string> IncludeDirectives = new List<string>();
 
+        
+
         public List<BracedSection> MainCode = new List<BracedSection>();
-
-
+        
         protected abstract string FilenameExt {
             get;
         }
@@ -42,8 +43,14 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
             }
         }
 
-        public void WriteFile() {
-            File.WriteAllText(FileName + FilenameExt, this.ToString());
+        public void WriteFile(string __Directory) {
+            if (!Directory.Exists(__Directory))
+                throw new IOException("Output directory is not existent.");
+
+            string FullName = Path.Combine(__Directory, FileName + FilenameExt);
+
+
+            File.WriteAllText(FullName, this.ToString());
         }
     }
 }
