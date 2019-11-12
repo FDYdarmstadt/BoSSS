@@ -25,7 +25,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         int iKref;
 
-        public enum QuadratureMode { Surface, Volume, Combo };
+        public enum QuadratureMode { Surface, PositiveVolume, NegativeVolume, Combo };
 
         QuadratureMode mode;
 
@@ -56,7 +56,11 @@ namespace BoSSS.Foundation.XDG.Quadrature
             bool IsSurfaceIntegral = (mode == QuadratureMode.Surface);
 
             LinearPSI<Cube> psi = new LinearPSI<Cube>(Cube.Instance);
-            Tuple<LinearPSI<Cube>, int> psi_i_s_i = new Tuple<LinearPSI<Cube>, int>(psi, 1);
+            int domainSign = 1;
+            if (mode == QuadratureMode.NegativeVolume) {
+                domainSign = -1;
+            }
+            Tuple<LinearPSI<Cube>, int> psi_i_s_i = new Tuple<LinearPSI<Cube>, int>(psi, domainSign);
             LinearSayeSpace<Cube> arg = new LinearSayeSpace<Cube>(Cube.Instance, psi_i_s_i, IsSurfaceIntegral);
             arg.Reset();
             return arg;
