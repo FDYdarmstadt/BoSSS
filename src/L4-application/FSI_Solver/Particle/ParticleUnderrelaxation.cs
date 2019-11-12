@@ -39,6 +39,7 @@ namespace BoSSS.Application.FSI_Solver {
             m_UseAdaptiveUnderrelaxation = parameter.m_UseAdaptiveUnderrelaxation;
             m_AverageForce = averageForce;
         }
+        internal ParticleUnderrelaxation() { }
         [DataMember]
         private readonly double m_ConvergenceLimit;
         [DataMember]
@@ -82,6 +83,12 @@ namespace BoSSS.Application.FSI_Solver {
                     ? CalculateAdaptiveUnderrelaxation(forces[d], tempForcesPrev, m_AverageForce, m_ConvergenceLimit, m_RelaxationFactor)
                     : m_RelaxationFactor;
                 forces[d] = underrelaxationCoeff * forces[d] + (1 - underrelaxationCoeff) * forcesPreviousIteration[0][d];
+            }
+        }
+
+        internal void ForceAndTorque(ref double[] forces, double[] forcesPreviousIteration) {
+            for (int d = 0; d < forces.Length; d++) {
+                forces[d] = 0.01 * forces[d] + (1 - 0.01) * forcesPreviousIteration[d];
             }
         }
 

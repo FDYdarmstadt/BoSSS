@@ -89,7 +89,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control WetParticleWallCollision(int k = 3, double DensityFactor = 2, int amrLevel = 4) {
+        public static FSI_Control WetParticleWallCollision(int k = 2, double DensityFactor = 200, int amrLevel = 2) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "wetParticleWallCollision");
             C.SetSaveOptions(@"D:\BoSSS_databases\wetParticleCollision", 1);
 
@@ -116,7 +116,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Defining particles
             C.Particles = new List<Particle>();
             C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.hydrodynamicsConvergenceCriterion, relaxationFactor: 1.0, useAddaptiveUnderrelaxation: true);
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 1);
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 0);
             C.Particles.Add(new Particle_Sphere(motion, 0.25, new double[] { 0.0, 0.0 }, 0, 0, new double[] { 0, 0}));
 
             // Quadrature rules

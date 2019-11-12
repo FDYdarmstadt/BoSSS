@@ -20,6 +20,7 @@ using BoSSS.Foundation.XDG;
 using ilPSP;
 using MPI.Wrappers;
 using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace BoSSS.Application.FSI_Solver {
@@ -192,11 +193,43 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="levelSetTracker"></param>
         /// <param name="fluidViscosity"></param>
         public override void UpdateForcesAndTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, bool firstIteration, double dt) {
-            double[] tempForces = CalculateHydrodynamicForces(hydrodynamicsIntegration, fluidDensity);
+            //double[] tempForces = CalculateHydrodynamicForces(hydrodynamicsIntegration, fluidDensity, dt);
+            //ForceAddedDamping(ref tempForces, dt);
+            //double tempTorque = CalculateHydrodynamicTorque(hydrodynamicsIntegration, dt);
+            //TorqueAddedDamping(ref tempTorque, dt);
+            //HydrodynamicsPostprocessing(tempForces, tempTorque);
+        }
+
+        /// <summary>
+        /// Update Forces and Torque acting from fluid onto the particle
+        /// </summary>
+        /// <param name="hydrodynamicsIntegration"></param>
+        /// <param name="fluidDensity"></param>
+        public override double[] CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, CellMask cutCells, double dt) {
+            double[] tempForces = hydrodynamicsIntegration.Forces(out List<double[]>[] stressToPrintOut, cutCells);
+            currentStress = TransformStressToPrint(stressToPrintOut);
+            Aux.TestArithmeticException(tempForces, "temporal forces during calculation of hydrodynamics");
+            Force_MPISum(ref tempForces);
+            CalculateGravity(fluidDensity, tempForces);
             ForceAddedDamping(ref tempForces, dt);
-            double tempTorque = CalculateHydrodynamicTorque(hydrodynamicsIntegration);
+            return tempForces;
+        }
+
+        /// <summary>
+        /// Update Forces and Torque acting from fluid onto the particle
+        /// </summary>
+        /// <param name="U"></param>
+        /// <param name="P"></param>
+        /// <param name="levelSetTracker"></param>
+        /// <param name="fluidViscosity"></param>
+        /// <param name="cutCells"></param>
+        /// <param name="dt"></param>
+        public override double CalculateHydrodynamicTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, CellMask cutCells, double dt) {
+            double tempTorque = hydrodynamicsIntegration.Torque(GetPosition(0), cutCells);
+            Aux.TestArithmeticException(tempTorque, "temporal torque during calculation of hydrodynamics");
+            Torque_MPISum(ref tempTorque);
             TorqueAddedDamping(ref tempTorque, dt);
-            HydrodynamicsPostprocessing(tempForces, tempTorque);
+            return tempTorque;
         }
 
         /// <summary>

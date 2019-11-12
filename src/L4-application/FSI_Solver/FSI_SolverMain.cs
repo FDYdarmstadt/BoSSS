@@ -834,10 +834,12 @@ namespace BoSSS.Application.FSI_Solver {
                         int iterationCounter = 0;
                         double hydroDynForceTorqueResidual = double.MaxValue;
                         int minIteration = 5;
+                        Motion_AllParticles AllParticleHydrodynamics = new Motion_AllParticles(LsTrk);
                         while (hydroDynForceTorqueResidual > HydrodynConvergenceCriterion || iterationCounter < minIteration) {
                             Auxillary.CheckForMaxIterations(iterationCounter, ((FSI_Control)Control).maxIterationsFullyCoupled);
                             Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
-                            Auxillary.SaveOldParticleState(m_Particles);
+                            //Auxillary.SaveOldParticleState(m_Particles);
+                            AllParticleHydrodynamics.SaveHydrodynamicOfPreviousIteration(m_Particles);
                             //int PredictFreq = 5;
                             // actual physics
                             // -------------------------------------------------
@@ -851,11 +853,23 @@ namespace BoSSS.Application.FSI_Solver {
                                 InitializeParticlePerIteration(m_Particles, TimestepInt);
                             }
                             else {
+                                VectorField<SinglePhaseField> velocityOld = Velocity.CloneAs();
+                                SinglePhaseField pressureOld = Pressure.CloneAs();
                                 m_BDF_Timestepper.Solve(phystime, dt, false);
-                                if (iterationCounter <= 1)
-                                    CalculateHydrodynamicForces(m_Particles, dt, true);
-                                else
-                                    CalculateHydrodynamicForces(m_Particles, dt, false);
+                                ParticleHydrodynamicsIntegration hydrodynamicsIntegration = new ParticleHydrodynamicsIntegration(2, Velocity, Pressure, LsTrk, FluidViscosity);
+                                double underrelax = AllParticleHydrodynamics.CalculateHydrodynamics(m_Particles, hydrodynamicsIntegration, FluidDensity, IsFullyCoupled);
+                                Console.WriteLine("Underrelaxation Coeff" + underrelax);
+                                if (iterationCounter != 1) {
+                                    underrelax = 2;
+                                    Velocity.Scale(underrelax);
+                                    Velocity.Acc((1 - underrelax), velocityOld);
+                                    Pressure.Scale(underrelax);
+                                    Pressure.Acc((1 - underrelax), pressureOld);
+                                }
+                                //if (iterationCounter <= 1)
+                                //    CalculateHydrodynamicForces(m_Particles, dt, true);
+                                //else
+                                //CalculateHydrodynamicForces(m_Particles, dt, false);
                             }
                             if (TimestepInt != 1 || iterationCounter != 0)
                                 CalculateParticleVelocity(m_Particles, dt, iterationCounter);
@@ -866,7 +880,8 @@ namespace BoSSS.Application.FSI_Solver {
 
                             // residual
                             // -------------------------------------------------
-                            hydroDynForceTorqueResidual = Auxillary.CalculateParticleResidual(m_Particles, ref iterationCounter);
+                            hydroDynForceTorqueResidual = AllParticleHydrodynamics.CalculateParticleResidual(ref iterationCounter);
+                           //hydroDynForceTorqueResidual = Auxillary.CalculateParticleResidual(m_Particles, ref iterationCounter);
                             //hydroDynForceTorqueResidual = Auxillary.CalculateParticleVELResidual(m_Particles, ref iterationCounter);
 
                             // print iteration status
@@ -1347,6 +1362,7 @@ namespace BoSSS.Application.FSI_Solver {
                     int oldJ = this.GridData.CellPartitioning.TotalLength;
                     Console.WriteLine("       Refining " + consoleRefineCoarse[0] + " of " + oldJ + " cells");
                     Console.WriteLine("       Coarsening " + consoleRefineCoarse[1] + " of " + oldJ + " cells");
+                    Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count().MPISum());
                     newGrid = ((GridData)GridData).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
                 }
                 else {
@@ -1371,35 +1387,77 @@ namespace BoSSS.Application.FSI_Solver {
             double h_minStart = h_maxStart / (2 * refinementLevel);
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
+            BitArray coarseCells = new BitArray(noOfLocalCells);
             BitArray mediumCells = new BitArray(noOfLocalCells);
             BitArray fineCells = new BitArray(noOfLocalCells);
             BitArray collisionFineCells = new BitArray(noOfLocalCells);
-            double radiusMediumCells = LsTrk.GridDat.Cells.h_maxGlobal;
+            double radiusCoarseCells = LsTrk.GridDat.Cells.h_maxGlobal;
+            double radiusMediumCells = 6 * LsTrk.GridDat.Cells.h_minGlobal;
             double radiusFineCells = 3 * LsTrk.GridDat.Cells.h_minGlobal;
             double radiusCollision = LsTrk.GridDat.Cells.h_minGlobal;
             for (int p = 0; p < m_Particles.Count; p++) {
                 Particle particle = m_Particles[p];
                 for (int j = 0; j < noOfLocalCells; j++) {
                     double[] centerPoint = new double[] { CellCenters[j, 0], CellCenters[j, 1] };
-                    if (!mediumCells[j])
+                    if (!coarseCells[j]) {
+                        coarseCells[j] = particle.Contains(centerPoint, radiusMediumCells);
+                    }
+                    if (!mediumCells[j]) {
                         mediumCells[j] = particle.Contains(centerPoint, radiusMediumCells);
-                    if (!fineCells[j])
+                    }
+                    if (!fineCells[j] && particle.SeperateCellRegions(centerPoint)) {
                         fineCells[j] = particle.Contains(centerPoint, radiusFineCells);
-                    else if (particle.Contains(centerPoint, radiusCollision))
-                        collisionFineCells[j] = true;
+                    }
                     if (particle.Contains(centerPoint, radiusCollision) && GridData.GetBoundaryCells().Contains(j))
                         collisionFineCells[j] = true;
                 }
             }
-            int coarseRefinementLevel = refinementLevel > 2 ? refinementLevel / 2 : 1;
+            int medioumRefinementLevel = refinementLevel > 2 ? refinementLevel / 2 : 1;
+            int coarseRefinementLevel = refinementLevel > 4 ? refinementLevel / 4 : 1;
             //if (refinementLevel - coarseRefinementLevel > coarseRefinementLevel)
             //    coarseRefinementLevel += 1;
             List<Tuple<int, BitArray>> AllCellsWithMaxRefineLevel = new List<Tuple<int, BitArray>> {
                 new Tuple<int, BitArray>(refinementLevel, fineCells),
-                new Tuple<int, BitArray>(coarseRefinementLevel, mediumCells),
-                //new Tuple<int, CellMask>(refinementLevel + 1, new CellMask(GridData, collisionFineCells)),
+                new Tuple<int, BitArray>(medioumRefinementLevel, mediumCells),
+                new Tuple<int, BitArray>(coarseRefinementLevel, coarseCells),
+                new Tuple<int, BitArray>(refinementLevel + 1, collisionFineCells),
             };
             return AllCellsWithMaxRefineLevel;
+        }
+
+        private List<Tuple<int, BitArray>> StupidShowOfRefinement() {
+            BitArray CutCells = m_Particles[0].CutBitArray(LsTrk);
+            List<Tuple<int, BitArray>> StupidList = new List<Tuple<int, BitArray>>();
+            int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            BitArray tempCells1 = new BitArray(noOfLocalCells);
+            BitArray tempCells2 = new BitArray(noOfLocalCells);
+            BitArray tempCells3 = new BitArray(noOfLocalCells);
+            BitArray tempCells4 = new BitArray(noOfLocalCells);
+            BitArray tempCells5 = new BitArray(noOfLocalCells);
+            for (int i = 0; i < GridData.iLogicalCells.NoOfLocalUpdatedCells; i++) {
+                GridData grdDat = (GridData)GridData;
+                int currentLevel = grdDat.Cells.GetCell(i).RefinementLevel;
+                int nextLevel = currentLevel;
+                if (CutCells[i] && GridData.GetBoundaryCells().Contains(i)) {
+                    nextLevel += 1;
+                }
+                if (nextLevel == 1)
+                    tempCells1[i] = true;
+                else if (nextLevel == 2)
+                    tempCells2[i] = true;
+                else if (nextLevel == 3)
+                    tempCells3[i] = true;
+                else if (nextLevel == 4)
+                    tempCells4[i] = true;
+                else if (nextLevel == 5)
+                    tempCells5[i] = true;
+            }
+            StupidList.Add(new Tuple<int, BitArray>(1, tempCells1));
+            StupidList.Add(new Tuple<int, BitArray>(2, tempCells2));
+            StupidList.Add(new Tuple<int, BitArray>(3, tempCells3));
+            StupidList.Add(new Tuple<int, BitArray>(4, tempCells4));
+            StupidList.Add(new Tuple<int, BitArray>(5, tempCells5));
+            return StupidList;
         }
 
         /// <summary>

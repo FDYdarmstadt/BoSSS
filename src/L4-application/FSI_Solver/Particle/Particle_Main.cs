@@ -151,6 +151,10 @@ namespace BoSSS.Application.FSI_Solver {
             ? (Math.Cos(Motion.GetAngle(0)) * (X[0] - Motion.GetPosition(0)[0]) + Math.Sin(Motion.GetAngle(0)) * (X[1] - Motion.GetPosition(0)[1])) / Math.Sqrt((X[0] - Motion.GetPosition(0)[0]).Pow2() + (X[1] - Motion.GetPosition(0)[1]).Pow2())
             : 0;
 
+        public bool SeperateCellRegions(double[] X) {
+            return Math.Cos(Motion.GetAngle(0)) * (X[0] - Motion.GetPosition(0)[0]) + Math.Sin(Motion.GetAngle(0)) * (X[1] - Motion.GetPosition(0)[1]) < 1e-8;
+        }
+
         /// <summary>
         /// Circumference of the current particle.
         /// </summary>
@@ -178,6 +182,17 @@ namespace BoSSS.Application.FSI_Solver {
             CellMask CutCells = new CellMask(LsTrk.GridDat, CellArray, MaskType.Logical);
             CutCells = CutCells.Intersect(LsTrk.Regions.GetCutCellMask());
             return CutCells;
+        }
+
+        public BitArray CutBitArray(LevelSetTracker LsTrk) {
+            BitArray CellArray = new BitArray(LsTrk.GridDat.Cells.NoOfLocalUpdatedCells);
+            MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
+            double h_min = LsTrk.GridDat.Cells.h_minGlobal / 2;
+
+            for (int i = 0; i < CellArray.Length; i++) {
+                CellArray[i] = Contains(new double[] { CellCenters[i, 0], CellCenters[i, 1] }, h_min, h_min, false);
+            }
+            return CellArray;
         }
 
         /// <summary>

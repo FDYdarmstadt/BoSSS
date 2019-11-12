@@ -85,6 +85,7 @@
     <Compile Include="ControlFiles\HardcodedControl\FourCellsTest.cs" />
     <Compile Include="ControlFiles\HardcodedControl\DryParticles.cs" />
     <Compile Include="ControlFiles\HardcodedControl\HardcodedControlDeussen.cs" />
+    <Compile Include="ControlFiles\HardcodedControl\HC_Dry.cs" />
     <Compile Include="ControlFiles\HardcodedControl\HC_2ParticleInteraction.cs" />
     <Compile Include="ControlFiles\HardcodedControl\HC_CollisionRuntime.cs" />
     <Compile Include="ControlFiles\HardcodedControl\HardcodedControl_multipleActiveParticles .cs" />
@@ -102,6 +103,7 @@
     <Compile Include="FSI_TimestepInfo.cs" />
     <Compile Include="FSI_LevelSetUpdate.cs" />
     <Compile Include="FSI_Tutorial.cs" />
+    <Compile Include="Particle\Motion\Motion_AllParticles.cs" />
     <Compile Include="Particle\Motion\Motion_Wet_NoTranslation.cs" />
     <Compile Include="Particle\Motion\Motion_Wet_NoRotation.cs" />
     <Compile Include="Particle\Motion\Motion_AddedDamping.cs" />

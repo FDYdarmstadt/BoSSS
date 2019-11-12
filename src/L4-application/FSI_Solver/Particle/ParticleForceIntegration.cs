@@ -38,6 +38,16 @@ namespace BoSSS.Application.FSI_Solver {
             m_FluidViscosity = fluidViscosity;
         }
 
+        public ParticleHydrodynamicsIntegration(int spatialDim, VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker levelSetTracker, double fluidViscosity) {
+            m_SpatialDim = spatialDim;
+            m_RequiredOrder = U[0].Basis.Degree * 3 + 2;
+            m_U = U.ToArray();
+            m_P = P;
+            m_LevelSetTracker = levelSetTracker;
+            m_GridData = m_LevelSetTracker.GridDat;
+            m_FluidViscosity = fluidViscosity;
+        }
+
         [DataMember]
         private readonly int m_SpatialDim;
         [DataMember]
@@ -58,7 +68,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Calculate Forces acting from fluid onto the particle
         /// </summary>
-        internal double[] Forces(out List<double[]>[] stressToPrintOut) {
+        internal double[] Forces(out List<double[]>[] stressToPrintOut, CellMask cutCells) {
             double[] tempForces = new double[m_SpatialDim];
             double[] IntegrationForces = tempForces.CloneAs();
             List<double[]>[] stressToPrint = new List<double[]>[m_SpatialDim];
@@ -85,7 +95,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 int[] noOfIntegrals = new int[] { 1 };
                 XQuadSchemeHelper SchemeHelper = m_LevelSetTracker.GetXDGSpaceMetrics(new[] { m_LevelSetTracker.GetSpeciesId("A") }, m_RequiredOrder, 1).XQuadSchemeHelper;
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, m_CutCells);
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, cutCells);
                 ICompositeQuadRule<QuadRule> surfaceRule = cqs.Compile(m_LevelSetTracker.GridDat, m_RequiredOrder);
 
                 CellQuadrature.GetQuadrature(noOfIntegrals, m_GridData, surfaceRule,
@@ -100,7 +110,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Calculate Forces acting from fluid onto the particle
         /// </summary>
-        internal double Torque(double[] position) {
+        internal double Torque(double[] position, CellMask cutCells) {
             double tempTorque = new double();
             void ErrFunc2(int j0, int Len, NodeSet Ns, MultidimensionalArray result) {
                 int K = result.GetLength(1);
@@ -120,7 +130,7 @@ namespace BoSSS.Application.FSI_Solver {
                 }
             }
             var SchemeHelper2 = m_LevelSetTracker.GetXDGSpaceMetrics(new[] { m_LevelSetTracker.GetSpeciesId("A") }, m_RequiredOrder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs2 = SchemeHelper2.GetLevelSetquadScheme(0, m_CutCells);
+            CellQuadratureScheme cqs2 = SchemeHelper2.GetLevelSetquadScheme(0, cutCells);
             CellQuadrature.GetQuadrature(new int[] { 1 }, m_LevelSetTracker.GridDat, cqs2.Compile(m_LevelSetTracker.GridDat, m_RequiredOrder),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
                     ErrFunc2(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));

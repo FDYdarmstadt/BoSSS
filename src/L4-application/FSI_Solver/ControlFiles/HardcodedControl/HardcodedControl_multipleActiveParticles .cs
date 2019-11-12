@@ -16,48 +16,50 @@ limitations under the License.
 
 using System;
 using System.Collections.Generic;
+using BoSSS.Solution.Control;
 using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HardcodedControl_multipleActiveParticles : IBM_Solver.HardcodedTestExamples {
         public static FSI_Control ActiveRods_noBackroundFlow(int k = 2) {
-            FSI_Control C = new FSI_Control(degree: k, projectName: "9_active_Rods");
-            C.SetSaveOptions(@"\\hpccluster\hpccluster-scratch\deussen\cluster_db\25_particles", 1);
+            FSI_Control C = new FSI_Control(degree: k, projectName: "7_active_Rods");
+            C.SetSaveOptions(@"/home/ij83requ/default_bosss_db", 1);
 
             List<string> boundaryValues = new List<string> {
                 "Wall"
             };
-            int sqrtPart = 2;
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: sqrtPart + 1, lengthY: sqrtPart + 1, cellsPerUnitLength: 4, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel: 1);
-            C.hydrodynamicsConvergenceCriterion = 1e-3;
+            C.SetGrid(lengthX: 10, lengthY: 10, cellsPerUnitLength: 3, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(amrLevel: 4);
+            C.hydrodynamicsConvergenceCriterion = 1e-2;
 
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.mu_A = 0.01;
+            C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.IncludeConvection = false;
 
             // Particle Properties
             // =============================
-            double particleDensity = 2;
-            C.underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, ParticleUnderrelaxationParam.UnderrelaxationMethod.ProcentualRelaxation, relaxationFactor: 3.0, useAddaptiveUnderrelaxation: true);
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 1);
-            for (int x = 0; x < sqrtPart; x++) {
-                for (int y = 0; y < sqrtPart; y++) {
-                    C.Particles.Add(new Particle_Ellipsoid(motion, 0.25, 0.1, new double[] { -0.5 + 1 * x, 0.5 - 1 * y }, startAngl: 180 -30 - 90 * (x - y) + 180 * (1 - x * y), activeStress: 50));
-                }
-            }
+            double particleDensity = 1000;
+            C.underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, ParticleUnderrelaxationParam.UnderrelaxationMethod.Jacobian, relaxationFactor: 3.0, useAddaptiveUnderrelaxation: true);
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 1.5);
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.2, new double[] { -3, 3 }, startAngl: -32, activeStress: 10));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.2, new double[] { -2.8, 0 }, startAngl: 49, activeStress: 10));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.2, new double[] { 0.2, -3.1 }, startAngl: -98, activeStress: 10));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.2, new double[] { 2.8, -0.5 }, startAngl: 182, activeStress: 10));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.2, new double[] { 0.6, 1.5 }, startAngl: 99, activeStress: 10));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.2, new double[] { -3.0, -3.0 }, startAngl: 56, activeStress: 10));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.2, new double[] { 1.0, 3.0 }, startAngl: 180, activeStress: 10));
 
             // misc. solver options
             // =============================  
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
-            double dt = 1e-3;
+            double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 100000000;
-            C.NoOfTimesteps = 1000000;
+            C.NoOfTimesteps = int.MaxValue;
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
@@ -67,6 +69,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
             C.LSunderrelax = 1.0;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
 
             // Coupling Properties
             // =============================

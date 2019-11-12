@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
+using System.Collections.Generic;
 
 namespace BoSSS.Application.FSI_Solver {
     public class Motion_Wet_NoRotation : Motion_Wet {
@@ -93,8 +94,34 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="levelSetTracker"></param>
         /// <param name="fluidViscosity"></param>
         public override void UpdateForcesAndTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, bool firstIteration, double dt = 0) {
-            double[] tempForces = CalculateHydrodynamicForces(hydrodynamicsIntegration, fluidDensity);
-            HydrodynamicsPostprocessing(tempForces);
+            //double[] tempForces = CalculateHydrodynamicForces(hydrodynamicsIntegration, fluidDensity);
+            //HydrodynamicsPostprocessing(tempForces);
+        }
+        /// <summary>
+        /// Update Forces and Torque acting from fluid onto the particle
+        /// </summary>
+        /// <param name="hydrodynamicsIntegration"></param>
+        /// <param name="fluidDensity"></param>
+        public override double[] CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, CellMask cutCells, double dt) {
+            double[] tempForces = hydrodynamicsIntegration.Forces(out List<double[]>[] stressToPrintOut, cutCells);
+            currentStress = TransformStressToPrint(stressToPrintOut);
+            Aux.TestArithmeticException(tempForces, "temporal forces during calculation of hydrodynamics");
+            Force_MPISum(ref tempForces);
+            CalculateGravity(fluidDensity, tempForces);
+            return tempForces;
+        }
+
+        /// <summary>
+        /// Update Forces and Torque acting from fluid onto the particle
+        /// </summary>
+        /// <param name="U"></param>
+        /// <param name="P"></param>
+        /// <param name="levelSetTracker"></param>
+        /// <param name="fluidViscosity"></param>
+        /// <param name="cutCells"></param>
+        /// <param name="dt"></param>
+        public override double CalculateHydrodynamicTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, CellMask cutCells, double dt) {
+            return 0;
         }
     }
 }

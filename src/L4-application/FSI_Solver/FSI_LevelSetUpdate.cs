@@ -221,17 +221,12 @@ namespace FSI_Solver {
             for (int p = 0; p < Particles.Count; p++) {
                 double h_min = m_LevelSetTracker.GridDat.Cells.h_minGlobal > Particles[p].GetLengthScales().Min()
                     ? 1.5 * m_LevelSetTracker.GridDat.Cells.h_minGlobal
-                    : 2 * m_LevelSetTracker.GridDat.Cells.h_minGlobal;
-                double[] ParticlePos = Particles[p].Motion.GetPosition();
-                double Upperedge = ParticlePos[1] + h_min;
-                double Loweredge = ParticlePos[1] - h_min;
-                double Leftedge = ParticlePos[0] - h_min;
-                double Rightedge = ParticlePos[0] + h_min;
+                    : 0;
                 int temp = 0;
                 for (int i = 0; i < ColoredCellsSorted.Count; i++) {
                     if (ColoredCellsSorted[i][0] < J) {
                         double[] center = gridData.iLogicalCells.GetCenter(ColoredCellsSorted[i][0]);
-                        if (center[0] > Leftedge && center[0] < Rightedge && center[1] > Loweredge && center[1] < Upperedge && ColoredCellsSorted[i][1] != 0) {
+                        if (ColoredCellsSorted[i][1] != 0 && Particles[p].Contains(center, h_min)) {
                             temp = ColoredCellsSorted[i][1];
                             break;
                         }
