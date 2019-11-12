@@ -85,6 +85,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             private set;
         }
 
+        /// <summary>
+        /// index into <see cref="GridData.CellData.RefElements"/>
+        /// </summary>
         int iKref;
 
         /// <summary>
@@ -93,17 +96,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         RefElement m_RefElement;
 
         /// <summary>
-        ///Node-wise evaluation of the level-set field.
+        /// Node-wise evaluation of the level-set field.
         /// </summary>
         protected LevelSetTracker.LevelSetData LevelSetData;
 
         bool SupportPointrule;
 
-
-        ///// <summary>
-        ///// the awesome level set tracker
-        ///// </summary>
-        //protected LevelSetTracker tracker;
 
         abstract internal class QRF : IQuadRuleFactory<CellBoundaryQuadRule> {
             internal LineAndPointQuadratureFactory m_Owner;

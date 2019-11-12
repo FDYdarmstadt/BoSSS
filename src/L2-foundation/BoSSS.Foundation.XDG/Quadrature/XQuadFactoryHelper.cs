@@ -247,10 +247,13 @@ namespace BoSSS.Foundation.XDG {
             
 
             if (jmp == JumpTypes.Heaviside) {
-                var r = new EdgeRuleFromCellBoundaryFactory(gdat, GetCellFaceFactory(levSetIndex, KrefVol), m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex));
+                var r = new EdgeRuleFromCellBoundaryFactory(gdat, 
+                    GetCellFaceFactory(levSetIndex, KrefVol), 
+                    m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex));
                 return r;
             } else if (jmp == JumpTypes.OneMinusHeaviside) {
-                return new ComplementaryRuleFactory(GetEdgeRuleFactory(levSetIndex, JumpTypes.Heaviside, KrefVol));
+                
+                //return new ComplementaryRuleFactory(GetEdgeRuleFactory(levSetIndex, JumpTypes.Heaviside, KrefVol));
             } else
                 throw new ArgumentOutOfRangeException("unsupported jump type");
         }
