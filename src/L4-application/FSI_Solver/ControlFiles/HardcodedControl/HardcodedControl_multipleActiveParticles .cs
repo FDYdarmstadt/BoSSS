@@ -1,5 +1,5 @@
 ﻿/* =======================================================================
-Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
+Copyright 2019 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,36 +20,33 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HardcodedControl_multipleActiveParticles : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control ActiveRods_noBackroundFlow(int k = 3) {
+        public static FSI_Control ActiveRods_noBackroundFlow(int k = 2) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "9_active_Rods");
-            C.SetSaveOptions(@"D:\BoSSS_databases\multipleActiveParticles", 1);
+            C.SetSaveOptions(@"\\hpccluster\hpccluster-scratch\deussen\cluster_db\25_particles", 1);
 
             List<string> boundaryValues = new List<string> {
-                "Wall_left",
-                "Wall_right",
-                "Wall_lower",
-                "Wall_upper"
+                "Wall"
             };
-            int sqrtPart = 4;
+            int sqrtPart = 2;
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 4, lengthY: 4, cellsPerUnitLength: 5, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel: 3);
-            C.hydrodynamicsConvergenceCriterion = 1e-2;
+            C.SetGrid(lengthX: sqrtPart + 1, lengthY: sqrtPart + 1, cellsPerUnitLength: 4, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(amrLevel: 1);
+            C.hydrodynamicsConvergenceCriterion = 1e-3;
 
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.mu_A = 0.01;
             C.PhysicalParameters.IncludeConvection = false;
 
             // Particle Properties
             // =============================
-            double particleDensity = 1.1;
-            C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.hydrodynamicsConvergenceCriterion, underrelaxationFactorIn: 1.0, useAddaptiveUnderrelaxationIn: true);
+            double particleDensity = 2;
+            C.underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, ParticleUnderrelaxationParam.UnderrelaxationMethod.ProcentualRelaxation, relaxationFactor: 3.0, useAddaptiveUnderrelaxation: true);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 1);
             for (int x = 0; x < sqrtPart; x++) {
                 for (int y = 0; y < sqrtPart; y++) {
-                    C.Particles.Add(new Particle_Ellipsoid(motion, 0.25, 0.1, new double[] { -1.5 + 1 * x, 1.5 - 1 * y }, startAngl: Math.Pow(-1, x * y) * 160, activeStress: 10));
+                    C.Particles.Add(new Particle_Ellipsoid(motion, 0.25, 0.1, new double[] { -0.5 + 1 * x, 0.5 - 1 * y }, startAngl: 180 -30 - 90 * (x - y) + 180 * (1 - x * y), activeStress: 50));
                 }
             }
 
@@ -59,7 +56,7 @@ namespace BoSSS.Application.FSI_Solver {
             double dt = 1e-3;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.Endtime = 1000000;
+            C.Endtime = 100000000;
             C.NoOfTimesteps = 1000000;
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;

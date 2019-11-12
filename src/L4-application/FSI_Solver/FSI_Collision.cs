@@ -23,7 +23,10 @@ using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using FSI_Solver;
 
 namespace FSI_Solver {
     class FSI_Collision {
@@ -235,10 +238,20 @@ namespace FSI_Solver {
         ///  <param name="normalVector"></param>
         /// <param name="distance"></param>
         private double DynamicTimestep(Particle particle0, Particle particle1, double[] closestPoint0, double[] closestPoint1, double[] normalVector, double distance) {
-            CalculatePointVelocity(particle0, closestPoint0, out double[] pointVelocity0);
-            ProjectVelocityOnVector(normalVector, pointVelocity0, out double detectCollisionVn_P0);
-            CalculatePointVelocity(particle1, closestPoint1, out double[] pointVelocity1);
-            ProjectVelocityOnVector(normalVector, pointVelocity1, out double detectCollisionVn_P1);
+            double detectCollisionVn_P0;
+            double detectCollisionVn_P1;
+            if (particle0.Motion.IncludeTranslation || particle0.Motion.IncludeRotation) {
+                CalculatePointVelocity(particle0, closestPoint0, out double[] pointVelocity0);
+                ProjectVelocityOnVector(normalVector, pointVelocity0, out detectCollisionVn_P0);
+            }
+            else
+                detectCollisionVn_P0 = 0;
+            if (particle1.Motion.IncludeTranslation || particle1.Motion.IncludeRotation) {
+                CalculatePointVelocity(particle1, closestPoint1, out double[] pointVelocity1);
+                ProjectVelocityOnVector(normalVector, pointVelocity1, out detectCollisionVn_P1);
+            }
+            else
+                detectCollisionVn_P1 = 0;
             return (detectCollisionVn_P1 - detectCollisionVn_P0 == 0) ? double.MaxValue : 0.9 * distance / (detectCollisionVn_P1 - detectCollisionVn_P0);
         }
 
@@ -327,6 +340,7 @@ namespace FSI_Solver {
             ClosestPoint_P1 = MultidimensionalArray.Create(SpatialDim);
             Overlapping = false;
             int NoOfSubParticles1 = Particle1 == null ? 1 : Particle1.NoOfSubParticles;
+;
 
             for (int i = 0; i < Particle0.NoOfSubParticles; i++) {
                 for (int j = 0; j < NoOfSubParticles1; j++) {
@@ -370,6 +384,9 @@ namespace FSI_Solver {
             ClosestPoint_P0 = MultidimensionalArray.Create(SpatialDim);
             Overlapping = false;
 
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
+
             for (int i = 0; i < Particle0.NoOfSubParticles; i++) {
                 GJK_DistanceAlgorithm(Particle0, i, null, 1, out double temp_Distance, out double[] temp_DistanceVector, out double[] temp_ClosestPoint_P0, out _, out Overlapping);
                 if (Overlapping)
@@ -382,6 +399,10 @@ namespace FSI_Solver {
                     }
                 }
             }
+            stopWatch.Stop();
+            TimeSpan ts = stopWatch.Elapsed;
+            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
+            Console.WriteLine("Runtime of GJK: " + elapsedTime);
         }
 
         /// <summary>
@@ -515,31 +536,38 @@ namespace FSI_Solver {
             int SpatialDim = particle.Motion.GetPosition(0).Count();
             SupportPoint = new double[SpatialDim];
             // A direct formulation of the support function for a sphere exists, thus it is also possible to map it to an ellipsoid.
-            if (particle is Particle_Ellipsoid || particle is Particle_Sphere) {
-                particle.GetSupportPoint(SpatialDim, Vector, out SupportPoint);
+            if (particle is Particle_Ellipsoid || particle is Particle_Sphere || particle is Particle_Rectangle || particle is Particle_Shell) {
+                SupportPoint = particle.GetSupportPoint(Vector, SubParticleID);
             }
-
-            // Binary search in all other cases.
+            // Interpolated binary search in all other cases.
             else {
-                MultidimensionalArray SurfacePoints = particle.GetSurfacePoints(m_hMin);
-                MultidimensionalArray SurfacePointsSubParticle = SurfacePoints.ExtractSubArrayShallow(new int[] { SubParticleID, -1, -1 });
-                int L = 1;
-                int R = SurfacePointsSubParticle.GetLength(0) - 2;
-                while (L <= R && L > 0 && R < SurfacePointsSubParticle.GetLength(0) - 1) {
-                    int Index = (L + R) / 2;
+                double angle = particle.Motion.GetAngle(0);
+                double[] particleDirection = new double[] { Math.Cos(angle), Math.Sin(angle) };
+                double testSign = particleDirection[0] * Vector[1] - particleDirection[1] * Vector[0];
+                double searchStartAngle = (1 - Math.Sign(testSign)) * Math.PI / 2 + Math.Acos(Aux.DotProduct(Vector, particleDirection) / Vector.L2Norm());
+                double L = searchStartAngle - Math.PI;
+                double R = searchStartAngle + Math.PI;
+                while (L < R && Math.Abs(L-R) > 1e-15) {
+                    searchStartAngle = (L + R) / 2;
+                    double dAngle = 1e-8;
+                    MultidimensionalArray SurfacePoints = particle.GetSurfacePoints(dAngle, searchStartAngle, SubParticleID);
                     double[] RightNeighbour = new double[2];
                     double[] LeftNeighbour = new double[2];
                     for (int d = 0; d < 2; d++) {
-                        SupportPoint[d] = SurfacePointsSubParticle[Index, d];
-                        LeftNeighbour[d] = SurfacePointsSubParticle[Index - 1, d];
-                        RightNeighbour[d] = SurfacePointsSubParticle[Index + 1, d];
+                        SupportPoint[d] = SurfacePoints[1, d];
+                        LeftNeighbour[d] = SurfacePoints[0, d];
+                        RightNeighbour[d] = SurfacePoints[2, d];
                     }
                     if (Aux.DotProduct(SupportPoint, Vector) > Aux.DotProduct(RightNeighbour, Vector) && Aux.DotProduct(SupportPoint, Vector) > Aux.DotProduct(LeftNeighbour, Vector))
                         break; // The current temp_supportPoint is the actual support point.
                     else if (Aux.DotProduct(RightNeighbour, Vector) > Aux.DotProduct(LeftNeighbour, Vector))
-                        L = Index + 1; // Search on the right side of the current point.
+                        L = searchStartAngle; // Search on the right side of the current point.
                     else
-                        R = Index - 1; // Search on the left side.
+                        R = searchStartAngle; // Search on the left side.
+                }
+                double[] position = particle.Motion.GetPosition(0);
+                for (int d = 0; d < 2; d++) {
+                    SupportPoint[d] += position[d];
                 }
             }
         }
@@ -730,7 +758,7 @@ namespace FSI_Solver {
             for (int p = 0; p < collidedParticles.Count(); p++) {
                 double tempCollisionVn = collidedParticles[p].Motion.IncludeTranslation ? collidedParticles[p].Motion.GetPreCollisionVelocity()[0] + Math.Pow(-1, p + 1) * collisionCoefficient / collidedParticles[p].Motion.Mass_P : 0;
                 double tempCollisionVt = collidedParticles[p].Motion.IncludeTranslation ? collidedParticles[p].Motion.GetPreCollisionVelocity()[1] * m_CoefficientOfRestitution : 0;
-                double tempCollisionRot = collidedParticles[p].Motion.IncludeRotation ? collidedParticles[p].Motion.GetRotationalVelocity(0) + Math.Pow(-1, p) * collidedParticles[p].Eccentricity * collisionCoefficient / collidedParticles[p].MomentOfInertia_P : 0;
+                double tempCollisionRot = collidedParticles[p].Motion.IncludeRotation ? collidedParticles[p].Motion.GetRotationalVelocity(0) + Math.Pow(-1, p) * collidedParticles[p].Eccentricity * collisionCoefficient / collidedParticles[p].MomentOfInertia : 0;
                 collidedParticles[p].Motion.SetCollisionVelocities(tempCollisionVn, tempCollisionVt, tempCollisionRot);
             }
         }
@@ -747,7 +775,7 @@ namespace FSI_Solver {
 
             double tempCollisionVn = particle.Motion.IncludeTranslation ? particle.Motion.GetPreCollisionVelocity()[0] - collisionCoefficient / particle.Motion.Mass_P : 0;
             double tempCollisionVt = particle.Motion.IncludeTranslation ? particle.Motion.GetPreCollisionVelocity()[1] : 0;
-            double tempCollisionRot = particle.Motion.IncludeRotation ? particle.Motion.GetRotationalVelocity(0) + particle.Eccentricity * collisionCoefficient / particle.MomentOfInertia_P : 0;
+            double tempCollisionRot = particle.Motion.IncludeRotation ? particle.Motion.GetRotationalVelocity(0) + particle.Eccentricity * collisionCoefficient / particle.MomentOfInertia : 0;
             particle.Motion.SetCollisionVelocities(tempCollisionVn, tempCollisionVt, tempCollisionRot);
         }
 
@@ -761,7 +789,7 @@ namespace FSI_Solver {
             double[] momentOfInertiaReciprocal = new double[2];
             for (int p = 0; p < collidedParticles.Count(); p++) {
                 massReciprocal[p] = collidedParticles[p].Motion.IncludeTranslation ? 1 / collidedParticles[p].Motion.Mass_P : 0;
-                momentOfInertiaReciprocal[p] = collidedParticles[p].Motion.IncludeRotation ? collidedParticles[p].Eccentricity.Pow2() / collidedParticles[p].MomentOfInertia_P : 0;
+                momentOfInertiaReciprocal[p] = collidedParticles[p].Motion.IncludeRotation ? collidedParticles[p].Eccentricity.Pow2() / collidedParticles[p].MomentOfInertia : 0;
             }
             collisionCoefficient = (1 + m_CoefficientOfRestitution) * ((collidedParticles[0].Motion.GetPreCollisionVelocity()[0] - collidedParticles[1].Motion.GetPreCollisionVelocity()[0]) / (massReciprocal[0] + massReciprocal[1] + momentOfInertiaReciprocal[0] + momentOfInertiaReciprocal[1]));
             collisionCoefficient += (1 + m_CoefficientOfRestitution) * ((-collidedParticles[0].Eccentricity * collidedParticles[0].Motion.GetRotationalVelocity(0) + collidedParticles[1].Eccentricity * collidedParticles[1].Motion.GetRotationalVelocity(0)) / (massReciprocal[0] + massReciprocal[1] + momentOfInertiaReciprocal[0] + momentOfInertiaReciprocal[1]));
@@ -773,8 +801,8 @@ namespace FSI_Solver {
         /// <param name="particle"></param>
         /// <param name="collisionCoefficient"></param>
         private void CalculateCollisionCoefficient(Particle particle, out double collisionCoefficient) {
-            collisionCoefficient = (1 + m_CoefficientOfRestitution) * (particle.Motion.GetPreCollisionVelocity()[0] / (1 / particle.Motion.Mass_P + particle.Eccentricity.Pow2() / particle.MomentOfInertia_P));
-            collisionCoefficient += -(1 + m_CoefficientOfRestitution) * particle.Eccentricity * particle.Motion.GetRotationalVelocity(0) / (1 / particle.Motion.Mass_P + particle.Eccentricity.Pow2() / particle.MomentOfInertia_P);
+            collisionCoefficient = (1 + m_CoefficientOfRestitution) * (particle.Motion.GetPreCollisionVelocity()[0] / (1 / particle.Motion.Mass_P + particle.Eccentricity.Pow2() / particle.MomentOfInertia));
+            collisionCoefficient += -(1 + m_CoefficientOfRestitution) * particle.Eccentricity * particle.Motion.GetRotationalVelocity(0) / (1 / particle.Motion.Mass_P + particle.Eccentricity.Pow2() / particle.MomentOfInertia);
         }
 
         /// <summary>

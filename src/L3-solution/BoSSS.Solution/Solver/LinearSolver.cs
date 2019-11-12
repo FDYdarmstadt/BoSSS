@@ -153,6 +153,8 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         exp_gmres_levelpmg = 47,
 
+        exp_gmres_schwarz_pmg = 48,
+
         /// <summary>
         /// highly experimental shit
         /// </summary>
@@ -162,6 +164,8 @@ namespace BoSSS.Solution.Control {
         /// Orthonormalization Scheme with p-multigrid preconditioner
         /// </summary>
         exp_OrthoS_pMG = 51,
+
+        
 
         selfmade = 999,
     }
@@ -236,5 +240,12 @@ namespace BoSSS.Solution.Control {
         public int TargetBlockSize = 10000;
 
         //public Tuple<LinearSolverCode, Precond> SolverCode = new Tuple<LinearSolverCode, Precond>(LinearSolverCode.GMRES,Precond.none);
+
+        /// <summary>
+        /// Set the type of Parallelism to be used for the linear Solver.
+        /// You may define a comma seperated list out of the following: "SEQ","MPI","OMP"
+        /// </summary>
+        [DataMember]
+        public string Parallelism = "SEQ";
     }
 }

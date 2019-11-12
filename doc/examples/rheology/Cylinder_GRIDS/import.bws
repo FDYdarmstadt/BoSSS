@@ -1,0 +1,100 @@
+restart
+**************
+
+  Database Explorer v2
+  ____________________
+
+Databases loaded:
+List of 8 instances of IDatabaseInfo {
+  0: { Session Count = 1; Grid Count = 1; Path = c:\AnnesBoSSSdb\OperatorTest }
+  1: { Session Count = 0; Grid Count = 0; Path = C:\AnnesBoSSSdb\StokesChannel }
+  2: { Session Count = 17; Grid Count = 3; Path = C:\AnnesBoSSSdb\Channel }
+  3: { Session Count = 1; Grid Count = 0; Path = c:\AnnesBoSSSdb\Contraction }
+  4: { Session Count = 20; Grid Count = 6; Path = c:\AnnesBoSSSdb\ConvergenceStokesLDG }
+  5: { Session Count = 6; Grid Count = 2; Path = p:\cluster\cluster_db\ConvergenceStudyLDG }
+  6: { Session Count = 20; Grid Count = 6; Path = c:\AnnesBoSSSdb\ConvergenceStokesLDG2exclBEpen }
+  7: { Session Count = 27; Grid Count = 5; Path = c:\AnnesBoSSSdb\ConfinedCylinder }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+Gmsh gmshGrid = new Gmsh(@"C:\AnnesBoSSSdb\Cylinder_GRIDS\mesh_karman_OriginalBox_MEDIUM.msh")
+**************
+==============
+GridCommons bosssGrid = gmshGrid.GenerateBoSSSGrid();
+**************
+==============
+bosssGrid.Name = "confined_cylinder";
+**************
+==============
+bosssGrid.EdgeTagNames.Add(1, "Velocity_inlet");
+bosssGrid.EdgeTagNames.Add(2, "Wall_bottom");
+bosssGrid.EdgeTagNames.Add(3, "Wall_top");
+bosssGrid.EdgeTagNames.Add(4, "Pressure_Outlet");
+bosssGrid.EdgeTagNames.Add(5, "Wall_cylinder");
+**************
+==============
+//Func<double[], byte> edgeTagFunc = delegate (double[] X) {
+//    if (Math.Abs(X[0]) < 1e-15) {
+//        return 1;
+//    } else if (Math.Abs(X[0] - 1.0) < 1e-15) {
+//        return 2;
+//    } else {
+//        return 3;
+//    }
+//};
+
+Func<double[], byte> edgeTagFunc = delegate (double[] X) {
+                    double x = X[0];
+                    double y = X[1];
+
+//                    if (!C.FixedStreamwisePeriodicBC)
+//                    {
+                        if (Math.Abs(x - (-15)) < 1.0e-10)
+                        {
+                            //left
+                            return 1;
+                        }
+
+                        if (Math.Abs(x - (15)) < 1.0e-10)
+                        {
+                            //right
+                            return 4;
+                        }
+//                    }
+
+                    if (Math.Abs(y - (-2)) < 1.0e-10)
+                    {
+                        //bottom
+                        return 2;
+                    }
+
+                    if (Math.Abs(y - (+2)) < 1.0e-10)
+                    {
+                        //top
+                        return 3;
+                    }
+                    
+                    if (-1.0 < y && y < 1.0 && -1.0 < x  && x < 1.0)// 1.0e-6)
+                    {
+                        //cylinder
+                        return 5;
+                    }
+
+                    throw new ArgumentOutOfRangeException("at x = " + x + "and y = " +y);
+                }
+**************
+==============
+bosssGrid.DefineEdgeTags(edgeTagFunc);
+**************
+==============
+**************
+==============
+databases.Pick(7).Controller.SaveGridInfo(bosssGrid)
+**************
+==============
+**************
+==============
+**************
+==============

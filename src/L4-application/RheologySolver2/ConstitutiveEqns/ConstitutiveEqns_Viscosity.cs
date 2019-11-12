@@ -214,33 +214,27 @@ namespace BoSSS.Application.Rheology {
 
                 case IncompressibleBcType.FreeSlip:
 
-                    //Free slip wall for symmetry line of symmetric channel
+                    //Free slip wall for symmetry line
                     switch (Component) {
                         case 0:
-                            //res += inp.Normale[0] * (2 * Uin[0] - Uin[0] * inp.Normale[0] * inp.Normale[0] - Uin[2] * inp.Normale[1] * inp.Normale[0]);// - Uin[0] * inp.Normale[1] * inp.Normale[1]);
-                            //res += 2 * Uin[0] * inp.Normale[0] * inp.Normale[0] * inp.Normale[0] + (Uin[0] * inp.Normale[1] + Uin[2] * inp.Normale[0]) * inp.Normale[1] * inp.Normale[0];
-                            res += Uin[0] * n1 + Uin[1] * n2;
+                            res -= Uin[0] * n1 + Uin[1] * n2;
+                            //res += 2 * Uin[0] * inp.Normale[0] * inp.Normale[0] * inp.Normale[0] + 2 * Uin[2] * inp.Normale[0] * inp.Normale[1] * inp.Normale[0];
+                            //res = 0;// (Uin[0]+VelocityX) * inp.Normale[0] * inp.Normale[0] * inp.Normale[0] + (Uin[2]+VelocityY) * inp.Normale[0] * inp.Normale[1] * inp.Normale[0];
                             break;
                         case 1:
-                            //res += 2 * Uin[0] * inp.Normale[1] + 2 * Uin[1] * inp.Normale[0] - Uin[0] * inp.Normale[1] * inp.Normale[1] * inp.Normale[1] + Uin[0] * inp.Normale[0] * inp.Normale[0] * inp.Normale[1];// - Uin[1] * inp.Normale[0] * inp.Normale[0] * inp.Normale[0];
-                            //res += 2 * (Uin[0] * inp.Normale[0] + Uin[1] * inp.Normale[1]) * inp.Normale[0] * inp.Normale[1] + (Uin[1] * inp.Normale[0] + Uin[0] * inp.Normale[1]) * inp.Normale[0] * inp.Normale[0] + (Uin[1] * inp.Normale[0] + Uin[0] * inp.Normale[1]) * inp.Normale[1] * inp.Normale[1];
                             res += Uin[0] * n1 + Uin[1] * n2;
+                            //res += 0.5 * ((Uin[0] + Vel1) * n1 + (Uin[1] + Vel2) * n2);
+                            //res += 2 * Uin[0] * inp.Normale[1] * inp.Normale[0] * inp.Normale[0] + 2 * Uin[1] * inp.Normale[1] * inp.Normale[1] * inp.Normale[0];
+                            //res = 0;// (Uin[0] + VelocityX) * inp.Normale[1] * inp.Normale[0] * inp.Normale[0] + (Uin[1] + VelocityY) * inp.Normale[1] * inp.Normale[1] * inp.Normale[0];
                             break;
                         case 2:
-                            //res += inp.Normale[1] * (2 * Uin[0] - Uin[2] * inp.Normale[1] * inp.Normale[1] - Uin[0] * inp.Normale[1] * inp.Normale[0]);// - Uin[2] * inp.Normale[0] * inp.Normale[0]); 
-                            res += 0;// 2 * Uin[0] * inp.Normale[1] * inp.Normale[1] * inp.Normale[1] + (Uin[2] * inp.Normale[1] + Uin[0] * inp.Normale[0]) * inp.Normale[0] * inp.Normale[1];
-                            //res += Uin[0] * n1 + Uin[1] * n2;
+                            res -= Uin[0] * n1 + Uin[1] * n2;
+                            //res += 2 * Uin[2] * inp.Normale[1] * inp.Normale[0] * inp.Normale[1] + 2 * Uin[0] * inp.Normale[1] * inp.Normale[1] * inp.Normale[1];
+                            //res = 0;// (Uin[2] + VelocityY) * inp.Normale[1] * inp.Normale[0] * inp.Normale[1] + (Uin[0] + VelocityX) * inp.Normale[1] * inp.Normale[1] * inp.Normale[1];
                             break;
                         default:
                             throw new NotImplementedException();
                     }
-
-
-                    //res += Uin[0] * n1 + Uin[1] * n2;
-                    //res += n1 * n2 * (Uin[0] * n1 + Uin[1] * n2) * n1 * n2;
-                    //res += n2 *0.5 * ((Uin[0] + Vel1) * n1 + (Uin[1] + Vel2) * n2) *n1;
-                    //res += n1 * n2 * (Uin[0] * n1 + Uin[1] * n2) * n1 * n2;
-                    //res += 0;
 
                     break;
 
@@ -249,16 +243,15 @@ namespace BoSSS.Application.Rheology {
 
                     // Dirichlet value for Velocity
                     // ============================
-                    if (Component == 1)
-                    {
+                    //if (Component == 1) {
                         res += 0.5 * ((Uin[0] + Vel1) * n1 + (Uin[1] + Vel2) * n2);
                         //res += Vel1 * n1 + Vel2 * n2;// + Vel1 * n2 + Vel2 * n1;
-                    }
-                    else {
+                    //}
+                    //else {
 
-                        res += 0.5 * ((Uin[0] + Vel1) * n1 + (Uin[1] + Vel2) * n2);
-                        //res += Vel1 * n1 + Vel2 * n2;
-                    }
+                    //    res += 0.5 * ((Uin[0] + Vel1) * n1 + (Uin[1] + Vel2) * n2);
+                    //    //res += Vel1 * n1 + Vel2 * n2;
+                    //}
 
                     break;
 
