@@ -1,5 +1,6 @@
 restart
 **************
+
   BoSSSpad C# interpreter
   _______________________
 
@@ -263,7 +264,7 @@ int iCol = 0;
                 yValue = 0;
                 return;
            }
-           //All sessions with #cells equal to 8 are dismissed
+           
            if(Convert.ToInt32(Row["Grid:NoOfCells"])==8){
                System.Console.WriteLine("skipped");
                    Nmn = null;
@@ -377,24 +378,24 @@ int iCol = 0;
 AllMultiplots[0].PlotNow()
 **************
 skipped
-aggBinit/slvRun = 746.6019995/673.4551816    + case: 0 + yValue = 673.4551816
+aggBinit/slvRun = 746.6019995/673.4551816	 + case: 0 + yValue = 673.4551816
 skipped
-aggBinit/slvRun = 746.6019995/673.4551816    + case: 1 + yValue = 103.0913076
+aggBinit/slvRun = 746.6019995/673.4551816	 + case: 1 + yValue = 103.0913076
 skipped
-aggBinit/slvRun = 746.6019995/673.4551816    + case: 2 + yValue = 746.6019995
+aggBinit/slvRun = 746.6019995/673.4551816	 + case: 2 + yValue = 746.6019995
 skipped
-aggBinit/slvRun = 746.6019995/673.4551816    + case: 3 + yValue = 352.3874609
-skipped
-skipped
+aggBinit/slvRun = 746.6019995/673.4551816	 + case: 3 + yValue = 352.3874609
 skipped
 skipped
-aggBinit/slvRun = 762.9091909/5129.8501181   + case: 0 + yValue = 5129.8501181
 skipped
-aggBinit/slvRun = 762.9091909/5129.8501181   + case: 1 + yValue = 19.629075
 skipped
-aggBinit/slvRun = 762.9091909/5129.8501181   + case: 2 + yValue = 762.9091909
+aggBinit/slvRun = 762.9091909/5129.8501181	 + case: 0 + yValue = 5129.8501181
 skipped
-aggBinit/slvRun = 762.9091909/5129.8501181   + case: 3 + yValue = 411.8597846
+aggBinit/slvRun = 762.9091909/5129.8501181	 + case: 1 + yValue = 19.629075
+skipped
+aggBinit/slvRun = 762.9091909/5129.8501181	 + case: 2 + yValue = 762.9091909
+skipped
+aggBinit/slvRun = 762.9091909/5129.8501181	 + case: 3 + yValue = 411.8597846
 skipped
 skipped
 skipped
@@ -444,8 +445,6 @@ System.ComponentModel.Win32Exception (0x80004005): The system cannot find the fi
 CL.WriteMinimalCompileableExample(
     Path.Combine(CurrentDocDir, "plots", "Main_gmres_pMG.tex"),
     "gmres_pMG.tex");
-**************
-==============
 **************
 ==============
 **************

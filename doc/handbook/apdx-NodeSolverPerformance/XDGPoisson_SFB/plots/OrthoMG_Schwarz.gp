@@ -1,4 +1,4 @@
-set output 'Kcycle_Schwarz.tex'
+set output 'OrthoMG_Schwarz.tex'
 set terminal cairolatex  pdf   size 14cm,12cm
 set multiplot
 set size 1,0.333333333333333
@@ -32,7 +32,7 @@ set termoption dashed
 set termoption dashed
 set termoption dashed
 set termoption dashed
-plot "Kcycle_Schwarz_data_0.csv" title "Slv Iter" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "Kcycle_Schwarz_data_1.csv" title "Slv Init" with linespoints linecolor  "black" dashtype 2 linewidth 3 pointtype 4 pointsize 0.5, "Kcycle_Schwarz_data_2.csv" title "Agg Init" with linespoints linecolor  "black" dashtype 4 linewidth 3 pointtype 12 pointsize 0.5, "Kcycle_Schwarz_data_3.csv" title "Mtx ass" with linespoints linecolor  "black" dashtype 5 linewidth 3 pointtype 10 pointsize 0.5, "Kcycle_Schwarz_data_4.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
+plot "OrthoMG_Schwarz_data_0.csv" title "Slv Iter" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "OrthoMG_Schwarz_data_1.csv" title "Slv Init" with linespoints linecolor  "black" dashtype 2 linewidth 3 pointtype 4 pointsize 0.5, "OrthoMG_Schwarz_data_2.csv" title "Agg Init" with linespoints linecolor  "black" dashtype 4 linewidth 3 pointtype 12 pointsize 0.5, "OrthoMG_Schwarz_data_3.csv" title "Mtx ass" with linespoints linecolor  "black" dashtype 5 linewidth 3 pointtype 10 pointsize 0.5, "OrthoMG_Schwarz_data_4.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
 set size 0.98,0.326666666666667
 set origin 0.01,0.336666666666667
 set lmargin 1e01
@@ -62,7 +62,7 @@ set termoption dashed
 set termoption dashed
 set termoption dashed
 set termoption dashed
-plot "Kcycle_Schwarz_data_5.csv" title "Slv Iter" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "Kcycle_Schwarz_data_6.csv" title "Slv Init" with linespoints linecolor  "black" dashtype 2 linewidth 3 pointtype 4 pointsize 0.5, "Kcycle_Schwarz_data_7.csv" title "Agg Init" with linespoints linecolor  "black" dashtype 4 linewidth 3 pointtype 12 pointsize 0.5, "Kcycle_Schwarz_data_8.csv" title "Mtx ass" with linespoints linecolor  "black" dashtype 5 linewidth 3 pointtype 10 pointsize 0.5, "Kcycle_Schwarz_data_9.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
+plot "OrthoMG_Schwarz_data_5.csv" title "Slv Iter" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "OrthoMG_Schwarz_data_6.csv" title "Slv Init" with linespoints linecolor  "black" dashtype 2 linewidth 3 pointtype 4 pointsize 0.5, "OrthoMG_Schwarz_data_7.csv" title "Agg Init" with linespoints linecolor  "black" dashtype 4 linewidth 3 pointtype 12 pointsize 0.5, "OrthoMG_Schwarz_data_8.csv" title "Mtx ass" with linespoints linecolor  "black" dashtype 5 linewidth 3 pointtype 10 pointsize 0.5, "OrthoMG_Schwarz_data_9.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
 set size 0.98,0.326666666666667
 set origin 0.01,0.00333333333333333
 set lmargin 1e01
@@ -94,7 +94,7 @@ set termoption dashed
 set termoption dashed
 set termoption dashed
 set termoption dashed
-plot "Kcycle_Schwarz_data_10.csv" title "Slv Iter" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "Kcycle_Schwarz_data_11.csv" title "Slv Init" with linespoints linecolor  "black" dashtype 2 linewidth 3 pointtype 4 pointsize 0.5, "Kcycle_Schwarz_data_12.csv" title "Agg Init" with linespoints linecolor  "black" dashtype 4 linewidth 3 pointtype 12 pointsize 0.5, "Kcycle_Schwarz_data_13.csv" title "Mtx ass" with linespoints linecolor  "black" dashtype 5 linewidth 3 pointtype 10 pointsize 0.5, "Kcycle_Schwarz_data_14.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
+plot "OrthoMG_Schwarz_data_10.csv" title "Slv Iter" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "OrthoMG_Schwarz_data_11.csv" title "Slv Init" with linespoints linecolor  "black" dashtype 2 linewidth 3 pointtype 4 pointsize 0.5, "OrthoMG_Schwarz_data_12.csv" title "Agg Init" with linespoints linecolor  "black" dashtype 4 linewidth 3 pointtype 12 pointsize 0.5, "OrthoMG_Schwarz_data_13.csv" title "Mtx ass" with linespoints linecolor  "black" dashtype 5 linewidth 3 pointtype 10 pointsize 0.5, "OrthoMG_Schwarz_data_14.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
 
 
 exit
