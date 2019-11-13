@@ -13,11 +13,83 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Application.ExternalBinding {
 
+    public interface IForeignLanguageProxy {
+
+        void _SetForeignPointer(IntPtr ptr);
+        IntPtr _GetForeignPointer();
+        
+    }
+
+
+    public class TwinRef : IForeignLanguageProxy {
+        internal GridServer BackRef;
+
+        [CodeGenExport]
+        public GridServer GetBack() {
+            return BackRef;
+        }
+
+        IntPtr m_ForeignPtr;
+
+        public void _SetForeignPointer(IntPtr ptr) {
+            if (ptr == IntPtr.Zero) {
+                m_ForeignPtr = IntPtr.Zero;
+            } else {
+
+                if (m_ForeignPtr != IntPtr.Zero) {
+                    throw new ApplicationException("already registered");
+                }
+                m_ForeignPtr = ptr;
+            }
+        }
+
+
+        public IntPtr _GetForeignPointer() {
+            Console.WriteLine("Twinref._GetForeignPointer " + m_ForeignPtr.ToString("x"));
+            return m_ForeignPtr;
+        }
+
+
+
+    }
+
 
     /// <summary>
     /// Instantiation of BoSSS grids
     /// </summary>
-    public class GridServer {
+    public class GridServer : IForeignLanguageProxy {
+
+        TwinRef m_TwinRef;
+
+        [CodeGenExport]
+        public TwinRef GetTwin() {
+            if(m_TwinRef == null) {
+                m_TwinRef = new TwinRef() { BackRef = this };
+            }
+
+            return m_TwinRef;
+        }
+
+        IntPtr m_ForeignPtr;
+
+        public void _SetForeignPointer(IntPtr ptr) {
+            if (ptr == IntPtr.Zero) {
+                m_ForeignPtr = IntPtr.Zero;
+            } else {
+
+                if (m_ForeignPtr != IntPtr.Zero) {
+                    throw new ApplicationException("already registered");
+                }
+                m_ForeignPtr = ptr;
+            }
+        }
+
+
+        public IntPtr _GetForeignPointer() {
+            return m_ForeignPtr;
+        }
+
+
 
         /// <summary>
         /// Create a BoSSS grid from an OpenFOAM mesh
@@ -58,6 +130,8 @@ namespace BoSSS.Application.ExternalBinding {
 
             Common_.BoSSSInitialize();
             Console.WriteLine("nPoints = {0}, nCells = {1}, nFaces = {2}, nInternalFaces = {3}", nPoints, nCells, nFaces, nInternalFaces);
+            Console.WriteLine("init skipped for tst purpose.");
+            return;
 
             try {
 
@@ -109,9 +183,10 @@ namespace BoSSS.Application.ExternalBinding {
         }
 
 
-        public void TestMethod(int a, out int b, ref int c) {
-
-            b = 0;
+        [CodeGenExport]
+        public int TestMethod(int a) {
+            Console.WriteLine("C#: Got number " + a + " from external code; returning " + (a*2));
+            return a * 2;
         }
 
 

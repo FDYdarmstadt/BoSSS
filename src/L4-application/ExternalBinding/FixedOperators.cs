@@ -47,7 +47,7 @@ namespace BoSSS.Application.ExternalBinding {
                 throw new NotImplementedException("todo");
 
             } catch (Exception e) {
-                ierr = Infrastructure.ErrorHandler(e);
+                ierr = 0;// Infrastructure.ErrorHandler(e);
             }
             ierr = 0;
         }
