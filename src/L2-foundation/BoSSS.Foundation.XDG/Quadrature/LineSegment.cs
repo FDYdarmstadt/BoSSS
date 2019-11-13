@@ -25,6 +25,7 @@ using ilPSP;
 using ilPSP.Utils;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
@@ -54,11 +55,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// </summary>
         private double? length = null;
 
-        /// <summary>
-        /// Cache for the roots found on this line segment. The keys are given
-        /// by a level set - cell pair.
-        /// </summary>
-        private Dictionary<Tuple<ILevelSet, int>, double[]> rootsCache = new Dictionary<Tuple<ILevelSet, int>, double[]>();
+        ///// <summary>
+        ///// Cache for the roots found on this line segment. The keys are given
+        ///// by a level set - cell pair.
+        ///// </summary>
+        //private Dictionary<Tuple<ILevelSet, int>, double[]> rootsCache = new Dictionary<Tuple<ILevelSet, int>, double[]>();
 
         RefElement m_Kref;
 
@@ -103,15 +104,15 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         public LineSegment(
             int spatialDimension,
             RefElement Kräf,
-            double[] start,
-            double[] end,
+            Vector start,
+            Vector end,
             int iVertexStart = -1,
             int iVertexEnd = -1,
             IRootFindingAlgorithm rootFindingAlgorithm = null) {
 
-            if (start.Length != spatialDimension)
+            if (start.Dim != spatialDimension)
                 throw new ArgumentException();
-            if (end.Length != spatialDimension)
+            if (end.Dim != spatialDimension)
                 throw new ArgumentException();
 
             this.m_Kref = Kräf;
@@ -127,14 +128,14 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// </summary>
         public int SpatialDimension {
             get {
-                return Start.Length;
+                return Start.Dim;
             }
         }
 
         /// <summary>
         /// Start coordinates, usually in the reference coordinate system of the cell
         /// </summary>
-        public double[] Start {
+        public Vector Start {
             get;
             private set;
         }
@@ -152,7 +153,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <summary>
         /// End coordinates, usually in the reference coordinate system of the cell
         /// </summary>
-        public double[] End {
+        public Vector End {
             get;
             private set;
         }
@@ -210,8 +211,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// </returns>
         public LineSegment[] Split(double[] splitPoints) {
             LineSegment[] subSegments = new LineSegment[splitPoints.Length + 1];
-            double[] currentStart;
-            double[] currentEnd = Start;
+            Vector currentStart = default(Vector);
+            Vector currentEnd = Start;
 
             for (int i = 0; i < splitPoints.Length; i++) {
                 currentStart = currentEnd;
@@ -251,16 +252,17 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
-        public double[] GetPointOnSegment(double t) {
+        public Vector GetPointOnSegment(double t) {
             Debug.Assert(
                 t.Abs() <= 1.0,
                 "Point out of range");
 
-            double[] result = new double[SpatialDimension];
-            for (int d = 0; d < SpatialDimension; d++) {
-                result[d] = 0.5 * ((End[d] - Start[d]) * t + Start[d] + End[d]);
-            }
-            return result;
+            //double[] result = new double[SpatialDimension];
+            //for (int d = 0; d < SpatialDimension; d++) {
+            //    result[d] = 0.5 * ((End[d] - Start[d]) * t + Start[d] + End[d]);
+            //}
+            //return result;
+            return (t * 0.5) * (End - Start) + Start + End;
         }
 
         /// <summary>
@@ -288,10 +290,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         public LineSegment Inverse {
             get {
                 LineSegment inverse = new LineSegment(
-                    this.Start.Length,
+                    this.Start.Dim,
                     this.m_Kref,
-                    this.End.CloneAs(),
-                    this.Start.CloneAs(),
+                    this.End,
+                    this.Start,
                     this.iVertexEnd,
                     this.iVertexStart,
                     this.RootFindingAlgorithm);
@@ -900,7 +902,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// Not used.
         /// </param>
         public void OnNext(LevelSetTracker.LevelSetRegions status) {
-            rootsCache.Clear();
+            //rootsCache.Clear();
         }
 
         #endregion
