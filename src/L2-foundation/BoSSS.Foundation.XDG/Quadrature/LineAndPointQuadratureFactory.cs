@@ -385,8 +385,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             for (int e = 0; e < referenceLineSegments.Length; e++) {
                 LineSegment referenceSegment = referenceLineSegments[e];
 
-                double[] P0 = referenceSegment.GetPointOnSegment(-1.0);
-                double[] P1 = referenceSegment.GetPointOnSegment(+1.0);
+                Vector P0 = referenceSegment.GetPointOnSegment(-1.0);
+                Vector P1 = referenceSegment.GetPointOnSegment(+1.0);
 
                 int iP0 = this.m_RefElement.Vertices.MindistRow(P0);
                 int iP1 = this.m_RefElement.Vertices.MindistRow(P1);
@@ -432,7 +432,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     LnMeasPos_nodes.Clear();
                     LnMeasNeg_weights.Clear();
                     LnMeasPos_weights.Clear();
-                    int[] LnMeas_noOfNodesPerEdge = new int[referenceLineSegments.Length];
+                    int[] LnMeasPos_noOfNodesPerEdge = new int[referenceLineSegments.Length];
+                    int[] LnMeasNeg_noOfNodesPerEdge = new int[referenceLineSegments.Length];
                     int[] PtMeas_noOfNodesPerEdge = new int[referenceLineSegments.Length];
 
                     // ==================
@@ -485,16 +486,19 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 MultidimensionalArray levelSetValue = LevelSetData.GetLevSetValues(_point, jCell, 1);
                                 List<Vector> LnMeas_nodes;
                                 List<double> LnMeas_weights;
+                                int[] LnMeas_noOfNodesPerEdge;
                                 bool PositiveSegment;
                                 if (levelSetValue[0, 0] <= 0) {
                                     // negative segment...
                                     LnMeas_nodes = LnMeasNeg_nodes;
                                     LnMeas_weights = LnMeasNeg_weights;
+                                    LnMeas_noOfNodesPerEdge = LnMeasNeg_noOfNodesPerEdge;
                                     PositiveSegment = false;
                                 } else {
                                     // positive segment
                                     LnMeas_nodes = LnMeasPos_nodes;
                                     LnMeas_weights = LnMeasPos_weights;
+                                    LnMeas_noOfNodesPerEdge = LnMeasPos_noOfNodesPerEdge;
                                     PositiveSegment = true;
                                 }
 
@@ -530,6 +534,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             List<Vector> LnMeas_nodes;
                             List<double> LnMeas_weights;
                             List<ChunkRulePair<CellBoundaryQuadRule>> LineMeasure_result;
+                            int[] LnMeas_noOfNodesPerEdge;
                             bool PositiveSegment;
 
                             if (posneg == 0) {
@@ -537,12 +542,14 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 LnMeas_nodes = LnMeasNeg_nodes;
                                 LnMeas_weights = LnMeasNeg_weights;
                                 LineMeasure_result = LineMeasureNeg_result;
+                                LnMeas_noOfNodesPerEdge = LnMeasNeg_noOfNodesPerEdge;
                                 PositiveSegment = false;
                             } else {
                                 // positive segment
                                 LnMeas_nodes = LnMeasPos_nodes;
                                 LnMeas_weights = LnMeasPos_weights;
                                 LineMeasure_result = LineMeasurePos_result;
+                                LnMeas_noOfNodesPerEdge = LnMeasPos_noOfNodesPerEdge;
                                 PositiveSegment = true;
                             }
 
@@ -564,7 +571,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                     //for (int d = 0; d < D; d++) {
                                     //    localNodes[j, d] = LnMeas_nodes[j][d];
                                     //}
-                                    localNodes.SetRowPt(j, LnMeasNeg_nodes[j]);
+                                    localNodes.SetRowPt(j, LnMeas_nodes[j]);
                                 }
                                 localNodes.LockForever();
 

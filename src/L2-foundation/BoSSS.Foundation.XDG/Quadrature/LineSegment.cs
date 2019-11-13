@@ -262,7 +262,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             //    result[d] = 0.5 * ((End[d] - Start[d]) * t + Start[d] + End[d]);
             //}
             //return result;
-            return (t * 0.5) * (End - Start) + Start + End;
+            return 0.5 * (t * (End - Start) + Start + End);
         }
 
         /// <summary>

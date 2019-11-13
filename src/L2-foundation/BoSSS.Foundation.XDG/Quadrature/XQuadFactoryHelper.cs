@@ -214,7 +214,7 @@ namespace BoSSS.Foundation.XDG {
                     LineAndPoint_in2D[levSetIndex] = new LineAndPointQuadratureFactory(Kref, this.m_LevelSetDatas[levSetIndex], true);
                 }
 
-                return LineAndPoint_in2D[levSetIndex].GetLineFactory(jumpType != JumpTypes.Heaviside ? true : false);
+                return LineAndPoint_in2D[levSetIndex].GetLineFactory(jumpType == JumpTypes.Heaviside ? true : false);
             } else if (D == 3) {
                 Debug.Assert(LineAndPoint_in2D == null);
 
