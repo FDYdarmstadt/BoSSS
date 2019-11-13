@@ -22,6 +22,7 @@ using BoSSS.Foundation.XDG.Quadrature.HMF;
 using BoSSS.Platform;
 using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Platform.LinAlg;
 
 namespace CutCellQuadrature {
 
@@ -87,12 +88,12 @@ namespace CutCellQuadrature {
             MultidimensionalArray globalSegmentCoordinates = MultidimensionalArray.Create(1, 2, D);
             gridData.TransformLocal2Global(localSegmentCoordinates, element, 1, globalSegmentCoordinates, 0);
 
-            double[] start = new double[D];
+            Vector start = new Vector(D);
             start[0] = globalSegmentCoordinates[0, 0, 0];
             start[1] = globalSegmentCoordinates[0, 0, 1];
             start[2] = globalSegmentCoordinates[0, 0, 2];
 
-            double[] end = new double[D];
+            Vector end = new Vector(D);
             end[0] = globalSegmentCoordinates[0, 1, 0];
             end[1] = globalSegmentCoordinates[0, 1, 1];
             end[2] = globalSegmentCoordinates[0, 1, 2];
