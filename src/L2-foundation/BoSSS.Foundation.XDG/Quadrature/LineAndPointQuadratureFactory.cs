@@ -28,6 +28,7 @@ using ilPSP.Utils;
 using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
@@ -85,6 +86,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             private set;
         }
 
+        /// <summary>
+        /// index into <see cref="GridData.CellData.RefElements"/>
+        /// </summary>
         int iKref;
 
         /// <summary>
@@ -93,17 +97,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         RefElement m_RefElement;
 
         /// <summary>
-        ///Node-wise evaluation of the level-set field.
+        /// Node-wise evaluation of the level-set field.
         /// </summary>
         protected LevelSetTracker.LevelSetData LevelSetData;
 
         bool SupportPointrule;
 
-
-        ///// <summary>
-        ///// the awesome level set tracker
-        ///// </summary>
-        //protected LevelSetTracker tracker;
 
         abstract internal class QRF : IQuadRuleFactory<CellBoundaryQuadRule> {
             internal LineAndPointQuadratureFactory m_Owner;
@@ -255,10 +254,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         }
 
         internal class LineQRF : QRF {
-            public LineQRF(LineAndPointQuadratureFactory o)
+            public LineQRF(LineAndPointQuadratureFactory o, bool sign)
                 : base() {
                 base.m_Owner = o;
-                base.Rules = o.m_LineMeasure;
+                base.Rules = sign ? o.m_LineMeasurePos : o.m_LineMeasureNeg;
                 int D = o.LevelSetData.GridDat.SpatialDimension;
                 this.empty = CellBoundaryQuadRule.CreateEmpty(o.m_RefElement, 1, D, o.referenceLineSegments.Length);
                 this.empty.Nodes.LockForever();
@@ -284,9 +283,17 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             }
         }
 
-        public IQuadRuleFactory<CellBoundaryQuadRule> GetLineFactory() {
+        /// <summary>
+        /// returns the line integration
+        /// </summary>
+        /// <param name="sign">
+        /// - true: positive level-set domain
+        /// - false: negative domain
+        /// </param>
+        /// <returns></returns>
+        public IQuadRuleFactory<CellBoundaryQuadRule> GetLineFactory(bool sign) {
             int D = this.LevelSetData.GridDat.SpatialDimension;
-            return new LineQRF(this);
+            return new LineQRF(this, sign);
         }
 
 
@@ -330,10 +337,18 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
 
         /// <summary>
-        /// key: quadrature order <br/>
-        /// value: quadrature rule
+        /// Quadrature rules for the positive level set region 
+        /// - key: quadrature order <br/>
+        /// - value: quadrature rule
         /// </summary>
-        Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[]> m_LineMeasure = new Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[]>();
+        Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[]> m_LineMeasurePos = new Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[]>();
+
+        /// <summary>
+        /// Quadrature rules for the positive level set region 
+        /// - key: quadrature order 
+        /// - value: quadrature rule
+        /// </summary>
+        Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[]> m_LineMeasureNeg = new Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[]>();
 
 
 
@@ -370,8 +385,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             for (int e = 0; e < referenceLineSegments.Length; e++) {
                 LineSegment referenceSegment = referenceLineSegments[e];
 
-                double[] P0 = referenceSegment.GetPointOnSegment(-1.0);
-                double[] P1 = referenceSegment.GetPointOnSegment(+1.0);
+                Vector P0 = referenceSegment.GetPointOnSegment(-1.0);
+                Vector P1 = referenceSegment.GetPointOnSegment(+1.0);
 
                 int iP0 = this.m_RefElement.Vertices.MindistRow(P0);
                 int iP1 = this.m_RefElement.Vertices.MindistRow(P1);
@@ -392,7 +407,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
 
             var PointMeasure_result = new List<ChunkRulePair<CellBoundaryQuadRule>>(mask.NoOfItemsLocally);
-            var LineMeasure_result = new List<ChunkRulePair<CellBoundaryQuadRule>>(mask.NoOfItemsLocally);
+            var LineMeasurePos_result = new List<ChunkRulePair<CellBoundaryQuadRule>>(mask.NoOfItemsLocally);
+            var LineMeasureNeg_result = new List<ChunkRulePair<CellBoundaryQuadRule>>(mask.NoOfItemsLocally);
+            List<Vector> LnMeasPos_nodes = new List<Vector>();
+            List<double> LnMeasPos_weights = new List<double>();
+            List<Vector> LnMeasNeg_nodes = new List<Vector>();
+            List<double> LnMeasNeg_weights = new List<double>();
             foreach (Chunk chunk in mask) {            // loop over cells
                 for (int i = 0; i < chunk.Len; i++) {  // loop over cells...
                     int jCell = i + chunk.i0;
@@ -408,9 +428,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     //    continue;
                     //}
 
-                    List<double[]> LnMeas_nodes = new List<double[]>();
-                    List<double> LnMeas_weights = new List<double>();
-                    int[] LnMeas_noOfNodesPerEdge = new int[referenceLineSegments.Length];
+                    LnMeasNeg_nodes.Clear();
+                    LnMeasPos_nodes.Clear();
+                    LnMeasNeg_weights.Clear();
+                    LnMeasPos_weights.Clear();
+                    int[] LnMeasPos_noOfNodesPerEdge = new int[referenceLineSegments.Length];
+                    int[] LnMeasNeg_noOfNodesPerEdge = new int[referenceLineSegments.Length];
                     int[] PtMeas_noOfNodesPerEdge = new int[referenceLineSegments.Length];
 
                     // ==================
@@ -461,13 +484,27 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                                 //bool center = false;
                                 MultidimensionalArray levelSetValue = LevelSetData.GetLevSetValues(_point, jCell, 1);
-                                if (levelSetValue[0, 0] <= -Tolerance) {
-                                    continue;
+                                List<Vector> LnMeas_nodes;
+                                List<double> LnMeas_weights;
+                                int[] LnMeas_noOfNodesPerEdge;
+                                bool PositiveSegment;
+                                if (levelSetValue[0, 0] <= 0) {
+                                    // negative segment...
+                                    LnMeas_nodes = LnMeasNeg_nodes;
+                                    LnMeas_weights = LnMeasNeg_weights;
+                                    LnMeas_noOfNodesPerEdge = LnMeasNeg_noOfNodesPerEdge;
+                                    PositiveSegment = false;
+                                } else {
+                                    // positive segment
+                                    LnMeas_nodes = LnMeasPos_nodes;
+                                    LnMeas_weights = LnMeasPos_weights;
+                                    LnMeas_noOfNodesPerEdge = LnMeasPos_noOfNodesPerEdge;
+                                    PositiveSegment = true;
                                 }
 
                                 
-
-                                ActiveSegments[e].Add(subSegments[k]);
+                                if(PositiveSegment)
+                                    ActiveSegments[e].Add(subSegments[k]);
 
                                 //bool start, end;
                                 //double[] StPoint = subSegments[k].GetPointOnSegment(-1.0);
@@ -483,7 +520,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                                 for (int m = 0; m < baseRule.NoOfNodes; m++) {
                                     // Base rule _always_ is a line rule, thus Nodes[*, _0_]
-                                    double[] point = subSegments[k].GetPointOnSegment(baseRule.Nodes[m, 0]);
+                                    Vector point = subSegments[k].GetPointOnSegment(baseRule.Nodes[m, 0]);
 
                                     LnMeas_weights.Add(weightFactor * baseRule.Weights[m]);
                                     LnMeas_nodes.Add(point);
@@ -493,38 +530,67 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             }
                         }
 
-                        if (LnMeas_weights.Count == 0) {
-                            var emptyrule = CellBoundaryQuadRule.CreateEmpty(this.m_RefElement, 1, D, referenceLineSegments.Length);
-                            // create a rule with just one node and weight zero;
-                            // this should avoid some special-case handling for empty rules
-                            emptyrule.NumbersOfNodesPerFace[0] = 1;
-                            emptyrule.Nodes.LockForever();
+                        for (int posneg = 0; posneg < 2; posneg++) {
+                            List<Vector> LnMeas_nodes;
+                            List<double> LnMeas_weights;
+                            List<ChunkRulePair<CellBoundaryQuadRule>> LineMeasure_result;
+                            int[] LnMeas_noOfNodesPerEdge;
+                            bool PositiveSegment;
 
-                            LineMeasure_result.Add(new ChunkRulePair<CellBoundaryQuadRule>(Chunk.GetSingleElementChunk(jCell), emptyrule));
+                            if (posneg == 0) {
+                                // negative segment...
+                                LnMeas_nodes = LnMeasNeg_nodes;
+                                LnMeas_weights = LnMeasNeg_weights;
+                                LineMeasure_result = LineMeasureNeg_result;
+                                LnMeas_noOfNodesPerEdge = LnMeasNeg_noOfNodesPerEdge;
+                                PositiveSegment = false;
+                            } else {
+                                // positive segment
+                                LnMeas_nodes = LnMeasPos_nodes;
+                                LnMeas_weights = LnMeasPos_weights;
+                                LineMeasure_result = LineMeasurePos_result;
+                                LnMeas_noOfNodesPerEdge = LnMeasPos_noOfNodesPerEdge;
+                                PositiveSegment = true;
+                            }
 
-                            LineMeasureEmptyOrFull = true;
-                        } else {
-                            NodeSet localNodes = new NodeSet(this.m_RefElement, LnMeas_nodes.Count, D);
-                            for (int j = 0; j < LnMeas_nodes.Count; j++) {
-                                for (int d = 0; d < D; d++) {
-                                    localNodes[j, d] = LnMeas_nodes[j][d];
+
+                            if (LnMeas_weights.Count == 0) {
+                                var emptyrule = CellBoundaryQuadRule.CreateEmpty(this.m_RefElement, 1, D, referenceLineSegments.Length);
+                                // create a rule with just one node and weight zero;
+                                // this should avoid some special-case handling for empty rules
+                                emptyrule.NumbersOfNodesPerFace[0] = 1;
+                                emptyrule.Nodes.LockForever();
+
+                                LineMeasure_result.Add(new ChunkRulePair<CellBoundaryQuadRule>(Chunk.GetSingleElementChunk(jCell), emptyrule));
+
+                                if(PositiveSegment)
+                                    LineMeasureEmptyOrFull = true;
+                            } else {
+                                NodeSet localNodes = new NodeSet(this.m_RefElement, LnMeas_nodes.Count, D);
+                                for (int j = 0; j < LnMeas_nodes.Count; j++) {
+                                    //for (int d = 0; d < D; d++) {
+                                    //    localNodes[j, d] = LnMeas_nodes[j][d];
+                                    //}
+                                    localNodes.SetRowPt(j, LnMeas_nodes[j]);
+                                }
+                                localNodes.LockForever();
+
+                                CellBoundaryQuadRule subdividedRule = new CellBoundaryQuadRule() {
+                                    OrderOfPrecision = order,
+                                    Weights = MultidimensionalArray.Create(LnMeas_weights.Count),
+                                    Nodes = localNodes,
+                                    NumbersOfNodesPerFace = LnMeas_noOfNodesPerEdge
+                                };
+                                subdividedRule.Weights.SetSubVector(LnMeas_weights, -1);
+
+                                LineMeasure_result.Add(new ChunkRulePair<CellBoundaryQuadRule>(
+                                    Chunk.GetSingleElementChunk(jCell), subdividedRule));
+
+                                if (PositiveSegment) {
+                                    nodesSum = subdividedRule.Weights.Sum();
+                                    LineMeasureEmptyOrFull = (Math.Abs(nodesSum) <= this.Tolerance * 10) || (Math.Abs(nodesSum - Fullsum) <= this.Tolerance * 10);
                                 }
                             }
-                            localNodes.LockForever();
-
-                            CellBoundaryQuadRule subdividedRule = new CellBoundaryQuadRule() {
-                                OrderOfPrecision = order,
-                                Weights = MultidimensionalArray.Create(LnMeas_weights.Count),
-                                Nodes = localNodes,
-                                NumbersOfNodesPerFace = LnMeas_noOfNodesPerEdge
-                            };
-                            subdividedRule.Weights.SetSubVector(LnMeas_weights, -1);
-
-                            LineMeasure_result.Add(new ChunkRulePair<CellBoundaryQuadRule>(
-                                Chunk.GetSingleElementChunk(jCell), subdividedRule));
-
-                            nodesSum = subdividedRule.Weights.Sum();
-                            LineMeasureEmptyOrFull = (Math.Abs(nodesSum) <= this.Tolerance*10) || (Math.Abs(nodesSum - Fullsum) <= this.Tolerance*10);
                         }
                     }
 
@@ -1022,9 +1088,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             }
             // cache result
             Debug.Assert(PointMeasure_result.Any(crp => crp.Rule.Nodes.IsLocked == false) == false);
-            Debug.Assert(LineMeasure_result.Any(crp => crp.Rule.Nodes.IsLocked == false) == false);
+            Debug.Assert(LineMeasurePos_result.Any(crp => crp.Rule.Nodes.IsLocked == false) == false);
+            Debug.Assert(LineMeasureNeg_result.Any(crp => crp.Rule.Nodes.IsLocked == false) == false);
             this.m_PointMeasure.Add(order, PointMeasure_result.ToArray());
-            this.m_LineMeasure.Add(order, LineMeasure_result.ToArray());
+            this.m_LineMeasurePos.Add(order, LineMeasurePos_result.ToArray());
+            this.m_LineMeasureNeg.Add(order, LineMeasureNeg_result.ToArray());
         }
 
         private static List<double> NewMethod(MultidimensionalArray scalings, GridData.EdgeData EdgeData, int jCell, int[] cell2Edge_j, double[][] _roots) {
@@ -1160,9 +1228,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
             List<LineSegment> lineSegments = new List<LineSegment>(initialNumberOfLineSegments);
             for (int i = 0; i < initialNumberOfLineSegments; i++) {
-                var p0 = vertexCoordinates.GetRow(2 * i + 0);
+                var p0 = vertexCoordinates.GetRowPt(2 * i + 0);
                 int iP0 = Simplex.Vertices.FindRow(p0, 1.0e-8);
-                var p1 = vertexCoordinates.GetRow(2 * i + 1);
+                var p1 = vertexCoordinates.GetRowPt(2 * i + 1);
                 int iP1 = Simplex.Vertices.FindRow(p1, 1.0e-8);
 
                 LineSegment newSegment = new LineSegment(spatialDimension, Simplex,

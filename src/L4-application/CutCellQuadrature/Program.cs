@@ -584,7 +584,7 @@ namespace CutCellQuadrature {
                                 true,
                                 rootFindingAlgorithm);
 
-                            volumeRuleFactoryEdge = bndrule.GetLineFactory();
+                            volumeRuleFactoryEdge = bndrule.GetLineFactory(true);
 
                             //volumeRuleFactoryEdge = new CutLineQuadRuleFactory(
                             //    levelSetTracker,
@@ -628,7 +628,7 @@ namespace CutCellQuadrature {
 
                         LevelSetComboRuleFactory2 Factory = new LevelSetComboRuleFactory2(
                             levelSetTracker.DataHistories[0].Current,
-                            bndrule.GetLineFactory(),
+                            bndrule.GetLineFactory(true),
                             null,
                             _SurfaceNodesOnZeroLevset: false,
                             _UseAlsoStokes: false,
@@ -657,7 +657,7 @@ namespace CutCellQuadrature {
 
                         LevelSetComboRuleFactory2 Factory = new LevelSetComboRuleFactory2(
                             levelSetTracker.DataHistories[0].Current,
-                            bndrule.GetLineFactory(), bndrule.GetPointFactory(),
+                            bndrule.GetLineFactory(true), bndrule.GetPointFactory(),
                             _SurfaceNodesOnZeroLevset: false,
                             _UseAlsoStokes: true,
                             _DoCheck: false);
