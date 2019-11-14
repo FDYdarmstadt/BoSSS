@@ -18,6 +18,7 @@ using BoSSS.Application.FSI_Solver;
 using BoSSS.Application.IBM_Solver;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
+using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.XdgTimestepping;
 using ilPSP;
 using MPI.Wrappers;
@@ -69,6 +70,11 @@ namespace FSI_Solver {
             ThrowIsInfinityException(variable, variableName);
         }
 
+        internal void TestArithmeticException(Vector variable, string variableName) {
+            ThrowIsNaNException(variable, variableName);
+            ThrowIsInfinityException(variable, variableName);
+        }
+
         internal void TestArithmeticException(double variable, string variableName) {
             ThrowIsNaNException(variable, variableName);
             ThrowIsInfinityException(variable, variableName);
@@ -87,6 +93,20 @@ namespace FSI_Solver {
             for (int i = 0; i < variable.Length; i++) {
                 if (double.IsNaN(variable[i]))
                     throw new ArithmeticException("Error during update of " + variableName + ", value is NaN.");
+            }
+        }
+
+        internal void ThrowIsNaNException(Vector variable, string variableName) {
+            for (int i = 0; i < variable.Dim; i++) {
+                if (double.IsNaN(variable[i]))
+                    throw new ArithmeticException("Error during update of " + variableName + ", value is NaN.");
+            }
+        }
+
+        internal void ThrowIsInfinityException(Vector variable, string variableName) {
+            for (int i = 0; i < variable.Dim; i++) {
+                if (double.IsInfinity(variable[i]))
+                    throw new ArithmeticException("Error during update of " + variableName + ", value is infinity.");
             }
         }
 
@@ -114,36 +134,6 @@ namespace FSI_Solver {
         internal void ThrowIsInfinityException(double variable, string variableName) {
             if (double.IsInfinity(variable))
                 throw new ArithmeticException("Error during update of " + variableName + ", value is infinity.");
-        }
-
-        /// <summary>
-        /// Calculate componentwise sum of two vectors.
-        /// </summary>
-        /// <param name="Vector0">
-        /// </param>
-        /// <param name="Vector1"></param>
-        internal double[] VectorSum(double[] Vector0, double[] Vector1) {
-            int Dim = Vector0 != null ? Vector0.Length : Vector1.Length;
-            if (Vector0 == null) {
-                Vector0 = Vector1.CloneAs();
-                for (int d = 0; d < Dim; d++) {
-                    Vector0[d] = 0;
-                }
-            }
-            if (Vector1 == null) {
-                Vector1 = Vector0.CloneAs();
-                for (int d = 0; d < Dim; d++) {
-                    Vector1[d] = 0;
-                }
-            }
-            double[] ResultVector = new double[Dim];
-            if (Vector0.Length != Vector1.Length)
-                throw new ArithmeticException("Mismatch in vector dimension");
-            for (int d = 0; d < Dim; d++) {
-                ResultVector[d] = Vector0[d] + Vector1[d];
-            }
-            TestArithmeticException(ResultVector, "result of vector summation");
-            return ResultVector;
         }
 
         /// <summary>

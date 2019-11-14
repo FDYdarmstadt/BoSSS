@@ -28,7 +28,7 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HC_Dry : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control SingleParticleFalling(int k = 2, int amrLevel = 4) {
+        public static FSI_Control SingleParticleFalling(int k = 4, int amrLevel = 4) {
             FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
             //C.SetSaveOptions(dataBasePath: @"/home/ij83requ/default_bosss_db", savePeriod: 1);
 
@@ -38,7 +38,7 @@ namespace BoSSS.Application.FSI_Solver {
                 "Wall"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 20, periodicX: false, periodicY: false);
+            C.SetGrid(lengthX: 0.5, lengthY: 0.5, cellsPerUnitLength: 60, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel);
 
             // Coupling Properties
@@ -74,6 +74,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LevelSetSmoothing = false;
 
 
             // Timestepping

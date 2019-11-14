@@ -99,18 +99,5 @@ namespace BoSSS.Application.FSI_Solver {
             Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
             return l_TranslationalVelocity;
         }
-
-        /// <summary>
-        /// Calls the calculation of the hydrodynamics
-        /// </summary>
-        /// <param name="U"></param>
-        /// <param name="P"></param>
-        /// <param name="levelSetTracker"></param>
-        /// <param name="muA"></param>
-        public override void UpdateForcesAndTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, bool firstIteration, double dt = 0) {
-            //double[] tempForces = new double[m_Dim];
-            //double tempTorque = CalculateHydrodynamicTorque(hydrodynamicsIntegration);
-            //HydrodynamicsPostprocessing(tempTorque);
-        }
     }
 }

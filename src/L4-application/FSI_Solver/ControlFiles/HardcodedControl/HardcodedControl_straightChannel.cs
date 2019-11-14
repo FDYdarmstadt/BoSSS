@@ -28,20 +28,21 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, int amrLevel = 6, double aspectRatio = 2, double activeStress = 1e2) {
+        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, int amrLevel = 6, double aspectRatio = 2, double activeStress = 1e4) {
             FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
             //C.SetSaveOptions(dataBasePath: @"/home/ij83requ/default_bosss_db", savePeriod: 1);
+            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
 
             // Domain
             // =============================
             List<string> boundaryValues = new List<string> {
-                "Wall_left",
-                "Wall_right",
+                "Pressure_Outlet_left",
+                "Pressure_Outlet_right",
                 "Wall_lower",
                 "Wall_upper"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 40, lengthY: 40, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
+            C.SetGrid(lengthX: 6, lengthY: 3, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel);
 
             // Coupling Properties
@@ -55,9 +56,9 @@ namespace BoSSS.Application.FSI_Solver {
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.mu_A = 0.01;
             C.PhysicalParameters.IncludeConvection = false;
-            double particleDensity = 100;
+            double particleDensity = 10000;
             C.gravity = new double[] { 0, 0 };
 
             // Particle Properties

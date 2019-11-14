@@ -87,17 +87,6 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calls the calculation of the hydrodynamics
-        /// </summary>
-        /// <param name="U"></param>
-        /// <param name="P"></param>
-        /// <param name="levelSetTracker"></param>
-        /// <param name="fluidViscosity"></param>
-        public override void UpdateForcesAndTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, bool firstIteration, double dt = 0) {
-            //double[] tempForces = CalculateHydrodynamicForces(hydrodynamicsIntegration, fluidDensity);
-            //HydrodynamicsPostprocessing(tempForces);
-        }
-        /// <summary>
         /// Update Forces and Torque acting from fluid onto the particle
         /// </summary>
         /// <param name="hydrodynamicsIntegration"></param>

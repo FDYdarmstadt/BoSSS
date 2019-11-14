@@ -44,7 +44,7 @@ namespace BoSSS.Application.FSI_Solver {
         private double relaxationCoeff = 1;
         LevelSetTracker m_LsTrk;
 
-        internal double CalculateHydrodynamics(List<Particle> AllParticles, ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, bool underrelax) {
+        internal void CalculateHydrodynamics(List<Particle> AllParticles, ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, bool underrelax) {
             double[] hydrodynamics = new double[m_Dim * AllParticles.Count() + AllParticles.Count()];
             for (int p = 0; p < AllParticles.Count(); p++) {
                 Particle currentParticle = AllParticles[p];
@@ -64,7 +64,6 @@ namespace BoSSS.Application.FSI_Solver {
                 Particle currentParticle = AllParticles[p];
                 currentParticle.Motion.UpdateForcesAndTorque(p, hydrodynamics);
             }
-            return relaxationCoeff;
         }
 
         private void StabilizeHydrodynamics(ref double[] tempForces, ref double tempTorque, double lengthScale) {

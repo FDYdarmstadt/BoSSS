@@ -501,19 +501,8 @@ namespace BoSSS.Application.FSI_Solver {
                 m_TranslationalVelocity[0] = CalculateTranslationalVelocity(dt, m_CollisionTimestep);
                 m_RotationalVelocity[0] = CalculateAngularVelocity(dt, m_CollisionTimestep);
             }
-        }
-
-        /// <summary>
-        /// Calls the calculation of the hydrodynamics
-        /// </summary>
-        /// <param name="U"></param>
-        /// <param name="P"></param>
-        /// <param name="levelSetTracker"></param>
-        /// <param name="fluidViscosity"></param>
-        public virtual void UpdateForcesAndTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, bool firstIteration, double dt = 0) {
-            //double[] tempForces = CalculateHydrodynamicForces(hydrodynamicsIntegration, fluidDensity);
-            //double tempTorque = CalculateHydrodynamicTorque(hydrodynamicsIntegration);
-            //HydrodynamicsPostprocessing(tempForces, tempTorque);
+            m_TranslationalVelocity[0][1] = 0;
+            m_RotationalVelocity[0] = 0;
         }
 
         public virtual void UpdateForcesAndTorque(int particleID, double[] fullListHydrodynamics) {
@@ -590,7 +579,7 @@ namespace BoSSS.Application.FSI_Solver {
         protected virtual double[] CalculateParticlePosition(double dt) {
             double[] l_Position = new double[m_Dim];
             for (int d = 0; d < m_Dim; d++) {
-               // l_Position[d] = m_Position[0][d] + (2 * m_TranslationalVelocity[0][d] - m_TranslationalVelocity[1][d]) * dt;
+               //l_Position[d] = m_Position[0][d] + (2 * m_TranslationalVelocity[0][d] - m_TranslationalVelocity[1][d]) * dt;
                l_Position[d] = m_Position[1][d] + (m_TranslationalVelocity[0][d] + 4 * m_TranslationalVelocity[1][d] + m_TranslationalVelocity[2][d]) * dt / 6;
             }
             Aux.TestArithmeticException(l_Position, "particle position");

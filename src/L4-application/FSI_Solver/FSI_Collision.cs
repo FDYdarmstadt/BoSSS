@@ -27,6 +27,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using FSI_Solver;
+using BoSSS.Platform.LinAlg;
 
 namespace FSI_Solver {
     class FSI_Collision {
@@ -441,10 +442,15 @@ namespace FSI_Solver {
             // Step 1
             // Initialize the algorithm with the particle position
             // =======================================================
-            double[] Position0 = ((double[])Particle0.Motion.GetPosition(0)).CloneAs();
+            double[] Position0 = Particle0.Motion.GetPosition(0).CloneAs();
+            double[] Position1 = Particle1 == null ? Particle0.ClosestPointOnOtherObjectToThis.CloneAs() : (Particle1.Motion.GetPosition(0)).CloneAs();
+            Vector[] positionVectors = new Vector[2];
+            positionVectors[0] = new Vector(Particle0.Motion.GetPosition(0).CloneAs());
+            positionVectors[1] = new Vector(Particle1 == null ? Particle0.ClosestPointOnOtherObjectToThis.CloneAs() : (Particle1.Motion.GetPosition(0)).CloneAs());
             int SpatialDim = Position0.Length;
-            double[] Position1 = Particle1 == null ? Particle0.ClosestPointOnOtherObjectToThis.CloneAs() : ((double[])Particle1.Motion.GetPosition(0)).CloneAs();
             double[] v = Aux.VectorDiff(Position0, Position1);
+            Vector supportVector = positionVectors[0] - positionVectors[1];
+            Aux.TestArithmeticException(supportVector, "support vector");
             Aux.TestArithmeticException(v, nameof(v));
             // Define the simplex, which contains all points to be tested for their distance (max. 3 points in 2D)
             List<double[]> Simplex = new List<double[]> { v.CloneAs() };
@@ -490,6 +496,7 @@ namespace FSI_Solver {
                 // If the condition is true
                 // we have found the closest points!
                 // -------------------------------------------------------
+                
                 if ((Aux.DotProduct(v, vt) - Aux.DotProduct(SupportPoint, vt)) >= -1e-12 && i > 1)
                     break;
 

@@ -857,19 +857,14 @@ namespace BoSSS.Application.FSI_Solver {
                                 SinglePhaseField pressureOld = Pressure.CloneAs();
                                 m_BDF_Timestepper.Solve(phystime, dt, false);
                                 ParticleHydrodynamicsIntegration hydrodynamicsIntegration = new ParticleHydrodynamicsIntegration(2, Velocity, Pressure, LsTrk, FluidViscosity);
-                                double underrelax = AllParticleHydrodynamics.CalculateHydrodynamics(m_Particles, hydrodynamicsIntegration, FluidDensity, IsFullyCoupled);
-                                Console.WriteLine("Underrelaxation Coeff" + underrelax);
+                                AllParticleHydrodynamics.CalculateHydrodynamics(m_Particles, hydrodynamicsIntegration, FluidDensity, IsFullyCoupled);
                                 if (iterationCounter != 1) {
-                                    underrelax = 2;
+                                    double underrelax = 2;
                                     Velocity.Scale(underrelax);
                                     Velocity.Acc((1 - underrelax), velocityOld);
                                     Pressure.Scale(underrelax);
                                     Pressure.Acc((1 - underrelax), pressureOld);
                                 }
-                                //if (iterationCounter <= 1)
-                                //    CalculateHydrodynamicForces(m_Particles, dt, true);
-                                //else
-                                //CalculateHydrodynamicForces(m_Particles, dt, false);
                             }
                             if (TimestepInt != 1 || iterationCounter != 0)
                                 CalculateParticleVelocity(m_Particles, dt, iterationCounter);
@@ -881,8 +876,6 @@ namespace BoSSS.Application.FSI_Solver {
                             // residual
                             // -------------------------------------------------
                             hydroDynForceTorqueResidual = AllParticleHydrodynamics.CalculateParticleResidual(ref iterationCounter);
-                           //hydroDynForceTorqueResidual = Auxillary.CalculateParticleResidual(m_Particles, ref iterationCounter);
-                            //hydroDynForceTorqueResidual = Auxillary.CalculateParticleVELResidual(m_Particles, ref iterationCounter);
 
                             // print iteration status
                             // -------------------------------------------------
@@ -970,13 +963,9 @@ namespace BoSSS.Application.FSI_Solver {
             // - since the particle solver is much cheaper than the flow solver, this "not-really parallel" approach may work up to a few hundreds of particles
             // ===============================================
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            for (int p = 0; p < particles.Count(); p++) {
-                Particle currentParticle = particles[p];
-                //if (firstIteration)
-                //    currentParticle.Motion.SaveHydrodynamicsOfPreviousTimestep();
-                ParticleHydrodynamicsIntegration hydrodynamicsIntegration = new ParticleHydrodynamicsIntegration(2, Velocity, Pressure, LsTrk, currentParticle.CutCells_P(LsTrk), FluidViscosity);
-                currentParticle.Motion.UpdateForcesAndTorque(hydrodynamicsIntegration, FluidDensity, firstIteration, dt);
-            }
+            Motion_AllParticles AllParticleHydrodynamics = new Motion_AllParticles(LsTrk);
+            ParticleHydrodynamicsIntegration hydrodynamicsIntegration = new ParticleHydrodynamicsIntegration(2, Velocity, Pressure, LsTrk, FluidViscosity);
+            AllParticleHydrodynamics.CalculateHydrodynamics(m_Particles, hydrodynamicsIntegration, FluidDensity, IsFullyCoupled);
         }
 
         /// <summary>
@@ -1391,8 +1380,8 @@ namespace BoSSS.Application.FSI_Solver {
             BitArray mediumCells = new BitArray(noOfLocalCells);
             BitArray fineCells = new BitArray(noOfLocalCells);
             BitArray collisionFineCells = new BitArray(noOfLocalCells);
-            double radiusCoarseCells = LsTrk.GridDat.Cells.h_maxGlobal;
-            double radiusMediumCells = 6 * LsTrk.GridDat.Cells.h_minGlobal;
+            double radiusCoarseCells = 2 * LsTrk.GridDat.Cells.h_maxGlobal;
+            double radiusMediumCells = LsTrk.GridDat.Cells.h_maxGlobal;
             double radiusFineCells = 3 * LsTrk.GridDat.Cells.h_minGlobal;
             double radiusCollision = LsTrk.GridDat.Cells.h_minGlobal;
             for (int p = 0; p < m_Particles.Count; p++) {
@@ -1400,7 +1389,7 @@ namespace BoSSS.Application.FSI_Solver {
                 for (int j = 0; j < noOfLocalCells; j++) {
                     double[] centerPoint = new double[] { CellCenters[j, 0], CellCenters[j, 1] };
                     if (!coarseCells[j]) {
-                        coarseCells[j] = particle.Contains(centerPoint, radiusMediumCells);
+                        coarseCells[j] = particle.Contains(centerPoint, radiusCoarseCells);
                     }
                     if (!mediumCells[j]) {
                         mediumCells[j] = particle.Contains(centerPoint, radiusMediumCells);
@@ -1412,7 +1401,7 @@ namespace BoSSS.Application.FSI_Solver {
                         collisionFineCells[j] = true;
                 }
             }
-            int medioumRefinementLevel = refinementLevel > 2 ? refinementLevel / 2 : 1;
+            int medioumRefinementLevel = refinementLevel > 2 ? refinementLevel / 2 + 1 : 1;
             int coarseRefinementLevel = refinementLevel > 4 ? refinementLevel / 4 : 1;
             //if (refinementLevel - coarseRefinementLevel > coarseRefinementLevel)
             //    coarseRefinementLevel += 1;
