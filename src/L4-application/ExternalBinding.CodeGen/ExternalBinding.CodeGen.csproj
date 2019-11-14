@@ -54,6 +54,14 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
+      <Project>{8e6d8f23-623f-4204-b4ab-a088c0cd83aa}</Project>
+      <Name>ilPSP</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj">
+      <Project>{df7f5abd-e606-41cd-beef-31a95d136dea}</Project>
+      <Name>BoSSS.Solution</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ExternalBinding\ExternalBinding.csproj">
       <Project>{25390d9e-5bdf-4fcc-9a70-af49f36831a4}</Project>
       <Name>ExternalBinding</Name>

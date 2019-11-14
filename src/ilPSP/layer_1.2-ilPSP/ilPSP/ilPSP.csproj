@@ -67,6 +67,7 @@
     <Compile Include="ArrayTools.cs" />
     <Compile Include="BLAS.cs" />
     <Compile Include="BlockPartitioning.cs" />
+    <Compile Include="CodeGenExportAttribute.cs" />
     <Compile Include="CSVFile.cs" />
     <Compile Include="DoubleExtensions.cs" />
     <Compile Include="DuplicatingTextWriter.cs" />
@@ -76,6 +77,7 @@
     <Compile Include="IBlockPartitioning_Extension.cs" />
     <Compile Include="ICloneableExtensions.cs" />
     <Compile Include="IEnumerableExtensions.cs" />
+    <Compile Include="IForeignLanguageProxy.cs" />
     <Compile Include="IMatrixExtensions.cs" />
     <Compile Include="FuncComparer.cs" />
     <Compile Include="FuncEqualityComparer.cs" />
