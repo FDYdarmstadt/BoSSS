@@ -230,7 +230,12 @@ namespace BoSSS.Solution.NSECommon {
                 switch (physicsMode) {
                     case PhysicsMode.LowMach:
                         ConvectionTerm = p0 * Math.Sin(x_) + p0 * Math.Sin(y_); // This would be the MS if the discretized convective term of the energy equation is div(rho*u*T)
+
+                        ///////////////////////////////////////////
+                        ///this could be also the right ManSol. Because the ManSol is not divergence free, the identity  rho*cp*D(T)_DT = partiald(rho*cp*T)/partiald(t) + div(rho*cp*T*u) not always holds. The extra term accounts for the "extra mass" added by the man sol
                         //ConvectionTerm = p0 / Math.Cos(x_ * y_) * Math.Cos(x_) * y_ * Math.Sin(x_ * y_) + p0 / Math.Cos(x_ * y_) * Math.Cos(y_) * x_ * Math.Sin(x_ * y_);
+                        //ConvectionTerm += Math.Cos(x_ * y_) * (-p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) * Math.Cos(x_) * y_ * Math.Sin(x_ * y_) + p0 / Math.Cos(x_ * y_) * Math.Sin(x_)) + Math.Cos(x_ * y_) * (-p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) * Math.Cos(y_) * x_ * Math.Sin(x_ * y_) + p0 / Math.Cos(x_ * y_) * Math.Sin(y_));
+                        ////////////////////////////////////////////
                         ReactionRate = 0;
                         break;
                     case PhysicsMode.Combustion:
