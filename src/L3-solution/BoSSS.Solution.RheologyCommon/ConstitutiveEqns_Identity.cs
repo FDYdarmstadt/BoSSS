@@ -61,6 +61,11 @@ namespace BoSSS.Solution.RheologyCommon
         public IList<string> ParameterOrdering { get; }
 
         /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
+
+        /// <summary>
         /// Calculating the integral of the volume part
         /// </summary>
         public virtual double VolumeForm(ref CommonParamsVol cpv, double[] T, double[,] Grad_T, double V, double[] GradV)

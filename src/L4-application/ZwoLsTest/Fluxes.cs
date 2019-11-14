@@ -83,6 +83,12 @@ namespace BoSSS.Application.ZwoLsTest {
             }
         }
 
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
+
+
         virtual public SpeciesId PositiveSpecies {
             get;
             private set;

@@ -61,6 +61,11 @@ namespace BoSSS.Foundation.XDG {
             private set;
         }
 
+        bool IEquationComponent.IgnoreVectorizedImplementation {
+            get {
+                return false;
+            }
+        }
 
         double ILevelSetForm.LevelSetForm(ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             return OrgComponent.LevelSetForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB);

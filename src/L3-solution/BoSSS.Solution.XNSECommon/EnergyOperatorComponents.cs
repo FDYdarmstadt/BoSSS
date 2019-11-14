@@ -509,6 +509,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
             }
         }
 
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
+
         public int LevelSetIndex {
             get { return 0; }
         }
@@ -593,6 +598,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                 return new string[0];
             }
         }
+
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
 
         public double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
@@ -956,6 +966,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                 return null;
             }
         }
+
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
+
     }
 
 
@@ -1223,6 +1239,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
             }
         }
 
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
+
+
 
     }
 
@@ -1278,6 +1300,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
             }
         }
 
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
+
         public int LevelSetIndex {
             get { return 0; }
         }
@@ -1324,6 +1351,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                 return ArrayTools.Cat(VariableNames.VelocityVector(m_D), VariableNames.Pressure);
             }
         }
+
+
 
 
         protected override void Flux(ref CommonParamsVol inp, Double[] U, Double[] output) {
@@ -1465,6 +1494,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                 return ArrayTools.Cat(VariableNames.VelocityVector(m_D), VariableNames.Pressure);
             }
         }
+
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
+
     }
 
 
@@ -1494,6 +1529,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                 return ArrayTools.Cat(VariableNames.VelocityVector(m_D), (new string[] { "PressureGradX", "PressureGradY", "PressureGradZ" }).GetSubVector(0, m_D) );
             }
         }
+
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
 
         public double VolumeForm(ref CommonParamsVol cpv, Double[] U, Double[,] GradU, Double V, Double[] GradV) {
@@ -1560,6 +1600,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                 return ArrayTools.Cat(VariableNames.VelocityVector(m_D), VariableNames.VelocityX_GradientVector(), VariableNames.VelocityY_GradientVector());
             }
         }
+
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
 
         static double[,] VelociytGradient(double[] GradVelX, double[] GradVelY) {
@@ -1646,6 +1691,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                 return ArrayTools.Cat(VariableNames.VelocityVector(m_D), VariableNames.GravityVector(m_D));
             }
         }
+
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
 
         public double VolumeForm(ref CommonParamsVol cpv, Double[] U, Double[,] GradU, Double V, Double[] GradV) {

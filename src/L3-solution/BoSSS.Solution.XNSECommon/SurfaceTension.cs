@@ -227,7 +227,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                 return new string[] { VariableNames.Curvature };
             }
         }
-
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
         public int LevelSetIndex {
             get { return 0; }
         }
@@ -341,6 +344,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                 return new string[] { VariableNames.SurfaceForceComponent(m_d) };
             }
         }
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
         public int LevelSetIndex {
             get { return 0; }
@@ -886,6 +893,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                 return VariableNames.VelocityVector(m_D);
             }
         }
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
         public TermActivationFlags VolTerms {
             get {
@@ -1214,6 +1225,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             }
         }
 
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
         public virtual TermActivationFlags VolTerms {
             get {
@@ -1758,6 +1773,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         public virtual IList<string> ParameterOrdering {
             get { return new string[] { }; }
         }
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
         public int LevelSetIndex {
             get { return 0; }
@@ -1822,6 +1841,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                 return VariableNames.VelocityVector(m_D);
             }
         }
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
         public TermActivationFlags VolTerms {
             get {

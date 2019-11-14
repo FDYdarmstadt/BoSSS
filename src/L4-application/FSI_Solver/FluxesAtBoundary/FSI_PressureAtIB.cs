@@ -71,6 +71,11 @@ namespace BoSSS.Solution.NSECommon.Operator.Pressure {
             }
         }
 
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
+
         public double LevelSetForm(ref CommonParamsLs inp, double[] pA, double[] pB, double[,] Grad_pA, double[,] Grad_pB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             return vA * pA[0] * inp.n[m_d];
         }

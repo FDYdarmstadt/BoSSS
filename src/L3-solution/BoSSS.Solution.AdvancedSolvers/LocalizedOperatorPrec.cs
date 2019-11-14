@@ -249,7 +249,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 return VariableNames.Velocity0Vector(2);
             }
         }
-
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation {
+            get {
+                return false;
+            }
+        }
         public TermActivationFlags VolTerms {
             get {
                 return TermActivationFlags.GradUxGradV | TermActivationFlags.UxV | TermActivationFlags.GradUxV;

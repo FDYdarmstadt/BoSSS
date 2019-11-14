@@ -103,6 +103,10 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
                 return new string[] { "InterfaceValue" };
             }
         }
+        /// <summary>
+        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+        /// </summary>
+        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
         public int LevelSetIndex {
             get { return 0; }

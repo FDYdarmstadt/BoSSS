@@ -86,6 +86,11 @@ namespace BoSSS.Solution.LevelSetTools.Smoothing {
                     return null;
                 }
             }
+            /// <summary>
+            /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+            /// </summary>
+            bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
+
         }
 
 
@@ -138,6 +143,11 @@ namespace BoSSS.Solution.LevelSetTools.Smoothing {
                     return null;
                 }
             }
+            /// <summary>
+            /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+            /// </summary>
+            bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
+
         }
 
 
@@ -183,6 +193,11 @@ namespace BoSSS.Solution.LevelSetTools.Smoothing {
                     return null;
                 }
             }
+            /// <summary>
+            /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
+            /// </summary>
+            bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
+
         }
 
 
