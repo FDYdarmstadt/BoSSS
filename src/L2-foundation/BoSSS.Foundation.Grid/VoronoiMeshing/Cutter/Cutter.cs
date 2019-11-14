@@ -1,13 +1,10 @@
-﻿using System;
+﻿using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
+using System;
 using System.Collections.Generic;
-using BoSSS.Platform.LinAlg;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
 {
-    partial class Cutter<T>
+    class Cutter<T>
         where T :ILocatable, new()
     {
         BoundaryLineEnumerator boundary;

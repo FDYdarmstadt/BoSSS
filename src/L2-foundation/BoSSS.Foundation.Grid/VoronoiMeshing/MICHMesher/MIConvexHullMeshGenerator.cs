@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using BoSSS.Platform.LinAlg;
 
-namespace BoSSS.Foundation.Grid.Voronoi.Meshing
+namespace BoSSS.Foundation.Grid.Voronoi.Meshing.MICHMesher
 {
     static class MIConvexHullMeshGenerator
     {

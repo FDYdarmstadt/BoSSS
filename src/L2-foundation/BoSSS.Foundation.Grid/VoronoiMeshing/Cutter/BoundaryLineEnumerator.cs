@@ -1,5 +1,6 @@
 ﻿using BoSSS.Platform.LinAlg;
 using System.Collections.Generic;
+using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
 {
