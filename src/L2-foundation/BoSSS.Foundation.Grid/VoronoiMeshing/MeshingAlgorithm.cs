@@ -47,8 +47,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 }
                 nodes = mesh.Nodes;
             }
-            MatlabPlotter plotter = new MatlabPlotter();
-            plotter.Plot(mesh, "superDuper");
             return mesh;
         }
 

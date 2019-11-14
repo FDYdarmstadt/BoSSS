@@ -120,6 +120,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
                 }
                 aggregation.Add(Agg2Pt);
             }
+
             GridCommons grid = new Grid2D(Triangle.Instance)
             {
                 Cells = cells_GridCommons.ToArray()

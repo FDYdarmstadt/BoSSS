@@ -84,7 +84,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             map.PeriodicCornerCorrelation = periodicCornerCorrelation;
             AddPeriodicCornerTransformations(periodicCornerCorrelation, map.PeriodicBoundaryTransformations);
             AddPeriodicCornerBoundaryCorrelation(periodicCornerCorrelation, map.PeriodicBoundaryCorrelation);
-            UpdateVoronoiEdgeTags(periodicCornerCorrelation, map.PeriodicBoundaryCorrelation, boundary);
         }
 
         static IDictionary<Corner, int> ExtractPeriodicCornerMap(
@@ -110,8 +109,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             }
             return periodicCornerMap;
         }
-
-        
 
         static void AddPeriodicCornerTransformations(
             IDictionary<Corner, int> periodicCornerMap,
@@ -157,32 +154,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             }
         }
 
-        static void UpdateVoronoiEdgeTags(
-            IDictionary<Corner, int> periodicCornerMap,
-            IDictionary<int, int> periodicBoundaryCorrelation, 
-            VoronoiBoundary boundary)
-        {
-            int existingEdgeTags = periodicBoundaryCorrelation.Count - periodicCornerMap.Count;
-
-            byte[] newEdgeTags = new byte[periodicBoundaryCorrelation.Count];
-            boundary.EdgeTags.CopyTo(newEdgeTags, 0);
-            int i = 0;
-            foreach(var corner in periodicCornerMap)
-            {
-                if(corner.Value < (newEdgeTags.Length / 2) + 1)
-                {
-                    byte edgeTag = (byte)(GridCommons.FIRST_PERIODIC_BC_TAG + existingEdgeTags + i);
-                    newEdgeTags[corner.Value] = edgeTag;
-                    periodicBoundaryCorrelation.TryGetValue(corner.Value, out int pairedEdge);
-                    newEdgeTags[pairedEdge] = edgeTag;
-                    ++i;
-                }
-                else
-                {
-                    break;
-                }
-            }
-            boundary.EdgeTags = newEdgeTags;
-        }
+        
     }
 }

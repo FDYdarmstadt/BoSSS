@@ -12,31 +12,81 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
 
         readonly PeriodicBoundaryConverterMap boundaryMap;
 
+        readonly byte[] edgeTags; 
+
         public PeriodicBoundaryConverter(
             VoronoiBoundary boundary,
             PeriodicMap map)
         {
             edgePairer = new EdgePairer();
+            edgeTags = ExtractEdgeTags(boundary, map);
             this.boundaryMap = 
                 CreatePeriodicBoundaryMap<SortedList<byte, AffineTrafo>, LinkedListDictionary<int, bool>>(
-                    boundary.EdgeTags, 
-                    map.PeriodicBoundaryCorrelation, 
-                    map.PeriodicBoundaryTransformations);
+                    edgeTags, 
+                    map);
+        }
+
+        static byte[] ExtractEdgeTags(VoronoiBoundary boundary, PeriodicMap map)
+        {
+            byte[] voronoiEdgeTags = boundary.EdgeTags;
+            byte[] periodicCornerEdgeTags = GetPeriodicCornerEdgeTags(
+                map.PeriodicCornerCorrelation,
+                map.PeriodicBoundaryCorrelation);
+            byte[] edgeTags = Concat(voronoiEdgeTags, periodicCornerEdgeTags);
+            return edgeTags;
+        }
+
+        static T[] Concat<T>(T[] a, T[] b)
+        {
+            T[] both = new T[a.Length + b.Length];
+            a.CopyTo(both, 0);
+            b.CopyTo(both, a.Length);
+            return both;
+        }
+
+        static byte[] GetPeriodicCornerEdgeTags(
+            IDictionary<Corner, int> periodicCornerMap,
+            IDictionary<int, int> periodicBoundaryCorrelation)
+        {
+            int periodicCornerCount = periodicCornerMap.Count;
+            int allBoundariesCount = periodicBoundaryCorrelation.Count;
+            int nonCornerEdgeTagCount = allBoundariesCount - periodicCornerCount;
+
+            byte[] newEdgeTags = new byte[periodicCornerCount];
+            int i = 0;
+            foreach (var corner in periodicCornerMap)
+            {
+                int cornerIndice = corner.Value - nonCornerEdgeTagCount;
+                if (cornerIndice < (periodicCornerCount / 2))
+                {
+                    byte edgeTag = (byte)(GridCommons.FIRST_PERIODIC_BC_TAG + nonCornerEdgeTagCount / 2 + i);
+                    newEdgeTags[cornerIndice] = edgeTag;
+                    periodicBoundaryCorrelation.TryGetValue(corner.Value, out int pairedEdge);
+                    newEdgeTags[pairedEdge - nonCornerEdgeTagCount] = edgeTag;
+                    ++i;
+                }
+                else
+                {
+                    break;
+                }
+            }
+            return newEdgeTags;
         }
 
         static PeriodicBoundaryConverterMap CreatePeriodicBoundaryMap<TtrafoDictionary, TinverseDictionary>(
             byte[] edgeTags,
-            IDictionary<int, int> periodicBoundaryMap,
-            IDictionary<int, Transformation> periodicTransformations)
+            PeriodicMap map)
             where TtrafoDictionary : IDictionary<byte, AffineTrafo>, new()
             where TinverseDictionary : IDictionary<int, bool>, new()
         {
-            var periodicInverseMap = ExtractPeriodicInverseMap<TinverseDictionary>(
-                    periodicBoundaryMap);
+            var periodicInverseMap = ExtractPeriodicInverseMap<TinverseDictionary>(map.PeriodicBoundaryCorrelation);
+
+            
             var periodicTrafos = ExtractPeriodicTrafos<TtrafoDictionary>(
-                    edgeTags,
-                    periodicInverseMap,
-                    periodicTransformations);
+                edgeTags,
+                periodicInverseMap,
+                map.PeriodicBoundaryTransformations);
+
             var boundaryMap = new PeriodicBoundaryConverterMap()
             {
                 PeriodicInverseMap = periodicInverseMap,
@@ -90,7 +140,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
         public void RegisterPeriodicBoundariesTo(GridCommons grid)
         {
             Debug.Assert(boundaryMap.PeriodicTrafos is SortedList<byte, AffineTrafo>);
-            var periodicTrafos = (SortedList<byte, AffineTrafo>)boundaryMap.PeriodicTrafos;
+            var periodicTrafos = boundaryMap.PeriodicTrafos;
             //Sort by edgeTag
             foreach (var pair in periodicTrafos)
             {
@@ -99,13 +149,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
                 byte edgeTagInGrid = grid.AddPeriodicEdgeTrafo(trafo);
                 Debug.Assert(edgeTag == edgeTagInGrid);
             }
-        }
-
-        public SortedList<byte, AffineTrafo> GetPeriodicTrafos()
-        {
-            Debug.Assert(boundaryMap.PeriodicTrafos is SortedList<byte, AffineTrafo>);
-            var periodicTrafos = (SortedList<byte, AffineTrafo>)boundaryMap.PeriodicTrafos;
-            return periodicTrafos;
         }
 
         public void SetPeriodicData(
@@ -132,6 +175,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
         {
             var trafo = new AffineTrafo(transformation.Matrix, transformation.AffineTransformation);
             return trafo;
+        }
+
+        public byte GetEdgeTagOf(int boundaryEdgeNumber)
+        {
+            return edgeTags[boundaryEdgeNumber];
         }
     }
 }

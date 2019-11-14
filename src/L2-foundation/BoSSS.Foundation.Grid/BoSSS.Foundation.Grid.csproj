@@ -70,8 +70,8 @@
     <Compile Include="VoronoiMeshing\MatlabColorPalette.cs" />
     <Compile Include="VoronoiMeshing\MatlabPlotter.cs" />
     <Compile Include="VoronoiMeshing\MeshCellCopier.cs" />
-    <Compile Include="VoronoiMeshing\Converter\PeriodicConverterBoundaryMap.cs" />
-    <Compile Include="VoronoiMeshing\Converter\PeriodicConverterBoundary.cs" />
+    <Compile Include="VoronoiMeshing\Converter\PeriodicBoundaryConverterMap.cs" />
+    <Compile Include="VoronoiMeshing\Converter\PeriodicBoundaryConverter.cs" />
     <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\PeriodicCornerBoundaryAssigner.cs" />
     <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\PeriodicCornerCellFinder.cs" />
     <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\PeriodicCornerMapper.cs" />

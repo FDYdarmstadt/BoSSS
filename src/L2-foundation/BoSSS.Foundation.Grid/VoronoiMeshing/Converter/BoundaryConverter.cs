@@ -14,11 +14,14 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
     {
         VoronoiBoundary boundary;
 
-        readonly PeriodicBoundaryConverter periodicBoundary;
+        readonly PeriodicBoundaryConverter periodicBoundaryConverter;
 
         public BoundaryConverter(VoronoiBoundary boundary, PeriodicMap periodicMap = null)
         {
-            this.periodicBoundary = new PeriodicBoundaryConverter(boundary, periodicMap);
+            if(periodicMap != null)
+            {
+                this.periodicBoundaryConverter = new PeriodicBoundaryConverter(boundary, periodicMap);
+            }
             this.boundary = boundary;
         }
 
@@ -32,7 +35,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
         {
             foreach (BoundaryFace tag in tags)
             {
-                byte edgeTag = boundary.GetEdgeTagOfPolygonEdge(tag.BoundaryEdgeNumber);
+                byte edgeTag = GetEdgeTagOf(tag.BoundaryEdgeNumber);
                 int faceIndice = tag.Face;
                 CellFaceTag CFT = new CellFaceTag()
                 {
@@ -44,6 +47,20 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
             }
         }
 
+        byte GetEdgeTagOf(int boundaryEdgeNumber)
+        {
+            byte edgeTag = default;
+            if(periodicBoundaryConverter != null)
+            {
+                periodicBoundaryConverter.GetEdgeTagOf(boundaryEdgeNumber);
+            }
+            else
+            {
+                edgeTag = boundary.GetEdgeTagOfPolygonEdge(boundaryEdgeNumber);
+            }
+            return edgeTag;
+        }
+
         void AddPeriodicNeighbor(Cell cell, List<BoundaryFace> tags)
         {
             for (int i = 0; i < tags.Count; ++i)
@@ -52,8 +69,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
                 BoundaryFace face2EdgeMap = tags[i];
                 if (CFT.EdgeTag >= GridCommons.FIRST_PERIODIC_BC_TAG)
                 {
-                    Debug.Assert(periodicBoundary != null);
-                    periodicBoundary.SetPeriodicData(
+                    Debug.Assert(periodicBoundaryConverter != null);
+                    periodicBoundaryConverter.SetPeriodicData(
                         i,
                         cell.CellFaceTags,
                         face2EdgeMap.BoundaryEdgeNumber,
@@ -68,20 +85,19 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
         {
             if (boundary.EdgeTagNames != null)
             {
-                foreach (KeyValuePair<byte, string> tagName in boundary.EdgeTagNames)
-                {
-                    grid.EdgeTagNames.Add(tagName);
-                }
+                RegisterTagNamesTo(grid);
             }
-            if(periodicBoundary != null)
+            if(periodicBoundaryConverter != null)
             {
-                foreach (var pair in periodicBoundary.GetPeriodicTrafos())
-                {
-                    AffineTrafo trafo = pair.Value;
-                    byte edgeTag = pair.Key;
-                    byte edgeTagInGrid = grid.AddPeriodicEdgeTrafo(trafo);
-                    Debug.Assert(edgeTag == edgeTagInGrid);
-                }
+                periodicBoundaryConverter.RegisterPeriodicBoundariesTo(grid);
+            }
+        }
+
+        void RegisterTagNamesTo(GridCommons grid)
+        {
+            foreach (KeyValuePair<byte, string> tagName in boundary.EdgeTagNames)
+            {
+                grid.EdgeTagNames.Add(tagName);
             }
         }
     }

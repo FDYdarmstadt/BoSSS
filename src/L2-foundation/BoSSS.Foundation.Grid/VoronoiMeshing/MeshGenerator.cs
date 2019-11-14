@@ -36,8 +36,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         {
             Debug.Assert(nodes.Count > 0);
             IDMesh<T> mesh = CreateMeshFrom(nodes);
-            MatlabPlotter plotter = new MatlabPlotter();
-            plotter.Plot(mesh, "first");
             if (boundaryHandler.ContainsPeriodicBoundaries)
             {
                 nodes = boundaryHandler.CloneNodesAlongPeriodicBoundaries(mesh);

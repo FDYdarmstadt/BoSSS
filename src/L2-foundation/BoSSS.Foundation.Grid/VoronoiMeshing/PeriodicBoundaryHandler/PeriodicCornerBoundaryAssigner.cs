@@ -14,6 +14,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
     {
         int firstEdgeID;
 
+        bool firstCircle;
+
         readonly ICollection<EdgeID> visitedEdges;
 
         readonly PeriodicMap map;
@@ -69,57 +71,116 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             }
         }
 
+        readonly Queue<(Corner, Edge<T>)> periodicCorners;
+
+        BoundaryAssigner<T> boundaryAssigner;
+
         public PeriodicCornerBoundaryAssigner(PeriodicMap map)
         {
             this.map = map;
             visitedEdges = new LinkedList<EdgeID>();
+            periodicCorners = new Queue<(Corner, Edge<T>)>();
+            boundaryAssigner = new BoundaryAssigner<T>(map);
         }
 
         public void SetEdges(MeshCell<T> cornerCell)
         {
             visitedEdges.Clear();
-            IEnumerable<Edge<T>> firstEdges = PositiveRotationEdgesBeginningWith(cornerCell.Edges[0]);
-            Edge<T> firstEdge = FindFirstExitEdge(firstEdges);
-            firstEdgeID = firstEdge.Start.ID;
-
-            FindWronglyAssignedBoundaries(firstEdge);
+            FindWronglyAssignedBoundaries(cornerCell);
+            boundaryAssigner.AssignBoundariesOfPeriodicCorners(periodicCorners);
         }
 
-        Edge<T> FindFirstExitEdge(IEnumerable<Edge<T>> boundaryEdges)
+        Edge<T> FindFirstExitEdge(MeshCell<T> cornerCell)
         {
-            Convolution<Edge<T>> edges = new Convolution<Edge<T>>(boundaryEdges);
+            Edge<T> firstEdge = GetArbitraryInnerEdge(cornerCell);
+            IEnumerable<Edge<T>> firstEdges = PositiveRotationBoundaryEdgesBeginningWith(firstEdge);
 
-            Edge<T> current = null;
+            Convolution<Edge<T>> edges = new Convolution<Edge<T>>(firstEdges);
             foreach (var edgePair in edges)
             {
-                current = edgePair.Current;
-                if (edgePair.Current.BoundaryEdgeNumber != edgePair.Previous.BoundaryEdgeNumber)
+                if (FindExitEdgeInPositveRotation(edgePair, out Edge<T> current))
+                {
+                    if (!current.IsBoundary)
+                    {
+                        current = FindFirstExitEdge(current.Twin.Cell);
+                    }
+                    return current;
+                }
+            }
+            throw new Exception("Did not find exit edge.");
+        }
+
+        Edge<T> GetArbitraryInnerEdge(MeshCell<T> cornerCell)
+        {
+            foreach (var edge in cornerCell.Edges)
+            {
+                if (!edge.IsBoundary)
+                {
+                    return edge;
+                }
+            }
+            throw new Exception("Cell does not have a boundary.");
+        }
+
+        bool FindExitEdgeInPositveRotation(Pair<Edge<T>> edgePair, out Edge<T> edge)
+        {
+            edge = null;
+            if (edgePair.Current.BoundaryEdgeNumber != edgePair.Previous.BoundaryEdgeNumber)
+            {
+                map.PeriodicBoundaryCorrelation.TryGetValue(edgePair.Current.BoundaryEdgeNumber, out int pairedBoundary);
+                if (edgePair.Current.Twin.BoundaryEdgeNumber == pairedBoundary)
+                {
+                    edge = edgePair.Current;
+                    return true;
+                }
+                else
+                {
+                    if (!edgePair.Previous.IsBoundary)
+                    {
+                        edge = edgePair.Previous;
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        bool FindExitEdgeInNegativeRotation(Pair<Edge<T>> edgePair, out Edge<T> edge)
+        {
+            edge = null;
+            if (edgePair.Current.BoundaryEdgeNumber != edgePair.Previous.BoundaryEdgeNumber)
+            {
+                if (edgePair.Current.IsBoundary)
                 {
                     map.PeriodicBoundaryCorrelation.TryGetValue(edgePair.Current.BoundaryEdgeNumber, out int pairedBoundary);
                     if (edgePair.Current.Twin.BoundaryEdgeNumber == pairedBoundary)
                     {
-                        break;
+                        edge = edgePair.Current;
+                        return true;
                     }
                 }
+                else
+                {
+                    edge = edgePair.Current;
+                    return true;
+                }
+
             }
-            return current;
+            return false;
         }
 
-        IEnumerable<Edge<T>> PositiveRotationEdgesBeginningWith(Edge<T> first)
+        IEnumerable<Edge<T>> PositiveRotationBoundaryEdgesBeginningWith(Edge<T> first)
         {
             MeshCell<T> cell = first.Cell;
             int firstEdgeIndice = FindIndiceOfEdgeInItsCell(cell.Edges, first);
             CyclicArray<Edge<T>> edges = new CyclicArray<Edge<T>>(cell.Edges, firstEdgeIndice);
             foreach (Edge<T> edge in edges)
             {
-                if (edge.IsBoundary)
-                {
-                    yield return edge;
-                }
+                yield return edge;
             }
         }
 
-        IEnumerable<Edge<T>> NegativeRotationEdgesBeginningWith(Edge<T> first)
+        IEnumerable<Edge<T>> NegativeRotationBoundaryEdgesBeginningWith(Edge<T> first)
         {
             MeshCell<T> cell = first.Cell;
             Edge<T>[] reversedEdges = ArrayMethods.GetReverseOrderArray(cell.Edges);
@@ -127,10 +188,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             CyclicArray<Edge<T>> edges = new CyclicArray<Edge<T>>(reversedEdges, firstEdgeIndice);
             foreach (Edge<T> edge in edges)
             {
-                if (edge.IsBoundary)
-                {
-                    yield return edge;
-                }
+                yield return edge;
             }
         }
 
@@ -146,20 +204,20 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             throw new Exception("Edge not found.");
         }
 
-        bool firstCircle;
-
-        void FindWronglyAssignedBoundaries(Edge<T> edge)
+        void FindWronglyAssignedBoundaries(MeshCell<T> cornerCell)
         {
+            Edge<T> edge = FindFirstExitEdge(cornerCell);
+            firstEdgeID = edge.Start.ID;
             firstCircle = true;
             while (firstCircle)
             {
                 Edge<T> twin = edge.Twin;
-                IEnumerable<Edge<T>> edges = NegativeRotationEdgesBeginningWith(twin);
-                edge = AssignCornerTo(edges);
+                IEnumerable<Edge<T>> edges = NegativeRotationBoundaryEdgesBeginningWith(twin);
+                edge = CheckForCorners(edges);
             }
         }
 
-        Edge<T> AssignCornerTo(IEnumerable<Edge<T>> boundaryEdges)
+        Edge<T> CheckForCorners(IEnumerable<Edge<T>> boundaryEdges)
         {
             Convolution<Edge<T>> edges = new Convolution<Edge<T>>(boundaryEdges);
 
@@ -170,47 +228,23 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
                 Edge<T> previous = edgePair.Previous;
                 if (current.Start.ID != firstEdgeID)
                 {
-                    if (current.BoundaryEdgeNumber != previous.BoundaryEdgeNumber)
+                    if (FindExitEdgeInNegativeRotation(edgePair, out Edge<T> exitEdge))
                     {
-                        map.PeriodicBoundaryCorrelation.TryGetValue(current.BoundaryEdgeNumber, out int pairedBoundary);
-                        if (current.Twin.BoundaryEdgeNumber == pairedBoundary)
-                        {
-                            break;
-                        }
+                        return exitEdge;
                     }
                     if (AlreadyVisited(current))
                     {
                         Corner periodicCorner = FromCell(current.Cell);
-                        AssignEdge(current, periodicCorner);
+                        periodicCorners.Enqueue((periodicCorner, current));
                     };
                 }
                 else
                 {
                     firstCircle = false;
-                    break;
+                    return current;
                 }
             }
-            return current;
-        }
-
-        Corner FromCell(MeshCell<T> cell)
-        {
-            int firstEdge = int.MaxValue;
-            int secondEdge = int.MinValue;
-
-            foreach(Edge<T> edge in cell.Edges)
-            {
-                int edgeNumber = edge.BoundaryEdgeNumber;
-                firstEdge = Math.Min( Math.Max(edgeNumber, 0), firstEdge);
-                secondEdge = Math.Max(edgeNumber, secondEdge);
-            }
-
-            Corner cellCorner = new Corner
-            {
-                FirstEdge = firstEdge,
-                SecondEdge = secondEdge
-            };
-            return cellCorner;
+            throw new Exception("Cell does not have a boundary.");
         }
 
         bool AlreadyVisited(Edge<T> current)
@@ -227,6 +261,45 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             }
         }
 
+        Corner FromCell(MeshCell<T> cell)
+        {
+            int firstEdge = int.MaxValue;
+            int secondEdge = int.MinValue;
+
+            foreach (Edge<T> edge in cell.Edges)
+            {
+                int edgeNumber = edge.BoundaryEdgeNumber;
+                firstEdge = Math.Min(Math.Max(edgeNumber, 0), firstEdge);
+                secondEdge = Math.Max(edgeNumber, secondEdge);
+            }
+
+            Corner cellCorner = new Corner
+            {
+                FirstEdge = firstEdge,
+                SecondEdge = secondEdge
+            };
+            return cellCorner;
+        }
+    }
+
+    class BoundaryAssigner<T>
+    {
+        readonly PeriodicMap map;
+
+        public BoundaryAssigner(PeriodicMap map)
+        {
+            this.map = map;
+        }
+
+        public void AssignBoundariesOfPeriodicCorners(Queue<(Corner, Edge<T>)> periodicCorners)
+        {
+            while (periodicCorners.Count > 0)
+            {
+                (Corner periodicCorner, Edge<T> current) = periodicCorners.Dequeue();
+                AssignEdge(current, periodicCorner);
+            }
+        }
+
         void AssignEdge(Edge<T> edge, Corner corner)
         {
             Corner twin = CreateTwinOf(corner);
@@ -236,7 +309,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             map.PeriodicCornerCorrelation.TryGetValue(twin, out int twinBoundary);
             edge.Twin.BoundaryEdgeNumber = twinBoundary;
 
-            Debug.Assert(IsEdgeTransformation(map.PeriodicBoundaryTransformations[boundary], edge));
+            //Debug.Assert(IsEdgeTransformation(map.PeriodicBoundaryTransformations[boundary], edge));
         }
 
         Corner CreateTwinOf(Corner corner)
