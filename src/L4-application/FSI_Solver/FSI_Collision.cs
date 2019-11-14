@@ -345,7 +345,7 @@ namespace FSI_Solver {
 
             for (int i = 0; i < Particle0.NoOfSubParticles; i++) {
                 for (int j = 0; j < NoOfSubParticles1; j++) {
-                    GJK_DistanceAlgorithm(Particle0, i, Particle1, j, out double temp_Distance, out double[] temp_DistanceVector, out double[] temp_ClosestPoint_P0, out double[] temp_ClosestPoint_P1, out Overlapping);
+                    GJK_DistanceAlgorithm(Particle0, i, Particle1, j, out double temp_Distance, out Vector temp_DistanceVector, out Vector temp_ClosestPoint_P0, out Vector temp_ClosestPoint_P1, out Overlapping);
                     if (Overlapping)
                         break;
                     if (temp_Distance < Distance) {
@@ -389,7 +389,7 @@ namespace FSI_Solver {
             stopWatch.Start();
 
             for (int i = 0; i < Particle0.NoOfSubParticles; i++) {
-                GJK_DistanceAlgorithm(Particle0, i, null, 1, out double temp_Distance, out double[] temp_DistanceVector, out double[] temp_ClosestPoint_P0, out _, out Overlapping);
+                GJK_DistanceAlgorithm(Particle0, i, null, 1, out double temp_Distance, out Vector temp_DistanceVector, out Vector temp_ClosestPoint_P0, out _, out Overlapping);
                 if (Overlapping)
                     break;
                 if (temp_Distance < Distance) {
@@ -437,26 +437,24 @@ namespace FSI_Solver {
         /// <param name="Overlapping">
         /// Is true if the two particles are overlapping.
         /// </param>
-        internal void GJK_DistanceAlgorithm(Particle Particle0, int SubParticleID0, Particle Particle1, int SubParticleID1, out double Min_Distance, out double[] DistanceVec, out double[] ClosestPoint0, out double[] ClosestPoint1, out bool Overlapping) {
+        internal void GJK_DistanceAlgorithm(Particle Particle0, int SubParticleID0, Particle Particle1, int SubParticleID1, out double Min_Distance, out Vector DistanceVec, out Vector ClosestPoint0, out Vector ClosestPoint1, out bool Overlapping) {
 
             // Step 1
             // Initialize the algorithm with the particle position
             // =======================================================
-            double[] Position0 = Particle0.Motion.GetPosition(0).CloneAs();
-            double[] Position1 = Particle1 == null ? Particle0.ClosestPointOnOtherObjectToThis.CloneAs() : (Particle1.Motion.GetPosition(0)).CloneAs();
             Vector[] positionVectors = new Vector[2];
             positionVectors[0] = new Vector(Particle0.Motion.GetPosition(0).CloneAs());
             positionVectors[1] = new Vector(Particle1 == null ? Particle0.ClosestPointOnOtherObjectToThis.CloneAs() : (Particle1.Motion.GetPosition(0)).CloneAs());
-            int SpatialDim = Position0.Length;
-            double[] v = Aux.VectorDiff(Position0, Position1);
+            int SpatialDim = positionVectors[0].Dim;
+
             Vector supportVector = positionVectors[0] - positionVectors[1];
             Aux.TestArithmeticException(supportVector, "support vector");
-            Aux.TestArithmeticException(v, nameof(v));
-            // Define the simplex, which contains all points to be tested for their distance (max. 3 points in 2D)
-            List<double[]> Simplex = new List<double[]> { v.CloneAs() };
 
-            ClosestPoint0 = new double[SpatialDim];
-            ClosestPoint1 = new double[SpatialDim];
+            // Define the simplex, which contains all points to be tested for their distance (max. 3 points in 2D)
+            List<Vector> Simplex = new List<Vector> { supportVector };
+
+            ClosestPoint0 = new Vector();
+            ClosestPoint1 = new Vector();
             Overlapping = false;
             int maxNoOfIterations = 10000;
 
@@ -464,40 +462,38 @@ namespace FSI_Solver {
             // Start the iteration
             // =======================================================
             for (int i = 0; i <= maxNoOfIterations; i++) {
-                double[] vt = v.CloneAs();
-                for (int d = 0; d < SpatialDim; d++) {
-                    vt[d] = -v[d];
-                }
+                Vector negativeSupportVector = new Vector();
+                negativeSupportVector.Sub(supportVector);
 
                 // Calculate the support point of the two particles, 
                 // which are the closest points if the algorithm is finished.
                 // -------------------------------------------------------
-                CalculateSupportPoint(Particle0, SubParticleID0, vt, out ClosestPoint0);
+                CalculateSupportPoint(Particle0, SubParticleID0, negativeSupportVector, out ClosestPoint0);
                 Aux.TestArithmeticException(ClosestPoint0, nameof(ClosestPoint0));
                 // Particle-Particle collision
                 if (Particle1 != null)
-                    CalculateSupportPoint(Particle1, SubParticleID1, v, out ClosestPoint1);
+                    CalculateSupportPoint(Particle1, SubParticleID1, supportVector, out ClosestPoint1);
                 // Particle-wall collision
                 else {
                     ClosestPoint1 = ClosestPoint0.CloneAs();
-                    if (Position0[0] == Position1[0])
-                        ClosestPoint1[1] = Position1[1];
+                    if (positionVectors[0][0] == positionVectors[1][0])
+                        ClosestPoint1[1] = positionVectors[1][1];
                     else
-                        ClosestPoint1[0] = Position1[0];
+                        ClosestPoint1[0] = positionVectors[1][0];
                 }
                 Aux.TestArithmeticException(ClosestPoint1, nameof(ClosestPoint1));
 
                 // The current support point can be found by forming 
                 // the difference of the support points on the two particles
                 // -------------------------------------------------------
-                double[] SupportPoint = Aux.VectorDiff(ClosestPoint0, ClosestPoint1);
+                Vector SupportPoint =   ClosestPoint0 - ClosestPoint1;
                 Aux.TestArithmeticException(SupportPoint, nameof(SupportPoint));
 
                 // If the condition is true
                 // we have found the closest points!
                 // -------------------------------------------------------
                 
-                if ((Aux.DotProduct(v, vt) - Aux.DotProduct(SupportPoint, vt)) >= -1e-12 && i > 1)
+                if ((Aux.DotProduct(supportVector, negativeSupportVector) - Aux.DotProduct(SupportPoint, negativeSupportVector)) >= -1e-12 && i > 1)
                     break;
 
                 // Add new support point to simplex
@@ -539,19 +535,18 @@ namespace FSI_Solver {
         /// <param name="SupportPoint">
         /// The support point (Cpt. Obvious)
         /// </param>
-        private void CalculateSupportPoint(Particle particle, int SubParticleID, double[] Vector, out double[] SupportPoint) {
-            int SpatialDim = particle.Motion.GetPosition(0).Count();
-            SupportPoint = new double[SpatialDim];
+        private void CalculateSupportPoint(Particle particle, int SubParticleID, Vector supportVector, out Vector SupportPoint) {
+            SupportPoint = new Vector();
             // A direct formulation of the support function for a sphere exists, thus it is also possible to map it to an ellipsoid.
             if (particle is Particle_Ellipsoid || particle is Particle_Sphere || particle is Particle_Rectangle || particle is Particle_Shell) {
-                SupportPoint = particle.GetSupportPoint(Vector, SubParticleID);
+                SupportPoint = particle.GetSupportPoint(supportVector, SubParticleID);
             }
             // Interpolated binary search in all other cases.
             else {
                 double angle = particle.Motion.GetAngle(0);
                 double[] particleDirection = new double[] { Math.Cos(angle), Math.Sin(angle) };
-                double testSign = particleDirection[0] * Vector[1] - particleDirection[1] * Vector[0];
-                double searchStartAngle = (1 - Math.Sign(testSign)) * Math.PI / 2 + Math.Acos(Aux.DotProduct(Vector, particleDirection) / Vector.L2Norm());
+                double testSign = particleDirection[0] * supportVector[1] - particleDirection[1] * supportVector[0];
+                double searchStartAngle = (1 - Math.Sign(testSign)) * Math.PI / 2 + Math.Acos(Aux.DotProduct(supportVector, particleDirection) / supportVector.L2Norm());
                 double L = searchStartAngle - Math.PI;
                 double R = searchStartAngle + Math.PI;
                 while (L < R && Math.Abs(L-R) > 1e-15) {
@@ -565,9 +560,9 @@ namespace FSI_Solver {
                         LeftNeighbour[d] = SurfacePoints[0, d];
                         RightNeighbour[d] = SurfacePoints[2, d];
                     }
-                    if (Aux.DotProduct(SupportPoint, Vector) > Aux.DotProduct(RightNeighbour, Vector) && Aux.DotProduct(SupportPoint, Vector) > Aux.DotProduct(LeftNeighbour, Vector))
+                    if (Aux.DotProduct(SupportPoint, supportVector) > Aux.DotProduct(RightNeighbour, supportVector) && Aux.DotProduct(SupportPoint, supportVector) > Aux.DotProduct(LeftNeighbour, supportVector))
                         break; // The current temp_supportPoint is the actual support point.
-                    else if (Aux.DotProduct(RightNeighbour, Vector) > Aux.DotProduct(LeftNeighbour, Vector))
+                    else if (Aux.DotProduct(RightNeighbour, supportVector) > Aux.DotProduct(LeftNeighbour, supportVector))
                         L = searchStartAngle; // Search on the right side of the current point.
                     else
                         R = searchStartAngle; // Search on the left side.
