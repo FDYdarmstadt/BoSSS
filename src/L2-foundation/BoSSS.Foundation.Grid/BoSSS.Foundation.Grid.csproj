@@ -72,7 +72,9 @@
     <Compile Include="VoronoiMeshing\MeshCellCopier.cs" />
     <Compile Include="VoronoiMeshing\Converter\PeriodicConverterBoundaryMap.cs" />
     <Compile Include="VoronoiMeshing\Converter\PeriodicConverterBoundary.cs" />
-    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\CornerMapper.cs" />
+    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\PeriodicCornerBoundaryAssigner.cs" />
+    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\PeriodicCornerCellFinder.cs" />
+    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\PeriodicCornerMapper.cs" />
     <Compile Include="VoronoiMeshing\PeriodicMap.cs" />
     <Compile Include="VoronoiMeshing\PeriodicMapGenerator.cs" />
     <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\BoundaryCellMerger.cs" />

@@ -190,7 +190,7 @@ namespace VoronoiTests.Grid
                 EdgeTagNames = tagNames
             };
 
-            VoronoiGrid grid = VoronoiGrid2D.Polygonal(gridBoundary, 0, 100);
+            VoronoiGrid grid = VoronoiGrid2D.Polygonal(gridBoundary, 0, 500);
         }
 
         [Test]

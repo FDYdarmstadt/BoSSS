@@ -24,8 +24,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
         public PeriodicBoundaryHandler(
             BoundaryLine[] boundary,
             int firstCellNodeIndice,
-            PeriodicMap map = null
-            )
+            PeriodicMap map = null)
         {
             if (map != null)
             {
@@ -33,7 +32,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 
                 this.boundary = boundary;
                 this.firstCellNodeIndice = firstCellNodeIndice;
-                periodicTrafoMap = map.PeriodicTransformationMap;
+                periodicTrafoMap = map.PeriodicBoundaryTransformations;
                 nodeCloner = new BoundaryNodeCloner<T>(map);
                 recomposer = new BoundaryRecomposer<T>(map, firstCellNodeIndice); 
             }

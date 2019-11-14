@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Foundation.Grid.Voronoi.Meshing
+namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
 {
     partial class Cutter<T>
         where T :ILocatable, new()

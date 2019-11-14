@@ -5,7 +5,7 @@ using System.Linq;
 using System.Diagnostics;
 using BoSSS.Platform.LinAlg;
 
-namespace BoSSS.Foundation.Grid.Voronoi.Meshing
+namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
 {
     class MeshIntersecter<T>
         where T: ILocatable, new()

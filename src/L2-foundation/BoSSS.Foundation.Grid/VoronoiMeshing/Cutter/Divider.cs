@@ -4,7 +4,7 @@ using System;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Platform;
 
-namespace BoSSS.Foundation.Grid.Voronoi.Meshing
+namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
 {
     class Divider<T>
     {

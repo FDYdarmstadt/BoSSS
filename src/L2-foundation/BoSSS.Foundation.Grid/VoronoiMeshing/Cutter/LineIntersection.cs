@@ -6,7 +6,7 @@ using BoSSS.Platform.LinAlg;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Foundation.Grid.Voronoi.Meshing
+namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
 {
     static class LineIntersect
     {

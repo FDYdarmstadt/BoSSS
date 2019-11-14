@@ -49,14 +49,25 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return result;
         }
 
+        /// <summary>
+        ///Combine a(x) and b(x) to c(x) = a(b(x))
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
         public static Transformation Combine(Transformation a, Transformation b)
         {
-            throw new NotImplementedException();
-        }
+            if(a.dim != b.dim)
+            {
+                throw new NotSupportedException("Transformation dimensions do not align.");
+            }
 
-        public static Transformation GetReverse(Transformation a)
-        {
-            throw new NotImplementedException();
+            Transformation combination = new Transformation(a.dim)
+            {
+                matrix = a.matrix * b.matrix,
+                affineTransformation = a.matrix * b.affineTransformation + a.affineTransformation
+            };
+            return combination;
         }
     }
 }

@@ -12,7 +12,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 
         readonly int firstCellNodeIndice;
 
-        readonly CornerMapper<T> cornerMapper;
+        readonly PeriodicCornerMapper<T> cornerMapper;
 
         public BoundaryRecomposer(
             PeriodicMap map,
@@ -20,15 +20,20 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
         {
             this.map = map;
             this.firstCellNodeIndice = firstCellNodeIndice;
-            cornerMapper = new CornerMapper<T>(map);
+            cornerMapper = new PeriodicCornerMapper<T>(map);
         }
 
         public void RecomposePeriodicEdges(IDMesh<T> mesh, IEnumerable<Edge<T>> periodicEdges)
         {
             CellPairCollection<T> candidates = CellPairCollecter<T>.FollowBoundaryAndCollectCandidates(periodicEdges);
+            RecomposeCutCells(mesh, candidates);
+            cornerMapper.ConnectPeriodicCorners(candidates);
+        }
+
+        void RecomposeCutCells(IDMesh<T> mesh, CellPairCollection<T> candidates)
+        {
             MeshCellCopier<T> cellCopier = new MeshCellCopier<T>(mesh);
             BoundaryCellRemover<T> remover = new BoundaryCellRemover<T>(mesh, firstCellNodeIndice);
-            
 
             MatlabPlotter plotter = new MatlabPlotter();
             int i = 0;
@@ -38,11 +43,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
                 Debug.Assert(CellNodePositionsMatch(mergePair));
                 InitializeGlueMapOf(mergePair);
                 MergeAtBoundary(mergePair);
-                plotter.Plot(mesh, "intermediate" + i);
+                //plotter.Plot(mesh, "intermediate" + i);
                 ++i;
             }
-            plotter.Plot(mesh, "final");
-            cornerMapper.ConnectPeriodicCorners(candidates);
+            //plotter.Plot(mesh, "final");
         }
 
         void ExtractEdgeGlueMap(CellPairCollection<T> pairsForMerging)
@@ -62,7 +66,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 
         (int outerEdge, int innerEdge)[] ExtractEdgeGlueMap(CellPairCollection<T>.EdgeCombo cellsOfABoundary)
         {
-            int outerBoundaryNumber = map.PeriodicBoundaryMap[cellsOfABoundary.EdgeNumber];
+            int outerBoundaryNumber = map.PeriodicBoundaryCorrelation[cellsOfABoundary.EdgeNumber];
             int innerBoundaryNumber = cellsOfABoundary.EdgeNumber;
             (int outerEdge, int innerEdge)[] glueMap = new (int outerEdge, int innerEdge)[cellsOfABoundary.Outer.Count];
             for(int i = 0; i < cellsOfABoundary.Outer.Count; ++i)
@@ -102,7 +106,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             foreach (CellPairCollection<T>.EdgeCombo edgePair in candidates.GetCollectedEdgeCombos())
             {
                 CellPairCollection<T>.EdgeCombo mergePair = new CellPairCollection<T>.EdgeCombo(edgePair.EdgeNumber);
-                int pairedBoundary = map.PeriodicBoundaryMap[edgePair.EdgeNumber];
+                int pairedBoundary = map.PeriodicBoundaryCorrelation[edgePair.EdgeNumber];
                 candidates.TryGetOuterCells(pairedBoundary, out List<MeshCell<T>> pairedOuterCells);
                 mergePair.Outer = TransformedCopyOfOuter(pairedOuterCells, pairedBoundary, cellCopier);
                 mergePair.Inner = new List<MeshCell<T>>(ArrayMethods.GetReverseOrderArray(edgePair.Inner));
@@ -119,7 +123,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             MeshCellCopier<T> cellCopier)
         {
             //CloneAndTransformOuterCells
-            map.PeriodicTransformationMap.TryGetValue(boundaryNumber, out Transformation trafo);
+            map.PeriodicBoundaryTransformations.TryGetValue(boundaryNumber, out Transformation trafo);
             List<MeshCell<T>> clones = cellCopier.Copy(candidates);
             TransformCells(clones, trafo);
             return clones;

@@ -1,6 +1,8 @@
 ﻿using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
 using BoSSS.Platform.LinAlg;
+using ilPSP.Utils;
+using System;
 using System.Collections.Generic;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
@@ -9,22 +11,26 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
     {
         public static PeriodicMap GeneratePeriodicMap(MeshingAlgorithm.Settings settings, VoronoiBoundary boundary)
         {
-            IDictionary<int, int> periodicBoundaryMap = ExtractPeriodicBoundaryMap(boundary);
             PeriodicMap map = null;
+
+            IDictionary<int, int> periodicBoundaryMap = ExtractPeriodicBoundaryMap(boundary.EdgeTags);
             if (periodicBoundaryMap.Count > 0)
             {
+                IDictionary<int, Transformation> periodicBoundaryTransformationMap = CreatePeriodicTransformationsFrom(
+                    settings.Boundary,
+                    periodicBoundaryMap);
                 map = new PeriodicMap
                 {
-                    PeriodicBoundaryMap = periodicBoundaryMap,
-                    PeriodicTransformationMap = CreatePeriodicTransformationMapFrom(settings.Boundary, periodicBoundaryMap),
+                    PeriodicBoundaryCorrelation = periodicBoundaryMap,
+                    PeriodicBoundaryTransformations = periodicBoundaryTransformationMap,
                 };
+                AddPeriodicCorners(map, boundary);
             }
             return map;
         }
 
-        static IDictionary<int, int> ExtractPeriodicBoundaryMap(VoronoiBoundary boundary)
+        static IDictionary<int, int> ExtractPeriodicBoundaryMap(byte[] tags)
         {
-            byte[] tags = boundary.EdgeTags;
             IDictionary<int, int> periodicBoundaryMap = new Dictionary<int, int>();
             IDictionary<byte, int> usedTags = new LinkedListDictionary<byte, int>();
             for (int i = 0; i < tags.Length; ++i)
@@ -46,15 +52,15 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return periodicBoundaryMap;
         }
 
-        static IDictionary<int, Transformation> CreatePeriodicTransformationMapFrom(
+        static IDictionary<int, Transformation> CreatePeriodicTransformationsFrom(
             Vector[] boundary,
             IDictionary<int, int> periodicBoundaryMap)
         {
             BoundaryLine[] boundaryLines = BoundaryLine.ToLines(boundary);
-            return CreatePeriodicTransformationMapFrom(boundaryLines, periodicBoundaryMap);
+            return CreatePeriodicTransformationsFrom(boundaryLines, periodicBoundaryMap);
         }
 
-        static IDictionary<int, Transformation> CreatePeriodicTransformationMapFrom(
+        static IDictionary<int, Transformation> CreatePeriodicTransformationsFrom(
             BoundaryLine[] boundary,
             IDictionary<int, int> periodicBoundaryMap)
         {
@@ -68,6 +74,115 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 periodicTrafoMap.Add(boundaryPair.Key, transformation);
             }
             return periodicTrafoMap;
+        }
+
+        static void AddPeriodicCorners(PeriodicMap map, VoronoiBoundary boundary)
+        {
+            IDictionary<Corner, int> periodicCornerCorrelation = ExtractPeriodicCornerMap(
+                boundary.EdgeTags.Length,
+                map.PeriodicBoundaryCorrelation);
+            map.PeriodicCornerCorrelation = periodicCornerCorrelation;
+            AddPeriodicCornerTransformations(periodicCornerCorrelation, map.PeriodicBoundaryTransformations);
+            AddPeriodicCornerBoundaryCorrelation(periodicCornerCorrelation, map.PeriodicBoundaryCorrelation);
+            UpdateVoronoiEdgeTags(periodicCornerCorrelation, map.PeriodicBoundaryCorrelation, boundary);
+        }
+
+        static IDictionary<Corner, int> ExtractPeriodicCornerMap(
+            int totalEdges,
+            IDictionary<int, int> periodicBoundaryMap)
+        {
+            LinkedListDictionary<Corner, int> periodicCornerMap = new LinkedListDictionary<Corner, int>();
+            int cornerEdge = totalEdges;
+            for (int edge = 0; edge < totalEdges; ++edge)
+            {
+                int followingEdge = (edge + 1) % totalEdges;
+                if (periodicBoundaryMap.TryGetValue(edge, out int pairedEdge)
+                    && periodicBoundaryMap.TryGetValue(followingEdge, out int pairedFollowingEdge))
+                {
+                    Corner periodicCorner = new Corner
+                    {
+                        FirstEdge = edge,
+                        SecondEdge = followingEdge
+                    };
+                    periodicCornerMap.Add(periodicCorner, cornerEdge);
+                    ++cornerEdge;
+                }
+            }
+            return periodicCornerMap;
+        }
+
+        
+
+        static void AddPeriodicCornerTransformations(
+            IDictionary<Corner, int> periodicCornerMap,
+            IDictionary<int, Transformation> periodicBoundaryTransformations)
+        {
+            foreach (var cornerPair in periodicCornerMap)
+            {
+                Corner corner = cornerPair.Key;
+                int boundary = cornerPair.Value;
+                periodicBoundaryTransformations.TryGetValue(corner.FirstEdge, out Transformation first);
+                periodicBoundaryTransformations.TryGetValue(corner.SecondEdge, out Transformation second);
+
+                Transformation cornerTrafo = Transformation.Combine(first, second);
+                periodicBoundaryTransformations.Add(boundary, cornerTrafo);
+            }
+        }
+
+        static void AddPeriodicCornerBoundaryCorrelation(
+            IDictionary<Corner, int> periodicCornerMap,
+            IDictionary<int, int> periodicBoundaryCorrelation)
+        {
+            foreach (var cornerPair in periodicCornerMap)
+            {
+                Corner corner = cornerPair.Key;
+                int boundary = cornerPair.Value;
+
+                periodicBoundaryCorrelation.TryGetValue(corner.SecondEdge, out int firstEdgePaired);
+                periodicBoundaryCorrelation.TryGetValue(corner.FirstEdge, out int secondEdgePaired);
+                Corner pairedCorner = new Corner
+                {
+                    FirstEdge = firstEdgePaired,
+                    SecondEdge = secondEdgePaired
+                };
+
+                if(periodicCornerMap.TryGetValue(pairedCorner, out int pairedBoundary))
+                {
+                    periodicBoundaryCorrelation.Add(boundary, pairedBoundary);
+                }
+                else
+                {
+                    throw new System.Exception("Periodic corner missing.");
+                }
+            }
+        }
+
+        static void UpdateVoronoiEdgeTags(
+            IDictionary<Corner, int> periodicCornerMap,
+            IDictionary<int, int> periodicBoundaryCorrelation, 
+            VoronoiBoundary boundary)
+        {
+            int existingEdgeTags = periodicBoundaryCorrelation.Count - periodicCornerMap.Count;
+
+            byte[] newEdgeTags = new byte[periodicBoundaryCorrelation.Count];
+            boundary.EdgeTags.CopyTo(newEdgeTags, 0);
+            int i = 0;
+            foreach(var corner in periodicCornerMap)
+            {
+                if(corner.Value < (newEdgeTags.Length / 2) + 1)
+                {
+                    byte edgeTag = (byte)(GridCommons.FIRST_PERIODIC_BC_TAG + existingEdgeTags + i);
+                    newEdgeTags[corner.Value] = edgeTag;
+                    periodicBoundaryCorrelation.TryGetValue(corner.Value, out int pairedEdge);
+                    newEdgeTags[pairedEdge] = edgeTag;
+                    ++i;
+                }
+                else
+                {
+                    break;
+                }
+            }
+            boundary.EdgeTags = newEdgeTags;
         }
     }
 }

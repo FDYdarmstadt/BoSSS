@@ -3,7 +3,7 @@ using BoSSS.Platform.LinAlg;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace BoSSS.Foundation.Grid.Voronoi.Meshing
+namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
 {
     static class MeshMethods
     {

@@ -2,6 +2,7 @@
 using BoSSS.Platform.LinAlg;
 using System.Collections.Generic;
 using System.Diagnostics;
+using BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {

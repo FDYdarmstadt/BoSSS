@@ -17,11 +17,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
             PeriodicMap map)
         {
             edgePairer = new EdgePairer();
-            this.boundaryMap = CreatePeriodicBoundaryMap
-                <SortedList<byte, AffineTrafo>, LinkedListDictionary<int, bool>>(
+            this.boundaryMap = 
+                CreatePeriodicBoundaryMap<SortedList<byte, AffineTrafo>, LinkedListDictionary<int, bool>>(
                     boundary.EdgeTags, 
-                    map.PeriodicBoundaryMap, 
-                    map.PeriodicTransformationMap);
+                    map.PeriodicBoundaryCorrelation, 
+                    map.PeriodicBoundaryTransformations);
         }
 
         static PeriodicBoundaryConverterMap CreatePeriodicBoundaryMap<TtrafoDictionary, TinverseDictionary>(

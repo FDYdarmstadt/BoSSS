@@ -37,9 +37,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 
         Transformation GetBoundaryTransformationOf(Edge<T> edge)
         {
-            Debug.Assert(map.PeriodicTransformationMap.TryGetValue(edge.BoundaryEdgeNumber, out Transformation debug));
+            Debug.Assert(map.PeriodicBoundaryTransformations.TryGetValue(edge.BoundaryEdgeNumber, out Transformation debug));
 
-            map.PeriodicTransformationMap.TryGetValue(edge.BoundaryEdgeNumber, out Transformation transformation);
+            map.PeriodicBoundaryTransformations.TryGetValue(edge.BoundaryEdgeNumber, out Transformation transformation);
             return transformation;
         }
 
