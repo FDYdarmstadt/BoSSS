@@ -294,58 +294,66 @@ namespace BoSSS.Foundation.XDG {
                 if (m_VolumeFactory[levSetIndex] == null) {
                     switch (CutCellQuadratureType) {
                         case MomentFittingVariants.Classic:
-                            m_VolumeFactory[levSetIndex] = new LevelSetVolumeQuadRuleFactory(
-                                this.m_LevelSetDatas[levSetIndex],
-                                GetCellFaceFactory(levSetIndex, Kref, JumpTypes.Heaviside),
-                                GetSurfaceFactory(levSetIndex, Kref),
-                                jumpType: jmp);
-                            break;
+                        m_VolumeFactory[levSetIndex] = new LevelSetVolumeQuadRuleFactory(
+                            this.m_LevelSetDatas[levSetIndex],
+                            GetCellFaceFactory(levSetIndex, Kref, JumpTypes.Heaviside),
+                            GetSurfaceFactory(levSetIndex, Kref),
+                            jumpType: jmp);
+                        break;
 
                         case MomentFittingVariants.OneStepGauss:
                         case MomentFittingVariants.OneStepGaussAndStokes: {
-                                bool bStokes = CutCellQuadratureType == MomentFittingVariants.OneStepGaussAndStokes;
-                                LevelSetComboRuleFactory2 ComboRuleFactroy = new LevelSetComboRuleFactory2(
-                                        this.m_LevelSetDatas[levSetIndex],
-                                        this.GetCellFaceFactory(levSetIndex, Kref, JumpTypes.Heaviside),
-                                        bStokes ? this._GetSurfaceElement_BoundaryRuleFactory(levSetIndex, Kref) : null,
-                                        _UseAlsoStokes: bStokes,
-                                        _SurfaceNodesOnZeroLevset: false,
-                                        _DoCheck: CheckQuadRules);
-                                break;
-                            }
+                            bool bStokes = CutCellQuadratureType == MomentFittingVariants.OneStepGaussAndStokes;
+                            LevelSetComboRuleFactory2 ComboRuleFactroy = new LevelSetComboRuleFactory2(
+                                    this.m_LevelSetDatas[levSetIndex],
+                                    this.GetCellFaceFactory(levSetIndex, Kref, JumpTypes.Heaviside),
+                                    bStokes ? this._GetSurfaceElement_BoundaryRuleFactory(levSetIndex, Kref) : null,
+                                    _UseAlsoStokes: bStokes,
+                                    _SurfaceNodesOnZeroLevset: false,
+                                    _DoCheck: CheckQuadRules);
+                            m_VolumeFactory[levSetIndex] = ComboRuleFactroy.GetVolumeFactory(); 
+                            m_SurfaceFactory[levSetIndex] = ComboRuleFactroy.GetSurfaceFactory();
+                            break;
+                        }
 
                         case MomentFittingVariants.TwoStepStokesAndGauss:
                         case MomentFittingVariants.ExactCircle: {
-                                m_VolumeFactory[levSetIndex] = (new LevelSetVolumeQuadRuleFactory2b(Kref,
-                                        this.m_LevelSetDatas[levSetIndex],
-                                        GetCellFaceFactory(levSetIndex, Kref, JumpTypes.Heaviside),
-                                        GetSurfaceFactory(levSetIndex, Kref),
-                                        jmp));
-                                break;
-                            }
+                            m_VolumeFactory[levSetIndex] = (new LevelSetVolumeQuadRuleFactory2b(Kref,
+                                    this.m_LevelSetDatas[levSetIndex],
+                                    GetCellFaceFactory(levSetIndex, Kref, JumpTypes.Heaviside),
+                                    GetSurfaceFactory(levSetIndex, Kref),
+                                    jmp));
+                            break;
+                        }
                         case MomentFittingVariants.SayeNoComplementary:
                         case MomentFittingVariants.Saye:
-                            var comboFactory = Quadrature.SayeFactories.SayeGaussRule_Combo(
-                                this.m_LevelSetDatas[levSetIndex],
-                                new LineSegment.SafeGuardedNewtonMethod(1e-14));
-                            m_VolumeFactory[levSetIndex] = comboFactory.GetVolumeFactory();
-                            m_SurfaceFactory[levSetIndex] = comboFactory.GetSurfaceFactory();
-                            break;
+                        var comboFactory = Quadrature.SayeFactories.SayeGaussRule_Combo(
+                            this.m_LevelSetDatas[levSetIndex],
+                            new LineSegment.SafeGuardedNewtonMethod(1e-14));
+                        m_VolumeFactory[levSetIndex] = comboFactory.GetVolumeFactory();
+                        m_SurfaceFactory[levSetIndex] = comboFactory.GetSurfaceFactory();
+                        break;
                         default:
-                            throw new NotSupportedException(String.Format(
-                                "Variant {0} not implemented.", CutCellQuadratureType));
+                        throw new NotSupportedException(String.Format(
+                            "Variant {0} not implemented.", CutCellQuadratureType));
                     }
                 }
 
+                Debug.Assert(m_VolumeFactory[levSetIndex] != null);
                 return m_VolumeFactory[levSetIndex];
             } else if (jmp == JumpTypes.OneMinusHeaviside) {
+                IQuadRuleFactory<QuadRule> ret;
                 switch (CutCellQuadratureType) {
                     case MomentFittingVariants.SayeNoComplementary:
-                        return Quadrature.SayeFactories.SayeGaussRule_NegativeVolume(this.m_LevelSetDatas[levSetIndex],
-                                new LineSegment.SafeGuardedNewtonMethod(1e-14));
+                    ret = Quadrature.SayeFactories.SayeGaussRule_NegativeVolume(this.m_LevelSetDatas[levSetIndex],
+                            new LineSegment.SafeGuardedNewtonMethod(1e-14));
+                    break;
                     default:
-                        return new ComplementaryRuleFactory(GetVolRuleFactory(levSetIndex, JumpTypes.Heaviside, Kref));
+                    ret = new ComplementaryRuleFactory(GetVolRuleFactory(levSetIndex, JumpTypes.Heaviside, Kref));
+                    break;
                 }
+                Debug.Assert(ret != null);
+                return ret;
             } else {
                 throw new ArgumentOutOfRangeException("unsupported jump type");
             }
