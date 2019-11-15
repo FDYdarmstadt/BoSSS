@@ -69,10 +69,10 @@ namespace BoSSS.Application.FSI_Solver {
         private void StabilizeHydrodynamics(ref double[] tempForces, ref double tempTorque, double lengthScale) {
             double averageForcesAndTorque = Math.Abs(CalculateAverageForces(tempForces, tempTorque, lengthScale));
             for (int d = 0; d < m_Dim; d++) {
-                if (Math.Abs(tempForces[d] * 1e2) < averageForcesAndTorque || Math.Abs(tempForces[d]) < 1e-10)
+                if (Math.Abs(tempForces[d] * 1e6) < averageForcesAndTorque || Math.Abs(tempForces[d]) < 1e-10)
                     tempForces[d] = 0;
             }
-            if (Math.Abs(tempTorque * 1e2) < averageForcesAndTorque || Math.Abs(tempTorque) < 1e-10)
+            if (Math.Abs(tempTorque * 1e6) < averageForcesAndTorque || Math.Abs(tempTorque) < 1e-10)
                 tempTorque = 0;
         }
 
@@ -85,7 +85,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="torque">
         /// The hydrodynamic torque.
         /// </param>
-        /// <param name="averageDistance">
+        /// <param name="lengthScale">
         /// The average Lengthscale of the particle.
         /// </param>
         private double CalculateAverageForces(double[] forces, double torque, double lengthScale) {

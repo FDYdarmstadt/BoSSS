@@ -19,6 +19,7 @@ using System.Runtime.Serialization;
 using ilPSP;
 using System.Linq;
 using ilPSP.Utils;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Application.FSI_Solver {
     [DataContract]
@@ -161,14 +162,14 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="vector">
         /// A vector. 
         /// </param>
-        override public double[] GetSupportPoint(double[] vector, int SubParticleID) {
-            Aux.TestArithmeticException(vector, "vector in calc of support point");
-            if (vector.L2Norm() == 0)
+        override public Vector GetSupportPoint(Vector supportVector, int SubParticleID) {
+            Aux.TestArithmeticException(supportVector, "vector in calc of support point");
+            if (supportVector.L2Norm() == 0)
                 throw new ArithmeticException("The given vector has no length");
 
-            double[] SupportPoint = new double[SpatialDim];
+            Vector SupportPoint = new Vector(SpatialDim);
             double angle = Motion.GetAngle(0);
-            double[] position = Motion.GetPosition(0);
+            Vector position = new Vector(Motion.GetPosition(0));
 
             double[,] rotMatrix = new double[2, 2];
             rotMatrix[0, 0] = m_Length * Math.Cos(angle);
@@ -182,7 +183,7 @@ namespace BoSSS.Application.FSI_Solver {
             double[] rotVector = new double[2];
             for (int i = 0; i < 2; i++) {
                 for (int j = 0; j < 2; j++) {
-                    rotVector[i] += transposeRotMatrix[i, j] * vector[j];
+                    rotVector[i] += transposeRotMatrix[i, j] * supportVector[j];
                 }
             }
             rotVector.ScaleV(1 / rotVector.L2Norm());

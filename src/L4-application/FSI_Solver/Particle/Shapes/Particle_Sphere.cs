@@ -16,6 +16,7 @@ limitations under the License.
 
 using System;
 using System.Runtime.Serialization;
+using BoSSS.Platform.LinAlg;
 using ilPSP;
 using ilPSP.Utils;
 
@@ -129,11 +130,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="vector">
         /// A vector. 
         /// </param>
-        override public double[] GetSupportPoint(double[] vector, int SubParticleID) {
-            double length = Math.Sqrt(vector[0].Pow2() + vector[1].Pow2());
-            double CosT = vector[0] / length;
-            double SinT = vector[1] / length;
-            double[] SupportPoint = new double[SpatialDim];
+        override public Vector GetSupportPoint(Vector supportVector, int SubParticleID) {
+            double length = Math.Sqrt(supportVector[0].Pow2() + supportVector[1].Pow2());
+            double CosT = supportVector[0] / length;
+            double SinT = supportVector[1] / length;
+            Vector SupportPoint = new Vector(SpatialDim);
             if (SpatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
             SupportPoint[0] = CosT * m_Radius + Motion.GetPosition(0)[0];

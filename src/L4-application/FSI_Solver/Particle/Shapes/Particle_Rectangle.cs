@@ -19,6 +19,7 @@ using System.Runtime.Serialization;
 using ilPSP;
 using System.Linq;
 using ilPSP.Utils;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Application.FSI_Solver {
     [DataContract]
@@ -145,21 +146,21 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="vector">
         /// A vector. 
         /// </param>
-        override public double[] GetSupportPoint(double[] vector, int SubParticleID) {
-            Aux.TestArithmeticException(vector, "vector in calc of support point");
-            if (vector.L2Norm() == 0)
+        override public Vector GetSupportPoint(Vector supportVector, int SubParticleID) {
+            Aux.TestArithmeticException(supportVector, "vector in calc of support point");
+            if (supportVector.L2Norm() == 0)
                 throw new ArithmeticException("The given vector has no length");
-            
-            double[] supportPoint = vector.CloneAs();
+
+            Vector supportPoint = new Vector(supportVector);
             double angle = Motion.GetAngle(0);
-            double[] position = Motion.GetPosition(0);
-            double[] rotVector = vector.CloneAs();
-            rotVector[0] = vector[0] * Math.Cos(angle) - vector[1] * Math.Sin(angle);
-            rotVector[1] = vector[0] * Math.Sin(angle) + vector[1] * Math.Cos(angle);
-            double[] length = position.CloneAs();
+            Vector position = new Vector(Motion.GetPosition(0));
+            Vector rotVector = new Vector(supportVector);
+            rotVector[0] = supportVector[0] * Math.Cos(angle) - supportVector[1] * Math.Sin(angle);
+            rotVector[1] = supportVector[0] * Math.Sin(angle) + supportVector[1] * Math.Cos(angle);
+            Vector length = new Vector(position);
             length[0] = m_Length * Math.Cos(angle) - m_Thickness * Math.Sin(angle);
             length[1] = m_Length * Math.Sin(angle) + m_Thickness * Math.Cos(angle);
-            for(int d = 0; d < position.Length; d++) {
+            for(int d = 0; d < position.Dim; d++) {
                 supportPoint[d] = Math.Sign(rotVector[d]) * length[d] + position[d];
             }
             return supportPoint;

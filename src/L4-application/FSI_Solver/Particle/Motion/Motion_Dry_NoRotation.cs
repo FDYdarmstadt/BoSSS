@@ -88,17 +88,5 @@ namespace BoSSS.Application.FSI_Solver {
         protected override double CalculateRotationalAcceleration(double dt) {
             return 0;
         }
-
-        /// <summary>
-        /// Overrides the calculation of hydrodynamics for fixed particles, so that nothing happens.
-        /// </summary>
-        public override void UpdateForcesAndTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration = null, double fluidDensity = 0, bool firstIteration = false, double dt = 0) {
-            double[] tempForces = new double[m_Dim];
-            for (int d = 0; d < m_Dim; d++) {
-                tempForces[d] = Gravity[d] * Density * ParticleArea;
-            }
-            double tempTorque = 0;
-            HydrodynamicsPostprocessing(tempForces, tempTorque);
-        }
     }
 }

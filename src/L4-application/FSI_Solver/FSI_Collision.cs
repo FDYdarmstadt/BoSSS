@@ -345,15 +345,15 @@ namespace FSI_Solver {
 
             for (int i = 0; i < Particle0.NoOfSubParticles; i++) {
                 for (int j = 0; j < NoOfSubParticles1; j++) {
-                    GJK_DistanceAlgorithm(Particle0, i, Particle1, j, out double temp_Distance, out Vector temp_DistanceVector, out Vector temp_ClosestPoint_P0, out Vector temp_ClosestPoint_P1, out Overlapping);
+                    GJK_DistanceAlgorithm(Particle0, i, Particle1, j, out Vector temp_DistanceVector, out Vector[] temp_ClosestPoints, out Overlapping);
                     if (Overlapping)
                         break;
-                    if (temp_Distance < Distance) {
-                        Distance = temp_Distance;
+                    if (temp_DistanceVector.Abs() < Distance) {
+                        Distance = temp_DistanceVector.Abs();
                         for (int d = 0; d < SpatialDim; d++) {
                             DistanceVector[d] = temp_DistanceVector[d];
-                            ClosestPoint_P0[d] = temp_ClosestPoint_P0[d];
-                            ClosestPoint_P1[d] = temp_ClosestPoint_P1[d];
+                            ClosestPoint_P0[d] = temp_ClosestPoints[0][d];
+                            ClosestPoint_P1[d] = temp_ClosestPoints[1][d];
                         }
                     }
                 }
@@ -385,25 +385,18 @@ namespace FSI_Solver {
             ClosestPoint_P0 = MultidimensionalArray.Create(SpatialDim);
             Overlapping = false;
 
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
-
             for (int i = 0; i < Particle0.NoOfSubParticles; i++) {
-                GJK_DistanceAlgorithm(Particle0, i, null, 1, out double temp_Distance, out Vector temp_DistanceVector, out Vector temp_ClosestPoint_P0, out _, out Overlapping);
+                GJK_DistanceAlgorithm(Particle0, i, null, 1, out Vector temp_DistanceVector, out Vector[] temp_ClosestPoints, out Overlapping);
                 if (Overlapping)
                     break;
-                if (temp_Distance < Distance) {
-                    Distance = temp_Distance;
+                if (temp_DistanceVector.Abs() < Distance) {
+                    Distance = temp_DistanceVector.Abs();
                     for (int d = 0; d < SpatialDim; d++) {
                         DistanceVector[d] = temp_DistanceVector[d];
-                        ClosestPoint_P0[d] = temp_ClosestPoint_P0[d];
+                        ClosestPoint_P0[d] = temp_ClosestPoints[0][d];
                     }
                 }
             }
-            stopWatch.Stop();
-            TimeSpan ts = stopWatch.Elapsed;
-            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
-            Console.WriteLine("Runtime of GJK: " + elapsedTime);
         }
 
         /// <summary>
@@ -422,39 +415,32 @@ namespace FSI_Solver {
         /// <param name="SubParticleID1">
         /// In case of concave particles the particle is devided into multiple convex subparticles. Each of them has its one ID and needs to be tested as if it was a complete particle.
         /// </param>
-        /// <param name="Min_Distance">
-        /// The minimal distance between the two objects.
-        /// </param>
         /// <param name="DistanceVec">
         /// The vector of the minimal distance between the two objects.
         /// </param>
-        /// <param name="ClosestPoint0">
-        /// The point on the first object closest to the second one.
-        /// </param>
-        /// <param name="ClosestPoint1">
-        /// The point on the second object closest to the first one.
+        /// <param name="closestPoints">
+        /// The point on one object closest to the other one.
         /// </param>
         /// <param name="Overlapping">
         /// Is true if the two particles are overlapping.
         /// </param>
-        internal void GJK_DistanceAlgorithm(Particle Particle0, int SubParticleID0, Particle Particle1, int SubParticleID1, out double Min_Distance, out Vector DistanceVec, out Vector ClosestPoint0, out Vector ClosestPoint1, out bool Overlapping) {
+        internal void GJK_DistanceAlgorithm(Particle Particle0, int SubParticleID0, Particle Particle1, int SubParticleID1, out Vector DistanceVec, out Vector[] closestPoints, out bool Overlapping) {
 
             // Step 1
             // Initialize the algorithm with the particle position
             // =======================================================
+            int spatialDim = Particle0.Motion.GetPosition(0).Length;
             Vector[] positionVectors = new Vector[2];
             positionVectors[0] = new Vector(Particle0.Motion.GetPosition(0).CloneAs());
             positionVectors[1] = new Vector(Particle1 == null ? Particle0.ClosestPointOnOtherObjectToThis.CloneAs() : (Particle1.Motion.GetPosition(0)).CloneAs());
-            int SpatialDim = positionVectors[0].Dim;
 
             Vector supportVector = positionVectors[0] - positionVectors[1];
             Aux.TestArithmeticException(supportVector, "support vector");
 
             // Define the simplex, which contains all points to be tested for their distance (max. 3 points in 2D)
-            List<Vector> Simplex = new List<Vector> { supportVector };
+            List<Vector> Simplex = new List<Vector> { new Vector(supportVector) };
 
-            ClosestPoint0 = new Vector();
-            ClosestPoint1 = new Vector();
+            closestPoints = new Vector[2];
             Overlapping = false;
             int maxNoOfIterations = 10000;
 
@@ -462,48 +448,48 @@ namespace FSI_Solver {
             // Start the iteration
             // =======================================================
             for (int i = 0; i <= maxNoOfIterations; i++) {
-                Vector negativeSupportVector = new Vector();
+                Vector negativeSupportVector = new Vector(spatialDim);
                 negativeSupportVector.Sub(supportVector);
 
                 // Calculate the support point of the two particles, 
                 // which are the closest points if the algorithm is finished.
                 // -------------------------------------------------------
-                CalculateSupportPoint(Particle0, SubParticleID0, negativeSupportVector, out ClosestPoint0);
-                Aux.TestArithmeticException(ClosestPoint0, nameof(ClosestPoint0));
+                CalculateSupportPoint(Particle0, SubParticleID0, negativeSupportVector, out closestPoints[0]);
                 // Particle-Particle collision
-                if (Particle1 != null)
-                    CalculateSupportPoint(Particle1, SubParticleID1, supportVector, out ClosestPoint1);
+                if (Particle1 != null) {
+                    CalculateSupportPoint(Particle1, SubParticleID1, supportVector, out closestPoints[1]);
+                }
                 // Particle-wall collision
                 else {
-                    ClosestPoint1 = ClosestPoint0.CloneAs();
+                    closestPoints[1] = new Vector(closestPoints[0]);
                     if (positionVectors[0][0] == positionVectors[1][0])
-                        ClosestPoint1[1] = positionVectors[1][1];
+                        closestPoints[1][1] = positionVectors[1][1];
                     else
-                        ClosestPoint1[0] = positionVectors[1][0];
+                        closestPoints[1][0] = positionVectors[1][0];
                 }
-                Aux.TestArithmeticException(ClosestPoint1, nameof(ClosestPoint1));
+                Aux.TestArithmeticException(closestPoints[0], "closest point on particle 0");
+                Aux.TestArithmeticException(closestPoints[1], "closest point on particle 1");
 
                 // The current support point can be found by forming 
                 // the difference of the support points on the two particles
                 // -------------------------------------------------------
-                Vector SupportPoint =   ClosestPoint0 - ClosestPoint1;
-                Aux.TestArithmeticException(SupportPoint, nameof(SupportPoint));
+                Vector supportPoint = closestPoints[0] - closestPoints[1];
+                Aux.TestArithmeticException(supportPoint, "support point");
 
                 // If the condition is true
                 // we have found the closest points!
                 // -------------------------------------------------------
-                
-                if ((Aux.DotProduct(supportVector, negativeSupportVector) - Aux.DotProduct(SupportPoint, negativeSupportVector)) >= -1e-12 && i > 1)
+                if (((supportVector * negativeSupportVector) - (supportPoint * negativeSupportVector)) >= -1e-12 && i > 1)
                     break;
 
                 // Add new support point to simplex
                 // -------------------------------------------------------
-                Simplex.Insert(0, SupportPoint.CloneAs());
+                Simplex.Insert(0, new Vector(supportPoint));
 
                 // Calculation the new vector v with the distance
                 // algorithm
                 // -------------------------------------------------------
-                DistanceAlgorithm(Simplex, out v, out Overlapping);
+                supportVector = DistanceAlgorithm(Simplex, out Overlapping);
 
                 // End algorithm if the two objects are overlapping.
                 // -------------------------------------------------------
@@ -519,8 +505,7 @@ namespace FSI_Solver {
             // Step 3
             // Return min distance and distance vector.
             // =======================================================
-            Min_Distance = v.L2Norm();
-            DistanceVec = v.CloneAs();
+            DistanceVec = new Vector(supportVector);
         }
 
         /// <summary>
@@ -532,45 +517,44 @@ namespace FSI_Solver {
         /// <param name="Vector">
         /// The vector in which direction the support point is searched.
         /// </param>
-        /// <param name="SupportPoint">
+        /// <param name="supportPoint">
         /// The support point (Cpt. Obvious)
         /// </param>
-        private void CalculateSupportPoint(Particle particle, int SubParticleID, Vector supportVector, out Vector SupportPoint) {
-            SupportPoint = new Vector();
+        private void CalculateSupportPoint(Particle particle, int SubParticleID, Vector supportVector, out Vector supportPoint) {
+            int spatialDim = particle.Motion.GetPosition(0).Length;
+            supportPoint = new Vector(spatialDim);
             // A direct formulation of the support function for a sphere exists, thus it is also possible to map it to an ellipsoid.
             if (particle is Particle_Ellipsoid || particle is Particle_Sphere || particle is Particle_Rectangle || particle is Particle_Shell) {
-                SupportPoint = particle.GetSupportPoint(supportVector, SubParticleID);
+                supportPoint = particle.GetSupportPoint(supportVector, SubParticleID);
             }
             // Interpolated binary search in all other cases.
             else {
                 double angle = particle.Motion.GetAngle(0);
-                double[] particleDirection = new double[] { Math.Cos(angle), Math.Sin(angle) };
+                Vector particleDirection = new Vector(Math.Cos(angle), Math.Sin(angle));
                 double testSign = particleDirection[0] * supportVector[1] - particleDirection[1] * supportVector[0];
-                double searchStartAngle = (1 - Math.Sign(testSign)) * Math.PI / 2 + Math.Acos(Aux.DotProduct(supportVector, particleDirection) / supportVector.L2Norm());
+                double searchStartAngle = (1 - Math.Sign(testSign)) * Math.PI / 2 + Math.Acos((supportVector * particleDirection) / supportVector.L2Norm());
                 double L = searchStartAngle - Math.PI;
                 double R = searchStartAngle + Math.PI;
                 while (L < R && Math.Abs(L-R) > 1e-15) {
                     searchStartAngle = (L + R) / 2;
                     double dAngle = 1e-8;
                     MultidimensionalArray SurfacePoints = particle.GetSurfacePoints(dAngle, searchStartAngle, SubParticleID);
-                    double[] RightNeighbour = new double[2];
-                    double[] LeftNeighbour = new double[2];
-                    for (int d = 0; d < 2; d++) {
-                        SupportPoint[d] = SurfacePoints[1, d];
+                    Vector RightNeighbour = new Vector(spatialDim);
+                    Vector LeftNeighbour = new Vector(spatialDim);
+                    for (int d = 0; d < spatialDim; d++) {
+                        supportPoint[d] = SurfacePoints[1, d];
                         LeftNeighbour[d] = SurfacePoints[0, d];
                         RightNeighbour[d] = SurfacePoints[2, d];
                     }
-                    if (Aux.DotProduct(SupportPoint, supportVector) > Aux.DotProduct(RightNeighbour, supportVector) && Aux.DotProduct(SupportPoint, supportVector) > Aux.DotProduct(LeftNeighbour, supportVector))
+                    if ((supportPoint * supportVector) > (RightNeighbour * supportVector) && (supportPoint * supportVector) > (LeftNeighbour * supportVector))
                         break; // The current temp_supportPoint is the actual support point.
-                    else if (Aux.DotProduct(RightNeighbour, supportVector) > Aux.DotProduct(LeftNeighbour, supportVector))
+                    else if ((RightNeighbour * supportVector) > (LeftNeighbour * supportVector))
                         L = searchStartAngle; // Search on the right side of the current point.
                     else
                         R = searchStartAngle; // Search on the left side.
                 }
-                double[] position = particle.Motion.GetPosition(0);
-                for (int d = 0; d < 2; d++) {
-                    SupportPoint[d] += position[d];
-                }
+                Vector position = new Vector(particle.Motion.GetPosition(0));
+                supportPoint.Acc(position);
             }
         }
 
@@ -587,9 +571,8 @@ namespace FSI_Solver {
         /// <param name="overlapping">
         /// Is true if the simplex contains the origin
         /// </param>
-        private void DistanceAlgorithm(List<double[]> simplex, out double[] v, out bool overlapping) {
-            int spatialDim = simplex[0].Length;
-            v = new double[spatialDim];
+        private Vector DistanceAlgorithm(List<Vector> simplex, out bool overlapping) {
+            Vector supportVector = new Vector(simplex[0].Dim);
             overlapping = false;
 
             // Step 1
@@ -598,7 +581,7 @@ namespace FSI_Solver {
             // =======================================================
             for (int s1 = 0; s1 < simplex.Count(); s1++) {
                 for (int s2 = s1 + 1; s2 < simplex.Count(); s2++) {
-                    if (Math.Abs(simplex[s1][0] - simplex[s2][0]) < 1e-8 && Math.Abs(simplex[s1][1] - simplex[s2][1]) < 1e-8) {
+                    if ((simplex[s1] - simplex[s2]).Abs() < 1e-8) {
                         simplex.RemoveAt(s2);
                     }
                 }
@@ -608,11 +591,11 @@ namespace FSI_Solver {
             // Calculate dot product between all position vectors and 
             // save to an 2D-array.
             // =======================================================
-            List<double[]> dotProductSimplex = new List<double[]>();
+            double[][] dotProductSimplex = new double[simplex.Count()][];
             for (int s1 = 0; s1 < simplex.Count(); s1++) {
-                dotProductSimplex.Add(new double[simplex.Count()]);
+                dotProductSimplex[s1] = new double[simplex.Count()];
                 for (int s2 = s1; s2 < simplex.Count(); s2++) {
-                    dotProductSimplex[s1][s2] = Aux.DotProduct(simplex[s1], simplex[s2]);
+                    dotProductSimplex[s1][s2] = simplex[s1] * simplex[s2];
                 }
             }
 
@@ -624,41 +607,38 @@ namespace FSI_Solver {
             // the closest point of this simplex to the origin
             // -------------------------------------------------------
             if (simplex.Count() == 1) {
-                v = simplex[0];
-                Aux.TestArithmeticException(v, nameof(v));
+                supportVector = new Vector(simplex[0]);
+                Aux.TestArithmeticException(supportVector, "support vector");
             }
 
             // The simplex contains two elements, lets test which is
             // closest to the origin
             // -------------------------------------------------------
             else if (simplex.Count() == 2) {
-                // The first simplex point is closest to the origin, 
+                // One of the simplex point is closest to the origin, 
                 // choose this and delete the other one.
                 // -------------------------------------------------------
-                if (dotProductSimplex[0][0] - dotProductSimplex[0][1] <= 0) {
-                    v = simplex[0].CloneAs();
-                    simplex.RemoveAt(1);
-                    Aux.TestArithmeticException(v, nameof(v));
-                }
-                // The second simplex point is closest to the origin, 
-                // choose this and delete the other one.
-                // -------------------------------------------------------
-                else if (dotProductSimplex[1][1] - dotProductSimplex[0][1] <= 0) {
-                    v = simplex[1].CloneAs();
-                    simplex.RemoveAt(0);
-                    Aux.TestArithmeticException(v, nameof(v));
+                bool continueAlgorithm = true;
+                for (int s = 0; s < simplex.Count(); s++) {
+                    if (dotProductSimplex[s][s] - dotProductSimplex[0][1] <= 0) {
+                        supportVector = new Vector(simplex[s]);
+                        simplex.RemoveAt(Math.Abs(s - 1));
+                        Aux.TestArithmeticException(supportVector, "support vector");
+                        continueAlgorithm = false;
+                        break;
+                    }
                 }
                 // A point at the line between the two simplex points is
                 // closest to the origin, thus we need to keep both points.
                 // -------------------------------------------------------
-                else {
-                    double[] simplexDistanceVector = Aux.VectorDiff(simplex[1], simplex[0]);
-                    double lambda = Math.Abs(-simplex[1][1] * simplexDistanceVector[0] + simplex[1][0] * simplexDistanceVector[1]) / (simplexDistanceVector[0].Pow2() + simplexDistanceVector[1].Pow2());
+                if (continueAlgorithm) {
+                    Vector simplexDistanceVector = simplex[1] - simplex[0];
+                    double lambda = Math.Abs(simplex[1].CrossProduct2D(simplexDistanceVector)) / simplexDistanceVector.AbsSquare();
                     if (lambda == 0) // if the origin lies on the line between the two simplex points, the two objects are overlapping in one point
                         overlapping = true;
-                    v[0] = -lambda * simplexDistanceVector[1];
-                    v[1] = lambda * simplexDistanceVector[0];
-                    Aux.TestArithmeticException(v, nameof(v));
+                    supportVector[0] = -lambda * simplexDistanceVector[1];
+                    supportVector[1] = lambda * simplexDistanceVector[0];
+                    Aux.TestArithmeticException(supportVector, "support vector");
                 }
             }
 
@@ -674,12 +654,12 @@ namespace FSI_Solver {
                     int s2 = s1 == 2 ? 2 : 1;
                     int s3 = s1 == 0 ? 0 : 1;
                     if (dotProductSimplex[s1][s1] - dotProductSimplex[0][s2] <= 0 && dotProductSimplex[s1][s1] - dotProductSimplex[s3][2] <= 0) {
-                        v = simplex[s1].CloneAs();
+                        supportVector = new Vector(simplex[s1]);
                         // Delete the complete simplex and add back the point closest to the origin
                         simplex.Clear();
-                        simplex.Add(v.CloneAs());
+                        simplex.Add(new Vector(supportVector));
                         continueAlgorithm = false;
-                        Aux.TestArithmeticException(v, nameof(v));
+                        Aux.TestArithmeticException(supportVector, "support vector");
                         break;
                     }
                 }
@@ -714,22 +694,19 @@ namespace FSI_Solver {
                         }
                         // A point on one of the edges is closest to the origin.
                         if (dotProductSimplex[s3][s3] - dotProductSimplex[s3][s2] >= 0 && dotProductSimplex[s2][s2] - dotProductSimplex[s3][s2] >= 0 && crossProduct >= 0 && continueAlgorithm) {
-                            double[] simplexDistanceVector = new double[2];
-                            for (int d = 0; d < 2; d++) {
-                                simplexDistanceVector[d] = simplex[s2][d] - simplex[s3][d];
-                            }
-                            double Lambda = (simplex[s2][1] * simplexDistanceVector[0] - simplex[s2][0] * simplexDistanceVector[1]) / (simplexDistanceVector[0].Pow2() + simplexDistanceVector[1].Pow2());
-                            v[0] = -Lambda * simplexDistanceVector[1];
-                            v[1] = Lambda * simplexDistanceVector[0];
+                            Vector simplexDistanceVector = simplex[s2] - simplex[s3];
+                            double Lambda = Math.Abs(simplex[s2].CrossProduct2D(simplexDistanceVector)) / simplexDistanceVector.AbsSquare();
+                            supportVector[0] = -Lambda * simplexDistanceVector[1];
+                            supportVector[1] = Lambda * simplexDistanceVector[0];
                             // save the two remaining simplex points and clear the simplex.
-                            double[] tempSimplex1 = simplex[s2].CloneAs();
-                            double[] tempSimplex2 = simplex[s3].CloneAs();
+                            Vector tempSimplex1 = new Vector(simplex[s2]);
+                            Vector tempSimplex2 = new Vector(simplex[s3]);
                             simplex.Clear();
                             // Readd the remaining points
-                            simplex.Add(tempSimplex1.CloneAs());
-                            simplex.Add(tempSimplex2.CloneAs());
+                            simplex.Add(tempSimplex1);
+                            simplex.Add(tempSimplex2);
                             continueAlgorithm = false;
-                            Aux.TestArithmeticException(v, nameof(v));
+                            Aux.TestArithmeticException(supportVector, "support vector");
                             break;
                         }
                     }
@@ -741,6 +718,7 @@ namespace FSI_Solver {
                 if (continueAlgorithm)
                     overlapping = true;
             }
+            return supportVector;
         }
 
         /// <summary>
@@ -822,7 +800,7 @@ namespace FSI_Solver {
             int NoOfMaxWallEdges = 4;
             WallPoints = new double[NoOfMaxWallEdges][];
             int[][] Cells2Edges = GridData.iLogicalCells.Cells2Edges;
-            IList<BoSSS.Platform.LinAlg.AffineTrafo> trafo = GridData.iGeomEdges.Edge2CellTrafos;
+            IList<AffineTrafo> trafo = GridData.iGeomEdges.Edge2CellTrafos;
             foreach (Chunk cnk in ParticleBoundaryCells) {
                 for (int i = cnk.i0; i < cnk.JE; i++) {
                     foreach (int e in Cells2Edges[i]) {

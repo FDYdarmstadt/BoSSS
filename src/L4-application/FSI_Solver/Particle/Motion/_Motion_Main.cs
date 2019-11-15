@@ -501,11 +501,11 @@ namespace BoSSS.Application.FSI_Solver {
                 m_TranslationalVelocity[0] = CalculateTranslationalVelocity(dt, m_CollisionTimestep);
                 m_RotationalVelocity[0] = CalculateAngularVelocity(dt, m_CollisionTimestep);
             }
-            m_TranslationalVelocity[0][1] = 0;
-            m_RotationalVelocity[0] = 0;
+            //m_TranslationalVelocity[0][1] = 0;
+            //m_RotationalVelocity[0] = 0;
         }
 
-        public virtual void UpdateForcesAndTorque(int particleID, double[] fullListHydrodynamics) {
+        public void UpdateForcesAndTorque(int particleID, double[] fullListHydrodynamics) {
             for (int d = 0; d < m_Dim; d++) {
                 m_HydrodynamicForces[0][d] = fullListHydrodynamics[particleID + d];
             }

@@ -23,6 +23,7 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
 using BoSSS.Solution.NSECommon;
+using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;
 using FSI_Solver;
@@ -60,6 +61,14 @@ namespace BoSSS.Application.FSI_Solver {
             UpdateLevelSetParticles(phystime: 0.0);
             base.SetInitial();
         }
+        ///// <summary>
+        ///// all DG fields that were decorated by an <see cref="InstantiateFromControlFileAttribute"/>.
+        ///// </summary>
+        //protected ICollection<DGField> levelsetList = new List<DGField>();
+        //protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling) {
+        //    Tecplot.PlotFields(m_RegisteredFields, "IBM_Solver" + timestepNo, physTime, superSampling);
+        //    Tecplot.PlotFields(m_RegisteredFields, "LevelSet" + timestepNo, physTime, 4);
+        //}
 
         /// <summary>
         /// A list for all particles
@@ -833,7 +842,7 @@ namespace BoSSS.Application.FSI_Solver {
                         }
                         int iterationCounter = 0;
                         double hydroDynForceTorqueResidual = double.MaxValue;
-                        int minIteration = 5;
+                        int minIteration = 3;
                         Motion_AllParticles AllParticleHydrodynamics = new Motion_AllParticles(LsTrk);
                         while (hydroDynForceTorqueResidual > HydrodynConvergenceCriterion || iterationCounter < minIteration) {
                             Auxillary.CheckForMaxIterations(iterationCounter, ((FSI_Control)Control).maxIterationsFullyCoupled);
@@ -859,7 +868,7 @@ namespace BoSSS.Application.FSI_Solver {
                                 ParticleHydrodynamicsIntegration hydrodynamicsIntegration = new ParticleHydrodynamicsIntegration(2, Velocity, Pressure, LsTrk, FluidViscosity);
                                 AllParticleHydrodynamics.CalculateHydrodynamics(m_Particles, hydrodynamicsIntegration, FluidDensity, IsFullyCoupled);
                                 if (iterationCounter != 1) {
-                                    double underrelax = 2;
+                                    double underrelax = 0.1;
                                     Velocity.Scale(underrelax);
                                     Velocity.Acc((1 - underrelax), velocityOld);
                                     Pressure.Scale(underrelax);
@@ -1401,7 +1410,7 @@ namespace BoSSS.Application.FSI_Solver {
                         collisionFineCells[j] = true;
                 }
             }
-            int medioumRefinementLevel = refinementLevel > 2 ? refinementLevel / 2 + 1 : 1;
+            int medioumRefinementLevel = refinementLevel > 2 ? refinementLevel / 2 + 1 : refinementLevel == 2 ? 2 : 1;
             int coarseRefinementLevel = refinementLevel > 4 ? refinementLevel / 4 : 1;
             //if (refinementLevel - coarseRefinementLevel > coarseRefinementLevel)
             //    coarseRefinementLevel += 1;

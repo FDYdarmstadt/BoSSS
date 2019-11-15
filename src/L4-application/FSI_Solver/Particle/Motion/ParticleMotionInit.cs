@@ -43,7 +43,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </param>
         public ParticleMotionInit(double[] gravity = null, double particleDensity = 0, bool isDry = false, bool noRotation = false, bool noTranslation = false,
             ParticleUnderrelaxationParam underrelaxationParam = null, double addedDampingCoefficient = 0) {
-            m_Gravity = gravity.IsNullOrEmpty() ? (new double[] { 0, 9.81 }) : gravity;
+            m_Gravity = gravity.IsNullOrEmpty() ? (new double[] { 0, -9.81 }) : gravity;
             m_Density = particleDensity == 0 ? 1 : particleDensity;
             m_IsDry = isDry;
             m_NoRotation = noRotation;

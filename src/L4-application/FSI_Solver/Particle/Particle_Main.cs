@@ -24,6 +24,7 @@ using BoSSS.Foundation.Grid;
 using System.Collections;
 using FSI_Solver;
 using System.Collections.Generic;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Application.FSI_Solver {
 
@@ -89,7 +90,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Instantiate object for particle motion.
         /// </summary>
         [DataMember]
-        public Motion_Wet Motion { get; private set; } = new Motion_Wet(gravity: new double[] { 0, 9.81 }, density: 1);
+        public Motion_Wet Motion { get; private set; } = new Motion_Wet(gravity: new double[] { 0, -9.81 }, density: 1);
 
         /// <summary>
         /// Mass of the current particle.
@@ -219,7 +220,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Calculates the support point with an analytic formula (if applicable)
         /// </summary>
         /// <param name="Vector"></param>
-        public virtual double[] GetSupportPoint(double[] Vector, int SubParticleID) => throw new NotImplementedException();
+        public virtual Vector GetSupportPoint(Vector supportVector, int SubParticleID) => throw new NotImplementedException();
 
         /// <summary>
         /// Calculates the radial vector (SurfacePoint-ParticleReadOnlyPosition)

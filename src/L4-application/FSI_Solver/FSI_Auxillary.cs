@@ -137,54 +137,6 @@ namespace FSI_Solver {
         }
 
         /// <summary>
-        /// Calculate componentwise difference of two vectors.
-        /// </summary>
-        /// <param name="Vector0">
-        /// </param>
-        /// <param name="Vector1"></param>
-        internal double[] VectorDiff(double[] Vector0, double[] Vector1) {
-            int Dim = Vector0 != null ? Vector0.Length : Vector1.Length;
-            if (Vector0 == null) {
-                Vector0 = Vector1.CloneAs();
-                for (int d = 0; d < Dim; d++) {
-                    Vector0[d] = 0;
-                }
-            }
-            if (Vector1 == null) {
-                Vector1 = Vector0.CloneAs();
-                for (int d = 0; d < Dim; d++) {
-                    Vector1[d] = 0;
-                }
-            }
-            double[] ResultVector = new double[Dim];
-            if (Vector0.Length != Vector1.Length)
-                throw new ArithmeticException("Mismatch in vector dimension");
-            for (int d = 0; d < Dim; d++) {
-                ResultVector[d] = Vector0[d] - Vector1[d];
-            }
-            TestArithmeticException(ResultVector, "result of vector difference");
-            return ResultVector;
-        }
-
-        /// <summary>
-        /// Calculate teh dot product of two vectors.
-        /// </summary>
-        /// <param name="Vector0">
-        /// </param>
-        /// <param name="Vector1"></param>
-        internal double DotProduct(double[] Vector0, double[] Vector1) {
-            int Dim = Vector0.Length;
-            double DotProduct = new double();
-            if (Vector0.Length != Vector1.Length)
-                throw new ArithmeticException("Mismatch in vector dimension");
-            for (int d = 0; d < Dim; d++) {
-                DotProduct += Vector0[d] * Vector1[d];
-            }
-            TestArithmeticException(DotProduct, "dot product of two vectors");
-            return DotProduct;
-        }
-
-        /// <summary>
         /// Quicksort algorithm
         /// </summary>
         /// <param name="Leftelement">
@@ -437,23 +389,6 @@ namespace FSI_Solver {
                 }
             }
             Console.WriteLine(OutputBuilder.ToString());
-        }
-
-        /// <summary>
-        /// Does what it say
-        /// </summary>
-        /// <param name="Particles">
-        /// A list of all particles
-        /// </param>
-        /// <param name="IterationCounter"></param>
-        /// <param name="ForceTorqueConvergenceCriterion"></param>
-        /// /// <param name="IsFullyCoupled"></param>
-        internal void SaveOldParticleState(List<Particle> Particles) {
-            foreach (Particle p in Particles) {
-                // Save status for residual
-                // ========================
-                p.Motion.SaveHydrodynamicsOfPreviousIteration();
-            }
         }
 
         /// <summary>
