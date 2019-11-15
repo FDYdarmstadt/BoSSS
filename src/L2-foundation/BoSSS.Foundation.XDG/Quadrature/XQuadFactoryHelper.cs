@@ -84,12 +84,6 @@ namespace BoSSS.Foundation.XDG {
             /// R. Saye, SIAM Journal on Scientific Computing, 2015
             /// </remarks>
             Saye,
-
-            /// <summary>
-            /// Separate construction of edge and volume quadrature rules for both species in cut cells.
-            /// This has been done in order to prevent errors when evaluating the compressible HLLC fluxes.
-            /// </summary>
-            SayeNoComplementary
         }
 
         /// <summary>
@@ -325,7 +319,6 @@ namespace BoSSS.Foundation.XDG {
                                     jmp));
                             break;
                         }
-                        case MomentFittingVariants.SayeNoComplementary:
                         case MomentFittingVariants.Saye:
                         var comboFactory = Quadrature.SayeFactories.SayeGaussRule_Combo(
                             this.m_LevelSetDatas[levSetIndex],
@@ -344,7 +337,7 @@ namespace BoSSS.Foundation.XDG {
             } else if (jmp == JumpTypes.OneMinusHeaviside) {
                 IQuadRuleFactory<QuadRule> ret;
                 switch (CutCellQuadratureType) {
-                    case MomentFittingVariants.SayeNoComplementary:
+                    case MomentFittingVariants.Saye:
                     ret = Quadrature.SayeFactories.SayeGaussRule_NegativeVolume(this.m_LevelSetDatas[levSetIndex],
                             new LineSegment.SafeGuardedNewtonMethod(1e-14));
                     break;
@@ -451,7 +444,6 @@ namespace BoSSS.Foundation.XDG {
 
                     case MomentFittingVariants.ExactCircle:
                         return new ExactCircleLevelSetIntegration(levSetIndex, this.m_LevelSetDatas[levSetIndex].GridDat, Kref);
-                    case MomentFittingVariants.SayeNoComplementary:
                     case MomentFittingVariants.Saye:
                         var comboFactory = Quadrature.SayeFactories.SayeGaussRule_Combo(
                                 this.m_LevelSetDatas[levSetIndex],
