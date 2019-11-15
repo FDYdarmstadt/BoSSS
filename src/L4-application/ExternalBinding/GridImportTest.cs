@@ -155,12 +155,10 @@ namespace BoSSS.Application.ExternalBinding {
 
         public static void Main() {
 
-            Common_.BoSSSInitialize();
+            var c = new Initializer();
+            c.BoSSSInitialize();
 
             int nCells = 9;
-
-
-
 
             int nPoints = points.GetLength(0);
             int nFaces = owner.Length;
@@ -169,11 +167,8 @@ namespace BoSSS.Application.ExternalBinding {
 
 
 
-            var g = GridServer.FOAMmesh_to_BoSSS(nCells, faces, neighbour, owner, points);
+            var g = new OpenFOAMGrid(nCells, faces, neighbour, owner, points);
             Console.WriteLine("");
-
-            //var gd = new GridData(g);
-
 
         }
 

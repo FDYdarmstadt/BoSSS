@@ -24,6 +24,7 @@ using System.Linq;
 using System.Diagnostics;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
@@ -374,12 +375,14 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     lsData.GridDat.Grid.RefElements[0].TransformFaceCoordinates(
                         e, edgeVertices, volumeVertices);
 
-                    double[] start = new double[D];
-                    double[] end = new double[D];
-                    for (int d = 0; d < D; d++) {
-                        start[d] = volumeVertices[0, d];
-                        end[d] = volumeVertices[1, d];
-                    }
+                    //double[] start = new double[D];
+                    //double[] end = new double[D];
+                    //for (int d = 0; d < D; d++) {
+                    //    start[d] = volumeVertices[0, d];
+                    //    end[d] = volumeVertices[1, d];
+                    //}
+                    var start = volumeVertices.GetRowPt(0);
+                    var end = volumeVertices.GetRowPt(1);
                     LineSegment newSegment = new LineSegment(D, this.RefElement, start, end, rootFindingAlgorithm: RootFindingAlgorithm);
 
                     // Assert that the segment does not already exist

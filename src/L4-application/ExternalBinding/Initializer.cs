@@ -8,59 +8,56 @@ using System.Runtime.Serialization.Formatters.Binary;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation;
 using ilPSP;
+using ilPSP.Connectors;
 
 namespace BoSSS.Application.ExternalBinding {
-	public static class Common_ {
+	public class Initializer : IForeignLanguageProxy {
 				
 
-        /*
-		/// <summary>
-		/// releases all C# - references on an object, making it ready for garbage-collection.
-		/// </summary>
-		public static void ReleaseObject(ref int _ref, out int ierr) {
-			ierr = 0;
-			try {
-				object o = Infrastructure.GetObject(_ref);	
-				if( o is IDisposable) 
-					((IDisposable)o).Dispose();
-				Infrastructure.ForgetObject(_ref);
-			} catch (Exception e) {
-				ierr = Infrastructure.ErrorHandler(e);
-			}
-		}
-        */
-
-            /*
-        /// <summary>
-        /// A test function to verify that the interface is working; withes a hello message.
-        /// </summary>
-        /// <param name="dummy">
-        /// Test for input parameter: a dummy number, which is printed to the stdout.
-        /// </param>
-        /// <param name="ierr">
-        /// Test for return parameter: on exit, always the number of the beast (666).
-        /// </param>
-        public static void Test(ref int dummy, out int ierr) {
-            ierr = 666;
-            Console.WriteLine("Hello from Test: " + (dummy));
-        }
-		
-		*/
 		static bool mustFinalizeMPI;
 
         /// <summary>
-        /// 
+        /// Load(lookup of native libraries
         /// </summary>
-		public static void BoSSSInitialize() {
+        [CodeGenExport]
+        public void BoSSSInitialize() {
             ilPSP.Environment.Bootstrap(new string[0], BoSSS.Solution.Application.GetBoSSSInstallDir(), out mustFinalizeMPI);
 			//Console.WriteLine("elo from " +  Enviroment.MPIEnv.MPI_Rank + " of " + Enviroment.MPIEnv.MPI_Size);
 		}
-		
-		public static void BoSSSFinalize() {
+
+        /// <summary>
+        /// MPI shutdown
+        /// </summary>
+        [CodeGenExport]
+        public void BoSSSFinalize() {
 			if(mustFinalizeMPI)
 				MPI.Wrappers.csMPI.Raw.mpiFinalize();
 		}
-	}
+
+        IntPtr m_ForeignPtr;
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public void _SetForeignPointer(IntPtr ptr) {
+            if (ptr == IntPtr.Zero) {
+                m_ForeignPtr = IntPtr.Zero;
+            } else {
+
+                if (m_ForeignPtr != IntPtr.Zero) {
+                    throw new ApplicationException("already registered");
+                }
+                m_ForeignPtr = ptr;
+            }
+        }
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public IntPtr _GetForeignPointer() {
+            return m_ForeignPtr;
+        }
+    }
 
 	/*
 	public static class MsrMatrix_ {
