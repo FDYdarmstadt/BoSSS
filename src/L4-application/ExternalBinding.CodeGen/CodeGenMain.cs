@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using BoSSS.Application.ExternalBinding;
+using ilPSP.Connectors;
 
 namespace BoSSS.Application.ExternalBinding.CodeGen {
 

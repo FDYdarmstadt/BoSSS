@@ -30,6 +30,7 @@ using ilPSP.Utils;
 using log4net;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.RefElements;
+using ilPSP.Connectors;
 
 namespace BoSSS.Foundation.Grid.Classic {
 
@@ -39,7 +40,9 @@ namespace BoSSS.Foundation.Grid.Classic {
     /// disk but computed at run-time, i.e. load-time. This information is
     /// essential for the Discontinuous Galerkin algorithms.
     /// </summary>
-    sealed public partial class GridData : IGridData {
+    sealed public partial class GridData : IGridData, IForeignLanguageProxy {
+
+
 
         private static ILog Logger = LogManager.GetLogger(typeof(GridData));
 
@@ -1750,5 +1753,29 @@ namespace BoSSS.Foundation.Grid.Classic {
 
         BoundingBox m_GlobalBoundingBox;
 
+
+        IntPtr m_ForeignPtr;
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public void _SetForeignPointer(IntPtr ptr) {
+            if (ptr == IntPtr.Zero) {
+                m_ForeignPtr = IntPtr.Zero;
+            } else {
+
+                if (m_ForeignPtr != IntPtr.Zero) {
+                    throw new ApplicationException("already registered");
+                }
+                m_ForeignPtr = ptr;
+            }
+        }
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public IntPtr _GetForeignPointer() {
+            return m_ForeignPtr;
+        }
     }
 }
