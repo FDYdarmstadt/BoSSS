@@ -1,0 +1,574 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 5 instances of IDatabaseInfo {
+  0: { Session Count = 40; Grid Count = 4; Path = \\dc1\userspace\kikker\cluster\cluster_db\Channel_ConvergenceStudy_Wi=0.0 }
+  1: { Session Count = 55; Grid Count = 4; Path = \\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_ConvergenceStudy_Wi=0.0 }
+  2: { Session Count = 45; Grid Count = 4; Path = \\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_ConvergenceStudy_Wi=0.5 }
+  3: { Session Count = 59; Grid Count = 11; Path = \\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag }
+  4: { Session Count = 45; Grid Count = 6; Path = \\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_unsteady }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+LastError
+**************
+==============
+using BoSSS.Application.Rheology;
+**************
+==============
+**************
+==============
+WorkflowMgm.Init("ConfinedCylinder_ConvergenceStudy_Wi=0.0_levelPMG");
+**************
+Project name is set to 'ConfinedCylinder_ConvergenceStudy_Wi=0.0_levelPMG'.
+
+==============
+var myDb = OpenOrCreateDatabase(@"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_ConvergenceStudy_Wi=0.0");
+**************
+Opening existing database '\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_ConvergenceStudy_Wi=0.0'.
+
+==============
+//var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\kikker\deploy_dir\","hpccluster",ComputeNodes : new[] {"hpccluster"});
+var myBatch = new MiniBatchProcessorClient(@"\\dc1\userspace\kikker\cluster\ConfinedCylinder");
+**************
+==============
+MiniBatchProcessor.Server.StartIfNotRunning();
+**************
+Starting mini batch processor in external process...
+Started mini batch processor on local machine, process id is 24916.
+
+==============
+// ======================
+// Convergence Parameters
+// ======================
+**************
+==============
+int[] pOrder = new int[] {1, 2, 3, 4};
+int numberGrids = 4;
+**************
+==============
+// ===============================
+// Init grids and save to database
+// ===============================
+**************
+==============
+GridCommons[] grids = new GridCommons[numberGrids];
+//GridCommons grid;
+for (int k = 0; k < numberGrids; k++) {
+    //int k = 2;
+Gmsh gmshGrid         = new Gmsh(@"c:\Users\kikker\AnnesBoSSSdb\Cylinder_GRIDS\mesh_karman_OriginalBox_MEDIUM_"+k+"_half.msh");
+GridCommons bosssGrid = gmshGrid.GenerateBoSSSGrid();
+bosssGrid.Name        = "confined_cylinder";
+bosssGrid.EdgeTagNames.Add(1, "Velocity_inlet");
+//bosssGrid.EdgeTagNames.Add(2, "Wall_bottom");
+bosssGrid.EdgeTagNames.Add(2, "Freeslip");
+bosssGrid.EdgeTagNames.Add(3, "Wall_top");
+bosssGrid.EdgeTagNames.Add(4, "Pressure_Outlet");
+bosssGrid.EdgeTagNames.Add(5, "Wall_cylinder");
+
+Func<double[], byte> edgeTagFunc = delegate (double[] X) {
+                    double x = X[0];
+                    double y = X[1];
+//                  if (!C.FixedStreamwisePeriodicBC)
+//                  {
+                      if (Math.Abs(x - (-15)) < 1.0e-10)
+                          return 1;
+                      if (Math.Abs(x - (15)) < 1.0e-10)
+                          return 4;
+//                  }
+                    //if (Math.Abs(y - (-2)) < 1.0e-10)
+                    //    return 2;
+                    
+                    if (Math.Abs(y - (0)) < 1.0e-10)
+                        return 2;
+                    
+                    if (Math.Abs(y - (+2)) < 1.0e-10)
+                        return 3;
+                    
+                    //if (-1.0 < y && y < 1.0 && -1.0 < x  && x < 1.0)
+                    //    return 5;
+                    
+                    if (0.0 < y && y < 1.0 && -1.0 < x  && x < 1.0)
+                        return 5;
+                    
+                    throw new ArgumentOutOfRangeException("at x = " + x + "and y = " +y);
+};
+
+bosssGrid.DefineEdgeTags(edgeTagFunc);            
+//myDb.Controller.SaveGridInfo(bosssGrid);
+myDb.SaveGrid(ref bosssGrid);
+//grid = bosssGrid;   
+grids[k] = bosssGrid;           
+ }
+**************
+
+An equivalent grid is already present in the database -- the grid will not be saved.
+
+An equivalent grid is already present in the database -- the grid will not be saved.
+
+An equivalent grid is already present in the database -- the grid will not be saved.
+
+An equivalent grid is already present in the database -- the grid will not be saved.
+
+==============
+**************
+==============
+LastError
+**************
+==============
+// =====================================
+// setup control object for a solver run
+// =====================================
+**************
+==============
+using BoSSS.Solution.AdvancedSolvers;
+**************
+==============
+//Physical Params
+double u0                   = 1.5; // 0.375;// 0.66;// 3 / 2;
+double h                    = 4;
+double beta                 = 0.59;
+double Reynolds             = 1;
+double Weissenberg          = 0.0; //aim Weissenberg number!
+bool RaiseWeissenberg       = false;
+double WeissenbergIncrement = 0.1;
+**************
+==============
+// Set Initial Conditions  
+static class InitialValues {
+    
+    static double u0                   = 1.5; // 0.375;// 0.66;// 3 / 2;
+    static double h                    = 4;
+    static double beta                 = 0.59;
+    static double Reynolds             = 1;
+    static double Weissenberg          = 0.0; //aim Weissenberg number!
+    
+    public static double VelocityXfunction(double[] X) {
+        return u0 * (1  - (X[1] *  X[1])/h);
+    }
+
+    public static double VelocityYfunction(double[] X) {
+        return 0.0;
+    }
+
+    public static double Pressurefunction(double[] X) {
+        return u0 * 0.5 * Reynolds * (35 - X[0]);
+    }
+    
+    public static double StressXXfunction(double[] X) {
+        return 2 * Weissenberg * (1 - beta) * u0 * (-2 / h) * X[1] * u0 * (-2 / h) * X[1];
+    }
+    
+    public static double StressXYfunction(double[] X) {
+        return (1 - beta) * u0 * (-2 / h) * X[1];
+    }
+    
+    public static double StressYYfunction(double[] X) {
+        return 0.0;
+    }
+    public static double Phi(double[] X) {
+        return -1.0;
+    }
+}          
+**************
+==============
+//Set boundary conditions
+var Wall = new Formula("X => 0");
+**************
+==============
+List<RheologyControl> Controls = new List<RheologyControl>();
+**************
+==============
+pOrder;
+**************
+List of 4 instances of Int32 {
+  0: 1
+  1: 2
+  2: 3
+  3: 4
+}
+==============
+grids;
+**************
+List of 4 instances of GridCommons {
+  0: { Guid = 8ee81c34-79d3-43ea-a4da-75200314515d; Name = confined_cylinder; Cell Count = 320; Dim = 2 }
+  1: { Guid = 7f091341-034e-40a0-82b3-49a3e7793da3; Name = confined_cylinder; Cell Count = 1208; Dim = 2 }
+  2: { Guid = 6cba560e-00c9-45c6-8675-01bc6bb47671; Name = confined_cylinder; Cell Count = 4252; Dim = 2 }
+  3: { Guid = daa1e93e-dbc9-4bc3-992b-73ed27dd255a; Name = confined_cylinder; Cell Count = 14712; Dim = 2 }
+}
+==============
+Controls.Clear();
+foreach(int degree in pOrder) {
+    int elemInd = 0;
+foreach(GridCommons grd in grids) {
+//GridCommons grd = grid;
+    //Database
+    RheologyControl C = new RheologyControl();
+    C.savetodb        = true;
+    C.DbPath          = myDb.Path;
+    C.ProjectName     = "Cylinder";
+    C.SetGrid(grd);
+    C.TracingNamespaces = "BoSSS,ilPSP";
+
+    //SolverChooser
+    C.NonLinearSolver.MaxSolverIterations  = 100;
+    C.NonLinearSolver.MinSolverIterations  = 3;
+    C.NonLinearSolver.ConvergenceCriterion = 1E-6;
+    C.LinearSolver.MaxSolverIterations     = 100;
+    C.LinearSolver.MinSolverIterations     = 3;          
+    C.LinearSolver.ConvergenceCriterion    = 1E-6;
+    C.NonLinearSolver.SolverCode           = NonLinearSolverCode.Newton;
+    C.LinearSolver.SolverCode              = LinearSolverCode.exp_OrthoS_pMG;//classic_pardiso;//_mumps;
+    C.useJacobianForOperatorMatrix         = false;
+
+    //Timestepping
+    C.NoOfTimesteps      = 1;
+    C.dt                 = 1E20;
+    C.dtMax              = C.dt;
+    C.dtMin              = C.dt;
+    C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
+    C.ObjectiveParam     = 1.0;
+
+    //Configuration Shock capturing and body forces
+    C.UsePerssonSensor       = false;
+    C.SensorLimit            = 1e-4;
+    C.AdaptiveMeshRefinement = false;
+    C.RefinementLevel        = 10;
+    C.UseArtificialDiffusion = false;
+    C.Bodyforces             = true;
+
+    //Physical parameters
+    C.beta                 = beta;
+    C.Reynolds             = Reynolds;
+    C.Weissenberg          = Weissenberg; //aim Weissenberg number!
+    C.RaiseWeissenberg     = RaiseWeissenberg;
+    C.WeissenbergIncrement = WeissenbergIncrement;
+
+    //Penalties
+    C.ViscousPenaltyScaling = 1;
+    C.Penalty2              = 1;
+    C.Penalty1[0]           = 0.0;
+    C.Penalty1[1]           = 0.0;
+    C.PresPenalty2          = 1;  
+    C.PresPenalty1[0]       = 0.0;
+    C.PresPenalty1[1]       = 0.0;
+    C.alpha                 = 1;  
+    C.StressPenalty         = 1.0;
+
+    //Create Fields
+    C.FieldOptions.Add("VelocityX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+    C.FieldOptions.Add("VelocityY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+    C.FieldOptions.Add("Pressure", new FieldOpts() { Degree = degree - 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+
+    C.FieldOptions.Add("StressXX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+    C.FieldOptions.Add("StressXY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+    C.FieldOptions.Add("StressYY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+
+    C.FieldOptions.Add("ResidualMomentumX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+    C.FieldOptions.Add("ResidualMomentumY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+    C.FieldOptions.Add("ResidualConti", new FieldOpts() { Degree = degree - 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+
+    C.FieldOptions.Add("ResidualStressXX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+    C.FieldOptions.Add("ResidualStressXY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+    C.FieldOptions.Add("ResidualStressYY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+
+    C.FieldOptions.Add("PhiDG", new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+    C.FieldOptions.Add("Phi", new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+
+    //Set initial values
+    C.InitialValues.Add("VelocityX", GetFormulaObject(InitialValues.VelocityXfunction));
+    C.InitialValues.Add("VelocityY", GetFormulaObject(InitialValues.VelocityYfunction));
+    C.InitialValues.Add("StressXX", GetFormulaObject(InitialValues.StressXXfunction));
+    C.InitialValues.Add("StressXY", GetFormulaObject(InitialValues.StressXYfunction));
+    C.InitialValues.Add("StressYY", GetFormulaObject(InitialValues.StressYYfunction));
+    C.InitialValues.Add("Phi", GetFormulaObject(InitialValues.Phi));
+
+    //Set Boundary Conditions
+    //C.AddBoundaryValue("Wall_bottom", "VelocityX", Wall);
+    //C.AddBoundaryValue("Wall_bottom", "VelocityY", Wall);
+    C.AddBoundaryValue("Wall_top", "VelocityX", Wall);
+    C.AddBoundaryValue("Wall_top", "VelocityY", Wall);
+    C.AddBoundaryValue("Wall_cylinder", "VelocityX", Wall);
+    C.AddBoundaryValue("Wall_cylinder", "VelocityY", Wall);
+
+    C.AddBoundaryValue("Velocity_inlet", "VelocityX", GetFormulaObject(InitialValues.VelocityXfunction));
+    C.AddBoundaryValue("Velocity_inlet", "VelocityY", GetFormulaObject(InitialValues.VelocityYfunction));
+    C.AddBoundaryValue("Velocity_inlet", "StressXX", GetFormulaObject(InitialValues.StressXXfunction));
+    C.AddBoundaryValue("Velocity_inlet", "StressXY", GetFormulaObject(InitialValues.StressXYfunction));
+    C.AddBoundaryValue("Velocity_inlet", "StressYY", GetFormulaObject(InitialValues.StressYYfunction)); 
+    C.AddBoundaryValue("Pressure_Outlet");
+    C.AddBoundaryValue("Freeslip");
+            
+    //Save Session and next...
+    C.SessionName = "ConfinedCylinder_ConvergenceStudy_p"+degree+"_meshNo"+elemInd+"_Wi0.0_half_levelPMG";
+    Controls.Add(C);
+    elemInd += 1;
+    Console.WriteLine("Created control: " + C.SessionName);
+ }
+}
+**************
+Created control: ConfinedCylinder_ConvergenceStudy_p1_meshNo0_Wi0.0_half_levelPMG
+Created control: ConfinedCylinder_ConvergenceStudy_p1_meshNo1_Wi0.0_half_levelPMG
+Created control: ConfinedCylinder_ConvergenceStudy_p1_meshNo2_Wi0.0_half_levelPMG
+Created control: ConfinedCylinder_ConvergenceStudy_p1_meshNo3_Wi0.0_half_levelPMG
+Created control: ConfinedCylinder_ConvergenceStudy_p2_meshNo0_Wi0.0_half_levelPMG
+Created control: ConfinedCylinder_ConvergenceStudy_p2_meshNo1_Wi0.0_half_levelPMG
+Created control: ConfinedCylinder_ConvergenceStudy_p2_meshNo2_Wi0.0_half_levelPMG
+Created control: ConfinedCylinder_ConvergenceStudy_p2_meshNo3_Wi0.0_half_levelPMG
+Created control: ConfinedCylinder_ConvergenceStudy_p3_meshNo0_Wi0.0_half_levelPMG
+Created control: ConfinedCylinder_ConvergenceStudy_p3_meshNo1_Wi0.0_half_levelPMG
+Created control: ConfinedCylinder_ConvergenceStudy_p3_meshNo2_Wi0.0_half_levelPMG
+Created control: ConfinedCylinder_ConvergenceStudy_p3_meshNo3_Wi0.0_half_levelPMG
+Created control: ConfinedCylinder_ConvergenceStudy_p4_meshNo0_Wi0.0_half_levelPMG
+Created control: ConfinedCylinder_ConvergenceStudy_p4_meshNo1_Wi0.0_half_levelPMG
+Created control: ConfinedCylinder_ConvergenceStudy_p4_meshNo2_Wi0.0_half_levelPMG
+Created control: ConfinedCylinder_ConvergenceStudy_p4_meshNo3_Wi0.0_half_levelPMG
+
+==============
+**************
+==============
+// ===========
+// Launch Jobs
+// ===========
+**************
+==============
+Controls.Count;
+**************
+16
+==============
+int[] procs = new int[] {4};
+foreach(var ctrl in Controls) {
+foreach (int element in procs){
+var oneJob              = ctrl.CreateJob();
+oneJob.NumberOfMPIProcs = element;
+oneJob.ExecutionTime    = "24:00:00";
+oneJob.Activate(myBatch);
+}
+}
+**************
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-00
+Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
+copied 26 files.
+   writing file: control.obj
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-01
+Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
+copied 26 files.
+   writing file: control.obj
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-03
+Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
+copied 26 files.
+   writing file: control.obj
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-05
+Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
+copied 26 files.
+   writing file: control.obj
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-12
+Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
+copied 26 files.
+   writing file: control.obj
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-15
+Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
+copied 26 files.
+   writing file: control.obj
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-17
+Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
+copied 26 files.
+   writing file: control.obj
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-25
+Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
+copied 26 files.
+   writing file: control.obj
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-27
+Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
+copied 26 files.
+   writing file: control.obj
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-29
+Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
+copied 26 files.
+   writing file: control.obj
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-37
+Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
+copied 26 files.
+   writing file: control.obj
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-39
+Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
+copied 26 files.
+   writing file: control.obj
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-44
+Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
+copied 26 files.
+   writing file: control.obj
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-45
+Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
+copied 26 files.
+   writing file: control.obj
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-47
+Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
+copied 26 files.
+   writing file: control.obj
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct09_11-33-55
+Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
+copied 26 files.
+   writing file: control.obj
+deployment finished.
+
+==============
+LastError
+**************
+==============
+WorkflowMgm.AllJobs
+**************
+System.Reflection.TargetInvocationException occurred: Exception has been thrown by the target of an invocation.. Type 'LastError' for details.
+
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

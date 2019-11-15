@@ -9,6 +9,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.RefElements;
 using static BoSSS.Foundation.XDG.Quadrature.HMF.LineSegment;
 using ilPSP;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Foundation.XDG.Quadrature
 {
@@ -25,7 +26,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         int iKref;
 
-        public enum QuadratureMode { Surface, Volume, Combo };
+        public enum QuadratureMode { Surface, PositiveVolume, NegativeVolume, Combo };
 
         QuadratureMode mode;
 
@@ -56,7 +57,11 @@ namespace BoSSS.Foundation.XDG.Quadrature
             bool IsSurfaceIntegral = (mode == QuadratureMode.Surface);
 
             LinearPSI<Cube> psi = new LinearPSI<Cube>(Cube.Instance);
-            Tuple<LinearPSI<Cube>, int> psi_i_s_i = new Tuple<LinearPSI<Cube>, int>(psi, 1);
+            int domainSign = 1;
+            if (mode == QuadratureMode.NegativeVolume) {
+                domainSign = -1;
+            }
+            Tuple<LinearPSI<Cube>, int> psi_i_s_i = new Tuple<LinearPSI<Cube>, int>(psi, domainSign);
             LinearSayeSpace<Cube> arg = new LinearSayeSpace<Cube>(Cube.Instance, psi_i_s_i, IsSurfaceIntegral);
             arg.Reset();
             return arg;
@@ -386,9 +391,11 @@ namespace BoSSS.Foundation.XDG.Quadrature
         protected override double[] FindRoots(LinearPSI<Cube> psi, MultidimensionalArray X, int heightDirection, double[] bounds, int cell)
         {
             MultidimensionalArray XonPsi = psi.ProjectOnto(X);
-            XonPsi = XonPsi.ExtractSubArrayShallow( 0, -1 );
-            double[] start = XonPsi.To1DArray();
-            double[] end = XonPsi.To1DArray();
+            //XonPsi = XonPsi.ExtractSubArrayShallow( 0, -1 );
+            //double[] start = XonPsi.To1DArray();
+            //double[] end = XonPsi.To1DArray();
+            Vector start = XonPsi.GetRowPt(0);
+            Vector end = XonPsi.GetRowPt(0);
 
             start[heightDirection] = -1;
             end[heightDirection] = 1;

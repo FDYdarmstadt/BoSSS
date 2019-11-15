@@ -2,6 +2,7 @@
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
+using ilPSP.Connectors;
 using ilPSP.LinSolvers;
 using System;
 using System.Collections.Generic;
@@ -12,13 +13,40 @@ using System.Threading.Tasks;
 namespace BoSSS.Application.ExternalBinding {
     
 
-    public static class FixedOperators_ {
+    public class FixedOperators : IForeignLanguageProxy {
 
-        unsafe public static void Laplacian(ref int GridRef, 
+        IntPtr m_ForeignPtr;
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public void _SetForeignPointer(IntPtr ptr) {
+            if (ptr == IntPtr.Zero) {
+                m_ForeignPtr = IntPtr.Zero;
+            } else {
+
+                if (m_ForeignPtr != IntPtr.Zero) {
+                    throw new ApplicationException("already registered");
+                }
+                m_ForeignPtr = ptr;
+            }
+        }
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public IntPtr _GetForeignPointer() {
+            return m_ForeignPtr;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [CodeGenExport]
+        public void Laplacian(OpenFOAMGrid grid, 
             ref int DgDegree,
-
             out int ierr) {
-            try {
+            
                 // grid, etc
                 // =========
 
@@ -46,10 +74,7 @@ namespace BoSSS.Application.ExternalBinding {
 
                 throw new NotImplementedException("todo");
 
-            } catch (Exception e) {
-                ierr = Infrastructure.ErrorHandler(e);
-            }
-            ierr = 0;
+            
         }
 
 

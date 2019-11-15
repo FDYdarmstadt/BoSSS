@@ -153,6 +153,8 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         exp_gmres_levelpmg = 47,
 
+        exp_gmres_schwarz_pmg = 48,
+
         /// <summary>
         /// highly experimental shit
         /// </summary>
@@ -162,6 +164,8 @@ namespace BoSSS.Solution.Control {
         /// Orthonormalization Scheme with p-multigrid preconditioner
         /// </summary>
         exp_OrthoS_pMG = 51,
+
+        
 
         selfmade = 999,
     }

@@ -69,21 +69,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
             int D = N.Length;
             Debug.Assert(this.ArgumentOrdering.Count == 3);
-            //Debug.Assert(Grad_uA.GetLength(0) == this.ArgumentOrdering.Count);
-            //Debug.Assert(Grad_uB.GetLength(0) == this.ArgumentOrdering.Count);
-            //Debug.Assert(Grad_uA.GetLength(1) == D);
-            //Debug.Assert(Grad_uB.GetLength(1) == D);
-
-            //double[] Grad_uA_xN = new double[2], Grad_uB_xN = new double[2];
-            //double Grad_vA_xN = 0, Grad_vB_xN = 0;
-            //for (int d = 0; d < D; d++) {
-            //    for (int dd = 0; dd < D; dd++) {
-            //        Grad_uA_xN[dd] += Grad_uA[dd, d] * N[d];
-            //        Grad_uB_xN[dd] += Grad_uB[dd, d] * N[d];
-            //    }
-            //    Grad_vA_xN += Grad_vA[d] * N[d];
-            //    Grad_vB_xN += Grad_vB[d] * N[d];
-            //}
 
             double PosCellLengthScale = PosLengthScaleS[inp.jCell];
             double NegCellLengthScale = NegLengthScaleS[inp.jCell];
@@ -99,21 +84,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
             double res = 0;
 
-
-            res +=( 0.5 * (TA[0]* muA + TB[0]* muB) * N[0] + 0.5 * (TA[1]* muA + TB[1]* muB) * N[1]) *(vA-vB); // central difference for stress divergence
-
-            switch (component) {
-                case 0:
-                    res += -penalty2 / hCellMin * (TA[2]* muA - TB[2]* muB) * (vA - vB);
-                    break;
-                case 1:
-                    res += -penalty2 / hCellMin * (TA[2] * muA - TB[2]* muB) * (vA - vB);
-                    break;
-                default:
-                    throw new NotImplementedException();
-
-
-            }
+            res -= (0.5 * (TA[0] * muA + TB[0] * muB) * N[0] + 0.5 * (TA[1] * muA + TB[1] * muB) * N[1]) * (vA - vB); // central difference for stress divergence
+            res += penalty2 / hCellMin * (TA[2] * muA - TB[2] * muB) * (vA - vB);
 
             return  res;
         }

@@ -21,6 +21,7 @@ using System.Runtime.InteropServices;
 using System.Diagnostics;
 using ilPSP.Utils;
 using ilPSP;
+using System.Collections;
 
 namespace BoSSS.Platform.LinAlg {
 
@@ -28,7 +29,7 @@ namespace BoSSS.Platform.LinAlg {
     /// A spatial coordinate or vector, in 1D, 2D, 3D
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    public struct Vector {
+    public struct Vector : IList<double> {
 
         /// <summary>
         /// initializes a <paramref name="D"/>-dimensional vector.
@@ -88,12 +89,12 @@ namespace BoSSS.Platform.LinAlg {
 
             this.Dim = X.Length;
             x = X[0];
-            if(this.Dim > 1)
+            if (this.Dim > 1)
                 y = X[1];
             else
                 y = 0;
 
-            if(this.Dim > 2)
+            if (this.Dim > 2)
                 z = X[2];
             else
                 z = 0;
@@ -151,6 +152,24 @@ namespace BoSSS.Platform.LinAlg {
         /// </summary>
         public int Dummy_256bitAlign;
 
+        /// <summary>
+        /// equal to <see cref="Dim"/>
+        /// </summary>
+        public int Count {
+            get {
+                return Dim;
+            }
+        }
+
+        /// <summary>
+        /// always true, according to interface definition: elements can be changed, but no elements can be added/removed
+        /// </summary>
+        public bool IsReadOnly {
+            get {
+                return true;
+            }
+        }
+
 
         /// <summary>
         /// set/get entries
@@ -199,6 +218,15 @@ namespace BoSSS.Platform.LinAlg {
             this.x += v.x;
             this.y += v.y;
             this.z += v.z;
+        }
+
+        /// <summary>
+        /// sets all entries to 0.0
+        /// </summary>
+        public void Clearentries() {
+            this.x = 0.0;
+            this.y = 0.0;
+            this.z = 0.0;
         }
 
         /// <summary>
@@ -456,7 +484,7 @@ namespace BoSSS.Platform.LinAlg {
         /// </summary>
         /// <param name="a">1st operand</param>
         /// <param name="b">2nd operand</param>
-        /// <returns>a*b*</returns>
+        /// <returns>a*b</returns>
         public static double operator *(Vector a, Vector b) {
              if(a.Dim != b.Dim)
                 throw new ArgumentException("Dimension mismatch");
@@ -465,10 +493,10 @@ namespace BoSSS.Platform.LinAlg {
         }
 
         /// <summary>
-        /// Implicit conversion an array of doubles of length 2
+        /// Implicit conversion an array of doubles of length <see cref="Dim"/>
         /// </summary>
         /// <param name="v">The vector to be converted</param>
-        /// <returns>An array of doubles of length 2</returns>
+        /// <returns>An array of doubles of length <see cref="Dim"/></returns>
         public static implicit operator double[] (Vector v) {
             switch(v.Dim) {
                 case 1:
@@ -596,6 +624,104 @@ namespace BoSSS.Platform.LinAlg {
 
             for (int i = 0; i < length; i++) {
                 destination[i + destinationIndex] = this[i];
+            }
+        }
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public int IndexOf(double item) {
+            for(int d = 0; d < Dim; d++) {
+                if (item == this[d])
+                    return d;
+            }
+            return -1;
+        }
+
+        /// <summary>
+        /// not supported - read-only (<see cref="Dim"/> could be changed)
+        /// </summary>
+        public void Insert(int index, double item) {
+            throw new NotSupportedException("Read-Only.");
+        }
+
+        /// <summary>
+        /// not supported - read-only (<see cref="Dim"/> could be changed)
+        /// </summary>
+        public void RemoveAt(int index) {
+            throw new NotSupportedException("Read-Only.");
+        }
+
+        /// <summary>
+        /// not supported - read-only (<see cref="Dim"/> could be changed)
+        /// </summary>
+        public void Add(double item) {
+            throw new NotSupportedException("Read-Only.");
+        }
+
+        /// <summary>
+        /// not supported - read-only (<see cref="Dim"/> could be changed)
+        /// </summary>
+        public void Clear() {
+            throw new NotSupportedException("Read-Only (to set all entries to 0.0, use 'ClearEntries(...)'.");
+        }
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public bool Contains(double item) {
+            return this.IndexOf(item) >= 0;
+        }
+
+        /// <summary>
+        /// not supported - read-only (<see cref="Dim"/> could be changed)
+        /// </summary>
+        public bool Remove(double item) {
+            throw new NotSupportedException("Read-Only.");
+        }
+
+        public IEnumerator<double> GetEnumerator() {
+            return new MyEnum(this);
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() {
+            return GetEnumerator();
+        }
+
+        class MyEnum : IEnumerator<double> {
+            internal MyEnum(Vector __vec) {
+                vec = __vec;
+            }
+
+            private Vector vec;
+            int pos = -1;
+
+            public double Current {
+                get {
+                    if (pos < 0)
+                        throw new InvalidOperationException();
+                    if (pos >= vec.Dim)
+                        throw new InvalidOperationException();
+                    return vec[pos];
+                }
+            }
+
+            object IEnumerator.Current {
+                get {
+                    return Current;
+                }
+            }
+
+            public void Dispose() {
+            }
+
+            public bool MoveNext() {
+                pos++;
+                return (pos < vec.Dim);
+            }
+
+            public void Reset() {
+                pos = -1;
             }
         }
     }
