@@ -1235,26 +1235,22 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             // Solver Options
-            C.LinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.MinSolverIterations = 1;
-            C.NonLinearSolver.MaxSolverIterations = 100;
-            C.NonLinearSolver.MinSolverIterations = 1;
+            //C.LinearSolver.MaxSolverIterations = 100;
+            //C.LinearSolver.MinSolverIterations = 1;
+            //C.NonLinearSolver.MaxSolverIterations = 100;
+            //C.NonLinearSolver.MinSolverIterations = 1;
             C.savetodb = false;
             C.DbPath = null;
-            C.ProjectName = "ChannelFlow";
-            C.SessionName = "Channel";
-            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.ProjectName = "Incompressibel";
+            C.SessionName = "DrivenCavity";
+            //C.LinearSolver.NoOfMultigridLevels = 1;
 
             // Calculate Navier-Stokes? 
             C.PhysicalParameters.IncludeConvection = true;
 
             // Timestepper
             C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.ImplicitEuler;
-            double dt = 1E50;
-            C.dtMax = dt;
-            C.dtMin = dt;
-            C.Endtime = 60;
-            C.NoOfTimesteps = 1;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
 
             // Physical values
             C.PhysicalParameters.rho_A = 1;
@@ -1264,26 +1260,7 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             // Create Fields
-            C.FieldOptions.Add("VelocityX", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = k - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            C.SetDGdegree(k);
 
             // Create Grid
             C.GridFunc = delegate {
@@ -1331,9 +1308,8 @@ namespace BoSSS.Application.IBM_Solver {
             VelocityYex = (X, t) => (0);
             Pressure = (X, t) => (0);
 
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.PicardGMRES;
-
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_Schur;
+            //C.NonLinearSolver.SolverCode = NonLinearSolverCode.PicardGMRES;
+            //C.LinearSolver.SolverCode = LinearSolverCode.exp_Schur;
 
 
 
