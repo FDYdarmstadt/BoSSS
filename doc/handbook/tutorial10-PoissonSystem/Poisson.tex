@@ -348,10 +348,6 @@ class Gradient\_d : \newline
 \btab public TermActivationFlags BoundaryEdgeTerms \{ \newline 
 \btab    get \{ return TermActivationFlags.AllOn; \} \newline 
 \btab \} \newline 
-	/// Because we are not testing performance, we use the vectorized implementation if avaliable
-\btab bool IEquationComponent.IgnoreVectorizedImplementation \{ \newline 
-\btab \btab get \{ return false; \} \newline 
-\btab \} \newline 
  \newline 
     /// Now, we implement 
     /// \begin{itemize}
@@ -434,10 +430,7 @@ public class Identity :  \newline
  \newline 
 \btab public IList<String> ArgumentOrdering \{  \newline 
 \btab \btab get \{ return new string[] \{ component \}; \}  \newline 
-\btab \}
-\btab bool IEquationComponent.IgnoreVectorizedImplementation \{ \newline 
-\btab \btab get \{ return false; \} \newline 
-\btab \} \newline  
+\btab \} 
  \newline 
 \btab public TermActivationFlags VolTerms \{ \newline 
 \btab \btab get \{ \newline 

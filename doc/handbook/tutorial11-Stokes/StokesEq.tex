@@ -215,10 +215,6 @@ class Gradient\_d :\newline
 \btab public TermActivationFlags BoundaryEdgeTerms \{\newline 
 \btab    get \{ return TermActivationFlags.AllOn; \}\newline 
 \btab \}\newline 
-	/// Again, because we are not testing performance, we use the vectorized implementation if avaliable
-\btab bool IEquationComponent.IgnoreVectorizedImplementation \{ \newline 
-\btab \btab get \{ return false; \} \newline 
-\btab \}\newline 
  \newline 
     /// The volume integrand, for a vector-valued test-function $\vec{v}$
     /// would be $-\operatorname{div}{\vec{v}} \psi$. Our test function $v$
@@ -417,9 +413,6 @@ public class Viscous : \newline
 \btab \btab \}\newline 
 \btab \}\newline 
  \newline 
- \btab bool IEquationComponent.IgnoreVectorizedImplementation \{ \newline 
- \btab \btab get \{ return false; \} \newline 
- \btab \}\newline 
     /// The integrand for the volume integral:
 \btab public double VolumeForm(ref CommonParamsVol cpv, \newline 
 \btab \btab    double[] U, double[,] GradU,\newline 
