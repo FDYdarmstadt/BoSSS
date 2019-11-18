@@ -548,7 +548,43 @@ namespace BoSSS.Application.IBM_Solver {
                 OpMatrix.SaveToTextFileSparse("C:\\tmp\\FDmtx.txt");
                 OpAffine.SaveToTextFile("C:\\tmp\\FDaff.txt");
 
-               
+                {
+                    int L = _OpMatrix.NoOfCols;
+                    MultidimensionalArray __OpMatrix = MultidimensionalArray.Create(L, L);
+                    double eps = BLAS.MachineEps.Sqrt();
+                    double[] F0 = new double[L];
+                    double[] F1 = new double[L];
+                    var eval = IBM_Op.GetEvaluatorEx(LsTrk, CurrentState, Params, Mapping, FluidSpecies);
+                    eval.time = phystime;
+                    eval.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+
+                    ParameterUpdate(CurrentState, Params);
+                    eval.Evaluate(1.0, 0.0, F0);
+                    CoordinateVector CurrentStateVec = new CoordinateVector(CurrentState);
+                    var StateBkUp = CurrentStateVec.ToArray();
+                    double[] Diff = new double[L];
+                    for (int i = 0; i < L; i++) {
+                        if (i == 20)
+                            Console.Write("fuck");
+                        double bkup = CurrentStateVec[i];
+                        CurrentStateVec[i] += eps;
+
+                        F1.Clear();
+                        ParameterUpdate(CurrentState, Params);
+                        eval.Evaluate(1.0, 0.0, F1);
+
+                        Diff.SetV(F1);
+                        Diff.AccV(-1.0, F0);
+                        Diff.ScaleV(1 / eps);
+
+                        __OpMatrix.SetColumn(i, Diff);
+
+
+                        CurrentStateVec[i] = bkup;
+                    }
+                    __OpMatrix.SaveToTextFile("C:\\tmp\\AFmtx.txt");
+                }
+
 
 #if DEBUG
                 if (DelComputeOperatorMatrix_CallCounter == 1) {
