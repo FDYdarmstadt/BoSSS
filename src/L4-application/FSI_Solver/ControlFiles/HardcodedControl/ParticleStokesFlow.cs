@@ -46,8 +46,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================   
             double particleDensity = 100;
             C.Particles = new List<Particle>();
-            C.underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, relaxationFactor: 0.1, useAddaptiveUnderrelaxation: true);
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, true, false, C.underrelaxationParam, 0);
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, true, false, 0);
             C.Particles.Add(new Particle_Sphere(motion, 0.125, new double[] { 0.0, 0.0 },-90, 0, new double[] { 0, 0 }));
 
             // Quadrature rules
@@ -115,8 +114,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================   
             // Defining particles
             C.Particles = new List<Particle>();
-            C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.hydrodynamicsConvergenceCriterion, relaxationFactor: 1.0, useAddaptiveUnderrelaxation: true);
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 0);
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, 0);
             C.Particles.Add(new Particle_Sphere(motion, 0.25, new double[] { 0.0, 0.0 }, 0, 0, new double[] { 0, 0}));
 
             // Quadrature rules

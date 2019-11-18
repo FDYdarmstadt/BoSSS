@@ -15,19 +15,14 @@ limitations under the License.
 */
 
 using BoSSS.Application.FSI_Solver;
-using BoSSS.Application.IBM_Solver;
 using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
-using BoSSS.Solution.XdgTimestepping;
 using ilPSP;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace FSI_Solver {
     public class FSI_Auxillary {
@@ -134,100 +129,6 @@ namespace FSI_Solver {
         internal void ThrowIsInfinityException(double variable, string variableName) {
             if (double.IsInfinity(variable))
                 throw new ArithmeticException("Error during update of " + variableName + ", value is infinity.");
-        }
-
-        /// <summary>
-        /// Quicksort algorithm
-        /// </summary>
-        /// <param name="Leftelement">
-        /// The first element of the list to be sorted
-        /// </param>
-        /// <param name="RightElement">
-        /// The last element of the list to be sorted
-        /// </param>
-        /// <param name="Data">
-        /// The data to be sorted.
-        /// </param>
-        internal void Quicksort(int Leftelement, int RightElement, ref int[] Data) {
-            if (Leftelement < RightElement) {
-                int division = Quicksort_Divide(Leftelement, RightElement, ref Data);
-                Quicksort(Leftelement, division - 1, ref Data);
-                Quicksort(division + 1, RightElement, ref Data);
-            }
-        }
-
-        /// <summary>
-        /// Core routine of the quicksort algorithm, splits the list to be sorted
-        /// </summary>
-        /// <param name="Leftelement">
-        /// The first element of the list to be sorted
-        /// </param>
-        /// <param name="RightElement">
-        /// The last element of the list to be sorted
-        /// </param>
-        /// <param name="Data">
-        /// The data to be sorted.
-        /// </param>
-        private int Quicksort_Divide(int Leftelement, int RightElement, ref int[] Data) {
-            int i = Leftelement;
-            int j = RightElement - 1;
-            int pivot = Data[RightElement];
-
-            do {
-                while (Data[i] <= pivot && i < RightElement)
-                    i += 1;
-
-                while (Data[j] >= pivot && j > Leftelement)
-                    j -= 1;
-
-                if (i < j) {
-                    int z = Data[i];
-                    Data[i] = Data[j];
-                    Data[j] = z;
-                }
-
-            } while (i < j);
-
-            if (Data[i] > pivot) {
-                int z = Data[i];
-                Data[i] = Data[RightElement];
-                Data[RightElement] = z;
-            }
-            return i;
-        }
-        
-        /// <summary>
-        /// Residual for fully coupled system
-        /// </summary>
-        /// <param name="Particles">
-        /// A list of all particles
-        /// </param>
-        /// <param name="iterationCounter"></param>
-        /// <param name="MaximumIterations"></param>
-        /// <param name="Residual"></param>
-        /// <param name="IterationCounter_Out"> </param>
-        internal double CalculateParticleResidual(List<Particle> Particles, ref int iterationCounter) {
-            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            double residual = 0;
-            if (iterationCounter == 0)
-                residual = double.MaxValue;
-            else {
-                foreach (Particle p in Particles) {
-                    double diffForcesX = (p.Motion.GetForcesPreviousIteration()[0] - p.Motion.GetHydrodynamicForces(0)[0]).Pow2();
-                    double diffForcesY = (p.Motion.GetForcesPreviousIteration()[1] - p.Motion.GetHydrodynamicForces(0)[1]).Pow2();
-                    double diffTorque = (p.Motion.GetTorquePreviousIteration() - p.Motion.GetHydrodynamicTorque(0)).Pow2();
-                    double absSolution = Math.Sqrt(p.Motion.GetHydrodynamicForces(0)[0].Pow2() + p.Motion.GetHydrodynamicForces(0)[1].Pow2() + p.Motion.GetHydrodynamicTorque(0).Pow2());
-                    residual += Math.Sqrt(diffForcesX + diffForcesY + diffTorque) / absSolution;
-                }
-            }
-            residual /= Particles.Count();
-            iterationCounter += 1;
-            return residual;
-        }
-
-        internal void CheckForMaxIterations(int iterationCounter, int maximumIterations) {
-            if (iterationCounter > maximumIterations)
-                throw new ApplicationException("No convergence in coupled iterative solver, number of iterations: " + iterationCounter);
         }
 
         /// <summary>

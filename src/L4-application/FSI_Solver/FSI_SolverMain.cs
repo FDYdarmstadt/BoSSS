@@ -23,7 +23,6 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
 using BoSSS.Solution.NSECommon;
-using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;
 using FSI_Solver;
@@ -61,14 +60,6 @@ namespace BoSSS.Application.FSI_Solver {
             UpdateLevelSetParticles(phystime: 0.0);
             base.SetInitial();
         }
-        ///// <summary>
-        ///// all DG fields that were decorated by an <see cref="InstantiateFromControlFileAttribute"/>.
-        ///// </summary>
-        //protected ICollection<DGField> levelsetList = new List<DGField>();
-        //protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling) {
-        //    Tecplot.PlotFields(m_RegisteredFields, "IBM_Solver" + timestepNo, physTime, superSampling);
-        //    Tecplot.PlotFields(m_RegisteredFields, "LevelSet" + timestepNo, physTime, 4);
-        //}
 
         /// <summary>
         /// A list for all particles
@@ -365,14 +356,12 @@ namespace BoSSS.Application.FSI_Solver {
                 case LevelSetHandling.FSI_LieSplittingFullyCoupled:
                     MassMatrixShape = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
                     break;
-
                 case LevelSetHandling.Coupled_Once:
                 case LevelSetHandling.LieSplitting:
                 case LevelSetHandling.StrangSplitting:
                 case LevelSetHandling.None:
                     MassMatrixShape = MassMatrixShapeandDependence.IsTimeDependent;
                     break;
-
                 default:
                     throw new ApplicationException("unknown 'LevelSetMovement': " + ((FSI_Control)this.Control).Timestepper_LevelSetHandling);
             }
@@ -486,7 +475,8 @@ namespace BoSSS.Application.FSI_Solver {
             double forces_PResidual;
             if (((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
                 int iterationCounter = 0;
-                forces_PResidual = iterationCounter == 0 ? double.MaxValue : Auxillary.CalculateParticleResidual(m_Particles, ref iterationCounter);
+                Motion_AllParticles AllParticleHydrodynamics = new Motion_AllParticles(LsTrk);
+                forces_PResidual = iterationCounter == 0 ? double.MaxValue : AllParticleHydrodynamics.CalculateParticleResidual(ref iterationCounter); ;
                 Console.WriteLine("Current forces_PResidual:   " + forces_PResidual);
             }
             // no iterative solver, no residual
@@ -845,19 +835,10 @@ namespace BoSSS.Application.FSI_Solver {
                         int minIteration = 3;
                         Motion_AllParticles AllParticleHydrodynamics = new Motion_AllParticles(LsTrk);
                         while (hydroDynForceTorqueResidual > HydrodynConvergenceCriterion || iterationCounter < minIteration) {
-                            Auxillary.CheckForMaxIterations(iterationCounter, ((FSI_Control)Control).maxIterationsFullyCoupled);
+                            if (iterationCounter > ((FSI_Control)Control).maxIterationsFullyCoupled)
+                                throw new ApplicationException("No convergence in coupled iterative solver, number of iterations: " + iterationCounter);
                             Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
-                            //Auxillary.SaveOldParticleState(m_Particles);
                             AllParticleHydrodynamics.SaveHydrodynamicOfPreviousIteration(m_Particles);
-                            //int PredictFreq = 5;
-                            // actual physics
-                            // -------------------------------------------------
-                            //if (IsMultiple(iterationCounter, 3)) 
-                            //{
-                            //    foreach (Particle p in m_Particles) {
-                            //        p.Motion.PredictFromPreviousIteration(FluidViscosity, p.ActiveStress);
-                            //    }
-                            //}
                             if (IsFullyCoupled && iterationCounter == 0) {
                                 InitializeParticlePerIteration(m_Particles, TimestepInt);
                             }
@@ -868,7 +849,7 @@ namespace BoSSS.Application.FSI_Solver {
                                 ParticleHydrodynamicsIntegration hydrodynamicsIntegration = new ParticleHydrodynamicsIntegration(2, Velocity, Pressure, LsTrk, FluidViscosity);
                                 AllParticleHydrodynamics.CalculateHydrodynamics(m_Particles, hydrodynamicsIntegration, FluidDensity, IsFullyCoupled);
                                 if (iterationCounter != 1) {
-                                    double underrelax = 0.1;
+                                    double underrelax = 0.05;
                                     Velocity.Scale(underrelax);
                                     Velocity.Acc((1 - underrelax), velocityOld);
                                     Pressure.Scale(underrelax);
@@ -1403,22 +1384,22 @@ namespace BoSSS.Application.FSI_Solver {
                     if (!mediumCells[j]) {
                         mediumCells[j] = particle.Contains(centerPoint, radiusMediumCells);
                     }
-                    if (!fineCells[j] && particle.SeperateCellRegions(centerPoint)) {
+                    if (!fineCells[j] && LsTrk.Regions.IsSpeciesPresentInCell(LsTrk.GetSpeciesId("A"), j)){// && particle.SeperateCellRegions(centerPoint)) {
                         fineCells[j] = particle.Contains(centerPoint, radiusFineCells);
                     }
-                    if (particle.Contains(centerPoint, radiusCollision) && GridData.GetBoundaryCells().Contains(j))
-                        collisionFineCells[j] = true;
+                    //if (particle.Contains(centerPoint, radiusCollision) && GridData.GetBoundaryCells().Contains(j))
+                      //  collisionFineCells[j] = true;
                 }
             }
-            int medioumRefinementLevel = refinementLevel > 2 ? refinementLevel / 2 + 1 : refinementLevel == 2 ? 2 : 1;
+            int medioumRefinementLevel = refinementLevel > 2 ? refinementLevel / 2 + 1 : 1;// refinementLevel == 2 ? 2 : 1;
             int coarseRefinementLevel = refinementLevel > 4 ? refinementLevel / 4 : 1;
             //if (refinementLevel - coarseRefinementLevel > coarseRefinementLevel)
             //    coarseRefinementLevel += 1;
             List<Tuple<int, BitArray>> AllCellsWithMaxRefineLevel = new List<Tuple<int, BitArray>> {
                 new Tuple<int, BitArray>(refinementLevel, fineCells),
                 new Tuple<int, BitArray>(medioumRefinementLevel, mediumCells),
-                new Tuple<int, BitArray>(coarseRefinementLevel, coarseCells),
-                new Tuple<int, BitArray>(refinementLevel + 1, collisionFineCells),
+                //new Tuple<int, BitArray>(coarseRefinementLevel, coarseCells),
+                //new Tuple<int, BitArray>(refinementLevel + 1, collisionFineCells),
             };
             return AllCellsWithMaxRefineLevel;
         }

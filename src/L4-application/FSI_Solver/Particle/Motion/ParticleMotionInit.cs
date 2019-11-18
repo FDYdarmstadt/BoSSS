@@ -41,14 +41,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="addedDampingCoefficient">
         /// The added damping coefficient is a scaling factor for the model. If the value is smaller than zero no added damping is applied. Otherwise it should be between 0.5 and 1.5, for reference: Banks et.al. 2017.
         /// </param>
-        public ParticleMotionInit(double[] gravity = null, double particleDensity = 0, bool isDry = false, bool noRotation = false, bool noTranslation = false,
-            ParticleUnderrelaxationParam underrelaxationParam = null, double addedDampingCoefficient = 0) {
+        public ParticleMotionInit(double[] gravity = null, double particleDensity = 0, bool isDry = false, bool noRotation = false, bool noTranslation = false, double addedDampingCoefficient = 0) {
             m_Gravity = gravity.IsNullOrEmpty() ? (new double[] { 0, -9.81 }) : gravity;
             m_Density = particleDensity == 0 ? 1 : particleDensity;
             m_IsDry = isDry;
             m_NoRotation = noRotation;
             m_NoTranslation = noTranslation;
-            m_UnderrelaxationParam = underrelaxationParam;
             m_AddedDampingCoefficient = addedDampingCoefficient;
         }
 
@@ -58,16 +56,12 @@ namespace BoSSS.Application.FSI_Solver {
         private readonly bool m_IsDry;
         private readonly bool m_NoRotation;
         private readonly bool m_NoTranslation;
-        private readonly ParticleUnderrelaxationParam m_UnderrelaxationParam;
         private readonly double m_AddedDampingCoefficient;
 
         /// <summary>
         /// Initial check for the particle motion parameter.
         /// </summary>
         public void CheckInput() {
-            if (m_IsDry && m_UnderrelaxationParam != null)
-                throw new Exception("Error in control file: Cannot perform a dry simulation with full coupling between the particles and the (non-existing) fluid");
-
             if (m_AddedDampingCoefficient != 0 && m_AddedDampingCoefficient < 0.5 && m_AddedDampingCoefficient > 1.5)
                 throw new Exception("Error in control file: Added damping coefficient should be between 0.5 and 1.5! See for reference Banks et al.");
             if (m_AddedDampingCoefficient != 0 && (m_NoRotation || m_NoTranslation))
@@ -90,11 +84,11 @@ namespace BoSSS.Application.FSI_Solver {
                         : new Motion_Dry(m_Gravity, m_Density);
                 }
                 if (m_AddedDampingCoefficient != 0)
-                    return new Motion_AddedDamping(m_Gravity, m_Density, m_UnderrelaxationParam, m_AddedDampingCoefficient);
+                    return new Motion_AddedDamping(m_Gravity, m_Density, m_AddedDampingCoefficient);
                 else
-                    return m_NoRotation ? new Motion_Wet_NoRotation(m_Gravity, m_Density, m_UnderrelaxationParam)
-                        : m_NoTranslation ? new Motion_Wet_NoTranslation(m_Gravity, m_Density, m_UnderrelaxationParam)
-                        : new Motion_Wet(m_Gravity, m_Density, m_UnderrelaxationParam);
+                    return m_NoRotation ? new Motion_Wet_NoRotation(m_Gravity, m_Density)
+                        : m_NoTranslation ? new Motion_Wet_NoTranslation(m_Gravity, m_Density)
+                        : new Motion_Wet(m_Gravity, m_Density);
             }
         }
     }

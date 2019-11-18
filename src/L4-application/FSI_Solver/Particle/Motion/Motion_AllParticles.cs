@@ -58,11 +58,12 @@ namespace BoSSS.Application.FSI_Solver {
                 }
                 hydrodynamics[offset + m_Dim] = tempTorque;
             }
+            double[] relaxatedHydrodynamics = hydrodynamics.CloneAs();
             if (underrelax)
-                HydrodynamicsPostprocessing(hydrodynamics);
+                relaxatedHydrodynamics = HydrodynamicsPostprocessing(hydrodynamics);
             for (int p = 0; p < AllParticles.Count(); p++) {
                 Particle currentParticle = AllParticles[p];
-                currentParticle.Motion.UpdateForcesAndTorque(p, hydrodynamics);
+                currentParticle.Motion.UpdateForcesAndTorque(p, relaxatedHydrodynamics);
             }
         }
 
@@ -102,15 +103,17 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="tempForces"></param>
         /// <param name="tempTorque"></param>
         /// <param name="firstIteration"></param>
-        private void HydrodynamicsPostprocessing(double[] hydrodynamics) {
+        private double[] HydrodynamicsPostprocessing(double[] hydrodynamics) {
+            double[] relaxatedHydrodynamics = hydrodynamics.CloneAs();
             m_ForcesAndTorqueWithoutRelaxation.Insert(0, hydrodynamics.CloneAs());
-            ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation();
+            ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation(hydrodynamics, m_ForcesAndTorquePreviousIteration);
             if (m_ForcesAndTorquePreviousIteration.Count >= 4) {
-                Underrelaxation.ForcesAndTorque(ref hydrodynamics, m_ForcesAndTorquePreviousIteration, ref relaxationCoeff, m_ForcesAndTorqueWithoutRelaxation);
+                relaxatedHydrodynamics = Underrelaxation.ForcesAndTorque(ref relaxationCoeff, m_ForcesAndTorqueWithoutRelaxation);
             }
             else {
-                Underrelaxation.ForceAndTorque(ref hydrodynamics, m_ForcesAndTorquePreviousIteration[1]);
+                relaxatedHydrodynamics = Underrelaxation.ForceAndTorque();
             }
+            return relaxatedHydrodynamics;
         }
 
         internal void SaveHydrodynamicOfPreviousIteration(List<Particle> AllParticles) {

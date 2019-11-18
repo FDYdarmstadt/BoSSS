@@ -42,9 +42,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="underrelaxationParam">
         /// The underrelaxation parameters (convergence limit, prefactor and a bool whether to use addaptive underrelaxation) defined in <see cref="ParticleUnderrelaxationParam"/>.
         /// </param>
-        public Motion_Wet(double[] gravity, double density, ParticleUnderrelaxationParam underrelaxationParam = null) {
+        public Motion_Wet(double[] gravity, double density) {
             Gravity = gravity;
-            m_UnderrelaxationParam = underrelaxationParam;
             Density = density;
             // creating list for motion parameters (to save the history)
             for (int i = 0; i < m_HistoryLength; i++) {
@@ -61,8 +60,6 @@ namespace BoSSS.Application.FSI_Solver {
 
         [NonSerialized]
         internal readonly FSI_Auxillary Aux = new FSI_Auxillary();
-        [NonSerialized]
-        private readonly ParticleUnderrelaxationParam m_UnderrelaxationParam = null;
 
         [DataMember]
         private const int m_HistoryLength = 4;
@@ -507,9 +504,9 @@ namespace BoSSS.Application.FSI_Solver {
 
         public void UpdateForcesAndTorque(int particleID, double[] fullListHydrodynamics) {
             for (int d = 0; d < m_Dim; d++) {
-                m_HydrodynamicForces[0][d] = fullListHydrodynamics[particleID + d];
+                m_HydrodynamicForces[0][d] = fullListHydrodynamics[particleID * 3+ d];
             }
-            m_HydrodynamicTorque[0] = fullListHydrodynamics[particleID + m_Dim];
+            m_HydrodynamicTorque[0] = fullListHydrodynamics[particleID * 3 + m_Dim];
             Aux.TestArithmeticException(m_HydrodynamicForces[0], "hydrodynamic forces");
             Aux.TestArithmeticException(m_HydrodynamicTorque[0], "hydrodynamic torque");
         }
@@ -851,207 +848,6 @@ namespace BoSSS.Application.FSI_Solver {
             double globalStateBuffer = stateBuffer.MPISum();
             torque = globalStateBuffer;
             Aux.TestArithmeticException(torque, "temporal torque during calculation of hydrodynamics after mpi-summation");
-        }
-        double relaxationCoeff = 1;
-        /// <summary>
-        /// Post-processing of the hydrodynamics. If desired the underrelaxation is applied to the forces and torque.
-        /// </summary>
-        /// <param name="tempForces"></param>
-        /// <param name="tempTorque"></param>
-        /// <param name="firstIteration"></param>
-        protected void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque) {
-            StabilizeHydrodynamics(ref tempForces, ref tempTorque);
-
-            m_ForcesWithoutRelaxation.Insert(0, tempForces.CloneAs());
-            m_TorqueWithoutRelaxation.Insert(0, tempTorque);
-            double[] temp = new double[] { tempForces[0], tempForces[1], tempTorque };
-            m_ForcesAndTorqueWithoutRelaxation.Insert(0, temp);
-            if (m_UnderrelaxationParam != null) {
-                ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation(m_UnderrelaxationParam, CalculateAverageForces(tempForces, tempTorque));
-                if (m_UnderrelaxationParam.m_Method == ParticleUnderrelaxationParam.UnderrelaxationMethod.ProcentualRelaxation) {
-                    Underrelaxation.Forces(ref tempForces, m_ForcesPreviousIteration);
-                    Underrelaxation.Torque(ref tempTorque, m_TorquePreviousIteration);
-                }
-                else if (m_ForcesPreviousIteration.Count >= 3) {
-                    double[] test1 = new double[] { tempForces[0], tempForces[1], tempTorque };
-                    Underrelaxation.ForcesAndTorque(ref test1, m_ForcesAndTorquePreviousIteration, ref relaxationCoeff, m_ForcesAndTorqueWithoutRelaxation);
-                    tempForces[0] = test1[0];
-                    tempForces[1] = test1[1];
-                    tempTorque = test1[2];
-                }
-            }
-            m_HydrodynamicForces[0] = tempForces.CloneAs();
-            m_HydrodynamicTorque[0] = tempTorque;
-            Aux.TestArithmeticException(m_HydrodynamicForces[0], "hydrodynamic forces");
-            Aux.TestArithmeticException(m_HydrodynamicTorque[0], "hydrodynamic torque");
-        }
-
-        //protected void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque) {
-        //    StabilizeHydrodynamics(ref tempForces, ref tempTorque);
-
-        //    m_ForcesWithoutRelaxation.Insert(0, tempForces.CloneAs());
-        //    m_TorqueWithoutRelaxation.Insert(0, tempTorque);
-        //    double[] temp = new double[] { tempForces[0], tempForces[1], tempTorque };
-        //    m_ForcesAndTorqueWithoutRelaxation.Insert(0, temp);
-        //    if (m_UnderrelaxationParam != null) {
-        //        ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation(m_UnderrelaxationParam, CalculateAverageForces(tempForces, tempTorque));
-        //        if (m_ForcesPreviousIteration.Count < 4 || m_UnderrelaxationParam.m_Method == ParticleUnderrelaxationParam.UnderrelaxationMethod.ProcentualRelaxation) {
-        //            Underrelaxation.Forces(ref tempForces, m_ForcesPreviousIteration);
-        //            Underrelaxation.Torque(ref tempTorque, m_TorquePreviousIteration);
-        //        }
-        //        else {
-        //            double[] test1 = new double[] { tempForces[0], tempForces[1], tempTorque };
-        //            Underrelaxation.ForcesAndTorque2H(ref test1, m_ForcesAndTorquePreviousIteration, ref testRelaxation, m_ForcesAndTorqueWithoutRelaxation);
-        //            tempForces[0] = test1[0];
-        //            tempForces[1] = test1[1];
-        //            tempTorque = test1[2];
-        //        }
-        //    }
-        //    m_HydrodynamicForces[0] = tempForces.CloneAs();
-        //    m_HydrodynamicTorque[0] = tempTorque;
-        //    Aux.TestArithmeticException(m_HydrodynamicForces[0], "hydrodynamic forces");
-        //    Aux.TestArithmeticException(m_HydrodynamicTorque[0], "hydrodynamic torque");
-        //}
-
-        //List<double[]> fPlus = new List<double[]>();
-        //List<double[]> fMinus = new List<double[]>();
-        //protected void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque) {
-        //    StabilizeHydrodynamics(ref tempForces, ref tempTorque);
-
-        //    m_ForcesWithoutRelaxation.Insert(0, tempForces.CloneAs());
-        //    m_TorqueWithoutRelaxation.Insert(0, tempTorque);
-        //    double[] temp = new double[] { tempForces[0], tempForces[1], tempTorque };
-        //    m_ForcesAndTorqueWithoutRelaxation.Insert(0, temp);
-        //    if (m_UnderrelaxationParam != null) {
-        //        double[] testForce = new double[m_Dim + 1];
-        //        if (m_ForcesAndTorquePreviousIteration.Count == 2) {
-        //            fPlus.Add(temp.CloneAs());
-        //            for (int i = 0; i < m_Dim + 1; i++) {
-        //                temp[i] = 0;
-        //            }
-        //        }
-        //        else if (m_ForcesAndTorquePreviousIteration.Count == 3) {
-        //            fMinus.Add(temp.CloneAs());
-        //            for (int i = 0; i < m_Dim + 1; i++) {
-        //                if (fMinus[0][i] > fPlus[0][i]) {
-        //                    double tmp = fMinus[0][i];
-        //                    fMinus[0][i] = fPlus[0][i];
-        //                    fPlus[0][i] = tmp;
-        //                }
-        //                temp[i] = (fPlus[0][i] + fMinus[0][i]) / 2;
-        //            }
-        //        }
-        //        else if (m_ForcesAndTorquePreviousIteration.Count > 3) {
-        //            double[] plus = fPlus[0].CloneAs();
-        //            double[] minus = fMinus[0].CloneAs();
-        //            fPlus.Insert(0, plus.CloneAs());
-        //            fMinus.Insert(0, minus.CloneAs());
-        //            for (int i = 0; i < m_Dim; i++) {
-        //                if (temp[i] > m_HydrodynamicForces[1][i]) {
-        //                    fMinus[0][i] = m_HydrodynamicForces[1][i];
-        //                }
-        //                else
-        //                    fPlus[0][i] = m_HydrodynamicForces[1][i];
-        //            }
-        //            if (temp[2] > m_HydrodynamicTorque[1]) {
-        //                fMinus[0][2] = m_HydrodynamicTorque[1];
-        //            }
-        //            else
-        //                fPlus[0][2] = m_HydrodynamicTorque[1];
-        //            for (int i = 0; i < m_Dim + 1; i++) {
-        //                temp[i] = (fPlus[0][i] + fMinus[0][i]) / 2;
-        //            }
-        //        }
-        //    }
-        //    m_HydrodynamicForces[0][0] = temp[0];
-        //    m_HydrodynamicForces[0][1] = temp[1];
-        //    m_HydrodynamicTorque[0] = temp[2];
-        //    Aux.TestArithmeticException(m_HydrodynamicForces[0], "hydrodynamic forces");
-        //    Aux.TestArithmeticException(m_HydrodynamicTorque[0], "hydrodynamic torque");
-        //}
-
-        private void StabilizeHydrodynamics(ref double[] tempForces, ref double tempTorque) {
-            double averageForcesAndTorque = Math.Abs(CalculateAverageForces(tempForces, tempTorque));
-            for (int d = 0; d < m_Dim; d++) {
-                if (Math.Abs(tempForces[d] * 1e4) < averageForcesAndTorque || Math.Abs(tempForces[d]) < 1e-10)
-                    tempForces[d] = 0;
-            }
-            if (Math.Abs(tempTorque * 1e4) < averageForcesAndTorque || Math.Abs(tempTorque) < 1e-10)
-                tempTorque = 0;
-        }
-
-        /// <summary>
-        /// Post-processing of the hydrodynamics, only torque! If desired the underrelaxation is applied to the torque.
-        /// </summary>
-        /// <param name="tempTorque"></param>
-        /// <param name="firstIteration"></param>
-        protected void HydrodynamicsPostprocessing(double tempTorque) {
-            m_TorqueWithoutRelaxation.Insert(0, tempTorque);
-            double[] temp = new double[] { 0, 0, tempTorque };
-            m_ForcesAndTorqueWithoutRelaxation.Insert(0, temp);
-            if (m_UnderrelaxationParam != null) {
-                ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation(m_UnderrelaxationParam, CalculateAverageForces(new double[] { 0, 0 }, tempTorque));
-                if (m_TorquePreviousIteration.Count < 3 || m_UnderrelaxationParam.m_Method == ParticleUnderrelaxationParam.UnderrelaxationMethod.ProcentualRelaxation) {
-                    Underrelaxation.Torque(ref tempTorque, m_TorquePreviousIteration);
-                }
-                else {
-                    double[] test1 = new double[] { 0, 0, tempTorque };
-                    Underrelaxation.ForcesAndTorque(ref test1, m_ForcesAndTorquePreviousIteration, ref relaxationCoeff, m_ForcesAndTorqueWithoutRelaxation);
-                    tempTorque = test1[2];
-                }
-            }
-            m_HydrodynamicTorque[0] = tempTorque;
-            Aux.TestArithmeticException(m_HydrodynamicForces[0], "hydrodynamic forces");
-            Aux.TestArithmeticException(m_HydrodynamicTorque[0], "hydrodynamic torque");
-        }
-
-        /// <summary>
-        /// Post-processing of the hydrodynamics, only forces! If desired the underrelaxation is applied to the forces.
-        /// </summary>
-        /// <param name="tempForces"></param>
-        /// <param name="firstIteration"></param>
-        protected void HydrodynamicsPostprocessing(double[] tempForces) {
-            m_ForcesWithoutRelaxation.Insert(0, tempForces.CloneAs());
-            double[] temp = new double[] { tempForces[0], tempForces[1], 0 };
-            m_ForcesAndTorqueWithoutRelaxation.Insert(0, temp);
-            if (m_UnderrelaxationParam != null) {
-                ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation(m_UnderrelaxationParam, CalculateAverageForces(tempForces, 0));
-                if (m_ForcesPreviousIteration.Count < 3 || m_UnderrelaxationParam.m_Method == ParticleUnderrelaxationParam.UnderrelaxationMethod.ProcentualRelaxation) {
-                    Underrelaxation.Forces(ref tempForces, m_ForcesPreviousIteration);
-                }
-                else {
-                    double[] test1 = new double[] { tempForces[0], tempForces[1], 0 };
-                    Underrelaxation.ForcesAndTorque(ref test1, m_ForcesAndTorquePreviousIteration, ref relaxationCoeff, m_ForcesAndTorqueWithoutRelaxation);
-                    tempForces[0] = test1[0];
-                    tempForces[1] = test1[1];
-                }
-            }
-            for (int d = 0; d < m_Dim; d++) {
-                m_HydrodynamicForces[0][d] = tempForces[d];
-            }
-            m_HydrodynamicTorque[0] = 0;
-            Aux.TestArithmeticException(m_HydrodynamicForces[0], "hydrodynamic forces");
-            Aux.TestArithmeticException(m_HydrodynamicTorque[0], "hydrodynamic torque");
-        }
-
-        /// <summary>
-        /// Does what it says.
-        /// </summary>
-        /// <param name="forces">
-        /// The hydrodynamic forces.
-        /// </param>
-        /// <param name="torque">
-        /// The hydrodynamic torque.
-        /// </param>
-        /// <param name="averageDistance">
-        /// The average Lengthscale of the particle.
-        /// </param>
-        private double CalculateAverageForces(double[] forces, double torque) {
-            double averageForces = Math.Abs(torque) / MaxParticleLengthScale;
-            for (int d = 0; d < forces.Length; d++) {
-                averageForces += forces[d];
-            }
-            return averageForces /= 3;
         }
 
         /// <summary>

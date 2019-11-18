@@ -102,7 +102,6 @@
     <Compile Include="FSI_Collision.cs" />
     <Compile Include="FSI_TimestepInfo.cs" />
     <Compile Include="FSI_LevelSetUpdate.cs" />
-    <Compile Include="FSI_Tutorial.cs" />
     <Compile Include="Particle\Motion\Motion_AllParticles.cs" />
     <Compile Include="Particle\Motion\Motion_Wet_NoTranslation.cs" />
     <Compile Include="Particle\Motion\Motion_Wet_NoRotation.cs" />
@@ -116,7 +115,6 @@
     <Compile Include="Particle\ParticleForceIntegration.cs" />
     <Compile Include="Particle\Motion\_Motion_Main.cs" />
     <Compile Include="Particle\ParticleUnderrelaxation.cs" />
-    <Compile Include="Particle\ParticleUnderrelaxationParam.cs" />
     <Compile Include="Particle\Shapes\Particle_Shell.cs" />
     <Compile Include="Particle\Shapes\Particle_Rectangle.cs" />
     <Compile Include="Particle\Shapes\Particle_TrapRight.cs" />

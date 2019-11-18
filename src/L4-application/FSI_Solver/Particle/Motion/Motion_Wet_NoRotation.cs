@@ -34,7 +34,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// /// <param name="underrelaxationParam">
         /// The underrelaxation parameters (convergence limit, prefactor and a bool whether to use addaptive underrelaxation) defined in <see cref="ParticleUnderrelaxationParam"/>.
         /// </param>
-        public Motion_Wet_NoRotation(double[] gravity, double density, ParticleUnderrelaxationParam underrelaxationParam = null) : base(gravity, density, underrelaxationParam) {
+        public Motion_Wet_NoRotation(double[] gravity, double density) : base(gravity, density) {
             IncludeRotation = false;
         }
 
