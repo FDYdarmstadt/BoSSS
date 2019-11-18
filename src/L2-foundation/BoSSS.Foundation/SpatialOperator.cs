@@ -33,21 +33,7 @@ using BoSSS.Foundation.Grid.Classic;
 using System.Diagnostics;
 
 namespace BoSSS.Foundation {
-
-
-    interface A {
-        void a();
-    }
-
-    interface D {
-        void d();
-    }
-
-    interface CC : A, D {
-        void cc();
-    }
-
-
+       
     /// <summary>
     /// Delegate to trigger the update of parameter fields (e.g. when computing finite difference Jacobian, see e.g. <see cref="SpatialOperator.GetFDJacobianBuilder"/>).
     /// </summary>
