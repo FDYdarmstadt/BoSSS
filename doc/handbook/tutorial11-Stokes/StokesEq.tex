@@ -128,10 +128,6 @@ public class Divergence : \newline
 \btab \btab    return TermActivationFlags.AllOn;\newline 
 \btab \btab \}\newline 
 \btab \}\newline 
-	/// Because we are not testing performance, we use the vectorized implementation if avaliable
-\btab bool IEquationComponent.IgnoreVectorizedImplementation \{ \newline 
-\btab \btab get \{ return false; \} \newline 
-\btab \}\newline 
  \newline 
     /// In the volume part, the integrand is $\operatorname{div}(\vec{u}) v$:
 \btab public double VolumeForm(ref CommonParamsVol cpv, \newline 

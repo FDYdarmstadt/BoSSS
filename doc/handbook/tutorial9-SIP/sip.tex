@@ -86,10 +86,6 @@ public class SipLaplace :\newline
 \btab public IList<String> ArgumentOrdering \{ \newline 
 \btab \btab get \{ return new string[] \{ "u" \}; \} \newline 
 \btab \}\newline 
-	/// Because we are not testing performance, we use the vectorized implementation if avaliable
-\btab bool IEquationComponent.IgnoreVectorizedImplementation \{ \newline 
-\btab \btab get \{ return false; \} \newline 
-\btab \}\newline 
     /// The \code{TermActivationFlags} tell \BoSSS\ which kind of terms, 
     /// i.e. products of $u$, $v$, $\nabla u$, and $\nabla v$
     /// the \code{VolumeForm(...)} actually contains.
