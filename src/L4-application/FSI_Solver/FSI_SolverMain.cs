@@ -248,7 +248,6 @@ namespace BoSSS.Application.FSI_Solver {
                             comps.Add(convectionAtIB);
                         }
                     }
-                    U0MeanRequired = true;
                 }
             }
 

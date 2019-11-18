@@ -218,7 +218,14 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         protected double[] SaddlePointRHS;
 
-        protected bool U0MeanRequired = false;
+        /// <summary>
+        /// equal to <see cref="PhysicalParameters.IncludeConvection"/>
+        /// </summary>
+        protected bool U0MeanRequired {
+            get {
+                return Control.PhysicalParameters.IncludeConvection;
+            }
+        }
 
 
         protected XSpatialOperatorMk2 IBM_Op;
@@ -241,6 +248,8 @@ namespace BoSSS.Application.IBM_Solver {
         protected XdgBDFTimestepping m_BDF_Timestepper;
 
         //SinglePhaseField[] MGColoring;
+
+        
 
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
 
@@ -315,7 +324,6 @@ namespace BoSSS.Application.IBM_Solver {
 
                         comps.Add(ConvIB); // immersed boundary component
                     }
-                    this.U0MeanRequired = true;
                 }
 
                 // pressure part:
@@ -467,104 +475,168 @@ namespace BoSSS.Application.IBM_Solver {
 
         int DelComputeOperatorMatrix_CallCounter = 0;
 
+
+        void ParameterUpdate(IEnumerable<DGField> CurrentState, IEnumerable<DGField> ParameterVar) {
+            int D = this.LsTrk.GridDat.SpatialDimension;
+
+            var U0_CurrentState = new VectorField<SinglePhaseField>(CurrentState.Take(D).Select(F => (SinglePhaseField)F).ToArray());
+
+            // this method assumes that the parameter velocity is reference-equal to the current state 
+            for (int d = 0; d < D; d++)
+                if (!object.ReferenceEquals(CurrentState.ElementAt(d), ParameterVar.ElementAt(d)))
+                    throw new ApplicationException("internal error");
+            
+            if (this.U0MeanRequired) {
+                VectorField<SinglePhaseField> U0mean = new VectorField<SinglePhaseField>(ParameterVar.Skip(D).Take(D).Select(f => (SinglePhaseField)f).ToArray());
+                foreach (var um in U0mean)
+                    Debug.Assert(um.Basis.Degree == 0);
+
+                ComputeAverageU(U0_CurrentState, U0mean);
+            } else {
+                //U0_U0mean = new SinglePhaseField[2 * D];
+            }
+        }
+
+
         protected virtual void DelComputeOperatorMatrix(BlockMsrMatrix OpMatrix, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
             DelComputeOperatorMatrix_CallCounter++;
+            int D = this.LsTrk.GridDat.SpatialDimension;
 
             // compute operator
             //Debug.Assert(OpMatrix.InfNorm() == 0.0);
             //Debug.Assert(OpAffine.L2Norm() == 0.0);
 
-            // parameters...
-            int D = this.LsTrk.GridDat.SpatialDimension;
-            var U0 = new VectorField<SinglePhaseField>(CurrentState.Take(D).Select(F => (SinglePhaseField)F).ToArray());
-            SinglePhaseField[] U0_U0mean;
-            if (this.U0MeanRequired) {
-                Basis U0meanBasis = new Basis(GridData, 0);
-                VectorField<SinglePhaseField> U0mean = new VectorField<SinglePhaseField>(D, U0meanBasis, "U0mean_", SinglePhaseField.Factory);
-                U0mean.Clear();
-
-                if (this.Control.PhysicalParameters.IncludeConvection)
-                    ComputeAverageU(U0, U0mean);
-
-                U0_U0mean = ArrayTools.Cat<SinglePhaseField>(U0, U0mean);
-            } else {
-                U0_U0mean = new SinglePhaseField[2 * D];
+            // Create Parameters fields
+            DGField[] Params;
+            {
+                var U0 = new VectorField<SinglePhaseField>(CurrentState.Take(D).Select(F => (SinglePhaseField)F).ToArray());
+                SinglePhaseField[] U0_U0mean;
+                if (this.U0MeanRequired) {
+                    Basis U0meanBasis = new Basis(GridData, 0);
+                    VectorField<SinglePhaseField> U0mean = new VectorField<SinglePhaseField>(D, U0meanBasis, "U0mean_", SinglePhaseField.Factory);
+                    U0_U0mean = ArrayTools.Cat<SinglePhaseField>(U0, U0mean);
+                } else {
+                    U0_U0mean = new SinglePhaseField[2 * D];
+                }
+                Params = ArrayTools.Cat<DGField>(U0_U0mean);
             }
-            var Params = ArrayTools.Cat<SinglePhaseField>(
-                U0_U0mean);
 
             m_LenScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
 
             // create matrix and affine vector:
             if (OpMatrix != null) {
-                //IBM_Op.ComputeMatrixEx(LsTrk,
-                //    Mapping, Params, Mapping,
-                //    OpMatrix, OpAffine, false, phystime, true,
-                //    AgglomeratedCellLengthScales,
-                //    FluidSpecies);
-
+                // using ad-hoc linearization
+                ParameterUpdate(CurrentState, Params);
                 var mtxBuilder = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, FluidSpecies);
                 mtxBuilder.time = phystime;
                 mtxBuilder.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
 
-                mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
+                var _OpMatrix = new BlockMsrMatrix(OpMatrix._RowPartitioning, OpMatrix._ColPartitioning);
+                var _OpAffine = new double[OpAffine.Length];
+                mtxBuilder.ComputeMatrix(_OpMatrix, _OpAffine);
+                _OpMatrix.SaveToTextFileSparse("C:\\tmp\\AHmtx.txt");
+                _OpAffine.SaveToTextFile("C:\\tmp\\AHaff.txt");
+
+                // using finite difference Jacobi
+                var mtxBuilder2 = IBM_Op.GetFDJacobianBuilder(LsTrk, CurrentState, Params, Mapping,
+                    ParameterUpdate,
+                    FluidSpecies);
+                mtxBuilder2.time = phystime;
+                mtxBuilder2.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+
+                mtxBuilder2.ComputeMatrix(OpMatrix, OpAffine);
+                OpMatrix.SaveToTextFileSparse("C:\\tmp\\FDmtx.txt");
+                OpAffine.SaveToTextFile("C:\\tmp\\FDaff.txt");
+
+               
+
+#if DEBUG
+                if (DelComputeOperatorMatrix_CallCounter == 1) {
+                    int[] Uidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D.ForLoop(i => i));
+                    int[] Pidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D);
+                    CoordinateMapping Umap = this.Velocity.Mapping;
+                    CoordinateMapping Pmap = this.Pressure.Mapping;
+
+                    //{
+                        var p1 = new VectorField<SinglePhaseField>(D, Velocity[0].Basis, "FDjac_", SinglePhaseField.Factory); //new SinglePhaseField(this.Pressure.Basis, "FDjac");
+                        var p2 = new VectorField<SinglePhaseField>(D, Velocity[0].Basis, "AHjac_", SinglePhaseField.Factory);
+                        var er = new VectorField<SinglePhaseField>(D, Velocity[0].Basis, "er_", SinglePhaseField.Factory);
+
+                        var tv = new double[SaddlePointProblemMapping.LocalLength];
+                        var rs = new double[SaddlePointProblemMapping.LocalLength];
+                        Random rnd = new Random(0);
+                        for(int i = 0; i < Pidx.Length; i++) {
+                            tv[Pidx[i]] = rnd.NextDouble();
+                        }
+
+                        OpMatrix.SpMV(1.0, tv, 0.0, rs);
+                        p1.CoordinateVector.AccV(1.0, rs, default(int[]), Uidx);
+
+                        _OpMatrix.SpMV(1.0, tv, 0.0, rs);
+                        p2.CoordinateVector.AccV(1.0, rs, default(int[]), Uidx);
+
+                        er.Acc(1.0, p1);
+                        er.Acc(-1.0, p2);
+
+                    Tecplot.PlotFields(ArrayTools.Cat(p1, p2, er), "futinger", 69.0, 3);
+
+                    //}
+
+
+                    Uidx.SaveToTextFile("C:\\tmp\\uidx.txt");
+                    Pidx.SaveToTextFile("C:\\tmp\\pidx.txt");
+
+                    var pGrad = new BlockMsrMatrix(Umap, Pmap);
+                    var _pGrad = new BlockMsrMatrix(Umap, Pmap);
+                    var divVel = new BlockMsrMatrix(Pmap, Umap);
+                    OpMatrix.AccSubMatrixTo(1.0, pGrad, Uidx, default(int[]), Pidx, default(int[]));
+                    _OpMatrix.AccSubMatrixTo(1.0, _pGrad, Uidx, default(int[]), Pidx, default(int[]));
+                    OpMatrix.AccSubMatrixTo(1.0, divVel, Pidx, default(int[]), Uidx, default(int[]));
+
+                    _pGrad.Acc(-1.0, pGrad);
+                    double errSchas = _pGrad.InfNorm();
+
+                    //var pp1 = new SinglePhaseField(this.Pressure.Basis, "FDjac2");
+                    //var pp2 = new SinglePhaseField(this.Pressure.Basis, "FDaff2");
+                    //var eer = new SinglePhaseField(this.Pressure.Basis, "err2");
+
+                    //var tt = new double[Pidx.Length];
+                    //tt.AccV(1.0, tv, default(int[]), Pidx);
+                    //pGrad.SpMV(1.0, tt, 0.0, pp1.CoordinateVector);
+                    //_pGrad.SpMV(1.0, tt, 0.0, pp2.CoordinateVector);
+                    //eer.Acc(1.0, pp1);
+                    //eer.Acc(-1.0, pp2);
+
+
+                    //Tecplot.PlotFields(new DGField[] { p1, p2, er, pp1, pp2, eer }, "futinger", 69.0, 3);
+
+
+
+                    var pGradT = pGrad.Transpose();
+                    var Err = divVel.CloneAs();
+                    Err.Acc(+1.0, pGradT);
+                    double ErrInfAbs = Err.InfNorm();
+                    double denom = Math.Max(pGradT.InfNorm(), Math.Max(pGrad.InfNorm(), divVel.InfNorm()));
+                    double ErrInfRel = ErrInfAbs / denom;
+                    if (ErrInfRel >= 1e-8)
+                        throw new ArithmeticException("Stokes discretization error: | div + grad^t |oo is high; absolute: " + ErrInfAbs + ", relative: " + ErrInfRel + " (denominator: " + denom + ")");
+                    //Console.WriteLine("Stokes discretization error: | div - grad ^ t |oo is high; absolute: " + ErrInfAbs + ", relative: " + ErrInfRel + " (denom: " + denom + ")");
+                }
+#endif
 
             } else {
+                ParameterUpdate(CurrentState, Params);
                 var eval = IBM_Op.GetEvaluatorEx(LsTrk, CurrentState, Params, Mapping, FluidSpecies);
                 eval.time = phystime;
                 eval.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
 
                 eval.Evaluate(1.0, 1.0, OpAffine);
 
-#if DEBUG
-                // remark: remove this piece in a few months from now on (09may18) if no problems occur
-                {
-                    var check = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, FluidSpecies);
-                    check.time = phystime;
-                    check.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
-
-                    BlockMsrMatrix checkOpMatrix = new BlockMsrMatrix(Mapping, Mapping);
-                    double[] checkAffine = new double[OpAffine.Length];
-                    check.ComputeMatrix(checkOpMatrix, checkAffine);
-
-                    double[] checkResult = checkAffine.CloneAs();
-                    var currentVec = new CoordinateVector(CurrentState);
-                    checkOpMatrix.SpMV(1.0, new CoordinateVector(CurrentState), 1.0, checkResult);
-
-                    double L2_dist = GenericBlas.L2DistPow2(checkResult, OpAffine).MPISum().Sqrt();
-                    double RefNorm = (new double[] { checkResult.L2NormPow2(), OpAffine.L2NormPow2(), currentVec.L2NormPow2() }).MPISum().Max().Sqrt();
-
-                    Assert.LessOrEqual(L2_dist, RefNorm * 1.0e-6);
-                    Debug.Assert(L2_dist < RefNorm * 1.0e-6);
-                }
-#endif
             }
 
             m_LenScales = null;
 
-#if DEBUG
-            if (DelComputeOperatorMatrix_CallCounter == 1 && OpMatrix != null) {
-                int[] Uidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D.ForLoop(i => i));
-                int[] Pidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D);
-                CoordinateMapping Umap = this.Velocity.Mapping;
-                CoordinateMapping Pmap = this.Pressure.Mapping;
 
-                var pGrad = new BlockMsrMatrix(Umap, Pmap);
-                var divVel = new BlockMsrMatrix(Pmap, Umap);
-                OpMatrix.AccSubMatrixTo(1.0, pGrad, Uidx, default(int[]), Pidx, default(int[]));
-                OpMatrix.AccSubMatrixTo(1.0, divVel, Pidx, default(int[]), Uidx, default(int[]));
-
-                var pGradT = pGrad.Transpose();
-                var Err = divVel.CloneAs();
-                Err.Acc(+1.0, pGradT);
-                double ErrInfAbs = Err.InfNorm();
-                double denom = Math.Max(pGradT.InfNorm(), Math.Max(pGrad.InfNorm(), divVel.InfNorm()));
-                double ErrInfRel = ErrInfAbs / denom;
-                if (ErrInfRel >= 1e-8)
-                    throw new ArithmeticException("Stokes discretization error: | div + grad^t |oo is high; absolute: " + ErrInfAbs + ", relative: " + ErrInfRel + " (denominator: " + denom + ")");
-                //Console.WriteLine("Stokes discretization error: | div - grad ^ t |oo is high; absolute: " + ErrInfAbs + ", relative: " + ErrInfRel + " (denom: " + denom + ")");
-            }
-#endif
             if (OpMatrix != null)
                 OpMatrix.CheckForNanOrInfM();
             OpAffine.CheckForNanOrInfV();

@@ -34,6 +34,20 @@ using System.Diagnostics;
 
 namespace BoSSS.Foundation {
 
+
+    interface A {
+        void a();
+    }
+
+    interface D {
+        void d();
+    }
+
+    interface CC : A, D {
+        void cc();
+    }
+
+
     /// <summary>
     /// Delegate to trigger the update of parameter fields (e.g. when computing finite difference Jacobian, see e.g. <see cref="SpatialOperator.GetFDJacobianBuilder"/>).
     /// </summary>
@@ -1506,7 +1520,8 @@ namespace BoSSS.Foundation {
                 Eval.MPITtransceive = true;
                 DelParamUpdate = __delParameterUpdate;
 
-                BuildGridColoring();
+                //BuildGridColoring();
+                BuildOneByOneColoring();
 
                 //Console.WriteLine("FDJac: no of color lists: " + ColorLists.Length);
             }
@@ -1636,8 +1651,10 @@ namespace BoSSS.Foundation {
             /// </summary>
             int[][][] ExternalColorListsNeighbors;
 
-
-            void BuildGridColoring() {
+            /// <summary>
+            /// coloring which exploits presumed locality of the DG operator
+            /// </summary>
+            void BuildOptimizedGridColoring() {
                 var gDat = Eval.GridData;
 
 
@@ -1954,6 +1971,177 @@ namespace BoSSS.Foundation {
                 }
 #endif
 
+            }
+
+            /// <summary>
+            /// coloring with one cell at a pass
+            /// </summary>
+            void BuildOneByOneColoring() {
+                var gDat = Eval.GridData;
+
+                int[][] Neighs = gDat.iLogicalCells.CellNeighbours;
+                int J = gDat.iLogicalCells.NoOfLocalUpdatedCells;
+                int JE = gDat.iLogicalCells.Count;
+                long[] GlidxExt = gDat.iParallel.GlobalIndicesExternalCells;
+                var Gl2LocExt = gDat.iParallel.Global2LocalIdx;
+                var CellPart = gDat.CellPartitioning;
+                int Jglob = CellPart.TotalLength;
+
+
+                //int[] LocalMarker = new int[JE]; //    marker for blocked in the current pass 
+                //int[] ExchangedMarker = new int[JE]; //  accumulation buffer for MPI exchange
+                //BitArray Colored = new BitArray(JE); // all cells which are already colored (in previous passes)
+                //BitArray ColoredPass = new BitArray(JE); // all cells which are colored in current pass
+                //int[] LocalColorCause = new int[JE];
+
+                List<int> CellList = new List<int>();
+                List<int[]> ColorListsTmp = new List<int[]>();
+                List<int[]> ExternalColorListsTmp = new List<int[]>();
+                List<int[][]> ExternalColorListsNeighborsTmp = new List<int[][]>();
+
+                for(int jClGlob = 0; jClGlob < Jglob; jClGlob++) {
+
+                    // find next color list
+                    // ====================
+
+                    int jLoc = -1234;
+                    if(CellPart.IsInLocalRange(jClGlob)) {
+                        jLoc = CellPart.TransformIndexToLocal(jClGlob);
+                        ColorListsTmp.Add(new int[] { jLoc });
+                    }
+
+
+                    // communicate external lists
+                    // ==========================
+
+                    if (gDat.MpiSize > 1) {
+
+                        //Debugger.Launch();
+
+                        var ExchData = new Dictionary<int, List<Tuple<int, int>>>();
+
+                        if(jLoc >= 0) {
+                            int[] Neighs_j = Neighs[jLoc];
+                            foreach (int jN in Neighs_j) {
+                                if(jN >= J) {
+                                    
+                                    int Gl_jN = (int) GlidxExt[jN - J];
+                                    int iProc = CellPart.FindProcess(Gl_jN);
+                                    int Gl_j = jClGlob;
+
+                                    if(!ExchData.TryGetValue(iProc, out var ExchData_iProc)) {
+                                        ExchData_iProc = new List<Tuple<int, int>>();
+                                        ExchData.Add(iProc, ExchData_iProc);
+                                    }
+
+                                    ExchData_iProc.Add(new Tuple<int, int>(Gl_j, Gl_jN));
+                                }
+                            }
+                        }
+
+                        var RcvData = SerialisationMessenger.ExchangeData(ExchData);
+
+                        var ExtColor = new Dictionary<int, List<int>>();
+
+                        foreach (var kv in RcvData) {
+                            int iProc = kv.Key;
+                            var list = kv.Value;
+
+                            foreach(var t in list) {
+                                int Gl_j = t.Item1;
+                                int Gl_jN = t.Item2;
+                                Debug.Assert(CellPart.FindProcess(Gl_j) == iProc);
+                                Debug.Assert(CellPart.IsInLocalRange(Gl_jN));
+
+                                int Loc_jN = Gl_jN - CellPart.i0;
+                                Debug.Assert(Loc_jN >= 0 && Loc_jN < J);
+                                int Loc_j = Gl2LocExt[Gl_j];
+                                Debug.Assert(Loc_j >= J && Loc_j < JE);
+
+                                List<int> Neighs_Loc_jN;
+                                if(!ExtColor.TryGetValue(Loc_j, out Neighs_Loc_jN)) {
+                                    Neighs_Loc_jN = new List<int>();
+                                    ExtColor.Add(Loc_j, Neighs_Loc_jN);
+                                }
+
+                                Neighs_Loc_jN.Add(Loc_jN);
+                            }
+                        }
+
+
+                        int[] T2 = new int[ExtColor.Count];
+                        int[][] T3 = new int[ExtColor.Count][];
+                        int cnt = 0;
+                        foreach(var kv in ExtColor) {
+                            T2[cnt] = kv.Key;
+                            T3[cnt] = kv.Value.ToArray();
+                            cnt++;
+                        }
+
+                        ExternalColorListsTmp.Add(T2);
+                        ExternalColorListsNeighborsTmp.Add(T3);
+
+                    } else {
+                        ExternalColorListsTmp.Add(new int[0]);
+                        ExternalColorListsNeighborsTmp.Add(new int[0][]);
+                    }
+
+                }
+
+                // store
+                // =====
+                this.ColorLists = ColorListsTmp.ToArray();
+                this.ExternalColorLists = ExternalColorListsTmp.ToArray();
+                this.ExternalColorListsNeighbors = ExternalColorListsNeighborsTmp.ToArray();
+
+                // checks
+                // ======
+#if DEBUG
+                {
+                    int[] TouchLoc = new int[JE];
+
+                    foreach(int[] _CellList in this.ColorLists) {
+
+                        int[] NeighTouchLoc = new int[JE];
+
+                        foreach(int j in _CellList) {
+                            Debug.Assert(j < JE);
+                            Debug.Assert(TouchLoc[j] == 0);
+                            TouchLoc[j]++;
+
+                            Debug.Assert(NeighTouchLoc[j] == 0);
+                            NeighTouchLoc[j]++;
+
+                            foreach(int jn in Neighs[j]) {
+                                Debug.Assert(NeighTouchLoc[jn] == 0);
+                                NeighTouchLoc[jn]++;
+                            }
+
+                        }
+
+                        int[] NeighTouchGlob = NeighTouchLoc.CloneAs();
+                        NeighTouchGlob.MPIExchange(gDat);
+                        for(int j = J; j < JE; j++) {
+                            NeighTouchGlob[j] += NeighTouchLoc[j];
+                        }
+
+                        for(int j = 0; j < JE; j++) {
+                            Debug.Assert(NeighTouchGlob[j] <= 1);
+                        }
+                    }
+
+                    int[] TouchGlob = TouchLoc.CloneAs();
+                    TouchGlob.MPIExchange(gDat);
+                    for(int j = J; j < JE; j++) {
+                        TouchGlob[j] += TouchLoc[j];
+                    }
+                    
+                    for(int j = 0; j < JE; j++) {
+                        Debug.Assert(TouchGlob[j] == 1);
+                    }
+
+                }
+#endif
             }
 
 

@@ -45,12 +45,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <returns></returns>
         static public IBM_Control ChannelFlow(int k = 2, bool periodic = false, int xCells = 10, int yCells = 10, string dbpath = null) {
             IBM_Control C = new IBM_Control();
-            // Solver Options
-            C.NoOfTimesteps = 100;
-            C.LinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.MinSolverIterations = 1;
-            C.NonLinearSolver.MaxSolverIterations = 100;
-            C.NonLinearSolver.MinSolverIterations = 1;
+
             C.savetodb = false;
             C.DbPath = null;
             C.ProjectName = "ChannelFlow";
@@ -61,27 +56,11 @@ namespace BoSSS.Application.IBM_Solver {
 
             // Timestepper
             C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.ImplicitEuler;
-            double dt = 1E30;
-            C.dtMax = dt;
-            C.dtMin = dt;
-            C.Endtime = 60;
-            C.NoOfTimesteps = 1;
-            C.LinearSolver.MaxKrylovDim = 1000;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.NewtonGMRES;
-            //C.LinearSolver.SolverCode = LinearSolverCode.exp_localPrec;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
-            C.NonLinearSolver.PrecondSolver.SolverCode = LinearSolverCode.classic_pardiso;
-            C.LinearSolver.Parallelism = "OMP,MPI";
-            C.NonLinearSolver.PrecondSolver.Parallelism = "OMP,MPI,SEQ";
-
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
 
             // Physical values
             C.PhysicalParameters.rho_A = 1;
-
-            // 1/Re
-            C.PhysicalParameters.mu_A = 2.0 / 200;
-
+            C.PhysicalParameters.mu_A = 2.0 / 200; // 1 / Reynolds
 
             // Create Fields
             C.SetDGdegree(k);
@@ -144,7 +123,7 @@ namespace BoSSS.Application.IBM_Solver {
             }
 
             C.AddBoundaryValue("Wall_bottom");
-            C.AddBoundaryValue("Wall_top");
+            C.AddBoundaryValue("Wall_top", "VelocityX", X => 1);
 
             // Set Initial Conditions
             //C.InitialValues_Evaluators.Add("VelocityX", X => 1 - X[1] * X[1]);
@@ -1222,7 +1201,7 @@ namespace BoSSS.Application.IBM_Solver {
             return C;
         }
 
-        static public IBM_Control DrivenCavity(int k = 2, int Cells = 10, string dbpath = null) {
+        static public IBM_Control DrivenCavity(int k = 1, int Cells = 10, string dbpath = null) {
             IBM_Control C = new IBM_Control();
 
 
@@ -1268,10 +1247,7 @@ namespace BoSSS.Application.IBM_Solver {
                 var _yNodes = GenericBlas.Linspace(-1, 1, Cells + 1);
 
                 var grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes, CellType.Square_Linear);
-
-
                 grd.EdgeTagNames.Add(1, "Velocity_inlet");
-
                 grd.EdgeTagNames.Add(2, "Wall");
 
 
@@ -1313,7 +1289,7 @@ namespace BoSSS.Application.IBM_Solver {
 
 
 
-            C.AddBoundaryValue("Velocity_inlet", "VelocityX", X => 1);
+            C.AddBoundaryValue("Velocity_inlet", "VelocityX", X => 1.0);
             //C.AddBoundaryCondition("Pressure_Outlet");
 
             C.AddBoundaryValue("Wall");
