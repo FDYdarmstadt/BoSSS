@@ -115,11 +115,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             }
         }
 
-        bool IEquationComponent.IgnoreVectorizedImplementation {
-            get {
-                return false;
-            }
-        }
 
         // "global" variables
         int D;
@@ -424,11 +419,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             }
         }
 
-        bool IEquationComponent.IgnoreVectorizedImplementation {
-            get {
-                return false;
-            }
-        }
 
         // "global" variables
         double[] uA;

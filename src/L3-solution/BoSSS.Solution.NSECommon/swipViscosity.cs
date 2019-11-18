@@ -93,7 +93,7 @@ namespace BoSSS.Solution.NSECommon {
     /// <summary>
     /// base class for viscosity terms
     /// </summary>
-    public abstract class swipViscosityBase : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient {
+    public abstract class swipViscosityBase : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient, IEquationComponentChecking {
 
         /// <summary>
         /// ctor.
@@ -470,7 +470,7 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
-        bool IEquationComponent.IgnoreVectorizedImplementation {
+        bool IEquationComponentChecking.IgnoreVectorizedImplementation {
             get {
                 return m_ignoreVectorized;
             }

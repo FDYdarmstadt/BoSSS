@@ -68,11 +68,6 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             }
         }
 
-        bool IEquationComponent.IgnoreVectorizedImplementation {
-            get {
-                return false;
-            }
-        }
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             return this.volForm.VolumeForm(ref cpv, U, GradU, V, GradV);
@@ -320,11 +315,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 return edgeForm.ParameterOrdering;
             }
         }
-        bool IEquationComponent.IgnoreVectorizedImplementation {
-            get {
-                return false;
-            }
-        }
+
         void INonlinEdgeForm_V.InternalEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
             MultidimensionalArray fin, MultidimensionalArray fot) {

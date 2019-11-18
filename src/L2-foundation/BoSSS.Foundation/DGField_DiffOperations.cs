@@ -420,13 +420,7 @@ namespace BoSSS.Foundation {
                 get {
                     return null;
                 }
-            }
-
-            bool IEquationComponent.IgnoreVectorizedImplementation {
-                get {
-                    return false;
-                }
-            }
+            } 
         }
 
         /// <summary>

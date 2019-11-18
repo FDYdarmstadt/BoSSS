@@ -163,14 +163,6 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation {
-            get {
-                return false;
-            }
-        }
 
         /// <summary>
         /// Volume integrand of the SIP

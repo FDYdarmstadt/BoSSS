@@ -59,12 +59,6 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
             }
         }
 
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
-
-
         public int LevelSetIndex {
             get { return 0; }
         }

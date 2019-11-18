@@ -313,13 +313,5 @@ namespace BoSSS.Solution.NSECommon {
             get { return m_ParameterOrdering; }
         }
 
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation {
-            get {
-                return false;
-            }
-        }
     }
 }

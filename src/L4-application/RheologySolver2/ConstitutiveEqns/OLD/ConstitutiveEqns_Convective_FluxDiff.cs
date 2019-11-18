@@ -108,7 +108,6 @@ namespace BoSSS.Application.Rheology {
                 return VariableNames.Velocity0Vector(2);
             }
         }
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
         // calculating the fluxes
         public double VolumeForm(ref CommonParamsVol cpv, double[] T, double[,] GradT, double V, double[] GradV) {

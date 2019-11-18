@@ -107,12 +107,6 @@ namespace BoSSS.Solution.RheologyCommon
             }
         }
 
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
-
-
 
         /// <summary>
         /// Calculating the integral of the volume part

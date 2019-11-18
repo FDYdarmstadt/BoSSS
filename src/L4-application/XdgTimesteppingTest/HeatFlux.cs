@@ -40,10 +40,6 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             }
         }
 
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
         public void SetParameter(string speciesName, SpeciesId SpcId) {
             switch (speciesName) {
@@ -293,10 +289,6 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             }
         }
 
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
     }
 }

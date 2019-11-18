@@ -65,11 +65,6 @@ namespace BoSSS.Solution.Utils {
             get;
         }
 
-        bool IEquationComponent.IgnoreVectorizedImplementation {
-            get {
-                return false;
-            }
-        }
         #endregion
 
         /// <summary>

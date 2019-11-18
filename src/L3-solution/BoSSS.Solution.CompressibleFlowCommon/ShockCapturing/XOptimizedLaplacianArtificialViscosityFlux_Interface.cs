@@ -72,10 +72,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 return new string[] { "artificialViscosity" };
             }
         }
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
+
 
         public double LevelSetForm(ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             // Convert CommonParamsLs to CommonParams

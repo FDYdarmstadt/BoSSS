@@ -163,10 +163,6 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 return TermActivationFlags.UxV | TermActivationFlags.V;
             }
         }
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
 
         public IList<string> ArgumentOrdering {

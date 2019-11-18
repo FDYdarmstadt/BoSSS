@@ -61,14 +61,6 @@ namespace BoSSS.Solution.Utils
         }
 
         /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation {
-            get {
-                return false;
-            }
-        }
-        /// <summary>
         /// set to <see cref="TermActivationFlags.AllOn"/>
         /// </summary>
         public TermActivationFlags VolTerms {

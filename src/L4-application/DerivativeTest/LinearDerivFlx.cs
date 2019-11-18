@@ -89,8 +89,6 @@ namespace BoSSS.Application.DerivativeTest {
             }
         }
 
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
-
 
         /// <summary>
         /// diffusion coefficient, set to 1.0 per default;
