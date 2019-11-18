@@ -44,7 +44,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
                 InitializeGlueMapOf(mergePair);
                 MergeAtBoundary(mergePair);
                 //plotter.Plot(mesh, "intermediate" + i);
-                ++i;
+                //++i;
             }
             //plotter.Plot(mesh, "final");
         }

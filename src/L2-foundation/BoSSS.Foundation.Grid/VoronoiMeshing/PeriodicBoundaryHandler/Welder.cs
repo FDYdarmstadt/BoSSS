@@ -37,7 +37,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 
         static Edge<T> SourceFirstEdgeMerge<T>(Edge<T> source, Edge<T> target)
         {
-            Debug.Assert((source.End.Position - target.Start.Position).Abs() < 1e-12,
+            Debug.Assert((source.End.Position - target.Start.Position).Abs() < 1e-10,
                 "Edges do not touch.");
             int ID = target.Twin.End.ID; //hoho
             target.Start = source.Start;
@@ -50,7 +50,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 
         static Edge<T> TargetFirstEdgeMerge<T>(Edge<T> source, Edge<T> target)
         {
-            Debug.Assert((target.End.Position - source.Start.Position).Abs() < 1e-12,
+            Debug.Assert((target.End.Position - source.Start.Position).Abs() < 1e-10,
                 "Edges do not touch.");
             int ID = target.End.ID;
             target.End = source.End;

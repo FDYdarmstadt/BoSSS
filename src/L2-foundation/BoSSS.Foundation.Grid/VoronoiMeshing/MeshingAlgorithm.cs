@@ -47,6 +47,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 }
                 nodes = mesh.Nodes;
             }
+            Plot(mesh);
+
             return mesh;
         }
 
@@ -77,6 +79,13 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             }
             centerOfGravity.Scale(1.0 / cell.Vertices.Length);
             return centerOfGravity;
+        }
+
+        static void Plot<T>(Mesh<T> mesh)
+            where T : ILocatable
+        {
+            MatlabPlotter plotter = new MatlabPlotter();
+            plotter.Plot(mesh, "mesh");
         }
     }
 }
