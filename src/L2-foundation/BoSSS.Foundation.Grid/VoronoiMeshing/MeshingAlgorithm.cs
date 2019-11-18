@@ -47,7 +47,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 }
                 nodes = mesh.Nodes;
             }
-            Plot(mesh);
+            //Plot(mesh);
 
             return mesh;
         }
