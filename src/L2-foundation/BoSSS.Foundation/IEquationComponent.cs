@@ -42,9 +42,9 @@ namespace BoSSS.Foundation {
         IList<string> ParameterOrdering { get; }
 
         /// <summary>
-        /// Only for performance measurments of the vectorized implementations (e.g. <see cref="INonlinVolumeForm_V"/>, <see cref="IVolumeForm_UxV"/>, etc.)
+        /// Only for performance measurements of the vectorized implementations (e.g. <see cref="INonlinVolumeForm_V"/>, <see cref="IVolumeForm_UxV"/>, etc.)
         /// against the base implementation (<see cref="IVolumeForm"/>, <see cref="IEdgeForm"/>):
-        /// If true, the base implementaion will be used even if a vectorized verion is provided.
+        /// If true, the base implementation will be used even if a vectorized version is provided.
         /// </summary>
         bool IgnoreVectorizedImplementation { get; }
     }

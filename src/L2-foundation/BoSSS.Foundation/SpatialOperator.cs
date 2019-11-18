@@ -741,7 +741,7 @@ namespace BoSSS.Foundation {
         /// </param>
         /// <param name="edgeQrCtx">optional quadrature instruction for edges</param>
         /// <param name="volQrCtx">optional quadrature instruction for volumes/cells</param>
-        public virtual IEvaluatorNonLin GetEvaluatorEx(
+        public virtual IEvaluatorNonLin_ GetEvaluatorEx(
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
             EdgeQuadratureScheme edgeQrCtx = null,
             CellQuadratureScheme volQrCtx = null) //
@@ -767,7 +767,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Creator of a <see cref="EvaluatorLinear"/> object.
         /// </summary>
-        public virtual IEvaluatorLinear GetMatrixBuilder(
+        public virtual IEvaluatorLinear_ GetMatrixBuilder(
             UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
             EdgeQuadratureScheme edgeQrCtx = null,
             CellQuadratureScheme volQrCtx = null) //
@@ -791,7 +791,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Container for the evaluation of nonlinear fluxes/sources
         /// </summary>
-        abstract public class EvaluatorBase : IEvaluator {
+        abstract public class EvaluatorBase : IEvaluator_ {
 
             SpatialOperator m_Owner;
 
@@ -1083,7 +1083,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// evaluation of operators
         /// </summary>
-        protected class EvaluatorNonLin : EvaluatorBase, IEvaluatorNonLin {
+        protected class EvaluatorNonLin : EvaluatorBase, IEvaluatorNonLin_ {
 
             /// <summary>
             /// Returns domain fields and parameters.
@@ -1290,7 +1290,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// matrix assembly for linear or linearized operators
         /// </summary>
-        protected class EvaluatorLinear : EvaluatorBase, IEvaluatorLinear {
+        protected class EvaluatorLinear : EvaluatorBase, IEvaluatorLinear_ {
 
             /// <summary>
             /// Not for direct user interaction
@@ -1458,7 +1458,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// constructs a <see cref="FDJacobianBuilder"/> object to linearize nonlinear operators
         /// </summary>
-        public virtual IEvaluatorLinear GetFDJacobianBuilder(
+        public virtual IEvaluatorLinear_ GetFDJacobianBuilder(
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
             DelParameterUpdate __delParameterUpdate,
             EdgeQuadratureScheme edgeQrCtx = null,
@@ -1489,7 +1489,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Computes the (approximate) Jacobian matrix of the spatial operator by finite differences.
         /// </summary>
-        public class FDJacobianBuilder : IEvaluatorLinear {
+        public class FDJacobianBuilder : IEvaluatorLinear_ {
 
             /// <summary>
             /// Not for direct user interaction
@@ -1589,7 +1589,11 @@ namespace BoSSS.Foundation {
             /// </summary>
             public SpatialOperator Owner {
                 get {
-                    return Eval.Owner;
+                    if (Eval is IEvaluator_) {
+                        return ((IEvaluator_)Eval).Owner;
+                    } else {
+                        throw new NotSupportedException();
+                    }
                 }
             }
 
@@ -1605,13 +1609,24 @@ namespace BoSSS.Foundation {
             /// 
             /// </summary>
             virtual public CoefficientSet OperatorCoefficients {
-                get { return Eval.OperatorCoefficients; }
-                set { OperatorCoefficients = value; }
+                get {
+                    if (Eval is IEvaluator_) {
+                        return ((IEvaluator_)Eval).OperatorCoefficients;
+                    } else {
+                        throw new NotSupportedException();
+                    }
+                }
+                set {
+                    if (Eval is IEvaluator_) {
+                        ((IEvaluator_)Eval).OperatorCoefficients = value;
+                    } else {
+                        throw new NotSupportedException();
+                    }
+                }
             }
 
             IEvaluatorNonLin Eval;
-
-
+            
             DelParameterUpdate DelParamUpdate;
 
             /// <summary>

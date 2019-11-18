@@ -103,13 +103,10 @@ namespace BoSSS.Foundation.XDG {
 
             }
 
-
-            Dictionary<SpeciesId, IEvaluatorLinear> SpeciesBulkMtxBuilder = new Dictionary<SpeciesId, IEvaluatorLinear>();
-            Dictionary<SpeciesId, IEvaluatorLinear> SpeciesGhostEdgeBuilder = new Dictionary<SpeciesId, IEvaluatorLinear>();
-            Dictionary<SpeciesId, IEvaluatorLinear> SpeciesSurfElmBuilder = new Dictionary<SpeciesId, IEvaluatorLinear>();
-
-
-
+            Dictionary<SpeciesId, IEvaluatorLinear_> SpeciesBulkMtxBuilder = new Dictionary<SpeciesId, IEvaluatorLinear_>();
+            Dictionary<SpeciesId, IEvaluatorLinear_> SpeciesGhostEdgeBuilder = new Dictionary<SpeciesId, IEvaluatorLinear_>();
+            Dictionary<SpeciesId, IEvaluatorLinear_> SpeciesSurfElmBuilder = new Dictionary<SpeciesId, IEvaluatorLinear_>();
+            
             public void ComputeAffine<V>(V AffineOffset) where V : IList<double> {
                 ComputeMatrix_Internal(default(BlockMsrMatrix), AffineOffset, true);
             }
@@ -537,9 +534,9 @@ namespace BoSSS.Foundation.XDG {
             }
 
 
-            Dictionary<SpeciesId, IEvaluatorNonLin> SpeciesBulkEval = new Dictionary<SpeciesId, IEvaluatorNonLin>();
-            Dictionary<SpeciesId, IEvaluatorNonLin> SpeciesGhostEval = new Dictionary<SpeciesId, IEvaluatorNonLin>();
-            Dictionary<SpeciesId, IEvaluatorNonLin> SpeciesSurfElmEval = new Dictionary<SpeciesId, IEvaluatorNonLin>();
+            Dictionary<SpeciesId, IEvaluatorNonLin_> SpeciesBulkEval = new Dictionary<SpeciesId, IEvaluatorNonLin_>();
+            Dictionary<SpeciesId, IEvaluatorNonLin_> SpeciesGhostEval = new Dictionary<SpeciesId, IEvaluatorNonLin_>();
+            Dictionary<SpeciesId, IEvaluatorNonLin_> SpeciesSurfElmEval = new Dictionary<SpeciesId, IEvaluatorNonLin_>();
 
 
         }
@@ -1133,6 +1130,45 @@ namespace BoSSS.Foundation.XDG {
 
 
         /// <summary>
+        /// The 'X' version of the Jacobian builder
+        /// </summary>
+        public class XFDJacobianBuilder : SpatialOperator.FDJacobianBuilder {
+
+            internal XFDJacobianBuilder(XEvaluatorNonlin __XEval, DelParameterUpdate __delParameterUpdate) :
+                base(__XEval, __delParameterUpdate) //
+            {
+                this.XEval = __XEval;
+            }
+
+
+            XEvaluatorNonlin XEval;
+
+            /// <summary>
+            /// Not supported, use <see cref="SpeciesOperatorCoefficients"/>.
+            /// </summary>
+            public override CoefficientSet OperatorCoefficients {
+                get {
+                    throw new NotSupportedException("Use per-species implementation.");
+                }
+                set {
+                    throw new NotSupportedException("Use per-species implementation.");
+                }
+            }
+
+            /// <summary>
+            /// Operator coefficients for each species
+            /// </summary>
+            public Dictionary<SpeciesId, CoefficientSet> SpeciesOperatorCoefficients {
+                get {
+                    return XEval.SpeciesOperatorCoefficients;
+                }
+            }
+
+        }
+
+
+        /*
+        /// <summary>
         /// The 'X' version of the Jacobian builder, computes the (approximate) Jacobian matrix of the spatial operator by finite differences.
         /// </summary>
         public class XFDJacobianBuilder : IXEvaluatorLinear {
@@ -1307,18 +1343,7 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
 #endif
-                /*
-                this.ColorLists = new int[J][];
-                this.ExternalColorLists = new int[J][];
-                this.ExternalColorListsNeighbors = new int[J][][];
-                for(int j = 0; j < J; j++) {
-                    this.ColorLists[j] = new int[] { j };
-                    this.ExternalColorLists[j] = new int[0];
-                    this.ExternalColorListsNeighbors[j] = new int[0][];
-                }
-
-                return;
-                */
+               
 
 
                 int[] LocalMarker = new int[JE]; //    marker for blocked in the current pass 
@@ -1921,6 +1946,6 @@ namespace BoSSS.Foundation.XDG {
 
         }
 
-
+        */
     }
 }
