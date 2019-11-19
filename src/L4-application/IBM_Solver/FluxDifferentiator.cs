@@ -11,13 +11,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace IBM_Solver {
+namespace BoSSS.Application.IBM_Solver {
     class VolumeFormDifferentiator : IVolumeForm {
 
         public VolumeFormDifferentiator(IVolumeForm vf) {
             m_VolForm = vf;
             m_eps = Math.Sqrt(BLAS.MachineEps);
-            m_ParameterOrdering = ArrayTools.Cat(vf.ArgumentOrdering.Select(fn => fn + "_lin"), vf.ParameterOrdering);
+            m_ParameterOrdering = ArrayTools.Cat(vf.ArgumentOrdering.Select(fn => fn + "_lin"), 
+                vf.ParameterOrdering != null ? vf.ParameterOrdering : new string[0]);
         }
 
         double m_eps;
@@ -85,10 +86,6 @@ namespace IBM_Solver {
                     throw new NotImplementedException("todo");
                 }
             }
-            //ret += GenericBlas.InnerProd(dU, U);
-
-
-
 
             return ret;
         }
@@ -99,7 +96,8 @@ namespace IBM_Solver {
         public EdgeFormDifferentiator(IEdgeForm ef) {
             m_EdgForm = ef;
             m_eps = Math.Sqrt(BLAS.MachineEps);
-            m_ParameterOrdering = ArrayTools.Cat(ef.ArgumentOrdering.Select(fn => fn + "_lin"), ef.ParameterOrdering);
+            m_ParameterOrdering = ArrayTools.Cat(ef.ArgumentOrdering.Select(fn => fn + "_lin"), 
+                ef.ParameterOrdering != null ? ef.ParameterOrdering : new string[0]);
         }
 
         double m_eps;
@@ -200,7 +198,7 @@ namespace IBM_Solver {
         }
     }
 
-    /*
+    
     /// <summary>
     /// Upwind-based convection operator
     /// </summary>
@@ -250,6 +248,10 @@ namespace IBM_Solver {
         /// flux at the boundary
         /// </summary>
         double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
+            var _Uin = new Vector(Uin);
+            Debug.Assert(inp.D == _Uin.Dim);
+
+            
 
             IncompressibleBcType edgeType = m_bcmap.EdgeTag2Type[inp.EdgeTag];
 
@@ -261,50 +263,18 @@ namespace IBM_Solver {
                 case IncompressibleBcType.NavierSlip_Linear:
                 case IncompressibleBcType.Velocity_Inlet: {
 
-                
+                    var _Uot = new Vector(inp.D);
+                    for (int d = 0; d < inp.D; d++)
+                        _Uot[d] = velFunction[inp.EdgeTag, d](inp.X, inp.time);
 
-
-                    // Setup params
-                    // ============
-                    Foundation.CommonParams inp2;
-                    inp2.GridDat = inp.GridDat;
-                    inp2.Normale = inp.Normale;
-                    inp2.iEdge = inp.iEdge;
-                    inp2.Parameters_IN = inp.Parameters_IN;
-                    inp2.X = inp.X;
-                    inp2.time = inp.time;
-
-                    // Dirichlet value for velocity
-                    // ============================
-                    double Uout = velFunction[inp.EdgeTag, m_component](inp.X, inp.time);
-
-                    // Specify Parameters_OUT
-                    // ======================
-                    inp2.Parameters_OUT = new double[inp.Parameters_IN.Length];
-
-                    // Outer values for Velocity and VelocityMean
-                    for (int j = 0; j < m_SpatialDimension; j++) {
-
-                        inp2.Parameters_OUT[j] = velFunction[inp.EdgeTag, j](inp.X, inp.time);
-
-                        // Velocity0MeanVectorOut is set to zero, i.e. always LambdaIn is used.
-                        inp2.Parameters_OUT[m_SpatialDimension + j] = 0.0;
-                    }
-
-                     r = InnerEdgeFlux(ref inp2, Uin, new double[] { Uout });
-
-
-                    return r;
+                    return (_Uot * inp.Normale) * _Uot[m_component];
                 }
                 case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.Outflow:
                 case IncompressibleBcType.Pressure_Outlet: {
-                    double r = 0.0;
                     
 
-                    
-
-                    return r;
+                    return (_Uin * inp.Normale) * _Uin[m_component];
                 }
                 default:
                 throw new NotImplementedException("Boundary condition not implemented!");
@@ -312,36 +282,20 @@ namespace IBM_Solver {
         }
 
         /// <summary>
-        /// bla bla bla
+        /// Nonlinear upwind flux
         /// </summary>
-        protected override double InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout) {
+        double InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout) {
             double r = 0.0;
 
-            // Calculate central part
-            // ======================
+            var _Uin = new Vector(Uin);
+            var _Uot = new Vector(Uout);
 
-            double rhoIn = 1.0;
-            double rhoOut = 1.0;
-
-
-            // 2 * {u_i * u_j} * n_j,
-            // resp. 2 * {rho * u_i * u_j} * n_j for variable density
-            r += rhoIn * Uin[0] * (inp.Parameters_IN[0] * inp.Normale[0] + inp.Parameters_IN[1] * inp.Normale[1]);
-            r += rhoOut * Uout[0] * (inp.Parameters_OUT[0] * inp.Normale[0] + inp.Parameters_OUT[1] * inp.Normale[1]);
-            if (m_SpatialDimension == 3) {
-                r += rhoIn * Uin[0] * inp.Parameters_IN[2] * inp.Normale[2] + rhoOut * Uout[0] * inp.Parameters_OUT[2] * inp.Normale[2];
+            Vector Umean = (_Uin + _Uot) * 0.5;
+            if(Umean*inp.Normale >= 0) {
+                r = _Uin * inp.Normale * _Uin[m_component];
+            } else {
+                r = _Uot * inp.Normale * _Uot[m_component];
             }
-
-            // Calculate dissipative part
-            // ==========================
-
-            double[] VelocityMeanIn = new double[m_SpatialDimension];
-            double[] VelocityMeanOut = new double[m_SpatialDimension];
-            for (int d = 0; d < m_SpatialDimension; d++) {
-                VelocityMeanIn[d] = inp.Parameters_IN[m_SpatialDimension + d];
-                VelocityMeanOut[d] = inp.Parameters_OUT[m_SpatialDimension + d];
-            }
-
 
             return r;
         }
@@ -355,30 +309,10 @@ namespace IBM_Solver {
         /// For variable density the result is multiplied by \f$ \rho\f$ .
         /// </summary>
         void Flux(ref CommonParamsVol inp, double[] U, double[] output) {
-            output[0] = U[0] * inp.Parameters[0];
-            output[1] = U[0] * inp.Parameters[1];
-            if (m_SpatialDimension == 3) {
-                output[2] = U[0] * inp.Parameters[2];
-            }
+            var _U = new Vector(U);
+            Debug.Assert(inp.D == _U.Dim);
 
-            if (m_bcmap.PhysMode == PhysicsMode.LowMach || m_bcmap.PhysMode == PhysicsMode.Multiphase) {
-
-                double rho = EoS.GetDensity(inp.Parameters[2 * m_SpatialDimension]);
-                for (int d = 0; d < m_SpatialDimension; d++)
-                    output[d] *= rho;
-            }
-
-            if (m_bcmap.PhysMode == PhysicsMode.Combustion) {
-                double[] args = new double[NumberOfReactants + 1];
-                for (int n = 0; n < NumberOfReactants + 1; n++) {
-                    args[n] = inp.Parameters[2 * m_SpatialDimension + n];
-                }
-                double rho = EoS.GetDensity(args);
-                for (int d = 0; d < m_SpatialDimension; d++)
-                    output[d] *= rho;
-            }
-
-
+            output.SetV(_U * _U[m_component]);
         }
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
@@ -408,5 +342,5 @@ namespace IBM_Solver {
         public TermActivationFlags InnerEdgeTerms => TermActivationFlags.UxV;
     }
 
-*/
+
 }

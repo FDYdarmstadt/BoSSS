@@ -318,7 +318,8 @@ namespace BoSSS.Application.IBM_Solver {
                         var compsJ = IBM_Op_Jacobian.EquationComponents[CodName[d]];
 
                         //var ConvBulk = new Solution.XNSECommon.Operator.Convection.ConvectionInBulk_LLF(D, BcMap, d, this.Control.PhysicalParameters.rho_A, 1, IBM_Op_config.dntParams.LFFA, IBM_Op_config.dntParams.LFFB, LsTrk);
-                        var ConvBulk = new Solution.NSECommon.LinearizedConvection(D, boundaryCondMap, d);
+                        //var ConvBulk = new Solution.NSECommon.LinearizedConvection(D, boundaryCondMap, d);
+                        var ConvBulk = new UpwindConvection(D, boundaryCondMap, d);
                         //IBM_Op.OnIntegratingBulk += ConvBulk.SetParameter;
                         comps.Add(ConvBulk); // bulk component
 
@@ -326,6 +327,13 @@ namespace BoSSS.Application.IBM_Solver {
                             delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; }, this.Control.PhysicalParameters.rho_A, false);
 
                         comps.Add(ConvIB); // immersed boundary component
+
+                        // Jacobian 
+                        var ConvDerivEdg = new EdgeFormDifferentiator(ConvBulk);
+                        var ConvDerivVol = new VolumeFormDifferentiator(ConvBulk);
+                        compsJ.Add(ConvDerivEdg);
+                        compsJ.Add(ConvDerivVol);
+
                     }
                 }
 
@@ -540,21 +548,21 @@ namespace BoSSS.Application.IBM_Solver {
             if (OpMatrix != null) {
                 // using ad-hoc linearization:
                 // - - - - - - - - - - - - - - 
-                ParameterUpdate(CurrentState, Params);
-                var mtxBuilder = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, FluidSpecies);
-                mtxBuilder.time = phystime;
-                mtxBuilder.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
-                mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
+                //ParameterUpdate(CurrentState, Params);
+                //var mtxBuilder = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, FluidSpecies);
+                //mtxBuilder.time = phystime;
+                //mtxBuilder.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+                //mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
 
 
                 // using finite difference Jacobi:
                 // - - - - - - - - - - - - - - - -
-                //var mtxBuilder2 = IBM_Op.GetFDJacobianBuilder(LsTrk, CurrentState, Params, Mapping,
-                //    ParameterUpdate,
-                //    FluidSpecies);
-                //mtxBuilder2.time = phystime;
-                //mtxBuilder2.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
-                //mtxBuilder2.ComputeMatrix(OpMatrix, OpAffine);
+                var mtxBuilder2 = IBM_Op.GetFDJacobianBuilder(LsTrk, CurrentState, Params, Mapping,
+                    ParameterUpdate,
+                    FluidSpecies);
+                mtxBuilder2.time = phystime;
+                mtxBuilder2.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+                mtxBuilder2.ComputeMatrix(OpMatrix, OpAffine);
 
                 /*
                 {
