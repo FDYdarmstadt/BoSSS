@@ -531,11 +531,11 @@ namespace BoSSS.Application.IBM_Solver {
                 mtxBuilder.time = phystime;
                 mtxBuilder.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
 
-                var _OpMatrix = new BlockMsrMatrix(OpMatrix._RowPartitioning, OpMatrix._ColPartitioning);
-                var _OpAffine = new double[OpAffine.Length];
-                mtxBuilder.ComputeMatrix(_OpMatrix, _OpAffine);
-                _OpMatrix.SaveToTextFileSparse("C:\\tmp\\AHmtx.txt");
-                _OpAffine.SaveToTextFile("C:\\tmp\\AHaff.txt");
+                //var _OpMatrix = new BlockMsrMatrix(OpMatrix._RowPartitioning, OpMatrix._ColPartitioning);
+                //var _OpAffine = new double[OpAffine.Length];
+                //mtxBuilder.ComputeMatrix(_OpMatrix, _OpAffine);
+                //_OpMatrix.SaveToTextFileSparse("C:\\tmp\\AHmtx.txt");
+                //_OpAffine.SaveToTextFile("C:\\tmp\\AHaff.txt");
 
                 // using finite difference Jacobi
                 var mtxBuilder2 = IBM_Op.GetFDJacobianBuilder(LsTrk, CurrentState, Params, Mapping,
@@ -543,11 +543,9 @@ namespace BoSSS.Application.IBM_Solver {
                     FluidSpecies);
                 mtxBuilder2.time = phystime;
                 mtxBuilder2.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
-
                 mtxBuilder2.ComputeMatrix(OpMatrix, OpAffine);
-                OpMatrix.SaveToTextFileSparse("C:\\tmp\\FDmtx.txt");
-                OpAffine.SaveToTextFile("C:\\tmp\\FDaff.txt");
-
+                
+                /*
                 {
                     int L = _OpMatrix.NoOfCols;
                     MultidimensionalArray __OpMatrix = MultidimensionalArray.Create(L, L);
@@ -584,7 +582,7 @@ namespace BoSSS.Application.IBM_Solver {
                     }
                     __OpMatrix.SaveToTextFile("C:\\tmp\\AFmtx.txt");
                 }
-
+                */
 
 #if DEBUG
                 if (DelComputeOperatorMatrix_CallCounter == 1) {
@@ -593,60 +591,14 @@ namespace BoSSS.Application.IBM_Solver {
                     CoordinateMapping Umap = this.Velocity.Mapping;
                     CoordinateMapping Pmap = this.Pressure.Mapping;
 
-                    //{
-                        var p1 = new VectorField<SinglePhaseField>(D, Velocity[0].Basis, "FDjac_", SinglePhaseField.Factory); //new SinglePhaseField(this.Pressure.Basis, "FDjac");
-                        var p2 = new VectorField<SinglePhaseField>(D, Velocity[0].Basis, "AHjac_", SinglePhaseField.Factory);
-                        var er = new VectorField<SinglePhaseField>(D, Velocity[0].Basis, "er_", SinglePhaseField.Factory);
-
-                        var tv = new double[SaddlePointProblemMapping.LocalLength];
-                        var rs = new double[SaddlePointProblemMapping.LocalLength];
-                        Random rnd = new Random(0);
-                        for(int i = 0; i < Pidx.Length; i++) {
-                            tv[Pidx[i]] = rnd.NextDouble();
-                        }
-
-                        OpMatrix.SpMV(1.0, tv, 0.0, rs);
-                        p1.CoordinateVector.AccV(1.0, rs, default(int[]), Uidx);
-
-                        _OpMatrix.SpMV(1.0, tv, 0.0, rs);
-                        p2.CoordinateVector.AccV(1.0, rs, default(int[]), Uidx);
-
-                        er.Acc(1.0, p1);
-                        er.Acc(-1.0, p2);
-
-                    Tecplot.PlotFields(ArrayTools.Cat(p1, p2, er), "futinger", 69.0, 3);
-
-                    //}
-
-
-                    Uidx.SaveToTextFile("C:\\tmp\\uidx.txt");
-                    Pidx.SaveToTextFile("C:\\tmp\\pidx.txt");
-
                     var pGrad = new BlockMsrMatrix(Umap, Pmap);
                     var _pGrad = new BlockMsrMatrix(Umap, Pmap);
                     var divVel = new BlockMsrMatrix(Pmap, Umap);
                     OpMatrix.AccSubMatrixTo(1.0, pGrad, Uidx, default(int[]), Pidx, default(int[]));
-                    _OpMatrix.AccSubMatrixTo(1.0, _pGrad, Uidx, default(int[]), Pidx, default(int[]));
                     OpMatrix.AccSubMatrixTo(1.0, divVel, Pidx, default(int[]), Uidx, default(int[]));
 
                     _pGrad.Acc(-1.0, pGrad);
                     double errSchas = _pGrad.InfNorm();
-
-                    //var pp1 = new SinglePhaseField(this.Pressure.Basis, "FDjac2");
-                    //var pp2 = new SinglePhaseField(this.Pressure.Basis, "FDaff2");
-                    //var eer = new SinglePhaseField(this.Pressure.Basis, "err2");
-
-                    //var tt = new double[Pidx.Length];
-                    //tt.AccV(1.0, tv, default(int[]), Pidx);
-                    //pGrad.SpMV(1.0, tt, 0.0, pp1.CoordinateVector);
-                    //_pGrad.SpMV(1.0, tt, 0.0, pp2.CoordinateVector);
-                    //eer.Acc(1.0, pp1);
-                    //eer.Acc(-1.0, pp2);
-
-
-                    //Tecplot.PlotFields(new DGField[] { p1, p2, er, pp1, pp2, eer }, "futinger", 69.0, 3);
-
-
 
                     var pGradT = pGrad.Transpose();
                     var Err = divVel.CloneAs();
@@ -901,6 +853,8 @@ namespace BoSSS.Application.IBM_Solver {
                 var CC = this.LsTrk.Regions.GetCutCellMask();
                 int D = this.LsTrk.GridDat.SpatialDimension;
                 double minvol = Math.Pow(this.LsTrk.GridDat.Cells.h_minGlobal, D);
+
+                U0mean.Clear();
 
                 int QuadDegree = this.HMForder;
 

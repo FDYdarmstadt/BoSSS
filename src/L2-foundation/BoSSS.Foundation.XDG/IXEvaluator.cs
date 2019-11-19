@@ -29,7 +29,6 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         XSpatialOperatorMk2 Owner { get; }
 
-       
         /// <summary>
         /// Operator coefficients for each species
         /// </summary>
@@ -42,8 +41,6 @@ namespace BoSSS.Foundation.XDG {
     /// </summary>
     public interface IXEvaluatorNonLin : IXEvaluator, IEvaluatorNonLin {
 
-        
-
     }
    
     /// <summary>
@@ -51,7 +48,6 @@ namespace BoSSS.Foundation.XDG {
     /// </summary>
     public interface IXEvaluatorLinear : IXEvaluator, IEvaluatorLinear {
 
-        
     }
     
 }
