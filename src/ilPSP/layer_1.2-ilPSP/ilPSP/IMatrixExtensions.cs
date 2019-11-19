@@ -243,6 +243,20 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// Finds those row of <paramref name="mda"/>, where the L2-distance between the row and <paramref name="Row"/> is minimal. 
+        /// </summary>
+        /// <returns>
+        /// the row index of the minimum-distance row.
+        /// </returns>
+        static public int MindistRow(this IMatrix mda, Vector Row) {
+            double Dmax;
+            int iDmax;
+            MindistRow(mda, Row, out Dmax, out iDmax);
+            return iDmax;
+        }
+
+
+        /// <summary>
         /// Finds those row <paramref name="iDmax"/> of <paramref name="mda"/>, where the L2-distance between the row and <paramref name="Row"/> is minimal. 
         /// </summary>
         /// <param name="mda">some matrix</param>

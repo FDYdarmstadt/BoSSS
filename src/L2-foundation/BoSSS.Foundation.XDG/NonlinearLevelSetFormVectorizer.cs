@@ -92,8 +92,8 @@ namespace BoSSS.Foundation.XDG {
             SpeciesId negSpc = this.NegativeSpecies;
 
             CommonParamsLs cp;
-            cp.n = new double[D];
-            cp.x = new double[D];
+            cp.n = new Vector(D);
+            cp.x = new Vector(D);
             cp.ParamsPos = new double[_NOParams];
             cp.ParamsNeg = new double[_NOParams];
             cp.time = inp.time;

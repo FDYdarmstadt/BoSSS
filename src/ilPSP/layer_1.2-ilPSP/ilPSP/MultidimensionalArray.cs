@@ -1313,11 +1313,7 @@ namespace ilPSP {
             for (int i = 0; i < L; i++)
                 x[i + xOffset] = sub[i];
         }
-
-
         
-
-
         /// <summary>
         /// Copies to a one-dimensional array/list
         /// </summary>

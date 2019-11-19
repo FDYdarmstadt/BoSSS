@@ -199,8 +199,8 @@ namespace BoSSS.Foundation.XDG {
                     //    cp.NegCellLengthScale = double.NaN;
                     
                     for (int n = 0; n < N; n++) { // loop over nodes...
-                        inp.Normal.CopyTo(normal, j, n, -1);
-                        inp.X.CopyTo(node, j, n, -1);
+                        inp.Normal.CopyTo(cp.n, j, n, -1);
+                        inp.X.CopyTo(cp.x, j, n, -1);
                         for (int i = 0; i < NP; i++) {
                             ParamsPos[i] = inp.ParamsPos[i][j, n];
                             ParamsNeg[i] = inp.ParamsNeg[i][j, n];
@@ -280,8 +280,8 @@ namespace BoSSS.Foundation.XDG {
                     //    cp.NegCellLengthScale = double.NaN;
 
                     for (int n = 0; n < N; n++) { // loop over nodes...
-                        inp.Normal.CopyTo(normal, j, n, -1);
-                        inp.X.CopyTo(node, j, n, -1);
+                        inp.Normal.CopyTo(cp.n, j, n, -1);
+                        inp.X.CopyTo(cp.x, j, n, -1);
                         for (int i = 0; i < NP; i++) {
                             ParamsPos[i] = inp.ParamsPos[i][j, n];
                             ParamsNeg[i] = inp.ParamsNeg[i][j, n];
@@ -364,8 +364,8 @@ namespace BoSSS.Foundation.XDG {
                     //    cp.NegCellLengthScale = double.NaN;
 
                     for (int n = 0; n < N; n++) { // loop over nodes...
-                        inp.Normal.CopyTo(normal, j, n, -1);
-                        inp.X.CopyTo(node, j, n, -1);
+                        inp.Normal.CopyTo(cp.n, j, n, -1);
+                        inp.X.CopyTo(cp.x, j, n, -1);
                         for (int i = 0; i < NP; i++) {
                             ParamsPos[i] = inp.ParamsPos[i][j, n];
                             ParamsNeg[i] = inp.ParamsNeg[i][j, n];
@@ -448,8 +448,8 @@ namespace BoSSS.Foundation.XDG {
                     //    cp.NegCellLengthScale = double.NaN;
 
                     for (int n = 0; n < N; n++) { // loop over nodes...
-                        inp.Normal.CopyTo(normal, j, n, -1);
-                        inp.X.CopyTo(node, j, n, -1);
+                        inp.Normal.CopyTo(cp.n, j, n, -1);
+                        inp.X.CopyTo(cp.x, j, n, -1);
                         for (int i = 0; i < NP; i++) {
                             ParamsPos[i] = inp.ParamsPos[i][j, n];
                             ParamsNeg[i] = inp.ParamsNeg[i][j, n];
@@ -528,8 +528,8 @@ namespace BoSSS.Foundation.XDG {
                 //    cp.NegCellLengthScale = double.NaN;
 
                 for (int n = 0; n < N; n++) { // loop over nodes...
-                    inp.Normal.CopyTo(normal, j, n, -1);
-                    inp.X.CopyTo(node, j, n, -1);
+                    inp.Normal.CopyTo(cp.n, j, n, -1);
+                    inp.X.CopyTo(cp.x, j, n, -1);
                     for (int i = 0; i < NP; i++) {
                         ParamsPos[i] = inp.ParamsPos[i][j, n];
                         ParamsNeg[i] = inp.ParamsNeg[i][j, n];
@@ -606,8 +606,8 @@ namespace BoSSS.Foundation.XDG {
                 //    cp.NegCellLengthScale = double.NaN;
 
                 for (int n = 0; n < N; n++) { // loop over nodes...
-                    inp.Normal.CopyTo(normal, j, n, -1);
-                    inp.X.CopyTo(node, j, n, -1);
+                    inp.Normal.CopyTo(cp.n, j, n, -1);
+                    inp.X.CopyTo(cp.x, j, n, -1);
                     for (int i = 0; i < NP; i++) {
                         ParamsPos[i] = inp.ParamsPos[i][j, n];
                         ParamsNeg[i] = inp.ParamsNeg[i][j, n];

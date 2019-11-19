@@ -200,7 +200,7 @@ namespace IBM_Solver {
         }
     }
 
-
+    /*
     /// <summary>
     /// Upwind-based convection operator
     /// </summary>
@@ -407,4 +407,6 @@ namespace IBM_Solver {
 
         public TermActivationFlags InnerEdgeTerms => TermActivationFlags.UxV;
     }
+
+*/
 }

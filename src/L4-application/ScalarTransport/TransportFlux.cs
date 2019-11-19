@@ -19,6 +19,7 @@ using BoSSS.Solution.Utils;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Foundation;
 using System.Collections.Generic;
+using ilPSP;
 
 namespace BoSSS.Application.ScalarTransport {
 

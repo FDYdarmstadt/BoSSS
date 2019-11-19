@@ -25,6 +25,7 @@ using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.ShockCapturing;
+using ilPSP;
 using ilPSP.Utils;
 using NUnit.Framework;
 using System;

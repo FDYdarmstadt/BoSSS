@@ -18,6 +18,7 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.Utils;
+using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -21,6 +21,7 @@ using System.Text;
 using BoSSS.Foundation;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.Utils;
+using ilPSP;
 
 namespace BoSSS.Solution.NSECommon {
 

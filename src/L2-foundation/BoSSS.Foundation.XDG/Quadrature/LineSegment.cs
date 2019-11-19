@@ -270,8 +270,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// </summary>
         /// <param name="pt"></param>
         /// <returns></returns>
-        public double GetSegmentCoordinateForPoint(double[] pt) {
-            if (pt.Length != this.SpatialDimension)
+        public double GetSegmentCoordinateForPoint(Vector pt) {
+            if (pt.Dim != this.SpatialDimension)
                 throw new ArgumentException();
             var St = this.Start;
             var En = this.End;

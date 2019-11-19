@@ -779,7 +779,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             // identify if roots are at vertices of the RefElement
                             // ===================================================
 
-                            List<double[]> PtMeas_nodes = new List<double[]>();
+                            List<Vector> PtMeas_nodes = new List<Vector>();
                             for (int e = 0; e < referenceLineSegments.Length; e++) {
                                 LineSegment referenceSegment = referenceLineSegments[e];
                                 double[] roots = _roots[e];
@@ -868,7 +868,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                         for (int h = roots.Length - 1; h >= 0; h--) {
                                             int iVertex = _rootIsAtVertex[e][h];
 
-                                            double[] pt = null;
+                                            Vector pt = default(Vector);
+                                            bool pt_initialized = false;
 
                                             if (iVertex >= 0) {
                                                 // ensure that this root is present for all other faces
@@ -887,8 +888,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                                         continue;
 
                                                     if (!_rootIsAtVertex[iF].Contains(iVertex)) {
-                                                        if (pt == null)
+                                                        if (!pt_initialized) {
                                                             pt = referenceSegment.GetPointOnSegment(roots[h]);
+                                                            pt_initialized = true;
+                                                        }
 
                                                         var alpha = referenceLineSegments[iF].GetSegmentCoordinateForPoint(pt);
                                                         Debug.Assert(alpha >= -1.00000001);

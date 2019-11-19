@@ -491,7 +491,7 @@ namespace ilPSP {
 
             return (a.x * b.x + a.y * b.y + a.z * b.z);
         }
-        /*
+        
         /// <summary>
         /// Implicit conversion an array of doubles of length <see cref="Dim"/>
         /// </summary>
@@ -518,7 +518,7 @@ namespace ilPSP {
         public static implicit operator Vector( double[]  v) {
             return new Vector(v);
         }
-        */
+        
 
         /// <summary>
         /// a vector notation: (x|y);
