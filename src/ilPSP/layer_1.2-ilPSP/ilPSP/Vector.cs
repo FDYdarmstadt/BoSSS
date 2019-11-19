@@ -23,7 +23,7 @@ using ilPSP.Utils;
 using ilPSP;
 using System.Collections;
 
-namespace BoSSS.Platform.LinAlg {
+namespace ilPSP {
 
     /// <summary>
     /// A spatial coordinate or vector, in 1D, 2D, 3D

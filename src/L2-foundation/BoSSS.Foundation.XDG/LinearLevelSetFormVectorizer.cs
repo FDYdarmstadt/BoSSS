@@ -21,6 +21,7 @@ using System.Text;
 using BoSSS.Platform;
 using System.Diagnostics;
 using ilPSP;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -148,15 +149,13 @@ namespace BoSSS.Foundation.XDG {
 
 
             // create temp mem:
-            double[] node = new double[D];
-            double[] normal = new double[D];
             int NP = (this.ParameterOrdering != null) ? this.ParameterOrdering.Count : 0;
 
             double[] ParamsPos = new double[NP];
             double[] ParamsNeg = new double[NP];
             CommonParamsLs cp = default(CommonParamsLs);
-            cp.n = normal;
-            cp.x = node;
+            cp.n = new Vector(D);
+            cp.x = new Vector(D);
             cp.ParamsNeg = ParamsNeg;
             cp.ParamsPos = ParamsPos;
             cp.time = inp.time;
@@ -230,15 +229,13 @@ namespace BoSSS.Foundation.XDG {
             
 
             // create temp mem:
-            double[] node = new double[D];
-            double[] normal = new double[D];
             int NP = (this.ParameterOrdering != null) ? this.ParameterOrdering.Count : 0;
 
             double[] ParamsPos = new double[NP];
             double[] ParamsNeg = new double[NP];
             CommonParamsLs cp = default(CommonParamsLs);
-            cp.n = normal;
-            cp.x = node;
+            cp.n = new Vector(D);
+            cp.x = new Vector(D);
             cp.ParamsNeg = ParamsNeg;
             cp.ParamsPos = ParamsPos;
             cp.time = inp.time;
@@ -316,15 +313,13 @@ namespace BoSSS.Foundation.XDG {
 
 
             // create temp mem:
-            double[] node = new double[D];
-            double[] normal = new double[D];
             int NP = (this.ParameterOrdering != null) ? this.ParameterOrdering.Count : 0;
 
             double[] ParamsPos = new double[NP];
             double[] ParamsNeg = new double[NP];
             CommonParamsLs cp = default(CommonParamsLs);
-            cp.n = normal;
-            cp.x = node;
+            cp.n = new Vector(D);
+            cp.x = new Vector(D);
             cp.ParamsNeg = ParamsNeg;
             cp.ParamsPos = ParamsPos;
             cp.time = inp.time;
@@ -401,15 +396,13 @@ namespace BoSSS.Foundation.XDG {
 
 
             // create temp mem:
-            double[] node = new double[D];
-            double[] normal = new double[D];
             int NP = (this.ParameterOrdering != null) ? this.ParameterOrdering.Count : 0;
 
             double[] ParamsPos = new double[NP];
             double[] ParamsNeg = new double[NP];
             CommonParamsLs cp = default(CommonParamsLs);
-            cp.n = normal;
-            cp.x = node;
+            cp.n = new Vector(D);
+            cp.x = new Vector(D);
             cp.ParamsNeg = ParamsNeg;
             cp.ParamsPos = ParamsPos;
             cp.time = inp.time;
@@ -488,15 +481,13 @@ namespace BoSSS.Foundation.XDG {
 
 
             // create temp mem:
-            double[] node = new double[D];
-            double[] normal = new double[D];
             int NP = (this.ParameterOrdering != null) ? this.ParameterOrdering.Count : 0;
 
             double[] ParamsPos = new double[NP];
             double[] ParamsNeg = new double[NP];
             CommonParamsLs cp = default(CommonParamsLs);
-            cp.n = normal;
-            cp.x = node;
+            cp.n = new Vector(D);
+            cp.x = new Vector(D);
             cp.ParamsNeg = ParamsNeg;
             cp.ParamsPos = ParamsPos;
             cp.time = inp.time;
@@ -565,15 +556,13 @@ namespace BoSSS.Foundation.XDG {
 
 
             // create temp mem:
-            double[] node = new double[D];
-            double[] normal = new double[D];
             int NP = (this.ParameterOrdering != null) ? this.ParameterOrdering.Count : 0;
 
             double[] ParamsPos = new double[NP];
             double[] ParamsNeg = new double[NP];
             CommonParamsLs cp = default(CommonParamsLs);
-            cp.n = normal;
-            cp.x = node;
+            cp.n = new Vector(D);
+            cp.x = new Vector(D);
             cp.ParamsNeg = ParamsNeg;
             cp.ParamsPos = ParamsPos;
             cp.time = inp.time;

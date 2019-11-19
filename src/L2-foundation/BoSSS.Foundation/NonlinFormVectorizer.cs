@@ -23,6 +23,7 @@ using BoSSS.Platform;
 using System.Diagnostics;
 using BoSSS.Foundation.Grid;
 using ilPSP;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Foundation.Quadrature.NonLin {
 
@@ -92,7 +93,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             CommonParamsVol cpv;
             cpv.GridDat = prm.GridDat;
             cpv.Parameters = new double[_NOParams];
-            cpv.Xglobal = new double[D];
+            cpv.Xglobal = new Vector(D);
             cpv.time = prm.time;
             double[] _GradV = new double[D];
             double[,] _GradU = new double[_NOargs, D];
@@ -161,7 +162,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             CommonParamsVol cpv;
             cpv.GridDat = prm.GridDat;
             cpv.Parameters = new double[_NOParams];
-            cpv.Xglobal = new double[D];
+            cpv.Xglobal = new Vector(D);
             cpv.time = prm.time;
             double[] _GradV = new double[D];
             double[,] _GradU = new double[_NOargs, D];
@@ -346,8 +347,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             cpv.GridDat = efp.GridDat;
             cpv.Parameters_IN = new double[_NOParams];
             cpv.Parameters_OUT = new double[_NOParams];
-            cpv.Normale = new double[D];
-            cpv.X = new double[D];
+            cpv.Normale = new Vector(D);
+            cpv.X = new Vector(D);
             cpv.time = efp.time;
 
             double[] _GradV_in = new double[D];
@@ -449,8 +450,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             CommonParamsBnd cpv;
             cpv.GridDat = efp.GridDat;
             cpv.Parameters_IN = new double[_NOParams];
-            cpv.Normale = new double[D];
-            cpv.X = new double[D];
+            cpv.Normale = new Vector(D);
+            cpv.X = new Vector(D);
             cpv.time = efp.time;
 
             double[] _GradV_in = new double[D];
@@ -538,8 +539,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             cpv.GridDat = efp.GridDat;
             cpv.Parameters_IN = new double[_NOParams];
             cpv.Parameters_OUT = new double[_NOParams];
-            cpv.Normale = new double[D];
-            cpv.X = new double[D];
+            cpv.Normale = new Vector(D);
+            cpv.X = new Vector(D);
             cpv.time = efp.time;
 
             double[] _GradV_in = new double[D];
@@ -642,8 +643,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             CommonParamsBnd cpv;
             cpv.GridDat = efp.GridDat;
             cpv.Parameters_IN = new double[_NOParams];
-            cpv.Normale = new double[D];
-            cpv.X = new double[D];
+            cpv.Normale = new Vector(D);
+            cpv.X = new Vector(D);
             cpv.time = efp.time;
 
             double[] _GradV_in = new double[D];

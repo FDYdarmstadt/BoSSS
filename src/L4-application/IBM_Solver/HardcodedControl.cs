@@ -123,7 +123,7 @@ namespace BoSSS.Application.IBM_Solver {
             }
 
             C.AddBoundaryValue("Wall_bottom");
-            C.AddBoundaryValue("Wall_top", "VelocityX", X => 1);
+            C.AddBoundaryValue("Wall_top");
 
             // Set Initial Conditions
             //C.InitialValues_Evaluators.Add("VelocityX", X => 1 - X[1] * X[1]);
@@ -1201,7 +1201,7 @@ namespace BoSSS.Application.IBM_Solver {
             return C;
         }
 
-        static public IBM_Control DrivenCavity(int k = 1, int Cells = 10, string dbpath = null) {
+        static public IBM_Control DrivenCavity(int k = 2, int Cells = 10, string dbpath = null) {
             IBM_Control C = new IBM_Control();
 
 
@@ -1284,10 +1284,7 @@ namespace BoSSS.Application.IBM_Solver {
             VelocityYex = (X, t) => (0);
             Pressure = (X, t) => (0);
 
-            //C.NonLinearSolver.SolverCode = NonLinearSolverCode.PicardGMRES;
-            //C.LinearSolver.SolverCode = LinearSolverCode.exp_Schur;
-
-
+  
 
             C.AddBoundaryValue("Velocity_inlet", "VelocityX", X => 1.0);
             //C.AddBoundaryCondition("Pressure_Outlet");

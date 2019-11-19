@@ -25,6 +25,7 @@ using ilPSP.Utils;
 using System.Diagnostics;
 using BoSSS.Foundation;
 using ilPSP;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Solution.NSECommon {
 
@@ -709,8 +710,8 @@ namespace BoSSS.Solution.NSECommon {
             CommonParamsBnd cpv;
             cpv.GridDat = efp.GridDat;
             cpv.Parameters_IN = new double[_NOParams];
-            cpv.Normale = new double[D];
-            cpv.X = new double[D];
+            cpv.Normale = new Vector(D);;
+            cpv.X = new Vector(D);
             cpv.time = efp.time;
 
             double[] _GradV_in = new double[D];

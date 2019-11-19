@@ -1506,8 +1506,8 @@ namespace BoSSS.Foundation {
                 Eval.MPITtransceive = true;
                 DelParamUpdate = __delParameterUpdate;
 
-                //BuildGridColoring();
-                BuildOneByOneColoring();
+                BuildOptimizedGridColoring();
+                //BuildOneByOneColoring();
 
                 //Console.WriteLine("FDJac: no of color lists: " + ColorLists.Length);
             }
@@ -1677,19 +1677,7 @@ namespace BoSSS.Foundation {
                     }
                 }
 #endif
-                /*
-                this.ColorLists = new int[J][];
-                this.ExternalColorLists = new int[J][];
-                this.ExternalColorListsNeighbors = new int[J][][];
-                for(int j = 0; j < J; j++) {
-                    this.ColorLists[j] = new int[] { j };
-                    this.ExternalColorLists[j] = new int[0];
-                    this.ExternalColorListsNeighbors[j] = new int[0][];
-                }
-
-                return;
-                */
-
+             
 
                 int[] LocalMarker = new int[JE]; //    marker for blocked in the current pass 
                 int[] ExchangedMarker = new int[JE]; //  accumulation buffer for MPI exchange

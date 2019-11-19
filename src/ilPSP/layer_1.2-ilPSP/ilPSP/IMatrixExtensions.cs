@@ -276,13 +276,61 @@ namespace ilPSP {
 
             Dmax = Math.Sqrt(Dmax);
         }
-
-
+        
         /// <summary>
         /// Finds those row of <paramref name="mda"/>, where the L2-distance between the row and <paramref name="Row"/> is 
         /// below <paramref name="tol"/>; returns a negative number otherwise.
         /// </summary>
         static public int FindRow(this IMatrix mda, double[] Row, double tol) {
+            double Dmax;
+            int iDmax;
+            MindistRow(mda, Row, out Dmax, out iDmax);
+            if(Dmax < tol)
+                return iDmax;
+            else
+                return -1;
+        }
+
+        /// <summary>
+        /// Finds those row <paramref name="iDmax"/> of <paramref name="mda"/>, where the L2-distance between the row and <paramref name="Row"/> is minimal. 
+        /// </summary>
+        /// <param name="mda">some matrix</param>
+        /// <param name="Row">some row</param>
+        /// <param name="Dmax">minimum L2 distance over all rows</param>
+        /// <param name="iDmax">index of minimum L2-distance row</param>
+        /// <returns></returns>
+        static public void MindistRow(this IMatrix mda, Vector Row, out double Dmax, out int iDmax) {
+            if(Row.Dim != mda.NoOfCols)
+                throw new ArgumentException();
+
+
+            int N = mda.NoOfCols;
+            int M = mda.NoOfRows;
+
+            Dmax = double.MaxValue;
+            iDmax = int.MinValue;
+
+            for(int i = 0; i < M; i++) {
+                double dist = 0.0;
+                for(int j = 0; j < N; j++) {
+                    double a = Row[j] - mda[i, j];
+                    dist += a * a;
+                }
+
+                if(Dmax > dist) {
+                    Dmax = dist;
+                    iDmax = i;
+                }
+            }
+
+            Dmax = Math.Sqrt(Dmax);
+        }
+        
+        /// <summary>
+        /// Finds those row of <paramref name="mda"/>, where the L2-distance between the row and <paramref name="Row"/> is 
+        /// below <paramref name="tol"/>; returns a negative number otherwise.
+        /// </summary>
+        static public int FindRow(this IMatrix mda, Vector Row, double tol) {
             double Dmax;
             int iDmax;
             MindistRow(mda, Row, out Dmax, out iDmax);
