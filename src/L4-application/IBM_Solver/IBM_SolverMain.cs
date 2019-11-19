@@ -283,7 +283,8 @@ namespace BoSSS.Application.IBM_Solver {
 
                 // full operator:
                 var CodName = ((new string[] { "momX", "momY", "momZ" }).GetSubVector(0, D)).Cat("div");
-                var Params = ArrayTools.Cat(
+                var Params = 
+                     ArrayTools.Cat(
                      VariableNames.Velocity0Vector(D),
                      VariableNames.Velocity0MeanVector(D));
                 var DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure);
@@ -303,7 +304,7 @@ namespace BoSSS.Application.IBM_Solver {
                     (A, B, C) => this.HMForder, null);
                 
                 IBM_Op_Jacobian = new XSpatialOperatorMk2(DomNameSelected, 
-                    ArrayTools.Cat(DomNameSelected.Select(fn => fn + "_lin"), Params), 
+                    DomNameSelected.Select(fn => fn + "_lin").ToArray(), 
                     CodNameSelected,
                     (A, B, C) => this.HMForder, null);
 
@@ -405,7 +406,7 @@ namespace BoSSS.Application.IBM_Solver {
                         IBM_Op.EquationComponents["div"].Add(src);
                         IBM_Op.EquationComponents["div"].Add(flx);
 
-                        IBM_Op_Jacobian.EquationComponents["div"].Add(flx);
+                        IBM_Op_Jacobian.EquationComponents["div"].Add(src);
                         IBM_Op_Jacobian.EquationComponents["div"].Add(flx);
 
                         //var presStab = new PressureStabilization(1, this.GridData.Edges.h_max_Edge, 1 / this.Control.PhysicalParameters.mu_A);
@@ -564,44 +565,25 @@ namespace BoSSS.Application.IBM_Solver {
                 mtxBuilder2.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
                 mtxBuilder2.ComputeMatrix(OpMatrix, OpAffine);
 
-                /*
-                {
-                    int L = _OpMatrix.NoOfCols;
-                    MultidimensionalArray __OpMatrix = MultidimensionalArray.Create(L, L);
-                    double eps = BLAS.MachineEps.Sqrt();
-                    double[] F0 = new double[L];
-                    double[] F1 = new double[L];
-                    var eval = IBM_Op.GetEvaluatorEx(LsTrk, CurrentState, Params, Mapping, FluidSpecies);
-                    eval.time = phystime;
-                    eval.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+                // using the other kind of Jacobi:
+                // - - - - - - - - - - - - - - - -
+                var _OpMatrix = new BlockMsrMatrix(OpMatrix._ColPartitioning);
+                var _OpAffine = new double[_OpMatrix._ColPartitioning.LocalLength];
+                var mtxBuilder3 = IBM_Op_Jacobian.GetMatrixBuilder(LsTrk, Mapping, CurrentState, Mapping, FluidSpecies);
+                mtxBuilder3.time = phystime;
+                mtxBuilder3.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+                mtxBuilder3.ComputeMatrix(_OpMatrix, _OpAffine);
 
-                    ParameterUpdate(CurrentState, Params);
-                    eval.Evaluate(1.0, 0.0, F0);
-                    CoordinateVector CurrentStateVec = new CoordinateVector(CurrentState);
-                    var StateBkUp = CurrentStateVec.ToArray();
-                    double[] Diff = new double[L];
-                    for (int i = 0; i < L; i++) {
-                        if (i == 20)
-                            Console.Write("fuck");
-                        double bkup = CurrentStateVec[i];
-                        CurrentStateVec[i] += eps;
+                var DeltaMtx = _OpMatrix.CloneAs();
+                var DeltaAff = _OpAffine.CloneAs();
+                DeltaMtx.Acc(-1.0, OpMatrix);
+                DeltaAff.AccV(-1.0, OpAffine);
+                double mtxdelta = DeltaMtx.InfNorm();
+                double affdelta = DeltaAff.L2Norm();
 
-                        F1.Clear();
-                        ParameterUpdate(CurrentState, Params);
-                        eval.Evaluate(1.0, 0.0, F1);
+                //OpMatrix.Clear();
+                //OpMatrix.Acc(1.0, _OpMatrix);
 
-                        Diff.SetV(F1);
-                        Diff.AccV(-1.0, F0);
-                        Diff.ScaleV(1 / eps);
-
-                        __OpMatrix.SetColumn(i, Diff);
-
-
-                        CurrentStateVec[i] = bkup;
-                    }
-                    __OpMatrix.SaveToTextFile("C:\\tmp\\AFmtx.txt");
-                }
-                */
 
 #if DEBUG
                 if (DelComputeOperatorMatrix_CallCounter == 1) {
@@ -609,15 +591,11 @@ namespace BoSSS.Application.IBM_Solver {
                     int[] Pidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D);
                     CoordinateMapping Umap = this.Velocity.Mapping;
                     CoordinateMapping Pmap = this.Pressure.Mapping;
-
+                    
                     var pGrad = new BlockMsrMatrix(Umap, Pmap);
-                    var _pGrad = new BlockMsrMatrix(Umap, Pmap);
                     var divVel = new BlockMsrMatrix(Pmap, Umap);
                     OpMatrix.AccSubMatrixTo(1.0, pGrad, Uidx, default(int[]), Pidx, default(int[]));
                     OpMatrix.AccSubMatrixTo(1.0, divVel, Pidx, default(int[]), Uidx, default(int[]));
-
-                    _pGrad.Acc(-1.0, pGrad);
-                    double errSchas = _pGrad.InfNorm();
 
                     var pGradT = pGrad.Transpose();
                     var Err = divVel.CloneAs();

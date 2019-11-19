@@ -60,27 +60,36 @@ namespace BoSSS.Application.IBM_Solver {
             double f0 = m_VolForm.VolumeForm(ref clonedParams, Utmp, null, V, GradV);
 
             for (int iVar = 0; iVar < GAMMA; iVar++) { // loop over trial variables
-                if (   ((m_VolForm.VolTerms & (TermActivationFlags.UxV | TermActivationFlags.UxGradV)) != 0) 
+                if (((m_VolForm.VolTerms & (TermActivationFlags.UxV | TermActivationFlags.UxGradV)) != 0)
                     && (U[iVar] != 0.0)) { // perf. opt.
                     // add perturbation
                     double bkup = Utmp[iVar];
-                    double delta = Math.Abs(Utmp[iVar]) * eps;
+                    double delta = Math.Abs(U[iVar]) * eps;
+                    Debug.Assert(delta > 0);
                     Utmp[iVar] += delta;
 
                     // flux eval
                     double f1 = m_VolForm.VolumeForm(ref clonedParams, Utmp, null, V, GradV);
+                    if (double.IsInfinity(f1))
+                        throw new ArithmeticException();
+                    if (double.IsNaN(f1))
+                        throw new ArithmeticException();
 
                     // restore un-perturbed state
                     Utmp[iVar] = bkup;
 
                     // compute finite difference
                     double dU_iVar = (f1 - f0) / delta;
+                    if (double.IsInfinity(dU_iVar))
+                        throw new ArithmeticException();
+                    if (double.IsNaN(dU_iVar))
+                        throw new ArithmeticException();
 
                     // inner product
                     ret += dU_iVar * U[iVar];
                 }
 
-                if (   ((m_VolForm.VolTerms & (TermActivationFlags.GradUxGradV | TermActivationFlags.GradUxGradV)) != 0) 
+                if (((m_VolForm.VolTerms & (TermActivationFlags.GradUxGradV | TermActivationFlags.GradUxGradV)) != 0)
                     && (GradU.GetRow(iVar).L2NormPow2() != 0.0)) {
 
                     throw new NotImplementedException("todo");
@@ -150,17 +159,26 @@ namespace BoSSS.Application.IBM_Solver {
                     if (U_IN[iVar] != 0.0) {
                         // add perturbation
                         double bkup = U_IN_temp[iVar];
-                        double delta = Math.Abs(U_IN_temp[iVar]) * eps;
+                        double delta = Math.Abs(U_IN[iVar]) * eps;
+                        Debug.Assert(delta > 0);
                         U_IN_temp[iVar] += delta;
 
                         // flux eval
                         double f1 = m_EdgForm.InnerEdgeForm(ref clonedParams, U_IN_temp, U_OT_temp, null, null, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
+                        if (double.IsInfinity(f1))
+                            throw new ArithmeticException();
+                        if (double.IsNaN(f1))
+                            throw new ArithmeticException();
 
                         // restore un-perturbed state
                         U_IN_temp[iVar] = bkup;
 
                         // compute finite difference
                         double dU_iVar = (f1 - f0) / delta;
+                        if (double.IsInfinity(dU_iVar))
+                            throw new ArithmeticException();
+                        if (double.IsNaN(dU_iVar))
+                            throw new ArithmeticException();
 
                         // inner product
                         ret += dU_iVar * U_IN[iVar];
@@ -169,17 +187,26 @@ namespace BoSSS.Application.IBM_Solver {
                     if(U_OT[iVar] != 0.0) {
                         // add perturbation
                         double bkup = U_OT_temp[iVar];
-                        double delta = Math.Abs(U_OT_temp[iVar]) * eps;
+                        double delta = Math.Abs(U_OT[iVar]) * eps;
+                        Debug.Assert(delta > 0);
                         U_OT_temp[iVar] += delta;
 
                         // flux eval
                         double f1 = m_EdgForm.InnerEdgeForm(ref clonedParams, U_IN_temp, U_OT_temp, null, null, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
+                        if (double.IsInfinity(f1))
+                            throw new ArithmeticException();
+                        if (double.IsNaN(f1))
+                            throw new ArithmeticException();
 
                         // restore un-perturbed state
                         U_OT_temp[iVar] = bkup;
 
                         // compute finite difference
                         double dU_iVar = (f1 - f0) / delta;
+                        if (double.IsInfinity(dU_iVar))
+                            throw new ArithmeticException();
+                        if (double.IsNaN(dU_iVar))
+                            throw new ArithmeticException();
 
                         // inner product
                         ret += dU_iVar * U_OT[iVar];
@@ -193,8 +220,58 @@ namespace BoSSS.Application.IBM_Solver {
             return ret;
         }
 
-        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
-            throw new NotImplementedException();
+        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] U_IN, double[,] _Grad_uA, double _vIN, double[] _Grad_vIN) {
+            double ret = 0.0;
+            int GAMMA = m_EdgForm.ArgumentOrdering.Count;
+
+            double eps = m_eps;
+            
+            int NoOfParams = m_EdgForm.ParameterOrdering != null ? m_EdgForm.ParameterOrdering.Count : 0;
+            double[] OrgParams_IN = new double[NoOfParams];
+            OrgParams_IN.SetSubVector(inp.Parameters_IN, GAMMA, NoOfParams);
+
+            CommonParamsBnd clonedParams = inp;
+            Debug.Assert(object.ReferenceEquals(inp, clonedParams) == false);
+            clonedParams.Parameters_IN = OrgParams_IN;
+
+            double[] U_IN_temp = new double[GAMMA];
+            U_IN_temp.SetSubVector(inp.Parameters_IN, 0, GAMMA);
+
+            //double[] dU = new double[GAMMA];
+            double f0 = m_EdgForm.BoundaryEdgeForm(ref clonedParams, U_IN_temp, null, _vIN, _Grad_vIN);
+            for (int iVar = 0; iVar < GAMMA; iVar++) { // loop over trial variables
+                if (((m_EdgForm.InnerEdgeTerms & (TermActivationFlags.UxV | TermActivationFlags.UxGradV)) != 0)) {
+                    if (U_IN[iVar] != 0.0) {
+                        // add perturbation
+                        double bkup = U_IN_temp[iVar];
+                        double delta = Math.Abs(U_IN[iVar]) * eps;
+                        Debug.Assert(delta > 0);
+                        U_IN_temp[iVar] += delta;
+
+                        // flux eval
+                        double f1 = m_EdgForm.BoundaryEdgeForm(ref clonedParams, U_IN_temp, null, _vIN, _Grad_vIN);
+                        if (double.IsInfinity(f1))
+                            throw new ArithmeticException();
+                        if (double.IsNaN(f1))
+                            throw new ArithmeticException();
+                        
+                        // restore un-perturbed state
+                        U_IN_temp[iVar] = bkup;
+
+                        // compute finite difference
+                        double dU_iVar = (f1 - f0) / delta;
+                        if (double.IsInfinity(dU_iVar))
+                            throw new ArithmeticException();
+                        if (double.IsNaN(dU_iVar))
+                            throw new ArithmeticException();
+
+                        // inner product
+                        ret += dU_iVar * U_IN[iVar];
+                    }
+                }
+            }
+
+            return ret;
         }
     }
 
