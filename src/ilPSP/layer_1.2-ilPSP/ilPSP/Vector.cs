@@ -738,7 +738,7 @@ namespace ilPSP {
         /// <summary>
         /// Initializes this from the second dimension of a 2D array
         /// </summary>
-        /// <param name="mda">2D-array</param>
+        /// <param name="mda">data origin</param>
         /// <param name="i1">index into 1st dimension of <paramref name="mda"/></param>
         public void SetFrom(MultidimensionalArray mda, int i1) {
 #if DEBUG
@@ -747,31 +747,168 @@ namespace ilPSP {
             if (mda.GetLength(1) != Dim)
                 throw new ArgumentException("Second dimension mismatch.");
 #endif
-            this[0] = mda[i1, 0];
+            x = mda[i1, 0];
             if(Dim > 1) 
-                this[1] = mda[i1, 1];
+                y = mda[i1, 1];
             if(Dim > 2) 
-                this[2] = mda[i1, 2];
+                z = mda[i1, 2];
         }
 
         /// <summary>
         /// Initializes this from the third dimension of a 3D array
         /// </summary>
-        /// <param name="mda">2D-array</param>
+        /// <param name="mda">data origin</param>
         /// <param name="i1">index into 1st dimension of <paramref name="mda"/></param>
         /// <param name="i2">index into 2nd dimension of <paramref name="mda"/></param>
         public void SetFrom(MultidimensionalArray mda, int i1, int i2) {
 #if DEBUG
             if (mda.Dimension != 3)
-                throw new ArgumentException("Expecting a 2D-array."); ;
+                throw new ArgumentException("Expecting a 3D-array."); ;
             if (mda.GetLength(2) != Dim)
                 throw new ArgumentException("Second dimension mismatch.");
 #endif
-            this[0] = mda[i1, i2, 0];
+            x = mda[i1, i2, 0];
             if(Dim > 1) 
-                this[1] = mda[i1, i2, 1];
+                y = mda[i1, i2, 1];
             if(Dim > 2) 
-                this[2] = mda[i1, i2, 2];
+                z = mda[i1, i2, 2];
+        }
+
+        /// <summary>
+        /// Initializes this from an array with arbitrary dimensions
+        /// </summary>
+        /// <param name="mda">data origin</param>
+        /// <param name="IndexOffset">the index into <paramref name="mda"/>, where to start reading data</param>
+        /// <param name="OriginDim">the dimension from which to take the vector entries</param>
+        public void SetFrom(int OriginDim, MultidimensionalArray mda, params int[] IndexOffset) {
+#if DEBUG
+            if (mda.Dimension != IndexOffset.Length)
+                throw new ArgumentException("Expecting an array of dimension equal to length of IndexOffset.");
+            if (mda.GetLength(OriginDim) != Dim)
+                throw new ArgumentException("Origin dimension has mismatching length."); 
+#endif
+            x = mda[IndexOffset];
+            if (Dim > 1) {
+                IndexOffset[OriginDim]++;
+                y = mda[IndexOffset];
+            }
+            if (Dim > 2) {
+                IndexOffset[OriginDim]++;
+                z = mda[IndexOffset];
+            }
+        }
+
+        /// <summary>
+        /// Initializes this from an array with arbitrary dimensions
+        /// </summary>
+        /// <param name="mda">data origin</param>
+        /// <param name="inc">index increase</param>
+        /// <param name="IndexOffset">the index into <paramref name="mda"/>, where to start reading data</param>
+        /// <param name="OriginDim">the dimension from which to take the vector entries</param>
+        public void SetFrom(int OriginDim, int inc, MultidimensionalArray mda, params int[] IndexOffset) {
+#if DEBUG
+            if (mda.Dimension != IndexOffset.Length)
+                throw new ArgumentException("Expecting an array of dimension equal to length of IndexOffset.");
+#endif
+            x = mda[IndexOffset];
+            if (Dim > 1) {
+                IndexOffset[OriginDim] += inc;
+                y = mda[IndexOffset];
+            }
+            if (Dim > 2) {
+                IndexOffset[OriginDim] += inc;
+                z = mda[IndexOffset];
+            }
+        }
+
+
+
+        /// <summary>
+        /// Writes the components of this vector to a 2D array
+        /// </summary>
+        /// <param name="mda">data origin</param>
+        /// <param name="i1">index into 1st dimension of <paramref name="mda"/></param>
+        public void WriteTo(MultidimensionalArray mda, int i1) {
+#if DEBUG
+            if (mda.Dimension != 2)
+                throw new ArgumentException("Expecting a 2D-array."); ;
+            if (mda.GetLength(1) != Dim)
+                throw new ArgumentException("Second dimension mismatch.");
+#endif
+            mda[i1, 0] = x;
+            if(Dim > 1) 
+                mda[i1, 1] = y;
+            if(Dim > 2) 
+                mda[i1, 2] = z;
+        }
+
+        /// <summary>
+        /// Writes the components of this vector to a 3D array
+        /// </summary>
+        /// <param name="mda">data origin</param>
+        /// <param name="i1">index into 1st dimension of <paramref name="mda"/></param>
+        /// <param name="i2">index into 2nd dimension of <paramref name="mda"/></param>
+        public void WriteTo(MultidimensionalArray mda, int i1, int i2) {
+#if DEBUG
+            if (mda.Dimension != 3)
+                throw new ArgumentException("Expecting a 3D-array."); ;
+            if (mda.GetLength(2) != Dim)
+                throw new ArgumentException("Second dimension mismatch.");
+#endif
+            mda[i1, i2, 0] = x;
+            if(Dim > 1) 
+                mda[i1, i2, 1] = y;
+            if(Dim > 2) 
+                mda[i1, i2, 2] = z;
+        }
+
+        /// <summary>
+        /// Writes the components of this vector to an array with arbitrary dimensions
+        /// </summary>
+        /// <param name="mda">data origin</param>
+        /// <param name="IndexOffset">the index into <paramref name="mda"/>, where to start writing data</param>
+        /// <param name="DestDim">the dimension from which to take the vector entries</param>
+        public void WriteTo(int DestDim, MultidimensionalArray mda, params int[] IndexOffset) {
+#if DEBUG
+            if (mda.Dimension != IndexOffset.Length)
+                throw new ArgumentException("Expecting an array of dimension equal to length of IndexOffset."); ;
+            if (mda.GetLength(DestDim) != Dim)
+                throw new ArgumentException("Destination dimension has mismatching length.");
+#endif
+
+            mda[IndexOffset] = x;
+            if (Dim > 1) {
+                IndexOffset[DestDim]++;
+                mda[IndexOffset] = y;
+            }
+            if (Dim > 2) {
+                IndexOffset[DestDim]++;
+                mda[IndexOffset] = z;
+            }
+        }
+
+        /// <summary>
+        /// Writes the components of this vector to an array with arbitrary dimensions
+        /// </summary>
+        /// <param name="mda">data origin</param>
+        /// <param name="inc">index increase</param>
+        /// <param name="IndexOffset">the index into <paramref name="mda"/>, where to start writing data</param>
+        /// <param name="DestDim">the dimension from which to take the vector entries</param>
+        public void WriteTo(int DestDim, int inc, MultidimensionalArray mda, params int[] IndexOffset) {
+#if DEBUG
+            if (mda.Dimension != IndexOffset.Length)
+                throw new ArgumentException("Expecting an array of dimension equal to length of IndexOffset."); ;
+#endif
+
+            mda[IndexOffset] = x;
+            if (Dim > 1) {
+                IndexOffset[DestDim] += inc;
+                mda[IndexOffset] = y;
+            }
+            if (Dim > 2) {
+                IndexOffset[DestDim] += inc;
+                mda[IndexOffset] = z;
+            }
         }
     }
 
