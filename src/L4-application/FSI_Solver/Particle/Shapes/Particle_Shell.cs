@@ -138,28 +138,20 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="point">
         /// The point to be tested.
         /// </param>
-        /// <param name="minTolerance">
-        /// Minimum tolerance length.
+        /// <param name="tolerance">
+        /// tolerance length.
         /// </param>
-        /// <param name="maxTolerance">
-        /// Maximal tolerance length. Equal to h_min if not specified.
-        /// </param>
-        /// <param name="WithoutTolerance">
-        /// No tolerance.
-        /// </param>
-        public override bool Contains(double[] point, double minTolerance, double maxTolerance = 0, bool WithoutTolerance = false) {
+        public override bool Contains(Vector point, double tolerance = 0) {
             double angle = Motion.GetAngle(0);
-            double[] position = Motion.GetPosition(0);
-            if (maxTolerance == 0)
-                maxTolerance = minTolerance;
-            double a = !WithoutTolerance ? (m_Length - 2 * m_Thickness) / 2 + Math.Sqrt(maxTolerance.Pow2() + minTolerance.Pow2()) : (m_Length - 2 * m_Thickness) / 2;
-            double b = !WithoutTolerance ? m_Height / 2 + Math.Sqrt(maxTolerance.Pow2() + minTolerance.Pow2()) : m_Height / 2;
-            double c = !WithoutTolerance ? m_Thickness / 2 + Math.Sqrt(maxTolerance.Pow2() + minTolerance.Pow2()) : m_Thickness / 2;
-            double[] tempX = point.CloneAs();
+            Vector position = Motion.GetPosition(0);
+            double a = (m_Length - 2 * m_Thickness) / 2 + tolerance;
+            double b = m_Height / 2 + tolerance;
+            double c = m_Thickness / 2 + tolerance;
+            Vector tempX = new Vector(point);
             tempX[0] = point[0] * Math.Cos(angle) - point[1] * Math.Sin(angle);
             tempX[1] = point[0] * Math.Sin(angle) + point[1] * Math.Cos(angle);
             // subparticle _
-            double[] subPosition = position.CloneAs();
+            Vector subPosition = new Vector(position);
             subPosition[0] = position[0] - (m_Height - m_Thickness) / 2 * Math.Sin(angle);
             subPosition[1] = position[1] - (m_Height - m_Thickness) / 2 * Math.Cos(angle);
             if (Math.Abs(tempX[0] - subPosition[0]) < a && Math.Abs(tempX[1] - subPosition[1]) < c)

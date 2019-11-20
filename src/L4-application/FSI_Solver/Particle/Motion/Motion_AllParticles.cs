@@ -32,18 +32,23 @@ namespace BoSSS.Application.FSI_Solver {
         internal Motion_AllParticles(LevelSetTracker lsTrk) {
             m_LsTrk = lsTrk;
         }
-        [NonSerialized]
-        internal readonly FSI_Auxillary Aux = new FSI_Auxillary();
+
         [DataMember]
-        protected static int m_Dim = 2;
+        private static readonly int m_Dim = 2;
         [DataMember]
         private readonly List<double[]> m_ForcesAndTorquePreviousIteration = new List<double[]>();
         [DataMember]
-        private List<double[]> m_ForcesAndTorqueWithoutRelaxation = new List<double[]>();
+        private readonly List<double[]> m_ForcesAndTorqueWithoutRelaxation = new List<double[]>();
         [DataMember]
-        private double relaxationCoeff = 1;
-        LevelSetTracker m_LsTrk;
+        private readonly LevelSetTracker m_LsTrk;
 
+        /// <summary>
+        /// ...
+        /// </summary>
+        /// <param name="AllParticles"></param>
+        /// <param name="hydrodynamicsIntegration"></param>
+        /// <param name="fluidDensity"></param>
+        /// <param name="underrelax"></param>
         internal void CalculateHydrodynamics(List<Particle> AllParticles, ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, bool underrelax) {
             double[] hydrodynamics = new double[m_Dim * AllParticles.Count() + AllParticles.Count()];
             for (int p = 0; p < AllParticles.Count(); p++) {
@@ -52,7 +57,6 @@ namespace BoSSS.Application.FSI_Solver {
                 int offset = p * (m_Dim + 1);
                 double[] tempForces = currentParticle.Motion.CalculateHydrodynamicForces(hydrodynamicsIntegration, fluidDensity, cutCells);
                 double tempTorque = currentParticle.Motion.CalculateHydrodynamicTorque(hydrodynamicsIntegration, cutCells);
-                StabilizeHydrodynamics(ref tempForces, ref tempTorque, currentParticle.Motion.MaxParticleLengthScale);
                 for (int d = 0; d < m_Dim; d++) {
                     hydrodynamics[offset + d] = tempForces[d];
                 }
@@ -67,55 +71,27 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        private void StabilizeHydrodynamics(ref double[] tempForces, ref double tempTorque, double lengthScale) {
-            double averageForcesAndTorque = Math.Abs(CalculateAverageForces(tempForces, tempTorque, lengthScale));
-            for (int d = 0; d < m_Dim; d++) {
-                if (Math.Abs(tempForces[d] * 1e6) < averageForcesAndTorque || Math.Abs(tempForces[d]) < 1e-10)
-                    tempForces[d] = 0;
-            }
-            if (Math.Abs(tempTorque * 1e6) < averageForcesAndTorque || Math.Abs(tempTorque) < 1e-10)
-                tempTorque = 0;
-        }
-
-        /// <summary>
-        /// Does what it says.
-        /// </summary>
-        /// <param name="forces">
-        /// The hydrodynamic forces.
-        /// </param>
-        /// <param name="torque">
-        /// The hydrodynamic torque.
-        /// </param>
-        /// <param name="lengthScale">
-        /// The average Lengthscale of the particle.
-        /// </param>
-        private double CalculateAverageForces(double[] forces, double torque, double lengthScale) {
-            double averageForces = Math.Abs(torque) / lengthScale;
-            for (int d = 0; d < forces.Length; d++) {
-                averageForces += forces[d];
-            }
-            return averageForces /= 3;
-        }
-
         /// <summary>
         /// Post-processing of the hydrodynamics. If desired the underrelaxation is applied to the forces and torque.
         /// </summary>
-        /// <param name="tempForces"></param>
-        /// <param name="tempTorque"></param>
-        /// <param name="firstIteration"></param>
+        /// <param name="hydrodynamics"></param>
         private double[] HydrodynamicsPostprocessing(double[] hydrodynamics) {
-            double[] relaxatedHydrodynamics = hydrodynamics.CloneAs();
             m_ForcesAndTorqueWithoutRelaxation.Insert(0, hydrodynamics.CloneAs());
             ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation(hydrodynamics, m_ForcesAndTorquePreviousIteration);
+            double[] relaxatedHydrodynamics;
             if (m_ForcesAndTorquePreviousIteration.Count >= 4) {
-                relaxatedHydrodynamics = Underrelaxation.ForcesAndTorque(ref relaxationCoeff, m_ForcesAndTorqueWithoutRelaxation);
+                relaxatedHydrodynamics = Underrelaxation.JacobianUnderrelaxation(m_ForcesAndTorqueWithoutRelaxation);
             }
             else {
-                relaxatedHydrodynamics = Underrelaxation.ForceAndTorque();
+                relaxatedHydrodynamics = Underrelaxation.StaticUnderrelaxation();
             }
             return relaxatedHydrodynamics;
         }
 
+        /// <summary>
+        /// ...
+        /// </summary>
+        /// <param name="AllParticles"></param>
         internal void SaveHydrodynamicOfPreviousIteration(List<Particle> AllParticles) {
             double[] hydrodynamics = new double[(m_Dim + 1) * AllParticles.Count()];
             for (int p = 0; p < AllParticles.Count(); p++) {
@@ -134,13 +110,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Residual for fully coupled system
         /// </summary>
-        /// <param name="Particles">
-        /// A list of all particles
-        /// </param>
         /// <param name="iterationCounter"></param>
-        /// <param name="MaximumIterations"></param>
-        /// <param name="Residual"></param>
-        /// <param name="IterationCounter_Out"> </param>
         internal double CalculateParticleResidual(ref int iterationCounter) {
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             double residual = 0;

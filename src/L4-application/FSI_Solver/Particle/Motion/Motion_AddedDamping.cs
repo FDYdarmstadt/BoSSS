@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
+using BoSSS.Platform.LinAlg;
 using ilPSP;
 using MPI.Wrappers;
 using System;
@@ -112,11 +113,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// Calculates the translational acceleration of the particle using the added damping model.
         /// </summary>
         /// <param name="dt">Timestep</param>
-        protected override double[] CalculateTranslationalAcceleration(double dt) {
+        protected override Vector CalculateTranslationalAcceleration(double dt) {
             double[,] coefficientMatrix = CalculateCoefficientMatrix(dt);
             double denominator = CalculateDenominator(coefficientMatrix);
 
-            double[] l_Acceleration = new double[2];
+            Vector l_Acceleration = new Vector(m_Dim);
             l_Acceleration[0] = GetHydrodynamicForces(0)[0] * (coefficientMatrix[1, 1] * coefficientMatrix[2, 2] - coefficientMatrix[1, 2] * coefficientMatrix[2, 1]);
             l_Acceleration[0] += GetHydrodynamicForces(0)[1] * (-coefficientMatrix[0, 1] * coefficientMatrix[2, 2] + coefficientMatrix[0, 2] * coefficientMatrix[2, 1]);
             l_Acceleration[0] += GetHydrodynamicTorque(0) * (coefficientMatrix[0, 1] * coefficientMatrix[1, 2] - coefficientMatrix[0, 2] * coefficientMatrix[1, 1]);
@@ -190,13 +191,13 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="hydrodynamicsIntegration"></param>
         /// <param name="fluidDensity"></param>
-        public override double[] CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, CellMask cutCells, double dt) {
-            double[] tempForces = hydrodynamicsIntegration.Forces(out List<double[]>[] stressToPrintOut, cutCells);
+        public override Vector CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, CellMask cutCells, double dt) {
+            Vector tempForces = new Vector(hydrodynamicsIntegration.Forces(out List<double[]>[] stressToPrintOut, cutCells));
             currentStress = TransformStressToPrint(stressToPrintOut);
             Aux.TestArithmeticException(tempForces, "temporal forces during calculation of hydrodynamics");
-            Force_MPISum(ref tempForces);
-            CalculateGravity(fluidDensity, tempForces);
-            ForceAddedDamping(ref tempForces, dt);
+            tempForces = Force_MPISum(tempForces);
+            tempForces = CalculateGravity(fluidDensity, tempForces);
+            tempForces = ForceAddedDamping(tempForces, dt);
             return tempForces;
         }
 
@@ -222,10 +223,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         /// <param name="forces"></param>
-        private void ForceAddedDamping(ref double[] forces, double dt) {
+        private Vector ForceAddedDamping(Vector forces, double dt) {
             for (int d = 0; d < m_Dim; d++) {
                 forces[d] += m_AddedDampingCoefficient * dt * (AddedDampingTensor[0, d] * GetTranslationalAcceleration(0)[0] + AddedDampingTensor[1, d] * GetTranslationalAcceleration(0)[1] + AddedDampingTensor[d, 2] * GetRotationalAcceleration(0));
             }
+            return forces;
         }
 
         /// <summary>

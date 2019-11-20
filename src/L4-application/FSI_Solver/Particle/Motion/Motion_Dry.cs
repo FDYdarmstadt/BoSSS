@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Application.FSI_Solver {
     public class Motion_Dry : Motion_Wet {
@@ -34,27 +35,21 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
+        /// Calculate the new translational velocity of the particle
         /// </summary>
         /// <param name="dt">Timestep</param>
-        protected override double[] CalculateTranslationalVelocity(double dt) {
-            double[] l_TranslationalVelocity = new double[m_Dim];
-            for (int d = 0; d < m_Dim; d++) {
-                l_TranslationalVelocity[d] = GetTranslationalVelocity(1)[d] + GetTranslationalAcceleration(0)[d] * dt;
-            }
+        protected override Vector CalculateTranslationalVelocity(double dt) {
+            Vector l_TranslationalVelocity = GetTranslationalVelocity(1) + GetTranslationalAcceleration(0) * dt;
             Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
             return l_TranslationalVelocity;
         }
 
         /// <summary>
-        /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
+        /// Calculate the new translational velocity of the particle
         /// </summary>
         /// <param name="dt">Timestep</param>
-        protected override double[] CalculateTranslationalVelocity(double dt, double collisionTimestep) {
-            double[] l_TranslationalVelocity = new double[m_Dim];
-            for (int d = 0; d < m_Dim; d++) {
-                l_TranslationalVelocity[d] = GetTranslationalVelocity(1)[d] + GetTranslationalAcceleration(0)[d] * (dt - collisionTimestep);
-            }
+        protected override Vector CalculateTranslationalVelocity(double dt, double collisionTimestep) {
+            Vector l_TranslationalVelocity = GetTranslationalVelocity(1) + GetTranslationalAcceleration(0) * dt;
             Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
             return l_TranslationalVelocity;
         }
@@ -96,9 +91,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="hydrodynamicsIntegration"></param>
         /// <param name="fluidDensity"></param>
-        public override double[] CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, CellMask cutCells, double dt) {
-            double[] tempForces = new double[m_Dim];
-            CalculateGravity(fluidDensity, tempForces);
+        public override Vector CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, CellMask cutCells, double dt) {
+            Vector tempForces = new Vector(m_Dim);
+            tempForces = CalculateGravity(fluidDensity, tempForces);
             return tempForces;
         }
 

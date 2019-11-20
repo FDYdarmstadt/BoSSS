@@ -46,12 +46,9 @@ namespace FSI_Solver {
         /// <param name="variable">
         /// Name of the list.
         /// </param>
-        internal void SaveMultidimValueOfLastTimestep(List<double[]> variable) {
-            int Dim = variable[0].Length;
-            variable.Insert(0, new double[Dim]);
-            for (int d = 0; d < Dim; d++) {
-                variable[0][d] = 0;
-            }
+        internal void SaveVectorOfLastTimestep(List<Vector> variable) {
+            int dim = variable[0].Dim;
+            variable.Insert(0, new Vector(dim));
             variable.RemoveAt(variable.Count - 1);
         }
 

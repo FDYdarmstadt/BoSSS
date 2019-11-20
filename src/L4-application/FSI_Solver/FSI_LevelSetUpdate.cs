@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Application.FSI_Solver;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
+using BoSSS.Platform.LinAlg;
 using MPI.Wrappers;
 using System;
 using System.Collections;
@@ -225,7 +226,7 @@ namespace FSI_Solver {
                 int temp = 0;
                 for (int i = 0; i < ColoredCellsSorted.Count; i++) {
                     if (ColoredCellsSorted[i][0] < J) {
-                        double[] center = gridData.iLogicalCells.GetCenter(ColoredCellsSorted[i][0]);
+                        Vector center = new Vector(gridData.iLogicalCells.GetCenter(ColoredCellsSorted[i][0]));
                         if (ColoredCellsSorted[i][1] != 0 && Particles[p].Contains(center, h_min)) {
                             temp = ColoredCellsSorted[i][1];
                             break;

@@ -114,25 +114,17 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="point">
         /// The point to be tested.
         /// </param>
-        /// <param name="minTolerance">
-        /// Minimum tolerance length.
+        /// <param name="tolerance">
+        /// tolerance length.
         /// </param>
-        /// <param name="maxTolerance">
-        /// Maximal tolerance length. Equal to h_min if not specified.
-        /// </param>
-        /// <param name="WithoutTolerance">
-        /// No tolerance.
-        /// </param>
-        public override bool Contains(double[] point, double minTolerance, double maxTolerance = 0, bool WithoutTolerance = false) {
-            double angle = Motion.GetAngle(0);
-            double[] position = Motion.GetPosition(0);
-            if (maxTolerance == 0)
-                maxTolerance = minTolerance;
-            double radiusTolerance = 1;
-            double a = !WithoutTolerance ? m_Length + Math.Sqrt(maxTolerance.Pow2() + minTolerance.Pow2()) : m_Length;
-            double b = !WithoutTolerance ? m_Thickness + Math.Sqrt(maxTolerance.Pow2() + minTolerance.Pow2()) : m_Thickness;
-            double Ellipse = ((point[0] - position[0]) * Math.Cos(angle) + (point[1] - position[1]) * Math.Sin(angle)).Pow2() / a.Pow2() + (-(point[0] - position[0]) * Math.Sin(angle) + (point[1] - position[1]) * Math.Cos(angle)).Pow2() / b.Pow2();
-            return Ellipse < radiusTolerance;
+        public override bool Contains(Vector point, double tolerance = 0) {
+            Vector orientation = new Vector(Math.Cos(Motion.GetAngle(0)), Math.Sin(Motion.GetAngle(0)));
+            Vector normalOrientation = new Vector(-Math.Sin(Motion.GetAngle(0)), Math.Cos(Motion.GetAngle(0)));
+            Vector position = Motion.GetPosition(0);
+            double a = m_Length + tolerance;
+            double b = m_Thickness + tolerance;
+            double Ellipse = ((point - position) * orientation).Pow2() / a.Pow2() + ((point - position) * normalOrientation).Pow2() / b.Pow2();
+            return Ellipse < 1;
         }
 
         /// <summary>

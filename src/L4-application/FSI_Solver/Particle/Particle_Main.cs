@@ -120,13 +120,13 @@ namespace BoSSS.Application.FSI_Solver {
         /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
         /// </summary>
         [DataMember]
-        public double[] ClosestPointToOtherObject { get; set; }
+        public Vector ClosestPointToOtherObject { get; set; }
 
         /// <summary>
         /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
         /// </summary>
         [DataMember]
-        public double[] ClosestPointOnOtherObjectToThis { get; set; }
+        public Vector ClosestPointOnOtherObjectToThis { get; set; }
 
         /// <summary>
         /// Active stress on the current particle.
@@ -176,9 +176,10 @@ namespace BoSSS.Application.FSI_Solver {
             MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
             double h_min = LsTrk.GridDat.Cells.h_minGlobal;
             double h_max = LsTrk.GridDat.Cells.h_maxGlobal;
+            double tolerance = Math.Sqrt(h_min.Pow2() + h_max.Pow2());
 
             for (int i = 0; i < CellArray.Length; i++) {
-                CellArray[i] = Contains(new double[] { CellCenters[i, 0], CellCenters[i, 1] }, h_min, h_max, false);
+                CellArray[i] = Contains(new Vector(CellCenters[i, 0], CellCenters[i, 1]), tolerance);
             }
             CellMask CutCells = new CellMask(LsTrk.GridDat, CellArray, MaskType.Logical);
             CutCells = CutCells.Intersect(LsTrk.Regions.GetCutCellMask());
@@ -188,10 +189,9 @@ namespace BoSSS.Application.FSI_Solver {
         public BitArray CutBitArray(LevelSetTracker LsTrk) {
             BitArray CellArray = new BitArray(LsTrk.GridDat.Cells.NoOfLocalUpdatedCells);
             MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
-            double h_min = LsTrk.GridDat.Cells.h_minGlobal / 2;
-
+            double tolerance = LsTrk.GridDat.Cells.h_minGlobal / 2;
             for (int i = 0; i < CellArray.Length; i++) {
-                CellArray[i] = Contains(new double[] { CellCenters[i, 0], CellCenters[i, 1] }, h_min, h_min, false);
+                CellArray[i] = Contains(new Vector(CellCenters[i, 0], CellCenters[i, 1]), tolerance);
             }
             return CellArray;
         }
@@ -203,7 +203,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="h_min"></param>
         /// <param name="h_max"></param>
         /// <param name="WithoutTolerance"></param>
-        public virtual bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false) => throw new NotImplementedException();
+        public virtual bool Contains(Vector point, double tolerance = 0) => throw new NotImplementedException();
 
         /// <summary>
         /// Return the lengthscales of the particle (length and thickness)
@@ -231,8 +231,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// </param>
         /// <param name="RadialLength">
         /// </param>
-        internal void CalculateRadialVector(double[] SurfacePoint, out double[] RadialVector, out double RadialLength) {
-            RadialVector = new double[] { SurfacePoint[0] - Motion.GetPosition(0)[0], SurfacePoint[1] - Motion.GetPosition(0)[1] };
+        internal void CalculateRadialVector(Vector SurfacePoint, out Vector RadialVector, out double RadialLength) {
+            RadialVector = new Vector(SurfacePoint[0] - Motion.GetPosition(0)[0], SurfacePoint[1] - Motion.GetPosition(0)[1]);
             if (RadialVector.L2Norm() == 0)
                 throw new ArithmeticException("The given vector has no length");
             RadialLength = RadialVector.L2Norm();
@@ -248,8 +248,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// </param>
         /// <param name="RadialNormalVector">
         /// </param>
-        internal void CalculateRadialNormalVector(double[] SurfacePoint, out double[] RadialNormalVector) {
-            RadialNormalVector = new double[] { SurfacePoint[1] - Motion.GetPosition(0)[1], -SurfacePoint[0] + Motion.GetPosition(0)[0] };
+        internal void CalculateRadialNormalVector(Vector SurfacePoint, out Vector RadialNormalVector) {
+            RadialNormalVector = new Vector(SurfacePoint[1] - Motion.GetPosition(0)[1], -SurfacePoint[0] + Motion.GetPosition(0)[0]);
             RadialNormalVector.ScaleV(1 / RadialNormalVector.L2Norm());
             Aux.TestArithmeticException(RadialNormalVector, "particle vector normal to radial vector");
         }
@@ -258,8 +258,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// Calculates the eccentricity of a collision
         /// </summary>
         internal void CalculateEccentricity() {
-            CalculateRadialVector(ClosestPointToOtherObject, out double[] RadialVector, out _);
-            Eccentricity = RadialVector[0] * Motion.GetLastCollisionTangentialVector()[0] + RadialVector[1] * Motion.GetLastCollisionTangentialVector()[1];
+            CalculateRadialVector(ClosestPointToOtherObject, out Vector RadialVector, out _);
+            Eccentricity = RadialVector * Motion.GetLastCollisionTangentialVector();
             Aux.TestArithmeticException(Eccentricity, "particle eccentricity");
         }
 

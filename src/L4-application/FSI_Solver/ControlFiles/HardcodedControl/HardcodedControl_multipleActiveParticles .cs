@@ -166,7 +166,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.2, new double[] { -3, -1 }, startAngl: 10, activeStress: 100));
             C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.2, new double[] { 3, 0 }, startAngl: 188, activeStress: 100));
             C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.2, new double[] { 0, 1 }, startAngl: -92, activeStress: 100));
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.2, new double[] { 0, -1 }, startAngl: 54, activeStress: 100));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.2, new double[] { 0, -1 }, startAngl: 54, activeStress: 100));
             //C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.2, new double[] { 2, 2 }, startAngl: 33, activeStress: 100));
             //C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.2, new double[] { -5, -1 }, startAngl: 128, activeStress: 100));
             //C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.2, new double[] { -5, 3 }, startAngl: 185, activeStress: 100));
@@ -176,7 +176,7 @@ namespace BoSSS.Application.FSI_Solver {
             // misc. solver options
             // =============================  
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
-            double dt = 1e-2;
+            double dt = 1e-3;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 100000000;

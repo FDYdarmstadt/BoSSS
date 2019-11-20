@@ -21,6 +21,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
+using BoSSS.Platform.LinAlg;
 using BoSSS.Solution;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Utils;
@@ -411,10 +412,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         private double[] CreateCouplingAtParticleBoundary(double[] X) {
             double[] couplingArray = new double[X.Length + 7];
+            Vector point = new Vector(X);
             foreach (Particle p in m_Particles) {
-                p.CalculateRadialNormalVector(X, out double[] RadialNormalVector);
+                p.CalculateRadialNormalVector(point, out Vector RadialNormalVector);
                 double seperateBoundaryRegions = p.ActiveStress != 0 ? p.SeperateBoundaryRegions(X) : 0;
-                bool containsParticle = m_Particles.Count == 1 ? true : p.Contains(X, GridData.iGeomCells.h_min.Min());
+                bool containsParticle = m_Particles.Count == 1 ? true : p.Contains(point, GridData.iGeomCells.h_min.Min());
                 if (containsParticle) {
                     couplingArray[0] = p.Motion.GetTranslationalVelocity(0)[0];
                     couplingArray[1] = p.Motion.GetTranslationalVelocity(0)[1];
@@ -711,8 +713,8 @@ namespace BoSSS.Application.FSI_Solver {
                 Particle currentParticle = m_Particles[p];
                 double h_min = GridData.iGeomCells.h_min.Min() / 2;
                 for (int j = 0; j < J; j++) {
-                    double[] center = GridData.iLogicalCells.GetCenter(j);
-                    if (currentParticle.Contains(center, h_min, h_min)) {
+                    Vector center = new Vector(GridData.iLogicalCells.GetCenter(j));
+                    if (currentParticle.Contains(center, h_min)) {
                         ParticleColor.SetMeanValue(j, p + 1);
                         coloredCells.Add(j);
                         cells[j] = p + 1;
@@ -849,7 +851,7 @@ namespace BoSSS.Application.FSI_Solver {
                                 ParticleHydrodynamicsIntegration hydrodynamicsIntegration = new ParticleHydrodynamicsIntegration(2, Velocity, Pressure, LsTrk, FluidViscosity);
                                 AllParticleHydrodynamics.CalculateHydrodynamics(m_Particles, hydrodynamicsIntegration, FluidDensity, IsFullyCoupled);
                                 if (iterationCounter != 1) {
-                                    double underrelax = 0.05;
+                                    double underrelax = 0.5;
                                     Velocity.Scale(underrelax);
                                     Velocity.Acc((1 - underrelax), velocityOld);
                                     Pressure.Scale(underrelax);
@@ -1377,7 +1379,7 @@ namespace BoSSS.Application.FSI_Solver {
             for (int p = 0; p < m_Particles.Count; p++) {
                 Particle particle = m_Particles[p];
                 for (int j = 0; j < noOfLocalCells; j++) {
-                    double[] centerPoint = new double[] { CellCenters[j, 0], CellCenters[j, 1] };
+                    Vector centerPoint = new Vector(CellCenters[j, 0], CellCenters[j, 1]);
                     if (!coarseCells[j]) {
                         coarseCells[j] = particle.Contains(centerPoint, radiusCoarseCells);
                     }
@@ -1486,7 +1488,7 @@ namespace BoSSS.Application.FSI_Solver {
             for (int p = 0; p < m_Particles.Count; p++) {
                 Particle particle = m_Particles[p];
                 for (int j = 0; j < noOfLocalCells; j++) {
-                    double[] centerPoint = new double[] { CellCenters[j, 0], CellCenters[j, 1] };
+                    Vector centerPoint = new Vector(CellCenters[j, 0], CellCenters[j, 1]);
                     if (!coarseCells[j])
                         coarseCells[j] = particle.Contains(centerPoint, radiusFineCells);
                 }

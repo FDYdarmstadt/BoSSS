@@ -21,21 +21,30 @@ using System.Runtime.Serialization;
 namespace BoSSS.Application.FSI_Solver {
     class ParticleUnderrelaxation {
 
+        /// <summary>
+        /// Constructor for underrelaxation. 
+        /// </summary>
+        /// <param name="variable">
+        /// The variable to be relaxated
+        /// </param>  
+        /// <param name="variablePreviousIteration">
+        /// The variable at the previous iteration.
+        /// </param>  
         internal ParticleUnderrelaxation(double[] variable, List<double[]> variablePreviousIteration) {
             m_Variable = variable;
             m_VariablePreviousIteration = variablePreviousIteration;
         }
 
         [DataMember]
-        private double[] m_Variable;
+        private readonly double[] m_Variable;
         [DataMember]
-        private List<double[]> m_VariablePreviousIteration;
+        private readonly List<double[]> m_VariablePreviousIteration;
 
         /// <summary>
         /// This method underrelaxates the hydrodynamic forces and torque. The underrelaxation coefficient is static.
         /// Used for init of the Jacobian underrelaxation.
         /// </summary>
-        internal double[] ForceAndTorque() {
+        internal double[] StaticUnderrelaxation() {
             double[] returnVariable = m_Variable.CloneAs();
             for (int d = 0; d < m_Variable.Length; d++) {
                 returnVariable[d] = 0.1 * m_Variable[d] + (1 - 0.1) * m_VariablePreviousIteration[1][d];
@@ -47,22 +56,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// This method underrelaxates the hydrodynamic forces and torque. The Underrelaxation
         /// factor is calculated dynamically by employing a gradient procedure.
         /// </summary>
-        /// <param name="torque">
-        /// The hydrodynamic torque.
-        /// </param>
-        /// <param name="torquePreviousIteration">
-        /// The hydrodynamic torque at the previous iteration.
+        /// <param name="variableWithoutRelaxationPreviousIteration">
+        /// The hydrodynamics of the previous iterations without underrelaxation.
         /// </param>  
-        internal double[] ForcesAndTorque(ref double oldUnderrelaxationCoefficient, List<double[]> variableWithoutRelaxationPreviousIteration) {
-            double[] returnVariable = m_Variable.CloneAs();
-            double[] underrelaxationCoefficient = new double[] { 0, oldUnderrelaxationCoefficient };
-            JacobianUnderrelaxation(underrelaxationCoefficient, variableWithoutRelaxationPreviousIteration);
-            oldUnderrelaxationCoefficient = underrelaxationCoefficient[0];
-            return returnVariable;
-        }
-
-        private double[] JacobianUnderrelaxation(double[] underrelaxationCoefficient, List<double[]> variableWithoutRelaxationPreviousIteration) {
+        internal double[] JacobianUnderrelaxation(List<double[]> variableWithoutRelaxationPreviousIteration) {
             // ursprüngliche idee: Fixed-point fluid–structure interaction solvers with dynamic relaxation Ulrich Küttler, Wolfgang Wall
+            double[] returnVariable = m_Variable.CloneAs();
             double[,] jacobian = ApproximateRelaxJacobian(variableWithoutRelaxationPreviousIteration);
             double[] residual = new double[m_Variable.Length];
             double residualScalar = 0;
@@ -80,10 +79,9 @@ namespace BoSSS.Application.FSI_Solver {
             for (int i = 0; i < m_Variable.Length; i++) {
                 residualJacSecond += residualJacFirst[i] * residual[i];
             }
-            underrelaxationCoefficient[0] = -residualScalar / residualJacSecond;
-            double[] returnVariable = m_Variable.CloneAs();
+            double underrelaxationCoefficient = -residualScalar / residualJacSecond;
             for (int i = 0; i < m_Variable.Length; i++) {
-                returnVariable[i] = underrelaxationCoefficient[0] * (m_Variable[i] - m_VariablePreviousIteration[0][i]) + m_VariablePreviousIteration[0][i];
+                returnVariable[i] = underrelaxationCoefficient * (m_Variable[i] - m_VariablePreviousIteration[0][i]) + m_VariablePreviousIteration[0][i];
             }
             return returnVariable;
         }
