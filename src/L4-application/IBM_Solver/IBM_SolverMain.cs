@@ -549,11 +549,11 @@ namespace BoSSS.Application.IBM_Solver {
             if (OpMatrix != null) {
                 // using ad-hoc linearization:
                 // - - - - - - - - - - - - - - 
-                //ParameterUpdate(CurrentState, Params);
-                //var mtxBuilder = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, FluidSpecies);
-                //mtxBuilder.time = phystime;
-                //mtxBuilder.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
-                ////mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
+                ParameterUpdate(CurrentState, Params);
+                var mtxBuilder = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, FluidSpecies);
+                mtxBuilder.time = phystime;
+                mtxBuilder.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+                mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
                 //mtxBuilder.ComputeAffine(OpAffine);
 
 
@@ -568,26 +568,26 @@ namespace BoSSS.Application.IBM_Solver {
 
                 // using the other kind of Jacobi:
                 // - - - - - - - - - - - - - - - -
-                var _OpMatrix = new BlockMsrMatrix(OpMatrix._ColPartitioning);
-                var _OpAffine = new double[_OpMatrix._ColPartitioning.LocalLength];
-                var mtxBuilder3 = IBM_Op_Jacobian.GetMatrixBuilder(LsTrk, Mapping, CurrentState, Mapping, FluidSpecies);
-                mtxBuilder3.time = phystime;
-                mtxBuilder3.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
-                mtxBuilder3.ComputeMatrix(_OpMatrix, _OpAffine);
+                //var _OpMatrix = new BlockMsrMatrix(OpMatrix._ColPartitioning);
+                //var _OpAffine = new double[_OpMatrix._ColPartitioning.LocalLength];
+                //var mtxBuilder3 = IBM_Op_Jacobian.GetMatrixBuilder(LsTrk, Mapping, CurrentState, Mapping, FluidSpecies);
+                //mtxBuilder3.time = phystime;
+                //mtxBuilder3.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+                //mtxBuilder3.ComputeMatrix(_OpMatrix, _OpAffine);
 
 
                 //_OpMatrix.SpMV(-1.0, new CoordinateVector(CurrentState), 0.0, OpAffine);
                 //OpAffine.AccV(1.0, _OpAffine);
 
-                var DeltaMtx = _OpMatrix.CloneAs();
-                var DeltaAff = _OpAffine.CloneAs();
-                DeltaMtx.Acc(-1.0, OpMatrix);
-                DeltaAff.AccV(-1.0, OpAffine);
-                double mtxdelta = DeltaMtx.InfNorm();
-                double affdelta = DeltaAff.L2Norm();
+                //var DeltaMtx = _OpMatrix.CloneAs();
+                //var DeltaAff = _OpAffine.CloneAs();
+                //DeltaMtx.Acc(-1.0, OpMatrix);
+                //DeltaAff.AccV(-1.0, OpAffine);
+                //double mtxdelta = DeltaMtx.InfNorm();
+                //double affdelta = DeltaAff.L2Norm();
 
-                OpMatrix.Clear();
-                OpMatrix.Acc(1.0, _OpMatrix);
+                //OpMatrix.Clear();
+                //OpMatrix.Acc(1.0, _OpMatrix);
 
 
 #if DEBUG

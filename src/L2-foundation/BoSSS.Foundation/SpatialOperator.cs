@@ -2410,7 +2410,10 @@ namespace BoSSS.Foundation {
                 // ====================================
                 U0.SetV(U0backup);
                 DelParamUpdate(domFields, Eval.Parameters.ToArray());
+#if DEBUG
 
+
+#endif
 
                 //Console.WriteLine("Total number of evaluations: " + NoOfEvals);
 
