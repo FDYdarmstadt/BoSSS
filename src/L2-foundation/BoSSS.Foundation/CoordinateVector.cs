@@ -17,6 +17,7 @@ limitations under the License.
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using BoSSS.Platform.LinAlg;
 using ilPSP.Utils;
 
@@ -112,6 +113,17 @@ namespace BoSSS.Foundation {
         /// </remarks>
         public CoordinateVector(params DGField[] fields) :
             this(false, fields) {
+        }
+
+        /// <summary>
+        /// Constructs a new vector, based on the list of DG fields,
+        /// <paramref name="fields"/>;
+        /// </summary>
+        /// <remarks>
+        /// <see cref="PresentExternal"/> is initialized to false.
+        /// </remarks>
+        public CoordinateVector(IEnumerable<DGField> fields) :
+            this(false, fields.ToArray()) {
         }
 
         /// <summary>

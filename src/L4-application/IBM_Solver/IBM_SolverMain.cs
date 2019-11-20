@@ -554,9 +554,7 @@ namespace BoSSS.Application.IBM_Solver {
                 mtxBuilder.time = phystime;
                 mtxBuilder.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
                 mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
-                //mtxBuilder.ComputeAffine(OpAffine);
-
-
+                
                 // using finite difference Jacobi:
                 // - - - - - - - - - - - - - - - -
                 //var mtxBuilder2 = IBM_Op.GetFDJacobianBuilder(LsTrk, CurrentState, Params, Mapping,

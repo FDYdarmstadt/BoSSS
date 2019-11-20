@@ -100,11 +100,7 @@ namespace BoSSS.Solution.Utils {
                 return null; 
             } 
         }
-        bool IEquationComponent.IgnoreVectorizedImplementation {
-            get {
-                return false;
-            }
-        }
+        
         /// <summary>
         /// this kind of source depends on trial function gradient and test function value.
         /// </summary>

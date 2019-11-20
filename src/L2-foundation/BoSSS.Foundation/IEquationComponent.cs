@@ -42,7 +42,13 @@ namespace BoSSS.Foundation {
         /// parameter variables are sorted for this flux;
         /// </summary>
         IList<string> ParameterOrdering { get; }
+    }
 
+    /// <summary>
+    /// Additional hints for checking the implementation
+    /// </summary>
+    public interface IEquationComponentChecking : IEquationComponent { 
+        
         /// <summary>
         /// Only for performance measurements of the vectorized implementations (e.g. <see cref="INonlinVolumeForm_V"/>, <see cref="IVolumeForm_UxV"/>, etc.)
         /// against the base implementation (<see cref="IVolumeForm"/>, <see cref="IEdgeForm"/>):

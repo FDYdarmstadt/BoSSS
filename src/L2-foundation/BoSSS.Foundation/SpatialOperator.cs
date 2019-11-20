@@ -2189,6 +2189,10 @@ namespace BoSSS.Foundation {
 
                 double[] F0 = new double[Lout];
                 DelParamUpdate(domFields, Eval.Parameters.ToArray());
+#if DEBUG
+                var ParamsVec = new CoordinateVector(Eval.Parameters);
+                double[] ParamsVecBkup = ParamsVec.ToArray();
+#endif
                 Eval.Evaluate(1.0, 0.0, F0);
                 AffineOffset.AccV(1.0, F0);
                 NoOfEvals++;
@@ -2411,7 +2415,11 @@ namespace BoSSS.Foundation {
                 U0.SetV(U0backup);
                 DelParamUpdate(domFields, Eval.Parameters.ToArray());
 #if DEBUG
-
+                double deltaParamsVec = ParamsVecBkup.L2DistPow2(ParamsVecBkup).MPISum().Sqrt();
+                double abs = Math.Max(Math.Sqrt(BLAS.MachineEps), Math.Max(ParamsVecBkup.MPI_L2Norm(), ParamsVec.MPI_L2Norm()));
+                double relDelta = deltaParamsVec / abs;
+                if (deltaParamsVec > Math.Sqrt(BLAS.MachineEps))
+                    throw new ApplicationException("FDJacobian detected side-effect in DelParamUpdate(...) -- provides different result before and after finite difference approximation.");
 
 #endif
 

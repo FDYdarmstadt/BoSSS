@@ -72,10 +72,6 @@ namespace BoSSS.Application.Rheology {
             }
         }
 
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
         public TermActivationFlags BoundaryEdgeTerms {
             get { return TermActivationFlags.AllOn; }

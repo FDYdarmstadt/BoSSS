@@ -200,14 +200,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation {
-            get {
-                return false;
-            }
-        }
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             return 0;

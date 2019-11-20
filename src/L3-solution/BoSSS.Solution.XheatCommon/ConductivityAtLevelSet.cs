@@ -152,10 +152,6 @@ namespace BoSSS.Solution.XheatCommon {
                 return null;
             }
         }
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
     }
 
@@ -237,10 +233,7 @@ namespace BoSSS.Solution.XheatCommon {
                 return null;
             }
         }
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
+
     }
 
 
@@ -319,10 +312,7 @@ namespace BoSSS.Solution.XheatCommon {
                 return null;
             }
         }
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
+
     }
 
 
@@ -387,11 +377,6 @@ namespace BoSSS.Solution.XheatCommon {
                     return TermActivationFlags.UxV | TermActivationFlags.V;
             }
         }
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
-
 
         public IList<string> ParameterOrdering {
             get {
@@ -471,11 +456,6 @@ namespace BoSSS.Solution.XheatCommon {
                 return null;
             }
         }
-
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
     }
 

@@ -66,8 +66,6 @@ namespace BoSSS.Application.Rheology {
         public IList<string> ParameterOrdering {get;}
 
 
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
-
         /// <summary>
         /// Calculating the integral of the volume part
         /// </summary>

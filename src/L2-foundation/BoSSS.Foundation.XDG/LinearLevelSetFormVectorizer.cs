@@ -126,11 +126,6 @@ namespace BoSSS.Foundation.XDG {
             private set;
         }
 
-        bool IEquationComponent.IgnoreVectorizedImplementation {
-            get {
-                return false;
-            }
-        }
 
         public double LevelSetForm(ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             throw new NotSupportedException("Should not be called.");

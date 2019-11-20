@@ -194,10 +194,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 return new string[] { "Vx", "Vy" };
             }
         }
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
+
     }
 
 

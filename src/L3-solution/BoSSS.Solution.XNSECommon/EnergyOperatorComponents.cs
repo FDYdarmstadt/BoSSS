@@ -509,10 +509,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
             }
         }
 
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
         public int LevelSetIndex {
             get { return 0; }
@@ -599,10 +595,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
             }
         }
 
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
 
         public double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
@@ -967,11 +959,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
             }
         }
 
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
-
     }
 
 
@@ -1239,13 +1226,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
             }
         }
 
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
-
-
-
     }
 
 
@@ -1299,11 +1279,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                 return ArrayTools.Cat((new string[] { "VelocityX_Mean", "VelocityY_Mean", "VelocityZ_Mean" }).GetSubVector(0, m_D), "Curvature");
             }
         }
-
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
+        
 
         public int LevelSetIndex {
             get { return 0; }
@@ -1495,11 +1471,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
             }
         }
 
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
-
     }
 
 
@@ -1529,11 +1500,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                 return ArrayTools.Cat(VariableNames.VelocityVector(m_D), (new string[] { "PressureGradX", "PressureGradY", "PressureGradZ" }).GetSubVector(0, m_D) );
             }
         }
-
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
 
         public double VolumeForm(ref CommonParamsVol cpv, Double[] U, Double[,] GradU, Double V, Double[] GradV) {
@@ -1600,11 +1566,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                 return ArrayTools.Cat(VariableNames.VelocityVector(m_D), VariableNames.VelocityX_GradientVector(), VariableNames.VelocityY_GradientVector());
             }
         }
-
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
 
 
         static double[,] VelociytGradient(double[] GradVelX, double[] GradVelY) {
@@ -1691,12 +1652,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                 return ArrayTools.Cat(VariableNames.VelocityVector(m_D), VariableNames.GravityVector(m_D));
             }
         }
-
-        /// <summary>
-        /// <see cref="IEquationComponent.IgnoreVectorizedImplementation"/>
-        /// </summary>
-        bool IEquationComponent.IgnoreVectorizedImplementation { get { return false; } }
-
 
         public double VolumeForm(ref CommonParamsVol cpv, Double[] U, Double[,] GradU, Double V, Double[] GradV) {
 

@@ -63,7 +63,7 @@ namespace BoSSS.Solution.NSECommon {
     /// <summary>
     /// base class for viscosity terms
     /// </summary>
-    public abstract class swipViscosityBase : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient {
+    public abstract class swipViscosityBase : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient, IEquationComponentChecking {
 
         /// <summary>
         /// ctor.
@@ -95,7 +95,7 @@ namespace BoSSS.Solution.NSECommon {
         protected swipViscosityBase(
             double _penaltyBase,
             int iComp, int D, IncompressibleBoundaryCondMap bcmap,
-            ViscosityOption _ViscosityMode, double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null) {
+            ViscosityOption _ViscosityMode, double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null, bool ignoreVectorized = false) {
             //Func<double, int, int, MultidimensionalArray, double> ComputePenalty = null) {
             this.m_penalty_base = _penaltyBase;
             //this.m_ComputePenalty = ComputePenalty;
@@ -105,7 +105,7 @@ namespace BoSSS.Solution.NSECommon {
             velFunction = D.ForLoop(d => bcmap.bndFunction[VariableNames.Velocity_d(d)]);
             EdgeTag2Type = bcmap.EdgeTag2Type;
             this.m_PhysicsMode = bcmap.PhysMode;
-
+            this.m_ignoreVectorized = ignoreVectorized;
             this.m_ViscosityMode = _ViscosityMode;
             switch(_ViscosityMode) {
                 case ViscosityOption.ConstantViscosity:
@@ -193,6 +193,11 @@ namespace BoSSS.Solution.NSECommon {
         /// as a function of temperature / level-set.
         /// </summary>
         MaterialLaw m_EoS = null;
+        
+        /// <summary>
+        /// Optional switch for ignoring the vectorized versions of fluxes. May be used for testing 
+        /// </summary>
+        bool m_ignoreVectorized = false;
 
         /// <summary>
         /// PhysicsMode needed for ParamterOrdering.
@@ -395,9 +400,9 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
-        bool IEquationComponent.IgnoreVectorizedImplementation {
+        bool IEquationComponentChecking.IgnoreVectorizedImplementation {
             get {
-                return false;
+                return m_ignoreVectorized;
             }
         }
 
@@ -423,10 +428,10 @@ namespace BoSSS.Solution.NSECommon {
         /// ctor; parameter documentation see <see cref="swipViscosityBase.swipViscosityBase"/>.
         /// </summary>
         public swipViscosity_Term1(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
-            ViscosityOption _ViscosityMode, double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null)
+            ViscosityOption _ViscosityMode, double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null, bool ignoreVectorized = false)
             //Func<double, int, int, MultidimensionalArray, double> ComputePenalty = null)
-            : base(_penalty, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS) {
-
+            : base(_penalty, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS, ignoreVectorized) {
+            
         }
 
         //public override IList<string> ArgumentOrdering
@@ -908,8 +913,8 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public swipViscosity_Term2(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
             ViscosityOption _ViscosityMode, ViscositySolverMode ViscSolverMode = ViscositySolverMode.FullyCoupled,
-            double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null)
-            : base(_penalty, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS) {
+            double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null, bool ignoreVectorized =false)
+            : base(_penalty, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS, ignoreVectorized) {
 
             this.ViscSolverMode = ViscSolverMode;
         }
@@ -1346,8 +1351,8 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public swipViscosity_Term3(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
             ViscosityOption _ViscosityMode, ViscositySolverMode ViscSolverMode = ViscositySolverMode.FullyCoupled,
-            double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null)
-            : base(_penalty, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS) {
+            double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null, bool ignoreVectorized = false)
+            : base(_penalty, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS, ignoreVectorized) {
 
             this.ViscSolverMode = ViscSolverMode;
         }

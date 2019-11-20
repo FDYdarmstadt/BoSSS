@@ -274,12 +274,7 @@ namespace BoSSS.Foundation {
                     return null;
                 }
             }
-
-            bool IEquationComponent.IgnoreVectorizedImplementation {
-                get {
-                    return false;
-                }
-            }
+        
         }
 
 
