@@ -31,7 +31,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public Motion_Dry_NoTranslation(double[] gravity, double density) : base(gravity, density) {
+        public Motion_Dry_NoTranslation(Vector gravity, double density) : base(gravity, density) {
             IncludeTranslation = false;
         }
 

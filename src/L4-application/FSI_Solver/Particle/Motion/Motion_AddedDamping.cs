@@ -42,7 +42,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="addedDampingCoefficient">
         /// The added damping coefficient is a scaling factor for the model. Should be between 0.5 and 1.5, for reference: Banks et.al. 2017.
         /// </param>
-        public Motion_AddedDamping( double[] gravity, double density, double addedDampingCoefficient = 1) : base(gravity, density) {
+        public Motion_AddedDamping(Vector gravity, double density, double addedDampingCoefficient = 1) : base(gravity, density) {
             m_StartingAngle = GetAngle(0);
             m_AddedDampingCoefficient = addedDampingCoefficient;    
             UseAddedDamping = true;

@@ -31,7 +31,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public Motion_Fixed(double[] gravity = null, double density = 0) : base(gravity, density) {
+        public Motion_Fixed(double[] gravity = null, double density = 0) : base(new Vector(gravity), density) {
             IncludeRotation = false;
             IncludeTranslation = false;
         }

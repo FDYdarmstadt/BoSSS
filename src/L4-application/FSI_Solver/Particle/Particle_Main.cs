@@ -66,11 +66,10 @@ namespace BoSSS.Application.FSI_Solver {
         public Particle(ParticleMotionInit motionInit, double[] startPos, double startAngl = 0.0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) {
             SpatialDim = startPos.Length;
             ActiveStress = activeStress;
-            m_MotionInit = motionInit;
             Aux = new FSI_Auxillary();
 
-            m_MotionInit.CheckInput();
-            Motion = m_MotionInit.ParticleMotion;
+            motionInit.CheckInput();
+            Motion = motionInit.ParticleMotion;
             Motion.InitializeParticlePositionAndAngle(startPos, startAngl);
             Motion.InitializeParticleVelocity(startTransVelocity, startRotVelocity);
             particleDensity = Motion.Density;
@@ -78,8 +77,6 @@ namespace BoSSS.Application.FSI_Solver {
 
         [NonSerialized]
         protected readonly FSI_Auxillary Aux;
-        [DataMember]
-        private readonly ParticleMotionInit m_MotionInit;
         [DataMember]
         private readonly double particleDensity;
 
@@ -90,7 +87,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Instantiate object for particle motion.
         /// </summary>
         [DataMember]
-        public Motion_Wet Motion { get; private set; } = new Motion_Wet(gravity: new double[] { 0, -9.81 }, density: 1);
+        public Motion_Wet Motion { get; private set; }
 
         /// <summary>
         /// Mass of the current particle.
@@ -120,13 +117,13 @@ namespace BoSSS.Application.FSI_Solver {
         /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
         /// </summary>
         [DataMember]
-        public Vector ClosestPointToOtherObject { get; set; }
+        public Vector ClosestPointToOtherObject = new Vector(2);
 
         /// <summary>
         /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
         /// </summary>
         [DataMember]
-        public Vector ClosestPointOnOtherObjectToThis { get; set; }
+        public Vector ClosestPointOnOtherObjectToThis = new Vector(2);
 
         /// <summary>
         /// Active stress on the current particle.

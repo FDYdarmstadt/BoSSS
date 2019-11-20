@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Platform.LinAlg;
 using FSI_Solver;
 using ilPSP;
 using System;
@@ -42,7 +43,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// The added damping coefficient is a scaling factor for the model. If the value is smaller than zero no added damping is applied. Otherwise it should be between 0.5 and 1.5, for reference: Banks et.al. 2017.
         /// </param>
         public ParticleMotionInit(double[] gravity = null, double particleDensity = 0, bool isDry = false, bool noRotation = false, bool noTranslation = false, double addedDampingCoefficient = 0) {
-            m_Gravity = gravity.IsNullOrEmpty() ? (new double[] { 0, -9.81 }) : gravity;
+            m_Gravity = gravity.IsNullOrEmpty() ? new Vector(0, -9.81 ) : new Vector(gravity);
             m_Density = particleDensity == 0 ? 1 : particleDensity;
             m_IsDry = isDry;
             m_NoRotation = noRotation;
@@ -51,7 +52,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         private readonly FSI_Auxillary Aux = new FSI_Auxillary();
-        private readonly double[] m_Gravity;
+        private readonly Vector m_Gravity;
         private readonly double m_Density;
         private readonly bool m_IsDry;
         private readonly bool m_NoRotation;

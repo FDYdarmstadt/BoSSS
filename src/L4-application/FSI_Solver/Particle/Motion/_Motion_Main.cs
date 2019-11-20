@@ -40,7 +40,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public Motion_Wet(double[] gravity, double density) {
+        public Motion_Wet(Vector gravity, double density) {
+            gravity = new Vector(0, 0);
             Gravity = new Vector(gravity);
             Density = density;
             // creating list for motion parameters (to save the history)
@@ -54,6 +55,9 @@ namespace BoSSS.Application.FSI_Solver {
                 m_HydrodynamicForces.Add(new Vector(m_Dim));
                 m_HydrodynamicTorque.Add(new double());
             }
+            m_CollisionTranslationalVelocity.Add(new Vector(m_Dim));
+            m_CollisionNormalVector.Add(new Vector(m_Dim));
+            m_CollisionTangentialVector.Add(new Vector(m_Dim));
         }
 
         [NonSerialized]
@@ -78,12 +82,6 @@ namespace BoSSS.Application.FSI_Solver {
         private readonly List<Vector> m_HydrodynamicForces = new List<Vector>();
         [DataMember]
         private readonly List<double> m_HydrodynamicTorque = new List<double>();
-        [DataMember]
-        private readonly List<double[]> m_ForcesPreviousIteration = new List<double[]>();
-        [DataMember]
-        private readonly List<double> m_TorquePreviousIteration = new List<double>();
-        [DataMember]
-        private readonly List<double[]> m_ForcesAndTorquePreviousIteration = new List<double[]>();
         [DataMember]
         private double m_CollisionTimestep = 0;
         [DataMember]
@@ -326,11 +324,6 @@ namespace BoSSS.Application.FSI_Solver {
             Aux.SaveValueOfLastTimestep(m_RotationalAcceleration);
         }
 
-        public void ClearPreviousIterations() {
-            m_ForcesPreviousIteration.Clear();
-            m_TorquePreviousIteration.Clear();
-        }
-
         /// <summary>
         /// Saves force and torque of the previous timestep.
         /// </summary>
@@ -458,8 +451,6 @@ namespace BoSSS.Application.FSI_Solver {
                 m_TranslationalVelocity[0] = CalculateTranslationalVelocity(dt, m_CollisionTimestep);
                 m_RotationalVelocity[0] = CalculateAngularVelocity(dt, m_CollisionTimestep);
             }
-            //m_TranslationalVelocity[0][1] = 0;
-            //m_RotationalVelocity[0] = 0;
         }
 
         public void UpdateForcesAndTorque(int particleID, double[] fullListHydrodynamics) {

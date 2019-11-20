@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Application.FSI_Solver {
     public class Motion_Dry_NoRotation : Motion_Dry {
@@ -30,7 +31,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public Motion_Dry_NoRotation(double[] gravity, double density) : base(gravity, density) {
+        public Motion_Dry_NoRotation(Vector gravity, double density) : base(gravity, density) {
             IncludeRotation = false;
         }
 
