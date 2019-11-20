@@ -734,6 +734,45 @@ namespace ilPSP {
                 pos = -1;
             }
         }
+
+        /// <summary>
+        /// Initializes this from the second dimension of a 2D array
+        /// </summary>
+        /// <param name="mda">2D-array</param>
+        /// <param name="i1">index into 1st dimension of <paramref name="mda"/></param>
+        public void SetFrom(MultidimensionalArray mda, int i1) {
+#if DEBUG
+            if (mda.Dimension != 2)
+                throw new ArgumentException("Expecting a 2D-array."); ;
+            if (mda.GetLength(1) != Dim)
+                throw new ArgumentException("Second dimension mismatch.");
+#endif
+            this[0] = mda[i1, 0];
+            if(Dim > 1) 
+                this[1] = mda[i1, 1];
+            if(Dim > 2) 
+                this[2] = mda[i1, 2];
+        }
+
+        /// <summary>
+        /// Initializes this from the third dimension of a 3D array
+        /// </summary>
+        /// <param name="mda">2D-array</param>
+        /// <param name="i1">index into 1st dimension of <paramref name="mda"/></param>
+        /// <param name="i2">index into 2nd dimension of <paramref name="mda"/></param>
+        public void SetFrom(MultidimensionalArray mda, int i1, int i2) {
+#if DEBUG
+            if (mda.Dimension != 3)
+                throw new ArgumentException("Expecting a 2D-array."); ;
+            if (mda.GetLength(2) != Dim)
+                throw new ArgumentException("Second dimension mismatch.");
+#endif
+            this[0] = mda[i1, i2, 0];
+            if(Dim > 1) 
+                this[1] = mda[i1, i2, 1];
+            if(Dim > 2) 
+                this[2] = mda[i1, i2, 2];
+        }
     }
 
     /// <summary>

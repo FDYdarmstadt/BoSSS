@@ -438,6 +438,10 @@ namespace BoSSS.Foundation.XDG {
             /// copy to array.
             /// </summary>
             public void CopyTo(double[] array, int arrayIndex) {
+#if DEBUG
+            if(array.GetType().IsValueType)
+                throw new NotSupportedException("CopyTo value type -- probably not the expected result! (Using vector struct in CopyTo(...) - operation?)");
+#endif
                 int L = this.Count;
                 for(int i = 0; i < L; i++)
                     array[i + arrayIndex] = this[i];

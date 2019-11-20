@@ -415,6 +415,11 @@ namespace ilPSP {
         }
 
         static unsafe void CopyToUnsafeBuffer<T>(T M, double* buffer, bool BufferInFortranOrder) where T : IMatrix {
+#if DEBUG
+            if(M.GetType().IsValueType)
+                throw new NotSupportedException("CopyTo value type -- probably not the expected result! (Using vector struct in CopyTo(...) - operation?)");
+#endif
+
             int I = M.NoOfRows, J = M.NoOfCols;
 
             if (BufferInFortranOrder) {

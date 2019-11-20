@@ -553,17 +553,18 @@ namespace BoSSS.Application.IBM_Solver {
                 //var mtxBuilder = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, FluidSpecies);
                 //mtxBuilder.time = phystime;
                 //mtxBuilder.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
-                //mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
+                ////mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
+                //mtxBuilder.ComputeAffine(OpAffine);
 
 
                 // using finite difference Jacobi:
                 // - - - - - - - - - - - - - - - -
-                var mtxBuilder2 = IBM_Op.GetFDJacobianBuilder(LsTrk, CurrentState, Params, Mapping,
-                    ParameterUpdate,
-                    FluidSpecies);
-                mtxBuilder2.time = phystime;
-                mtxBuilder2.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
-                mtxBuilder2.ComputeMatrix(OpMatrix, OpAffine);
+                //var mtxBuilder2 = IBM_Op.GetFDJacobianBuilder(LsTrk, CurrentState, Params, Mapping,
+                //    ParameterUpdate,
+                //    FluidSpecies);
+                //mtxBuilder2.time = phystime;
+                //mtxBuilder2.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+                //mtxBuilder2.ComputeMatrix(OpMatrix, OpAffine);
 
                 // using the other kind of Jacobi:
                 // - - - - - - - - - - - - - - - -
@@ -574,6 +575,10 @@ namespace BoSSS.Application.IBM_Solver {
                 mtxBuilder3.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
                 mtxBuilder3.ComputeMatrix(_OpMatrix, _OpAffine);
 
+
+                //_OpMatrix.SpMV(-1.0, new CoordinateVector(CurrentState), 0.0, OpAffine);
+                //OpAffine.AccV(1.0, _OpAffine);
+
                 var DeltaMtx = _OpMatrix.CloneAs();
                 var DeltaAff = _OpAffine.CloneAs();
                 DeltaMtx.Acc(-1.0, OpMatrix);
@@ -581,8 +586,8 @@ namespace BoSSS.Application.IBM_Solver {
                 double mtxdelta = DeltaMtx.InfNorm();
                 double affdelta = DeltaAff.L2Norm();
 
-                //OpMatrix.Clear();
-                //OpMatrix.Acc(1.0, _OpMatrix);
+                OpMatrix.Clear();
+                OpMatrix.Acc(1.0, _OpMatrix);
 
 
 #if DEBUG

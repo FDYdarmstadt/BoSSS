@@ -466,6 +466,10 @@ namespace BoSSS.Foundation {
         /// <param name="array">the destination array</param>
         /// <param name="arrayIndex">offset index into the destination array</param>
         public void CopyTo<T>(T array, int arrayIndex) where T : IList<double> {
+#if DEBUG
+            if(array.GetType().IsValueType)
+                throw new NotSupportedException("CopyTo value type -- probably not the expected result! (Using vector struct in CopyTo(...) - operation?)");
+#endif
             Copy(array, arrayIndex, true);
         }
 

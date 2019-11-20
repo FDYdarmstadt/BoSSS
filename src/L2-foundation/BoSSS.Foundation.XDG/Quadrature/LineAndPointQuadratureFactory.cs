@@ -833,9 +833,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 subdividedRule.Weights.SetVector(PtMeas_weights);
 
                                 for (int j = 0; j < PtMeas_nodes.Count; j++) {
-                                    for (int d = 0; d < D; d++) {
-                                        subdividedRule.Nodes[j, d] = PtMeas_nodes[j][d];
-                                    }
+                                    subdividedRule.Nodes.SetRowPt(j, PtMeas_nodes[j]);
                                 }
 
                                 for (int e = 0; e < _roots.Length; e++) {
