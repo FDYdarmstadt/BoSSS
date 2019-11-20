@@ -99,7 +99,7 @@ namespace BoSSS.Solution.Utils {
                 return null; 
             } 
         }
-
+        
         /// <summary>
         /// this kind of source depends on trial function gradient and test function value.
         /// </summary>

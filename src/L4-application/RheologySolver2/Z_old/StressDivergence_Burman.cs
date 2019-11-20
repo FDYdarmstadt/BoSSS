@@ -72,6 +72,7 @@ namespace BoSSS.Application.Rheology {
             }
         }
 
+
         public TermActivationFlags BoundaryEdgeTerms {
             get { return TermActivationFlags.AllOn; }
         }

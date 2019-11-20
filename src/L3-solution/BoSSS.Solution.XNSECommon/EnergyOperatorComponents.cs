@@ -509,6 +509,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
             }
         }
 
+
         public int LevelSetIndex {
             get { return 0; }
         }
@@ -593,6 +594,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                 return new string[0];
             }
         }
+
 
 
         public double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
@@ -956,6 +958,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                 return null;
             }
         }
+
     }
 
 
@@ -1223,7 +1226,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
             }
         }
 
-
     }
 
 
@@ -1277,6 +1279,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                 return ArrayTools.Cat((new string[] { "VelocityX_Mean", "VelocityY_Mean", "VelocityZ_Mean" }).GetSubVector(0, m_D), "Curvature");
             }
         }
+        
 
         public int LevelSetIndex {
             get { return 0; }
@@ -1324,6 +1327,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                 return ArrayTools.Cat(VariableNames.VelocityVector(m_D), VariableNames.Pressure);
             }
         }
+
+
 
 
         protected override void Flux(ref CommonParamsVol inp, Double[] U, Double[] output) {
@@ -1465,6 +1470,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                 return ArrayTools.Cat(VariableNames.VelocityVector(m_D), VariableNames.Pressure);
             }
         }
+
     }
 
 
@@ -1646,7 +1652,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                 return ArrayTools.Cat(VariableNames.VelocityVector(m_D), VariableNames.GravityVector(m_D));
             }
         }
-
 
         public double VolumeForm(ref CommonParamsVol cpv, Double[] U, Double[,] GradU, Double V, Double[] GradV) {
 

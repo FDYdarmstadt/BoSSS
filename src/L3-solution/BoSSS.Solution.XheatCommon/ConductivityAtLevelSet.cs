@@ -153,7 +153,6 @@ namespace BoSSS.Solution.XheatCommon {
             }
         }
 
-
     }
 
     /// <summary>

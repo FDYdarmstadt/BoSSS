@@ -217,7 +217,7 @@ namespace BoSSS.Solution.Utils {
         /// <see cref="IEquationComponent.ArgumentOrdering"/>
         /// </summary>
         public abstract IList<string> ArgumentOrdering { get; }
-
+  
         #endregion
 
     }

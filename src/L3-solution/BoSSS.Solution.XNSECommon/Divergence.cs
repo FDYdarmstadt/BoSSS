@@ -358,6 +358,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             get { return null; }
         }
 
+
         public int LevelSetIndex {
             get { return 0; }
         }

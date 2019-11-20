@@ -155,6 +155,7 @@ namespace BoSSS.Solution.XheatCommon {
             }
         }
 
+
         public TermActivationFlags VolTerms {
             get {
                 return TermActivationFlags.UxGradV;

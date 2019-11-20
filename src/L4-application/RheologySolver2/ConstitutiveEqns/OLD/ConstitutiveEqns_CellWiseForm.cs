@@ -106,7 +106,6 @@ namespace BoSSS.Application.Rheology
             }
         }
 
-       
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA)
         {

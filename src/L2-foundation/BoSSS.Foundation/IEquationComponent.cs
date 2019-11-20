@@ -42,6 +42,19 @@ namespace BoSSS.Foundation {
         IList<string> ParameterOrdering { get; }
     }
 
+    /// <summary>
+    /// Additional hints for checking the implementation
+    /// </summary>
+    public interface IEquationComponentChecking : IEquationComponent { 
+        
+        /// <summary>
+        /// Only for performance measurments of the vectorized implementations (e.g. <see cref="INonlinVolumeForm_V"/>, <see cref="IVolumeForm_UxV"/>, etc.)
+        /// against the base implementation (<see cref="IVolumeForm"/>, <see cref="IEdgeForm"/>):
+        /// If true, the base implementaion will be used even if a vectorized verion is provided.
+        /// </summary>
+        bool IgnoreVectorizedImplementation { get; }
+    }
+
 
     /// <summary>
     /// Interface for equation components which require e.g. grid and/or problem-dependent coefficients,

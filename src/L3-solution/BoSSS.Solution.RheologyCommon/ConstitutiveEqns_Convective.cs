@@ -107,7 +107,6 @@ namespace BoSSS.Solution.RheologyCommon {
         }
 
 
-
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] Tin, double[,] Grad_Tin, double Vin, double[] Grad_Vin) {
             double[] Normale = inp.Normale;
             double Tout;

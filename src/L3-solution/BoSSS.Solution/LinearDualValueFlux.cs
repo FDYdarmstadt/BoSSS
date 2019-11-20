@@ -78,7 +78,6 @@ namespace BoSSS.Solution.Utils {
         /// </summary>
         virtual public IList<string> ParameterOrdering { get { return null; } }
 
-        
         /// <summary>
         /// override this method to implement the dual-value 'flux' at interior edges
         /// </summary>

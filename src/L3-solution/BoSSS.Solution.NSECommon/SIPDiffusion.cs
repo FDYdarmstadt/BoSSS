@@ -312,5 +312,6 @@ namespace BoSSS.Solution.NSECommon {
         public IList<string> ParameterOrdering {
             get { return m_ParameterOrdering; }
         }
+
     }
 }

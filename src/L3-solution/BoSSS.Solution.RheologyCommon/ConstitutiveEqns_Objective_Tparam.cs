@@ -93,6 +93,7 @@ namespace BoSSS.Solution.RheologyCommon
         }
 
 
+
         /// <summary>
         /// Calculating the integral of the volume part
         /// </summary>

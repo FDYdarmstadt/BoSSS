@@ -29,11 +29,11 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
     class LinearVolumeFormVectorizer : IVolumeForm_GradUxGradV, IVolumeForm_UxV, IVolumeForm_UxGradV, IVolumeForm_GradUxV, IVolumeSource_V, IVolumeSource_GradV {
 
-        public TermActivationFlags VolTerms{ 
+        public TermActivationFlags VolTerms {
             get;
             private set;
         }
-        
+
         public LinearVolumeFormVectorizer(IVolumeForm _volForm) {
             this.VolTerms = _volForm.VolTerms;
             this.volForm = _volForm;
@@ -94,7 +94,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             TestVar = 0;
             return a1;
         }
-        
+
 
 
         /// <summary>
@@ -114,7 +114,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 return this.volForm.ParameterOrdering;
             }
         }
-                
+
+
         // "global" variables
         int D;
         int K;
@@ -226,7 +227,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
             int _NOargs = this.ArgumentOrdering.Count;
             this.InitGlobals(prm, __K);
-            
+
             CommonParamsVol cpv;
             cpv.GridDat = prm.GridDat;
             cpv.Parameters = new double[_NOParams];
@@ -327,7 +328,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
 
                     V[l, k] += GetCoeff(ref this.v, ref cpv);
-                    
+
                 }
             }
         }
@@ -369,19 +370,19 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
     class LinearEdgeFormVectorizer : IEdgeform_GradUxV, IEdgeform_UxGradV, IEdgeSource_V, IEdgeSource_GradV, IEdgeform_UxV, IEdgeform_GradUxGradV {
 
-        
-        public TermActivationFlags BoundaryEdgeTerms { 
+
+        public TermActivationFlags BoundaryEdgeTerms {
             get;
             private set;
         }
 
-        public TermActivationFlags InnerEdgeTerms{ 
+        public TermActivationFlags InnerEdgeTerms {
             get;
             private set;
         }
 
 
-        
+
         public LinearEdgeFormVectorizer(IEdgeForm _edgeForm) {
             this.InnerEdgeTerms = _edgeForm.InnerEdgeTerms;
             this.BoundaryEdgeTerms = _edgeForm.BoundaryEdgeTerms;
@@ -389,7 +390,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         }
 
 
-        
+
         IEdgeForm edgeForm;
 
         /// <summary>
@@ -419,7 +420,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         }
 
 
-        
         // "global" variables
         double[] uA;
         double[] uB;
@@ -447,7 +447,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             Debug.Assert(Grad_uA.GetLength(1) == D);
             Debug.Assert(Grad_uB.GetLength(1) == D);
             Debug.Assert(Grad_vA.Length == D);
-            Debug.Assert(Grad_vB .Length == D);
+            Debug.Assert(Grad_vB.Length == D);
 
             Debug.Assert(this.edgeForm.InnerEdgeForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB) == 0.0);
 
@@ -515,23 +515,23 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             cp.GridDat = efp.GridDat;
             cp.time = efp.time;
 
-            for (int l = 0; l < L; l++) { // loop over edges 
+            for(int l = 0; l < L; l++) { // loop over edges 
                 cp.iEdge = efp.e0 + l;
-                
-                for (int k = 0; k < K; k++) { // loop over quadrature nodes
 
-                    for (int d = 0; d < D; d++) {
+                for(int k = 0; k < K; k++) { // loop over quadrature nodes
+
+                    for(int d = 0; d < D; d++) {
                         cp.Normale[d] = efp.Normals[l, k, d];
                         cp.X[d] = efp.NodesGlobal[l, k, d];
                     }
 
-                    for (int np = 0; np < NoParams; np++) {
+                    for(int np = 0; np < NoParams; np++) {
                         cp.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
                         cp.Parameters_OUT[np] = efp.ParameterVars_OUT[np][l, k];
                     }
 
-                    for (int d = 0; d < D; d++) {
-                        for (int c = 0; c < NoArgs; c++) {
+                    for(int d = 0; d < D; d++) {
+                        for(int c = 0; c < NoArgs; c++) {
                             GradUxV[l, k, 0, 0, c, d] = GetCoeff(ref Grad_uA[c, d], ref vA, ref cp);
                             GradUxV[l, k, 0, 1, c, d] = GetCoeff(ref Grad_uB[c, d], ref vA, ref cp);
                             GradUxV[l, k, 1, 0, c, d] = GetCoeff(ref Grad_uA[c, d], ref vB, ref cp);
@@ -557,23 +557,23 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
             var _EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
 
-            for (int l = 0; l < L; l++) { // loop over edges
+            for(int l = 0; l < L; l++) { // loop over edges
                 cp.iEdge = efp.e0 + l;
                 cp.EdgeTag = _EdgeTags[cp.iEdge];
 
-                for (int k = 0; k < K; k++) { // loop over quadrature nodes
+                for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
-                    for (int d = 0; d < D; d++) {
+                    for(int d = 0; d < D; d++) {
                         cp.Normale[d] = efp.Normals[l, k, d];
                         cp.X[d] = efp.NodesGlobal[l, k, d];
                     }
 
-                    for (int np = 0; np < NoParams; np++) {
+                    for(int np = 0; np < NoParams; np++) {
                         cp.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
                     }
 
-                    for (int d = 0; d < D; d++) {
-                        for (int c = 0; c < NoArgs; c++) {
+                    for(int d = 0; d < D; d++) {
+                        for(int c = 0; c < NoArgs; c++) {
                             GradUxV[l, k, c, d] = GetCoeffBnd(ref Grad_uA[c, d], ref vA, ref cp);
                         }
                     }
@@ -603,23 +603,23 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             cp.Parameters_OUT = new double[NoParams];
             cp.GridDat = efp.GridDat;
 
-            for (int l = 0; l < L; l++) { // loop over edges 
+            for(int l = 0; l < L; l++) { // loop over edges 
                 cp.iEdge = efp.e0 + l;
-                
-                for (int k = 0; k < K; k++) { // loop over quadrature nodes
 
-                    for (int d = 0; d < D; d++) {
+                for(int k = 0; k < K; k++) { // loop over quadrature nodes
+
+                    for(int d = 0; d < D; d++) {
                         cp.Normale[d] = efp.Normals[l, k, d];
                         cp.X[d] = efp.NodesGlobal[l, k, d];
                     }
 
-                    for (int np = 0; np < NoParams; np++) {
+                    for(int np = 0; np < NoParams; np++) {
                         cp.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
                         cp.Parameters_OUT[np] = efp.ParameterVars_OUT[np][l, k];
                     }
 
-                    for (int d = 0; d < D; d++) {
-                        for (int c = 0; c < NoArgs; c++) {
+                    for(int d = 0; d < D; d++) {
+                        for(int c = 0; c < NoArgs; c++) {
                             UxGradV[l, k, 0, 0, c, d] = GetCoeff(ref uA[c], ref Grad_vA[d], ref cp);
                             UxGradV[l, k, 0, 1, c, d] = GetCoeff(ref uB[c], ref Grad_vA[d], ref cp);
                             UxGradV[l, k, 1, 0, c, d] = GetCoeff(ref uA[c], ref Grad_vB[d], ref cp);
@@ -709,23 +709,23 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
             var _EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
 
-            for (int l = 0; l < L; l++) { // loop over edges
+            for(int l = 0; l < L; l++) { // loop over edges
                 cp.iEdge = efp.e0 + l;
                 cp.EdgeTag = _EdgeTags[cp.iEdge];
 
-                for (int k = 0; k < K; k++) { // loop over quadrature nodes
+                for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
-                    for (int d = 0; d < D; d++) {
+                    for(int d = 0; d < D; d++) {
                         cp.Normale[d] = efp.Normals[l, k, d];
                         cp.X[d] = efp.NodesGlobal[l, k, d];
                     }
 
-                    for (int np = 0; np < NoParams; np++) {
+                    for(int np = 0; np < NoParams; np++) {
                         cp.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
                     }
 
-                    for (int d = 0; d < D; d++) {
-                        for (int c = 0; c < NoArgs; c++) {
+                    for(int d = 0; d < D; d++) {
+                        for(int c = 0; c < NoArgs; c++) {
                             UxGradV[l, k, c, d] = GetCoeffBnd(ref uA[c], ref Grad_vA[d], ref cp);
                         }
                     }
@@ -733,7 +733,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             }
         }
 
-        
+
         void IEdgeform_GradUxGradV.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray GradUxGradV) {
             InitGlobals(efp);
 
@@ -764,7 +764,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     for(int d1 = 0; d1 < D; d1++) {
                         for(int d2 = 0; d2 < D; d2++) {
                             for(int c = 0; c < NoArgs; c++) {
-                                GradUxGradV[l, k, c, d1, d2] = GetCoeffBnd(ref Grad_uA[c,d1], ref Grad_vA[d2], ref cp);
+                                GradUxGradV[l, k, c, d1, d2] = GetCoeffBnd(ref Grad_uA[c, d1], ref Grad_vA[d2], ref cp);
                             }
                         }
                     }
@@ -787,17 +787,17 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
             var _EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
 
-            for (int l = 0; l < L; l++) { // loop over edges
+            for(int l = 0; l < L; l++) { // loop over edges
                 cp.iEdge = efp.e0 + l;
 
-                for (int k = 0; k < K; k++) { // loop over quadrature nodes
+                for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
-                    for (int d = 0; d < D; d++) {
+                    for(int d = 0; d < D; d++) {
                         cp.Normale[d] = efp.Normals[l, k, d];
                         cp.X[d] = efp.NodesGlobal[l, k, d];
                     }
 
-                    for (int np = 0; np < NoParams; np++) {
+                    for(int np = 0; np < NoParams; np++) {
                         cp.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
                         cp.Parameters_OUT[np] = efp.ParameterVars_OUT[np][l, k];
                     }
@@ -823,18 +823,18 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
             var _EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
 
-            for (int l = 0; l < L; l++) { // loop over edges
+            for(int l = 0; l < L; l++) { // loop over edges
                 cp.iEdge = efp.e0 + l;
                 cp.EdgeTag = _EdgeTags[cp.iEdge];
 
-                for (int k = 0; k < K; k++) { // loop over quadrature nodes
+                for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
-                    for (int d = 0; d < D; d++) {
+                    for(int d = 0; d < D; d++) {
                         cp.Normale[d] = efp.Normals[l, k, d];
                         cp.X[d] = efp.NodesGlobal[l, k, d];
                     }
 
-                    for (int np = 0; np < NoParams; np++) {
+                    for(int np = 0; np < NoParams; np++) {
                         cp.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
                     }
 
@@ -858,22 +858,22 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
             var _EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
 
-            for (int l = 0; l < L; l++) { // loop over edges
+            for(int l = 0; l < L; l++) { // loop over edges
                 cp.iEdge = efp.e0 + l;
 
-                for (int k = 0; k < K; k++) { // loop over quadrature nodes
+                for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
-                    for (int d = 0; d < D; d++) {
+                    for(int d = 0; d < D; d++) {
                         cp.Normale[d] = efp.Normals[l, k, d];
                         cp.X[d] = efp.NodesGlobal[l, k, d];
                     }
 
-                    for (int np = 0; np < NoParams; np++) {
+                    for(int np = 0; np < NoParams; np++) {
                         cp.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
                         cp.Parameters_OUT[np] = efp.ParameterVars_OUT[np][l, k];
                     }
 
-                    for (int d = 0; d < D; d++) {
+                    for(int d = 0; d < D; d++) {
                         GradV[l, k, 0, d] = GetSourceCoeff(ref Grad_vA[d], ref cp);
                         GradV[l, k, 1, d] = GetSourceCoeff(ref Grad_vB[d], ref cp);
                     }
@@ -896,22 +896,22 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
             var _EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
 
-            for (int l = 0; l < L; l++) { // loop over edges
+            for(int l = 0; l < L; l++) { // loop over edges
                 cp.iEdge = efp.e0 + l;
                 cp.EdgeTag = _EdgeTags[cp.iEdge];
 
-                for (int k = 0; k < K; k++) { // loop over quadrature nodes
+                for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
-                    for (int d = 0; d < D; d++) {
+                    for(int d = 0; d < D; d++) {
                         cp.Normale[d] = efp.Normals[l, k, d];
                         cp.X[d] = efp.NodesGlobal[l, k, d];
                     }
 
-                    for (int np = 0; np < NoParams; np++) {
+                    for(int np = 0; np < NoParams; np++) {
                         cp.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
                     }
 
-                    for (int d = 0; d < D; d++) {
+                    for(int d = 0; d < D; d++) {
                         GradV[l, k, d] = GetSourceCoeffBnd(ref Grad_vA[d], ref cp);
                     }
                 }
@@ -934,22 +934,22 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             cp.Parameters_OUT = new double[NoParams];
             cp.GridDat = efp.GridDat;
 
-            for (int l = 0; l < L; l++) { // loop over edges 
+            for(int l = 0; l < L; l++) { // loop over edges 
                 cp.iEdge = efp.e0 + l;
 
-                for (int k = 0; k < K; k++) { // loop over quadrature nodes
+                for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
-                    for (int d = 0; d < D; d++) {
+                    for(int d = 0; d < D; d++) {
                         cp.Normale[d] = efp.Normals[l, k, d];
                         cp.X[d] = efp.NodesGlobal[l, k, d];
                     }
 
-                    for (int np = 0; np < NoParams; np++) {
+                    for(int np = 0; np < NoParams; np++) {
                         cp.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
                         cp.Parameters_OUT[np] = efp.ParameterVars_OUT[np][l, k];
                     }
 
-                    for (int c = 0; c < NoArgs; c++) {
+                    for(int c = 0; c < NoArgs; c++) {
                         UxV[l, k, 0, 0, c] = GetCoeff(ref uA[c], ref vA, ref cp);
                         UxV[l, k, 0, 1, c] = GetCoeff(ref uB[c], ref vA, ref cp);
                         UxV[l, k, 1, 0, c] = GetCoeff(ref uA[c], ref vB, ref cp);
@@ -974,23 +974,23 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
             var _EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
 
-            for (int l = 0; l < L; l++) { // loop over edges
+            for(int l = 0; l < L; l++) { // loop over edges
                 cp.iEdge = efp.e0 + l;
                 cp.EdgeTag = _EdgeTags[cp.iEdge];
 
-                for (int k = 0; k < K; k++) { // loop over quadrature nodes
+                for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
-                    for (int d = 0; d < D; d++) {
+                    for(int d = 0; d < D; d++) {
                         cp.Normale[d] = efp.Normals[l, k, d];
                         cp.X[d] = efp.NodesGlobal[l, k, d];
                     }
 
-                    for (int np = 0; np < NoParams; np++) {
+                    for(int np = 0; np < NoParams; np++) {
                         cp.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
                     }
 
 
-                    for (int c = 0; c < NoArgs; c++) {
+                    for(int c = 0; c < NoArgs; c++) {
                         UxV[l, k, c] = GetCoeffBnd(ref uA[c], ref vA, ref cp);
                     }
                 }
@@ -998,7 +998,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         }
 
 
-       
+
         public double InnerEdgeForm(ref CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
             return this.edgeForm.InnerEdgeForm(ref inp, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
         }

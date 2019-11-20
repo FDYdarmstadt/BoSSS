@@ -83,7 +83,7 @@ namespace BoSSS.Solution.NSECommon {
         /// Generalized Navier Boundary condition with linear effective forces at wall and contact line
         /// \f[
         /// \vec{u} \cdot \vec{n}_S = 0 \text{ and } 
-        /// \boldsymnol{P}_S (\operatorname{grad}u + (\operatorname{grad}u)^T ) \vec{n}_S = -\beta_S \boldsymnol{P}_S \vec{u} \text{ on } \partial \Omega_{S}
+        /// \boldsymbol{P}_S (\operatorname{grad}u + (\operatorname{grad}u)^T ) \vec{n}_S = -\beta_S \boldsymbol{P}_S \vec{u} \text{ on } \partial \Omega_{S}
         /// \sigma \boldsymbol{P}_S \tau_L = -\beta_L (\vec{u} \cdot \vec{n}_L) + \sigma \cos(\Theta_e) \vec{n}_L \text{ on } L
         /// \f]
         /// </summary>

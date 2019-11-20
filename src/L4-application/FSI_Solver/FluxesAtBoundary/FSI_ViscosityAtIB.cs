@@ -175,6 +175,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             get { return VariableNames.VelocityVector(this.m_D); }
         }
 
+
         public SpeciesId PositiveSpecies {
             get { return m_LsTrk.GetSpeciesId("B"); }
         }
