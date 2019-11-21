@@ -669,10 +669,11 @@ namespace BoSSS.Solution.Control {
                 return m_TimesteppingMode;
             }
             set {
-                if (value == _TimesteppingMode.Steady)
+                if (value == _TimesteppingMode.Steady) {
                     dtFixed = double.MaxValue / 1e4;
+                    NoOfTimesteps = 1;
+                }
                 m_TimesteppingMode = value;
-                NoOfTimesteps = 1;
             }
         }
 
