@@ -63,7 +63,7 @@ namespace BoSSS.Foundation.XDG {
         //    double vA, double vB, double[] Grad_vA, double[] Grad_vB);
 
 
-        private double GetCoeff(ref double d1, ref double d2, ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, ref double vA, ref double vB, double[] Grad_vA, double[] Grad_vB) {
+        private double GetCoeff(ref double d1, ref double d2, ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, ref double vA, ref double vB, double[] Grad_vA, double[] Grad_vB) {
             //if(this.OrgComponent.LevelSetForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB) != 0.0) {
             //    double funky = this.OrgComponent.LevelSetForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB);
             //    Console.WriteLine(funky);
@@ -84,7 +84,7 @@ namespace BoSSS.Foundation.XDG {
             return this.OrgComponent.GetType().FullName;
         }
 
-        private double GetSourceCoeff(ref double d2, ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, ref double vA, ref double vB, double[] Grad_vA, double[] Grad_vB) {
+        private double GetSourceCoeff(ref double d2, ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, ref double vA, ref double vB, double[] Grad_vA, double[] Grad_vB) {
             Debug.Assert(this.OrgComponent.LevelSetForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB) == 0.0);
 
             d2 = 1; // set test function
@@ -127,7 +127,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
-        public double LevelSetForm(ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public double LevelSetForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             throw new NotSupportedException("Should not be called.");
         }
 
@@ -148,13 +148,14 @@ namespace BoSSS.Foundation.XDG {
 
             double[] ParamsPos = new double[NP];
             double[] ParamsNeg = new double[NP];
-            CommonParamsLs cp = default(CommonParamsLs);
+            CommonParams cp;
             cp.Normal = new Vector(D);
             cp.X = new Vector(D);
-            cp.ParamsNeg = ParamsNeg;
-            cp.ParamsPos = ParamsPos;
+            cp.Parameters_IN = ParamsNeg;
+            cp.Parameters_OUT = ParamsPos;
             cp.time = inp.time;
-
+            cp.iEdge = -123456;
+            cp.GridDat = null;
 
             // temp mem.
             double[] uA = new double[NoOfVars];
@@ -183,7 +184,9 @@ namespace BoSSS.Foundation.XDG {
                     Debug.Assert(NoOf == 2);
                     int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
                     int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
-                    cp.jCell = j + inp.i0;
+                    cp.jCellIn = j + inp.i0;
+                    cp.jCellOut = cp.jCellIn;
+
                     //if (inp.PosCellLengthScale != null)
                     //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
                     //else
@@ -228,13 +231,14 @@ namespace BoSSS.Foundation.XDG {
 
             double[] ParamsPos = new double[NP];
             double[] ParamsNeg = new double[NP];
-            CommonParamsLs cp = default(CommonParamsLs);
+            CommonParams cp;
             cp.Normal = new Vector(D);
             cp.X = new Vector(D);
-            cp.ParamsNeg = ParamsNeg;
-            cp.ParamsPos = ParamsPos;
+            cp.Parameters_IN = ParamsNeg;
+            cp.Parameters_OUT = ParamsPos;
             cp.time = inp.time;
-
+            cp.iEdge = -123456;
+            cp.GridDat = null;
 
             // temp mem.
             double[] uA = new double[NoOfVars];
@@ -264,7 +268,8 @@ namespace BoSSS.Foundation.XDG {
                     //int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, neg);
                     int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
                     int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
-                    cp.jCell = j + inp.i0;
+                    cp.jCellIn = j + inp.i0;
+                    cp.jCellOut = cp.jCellIn;
                     //if (inp.PosCellLengthScale != null)
                     //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
                     //else
@@ -312,13 +317,14 @@ namespace BoSSS.Foundation.XDG {
 
             double[] ParamsPos = new double[NP];
             double[] ParamsNeg = new double[NP];
-            CommonParamsLs cp = default(CommonParamsLs);
+            CommonParams cp;
             cp.Normal = new Vector(D);
             cp.X = new Vector(D);
-            cp.ParamsNeg = ParamsNeg;
-            cp.ParamsPos = ParamsPos;
+            cp.Parameters_IN = ParamsNeg;
+            cp.Parameters_OUT = ParamsPos;
             cp.time = inp.time;
-
+            cp.iEdge = -123456;
+            cp.GridDat = null;
 
             // temp mem.
             double[] uA = new double[NoOfVars];
@@ -348,7 +354,8 @@ namespace BoSSS.Foundation.XDG {
                     //int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, neg);
                     int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
                     int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
-                    cp.jCell = j + inp.i0;
+                    cp.jCellIn = j + inp.i0;
+                    cp.jCellOut = cp.jCellIn;
                     //if (inp.PosCellLengthScale != null)
                     //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
                     //else
@@ -395,13 +402,14 @@ namespace BoSSS.Foundation.XDG {
 
             double[] ParamsPos = new double[NP];
             double[] ParamsNeg = new double[NP];
-            CommonParamsLs cp = default(CommonParamsLs);
+            CommonParams cp;
             cp.Normal = new Vector(D);
             cp.X = new Vector(D);
-            cp.ParamsNeg = ParamsNeg;
-            cp.ParamsPos = ParamsPos;
+            cp.Parameters_IN = ParamsNeg;
+            cp.Parameters_OUT = ParamsPos;
             cp.time = inp.time;
-
+            cp.iEdge = -123456;
+            cp.GridDat = null;
 
             // temp mem.
             double[] uA = new double[NoOfVars];
@@ -432,7 +440,8 @@ namespace BoSSS.Foundation.XDG {
                     //int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, neg);
                     int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
                     int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
-                    cp.jCell = j + inp.i0;
+                    cp.jCellIn = j + inp.i0;
+                    cp.jCellOut = cp.jCellIn;
                     //if (inp.PosCellLengthScale != null)
                     //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
                     //else
@@ -481,13 +490,14 @@ namespace BoSSS.Foundation.XDG {
 
             double[] ParamsPos = new double[NP];
             double[] ParamsNeg = new double[NP];
-            CommonParamsLs cp = default(CommonParamsLs);
+            CommonParams cp;
             cp.Normal = new Vector(D);
             cp.X = new Vector(D);
-            cp.ParamsNeg = ParamsNeg;
-            cp.ParamsPos = ParamsPos;
+            cp.Parameters_IN = ParamsNeg;
+            cp.Parameters_OUT = ParamsPos;
             cp.time = inp.time;
-
+            cp.iEdge = -123456;
+            cp.GridDat = null;
 
             // temp mem.
             double[] uA = new double[NoOfVars];
@@ -513,7 +523,8 @@ namespace BoSSS.Foundation.XDG {
                 //int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, neg);
                 int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
                 int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
-                cp.jCell = j + inp.i0;
+                cp.jCellIn = j + inp.i0;
+                cp.jCellOut = cp.jCellIn;
                 //if (inp.PosCellLengthScale != null)
                 //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
                 //else
@@ -556,13 +567,14 @@ namespace BoSSS.Foundation.XDG {
 
             double[] ParamsPos = new double[NP];
             double[] ParamsNeg = new double[NP];
-            CommonParamsLs cp = default(CommonParamsLs);
+            CommonParams cp;
             cp.Normal = new Vector(D);
             cp.X = new Vector(D);
-            cp.ParamsNeg = ParamsNeg;
-            cp.ParamsPos = ParamsPos;
+            cp.Parameters_IN = ParamsNeg;
+            cp.Parameters_OUT = ParamsPos;
             cp.time = inp.time;
-
+            cp.iEdge = -123456;
+            cp.GridDat = null;
 
             // temp mem.
             double[] uA = new double[NoOfVars];
@@ -591,7 +603,8 @@ namespace BoSSS.Foundation.XDG {
                 //int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, neg);
                 int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
                 int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
-                cp.jCell = j + inp.i0;
+                cp.jCellIn = j + inp.i0;
+                cp.jCellOut = cp.jCellIn;
                 //if (inp.PosCellLengthScale != null)
                 //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
                 //else

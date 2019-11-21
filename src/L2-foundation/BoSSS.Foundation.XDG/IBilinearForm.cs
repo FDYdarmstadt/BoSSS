@@ -88,11 +88,11 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public LevelSetTracker LsTrk;
 	}
-
+    /*
     /// <summary>
     /// common input parameters for the abstract functions
     /// </summary>
-    public struct CommonParamsLs {
+    public struct CommonParams {
 
         /// <summary>
         /// Position vector, in global/physical coordinates at which the integrand should be evaluated.
@@ -136,6 +136,7 @@ namespace BoSSS.Foundation.XDG {
         public double time;
 
     }
+    */
 
     /// <summary>
     /// this interface should be implemented by bulk equation components which require to switch coefficients based on species.
@@ -185,7 +186,7 @@ namespace BoSSS.Foundation.XDG {
 
         TermActivationFlags LevelSetTerms { get; }
 
-        double LevelSetForm(ref CommonParamsLs inp,
+        double LevelSetForm(ref CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB);
     }

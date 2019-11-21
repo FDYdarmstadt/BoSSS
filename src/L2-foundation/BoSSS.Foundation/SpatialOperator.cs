@@ -46,45 +46,47 @@ namespace BoSSS.Foundation {
     public delegate void DelParameterUpdate(IEnumerable<DGField> DomainVar, IEnumerable<DGField> ParameterVar);
 
     /// <summary>
+    /// Options for the treatment of edges at the boundary of a
+    /// <see cref="SubGrid"/>.
+    /// </summary>
+    public enum SubGridBoundaryModes {
+
+        /// <summary>
+        /// Treats the edge as a real boundary edge (i.e., will use the
+        /// boundary conditions defined by the flux function)
+        /// </summary>
+        BoundaryEdge = 0,
+
+        /// <summary>
+        /// Treats the edge as a standard inner edge (i.e., the inner edge
+        /// flux will be evaluated as for any other inenr edge)
+        /// </summary>
+        InnerEdge,
+
+        /// <summary>
+        /// Treats the edge as an <i>open boundary</i> of the domain (i.e.,
+        /// the inner edge flux will be used, but using the same values for
+        /// the variables at both sides of the edge).
+        /// </summary>
+        OpenBoundary,
+
+        /// <summary>
+        /// Treats the edge as a standard inner edge (i.e., the inner edge
+        /// flux will be evaluated as for any other inenr edge), but saves 
+        /// also the fluxes across these edges (needed for LocalTimeStepping)
+        /// </summary>
+        InnerEdgeLTS,
+    }
+
+
+    /// <summary>
     /// This class represents a spatial operator which maps
     /// from (DG-) variables in the domain, identified and ordered by <see cref="DomainVar"/>
     /// to variables in the co-domain, identified and ordered by <see cref="CodomainVar"/>.
     /// </summary>
     public class SpatialOperator {
 
-        /// <summary>
-        /// Options for the treatment of edges at the boundary of a
-        /// <see cref="SubGrid"/>.
-        /// </summary>
-        public enum SubGridBoundaryModes {
-
-            /// <summary>
-            /// Treats the edge as a real boundary edge (i.e., will use the
-            /// boundary conditions defined by the flux function)
-            /// </summary>
-            BoundaryEdge = 0,
-
-            /// <summary>
-            /// Treats the edge as a standard inner edge (i.e., the inner edge
-            /// flux will be evaluated as for any other inenr edge)
-            /// </summary>
-            InnerEdge,
-
-            /// <summary>
-            /// Treats the edge as an <i>open boundary</i> of the domain (i.e.,
-            /// the inner edge flux will be used, but using the same values for
-            /// the variables at both sides of the edge).
-            /// </summary>
-            OpenBoundary,
-
-            /// <summary>
-            /// Treats the edge as a standard inner edge (i.e., the inner edge
-            /// flux will be evaluated as for any other inenr edge), but saves 
-            /// also the fluxes across these edges (needed for LocalTimeStepping)
-            /// </summary>
-            InnerEdgeLTS,
-        }
-
+ 
 
         /// <summary>
         /// Function Mapping from Domain Variable Degrees, Parameter Degrees and CoDomain Variable Degrees to the Quadrature Order
@@ -2459,6 +2461,36 @@ namespace BoSSS.Foundation {
                     throw new ArgumentException("expecting logical mask");
                 Eval.ActivateSubgridBoundary(sgrd, subGridBoundaryTreatment);
             }
+        }
+
+
+        /// <summary>
+        /// An operator which computes the Jacobian matrix of this operator.
+        /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
+        /// </summary>
+        public SpatialOperator GetJacobiOperator() {
+            if (!this.IsCommited)
+                throw new InvalidOperationException("Invalid prior to calling Commit().");
+
+            var JacobianOp = new SpatialOperator(
+                   this.DomainVar,
+                   ArrayTools.Cat(this.DomainVar.Select(fn => fn + "_lin"), this.ParameterVar),
+                   this.CodomainVar,
+                   this.QuadOrderFunction);
+
+            foreach(string CodNmn in this.CodomainVar) {
+                foreach(var eq in this.EquationComponents[CodNmn]) {
+
+                    if (!(eq is ISupportsJacobianComponent _eq))
+                        throw new NotSupportedException(string.Format("Unable to handle component {0}: To obtain a Jacobian operator, all components must implement the {1} interface.", eq.GetType().Name, typeof(ISupportsJacobianComponent).Name));
+
+                    foreach (var eqj in _eq.GetJacobianComponents())
+                        JacobianOp.EquationComponents[CodNmn].Add(eqj);
+                }
+            }
+            
+            JacobianOp.Commit();
+            return JacobianOp;
         }
     }
 }

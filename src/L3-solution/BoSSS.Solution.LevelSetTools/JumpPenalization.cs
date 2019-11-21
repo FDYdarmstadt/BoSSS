@@ -264,7 +264,7 @@ namespace BoSSS.Solution.LevelSetTools.Smoothing {
                 inp_LevSet_Mapping, new DGField[0], outp_Result_Mapping);//,
                 //qInsEdge: new EdgeQuadratureScheme(true, S.InnerEdgesMask),
                 //qInsVol: new CellQuadratureScheme(true, CellMask.GetEmptyMask(S._GridData)),
-                //bndMode: SpatialOperator.SubGridBoundaryModes.InnerEdge,
+                //bndMode: SubGridBoundaryModes.InnerEdge,
                 //sgrd: S);                
         }
 

@@ -80,12 +80,12 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
 
-        public override double LevelSetForm(ref Foundation.XDG.CommonParamsLs cp,
+        public override double LevelSetForm(ref CommonParams cp,
             double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
 
-            double M = ComputeEvaporationMass(cp.ParamsNeg.GetSubVector(2 * D, D + 3), cp.ParamsPos.GetSubVector(2 * D, D + 3), cp.Normal, cp.jCell);
+            double M = ComputeEvaporationMass(cp.Parameters_IN.GetSubVector(2 * D, D + 3), cp.Parameters_OUT.GetSubVector(2 * D, D + 3), cp.Normal, cp.jCellIn);
             if (M == 0.0)
                 return 0.0;
 
@@ -93,8 +93,8 @@ namespace BoSSS.Solution.XheatCommon {
             double[] VelocityMeanIn = new double[D];
             double[] VelocityMeanOut = new double[D];
             for (int d = 0; d < D; d++) {
-                VelocityMeanIn[d] = cp.ParamsNeg[D + d];
-                VelocityMeanOut[d] = cp.ParamsPos[D + d];
+                VelocityMeanIn[d] = cp.Parameters_IN[D + d];
+                VelocityMeanOut[d] = cp.Parameters_OUT[D + d];
             }
 
             double LambdaIn;
@@ -190,19 +190,19 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
 
-        public override double LevelSetForm(ref Foundation.XDG.CommonParamsLs cp,
+        public override double LevelSetForm(ref CommonParams cp,
             double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
 
-            double M = ComputeEvaporationMass(cp.ParamsNeg.GetSubVector(2 * D, D + 3), cp.ParamsPos.GetSubVector(2 * D, D + 3), cp.Normal, cp.jCell);
+            double M = ComputeEvaporationMass(cp.Parameters_IN.GetSubVector(2 * D, D + 3), cp.Parameters_OUT.GetSubVector(2 * D, D + 3), cp.Normal, cp.jCellIn);
             if (M == 0.0)
                 return 0.0;
 
 
             double Ucentral = 0.0;
             for (int d = 0; d < D; d++) {
-                Ucentral += 0.5 * (cp.ParamsNeg[d] + cp.ParamsPos[d]) * cp.Normal[d];
+                Ucentral += 0.5 * (cp.Parameters_IN[d] + cp.Parameters_OUT[d]) * cp.Normal[d];
             }
 
             double uAxN = Ucentral * (-M * (1 / rhoA) * cp.Normal[m_d]);

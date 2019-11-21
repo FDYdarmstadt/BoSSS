@@ -57,7 +57,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
             return (UxN_in - UxN_out);
         }
 
-        public double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+        public double LevelSetForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
             
             double uAxN = GenericBlas.InnerProd(U_Neg, cp.Normal);
 
@@ -85,7 +85,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
 
         /*
         public override void PrimalVar_LevelSetFlux(out double FlxNeg, out double FlxPos,
-            ref CommonParamsLs cp,
+            ref CommonParams cp,
             double[] U_Neg, double[] U_Pos) {
             FlxNeg = 0;
             FlxPos = 0;
@@ -95,7 +95,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
             G = 0;
         }
 
-        public override void Nu(out double NuNeg, out double NuPos, ref CommonParamsLs cp) {
+        public override void Nu(out double NuNeg, out double NuPos, ref CommonParams cp) {
             NuNeg = 1.0;
             NuPos = 1.0;
         }

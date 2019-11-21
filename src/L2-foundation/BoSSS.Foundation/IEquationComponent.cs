@@ -111,7 +111,19 @@ namespace BoSSS.Foundation {
     }
 
 
+    /// <summary>
+    /// Interface for components that provide their derivative,
+    /// required for Newton solvers
+    /// (see <see cref="SpatialOperator.GetJacobiOperator"/>).
+    /// </summary>
+    public interface ISupportsJacobianComponent {
 
+        /// <summary>
+        /// A collection of components which in sum for the derivative of this component;
+        /// For (bi-) linear components, this is usually the flux itself.
+        /// </summary>
+        IEquationComponent[] GetJacobianComponents();
+    }
 
     /// <summary>
     /// defines a nonlinear source term.
@@ -568,20 +580,12 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Index of IN-cell (local geometrical index).
         /// </summary>
-        public int jCellIn {
-            get {
-                return GridDat.iGeomEdges.CellIndices[iEdge, 0];
-            }
-        }
+        public int jCellIn;
 
         /// <summary>
         /// Index of OUT-cell (local geometrical index).
         /// </summary>
-        public int jCellOut {
-            get {
-                return GridDat.iGeomEdges.CellIndices[iEdge, 1];
-            }
-        }
+        public int jCellOut;
 
         /// <summary>
         /// reference to grid data structure.

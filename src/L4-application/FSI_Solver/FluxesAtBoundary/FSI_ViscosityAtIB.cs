@@ -53,11 +53,11 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         /// <summary>
         /// default-implementation
         /// </summary>
-        public double LevelSetForm(ref CommonParamsLs inp,
+        public double LevelSetForm(ref CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double[] N = inp.Normal;
-            double _penalty = m_PenaltyFunc(m_penalty, inp.jCell);
+            double _penalty = m_PenaltyFunc(m_penalty, inp.jCellIn);
             int D = N.Length;
 
             // Particle parameters

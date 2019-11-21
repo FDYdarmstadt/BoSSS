@@ -110,11 +110,11 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             return u;
         }
 
-        public double LevelSetForm(ref CommonParamsLs inp,
+        public double LevelSetForm(ref CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-            Vector V = FlowField(inp.X, inp.ParamsNeg, inp.ParamsPos);
+            Vector V = FlowField(inp.X, inp.Parameters_IN, inp.Parameters_OUT);
             Vector N = new Vector(inp.Normal);
 
             double s = m_NormalVel(inp.X, inp.time);

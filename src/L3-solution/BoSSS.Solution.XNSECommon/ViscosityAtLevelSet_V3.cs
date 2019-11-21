@@ -61,11 +61,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         /// <summary>
         /// default-implementation
         /// </summary>
-        public double LevelSetForm(ref CommonParamsLs inp,
+        public double LevelSetForm(ref CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double[] N = inp.Normal;
-            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCell];
+            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCellIn];
 
             int D = N.Length;
             Debug.Assert(this.ArgumentOrdering.Count == D);
@@ -86,8 +86,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             }
             double Ret = 0.0;
 
-            double PosCellLengthScale = PosLengthScaleS[inp.jCell];
-            double NegCellLengthScale = NegLengthScaleS[inp.jCell];
+            double PosCellLengthScale = PosLengthScaleS[inp.jCellOut];
+            double NegCellLengthScale = NegLengthScaleS[inp.jCellIn];
 
             double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
             if (hCutCellMin <= 1.0e-10 * hCellMin)
@@ -472,7 +472,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
     //    /// <summary>
     //    /// 
     //    /// </summary>
-    //    public double LevelSetForm(ref CommonParamsLs inp,
+    //    public double LevelSetForm(ref CommonParams inp,
     //        double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
     //        double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
     //        double[] N = inp.n;

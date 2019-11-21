@@ -77,19 +77,9 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
             }
         }
 
-        public double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+        public double LevelSetForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
 
-            BoSSS.Foundation.CommonParams inp;
-
-            // Input parameters
-            // =============================
-            inp.Parameters_IN = cp.ParamsNeg;
-            inp.Normal = cp.Normal;
-            inp.iEdge = int.MinValue;
-            inp.GridDat = this.m_LsTrk.GridDat;
-            inp.X = cp.X;
-            inp.time = cp.time;
-            inp.Parameters_OUT = new double[inp.Parameters_IN.Length];
+            CommonParams inp = cp;
 
             // Particle parameters
             // =============================
@@ -112,6 +102,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
 
             // Outer values for Velocity and VelocityMean
             // =============================
+            inp.Parameters_OUT = new double[inp.Parameters_IN.Length];
             inp.Parameters_OUT[0] = uLevSet[0] + RadialLength * wLevSet * RadialNormalVector[0];
             inp.Parameters_OUT[1] = uLevSet[1] + RadialLength * wLevSet * RadialNormalVector[1];
             // Velocity0MeanVectorOut is set to zero, i.e. always LambdaIn is used.

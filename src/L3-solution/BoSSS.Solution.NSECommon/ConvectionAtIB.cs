@@ -91,7 +91,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
 
         // Flux over interface
         public override void DerivativVar_LevelSetFlux(out double FlxNeg, out double FlxPos,
-            ref CommonParamsLs cp,
+            ref CommonParams cp,
             double[] U_Neg, double[] U_Pos, double[,] GradU_Neg, double[,] GradU_Pos) {
 
             double[] _uLevSet = new double[2];
@@ -134,16 +134,16 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
         }
         */
 
-        public double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+        public double LevelSetForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
 
-            BoSSS.Foundation.CommonParams inp; // = default(BoSSS.Foundation.InParams);
-            inp.Parameters_IN = cp.ParamsNeg;
-            inp.Normal = cp.Normal;
-            inp.iEdge = int.MinValue;
-            inp.GridDat = this.m_LsTrk.GridDat;
-            inp.X = cp.X;
-            inp.time = cp.time;
-            inp.Parameters_OUT = new double[inp.Parameters_IN.Length];
+            BoSSS.Foundation.CommonParams inp = cp; // = default(BoSSS.Foundation.InParams);
+            //inp.Parameters_IN = cp.ParamsNeg;
+            //inp.Normal = cp.Normal;
+            //inp.iEdge = int.MinValue;
+            //inp.GridDat = this.m_LsTrk.GridDat;
+            //inp.X = cp.X;
+            //inp.time = cp.time;
+            //inp.Parameters_OUT = new double[inp.Parameters_IN.Length];
 
             var parameters_P = m_getParticleParams(inp.X, inp.time);
             double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };

@@ -251,6 +251,8 @@ namespace BoSSS.Application.Rheology {
                     inp2.Parameters_IN = inp.Parameters_IN;
                     inp2.X = inp.X;
                     inp2.time = inp.time;
+                    inp2.jCellIn = inp.jCellIn;
+                    inp2.jCellOut = int.MinValue;
 
                     // Specify Parameters_OUT
                     // ======================
