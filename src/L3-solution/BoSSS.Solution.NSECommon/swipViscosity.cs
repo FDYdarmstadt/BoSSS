@@ -25,39 +25,9 @@ using ilPSP.Utils;
 using System.Diagnostics;
 using BoSSS.Foundation;
 using ilPSP;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Solution.NSECommon {
-
-    /*
-    /// <summary>
-    /// A configuration switch to <see cref="swipViscosityBase"/> and decendants, to
-    /// switch between different variants of inhomogeneous-diffusion forms
-    /// </summary>
-    public enum ViscosityImplementation {
-
-        /// <summary>
-        /// SWIP-form according to 
-        /// <code>
-        /// @book{di_pietro_mathematical_2011,
-        ///       series = {Math Matiques Et Applications},
-        ///       title = {Mathematical Aspects of Discontinuous Galerkin Methods},
-        ///       isbn = {9783642229794},
-        ///       number = {69},
-        ///       publisher = {Springer},
-        ///       author = {Di Pietro, Daniele Antonio and Ern, Alexandre},
-        ///       year = {2011},
-        /// }
-        /// </code>
-        /// (page 155)
-        /// </summary>
-        SWIP,
-
-        /// <summary>
-        /// an alternate consistent implementation
-        /// </summary>
-        H
-    }
-    */
 
     /// <summary>
     /// A configuration switch to <see cref="swipViscosityBase"/> and decendants, to
@@ -145,7 +115,7 @@ namespace BoSSS.Solution.NSECommon {
                     break;
                 case ViscosityOption.ConstantViscosityDimensionless:
                     if(double.IsNaN(reynolds))
-                        throw new ArgumentException("reynolds number is missing!");
+                        throw new ArgumentException("Reynolds number is missing!");
                     this.m_reynolds = reynolds;
                     break;
                 case ViscosityOption.VariableViscosity:
@@ -153,7 +123,7 @@ namespace BoSSS.Solution.NSECommon {
                     break;
                 case ViscosityOption.VariableViscosityDimensionless:
                     if(double.IsNaN(reynolds))
-                        throw new ArgumentException("reynolds number is missing!");
+                        throw new ArgumentException("Reynolds number is missing!");
                     this.m_reynolds = reynolds;
                     this.m_EoS = EoS;
                     break;
@@ -326,8 +296,6 @@ namespace BoSSS.Solution.NSECommon {
 
             return penaltySizeFactor * m_penalty * m_penalty_base;
         }
-
-  
 
 
         /// <summary>
@@ -741,8 +709,8 @@ namespace BoSSS.Solution.NSECommon {
             CommonParamsBnd cpv;
             cpv.GridDat = efp.GridDat;
             cpv.Parameters_IN = new double[_NOParams];
-            cpv.Normale = new double[D];
-            cpv.X = new double[D];
+            cpv.Normale = new Vector(D);;
+            cpv.X = new Vector(D);
             cpv.time = efp.time;
 
             double[] _GradV_in = new double[D];

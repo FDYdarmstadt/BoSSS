@@ -67,7 +67,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// <see cref="BoundaryCondition.GetBoundaryState"/>
         /// </returns>
         public override StateVector GetBoundaryState(double time, double[] x, double[] normal, StateVector stateIn) {
-            Vector normalVector = GetNormalVector(normal);
+            ilPSP.Vector normalVector = GetNormalVector(normal);
 
             Debug.Assert(normal.Length == stateIn.Dimension);
             int D = normal.Length;
@@ -75,15 +75,15 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
             StateVector stateOut;
             if (WallVelocities == null) {
                 // VegtVen2002, page 14, second equation
-                Vector mOut = stateIn.Momentum - 2.0 * (stateIn.Momentum * normalVector) * normalVector;
+                ilPSP.Vector mOut = stateIn.Momentum - 2.0 * (stateIn.Momentum * normalVector) * normalVector;
                 stateOut = new StateVector(stateIn.Material, stateIn.Density, mOut, stateIn.Energy);
             } else {
-                Vector uWall = new Vector(D);
+                ilPSP.Vector uWall = new ilPSP.Vector(D);
                 for (int d = 0; d < D; d++) {
                     uWall[d] = WallVelocities[d](x, time);
                 }
 
-                Vector uOut = stateIn.Velocity
+                ilPSP.Vector uOut = stateIn.Velocity
                     - 2.0 * ((stateIn.Velocity - uWall) * normalVector) * normalVector;
                 stateOut = StateVector.FromPrimitiveQuantities(
                     stateIn.Material, stateIn.Density, uOut, stateIn.Pressure);

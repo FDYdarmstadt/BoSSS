@@ -181,6 +181,11 @@ namespace ilPSP {
         /// <param name="arrayIndex">
         /// </param>
         public void CopyTo(T[] array, int arrayIndex) {
+#if DEBUG
+            if(array.GetType().IsValueType == false)
+                throw new NotSupportedException("CopyTo value type -- probably not the expected result! (Using vector struct in CopyTo(...) - operation?)");
+#endif
+
             Array.Clear(array, arrayIndex, this.Count);
             foreach (var entry in m_Content) {
                 array[entry.Key] = entry.Value;

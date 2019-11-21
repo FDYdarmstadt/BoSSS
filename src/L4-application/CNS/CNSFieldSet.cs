@@ -24,6 +24,7 @@ using BoSSS.Solution.Utils;
 using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.ShockCapturing;
+using ilPSP;
 using ilPSP.Tracing;
 using System;
 using System.Collections.Generic;

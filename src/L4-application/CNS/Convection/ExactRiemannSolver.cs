@@ -84,7 +84,7 @@ namespace CNS.Convection {
         /// Velocities in the edge coordinate system defined by the given edge
         /// normal.
         /// </summary>
-        private Vector velocityLeft, velocityRight, edgeNormal;
+        private ilPSP.Vector velocityLeft, velocityRight, edgeNormal;
 
         /// <summary>
         /// Constructor for the multiphase case, initializes values
@@ -99,7 +99,7 @@ namespace CNS.Convection {
         /// The normal vector of the edge between the 'left' and the 'right'
         /// state (pointing from 'left' to 'right'). 
         /// </param>
-        public ExactRiemannSolver(StateVector stateLeft, StateVector stateRight, Vector edgeNormal) {
+        public ExactRiemannSolver(StateVector stateLeft, StateVector stateRight, ilPSP.Vector edgeNormal) {
             IdealGas gasLeft = stateLeft.Material.EquationOfState as IdealGas;
             IdealGas gasRight = stateRight.Material.EquationOfState as IdealGas;
             if (gasLeft == null || gasRight == null) {
@@ -166,7 +166,7 @@ namespace CNS.Convection {
             Sample(meanPressure, meanVelocity, S, out densityStar, out normalVelocityStar, out pressureStar);
 
             // Return exact solution in conservative variables
-            Vector u;
+            ilPSP.Vector u;
             Material material;
             if (S <= meanVelocity) {
                 // left of the interface

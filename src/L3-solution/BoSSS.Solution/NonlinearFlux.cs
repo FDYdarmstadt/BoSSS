@@ -82,9 +82,6 @@ namespace BoSSS.Solution.Utils {
             }
         }
 
-
-
-
         #region INonlinearFlux Member
 
         /// <summary>
@@ -209,8 +206,6 @@ namespace BoSSS.Solution.Utils {
 
         #endregion
 
-
-
         #region IEquationComponent Member
 
         /// <summary>
@@ -219,7 +214,6 @@ namespace BoSSS.Solution.Utils {
         public abstract IList<string> ArgumentOrdering { get; }
   
         #endregion
-
     }
 
 

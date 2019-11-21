@@ -98,16 +98,16 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
                 return new StateVector(
                     stateIn.Material,
                     stateIn.Density,
-                    new Vector(),
+                    new ilPSP.Vector(),
                     stateIn.Density * innerEnergy);
             } else {
-                Vector velocity = new Vector(D);
+                ilPSP.Vector velocity = new ilPSP.Vector(D);
                 for (int d = 0; d < D; d++) {
                     velocity[d] = WallVelocities[d](x, time);
                 }
 
 #if DEBUG
-                Vector n = new Vector(normal);
+                ilPSP.Vector n = new ilPSP.Vector(normal);
                 if (Math.Abs(velocity * n) > 1e-10) {
                     throw new Exception(
                         "Wall velocity must be tangent to the wall");
