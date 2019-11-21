@@ -59,19 +59,19 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
 
         public double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
             
-            double uAxN = GenericBlas.InnerProd(U_Neg, cp.n);
+            double uAxN = GenericBlas.InnerProd(U_Neg, cp.Normal);
 
-            var parameters_P = m_getParticleParams(cp.x, cp.time);
+            var parameters_P = m_getParticleParams(cp.X, cp.time);
             double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
             double wLevSet = parameters_P[2];
             pRadius = parameters_P[3];
 
             double[] _uLevSet = new double[D];
 
-            _uLevSet[0] = uLevSet[0]+pRadius*wLevSet*-cp.n[1];
-            _uLevSet[1] = uLevSet[1] + pRadius * wLevSet * cp.n[0];
+            _uLevSet[0] = uLevSet[0]+pRadius*wLevSet*-cp.Normal[1];
+            _uLevSet[1] = uLevSet[1] + pRadius * wLevSet * cp.Normal[0];
 
-            double uBxN = GenericBlas.InnerProd(_uLevSet, cp.n);
+            double uBxN = GenericBlas.InnerProd(_uLevSet, cp.Normal);
           
             // transform from species B to A: we call this the "A-fictitious" value
             double uAxN_fict;

@@ -199,16 +199,16 @@ namespace BoSSS.Solution.NSECommon {
                             if (m_SpatialDimension == 3)
                                 v3 = velFunction[inp.EdgeTag, 2](inp.X, inp.time) + inp.Parameters_IN[2 + 2 * m_SpatialDimension];
 
-                            r += u_d * (v1 * inp.Normale[0] + v2 * inp.Normale[1]);
+                            r += u_d * (v1 * inp.Normal[0] + v2 * inp.Normal[1]);
                             if (m_SpatialDimension == 3) {
-                                r += u_d * v3 * inp.Normale[2];
+                                r += u_d * v3 * inp.Normal[2];
                             }
                         } else {
                             // Setup params
                             // ============
                             Foundation.CommonParams inp2;
                             inp2.GridDat = inp.GridDat;
-                            inp2.Normale = inp.Normale;
+                            inp2.Normal = inp.Normal;
                             inp2.iEdge = inp.iEdge;
                             inp2.Parameters_IN = inp.Parameters_IN;
                             inp2.X = inp.X;
@@ -326,9 +326,9 @@ namespace BoSSS.Solution.NSECommon {
                                 u3 = inp.Parameters_IN[2];
                         }
 
-                        r += u_d * (u1 * inp.Normale[0] + u2 * inp.Normale[1]);
+                        r += u_d * (u1 * inp.Normal[0] + u2 * inp.Normal[1]);
                         if (m_SpatialDimension == 3) {
-                            r += u_d * u3 * inp.Normale[2];
+                            r += u_d * u3 * inp.Normal[2];
                         }
 
                         if (m_bcmap.PhysMode == PhysicsMode.LowMach || m_bcmap.PhysMode == PhysicsMode.Multiphase) {
@@ -391,10 +391,10 @@ namespace BoSSS.Solution.NSECommon {
 
             // 2 * {u_i * u_j} * n_j,
             // resp. 2 * {rho * u_i * u_j} * n_j for variable density
-            r += rhoIn * Uin[0] * (inp.Parameters_IN[0] * inp.Normale[0] + inp.Parameters_IN[1] * inp.Normale[1]);
-            r += rhoOut * Uout[0] * (inp.Parameters_OUT[0] * inp.Normale[0] + inp.Parameters_OUT[1] * inp.Normale[1]);
+            r += rhoIn * Uin[0] * (inp.Parameters_IN[0] * inp.Normal[0] + inp.Parameters_IN[1] * inp.Normal[1]);
+            r += rhoOut * Uout[0] * (inp.Parameters_OUT[0] * inp.Normal[0] + inp.Parameters_OUT[1] * inp.Normal[1]);
             if (m_SpatialDimension == 3) {
-                r += rhoIn * Uin[0] * inp.Parameters_IN[2] * inp.Normale[2] + rhoOut * Uout[0] * inp.Parameters_OUT[2] * inp.Normale[2];
+                r += rhoIn * Uin[0] * inp.Parameters_IN[2] * inp.Normal[2] + rhoOut * Uout[0] * inp.Parameters_OUT[2] * inp.Normal[2];
             }
 
             // Calculate dissipative part
@@ -413,15 +413,15 @@ namespace BoSSS.Solution.NSECommon {
             switch (m_bcmap.PhysMode) {
                 case PhysicsMode.Viscoelastic:
                 case PhysicsMode.Incompressible:
-                    LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normale, true);
-                    LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normale, true);
+                    LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, true);
+                    LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, true);
                     break;
                 case PhysicsMode.LowMach:
                 case PhysicsMode.Multiphase:
                     double TemperatureMeanIn = inp.Parameters_IN[2 * m_SpatialDimension + 1];
                     double TemperatureMeanOut = inp.Parameters_OUT[2 * m_SpatialDimension + 1];
-                    LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normale, EoS, true, TemperatureMeanIn);
-                    LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normale, EoS, true, TemperatureMeanOut);
+                    LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, EoS, true, TemperatureMeanIn);
+                    LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, EoS, true, TemperatureMeanOut);
                     break;
                 case PhysicsMode.Combustion:
                     double[] ScalarMeanIn = new double[NumberOfReactants + 1];
@@ -430,8 +430,8 @@ namespace BoSSS.Solution.NSECommon {
                         ScalarMeanIn[n] = inp.Parameters_IN[2 * m_SpatialDimension + NumberOfReactants + 1 + n];
                         ScalarMeanOut[n] = inp.Parameters_OUT[2 * m_SpatialDimension + NumberOfReactants + 1 + n];
                     }
-                    LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normale, EoS, true, ScalarMeanIn);
-                    LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normale, EoS, true, ScalarMeanOut);
+                    LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, EoS, true, ScalarMeanIn);
+                    LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, EoS, true, ScalarMeanOut);
                     break;
                 default:
                     throw new NotImplementedException();

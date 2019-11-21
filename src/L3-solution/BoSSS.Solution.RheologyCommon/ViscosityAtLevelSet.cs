@@ -87,7 +87,7 @@ namespace BoSSS.Solution.RheologyCommon {
         public double LevelSetForm(ref CommonParamsLs inp,
             double[] UA, double[] UB, double[,] Grad_uA, double[,] Grad_uB,
             double VA, double VB, double[] Grad_vA, double[] Grad_vB) {
-            double[] N = inp.n;
+            double[] N = inp.Normal;
             double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCell];
 
             int D = N.Length;

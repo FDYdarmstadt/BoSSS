@@ -56,7 +56,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
         public double LevelSetForm(ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double S0 = 0; // velocity in normal direction, at the interface
             for(int d = 0; d < D; d++) {
-                S0 += inp.n[d] * inp.ParamsNeg[d];
+                S0 += inp.Normal[d] * inp.ParamsNeg[d];
             }
 
             double NegCellLengthScale = NegCellLengthScaleS[inp.jCell];

@@ -64,7 +64,7 @@ namespace BoSSS.Solution.XheatCommon {
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-            double[] N = inp.n;
+            double[] N = inp.Normal;
             double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCell];
 
             int D = N.Length;
@@ -185,8 +185,8 @@ namespace BoSSS.Solution.XheatCommon {
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
 
-            double uAxN = GenericBlas.InnerProd(U_Neg, cp.n);
-            double uBxN = GenericBlas.InnerProd(U_Pos, cp.n);
+            double uAxN = GenericBlas.InnerProd(U_Neg, cp.Normal);
+            double uBxN = GenericBlas.InnerProd(U_Pos, cp.Normal);
 
             // transform from species B to A: we call this the "A-fictitious" value
             double uAxN_fict = uBxN;
@@ -261,8 +261,8 @@ namespace BoSSS.Solution.XheatCommon {
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
 
-            double uAxN = GenericBlas.InnerProd(U_Neg, cp.n);
-            double uBxN = GenericBlas.InnerProd(U_Pos, cp.n);
+            double uAxN = GenericBlas.InnerProd(U_Neg, cp.Normal);
+            double uBxN = GenericBlas.InnerProd(U_Pos, cp.Normal);
 
             // transform from species B to A: we call this the "A-fictitious" value
             double uAxN_fict = uBxN;
@@ -349,7 +349,7 @@ namespace BoSSS.Solution.XheatCommon {
 
             double Acc = (DirichletCond) ? Tsat : 0.5 * (uB[0] + uA[0]);
 
-            return -Acc * (kB * vB - kA * vA) * inp.n[m_d];
+            return -Acc * (kB * vB - kA * vA) * inp.Normal[m_d];
         }
 
 
@@ -416,10 +416,10 @@ namespace BoSSS.Solution.XheatCommon {
             double Acc = 0.0;
 
             if (DirichletCond) {
-                Acc += 2.0 * (uA[0] - Tsat) * inp.n[m_d] * (vA - 0.0);
-                Acc += 2.0 * (Tsat - uB[0]) * inp.n[m_d] * (0.0 - vB);
+                Acc += 2.0 * (uA[0] - Tsat) * inp.Normal[m_d] * (vA - 0.0);
+                Acc += 2.0 * (Tsat - uB[0]) * inp.Normal[m_d] * (0.0 - vB);
             } else {
-                Acc += (uA[0] - uB[0]) * inp.n[m_d] * (vA - vB);
+                Acc += (uA[0] - uB[0]) * inp.Normal[m_d] * (vA - vB);
             }
 
             return Acc;

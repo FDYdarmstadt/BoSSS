@@ -202,8 +202,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-            double uAxN = GenericBlas.InnerProd(U_Neg, cp.n);
-            double uBxN = GenericBlas.InnerProd(U_Pos, cp.n);
+            double uAxN = GenericBlas.InnerProd(U_Neg, cp.Normal);
+            double uBxN = GenericBlas.InnerProd(U_Pos, cp.Normal);
 
             //double s = 0;//cp.ParamsNeg[0];
                          //if (!MaterialInterface) {

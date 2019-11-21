@@ -179,10 +179,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
                 BoSSS.Foundation.CommonParams inp; // = default(BoSSS.Foundation.InParams);
                 inp.Parameters_IN = ParamsNeg;
                 inp.Parameters_OUT = ParamsNegFict;
-                inp.Normale = cp.n;
+                inp.Normal = cp.Normal;
                 inp.iEdge = int.MinValue;
                 inp.GridDat = this.m_LsTrk.GridDat;
-                inp.X = cp.x;
+                inp.X = cp.X;
                 inp.time = cp.time;
                 //inp.jCellIn = cp.jCell;
                 //inp.jCellOut = cp.jCell;
@@ -202,10 +202,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
                 BoSSS.Foundation.CommonParams inp; // = default(BoSSS.Foundation.InParams);
                 inp.Parameters_IN = ParamsPosFict;
                 inp.Parameters_OUT = ParamsPos;
-                inp.Normale = cp.n;
+                inp.Normal = cp.Normal;
                 inp.iEdge = int.MinValue;
                 inp.GridDat = this.m_LsTrk.GridDat;
-                inp.X = cp.x;
+                inp.X = cp.X;
                 inp.time = cp.time;
                 //inp.jCellIn = cp.jCell;
                 //inp.jCellOut = cp.jCell;
@@ -499,8 +499,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
             //// 2 * {u_i * u_j} * n_j,
             //// resp. 2 * {rho * u_i * u_j} * n_j for variable density
-            flx += rhoA * U_Neg[0] * ((cp.ParamsNeg[0] - Uint[0]) * cp.n[0] + (cp.ParamsNeg[1] - Uint[1]) * cp.n[1]);
-            flx += rhoB * U_Pos[0] * ((cp.ParamsPos[0] - Uint[0]) * cp.n[0] + (cp.ParamsPos[1] - Uint[1]) * cp.n[1]);
+            flx += rhoA * U_Neg[0] * ((cp.ParamsNeg[0] - Uint[0]) * cp.Normal[0] + (cp.ParamsNeg[1] - Uint[1]) * cp.Normal[1]);
+            flx += rhoB * U_Pos[0] * ((cp.ParamsPos[0] - Uint[0]) * cp.Normal[0] + (cp.ParamsPos[1] - Uint[1]) * cp.Normal[1]);
             //if (m_D == 3) {
             //    flx += rhoA * U_Neg[0] * cp.ParamsNeg[2] * cp.n[2] + rhoB * U_Pos[0] * cp.ParamsPos[2] * cp.n[2];
             //}
@@ -518,8 +518,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             double LambdaIn;
             double LambdaOut;
 
-            LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.n, true);
-            LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.n, true);
+            LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.Normal, true);
+            LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.Normal, true);
 
             LambdaIn *= rhoA;
             LambdaOut *= rhoB;
@@ -727,11 +727,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
             double UnCentral = 0.0;
             for (int d = 0; d < D; d++) {
-                UnCentral += 0.5 * (rhoA * (cp.ParamsNeg[d] - Uint[d]) + rhoB * (cp.ParamsPos[d] - Uint[d])) * cp.n[d];
+                UnCentral += 0.5 * (rhoA * (cp.ParamsNeg[d] - Uint[d]) + rhoB * (cp.ParamsPos[d] - Uint[d])) * cp.Normal[d];
             }
 
-            uAxN += UnCentral * (0.0 - (-M * (1 / rhoA) * cp.n[m_d]));
-            uBxN += UnCentral * (0.0 - (-M * (1 / rhoB) * cp.n[m_d]));
+            uAxN += UnCentral * (0.0 - (-M * (1 / rhoA) * cp.Normal[m_d]));
+            uBxN += UnCentral * (0.0 - (-M * (1 / rhoB) * cp.Normal[m_d]));
 
 
             // ====================================================================

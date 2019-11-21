@@ -114,23 +114,23 @@ namespace BoSSS.Application.Rheology {
             double u = 0.5 * (inp.Parameters_IN[0] + inp.Parameters_OUT[0]);
             double v = 0.5 * (inp.Parameters_IN[1] + inp.Parameters_OUT[1]);
 
-            Vector n = new Vector(inp.Normale[0], inp.Normale[1]);
+            Vector n = new Vector(inp.Normal[0], inp.Normal[1]);
             Vector velocityVector = new Vector(u, v);
 
             if (velocityVector * n > 0)
             {
 
                 //Outflow
-                res += u * (m_alpha * Tin[0] + (1 - m_alpha) * Tout[0]) * inp.Normale[0];
-                res += v * (m_alpha * Tin[0] + (1 - m_alpha) * Tout[0]) * inp.Normale[1];
+                res += u * (m_alpha * Tin[0] + (1 - m_alpha) * Tout[0]) * inp.Normal[0];
+                res += v * (m_alpha * Tin[0] + (1 - m_alpha) * Tout[0]) * inp.Normal[1];
 
             }
             else
             {
 
                 //Inflow
-                res += u * (m_alpha * Tout[0] + (1 - m_alpha) * Tin[0]) * inp.Normale[0];
-                res += v * (m_alpha * Tout[0] + (1 - m_alpha) * Tin[0]) * inp.Normale[1];
+                res += u * (m_alpha * Tout[0] + (1 - m_alpha) * Tin[0]) * inp.Normal[0];
+                res += v * (m_alpha * Tout[0] + (1 - m_alpha) * Tin[0]) * inp.Normal[1];
             }
 
             return m_Weissenberg * res;
@@ -149,8 +149,8 @@ namespace BoSSS.Application.Rheology {
                     // Atmospheric outlet/pressure outflow: hom. Neumann
                     double u = inp.Parameters_IN[0];
                     double v = inp.Parameters_IN[1];
-                    res += u * Tin[0] * inp.Normale[0];
-                    res += v * Tin[0] * inp.Normale[1];
+                    res += u * Tin[0] * inp.Normal[0];
+                    res += v * Tin[0] * inp.Normal[1];
                     res *= m_Weissenberg;
                     break;
 
@@ -161,7 +161,7 @@ namespace BoSSS.Application.Rheology {
                     // ============
                     Foundation.CommonParams inp2;
                     inp2.GridDat = inp.GridDat;
-                    inp2.Normale = inp.Normale;
+                    inp2.Normal = inp.Normal;
                     inp2.iEdge = inp.iEdge;
                     inp2.Parameters_IN = inp.Parameters_IN;
                     inp2.X = inp.X;
@@ -172,7 +172,7 @@ namespace BoSSS.Application.Rheology {
                     inp2.Parameters_OUT = new double[inp.Parameters_IN.Length];
 
                     // Outer values for Velocity and VelocityMean
-                    Debug.Assert(inp.Normale.Dim == 2);
+                    Debug.Assert(inp.Normal.Dim == 2);
                     for (int j = 0; j < 2; j++)
                     {
 

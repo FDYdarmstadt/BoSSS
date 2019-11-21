@@ -182,7 +182,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             //}
 
 
-            double[] Normal = cp.n;
+            double[] Normal = cp.Normal;
 
             double presJump = (-curvature * sigma) * Normal[m_d];
 
@@ -278,7 +278,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             Debug.Assert(cp.ParamsPos[0] == cp.ParamsNeg[0], "curvature must be continuous across interface");
             Debug.Assert(!double.IsNaN(curvature) || !double.IsInfinity(curvature));
 
-            double[] Normal = cp.n;
+            double[] Normal = cp.Normal;
 
             double surfForce = cp.ParamsNeg[0];
             Debug.Assert(cp.ParamsNeg[0] == cp.ParamsPos[0]);
@@ -513,7 +513,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
 
         protected override void InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout, out double FluxInCell, out double FluxOuCell) {
-            double[] EdgeNormal = inp.Normale;
+            double[] EdgeNormal = inp.Normal;
             double[] SurfaceNormalIn = (new double[] { inp.Parameters_IN[0], inp.Parameters_IN[1] }).Normalize();
             double[] SurfaceNormalOu = (new double[] { inp.Parameters_OUT[0], inp.Parameters_OUT[1] }).Normalize();
 
@@ -574,7 +574,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
        
 
         protected override void BorderEdgeFlux_(ref CommonParamsBnd inp, double[] Uin, out double FluxInCell) {
-            double[] EdgeNormal = inp.Normale;
+            double[] EdgeNormal = inp.Normal;
             double[] SurfaceNormalIn = (new double[] { inp.Parameters_IN[0], inp.Parameters_IN[1] }).Normalize();
 
             double[] TangenteInn = tangente(SurfaceNormalIn, EdgeNormal);
@@ -929,7 +929,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
 
-            double[] EdgeNormal = inp.Normale;
+            double[] EdgeNormal = inp.Normal;
             double[] SurfaceNormal_IN = SurfaceNormal(inp.Parameters_IN);
             double[] SurfaceNormal_OUT = SurfaceNormal(inp.Parameters_OUT);
 
@@ -952,7 +952,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                 case IncompressibleBcType.Velocity_Inlet:
                 case IncompressibleBcType.Pressure_Outlet: {
 
-                        double[] EdgeNormal = inp.Normale;
+                        double[] EdgeNormal = inp.Normal;
                         double[] SurfaceNormal_IN = SurfaceNormal(inp.Parameters_IN);
                         double[] Tangente_IN = Tangent(SurfaceNormal_IN, EdgeNormal);
 
@@ -963,7 +963,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                 case IncompressibleBcType.SlipSymmetry:
                 case IncompressibleBcType.NavierSlip_Linear: {
 
-                        double[] EdgeNormal = inp.Normale;
+                        double[] EdgeNormal = inp.Normal;
                         double[] SurfaceNormal_IN = SurfaceNormal(inp.Parameters_IN);
                         double[] Tangente_IN = Tangent(SurfaceNormal_IN, EdgeNormal);
 
@@ -1411,8 +1411,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             double[,] Psurf_IN = SurfaceProjection(Nsurf_IN);
             double[,] Psurf_OUT = SurfaceProjection(Nsurf_OUT);
 
-            double[] tauL_IN = Tangent(Nsurf_IN, inp.Normale);
-            double[] tauL_OUT = Tangent(Nsurf_OUT, inp.Normale);
+            double[] tauL_IN = Tangent(Nsurf_IN, inp.Normal);
+            double[] tauL_OUT = Tangent(Nsurf_OUT, inp.Normal);
 
             double[] tauL_Aver = tauL_IN.CloneAs();
             tauL_Aver.ScaleV(0.5);
@@ -1511,8 +1511,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             double[,] Psurf_OUT = SurfaceProjection(Nsurf_OUT);
 
 
-            double[] tauL_IN = Tangent(Nsurf_IN, inp.Normale);
-            double[] tauL_OUT = Tangent(Nsurf_OUT, inp.Normale);
+            double[] tauL_IN = Tangent(Nsurf_IN, inp.Normal);
+            double[] tauL_OUT = Tangent(Nsurf_OUT, inp.Normal);
 
             double[] tauL_Aver = tauL_IN.CloneAs();
             tauL_Aver.ScaleV(0.5);
@@ -1608,8 +1608,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             double[,] Psurf_IN = SurfaceProjection(Nsurf_IN);
             double[,] Psurf_OUT = SurfaceProjection(Nsurf_OUT);
 
-            double[] tauL_IN = Tangent(Nsurf_IN, inp.Normale);
-            double[] tauL_OUT = Tangent(Nsurf_OUT, inp.Normale);
+            double[] tauL_IN = Tangent(Nsurf_IN, inp.Normal);
+            double[] tauL_OUT = Tangent(Nsurf_OUT, inp.Normal);
 
             double[] tauL_Aver = tauL_IN.CloneAs();
             tauL_Aver.ScaleV(0.5);
@@ -1663,7 +1663,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                         double[] Nedge_IN = inp.Parameters_IN;
                         double[] Nsurf_IN = SurfaceNormal(inp.Parameters_IN);
                         double[,] Psurf_IN = SurfaceProjection(Nsurf_IN);
-                        double[] tauL_IN = Tangent(Nsurf_IN, inp.Normale);
+                        double[] tauL_IN = Tangent(Nsurf_IN, inp.Normal);
 
                         double divUsurf_IN = 0.0;
                         for (int d1 = 0; d1 < inp.D; d1++) {
@@ -1734,7 +1734,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         public double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-            double[] Normal = cp.n;
+            double[] Normal = cp.Normal;
 
             double acc = 0.0;
 
@@ -1865,7 +1865,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
 
-            double[] EdgeNormal = inp.Normale;
+            double[] EdgeNormal = inp.Normal;
             double[] SurfaceNormal_IN = SurfaceNormal(inp.Parameters_IN);
             double[] SurfaceNormal_OUT = SurfaceNormal(inp.Parameters_OUT);
 
@@ -1890,7 +1890,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                 case IncompressibleBcType.SlipSymmetry:
                 case IncompressibleBcType.NavierSlip_Linear: {
 
-                        double[] EdgeNormal = inp.Normale;
+                        double[] EdgeNormal = inp.Normal;
                         double[] SurfaceNormal_IN = SurfaceNormal(inp.Parameters_IN);
                         double[] Tangente_IN = Tangent(SurfaceNormal_IN, EdgeNormal);
 

@@ -161,10 +161,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
 
             // 2 * {u_i * u_j} * n_j,
             // resp. 2 * {rho * u_i * u_j} * n_j for variable density
-            r += rhoIn * Uin[0] * (inp.Parameters_IN[0] * inp.Normale[0] + inp.Parameters_IN[1] * inp.Normale[1]);
-            r += rhoOut * Uout[0] * (inp.Parameters_OUT[0] * inp.Normale[0] + inp.Parameters_OUT[1] * inp.Normale[1]);
+            r += rhoIn * Uin[0] * (inp.Parameters_IN[0] * inp.Normal[0] + inp.Parameters_IN[1] * inp.Normal[1]);
+            r += rhoOut * Uout[0] * (inp.Parameters_OUT[0] * inp.Normal[0] + inp.Parameters_OUT[1] * inp.Normal[1]);
             if(m_SpatialDimension == 3) {
-                r += rhoIn * Uin[0] * inp.Parameters_IN[2] * inp.Normale[2] + rhoOut * Uout[0] * inp.Parameters_OUT[2] * inp.Normale[2];
+                r += rhoIn * Uin[0] * inp.Parameters_IN[2] * inp.Normal[2] + rhoOut * Uout[0] * inp.Parameters_OUT[2] * inp.Normal[2];
             }
 
             // Calculate dissipative part
@@ -180,8 +180,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
             double LambdaIn;
             double LambdaOut;
 
-            LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normale, true);
-            LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normale, true);
+            LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, true);
+            LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, true);
 
             double Lambda = Math.Max(LambdaIn, LambdaOut);
             double uJump = Uin[0] - Uout[0];
@@ -207,7 +207,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                         // ============
                         Foundation.CommonParams inp2;
                         inp2.GridDat = inp.GridDat;
-                        inp2.Normale = inp.Normale;
+                        inp2.Normal = inp.Normal;
                         inp2.iEdge = inp.iEdge;
                         inp2.Parameters_IN = inp.Parameters_IN;
                         inp2.X = inp.X;
@@ -249,9 +249,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                         if(m_SpatialDimension == 3)
                             u3 = inp.Parameters_IN[2];
 
-                        r += u_d * (u1 * inp.Normale[0] + u2 * inp.Normale[1]);
+                        r += u_d * (u1 * inp.Normal[0] + u2 * inp.Normal[1]);
                         if(m_SpatialDimension == 3) {
-                            r += u_d * u3 * inp.Normale[2];
+                            r += u_d * u3 * inp.Normal[2];
                         }
 
                         return r;
@@ -467,10 +467,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                 BoSSS.Foundation.CommonParams inp; // = default(BoSSS.Foundation.InParams);
                 inp.Parameters_IN = ParamsNeg;
                 inp.Parameters_OUT = ParamsNegFict;
-                inp.Normale = cp.n;
+                inp.Normal = cp.Normal;
                 inp.iEdge = int.MinValue;
                 inp.GridDat = this.m_LsTrk.GridDat;
-                inp.X = cp.x;
+                inp.X = cp.X;
                 inp.time = cp.time;
 
                 FlxNeg = this.NegFlux.IEF(ref inp, U_Neg, U_NegFict);
@@ -482,10 +482,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                 BoSSS.Foundation.CommonParams inp; // = default(BoSSS.Foundation.InParams);
                 inp.Parameters_IN = ParamsPosFict;
                 inp.Parameters_OUT = ParamsPos;
-                inp.Normale = cp.n;
+                inp.Normal = cp.Normal;
                 inp.iEdge = int.MinValue;
                 inp.GridDat = this.m_LsTrk.GridDat;
-                inp.X = cp.x;
+                inp.X = cp.X;
                 inp.time = cp.time;
 
                 FlxPos = this.PosFlux.IEF(ref inp, U_PosFict, U_Pos);
@@ -617,8 +617,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
 
 
             for(int d = 0; d < inp.D; d++) {
-                Acc += 0.5 * (muA * _Grad_uA[0, d] + muB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
-                Acc += 0.5 * (muA * _Grad_vA[d] + muB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
+                Acc += 0.5 * (muA * _Grad_uA[0, d] + muB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normal[d];  // consistency term
+                Acc += 0.5 * (muA * _Grad_vA[d] + muB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normal[d];  // symmetry term
             }
             Acc *= this.m_alpha;
 
@@ -644,7 +644,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                         double g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, 0);
 
                         for(int d = 0; d < inp.D; d++) {
-                            double nd = inp.Normale[d];
+                            double nd = inp.Normal[d];
                             Acc += (muA * _Grad_uA[0, d]) * (_vA) * nd;
                             Acc += (muA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;
                         }
@@ -657,7 +657,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                 case IncompressibleBcType.Pressure_Dirichlet: {
 
                         for(int d = 0; d < inp.D; d++) {
-                            double nd = inp.Normale[d];
+                            double nd = inp.Normal[d];
                             Acc += (muA * _Grad_uA[0, d]) * (_vA) * nd;
                             //Acc += (muA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;
                         }
@@ -882,7 +882,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-            double[] N = inp.n;
+            double[] N = inp.Normal;
             double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCell];
 
             int D = N.Length;
@@ -1058,7 +1058,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                         for(int d = 0; d < m_D; d++) {
                             //acc -= Press_IN * Vel_IN[d] * inp.Normale[d];
                             for(int dd = 0; dd < m_D; dd++) {
-                                acc += mu * (GradVel_IN[d, dd] * Vel_IN[dd]) * inp.Normale[d];
+                                acc += mu * (GradVel_IN[d, dd] * Vel_IN[dd]) * inp.Normal[d];
                                 //acc += mu * (GradVel_IN[dd, d] * Vel_IN[dd]) * inp.Normale[d];  // transposed term
                             }
                         }
@@ -1068,7 +1068,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                         for(int d = 0; d < m_D; d++) {
                             //acc -= Press_IN * Vel_IN[d] * inp.Normale[d];
                             for(int dd = 0; dd < m_D; dd++) {
-                                acc += mu * (GradVel_IN[d, dd] * Vel_IN[dd]) * inp.Normale[d];
+                                acc += mu * (GradVel_IN[d, dd] * Vel_IN[dd]) * inp.Normal[d];
                                 //acc += mu * (GradVel_IN[dd, d] * Vel_IN[dd]) * inp.Normale[d];  // transposed term
                             }
                         }
@@ -1079,7 +1079,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                         for(int d = 0; d < m_D; d++) {
                             //acc -= Press_IN * Vel_IN[d] * inp.Normale[d];
                             for(int dd = 0; dd < m_D; dd++) {
-                                acc += mu * (GradVel_IN[d, dd] * Vel_IN[dd]) * inp.Normale[d];
+                                acc += mu * (GradVel_IN[d, dd] * Vel_IN[dd]) * inp.Normal[d];
                                 //acc += mu * (GradVel_IN[dd, d] * Vel_IN[dd]) * inp.Normale[d];  // transposed term
                             }
                         }
@@ -1108,7 +1108,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
             for(int d = 0; d < m_D; d++) {
                 //acc -= 0.5 * (Press_IN * Vel_IN[d] + Press_OUT * Vel_OUT[d]) * inp.Normale[d];
                 for(int dd = 0; dd < m_D; dd++) {
-                    acc += 0.5 * mu * (GradVel_IN[d, dd] * Vel_IN[dd] + GradVel_OUT[d, dd] * Vel_OUT[dd]) * inp.Normale[d];
+                    acc += 0.5 * mu * (GradVel_IN[d, dd] * Vel_IN[dd] + GradVel_OUT[d, dd] * Vel_OUT[dd]) * inp.Normal[d];
                     //acc += 0.5 * mu * (GradVel_IN[dd, d] * Vel_IN[dd] + GradVel_OUT[dd, d] * Vel_OUT[dd]) * inp.Normale[d];  // transposed term
                 }
             }
@@ -1187,7 +1187,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
             for(int d = 0; d < m_D; d++) {
                 //ret += 0.5 * (p_A * Vel_A[d] + p_B * Vel_B[d]) * inp.n[d];  // pressure
                 for(int dd = 0; dd < m_D; dd++) {
-                    ret -= 0.5 * (muA * GradVel_A[d, dd] * Vel_A[dd] + muB * GradVel_B[d, dd] * Vel_B[dd]) * inp.n[d];  // gradU
+                    ret -= 0.5 * (muA * GradVel_A[d, dd] * Vel_A[dd] + muB * GradVel_B[d, dd] * Vel_B[dd]) * inp.Normal[d];  // gradU
                     //ret -= 0.5 * (muA * GradVel_A[dd, d] * Vel_A[dd] + muB * GradVel_B[dd, d] * Vel_B[dd]) * inp.n[d];  // gradU transposed
                 }
             }
@@ -1251,7 +1251,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
 
             double curvature = cp.ParamsPos[m_D];
             double[] Vel = cp.ParamsPos.GetSubVector(0, m_D);
-            double[] Normal = cp.n;
+            double[] Normal = cp.Normal;
 
             double surfE = 0;
             for(int d = 0; d < m_D; d++) {
@@ -1356,13 +1356,13 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                 case IncompressibleBcType.Wall:
                 case IncompressibleBcType.Velocity_Inlet: {
                         for(int d = 0; d < m_D; d++) {
-                            acc -= Press_IN * Vel_IN[d] * inp.Normale[d];
+                            acc -= Press_IN * Vel_IN[d] * inp.Normal[d];
                         }
                         break;
                     }
                 case IncompressibleBcType.Pressure_Outlet: {
                         for(int d = 0; d < m_D; d++) {
-                            acc -= Press_IN * Vel_IN[d] * inp.Normale[d];
+                            acc -= Press_IN * Vel_IN[d] * inp.Normal[d];
                         }
                         break;
                     }
@@ -1385,7 +1385,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
             double acc = 0;
 
             for(int d = 0; d < m_D; d++) {
-                acc -= 0.5 * (Press_IN * Vel_IN[d] + Press_OUT * Vel_OUT[d]) * inp.Normale[d];
+                acc -= 0.5 * (Press_IN * Vel_IN[d] + Press_OUT * Vel_OUT[d]) * inp.Normal[d];
             }
 
             return -acc;
@@ -1434,7 +1434,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
             double ret = 0.0;
 
             for(int d = 0; d < m_D; d++) {
-                ret += 0.5 * (p_A * Vel_A[d] + p_B * Vel_B[d]) * inp.n[d];  // pressure
+                ret += 0.5 * (p_A * Vel_A[d] + p_B * Vel_B[d]) * inp.Normal[d];  // pressure
             }
 
             ret *= (vA - vB);

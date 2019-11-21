@@ -84,10 +84,10 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
             // Input parameters
             // =============================
             inp.Parameters_IN = cp.ParamsNeg;
-            inp.Normale = cp.n;
+            inp.Normal = cp.Normal;
             inp.iEdge = int.MinValue;
             inp.GridDat = this.m_LsTrk.GridDat;
-            inp.X = cp.x;
+            inp.X = cp.X;
             inp.time = cp.time;
             inp.Parameters_OUT = new double[inp.Parameters_IN.Length];
 

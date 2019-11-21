@@ -71,7 +71,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         //public override double EdgeForm(ref Linear2ndDerivativeCouplingFlux.CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            double[] N = inp.n;
+            double[] N = inp.Normal;
 
 
             //Debug.Assert(!double.IsNaN(inp.PosCellLengthScale));
@@ -85,7 +85,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
             int D = N.Length;
 
-            var parameters_P = m_getParticleParams(inp.x, inp.time);
+            var parameters_P = m_getParticleParams(inp.X, inp.time);
             double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
             double wLevSet = parameters_P[2];
             pRadius = parameters_P[3];
@@ -110,7 +110,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
 
             // 3D for IBM_Solver
-            if (inp.x.Dim == 3) {
+            if (inp.X.Dim == 3) {
                 
                 Ret -= Grad_uA_xN * (vA);                           // consistency term
                 Ret -= Grad_vA_xN * (uA[component] - 0);     // symmetry term
@@ -123,9 +123,9 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
 
             if (component == 0) {
-                uAFict = uLevSet[component] + pRadius * wLevSet * -inp.n[1];
+                uAFict = uLevSet[component] + pRadius * wLevSet * -inp.Normal[1];
             } else {
-                uAFict = uLevSet[component] + pRadius * wLevSet * inp.n[0];
+                uAFict = uLevSet[component] + pRadius * wLevSet * inp.Normal[0];
             }
 
 

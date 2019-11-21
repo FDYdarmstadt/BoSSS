@@ -338,7 +338,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             cpv.GridDat = efp.GridDat;
             cpv.Parameters_IN = new double[_NOParams];
             cpv.Parameters_OUT = new double[_NOParams];
-            cpv.Normale = new Vector(D);
+            cpv.Normal = new Vector(D);
             cpv.X = new Vector(D);
             cpv.time = efp.time;
 
@@ -381,7 +381,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     }
 
                     for (int d = 0; d < D; d++) {
-                        cpv.Normale[d] = efp.Normals[l, k, d];
+                        cpv.Normal[d] = efp.Normals[l, k, d];
                         cpv.X[d] = efp.NodesGlobal[l, k, d];
                     }
 
@@ -441,7 +441,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             CommonParamsBnd cpv;
             cpv.GridDat = efp.GridDat;
             cpv.Parameters_IN = new double[_NOParams];
-            cpv.Normale = new Vector(D);
+            cpv.Normal = new Vector(D);
             cpv.X = new Vector(D);
             cpv.time = efp.time;
 
@@ -475,7 +475,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     }
 
                     for (int d = 0; d < D; d++) {
-                        cpv.Normale[d] = efp.Normals[l, k, d];
+                        cpv.Normal[d] = efp.Normals[l, k, d];
                         cpv.X[d] = efp.NodesGlobal[l, k, d];
                     }
 
@@ -530,7 +530,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             cpv.GridDat = efp.GridDat;
             cpv.Parameters_IN = new double[_NOParams];
             cpv.Parameters_OUT = new double[_NOParams];
-            cpv.Normale = new Vector(D);
+            cpv.Normal = new Vector(D);
             cpv.X = new Vector(D);
             cpv.time = efp.time;
 
@@ -572,7 +572,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     }
 
                     for (int d = 0; d < D; d++) {
-                        cpv.Normale[d] = efp.Normals[l, k, d];
+                        cpv.Normal[d] = efp.Normals[l, k, d];
                         cpv.X[d] = efp.NodesGlobal[l, k, d];
                     }
 
@@ -634,7 +634,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             CommonParamsBnd cpv;
             cpv.GridDat = efp.GridDat;
             cpv.Parameters_IN = new double[_NOParams];
-            cpv.Normale = new Vector(D);
+            cpv.Normal = new Vector(D);
             cpv.X = new Vector(D);
             cpv.time = efp.time;
 
@@ -667,7 +667,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     }
 
                     for (int d = 0; d < D; d++) {
-                        cpv.Normale[d] = efp.Normals[l, k, d];
+                        cpv.Normal[d] = efp.Normals[l, k, d];
                         cpv.X[d] = efp.NodesGlobal[l, k, d];
                     }
 

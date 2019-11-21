@@ -138,10 +138,10 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
 
             BoSSS.Foundation.CommonParams inp; // = default(BoSSS.Foundation.InParams);
             inp.Parameters_IN = cp.ParamsNeg;
-            inp.Normale = cp.n;
+            inp.Normal = cp.Normal;
             inp.iEdge = int.MinValue;
             inp.GridDat = this.m_LsTrk.GridDat;
-            inp.X = cp.x;
+            inp.X = cp.X;
             inp.time = cp.time;
             inp.Parameters_OUT = new double[inp.Parameters_IN.Length];
 
@@ -152,12 +152,12 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
 
             double[] uLevSet_temp = new double[1];
             if (m_d == 0) {
-                uLevSet_temp[0] = uLevSet[0] + pRadius * wLevSet * -cp.n[1];
-            } else { uLevSet_temp[0] = uLevSet[1] + pRadius * wLevSet * cp.n[0]; }
+                uLevSet_temp[0] = uLevSet[0] + pRadius * wLevSet * -cp.Normal[1];
+            } else { uLevSet_temp[0] = uLevSet[1] + pRadius * wLevSet * cp.Normal[0]; }
 
             //Outer values for Velocity and VelocityMean
-            inp.Parameters_OUT[0] = uLevSet[0] + pRadius * wLevSet * -cp.n[1];
-            inp.Parameters_OUT[1] = uLevSet[1] + pRadius * wLevSet * cp.n[0];
+            inp.Parameters_OUT[0] = uLevSet[0] + pRadius * wLevSet * -cp.Normal[1];
+            inp.Parameters_OUT[1] = uLevSet[1] + pRadius * wLevSet * cp.Normal[0];
             // Velocity0MeanVectorOut is set to zero, i.e. always LambdaIn is used.
             inp.Parameters_OUT[2] = 0;
             inp.Parameters_OUT[3] = 0;

@@ -56,7 +56,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         //public override double EdgeForm(ref Linear2ndDerivativeCouplingFlux.CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            double[] N = inp.n;
+            double[] N = inp.Normal;
             double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCell];
 
             int D = N.Length;

@@ -109,7 +109,7 @@ namespace BoSSS.Application.Rheology
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA)
         {
-            double[] Normale = inp.Normale;
+            double[] Normale = inp.Normal;
 
             double[,] T__in = new double[2, 2];
             double[,] T_out = new double[2, 2];
@@ -143,7 +143,7 @@ namespace BoSSS.Application.Rheology
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT)
         {
-            Vector Normale = inp.Normale;
+            Vector Normale = inp.Normal;
 
             //double[,] T__in, double[,] T_out, double[,] S, double[] U0__in, double[] U0_out
 

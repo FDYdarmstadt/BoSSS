@@ -87,8 +87,8 @@ namespace BoSSS.Foundation.XDG {
             SpeciesId negSpc = this.NegativeSpecies;
 
             CommonParamsLs cp;
-            cp.n = new Vector(D);
-            cp.x = new Vector(D);
+            cp.Normal = new Vector(D);
+            cp.X = new Vector(D);
             cp.ParamsPos = new double[_NOParams];
             cp.ParamsNeg = new double[_NOParams];
             cp.time = inp.time;
@@ -125,8 +125,8 @@ namespace BoSSS.Foundation.XDG {
                         cp.ParamsNeg[np] = inp.ParamsNeg[np][l, k];
                     }
                     for (int d = 0; d < D; d++) {
-                        cp.x[d] = inp.X[l, k, d];
-                        cp.n[d] = inp.Normal[l, k, d];
+                        cp.X[d] = inp.X[l, k, d];
+                        cp.Normal[d] = inp.Normal[l, k, d];
                     }
 
                     for (int na = 0; na < _NOargs; na++) {
@@ -183,8 +183,8 @@ namespace BoSSS.Foundation.XDG {
             SpeciesId negSpc = this.NegativeSpecies;
 
             CommonParamsLs cp;
-            cp.n = new Vector(D);
-            cp.x = new Vector(D);
+            cp.Normal = new Vector(D);
+            cp.X = new Vector(D);
             cp.ParamsPos = new double[_NOParams];
             cp.ParamsNeg = new double[_NOParams];
             cp.time = inp.time;
@@ -221,8 +221,8 @@ namespace BoSSS.Foundation.XDG {
                         cp.ParamsNeg[np] = inp.ParamsNeg[np][l, k];
                     }
                     for (int d = 0; d < D; d++) {
-                        cp.x[d] = inp.X[l, k, d];
-                        cp.n[d] = inp.Normal[l, k, d];
+                        cp.X[d] = inp.X[l, k, d];
+                        cp.Normal[d] = inp.Normal[l, k, d];
                     }
 
                     for (int na = 0; na < _NOargs; na++) {

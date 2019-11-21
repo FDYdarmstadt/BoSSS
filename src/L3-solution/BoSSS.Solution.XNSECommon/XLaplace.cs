@@ -139,8 +139,8 @@ namespace BoSSS.Solution.XNSECommon {
 
             
             for (int d = 0; d < inp.D; d++) {
-                Acc += (scaleIN * muA * _Grad_uA[0, d] + scaleOT * muB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
-                Acc += (scaleIN * muA * _Grad_vA[d] + scaleOT * muB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
+                Acc += (scaleIN * muA * _Grad_uA[0, d] + scaleOT * muB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normal[d];  // consistency term
+                Acc += (scaleIN * muA * _Grad_vA[d] + scaleOT * muB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normal[d];  // symmetry term
             }
             Acc *= this.m_alpha;
 
@@ -218,7 +218,7 @@ namespace BoSSS.Solution.XNSECommon {
         public virtual double LevelSetForm(ref CommonParamsLs inp, 
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            double[] N = inp.n;
+            double[] N = inp.Normal;
             double Grad_uA_xN = 0, Grad_uB_xN = 0, Grad_vA_xN = 0, Grad_vB_xN = 0;
             int D = N.Length;
             Debug.Assert(Grad_uA.GetLength(0) == this.ArgumentOrdering.Count);

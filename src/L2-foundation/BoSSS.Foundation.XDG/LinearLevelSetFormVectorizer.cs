@@ -149,8 +149,8 @@ namespace BoSSS.Foundation.XDG {
             double[] ParamsPos = new double[NP];
             double[] ParamsNeg = new double[NP];
             CommonParamsLs cp = default(CommonParamsLs);
-            cp.n = new Vector(D);
-            cp.x = new Vector(D);
+            cp.Normal = new Vector(D);
+            cp.X = new Vector(D);
             cp.ParamsNeg = ParamsNeg;
             cp.ParamsPos = ParamsPos;
             cp.time = inp.time;
@@ -194,8 +194,8 @@ namespace BoSSS.Foundation.XDG {
                     //    cp.NegCellLengthScale = double.NaN;
                     
                     for (int n = 0; n < N; n++) { // loop over nodes...
-                        cp.n.SetFrom(inp.Normal, j, n);
-                        cp.x.SetFrom(inp.X, j, n);
+                        cp.Normal.SetFrom(inp.Normal, j, n);
+                        cp.X.SetFrom(inp.X, j, n);
                         for (int i = 0; i < NP; i++) {
                             ParamsPos[i] = inp.ParamsPos[i][j, n];
                             ParamsNeg[i] = inp.ParamsNeg[i][j, n];
@@ -229,8 +229,8 @@ namespace BoSSS.Foundation.XDG {
             double[] ParamsPos = new double[NP];
             double[] ParamsNeg = new double[NP];
             CommonParamsLs cp = default(CommonParamsLs);
-            cp.n = new Vector(D);
-            cp.x = new Vector(D);
+            cp.Normal = new Vector(D);
+            cp.X = new Vector(D);
             cp.ParamsNeg = ParamsNeg;
             cp.ParamsPos = ParamsPos;
             cp.time = inp.time;
@@ -275,8 +275,8 @@ namespace BoSSS.Foundation.XDG {
                     //    cp.NegCellLengthScale = double.NaN;
 
                     for (int n = 0; n < N; n++) { // loop over nodes...
-                        cp.n.SetFrom(inp.Normal, j, n);
-                        cp.x.SetFrom(inp.X, j, n);
+                        cp.Normal.SetFrom(inp.Normal, j, n);
+                        cp.X.SetFrom(inp.X, j, n);
                         for (int i = 0; i < NP; i++) {
                             ParamsPos[i] = inp.ParamsPos[i][j, n];
                             ParamsNeg[i] = inp.ParamsNeg[i][j, n];
@@ -313,8 +313,8 @@ namespace BoSSS.Foundation.XDG {
             double[] ParamsPos = new double[NP];
             double[] ParamsNeg = new double[NP];
             CommonParamsLs cp = default(CommonParamsLs);
-            cp.n = new Vector(D);
-            cp.x = new Vector(D);
+            cp.Normal = new Vector(D);
+            cp.X = new Vector(D);
             cp.ParamsNeg = ParamsNeg;
             cp.ParamsPos = ParamsPos;
             cp.time = inp.time;
@@ -359,8 +359,8 @@ namespace BoSSS.Foundation.XDG {
                     //    cp.NegCellLengthScale = double.NaN;
 
                     for (int n = 0; n < N; n++) { // loop over nodes...
-                        cp.n.SetFrom(inp.Normal, j, n);
-                        cp.x.SetFrom(inp.X, j, n);
+                        cp.Normal.SetFrom(inp.Normal, j, n);
+                        cp.X.SetFrom(inp.X, j, n);
                         for (int i = 0; i < NP; i++) {
                             ParamsPos[i] = inp.ParamsPos[i][j, n];
                             ParamsNeg[i] = inp.ParamsNeg[i][j, n];
@@ -396,8 +396,8 @@ namespace BoSSS.Foundation.XDG {
             double[] ParamsPos = new double[NP];
             double[] ParamsNeg = new double[NP];
             CommonParamsLs cp = default(CommonParamsLs);
-            cp.n = new Vector(D);
-            cp.x = new Vector(D);
+            cp.Normal = new Vector(D);
+            cp.X = new Vector(D);
             cp.ParamsNeg = ParamsNeg;
             cp.ParamsPos = ParamsPos;
             cp.time = inp.time;
@@ -443,8 +443,8 @@ namespace BoSSS.Foundation.XDG {
                     //    cp.NegCellLengthScale = double.NaN;
 
                     for (int n = 0; n < N; n++) { // loop over nodes...
-                        cp.n.SetFrom(inp.Normal, j, n);
-                        cp.x.SetFrom(inp.X, j, n);
+                        cp.Normal.SetFrom(inp.Normal, j, n);
+                        cp.X.SetFrom(inp.X, j, n);
 
                         for (int i = 0; i < NP; i++) {
                             ParamsPos[i] = inp.ParamsPos[i][j, n];
@@ -482,8 +482,8 @@ namespace BoSSS.Foundation.XDG {
             double[] ParamsPos = new double[NP];
             double[] ParamsNeg = new double[NP];
             CommonParamsLs cp = default(CommonParamsLs);
-            cp.n = new Vector(D);
-            cp.x = new Vector(D);
+            cp.Normal = new Vector(D);
+            cp.X = new Vector(D);
             cp.ParamsNeg = ParamsNeg;
             cp.ParamsPos = ParamsPos;
             cp.time = inp.time;
@@ -524,8 +524,8 @@ namespace BoSSS.Foundation.XDG {
                 //    cp.NegCellLengthScale = double.NaN;
 
                 for (int n = 0; n < N; n++) { // loop over nodes...
-                    cp.n.SetFrom(inp.Normal, j, n);
-                    cp.x.SetFrom(inp.X, j, n);
+                    cp.Normal.SetFrom(inp.Normal, j, n);
+                    cp.X.SetFrom(inp.X, j, n);
                     for (int i = 0; i < NP; i++) {
                         ParamsPos[i] = inp.ParamsPos[i][j, n];
                         ParamsNeg[i] = inp.ParamsNeg[i][j, n];
@@ -557,8 +557,8 @@ namespace BoSSS.Foundation.XDG {
             double[] ParamsPos = new double[NP];
             double[] ParamsNeg = new double[NP];
             CommonParamsLs cp = default(CommonParamsLs);
-            cp.n = new Vector(D);
-            cp.x = new Vector(D);
+            cp.Normal = new Vector(D);
+            cp.X = new Vector(D);
             cp.ParamsNeg = ParamsNeg;
             cp.ParamsPos = ParamsPos;
             cp.time = inp.time;
@@ -602,8 +602,8 @@ namespace BoSSS.Foundation.XDG {
                 //    cp.NegCellLengthScale = double.NaN;
 
                 for (int n = 0; n < N; n++) { // loop over nodes...
-                    cp.n.SetFrom(inp.Normal, j, n);
-                    cp.x.SetFrom(inp.X, j, n);
+                    cp.Normal.SetFrom(inp.Normal, j, n);
+                    cp.X.SetFrom(inp.X, j, n);
                     for (int i = 0; i < NP; i++) {
                         ParamsPos[i] = inp.ParamsPos[i][j, n];
                         ParamsNeg[i] = inp.ParamsNeg[i][j, n];

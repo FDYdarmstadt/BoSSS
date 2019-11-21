@@ -54,11 +54,11 @@ namespace BoSSS.Solution.XheatCommon {
 
             double acc = 0.0;
             if (hVapA > 0.0) {
-                acc += (0 - vA) * inp.n[m_d] * pSat;
-                acc += (vB - 0) * inp.n[m_d] * pB[0];
+                acc += (0 - vA) * inp.Normal[m_d] * pSat;
+                acc += (vB - 0) * inp.Normal[m_d] * pB[0];
             } else {
-                acc += (0 - vA) * inp.n[m_d] * pA[0];
-                acc += (vB - 0) * inp.n[m_d] * pSat;
+                acc += (0 - vA) * inp.Normal[m_d] * pA[0];
+                acc += (vB - 0) * inp.Normal[m_d] * pSat;
             }
             //return (vB - vA) * inp.n[m_d] * pSat;
             return -acc;

@@ -94,7 +94,7 @@ namespace BoSSS.Solution.NSECommon {
                             case PhysicsMode.Multiphase: {
                                     // opt1:
                                     TemperatureOut = Bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);
-                                    res = EoS.GetDensity(TemperatureOut) * Uout * inp.Normale[Component];
+                                    res = EoS.GetDensity(TemperatureOut) * Uout * inp.Normal[Component];
                                     // opt2:
                                     //double TemperatureIN = inp.Parameters_IN[0];
                                     //double rhoIn = EoS.GetDensity(TemperatureIN);
@@ -109,10 +109,10 @@ namespace BoSSS.Solution.NSECommon {
                                 for (int n = 1; n < NumberOfReactants + 1; n++) {
                                     args[n] = Bcmap.bndFunction[VariableNames.MassFraction_n(n - 1)][inp.EdgeTag](inp.X, 0);
                                 }
-                                res = EoS.GetDensity(args) * Uout * inp.Normale[Component];
+                                res = EoS.GetDensity(args) * Uout * inp.Normal[Component];
                                 break;
                             case PhysicsMode.Incompressible:
-                                res = Uout * inp.Normale[Component];
+                                res = Uout * inp.Normal[Component];
                                 break;
                             default:
                                 throw new ApplicationException("PhysicsMode not implemented");
@@ -122,14 +122,14 @@ namespace BoSSS.Solution.NSECommon {
                 case IncompressibleBcType.Pressure_Outlet: {
                         switch (Bcmap.PhysMode) {
                             case PhysicsMode.Incompressible:
-                                res = Uin[0] * inp.Normale[Component];
+                                res = Uin[0] * inp.Normal[Component];
                                 break;
                             case PhysicsMode.LowMach:
                             case PhysicsMode.Multiphase:
-                                res = EoS.GetDensity(inp.Parameters_IN[0]) * Uin[0] * inp.Normale[Component];
+                                res = EoS.GetDensity(inp.Parameters_IN[0]) * Uin[0] * inp.Normal[Component];
                                 break;
                             case PhysicsMode.Combustion:
-                                res = EoS.GetDensity(inp.Parameters_IN) * Uin[0] * inp.Normale[Component];
+                                res = EoS.GetDensity(inp.Parameters_IN) * Uin[0] * inp.Normal[Component];
                                 break;
                             default:
                                 throw new ApplicationException("PhysicsMode not implemented");
@@ -148,7 +148,7 @@ namespace BoSSS.Solution.NSECommon {
 
             switch (Bcmap.PhysMode) {
                 case PhysicsMode.Incompressible:
-                    res = 0.5 * (Uin[0] + Uout[0]) * inp.Normale[Component];
+                    res = 0.5 * (Uin[0] + Uout[0]) * inp.Normal[Component];
                     break;
                 case PhysicsMode.LowMach:
                 case PhysicsMode.Multiphase:
@@ -161,10 +161,10 @@ namespace BoSSS.Solution.NSECommon {
                     if (double.IsNaN(densityOut) || double.IsInfinity(densityOut))
                         throw new NotFiniteNumberException();
 
-                    res = 0.5 * (EoS.GetDensity(inp.Parameters_IN[0]) * Uin[0] + EoS.GetDensity(inp.Parameters_OUT[0]) * Uout[0]) * inp.Normale[Component];
+                    res = 0.5 * (EoS.GetDensity(inp.Parameters_IN[0]) * Uin[0] + EoS.GetDensity(inp.Parameters_OUT[0]) * Uout[0]) * inp.Normal[Component];
                     break;
                 case PhysicsMode.Combustion:
-                    res = 0.5 * (EoS.GetDensity(inp.Parameters_IN) * Uin[0] + EoS.GetDensity(inp.Parameters_OUT) * Uout[0]) * inp.Normale[Component];
+                    res = 0.5 * (EoS.GetDensity(inp.Parameters_IN) * Uin[0] + EoS.GetDensity(inp.Parameters_OUT) * Uout[0]) * inp.Normal[Component];
                     break;
                 default:
                     throw new ApplicationException("PhysicsMode not implemented");

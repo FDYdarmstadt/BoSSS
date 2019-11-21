@@ -289,7 +289,7 @@ namespace CNS.IBM {
             CommonParams InParams = new CommonParams() {
                 GridDat = cpv.GridDat,
                 iEdge = Math.Abs(cpv.GridDat.iLogicalCells.Cells2Edges[cpv.jCell][0]) - 1, // TO BE CHANGED
-                Normale = normal,
+                Normal = normal,
                 Parameters_IN = cpv.Parameters,
                 Parameters_OUT = cpv.Parameters,
                 time = cpv.time,

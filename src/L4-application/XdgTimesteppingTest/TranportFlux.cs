@@ -40,7 +40,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         }
 
         protected override double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
-            Vector n = new Vector(2); n.x = inp.Normale[0]; n.y = inp.Normale[1];
+            Vector n = new Vector(2); n.x = inp.Normal[0]; n.y = inp.Normal[1];
 
             var vel = FlowField(inp.X, inp.Parameters_IN, inp.Parameters_IN);
 
@@ -56,7 +56,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         }
 
         protected override double InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout) {
-            Vector n = new Vector(2); n.x = inp.Normale[0]; n.y = inp.Normale[1];
+            Vector n = new Vector(2); n.x = inp.Normal[0]; n.y = inp.Normal[1];
 
             var vel = FlowField(inp.X, inp.Parameters_IN, inp.Parameters_OUT);
             if (vel * n  > 0)
@@ -114,10 +114,10 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-            Vector V = FlowField(inp.x, inp.ParamsNeg, inp.ParamsPos);
-            Vector N = new Vector(inp.n);
+            Vector V = FlowField(inp.X, inp.ParamsNeg, inp.ParamsPos);
+            Vector N = new Vector(inp.Normal);
 
-            double s = m_NormalVel(inp.x, inp.time);
+            double s = m_NormalVel(inp.X, inp.time);
             double RelSpeed = V * N - s;
 
             /*

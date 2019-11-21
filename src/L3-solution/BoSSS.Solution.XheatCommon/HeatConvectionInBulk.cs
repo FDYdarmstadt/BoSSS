@@ -225,10 +225,10 @@ namespace BoSSS.Solution.XheatCommon {
 
             // 2 * {u_i * u_j} * n_j,
             // resp. 2 * {rho * u_i * u_j} * n_j for variable density
-            r += rhoIn * Uin[0] * (inp.Parameters_IN[0] * inp.Normale[0] + inp.Parameters_IN[1] * inp.Normale[1]);
-            r += rhoOut * Uout[0] * (inp.Parameters_OUT[0] * inp.Normale[0] + inp.Parameters_OUT[1] * inp.Normale[1]);
+            r += rhoIn * Uin[0] * (inp.Parameters_IN[0] * inp.Normal[0] + inp.Parameters_IN[1] * inp.Normal[1]);
+            r += rhoOut * Uout[0] * (inp.Parameters_OUT[0] * inp.Normal[0] + inp.Parameters_OUT[1] * inp.Normal[1]);
             if(m_SpatialDimension == 3) {
-                r += rhoIn * Uin[0] * inp.Parameters_IN[2] * inp.Normale[2] + rhoOut * Uout[0] * inp.Parameters_OUT[2] * inp.Normale[2];
+                r += rhoIn * Uin[0] * inp.Parameters_IN[2] * inp.Normal[2] + rhoOut * Uout[0] * inp.Parameters_OUT[2] * inp.Normal[2];
             }
 
             // Calculate dissipative part
@@ -244,8 +244,8 @@ namespace BoSSS.Solution.XheatCommon {
             double LambdaIn;
             double LambdaOut;
 
-            LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normale, true);
-            LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normale, true);
+            LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, true);
+            LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, true);
 
             double Lambda = Math.Max(LambdaIn, LambdaOut);
             double uJump = Uin[0] - Uout[0];
@@ -270,7 +270,7 @@ namespace BoSSS.Solution.XheatCommon {
                         // ============
                         Foundation.CommonParams inp2;
                         inp2.GridDat = inp.GridDat;
-                        inp2.Normale = inp.Normale;
+                        inp2.Normal = inp.Normal;
                         inp2.iEdge = inp.iEdge;
                         inp2.Parameters_IN = inp.Parameters_IN;
                         inp2.X = inp.X;
@@ -315,9 +315,9 @@ namespace BoSSS.Solution.XheatCommon {
                         if(m_SpatialDimension == 3)
                             u3 = inp.Parameters_IN[2];
 
-                        r += u_d * (u1 * inp.Normale[0] + u2 * inp.Normale[1]);
+                        r += u_d * (u1 * inp.Normal[0] + u2 * inp.Normal[1]);
                         if(m_SpatialDimension == 3) {
-                            r += u_d * u3 * inp.Normale[2];
+                            r += u_d * u3 * inp.Normal[2];
                         }
 
                         return r;

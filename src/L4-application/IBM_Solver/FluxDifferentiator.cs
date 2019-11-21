@@ -344,14 +344,14 @@ namespace BoSSS.Application.IBM_Solver {
                     for (int d = 0; d < inp.D; d++)
                         _Uot[d] = velFunction[inp.EdgeTag, d](inp.X, inp.time);
 
-                    return (_Uot * inp.Normale) * _Uot[m_component];
+                    return (_Uot * inp.Normal) * _Uot[m_component];
                 }
                 case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.Outflow:
                 case IncompressibleBcType.Pressure_Outlet: {
                     
 
-                    return (_Uin * inp.Normale) * _Uin[m_component];
+                    return (_Uin * inp.Normal) * _Uin[m_component];
                 }
                 default:
                 throw new NotImplementedException("Boundary condition not implemented!");
@@ -368,10 +368,10 @@ namespace BoSSS.Application.IBM_Solver {
             var _Uot = new Vector(Uout);
 
             Vector Umean = (_Uin + _Uot) * 0.5;
-            if(Umean*inp.Normale >= 0) {
-                r = _Uin * inp.Normale * _Uin[m_component];
+            if(Umean*inp.Normal >= 0) {
+                r = _Uin * inp.Normal * _Uin[m_component];
             } else {
-                r = _Uot * inp.Normale * _Uot[m_component];
+                r = _Uot * inp.Normal * _Uot[m_component];
             }
 
             return r;

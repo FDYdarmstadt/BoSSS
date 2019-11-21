@@ -112,9 +112,9 @@ namespace BoSSS.Solution.XheatCommon {
 
                 // Calculate central part
                 // ======================
-                r += Tsat * (ParamsNeg[0] * cp.n[0] + ParamsNeg[1] * cp.n[1]);
+                r += Tsat * (ParamsNeg[0] * cp.Normal[0] + ParamsNeg[1] * cp.Normal[1]);
                 if (m_D == 3) {
-                    r += Tsat * ParamsNeg[2] * cp.n[2];
+                    r += Tsat * ParamsNeg[2] * cp.Normal[2];
                 }
 
                 // Calculate dissipative part
@@ -125,7 +125,7 @@ namespace BoSSS.Solution.XheatCommon {
                     VelocityMeanIn[d] = ParamsNeg[m_D + d];
                 }
 
-                double LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.n, true);
+                double LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.Normal, true);
 
                 double uJump = U_Neg[0] - Tsat;
 
@@ -139,10 +139,10 @@ namespace BoSSS.Solution.XheatCommon {
                 BoSSS.Foundation.CommonParams inp; // = default(BoSSS.Foundation.InParams);
                 inp.Parameters_IN = ParamsNeg;
                 inp.Parameters_OUT = ParamsNegFict;
-                inp.Normale = cp.n;
+                inp.Normal = cp.Normal;
                 inp.iEdge = int.MinValue;
                 inp.GridDat = this.m_LsTrk.GridDat;
-                inp.X = cp.x;
+                inp.X = cp.X;
                 inp.time = cp.time;
 
                 FlxNeg = this.NegFlux.IEF(ref inp, U_Neg, U_NegFict);
@@ -157,9 +157,9 @@ namespace BoSSS.Solution.XheatCommon {
 
                 // Calculate central part
                 // ======================
-                r += Tsat * (ParamsPos[0] * cp.n[0] + ParamsPos[1] * cp.n[1]);
+                r += Tsat * (ParamsPos[0] * cp.Normal[0] + ParamsPos[1] * cp.Normal[1]);
                 if (m_D == 3) {
-                    r += Tsat * ParamsPos[2] * cp.n[2];
+                    r += Tsat * ParamsPos[2] * cp.Normal[2];
                 }
 
                 // Calculate dissipative part
@@ -170,7 +170,7 @@ namespace BoSSS.Solution.XheatCommon {
                     VelocityMeanOut[d] = ParamsPos[m_D + d];
                 }
 
-                double LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.n, true);
+                double LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.Normal, true);
 
                 double uJump = Tsat - U_Pos[0];
 
@@ -183,10 +183,10 @@ namespace BoSSS.Solution.XheatCommon {
                 BoSSS.Foundation.CommonParams inp; // = default(BoSSS.Foundation.InParams);
                 inp.Parameters_IN = ParamsPosFict;
                 inp.Parameters_OUT = ParamsPos;
-                inp.Normale = cp.n;
+                inp.Normal = cp.Normal;
                 inp.iEdge = int.MinValue;
                 inp.GridDat = this.m_LsTrk.GridDat;
-                inp.X = cp.x;
+                inp.X = cp.X;
                 inp.time = cp.time;
 
                 FlxPos = this.PosFlux.IEF(ref inp, U_PosFict, U_Pos);
@@ -297,7 +297,7 @@ namespace BoSSS.Solution.XheatCommon {
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
 
-            double M = ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.n, cp.jCell);
+            double M = ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.Normal, cp.jCell);
             if (M == 0.0)
                 return 0.0;
 

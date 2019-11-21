@@ -115,9 +115,9 @@ namespace BoSSS.Solution.LevelSetTools.Smoothing {
 
                 for(int d = 0; d < D; d++) {
                     if(ATerm)
-                        R -= (_Grad_uA[0, d] - _Grad_uB[0, d]) * inp.Normale[d] * (_vA - _vB);
+                        R -= (_Grad_uA[0, d] - _Grad_uB[0, d]) * inp.Normal[d] * (_vA - _vB);
                     if(BTerm)
-                        R -= (_uA[0] - _uB[0]) * inp.Normale[d] * (_Grad_vA[d] - _Grad_vB[d]);
+                        R -= (_uA[0] - _uB[0]) * inp.Normal[d] * (_Grad_vA[d] - _Grad_vB[d]);
                 }
 
                 return R;

@@ -71,7 +71,7 @@ namespace BoSSS.Solution.NSECommon {
                 case IncompressibleBcType.Velocity_Inlet: {
                         Foundation.CommonParams inp2;
                         inp2.GridDat = inp.GridDat;
-                        inp2.Normale = inp.Normale;
+                        inp2.Normal = inp.Normal;
                         inp2.iEdge = inp.iEdge;
                         inp2.Parameters_IN = inp.Parameters_IN;
                         inp2.X = inp.X;
@@ -109,7 +109,7 @@ namespace BoSSS.Solution.NSECommon {
 
                         for (int j = 0; j < SpatDimension; j++) {
                             double u_j = inp.Parameters_IN[j];
-                            r += rho * u_i * u_j * inp.Normale[j];
+                            r += rho * u_i * u_j * inp.Normal[j];
                         }
 
                         return r;
@@ -137,8 +137,8 @@ namespace BoSSS.Solution.NSECommon {
             double ScalarMeanIn = inp.Parameters_IN[2 * SpatDimension + 1];
             double ScalarMeanOut = inp.Parameters_OUT[2 * SpatDimension + 1];
 
-            double LambdaIn = EoS.GetLambda(VelocityMeanIn, inp.Normale, ScalarMeanIn);
-            double LambdaOut = EoS.GetLambda(VelocityMeanOut, inp.Normale, ScalarMeanOut);
+            double LambdaIn = EoS.GetLambda(VelocityMeanIn, inp.Normal, ScalarMeanIn);
+            double LambdaOut = EoS.GetLambda(VelocityMeanOut, inp.Normal, ScalarMeanOut);
 
             double Lambda = Math.Max(LambdaIn, LambdaOut);
 
@@ -157,8 +157,8 @@ namespace BoSSS.Solution.NSECommon {
             for (int j = 0; j < SpatDimension; j++) {
                 double u_j_In = inp.Parameters_IN[j];
                 double u_j_Out = inp.Parameters_OUT[j];
-                res += 0.5 * rhoIn * u_i_In * u_j_In * inp.Normale[j];
-                res += 0.5 * rhoOut * u_i_Out * u_j_Out * inp.Normale[j];
+                res += 0.5 * rhoIn * u_i_In * u_j_In * inp.Normal[j];
+                res += 0.5 * rhoOut * u_i_Out * u_j_Out * inp.Normal[j];
             }
 
             // Calculate dissipative part

@@ -523,9 +523,9 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 double Disc = 0, FluxIn = 0, FluxOt = 0;
                  
                 for(int d = 0; d < D; d++) {
-                    Disc = (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * inp.Normale[d];
-                    FluxIn += (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * 0.5 * inp.Normale[d] * PhiIn[0];
-                    FluxOt += (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * 0.5 * inp.Normale[d] * PhiOt[0];
+                    Disc = (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * inp.Normal[d];
+                    FluxIn += (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * 0.5 * inp.Normal[d] * PhiIn[0];
+                    FluxOt += (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * 0.5 * inp.Normal[d] * PhiOt[0];
                 }
 
                 double Flux = 0;

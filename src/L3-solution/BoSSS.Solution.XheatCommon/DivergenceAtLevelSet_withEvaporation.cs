@@ -94,7 +94,7 @@ namespace BoSSS.Solution.XheatCommon {
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
 
-            double M = ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.n, cp.jCell);
+            double M = ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.Normal, cp.jCell);
             if (M == 0.0)
                 return 0.0;
 

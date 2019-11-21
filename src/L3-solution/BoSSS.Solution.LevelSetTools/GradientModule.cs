@@ -75,24 +75,24 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
 
                     Debug.Assert(inp.jCellOut == m_jCell);
 
-                    return PhiIn[0] * (-inp.Normale[this.m_Direction]) * vOt;
+                    return PhiIn[0] * (-inp.Normal[this.m_Direction]) * vOt;
 
                 } else if(this.m_AcceptedMask[inp.jCellIn] == false && this.m_AcceptedMask[inp.jCellOut] == true) {
                     // ... vice-versa
 
                     Debug.Assert(inp.jCellIn == m_jCell);
 
-                    return PhiOt[0] * (inp.Normale[this.m_Direction]) * vIn;
+                    return PhiOt[0] * (inp.Normal[this.m_Direction]) * vIn;
 
                 } else {
                     
                     if(this.m_jCell == inp.jCellOut) {
 
-                        return PhiOt[0] * (-inp.Normale[this.m_Direction]) * vOt;
+                        return PhiOt[0] * (-inp.Normal[this.m_Direction]) * vOt;
 
                     } else if(this.m_jCell == inp.jCellIn) {
 
-                        return PhiIn[0] * (+inp.Normale[this.m_Direction]) * vIn;
+                        return PhiIn[0] * (+inp.Normal[this.m_Direction]) * vIn;
 
                     } else {
                         throw new ApplicationException();
@@ -101,7 +101,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
             }
 
             public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] PhiIn, double[,] GradPhiIn, double vIn, double[] Grad_vIn) {
-                return PhiIn[0] * (+inp.Normale[this.m_Direction]) * vIn;
+                return PhiIn[0] * (+inp.Normal[this.m_Direction]) * vIn;
             }
 
             public IList<string> ArgumentOrdering {
@@ -163,7 +163,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 if(signIn != signOt || (signIn * signOt == 0)) {
                     // central difference
 
-                    Flux = 0.5 * (PhiIn[0] + PhiOt[0]) * (inp.Normale[this.m_Direction]);
+                    Flux = 0.5 * (PhiIn[0] + PhiOt[0]) * (inp.Normal[this.m_Direction]);
                 } else {
                     Debug.Assert(Math.Abs(signIn) == 1);
                     Debug.Assert(Math.Abs(signOt) == 1);
@@ -174,9 +174,9 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
 
 
                     if(delta < 0)
-                        Flux = PhiIn[0] * (inp.Normale[this.m_Direction]);
+                        Flux = PhiIn[0] * (inp.Normal[this.m_Direction]);
                     else
-                        Flux = PhiOt[0] * (inp.Normale[this.m_Direction]);
+                        Flux = PhiOt[0] * (inp.Normal[this.m_Direction]);
                 }
                 
                 return Flux * (vIn - vOt);
@@ -184,7 +184,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
             }
 
             public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] PhiIn, double[,] GradPhiIn, double vIn, double[] Grad_vIn) {
-                return PhiIn[0] * (+inp.Normale[this.m_Direction]) * vIn;
+                return PhiIn[0] * (+inp.Normal[this.m_Direction]) * vIn;
             }
 
             public IList<string> ArgumentOrdering {

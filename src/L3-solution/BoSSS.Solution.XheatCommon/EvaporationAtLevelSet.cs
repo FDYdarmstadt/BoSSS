@@ -196,7 +196,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         public override double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-            double qEvap = ComputeHeatFlux(cp.ParamsNeg, cp.ParamsPos, cp.n, cp.jCell);
+            double qEvap = ComputeHeatFlux(cp.ParamsNeg, cp.ParamsPos, cp.Normal, cp.jCell);
             //Console.WriteLine("qEvap - HeatFluxAtLevelSet: {0}", qEvap);
             if (qEvap == 0.0)
                 return 0.0;
@@ -245,7 +245,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         public override double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-            double qEvap = ComputeHeatFlux(cp.ParamsNeg, cp.ParamsPos, cp.n, cp.jCell);
+            double qEvap = ComputeHeatFlux(cp.ParamsNeg, cp.ParamsPos, cp.Normal, cp.jCell);
             //Console.WriteLine("qEvap - HeatFluxAtLevelSet: {0}", qEvap);
             if (qEvap == 0.0)
                 return 0.0;

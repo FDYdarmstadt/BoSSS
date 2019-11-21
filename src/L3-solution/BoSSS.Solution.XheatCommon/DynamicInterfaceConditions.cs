@@ -91,9 +91,9 @@ namespace BoSSS.Solution.XheatCommon {
 
         public override double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-            double[] Normal = cp.n;
+            double[] Normal = cp.Normal;
 
-            double M = ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.n, cp.jCell);
+            double M = ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.Normal, cp.jCell);
             if (M == 0.0)
                 return 0.0;
 

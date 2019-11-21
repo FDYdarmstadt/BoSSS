@@ -68,7 +68,7 @@ namespace BoSSS.Solution.NSECommon {
                 case IncompressibleBcType.Pressure_Outlet:
                     // Atmospheric outlet/pressure outlet: inhom. Dirichlet
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++
-                    return pressureFunction[inp.EdgeTag](inp.X, inp.time) * inp.Normale[m_d];
+                    return pressureFunction[inp.EdgeTag](inp.X, inp.time) * inp.Normal[m_d];
 
                 case IncompressibleBcType.Outflow:
                     throw new ArithmeticException("Tests on channel flow indicate that b.c. " + edgType + " is ill-posed, fk 25may16.");
@@ -80,7 +80,7 @@ namespace BoSSS.Solution.NSECommon {
                 case IncompressibleBcType.NoSlipNeumann:
                     // hom. Neumann b.c.
                     // +++++++++++++++++
-                    return Uin[0] * inp.Normale[m_d];
+                    return Uin[0] * inp.Normal[m_d];
                 default:
                     throw new NotImplementedException();
             }
@@ -90,7 +90,7 @@ namespace BoSSS.Solution.NSECommon {
         /// central difference Riemannian
         /// </summary>
         protected override double InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout) {
-            return 0.5 * (Uin[0] + Uout[0]) * inp.Normale[m_d];
+            return 0.5 * (Uin[0] + Uout[0]) * inp.Normal[m_d];
         }
 
         /// <summary>

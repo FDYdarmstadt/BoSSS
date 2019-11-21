@@ -438,7 +438,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
 
         private double GetCoeff(ref double d1, ref double d2, ref CommonParams inp) {
-            int D = inp.Normale.Dim;
+            int D = inp.Normal.Dim;
             Debug.Assert(this.NoArgs == this.ArgumentOrdering.Count);
 
             Debug.Assert(uA.Length == NoArgs);
@@ -509,7 +509,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
 
             CommonParams cp = default(CommonParams);
-            cp.Normale = new Vector(D);
+            cp.Normal = new Vector(D);
             cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.Parameters_OUT = new double[NoParams];
@@ -522,7 +522,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
-                        cp.Normale[d] = efp.Normals[l, k, d];
+                        cp.Normal[d] = efp.Normals[l, k, d];
                         cp.X[d] = efp.NodesGlobal[l, k, d];
                     }
 
@@ -550,7 +550,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             InitGlobals(efp);
 
             CommonParamsBnd cp = default(CommonParamsBnd);
-            cp.Normale = new Vector(D);
+            cp.Normal = new Vector(D);
             cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.GridDat = efp.GridDat;
@@ -565,7 +565,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
-                        cp.Normale[d] = efp.Normals[l, k, d];
+                        cp.Normal[d] = efp.Normals[l, k, d];
                         cp.X[d] = efp.NodesGlobal[l, k, d];
                     }
 
@@ -598,7 +598,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             Debug.Assert(D == UxGradV.GetLength(5));
 
             CommonParams cp = default(CommonParams);
-            cp.Normale = new Vector(D);
+            cp.Normal = new Vector(D);
             cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.Parameters_OUT = new double[NoParams];
@@ -610,7 +610,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
-                        cp.Normale[d] = efp.Normals[l, k, d];
+                        cp.Normal[d] = efp.Normals[l, k, d];
                         cp.X[d] = efp.NodesGlobal[l, k, d];
                     }
 
@@ -645,7 +645,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             Debug.Assert(D == GradUxGradV.GetLength(6));
 
             CommonParams cp = default(CommonParams);
-            cp.Normale = new Vector(D);
+            cp.Normal = new Vector(D);
             cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.Parameters_OUT = new double[NoParams];
@@ -657,7 +657,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
-                        cp.Normale[d] = efp.Normals[l, k, d];
+                        cp.Normal[d] = efp.Normals[l, k, d];
                         cp.X[d] = efp.NodesGlobal[l, k, d];
                     }
 
@@ -702,7 +702,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             InitGlobals(efp);
 
             CommonParamsBnd cp = default(CommonParamsBnd);
-            cp.Normale = new Vector(D);
+            cp.Normal = new Vector(D);
             cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.GridDat = efp.GridDat;
@@ -717,7 +717,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
-                        cp.Normale[d] = efp.Normals[l, k, d];
+                        cp.Normal[d] = efp.Normals[l, k, d];
                         cp.X[d] = efp.NodesGlobal[l, k, d];
                     }
 
@@ -739,7 +739,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             InitGlobals(efp);
 
             CommonParamsBnd cp = default(CommonParamsBnd);
-            cp.Normale = new Vector(D);
+            cp.Normal = new Vector(D);
             cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.GridDat = efp.GridDat;
@@ -754,7 +754,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
-                        cp.Normale[d] = efp.Normals[l, k, d];
+                        cp.Normal[d] = efp.Normals[l, k, d];
                         cp.X[d] = efp.NodesGlobal[l, k, d];
                     }
 
@@ -780,7 +780,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             InitGlobals(efp);
 
             CommonParams cp = default(CommonParams);
-            cp.Normale = new Vector(D);
+            cp.Normal = new Vector(D);
             cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.Parameters_OUT = new double[NoParams];
@@ -794,7 +794,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
-                        cp.Normale[d] = efp.Normals[l, k, d];
+                        cp.Normal[d] = efp.Normals[l, k, d];
                         cp.X[d] = efp.NodesGlobal[l, k, d];
                     }
 
@@ -816,7 +816,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             InitGlobals(efp);
 
             CommonParamsBnd cp = default(CommonParamsBnd);
-            cp.Normale = new Vector(D);
+            cp.Normal = new Vector(D);
             cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.GridDat = efp.GridDat;
@@ -831,7 +831,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
-                        cp.Normale[d] = efp.Normals[l, k, d];
+                        cp.Normal[d] = efp.Normals[l, k, d];
                         cp.X[d] = efp.NodesGlobal[l, k, d];
                     }
 
@@ -851,7 +851,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             InitGlobals(efp);
 
             CommonParams cp = default(CommonParams);
-            cp.Normale = new Vector(D);
+            cp.Normal = new Vector(D);
             cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.Parameters_OUT = new double[NoParams];
@@ -865,7 +865,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
-                        cp.Normale[d] = efp.Normals[l, k, d];
+                        cp.Normal[d] = efp.Normals[l, k, d];
                         cp.X[d] = efp.NodesGlobal[l, k, d];
                     }
 
@@ -889,7 +889,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             InitGlobals(efp);
 
             CommonParamsBnd cp = default(CommonParamsBnd);
-            cp.Normale = new Vector(D);
+            cp.Normal = new Vector(D);
             cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.GridDat = efp.GridDat;
@@ -904,7 +904,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
-                        cp.Normale[d] = efp.Normals[l, k, d];
+                        cp.Normal[d] = efp.Normals[l, k, d];
                         cp.X[d] = efp.NodesGlobal[l, k, d];
                     }
 
@@ -929,7 +929,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             Debug.Assert(efp.ParameterVars_OUT.Length == NoParams);
 
             CommonParams cp = default(CommonParams);
-            cp.Normale = new Vector(D);
+            cp.Normal = new Vector(D);
             cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.Parameters_OUT = new double[NoParams];
@@ -941,7 +941,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
-                        cp.Normale[d] = efp.Normals[l, k, d];
+                        cp.Normal[d] = efp.Normals[l, k, d];
                         cp.X[d] = efp.NodesGlobal[l, k, d];
                     }
 
@@ -967,7 +967,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             InitGlobals(efp);
 
             CommonParamsBnd cp = default(CommonParamsBnd);
-            cp.Normale = new Vector(D);
+            cp.Normal = new Vector(D);
             cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.GridDat = efp.GridDat;
@@ -982,7 +982,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
-                        cp.Normale[d] = efp.Normals[l, k, d];
+                        cp.Normal[d] = efp.Normals[l, k, d];
                         cp.X[d] = efp.NodesGlobal[l, k, d];
                     }
 

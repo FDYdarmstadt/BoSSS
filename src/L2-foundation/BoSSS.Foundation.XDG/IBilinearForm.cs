@@ -98,20 +98,20 @@ namespace BoSSS.Foundation.XDG {
         /// Position vector, in global/physical coordinates at which the integrand should be evaluated.
         /// Note: depending on the quadrature rule, that point is not necessarily located on the zero-level-set.
         /// </summary>
-        public Vector x;
+        public Vector X;
 
         /// <summary>
         /// Normal vector, parallel to the gradient of the level-set function.
         /// </summary>
-        public Vector n;
+        public Vector Normal;
 
         /// <summary>
         /// Guess what?
         /// </summary>
-        public int SpatialDim {
+        public int D {
             get {
-                Debug.Assert(x.Dim == n.Dim);
-                return n.Dim;
+                Debug.Assert(X.Dim == Normal.Dim);
+                return Normal.Dim;
             }
         }
 

@@ -543,7 +543,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// normal vector
         /// </summary>
-        public Vector Normale;
+        public Vector Normal;
 
         /// <summary>
         /// Quadrature node in global coordinates
@@ -593,7 +593,9 @@ namespace BoSSS.Foundation {
         /// </summary>
         public int D {
             get {
-                return GridDat.SpatialDimension;
+                Debug.Assert(X.Dim == Normal.Dim);
+                Debug.Assert(X.Dim == GridDat.SpatialDimension);
+                return X.Dim;
             }
         }
 
@@ -611,7 +613,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// normal vector
         /// </summary>
-        public Vector Normale;
+        public Vector Normal;
 
         /// <summary>
         /// Quadrature node in global coordinates
@@ -657,7 +659,10 @@ namespace BoSSS.Foundation {
         /// </summary>
         public int D {
             get {
-                return GridDat.SpatialDimension;
+                Debug.Assert(X.Dim == Normal.Dim);
+                Debug.Assert(X.Dim == GridDat.SpatialDimension);
+                return X.Dim;
+
             }
         }
     }
