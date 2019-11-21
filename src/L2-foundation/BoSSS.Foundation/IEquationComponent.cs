@@ -111,7 +111,19 @@ namespace BoSSS.Foundation {
     }
 
 
+    /// <summary>
+    /// Interface for components that provide their derivative,
+    /// required for Newton solvers
+    /// (see <see cref="SpatialOperator.GetJacobiOperator"/>).
+    /// </summary>
+    public interface ISupportsJacobianComponent {
 
+        /// <summary>
+        /// A collection of components which in sum for the derivative of this component;
+        /// For (bi-) linear components, this is usually the flux itself.
+        /// </summary>
+        IEquationComponent[] GetJacobianComponents();
+    }
 
     /// <summary>
     /// defines a nonlinear source term.
