@@ -16,6 +16,7 @@ limitations under the License.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using BoSSS.Foundation;
@@ -143,6 +144,10 @@ namespace BoSSS.Solution.NSECommon {
                 case DiffusionMode.Temperature:
                     DiffusivityA = ((MaterialLawLowMach)EoS).GetHeatConductivity(inp.Parameters_IN[0]);
                     DiffusivityB = ((MaterialLawLowMach)EoS).GetHeatConductivity(inp.Parameters_OUT[0]);
+                    Debug.Assert(!double.IsNaN(DiffusivityA));
+                    Debug.Assert(!double.IsInfinity(DiffusivityA));
+                    Debug.Assert(!double.IsNaN(DiffusivityB));
+                    Debug.Assert(!double.IsInfinity(DiffusivityB));
 
                     for (int d = 0; d < inp.D; d++) {
                         // consistency term
@@ -161,6 +166,10 @@ namespace BoSSS.Solution.NSECommon {
                     rhoB = EoS.GetDensity(inp.Parameters_OUT);
                     DiffusivityA = ((MaterialLawLowMach)EoS).GetDiffusivity(inp.Parameters_IN[0]);
                     DiffusivityB = ((MaterialLawLowMach)EoS).GetDiffusivity(inp.Parameters_OUT[0]);
+                    Debug.Assert(!double.IsNaN(DiffusivityA));
+                    Debug.Assert(!double.IsInfinity(DiffusivityA));
+                    Debug.Assert(!double.IsNaN(DiffusivityB));
+                    Debug.Assert(!double.IsInfinity(DiffusivityB));
 
                     for (int d = 0; d < inp.D; d++) {
                         // consistency term
@@ -189,9 +198,13 @@ namespace BoSSS.Solution.NSECommon {
             switch (Mode) {
                 case DiffusionMode.Temperature:
                     DiffusivityA = ((MaterialLawLowMach)EoS).GetHeatConductivity(inp.Parameters_IN[0]);
+                    Debug.Assert(!double.IsNaN(DiffusivityA));
+                    Debug.Assert(!double.IsInfinity(DiffusivityA));
                     break;
                 case DiffusionMode.MassFraction:
                     DiffusivityA = ((MaterialLawLowMach)EoS).GetDiffusivity(inp.Parameters_IN[0]);
+                    Debug.Assert(!double.IsNaN(DiffusivityA));
+                    Debug.Assert(!double.IsInfinity(DiffusivityA));
                     break;
                 default:
                     throw new NotImplementedException();
@@ -276,7 +289,10 @@ namespace BoSSS.Solution.NSECommon {
             switch (Mode) {
                 case DiffusionMode.Temperature:
                     Diffusivity = ((MaterialLawLowMach)EoS).GetHeatConductivity(cpv.Parameters[0]);
-                    for (int d = 0; d < cpv.D; d++)
+                    Debug.Assert(!double.IsNaN(Diffusivity));
+                    Debug.Assert(!double.IsInfinity(Diffusivity));
+
+                    for(int d = 0; d < cpv.D; d++)
                         Acc -= Diffusivity * GradU[0, d] * GradV[d];
                     break;
                 case DiffusionMode.MassFraction:

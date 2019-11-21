@@ -312,18 +312,6 @@ namespace BoSSS.Solution.NSECommon {
         /// look at formula (7) in cited paper
         /// </summary>
         protected double penalty(int jCellIn, int jCellOut) {
-            //double mu;
-            //if (m_ComputePenalty != null) {
-            //    mu = m_ComputePenalty(m_penalty_base, jCellIn, jCellOut, cj);
-            //} else {
-            //    double cj_in = cj[jCellIn];
-            //    mu = m_penalty_base * cj_in;
-            //    if (jCellOut >= 0) {
-            //        double cj_out = cj[jCellOut];
-            //        mu = Math.Max(mu, m_penalty_base * cj_out);
-            //    }
-            //}
-            //return mu;
 
             double penaltySizeFactor_A = 1.0 / cj[jCellIn];
             double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / cj[jCellOut] : 0;
@@ -339,45 +327,7 @@ namespace BoSSS.Solution.NSECommon {
             return penaltySizeFactor * m_penalty * m_penalty_base;
         }
 
-        /*
-        protected double ComputePenaltyBulk(double penalty, int jCellIn, int jCellOut, MultidimensionalArray cj) {
-            double muFactor; // the WTF factor
-            if (jCellOut >= 0)
-                muFactor = 1.0;
-            else
-                //muFactor = Math.Max(1, 0) / this.Control.PhysicalParameters.mu_A; // Hardcoded for single phase flows
-                muFactor = Math.Max(this.Control.PhysicalParameters.mu_A, 0) / this.Control.PhysicalParameters.mu_A; // Hardcoded for single phase flows
-            double penaltySizeFactor_A = 1.0 / this.m_LenScales[jCellIn];
-            double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / this.m_LenScales[jCellOut] : 0;
-            double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
-            return penalty * penaltySizeFactor * muFactor;
-=======
-        virtual protected double penalty(int jCellIn, int jCellOut) {
-            double mu;
-            if (m_jCellInOld == jCellIn && m_jCellOutOld == jCellOut) {
-                return m_PenaltyVal;
-            } else {
-
-                if (m_ComputePenalty != null) {
-                    mu = m_ComputePenalty(m_penalty, jCellIn, jCellOut, cj);
-                } else {
-                    double cj_in = cj[jCellIn];
-                    mu = m_penalty * cj_in;
-                    if (jCellOut >= 0) {
-                        double cj_out = cj[jCellOut];
-                        mu = Math.Max(mu, m_penalty * cj_out);
-                    }
-                }
-
-                m_PenaltyVal = mu;
-                m_jCellInOld = jCellIn;
-                m_jCellOutOld = jCellOut;
-
-                return mu;
-            }
->>>>>>> experimental/master
-        }
-        */
+  
 
 
         /// <summary>
@@ -720,11 +670,11 @@ namespace BoSSS.Solution.NSECommon {
                         Parameters[np] = prm.ParameterVars[np][cell, node];
                     }
                     double viscosity = Viscosity(Parameters) * base.m_alpha;
-                    //f[cell, node, d] *= base.m_alpha;
+                    Debug.Assert(!double.IsNaN(viscosity));
+                    Debug.Assert(!double.IsInfinity(viscosity));
 
                     for(int d = 0; d < prm.GridDat.SpatialDimension; d++) {
                         f[cell, node, d] += viscosity * GradU[m_iComp][cell, node, d];
-                        //f[cell, node, d] *= base.m_alpha;
                     }
                 }
             }
@@ -757,6 +707,12 @@ namespace BoSSS.Solution.NSECommon {
                     }
                     double viscosityIN = Viscosity(ParametersIN);
                     double viscosityOT = Viscosity(ParametersOT);
+                    Debug.Assert(!double.IsNaN(viscosityIN));
+                    Debug.Assert(!double.IsNaN(viscosityOT));
+                    Debug.Assert(!double.IsInfinity(viscosityIN));
+                    Debug.Assert(!double.IsInfinity(viscosityOT));
+
+
 
                     double fluxIn = viscosityIN * uJump;
                     double fluxOut = viscosityOT * uJump;
@@ -803,6 +759,8 @@ namespace BoSSS.Solution.NSECommon {
 
                     for(int np = 0; np < _NOParams; np++) {
                         cpv.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
+                        Debug.Assert(!double.IsNaN(cpv.Parameters_IN[np]));
+                        Debug.Assert(!double.IsInfinity(cpv.Parameters_IN[np]));
                     }
 
                     for(int d = 0; d < D; d++) {
@@ -862,7 +820,10 @@ namespace BoSSS.Solution.NSECommon {
                     }
                     double viscosityIN = Viscosity(ParametersIN);
                     double viscosityOT = Viscosity(ParametersOT);
-
+                    Debug.Assert(!double.IsNaN(viscosityIN));
+                    Debug.Assert(!double.IsNaN(viscosityOT));
+                    Debug.Assert(!double.IsInfinity(viscosityIN));
+                    Debug.Assert(!double.IsInfinity(viscosityOT));
 
                     double flux = 0.0;
                     for(int d = 0; d < efp.GridDat.SpatialDimension; d++) {
@@ -911,6 +872,8 @@ namespace BoSSS.Solution.NSECommon {
 
                     for(int np = 0; np < _NOParams; np++) {
                         cpv.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
+                        Debug.Assert(!double.IsNaN(cpv.Parameters_IN[np]));
+                        Debug.Assert(!double.IsInfinity(cpv.Parameters_IN[np]));
                     }
 
                     for(int d = 0; d < D; d++) {

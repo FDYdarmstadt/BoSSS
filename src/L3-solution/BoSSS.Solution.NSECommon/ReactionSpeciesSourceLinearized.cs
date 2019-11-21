@@ -83,7 +83,7 @@ namespace BoSSS.Solution.NSECommon {
         protected override double Source(double[] x, double[] parameters, double[] U) {
 
             double ReactionRate = 0.0;
-            double ExponentialPart = ReactionRateConstants[0] * Math.Exp(-ReactionRateConstants[1] / parameters[0]);
+            double ExponentialPart = ReactionRateConstants[0] * Math.Exp(-ReactionRateConstants[1] / parameters[0]); // Da*exp(-Ta/T)
             rho = EoS.GetDensity(parameters);
             // 0. MassFraction (fuel) balance species source
             if (SpeciesIndex == 0) {

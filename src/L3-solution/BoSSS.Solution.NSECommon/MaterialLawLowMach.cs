@@ -16,6 +16,7 @@ limitations under the License.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
@@ -139,6 +140,8 @@ namespace BoSSS.Solution.NSECommon {
                 case MaterialParamsMode.Sutherland: {
                         double S = 110.5;
                         double viscosity = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
+                        Debug.Assert(!double.IsNaN(viscosity));
+                        Debug.Assert(!double.IsInfinity(viscosity));
                         return viscosity;
                     }
                 case MaterialParamsMode.PowerLaw: {
@@ -162,6 +165,8 @@ namespace BoSSS.Solution.NSECommon {
                 case MaterialParamsMode.Sutherland: {
                         double S = 110.5;
                         double viscosity = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
+                        Debug.Assert(!double.IsNaN(viscosity));
+                        Debug.Assert(!double.IsInfinity(viscosity));
                         double lambda = viscosity; //// using viscosity = lambda for Pr = cte...
                         return lambda;
                     }
