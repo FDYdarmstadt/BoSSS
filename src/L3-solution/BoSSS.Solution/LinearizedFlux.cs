@@ -105,8 +105,8 @@ namespace BoSSS.Solution.Utils {
             baseFlux.BorderEdgeFlux(
                 0.0,
                 inp.iEdge,
-                MultidimensionalArray.CreateWrapper(inp.X, 1, 1, inp.X.Length),
-                MultidimensionalArray.CreateWrapper(inp.Normale, 1, inp.Normale.Length),
+                MultidimensionalArray.CreateWrapper(inp.X, 1, 1, inp.D),
+                MultidimensionalArray.CreateWrapper(inp.Normale, 1, inp.D),
                 false,
                 new byte[] { inp.EdgeTag },
                 0,
@@ -126,8 +126,8 @@ namespace BoSSS.Solution.Utils {
                 baseFlux.BorderEdgeFlux(
                     0.0,
                     inp.iEdge,
-                    MultidimensionalArray.CreateWrapper(inp.X, 1, 1, inp.X.Length),
-                    MultidimensionalArray.CreateWrapper(inp.Normale, 1, inp.Normale.Length),
+                    MultidimensionalArray.CreateWrapper(inp.X, 1, 1, inp.D),
+                    MultidimensionalArray.CreateWrapper(inp.Normale, 1, inp.D),
                     false,
                     new byte[] { inp.EdgeTag },
                     0,
@@ -172,8 +172,8 @@ namespace BoSSS.Solution.Utils {
             baseFlux.InnerEdgeFlux(
                 0.0,
                 inp.iEdge,
-                MultidimensionalArray.CreateWrapper(inp.X, 1, 1, inp.X.Length),
-                MultidimensionalArray.CreateWrapper(inp.Normale, 1, inp.Normale.Length),
+                MultidimensionalArray.CreateWrapper(inp.X, 1, 1, inp.D),
+                MultidimensionalArray.CreateWrapper(inp.Normale, 1, inp.D),
                 inp.Parameters_IN.Select(p =>
                     MultidimensionalArray.CreateWrapper(new double[] { p }, 1, 1)).ToArray(),
                 inp.Parameters_OUT.Select(p =>
@@ -192,8 +192,8 @@ namespace BoSSS.Solution.Utils {
                 baseFlux.InnerEdgeFlux(
                     0.0,
                     inp.iEdge,
-                    MultidimensionalArray.CreateWrapper(inp.X, 1, 1, inp.X.Length),
-                    MultidimensionalArray.CreateWrapper(inp.Normale, 1, inp.Normale.Length),
+                    MultidimensionalArray.CreateWrapper(inp.X, 1, 1, inp.D),
+                    MultidimensionalArray.CreateWrapper(inp.Normale, 1, inp.D),
                     perturbedParameters.Select(p =>
                         MultidimensionalArray.CreateWrapper(new double[] { p }, 1, 1)).ToArray(),
                     inp.Parameters_OUT.Select(p =>
@@ -215,8 +215,8 @@ namespace BoSSS.Solution.Utils {
                 baseFlux.InnerEdgeFlux(
                     0.0,
                     inp.iEdge,
-                    MultidimensionalArray.CreateWrapper(inp.X, 1, 1, inp.X.Length),
-                    MultidimensionalArray.CreateWrapper(inp.Normale, 1, inp.Normale.Length),
+                    MultidimensionalArray.CreateWrapper(inp.X, 1, 1, inp.D),
+                    MultidimensionalArray.CreateWrapper(inp.Normale, 1, inp.D),
                     inp.Parameters_IN.Select(p =>
                         MultidimensionalArray.CreateWrapper(new double[] { p }, 1, 1)).ToArray(),
                     perturbedParameters.Select(p =>
@@ -250,38 +250,38 @@ namespace BoSSS.Solution.Utils {
         /// <param name="U"></param>
         /// <param name="output"></param>
         protected override void Flux(ref CommonParamsVol inp, double[] U, double[] output) {
-            MultidimensionalArray refFlux = MultidimensionalArray.Create(1, 1, inp.Xglobal.Length);
+            MultidimensionalArray refFlux = MultidimensionalArray.Create(1, 1, inp.D);
             baseFlux.Flux(
                 0.0,
-                MultidimensionalArray.CreateWrapper(inp.Xglobal, 1, 1, inp.Xglobal.Length),
+                MultidimensionalArray.CreateWrapper(inp.Xglobal, 1, 1, inp.D),
                 inp.Parameters.Select(p =>
                     MultidimensionalArray.CreateWrapper(new double[] { p }, 1, 1)).ToArray(),
                 0,
                 1,
                 refFlux);
 
-            double[,] FunctionMatrix = new double[inp.Xglobal.Length, inp.Parameters.Length];
+            double[,] FunctionMatrix = new double[inp.D, inp.Parameters.Length];
             for (int i = 0; i < inp.Parameters.Length; i++) {
                 double[] perturbedParameters = inp.Parameters.CloneAs();
                 double stepSize = GetStepSize(perturbedParameters[i]);
                 perturbedParameters[i] += stepSize;
 
-                MultidimensionalArray perturbedFlux = MultidimensionalArray.Create(1, 1, inp.Xglobal.Length);
+                MultidimensionalArray perturbedFlux = MultidimensionalArray.Create(1, 1, inp.D);
                 baseFlux.Flux(
                     0.0,
-                    MultidimensionalArray.CreateWrapper(inp.Xglobal, 1, 1, inp.Xglobal.Length),
+                    MultidimensionalArray.CreateWrapper(inp.Xglobal, 1, 1, inp.D),
                     perturbedParameters.Select(p =>
                         MultidimensionalArray.CreateWrapper(new double[] { p }, 1, 1)).ToArray(),
                     0,
                     1,
                     perturbedFlux);
 
-                for (int d = 0; d < inp.Xglobal.Length; d++) {
+                for (int d = 0; d < inp.D; d++) {
                     FunctionMatrix[d, i] = (perturbedFlux[0, 0, d] - refFlux[0, 0, d]) / stepSize;
                 }
             }
 
-            for (int d = 0; d < inp.Xglobal.Length; d++) {
+            for (int d = 0; d < inp.D; d++) {
                 output[d] = refFlux[0, 0, d];
                 for (int i = 0; i < inp.Parameters.Length; i++) {
                     output[d] += FunctionMatrix[d, i] * (U[i] - inp.Parameters[i]);

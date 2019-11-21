@@ -21,6 +21,7 @@ using System.Text;
 using BoSSS.Platform;
 using System.Diagnostics;
 using ilPSP;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Foundation.XDG {
     
@@ -97,20 +98,20 @@ namespace BoSSS.Foundation.XDG {
         /// Position vector, in global/physical coordinates at which the integrand should be evaluated.
         /// Note: depending on the quadrature rule, that point is not necessarily located on the zero-level-set.
         /// </summary>
-        public double[] x;
+        public Vector x;
 
         /// <summary>
         /// Normal vector, parallel to the gradient of the level-set function.
         /// </summary>
-        public double[] n;
+        public Vector n;
 
         /// <summary>
         /// Guess what?
         /// </summary>
         public int SpatialDim {
             get {
-                Debug.Assert(x.Length == n.Length);
-                return n.Length;
+                Debug.Assert(x.Dim == n.Dim);
+                return n.Dim;
             }
         }
 
@@ -134,15 +135,6 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public double time;
 
-        ///// <summary>
-        ///// A characteristic length scale for the negative part of the cut cell, i.e. the respective part of the cut cell where the level-set field is negative.
-        ///// </summary>
-        //public double NegCellLengthScale;
-
-        ///// <summary>
-        ///// A characteristic length scale for the positive part of the cut cell, i.e. the respective part of the cut cell where the level-set field is positive.
-        ///// </summary>
-        //public double PosCellLengthScale;
     }
 
     /// <summary>

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using BoSSS.Platform.LinAlg;
 using System.Diagnostics;
+using ilPSP;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
@@ -81,7 +82,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                     CenterOfGravity += vertex.Position;
                 }
                 CenterOfGravity.Scale(1.0 / cell.Vertices.Length);
-                CenterOfGravity = CenterOfGravity * relaxValue + new Vector(cell.Node.Position) * (1 - relaxValue);
+                CenterOfGravity = CenterOfGravity * relaxValue + cell.Node.Position * (1 - relaxValue);
 
                 cell.Node.Position = CenterOfGravity;
                 if (cell.ID == FirstCellNode_indice)

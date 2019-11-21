@@ -76,7 +76,7 @@ namespace CNS.Convection {
         /// <returns>
         /// <see cref="ExactRiemannSolver.GetCentralState"/>
         /// </returns>
-        protected override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref Vector normal, int edgeIndex) {
+        protected override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex) {
             ExactRiemannSolver riemannSolver = new ExactRiemannSolver(
                 stateIn, stateOut, normal);
 

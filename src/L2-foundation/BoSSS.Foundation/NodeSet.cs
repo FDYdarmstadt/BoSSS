@@ -101,6 +101,27 @@ namespace BoSSS.Foundation {
             }
         }
 
+        /// <summary>
+        /// Constructor: initializes this node set
+        /// containing only one point <paramref name="point"/>.
+        /// </summary>
+        public NodeSet(RefElement r, Vector point)
+            : base(2) //
+        {
+            if(point.Dim > 3)
+                throw new ArgumentException("Spatial dimension is expected to be lower or equal to 3.");
+            base.Allocate(1, point.Dim);
+            base.ExtractSubArrayShallow(0, -1).SetVector(point);
+            base.LockForever();
+            this.RefElement = r;
+            lock(syncRoot) {
+                this.Reference = RefCounter;
+                if(RefCounter >= int.MaxValue)
+                    throw new ApplicationException("NodeSet ref-counter overflow.");
+                RefCounter++;
+            }
+        }
+
 
         /// <summary>
         /// Creates a node set with all nodes set to 0 -- these values can still be changed.
