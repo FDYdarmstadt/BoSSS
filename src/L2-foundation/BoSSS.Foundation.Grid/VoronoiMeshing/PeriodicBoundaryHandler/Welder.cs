@@ -39,7 +39,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
         {
             Debug.Assert((source.End.Position - target.Start.Position).Abs() < 1e-10,
                 "Edges do not touch.");
-            int ID = target.Twin.End.ID; //hoho
+            int ID = target.Start.ID; //hoho
             target.Start = source.Start;
             target.Start.ID = ID;
 

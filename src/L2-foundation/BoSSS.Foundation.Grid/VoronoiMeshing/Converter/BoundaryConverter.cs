@@ -52,7 +52,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
             byte edgeTag = default;
             if(periodicBoundaryConverter != null)
             {
-                periodicBoundaryConverter.GetEdgeTagOf(boundaryEdgeNumber);
+                edgeTag = periodicBoundaryConverter.GetEdgeTagOf(boundaryEdgeNumber);
             }
             else
             {

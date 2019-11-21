@@ -16,8 +16,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         public bool Equals(Corner other)
         {
-            bool orderA = (other.FirstEdge == FirstEdge) && (other.SecondEdge == SecondEdge); 
-            bool orderB = (other.SecondEdge == FirstEdge) && (other.SecondEdge == FirstEdge);
+            bool orderA = (other.FirstEdge == SecondEdge) && (other.SecondEdge == FirstEdge); 
+            bool orderB = (other.SecondEdge == SecondEdge) && (other.FirstEdge == FirstEdge);
             return orderA || orderB;
         }
 
@@ -25,9 +25,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         {
             if(otherObject is Corner other)
             {
-                bool orderA = (other.FirstEdge == FirstEdge) && (other.SecondEdge == SecondEdge);
-                bool orderB = (other.SecondEdge == FirstEdge) && (other.SecondEdge == FirstEdge);
-                return orderA || orderB;
+                return Equals(other);
             }
             else
             {

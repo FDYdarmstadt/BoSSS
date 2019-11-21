@@ -127,10 +127,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
                 sourceEdge.Start.ID = sourceEdge.Twin.End.ID;
                 sourceEdge.End.ID = sourceEdge.Twin.Start.ID;
 
-                sourceEdge.IsBoundary = false;
-                sourceEdge.BoundaryEdgeNumber = -1;
-                sourceEdge.Twin.IsBoundary = false;
-                sourceEdge.Twin.BoundaryEdgeNumber = -1;
+                //sourceEdge.IsBoundary = false;
+                //sourceEdge.BoundaryEdgeNumber = -1;
+                //sourceEdge.Twin.IsBoundary = false;
+                //sourceEdge.Twin.BoundaryEdgeNumber = -1;
             }
             else
             {

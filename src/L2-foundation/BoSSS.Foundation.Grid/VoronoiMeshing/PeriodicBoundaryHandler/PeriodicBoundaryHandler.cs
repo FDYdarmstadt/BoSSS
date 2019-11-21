@@ -44,7 +44,13 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 
         IEnumerable<Edge<T>> PeriodicEdgesOf(Mesh<T> mesh)
         {
-            foreach (Edge<T> edge in BoundaryEdgesOf(mesh))
+            Vector startFromEnclosingCell = boundary[0].Start.Position;
+            return PeriodicEdgesOf(mesh, startFromEnclosingCell);
+        }
+
+        IEnumerable<Edge<T>> PeriodicEdgesOf(Mesh<T> mesh, Vector start)
+        {
+            foreach (Edge<T> edge in BoundaryEdgesOf(mesh, start))
             {
                 if (periodicTrafoMap.ContainsKey(edge.BoundaryEdgeNumber))
                 {
@@ -53,11 +59,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             }
         }
 
-        IEnumerable<Edge<T>> BoundaryEdgesOf(Mesh<T> mesh)
+        IEnumerable<Edge<T>> BoundaryEdgesOf(Mesh<T> mesh, Vector start)
         {
             BoundaryEdgeFinder<T> edgeCells = new BoundaryEdgeFinder<T>(mesh);
-            Vector startFromEnclosingCell = boundary[0].Start.Position;
-            foreach (Edge<T> edge in edgeCells.Edges(startFromEnclosingCell, firstCellNodeIndice))
+            
+            foreach (Edge<T> edge in edgeCells.Edges(start, firstCellNodeIndice))
             {
                 yield return edge;
             }
@@ -79,7 +85,57 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             Debug.Assert(ContainsPeriodicBoundaries == true);
 
             IEnumerable<Edge<T>> periodicEdges = PeriodicEdgesOf(mesh);
-            recomposer.RecomposePeriodicEdges(mesh, periodicEdges); 
+            recomposer.RecomposePeriodicEdges(mesh, periodicEdges);
+
+            Debug.Assert(PeriodicEdgeIDsLineUp(mesh));
+        }
+
+        bool PeriodicEdgeIDsLineUp(Mesh<T> mesh)
+        {
+            IEnumerable<Edge<T>> periodicEdges = PeriodicEdgesOf(mesh, mesh.Cells[firstCellNodeIndice].Node.Position);
+            List<int> innerIds = new List<int>();
+            List<int> outerIds = new List<int>();
+            foreach(var edge in periodicEdges)
+            {
+                innerIds.Add(edge.Start.ID);
+                outerIds.Add(edge.Twin.Start.ID);
+            }
+            HashSet< int> innerEdges = new HashSet<int>();
+            int missCounter = 0;
+            int duplicateCounter = 0;
+            foreach(int i in innerIds)
+            {
+                if (innerEdges.Contains(i))
+                {
+                    ++duplicateCounter;
+                }
+                innerEdges.Add(i);
+            }
+            HashSet<int> outerEdges = new HashSet<int>();
+            foreach (int i in outerIds)
+            {
+                if (outerEdges.Contains(i))
+                {
+                    ++duplicateCounter;
+                }
+                outerEdges.Add(i);
+
+                if (!innerEdges.Contains(i))
+                {
+                    ++missCounter;
+                }
+            }
+            foreach (int i in innerIds)
+            {
+                if (!outerEdges.Contains(i))
+                {
+                    ++missCounter;
+                }
+            }
+            if (missCounter > 0 || duplicateCounter > 0)
+                return false;
+            else 
+                return true;
         }
     }
 }

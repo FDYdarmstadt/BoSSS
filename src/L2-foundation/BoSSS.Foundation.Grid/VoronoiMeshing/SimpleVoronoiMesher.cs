@@ -20,7 +20,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         public Vector Position {
             get { return node.Position; }
-            set { node.Position = value; }
+            set {
+                node.Position = value;
+                node.Velocity = new Vector(value.Dim);
+            }
         }
 
         public VoronoiNode AsVoronoiNode()

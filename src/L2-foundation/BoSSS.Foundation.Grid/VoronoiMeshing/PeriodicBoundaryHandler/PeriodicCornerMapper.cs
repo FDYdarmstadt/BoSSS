@@ -3,19 +3,28 @@
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 {
     class PeriodicCornerMapper<T>
+        where T : ILocatable
     {
-        PeriodicCornerBoundaryAssigner<T> boundaryAssigner;
+        PeriodicCornerBoundaryIdentifier<T> boundaryAssigner;
+
+        Queue<MeshCell<T>> cornerCells;
+
+        PeriodicCornerCellFinder<T> cornerFinder;
 
         public PeriodicCornerMapper(PeriodicMap map)
         {
-            boundaryAssigner = new PeriodicCornerBoundaryAssigner<T>(map);
+            cornerFinder = new PeriodicCornerCellFinder<T>(map);
+            boundaryAssigner = new PeriodicCornerBoundaryIdentifier<T>(map);
         }
 
-        public void ConnectPeriodicCorners(CellPairCollection<T> candidates)
+        public void ConnectPeriodicCorners()
         {
-            var cornerFinder = new PeriodicCornerCellFinder<T>();
-            Queue<MeshCell<T>> cornerCells = cornerFinder.FindInner(candidates);
             ConnectCorners(cornerCells);
+        }
+
+        public void FindPeriodicCorners(CellPairCollection<T> candidates)
+        {
+            cornerCells = cornerFinder.FindInner(candidates);
         }
 
         void ConnectCorners(Queue<MeshCell<T>> cornerCells)

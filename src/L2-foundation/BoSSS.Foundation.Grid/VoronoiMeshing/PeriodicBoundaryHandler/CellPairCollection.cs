@@ -1,5 +1,6 @@
 ﻿using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 {
@@ -136,12 +137,51 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             }
         }
 
-        public IEnumerable<EdgeCombo> GetCollectedEdgeCombos()
+        public EdgeCombo[] GetCollectedEdgeCombos()
         {
             EdgeCombo[] combos = new EdgeCombo[periodicEdges.Count];
             foreach((int i, KeyValuePair<int, EdgeCombo> combo) in CountingEnumerable.Wrap(periodicEdges))
             {
                 combos[i] = combo.Value;
+            }
+            return combos;
+        }
+
+        public IEnumerable<Pair<EdgeCombo>> GetCollectedEdgeCombos(PeriodicMap map)
+        {
+            IDictionary<int, int> boundaryMap = map.PeriodicBoundaryCorrelation;
+            EdgeCombo[] combos = EdgeComboAsPairs(boundaryMap);
+
+            Pair<EdgeCombo>[] pairedEdgeCombos = new Pair<EdgeCombo>[combos.Length / 2];
+            for ( int i = 0; i < pairedEdgeCombos.Length; ++i)
+            {
+                pairedEdgeCombos[i] = new Pair<EdgeCombo>
+                {
+                    Previous = combos[2 * i],
+                    Current = combos[2 * i + 1],
+                };
+            }
+            return pairedEdgeCombos;
+        }
+
+        EdgeCombo[] EdgeComboAsPairs( IDictionary<int, int> boundaryMap)
+        {
+            EdgeCombo[] combos = GetCollectedEdgeCombos();
+            Debug.Assert(combos.Length % 2 == 0);
+            for (int i = 0; i < combos.Length - 3; i += 2)
+            {
+                EdgeCombo active = combos[i];
+                boundaryMap.TryGetValue(active.EdgeNumber, out int pairedBoundary);
+                for (int j = i + 1; j < combos.Length; ++j)
+                {
+                    EdgeCombo matchCandidate = combos[j];
+                    if (matchCandidate.EdgeNumber == pairedBoundary)
+                    {
+                        EdgeCombo temp = combos[i + 1];
+                        combos[i + 1] = matchCandidate;
+                        combos[j] = temp;
+                    }
+                }
             }
             return combos;
         }

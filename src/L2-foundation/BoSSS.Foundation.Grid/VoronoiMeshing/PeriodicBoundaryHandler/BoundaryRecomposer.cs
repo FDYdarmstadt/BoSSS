@@ -26,8 +26,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
         public void RecomposePeriodicEdges(IDMesh<T> mesh, IEnumerable<Edge<T>> periodicEdges)
         {
             CellPairCollection<T> candidates = CellPairCollecter<T>.FollowBoundaryAndCollectCandidates(periodicEdges);
+            cornerMapper.FindPeriodicCorners(candidates);
             RecomposeCutCells(mesh, candidates);
-            cornerMapper.ConnectPeriodicCorners(candidates);
+            cornerMapper.ConnectPeriodicCorners();
         }
 
         void RecomposeCutCells(IDMesh<T> mesh, CellPairCollection<T> candidates)
@@ -44,9 +45,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
                 InitializeGlueMapOf(mergePair);
                 MergeAtBoundary(mergePair);
                 //plotter.Plot(mesh, "intermediate" + i);
-                //++i;
+                ++i;
             }
-            //plotter.Plot(mesh, "final");
+            plotter.Plot(mesh, "final");
         }
 
         void ExtractEdgeGlueMap(CellPairCollection<T> pairsForMerging)
@@ -103,18 +104,35 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             MeshCellCopier<T> cellCopier,
             BoundaryCellRemover<T> remover)
         {
-            foreach (CellPairCollection<T>.EdgeCombo edgePair in candidates.GetCollectedEdgeCombos())
+            foreach (Pair<CellPairCollection<T>.EdgeCombo> opposingEdges in candidates.GetCollectedEdgeCombos(map))
             {
-                CellPairCollection<T>.EdgeCombo mergePair = new CellPairCollection<T>.EdgeCombo(edgePair.EdgeNumber);
-                int pairedBoundary = map.PeriodicBoundaryCorrelation[edgePair.EdgeNumber];
-                candidates.TryGetOuterCells(pairedBoundary, out List<MeshCell<T>> pairedOuterCells);
-                mergePair.Outer = TransformedCopyOfOuter(pairedOuterCells, pairedBoundary, cellCopier);
-                mergePair.Inner = new List<MeshCell<T>>(ArrayMethods.GetReverseOrderArray(edgePair.Inner));
-                remover.EnqueueForRemoval(pairedOuterCells, pairedBoundary);
+                CellPairCollection<T>.EdgeCombo mergePair;
 
+                mergePair = ExtractMergePair(opposingEdges.Previous, candidates, cellCopier, remover);
                 yield return mergePair;
+
+                mergePair = ExtractMergePair(opposingEdges.Current, candidates, cellCopier, remover);
+                yield return mergePair;
+
+                remover.SetQueuedCellsAsOuter();
             }
-            remover.RemoveQueuedCells();
+            
+            remover.RemoveOuterCellsFromMesh();
+        }
+
+        CellPairCollection<T>.EdgeCombo ExtractMergePair(
+            CellPairCollection<T>.EdgeCombo edgePair, 
+            CellPairCollection<T> candidates, 
+            MeshCellCopier<T> cellCopier,
+            BoundaryCellRemover<T> remover)
+        {
+            CellPairCollection<T>.EdgeCombo mergePair = new CellPairCollection<T>.EdgeCombo(edgePair.EdgeNumber);
+            int pairedBoundary = map.PeriodicBoundaryCorrelation[edgePair.EdgeNumber];
+            candidates.TryGetOuterCells(pairedBoundary, out List<MeshCell<T>> pairedOuterCells);
+            mergePair.Outer = TransformedCopyOfOuter(pairedOuterCells, pairedBoundary, cellCopier);
+            mergePair.Inner = new List<MeshCell<T>>(ArrayMethods.GetReverseOrderArray(edgePair.Inner));
+            remover.EnqueueForRemoval(pairedOuterCells, pairedBoundary, edgePair.EdgeNumber);
+            return mergePair;
         }
 
         List<MeshCell<T>> TransformedCopyOfOuter(

@@ -1,16 +1,21 @@
-﻿using System.Collections.Generic;
+﻿using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
+using BoSSS.Platform;
+using BoSSS.Platform.LinAlg;
+using System;
+using System.Collections.Generic;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 {
     class PeriodicCornerCellFinder<T>
+        where T : ILocatable
     {
-        readonly ICollection<int> visitedCorners;
-
         readonly Queue<MeshCell<T>> cornerCells;
 
-        public PeriodicCornerCellFinder()
+        readonly PeriodicMap map;
+
+        public PeriodicCornerCellFinder(PeriodicMap map)
         {
-            visitedCorners = new LinkedList<int>();
+            this.map = map;
             cornerCells = new Queue<MeshCell<T>>();
         }
 
@@ -21,36 +26,68 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
                 if (edge.Inner.Count > 0)
                 {
                     MeshCell<T> first = edge.Inner[0];
-                    if (AlreadyVisited(first))
+                    if (IsPeriodicCorner(first))
                     {
                         cornerCells.Enqueue(first);
-                    }
-                    //add last
-                    if (edge.Inner.Count > 1)
-                    {
-                        MeshCell<T> last = edge.Inner[edge.Inner.Count - 1];
-                        if (AlreadyVisited(last))
-                        {
-                            cornerCells.Enqueue(last);
-                        }
                     }
                 }
             }
             return cornerCells;
         }
 
-        bool AlreadyVisited(MeshCell<T> cell)
+        bool IsPeriodicCorner(MeshCell<T> cell)
         {
-            if (visitedCorners.Contains(cell.ID))
+            if (NodeIsInVoronoiCell(cell))
             {
-                visitedCorners.Remove(cell.ID);
-                return true;
+                if (IsCorner(cell, out Corner corner))
+                {
+                    if (map.PeriodicCornerCorrelation.TryGetValue(corner, out int wayne))
+                    {
+                        return true;
+                    }
+                };
             }
-            else
-            {
-                visitedCorners.Add(cell.ID);
-                return false;
-            }
+            return false;
         }
+
+        bool IsCorner(MeshCell<T> cell, out Corner corner)
+        {
+            foreach (Pair<Edge<T>> followingBoundaries in new Convolution<Edge<T>>(cell.Edges))
+            {
+                Edge<T> current = followingBoundaries.Current;
+                Edge<T> following = followingBoundaries.Previous;
+                if(current.IsBoundary && following.IsBoundary)
+                {
+                    if (Math.Abs(current.BoundaryEdgeNumber - following.BoundaryEdgeNumber) == 1)
+                    {
+                        corner = new Corner
+                        {
+                            FirstEdge = current.BoundaryEdgeNumber,
+                            SecondEdge = following.BoundaryEdgeNumber
+                        };
+                        return true;
+                    }
+                }
+            }
+            corner = default;
+            return false;
+        }
+
+        bool NodeIsInVoronoiCell(MeshCell<T> cell)
+        {
+            Vector[] vertices = Cast(cell.Vertices);
+            return PolygonTesselation.PointInConvexPolygon(vertices, cell.Node.Position);
+        }
+
+        Vector[] Cast(IList<Vertex> children) 
+        {
+            Vector[] parents = new Vector[children.Count];
+            for(int i = 0; i < children.Count; ++i)
+            {
+                parents[i] = (Vector)children[i];
+            }
+            return parents;
+        }
+
     }
 }

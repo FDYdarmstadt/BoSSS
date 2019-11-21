@@ -39,7 +39,7 @@ namespace BoSSS.Platform
                 return start;
             }
             set {
-                this.start = value % Length;
+                this.start = goesRoundLikeARecordBaby(value, 0);
             }
         }
 
@@ -55,7 +55,7 @@ namespace BoSSS.Platform
                 }
                 else
                 {
-                    int index = goesRoundLikeARecordBaby(i);
+                    int index = goesRoundLikeARecordBaby(i, start);
                     return data[index];
                 }
             }
@@ -66,17 +66,16 @@ namespace BoSSS.Platform
                 }
                 else
                 {
-                    int index = goesRoundLikeARecordBaby(i);
+                    int index = goesRoundLikeARecordBaby(i, start);
                     data[index] = value;
                 }
             }
-
         }
 
-        private int goesRoundLikeARecordBaby(int indice)
+        private int goesRoundLikeARecordBaby(int indice, int offset)
         {
-            indice = (indice + start) % Length;
-            indice = Math.Abs(indice);
+            indice = (indice + offset) % Length;
+            indice = indice < 0 ? indice + Length : indice;
             return indice;
         }
 

@@ -9,46 +9,38 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 
         readonly InsideCellEnumerator<T> insideCells;
 
-        readonly Queue<(IList<MeshCell<T>>, int)> meshCellsToRemove;
+        readonly Queue<(IList<MeshCell<T>>, int, int)> meshCellsToRemove;
 
         public BoundaryCellRemover(Mesh<T> mesh, int firstCellNodeIndice)
         {
             this.mesh = mesh;
             insideCells = new InsideCellEnumerator<T>(mesh, firstCellNodeIndice);
-            meshCellsToRemove = new Queue<(IList<MeshCell<T>>, int)>();
+            meshCellsToRemove = new Queue<(IList<MeshCell<T>>, int, int)>();
         }
 
-        public void EnqueueForRemoval(IList<MeshCell<T>> cells, int boundaryEdgeNumber)
+        public void EnqueueForRemoval(IList<MeshCell<T>> cells, int boundaryEdgeNumber, int pairedBoundaryEdgeNumber)
         {
-            meshCellsToRemove.Enqueue((cells, boundaryEdgeNumber));
+            meshCellsToRemove.Enqueue((cells, boundaryEdgeNumber, pairedBoundaryEdgeNumber));
         }
 
-        public void SetCellsAsBoundary(IList<MeshCell<T>> cells, int boundaryEdgeNumber)
-        {
-            SetAsBoundary(cells, boundaryEdgeNumber);
-        }
-
-        void SetAsBoundary(IList<MeshCell<T>> cells, int boundaryEdgeNumber)
+        void SetAsBoundary(IList<MeshCell<T>> cells, int boundaryEdgeNumber, int pairedBoundaryNumber)
         {
             foreach (MeshCell<T> cell in cells)
             {
-                SetAllEdgesToBoundary(cell.Edges, boundaryEdgeNumber);
+                SetAllEdgesToBoundary(cell.Edges, boundaryEdgeNumber, pairedBoundaryNumber);
             }
         }
 
-        void SetAllEdgesToBoundary(Edge<T>[] edges, int boundaryEdgeNumber)
+        void SetAllEdgesToBoundary(Edge<T>[] edges, int boundaryEdgeNumber, int pairedBoundaryNumber)
         {
             foreach (Edge<T> edge in edges)
             {
                 edge.IsBoundary = true;
-                edge.BoundaryEdgeNumber = boundaryEdgeNumber;
+                edge.BoundaryEdgeNumber = pairedBoundaryNumber;
                 if (edge.Twin != null)
                 {
-                    if(edge.Twin.Start.ID == edge.End.ID || edge.Twin.End.ID == edge.Start.ID)
-                    {
-                        edge.Twin.BoundaryEdgeNumber = boundaryEdgeNumber;
-                        edge.Twin.IsBoundary = true;
-                    }
+                    edge.Twin.BoundaryEdgeNumber = boundaryEdgeNumber;
+                    edge.Twin.IsBoundary = true;
                 }
             }
         }
@@ -57,13 +49,22 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
         {
             while(meshCellsToRemove.Count > 0)
             {
-                (IList<MeshCell<T>> cells, int boundaryNumber) = meshCellsToRemove.Dequeue();
-                SetAsBoundary(cells, boundaryNumber);
+                (IList<MeshCell<T>> cells, int boundaryNumber, int pairedBoundaryNumber) = meshCellsToRemove.Dequeue();
+                SetAsBoundary(cells, boundaryNumber, pairedBoundaryNumber);
             }
             RemoveOuterCellsFromMesh();
         }
 
-        void RemoveOuterCellsFromMesh()
+        public void SetQueuedCellsAsOuter()
+        {
+            while (meshCellsToRemove.Count > 0)
+            {
+                (IList<MeshCell<T>> cells, int boundaryNumber, int pairedBoundaryNumber) = meshCellsToRemove.Dequeue();
+                SetAsBoundary(cells, boundaryNumber, pairedBoundaryNumber);
+            }
+        }
+
+        public void RemoveOuterCellsFromMesh()
         {
             List<MeshCell<T>> cells = new List<MeshCell<T>>(mesh.Cells.Count);
             foreach (MeshCell<T> cell in insideCells.EnumerateCellsInConcentricCircles())

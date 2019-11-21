@@ -156,18 +156,18 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
             CellFaceTag[] tags,
             int boundaryNumber,
             long globalCellID,
-            int edgeStartID,
-            int edgeEndID)
+            int edgeID,
+            int edgeTwinID)
         {
             tags[tagIndice].ConformalNeighborship = true;
             tags[tagIndice].PeriodicInverse = boundaryMap.IsPeriodicInverse(boundaryNumber);
             if (tags[tagIndice].PeriodicInverse)
             {
-                edgePairer.SetNeighborCell(edgeStartID, tagIndice, tags, globalCellID);
+                edgePairer.SetNeighborCell(edgeID, tagIndice, tags, globalCellID);
             }
             else
             {
-                edgePairer.SetNeighborCell(edgeEndID, tagIndice, tags, globalCellID);
+                edgePairer.SetNeighborCell(edgeTwinID, tagIndice, tags, globalCellID);
             }
         }
 
