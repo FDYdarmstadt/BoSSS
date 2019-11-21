@@ -2407,7 +2407,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.3;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
 
-            C.LSContiProjectionMethod = ContinuityProjectionOption.ContinuousDG;
+            C.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 100;

@@ -106,7 +106,11 @@
     <Compile Include="Tests\UnitTest.cs" />
     <Compile Include="Tests\ViscosityJumpTest.cs" />
     <Compile Include="XNSE_OperatorConfiguration.cs" />
+    <Compile Include="XNSE_SolverMain_Energy.cs" />
+    <Compile Include="XNSE_SolverMain_Heat.cs" />
     <Compile Include="XNSE_SolverMain.cs" />
+    <Compile Include="XNSE_SolverMain_LevelSet.cs" />
+    <Compile Include="XNSE_SolverMain_Utils.cs" />
     <Compile Include="XNSFE_OperatorComponents.cs" />
     <Compile Include="XNSFE_OperatorFactory.cs" />
   </ItemGroup>

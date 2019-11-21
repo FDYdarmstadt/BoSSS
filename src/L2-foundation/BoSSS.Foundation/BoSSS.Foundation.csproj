@@ -79,7 +79,7 @@
     <Compile Include="CellMask.cs" />
     <Compile Include="CellQuadrature.cs" />
     <Compile Include="CellType.cs" />
-    <Compile Include="ContinuousDGField.cs" />
+    <Compile Include="ConstrainedDGField.cs" />
     <Compile Include="Cube.cs" />
     <Compile Include="DatabaseController.cs" />
     <Compile Include="DatabaseDriver.cs" />

@@ -343,7 +343,7 @@ namespace BoSSS.Application.XRheology_Solver {
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
 
 
-            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ContinuousDG;
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
             //C.AdaptiveMeshRefinement = true;
 
@@ -669,7 +669,7 @@ namespace BoSSS.Application.XRheology_Solver {
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
 
 
-            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ContinuousDG;
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
             //C.EnforceLevelSetConservation = true;
 
@@ -964,7 +964,7 @@ namespace BoSSS.Application.XRheology_Solver {
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
 
 
-            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ContinuousDG;
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
             //C.AdaptiveMeshRefinement = true;
 
@@ -1278,7 +1278,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
             //C.LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.PARDISO };
 
-            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ContinuousDG;
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
@@ -1535,7 +1535,7 @@ namespace BoSSS.Application.XRheology_Solver {
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
 
 
-            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ContinuousDG;
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
             //C.AdaptiveMeshRefinement = true;
 
@@ -1811,7 +1811,7 @@ namespace BoSSS.Application.XRheology_Solver {
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
 
 
-            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ContinuousDG;
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
             //C.EnforceLevelSetConservation = true;
 
@@ -2111,7 +2111,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
             C.ComputeEnergy = false;
 
-            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ContinuousDG;
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MaxSolverIterations = 50;

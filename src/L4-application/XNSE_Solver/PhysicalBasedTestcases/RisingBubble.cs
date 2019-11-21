@@ -308,7 +308,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux;
             //C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
-            C.LSContiProjectionMethod = ContinuityProjectionOption.ContinuousDG;
+            C.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
             #endregion
 
 
@@ -569,7 +569,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
 
-            C.LSContiProjectionMethod = ContinuityProjectionOption.ContinuousDG;
+            C.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
