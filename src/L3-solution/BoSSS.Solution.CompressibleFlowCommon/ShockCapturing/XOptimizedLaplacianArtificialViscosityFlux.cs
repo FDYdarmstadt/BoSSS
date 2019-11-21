@@ -237,7 +237,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                     // Global node coordinates
                     double[] X = new double[dimension];
                     for (int i = 0; i < dimension; i++) {
-                        X[i] = efp.NodesGlobal[cell, node, i];
+                        X[i] = efp.Nodes[cell, node, i];
                     }
 
                     switch (edgeType) {
@@ -333,7 +333,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                     // Global node coordinates
                     double[] X = new double[dimension];
                     for (int i = 0; i < dimension; i++) {
-                        X[i] = efp.NodesGlobal[cell, node, i];
+                        X[i] = efp.Nodes[cell, node, i];
                     }
 
                     // SIPG Flux Loops

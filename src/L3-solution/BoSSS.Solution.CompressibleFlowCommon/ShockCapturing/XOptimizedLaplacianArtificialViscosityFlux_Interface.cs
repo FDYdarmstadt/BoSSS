@@ -97,8 +97,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             edgeParams.time = inp.time;
             edgeParams.ParameterVars_IN = inp.ParamsNeg;
             edgeParams.ParameterVars_OUT = inp.ParamsPos;
-            edgeParams.Normals = inp.Normal;
-            edgeParams.NodesGlobal = inp.X;
+            edgeParams.Normals = inp.Normals;
+            edgeParams.Nodes = inp.Nodes;
 
             // Split coeff array into species A and B
             MultidimensionalArray fin = Koeff_GradV.ExtractSubArrayShallow(-1, -1, 0, -1);
@@ -116,8 +116,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             edgeParams.time = inp.time;
             edgeParams.ParameterVars_IN = inp.ParamsNeg;
             edgeParams.ParameterVars_OUT = inp.ParamsPos;
-            edgeParams.Normals = inp.Normal;
-            edgeParams.NodesGlobal = inp.X;
+            edgeParams.Normals = inp.Normals;
+            edgeParams.Nodes = inp.Nodes;
 
             // Split coeff array into species A and B
             MultidimensionalArray fin = Koeff_V.ExtractSubArrayShallow(-1, -1, 0);

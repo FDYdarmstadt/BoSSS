@@ -382,7 +382,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                     for (int d = 0; d < D; d++) {
                         cpv.Normal[d] = efp.Normals[l, k, d];
-                        cpv.X[d] = efp.NodesGlobal[l, k, d];
+                        cpv.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for (int na = 0; na < _NOargs; na++) {
@@ -476,7 +476,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                     for (int d = 0; d < D; d++) {
                         cpv.Normal[d] = efp.Normals[l, k, d];
-                        cpv.X[d] = efp.NodesGlobal[l, k, d];
+                        cpv.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for (int na = 0; na < _NOargs; na++) {
@@ -573,7 +573,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                     for (int d = 0; d < D; d++) {
                         cpv.Normal[d] = efp.Normals[l, k, d];
-                        cpv.X[d] = efp.NodesGlobal[l, k, d];
+                        cpv.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for (int na = 0; na < _NOargs; na++) {
@@ -668,7 +668,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                     for (int d = 0; d < D; d++) {
                         cpv.Normal[d] = efp.Normals[l, k, d];
-                        cpv.X[d] = efp.NodesGlobal[l, k, d];
+                        cpv.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for (int na = 0; na < _NOargs; na++) {

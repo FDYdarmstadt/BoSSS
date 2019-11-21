@@ -72,7 +72,7 @@ namespace BoSSS.Foundation.XDG {
             int L = inp.Len;
             Debug.Assert(Koeff_V.GetLength(0) == L);
             int K = Koeff_V.GetLength(1); // no of nodes per cell
-            int D = inp.X.GetLength(2); // spatial dimension
+            int D = inp.Nodes.GetLength(2); // spatial dimension
             int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
             Debug.Assert(_NOParams == inp.ParamsNeg.Length);
             Debug.Assert(_NOParams == inp.ParamsPos.Length);
@@ -125,8 +125,8 @@ namespace BoSSS.Foundation.XDG {
                         cp.ParamsNeg[np] = inp.ParamsNeg[np][l, k];
                     }
                     for (int d = 0; d < D; d++) {
-                        cp.X[d] = inp.X[l, k, d];
-                        cp.Normal[d] = inp.Normal[l, k, d];
+                        cp.X[d] = inp.Nodes[l, k, d];
+                        cp.Normal[d] = inp.Normals[l, k, d];
                     }
 
                     for (int na = 0; na < _NOargs; na++) {
@@ -168,7 +168,7 @@ namespace BoSSS.Foundation.XDG {
             int L = inp.Len;
             Debug.Assert(Koeff_GradV.GetLength(0) == L);
             int K = Koeff_GradV.GetLength(1); // no of nodes per cell
-            int D = inp.X.GetLength(2); // spatial dimension
+            int D = inp.Nodes.GetLength(2); // spatial dimension
             int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
             Debug.Assert(_NOParams == inp.ParamsNeg.Length);
             Debug.Assert(_NOParams == inp.ParamsPos.Length);
@@ -221,8 +221,8 @@ namespace BoSSS.Foundation.XDG {
                         cp.ParamsNeg[np] = inp.ParamsNeg[np][l, k];
                     }
                     for (int d = 0; d < D; d++) {
-                        cp.X[d] = inp.X[l, k, d];
-                        cp.Normal[d] = inp.Normal[l, k, d];
+                        cp.X[d] = inp.Nodes[l, k, d];
+                        cp.Normal[d] = inp.Normals[l, k, d];
                     }
 
                     for (int na = 0; na < _NOargs; na++) {

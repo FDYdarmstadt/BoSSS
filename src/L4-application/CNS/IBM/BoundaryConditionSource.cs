@@ -491,7 +491,7 @@ namespace CNS.IBM {
                 e0 = Math.Abs(prm.GridDat.iLogicalCells.Cells2Edges[prm.j0][0]) - 1, // THIS IS AN EVIL HACK; NEEDS TO BE CHANGED
                 GridDat = prm.GridDat,
                 Len = prm.Len,
-                NodesGlobal = prm.Xglobal,
+                Nodes = prm.Xglobal,
                 Normals = normals,
                 ParameterVars_IN = prm.ParameterVars,
                 ParameterVars_OUT = prm.ParameterVars,

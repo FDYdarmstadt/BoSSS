@@ -40,7 +40,7 @@ namespace BoSSS.Foundation.XDG {
 		///   <item>3rd index: spatial dimension</item>
 		/// </list>
 		/// </remarks>			
-		public MultidimensionalArray X;
+		public MultidimensionalArray Nodes;
 
 		/// <summary>
 		/// normals on level set at quadrature points
@@ -50,7 +50,7 @@ namespace BoSSS.Foundation.XDG {
 		///   <item>2nd index: quadrature node</item>
 		///   <item>3rd index: spatial direction</item>
 		/// </list>
-		public MultidimensionalArray Normal;
+		public MultidimensionalArray Normals;
 
 		/// <summary>
         /// Values of parameter fields at quadrature nodes on positive side, i.e. where the level-set function is positive.
@@ -73,7 +73,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public int Len {
             get {
-                int L = Normal.GetLength(0);
+                int L = Normals.GetLength(0);
                 return L;
             }
         }

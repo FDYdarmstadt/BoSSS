@@ -1112,39 +1112,39 @@ namespace BoSSS.Foundation {
         public double time;
 
         /// <summary>
-        /// Values of parameter fields at quadrature nodes, for the IN-cell<br/>
-        /// array index: parameter variable, as specified by the parameter mapping (see <see cref="IEquationComponent.ParameterOrdering"/>); <br/>
-        /// for each multidimensional array: <br/>
-        /// 1st index: cell <br/>
-        /// 2nd index: node 
+        /// Values of parameter fields at quadrature nodes, for the IN-cell:
+        /// array index: parameter variable, as specified by the parameter mapping (see <see cref="IEquationComponent.ParameterOrdering"/>); 
+        /// for each multidimensional array: 
+        /// - 1st index: cell
+        /// - 2nd index: node 
         /// </summary>
         public MultidimensionalArray[] ParameterVars_IN;
 
         /// <summary>
-        /// Values of parameter fields at quadrature nodes, for the OUT-cell<br/>
-        /// array index: parameter variable, as specified by the parameter mapping (see <see cref="IEquationComponent.ParameterOrdering"/>); <br/>
-        /// for each multidimensional array: <br/>
-        /// 1st index: cell <br/>
-        /// 2nd index: node 
+        /// Values of parameter fields at quadrature nodes, for the OUT-cell:
+        /// array index: parameter variable, as specified by the parameter mapping (see <see cref="IEquationComponent.ParameterOrdering"/>); 
+        /// for each multidimensional array:
+        /// - 1st index: cell
+        /// - 2nd index: node 
         /// </summary>
         public MultidimensionalArray[] ParameterVars_OUT;
 
 
         /// <summary>
-        /// Edge normals at quadrature nodes. <br/>
-        /// 1st index: edge<br/>
-        /// 2nd index: quadrature node<br/>
-        /// 3rd index: spatial direction
+        /// Edge normals at quadrature nodes. 
+        /// - 1st index: edge
+        /// - 2nd index: quadrature node
+        /// - 3rd index: spatial direction
         /// </summary>
         public MultidimensionalArray Normals;
 
         /// <summary>
-        /// Quadrature nodes in global coordinates. <br/>
-        /// 1st index: edge<br/>
-        /// 2nd index: quadrature node<br/>
-        /// 3rd index: spatial direction
+        /// Quadrature nodes in global coordinates. 
+        /// - 1st index: edge
+        /// - 2nd index: quadrature node
+        /// - 3rd index: spatial direction
         /// </summary>
-        public MultidimensionalArray NodesGlobal;
+        public MultidimensionalArray Nodes;
     }
 
     /// <summary>

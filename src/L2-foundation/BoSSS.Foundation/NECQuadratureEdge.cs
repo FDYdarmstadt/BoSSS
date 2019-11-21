@@ -923,7 +923,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         int[] IEscl = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1 };
 
                         efp.Normals = NormalsGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
-                        efp.NodesGlobal = NodesGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
+                        efp.Nodes = NodesGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
 
                         var _FluxValuesIN = FluxValuesIN.ExtractSubArrayShallow(I0scl, IEscl);
                         var _FluxValuesOT = FluxValuesOT.ExtractSubArrayShallow(I0scl, IEscl);
@@ -958,7 +958,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         int[] IEscl = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1 };
 
                         efp.Normals = NormalsGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
-                        efp.NodesGlobal = NodesGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
+                        efp.Nodes = NodesGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
 
                         var _FluxValuesIN = (flipNormal ? FluxValuesOT : FluxValuesIN).ExtractSubArrayShallow(I0scl, IEscl);
 
@@ -1012,7 +1012,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         int[] IEscl = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1 };
 
                         efp.Normals = NormalsGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
-                        efp.NodesGlobal = NodesGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
+                        efp.Nodes = NodesGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
 
                         var _GradFluxIN = m_GradientFluxValuesIN[e].ExtractSubArrayShallow(I0vec, IEvec);
                         var _GradFluxOT = m_GradientFluxValuesOT[e].ExtractSubArrayShallow(I0vec, IEvec);
@@ -1046,7 +1046,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         int[] IEscl = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1 };
                         
                         efp.Normals = NormalsGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
-                        efp.NodesGlobal = NodesGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
+                        efp.Nodes = NodesGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
 
                         var _GradFluxIN = (flipNormal ? m_GradientFluxValuesOT[e] : m_GradientFluxValuesIN[e]).ExtractSubArrayShallow(I0vec, IEvec);
 

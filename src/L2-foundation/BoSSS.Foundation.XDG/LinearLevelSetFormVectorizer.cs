@@ -134,8 +134,8 @@ namespace BoSSS.Foundation.XDG {
         void ILevelSetForm_UxV.LevelSetForm_UxV(LevSetIntParams inp, MultidimensionalArray Koeff_UxV) {
             int j0 = inp.i0;
             int Len = inp.Len;
-            int N = inp.X.GetLength(1); // nodes per cell
-            int D = inp.X.GetLength(2); // spatial dim.
+            int N = inp.Nodes.GetLength(1); // nodes per cell
+            int D = inp.Nodes.GetLength(2); // spatial dim.
             int NoOfVars = this.ArgumentOrdering.Count;
             LevelSetTracker lsTrk = inp.LsTrk;
 
@@ -194,8 +194,8 @@ namespace BoSSS.Foundation.XDG {
                     //    cp.NegCellLengthScale = double.NaN;
                     
                     for (int n = 0; n < N; n++) { // loop over nodes...
-                        cp.Normal.SetFrom(inp.Normal, j, n);
-                        cp.X.SetFrom(inp.X, j, n);
+                        cp.Normal.SetFrom(inp.Normals, j, n);
+                        cp.X.SetFrom(inp.Nodes, j, n);
                         for (int i = 0; i < NP; i++) {
                             ParamsPos[i] = inp.ParamsPos[i][j, n];
                             ParamsNeg[i] = inp.ParamsNeg[i][j, n];
@@ -214,8 +214,8 @@ namespace BoSSS.Foundation.XDG {
         void ILevelSetForm_UxGradV.LevelSetForm_UxGradV(LevSetIntParams inp, MultidimensionalArray Koeff_UxNablaV) {
             int j0 = inp.i0;
             int Len = inp.Len;
-            int N = inp.X.GetLength(1); // nodes per cell
-            int D = inp.X.GetLength(2); // spatial dim.
+            int N = inp.Nodes.GetLength(1); // nodes per cell
+            int D = inp.Nodes.GetLength(2); // spatial dim.
             int NoOfVars = this.ArgumentOrdering.Count;
             LevelSetTracker lsTrk = inp.LsTrk;
 
@@ -275,8 +275,8 @@ namespace BoSSS.Foundation.XDG {
                     //    cp.NegCellLengthScale = double.NaN;
 
                     for (int n = 0; n < N; n++) { // loop over nodes...
-                        cp.Normal.SetFrom(inp.Normal, j, n);
-                        cp.X.SetFrom(inp.X, j, n);
+                        cp.Normal.SetFrom(inp.Normals, j, n);
+                        cp.X.SetFrom(inp.Nodes, j, n);
                         for (int i = 0; i < NP; i++) {
                             ParamsPos[i] = inp.ParamsPos[i][j, n];
                             ParamsNeg[i] = inp.ParamsNeg[i][j, n];
@@ -298,8 +298,8 @@ namespace BoSSS.Foundation.XDG {
         void ILevelSetForm_GradUxV.LevelSetForm_GradUxV(LevSetIntParams inp, MultidimensionalArray Koeff_NablaUxV) {
             int j0 = inp.i0;
             int Len = inp.Len;
-            int N = inp.X.GetLength(1); // nodes per cell
-            int D = inp.X.GetLength(2); // spatial dim.
+            int N = inp.Nodes.GetLength(1); // nodes per cell
+            int D = inp.Nodes.GetLength(2); // spatial dim.
             int NoOfVars = this.ArgumentOrdering.Count;
             LevelSetTracker lsTrk = inp.LsTrk;
 
@@ -359,8 +359,8 @@ namespace BoSSS.Foundation.XDG {
                     //    cp.NegCellLengthScale = double.NaN;
 
                     for (int n = 0; n < N; n++) { // loop over nodes...
-                        cp.Normal.SetFrom(inp.Normal, j, n);
-                        cp.X.SetFrom(inp.X, j, n);
+                        cp.Normal.SetFrom(inp.Normals, j, n);
+                        cp.X.SetFrom(inp.Nodes, j, n);
                         for (int i = 0; i < NP; i++) {
                             ParamsPos[i] = inp.ParamsPos[i][j, n];
                             ParamsNeg[i] = inp.ParamsNeg[i][j, n];
@@ -381,8 +381,8 @@ namespace BoSSS.Foundation.XDG {
         void ILevelSetForm_GradUxGradV.LevelSetForm_GradUxGradV(LevSetIntParams inp, MultidimensionalArray Koeff_NablaUxNablaV) {
             int j0 = inp.i0;
             int Len = inp.Len;
-            int N = inp.X.GetLength(1); // nodes per cell
-            int D = inp.X.GetLength(2); // spatial dim.
+            int N = inp.Nodes.GetLength(1); // nodes per cell
+            int D = inp.Nodes.GetLength(2); // spatial dim.
             int NoOfVars = this.ArgumentOrdering.Count;
             LevelSetTracker lsTrk = inp.LsTrk;
 
@@ -443,8 +443,8 @@ namespace BoSSS.Foundation.XDG {
                     //    cp.NegCellLengthScale = double.NaN;
 
                     for (int n = 0; n < N; n++) { // loop over nodes...
-                        cp.Normal.SetFrom(inp.Normal, j, n);
-                        cp.X.SetFrom(inp.X, j, n);
+                        cp.Normal.SetFrom(inp.Normals, j, n);
+                        cp.X.SetFrom(inp.Nodes, j, n);
 
                         for (int i = 0; i < NP; i++) {
                             ParamsPos[i] = inp.ParamsPos[i][j, n];
@@ -467,8 +467,8 @@ namespace BoSSS.Foundation.XDG {
         void ILevelSetForm_GradV.LevelSetForm_GradV(LevSetIntParams inp, MultidimensionalArray Koeff_NablaV) {
             int j0 = inp.i0;
             int Len = inp.Len;
-            int N = inp.X.GetLength(1); // nodes per cell
-            int D = inp.X.GetLength(2); // spatial dim.
+            int N = inp.Nodes.GetLength(1); // nodes per cell
+            int D = inp.Nodes.GetLength(2); // spatial dim.
             int NoOfVars = this.ArgumentOrdering.Count;
             LevelSetTracker lsTrk = inp.LsTrk;
 
@@ -524,8 +524,8 @@ namespace BoSSS.Foundation.XDG {
                 //    cp.NegCellLengthScale = double.NaN;
 
                 for (int n = 0; n < N; n++) { // loop over nodes...
-                    cp.Normal.SetFrom(inp.Normal, j, n);
-                    cp.X.SetFrom(inp.X, j, n);
+                    cp.Normal.SetFrom(inp.Normals, j, n);
+                    cp.X.SetFrom(inp.Nodes, j, n);
                     for (int i = 0; i < NP; i++) {
                         ParamsPos[i] = inp.ParamsPos[i][j, n];
                         ParamsNeg[i] = inp.ParamsNeg[i][j, n];
@@ -542,8 +542,8 @@ namespace BoSSS.Foundation.XDG {
         void ILevelSetForm_V.LevelSetForm_V(LevSetIntParams inp, MultidimensionalArray Koeff_V) {
             int j0 = inp.i0;
             int Len = inp.Len;
-            int N = inp.X.GetLength(1); // nodes per cell
-            int D = inp.X.GetLength(2); // spatial dim.
+            int N = inp.Nodes.GetLength(1); // nodes per cell
+            int D = inp.Nodes.GetLength(2); // spatial dim.
             int NoOfVars = this.ArgumentOrdering.Count;
             LevelSetTracker lsTrk = inp.LsTrk;
 
@@ -602,8 +602,8 @@ namespace BoSSS.Foundation.XDG {
                 //    cp.NegCellLengthScale = double.NaN;
 
                 for (int n = 0; n < N; n++) { // loop over nodes...
-                    cp.Normal.SetFrom(inp.Normal, j, n);
-                    cp.X.SetFrom(inp.X, j, n);
+                    cp.Normal.SetFrom(inp.Normals, j, n);
+                    cp.X.SetFrom(inp.Nodes, j, n);
                     for (int i = 0; i < NP; i++) {
                         ParamsPos[i] = inp.ParamsPos[i][j, n];
                         ParamsNeg[i] = inp.ParamsNeg[i][j, n];

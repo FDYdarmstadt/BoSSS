@@ -523,7 +523,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                     for(int d = 0; d < D; d++) {
                         cp.Normal[d] = efp.Normals[l, k, d];
-                        cp.X[d] = efp.NodesGlobal[l, k, d];
+                        cp.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int np = 0; np < NoParams; np++) {
@@ -566,7 +566,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                     for(int d = 0; d < D; d++) {
                         cp.Normal[d] = efp.Normals[l, k, d];
-                        cp.X[d] = efp.NodesGlobal[l, k, d];
+                        cp.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int np = 0; np < NoParams; np++) {
@@ -611,7 +611,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                     for(int d = 0; d < D; d++) {
                         cp.Normal[d] = efp.Normals[l, k, d];
-                        cp.X[d] = efp.NodesGlobal[l, k, d];
+                        cp.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int np = 0; np < NoParams; np++) {
@@ -658,7 +658,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                     for(int d = 0; d < D; d++) {
                         cp.Normal[d] = efp.Normals[l, k, d];
-                        cp.X[d] = efp.NodesGlobal[l, k, d];
+                        cp.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int np = 0; np < NoParams; np++) {
@@ -718,7 +718,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                     for(int d = 0; d < D; d++) {
                         cp.Normal[d] = efp.Normals[l, k, d];
-                        cp.X[d] = efp.NodesGlobal[l, k, d];
+                        cp.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int np = 0; np < NoParams; np++) {
@@ -755,7 +755,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                     for(int d = 0; d < D; d++) {
                         cp.Normal[d] = efp.Normals[l, k, d];
-                        cp.X[d] = efp.NodesGlobal[l, k, d];
+                        cp.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int np = 0; np < NoParams; np++) {
@@ -795,7 +795,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                     for(int d = 0; d < D; d++) {
                         cp.Normal[d] = efp.Normals[l, k, d];
-                        cp.X[d] = efp.NodesGlobal[l, k, d];
+                        cp.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int np = 0; np < NoParams; np++) {
@@ -832,7 +832,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                     for(int d = 0; d < D; d++) {
                         cp.Normal[d] = efp.Normals[l, k, d];
-                        cp.X[d] = efp.NodesGlobal[l, k, d];
+                        cp.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int np = 0; np < NoParams; np++) {
@@ -866,7 +866,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                     for(int d = 0; d < D; d++) {
                         cp.Normal[d] = efp.Normals[l, k, d];
-                        cp.X[d] = efp.NodesGlobal[l, k, d];
+                        cp.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int np = 0; np < NoParams; np++) {
@@ -905,7 +905,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                     for(int d = 0; d < D; d++) {
                         cp.Normal[d] = efp.Normals[l, k, d];
-                        cp.X[d] = efp.NodesGlobal[l, k, d];
+                        cp.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int np = 0; np < NoParams; np++) {
@@ -942,7 +942,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                     for(int d = 0; d < D; d++) {
                         cp.Normal[d] = efp.Normals[l, k, d];
-                        cp.X[d] = efp.NodesGlobal[l, k, d];
+                        cp.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int np = 0; np < NoParams; np++) {
@@ -983,7 +983,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                     for(int d = 0; d < D; d++) {
                         cp.Normal[d] = efp.Normals[l, k, d];
-                        cp.X[d] = efp.NodesGlobal[l, k, d];
+                        cp.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int np = 0; np < NoParams; np++) {
