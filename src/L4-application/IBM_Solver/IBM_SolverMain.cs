@@ -54,7 +54,6 @@ namespace BoSSS.Application.IBM_Solver {
         /// Application entry point.
         /// </summary>
         static void Main(string[] args) {
-         
             BoSSS.Solution.Application<IBM_Control>._Main(args, false, delegate () {
                 var p = new IBM_SolverMain();
                 return p;
@@ -318,10 +317,8 @@ namespace BoSSS.Application.IBM_Solver {
                         var comps = IBM_Op.EquationComponents[CodName[d]];
                         var compsJ = IBM_Op_Jacobian.EquationComponents[CodName[d]];
 
-                        //var ConvBulk = new Solution.XNSECommon.Operator.Convection.ConvectionInBulk_LLF(D, BcMap, d, this.Control.PhysicalParameters.rho_A, 1, IBM_Op_config.dntParams.LFFA, IBM_Op_config.dntParams.LFFB, LsTrk);
-                        //var ConvBulk = new Solution.NSECommon.LinearizedConvection(D, boundaryCondMap, d);
-                        var ConvBulk = new UpwindConvection(D, boundaryCondMap, d);
-                        //IBM_Op.OnIntegratingBulk += ConvBulk.SetParameter;
+                        var ConvBulk = new Solution.NSECommon.LinearizedConvection(D, boundaryCondMap, d);
+                        var ConvBulkUp = new UpwindConvection(D, boundaryCondMap, d);
                         comps.Add(ConvBulk); // bulk component
 
                         var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(d, D, LsTrk, this.Control.AdvancedDiscretizationOptions.LFFA, boundaryCondMap,
@@ -330,8 +327,8 @@ namespace BoSSS.Application.IBM_Solver {
                         comps.Add(ConvIB); // immersed boundary component
 
                         // Jacobian 
-                        var ConvDerivEdg = new EdgeFormDifferentiator(ConvBulk);
-                        var ConvDerivVol = new VolumeFormDifferentiator(ConvBulk);
+                        var ConvDerivEdg = new EdgeFormDifferentiator(ConvBulkUp);
+                        var ConvDerivVol = new VolumeFormDifferentiator(ConvBulkUp);
                         compsJ.Add(ConvDerivEdg);
                         compsJ.Add(ConvDerivVol);
 
