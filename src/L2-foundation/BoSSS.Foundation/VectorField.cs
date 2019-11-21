@@ -429,12 +429,12 @@ namespace BoSSS.Foundation {
         /// <param name="bndMode"></param>
         /// <remarks>
         /// This method is based on
-        /// <see cref="DGField.DerivativeByFlux(double,DGField,int,SubGrid,SpatialOperator.SubGridBoundaryModes)"/>,
+        /// <see cref="DGField.DerivativeByFlux(double,DGField,int,SubGrid,SubGridBoundaryModes)"/>,
         /// i.e. it calculates derivatives by central-difference fluxes;
         /// </remarks>
         /* <seealso cref="DGField.Curl2DByFlux{T}"/> */
         public void Curl3DByFlux(double alpha, VectorField<T> vec,
-            SubGrid optionalSubGrid = null, SpatialOperator.SubGridBoundaryModes bndMode = SpatialOperator.SubGridBoundaryModes.OpenBoundary) {
+            SubGrid optionalSubGrid = null, SubGridBoundaryModes bndMode = SubGridBoundaryModes.OpenBoundary) {
             if (vec.Dim != 3)
                 throw new ArgumentException("this method works only for 3-dimensional vector fields.", "vec");
             if (this.Dim != 3)
@@ -497,7 +497,7 @@ namespace BoSSS.Foundation {
             double alpha,
             DGField f,
             SubGrid optionalSubGrid = null,
-            SpatialOperator.SubGridBoundaryModes bndMode = SpatialOperator.SubGridBoundaryModes.OpenBoundary) {
+            SubGridBoundaryModes bndMode = SubGridBoundaryModes.OpenBoundary) {
 
             int D = f.Basis.GridDat.SpatialDimension;
 

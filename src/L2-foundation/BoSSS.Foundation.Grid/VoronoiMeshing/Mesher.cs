@@ -15,7 +15,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             public int FirstCellNode_indice = 0;
         }
 
-        Settings settings;
+        //Settings settings;
 
         MeshingAlgorithm.Settings ConvertToMesherSettings(Settings settings)
         {

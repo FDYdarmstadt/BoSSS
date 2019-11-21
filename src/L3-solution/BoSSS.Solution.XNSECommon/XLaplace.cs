@@ -215,7 +215,7 @@ namespace BoSSS.Solution.XNSECommon {
         protected Mode m_mode;
 
         
-        public virtual double LevelSetForm(ref CommonParamsLs inp, 
+        public virtual double LevelSetForm(ref CommonParams inp, 
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double[] N = inp.Normal;
@@ -246,12 +246,12 @@ namespace BoSSS.Solution.XNSECommon {
             return Ret;
         }
 
-        protected double GetPenalty(ref CommonParamsLs inp) {
+        protected double GetPenalty(ref CommonParams inp) {
             //double penaltySizeFactor_A = 1.0 / this.ccBB.Get_hminBB(this.NegativeSpecies, inp.jCell);
             //double penaltySizeFactor_B = 1.0 / this.ccBB.Get_hminBB(this.PositiveSpecies, inp.jCell);
 
-            double PosCellLengthScale = PosLengthScaleS[inp.jCell];
-            double NegCellLengthScale = NegLengthScaleS[inp.jCell];
+            double PosCellLengthScale = PosLengthScaleS[inp.jCellOut];
+            double NegCellLengthScale = NegLengthScaleS[inp.jCellIn];
 
             double penaltySizeFactor_A = 1.0 / NegCellLengthScale;
             double penaltySizeFactor_B = 1.0 / PosCellLengthScale;
@@ -284,7 +284,7 @@ namespace BoSSS.Solution.XNSECommon {
         //List<int> cellElo = new List<int>();
 
 
-        protected void ComputeScaling(ref CommonParamsLs inp, out double scaleIN, out double scaleOT) {
+        protected void ComputeScaling(ref CommonParams inp, out double scaleIN, out double scaleOT) {
             Debug.Assert(Math.Sign(muA) == Math.Sign(muB));
                     
             switch(this.m_mode) {

@@ -198,7 +198,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             }
         }
 
-        public double LevelSetForm(ref Foundation.XDG.CommonParamsLs cp,
+        public double LevelSetForm(ref CommonParams cp,
             double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 

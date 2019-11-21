@@ -449,7 +449,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             //            OldLevSet.Mapping, ExtVel, NewLevelSet.Mapping,
             //            qInsEdge: new EdgeQuadratureScheme(domain: NEARgrid.InnerEdgesMask),
             //            qInsVol: new CellQuadratureScheme(domain: CellMask.GetEmptyMask(gdat)),
-            //            bndMode: SpatialOperator.SubGridBoundaryModes.InnerEdge);
+            //            bndMode: SubGridBoundaryModes.InnerEdge);
 
 
 

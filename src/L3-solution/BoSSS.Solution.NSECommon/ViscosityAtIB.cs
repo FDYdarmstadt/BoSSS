@@ -67,7 +67,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         /// <summary>
         /// default-implementation
         /// </summary>
-        public double LevelSetForm(ref CommonParamsLs inp,
+        public double LevelSetForm(ref CommonParams inp,
         //public override double EdgeForm(ref Linear2ndDerivativeCouplingFlux.CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
@@ -81,7 +81,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             //    // very small cell -- clippling
             //    hCutCellMin = hCellMin;
             //double _penalty = penalty(hCutCellMin);
-            double _penalty = m_PenaltyFunc(m_penalty, inp.jCell);
+            double _penalty = m_PenaltyFunc(m_penalty, inp.jCellIn);
 
             int D = N.Length;
 
@@ -211,7 +211,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
 
         public override void DerivativVar_LevelSetFlux(out double FlxNeg, out double FlxPos,
-            ref CommonParamsLs cp,
+            ref CommonParams cp,
             double[] U_A, double[] U_B, double[,] GradU_A, double[,] GradU_B)
         {
 
@@ -391,7 +391,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
 
         public override void PrimalVar_LevelSetFlux(out double FlxNeg, out double FlxPos,
-            ref CommonParamsLs cp,
+            ref CommonParams cp,
             double[] U_Neg, double[] U_Pos)
         {
             //EquationAndVarMode varMode = T.varmode;
@@ -419,7 +419,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             G = U[this.m_d]; //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
         }
 
-        public override void Nu(out double NuNeg, out double NuPos, ref CommonParamsLs cp)
+        public override void Nu(out double NuNeg, out double NuPos, ref CommonParams cp)
         {
             NuPos = 1;
             NuNeg = 1;

@@ -89,17 +89,17 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
 
-        public override double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public override double LevelSetForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
             double[] Normal = cp.Normal;
 
-            double M = ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.Normal, cp.jCell);
+            double M = ComputeEvaporationMass(cp.Parameters_IN, cp.Parameters_OUT, cp.Normal, cp.jCellIn);
             if (M == 0.0)
                 return 0.0;
 
             double massFlux = M.Pow2() * ((1 / rhoA) - (1 / rhoB)) * Normal[m_d];
                
-            double p_disp = cp.ParamsNeg[1];
+            double p_disp = cp.Parameters_IN[1];
             // augmented capillary pressure
             //double acp_jump = 0.0;
             //if(!double.IsNaN(p_disp))

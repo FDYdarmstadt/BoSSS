@@ -279,7 +279,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 evo = op.GetEvaluatorEx(Phi.Mapping.Fields, gradPhi.Mapping.Fields, Phi.Mapping,
                     edgeQrCtx: (new EdgeQuadratureScheme(domain: EdgeMask.GetEmptyMask(this.GridDat))),
                     volQrCtx: (new CellQuadratureScheme(domain: jCellGrid.VolumeMask)));
-                evo.ActivateSubgridBoundary(jCellGrid.VolumeMask, subGridBoundaryTreatment: SpatialOperator.SubGridBoundaryModes.InnerEdge);
+                evo.ActivateSubgridBoundary(jCellGrid.VolumeMask, subGridBoundaryTreatment: SubGridBoundaryModes.InnerEdge);
             }
 
             // create artificial diffusion operator

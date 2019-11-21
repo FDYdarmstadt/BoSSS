@@ -84,17 +84,17 @@ namespace BoSSS.Solution.RheologyCommon {
         /// <summary>
         /// default-implementation
         /// </summary>
-        public double LevelSetForm(ref CommonParamsLs inp,
+        public double LevelSetForm(ref CommonParams inp,
             double[] UA, double[] UB, double[,] Grad_uA, double[,] Grad_uB,
             double VA, double VB, double[] Grad_vA, double[] Grad_vB) {
             double[] N = inp.Normal;
-            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCell];
+            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCellIn];
 
             int D = N.Length;
             Debug.Assert(this.ArgumentOrdering.Count == 2);
 
-            double PosCellLengthScale = PosLengthScaleS[inp.jCell];
-            double NegCellLengthScale = NegLengthScaleS[inp.jCell];
+            double PosCellLengthScale = PosLengthScaleS[inp.jCellOut];
+            double NegCellLengthScale = NegLengthScaleS[inp.jCellIn];
 
             double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
             if (hCutCellMin <= 1.0e-10 * hCellMin)

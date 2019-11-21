@@ -235,7 +235,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                     Phi.Mapping, null, gradPhi.Mapping,
                     edgeQrCtx: (new EdgeQuadratureScheme(domain: Sgrd.AllEdgesMask)),
                     volQrCtx: (new CellQuadratureScheme(domain: Sgrd.VolumeMask)));
-                m_gradEvo.ActivateSubgridBoundary(subGridBoundaryTreatment: SpatialOperator.SubGridBoundaryModes.BoundaryEdge, sgrd: Sgrd.VolumeMask);
+                m_gradEvo.ActivateSubgridBoundary(subGridBoundaryTreatment: SubGridBoundaryModes.BoundaryEdge, sgrd: Sgrd.VolumeMask);
 
                 m_gradEvo_jCell = jCell;
             }
@@ -267,7 +267,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 (new EdgeQuadratureScheme(domain: Sgrd.AllEdgesMask)),
                 (new CellQuadratureScheme(domain: Sgrd.VolumeMask)));
 
-            gradEvo.ActivateSubgridBoundary(Sgrd.VolumeMask, SpatialOperator.SubGridBoundaryModes.BoundaryEdge);
+            gradEvo.ActivateSubgridBoundary(Sgrd.VolumeMask, SubGridBoundaryModes.BoundaryEdge);
 
             //Sgrd.VolumeMask.ToTxtFile("nar.csv", false);
 
@@ -276,7 +276,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
             gradEvo.time = 0.0;
             gradEvo.MPITtransceive = false;
             gradEvo.Evaluate(1.0, 0.0, gradPhi.CoordinateVector);
-            //gradPhi.GradientByFlux(1.0, Phi, optionalSubGrid:Sgrd , bndMode: SpatialOperator.SubGridBoundaryModes.BoundaryEdge);
+            //gradPhi.GradientByFlux(1.0, Phi, optionalSubGrid:Sgrd , bndMode: SubGridBoundaryModes.BoundaryEdge);
 
             
         }

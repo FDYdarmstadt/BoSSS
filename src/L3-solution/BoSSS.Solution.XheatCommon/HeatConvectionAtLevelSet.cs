@@ -93,14 +93,14 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
 
-        public double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+        public double LevelSetForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
             double[] U_NegFict, U_PosFict;
 
 
             this.TransformU(ref U_Neg, ref U_Pos, out U_NegFict, out U_PosFict);
 
-            double[] ParamsNeg = cp.ParamsNeg;
-            double[] ParamsPos = cp.ParamsPos;
+            double[] ParamsNeg = cp.Parameters_IN;
+            double[] ParamsPos = cp.Parameters_OUT;
             double[] ParamsPosFict, ParamsNegFict;
             this.TransformU(ref ParamsNeg, ref ParamsPos, out ParamsNegFict, out ParamsPosFict);
 
@@ -134,16 +134,10 @@ namespace BoSSS.Solution.XheatCommon {
                 FlxNeg = capA * r;
 
 
-            } else { 
+            } else {
 
-                BoSSS.Foundation.CommonParams inp; // = default(BoSSS.Foundation.InParams);
-                inp.Parameters_IN = ParamsNeg;
+                BoSSS.Foundation.CommonParams inp = cp;
                 inp.Parameters_OUT = ParamsNegFict;
-                inp.Normal = cp.Normal;
-                inp.iEdge = int.MinValue;
-                inp.GridDat = this.m_LsTrk.GridDat;
-                inp.X = cp.X;
-                inp.time = cp.time;
 
                 FlxNeg = this.NegFlux.IEF(ref inp, U_Neg, U_NegFict);
                 //Console.WriteLine("FlxNeg = {0}", FlxNeg);
@@ -180,14 +174,8 @@ namespace BoSSS.Solution.XheatCommon {
 
             } else {
 
-                BoSSS.Foundation.CommonParams inp; // = default(BoSSS.Foundation.InParams);
+                BoSSS.Foundation.CommonParams inp = cp;
                 inp.Parameters_IN = ParamsPosFict;
-                inp.Parameters_OUT = ParamsPos;
-                inp.Normal = cp.Normal;
-                inp.iEdge = int.MinValue;
-                inp.GridDat = this.m_LsTrk.GridDat;
-                inp.X = cp.X;
-                inp.time = cp.time;
 
                 FlxPos = this.PosFlux.IEF(ref inp, U_PosFict, U_Pos);
                 //Console.WriteLine("FlxPos = {0}", FlxPos);
@@ -292,12 +280,12 @@ namespace BoSSS.Solution.XheatCommon {
 
         }
 
-        public override double LevelSetForm(ref Foundation.XDG.CommonParamsLs cp,
+        public override double LevelSetForm(ref CommonParams cp,
             double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
 
-            double M = ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.Normal, cp.jCell);
+            double M = ComputeEvaporationMass(cp.Parameters_IN, cp.Parameters_OUT, cp.Normal, cp.jCellIn);
             if (M == 0.0)
                 return 0.0;
 

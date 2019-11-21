@@ -71,7 +71,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Pressure {
             }
         }
 
-        public double LevelSetForm(ref CommonParamsLs inp, double[] pA, double[] pB, double[,] Grad_pA, double[,] Grad_pB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public double LevelSetForm(ref CommonParams inp, double[] pA, double[] pB, double[,] Grad_pA, double[,] Grad_pB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             return vA * pA[0] * inp.Normal[m_d];
         }
     }

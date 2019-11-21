@@ -74,18 +74,18 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         }
 
 
-        public double LevelSetForm(ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            // Convert CommonParamsLs to CommonParams
-            CommonParams commonParams;
-            commonParams.Normal = inp.Normal;
-            commonParams.X = inp.X;
-            commonParams.Parameters_IN = inp.ParamsNeg;
-            commonParams.Parameters_OUT = inp.ParamsPos;
-            commonParams.iEdge = int.MaxValue; // Alternative: use cell index as edge index --> Might this cause problems?
-            commonParams.GridDat = this.levelSetTracker.GridDat;
-            commonParams.time = inp.time;
+        public double LevelSetForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+            //// Convert CommonParams to CommonParams
+            //CommonParams commonParams;
+            //commonParams.Normal = inp.Normal;
+            //commonParams.X = inp.X;
+            //commonParams.Parameters_IN = inp.Parameters_IN;
+            //commonParams.Parameters_OUT = inp.Parameters_OUT;
+            //commonParams.iEdge = int.MaxValue; // Alternative: use cell index as edge index --> Might this cause problems?
+            //commonParams.GridDat = this.levelSetTracker.GridDat;
+            //commonParams.time = inp.time;
 
-            return this.bulkFlux.InnerEdgeFormHack(ref commonParams, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB);
+            return this.bulkFlux.InnerEdgeFormHack(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB);
         }
 
         public void LevelSetForm_GradV(LevSetIntParams inp, MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB, MultidimensionalArray Koeff_GradV) {

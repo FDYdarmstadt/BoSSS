@@ -107,7 +107,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         }
                
 
-        public double LevelSetForm(ref CommonParamsLs inp,
+        public double LevelSetForm(ref CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
@@ -115,8 +115,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             if (Math.Abs(N * m_Direction - 1.0) >= 1.0e-8)
                 throw new ArithmeticException("Normal Vector mismatch.");
 
-            double u0In = inp.ParamsNeg[0];
-            double u0Ot = inp.ParamsPos[0];
+            double u0In = inp.Parameters_IN[0];
+            double u0Ot = inp.Parameters_OUT[0];
             double uIn = uA[0];
             double uOt = uB[0];
 

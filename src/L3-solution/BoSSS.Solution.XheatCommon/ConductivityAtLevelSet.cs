@@ -59,13 +59,13 @@ namespace BoSSS.Solution.XheatCommon {
         /// <summary>
         /// default-implementation
         /// </summary>
-        public double LevelSetForm(ref CommonParamsLs inp,
+        public double LevelSetForm(ref CommonParams inp,
         //public override double EdgeForm(ref Linear2ndDerivativeCouplingFlux.CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
             double[] N = inp.Normal;
-            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCell];
+            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCellIn];
 
             int D = N.Length;
             //Debug.Assert(this.ArgumentOrdering.Count == D);
@@ -82,8 +82,8 @@ namespace BoSSS.Solution.XheatCommon {
                 Grad_vB_xN += Grad_vB[d] * N[d];
             }
 
-            double PosCellLengthScale = PosLengthScaleS[inp.jCell];
-            double NegCellLengthScale = NegLengthScaleS[inp.jCell];
+            double PosCellLengthScale = PosLengthScaleS[inp.jCellOut];
+            double NegCellLengthScale = NegLengthScaleS[inp.jCellIn];
 
             double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
             Debug.Assert(!(double.IsInfinity(hCutCellMin) || double.IsNaN(hCutCellMin)));
@@ -181,7 +181,7 @@ namespace BoSSS.Solution.XheatCommon {
         /// <summary>
         /// 
         /// </summary>
-        public double LevelSetForm(ref Foundation.XDG.CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
+        public double LevelSetForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
 
@@ -257,7 +257,7 @@ namespace BoSSS.Solution.XheatCommon {
         /// <summary>
         /// 
         /// </summary>
-        public double LevelSetForm(ref Foundation.XDG.CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
+        public double LevelSetForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
 
@@ -343,7 +343,7 @@ namespace BoSSS.Solution.XheatCommon {
         /// <summary>
         /// 
         /// </summary>
-        public double LevelSetForm(ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
+        public double LevelSetForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
 
@@ -408,7 +408,7 @@ namespace BoSSS.Solution.XheatCommon {
         /// <summary>
         /// 
         /// </summary>
-        public double LevelSetForm(ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
+        public double LevelSetForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
             //return (uA[0] - uB[0]) * inp.n[m_d] * (vA - vB);

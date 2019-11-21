@@ -203,12 +203,12 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// <summary>
         /// default-implementation
         /// </summary>
-        public double LevelSetForm(ref CommonParamsLs inp,
+        public double LevelSetForm(ref CommonParams inp,
         //public override double EdgeForm(ref Linear2ndDerivativeCouplingFlux.CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double[] N = inp.Normal;
-            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCell];
+            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCellIn];
 
             // symmetric interior penalty
             // ==========================
@@ -222,8 +222,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 Grad_vB_xN += Grad_vB[d] * N[d];
             }
 
-            double NegCellLengthScale = NegCellLengthScaleS[inp.jCell];
-            double PosCellLengthScale = PosCellLengthScaleS[inp.jCell];
+            double NegCellLengthScale = NegCellLengthScaleS[inp.jCellIn];
+            double PosCellLengthScale = PosCellLengthScaleS[inp.jCellOut];
             double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
             Debug.Assert(!(double.IsInfinity(hCutCellMin) || double.IsNaN(hCutCellMin)));
 

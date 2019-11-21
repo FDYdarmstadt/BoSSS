@@ -44,11 +44,6 @@ namespace BoSSS.Foundation.XDG {
     public partial class XSpatialOperatorMk2 {
 
 
-        //==========================================================================================================================
-        // new code
-        //==========================================================================================================================
-
-
         /// <summary>
         /// for constructing evaluators of the species terms
         /// </summary>
@@ -142,7 +137,6 @@ namespace BoSSS.Foundation.XDG {
 
         }
 
-
         SpeciesId[] m_Species;
 
         internal const int ___SpeciesIDOffest = 11111;  // not to be changed!!! -> value defined by levelSetTracker
@@ -185,23 +179,9 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
-        ///// <summary>
-        ///// hack
-        ///// </summary>
-        //IEvaluatorNonLin_ GetEvaluatorExBase(IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
-        //    return m_SpatialOperator.GetEvaluatorEx(DomainFields, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
-        //}
-
         IEvaluatorNonLin_ GetSpeciesEvaluatorExBase(SpeciesId spcId, IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
             return m_SpeciesOperator[spcId].GetEvaluatorEx(DomainFields, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
         }
-
-        ///// <summary>
-        ///// nix für kleine Kinder (wilder hack)
-        ///// </summary>
-        //IEvaluatorLinear GetMatrixBuilderBase(UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
-        //    return m_SpatialOperator.GetMatrixBuilder(DomainVarMap, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
-        //}
 
         IEvaluatorLinear_ GetSpeciesMatrixBuilderBase(SpeciesId spcId, UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
             return m_SpeciesOperator[spcId].GetMatrixBuilder(DomainVarMap, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
@@ -337,7 +317,9 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
-
+        /// <summary>
+        /// This class acts as a frame for some other vector, and presents only those entries which are associated with a given species.
+        /// </summary>
         internal class SpeciesFrameVector<V> : IList<double>
             where V : IList<double> {
 
@@ -533,8 +515,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// This class acts as a frame fore some other matrix, and presents only those entries which are associated
-        /// with a given species.
+        /// This class acts as a frame for some other matrix, and presents only those entries which are associated with a given species.
         /// </summary>
         public class SpeciesFrameMatrix<M> : IMutableMatrixEx
             where M : IMutableMatrixEx {
@@ -1187,8 +1168,6 @@ namespace BoSSS.Foundation.XDG {
             return r;
         }
 
-
-
         /// <summary>
         /// verifies all equation components;
         /// </summary>
@@ -1301,6 +1280,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         
+
         /// <summary>
         /// <see cref="EquationComponents"/>
         /// </summary>

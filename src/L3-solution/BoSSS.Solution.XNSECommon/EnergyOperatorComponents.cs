@@ -212,6 +212,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                         inp2.Parameters_IN = inp.Parameters_IN;
                         inp2.X = inp.X;
                         inp2.time = inp.time;
+                        inp2.jCellIn = inp.jCellIn;
+                        inp2.jCellOut = int.MinValue;
 
                         // Specify Parameters_OUT
                         // ======================
@@ -451,27 +453,21 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
         }
 
 
-        public double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+        public double LevelSetForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
             double[] U_NegFict, U_PosFict;
 
             this.TransformU(ref U_Neg, ref U_Pos, out U_NegFict, out U_PosFict);
 
-            double[] ParamsNeg = cp.ParamsNeg;
-            double[] ParamsPos = cp.ParamsPos;
+            double[] ParamsNeg = cp.Parameters_IN;
+            double[] ParamsPos = cp.Parameters_OUT;
             double[] ParamsPosFict, ParamsNegFict;
             this.TransformU(ref ParamsNeg, ref ParamsPos, out ParamsNegFict, out ParamsPosFict);
             //Flux for negativ side
             double FlxNeg;
             {
 
-                BoSSS.Foundation.CommonParams inp; // = default(BoSSS.Foundation.InParams);
-                inp.Parameters_IN = ParamsNeg;
+                CommonParams inp = cp; // = default(BoSSS.Foundation.InParams);
                 inp.Parameters_OUT = ParamsNegFict;
-                inp.Normal = cp.Normal;
-                inp.iEdge = int.MinValue;
-                inp.GridDat = this.m_LsTrk.GridDat;
-                inp.X = cp.X;
-                inp.time = cp.time;
 
                 FlxNeg = this.NegFlux.IEF(ref inp, U_Neg, U_NegFict);
             }
@@ -479,13 +475,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
             double FlxPos;
             {
 
-                BoSSS.Foundation.CommonParams inp; // = default(BoSSS.Foundation.InParams);
+                BoSSS.Foundation.CommonParams inp = cp; // = default(BoSSS.Foundation.InParams);
                 inp.Parameters_IN = ParamsPosFict;
-                inp.Parameters_OUT = ParamsPos;
-                inp.Normal = cp.Normal;
-                inp.iEdge = int.MinValue;
-                inp.GridDat = this.m_LsTrk.GridDat;
-                inp.X = cp.X;
                 inp.time = cp.time;
 
                 FlxPos = this.PosFlux.IEF(ref inp, U_PosFict, U_Pos);
@@ -877,13 +868,13 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
         /// <summary>
         /// default-implementation
         /// </summary>
-        public double LevelSetForm(ref CommonParamsLs inp,
+        public double LevelSetForm(ref CommonParams inp,
         //public override double EdgeForm(ref Linear2ndDerivativeCouplingFlux.CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
             double[] N = inp.Normal;
-            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCell];
+            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCellIn];
 
             int D = N.Length;
             //Debug.Assert(this.ArgumentOrdering.Count == D);
@@ -900,8 +891,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                 Grad_vB_xN += Grad_vB[d] * N[d];
             }
 
-            double PosCellLengthScale = PosLengthScaleS[inp.jCell];
-            double NegCellLengthScale = NegLengthScaleS[inp.jCell];
+            double PosCellLengthScale = PosLengthScaleS[inp.jCellOut];
+            double NegCellLengthScale = NegLengthScaleS[inp.jCellIn];
 
             double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
             Debug.Assert(!(double.IsInfinity(hCutCellMin) || double.IsNaN(hCutCellMin)));
@@ -1173,12 +1164,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
         }
 
 
-        public Double LevelSetForm(ref CommonParamsLs inp, Double[] uA, Double[] uB, Double[,] Grad_uA, Double[,] Grad_uB, Double vA, Double vB, Double[] Grad_vA, Double[] Grad_vB) {
+        public Double LevelSetForm(ref CommonParams inp, Double[] uA, Double[] uB, Double[,] Grad_uA, Double[,] Grad_uB, Double vA, Double vB, Double[] Grad_vA, Double[] Grad_vB) {
 
-            double[] Vel_A = inp.ParamsNeg.GetSubVector(0, m_D);
-            double[] Vel_B = inp.ParamsPos.GetSubVector(0, m_D);
-            double[,] GradVel_A = VelociytGradient(inp.ParamsNeg.GetSubVector(m_D, m_D), inp.ParamsNeg.GetSubVector(2 * m_D, m_D));
-            double[,] GradVel_B = VelociytGradient(inp.ParamsPos.GetSubVector(m_D, m_D), inp.ParamsPos.GetSubVector(2 * m_D, m_D));
+            double[] Vel_A = inp.Parameters_IN.GetSubVector(0, m_D);
+            double[] Vel_B = inp.Parameters_OUT.GetSubVector(0, m_D);
+            double[,] GradVel_A = VelociytGradient(inp.Parameters_IN.GetSubVector(m_D, m_D), inp.Parameters_IN.GetSubVector(2 * m_D, m_D));
+            double[,] GradVel_B = VelociytGradient(inp.Parameters_OUT.GetSubVector(m_D, m_D), inp.Parameters_OUT.GetSubVector(2 * m_D, m_D));
             //double p_A = inp.ParamsNeg[3 * m_D];
             //double p_B = inp.ParamsPos[3 * m_D];
 
@@ -1244,13 +1235,13 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
         double sigma;
 
 
-        public double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            Debug.Assert(cp.ParamsPos[0] == cp.ParamsNeg[0], "interface velocityX must be continuous across interface");
-            Debug.Assert(cp.ParamsPos[1] == cp.ParamsNeg[1], "interface velocityY must be continuous across interface");
-            Debug.Assert(cp.ParamsPos[2] == cp.ParamsNeg[2], "curvature must be continuous across interface");
+        public double LevelSetForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+            Debug.Assert(cp.Parameters_OUT[0] == cp.Parameters_IN[0], "interface velocityX must be continuous across interface");
+            Debug.Assert(cp.Parameters_OUT[1] == cp.Parameters_IN[1], "interface velocityY must be continuous across interface");
+            Debug.Assert(cp.Parameters_OUT[2] == cp.Parameters_IN[2], "curvature must be continuous across interface");
 
-            double curvature = cp.ParamsPos[m_D];
-            double[] Vel = cp.ParamsPos.GetSubVector(0, m_D);
+            double curvature = cp.Parameters_OUT[m_D];
+            double[] Vel = cp.Parameters_OUT.GetSubVector(0, m_D);
             double[] Normal = cp.Normal;
 
             double surfE = 0;
@@ -1424,12 +1415,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
         int m_D;
 
 
-        public Double LevelSetForm(ref CommonParamsLs inp, Double[] uA, Double[] uB, Double[,] Grad_uA, Double[,] Grad_uB, Double vA, Double vB, Double[] Grad_vA, Double[] Grad_vB) {
+        public Double LevelSetForm(ref CommonParams inp, Double[] uA, Double[] uB, Double[,] Grad_uA, Double[,] Grad_uB, Double vA, Double vB, Double[] Grad_vA, Double[] Grad_vB) {
 
-            double[] Vel_A = inp.ParamsNeg.GetSubVector(0, m_D);
-            double[] Vel_B = inp.ParamsPos.GetSubVector(0, m_D);
-            double p_A = inp.ParamsNeg[m_D];
-            double p_B = inp.ParamsPos[m_D];
+            double[] Vel_A = inp.Parameters_IN.GetSubVector(0, m_D);
+            double[] Vel_B = inp.Parameters_OUT.GetSubVector(0, m_D);
+            double p_A = inp.Parameters_IN[m_D];
+            double p_B = inp.Parameters_OUT[m_D];
 
             double ret = 0.0;
 
