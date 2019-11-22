@@ -313,15 +313,16 @@ namespace BoSSS.Application.IBM_Solver {
                     for (int d = 0; d < D; d++) {
 
                         var comps = IBM_Op.EquationComponents[CodName[d]];
-                        //var compsJ = IBM_Op_Jacobian.EquationComponents[CodName[d]];
-
+                       
                         //var ConvBulk = new Solution.NSECommon.LinearizedConvection(D, boundaryCondMap, d);
-                        var ConvBulkUp = new UpwindConvection(D, boundaryCondMap, d);
+                        var ConvBulkUp = new UpwindConvection(D, boundaryCondMap, d, Control.PhysicalParameters.rho_A);
                         comps.Add(ConvBulkUp); // bulk component
 
-                        var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(d, D, LsTrk, this.Control.AdvancedDiscretizationOptions.LFFA, boundaryCondMap,
-                            delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; }, this.Control.PhysicalParameters.rho_A, false);
-
+                        //var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(
+                        //    d, D, LsTrk, this.Control.AdvancedDiscretizationOptions.LFFA, boundaryCondMap,
+                        //    delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; }, this.Control.PhysicalParameters.rho_A, false);
+                        var ConvIB = new ConvectionAtIB(LsTrk, d, D, Control.PhysicalParameters.rho_A, false);
+                        
                         comps.Add(ConvIB); // immersed boundary component
 
                     }
@@ -522,45 +523,85 @@ namespace BoSSS.Application.IBM_Solver {
 
             // create matrix and affine vector:
             if (OpMatrix != null) {
+
+                {
+                    Random rnd = new Random();
+                    var css = new CoordinateVector(CurrentState);
+                    for (int i = 0; i < css.Count; i++)
+                        css[i] = rnd.NextDouble();
+                }
+
+
                 // using ad-hoc linearization:
                 // - - - - - - - - - - - - - - 
-                //ParameterUpdate(CurrentState, Params);
-                //var mtxBuilder = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, FluidSpecies);
-                //mtxBuilder.time = phystime;
-                //mtxBuilder.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
-                //mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
+                ParameterUpdate(CurrentState, Params);
+                var mtxBuilder = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, FluidSpecies);
+                mtxBuilder.time = phystime;
+                mtxBuilder.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+                var __OpMatrix = new BlockMsrMatrix(OpMatrix._ColPartitioning);
+                var __OpAffine = new double[__OpMatrix._ColPartitioning.LocalLength];
+                mtxBuilder.ComputeMatrix(__OpMatrix, __OpAffine);
 
                 // using finite difference Jacobi:
                 // - - - - - - - - - - - - - - - -
-                var mtxBuilder2 = IBM_Op.GetFDJacobianBuilder(LsTrk, CurrentState, Params, Mapping,
-                    ParameterUpdate,
+                //Stopwatch s1 = new Stopwatch();
+                //s1.Start();
+                var mtxBuilder2 = IBM_Op.GetFDJacobianBuilder(LsTrk, CurrentState, null, Mapping,
+                    null,
                     FluidSpecies);
                 mtxBuilder2.time = phystime;
                 mtxBuilder2.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
                 mtxBuilder2.ComputeMatrix(OpMatrix, OpAffine);
+                //s1.Stop();
 
                 // using the other kind of Jacobi:
                 // - - - - - - - - - - - - - - - -
-                //var _OpMatrix = new BlockMsrMatrix(OpMatrix._ColPartitioning);
-                //var _OpAffine = new double[_OpMatrix._ColPartitioning.LocalLength];
-                //var mtxBuilder3 = IBM_Op_Jacobian.GetMatrixBuilder(LsTrk, Mapping, CurrentState, Mapping, FluidSpecies);
-                //mtxBuilder3.time = phystime;
-                //mtxBuilder3.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
-                //mtxBuilder3.ComputeMatrix(_OpMatrix, _OpAffine);
+                var _OpMatrix = new BlockMsrMatrix(OpMatrix._ColPartitioning);
+                var _OpAffine = new double[_OpMatrix._ColPartitioning.LocalLength];
+                //Stopwatch s2 = new Stopwatch();
+                //s2.Start();
+                var mtxBuilder3 = IBM_Op_Jacobian.GetMatrixBuilder(LsTrk, Mapping, CurrentState, Mapping, FluidSpecies);
+                mtxBuilder3.time = phystime;
+                mtxBuilder3.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+                mtxBuilder3.ComputeMatrix(_OpMatrix, _OpAffine);
+                //s2.Stop();
 
+                //Console.WriteLine("   FinDiff jac: {0} \t new Jac: {1}", s1.Elapsed, s2.Elapsed);
 
-                //_OpMatrix.SpMV(-1.0, new CoordinateVector(CurrentState), 0.0, OpAffine);
+                // -------------------------------------------
+                // test shit
+
+                var eval = IBM_Op.GetEvaluatorEx(LsTrk, CurrentState, null, Mapping, FluidSpecies);
+                double[] Resi = new double[Mapping.LocalLength];
+                eval.time = phystime;
+                eval.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+                eval.Evaluate(1.0, 0.0, Resi);
+
+                double[] ERR = _OpAffine.CloneAs();
+                ERR.AccV(-1.0, Resi);
+
+                double l2dist = GenericBlas.L2Dist(__OpAffine, _OpAffine);
+                Console.WriteLine("evaluation dist: " + l2dist);
+
+                // ---------------------------------------------
+                // test shit
+
+                _OpAffine.SetV(Resi);
+                _OpMatrix.SpMV(-1.0, new CoordinateVector(CurrentState), 1.0, _OpAffine);
                 //OpAffine.AccV(1.0, _OpAffine);
 
-                //var DeltaMtx = _OpMatrix.CloneAs();
-                //var DeltaAff = _OpAffine.CloneAs();
-                //DeltaMtx.Acc(-1.0, OpMatrix);
-                //DeltaAff.AccV(-1.0, OpAffine);
-                //double mtxdelta = DeltaMtx.InfNorm();
-                //double affdelta = DeltaAff.L2Norm();
+                var DeltaMtx = _OpMatrix.CloneAs();
+                var DeltaAff = _OpAffine.CloneAs();
+                DeltaMtx.Acc(-1.0, OpMatrix);
+                DeltaAff.AccV(-1.0, OpAffine);
+                double mtxdelta = DeltaMtx.InfNorm();
+                double l2_DeltaAff = DeltaAff.L2Norm();
+                Console.WriteLine("matrix delta: " + mtxdelta);
+                Console.WriteLine("affine Delta: " + l2_DeltaAff);
 
-                //OpMatrix.Clear();
-                //OpMatrix.Acc(1.0, _OpMatrix);
+
+                OpMatrix.Clear();
+                OpMatrix.Acc(1.0, _OpMatrix);
 
 
 #if DEBUG

@@ -1506,12 +1506,19 @@ namespace BoSSS.Foundation {
 
                 Eval = __Eval;
                 Eval.MPITtransceive = true;
-                DelParamUpdate = __delParameterUpdate;
+                if (__delParameterUpdate != null)
+                    DelParamUpdate = __delParameterUpdate;
+                else
+                    DelParamUpdate = EmptyParamUpdate;
 
                 BuildOptimizedGridColoring();
                 //BuildOneByOneColoring();
 
                 //Console.WriteLine("FDJac: no of color lists: " + ColorLists.Length);
+            }
+
+            void EmptyParamUpdate(IEnumerable<DGField> F, IEnumerable<DGField> P) {
+                // do nothing
             }
 
             /// <summary>
@@ -2192,8 +2199,15 @@ namespace BoSSS.Foundation {
                 double[] F0 = new double[Lout];
                 DelParamUpdate(domFields, Eval.Parameters.ToArray());
 #if DEBUG
-                var ParamsVec = new CoordinateVector(Eval.Parameters);
-                double[] ParamsVecBkup = ParamsVec.ToArray();
+                CoordinateVector ParamsVec;
+                double[] ParamsVecBkup;
+                if (Eval.Parameters.Count > 0) {
+                    ParamsVec = new CoordinateVector(Eval.Parameters);
+                    ParamsVecBkup = ParamsVec.ToArray();
+                } else {
+                    ParamsVec = null;
+                    ParamsVecBkup = null;
+                }
 #endif
                 Eval.Evaluate(1.0, 0.0, F0);
                 AffineOffset.AccV(1.0, F0);
@@ -2417,11 +2431,13 @@ namespace BoSSS.Foundation {
                 U0.SetV(U0backup);
                 DelParamUpdate(domFields, Eval.Parameters.ToArray());
 #if DEBUG
-                double deltaParamsVec = ParamsVecBkup.L2DistPow2(ParamsVecBkup).MPISum().Sqrt();
-                double abs = Math.Max(Math.Sqrt(BLAS.MachineEps), Math.Max(ParamsVecBkup.MPI_L2Norm(), ParamsVec.MPI_L2Norm()));
-                double relDelta = deltaParamsVec / abs;
-                if (deltaParamsVec > Math.Sqrt(BLAS.MachineEps))
-                    throw new ApplicationException("FDJacobian detected side-effect in DelParamUpdate(...) -- provides different result before and after finite difference approximation.");
+                if (Eval.Parameters.Count > 0) {
+                    double deltaParamsVec = ParamsVecBkup.L2DistPow2(ParamsVecBkup).MPISum().Sqrt();
+                    double abs = Math.Max(Math.Sqrt(BLAS.MachineEps), Math.Max(ParamsVecBkup.MPI_L2Norm(), ParamsVec.MPI_L2Norm()));
+                    double relDelta = deltaParamsVec / abs;
+                    if (deltaParamsVec > Math.Sqrt(BLAS.MachineEps))
+                        throw new ApplicationException("FDJacobian detected side-effect in DelParamUpdate(...) -- provides different result before and after finite difference approximation.");
+                }
 
 #endif
 
