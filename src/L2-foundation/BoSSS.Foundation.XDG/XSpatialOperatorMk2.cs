@@ -1151,8 +1151,6 @@ namespace BoSSS.Foundation.XDG {
 
         #endregion
 
-
-
         /// <summary>
         /// An operator which computes the Jacobian matrix of this operator.
         /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
@@ -1176,6 +1174,7 @@ namespace BoSSS.Foundation.XDG {
                         JacobianOp.EquationComponents[CodNmn].Add(eqj);
                 }
 
+
                 foreach (var eq in this.GhostEdgesOperator.EquationComponents[CodNmn]) {
                     if (!(eq is ISupportsJacobianComponent _eq))
                         throw new NotSupportedException(string.Format("Unable to handle component {0}: To obtain a Jacobian operator, all components must implement the {1} interface.", eq.GetType().Name, typeof(ISupportsJacobianComponent).Name));
@@ -1195,8 +1194,6 @@ namespace BoSSS.Foundation.XDG {
             JacobianOp.Commit();
             return JacobianOp;
         }
-
-
 
         //==========================================================================================================================
         // Reused from SpatialOperator without modifications
