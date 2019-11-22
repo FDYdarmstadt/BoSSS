@@ -238,11 +238,19 @@ namespace BoSSS.Solution.NSECommon {
                 case ViscosityOption.ConstantViscosity:
                 case ViscosityOption.ConstantViscosityDimensionless:
                 return new IEquationComponent[] { this };
+<<<<<<< Updated upstream
 
                 case ViscosityOption.VariableViscosity:
                 case ViscosityOption.VariableViscosityDimensionless:
                 throw new NotImplementedException("Nonlinear dependence - todo.");
 
+=======
+
+                case ViscosityOption.VariableViscosity:
+                case ViscosityOption.VariableViscosityDimensionless:
+                throw new NotImplementedException("Nonlinear dependence - todo.");
+
+>>>>>>> Stashed changes
                 default:
                 throw new NotImplementedException();
             }
