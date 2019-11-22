@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
+using ilPSP;
 using System;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {

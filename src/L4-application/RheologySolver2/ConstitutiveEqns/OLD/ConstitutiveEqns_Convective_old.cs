@@ -26,6 +26,7 @@ using ilPSP.LinSolvers;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Foundation.Grid.Classic;
 using System.Diagnostics;
+using ilPSP;
 
 namespace BoSSS.Application.Rheology {
 
@@ -171,7 +172,7 @@ namespace BoSSS.Application.Rheology {
                     inp2.Parameters_OUT = new double[inp.Parameters_IN.Length];
 
                     // Outer values for Velocity and VelocityMean
-                    Debug.Assert(inp.Normale.Length == 2);
+                    Debug.Assert(inp.Normale.Dim == 2);
                     for (int j = 0; j < 2; j++)
                     {
 

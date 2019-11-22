@@ -163,7 +163,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// <summary>
         /// In the case of Burgers equation, the Pseudo-1D - direction.
         /// </summary>
-        public Vector BurgersDirection;
+        public ilPSP.Vector BurgersDirection;
 
         
         /// <summary>

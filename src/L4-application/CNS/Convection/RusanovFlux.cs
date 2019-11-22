@@ -70,7 +70,7 @@ namespace CNS.Convection {
         /// S^+ = \max \{|u_L| + a_L, |u_r| + a_R\}
         /// \f$ 
         /// </returns>
-        protected override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref Vector normal, int edgeIndex) {
+        protected override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex) {
             double waveSpeedIn = Math.Abs(stateIn.Velocity * normal) + stateIn.SpeedOfSound;
             double waveSpeedOut = Math.Abs(stateOut.Velocity * normal) + stateOut.SpeedOfSound;
             double penalty = Math.Max(waveSpeedIn, waveSpeedOut);
