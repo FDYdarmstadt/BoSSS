@@ -63,7 +63,7 @@ namespace BoSSS.Solution.NSECommon {
     /// <summary>
     /// base class for viscosity terms
     /// </summary>
-    public abstract class swipViscosityBase : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient, IEquationComponentChecking {
+    public abstract class swipViscosityBase : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient, IEquationComponentChecking, ISupportsJacobianComponent {
 
         /// <summary>
         /// ctor.
@@ -230,7 +230,23 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
+        /// <summary>
+        /// Linear component - returns this object itself.
+        /// </summary>
+        virtual public IEquationComponent[] GetJacobianComponents() {
+            switch (m_ViscosityMode) {
+                case ViscosityOption.ConstantViscosity:
+                case ViscosityOption.ConstantViscosityDimensionless:
+                return new IEquationComponent[] { this };
 
+                case ViscosityOption.VariableViscosity:
+                case ViscosityOption.VariableViscosityDimensionless:
+                throw new NotImplementedException("Nonlinear dependence - todo.");
+
+                default:
+                throw new NotImplementedException();
+            }
+        }
 
 
         /// <summary>

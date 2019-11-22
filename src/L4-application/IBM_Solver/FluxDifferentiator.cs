@@ -279,7 +279,7 @@ namespace BoSSS.Application.IBM_Solver {
     /// <summary>
     /// Upwind-based convection operator
     /// </summary>
-    public class UpwindConvection : IVolumeForm, IEdgeForm {
+    public class UpwindConvection : IVolumeForm, IEdgeForm, ISupportsJacobianComponent {
 
         /// <summary>
         /// Spatial dimension;
@@ -395,7 +395,7 @@ namespace BoSSS.Application.IBM_Solver {
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double[] R = new double[m_SpatialDimension];
             Flux(ref cpv, U, R);
-            return R.InnerProd(GradV);
+            return -R.InnerProd(GradV);
         }
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
@@ -404,6 +404,12 @@ namespace BoSSS.Application.IBM_Solver {
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             return BorderEdgeFlux(ref inp, _uA) * _vA;
+        }
+
+        public IEquationComponent[] GetJacobianComponents() {
+            var ConvDerivEdg = new EdgeFormDifferentiator(this);
+            var ConvDerivVol = new VolumeFormDifferentiator(this);
+            return new IEquationComponent[] { ConvDerivEdg, ConvDerivVol };
         }
 
         public IList<string> ArgumentOrdering => VariableNames.VelocityVector(m_SpatialDimension);

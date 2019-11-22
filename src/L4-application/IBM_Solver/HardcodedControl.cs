@@ -126,7 +126,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.AddBoundaryValue("Wall_top");
 
             // Set Initial Conditions
-            //C.InitialValues_Evaluators.Add("VelocityX", X => 1 - X[1] * X[1]);
+            //C.InitialValues_Evaluators.Add("VelocityX", X => VelocityXex(X,0.0));
             //C.InitialValues_Evaluators.Add("VelocityY", X => 0);
             //C.InitialValues_Evaluators.Add("Pressure", X => 2.0*C.PhysicalParameters.mu_A*(-X[0] + 10));
             C.InitialValues_Evaluators.Add("VelocityX", X => 0.0);
