@@ -50,7 +50,6 @@ using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XheatCommon;
 using BoSSS.Solution.XNSECommon;
-using BoSSS.Solution.XNSECommon.Operator.Energy;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Foundation.Grid.Aggregation;
@@ -183,7 +182,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 base.RegisterField(this.ResidualContinuity);
 
 
-                if (this.Control.ComputeEnergy)
+                //if (this.Control.ComputeEnergy)
                     this.CreateEnergyFields();
 
 
@@ -239,26 +238,32 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 double[] scale_A = new double[D + 1];
                 double[] scale_B = new double[D + 1];
-                if (this.Control.solveCoupledHeatEquation) {
+                int mD = D + 1;
+                if (this.Control.solveKineticEnergyEquation) {
                     scale_A = new double[D + 2];
                     scale_B = new double[D + 2];
+                    mD = D + 2;
+                }
+                if (this.Control.solveCoupledHeatEquation) {
+                    scale_A = new double[mD + 1];
+                    scale_B = new double[mD + 1];
                     if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
-                        scale_A = new double[D + 2 + D];
-                        scale_B = new double[D + 2 + D];
+                        scale_A = new double[mD + 1 + D];
+                        scale_B = new double[mD + 1 + D];
                     }
                 }
 
-                scale_A.SetAll(rho_A); // mass matrix in momentum equation
+                scale_A.SetAll(rho_A); // mass matrix in momentum equation (kinetic energy equation)
                 scale_A[D] = 0; // no  mass matrix for continuity equation
-                scale_B.SetAll(rho_B); // mass matrix in momentum equation
+                scale_B.SetAll(rho_B); // mass matrix in momentum equation (kinetic energy equation)
                 scale_B[D] = 0; // no  mass matrix for continuity equation
 
                 if (this.Control.solveCoupledHeatEquation) {
-                    scale_A[D + 1] = rho_A * c_A;
-                    scale_B[D + 1] = rho_B * c_B;
+                    scale_A[mD + 1] = rho_A * c_A;
+                    scale_B[mD + 1] = rho_B * c_B;
                     if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
-                        scale_A.GetSubVector(D + 2, D).SetAll(0.0);
-                        scale_B.GetSubVector(D + 2, D).SetAll(0.0);
+                        scale_A.GetSubVector(mD + 1, D).SetAll(0.0);
+                        scale_B.GetSubVector(mD + 1, D).SetAll(0.0);
                     }
                 }
 
@@ -295,10 +300,14 @@ namespace BoSSS.Application.XNSE_Solver {
             get {
                 if (m_CurrentSolution == null) {
                     m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(this.CurrentVel, this.Pressure));
+                    if (this.Control.solveKineticEnergyEquation) {
+                        m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(m_CurrentSolution.Mapping.Fields.ToArray(), this.KineticEnergy));
+                    }
                     if (this.Control.solveCoupledHeatEquation) {
-                        m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(this.CurrentVel, this.Pressure, this.Temperature));
+                        //m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(this.CurrentVel, this.Pressure, this.Temperature));
+                        m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(m_CurrentSolution.Mapping.Fields.ToArray(), this.Temperature));
                         if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
-                            m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(this.CurrentVel, this.Pressure, this.Temperature, this.HeatFlux));
+                            m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(m_CurrentSolution.Mapping.Fields.ToArray(), this.HeatFlux));
                     }
                 } else {
                     for (int d = 0; d < base.GridData.SpatialDimension; d++) {
@@ -319,10 +328,14 @@ namespace BoSSS.Application.XNSE_Solver {
             get {
                 if (m_CurrentResidual == null) {
                     m_CurrentResidual = new CoordinateVector(ArrayTools.Cat<DGField>(XDGvelocity.ResidualMomentum, ResidualContinuity));
+                    if (this.Control.solveKineticEnergyEquation) {
+                        m_CurrentResidual = new CoordinateVector(ArrayTools.Cat(m_CurrentResidual.Mapping.Fields.ToArray(), this.ResidualKineticEnergy));
+                    }
                     if (this.Control.solveCoupledHeatEquation) {
-                        m_CurrentResidual = new CoordinateVector(ArrayTools.Cat<DGField>(XDGvelocity.ResidualMomentum, ResidualContinuity, ResidualHeat));
+                        //m_CurrentResidual = new CoordinateVector(ArrayTools.Cat<DGField>(XDGvelocity.ResidualMomentum, ResidualContinuity, ResidualHeat));
+                        m_CurrentResidual = new CoordinateVector(ArrayTools.Cat(m_CurrentResidual.Mapping.Fields.ToArray(), this.ResidualHeat));
                         if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
-                            m_CurrentResidual = new CoordinateVector(ArrayTools.Cat<DGField>(XDGvelocity.ResidualMomentum, ResidualContinuity, ResidualHeat, ResidualAuxHeatFlux));
+                            m_CurrentResidual = new CoordinateVector(ArrayTools.Cat(m_CurrentResidual.Mapping.Fields.ToArray(), this.ResidualAuxHeatFlux));
                     }
                 }
                 return m_CurrentResidual;
@@ -363,14 +376,26 @@ namespace BoSSS.Application.XNSE_Solver {
                 // the last configuration enty will be used for all higher level
                 MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
                 for (int iLevel = 0; iLevel < configs.Length; iLevel++) {
-                    if (this.Control.solveCoupledHeatEquation) {
+
+                    configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 1];
+                    int mD = D + 1;
+                    if (this.Control.solveKineticEnergyEquation) {
                         configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 2];
+                        mD = D + 2;
+                    }
+                    if (this.Control.solveCoupledHeatEquation) {
+                        configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[mD + 1];
                         if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
-                            configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 2 + D];
-                    } else {
-                        configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 1];
+                            configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[mD + 1 + D];
                     }
 
+                    //if (this.Control.solveCoupledHeatEquation) {
+                    //    configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 2];
+                    //    if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
+                    //        configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 2 + D];
+                    //} else {
+                    //    configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 1];
+                    //}
 
                     // configurations for velocity
                     for (int d = 0; d < D; d++) {
@@ -386,25 +411,35 @@ namespace BoSSS.Application.XNSE_Solver {
                         mode = this.Control.PressureBlockPrecondMode,
                         VarIndex = new int[] { D }
                     };
+                    
+                    if (this.Control.solveKineticEnergyEquation) {
+                        int pKinE = this.KineticEnergy.Basis.Degree;
+                        // configuration for kinetic energy
+                        configs[iLevel][D + 1] = new MultigridOperator.ChangeOfBasisConfig() {
+                            Degree = Math.Max(1, pKinE - iLevel),
+                            mode = this.Control.KineticEnergyeBlockPrecondMode,
+                            VarIndex = new int[] { D + 1 }
+                        };
+                    }
 
                     if (this.Control.solveCoupledHeatEquation) {
 
                         int pTemp = this.Temperature.Basis.Degree;
                         // configuration for Temperature
-                        configs[iLevel][D + 1] = new MultigridOperator.ChangeOfBasisConfig() {
+                        configs[iLevel][mD + 1] = new MultigridOperator.ChangeOfBasisConfig() {
                             Degree = Math.Max(1, pTemp - iLevel),
                             mode = this.Control.TemperatureBlockPrecondMode,
-                            VarIndex = new int[] { D + 1 }
+                            VarIndex = new int[] { mD + 1 }
                         };
 
                         // configuration for auxiliary heat flux
                         if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
                             int pFlux = this.HeatFlux[0].Basis.Degree;
                             for (int d = 0; d < D; d++) {
-                                configs[iLevel][D + 2 + d] = new MultigridOperator.ChangeOfBasisConfig() {
+                                configs[iLevel][mD + 1 + d] = new MultigridOperator.ChangeOfBasisConfig() {
                                     Degree = Math.Max(1, pFlux - iLevel),
                                     mode = MultigridOperator.Mode.Eye,
-                                    VarIndex = new int[] { D + 2 + d }
+                                    VarIndex = new int[] { mD + 1 + d }
                                 };
                             }
                         }
@@ -441,8 +476,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
             #endregion
 
-            #region Config and Generate XOperator
 
+            #region Config and Generate XOperator
 
             //Quadrature Order
             //----------------
@@ -458,16 +493,8 @@ namespace BoSSS.Application.XNSE_Solver {
             XNSFE_Operator = new XNSFE_OperatorFactory(XOpConfig, this.LsTrk, this.m_HMForder, this.BcMap, this.thermBcMap, degU);
             updateSolutionParams = new bool[CurrentResidual.Mapping.Fields.Count];
 
-
-            // kinetic energy balance Operator
-            // ===============================
-
-            if (this.Control.ComputeEnergy) {
-                this.generateKinEnergyOperator();
-            }
-
-
             #endregion
+
 
             #region Create Timestepper
             // =======================
@@ -481,23 +508,28 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 Debug.Assert(object.ReferenceEquals(this.MultigridSequence[0].ParentGrid, this.GridData));
 
-                if (this.Control.solveCoupledHeatEquation) {
-                    if (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP)
-                        m_BDF_Timestepper.DataRestoreAfterBalancing(L,
-                            ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure, this.Temperature),
-                            ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity, this.ResidualHeat),
-                            this.LsTrk, this.MultigridSequence);
-                    else
-                        m_BDF_Timestepper.DataRestoreAfterBalancing(L,
-                            ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure, this.Temperature, this.HeatFlux.ToArray()),
-                            ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity, this.ResidualHeat, this.ResidualAuxHeatFlux.ToArray()),
-                            this.LsTrk, this.MultigridSequence);
-                } else {
-                    m_BDF_Timestepper.DataRestoreAfterBalancing(L,
-                        ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure),
-                        ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity),
-                        this.LsTrk, this.MultigridSequence);
-                }
+                m_BDF_Timestepper.DataRestoreAfterBalancing(L,
+                    m_CurrentSolution.Mapping.Fields.ToArray(),
+                    m_CurrentResidual.Mapping.Fields.ToArray(),
+                    this.LsTrk, this.MultigridSequence);
+
+                //if (this.Control.solveCoupledHeatEquation) {
+                //    if (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP)
+                //        m_BDF_Timestepper.DataRestoreAfterBalancing(L,
+                //            ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure, this.Temperature),
+                //            ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity, this.ResidualHeat),
+                //            this.LsTrk, this.MultigridSequence);
+                //    else
+                //        m_BDF_Timestepper.DataRestoreAfterBalancing(L,
+                //            ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure, this.Temperature, this.HeatFlux.ToArray()),
+                //            ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity, this.ResidualHeat, this.ResidualAuxHeatFlux.ToArray()),
+                //            this.LsTrk, this.MultigridSequence);
+                //} else {
+                //    m_BDF_Timestepper.DataRestoreAfterBalancing(L,
+                //        ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure),
+                //        ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity),
+                //        this.LsTrk, this.MultigridSequence);
+                //}
 
                 //PlotCurrentState(hack_Phystime, new TimestepNumber(hack_TimestepIndex, 13), 2);
 
@@ -897,39 +929,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     //m_BDF_Timestepper.Config_linearSolver = new DirectSolver() { WhichSolver = this.Control.LinearSolver };
                 }
 
-
-                //Console.WriteLine("noofpartsperprocess = {0}", this.CurrentSolution.Count / 10000);
-
-                if (this.Control.ComputeEnergy) {
-                    m_BDF_energyTimestepper = new XdgBDFTimestepping(
-                    this.CurrentEnergySolution.Mapping.Fields,
-                    this.CurrentEnergyResidual.Mapping.Fields,
-                    LsTrk,
-                    false,
-                    DelComputeEnergyOperatorMatrix, null, DelUpdateLevelSet_EnergyOperator,
-                    (this.Control.CompMode == AppControl._CompMode.Transient) ? bdfOrder : 1,
-                    this.Control.Timestepper_LevelSetHandling,
-                    MassMatrixShapeandDependence.IsTimeDependent,   // only for Lie-Splitting and coupled_Once
-                    SpatialOperatorType.LinearTimeDependent,
-                    MassScaleForEnergy,
-                    this.MultigridEnergyOperatorConfig, base.MultigridSequence,
-                    this.LsTrk.SpeciesIdS.ToArray(), this.KineticEnergy.Basis.Degree * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2),
-                    this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
-                    true,
-                    this.Control.NonLinearSolver,
-                    this.Control.LinearSolver
-                    );
-                    m_BDF_energyTimestepper.m_ResLogger = this.EnergyResLogger;
-                    m_BDF_energyTimestepper.m_ResidualNames = this.CurrentEnergyResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
-                    //m_BDF_coupledTimestepper.Config_SolverConvergenceCriterion = this.Control.Solver_ConvergenceCriterion;
-                    m_BDF_energyTimestepper.Config_LevelSetConvergenceCriterion = this.Control.LevelSet_ConvergenceCriterion;
-                    //m_BDF_coupledTimestepper.Config_MaxIterations = this.Control.Solver_MaxIterations;
-                    this.Control.NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.NonLinearSolver.MinSolverIterations;
-                    //m_BDF_energyTimestepper.Config_MinIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.Solver_MinIterations;
-                    m_BDF_energyTimestepper.Timestepper_Init = TimeStepperInit.SingleInit;
-                    m_BDF_energyTimestepper.PushLevelSet = delegate () { };    // dummy push
-                    m_BDF_energyTimestepper.coupledOperator = true;
-                }
+                //Console.WriteLine("noofpartsperprocess = {0}", this.CurrentSolution.Count / 10000);   
 
             } else {
 
@@ -1097,13 +1097,15 @@ namespace BoSSS.Application.XNSE_Solver {
                     PushLevelSetAndRelatedStuff();
 
 
-                    // backup old velocity for energy checks
-                    // -------------------------------------
-                    if(this.Control.ComputeEnergy && this.Control.CompMode == AppControl._CompMode.Transient) {
+                    // backup old velocity/kinetic energy for energy checks
+                    // -----------------------------------------------------
+                    if(this.Control.ComputeEnergyProperties && this.Control.CompMode == AppControl._CompMode.Transient) {
                         for(int d = 0; d < D; d++) {
                             this.prevVel[d].Clear();
                             this.prevVel[d].Acc(1.0, this.CurrentVel[d]);
                         }
+                        //this.prevKineticEnergy.Clear();
+                        //this.prevKineticEnergy.Acc(1.0, this.KineticEnergy);
                     }
 
 
@@ -1193,11 +1195,6 @@ namespace BoSSS.Application.XNSE_Solver {
                         lockUpdate = false;
 
                         m_BDF_Timestepper.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-
-                        //if(this.Control.solveCoupledHeatEquation && m_BDF_coupledTimestepper != null) {
-                        //    m_BDF_coupledTimestepper.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-                        //    //ComputeHeatflux();
-                        //}
                         
                     } else {
                         //m_RK_Timestepper.Solve(phystime, dt);
@@ -1205,16 +1202,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 }
 
-                if (this.Control.solveCoupledHeatEquation && (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP))
-                    this.ComputeHeatFlux();
 
-                if(this.Control.ComputeEnergy && m_BDF_energyTimestepper != null) {
-
-                    this.prevKineticEnergy.Clear();
-                    this.prevKineticEnergy.Acc(1.0, this.KineticEnergy);
-
-                    // solve kinetic energy balance
-                    m_BDF_energyTimestepper.Solve(phystime, dt);
+                if(this.Control.solveKineticEnergyEquation) {
 
                     // derive kinetic Energy from flow solution
                     double[] rhoS = new double[] { this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B };
@@ -1225,11 +1214,11 @@ namespace BoSSS.Application.XNSE_Solver {
                     GeneratedKineticEnergy.Acc(1.0, this.KineticEnergy);
                     GeneratedKineticEnergy.Acc(-1.0, this.DerivedKineticEnergy);
 
-                    // changerate of kinetic energy from discretization 
-                    double[] muS = new double[] { this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B };
-                    EnergyUtils.ProjectKineticDissipation(this.KineticDissipation, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
-
                 }
+
+
+                if (this.Control.solveCoupledHeatEquation && (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP))
+                    this.ComputeHeatFlux();
 
 
                 Postprocessing(TimestepInt, phystime, dt, TimestepNo);

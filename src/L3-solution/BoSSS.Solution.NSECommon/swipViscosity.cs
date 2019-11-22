@@ -433,7 +433,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Dirichlet boundary value: the given velocity at the boundary.
         /// </summary>
-        protected double g_Diri(double[] X, double time, int EdgeTag, int d) {
+        protected virtual double g_Diri(double[] X, double time, int EdgeTag, int d) {
             if (this.g_Diri_Override == null) {
                 Func<double[], double, double> boundVel = this.velFunction[d][EdgeTag];
                 double ret = boundVel(X, time);

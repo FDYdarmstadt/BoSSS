@@ -311,7 +311,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergy = false;
+            C.ComputeEnergyProperties = false;
             //C.ComputeInterfaceEnergy = true;
 
             //C.CheckJumpConditions = true;
@@ -635,8 +635,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergy = false;
-            C.ComputeInterfaceEnergy = false;
+            C.solveKineticEnergyEquation = false;
+            C.ComputeEnergyProperties = false;
 
             C.CheckJumpConditions = false;
             C.CheckInterfaceProps = false;
@@ -931,8 +931,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergy = false;
-            C.ComputeInterfaceEnergy = false;
+            C.solveKineticEnergyEquation = false;
+            C.ComputeEnergyProperties = false;
 
             C.CheckJumpConditions = false;
 
@@ -1250,7 +1250,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergy = false;
+            C.ComputeEnergyProperties = false;
 
             //C.LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.PARDISO };
 
@@ -1501,8 +1501,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergy = true;
-            C.ComputeInterfaceEnergy = false;
+            C.solveKineticEnergyEquation = true;
+            C.ComputeEnergyProperties = false;
 
             C.CheckJumpConditions = true;
             C.CheckInterfaceProps = false;
@@ -1777,8 +1777,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergy = false;
-            C.ComputeInterfaceEnergy = false;
+            C.solveKineticEnergyEquation = false;
+            C.ComputeEnergyProperties = false;
 
             C.CheckJumpConditions = false;
             C.CheckInterfaceProps = false;
@@ -2085,7 +2085,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
-            C.ComputeEnergy = false;
+            C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;

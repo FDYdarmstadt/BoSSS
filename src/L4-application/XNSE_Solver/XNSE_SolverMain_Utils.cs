@@ -50,7 +50,6 @@ using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XheatCommon;
 using BoSSS.Solution.XNSECommon;
-using BoSSS.Solution.XNSECommon.Operator.Energy;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Foundation.Grid.Aggregation;
@@ -243,7 +242,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             #region integral energy computation 
 
-            if (this.Control.ComputeInterfaceEnergy) {
+            if (this.Control.ComputeEnergyProperties) {
 
                 // compute current energies
                 double[] rhoS = new double[] { this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B };

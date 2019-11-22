@@ -20,6 +20,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using ilPSP.Utils;
+
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XheatCommon;
 using BoSSS.Solution.XNSECommon;
@@ -219,6 +221,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
             thermParams = control.ThermalParameters;
 
+            solveEnergy = control.solveKineticEnergyEquation;
+
             solveHeat = control.solveCoupledHeatEquation;
             Evaporation = (control.ThermalParameters.hVap > 0.0);
             if(control.prescribedMassflux_Evaluator != null)
@@ -227,15 +231,33 @@ namespace BoSSS.Application.XNSE_Solver {
                 prescribedMassflux = control.prescribedMassflux.Evaluate;
             MatInt = !Evaporation;
 
+            int nBlocks = 2;
+            if (solveEnergy) {
+                CodBlocks = new bool[3];
+                DomBlocks = new bool[3];
+                nBlocks = 3;
+            }
+
             if (solveHeat) {
                 this.conductMode = control.conductMode;
-                CodBlocks = (this.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) ? new bool[] { true, true, true } : new bool[] { true, true, true, true };
-                DomBlocks = (this.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) ? new bool[] { true, true, true } : new bool[] { true, true, true, true };
+                CodBlocks = (this.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) ? new bool[nBlocks + 1] : new bool[nBlocks + 2];
+                DomBlocks = (this.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) ? new bool[nBlocks + 1] : new bool[nBlocks + 2];
             }
+
+            CodBlocks.SetAll(true);
+            DomBlocks.SetAll(true);
+
         }
 
 
         public ThermalParameters thermParams;
+
+
+        /// <summary>
+        /// include kinetic energy equation
+        /// </summary>
+        public bool solveEnergy;
+
 
         /// <summary>
         /// true if the heat equation is solved via the auxiliary heat flux formulation

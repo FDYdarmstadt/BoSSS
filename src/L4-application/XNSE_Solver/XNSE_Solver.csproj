@@ -139,6 +139,10 @@
       <Project>{efe8c307-09bc-4f58-b991-6ef8fd6d5eff}</Project>
       <Name>BoSSS.Solution.AdvancedSolvers</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.EnergyCommon\BoSSS.Solution.EnergyCommon.csproj">
+      <Project>{7c92a61e-a113-4093-9e37-2786ac737f36}</Project>
+      <Name>BoSSS.Solution.EnergyCommon</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Gnuplot\BoSSS.Solution.Gnuplot.csproj">
       <Project>{d4fadb7c-0b11-4f41-a97a-146dc1f7034e}</Project>
       <Name>BoSSS.Solution.Gnuplot</Name>

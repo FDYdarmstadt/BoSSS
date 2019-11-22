@@ -33,6 +33,7 @@ using BoSSS.Foundation.XDG;
 
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XNSECommon;
+using BoSSS.Solution.EnergyCommon;
 using BoSSS.Solution.XheatCommon;
 using System.Collections;
 
@@ -60,6 +61,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="_LsTrk"></param>
         /// <param name="_HMFdegree"></param>
         /// <param name="BcMap"></param>
+        /// <param name="thermBcMap"></param>
         /// <param name="degU"></param>
         public XNSFE_OperatorFactory(XNSFE_OperatorConfiguration _config, LevelSetTracker _LsTrk, int _HMFdegree, 
             IncompressibleMultiphaseBoundaryCondMap BcMap, ThermalMultiphaseBoundaryCondMap thermBcMap, int degU) {
@@ -78,9 +80,6 @@ namespace BoSSS.Application.XNSE_Solver {
             // test input
             // ==========
             {
-                if (!config.solveHeat && (config.getDomBlocks.GetLength(0) != 2 || config.getCodBlocks.GetLength(0) != 2))
-                    throw new ArgumentException();
-
                 if ((config.getPhysParams.mu_A <= 0) && (config.getPhysParams.mu_B <= 0)) {
                     config.isViscous = false;
                 } else {
@@ -107,14 +106,27 @@ namespace BoSSS.Application.XNSE_Solver {
                 VariableNames.Velocity0MeanVector(D),
                 VariableNames.NormalVector(D),
                 VariableNames.Curvature,
-                VariableNames.SurfaceForceVector(D),
-                VariableNames.Temperature0,
-                VariableNames.HeatFlux0Vector(D),
-                VariableNames.DisjoiningPressure
+                VariableNames.SurfaceForceVector(D)
                 );
             DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure);
 
+            if (config.solveEnergy) {
+                CodName = ArrayTools.Cat(CodName, EquationNames.KineticEnergyEquation);
+                Params = ArrayTools.Cat(Params,
+                    VariableNames.VelocityX_GradientVector(),
+                    VariableNames.VelocityY_GradientVector(),
+                    VariableNames.PressureGradient(D),
+                    VariableNames.GravityVector(D)
+                    );
+                DomName = ArrayTools.Cat(DomName, VariableNames.KineticEnergy);
+            }
+
             if (config.solveHeat) {
+                Params = ArrayTools.Cat(Params,
+                    VariableNames.Temperature0,
+                    VariableNames.HeatFlux0Vector(D),
+                    VariableNames.DisjoiningPressure
+                    );
                 if (config.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) {
                     CodName = ArrayTools.Cat(CodName, EquationNames.HeatEquation);
                     DomName = ArrayTools.Cat(DomName, VariableNames.Temperature);
@@ -137,17 +149,26 @@ namespace BoSSS.Application.XNSE_Solver {
             if (config.getDomBlocks[1])
                 DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(D, 1));
 
-            if (config.solveHeat) {
+            int nBlocks = 2;
+            if (config.solveEnergy) {
+                nBlocks = 3;
                 if (config.getCodBlocks[2])
                     CodNameSelected = ArrayTools.Cat(CodNameSelected, CodName.GetSubVector(D + 1, 1));
                 if (config.getDomBlocks[2])
                     DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(D + 1, 1));
+            }
+
+            if (config.solveHeat) {
+                if (config.getCodBlocks[nBlocks])
+                    CodNameSelected = ArrayTools.Cat(CodNameSelected, CodName.GetSubVector(nBlocks + (D - 1) + 1, 1));
+                if (config.getDomBlocks[nBlocks])
+                    DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(nBlocks + (D - 1) + 1, 1));
 
                 if (config.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
-                    if (config.getCodBlocks[3])
-                        CodNameSelected = ArrayTools.Cat(CodNameSelected, CodName.GetSubVector(D + 2, D));
-                    if (config.getDomBlocks[3])
-                        DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(D + 2, D));
+                    if (config.getCodBlocks[nBlocks + 1])
+                        CodNameSelected = ArrayTools.Cat(CodNameSelected, CodName.GetSubVector(nBlocks + (D - 1) + 2, D));
+                    if (config.getDomBlocks[nBlocks + 1])
+                        DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(nBlocks + (D - 1) + 2, D));
                 }
             }
 
@@ -177,13 +198,26 @@ namespace BoSSS.Application.XNSE_Solver {
                 Solution.XNSECommon.XOperatorComponentsFactory.AddInterfaceContinuityEq(m_XOp, config, D, LsTrk);       // continuity equation
 
 
+            // add kinetic energy equation components
+            // ======================================
+            if (config.solveEnergy) {
+
+                // species bulk components
+                for (int spc = 0; spc < LsTrk.TotalNoOfSpecies; spc++) {
+                    Solution.EnergyCommon.XOperatorComponentsFactory.AddSpeciesKineticEnergyEquation(m_XOp, config, D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap, LsTrk);
+                }
+
+                // interface components
+                Solution.EnergyCommon.XOperatorComponentsFactory.AddInterfaceKineticEnergyEquation(m_XOp, config, D, BcMap, LsTrk, degU);
+            }
+
+
             // add Heat equation components
             // ============================
             if (config.solveHeat) {
 
                 // species bulk components
                 for (int spc = 0; spc < LsTrk.TotalNoOfSpecies; spc++) {
-                    // heat equation
                     Solution.XheatCommon.XOperatorComponentsFactory.AddSpeciesHeatEq(m_XOp, config,
                          D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], thermBcMap, LsTrk);
                 }
@@ -233,6 +267,8 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="SurfaceForce"></param>
         /// <param name="LevelSetGradient"></param>
         /// <param name="ExternalyProvidedCurvature"></param>
+        /// <param name="updateSolutionParams"></param>
+        /// <param name="ExtParams"></param>
         public void AssembleMatrix<T>(BlockMsrMatrix OpMatrix, double[] OpAffine,
             UnsetteledCoordinateMapping RowMapping, UnsetteledCoordinateMapping ColMapping,
             IEnumerable<T> CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time,
@@ -371,6 +407,46 @@ namespace BoSSS.Application.XNSE_Solver {
             }
 
 
+            //// velocity gradient vectors
+            //var VelMap = new CoordinateMapping(this.XDGvelocity.Velocity.ToArray());
+            //DGField[] VelParam = VelMap.Fields.ToArray();
+
+            //VectorField<DGField> GradVelX = new VectorField<DGField>(D, VelParam[0].Basis, "VelocityXGradient", XDGField.Factory);
+            //for (int d = 0; d < D; d++) {
+            //    foreach (var Spc in this.LsTrk.SpeciesIdS) {
+            //        DGField f_Spc = ((VelParam[0] as XDGField).GetSpeciesShadowField(Spc));
+            //        (GradVelX[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(1.0, f_Spc, d);
+            //    }
+            //}
+            //GradVelX.ForEach(F => F.CheckForNanOrInf(true, true, true));
+
+            //VectorField<DGField> GradVelY = new VectorField<DGField>(D, VelParam[0].Basis, "VelocityYGradient", XDGField.Factory);
+            //for (int d = 0; d < D; d++) {
+            //    foreach (var Spc in this.LsTrk.SpeciesIdS) {
+            //        DGField f_Spc = ((VelParam[1] as XDGField).GetSpeciesShadowField(Spc));
+            //        (GradVelY[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(1.0, f_Spc, d);
+            //    }
+            //}
+            //GradVelY.ForEach(F => F.CheckForNanOrInf(true, true, true));
+
+            //// pressure and gradient
+            //var PressMap = new CoordinateMapping(this.Pressure);
+            //DGField[] PressParam = PressMap.Fields.ToArray();
+
+            //VectorField<DGField> PressGrad = new VectorField<DGField>(D, PressParam[0].Basis, "PressureGrad", XDGField.Factory);
+            //for (int d = 0; d < D; d++) {
+            //    foreach (var Spc in this.LsTrk.SpeciesIdS) {
+            //        DGField f_Spc = ((PressParam[0] as XDGField).GetSpeciesShadowField(Spc));
+            //        (PressGrad[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(1.0, f_Spc, d);
+            //    }
+            //}
+            //PressGrad.ForEach(F => F.CheckForNanOrInf(true, true, true));
+
+            //// gravity
+            //var GravMap = new CoordinateMapping(this.XDGvelocity.Gravity.ToArray());
+            //DGField[] GravParam = GravMap.Fields.ToArray();
+
+
             // heat flux for evaporation
             DGField[] HeatFluxParam = new DGField[D];
             if (config.solveHeat) {
@@ -396,10 +472,22 @@ namespace BoSSS.Application.XNSE_Solver {
                 U0_U0mean,
                 Normals,
                 Curvature,
-                ((SurfaceForce != null) ? SurfaceForce.ToArray() : new SinglePhaseField[D]),
-                ((config.solveHeat) ? CurrentState.ToArray<DGField>().GetSubVector(D + 1, 1) : new SinglePhaseField[1]),
-                ((config.solveHeat) ? HeatFluxParam : new SinglePhaseField[D]),
-                ((config.solveHeat) ? new SinglePhaseField[1] : new SinglePhaseField[1]));
+                ((SurfaceForce != null) ? SurfaceForce.ToArray() : new SinglePhaseField[D]));
+
+            if (config.solveEnergy) {
+                Params = ArrayTools.Cat<DGField>(Params.ToArray<DGField>(),
+                    new SinglePhaseField[D],
+                    new SinglePhaseField[D],
+                    new SinglePhaseField[D],
+                    new SinglePhaseField[D]);
+            }
+
+            if (config.solveHeat) {
+                Params = ArrayTools.Cat<DGField>(Params.ToArray<DGField>(),
+                    CurrentState.ToArray<DGField>().GetSubVector(D + 1, 1),
+                    HeatFluxParam,
+                    new SinglePhaseField[1]);
+            }
 
 
             // store old params

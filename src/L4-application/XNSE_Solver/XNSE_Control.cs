@@ -427,14 +427,25 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// If true, kinetic and surface energy will be evaluated in every cycle.
         /// </summary>
-        [DataMember]
-        public bool ComputeEnergy = false;
+        //[DataMember]
+        //public bool ComputeEnergy = false;
 
         /// <summary>
-        /// If true, energy balance at the interface will be evaluated in every cycle.
+        /// if true, kinetic energy equation will be solved 
         /// </summary>
         [DataMember]
-        public bool ComputeInterfaceEnergy = false;
+        public bool solveKineticEnergyEquation = false;
+
+        /// <summary>
+        /// Block-Precondition for the kinetic-Energy-block
+        /// </summary>
+        public MultigridOperator.Mode KineticEnergyeBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
+
+        /// <summary>
+        /// If true, various energy properties will be evaluated in every cycle.
+        /// </summary>
+        [DataMember]
+        public bool ComputeEnergyProperties = false;
 
         /// <summary>
         /// if true, the jump condition for mass, momentum and energy will be checked

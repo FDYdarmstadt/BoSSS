@@ -37,6 +37,7 @@ namespace BoSSS.Solution.XNSECommon {
         //=======================
         // Navier Stokes equation
         //=======================
+        #region nse
 
         /// <summary>
         /// 
@@ -265,7 +266,7 @@ namespace BoSSS.Solution.XNSECommon {
                         break;
                     case ViscosityMode.Viscoelastic:
                         //comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, 1 / reynoldsA, 1 / reynoldsB, penalty * 1.0, d, false));
-                        comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, 1/reynoldsA, 1/reynoldsB, penalty, d, dntParams.UseWeightedAverages));
+                        comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, 1 / reynoldsA, 1 / reynoldsB, penalty, d, dntParams.UseWeightedAverages));
                         comps.Add(new Operator.Viscosity.StressDivergenceAtLevelSet(LsTrk, reynoldsA, reynoldsB, penalty1, penalty2, d));
                         break;
 
@@ -447,11 +448,13 @@ namespace BoSSS.Solution.XNSECommon {
 
         }
 
+        #endregion
 
 
         //====================
         // Continuity equation
         //====================
+        #region conti
 
         /// <summary>
         /// 
@@ -529,22 +532,9 @@ namespace BoSSS.Solution.XNSECommon {
             comps.Add(divPen);
         }
 
-
-
-        //========================
-        // Kinetic energy equation
-        //========================
-
-        public static void AddSpeciesKineticEnergyBalance(XSpatialOperatorMk2 XOp) {
-
-        }
-
-        public static void AddInterfaceKineticEnergyBalance(XSpatialOperatorMk2 XOp) {
-
-        }
+        #endregion
 
     }
-
 
     /// <summary>
     /// base configuration options

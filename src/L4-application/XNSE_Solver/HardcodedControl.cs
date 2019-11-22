@@ -179,7 +179,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean;
             C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
-            C.ComputeEnergy = true;
+            C.ComputeEnergyProperties = true;
 
             // Timestepping
             // ============
@@ -385,7 +385,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 2;
             }
 
-            C.ComputeEnergy = true;
+            C.ComputeEnergyProperties = true;
 
             // Timestepping
             // ============
@@ -1294,7 +1294,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region solver
 
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
-            C.ComputeEnergy = false;
+            C.ComputeEnergyProperties = false;
 
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
@@ -1961,7 +1961,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.PressureBlockPrecondMode = MultigridOperator.Mode.IdMass;
             C.LinearSolver.NoOfMultigridLevels = 1;
 
-            C.ComputeEnergy = false;
+            C.ComputeEnergyProperties = false;
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
@@ -2402,7 +2402,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.ComputeEnergy = false;
+            C.ComputeEnergyProperties = false;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.3;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
@@ -2947,7 +2947,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
 
-            C.ComputeEnergy = false;
+            C.ComputeEnergyProperties = false;
 
             #endregion
 
@@ -3114,7 +3114,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
 
-            C.ComputeEnergy = false;
+            C.ComputeEnergyProperties = false;
 
             #endregion
 
@@ -3279,7 +3279,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
 
-            C.ComputeEnergy = false;
+            C.ComputeEnergyProperties = false;
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
@@ -3801,7 +3801,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.ComputeInterfaceEnergy = true;
+            C.ComputeEnergyProperties = true;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
@@ -4231,7 +4231,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
-            C.ComputeEnergy = false;
+            C.ComputeEnergyProperties = false;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
@@ -4969,7 +4969,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.InitialValues_Evaluators.Add("Phi", (X => X[1] - X[0] + 0.2));
 
-            C.ComputeEnergy = false;
+            C.ComputeEnergyProperties = false;
 
             C.CompMode = AppControl._CompMode.Steady;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
@@ -5197,7 +5197,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.ComputeEnergy = false;
+            C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
@@ -5393,7 +5393,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.ComputeEnergy = false;
+            C.ComputeEnergyProperties = false;
 
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
 
