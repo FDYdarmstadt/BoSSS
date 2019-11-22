@@ -32,7 +32,7 @@ namespace BoSSS.Solution.Utils {
     /// an algebraic formula. All function matrixes and offsets (aka. intercept) are constructed from the user-defined
     /// functions by this class.
     /// </summary>
-    abstract public class LinearDualValueFlux : IEdgeForm {
+    abstract public class LinearDualValueFlux : IEdgeForm, ISupportsJacobianComponent {
 
         /// <summary>
         /// Implementation of the LinearDualValueFlux for Inner-Edges, based on <see cref="IEdgeForm"/>
@@ -103,5 +103,12 @@ namespace BoSSS.Solution.Utils {
         }
 
         
+        /// <summary>
+        /// Linear component - returns this object itself.
+        /// </summary>
+        virtual public IEquationComponent[] GetJacobianComponents() {
+            return new IEquationComponent[] { this };
+        }
+
     }
 }

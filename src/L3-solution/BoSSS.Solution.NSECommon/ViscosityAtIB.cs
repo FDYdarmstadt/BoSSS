@@ -28,7 +28,7 @@ using BoSSS.Foundation;
 
 namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
-    public class ViscosityAtIB : BoSSS.Foundation.XDG.ILevelSetForm {
+    public class ViscosityAtIB : BoSSS.Foundation.XDG.ILevelSetForm, ISupportsJacobianComponent {
 
         LevelSetTracker m_LsTrk;
 
@@ -165,6 +165,14 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
                 return null;
             }
         }
+
+        /// <summary>
+        /// Linear component - returns this object itself.
+        /// </summary>
+        virtual public IEquationComponent[] GetJacobianComponents() {
+            return new IEquationComponent[] { this };
+        }
+
     }
 
     /*

@@ -30,7 +30,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
     /// <summary>
     /// velocity jump penalty for the divergence operator, on the level set
     /// </summary>
-    public class DivergenceAtIB : ILevelSetForm {
+    public class DivergenceAtIB : ILevelSetForm, ISupportsJacobianComponent {
 
         LevelSetTracker m_LsTrk;
 
@@ -132,5 +132,13 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
                 return TermActivationFlags.V | TermActivationFlags.UxV;
             }
         }
+
+        /// <summary>
+        /// Linear component - returns this object itself.
+        /// </summary>
+        virtual public IEquationComponent[] GetJacobianComponents() {
+            return new IEquationComponent[] { this };
+        }
+
     }
 }

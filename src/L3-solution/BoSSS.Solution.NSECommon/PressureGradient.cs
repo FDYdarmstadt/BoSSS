@@ -102,6 +102,8 @@ namespace BoSSS.Solution.NSECommon {
             output[m_d] = U[0];
         }
 
+       
+
         /// <summary>
         /// 
         /// </summary>
@@ -150,89 +152,5 @@ namespace BoSSS.Solution.NSECommon {
         }
     }
 
-    /// <summary>
-    /// Derivative in <em>d</em>-th coordinate direction, using central difference;
-    /// </summary>
-    /// <remarks>
-    /// This class is a implemented as an nonlinear flux, although it is affine-linear in mathematical sense.
-    /// It can be used for direct evaluation of the operator by quadrature.
-    /// A mathematical equal, linear version,
-    /// which can be used to assemble the matrix of the operator,
-    /// is given by <see cref="PressureGradientLin_d"/>.
-    /// </remarks>
-    public class PressureGradientNonlin_d : NonlinearFlux {
 
-        int m_d = -1;
-
-        BoundaryCondMap<IncompressibleBcType> m_bcmap;
-
-        /// <summary>
-        /// ctor
-        /// </summary>
-        /// <param name="_d">
-        /// spatial direction of derivative
-        /// </param>
-        /// <param name="bcmap"></param>
-        public PressureGradientNonlin_d(int _d, IncompressibleBoundaryCondMap bcmap) {
-            m_d = _d;
-            m_bcmap = bcmap;
-            pressureFunction = bcmap.bndFunction[VariableNames.Pressure];
-        }
-
-        Func<double[], double, double>[] pressureFunction;
-
-        /// <summary>
-        /// A central difference at Dirichlet boundary regions (<see cref="IncompressibleBcType.Pressure_Outlet"/>),
-        /// an open end everywhere else.
-        /// </summary>
-        protected override double BorderEdgeFlux(double time, double[] x, double[] normal, byte EdgeTag, double[] Uin, int jEdge) {
-            IncompressibleBcType edgType = m_bcmap.EdgeTag2Type[EdgeTag];
-
-            switch (edgType) {
-                case IncompressibleBcType.Pressure_Outlet:
-                    // Atmospheric outlet/pressure outlet: inhom. Dirichlet
-                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++
-                    return pressureFunction[EdgeTag](x, 0) * normal[m_d];
-
-                case IncompressibleBcType.Outflow:
-                case IncompressibleBcType.Velocity_Inlet:
-                case IncompressibleBcType.Wall:
-                    // inhom. Neumann b.c.
-                    // +++++++++++++++++++
-                    return Uin[0] * normal[m_d];
-                default:
-                    throw new NotImplementedException();
-            }
-        }
-
-        /// <summary>
-        /// central difference Riemannian
-        /// </summary>
-        protected override double InnerEdgeFlux(double time, double[] x, double[] normal, double[] Uin, double[] Uout, int jEdge) {
-            return 0.5 * (Uin[0] + Uout[0]) * normal[m_d];
-        }
-
-        /// <summary>
-        /// returns 
-        /// \f[ 
-        ///   \vec{e}_d \cdot p,
-        /// \f]
-        /// where <em>d</em> is the component index provided in the constructor.
-        /// </summary>
-        protected override void Flux(double time, double[] x, double[] U, double[] output) {
-            int D = output.Length;
-            Array.Clear(output, 0, D);
-            output[m_d] = U[0];
-        }
-
-        /// <summary>
-        /// the variable name of the pressure
-        /// </summary>
-        public override IList<string> ArgumentOrdering {
-            get {
-                return new string[] { VariableNames.Pressure };
-            }
-        }
-
-    }
 }
