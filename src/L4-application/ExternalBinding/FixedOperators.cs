@@ -43,38 +43,36 @@ namespace BoSSS.Application.ExternalBinding {
         /// 
         /// </summary>
         [CodeGenExport]
-        public void Laplacian(OpenFOAMGrid grid, 
-            ref int DgDegree,
-            out int ierr) {
-            
-                // grid, etc
-                // =========
+        public void Laplacian(OpenFOAMGrid grid, int DgDegree) {
 
-                GridData grd = null;// (GridData)(Infrastructure.GetObject(GridRef));
+            // grid, etc
+            // =========
 
-                var b = new Basis(grd, DgDegree);
-                var map = new UnsetteledCoordinateMapping(b);
-                
-                var L = new Laplace(1.3, grd.Cells.cj);
-                var op = new SpatialOperator(1, 0, 1, QuadOrderFunc.Linear(), "T", "c1");
-                op.EquationComponents["c1"].Add(L);
-                op.Commit();
+            GridData grd = grid.GridData;
 
-                // evaluate operator
-                // =================
+            var b = new Basis(grd, DgDegree);
+            var map = new UnsetteledCoordinateMapping(b);
 
-                var Mtx = new BlockMsrMatrix(map, map);
-                double[] B = new double[map.LocalLength];
+            var L = new Laplace(1.3, grd.Cells.cj);
+            var op = new SpatialOperator(1, 0, 1, QuadOrderFunc.Linear(), "T", "c1");
+            op.EquationComponents["c1"].Add(L);
+            op.Commit();
 
-                var eval = op.GetMatrixBuilder(map, null, map);
-                eval.ComputeMatrix(Mtx, B);
+            // evaluate operator
+            // =================
 
-                // return data
-                // ===========
+            var Mtx = new BlockMsrMatrix(map, map);
+            double[] B = new double[map.LocalLength];
 
-                throw new NotImplementedException("todo");
+            var eval = op.GetMatrixBuilder(map, null, map);
+            eval.ComputeMatrix(Mtx, B);
 
-            
+            // return data
+            // ===========
+
+            throw new NotImplementedException("todo");
+
+
         }
 
 

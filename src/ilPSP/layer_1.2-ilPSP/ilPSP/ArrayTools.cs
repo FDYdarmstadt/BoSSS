@@ -1312,5 +1312,19 @@ namespace ilPSP.Utils {
         public static void Clear<T>(this T[] A) {
             Array.Clear(A, 0, A.Length);
         }
+
+        /// <summary>
+        /// Adds an object to a list, only if it is not already in this list,
+        /// i.e. adding an element to a set.
+        /// </summary>
+        public static void SetAdd(this System.Collections.IList l, object o) {
+            foreach(var r in l) {
+                if(r.Equals(o)) {
+                    return;
+                }
+            }
+            l.Add(o);
+        }
+
     }
 }

@@ -6,7 +6,9 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using BoSSS.Application.ExternalBinding;
+using ilPSP;
 using ilPSP.Connectors;
+using ilPSP.Utils;
 
 namespace BoSSS.Application.ExternalBinding.CodeGen {
 
@@ -15,23 +17,29 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
     /// </summary>
     static class CodeGenMain {
 
+        static Type[] s_TypesToExport = null;
        
         /// <summary>
         /// all which implements <see cref="BoSSS.Application.ExternalBinding.IForeignLanguageProxy"/>;
         /// </summary>
         static Type[] TypesToExport { 
             get {
-                var assis = BoSSS.Solution.Application.GetAllAssemblies();
-                List<Type> classes = new List<Type>();
-                foreach(var a in assis) {
-                    foreach(var t in a.GetTypes()) {
-                        if(t.IsClass && t.GetInterfaces().Contains(typeof(IForeignLanguageProxy))) {
-                            classes.Add(t);
+                if (s_TypesToExport == null) {
+                    var assis = BoSSS.Solution.Application.GetAllAssemblies();
+                    List<Type> classes = new List<Type>();
+                    foreach (var a in assis) {
+                        foreach (var t in a.GetTypes()) {
+                            if (t.IsClass && t.GetInterfaces().Contains(typeof(IForeignLanguageProxy))) {
+                                classes.Add(t);
+                            }
                         }
                     }
-                }
 
-                return classes.ToArray();
+                    // additional hooks 
+                    classes.SetAdd(typeof(FixedOperators));
+                    s_TypesToExport = classes.ToArray();
+                }
+                return s_TypesToExport.CloneAs();
             }
         }
 
@@ -46,17 +54,15 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
             return TypesToExport.Contains(t);
         }
         static string FormatType4C(Type t) {
-            if (IsExportedRefType(t))
-                return t.Name.ToString() + "*";
+            if (TypesToExport.Contains(t))
+                return t.FullName.Replace(".", "::") + "*";
+
             if (IsPrimitiveType(t))
                 return SupportedPrimitiveTypesSS[Array.IndexOf(SupportedPrimitiveTypes, t)];
 
             throw new NotImplementedException("Unknown Type: " + t);
         }
-        //static bool IsPointer(Type t) {
-        //    t.IsPointer
-        //}
-
+        
         static bool IsFromMagicInterface(MethodInfo mi) {
             var t = mi.DeclaringType;
             if (!ImplementsMagicInterface(t))
@@ -283,6 +289,17 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
             }
 
 
+            // _GetMonoObject(...) method
+            // ===========================
+            {
+                PublicMethodDecl.AddInner("MonoObject* _GetMonoObject();", t.Name);
+
+                BracedSection _GetMonoObjectImpl = new BracedSection();
+                Cnmnsp.Children.Add(_GetMonoObjectImpl);
+                _GetMonoObjectImpl.AddOutside("MonoObject* {0}::_GetMonoObject()", t.Name);
+                _GetMonoObjectImpl.AddInner("return mono_gchandle_get_target(_MonoGCHandle);");
+            }
+
 
             // constructor wrappers
             // ====================
@@ -294,6 +311,10 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
                     Console.WriteLine("Skipping abstract method: " + m.Name);
                     continue;
                 }
+
+                if (!(m.GetCustomAttributes().Any(att => att.GetType() == typeof(CodeGenExportAttribute))))
+                    continue;
+
 
                 var Params = m.GetParameters();
                 string sParams = FormatParameters(Params);
@@ -324,24 +345,7 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
                 ctorImpl.AddInner("_MonoGCHandle = mono_gchandle_new(ThisObj, true);");
 
                 //argument 
-                ctorImpl.AddInner("void* args[{0}];", Math.Max(1, Params.Length));
-                for (int i = 0; i < Params.Length; i++) {
-                    if (Params[i].ParameterType.IsPointer) {
-                        ctorImpl.AddInner("args[{0}] = {1};", i, Params[i].Name);
-                    } else if(Params[i].ParameterType.IsValueType) {
-                        ctorImpl.AddInner("args[{0}] = &{1};", i, Params[i].Name);
-                    } else {
-                        throw new NotImplementedException("Todo: args of type " + Params[i].ParameterType);
-                    }
-                }
-
-                // call mono
-                ctorImpl.AddInner("MonoObject* exception;");
-                ctorImpl.AddInner("MonoObject* retval;");
-                ctorImpl.AddInner("retval = mono_runtime_invoke(_ctor_{0}, mono_gchandle_get_target(_MonoGCHandle), args, &exception);", CtorCounter);
-                ctorImpl.AddInner("if (exception != NULL) {");
-                ctorImpl.AddInner("    printf( \"got exception from C#\\n\");");
-                ctorImpl.AddInner("}");
+                CreateMethodWrapper("ctor_" + CtorCounter, Params, ctorImpl);
 
                 // link c++ to .NET object
                 ctorImpl.AddInner("_SetForeignPointer(this);");
@@ -372,15 +376,15 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
                 string sParams = FormatParameters(Params);
 
                 string sRetType = FormatType4C(m.ReturnType);
-                
+
                 // init code
                 // ---------
                 PrivateBindingDecl.AddInner("MonoMethod* _{0};", m.Name);
-                InitCode.AddInner("_{0} = BoSSScppWrapper::MonoBoSSSglobals::LookupMethod(_ClassHandle, \"{1}\", true);", 
+                InitCode.AddInner("_{0} = BoSSScppWrapper::MonoBoSSSglobals::LookupMethod(_ClassHandle, \"{1}\", true);",
                     m.Name,
                     t.FullName + ":" + m.Name
                     );
-                
+
                 // declaration in class
                 // --------------------
                 PublicMethodDecl.AddInner(sRetType + " " + m.Name + "(" + sParams + ");");
@@ -391,40 +395,17 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
                 BracedSection methImpl = new BracedSection();
                 Cnmnsp.Children.Add(methImpl);
                 methImpl.AddOutside("{0} {1}::{2}({3})", sRetType, t.Name, m.Name, sParams);
-
-                
-                // get object pointer
-                methImpl.AddInner("MonoObject* ThisObj = mono_gchandle_get_target(_MonoGCHandle);");
-
-                //argument 
-                methImpl.AddInner("void* args[{0}];", Math.Max(1,Params.Length));
-                for (int i = 0; i < Params.Length; i++) {
-                    if (Params[i].ParameterType.IsPointer) {
-                        methImpl.AddInner("args[{0}] = {1};", i, Params[i].Name);
-                    } else if(Params[i].ParameterType.IsValueType) {
-                        methImpl.AddInner("args[{0}] = &{1};", i, Params[i].Name);
-                    } else {
-                        throw new NotImplementedException("Todo: args of type " + Params[i].ParameterType);
-                    }
-                }
-
-                // call mono
-                methImpl.AddInner("MonoObject* exception;");
-                methImpl.AddInner("MonoObject* retval;");
-                methImpl.AddInner("retval = mono_runtime_invoke(_{0}, mono_gchandle_get_target(_MonoGCHandle), args, &exception);", m.Name);
-                methImpl.AddInner("if (exception != NULL) {");
-                methImpl.AddInner("    printf( \"got exception from C#\\n\");");
-                methImpl.AddInner("}");
+                CreateMethodWrapper(m.Name, Params, methImpl);
 
                 // return value handling
-                if(m.ReturnType == typeof(void)) {
+                if (m.ReturnType == typeof(void)) {
                     // nothing to do
                     methImpl.AddInner("return;");
-                } else if(IsPrimitiveType(m.ReturnType)) {
+                } else if (IsPrimitiveType(m.ReturnType)) {
                     // try with type-cast
                     methImpl.AddInner("void* retptr = mono_object_unbox(retval);");
                     methImpl.AddInner("return *(({0}*) retptr);", sRetType);
-                } else if(IsExportedRefType(m.ReturnType)) {
+                } else if (IsExportedRefType(m.ReturnType)) {
                     // wrapper object required
                     methImpl.AddInner("return {0}::_FromMonoObject(retval);", m.ReturnType.FullName.Replace(".", "::"));
                 } else {
@@ -436,6 +417,29 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
 
         }
 
+        private static void CreateMethodWrapper(string _Name, ParameterInfo[] Params, BracedSection methImpl) {
+            //argument 
+            methImpl.AddInner("void* args[{0}];", Math.Max(1, Params.Length));
+            for (int i = 0; i < Params.Length; i++) {
+                if (Params[i].ParameterType.IsPointer) {
+                    methImpl.AddInner("args[{0}] = {1};", i, Params[i].Name);
+                } else if (Params[i].ParameterType.IsValueType) {
+                    methImpl.AddInner("args[{0}] = &{1};", i, Params[i].Name);
+                } else if (TypesToExport.Contains(Params[i].ParameterType)) {
+                    methImpl.AddInner("args[{0}] = {1}->_GetMonoObject();", i, Params[i].Name);
+                } else {
+                    throw new NotImplementedException("Todo: args of type " + Params[i].ParameterType);
+                }
+            }
+
+            // call mono
+            methImpl.AddInner("MonoObject* exception;");
+            methImpl.AddInner("MonoObject* retval;");
+            methImpl.AddInner("retval = mono_runtime_invoke(_{0}, mono_gchandle_get_target(_MonoGCHandle), args, &exception);", _Name);
+            methImpl.AddInner("if (exception != NULL) {");
+            methImpl.AddInner("    printf( \"got exception from C#\\n\");");
+            methImpl.AddInner("}");
+        }
 
         static void CreatePrototypeDeclarations() {
 
@@ -515,7 +519,7 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
         }
 
 
-        static void Main(string[] args) {
+        public static void Main(string[] args) {
 
             // create type decls
             // =================
@@ -544,7 +548,7 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
             // ==========
                                  
             string outputDir = @"C:\Users\florian\Documents\Visual Studio 2017\Projects\ExtBindingTest\ExtBindingTest";
-            //string outputDir = ".";
+            //string outputDir = @"C:\tmp\ExtBindingTest";
 
             foreach(var Cf in Cppfiles) {
                 Cf.WriteFile(outputDir);
