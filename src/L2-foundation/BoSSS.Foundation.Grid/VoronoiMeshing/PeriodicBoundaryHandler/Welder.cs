@@ -10,7 +10,14 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 {
     class Welder
     {
-        public static void TargetFirstWeldEdges<T>(LinkedListNode<Edge<T>> source, LinkedListNode<Edge<T>> target)
+        int targetBoundaryNumber;
+
+        public Welder(int targetBoundaryNumber)
+        {
+            this.targetBoundaryNumber = targetBoundaryNumber;
+        }
+
+        public void TargetFirstWeldEdges<T>(LinkedListNode<Edge<T>> source, LinkedListNode<Edge<T>> target)
         {
             if (OnLine(source.Value.Start, source.Value.End, target.Value.Start))
             {
@@ -19,7 +26,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             }
         }
 
-        public static void SourceFirstWeldEdges<T>(LinkedListNode<Edge<T>> source, LinkedListNode<Edge<T>> target)
+        public void SourceFirstWeldEdges<T>(LinkedListNode<Edge<T>> source, LinkedListNode<Edge<T>> target)
         {
             if (OnLine(source.Value.Start, source.Value.End, target.Value.Start))
             {
@@ -28,36 +35,41 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             }
         }
 
-        static void MergeNodes<T>(LinkedListNode<Edge<T>> source, LinkedListNode<Edge<T>> target)
+        void MergeNodes<T>(LinkedListNode<Edge<T>> source, LinkedListNode<Edge<T>> target)
         {
             Debug.Assert(source.List.First.Value.Start.ID == target.List.First.Value.Start.ID,
                 "Nodes must be from same list.");
             source.List.Remove(source);
         }
 
-        static Edge<T> SourceFirstEdgeMerge<T>(Edge<T> source, Edge<T> target)
+        Edge<T> SourceFirstEdgeMerge<T>(Edge<T> source, Edge<T> target)
         {
             Debug.Assert((source.End.Position - target.Start.Position).Abs() < 1e-10,
                 "Edges do not touch.");
             int ID = target.Start.ID; //hoho
             target.Start = source.Start;
             target.Start.ID = ID;
-
-            source.Twin.Twin = target;
-            
+            if (target.IsBoundary && target.BoundaryEdgeNumber == targetBoundaryNumber)
+            {
+                source.Twin.Twin = target;
+                target.Twin = source.Twin;
+            }
             return target;
         }
 
-        static Edge<T> TargetFirstEdgeMerge<T>(Edge<T> source, Edge<T> target)
+        Edge<T> TargetFirstEdgeMerge<T>(Edge<T> source, Edge<T> target)
         {
             Debug.Assert((target.End.Position - source.Start.Position).Abs() < 1e-10,
                 "Edges do not touch.");
             int ID = target.End.ID;
             target.End = source.End;
             target.End.ID = ID;
-            
-            source.Twin.Twin = target;
-            
+
+            if (target.IsBoundary && target.BoundaryEdgeNumber == targetBoundaryNumber)
+            {
+                source.Twin.Twin = target;
+                target.Twin = source.Twin;
+            }
             return target;
         }
 

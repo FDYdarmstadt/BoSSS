@@ -13,16 +13,15 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             this.map = map;
         }
 
-        public void AssignBoundariesOfPeriodicCorners(Queue< Edge<T>> periodicEdges, Corner periodicCorner)
+        public void AssignBoundariesOfPeriodicCorners(IEnumerable< Edge<T>> periodicEdges, Corner periodicCorner)
         {
-            while (periodicEdges.Count > 0)
+            foreach (Edge<T> edge in periodicEdges)
             {
-                Edge<T> current = periodicEdges.Dequeue();
-                AssignEdge(current, periodicCorner);
+                AssignBoundariesOfPeriodicCorner(edge, periodicCorner);
             }
         }
 
-        void AssignEdge(Edge<T> edge, Corner corner)
+        void AssignBoundariesOfPeriodicCorner(Edge<T> edge, Corner corner)
         {
             Corner twin = CreateTwinOf(corner);
 

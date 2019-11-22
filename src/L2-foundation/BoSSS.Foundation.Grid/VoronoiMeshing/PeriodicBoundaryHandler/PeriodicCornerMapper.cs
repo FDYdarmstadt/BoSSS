@@ -1,20 +1,21 @@
-﻿using System.Collections.Generic;
+﻿using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
+using System.Collections.Generic;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 {
     class PeriodicCornerMapper<T>
         where T : ILocatable
     {
-        PeriodicCornerBoundaryIdentifier<T> boundaryAssigner;
-
+        readonly PeriodicCornerBoundaryIdentifier<T> boundaryIdentifier;
         Queue<MeshCell<T>> cornerCells;
-
-        PeriodicCornerCellFinder<T> cornerFinder;
+        readonly PeriodicCornerCellFinder<T> cornerFinder;
+        readonly PeriodicCornerBoundaryAssigner<T> boundaryAssigner;
 
         public PeriodicCornerMapper(PeriodicMap map)
         {
             cornerFinder = new PeriodicCornerCellFinder<T>(map);
-            boundaryAssigner = new PeriodicCornerBoundaryIdentifier<T>(map);
+            boundaryIdentifier = new PeriodicCornerBoundaryIdentifier<T>(map);
+            boundaryAssigner = new PeriodicCornerBoundaryAssigner<T>(map);
         }
 
         public void ConnectPeriodicCorners()
@@ -32,8 +33,12 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             while (cornerCells.Count > 0)
             {
                 MeshCell<T> cornerCell = cornerCells.Dequeue();
-                boundaryAssigner.SetEdges(cornerCell);
+                (Stack<Edge<T>> wronglyAssignedEdges, Corner corner) = boundaryIdentifier.FindEdges(cornerCell);
+                boundaryAssigner.AssignBoundariesOfPeriodicCorners(wronglyAssignedEdges, corner);
             }
         }
     }
 }
+
+
+

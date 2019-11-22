@@ -11,7 +11,7 @@ namespace VoronoiTests.Grid
     {
         public override void Run()
         {
-            AllPeriodicBoundariesLarge();
+            PeriodicBoundaryPair();
         }
 
         [Test]
@@ -142,7 +142,7 @@ namespace VoronoiTests.Grid
                 EdgeTagNames = tagNames
             };
 
-            VoronoiGrid grid = VoronoiGrid2D.Polygonal(gridBoundary, 0, 200);
+            VoronoiGrid grid = VoronoiGrid2D.Polygonal(gridBoundary, 0, 500);
         }
 
         [Test]
@@ -190,7 +190,7 @@ namespace VoronoiTests.Grid
                 EdgeTagNames = tagNames
             };
 
-            VoronoiGrid grid = VoronoiGrid2D.Polygonal(gridBoundary, 0, 20);
+            VoronoiGrid grid = VoronoiGrid2D.Polygonal(gridBoundary, 0, 400);
         }
 
         [Test]

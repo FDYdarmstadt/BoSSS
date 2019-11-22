@@ -54,7 +54,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         }
     }
 
-    enum MeshCellType { Inside, NotDetermined }
+    enum MeshCellType { Inside, NotDetermined, Outside }
 
     class MeshCell<T>
     {

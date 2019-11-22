@@ -1,6 +1,7 @@
 ﻿using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
 using BoSSS.Platform.LinAlg;
 using ilPSP;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -93,42 +94,46 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
         bool PeriodicEdgeIDsLineUp(Mesh<T> mesh)
         {
             IEnumerable<Edge<T>> periodicEdges = PeriodicEdgesOf(mesh, mesh.Cells[firstCellNodeIndice].Node.Position);
-            List<int> innerIds = new List<int>();
-            List<int> outerIds = new List<int>();
+            List<Vertex> innerIds = new List<Vertex>();
+            List<Vertex> outerIds = new List<Vertex>();
             foreach(var edge in periodicEdges)
             {
-                innerIds.Add(edge.Start.ID);
-                outerIds.Add(edge.Twin.Start.ID);
+                innerIds.Add(edge.Start);
+                outerIds.Add(edge.Twin.Start);
             }
             HashSet< int> innerEdges = new HashSet<int>();
             int missCounter = 0;
             int duplicateCounter = 0;
-            foreach(int i in innerIds)
+            foreach(Vertex i in innerIds)
             {
-                if (innerEdges.Contains(i))
+                if (innerEdges.Contains(i.ID))
                 {
+                    Console.WriteLine($"({i.Position.x}, {i.Position.y} ) is a duplicate.");
                     ++duplicateCounter;
                 }
-                innerEdges.Add(i);
+                innerEdges.Add(i.ID);
             }
             HashSet<int> outerEdges = new HashSet<int>();
-            foreach (int i in outerIds)
+            foreach (Vertex i in outerIds)
             {
-                if (outerEdges.Contains(i))
+                if (outerEdges.Contains(i.ID))
                 {
+                    Console.WriteLine($"({i.Position.x}, {i.Position.y} ) is a duplicate.");
                     ++duplicateCounter;
                 }
-                outerEdges.Add(i);
+                outerEdges.Add(i.ID);
 
-                if (!innerEdges.Contains(i))
+                if (!innerEdges.Contains(i.ID))
                 {
+                    Console.WriteLine($"({i.Position.x}, {i.Position.y} ) is a miss.");
                     ++missCounter;
                 }
             }
-            foreach (int i in innerIds)
+            foreach (Vertex i in innerIds)
             {
-                if (!outerEdges.Contains(i))
+                if (!outerEdges.Contains(i.ID))
                 {
+                    Console.WriteLine($"({i.Position.x}, {i.Position.y} ) is a miss.");
                     ++missCounter;
                 }
             }

@@ -17,8 +17,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
         IEnumerator<Edge<T>> targetEdgeEnumerator;
 
         int targetBoundaryEdgeNumber;
+        int sourceBoundaryEdgeNumber;
 
         MeshCell<T> targetCell;
+
+        Welder welder;
 
         public BoundaryCellMerger()
         {
@@ -48,10 +51,12 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             newEdges.Clear();
             targetCell = target;
 
-            //Todo: Add convolution stuff, if weld is longer than 1.
-            Setup(source.Edges, sourceEdgeIndice, target.Edges, targetEdgeIndice);
-            ConstructNewEdges();
-            ReshapeCell(target);
+            if (source.type != MeshCellType.Outside || target.type != MeshCellType.Outside)
+            {
+                Setup(source.Edges, sourceEdgeIndice, target.Edges, targetEdgeIndice);
+                ConstructNewEdges();
+                ReshapeCell(target);
+            }
         }
 
         void AssertCorrectness(MeshCell<T> source, int sourceIndice, MeshCell<T> target, int targetIndice)
@@ -63,6 +68,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
         void Setup(Edge<T>[] sourceEdges, int sourceEdgeIndice, Edge<T>[] targetEdges, int targetEdgeIndice)
         {
             targetBoundaryEdgeNumber = targetEdges[targetEdgeIndice].BoundaryEdgeNumber;
+            sourceBoundaryEdgeNumber = sourceEdges[sourceEdgeIndice].BoundaryEdgeNumber;
+
+            welder = new Welder(targetBoundaryEdgeNumber);
 
             CyclicArray<Edge<T>> sourceEdgesStartingAtWeld = new CyclicArray<Edge<T>>(sourceEdges, sourceEdgeIndice);
             sourceEdgeEnumerator = new CyclicArrayEnumerator<Edge<T>>(sourceEdgesStartingAtWeld);
@@ -98,21 +106,23 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             AddTargetEdge(targetEdgeEnumerator.Current);
             LinkedListNode<Edge<T>> sourceNodeAfterWeld = newEdges.First;
             LinkedListNode<Edge<T>> targetNodeAfterWeld = newEdges.Last;
-            Welder.TargetFirstWeldEdges(sourceNodeAfterWeld, targetNodeAfterWeld);
+            welder.TargetFirstWeldEdges(sourceNodeAfterWeld, targetNodeAfterWeld);
         }
 
         void AddTargetEdge(Edge<T> targetEdge)
         {
             newEdges.AddLast(targetEdge);
+            targetEdge.Twin.Twin = targetEdge;
         }
 
         void AddSourceEdge(Edge<T> sourceEdge)
         {
             sourceEdge.Cell = targetCell;
-            if (newEdges.Count != 0)
+            /*if (newEdges.Count != 0)
             {
                 sourceEdge.Start = newEdges.First.Value.End;
             }
+            /*
             Edge<T> neighborInUntransformed = sourceEdge.Twin.Twin.Twin;
             Edge<T> neighbor = sourceEdge.Twin;
             if (neighborInUntransformed.Start.ID != neighbor.Start.ID)
@@ -122,28 +132,39 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 
                 sourceEdge.Twin = neighborInUntransformed;
                 //sourceEdge.Cell = sourceEdge.Twin.Twin.Cell;
-                sourceEdge.Twin.Twin = sourceEdge;
 
                 sourceEdge.Start.ID = sourceEdge.Twin.End.ID;
                 sourceEdge.End.ID = sourceEdge.Twin.Start.ID;
+                
+                sourceEdge.IsBoundary = false;
+                sourceEdge.BoundaryEdgeNumber = -1;
+                sourceEdge.Twin.IsBoundary = false;
+                sourceEdge.Twin.BoundaryEdgeNumber = -1;
 
-                //sourceEdge.IsBoundary = false;
-                //sourceEdge.BoundaryEdgeNumber = -1;
-                //sourceEdge.Twin.IsBoundary = false;
-                //sourceEdge.Twin.BoundaryEdgeNumber = -1;
             }
             else
             {
-                sourceEdge.Twin.Twin = sourceEdge;
+                sourceEdge.BoundaryEdgeNumber = targetBoundaryEdgeNumber;
+                sourceEdge.IsBoundary = true;
+            }*/
+
+            if (sourceEdge.Twin.IsBoundary)
+            {
                 sourceEdge.BoundaryEdgeNumber = targetBoundaryEdgeNumber;
                 sourceEdge.IsBoundary = true;
             }
+            else
+            {
+                sourceEdge.Start.ID = sourceEdge.Twin.End.ID;
+                sourceEdge.End.ID = sourceEdge.Twin.Start.ID;
+            }
+            sourceEdge.Twin.Twin = sourceEdge;
+
             newEdges.AddFirst(sourceEdge);
         }
 
         void AddCommonEdges()
         {
-            //Add common edges and set source to target boundary
             while (sourceEdgeEnumerator.MoveNext())
             {
                 Edge<T> sourceEdge = sourceEdgeEnumerator.Current;
@@ -164,7 +185,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             newEdges.RemoveFirst();
             newEdges.AddLast(firstNode);
             //Weld last source Edge and last target Edge
-            Welder.SourceFirstWeldEdges(newEdges.Last, newEdges.Last.Previous);
+            welder.SourceFirstWeldEdges(newEdges.Last, newEdges.Last.Previous);
         }
 
         void ReshapeCell(MeshCell<T> cell)

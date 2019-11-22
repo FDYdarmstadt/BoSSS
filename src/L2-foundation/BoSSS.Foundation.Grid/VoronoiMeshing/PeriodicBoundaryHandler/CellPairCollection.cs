@@ -6,7 +6,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 {
     class CellPairCollection<T>
     {
-        IDictionary<int, EdgeCombo> periodicEdges;
+        readonly IDictionary<int, EdgeCombo> periodicEdges;
 
         public class EdgeCombo
         {
@@ -147,7 +147,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             return combos;
         }
 
-        public IEnumerable<Pair<EdgeCombo>> GetCollectedEdgeCombos(PeriodicMap map)
+        public IEnumerable<Pair<EdgeCombo>> GetCollectedEdgeComboPairs(PeriodicMap map)
         {
             IDictionary<int, int> boundaryMap = map.PeriodicBoundaryCorrelation;
             EdgeCombo[] combos = EdgeComboAsPairs(boundaryMap);

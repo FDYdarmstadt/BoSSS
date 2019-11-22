@@ -27,6 +27,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
         {
             foreach (MeshCell<T> cell in cells)
             {
+                cell.type = MeshCellType.Outside;
                 SetAllEdgesToBoundary(cell.Edges, boundaryEdgeNumber, pairedBoundaryNumber);
             }
         }
@@ -35,13 +36,26 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
         {
             foreach (Edge<T> edge in edges)
             {
-                edge.IsBoundary = true;
-                edge.BoundaryEdgeNumber = pairedBoundaryNumber;
+
+                SwitchBoundary(edge, pairedBoundaryNumber);
                 if (edge.Twin != null)
                 {
-                    edge.Twin.BoundaryEdgeNumber = boundaryEdgeNumber;
-                    edge.Twin.IsBoundary = true;
+                    SwitchBoundary(edge.Twin, boundaryEdgeNumber);
                 }
+            }
+        }
+
+        void SwitchBoundary(Edge<T> edge, int boundaryEdgeNumber)
+        {
+            if (edge.IsBoundary)
+            {
+                edge.IsBoundary = false;
+                edge.BoundaryEdgeNumber = -1;
+            }
+            else
+            {
+                edge.IsBoundary = true;
+                edge.BoundaryEdgeNumber = boundaryEdgeNumber;
             }
         }
 
