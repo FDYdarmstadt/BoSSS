@@ -1192,6 +1192,7 @@ namespace BoSSS.Foundation.XDG {
                     foreach (var eqj in _eq.GetJacobianComponents())
                         JacobianOp.EquationComponents[CodNmn].Add(eqj);
                 }
+<<<<<<< Updated upstream
 
                 foreach (var eq in this.GhostEdgesOperator.EquationComponents[CodNmn]) {
                     if (!(eq is ISupportsJacobianComponent _eq))
@@ -1200,6 +1201,16 @@ namespace BoSSS.Foundation.XDG {
                         JacobianOp.GhostEdgesOperator.EquationComponents[CodNmn].Add(eqj);
                 }
 
+=======
+
+                foreach (var eq in this.GhostEdgesOperator.EquationComponents[CodNmn]) {
+                    if (!(eq is ISupportsJacobianComponent _eq))
+                        throw new NotSupportedException(string.Format("Unable to handle component {0}: To obtain a Jacobian operator, all components must implement the {1} interface.", eq.GetType().Name, typeof(ISupportsJacobianComponent).Name));
+                    foreach (var eqj in _eq.GetJacobianComponents())
+                        JacobianOp.GhostEdgesOperator.EquationComponents[CodNmn].Add(eqj);
+                }
+
+>>>>>>> Stashed changes
                 foreach (var eq in this.SurfaceElementOperator.EquationComponents[CodNmn]) {
                     if (!(eq is ISupportsJacobianComponent _eq))
                         throw new NotSupportedException(string.Format("Unable to handle component {0}: To obtain a Jacobian operator, all components must implement the {1} interface.", eq.GetType().Name, typeof(ISupportsJacobianComponent).Name));
