@@ -1301,7 +1301,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.InitialValues_Evaluators.Add("Phi", X => -1);
             //C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + 0.5.Pow2());
 
-            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.IncludeConvection = true;
 
             return C;
         }

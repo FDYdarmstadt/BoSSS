@@ -72,10 +72,12 @@ namespace BoSSS.Application.IBM_Solver {
 
             for (int iVar = 0; iVar < GAMMA; iVar++) { // loop over trial variables
                 if (((m_VolForm.VolTerms & (TermActivationFlags.UxV | TermActivationFlags.UxGradV)) != 0)
-                    && (U[iVar] != 0.0)) { // perf. opt.
+                    ){ 
+                    //&& (U[iVar] != 0.0)) { // perf. opt.
                     // add perturbation
                     double bkup = Utmp[iVar];
                     double delta = Math.Abs(U[iVar]) * eps;
+                    delta = eps;
                     Debug.Assert(delta > 0);
                     Utmp[iVar] += delta;
 
@@ -98,6 +100,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                     // inner product
                     ret += dU_iVar * U[iVar];
+                    ret -= dU_iVar * Utmp[iVar]; // subtract affine contribution
                 }
 
                 if (((m_VolForm.VolTerms & (TermActivationFlags.GradUxGradV | TermActivationFlags.GradUxGradV)) != 0)
@@ -186,10 +189,12 @@ namespace BoSSS.Application.IBM_Solver {
             ret += f0; // affine contribution - contains V and GradV contribution
             for (int iVar = 0; iVar < GAMMA; iVar++) { // loop over trial variables
                 if (((m_EdgForm.InnerEdgeTerms & (TermActivationFlags.UxV | TermActivationFlags.UxGradV)) != 0)) {
-                    if (U_IN[iVar] != 0.0) {
+                    //if (U_IN[iVar] != 0.0) {
+                    { 
                         // add perturbation
                         double bkup = U_IN_temp[iVar];
                         double delta = Math.Abs(U_IN[iVar]) * eps;
+                        delta = eps;
                         Debug.Assert(delta > 0);
                         U_IN_temp[iVar] += delta;
 
@@ -212,12 +217,15 @@ namespace BoSSS.Application.IBM_Solver {
 
                         // inner product
                         ret += dU_iVar * U_IN[iVar];
+                        ret -= dU_iVar * U_IN_temp[iVar]; // subtract affine contribution
                     }
-                    
-                    if(U_OT[iVar] != 0.0) {
+
+                    //if(U_OT[iVar] != 0.0) {
+                    { 
                         // add perturbation
                         double bkup = U_OT_temp[iVar];
                         double delta = Math.Abs(U_OT[iVar]) * eps;
+                        delta = eps;
                         Debug.Assert(delta > 0);
                         U_OT_temp[iVar] += delta;
 
@@ -240,6 +248,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                         // inner product
                         ret += dU_iVar * U_OT[iVar];
+                        ret -= dU_iVar * U_OT_temp[iVar]; // subtract affine contribution
                     }
                 }
 
@@ -270,10 +279,12 @@ namespace BoSSS.Application.IBM_Solver {
             ret += f0; // affine contribution - contains V and GradV contribution
             for (int iVar = 0; iVar < GAMMA; iVar++) { // loop over trial variables
                 if (((m_EdgForm.InnerEdgeTerms & (TermActivationFlags.UxV | TermActivationFlags.UxGradV)) != 0)) {
-                    if (U_IN[iVar] != 0.0) {
+                    //if (U_IN[iVar] != 0.0) {
+                    { 
                         // add perturbation
                         double bkup = U_IN_temp[iVar];
-                        double delta = Math.Abs(U_IN[iVar]) * eps;
+                        double delta = Math.Abs(U_IN[iVar]);//, Math.Abs(U_INtm[iVar]) * eps;
+                        delta = eps;
                         Debug.Assert(delta > 0);
                         U_IN_temp[iVar] += delta;
 
@@ -296,6 +307,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                         // inner product
                         ret += dU_iVar * U_IN[iVar];
+                        ret -= dU_iVar * U_IN_temp[iVar]; // subtract affine contribution
                     }
                 }
             }
@@ -358,8 +370,7 @@ namespace BoSSS.Application.IBM_Solver {
         double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
             var _Uin = new Vector(Uin);
             Debug.Assert(inp.D == _Uin.Dim);
-
-
+            
 
             IncompressibleBcType edgeType = m_bcmap.EdgeTag2Type[inp.EdgeTag];
 
@@ -394,7 +405,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         double InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout) {
             double r = 0.0;
-
+            
             var _Uin = new Vector(Uin);
             var _Uot = new Vector(Uout);
 
@@ -421,6 +432,7 @@ namespace BoSSS.Application.IBM_Solver {
             Debug.Assert(inp.D == _U.Dim);
 
             output.SetV(_U * _U[m_component] * m_rho);
+            
         }
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
