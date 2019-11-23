@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
-    static class MeshCellCloner
+    static class MeshElementCloner
     {
         public static MeshCell<T>[] Clone<T>(IList<MeshCell<T>> cells)
             where T : ILocatable, new()
@@ -62,7 +62,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return clone;
         }
 
-        static Edge<T>[] Clone<T>(IList<Edge<T>> edges)
+        public static Edge<T>[] Clone<T>(IList<Edge<T>> edges)
         {
             Edge<T>[] clones = new Edge<T>[edges.Count];
             for (int i = 0; i < edges.Count; ++i)
@@ -72,7 +72,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return clones;
         }
 
-        static Edge<T> Clone<T>(Edge<T> edge)
+        public static Edge<T> Clone<T>(Edge<T> edge)
         {
             Edge<T> clone = new Edge<T>()
             {

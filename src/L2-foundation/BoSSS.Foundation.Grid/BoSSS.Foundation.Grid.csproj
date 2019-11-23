@@ -69,7 +69,7 @@
     <Compile Include="VoronoiMeshing\Converter\EdgePairer.cs" />
     <Compile Include="VoronoiMeshing\MatlabColorPalette.cs" />
     <Compile Include="VoronoiMeshing\MatlabPlotter.cs" />
-    <Compile Include="VoronoiMeshing\MeshCellCopier.cs" />
+    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\MeshEdgeDivider.cs" />
     <Compile Include="VoronoiMeshing\Converter\PeriodicBoundaryConverterMap.cs" />
     <Compile Include="VoronoiMeshing\Converter\PeriodicBoundaryConverter.cs" />
     <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\PeriodicCornerBoundaryAssigner.cs" />
@@ -82,7 +82,7 @@
     <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\BoundaryEdgeFinder.cs" />
     <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\BoundaryRecomposer.cs" />
     <Compile Include="VoronoiMeshing\BoundaryTransformation.cs" />
-    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\BoundaryCellRemover.cs" />
+    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\BoundaryMover.cs" />
     <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\CellPairCollection.cs" />
     <Compile Include="VoronoiMeshing\DataStructures\ReverseEnumerator.cs" />
     <Compile Include="VoronoiMeshing\DataStructures\Convolution.cs" />
@@ -90,7 +90,7 @@
     <Compile Include="VoronoiMeshing\DataStructures\CountingEnumerable.cs" />
     <Compile Include="VoronoiMeshing\DataStructures\pair.cs" />
     <Compile Include="VoronoiMeshing\DataStructures\ArrayMethods.cs" />
-    <Compile Include="VoronoiMeshing\MeshCellCloner.cs" />
+    <Compile Include="VoronoiMeshing\MeshElementCloner.cs" />
     <Compile Include="VoronoiMeshing\Cutter\BoundaryLineEnumerator.cs" />
     <Compile Include="VoronoiMeshing\Cutter\Divider.cs" />
     <Compile Include="VoronoiMeshing\BoundaryLine.cs" />

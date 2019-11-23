@@ -1,34 +1,29 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 {
-    class BoundaryCellRemover<T>
-        where T : ILocatable
+    class BoundaryMover<T>
     {
         readonly Mesh<T> mesh;
 
         readonly InsideCellEnumerator<T> insideCells;
 
-        readonly Queue<(IList<MeshCell<T>>, int, int)> meshCellsToRemove;
+        readonly MeshEdgeDivider<T> edgeDivider;
 
-        public BoundaryCellRemover(Mesh<T> mesh, int firstCellNodeIndice)
+        public BoundaryMover(IDMesh<T> mesh, int firstCellNodeIndice)
         {
             this.mesh = mesh;
             insideCells = new InsideCellEnumerator<T>(mesh, firstCellNodeIndice);
-            meshCellsToRemove = new Queue<(IList<MeshCell<T>>, int, int)>();
+            edgeDivider = new MeshEdgeDivider<T>(mesh);
         }
 
-        public void EnqueueForRemoval(IList<MeshCell<T>> cells, int boundaryEdgeNumber, int pairedBoundaryEdgeNumber)
-        {
-            meshCellsToRemove.Enqueue((cells, boundaryEdgeNumber, pairedBoundaryEdgeNumber));
-        }
-
-        void SetAsBoundary(IList<MeshCell<T>> cells, int boundaryEdgeNumber, int pairedBoundaryNumber)
+        public void MoveBoundary(IList<MeshCell<T>> cells, int boundaryEdgeNumber, int pairedBoundaryEdgeNumber)
         {
             foreach (MeshCell<T> cell in cells)
             {
                 cell.type = MeshCellType.Outside;
-                SetAllEdgesToBoundary(cell.Edges, boundaryEdgeNumber, pairedBoundaryNumber);
+                SetAllEdgesToBoundary(cell.Edges, boundaryEdgeNumber, pairedBoundaryEdgeNumber);
             }
         }
 
@@ -36,7 +31,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
         {
             foreach (Edge<T> edge in edges)
             {
-
                 SwitchBoundary(edge, pairedBoundaryNumber);
                 if (edge.Twin != null)
                 {
@@ -59,22 +53,18 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             }
         }
 
-        public void RemoveQueuedCells()
+        public void DivideBoundary(IList<MeshCell<T>> cells)
         {
-            while(meshCellsToRemove.Count > 0)
+            foreach(MeshCell<T> cell in cells)
             {
-                (IList<MeshCell<T>> cells, int boundaryNumber, int pairedBoundaryNumber) = meshCellsToRemove.Dequeue();
-                SetAsBoundary(cells, boundaryNumber, pairedBoundaryNumber);
-            }
-            RemoveOuterCellsFromMesh();
-        }
-
-        public void SetQueuedCellsAsOuter()
-        {
-            while (meshCellsToRemove.Count > 0)
-            {
-                (IList<MeshCell<T>> cells, int boundaryNumber, int pairedBoundaryNumber) = meshCellsToRemove.Dequeue();
-                SetAsBoundary(cells, boundaryNumber, pairedBoundaryNumber);
+                for(int i = 0; i < cell.Edges.Length; ++i)
+                {
+                    Edge<T> edge = cell.Edges[i];
+                    if (edge.IsBoundary)
+                    {
+                        edgeDivider.DivideEdge(edge, i);
+                    }
+                }
             }
         }
 

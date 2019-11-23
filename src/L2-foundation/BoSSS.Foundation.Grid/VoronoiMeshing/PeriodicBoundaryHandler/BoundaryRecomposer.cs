@@ -14,6 +14,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 
         readonly PeriodicCornerMapper<T> cornerMapper;
 
+        BoundaryMover<T> boundaryMover;
+
         public BoundaryRecomposer(
             PeriodicMap map,
             int firstCellNodeIndice)
@@ -33,60 +35,50 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 
         void RecomposeCutCells(IDMesh<T> mesh, CellPairCollection<T> candidates)
         {
-            MeshCellCopier<T> cellCopier = new MeshCellCopier<T>(mesh);
-            BoundaryCellRemover<T> remover = new BoundaryCellRemover<T>(mesh, firstCellNodeIndice);
+            boundaryMover = new BoundaryMover<T>(mesh, firstCellNodeIndice);
 
             MatlabPlotter plotter = new MatlabPlotter();
             int i = 0;
             plotter.Plot(mesh, "intermediate" + i);
-            foreach (CellPairCollection<T>.EdgeCombo mergePair in CreateMergePairsOfEachEdge(candidates, cellCopier, remover))
+            foreach (CellPairCollection<T>.EdgeCombo mergePair in CreateMergePairsOfEachEdge(candidates))
             {
                 ++i;
                 Debug.Assert(CellNodePositionsMatch(mergePair));
-                plotter.Plot(mesh, "intermediate" + i);
-                MergeAtBoundary(mergePair);
+                //plotter.Plot(mesh, "intermediate" + i);
                 
+                //MergeAtBoundary(mergePair);
             }
             plotter.Plot(mesh, "ifinal");
         }
 
         IEnumerable<CellPairCollection<T>.EdgeCombo> CreateMergePairsOfEachEdge(
-            CellPairCollection<T> candidates,
-            MeshCellCopier<T> cellCopier,
-            BoundaryCellRemover<T> remover)
+            CellPairCollection<T> candidates)
         {
             foreach (Pair<CellPairCollection<T>.EdgeCombo> opposingEdges in candidates.GetCollectedEdgeComboPairs(map))
             {
-                CellPairCollection<T>.EdgeCombo mergePair = 
-                    ExtractMergePair(opposingEdges.Previous, candidates, cellCopier, remover);
-                InitializeGlueMapOf(mergePair);
-                CellPairCollection<T>.EdgeCombo secondMergePair = 
-                    ExtractMergePair(opposingEdges.Current, candidates, cellCopier, remover);
-                InitializeGlueMapOf(secondMergePair);
+                CellPairCollection<T>.EdgeCombo mergePair = ExtractMergePair(opposingEdges.Previous, candidates);
+                CellPairCollection<T>.EdgeCombo opposedMergePair = ExtractMergePair(opposingEdges.Current, candidates);
 
-                remover.SetQueuedCellsAsOuter();
-                remover.RemoveOuterCellsFromMesh();
-
+                Transform(mergePair);
+                Transform(opposedMergePair);
                 yield return mergePair;
-                yield return secondMergePair;
+                yield return opposedMergePair;
             }
-            
-            //remover.RemoveOuterCellsFromMesh();
-
+            boundaryMover.RemoveOuterCellsFromMesh();
         }
 
         CellPairCollection<T>.EdgeCombo ExtractMergePair(
             CellPairCollection<T>.EdgeCombo edgePair,
-            CellPairCollection<T> candidates,
-            MeshCellCopier<T> cellCopier,
-            BoundaryCellRemover<T> remover)
+            CellPairCollection<T> candidates)
         {
             CellPairCollection<T>.EdgeCombo mergePair = new CellPairCollection<T>.EdgeCombo(edgePair.EdgeNumber);
+            
             int pairedBoundary = map.PeriodicBoundaryCorrelation[edgePair.EdgeNumber];
             candidates.TryGetOuterCells(pairedBoundary, out List<MeshCell<T>> pairedOuterCells);
-            mergePair.Outer = TransformedCopyOfOuter(pairedOuterCells, pairedBoundary, cellCopier);
+            mergePair.Outer = pairedOuterCells;
             mergePair.Inner = new List<MeshCell<T>>(ArrayMethods.GetReverseOrderArray(edgePair.Inner));
-            remover.EnqueueForRemoval(pairedOuterCells, pairedBoundary, edgePair.EdgeNumber);
+            InitializeGlueMapOf(mergePair);
+
             return mergePair;
         }
 
@@ -139,32 +131,48 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             return glueMap;
         }
 
-        
-        List<MeshCell<T>> TransformedCopyOfOuter(
-            List<MeshCell<T>> candidates,
-            int boundaryNumber,
-            MeshCellCopier<T> cellCopier)
+        void Transform(CellPairCollection<T>.EdgeCombo mergePair)
+        {
+            int pairedBoundary = map.PeriodicBoundaryCorrelation[mergePair.EdgeNumber];
+
+            boundaryMover.MoveBoundary(mergePair.Outer, pairedBoundary, mergePair.EdgeNumber);
+            boundaryMover.DivideBoundary(mergePair.Outer);
+
+            Transform(mergePair.Outer, pairedBoundary);
+        }
+
+        void Transform(
+            List<MeshCell<T>> cells,
+            int boundaryNumber)
         {
             //CloneAndTransformOuterCells
             map.PeriodicBoundaryTransformations.TryGetValue(boundaryNumber, out Transformation trafo);
-            List<MeshCell<T>> clones = cellCopier.Copy(candidates);
-            TransformCells(clones, trafo);
-            return clones;
+            TransformCells(cells, trafo);
         }
 
-        static void TransformCells(IEnumerable<MeshCell<T>> cells, Transformation transformation)
+        static void TransformCells(IList<MeshCell<T>> cells, Transformation transformation)
         {
+            HashSet<int> transformed = new HashSet<int>();
             foreach (MeshCell<T> cell in cells)
             {
-                TransformCell(cell, transformation);
+                TransformCell(cell, transformation, transformed);
             }
         }
 
-        static void TransformCell(MeshCell<T> cell, Transformation transformation)
+        static void TransformCell(
+            MeshCell<T> cell, 
+            Transformation transformation, 
+            HashSet<int> transformed)
         {
             for (int i = 0; i < cell.Vertices.Length; ++i)
             {
-                cell.Vertices[i].Position = transformation.Transform(cell.Vertices[i].Position);
+                Vertex vertex = cell.Vertices[i];
+                if (!transformed.Contains(vertex.ID))
+                {
+                    transformed.Add(vertex.ID);
+                    cell.Vertices[i].Position = transformation.Transform(cell.Vertices[i].Position);
+                }
+                
             }
             cell.Node.Position = transformation.Transform(cell.Node.Position);
         }
