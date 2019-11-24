@@ -7,6 +7,9 @@ using System.Diagnostics;
 
 namespace BoSSS.Application.ExternalBinding {
 
+    /// <summary>
+    /// Basic Testing for external language binding.
+    /// </summary>
     [TestFixture]
     static public class GridImportTest {
         internal static int[][] faces = new int[][] {
@@ -150,10 +153,7 @@ namespace BoSSS.Application.ExternalBinding {
             };
 
         public static void Main() {
-
             
-
-
             int nPoints = points.GetLength(0);
             int nFaces = owner.Length;
             int nInternalFaces = neighbour.Length;
@@ -165,6 +165,9 @@ namespace BoSSS.Application.ExternalBinding {
 
         }
 
+        /// <summary>
+        /// test for <see cref="OpenFOAMGrid"/>
+        /// </summary>
         [Test]
         public static void ConvertFOAMGrid() {
             int nCells = 9;
@@ -175,12 +178,18 @@ namespace BoSSS.Application.ExternalBinding {
         
         static Initializer MyInit;
 
+        /// <summary>
+        /// MPI Init
+        /// </summary>
         [TestFixtureSetUp]
         public static void Init() {
             MyInit = new Initializer();
             MyInit.BoSSSInitialize();
         }
 
+        /// <summary>
+        /// MPI shutdown
+        /// </summary>
         [TestFixtureTearDown]
         public static void Cleanup() {
             MyInit.BoSSSFinalize();
