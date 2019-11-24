@@ -159,8 +159,9 @@ namespace BoSSS.Application.ExternalBinding {
             int nInternalFaces = neighbour.Length;
 
 
+            Init();
             ConvertFOAMGrid();
-
+            Cleanup();
 
         }
 

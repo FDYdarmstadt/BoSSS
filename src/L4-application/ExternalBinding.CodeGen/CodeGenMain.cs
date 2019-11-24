@@ -533,6 +533,9 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
                     Console.Error.WriteLine("Unable to get output directory.");
                 else if(!Directory.Exists(args[0]))
                     Console.Error.WriteLine("Directory >{0}< does not seem to exist.");
+
+                Console.Error.WriteLine("exiting");
+                return;
             }
             string outputDir = args[0];
 
