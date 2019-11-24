@@ -515,11 +515,28 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
                 Hfile.IncludeDirectives.Add("#include \"" + Hf.FileName + CodeGenHeaderFile.HeaderFileSuffix + "\"");
             }
 
+            Hfile.IncludeDirectives.Add("#include \"MonoBoSSSglobals.h\"");
+
             Hfiles.Add(Hfile);
         }
 
 
         public static void Main(string[] args) {
+            // check input
+            // ===========
+            if(args.Length != 1 || !Directory.Exists(args[0])) {
+                Console.WriteLine("BoSSS - Code generator for C++ bindings.");
+                Console.WriteLine("usage: ");
+                Console.WriteLine("      ExteranlBinding.CodeGen.exe {OuputDir}");
+
+                if(args.Length < 1)
+                    Console.Error.WriteLine("Unable to get output directory.");
+                else if(!Directory.Exists(args[0]))
+                    Console.Error.WriteLine("Directory >{0}< does not seem to exist.");
+            }
+            string outputDir = args[0];
+
+
 
             // create type decls
             // =================
@@ -542,12 +559,12 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
             // Master include
             // ==============
             GenerateMasterInclude();
-            
+
 
             // write code
             // ==========
-                                 
-            string outputDir = @"C:\Users\florian\Documents\Visual Studio 2017\Projects\ExtBindingTest\ExtBindingTest";
+
+            //string outputDir = @"C:\Users\florian\Documents\Visual Studio 2017\Projects\ExtBindingTest\ExtBindingTest";
             //string outputDir = @"C:\tmp\ExtBindingTest";
 
             foreach(var Cf in Cppfiles) {
@@ -556,6 +573,15 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
             foreach(var Hf in Hfiles) {
                 Hf.WriteFile(outputDir);
             }
+
+            // Write additional files
+            // ======================
+
+            File.WriteAllText(Path.Combine(outputDir, "compile.sh"), Resources.compile_sh);
+            File.WriteAllText(Path.Combine(outputDir, "MonoBoSSSglobals.h"), Resources.MonoBoSSSglobals_h);
+            File.WriteAllText(Path.Combine(outputDir, "MonoBoSSSglobals.cpp"), Resources.MonoBoSSSglobals_cpp);
+            File.WriteAllText(Path.Combine(outputDir, "ExtBindingTest.cpp"), Resources.ExtBindingTest_cpp);
+
         }
     }
 }

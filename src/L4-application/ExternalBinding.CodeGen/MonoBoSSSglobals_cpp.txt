@@ -1,0 +1,77 @@
+#include <stdlib.h>
+#include <assert.h>
+
+#include <mono/metadata/mono-config.h>
+#include <mono/jit/jit.h>
+#include <mono/metadata/assembly.h>
+#include <mono/metadata/debug-helpers.h>
+
+#include "MonoBoSSSglobals.h"
+
+
+
+namespace BoSSScppWrapper
+{
+    //MonoBoSSSglobals::Initialized = 0;
+
+    MonoDomain* MonoBoSSSglobals::domain = NULL;
+    MonoAssembly* MonoBoSSSglobals::assembly = NULL;
+    MonoImage* MonoBoSSSglobals::image = NULL;
+    int MonoBoSSSglobals::Initialized = 0;
+
+    void MonoBoSSSglobals::Init(const char* dir, const char* assemblyFile)
+    {
+        
+        if (Initialized != 0)
+            return;
+        Initialized = 0x1234;
+        
+        mono_config_parse(NULL);
+        domain = mono_jit_init_version("domain_name", "v4.0.30319");
+        if (domain == NULL)
+            throw "Unable to setup mono domain.";
+        mono_domain_set_config(domain, dir, "");
+
+        assembly = mono_domain_assembly_open(domain, assemblyFile);
+        if (assembly == NULL) {
+            printf("Unable to open assembly: {%s}\n", assemblyFile);
+            throw "Unable to open assembly.";
+        }
+        image = mono_assembly_get_image(assembly);
+        if (image == NULL) {
+            printf("Unable to get assembly image.\n");
+            throw "Unable to get assembly image.";
+        }
+        printf("done.\n");
+    }
+
+    MonoClass* MonoBoSSSglobals::LookupClass(const char *_classname, const char* _namespace) {
+        if(image == NULL) {
+            fprintf(stderr, "Image not loaded - must call MonoBoSSSglobals::Init first.\n");
+        }
+        assert(image != NULL);
+        MonoClass* mcls = mono_class_from_name(image, _namespace, _classname);
+        if (mcls == NULL) {
+            fprintf(stderr, "unable to find class %s.%s\n", _namespace, _classname);
+            throw "unable to find method description for method. ";// +name_as_string)
+        }
+        return mcls;
+    }
+
+    MonoMethod* MonoBoSSSglobals::LookupMethod(MonoClass* pClass, const char *name, mono_bool include_namespace) {
+
+        MonoMethodDesc* desc = mono_method_desc_new(name, include_namespace);
+
+        if (desc == NULL) {
+            fprintf(stderr, "unable to find method description for method %s\n", name);
+            throw "unable to find method description for method. ";// +name_as_string)
+        }
+        MonoMethod* methodHandle = mono_method_desc_search_in_class(desc, pClass);
+        if (methodHandle == NULL) {
+            fprintf(stderr, "unable to find method handle for method.\n");
+            throw "unable to find method handle for method. ";// +name_as_string)
+        }
+        mono_method_desc_free(desc);
+        return methodHandle;
+    }
+}

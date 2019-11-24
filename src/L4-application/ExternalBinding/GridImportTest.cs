@@ -1,18 +1,14 @@
-﻿using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Foundation.Grid.RefElements;
-using ilPSP;
-using ilPSP.Utils;
+﻿using BoSSS.Foundation.Grid;
+using MPI.Wrappers;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BoSSS.Application.ExternalBinding {
-    public class GridImportTest {
+
+    [TestFixture]
+    static public class GridImportTest {
         internal static int[][] faces = new int[][] {
             new int[] {1, 5, 21, 17},
             new int[] {4, 20, 21, 5},
@@ -155,30 +151,39 @@ namespace BoSSS.Application.ExternalBinding {
 
         public static void Main() {
 
-            var c = new Initializer();
-            c.BoSSSInitialize();
+            
 
-            int nCells = 9;
 
             int nPoints = points.GetLength(0);
             int nFaces = owner.Length;
             int nInternalFaces = neighbour.Length;
 
 
+            ConvertFOAMGrid();
 
-
-            var g = new OpenFOAMGrid(nCells, faces, neighbour, owner, points);
-            Console.WriteLine("");
 
         }
 
+        [Test]
+        public static void ConvertFOAMGrid() {
+            int nCells = 9;
+            var g = new OpenFOAMGrid(nCells, faces, neighbour, owner, points);
 
+            Assert.AreEqual(g.GridData.iLogicalCells.Count, nCells, "Mismatch in expected number of cells.");
+        }
+        
+        static Initializer MyInit;
 
+        [TestFixtureSetUp]
+        public static void Init() {
+            MyInit = new Initializer();
+            MyInit.BoSSSInitialize();
+        }
 
-        // ---------------------------------
-        // test data from OpenFOAM tutorials
-        //
-
+        [TestFixtureTearDown]
+        public static void Cleanup() {
+            MyInit.BoSSSFinalize();
+        }
 
     }
 }

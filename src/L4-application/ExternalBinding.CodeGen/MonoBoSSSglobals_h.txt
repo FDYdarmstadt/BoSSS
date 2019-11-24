@@ -1,0 +1,19 @@
+#pragma once
+namespace BoSSScppWrapper
+{
+class MonoBoSSSglobals
+{
+public:
+	
+    static MonoDomain* domain;
+    static MonoAssembly* assembly;
+    static MonoImage* image;
+
+	static void Init(const char* dir, const char* exe);
+    static MonoClass*  LookupClass(const char *_classname, const char* _namespace);
+    static MonoMethod* LookupMethod(MonoClass* pClass, const char *name, mono_bool include_namespace);
+
+private:
+    static int Initialized;
+};
+}
