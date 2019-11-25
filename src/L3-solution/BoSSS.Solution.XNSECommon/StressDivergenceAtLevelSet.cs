@@ -85,7 +85,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             double res = 0;
 
             res -= (0.5 * (TA[0] * muA + TB[0] * muB) * N[0] + 0.5 * (TA[1] * muA + TB[1] * muB) * N[1]) * (vA - vB); // central difference for stress divergence
-            res += penalty2 / hCellMin * (TA[2] * muA - TB[2] * muB) * (vA - vB);
+            res += penalty2 / hCutCellMin * (TA[2] * muA - TB[2] * muB) * (vA - vB);
 
             return  res;
         }

@@ -227,6 +227,8 @@ namespace BoSSS.Solution.XNSECommon {
             //viscoelastic
             double reynoldsA = physParams.reynolds_A;
             double reynoldsB = physParams.reynolds_B;
+            double betaA = physParams.beta_a;
+            double betaB = physParams.beta_b;
             double[] penalty1 = dntParams.Penalty1;
             double penalty2 = dntParams.Penalty2;
 
@@ -265,7 +267,7 @@ namespace BoSSS.Solution.XNSECommon {
                         break;
                     case ViscosityMode.Viscoelastic:
                         //comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, 1 / reynoldsA, 1 / reynoldsB, penalty * 1.0, d, false));
-                        comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, 1/reynoldsA, 1/reynoldsB, penalty, d, dntParams.UseWeightedAverages));
+                        comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, betaA / reynoldsA, betaB / reynoldsB, penalty, d, dntParams.UseWeightedAverages));
                         comps.Add(new Operator.Viscosity.StressDivergenceAtLevelSet(LsTrk, reynoldsA, reynoldsB, penalty1, penalty2, d));
                         break;
 
@@ -492,6 +494,8 @@ namespace BoSSS.Solution.XNSECommon {
                 comps.Add(src);
                 var flx = new Operator.Continuity.DivergenceInSpeciesBulk_Edge(d, BcMap, spcName, spcId, rhoSpc, dntParams.ContiSign, dntParams.RescaleConti);
                 comps.Add(flx);
+                //var stab = new PressureStabilizationInBulk(dntParams.PresPenalty2, physParams.reynolds_A, physParams.reynolds_B, spcName, spcId);
+                //comps.Add(stab);
             }
 
         }
@@ -527,6 +531,8 @@ namespace BoSSS.Solution.XNSECommon {
 
             var divPen = new Operator.Continuity.DivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, config.isMatInt, dntParams.ContiSign, dntParams.RescaleConti);
             comps.Add(divPen);
+            //var stabint = new PressureStabilizationAtLevelSet(LsTrk, dntParams.PresPenalty2, physParams.reynolds_A, physParams.reynolds_B);
+            //comps.Add(stabint);
         }
 
 

@@ -103,8 +103,10 @@ namespace BoSSS.Solution.RheologyCommon {
             double res = 0;
 
             res += (TA[0] - TB[0]);
+            //res += 0.5 * (TA[0] + TB[0]);
 
-            return res * 0.5 *(VA + VB);
+            return res * 0.5 * (VA + VB);
+            //return res * (VA - VB);
         }
 
 

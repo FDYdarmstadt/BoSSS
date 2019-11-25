@@ -53,6 +53,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GenericTestcases.cs" />
+    <Compile Include="ManSol.cs" />
     <Compile Include="ChannelFlow.cs" />
     <Compile Include="Droplet.cs" />
     <Compile Include="XRheology_OperatorConfiguration.cs" />

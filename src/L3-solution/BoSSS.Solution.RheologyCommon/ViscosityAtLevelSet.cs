@@ -92,13 +92,13 @@ namespace BoSSS.Solution.RheologyCommon {
             int D = N.Length;
             Debug.Assert(this.ArgumentOrdering.Count == 2);
 
-            double PosCellLengthScale = PosLengthScaleS[inp.jCell];
-            double NegCellLengthScale = NegLengthScaleS[inp.jCell];
+            //double PosCellLengthScale = PosLengthScaleS[inp.jCell];
+            //double NegCellLengthScale = NegLengthScaleS[inp.jCell];
 
-            double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
-            if (hCutCellMin <= 1.0e-10 * hCellMin)
-                // very small cell -- clippling
-                hCutCellMin = hCellMin;
+            //double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
+            //if (hCutCellMin <= 1.0e-10 * hCellMin)
+            //    // very small cell -- clippling
+            //    hCutCellMin = hCellMin;
 
             Debug.Assert(UA.Length == this.ArgumentOrdering.Count);
             Debug.Assert(UB.Length == this.ArgumentOrdering.Count);

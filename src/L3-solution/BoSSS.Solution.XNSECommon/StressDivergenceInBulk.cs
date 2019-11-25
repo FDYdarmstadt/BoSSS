@@ -45,8 +45,8 @@ namespace BoSSS.Solution.RheologyCommon {
             base.pen2 = _Penalty2;
 
             switch (spcName) {
-                case "A": base.InverseReynolds = -1 / _ReynoldsA; break;
-                case "B": base.InverseReynolds = -1 / _ReynoldsB; break;
+                case "A": InverseReynolds = -1 / _ReynoldsA; break; //base.
+                case "B": InverseReynolds = -1 / _ReynoldsB; break; //base.
                 default: throw new ArgumentException("Unknown species.");
             }
 

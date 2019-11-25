@@ -225,6 +225,7 @@ namespace BoSSS.Application.XRheology_Solver {
         /// <summary>
         /// defines the number of incremental timesteps in one gloabl timestep (for incrementInit)
         /// </summary>
+        [DataMember]
         public int incrementTimesteps = 1;
 
         /// <summary>
@@ -236,11 +237,13 @@ namespace BoSSS.Application.XRheology_Solver {
         /// <summary>
         /// underrelaxation of the level set movement in case of coupled iterative
         /// </summary>
+        [DataMember]
         public double LSunderrelax = 1.0;
 
         /// <summary>
         /// array of additional parameter values for some testcases
         /// </summary>
+        [DataMember]
         public double[] AdditionalParameters;
 
         ///// <summary>
@@ -282,6 +285,7 @@ namespace BoSSS.Application.XRheology_Solver {
         /// <summary>
         /// Block-Preconditiond for the pressure/continuity-block of the saddle-point system
         /// </summary>
+        [DataMember]
         public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.IdMass;
 
         /// <summary>
@@ -309,7 +313,31 @@ namespace BoSSS.Application.XRheology_Solver {
         [DataMember]
         public bool ComputeInterfaceEnergy = false;
 
-
+        /// <summary>
+        /// Exact solution for GravityX source.
+        /// </summary>
+        [NonSerialized]
+        public IDictionary<string, Func<double[], double, double>> GravityX;
+        /// <summary>
+        /// Exact solution for GravityY source.
+        /// </summary>
+        [NonSerialized]
+        public IDictionary<string, Func<double[], double, double>> GravityY;
+        /// <summary>
+        /// Exact solution for GravityXX source.
+        /// </summary>
+        [NonSerialized]
+        public IDictionary<string, Func<double[], double, double>> GravityXX;
+        /// <summary>
+        /// Exact solution for GravityXY source.
+        /// </summary>
+        [NonSerialized]
+        public IDictionary<string, Func<double[], double, double>> GravityXY;
+        /// <summary>
+        /// Exact solution for GravityYY source.
+        /// </summary>
+        [NonSerialized]
+        public IDictionary<string, Func<double[], double, double>> GravityYY;
 
         /// <summary>
         /// Turn XDG for the velocity on/off; if off, only the pressure is approximated by XDG,
@@ -333,7 +361,11 @@ namespace BoSSS.Application.XRheology_Solver {
         /// Exact solution for stresses, for each species (either A or B).
         /// </summary>
         [NonSerialized]
-        public IDictionary<string, Func<double[], double, double>[]> ExactSolutionStresses;
+        public IDictionary<string, Func<double[], double, double>> ExactSolutionStressXX;
+        [NonSerialized]
+        public IDictionary<string, Func<double[], double, double>> ExactSolutionStressXY;
+        [NonSerialized]
+        public IDictionary<string, Func<double[], double, double>> ExactSolutionStressYY;
 
         /// <summary>
         /// Control Options for ReInit
@@ -395,6 +427,7 @@ namespace BoSSS.Application.XRheology_Solver {
         /// <summary>
         /// Analytical solution for linearized problem A(u_ex) * u_new = b(u_ex)?
         /// </summary>
+        [DataMember]
         public bool SetParamsAnalyticalSol = false;
 
         /// <summary>

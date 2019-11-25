@@ -41,8 +41,8 @@ namespace BoSSS.Solution.RheologyCommon {
             base.pen1 = _Penalty1;
 
             switch (spcName) {
-                case "A": base.m_ViscosityNonNewton = 1- _betaA; break;
-                case "B": base.m_ViscosityNonNewton = 1 - _betaB; break;
+                case "A": m_ViscosityNonNewton = 1- _betaA; break; //base.
+                case "B": m_ViscosityNonNewton = 1 - _betaB; break; //base.
                 default: throw new ArgumentException("Unknown species.");
             }
         }

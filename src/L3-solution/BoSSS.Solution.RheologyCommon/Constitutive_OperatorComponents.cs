@@ -167,8 +167,8 @@ namespace BoSSS.Solution.RheologyCommon {
         /// <param name="D"></param>
         /// <param name="BcMap"></param>
         /// <param name="LsTrk"></param>
-        public static void AddInterfaceConstitutive_component(XSpatialOperatorMk2 XOp, IXNSE_Configuration config, int d, int D,
-            IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk) {
+        public static void AddInterfaceConstitutive_component(XSpatialOperatorMk2 XOp, IRheology_Configuration config, int d, int D,
+            IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, out bool U0meanrequired) {
 
             // check input
             if (XOp.IsCommited)
@@ -205,10 +205,25 @@ namespace BoSSS.Solution.RheologyCommon {
             // set components
             var comps = XOp.EquationComponents[CodName];
 
-            // identity part
+            // identity part: local variable, therefore no contribution at interface!
             // ===================
-            var identity = new IdentityAtLevelSet(LsTrk, d);
-            comps.Add(identity);
+
+
+            U0meanrequired = false;
+
+            if (config.isOldroydB) {
+
+                // convective operator
+                // ===================
+                //var convective = new ConvectiveAtLevelSet(LsTrk, d, physParams.Weissenberg_a, physParams.Weissenberg_b, dntParams.alpha);
+                //comps.Add(convective);
+                U0meanrequired = true;
+
+                // objective operator
+                // ===================
+                //var objective = new ObjectiveAtLevelSet(LsTrk, d, physParams.Weissenberg_a, physParams.Weissenberg_b);
+                //comps.Add(objective);
+            }
 
             // viscous operator
             // ==================
@@ -225,11 +240,14 @@ namespace BoSSS.Solution.RheologyCommon {
         /// < param name="config"></param>
         /// <param name = "BcMap" ></ param >
         /// < param name="LsTrk"></param>
-        public static void AddInterfaceConstitutive(XSpatialOperatorMk2 XOp, IXNSE_Configuration config, int D,
-            IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk) {
+        /// <param name="U0meanrequired"></param>
+        public static void AddInterfaceConstitutive(XSpatialOperatorMk2 XOp, IRheology_Configuration config, int D,
+            IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, out bool U0meanrequired) {
+
+            U0meanrequired = false;
 
             for (int d = 0; d < 3; d++) {
-                AddInterfaceConstitutive_component(XOp, config, d, D, BcMap, LsTrk);
+                AddInterfaceConstitutive_component(XOp, config, d, D, BcMap, LsTrk, out U0meanrequired);
             }
         }
 
