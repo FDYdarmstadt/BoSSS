@@ -282,8 +282,8 @@ namespace BoSSS.Application.IBM_Solver {
 
                 // full operator:
                 var CodName = ((new string[] { "momX", "momY", "momZ" }).GetSubVector(0, D)).Cat("div");
-                var Params = new string[0]; //ArrayTools.Cat(VariableNames.Velocity0Vector(D),
-                     //VariableNames.Velocity0MeanVector(D));
+                var Params = ArrayTools.Cat(VariableNames.Velocity0Vector(D),
+                                            VariableNames.Velocity0MeanVector(D));
                 var DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure);
 
                 // selected part:
