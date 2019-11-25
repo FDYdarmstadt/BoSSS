@@ -11,13 +11,13 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
     /// Unit/regression tests
     /// </summary>
     [TestFixture]
-    public class Test {
+    static public class Test {
 
         /// <summary>
         /// Executes the Code generator to see if it runs without exception.
         /// </summary>
         [Test]
-        static void RunGenerator() {
+        public static void RunGenerator() {
             CodeGenMain.Main(new[] { "." });
         }
     }

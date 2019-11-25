@@ -521,13 +521,6 @@ namespace BoSSS.Application.IBM_Solver {
             // create matrix and affine vector:
             if (OpMatrix != null) {
 
-                //var css = new CoordinateVector(CurrentState);
-                //{
-                //    Random rnd = new Random();
-                //    for (int i = 0; i < css.Count; i++)
-                //        css[i] = rnd.NextDouble();
-                //}
-
 
                 // using ad-hoc linearization:
                 // - - - - - - - - - - - - - - 
@@ -535,9 +528,7 @@ namespace BoSSS.Application.IBM_Solver {
                 //var mtxBuilder = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, FluidSpecies);
                 //mtxBuilder.time = phystime;
                 //mtxBuilder.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
-                //var __OpMatrix = new BlockMsrMatrix(OpMatrix._ColPartitioning);
-                //var __OpAffine = new double[__OpMatrix._ColPartitioning.LocalLength];
-                //mtxBuilder.ComputeMatrix(__OpMatrix, __OpAffine);
+                //mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
 
                 // using finite difference Jacobi:
                 // - - - - - - - - - - - - - - - -
@@ -550,64 +541,10 @@ namespace BoSSS.Application.IBM_Solver {
 
                 // using the other kind of Jacobi:
                 // - - - - - - - - - - - - - - - -
-                //var _OpMatrix = new BlockMsrMatrix(OpMatrix._ColPartitioning);
-                //var _OpAffine = new double[_OpMatrix._ColPartitioning.LocalLength];
                 var mtxBuilder3 = IBM_Op_Jacobian.GetMatrixBuilder(LsTrk, Mapping, CurrentState, Mapping, FluidSpecies);
                 mtxBuilder3.time = phystime;
                 mtxBuilder3.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
                 mtxBuilder3.ComputeMatrix(OpMatrix, OpAffine);
-
-
-                ////Console.WriteLine("   FinDiff jac: {0} \t new Jac: {1}", s1.Elapsed, s2.Elapsed);
-
-                //// -------------------------------------------
-                //// test shit
-
-                //var eval = IBM_Op.GetEvaluatorEx(LsTrk, CurrentState, null, Mapping, FluidSpecies);
-                //double[] Resi = new double[Mapping.LocalLength];
-                //eval.time = phystime;
-                //eval.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
-                //eval.Evaluate(1.0, 0.0, Resi);
-
-                ////--------------------
-
-
-
-                //double[] Resi2 = _OpAffine.CloneAs();
-                //_OpMatrix.SpMV(1.0, css, 1.0, Resi2);
-
-                //double[] ERR = Resi.CloneAs();
-                //ERR.AccV(-1, Resi2);
-
-                //int L = ERR.Length;
-                //double[] factor = new double[L];
-                //for(int i = 0; i < ERR.Length; i++) {
-                //    factor[i] = Resi[i] / Resi2[i];
-                //}
-                
-                //double l2dist = ERR.MPI_L2Norm();
-                //Console.WriteLine("evaluation dist: " + l2dist);
-
-                //// ---------------------------------------------
-                //// test shit
-
-                //_OpAffine.SetV(Resi);
-                //_OpMatrix.SpMV(-1.0, new CoordinateVector(CurrentState), 1.0, _OpAffine);
-                ////OpAffine.AccV(1.0, _OpAffine);
-
-                //var DeltaMtx = _OpMatrix.CloneAs();
-                //var DeltaAff = _OpAffine.CloneAs();
-                //DeltaMtx.Acc(-1.0, OpMatrix);
-                //DeltaAff.AccV(-1.0, OpAffine);
-                //double mtxdelta = DeltaMtx.InfNorm();
-                //double l2_DeltaAff = DeltaAff.L2Norm();
-                //Console.WriteLine("matrix delta: " + mtxdelta);
-                //Console.WriteLine("affine Delta: " + l2_DeltaAff);
-
-
-                //OpMatrix.Clear();
-                //OpMatrix.Acc(1.0, _OpMatrix);
-
 
 #if DEBUG
                 if (DelComputeOperatorMatrix_CallCounter == 1) {
