@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using BoSSS.Foundation;
+using ilPSP;
 
 namespace BoSSS.Solution.Utils {
 
@@ -83,7 +84,7 @@ namespace BoSSS.Solution.Utils {
         /// <returns>
         /// source value
         /// </returns>
-        abstract public double _DerivativeSource(double[] x, double[] Parameters, double[,] GradientU);
+        abstract public double _DerivativeSource(Vector x, double[] Parameters, double[,] GradientU);
         
 
         /// <summary>

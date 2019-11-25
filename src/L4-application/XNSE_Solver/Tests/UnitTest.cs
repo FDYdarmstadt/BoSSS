@@ -312,12 +312,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
 
             if (tst.steady) {
-                C.CompMode = AppControl._CompMode.Steady;
+                C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
 
                 C.Option_LevelSetEvolution = LevelSetEvolution.None;
                 C.Timestepper_LevelSetHandling = LevelSetHandling.None;
             } else {
-                C.CompMode = AppControl._CompMode.Transient;
+                C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
 
                 C.Option_LevelSetEvolution = LevelSetEvolution.Prescribed;
                 C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;

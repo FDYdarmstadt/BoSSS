@@ -60,7 +60,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
             return new StateVector(
                 stateIn.Material,
                 stateIn.Density,
-                new Vector(),
+                new ilPSP.Vector(),
                 stateIn.Density * stateIn.SpecificInnerEnergy);
         }
     }

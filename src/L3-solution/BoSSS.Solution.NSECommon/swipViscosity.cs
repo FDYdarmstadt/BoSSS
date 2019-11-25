@@ -25,39 +25,9 @@ using ilPSP.Utils;
 using System.Diagnostics;
 using BoSSS.Foundation;
 using ilPSP;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Solution.NSECommon {
-
-    /*
-    /// <summary>
-    /// A configuration switch to <see cref="swipViscosityBase"/> and decendants, to
-    /// switch between different variants of inhomogeneous-diffusion forms
-    /// </summary>
-    public enum ViscosityImplementation {
-
-        /// <summary>
-        /// SWIP-form according to 
-        /// <code>
-        /// @book{di_pietro_mathematical_2011,
-        ///       series = {Math Matiques Et Applications},
-        ///       title = {Mathematical Aspects of Discontinuous Galerkin Methods},
-        ///       isbn = {9783642229794},
-        ///       number = {69},
-        ///       publisher = {Springer},
-        ///       author = {Di Pietro, Daniele Antonio and Ern, Alexandre},
-        ///       year = {2011},
-        /// }
-        /// </code>
-        /// (page 155)
-        /// </summary>
-        SWIP,
-
-        /// <summary>
-        /// an alternate consistent implementation
-        /// </summary>
-        H
-    }
-    */
 
     /// <summary>
     /// A configuration switch to <see cref="swipViscosityBase"/> and decendants, to
@@ -145,7 +115,7 @@ namespace BoSSS.Solution.NSECommon {
                     break;
                 case ViscosityOption.ConstantViscosityDimensionless:
                     if(double.IsNaN(reynolds))
-                        throw new ArgumentException("reynolds number is missing!");
+                        throw new ArgumentException("Reynolds number is missing!");
                     this.m_reynolds = reynolds;
                     break;
                 case ViscosityOption.VariableViscosity:
@@ -153,7 +123,7 @@ namespace BoSSS.Solution.NSECommon {
                     break;
                 case ViscosityOption.VariableViscosityDimensionless:
                     if(double.IsNaN(reynolds))
-                        throw new ArgumentException("reynolds number is missing!");
+                        throw new ArgumentException("Reynolds number is missing!");
                     this.m_reynolds = reynolds;
                     this.m_EoS = EoS;
                     break;
@@ -338,46 +308,6 @@ namespace BoSSS.Solution.NSECommon {
 
             return penaltySizeFactor * m_penalty * m_penalty_base;
         }
-
-        /*
-        protected double ComputePenaltyBulk(double penalty, int jCellIn, int jCellOut, MultidimensionalArray cj) {
-            double muFactor; // the WTF factor
-            if (jCellOut >= 0)
-                muFactor = 1.0;
-            else
-                //muFactor = Math.Max(1, 0) / this.Control.PhysicalParameters.mu_A; // Hardcoded for single phase flows
-                muFactor = Math.Max(this.Control.PhysicalParameters.mu_A, 0) / this.Control.PhysicalParameters.mu_A; // Hardcoded for single phase flows
-            double penaltySizeFactor_A = 1.0 / this.m_LenScales[jCellIn];
-            double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / this.m_LenScales[jCellOut] : 0;
-            double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
-            return penalty * penaltySizeFactor * muFactor;
-=======
-        virtual protected double penalty(int jCellIn, int jCellOut) {
-            double mu;
-            if (m_jCellInOld == jCellIn && m_jCellOutOld == jCellOut) {
-                return m_PenaltyVal;
-            } else {
-
-                if (m_ComputePenalty != null) {
-                    mu = m_ComputePenalty(m_penalty, jCellIn, jCellOut, cj);
-                } else {
-                    double cj_in = cj[jCellIn];
-                    mu = m_penalty * cj_in;
-                    if (jCellOut >= 0) {
-                        double cj_out = cj[jCellOut];
-                        mu = Math.Max(mu, m_penalty * cj_out);
-                    }
-                }
-
-                m_PenaltyVal = mu;
-                m_jCellInOld = jCellIn;
-                m_jCellOutOld = jCellOut;
-
-                return mu;
-            }
->>>>>>> experimental/master
-        }
-        */
 
 
         /// <summary>
@@ -785,8 +715,8 @@ namespace BoSSS.Solution.NSECommon {
             CommonParamsBnd cpv;
             cpv.GridDat = efp.GridDat;
             cpv.Parameters_IN = new double[_NOParams];
-            cpv.Normale = new double[D];
-            cpv.X = new double[D];
+            cpv.Normale = new Vector(D);;
+            cpv.X = new Vector(D);
             cpv.time = efp.time;
 
             double[] _GradV_in = new double[D];

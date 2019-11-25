@@ -23,6 +23,7 @@ using BoSSS.Platform;
 using System.Diagnostics;
 using BoSSS.Foundation.Grid;
 using ilPSP;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Foundation.Quadrature.Linear {
 
@@ -158,7 +159,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             CommonParamsVol cpv;
             cpv.GridDat = prm.GridDat;
             cpv.Parameters = new double[_NOParams];
-            cpv.Xglobal = new double[D];
+            cpv.Xglobal = new Vector(D);
             cpv.time = prm.time;
 
             for(int l = 0; l < L; l++) { // loop over cells...
@@ -194,7 +195,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             CommonParamsVol cpv;
             cpv.GridDat = prm.GridDat;
             cpv.Parameters = new double[_NOParams];
-            cpv.Xglobal = new double[D];
+            cpv.Xglobal = new Vector(D);
             cpv.time = prm.time;
 
             for(int l = 0; l < L; l++) { // loop over cells...
@@ -231,7 +232,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             CommonParamsVol cpv;
             cpv.GridDat = prm.GridDat;
             cpv.Parameters = new double[_NOParams];
-            cpv.Xglobal = new double[D];
+            cpv.Xglobal = new Vector(D);
             cpv.time = prm.time;
 
             for(int l = 0; l < L; l++) { // loop over cells...
@@ -272,7 +273,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             CommonParamsVol cpv;
             cpv.GridDat = prm.GridDat;
             cpv.Parameters = new double[_NOParams];
-            cpv.Xglobal = new double[D];
+            cpv.Xglobal = new Vector(D);
             cpv.time = prm.time;
 
             for(int l = 0; l < L; l++) { // loop over cells...
@@ -311,7 +312,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             CommonParamsVol cpv;
             cpv.GridDat = prm.GridDat;
             cpv.Parameters = new double[_NOParams];
-            cpv.Xglobal = new double[D];
+            cpv.Xglobal = new Vector(D);
             cpv.time = prm.time;
 
             for(int l = 0; l < L; l++) { // loop over cells...
@@ -345,7 +346,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             CommonParamsVol cpv;
             cpv.GridDat = prm.GridDat;
             cpv.Parameters = new double[_NOParams];
-            cpv.Xglobal = new double[D];
+            cpv.Xglobal = new Vector(D);
             cpv.time = prm.time;
 
             for(int l = 0; l < L; l++) { // loop over cells...
@@ -437,7 +438,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
 
         private double GetCoeff(ref double d1, ref double d2, ref CommonParams inp) {
-            int D = inp.Normale.Length;
+            int D = inp.Normale.Dim;
             Debug.Assert(this.NoArgs == this.ArgumentOrdering.Count);
 
             Debug.Assert(uA.Length == NoArgs);
@@ -508,8 +509,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
 
             CommonParams cp = default(CommonParams);
-            cp.Normale = new double[D];
-            cp.X = new double[D];
+            cp.Normale = new Vector(D);
+            cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.Parameters_OUT = new double[NoParams];
             cp.GridDat = efp.GridDat;
@@ -549,8 +550,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             InitGlobals(efp);
 
             CommonParamsBnd cp = default(CommonParamsBnd);
-            cp.Normale = new double[D];
-            cp.X = new double[D];
+            cp.Normale = new Vector(D);
+            cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.GridDat = efp.GridDat;
             cp.time = efp.time;
@@ -597,8 +598,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             Debug.Assert(D == UxGradV.GetLength(5));
 
             CommonParams cp = default(CommonParams);
-            cp.Normale = new double[D];
-            cp.X = new double[D];
+            cp.Normale = new Vector(D);
+            cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.Parameters_OUT = new double[NoParams];
             cp.GridDat = efp.GridDat;
@@ -644,8 +645,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             Debug.Assert(D == GradUxGradV.GetLength(6));
 
             CommonParams cp = default(CommonParams);
-            cp.Normale = new double[D];
-            cp.X = new double[D];
+            cp.Normale = new Vector(D);
+            cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.Parameters_OUT = new double[NoParams];
             cp.GridDat = efp.GridDat;
@@ -701,8 +702,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             InitGlobals(efp);
 
             CommonParamsBnd cp = default(CommonParamsBnd);
-            cp.Normale = new double[D];
-            cp.X = new double[D];
+            cp.Normale = new Vector(D);
+            cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.GridDat = efp.GridDat;
             cp.time = efp.time;
@@ -738,8 +739,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             InitGlobals(efp);
 
             CommonParamsBnd cp = default(CommonParamsBnd);
-            cp.Normale = new double[D];
-            cp.X = new double[D];
+            cp.Normale = new Vector(D);
+            cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.GridDat = efp.GridDat;
             cp.time = efp.time;
@@ -779,8 +780,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             InitGlobals(efp);
 
             CommonParams cp = default(CommonParams);
-            cp.Normale = new double[D];
-            cp.X = new double[D];
+            cp.Normale = new Vector(D);
+            cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.Parameters_OUT = new double[NoParams];
             cp.GridDat = efp.GridDat;
@@ -815,8 +816,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             InitGlobals(efp);
 
             CommonParamsBnd cp = default(CommonParamsBnd);
-            cp.Normale = new double[D];
-            cp.X = new double[D];
+            cp.Normale = new Vector(D);
+            cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.GridDat = efp.GridDat;
             cp.time = efp.time;
@@ -850,8 +851,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             InitGlobals(efp);
 
             CommonParams cp = default(CommonParams);
-            cp.Normale = new double[D];
-            cp.X = new double[D];
+            cp.Normale = new Vector(D);
+            cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.Parameters_OUT = new double[NoParams];
             cp.GridDat = efp.GridDat;
@@ -888,8 +889,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             InitGlobals(efp);
 
             CommonParamsBnd cp = default(CommonParamsBnd);
-            cp.Normale = new double[D];
-            cp.X = new double[D];
+            cp.Normale = new Vector(D);
+            cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.GridDat = efp.GridDat;
             cp.time = efp.time;
@@ -928,8 +929,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             Debug.Assert(efp.ParameterVars_OUT.Length == NoParams);
 
             CommonParams cp = default(CommonParams);
-            cp.Normale = new double[D];
-            cp.X = new double[D];
+            cp.Normale = new Vector(D);
+            cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.Parameters_OUT = new double[NoParams];
             cp.GridDat = efp.GridDat;
@@ -966,8 +967,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             InitGlobals(efp);
 
             CommonParamsBnd cp = default(CommonParamsBnd);
-            cp.Normale = new double[D];
-            cp.X = new double[D];
+            cp.Normale = new Vector(D);
+            cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.GridDat = efp.GridDat;
             cp.time = efp.time;

@@ -214,7 +214,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         continue;
                     }
 
-                    List<double[]> nodes = new List<double[]>();
+                    List<Vector> nodes = new List<Vector>();
                     List<double> weights = new List<double>();
 
                     if (lsData.GridDat.Cells.Cells2Edges[cell].Length != noOfEdges) {
@@ -270,7 +270,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                                 for (int m = 0; m < baseRule.NoOfNodes; m++) {
                                     // Base rule _always_ is a line rule, thus Nodes[*, _0_]
-                                    double[] point = subSegments[k].GetPointOnSegment(baseRule.Nodes[m, 0]);
+                                    var point = subSegments[k].GetPointOnSegment(baseRule.Nodes[m, 0]);
 
                                     weights.Add(baseRule.Weights[m] * scaling);
                                     nodes.Add(point);

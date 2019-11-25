@@ -31,6 +31,7 @@ using CNS.IBM;
 using CNS.LoadBalancing;
 using CNS.Residual;
 using CNS.ShockCapturing;
+using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;

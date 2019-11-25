@@ -75,6 +75,7 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="points">
         /// point coordinates, array of <paramref name="nPoints"/>*3
         /// </param>
+        [CodeGenExport]
         unsafe public OpenFOAMGrid(
             int nPoints, int nCells, int nFaces, int nInternalFaces,
             int** faces,
@@ -146,7 +147,7 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="points">
         /// point coordinates, array of <paramref name="nPoints"/>*3
         /// </param>
-        unsafe public OpenFOAMGrid(
+        public OpenFOAMGrid(
             int nCells, 
             int[][] faces,
             int[] neighbour,
