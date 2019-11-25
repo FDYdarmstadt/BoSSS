@@ -63,7 +63,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
         /// </param>
         /// <returns>see Toro2009, equation 10.71</returns>
-        protected internal override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref Vector normal, int edgeIndex) {
+        protected internal override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex) {
             double waveSpeedIn;
             double waveSpeedOut;
             EstimateWaveSpeeds(stateIn, stateOut, ref normal, out waveSpeedIn, out waveSpeedOut);
@@ -122,6 +122,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <returns>
         /// An estimate for the variable value in the star region
         /// </returns>
-        abstract protected double GetModifiedVariableValue(StateVector state, double cellWaveSpeed, double cellNormalVelocity, double intermediateWaveSpeed, ref Vector normal);
+        abstract protected double GetModifiedVariableValue(StateVector state, double cellWaveSpeed, double cellNormalVelocity, double intermediateWaveSpeed, ref ilPSP.Vector normal);
     }
 }

@@ -22,10 +22,11 @@ unset x2label
 unset y2label
 unset title 
 unset key
-set key inside top left Left reverse 
+set key font ",16"inside top left Left reverse 
 set xtics format " " 
 set x2tics format " " 
 set ytics format "$10^{%L}$" 
+set ytics font "sans, 16" 
 set y2tics format " " 
 set termoption dashed
 plot "XdgPoissonScaling_data_0.csv" title "Mult Gr w Blk Jac" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 5 pointsize 0.5, "XdgPoissonScaling_data_1.csv" title "Add Swz w Coarse" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 11 pointsize 0.5, "XdgPoissonScaling_data_2.csv" title "Mumps" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 10 pointsize 0.5, "XdgPoissonScaling_data_3.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
@@ -52,6 +53,7 @@ set key off
 set xtics format " " 
 set x2tics format " " 
 set ytics format "$10^{%L}$" 
+set ytics font "sans, 16" 
 set y2tics format " " 
 set termoption dashed
 plot "XdgPoissonScaling_data_4.csv" title "Mult Gr w Blk Jac" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 5 pointsize 0.5, "XdgPoissonScaling_data_5.csv" title "Add Swz w Coarse" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 11 pointsize 0.5, "XdgPoissonScaling_data_6.csv" title "Mumps" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 10 pointsize 0.5, "XdgPoissonScaling_data_7.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
@@ -76,8 +78,11 @@ unset y2label
 unset title 
 set key off
 set xtics format "$10^{%L}$" 
+set xtics offset 0, 0-0.4 font "sans, 18" 
+set xtics font "sans, 16" 
 set x2tics format " " 
 set ytics format "$10^{%L}$" 
+set ytics font "sans, 16" 
 set y2tics format " " 
 set termoption dashed
 plot "XdgPoissonScaling_data_8.csv" title "Mult Gr w Blk Jac" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 5 pointsize 0.5, "XdgPoissonScaling_data_9.csv" title "Add Swz w Coarse" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 11 pointsize 0.5, "XdgPoissonScaling_data_10.csv" title "Mumps" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 10 pointsize 0.5, "XdgPoissonScaling_data_11.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1

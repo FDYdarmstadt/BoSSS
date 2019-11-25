@@ -77,7 +77,7 @@ namespace BoSSS.Solution.NSECommon {
                 return TermActivationFlags.AllOn;
             }
         }
- 
+
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             //    throw new NotImplementedException();
             //}

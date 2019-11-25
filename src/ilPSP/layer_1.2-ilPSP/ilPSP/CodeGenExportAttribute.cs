@@ -4,11 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Application.ExternalBinding {
-    
-    
+namespace ilPSP.Connectors {
     /// <summary>
-    /// marks methods that should be exported
+    /// Attribute to mark functions that should be mapped in external language proxies (<see cref="IForeignLanguageProxy"/>
     /// </summary>
     public class CodeGenExportAttribute : Attribute {
     }

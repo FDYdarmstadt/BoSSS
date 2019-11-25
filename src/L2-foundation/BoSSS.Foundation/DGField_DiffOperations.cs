@@ -420,7 +420,7 @@ namespace BoSSS.Foundation {
                 get {
                     return null;
                 }
-            }
+            } 
         }
 
         /// <summary>

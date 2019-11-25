@@ -107,7 +107,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
             StateVector stateIn = new StateVector(Uin, speciesMap.GetMaterial(double.NaN));
             StateVector stateOut = new StateVector(Uout, speciesMap.GetMaterial(double.NaN));
 
-            Vector Normal = new Vector(stateIn.Dimension);
+            ilPSP.Vector Normal = new ilPSP.Vector(stateIn.Dimension);
             for (int i = 0; i < normal.Length; i++) {
                 Normal[i] = normal[i];
             }
@@ -129,7 +129,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// Processor-local index of the current edge
         /// </param>
         /// <returns>See Toro2009 (p. 332)</returns>
-        protected internal abstract double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref Vector normal, int edgeIndex);
+        protected internal abstract double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex);
 
         /// <summary>
         /// Weakly imposes the specific boundary condition for this boundary
@@ -138,31 +138,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// inserting it into
         /// <see cref="InnerEdgeFlux(double, double[], double[], double[], double[], int)"/>
         /// </summary>
-        /// <param name="time">
-        /// <see cref="NonlinearFlux.BorderEdgeFlux(double, double[], double[], byte, double[], int)"/>
-        /// </param>
-        /// <param name="x">
-        /// <see cref="NonlinearFlux.BorderEdgeFlux(double, double[], double[], byte, double[], int)"/>
-        /// </param>
-        /// <param name="normal">
-        /// <see cref="NonlinearFlux.BorderEdgeFlux(double, double[], double[], byte, double[], int)"/>
-        /// </param>
-        /// <param name="EdgeTag">
-        /// <see cref="NonlinearFlux.BorderEdgeFlux(double, double[], double[], byte, double[], int)"/>
-        /// </param>
-        /// <param name="Uin">
-        /// <see cref="NonlinearFlux.BorderEdgeFlux(double, double[], double[], byte, double[], int)"/>
-        /// </param>
-        /// <param name="jEdge">
-        /// <see cref="NonlinearFlux.BorderEdgeFlux(double, double[], double[], byte, double[], int)"/>
-        /// </param>
-        /// <returns>
-        /// <see cref="InnerEdgeFlux(double, double[], double[], double[], double[], int)"/>
-        /// </returns>
         protected override double BorderEdgeFlux(double time, double[] x, double[] normal, byte EdgeTag, double[] Uin, int jEdge) {
             StateVector stateIn = new StateVector(Uin, speciesMap.GetMaterial(double.NaN));
 
-            Vector Normal = new Vector(stateIn.Dimension);
+            ilPSP.Vector Normal = new ilPSP.Vector(stateIn.Dimension);
             for (int i = 0; i < normal.Length; i++) {
                 Normal[i] = normal[i];
             }
@@ -215,7 +194,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <paramref name="normal"/> in the considered neighbor cell
         /// </param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void EstimateWaveSpeeds(StateVector stateIn, StateVector stateOut, ref Vector normal, out double waveSpeedIn, out double waveSpeedOut) {
+        protected void EstimateWaveSpeeds(StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, out double waveSpeedIn, out double waveSpeedOut) {
             double normalVelocityIn = stateIn.Velocity * normal;
             double normalVelocityOut = stateOut.Velocity * normal;
 

@@ -60,6 +60,7 @@ namespace BoSSS.Solution.RheologyCommon
         /// </summary>
         public IList<string> ParameterOrdering { get; }
 
+
         /// <summary>
         /// Calculating the integral of the volume part
         /// </summary>

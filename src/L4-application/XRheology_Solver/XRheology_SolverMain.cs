@@ -503,9 +503,9 @@ namespace BoSSS.Application.XRheology_Solver {
                 return;
 
 
-            if (Control.CompMode == AppControl._CompMode.Steady) {
+            if (Control.TimesteppingMode == AppControl._TimesteppingMode.Steady) {
                 if (Control.Timestepper_LevelSetHandling != LevelSetHandling.None)
-                    throw new ApplicationException(string.Format("Illegal control file: for a steady computation ({0}), the level set handling must be {1}.", AppControl._CompMode.Steady, LevelSetHandling.None));
+                    throw new ApplicationException(string.Format("Illegal control file: for a steady computation ({0}), the level set handling must be {1}.", AppControl._TimesteppingMode.Steady, LevelSetHandling.None));
             }
 
             int degU = this.CurrentVel[0].Basis.Degree;
@@ -574,7 +574,7 @@ namespace BoSSS.Application.XRheology_Solver {
                         LsTrk,
                         true,
                         DelComputeOperatorMatrix, null, DelUpdateLevelSet,
-                        (this.Control.CompMode == AppControl._CompMode.Transient) ? bdfOrder : 1,
+                        (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? bdfOrder : 1,
                         this.Control.Timestepper_LevelSetHandling,
                         this.XOpConfig.mmsd,
                         (this.Control.PhysicalParameters.IncludeConvection) ? SpatialOperatorType.Nonlinear : SpatialOperatorType.LinearTimeDependent,
@@ -589,7 +589,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
                     m_BDF_Timestepper.m_ResLogger = base.ResLogger;
                     m_BDF_Timestepper.m_ResidualNames = this.CurrentResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
-                    m_BDF_Timestepper.Timestepper_Init = (this.Control.CompMode == AppControl._CompMode.Transient) ? this.Control.Timestepper_BDFinit : TimeStepperInit.SingleInit;
+                    m_BDF_Timestepper.Timestepper_Init = (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? this.Control.Timestepper_BDFinit : TimeStepperInit.SingleInit;
                     m_BDF_Timestepper.incrementTimesteps = this.Control.incrementTimesteps;
                     m_BDF_Timestepper.PushLevelSet = this.PushLevelSetAndRelatedStuff;
                     m_BDF_Timestepper.IterUnderrelax = this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? this.Control.LSunderrelax : 1.0;
@@ -1009,7 +1009,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
 
         /// <summary>
-        /// Depending on settings <see cref="AppControl.CompMode"/>, computes either one timestep or a steady-state solution.
+        /// Depending on settings <see cref="AppControl.TimesteppingMode"/>, computes either one timestep or a steady-state solution.
         /// </summary>
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
             using (var tr = new FuncTrace()) {
@@ -1123,7 +1123,7 @@ namespace BoSSS.Application.XRheology_Solver {
                 // =====================================================
 
 
-                if (base.Control.CompMode == AppControl._CompMode.Steady) {
+                if (base.Control.TimesteppingMode == AppControl._TimesteppingMode.Steady) {
                     dt = 1.0e100;
                     Console.WriteLine("Steady-state solve ...", TimestepNo, dt);
 
@@ -1136,7 +1136,7 @@ namespace BoSSS.Application.XRheology_Solver {
                     // =====================================================
                     // setup transient 
                     // =====================================================
-                } else if (base.Control.CompMode == AppControl._CompMode.Transient) {
+                } else if (base.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) {
 
                     // push stacks
                     // -----------
@@ -1146,7 +1146,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
                     // backup old velocity for energy checks
                     // -------------------------------------
-                    if (this.Control.ComputeEnergy && this.Control.CompMode == AppControl._CompMode.Transient) {
+                    if (this.Control.ComputeEnergy && this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) {
                         for (int d = 0; d < D; d++) {
                             this.prevVel[d].Clear();
                             this.prevVel[d].Acc(1.0, this.CurrentVel[d]);
@@ -1205,7 +1205,7 @@ namespace BoSSS.Application.XRheology_Solver {
                     Console.WriteLine("Instationary solve, timestep #{0}, dt = {1} ...", TimestepNo, dt);
 
                 } else {
-                    throw new NotImplementedException("Option " + base.Control.CompMode + " not supported yet.");
+                    throw new NotImplementedException("Option " + base.Control.TimesteppingMode + " not supported yet.");
                 }
 
                 // =======================================================================
@@ -2219,7 +2219,7 @@ namespace BoSSS.Application.XRheology_Solver {
                 // compute changerates (kinetic, surface)
                 double CR_KinEnergy = 0.0;
                 double CR_SurfEnergy = 0.0;
-                if (this.Control.CompMode == AppControl._CompMode.Transient) {
+                if (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) {
                     double prevKinEnergy = EnergyUtils.GetKineticEnergy(this.LsTrk, this.prevVel, rhoS, this.m_HMForder, 0);
                     CR_KinEnergy = (currentKinEnergy - prevKinEnergy) / dt;
 

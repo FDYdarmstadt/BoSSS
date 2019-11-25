@@ -265,6 +265,7 @@ namespace CNS {
         /// <see cref="Application{T}.RunSolverOneStep"/>
         /// </returns>
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
+
             using (var ht = new FuncTrace()) {
                 int printInterval = Control.PrintInterval;
                 if (DatabaseDriver.MyRank == 0 && TimestepNo % printInterval == 0) {
@@ -273,6 +274,8 @@ namespace CNS {
 #endif
                     Console.Write("Starting time step #" + TimestepNo + "...");
                 }
+
+
 
                 // Update shock-capturing variables before performing a time step
                 // as the time step constraints (could) depend on artificial viscosity.
@@ -317,7 +320,8 @@ namespace CNS {
                 if (Control.WriteLTSLog && TimeStepper is AdamsBashforthLTS) {
                     this.WriteLTSLog(dt);
                 }
-
+                //if (TimestepNo == 10)
+                //    ilPSP.Tracing.Tracer.Current.ResetRecursive();
                 return dt;
             }
         }

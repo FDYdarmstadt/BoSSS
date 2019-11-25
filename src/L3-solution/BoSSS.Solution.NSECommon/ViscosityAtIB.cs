@@ -110,7 +110,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
 
             // 3D for IBM_Solver
-            if (inp.x.Length == 3) {
+            if (inp.x.Dim == 3) {
                 
                 Ret -= Grad_uA_xN * (vA);                           // consistency term
                 Ret -= Grad_vA_xN * (uA[component] - 0);     // symmetry term
@@ -145,7 +145,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         public IList<string> ArgumentOrdering {
             get { return VariableNames.VelocityVector(this.m_D); }
         }
-
+    
         public SpeciesId PositiveSpecies {
             get { return m_LsTrk.GetSpeciesId("B"); }
         }

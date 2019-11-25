@@ -2,6 +2,7 @@
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
+using ilPSP.Connectors;
 using ilPSP.LinSolvers;
 using System;
 using System.Collections.Generic;
@@ -12,44 +13,66 @@ using System.Threading.Tasks;
 namespace BoSSS.Application.ExternalBinding {
     
 
-    public static class FixedOperators_ {
+    public class FixedOperators : IForeignLanguageProxy {
 
-        unsafe public static void Laplacian(ref int GridRef, 
-            ref int DgDegree,
+        IntPtr m_ForeignPtr;
 
-            out int ierr) {
-            try {
-                // grid, etc
-                // =========
+        /// <summary>
+        /// %
+        /// </summary>
+        public void _SetForeignPointer(IntPtr ptr) {
+            if (ptr == IntPtr.Zero) {
+                m_ForeignPtr = IntPtr.Zero;
+            } else {
 
-                GridData grd = null;// (GridData)(Infrastructure.GetObject(GridRef));
-
-                var b = new Basis(grd, DgDegree);
-                var map = new UnsetteledCoordinateMapping(b);
-                
-                var L = new Laplace(1.3, grd.Cells.cj);
-                var op = new SpatialOperator(1, 0, 1, QuadOrderFunc.Linear(), "T", "c1");
-                op.EquationComponents["c1"].Add(L);
-                op.Commit();
-
-                // evaluate operator
-                // =================
-
-                var Mtx = new BlockMsrMatrix(map, map);
-                double[] B = new double[map.LocalLength];
-
-                var eval = op.GetMatrixBuilder(map, null, map);
-                eval.ComputeMatrix(Mtx, B);
-
-                // return data
-                // ===========
-
-                throw new NotImplementedException("todo");
-
-            } catch (Exception e) {
-                ierr = Infrastructure.ErrorHandler(e);
+                if (m_ForeignPtr != IntPtr.Zero) {
+                    throw new ApplicationException("already registered");
+                }
+                m_ForeignPtr = ptr;
             }
-            ierr = 0;
+        }
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public IntPtr _GetForeignPointer() {
+            return m_ForeignPtr;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [CodeGenExport]
+        public void Laplacian(OpenFOAMGrid grid, int DgDegree) {
+
+            // grid, etc
+            // =========
+
+            GridData grd = grid.GridData;
+
+            var b = new Basis(grd, DgDegree);
+            var map = new UnsetteledCoordinateMapping(b);
+
+            var L = new Laplace(1.3, grd.Cells.cj);
+            var op = new SpatialOperator(1, 0, 1, QuadOrderFunc.Linear(), "T", "c1");
+            op.EquationComponents["c1"].Add(L);
+            op.Commit();
+
+            // evaluate operator
+            // =================
+
+            var Mtx = new BlockMsrMatrix(map, map);
+            double[] B = new double[map.LocalLength];
+
+            var eval = op.GetMatrixBuilder(map, null, map);
+            eval.ComputeMatrix(Mtx, B);
+
+            // return data
+            // ===========
+
+            throw new NotImplementedException("todo");
+
+
         }
 
 

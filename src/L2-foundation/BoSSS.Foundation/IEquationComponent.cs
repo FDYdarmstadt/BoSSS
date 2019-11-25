@@ -19,6 +19,8 @@ using BoSSS.Platform;
 using System;
 using BoSSS.Foundation.Grid;
 using ilPSP;
+using BoSSS.Platform.LinAlg;
+using System.Diagnostics;
 
 namespace BoSSS.Foundation {
 
@@ -40,6 +42,19 @@ namespace BoSSS.Foundation {
         /// parameter variables are sorted for this flux;
         /// </summary>
         IList<string> ParameterOrdering { get; }
+    }
+
+    /// <summary>
+    /// Additional hints for checking the implementation
+    /// </summary>
+    public interface IEquationComponentChecking : IEquationComponent { 
+        
+        /// <summary>
+        /// Only for performance measurements of the vectorized implementations (e.g. <see cref="INonlinVolumeForm_V"/>, <see cref="IVolumeForm_UxV"/>, etc.)
+        /// against the base implementation (<see cref="IVolumeForm"/>, <see cref="IEdgeForm"/>):
+        /// If true, the base implementation will be used even if a vectorized version is provided.
+        /// </summary>
+        bool IgnoreVectorizedImplementation { get; }
     }
 
 
@@ -528,12 +543,12 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// normal vector
         /// </summary>
-        public double[] Normale;
+        public Vector Normale;
 
         /// <summary>
         /// Quadrature node in global coordinates
         /// </summary>
-        public double[] X;
+        public Vector X;
 
         /// <summary>
         /// parameter values on IN-cell
@@ -596,12 +611,12 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// normal vector
         /// </summary>
-        public double[] Normale;
+        public Vector Normale;
 
         /// <summary>
         /// Quadrature node in global coordinates
         /// </summary>
-        public double[] X;
+        public Vector X;
 
         /// <summary>
         /// parameter values on IN-cell
@@ -727,14 +742,15 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// node in global coordinates
         /// </summary>
-        public double[] Xglobal;
+        public Vector Xglobal;
 
         /// <summary>
         /// Spatial dimension.
         /// </summary>
         public int D {
             get {
-                return GridDat.SpatialDimension;
+                Debug.Assert(Xglobal.Dim == GridDat.SpatialDimension);
+                return Xglobal.Dim;
             }
         }
     }

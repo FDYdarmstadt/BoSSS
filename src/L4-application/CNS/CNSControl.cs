@@ -195,7 +195,7 @@ namespace CNS {
         /// n-th time-step. If zero, no residual calculation should take place
         /// </summary>
         [InclusiveLowerBound(0)]
-        public int ResidualInterval = 1;
+        public int ResidualInterval = 0;
 
         /// <summary>
         /// A mapping between residual variables and the corresponding

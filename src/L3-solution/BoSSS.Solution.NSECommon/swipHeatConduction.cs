@@ -181,5 +181,6 @@ namespace BoSSS.Solution.NSECommon {
                 return new string[] { VariableNames.Temperature0 };
             }
         }
+
     }
 }

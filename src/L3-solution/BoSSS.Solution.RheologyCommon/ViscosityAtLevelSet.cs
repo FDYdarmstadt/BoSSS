@@ -80,6 +80,7 @@ namespace BoSSS.Solution.RheologyCommon {
         }
 
 
+
         /// <summary>
         /// default-implementation
         /// </summary>

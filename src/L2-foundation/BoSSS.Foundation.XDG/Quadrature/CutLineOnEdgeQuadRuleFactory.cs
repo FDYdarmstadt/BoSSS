@@ -24,6 +24,7 @@ using System.Linq;
 using System.Diagnostics;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
@@ -213,7 +214,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         continue;
                     }
 
-                    List<double[]> nodes = new List<double[]>();
+                    List<Vector> nodes = new List<Vector>();
                     List<double> weights = new List<double>();
 
                     if (lsData.GridDat.Cells.Cells2Edges[cell].Length != noOfEdges) {
@@ -269,7 +270,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                                 for (int m = 0; m < baseRule.NoOfNodes; m++) {
                                     // Base rule _always_ is a line rule, thus Nodes[*, _0_]
-                                    double[] point = subSegments[k].GetPointOnSegment(baseRule.Nodes[m, 0]);
+                                    var point = subSegments[k].GetPointOnSegment(baseRule.Nodes[m, 0]);
 
                                     weights.Add(baseRule.Weights[m] * scaling);
                                     nodes.Add(point);
@@ -374,12 +375,14 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     lsData.GridDat.Grid.RefElements[0].TransformFaceCoordinates(
                         e, edgeVertices, volumeVertices);
 
-                    double[] start = new double[D];
-                    double[] end = new double[D];
-                    for (int d = 0; d < D; d++) {
-                        start[d] = volumeVertices[0, d];
-                        end[d] = volumeVertices[1, d];
-                    }
+                    //double[] start = new double[D];
+                    //double[] end = new double[D];
+                    //for (int d = 0; d < D; d++) {
+                    //    start[d] = volumeVertices[0, d];
+                    //    end[d] = volumeVertices[1, d];
+                    //}
+                    var start = volumeVertices.GetRowPt(0);
+                    var end = volumeVertices.GetRowPt(1);
                     LineSegment newSegment = new LineSegment(D, this.RefElement, start, end, rootFindingAlgorithm: RootFindingAlgorithm);
 
                     // Assert that the segment does not already exist

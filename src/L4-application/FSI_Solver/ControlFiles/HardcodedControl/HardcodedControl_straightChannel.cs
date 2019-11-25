@@ -28,9 +28,9 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control ActiveRod_noBackroundFlow(int k = 3, int aspectRatio = 1) {
+        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, int amrLevel = 4, double aspectRatio = 2) {
             FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
-            C.SetSaveOptions(dataBasePath: @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\Channel", savePeriod: 1);
+            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
 
             // Domain
             // =============================
@@ -41,8 +41,8 @@ namespace BoSSS.Application.FSI_Solver {
                 "Wall_upper"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 30, lengthY: 8, cellsPerUnitLength: 0.5, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel: 6);
+            C.SetGrid(lengthX: 15, lengthY: 4, cellsPerUnitLength: 2, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(amrLevel);
 
             // Coupling Properties
             // =============================
@@ -50,21 +50,23 @@ namespace BoSSS.Application.FSI_Solver {
             C.LevelSetSmoothing = false;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.hydrodynamicsConvergenceCriterion = 1e-3;
+            C.hydrodynamicsConvergenceCriterion = 1e-8;
 
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.mu_A = 10;
+            C.PhysicalParameters.mu_A = 100;
             C.PhysicalParameters.IncludeConvection = false;
-            double particleDensity = 1;
+            double particleDensity = 1.01;
+            C.gravity = new double[] { 0, 0 };
+
             // Particle Properties
             // =============================   
-            C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.hydrodynamicsConvergenceCriterion, underrelaxationFactorIn: 3.0, useAddaptiveUnderrelaxationIn: true);
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 1);
-            double particleRadius = 0.1;
+            C.underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, ParticleUnderrelaxationParam.UnderrelaxationMethod.AitkenRelaxation, 0.01, true);
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 1.5);
+            double particleRadius = 0.125;
             C.Particles = new List<Particle> {
-                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { 0.0, 0.0 }, startAngl: 0, activeStress: 1)
+                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { 0.0, 0.0 }, startAngl: 0, activeStress: 100)
             };   
 
             // misc. solver options
@@ -74,11 +76,12 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
+            
 
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(dt: 1e-3, noOfTimesteps: 50000);
+            C.SetTimesteps(dt: 1e-3, noOfTimesteps: int.MaxValue);
 
             return C;
         }
@@ -111,7 +114,7 @@ namespace BoSSS.Application.FSI_Solver {
             double particleDensity = 1;
             // Particle Properties
             // =============================   
-            C.underrelaxationParam = new ParticleUnderrelaxationParam(convergenceLimit: C.hydrodynamicsConvergenceCriterion, underrelaxationFactorIn: 3.0, useAddaptiveUnderrelaxationIn: true);
+            C.underrelaxationParam = new ParticleUnderrelaxationParam(C.hydrodynamicsConvergenceCriterion, ParticleUnderrelaxationParam.UnderrelaxationMethod.ProcentualRelaxation, relaxationFactor: 3.0, useAddaptiveUnderrelaxation: true);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, C.underrelaxationParam, 1);
             C.Particles = new List<Particle> {
                 new Particle_Ellipsoid(motion, 0.5, 0.05, new double[] { 0.0, 0.0 }, startAngl: 0, activeStress: 1) 

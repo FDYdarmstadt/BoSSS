@@ -22,10 +22,11 @@ unset x2label
 unset y2label
 unset title 
 unset key
-set key inside top left Left reverse 
+set key font ",16"inside top left Left reverse 
 set xtics format " " 
 set x2tics format " " 
 set ytics format "$10^{%L}$" 
+set ytics font "sans, 16" 
 set y2tics format " " 
 set termoption dashed
 set termoption dashed
@@ -55,6 +56,7 @@ set key off
 set xtics format " " 
 set x2tics format " " 
 set ytics format "$10^{%L}$" 
+set ytics font "sans, 16" 
 set y2tics format " " 
 set termoption dashed
 set termoption dashed
@@ -82,8 +84,11 @@ unset y2label
 unset title 
 set key off
 set xtics format "$10^{%L}$" 
+set xtics offset 0, 0-0.4 font "sans, 18" 
+set xtics font "sans, 16" 
 set x2tics format " " 
 set ytics format "$10^{%L}$" 
+set ytics font "sans, 16" 
 set y2tics format " " 
 set termoption dashed
 set termoption dashed

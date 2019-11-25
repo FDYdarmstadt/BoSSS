@@ -39,3 +39,19 @@ if [[ $? -eq 0 ]]; then
 else
 	echo Upload error!
 fi
+
+# grab linux archive from jenkins-linux and publish
+linux_archive_path="jenkins-linux:/Jenkins/workspace/BoSSS-linux-build-installer/public/LinuxSetup/BoSSS*.run"
+linux_archive_output="InnoSetup/Output/BoSSS-setup-$1.run"
+linux_archive_asset="$upload_url?name=BoSSS-setup-$1.run"
+scp $linux_archive_path $linux_archive_output
+if [[ $? -eq 0 ]]; then
+	download=$(curl -H "Authorization: token $OAuth" -H "Accept: application/vnd.github.v3+json" -H "Content-Type: application/octet-stream" --data-binary @$linux_archive_output $linux_archive_asset)
+	if [[ $? -eq 0 ]]; then
+		echo $download | cut -d: -f2,3 | cut -d\" -f2
+	else
+		echo Upload error!
+	fi
+else
+	echo Unable to fetch Linux archive
+fi

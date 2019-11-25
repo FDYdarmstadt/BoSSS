@@ -64,7 +64,8 @@ namespace BoSSS.Application.Rheology {
         /// Ordering of the parameters - null at identity part
         /// </summary>
         public IList<string> ParameterOrdering {get;}
- 
+
+
         /// <summary>
         /// Calculating the integral of the volume part
         /// </summary>

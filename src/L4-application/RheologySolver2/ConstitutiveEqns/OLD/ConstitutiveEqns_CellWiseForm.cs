@@ -106,7 +106,6 @@ namespace BoSSS.Application.Rheology
             }
         }
 
-       
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA)
         {
@@ -144,7 +143,7 @@ namespace BoSSS.Application.Rheology
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT)
         {
-            double[] Normale = inp.Normale.CloneAs();
+            Vector Normale = inp.Normale;
 
             //double[,] T__in, double[,] T_out, double[,] S, double[] U0__in, double[] U0_out
 
@@ -167,7 +166,7 @@ namespace BoSSS.Application.Rheology
             S_out[ComponentRow, ComponentCol] = _vOUT;
 
             double flxIn = MyCellBoundaryForm(Normale, T__in, T_out, S__in, inp.Parameters_IN, inp.Parameters_OUT, false, 0);
-            Normale.ScaleV(-1.0);
+            Normale.Scale(-1.0);
             double flxOt = MyCellBoundaryForm(Normale, T_out, T__in, S_out, inp.Parameters_OUT, inp.Parameters_IN, false, 0);
 
             return flxIn + flxOt;
