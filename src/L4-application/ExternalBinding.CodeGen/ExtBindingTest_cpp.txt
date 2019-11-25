@@ -183,11 +183,6 @@ void InitMeshTest() {
     
 }
 
-
-
-
-
-
 int main()
 {
 	printf("Hello cruel world!\n");
@@ -195,26 +190,18 @@ int main()
     mono_config_parse(NULL);
 
 #ifdef _WIN32
-    char monodir[] = "C:\\Program Files\\Mono";
-    char exepath[] = "C:\\Users\\florian\\Documents\\BoSSS-master\\public\\src\\L4-application\\ExternalBinding\\bin\\Debug\\BoSSS.Application.ExternalBinding.exe";
+    //char monodir[] = "C:\\Program Files\\Mono";
+    char exedir[] = "C:\\Users\\florian\\Documents\\BoSSS-master\\public\\src\\L4-application\\ExternalBinding\\bin\\Debug\\";
 #else
-    char monodir[] = "./Debug";
-    char exepath[] = "./Debug/BoSSS.Application.ExternalBinding.exe";
+    char exedir[] = "./Debug/";
 #endif 
 
-    BoSSScppWrapper::MonoBoSSSglobals::Init(monodir, exepath);
+    BoSSS::Globals::Init(exedir);
     Initializer MyInit;
     MyInit.BoSSSInitialize();
-
-  
-    BoSSScppWrapper::MonoBoSSSglobals::Init(
-        monodir,
-        exepath 
-    );
     printf("init done.\n");
+
     InitMeshTest();
-
-
 
     MyInit.BoSSSFinalize();
 	return 0;
