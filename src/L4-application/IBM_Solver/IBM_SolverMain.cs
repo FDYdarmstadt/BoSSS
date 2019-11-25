@@ -310,14 +310,14 @@ namespace BoSSS.Application.IBM_Solver {
 
                         var comps = IBM_Op.EquationComponents[CodName[d]];
                        
-                        //var ConvBulk = new Solution.NSECommon.LinearizedConvection(D, boundaryCondMap, d);
-                        var ConvBulkUp = new UpwindConvection(D, boundaryCondMap, d, Control.PhysicalParameters.rho_A);
-                        comps.Add(ConvBulkUp); // bulk component
+                        var ConvBulk = new Solution.NSECommon.LinearizedConvection(D, boundaryCondMap, d);
+                        //var ConvBulkUp = new UpwindConvection(D, boundaryCondMap, d, Control.PhysicalParameters.rho_A);
+                        comps.Add(ConvBulk); // bulk component
 
-                        //var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(
-                        //    d, D, LsTrk, this.Control.AdvancedDiscretizationOptions.LFFA, boundaryCondMap,
-                        //    delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; }, this.Control.PhysicalParameters.rho_A, false);
-                        var ConvIB = new ConvectionAtIB(LsTrk, d, D, Control.PhysicalParameters.rho_A, false);
+                        var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(
+                            d, D, LsTrk, this.Control.AdvancedDiscretizationOptions.LFFA, boundaryCondMap,
+                            delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; }, this.Control.PhysicalParameters.rho_A, false);
+                        //var ConvIB = new ConvectionAtIB(LsTrk, d, D, Control.PhysicalParameters.rho_A, false);
                         
                         comps.Add(ConvIB); // immersed boundary component
 
@@ -395,7 +395,7 @@ namespace BoSSS.Application.IBM_Solver {
                 IBM_Op.Commit();
 
 
-                IBM_Op_Jacobian = IBM_Op.GetJacobiOperator();
+                //IBM_Op_Jacobian = IBM_Op.GetJacobiOperator();
             }
 
             // ==========================
@@ -524,11 +524,11 @@ namespace BoSSS.Application.IBM_Solver {
 
                 // using ad-hoc linearization:
                 // - - - - - - - - - - - - - - 
-                //ParameterUpdate(CurrentState, Params);
-                //var mtxBuilder = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, FluidSpecies);
-                //mtxBuilder.time = phystime;
-                //mtxBuilder.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
-                //mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
+                ParameterUpdate(CurrentState, Params);
+                var mtxBuilder = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, FluidSpecies);
+                mtxBuilder.time = phystime;
+                mtxBuilder.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+                mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
 
                 // using finite difference Jacobi:
                 // - - - - - - - - - - - - - - - -
@@ -541,10 +541,10 @@ namespace BoSSS.Application.IBM_Solver {
 
                 // using the other kind of Jacobi:
                 // - - - - - - - - - - - - - - - -
-                var mtxBuilder3 = IBM_Op_Jacobian.GetMatrixBuilder(LsTrk, Mapping, CurrentState, Mapping, FluidSpecies);
-                mtxBuilder3.time = phystime;
-                mtxBuilder3.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
-                mtxBuilder3.ComputeMatrix(OpMatrix, OpAffine);
+                //var mtxBuilder3 = IBM_Op_Jacobian.GetMatrixBuilder(LsTrk, Mapping, CurrentState, Mapping, FluidSpecies);
+                //mtxBuilder3.time = phystime;
+                //mtxBuilder3.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+                //mtxBuilder3.ComputeMatrix(OpMatrix, OpAffine);
 
 #if DEBUG
                 if (DelComputeOperatorMatrix_CallCounter == 1) {
