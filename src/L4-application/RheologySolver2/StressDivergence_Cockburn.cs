@@ -119,7 +119,7 @@ namespace BoSSS.Application.Rheology {
             
 
 
-            res += 0.5 * (Tin[0] + Tout[0])* inp.Normale[0] + 0.5 * (Tin[1] + Tout[1]) * inp.Normale[1]; // central difference for stress divergence
+            res += 0.5 * (Tin[0] + Tout[0])* inp.Normal[0] + 0.5 * (Tin[1] + Tout[1]) * inp.Normal[1]; // central difference for stress divergence
 
             switch (Component)
             {
@@ -157,8 +157,8 @@ namespace BoSSS.Application.Rheology {
 
 
                     // Atmospheric outlet/pressure outflow: hom. Neumann
-                    res += Tin[0] * inp.Normale[0];
-                    res += Tin[1] * inp.Normale[1];
+                    res += Tin[0] * inp.Normal[0];
+                    res += Tin[1] * inp.Normal[1];
                 break;
 
                 case IncompressibleBcType.FreeSlip:
@@ -170,19 +170,19 @@ namespace BoSSS.Application.Rheology {
 
                     switch (Component) {
                         case 0:
-                            res += inp.Normale[0] * Tin[0] * inp.Normale[0] * inp.Normale[0];
-                            res += inp.Normale[0] * Tin[1] * inp.Normale[1] * inp.Normale[0];
-                            res += inp.Normale[0] * Tin[1] * inp.Normale[0] * inp.Normale[1];
-                            res += inp.Normale[0] * Tin[3] * inp.Normale[1] * inp.Normale[1];
+                            res += inp.Normal[0] * Tin[0] * inp.Normal[0] * inp.Normal[0];
+                            res += inp.Normal[0] * Tin[1] * inp.Normal[1] * inp.Normal[0];
+                            res += inp.Normal[0] * Tin[1] * inp.Normal[0] * inp.Normal[1];
+                            res += inp.Normal[0] * Tin[3] * inp.Normal[1] * inp.Normal[1];
                             //res += -pen2 / h * (Tin[2] - VelocityX2) * inp.Normale[0] - pen2 / h * (Tin[2] - VelocityX2) * inp.Normale[1];
                             //res += 0;
 
                             break;
                         case 1:
-                            res += inp.Normale[1] * Tin[3] * inp.Normale[0] * inp.Normale[0];
-                            res += inp.Normale[1] * Tin[0] * inp.Normale[1] * inp.Normale[0];
-                            res += inp.Normale[1] * Tin[0] * inp.Normale[0] * inp.Normale[1];
-                            res += inp.Normale[1] * Tin[1] * inp.Normale[1] * inp.Normale[1];
+                            res += inp.Normal[1] * Tin[3] * inp.Normal[0] * inp.Normal[0];
+                            res += inp.Normal[1] * Tin[0] * inp.Normal[1] * inp.Normal[0];
+                            res += inp.Normal[1] * Tin[0] * inp.Normal[0] * inp.Normal[1];
+                            res += inp.Normal[1] * Tin[1] * inp.Normal[1] * inp.Normal[1];
                             //res += -pen2 / h * (Tin[2] - VelocityY2) * inp.Normale[0] - pen2 / h * (Tin[2] - VelocityY2) * inp.Normale[1];
                             //res += Tin[1] * inp.Normale[1];
                             //res += 0;
@@ -203,15 +203,15 @@ namespace BoSSS.Application.Rheology {
                     switch (Component)
                     {
                         case 0:
-                            res += Tin[0]* inp.Normale[0];
-                            res += Tin[1]* inp.Normale[1];
+                            res += Tin[0]* inp.Normal[0];
+                            res += Tin[1]* inp.Normal[1];
                              //alpha penalty for boundary (no beta penalty)
                             res += -pen2 / h * (Tin[2] - VelocityX); 
 
                             break;
                         case 1:
-                            res += Tin[0] * inp.Normale[0];
-                            res += Tin[1] * inp.Normale[1];
+                            res += Tin[0] * inp.Normal[0];
+                            res += Tin[1] * inp.Normal[1];
                             //alpha penalty for boundary (no beta penalty)
                             res += -pen2 / h * (Tin[2] - VelocityY);
 

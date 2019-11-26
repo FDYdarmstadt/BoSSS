@@ -94,7 +94,7 @@ namespace BoSSS.Solution.Timestepping {
         /// optional restriction to computational domain
         /// </param>
         public AdamsBashforth(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid sgrd = null)
-            : base(spatialOp, Fieldsmap, Parameters, SpatialOperator.SubGridBoundaryModes.InnerEdgeLTS, timeStepConstraints, sgrd) {
+            : base(spatialOp, Fieldsmap, Parameters, SubGridBoundaryModes.InnerEdgeLTS, timeStepConstraints, sgrd) {
             if (order > 3 || order == 0) {
                 throw new ArgumentException("Order not supported. Order must be between 1 and 3, but was " + order, "order");
             }

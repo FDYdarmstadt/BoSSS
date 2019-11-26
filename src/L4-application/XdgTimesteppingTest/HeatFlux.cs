@@ -82,8 +82,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
 
             for (int d = 0; d < inp.D; d++) {
-                Acc += 0.5 * (muA * _Grad_uA[0, d] + muB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
-                Acc += 0.5 * (muA * _Grad_vA[d] + muB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
+                Acc += 0.5 * (muA * _Grad_uA[0, d] + muB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normal[d];  // consistency term
+                Acc += 0.5 * (muA * _Grad_vA[d] + muB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normal[d];  // symmetry term
             }
 
             double muMax = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
@@ -135,14 +135,14 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             double pnlty = 2 * this.penalty(inp.jCellIn, -1);
             double muA = Viscosity;
 
-            if (IsDiri(inp.X, inp.Normale, inp.EdgeTag)) {
+            if (IsDiri(inp.X, inp.Normal, inp.EdgeTag)) {
                 // inhom. Dirichlet b.c.
                 // +++++++++++++++++++++
 
                 double g_D = g_Diri(inp.X, inp.time, inp.EdgeTag);
 
                 for (int d = 0; d < inp.D; d++) {
-                    double nd = inp.Normale[d];
+                    double nd = inp.Normal[d];
                     Acc += (muA * _Grad_uA[0, d]) * (_vA) * nd;
                     Acc += (muA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;
                 }
@@ -152,7 +152,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             } else {
                 // inhom. Neumann
                 // ++++++++++++
-                double g_N = g_Neu(inp.X, inp.Normale, inp.EdgeTag);
+                double g_N = g_Neu(inp.X, inp.Normal, inp.EdgeTag);
                 Acc += muA * g_N * _vA;
             }
 
@@ -203,12 +203,12 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// <summary>
         /// default-implementation
         /// </summary>
-        public double LevelSetForm(ref CommonParamsLs inp,
+        public double LevelSetForm(ref CommonParams inp,
         //public override double EdgeForm(ref Linear2ndDerivativeCouplingFlux.CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            double[] N = inp.n;
-            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCell];
+            double[] N = inp.Normal;
+            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCellIn];
 
             // symmetric interior penalty
             // ==========================
@@ -222,8 +222,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 Grad_vB_xN += Grad_vB[d] * N[d];
             }
 
-            double NegCellLengthScale = NegCellLengthScaleS[inp.jCell];
-            double PosCellLengthScale = PosCellLengthScaleS[inp.jCell];
+            double NegCellLengthScale = NegCellLengthScaleS[inp.jCellIn];
+            double PosCellLengthScale = PosCellLengthScaleS[inp.jCellOut];
             double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
             Debug.Assert(!(double.IsInfinity(hCutCellMin) || double.IsNaN(hCutCellMin)));
 
@@ -240,7 +240,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             // moving-mesh-contribution
             // ========================
 
-            double s = m_NormalVel(inp.x, inp.time);
+            double s = m_NormalVel(inp.X, inp.time);
             double movingFlux;
             if (s > 0) { // select DOWN-wind!
                 movingFlux = (-s) * uB[0];

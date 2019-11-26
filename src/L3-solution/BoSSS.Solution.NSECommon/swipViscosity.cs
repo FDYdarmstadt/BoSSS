@@ -63,7 +63,7 @@ namespace BoSSS.Solution.NSECommon {
     /// <summary>
     /// base class for viscosity terms
     /// </summary>
-    public abstract class swipViscosityBase : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient, IEquationComponentChecking {
+    public abstract class swipViscosityBase : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient, IEquationComponentChecking, ISupportsJacobianComponent {
 
         /// <summary>
         /// ctor.
@@ -230,7 +230,24 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
+        /// <summary>
+        /// Linear component - returns this object itself.
+        /// </summary>
+        virtual public IEquationComponent[] GetJacobianComponents() {
+            switch (m_ViscosityMode) {
+                case ViscosityOption.ConstantViscosity:
+                case ViscosityOption.ConstantViscosityDimensionless:
+                return new IEquationComponent[] { this };
 
+                case ViscosityOption.VariableViscosity:
+                case ViscosityOption.VariableViscosityDimensionless:
+                throw new NotImplementedException("Nonlinear dependence - todo.");
+
+
+                default:
+                throw new NotImplementedException();
+            }
+        }
 
 
         /// <summary>
@@ -466,8 +483,8 @@ namespace BoSSS.Solution.NSECommon {
             for(int d = 0; d < inp.D; d++) {
                 //Acc += 0.5 * (muA * _Grad_uA[0, d] + muB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
                 //Acc += 0.5 * (muA * _Grad_vA[d] + muB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
-                 Acc += 0.5 * (muA * _Grad_uA[m_iComp, d] + muB * _Grad_uB[m_iComp, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term  
-                Acc += 0.5 * (muA * _Grad_vA[d] + muB * _Grad_vB[d]) * (_uA[m_iComp] - _uB[m_iComp]) * inp.Normale[d];  // symmetry term
+                 Acc += 0.5 * (muA * _Grad_uA[m_iComp, d] + muB * _Grad_uB[m_iComp, d]) * (_vA - _vB) * inp.Normal[d];  // consistency term  
+                Acc += 0.5 * (muA * _Grad_vA[d] + muB * _Grad_vB[d]) * (_uA[m_iComp] - _uB[m_iComp]) * inp.Normal[d];  // symmetry term
             }
             Acc *= base.m_alpha;
 
@@ -511,7 +528,7 @@ namespace BoSSS.Solution.NSECommon {
                         double g_D = base.g_Diri(inp.X, inp.time, inp.EdgeTag, m_iComp);
 
                         for(int d = 0; d < inp.D; d++) {
-                            double nd = inp.Normale[d];
+                            double nd = inp.Normal[d];
                             //Acc += (muA * _Grad_uA[0, d]) * (_vA) * nd;
                             //Acc += (muA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;
                             Acc += (muA * _Grad_uA[m_iComp, d]) * (_vA) * nd;
@@ -534,13 +551,13 @@ namespace BoSSS.Solution.NSECommon {
 
                             for(int dD = 0; dD < D; dD++) {
                                 // consistency
-                                Acc += muA * (inp.Normale[dN] * _Grad_uA[dN, dD] * inp.Normale[dD]) * (_vA * inp.Normale[m_iComp]) * base.m_alpha;
+                                Acc += muA * (inp.Normal[dN] * _Grad_uA[dN, dD] * inp.Normal[dD]) * (_vA * inp.Normal[m_iComp]) * base.m_alpha;
                                 // symmetry
-                                Acc += muA * (inp.Normale[m_iComp] * _Grad_vA[dD] * inp.Normale[dD]) * (_uA[dN] - g_D) * inp.Normale[dN] * base.m_alpha;
+                                Acc += muA * (inp.Normal[m_iComp] * _Grad_vA[dD] * inp.Normal[dD]) * (_uA[dN] - g_D) * inp.Normal[dN] * base.m_alpha;
                             }
 
                             // penalty
-                            Acc -= muA * ((_uA[dN] - g_D) * inp.Normale[dN]) * ((_vA - 0) * inp.Normale[m_iComp]) * pnlty;
+                            Acc -= muA * ((_uA[dN] - g_D) * inp.Normal[dN]) * ((_vA - 0) * inp.Normal[m_iComp]) * pnlty;
                             Acc = 0;
                         }
                         break;
@@ -562,20 +579,20 @@ namespace BoSSS.Solution.NSECommon {
 
                             for(int dD = 0; dD < D; dD++) {
                                 // consistency
-                                Acc += muA * (inp.Normale[dN] * _Grad_uA[dN, dD] * inp.Normale[dD]) * (_vA * inp.Normale[m_iComp]) * base.m_alpha;
+                                Acc += muA * (inp.Normal[dN] * _Grad_uA[dN, dD] * inp.Normal[dD]) * (_vA * inp.Normal[m_iComp]) * base.m_alpha;
                                 // symmetry
-                                Acc += muA * (inp.Normale[m_iComp] * _Grad_vA[dD] * inp.Normale[dD]) * (_uA[dN] - g_D) * inp.Normale[dN] * base.m_alpha;
+                                Acc += muA * (inp.Normal[m_iComp] * _Grad_vA[dD] * inp.Normal[dD]) * (_uA[dN] - g_D) * inp.Normal[dN] * base.m_alpha;
                             }
 
                             // penalty
-                            Acc -= muA * ((_uA[dN] - g_D) * inp.Normale[dN]) * ((_vA - 0) * inp.Normale[m_iComp]) * pnlty;
+                            Acc -= muA * ((_uA[dN] - g_D) * inp.Normal[dN]) * ((_vA - 0) * inp.Normal[m_iComp]) * pnlty;
                         }
 
 
                         double[,] P = new double[D, D];
                         for(int d1 = 0; d1 < D; d1++) {
                             for(int d2 = 0; d2 < D; d2++) {
-                                double nn = inp.Normale[d1] * inp.Normale[d2];
+                                double nn = inp.Normal[d1] * inp.Normal[d2];
                                 if(d1 == d2) {
                                     P[d1, d2] = 1 - nn;
                                 } else {
@@ -608,7 +625,7 @@ namespace BoSSS.Solution.NSECommon {
                 case IncompressibleBcType.Pressure_Outlet: {
                         // Atmospheric outlet/pressure outflow: hom. Neumann
                         // +++++++++++++++++++++++++++++++++++++++++++++++++
-                        double g_N = g_Neu(inp.X, inp.Normale, inp.EdgeTag);
+                        double g_N = g_Neu(inp.X, inp.Normal, inp.EdgeTag);
 
                         Acc += muA * g_N * _vA * base.m_alpha;
 
@@ -621,7 +638,7 @@ namespace BoSSS.Solution.NSECommon {
 
                         for(int d = 0; d < inp.D; d++) {
                             //Acc += (muA * _Grad_uA[0, d]) * (_vA) * inp.Normale[d];
-                            Acc += (muA * _Grad_uA[m_iComp, d]) * (_vA) * inp.Normale[d];
+                            Acc += (muA * _Grad_uA[m_iComp, d]) * (_vA) * inp.Normal[d];
                         }
                         Acc *= base.m_alpha;
 
@@ -715,7 +732,7 @@ namespace BoSSS.Solution.NSECommon {
             CommonParamsBnd cpv;
             cpv.GridDat = efp.GridDat;
             cpv.Parameters_IN = new double[_NOParams];
-            cpv.Normale = new Vector(D);;
+            cpv.Normal = new Vector(D);;
             cpv.X = new Vector(D);
             cpv.time = efp.time;
 
@@ -736,8 +753,8 @@ namespace BoSSS.Solution.NSECommon {
                     }
 
                     for(int d = 0; d < D; d++) {
-                        cpv.Normale[d] = efp.Normals[l, k, d];
-                        cpv.X[d] = efp.NodesGlobal[l, k, d];
+                        cpv.Normal[d] = efp.Normals[l, k, d];
+                        cpv.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int na = 0; na < _NOargs; na++) {
@@ -821,7 +838,7 @@ namespace BoSSS.Solution.NSECommon {
             CommonParamsBnd cpv;
             cpv.GridDat = efp.GridDat;
             cpv.Parameters_IN = new double[_NOParams];
-            cpv.Normale = new double[D];
+            cpv.Normal = new double[D];
             cpv.X = new double[D];
             cpv.time = efp.time;
 
@@ -844,8 +861,8 @@ namespace BoSSS.Solution.NSECommon {
                     }
 
                     for(int d = 0; d < D; d++) {
-                        cpv.Normale[d] = efp.Normals[l, k, d];
-                        cpv.X[d] = efp.NodesGlobal[l, k, d];
+                        cpv.Normal[d] = efp.Normals[l, k, d];
+                        cpv.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int na = 0; na < _NOargs; na++) {
@@ -875,11 +892,6 @@ namespace BoSSS.Solution.NSECommon {
 
 
         }
-
-
-
-
-
     }
 
     /// <summary>
@@ -940,15 +952,15 @@ namespace BoSSS.Solution.NSECommon {
 
             for(int i = 0; i < inp.D; i++) {
                 // consistency term
-                Acc += 0.5 * (muA * _Grad_uA[i, m_iComp] + muB * _Grad_uB[i, m_iComp]) * (_vA - _vB) * inp.Normale[i];
+                Acc += 0.5 * (muA * _Grad_uA[i, m_iComp] + muB * _Grad_uB[i, m_iComp]) * (_vA - _vB) * inp.Normal[i];
                 // symmetry term
                 switch(ViscSolverMode) {
                     case ViscositySolverMode.FullyCoupled:
-                        Acc += 0.5 * (muA * _Grad_vA[i] + muB * _Grad_vB[i]) * (_uA[i] - _uB[i]) * inp.Normale[m_iComp];
+                        Acc += 0.5 * (muA * _Grad_vA[i] + muB * _Grad_vB[i]) * (_uA[i] - _uB[i]) * inp.Normal[m_iComp];
                         break;
                     case ViscositySolverMode.Segregated:
                         if(i == m_iComp)
-                            Acc += 0.5 * (muA * _Grad_vA[i] + muB * _Grad_vB[i]) * (_uA[i] - _uB[i]) * inp.Normale[m_iComp];
+                            Acc += 0.5 * (muA * _Grad_vA[i] + muB * _Grad_vB[i]) * (_uA[i] - _uB[i]) * inp.Normal[m_iComp];
                         break;
                     default:
                         throw new NotImplementedException();
@@ -1000,15 +1012,15 @@ namespace BoSSS.Solution.NSECommon {
 
                         for(int i = 0; i < inp.D; i++) {
                             // consistency
-                            Acc += (muA * _Grad_uA[i, m_iComp]) * (_vA) * inp.Normale[i];
+                            Acc += (muA * _Grad_uA[i, m_iComp]) * (_vA) * inp.Normal[i];
                             // symmetry
                             switch(ViscSolverMode) {
                                 case ViscositySolverMode.FullyCoupled:
-                                    Acc += (muA * _Grad_vA[i]) * (_uA[i] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, i)) * inp.Normale[m_iComp];
+                                    Acc += (muA * _Grad_vA[i]) * (_uA[i] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, i)) * inp.Normal[m_iComp];
                                     break;
                                 case ViscositySolverMode.Segregated:
                                     if(i == m_iComp)
-                                        Acc += (muA * _Grad_vA[i]) * (_uA[i] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, i)) * inp.Normale[m_iComp];
+                                        Acc += (muA * _Grad_vA[i]) * (_uA[i] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, i)) * inp.Normal[m_iComp];
                                     break;
                                 default:
                                     throw new NotImplementedException();
@@ -1030,12 +1042,12 @@ namespace BoSSS.Solution.NSECommon {
                         for(int dN = 0; dN < D; dN++) {
                             for(int dD = 0; dD < D; dD++) {
                                 // consistency
-                                Acc += muA * (inp.Normale[dN] * _Grad_uA[dD, dN] * inp.Normale[dD]) * (_vA * inp.Normale[m_iComp]) * base.m_alpha;
+                                Acc += muA * (inp.Normal[dN] * _Grad_uA[dD, dN] * inp.Normal[dD]) * (_vA * inp.Normal[m_iComp]) * base.m_alpha;
                                 // symmetry
                                 switch(ViscSolverMode) {
                                     case ViscositySolverMode.FullyCoupled:
                                         g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, dD);
-                                        Acc += muA * (inp.Normale[dN] * _Grad_vA[dN] * inp.Normale[m_iComp]) * (_uA[dD] - g_D) * inp.Normale[dD] * base.m_alpha;
+                                        Acc += muA * (inp.Normal[dN] * _Grad_vA[dN] * inp.Normal[m_iComp]) * (_uA[dD] - g_D) * inp.Normal[dD] * base.m_alpha;
                                         break;
                                     case ViscositySolverMode.Segregated:
                                     default:
@@ -1044,7 +1056,7 @@ namespace BoSSS.Solution.NSECommon {
                             }
                             g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, dN);
                             // penalty
-                            Acc -= muA * ((_uA[dN] - g_D) * inp.Normale[dN]) * ((_vA - 0) * inp.Normale[m_iComp]) * pnlty;
+                            Acc -= muA * ((_uA[dN] - g_D) * inp.Normal[dN]) * ((_vA - 0) * inp.Normal[m_iComp]) * pnlty;
                         }
 
                         break;
@@ -1077,10 +1089,10 @@ namespace BoSSS.Solution.NSECommon {
                             // Inner values of velocity gradient are taken, i.e.
                             // no boundary condition for the velocity (resp. velocity gradient) is imposed.
                             for(int i = 0; i < inp.D; i++) {
-                                Acc += (muA * _Grad_uA[i, m_iComp]) * (_vA) * inp.Normale[i];
+                                Acc += (muA * _Grad_uA[i, m_iComp]) * (_vA) * inp.Normal[i];
                             }
                         } else {
-                            double g_N = g_Neu(inp.X, inp.Normale, inp.EdgeTag);
+                            double g_N = g_Neu(inp.X, inp.Normal, inp.EdgeTag);
                             Acc += muA * g_N * _vA;
                         }
                         Acc *= base.m_alpha;
@@ -1171,7 +1183,7 @@ namespace BoSSS.Solution.NSECommon {
             CommonParamsBnd cpv;
             cpv.GridDat = efp.GridDat;
             cpv.Parameters_IN = new double[_NOParams];
-            cpv.Normale = new double[D];
+            cpv.Normal = new double[D];
             cpv.X = new double[D];
             cpv.time = efp.time;
 
@@ -1192,8 +1204,8 @@ namespace BoSSS.Solution.NSECommon {
                     }
 
                     for(int d = 0; d < D; d++) {
-                        cpv.Normale[d] = efp.Normals[l, k, d];
-                        cpv.X[d] = efp.NodesGlobal[l, k, d];
+                        cpv.Normal[d] = efp.Normals[l, k, d];
+                        cpv.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int na = 0; na < _NOargs; na++) {
@@ -1277,7 +1289,7 @@ namespace BoSSS.Solution.NSECommon {
             CommonParamsBnd cpv;
             cpv.GridDat = efp.GridDat;
             cpv.Parameters_IN = new double[_NOParams];
-            cpv.Normale = new double[D];
+            cpv.Normal = new double[D];
             cpv.X = new double[D];
             cpv.time = efp.time;
 
@@ -1300,8 +1312,8 @@ namespace BoSSS.Solution.NSECommon {
                     }
 
                     for(int d = 0; d < D; d++) {
-                        cpv.Normale[d] = efp.Normals[l, k, d];
-                        cpv.X[d] = efp.NodesGlobal[l, k, d];
+                        cpv.Normal[d] = efp.Normals[l, k, d];
+                        cpv.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int na = 0; na < _NOargs; na++) {
@@ -1376,15 +1388,15 @@ namespace BoSSS.Solution.NSECommon {
 
             for(int i = 0; i < inp.D; i++) {
                 // consistency term
-                Acc += 0.5 * (muA * _Grad_uA[i, i] + muB * _Grad_uB[i, i]) * (_vA - _vB) * inp.Normale[m_iComp];
+                Acc += 0.5 * (muA * _Grad_uA[i, i] + muB * _Grad_uB[i, i]) * (_vA - _vB) * inp.Normal[m_iComp];
                 // symmetry term
                 switch(ViscSolverMode) {
                     case ViscositySolverMode.FullyCoupled:
-                        Acc += 0.5 * (muA * _Grad_vA[m_iComp] + muB * _Grad_vB[m_iComp]) * (_uA[i] - _uB[i]) * inp.Normale[i];
+                        Acc += 0.5 * (muA * _Grad_vA[m_iComp] + muB * _Grad_vB[m_iComp]) * (_uA[i] - _uB[i]) * inp.Normal[i];
                         break;
                     case ViscositySolverMode.Segregated:
                         if(i == m_iComp)
-                            Acc += 0.5 * (muA * _Grad_vA[m_iComp] + muB * _Grad_vB[m_iComp]) * (_uA[i] - _uB[i]) * inp.Normale[i];
+                            Acc += 0.5 * (muA * _Grad_vA[m_iComp] + muB * _Grad_vB[m_iComp]) * (_uA[i] - _uB[i]) * inp.Normal[i];
                         break;
                     default:
                         throw new NotImplementedException();
@@ -1435,15 +1447,15 @@ namespace BoSSS.Solution.NSECommon {
 
                         for(int i = 0; i < inp.D; i++) {
                             // consistency
-                            Acc += (muA * _Grad_uA[i, i]) * (_vA) * inp.Normale[m_iComp];
+                            Acc += (muA * _Grad_uA[i, i]) * (_vA) * inp.Normal[m_iComp];
                             // symmetry
                             switch(ViscSolverMode) {
                                 case ViscositySolverMode.FullyCoupled:
-                                    Acc += (muA * _Grad_vA[m_iComp]) * (_uA[i] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, i)) * inp.Normale[i];
+                                    Acc += (muA * _Grad_vA[m_iComp]) * (_uA[i] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, i)) * inp.Normal[i];
                                     break;
                                 case ViscositySolverMode.Segregated:
                                     if(i == m_iComp)
-                                        Acc += (muA * _Grad_vA[m_iComp]) * (_uA[i] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, i)) * inp.Normale[i];
+                                        Acc += (muA * _Grad_vA[m_iComp]) * (_uA[i] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, i)) * inp.Normal[i];
                                     break;
                                 default:
                                     throw new NotImplementedException();
@@ -1464,10 +1476,10 @@ namespace BoSSS.Solution.NSECommon {
                             // Inner values of velocity gradient are taken, i.e.
                             // no boundary condition for the velocity (resp. velocity gradient) is imposed.
                             for(int i = 0; i < inp.D; i++) {
-                                Acc += (muA * _Grad_uA[i, i]) * (_vA) * inp.Normale[m_iComp];
+                                Acc += (muA * _Grad_uA[i, i]) * (_vA) * inp.Normal[m_iComp];
                             }
                         } else {
-                            double g_N = g_Neu(inp.X, inp.Normale, inp.EdgeTag);
+                            double g_N = g_Neu(inp.X, inp.Normal, inp.EdgeTag);
                             Acc += muA * g_N * _vA;
                         }
                         Acc *= base.m_alpha;
@@ -1560,7 +1572,7 @@ namespace BoSSS.Solution.NSECommon {
             CommonParamsBnd cpv;
             cpv.GridDat = efp.GridDat;
             cpv.Parameters_IN = new double[_NOParams];
-            cpv.Normale = new double[D];
+            cpv.Normal = new double[D];
             cpv.X = new double[D];
             cpv.time = efp.time;
 
@@ -1581,8 +1593,8 @@ namespace BoSSS.Solution.NSECommon {
                     }
 
                     for(int d = 0; d < D; d++) {
-                        cpv.Normale[d] = efp.Normals[l, k, d];
-                        cpv.X[d] = efp.NodesGlobal[l, k, d];
+                        cpv.Normal[d] = efp.Normals[l, k, d];
+                        cpv.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int na = 0; na < _NOargs; na++) {
@@ -1666,7 +1678,7 @@ namespace BoSSS.Solution.NSECommon {
             CommonParamsBnd cpv;
             cpv.GridDat = efp.GridDat;
             cpv.Parameters_IN = new double[_NOParams];
-            cpv.Normale = new double[D];
+            cpv.Normal = new double[D];
             cpv.X = new double[D];
             cpv.time = efp.time;
 
@@ -1689,8 +1701,8 @@ namespace BoSSS.Solution.NSECommon {
                     }
 
                     for(int d = 0; d < D; d++) {
-                        cpv.Normale[d] = efp.Normals[l, k, d];
-                        cpv.X[d] = efp.NodesGlobal[l, k, d];
+                        cpv.Normal[d] = efp.Normals[l, k, d];
+                        cpv.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int na = 0; na < _NOargs; na++) {

@@ -42,11 +42,11 @@ namespace BoSSS.Application.Matrix_MPItest {
         }
 
         protected override double BorderEdgeFlux(ref Foundation.CommonParamsBnd inp, double[] Uin) {
-            return Uin[0]*inp.Normale[0]*m_factor;
+            return Uin[0]*inp.Normal[0]*m_factor;
         }
 
         protected override double InnerEdgeFlux(ref Foundation.CommonParams inp, double[] Uin, double[] Uout) {
-            return 0.5*(Uin[0] + Uout[0])*inp.Normale[0]*m_factor;
+            return 0.5*(Uin[0] + Uout[0])*inp.Normal[0]*m_factor;
         }
 
         protected override void Flux(ref Foundation.CommonParamsVol inp, double[] U, double[] output) {
@@ -89,8 +89,8 @@ namespace BoSSS.Application.Matrix_MPItest {
         }
 
 
-        public double LevelSetForm(ref CommonParamsLs inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            double Flx = 0.5*(U_Pos[0] + U_Neg[0])*inp.n[0];
+        public double LevelSetForm(ref CommonParams inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+            double Flx = 0.5*(U_Pos[0] + U_Neg[0])*inp.Normal[0];
             return Flx * vA - Flx * vB*m_factor;
         }
 

@@ -131,8 +131,8 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
 
                     double Diffusion = 0;
                     for(int d = 0; d < D; d++) {
-                        Diffusion += GradPhiOt[0, d] * (0 - vOt) * inp.Normale[d];//            consistency
-                        Diffusion += Grad_vOt[d] * (bndValue - PhiOt[0]) * inp.Normale[d]; //   symmetry
+                        Diffusion += GradPhiOt[0, d] * (0 - vOt) * inp.Normal[d];//            consistency
+                        Diffusion += Grad_vOt[d] * (bndValue - PhiOt[0]) * inp.Normal[d]; //   symmetry
                     }
                     Diffusion -= (bndValue - PhiOt[0]) * (0 - vOt) * penalty; // penalty
 
@@ -147,8 +147,8 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
 
                     double Diffusion = 0;
                     for(int d = 0; d < D; d++) {
-                        Diffusion += GradPhiIn[0, d] * (vIn - 0) * (inp.Normale[d]); //           consistency
-                        Diffusion += Grad_vIn[d] * (PhiIn[0] - bndValue) * (inp.Normale[d]); //   symmetry
+                        Diffusion += GradPhiIn[0, d] * (vIn - 0) * (inp.Normal[d]); //           consistency
+                        Diffusion += Grad_vIn[d] * (PhiIn[0] - bndValue) * (inp.Normal[d]); //   symmetry
                     }
                     Diffusion -= (PhiIn[0] - bndValue) * (vIn - 0) * penalty; // penalty
 
@@ -160,7 +160,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                     if(this.jCell == inp.jCellIn) {
                         double g_Neu = 0;
                         for(int d = 0; d < D; d++) {
-                            g_Neu += inp.Parameters_IN[1 + d] * inp.Normale[d];
+                            g_Neu += inp.Parameters_IN[1 + d] * inp.Normal[d];
                         }
 
                         Clamp_g_Neu(ref g_Neu);
@@ -170,7 +170,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                         double g_Neu = 0;
 
                         for(int d = 0; d < D; d++) {
-                            g_Neu += inp.Parameters_OUT[1 + d] * inp.Normale[d];
+                            g_Neu += inp.Parameters_OUT[1 + d] * inp.Normal[d];
                         }
 
                         Clamp_g_Neu(ref g_Neu);
@@ -198,7 +198,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 int D = inp.D;
                 double g_Neu = 0;
                 for(int d = 0; d < D; d++) {
-                    g_Neu += inp.Parameters_IN[1 + d] * inp.Normale[d];
+                    g_Neu += inp.Parameters_IN[1 + d] * inp.Normal[d];
                 }
                 g_Neu *= DiffusionCoeff;
 
@@ -279,7 +279,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 evo = op.GetEvaluatorEx(Phi.Mapping.Fields, gradPhi.Mapping.Fields, Phi.Mapping,
                     edgeQrCtx: (new EdgeQuadratureScheme(domain: EdgeMask.GetEmptyMask(this.GridDat))),
                     volQrCtx: (new CellQuadratureScheme(domain: jCellGrid.VolumeMask)));
-                evo.ActivateSubgridBoundary(jCellGrid.VolumeMask, subGridBoundaryTreatment: SpatialOperator.SubGridBoundaryModes.InnerEdge);
+                evo.ActivateSubgridBoundary(jCellGrid.VolumeMask, subGridBoundaryTreatment: SubGridBoundaryModes.InnerEdge);
             }
 
             // create artificial diffusion operator

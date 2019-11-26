@@ -64,7 +64,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                     double g_D = dirichletFunction(inp.X, inp.time);
 
                     for (int d = 0; d < inp.D; d++) {
-                        double nd = inp.Normale[d];
+                        double nd = inp.Normal[d];
                         Acc += (nuA * _Grad_uA[0, d]) * (_vA) * nd;        // consistency
                         Acc += (nuA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;  // symmetry
                     }

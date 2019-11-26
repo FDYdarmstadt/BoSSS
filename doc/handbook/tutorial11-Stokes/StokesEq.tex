@@ -148,7 +148,7 @@ public class Divergence : \newline
  \newline 
 \btab \btab double Acc = 0;\newline 
 \btab \btab for(int d = 0; d < inp.D; d++) \{\newline 
-\btab \btab \btab Acc += 0.5*(V\_IN + V\_OT)*(U\_IN[d] - U\_OT[d])*inp.Normale[d];\newline 
+\btab \btab \btab Acc += 0.5*(V\_IN + V\_OT)*(U\_IN[d] - U\_OT[d])*inp.Normal[d];\newline 
 \btab \btab \}\newline 
 \btab \btab return Acc;\newline 
 \btab \}\newline 
@@ -170,7 +170,7 @@ public class Divergence : \newline
 \btab \btab \btab // is given by the function/delegate 'UDiri':\newline 
 \btab \btab \btab double[] UD = UDiri(inp.X);\newline 
 \btab \btab \btab for(int d = 0; d < inp.D; d++) \{\newline 
-\btab \btab \btab \btab Acc += (U\_IN[d] - UD[d])*inp.Normale[d]*V\_IN;\newline 
+\btab \btab \btab \btab Acc += (U\_IN[d] - UD[d])*inp.Normal[d]*V\_IN;\newline 
 \btab \btab \btab \}\newline 
 \btab \btab \}\newline 
 \btab \btab return Acc;\newline 
@@ -240,7 +240,7 @@ class Gradient\_d :\newline
 \btab \btab double V\_IN, double V\_OT, double[] GradV\_IN, double[] GradV\_OT) \{\newline 
  \newline 
 \btab \btab double Acc = 0;\newline 
-\btab \btab Acc += 0.5*(Psi\_IN[0] + Psi\_OT[0])*inp.Normale[this.d]*(V\_IN - V\_OT);\newline 
+\btab \btab Acc += 0.5*(Psi\_IN[0] + Psi\_OT[0])*inp.Normal[this.d]*(V\_IN - V\_OT);\newline 
 \btab \btab return Acc;  \newline 
 \btab  \}\newline 
  \newline 
@@ -255,8 +255,8 @@ class Gradient\_d :\newline
 \btab \btab \} else \{\newline 
 \btab \btab \btab // On the Dirichlet boundary, we do not know an outer value for \newline 
 \btab \btab \btab // the pressure, so we have to take the inner value:\newline 
-\btab \btab \btab Acc += Psi\_IN[0]*inp.Normale[this.d]*V\_IN;\newline 
-\btab \btab \}\newline 
+\btab \btab \btab Acc += Psi\_IN[0]*inp.Normal[this.d]*V\_IN;\newline 
+\btab \btab \}        \newline 
 \btab \btab return Acc;              \newline 
 \btab \}\newline 
 \}
@@ -433,14 +433,14 @@ public class Viscous : \newline
  \newline 
 \btab \btab double Acc = 0.0;\newline 
 \btab \btab for(int d = 0; d < inp.D; d++) \{ // loop over vector components \newline 
-\btab \btab \btab // consistency term: -(\{\{ \textbackslash /u \}\} [[ v ]])*Normale\newline 
+\btab \btab \btab // consistency term: -(\{\{ \textbackslash /u \}\} [[ v ]])*Normal\newline 
 \btab \btab \btab // index d: spatial direction\newline 
 \btab \btab \btab Acc -= 0.5 * (GradU\_IN[0, d] + GradU\_OT[0, d])*(V\_IN - V\_OT)\newline 
-\btab \btab \btab \btab \btab    * inp.Normale[d];\newline 
+\btab \btab \btab \btab \btab    * inp.Normal[d];\newline 
  \newline 
-\btab \btab \btab // the symmetry term -(\{\{ \textbackslash /v \}\} [[ u ]])*Normale\newline 
+\btab \btab \btab // the symmetry term -(\{\{ \textbackslash /v \}\} [[ u ]])*Normal\newline 
 \btab \btab \btab Acc -= 0.5 * (GradV\_IN[d] + GradV\_OT[d])*(U\_IN[0] - U\_OT[0])\newline 
-\btab \btab \btab \btab \btab    * inp.Normale[d];;\newline 
+\btab \btab \btab \btab \btab    * inp.Normal[d];;\newline 
 \btab \btab \}\newline 
  \newline 
 \btab \btab // the penalty term eta*[[u]]*[[v]]\newline 
@@ -465,9 +465,9 @@ public class Viscous : \newline
  \newline 
 \btab \btab \btab for(int d = 0; d < inp.D; d++) \{ // loop over vector components \newline 
 \btab \btab \btab \btab // consistency term:\newline 
-\btab \btab \btab \btab Acc -= (GradU\_IN[0, d])*(V\_IN) * inp.Normale[d];\newline 
+\btab \btab \btab \btab Acc -= (GradU\_IN[0, d])*(V\_IN) * inp.Normal[d];\newline 
 \btab \btab \btab \btab // symmetry term:\newline 
-\btab \btab \btab \btab Acc -= (GradV\_IN[d])*(U\_IN[0]- uBnd) * inp.Normale[d];\newline 
+\btab \btab \btab \btab Acc -= (GradV\_IN[d])*(U\_IN[0]- uBnd) * inp.Normal[d];\newline 
 \btab \btab \btab \}\newline 
  \newline 
 \btab \btab \btab // penalty term\newline 

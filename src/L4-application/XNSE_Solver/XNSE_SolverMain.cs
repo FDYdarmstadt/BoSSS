@@ -192,14 +192,9 @@ namespace BoSSS.Application.XNSE_Solver {
                 IOListOption.ControlFileDetermined)]
             public VectorField<TX> ResidualMomentum;
         }
-
+                
         /// <summary>
-        /// Velocity and related variables for the non-extended case, <see cref="XNSE_Control.UseXDG4Velocity"/> == false.
-        /// </summary>
-        //VelocityRelatedVars<SinglePhaseField> DGvelocity;
-
-        /// <summary>
-        /// Velocity and related variables for the extended case, <see cref="XNSE_Control.UseXDG4Velocity"/> == false.
+        /// Velocity and related variables for the extended case.
         /// </summary>
         VelocityRelatedVars<XDGField> XDGvelocity;
 
@@ -438,9 +433,14 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         /// <summary>
-        /// output of <see cref="AssembleMatrix"/>;
+        /// shortcut to mass matrix factory from level set tracker 
         /// </summary>
-        MassMatrixFactory MassFact;
+        MassMatrixFactory MassFact {
+            get {
+                // cached in lstrk, so no caching here required
+                return this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), m_HMForder, 1).MassMatrixFactory;
+            }
+        }
 
         /// <summary>
         /// HMF order/degree which is used globally in this solver.
@@ -860,8 +860,6 @@ namespace BoSSS.Application.XNSE_Solver {
             // Generate MassMatrix
             // ============================
           
-            // mass matrix factory
-            MassFact = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), m_HMForder, 1).MassMatrixFactory;// new MassMatrixFactory(maxB, CurrentAgg);
             var WholeMassMatrix = MassFact.GetMassMatrix(Mapping, MassScale); // mass matrix scaled with density rho
 
 
