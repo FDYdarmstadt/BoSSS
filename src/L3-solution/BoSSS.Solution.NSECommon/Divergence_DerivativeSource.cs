@@ -21,6 +21,7 @@ using System.Text;
 using BoSSS.Foundation;
 using BoSSS.Solution.Utils;
 using System.Diagnostics;
+using ilPSP;
 
 namespace BoSSS.Solution.NSECommon {
 
@@ -57,7 +58,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// bla bla bla.
         /// </summary>
-        public override double _DerivativeSource(double[] x, double[] Parameters, double[,] GradientU) {
+        public override double _DerivativeSource(Vector x, double[] Parameters, double[,] GradientU) {
             return GradientU[0, this.component];
         }
 
@@ -71,7 +72,7 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
-
+       
 
     }
 
@@ -132,7 +133,7 @@ namespace BoSSS.Solution.NSECommon {
             double u_j_In = Uin[0];
             double u_j_Out = Uout[0];
 
-            FluxInCell = -0.5 * (u_j_In - u_j_Out) * inp.Normale[component];
+            FluxInCell = -0.5 * (u_j_In - u_j_Out) * inp.Normal[component];
             FluxOutCell = FluxInCell;
         }
 
@@ -156,7 +157,7 @@ namespace BoSSS.Solution.NSECommon {
                     double u_j_In = Uin[0];
                     double u_j_Out = this.bndFunction[inp.EdgeTag](inp.X, inp.time);
 
-                    FluxInCell = -(u_j_In - u_j_Out) * inp.Normale[component];
+                    FluxInCell = -(u_j_In - u_j_Out) * inp.Normal[component];
                     break;
                 }
                 case IncompressibleBcType.Wall:
@@ -165,7 +166,7 @@ namespace BoSSS.Solution.NSECommon {
                 case IncompressibleBcType.NoSlipNeumann:
                 {
                     double u_j_In = Uin[0];
-                    FluxInCell = -u_j_In * inp.Normale[component];
+                    FluxInCell = -u_j_In * inp.Normal[component];
                     break;
                 }
                 default:

@@ -64,6 +64,7 @@
     <Compile Include="Grid2D.cs" />
     <Compile Include="Grid3D.cs" />
     <Compile Include="GridRefinementController.cs" />
+    <Compile Include="OpenFOAMGrid.cs" />
     <Compile Include="VoronoiMeshing\Mesher.cs" />
     <Compile Include="VoronoiMeshing\GridConverter.cs" />
     <Compile Include="VoronoiMeshing\Intersecter.cs" />

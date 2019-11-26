@@ -643,12 +643,13 @@ namespace BoSSS.Solution {
                     break;
 
                 case LinearSolverCode.exp_gmres_levelpmg:
-                    _precond = new LevelPmg() { UseHiOrderSmoothing = true };
+                    _precond = new LevelPmg() { UseHiOrderSmoothing = true, CoarseLowOrder=1 };
+                    //_precond = new SparseSolver() { WhichSolver = SparseSolver._whichSolver.PARDISO };
                     SetLinItCallback(_precond, isNonLinPrecond, IsLinPrecond: true);
-                    templinearSolve = new SoftGMRES()
-                    {
+                    templinearSolve = new SoftGMRES() {
                         m_Tolerance = lc.ConvergenceCriterion,
                         m_MaxIterations = lc.MaxSolverIterations,
+                        MaxKrylovDim = lc.MaxKrylovDim,
                         Precond = _precond
                     };
 
@@ -855,7 +856,7 @@ namespace BoSSS.Solution {
                                 UseHiOrderSmoothing =true,
                                 CoarseLowOrder=1
                             },
-                            
+
                             new Schwarz() {
                                 m_MaxIterations = 1,
                                 CoarseSolver = null,
@@ -1689,7 +1690,6 @@ namespace BoSSS.Solution {
                         WhichSolver = SparseSolver._whichSolver.PARDISO,
                         TestSolution = false
                     };
-
                 } else {
 
                     var smoother1 = new Schwarz() {

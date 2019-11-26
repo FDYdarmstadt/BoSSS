@@ -61,29 +61,35 @@ namespace BoSSS.Foundation {
         /// </summary>
         double time { get; set; }
 
-        /// <summary>
-        /// The pointer to a owner object, which totally contradicts the original idea of object-orientation. Hehe.
-        /// </summary>
-        SpatialOperator Owner { get; }
+       
 
         /// <summary>
         /// Turn MPI sending/receiving of parameters and domain fields on/off.
         /// </summary>
         bool MPITtransceive { get; set; }
 
-        /// <summary>
-        /// Stuff passed to equation components which implement <see cref="IEquationComponentCoefficient"/>.
-        /// </summary>
-        CoefficientSet OperatorCoefficients { get; set; }
+       
     }
 
+    /// <summary>
+    /// Explicit operator evaluation
+    /// </summary>
     public interface IEvaluatorNonLin : IEvaluator {
 
+        /// <summary>
+        /// Values for trial variables
+        /// </summary>
         CoordinateMapping DomainFields { get; }
-
-
-        void Evaluate<Tout>(double alpha, double beta, Tout output, double[] outputBndEdge = null) where Tout : IList<double>;
         
+        /// <summary>
+        /// Evaluation call
+        /// </summary>
+        /// <typeparam name="Tout"></typeparam>
+        /// <param name="alpha">result scaling</param>
+        /// <param name="beta">scaling of accumulator</param>
+        /// <param name="output">accumulation buffer</param>
+        /// <param name="outputBndEdge">temporary hack, introduced for Compressible Local-Timestepping solver </param>
+        void Evaluate<Tout>(double alpha, double beta, Tout output, double[] outputBndEdge = null) where Tout : IList<double>;
     }
 
     /// <summary>
@@ -117,4 +123,32 @@ namespace BoSSS.Foundation {
     }
 
 
+    /// <summary>
+    /// temporary hack; methods/properties which are specific for the single-phase evaluators, but not for XDG
+    /// </summary>
+    public interface IEvaluator_ {
+        /// <summary>
+        /// The pointer to a owner object, which totally contradicts the original idea of object-orientation. Hehe.
+        /// </summary>
+        SpatialOperator Owner { get; }
+
+        /// <summary>
+        /// Stuff passed to equation components which implement <see cref="IEquationComponentCoefficient"/>.
+        /// </summary>
+        CoefficientSet OperatorCoefficients { get; set; }
+    }
+
+    /// <summary>
+    /// Temporary hack: methods/properties which are specific for the single-phase evaluators, but not for XDG
+    /// </summary>
+    public interface IEvaluatorNonLin_ : IEvaluatorNonLin, IEvaluator_ {
+
+    }
+
+    /// <summary>
+    /// Temporary hack: methods/properties which are specific for the single-phase evaluators, but not for XDG
+    /// </summary>
+    public interface IEvaluatorLinear_ : IEvaluatorLinear, IEvaluator_ {
+
+    }
 }

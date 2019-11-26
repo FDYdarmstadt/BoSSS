@@ -23,6 +23,7 @@ using BoSSS.Platform;
 using System.Diagnostics;
 using BoSSS.Foundation.Grid;
 using ilPSP;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Foundation.Quadrature.NonLin {
 
@@ -87,33 +88,44 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             CommonParamsVol cpv;
             cpv.GridDat = prm.GridDat;
             cpv.Parameters = new double[_NOParams];
-            cpv.Xglobal = new double[D];
+            cpv.Xglobal = new Vector(D);
             cpv.time = prm.time;
             double[] _GradV = new double[D];
             double[,] _GradU = new double[_NOargs, D];
             double[] _U = new double[_NOargs];
             double _V = 1.0;
 
+#if DEBUG
+            MultidimensionalArray f_check = null;
 
-            for(int l = 0; l < L; l++) { // loop over cells...
+            if (volForm is INonlinVolumeForm_V volForm_) {
+                f_check = f.CloneAs();
+                volForm_.Form(ref prm, U, GradU, f);
+                var f_tmp = f;
+                f = f_check;
+                f_check = f_tmp;
+            }
+#endif
+
+            for (int l = 0; l < L; l++) { // loop over cells...
                 cpv.jCell = prm.j0 + l;
 
-                for(int k = 0; k < K; k++) { // loop over nodes...
+                for (int k = 0; k < K; k++) { // loop over nodes...
 
 
-                    for(int np = 0; np < _NOParams; np++) {
+                    for (int np = 0; np < _NOParams; np++) {
                         cpv.Parameters[np] = prm.ParameterVars[np][l, k];
                     }
-                    for(int d = 0; d < D; d++) {
+                    for (int d = 0; d < D; d++) {
                         cpv.Xglobal[d] = prm.Xglobal[l, k, d];
                     }
 
-                    for(int na = 0; na < _NOargs; na++) {
-                        if(U[na] != null) {
+                    for (int na = 0; na < _NOargs; na++) {
+                        if (U[na] != null) {
                             _U[na] = U[na][l, k];
                         }
-                        if(GradU[na] != null) {
-                            for(int d = 0; d < D; d++) {
+                        if (GradU[na] != null) {
+                            for (int d = 0; d < D; d++) {
                                 _GradU[na, d] = GradU[na][l, k, d];
                             }
                         }
@@ -122,6 +134,13 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     f[l, k] += volForm.VolumeForm(ref cpv, _U, _GradU, _V, _GradV);
                 }
             }
+#if DEBUG
+            if (f_check != null) {
+                double f_RelErr = f_check.L2Dist(f) / Math.Max(f.L2Norm(), 1);
+                Debug.Assert(f_RelErr < 1e-14);
+            }
+#endif
+
         }
 
         void INonlinVolumeForm_GradV.Form(ref VolumFormParams prm, MultidimensionalArray[] U, MultidimensionalArray[] GradU, MultidimensionalArray f) {
@@ -138,13 +157,23 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             CommonParamsVol cpv;
             cpv.GridDat = prm.GridDat;
             cpv.Parameters = new double[_NOParams];
-            cpv.Xglobal = new double[D];
+            cpv.Xglobal = new Vector(D);
             cpv.time = prm.time;
             double[] _GradV = new double[D];
             double[,] _GradU = new double[_NOargs, D];
             double[] _U = new double[_NOargs];
             double _V = 0.0;
+#if DEBUG
+            MultidimensionalArray f_check = null;
 
+            if (volForm is INonlinVolumeForm_GradV volForm_) {
+                f_check = f.CloneAs();
+                volForm_.Form(ref prm, U, GradU, f);
+                var f_tmp = f;
+                f = f_check;
+                f_check = f_tmp;
+            }
+#endif
             //unsafe {
             //    fixed(double* pParameters = cpv.Parameters, p_U = _U, p_GradU = _GradU, p_GradV = _GradV) {
             //bool* pUisNull = stackalloc bool[_NOargs];
@@ -157,15 +186,15 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
             // unsafe opt bringt hier relativ wenig/nix
 
-            for(int l = 0; l < L; l++) { // loop over cells...
+            for (int l = 0; l < L; l++) { // loop over cells...
                 cpv.jCell = prm.j0 + l;
 
-                for(int k = 0; k < K; k++) { // loop over nodes...
+                for (int k = 0; k < K; k++) { // loop over nodes...
 
-                    for(int d = 0; d < D; d++) {
+                    for (int d = 0; d < D; d++) {
                         cpv.Xglobal[d] = prm.Xglobal[l, k, d];
                     }
-                    for(int np = 0; np < _NOParams; np++) {
+                    for (int np = 0; np < _NOParams; np++) {
                         cpv.Parameters[np] = prm.ParameterVars[np][l, k];
                     }
 
@@ -195,18 +224,18 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         ppGradUisNull++;
                     }
                     */
-                    for(int na = 0; na < _NOargs; na++) {
-                        if(U[na] != null) {
+                    for (int na = 0; na < _NOargs; na++) {
+                        if (U[na] != null) {
                             _U[na] = U[na][l, k];
                         } else {
                             _U[na] = double.NaN;
                         }
-                        if(GradU[na] != null) {
-                            for(int d = 0; d < D; d++) {
+                        if (GradU[na] != null) {
+                            for (int d = 0; d < D; d++) {
                                 _GradU[na, d] = GradU[na][l, k, d];
                             }
                         } else {
-                            for(int d = 0; d < D; d++) {
+                            for (int d = 0; d < D; d++) {
                                 _GradU[na, d] = double.NaN;
                             }
                         }
@@ -221,13 +250,19 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         pp_GradV++;
                     }
                      */
-                    for(int d = 0; d < D; d++) {
+                    for (int d = 0; d < D; d++) {
                         _GradV[d] = 1.0;
                         f[l, k, d] += volForm.VolumeForm(ref cpv, _U, _GradU, _V, _GradV);
                         _GradV[d] = 0.0;
                     }
                 }
             }
+#if DEBUG
+            if (f_check != null) {
+                double f_RelErr = f_check.L2Dist(f) / Math.Max(f.L2Norm(), 1);
+                Debug.Assert(f_RelErr < 1e-14);
+            }
+#endif
         }
 
     }
@@ -282,7 +317,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             }
         }
 
-        void INonlinEdgeForm_V.InternalEdge(ref EdgeFormParams efp, 
+        void INonlinEdgeForm_V.InternalEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
             MultidimensionalArray fin, MultidimensionalArray fot) {
             int L = efp.Len;
@@ -291,6 +326,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             int K = fin.GetLength(1); // no of nodes per cell
             int D = efp.GridDat.SpatialDimension;
             int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
+            var E2C = efp.GridDat.iGeomEdges.CellIndices;
             Debug.Assert(_NOParams == efp.ParameterVars_IN.Length);
             Debug.Assert(_NOParams == efp.ParameterVars_OUT.Length);
             int _NOargs = this.ArgumentOrdering.Count;
@@ -303,10 +339,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             cpv.GridDat = efp.GridDat;
             cpv.Parameters_IN = new double[_NOParams];
             cpv.Parameters_OUT = new double[_NOParams];
-            cpv.Normale = new double[D];
-            cpv.X = new double[D];
+            cpv.Normal = new Vector(D);
+            cpv.X = new Vector(D);
             cpv.time = efp.time;
-            
+
             double[] _GradV_in = new double[D];
             double[,] _GradU_in = new double[_NOargs, D];
             double[] _U_in = new double[_NOargs];
@@ -316,24 +352,44 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             double[] _U_ot = new double[_NOargs];
             double _V_ot = 0.0;
 
-            for(int l = 0; l < L; l++) { // loop over cells...
-                cpv.iEdge = efp.e0 + l;
-                
-                for(int k = 0; k < K; k++) { // loop over nodes...
+#if DEBUG
+            MultidimensionalArray fin_check = null;
+            MultidimensionalArray fot_check = null;
+            if (edgeForm is INonlinEdgeForm_V edgeForm_) {
+                fin_check = fin.CloneAs();
+                fot_check = fot.CloneAs();
 
-                    for(int np = 0; np < _NOParams; np++) {
+                edgeForm_.InternalEdge(ref efp, Uin, Uout, GradUin, GradUout, fin, fot);
+
+                var fin_tmp = fin;
+                var fot_tmp = fot;
+                fin = fin_check;
+                fot = fot_check;
+                fin_check = fin_tmp;
+                fot_check = fot_tmp;
+            }
+#endif
+
+            for (int l = 0; l < L; l++) { // loop over edges...
+                cpv.iEdge = efp.e0 + l;
+                cpv.jCellIn = E2C[cpv.iEdge, 0];
+                cpv.jCellOut = E2C[cpv.iEdge, 1];
+
+                for (int k = 0; k < K; k++) { // loop over nodes...
+
+                    for (int np = 0; np < _NOParams; np++) {
                         cpv.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
                         cpv.Parameters_OUT[np] = efp.ParameterVars_OUT[np][l, k];
                     }
 
-                    for(int d = 0; d < D; d++) {
-                        cpv.Normale[d] = efp.Normals[l, k, d];
-                        cpv.X[d] = efp.NodesGlobal[l, k, d];
+                    for (int d = 0; d < D; d++) {
+                        cpv.Normal[d] = efp.Normals[l, k, d];
+                        cpv.X[d] = efp.Nodes[l, k, d];
                     }
 
-                    for(int na = 0; na < _NOargs; na++) {
+                    for (int na = 0; na < _NOargs; na++) {
                         Debug.Assert((Uin[na] != null) == (Uout[na] != null));
-                        if(Uin[na] != null) {
+                        if (Uin[na] != null) {
                             _U_in[na] = Uin[na][l, k];
                             _U_ot[na] = Uout[na][l, k];
                         } else {
@@ -341,13 +397,13 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                             _U_ot[na] = 0;
                         }
                         Debug.Assert((GradUin[na] != null) == (GradUout[na] != null));
-                        if(GradUin[na] != null) {
-                            for(int d = 0; d < D; d++) {
+                        if (GradUin[na] != null) {
+                            for (int d = 0; d < D; d++) {
                                 _GradU_in[na, d] = GradUin[na][l, k, d];
                                 _GradU_ot[na, d] = GradUout[na][l, k, d];
                             }
                         } else {
-                            for(int d = 0; d < D; d++) {
+                            for (int d = 0; d < D; d++) {
                                 _GradU_in[na, d] = 0;
                                 _GradU_ot[na, d] = 0;
                             }
@@ -362,6 +418,15 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     fot[l, k] += edgeForm.InnerEdgeForm(ref cpv, _U_in, _U_ot, _GradU_in, _GradU_ot, _V_in, _V_ot, _GradV_in, _GradV_ot);
                 }
             }
+
+#if DEBUG
+            if (fin_check != null) {
+                double fin_RelErr = fin_check.L2Dist(fin) / Math.Max(Math.Max(fin.L2Norm(), fin_check.L2Norm()), 1);
+                double fot_RelErr = fot_check.L2Dist(fot) / Math.Max(Math.Max(fot.L2Norm(), fot_check.L2Norm()), 1);
+                Debug.Assert(fin_RelErr < 1e-14 && fot_RelErr < 1e-14);
+
+            }
+#endif
         }
 
         void INonlinEdgeForm_V.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray f) {
@@ -378,8 +443,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             CommonParamsBnd cpv;
             cpv.GridDat = efp.GridDat;
             cpv.Parameters_IN = new double[_NOParams];
-            cpv.Normale = new double[D];
-            cpv.X = new double[D];
+            cpv.Normal = new Vector(D);
+            cpv.X = new Vector(D);
             cpv.time = efp.time;
 
             double[] _GradV_in = new double[D];
@@ -388,33 +453,46 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             double _V_in = 0.0;
             byte[] EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
 
-            for(int l = 0; l < L; l++) { // loop over cells...
+
+#if DEBUG
+            MultidimensionalArray f_check = null;
+
+            if (edgeForm is INonlinEdgeForm_V edgeForm_) {
+                f_check = f.CloneAs();
+                edgeForm_.BoundaryEdge(ref efp, Uin, GradUin, f);
+                var f_tmp = f;
+                f = f_check;
+                f_check = f_tmp;
+            }
+#endif
+
+            for (int l = 0; l < L; l++) { // loop over edges...
                 cpv.iEdge = efp.e0 + l;
                 cpv.EdgeTag = EdgeTags[cpv.iEdge];
 
-                for(int k = 0; k < K; k++) { // loop over nodes...
+                for (int k = 0; k < K; k++) { // loop over nodes...
 
-                    for(int np = 0; np < _NOParams; np++) {
+                    for (int np = 0; np < _NOParams; np++) {
                         cpv.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
                     }
 
-                    for(int d = 0; d < D; d++) {
-                        cpv.Normale[d] = efp.Normals[l, k, d];
-                        cpv.X[d] = efp.NodesGlobal[l, k, d];
+                    for (int d = 0; d < D; d++) {
+                        cpv.Normal[d] = efp.Normals[l, k, d];
+                        cpv.X[d] = efp.Nodes[l, k, d];
                     }
 
-                    for(int na = 0; na < _NOargs; na++) {
-                        if(Uin[na] != null) {
+                    for (int na = 0; na < _NOargs; na++) {
+                        if (Uin[na] != null) {
                             _U_in[na] = Uin[na][l, k];
                         } else {
                             _U_in[na] = 0;
                         }
-                        if(GradUin[na] != null) {
-                            for(int d = 0; d < D; d++) {
+                        if (GradUin[na] != null) {
+                            for (int d = 0; d < D; d++) {
                                 _GradU_in[na, d] = GradUin[na][l, k, d];
                             }
                         } else {
-                            for(int d = 0; d < D; d++) {
+                            for (int d = 0; d < D; d++) {
                                 _GradU_in[na, d] = 0;
                             }
                         }
@@ -424,6 +502,13 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     f[l, k] += edgeForm.BoundaryEdgeForm(ref cpv, _U_in, _GradU_in, _V_in, _GradV_in);
                 }
             }
+
+#if DEBUG
+            if (f_check != null) { 
+                double f_RelErr = f_check.L2Dist(f) / Math.Max(f.L2Norm(), 1); 
+                Debug.Assert(f_RelErr < 1e-14);
+            }
+#endif
         }
 
 
@@ -434,6 +519,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             Debug.Assert(fot.GetLength(0) == L);
             int K = fin.GetLength(1); // no of nodes per cell
             int D = efp.GridDat.SpatialDimension;
+            var E2C = efp.GridDat.iGeomEdges.CellIndices;
             int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
             Debug.Assert(_NOParams == efp.ParameterVars_IN.Length);
             Debug.Assert(_NOParams == efp.ParameterVars_OUT.Length);
@@ -447,8 +533,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             cpv.GridDat = efp.GridDat;
             cpv.Parameters_IN = new double[_NOParams];
             cpv.Parameters_OUT = new double[_NOParams];
-            cpv.Normale = new double[D];
-            cpv.X = new double[D];
+            cpv.Normal = new Vector(D);
+            cpv.X = new Vector(D);
             cpv.time = efp.time;
 
             double[] _GradV_in = new double[D];
@@ -460,24 +546,44 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             double[] _U_ot = new double[_NOargs];
             double _V_ot = 0.0;
 
-            for(int l = 0; l < L; l++) { // loop over cells...
+#if DEBUG
+            MultidimensionalArray fin_check = null;
+            MultidimensionalArray fot_check = null;
+            if (edgeForm is INonlinEdgeForm_GradV edgeForm_) {
+                fin_check = fin.CloneAs();
+                fot_check = fot.CloneAs();
+
+                edgeForm_.InternalEdge(ref efp, Uin, Uout, GradUin, GradUout, fin, fot);
+
+                var fin_tmp = fin;
+                var fot_tmp = fot;
+                fin = fin_check;
+                fot = fot_check;
+                fin_check = fin_tmp;
+                fot_check = fot_tmp;
+            }
+#endif
+
+            for (int l = 0; l < L; l++) { // loop over edges...
                 cpv.iEdge = efp.e0 + l;
+                cpv.jCellIn = E2C[cpv.iEdge, 0];
+                cpv.jCellOut = E2C[cpv.iEdge, 1];
 
-                for(int k = 0; k < K; k++) { // loop over nodes...
+                for (int k = 0; k < K; k++) { // loop over nodes...
 
-                    for(int np = 0; np < _NOParams; np++) {
+                    for (int np = 0; np < _NOParams; np++) {
                         cpv.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
                         cpv.Parameters_OUT[np] = efp.ParameterVars_OUT[np][l, k];
                     }
 
-                    for(int d = 0; d < D; d++) {
-                        cpv.Normale[d] = efp.Normals[l, k, d];
-                        cpv.X[d] = efp.NodesGlobal[l, k, d];
+                    for (int d = 0; d < D; d++) {
+                        cpv.Normal[d] = efp.Normals[l, k, d];
+                        cpv.X[d] = efp.Nodes[l, k, d];
                     }
 
-                    for(int na = 0; na < _NOargs; na++) {
+                    for (int na = 0; na < _NOargs; na++) {
                         Debug.Assert((Uin[na] != null) == (Uout[na] != null));
-                        if(Uin[na] != null) {
+                        if (Uin[na] != null) {
                             _U_in[na] = Uin[na][l, k];
                             _U_ot[na] = Uout[na][l, k];
                         } else {
@@ -485,20 +591,20 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                             _U_ot[na] = 0;
                         }
                         Debug.Assert((GradUin[na] != null) == (GradUout[na] != null));
-                        if(GradUin[na] != null) {
-                            for(int d = 0; d < D; d++) {
+                        if (GradUin[na] != null) {
+                            for (int d = 0; d < D; d++) {
                                 _GradU_in[na, d] = GradUin[na][l, k, d];
                                 _GradU_ot[na, d] = GradUout[na][l, k, d];
                             }
                         } else {
-                            for(int d = 0; d < D; d++) {
+                            for (int d = 0; d < D; d++) {
                                 _GradU_in[na, d] = 0;
                                 _GradU_ot[na, d] = 0;
                             }
                         }
                     }
 
-                    for(int d = 0; d < D; d++) {
+                    for (int d = 0; d < D; d++) {
                         _GradV_in[d] = 1;
                         fin[l, k, d] += edgeForm.InnerEdgeForm(ref cpv, _U_in, _U_ot, _GradU_in, _GradU_ot, _V_in, _V_ot, _GradV_in, _GradV_ot);
                         _GradV_in[d] = 0;
@@ -508,6 +614,15 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     }
                 }
             }
+
+#if DEBUG
+            if (fin_check != null) {
+                double fin_RelErr = fin_check.L2Dist(fin) / Math.Max(Math.Max(fin.L2Norm(), fin_check.L2Norm()), 1);
+                double fot_RelErr = fot_check.L2Dist(fot) / Math.Max(Math.Max(fot.L2Norm(), fot_check.L2Norm()), 1);               
+                Debug.Assert(fin_RelErr < 1e-14 && fot_RelErr < 1e-14);
+
+            }
+#endif
         }
 
         void INonlinEdgeForm_GradV.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray f) {
@@ -524,8 +639,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             CommonParamsBnd cpv;
             cpv.GridDat = efp.GridDat;
             cpv.Parameters_IN = new double[_NOParams];
-            cpv.Normale = new double[D];
-            cpv.X = new double[D];
+            cpv.Normal = new Vector(D);
+            cpv.X = new Vector(D);
             cpv.time = efp.time;
 
             double[] _GradV_in = new double[D];
@@ -534,48 +649,64 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             double _V_in = 0.0;
             byte[] EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
 
-            for(int l = 0; l < L; l++) { // loop over cells...
+#if DEBUG
+            MultidimensionalArray f_check = null;
+
+            if (edgeForm is INonlinEdgeForm_GradV edgeForm_) {
+                f_check = f.CloneAs();
+                edgeForm_.BoundaryEdge(ref efp, Uin, GradUin, f);
+                var f_tmp = f;
+                f = f_check;
+                f_check = f_tmp;
+            }
+#endif
+
+            for (int l = 0; l < L; l++) { // loop over edges ...
                 cpv.iEdge = efp.e0 + l;
                 cpv.EdgeTag = EdgeTags[cpv.iEdge];
 
-                for(int k = 0; k < K; k++) { // loop over nodes...
+                for (int k = 0; k < K; k++) { // loop over nodes...
 
-                    for(int np = 0; np < _NOParams; np++) {
+                    for (int np = 0; np < _NOParams; np++) {
                         cpv.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
                     }
 
-                    for(int d = 0; d < D; d++) {
-                        cpv.Normale[d] = efp.Normals[l, k, d];
-                        cpv.X[d] = efp.NodesGlobal[l, k, d];
+                    for (int d = 0; d < D; d++) {
+                        cpv.Normal[d] = efp.Normals[l, k, d];
+                        cpv.X[d] = efp.Nodes[l, k, d];
                     }
 
-                    for(int na = 0; na < _NOargs; na++) {
-                        if(Uin[na] != null) {
+                    for (int na = 0; na < _NOargs; na++) {
+                        if (Uin[na] != null) {
                             _U_in[na] = Uin[na][l, k];
                         } else {
                             _U_in[na] = 0;
                         }
-                        if(GradUin[na] != null) {
-                            for(int d = 0; d < D; d++) {
+                        if (GradUin[na] != null) {
+                            for (int d = 0; d < D; d++) {
                                 _GradU_in[na, d] = GradUin[na][l, k, d];
                             }
                         } else {
-                            for(int d = 0; d < D; d++) {
+                            for (int d = 0; d < D; d++) {
                                 _GradU_in[na, d] = 0;
                             }
                         }
                     }
 
-                    for(int d = 0; d < D; d++) {
+                    for (int d = 0; d < D; d++) {
                         _GradV_in[d] = 1;
                         f[l, k, d] += edgeForm.BoundaryEdgeForm(ref cpv, _U_in, _GradU_in, _V_in, _GradV_in);
                         _GradV_in[d] = 0;
                     }
                 }
             }
+
+#if DEBUG
+            if (f_check != null) {
+                double f_RelErr = f_check.L2Dist(f) / Math.Max(f.L2Norm(), 1);              
+                Debug.Assert(f_RelErr < 1e-14);
+            }
+#endif
         }
-
-        
     }
-
 }

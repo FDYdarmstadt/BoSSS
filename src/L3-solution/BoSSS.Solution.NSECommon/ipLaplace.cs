@@ -94,7 +94,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </returns>
         protected abstract bool IsDirichlet(ref Foundation.CommonParamsBnd inp);
 
-        
+
         /// <summary>
         /// Currently, not operational - intended for update of penalty length scales.
         /// </summary>
@@ -113,16 +113,16 @@ namespace BoSSS.Solution.NSECommon {
 
             */
 
-            
+
         }
-        
+
 
 
         /// <summary>
         /// Length scales used in <see cref="GetPenalty"/>
         /// </summary>
-        protected  MultidimensionalArray InverseLengthScales;
-               
+        protected MultidimensionalArray InverseLengthScales;
+
         /// <summary>
         /// computation of penalty parameter according to:
         /// An explicit expression for the penalty parameter of the
@@ -131,7 +131,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         protected virtual double GetPenalty(int jCellIn, int jCellOut) {
             double cj_in = InverseLengthScales[jCellIn];
-            double mu = m_penalty* cj_in;
+            double mu = m_penalty * cj_in;
             if(jCellOut >= 0) {
                 double cj_out = InverseLengthScales[jCellOut];
                 mu = Math.Max(mu, m_penalty * cj_out);
@@ -163,6 +163,7 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
+
         /// <summary>
         /// Volume integrand of the SIP
         /// </summary>
@@ -185,8 +186,8 @@ namespace BoSSS.Solution.NSECommon {
 
 
             for(int d = 0; d < inp.D; d++) {
-                Acc += 0.5 * (nuA * _Grad_uA[0, d] + nuB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
-                Acc += 0.5 * (nuA * _Grad_vA[d] + nuB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
+                Acc += 0.5 * (nuA * _Grad_uA[0, d] + nuB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normal[d];  // consistency term
+                Acc += 0.5 * (nuA * _Grad_vA[d] + nuB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normal[d];  // symmetry term
             }
             Acc *= this.m_alpha;
 
@@ -194,7 +195,7 @@ namespace BoSSS.Solution.NSECommon {
 
 
             Acc -= (_uA[0] - _uB[0]) * (_vA - _vB) * pnlty * nuMax; // penalty term
-                        
+
 
             return Acc;
 
@@ -216,7 +217,7 @@ namespace BoSSS.Solution.NSECommon {
                 double g_D = this.g_Diri(ref inp);
 
                 for(int d = 0; d < inp.D; d++) {
-                    double nd = inp.Normale[d];
+                    double nd = inp.Normal[d];
                     Acc += (nuA * _Grad_uA[0, d]) * (_vA) * nd;        // consistency
                     Acc += (nuA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;  // symmetry
                 }

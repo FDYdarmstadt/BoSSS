@@ -97,7 +97,7 @@ namespace CNS.IBM {
                     Mapping,
                     edgeScheme,
                     volumeScheme);
-                opi.ActivateSubgridBoundary(ABSubGrid.VolumeMask, subGridBoundaryTreatment: SpatialOperator.SubGridBoundaryModes.InnerEdgeLTS);
+                opi.ActivateSubgridBoundary(ABSubGrid.VolumeMask, subGridBoundaryTreatment: SubGridBoundaryModes.InnerEdgeLTS);
                 return opi;
             });
 

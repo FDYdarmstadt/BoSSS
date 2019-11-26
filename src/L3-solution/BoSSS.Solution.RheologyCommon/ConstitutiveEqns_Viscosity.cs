@@ -108,6 +108,7 @@ namespace BoSSS.Solution.RheologyCommon
             }
         }
 
+
         /// <summary>
         /// Calculating the integral of the volume part
         /// </summary>
@@ -147,21 +148,21 @@ namespace BoSSS.Solution.RheologyCommon
             switch (Component)
             {
                 case 0:
-                    res = 0.5 * ((Uin[0] + Uout[0]) * inp.Normale[0] + (Uin[1] + Uout[1]) * inp.Normale[0]) // central difference fo grad(u) and grad(u)^T
-                            + pen1[0] * ((Uin[0] - Uout[0]) * inp.Normale[0]) + pen1[1] * ((Uin[0] - Uout[0]) * inp.Normale[1]) // beta Penalty for grad(u)
-                            + pen1[0] * ((Uin[1] - Uout[1]) * inp.Normale[0]) + pen1[1] * ((Uin[1] - Uout[1]) * inp.Normale[1]); // beta penalty for grad(u)^T
+                    res = 0.5 * ((Uin[0] + Uout[0]) * inp.Normal[0] + (Uin[1] + Uout[1]) * inp.Normal[0]) // central difference fo grad(u) and grad(u)^T
+                            + pen1[0] * ((Uin[0] - Uout[0]) * inp.Normal[0]) + pen1[1] * ((Uin[0] - Uout[0]) * inp.Normal[1]) // beta Penalty for grad(u)
+                            + pen1[0] * ((Uin[1] - Uout[1]) * inp.Normal[0]) + pen1[1] * ((Uin[1] - Uout[1]) * inp.Normal[1]); // beta penalty for grad(u)^T
 
                     break;
                 case 1:
-                    res = 0.5 * ((Uin[0] + Uout[0]) * inp.Normale[1] + (Uin[1] + Uout[1]) * inp.Normale[0])
-                            + pen1[0] * ((Uin[0] - Uout[0]) * inp.Normale[0]) + pen1[1] * ((Uin[0] - Uout[0]) * inp.Normale[1])
-                            + pen1[0] * ((Uin[1] - Uout[1]) * inp.Normale[0]) + pen1[1] * ((Uin[1] - Uout[1]) * inp.Normale[1]);
+                    res = 0.5 * ((Uin[0] + Uout[0]) * inp.Normal[1] + (Uin[1] + Uout[1]) * inp.Normal[0])
+                            + pen1[0] * ((Uin[0] - Uout[0]) * inp.Normal[0]) + pen1[1] * ((Uin[0] - Uout[0]) * inp.Normal[1])
+                            + pen1[0] * ((Uin[1] - Uout[1]) * inp.Normal[0]) + pen1[1] * ((Uin[1] - Uout[1]) * inp.Normal[1]);
 
                     break;
                 case 2:
-                    res = 0.5 * ((Uin[0] + Uout[0]) * inp.Normale[1] + (Uin[1] + Uout[1]) * inp.Normale[1])
-                            + pen1[0] * ((Uin[0] - Uout[0]) * inp.Normale[0]) + pen1[1] * ((Uin[0] - Uout[0]) * inp.Normale[1])
-                            + pen1[0] * ((Uin[1] - Uout[1]) * inp.Normale[0]) + pen1[1] * ((Uin[1] - Uout[1]) * inp.Normale[1]);
+                    res = 0.5 * ((Uin[0] + Uout[0]) * inp.Normal[1] + (Uin[1] + Uout[1]) * inp.Normal[1])
+                            + pen1[0] * ((Uin[0] - Uout[0]) * inp.Normal[0]) + pen1[1] * ((Uin[0] - Uout[0]) * inp.Normal[1])
+                            + pen1[0] * ((Uin[1] - Uout[1]) * inp.Normal[0]) + pen1[1] * ((Uin[1] - Uout[1]) * inp.Normal[1]);
 
                     break;
                 default:
@@ -191,20 +192,20 @@ namespace BoSSS.Solution.RheologyCommon
             switch (Component)
             {
                 case 0:
-                    n1 = inp.Normale[0];
-                    n2 = inp.Normale[0];
+                    n1 = inp.Normal[0];
+                    n2 = inp.Normal[0];
                     Vel1 = VelocityX;
                     Vel2 = VelocityX;
                     break;
                 case 1:
-                    n1 = inp.Normale[1];
-                    n2 = inp.Normale[0];
+                    n1 = inp.Normal[1];
+                    n2 = inp.Normal[0];
                     Vel1 = VelocityX;
                     Vel2 = VelocityY;
                     break;
                 case 2:
-                    n1 = inp.Normale[1];
-                    n2 = inp.Normale[1];
+                    n1 = inp.Normal[1];
+                    n2 = inp.Normal[1];
                     Vel1 = VelocityY;
                     Vel2 = VelocityY;
                     break;

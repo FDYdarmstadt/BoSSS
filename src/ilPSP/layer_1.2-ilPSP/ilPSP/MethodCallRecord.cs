@@ -96,17 +96,19 @@ namespace ilPSP.Tracing {
         public void ResetRecursive(bool EliminateKilledTimeFromParrent = true) {
 
             if (EliminateKilledTimeFromParrent) {
-                long toRemove = this.TicksSpentInMethod;
+                long toRemove = this.TicksExclusive;
 
-                for(MethodCallRecord p = this.ParrentCall; p != null; p = p.ParrentCall) {
+                for (MethodCallRecord p = this.ParrentCall; p != null; p = p.ParrentCall) {
+
                     p.m_TicksSpentInMethod -= toRemove;
                 }
-                
-            }
 
-            this.m_TicksSpentInMethod = 0;
-            foreach (var c in Calls.Values)
+            }
+            this.m_TicksSpentInMethod -=this.TicksExclusive;
+
+            foreach (var c in Calls.Values) {
                 c.ResetRecursive();
+            }
         }
 
 

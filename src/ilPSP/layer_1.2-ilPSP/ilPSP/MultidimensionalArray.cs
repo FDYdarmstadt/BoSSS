@@ -1282,6 +1282,10 @@ namespace ilPSP {
         /// <param name="x">destination</param>
         /// <param name="SubArrayIdx"></param>
         public void CopyTo<T>(T x, params int[] SubArrayIdx) where T : IList<double> {
+#if DEBUG
+            if(x.GetType().IsValueType)
+                throw new NotSupportedException("CopyTo value type -- probably not the expected result! (Using vector struct in CopyTo(...) - operation?)");
+#endif
             var sub = this.ExtractSubArrayShallow(SubArrayIdx);
 
             if (sub.Dimension != 1)
@@ -1302,6 +1306,11 @@ namespace ilPSP {
         /// <param name="Iend">end indices (including)</param>
         /// <param name="xOffset">offset into <paramref name="x"/>, where the first element will be inserted</param>
         public void CopyTo<T>(T x, int[] Istart, int[] Iend, int xOffset = 0) where T : IList<double> {
+#if DEBUG
+            if(x.GetType().IsValueType)
+                throw new NotSupportedException("CopyTo value type -- probalby not the expected result! (Using vector struct in CopyTo(...) - operation?)");
+#endif
+
             var sub = this.ExtractSubArrayShallow(Istart, Iend);
 
             if (sub.Dimension != 1)
@@ -1313,7 +1322,7 @@ namespace ilPSP {
             for (int i = 0; i < L; i++)
                 x[i + xOffset] = sub[i];
         }
-
+        
         /// <summary>
         /// Copies to a one-dimensional array/list
         /// </summary>
@@ -1328,6 +1337,11 @@ namespace ilPSP {
         /// </remarks>
         public void CopyTo<T>(T array, bool RowWise, int arrayoffset)
             where T : IList<double> {
+#if DEBUG
+            if(array.GetType().IsValueType)
+                throw new NotSupportedException("CopyTo value type -- probably not the expected result! (Using vector struct in CopyTo(...) - operation?)");
+#endif
+
             if (Dimension != 2)
                 throw new NotSupportedException("array is not 2D and cannot be represented like a matrix");
 

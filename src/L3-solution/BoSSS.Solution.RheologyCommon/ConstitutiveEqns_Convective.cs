@@ -107,9 +107,8 @@ namespace BoSSS.Solution.RheologyCommon {
         }
 
 
-
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] Tin, double[,] Grad_Tin, double Vin, double[] Grad_Vin) {
-            double[] Normale = inp.Normale;
+            double[] Normale = inp.Normal;
             double Tout;
 
             if (m_BcMap.EdgeTag2Type[inp.EdgeTag] == IncompressibleBcType.Wall || m_BcMap.EdgeTag2Type[inp.EdgeTag] == IncompressibleBcType.FreeSlip) {
@@ -154,7 +153,7 @@ namespace BoSSS.Solution.RheologyCommon {
 
         public double InnerEdgeForm(ref CommonParams inp, double[] Tin, double[] Tout, double[,] Grad_Tin, double[,] Grad_Tout, double Vin, double Vout, double[] Grad_Vin, double[] Grad_Vout) {
 
-            double[] Normale = inp.Normale.CloneAs();
+            Vector Normale = inp.Normal;
 
             //Flux In
             double res1 = 0;
@@ -180,7 +179,7 @@ namespace BoSSS.Solution.RheologyCommon {
             double flxOut = 0;
             double n_u2 = 0;
 
-            Normale.ScaleV(-1.0);
+            Normale.Scale(-1.0);
             for (int d = 0; d < 2; d++) {
                 n_u2 += Normale[d] * 0.5 * (inp.Parameters_OUT[d] + inp.Parameters_IN[d]);
             }

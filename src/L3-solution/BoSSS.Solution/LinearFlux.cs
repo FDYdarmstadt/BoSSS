@@ -29,7 +29,7 @@ namespace BoSSS.Solution.Utils {
     /// an algebraic formula. All function matrices and offsets (aka. intercept)
     /// are constructed from the user-defined functions by this class.
     /// </summary>
-    public abstract class LinearFlux : IVolumeForm, IEdgeForm {
+    public abstract class LinearFlux : IVolumeForm, IEdgeForm, ISupportsJacobianComponent {
 
         /// <summary>
         /// not in use, returning null
@@ -81,12 +81,6 @@ namespace BoSSS.Solution.Utils {
         /// <summary>
         /// Implementation of a Bilinear for linear volume fluxes
         /// </summary>
-        /// <param name="cpv"><see cref="IVolumeForm.VolumeForm"/></param>
-        /// <param name="U"><see cref="IVolumeForm.VolumeForm"/></param>
-        /// <param name="GradU"><see cref="IVolumeForm.VolumeForm"/></param>
-        /// <param name="V"><see cref="IVolumeForm.VolumeForm"/></param>
-        /// <param name="GradV"><see cref="IVolumeForm.VolumeForm"/></param>
-        /// <returns></returns>
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             int D = GradV.Length;
             double acc = 0;
@@ -119,16 +113,6 @@ namespace BoSSS.Solution.Utils {
         /// <summary>
         /// Calls <see cref="LinearFlux.InnerEdgeFlux"/>
         /// </summary>
-        /// <param name="inp"><see cref="IEdgeForm.InnerEdgeForm"/></param>
-        /// <param name="_uA"><see cref="IEdgeForm.InnerEdgeForm"/></param>
-        /// <param name="_uB"><see cref="IEdgeForm.InnerEdgeForm"/></param>
-        /// <param name="_Grad_uA"><see cref="IEdgeForm.InnerEdgeForm"/></param>
-        /// <param name="_Grad_uB"><see cref="IEdgeForm.InnerEdgeForm"/></param>
-        /// <param name="_vA"><see cref="IEdgeForm.InnerEdgeForm"/></param>
-        /// <param name="_vB"><see cref="IEdgeForm.InnerEdgeForm"/></param>
-        /// <param name="_Grad_vA"><see cref="IEdgeForm.InnerEdgeForm"/></param>
-        /// <param name="_Grad_vB"><see cref="IEdgeForm.InnerEdgeForm"/></param>
-        /// <returns></returns>
         public double InnerEdgeForm(ref CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
             return this.InnerEdgeFlux(ref inp, _uA, _uB) * (_vA - _vB);
         }
@@ -137,14 +121,15 @@ namespace BoSSS.Solution.Utils {
         /// <summary>
         /// Calls <see cref="LinearFlux.BorderEdgeFlux"/>
         /// </summary>
-        /// <param name="inp"><see cref="IEdgeForm.BoundaryEdgeForm"/></param>
-        /// <param name="_uA"><see cref="IEdgeForm.BoundaryEdgeForm"/></param>
-        /// <param name="_Grad_uA"><see cref="IEdgeForm.BoundaryEdgeForm"/></param>
-        /// <param name="_vA"><see cref="IEdgeForm.BoundaryEdgeForm"/></param>
-        /// <param name="_Grad_vA"><see cref="IEdgeForm.BoundaryEdgeForm"/></param>
-        /// <returns></returns>
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             return this.BorderEdgeFlux(ref inp, _uA) * _vA;
+        }
+
+        /// <summary>
+        /// Linear component - returns this object itself.
+        /// </summary>
+        virtual public IEquationComponent[] GetJacobianComponents() {
+            return new IEquationComponent[] { this };
         }
     }
 }

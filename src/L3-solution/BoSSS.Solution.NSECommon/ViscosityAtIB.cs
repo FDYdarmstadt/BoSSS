@@ -28,7 +28,7 @@ using BoSSS.Foundation;
 
 namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
-    public class ViscosityAtIB : BoSSS.Foundation.XDG.ILevelSetForm {
+    public class ViscosityAtIB : BoSSS.Foundation.XDG.ILevelSetForm, ISupportsJacobianComponent {
 
         LevelSetTracker m_LsTrk;
 
@@ -67,11 +67,11 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         /// <summary>
         /// default-implementation
         /// </summary>
-        public double LevelSetForm(ref CommonParamsLs inp,
+        public double LevelSetForm(ref CommonParams inp,
         //public override double EdgeForm(ref Linear2ndDerivativeCouplingFlux.CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            double[] N = inp.n;
+            double[] N = inp.Normal;
 
 
             //Debug.Assert(!double.IsNaN(inp.PosCellLengthScale));
@@ -81,11 +81,11 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             //    // very small cell -- clippling
             //    hCutCellMin = hCellMin;
             //double _penalty = penalty(hCutCellMin);
-            double _penalty = m_PenaltyFunc(m_penalty, inp.jCell);
+            double _penalty = m_PenaltyFunc(m_penalty, inp.jCellIn);
 
             int D = N.Length;
 
-            var parameters_P = m_getParticleParams(inp.x, inp.time);
+            var parameters_P = m_getParticleParams(inp.X, inp.time);
             double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
             double wLevSet = parameters_P[2];
             pRadius = parameters_P[3];
@@ -110,7 +110,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
 
             // 3D for IBM_Solver
-            if (inp.x.Length == 3) {
+            if (inp.X.Dim == 3) {
                 
                 Ret -= Grad_uA_xN * (vA);                           // consistency term
                 Ret -= Grad_vA_xN * (uA[component] - 0);     // symmetry term
@@ -123,9 +123,9 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
 
             if (component == 0) {
-                uAFict = uLevSet[component] + pRadius * wLevSet * -inp.n[1];
+                uAFict = uLevSet[component] + pRadius * wLevSet * -inp.Normal[1];
             } else {
-                uAFict = uLevSet[component] + pRadius * wLevSet * inp.n[0];
+                uAFict = uLevSet[component] + pRadius * wLevSet * inp.Normal[0];
             }
 
 
@@ -145,7 +145,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         public IList<string> ArgumentOrdering {
             get { return VariableNames.VelocityVector(this.m_D); }
         }
-
+    
         public SpeciesId PositiveSpecies {
             get { return m_LsTrk.GetSpeciesId("B"); }
         }
@@ -165,6 +165,14 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
                 return null;
             }
         }
+
+        /// <summary>
+        /// Linear component - returns this object itself.
+        /// </summary>
+        virtual public IEquationComponent[] GetJacobianComponents() {
+            return new IEquationComponent[] { this };
+        }
+
     }
 
     /*
@@ -211,7 +219,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
 
         public override void DerivativVar_LevelSetFlux(out double FlxNeg, out double FlxPos,
-            ref CommonParamsLs cp,
+            ref CommonParams cp,
             double[] U_A, double[] U_B, double[,] GradU_A, double[,] GradU_B)
         {
 
@@ -391,7 +399,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
 
         public override void PrimalVar_LevelSetFlux(out double FlxNeg, out double FlxPos,
-            ref CommonParamsLs cp,
+            ref CommonParams cp,
             double[] U_Neg, double[] U_Pos)
         {
             //EquationAndVarMode varMode = T.varmode;
@@ -419,7 +427,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             G = U[this.m_d]; //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
         }
 
-        public override void Nu(out double NuNeg, out double NuPos, ref CommonParamsLs cp)
+        public override void Nu(out double NuNeg, out double NuPos, ref CommonParams cp)
         {
             NuPos = 1;
             NuNeg = 1;

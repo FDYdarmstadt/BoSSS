@@ -1,6 +1,7 @@
 ﻿using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Voronoi;
 using BoSSS.Platform.LinAlg;
+using ilPSP;
 using NUnit.Framework;
 
 namespace VoronoiTests.GridCreation

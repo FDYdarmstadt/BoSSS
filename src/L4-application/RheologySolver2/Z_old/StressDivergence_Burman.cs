@@ -72,6 +72,7 @@ namespace BoSSS.Application.Rheology {
             }
         }
 
+
         public TermActivationFlags BoundaryEdgeTerms {
             get { return TermActivationFlags.AllOn; }
         }
@@ -125,10 +126,10 @@ namespace BoSSS.Application.Rheology {
             double h_Edge = ((GridData.EdgeData)(inp.GridDat.iGeomEdges)).h_min_Edge[inp.iEdge];
             double h = Math.Min(h_min_in_loc, h_min_ot_loc);
             double h2 = Math.Min(h, h_Edge);
-            double[] n = inp.Normale;
+            double[] n = inp.Normal;
 
 
-            res += (0.5 * (Tin[0] + Tout[0])* inp.Normale[0] + 0.5 * (Tin[1] + Tout[1]) * inp.Normale[1]) * (Vin - Vout); // central difference for stress divergence
+            res += (0.5 * (Tin[0] + Tout[0])* inp.Normal[0] + 0.5 * (Tin[1] + Tout[1]) * inp.Normal[1]) * (Vin - Vout); // central difference for stress divergence
 
             switch (Component)
             {
@@ -169,8 +170,8 @@ namespace BoSSS.Application.Rheology {
 
 
                     // Atmospheric outlet/pressure outflow: hom. Neumann
-                    res += Tin[0] * inp.Normale[0];
-                    res += Tin[1] * inp.Normale[1];
+                    res += Tin[0] * inp.Normal[0];
+                    res += Tin[1] * inp.Normal[1];
                 break;
 
                 case IncompressibleBcType.Velocity_Inlet:
@@ -182,15 +183,15 @@ namespace BoSSS.Application.Rheology {
                     switch (Component)
                     {
                         case 0:
-                            res += Tin[0]* inp.Normale[0];
-                            res += Tin[1]* inp.Normale[1];
+                            res += Tin[0]* inp.Normal[0];
+                            res += Tin[1]* inp.Normal[1];
                              //alpha penalty for boundary (no beta penalty)
                             res += -pen2 / h * (Tin[2] - VelocityX); 
 
                             break;
                         case 1:
-                            res += Tin[0] * inp.Normale[0];
-                            res += Tin[1] * inp.Normale[1];
+                            res += Tin[0] * inp.Normal[0];
+                            res += Tin[1] * inp.Normal[1];
                             //alpha penalty for boundary (no beta penalty)
                             res += -pen2 / h * (Tin[2] - VelocityY);
 

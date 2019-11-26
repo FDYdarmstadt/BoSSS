@@ -139,8 +139,8 @@ namespace BoSSS.Solution.XNSECommon {
 
             
             for (int d = 0; d < inp.D; d++) {
-                Acc += (scaleIN * muA * _Grad_uA[0, d] + scaleOT * muB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
-                Acc += (scaleIN * muA * _Grad_vA[d] + scaleOT * muB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
+                Acc += (scaleIN * muA * _Grad_uA[0, d] + scaleOT * muB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normal[d];  // consistency term
+                Acc += (scaleIN * muA * _Grad_vA[d] + scaleOT * muB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normal[d];  // symmetry term
             }
             Acc *= this.m_alpha;
 
@@ -216,10 +216,10 @@ namespace BoSSS.Solution.XNSECommon {
         protected Mode m_mode;
 
         
-        public virtual double LevelSetForm(ref CommonParamsLs inp, 
+        public virtual double LevelSetForm(ref CommonParams inp, 
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            double[] N = inp.n;
+            double[] N = inp.Normal;
             double Grad_uA_xN = 0, Grad_uB_xN = 0, Grad_vA_xN = 0, Grad_vB_xN = 0;
             int D = N.Length;
             Debug.Assert(Grad_uA.GetLength(0) == this.ArgumentOrdering.Count);
@@ -247,12 +247,12 @@ namespace BoSSS.Solution.XNSECommon {
             return Ret;
         }
 
-        protected double GetPenalty(ref CommonParamsLs inp) {
+        protected double GetPenalty(ref CommonParams inp) {
             //double penaltySizeFactor_A = 1.0 / this.ccBB.Get_hminBB(this.NegativeSpecies, inp.jCell);
             //double penaltySizeFactor_B = 1.0 / this.ccBB.Get_hminBB(this.PositiveSpecies, inp.jCell);
 
-            double PosCellLengthScale = PosLengthScaleS[inp.jCell];
-            double NegCellLengthScale = NegLengthScaleS[inp.jCell];
+            double PosCellLengthScale = PosLengthScaleS[inp.jCellOut];
+            double NegCellLengthScale = NegLengthScaleS[inp.jCellIn];
 
             double penaltySizeFactor_A = 1.0 / NegCellLengthScale;
             double penaltySizeFactor_B = 1.0 / PosCellLengthScale;
@@ -285,7 +285,7 @@ namespace BoSSS.Solution.XNSECommon {
         //List<int> cellElo = new List<int>();
 
 
-        protected void ComputeScaling(ref CommonParamsLs inp, out double scaleIN, out double scaleOT) {
+        protected void ComputeScaling(ref CommonParams inp, out double scaleIN, out double scaleOT) {
             Debug.Assert(Math.Sign(muA) == Math.Sign(muB));
                     
             switch(this.m_mode) {
@@ -351,6 +351,8 @@ namespace BoSSS.Solution.XNSECommon {
         public IList<string> ParameterOrdering {
             get { return null; }
         }
+
+
     }
 
 

@@ -21,14 +21,15 @@ using System.Runtime.InteropServices;
 using System.Diagnostics;
 using ilPSP.Utils;
 using ilPSP;
+using System.Collections;
 
-namespace BoSSS.Platform.LinAlg {
+namespace ilPSP {
 
     /// <summary>
     /// A spatial coordinate or vector, in 1D, 2D, 3D
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    public struct Vector {
+    public struct Vector : IList<double> {
 
         /// <summary>
         /// initializes a <paramref name="D"/>-dimensional vector.
@@ -88,12 +89,12 @@ namespace BoSSS.Platform.LinAlg {
 
             this.Dim = X.Length;
             x = X[0];
-            if(this.Dim > 1)
+            if (this.Dim > 1)
                 y = X[1];
             else
                 y = 0;
 
-            if(this.Dim > 2)
+            if (this.Dim > 2)
                 z = X[2];
             else
                 z = 0;
@@ -151,6 +152,24 @@ namespace BoSSS.Platform.LinAlg {
         /// </summary>
         public int Dummy_256bitAlign;
 
+        /// <summary>
+        /// equal to <see cref="Dim"/>
+        /// </summary>
+        public int Count {
+            get {
+                return Dim;
+            }
+        }
+
+        /// <summary>
+        /// always true, according to interface definition: elements can be changed, but no elements can be added/removed
+        /// </summary>
+        public bool IsReadOnly {
+            get {
+                return true;
+            }
+        }
+
 
         /// <summary>
         /// set/get entries
@@ -199,6 +218,15 @@ namespace BoSSS.Platform.LinAlg {
             this.x += v.x;
             this.y += v.y;
             this.z += v.z;
+        }
+
+        /// <summary>
+        /// sets all entries to 0.0
+        /// </summary>
+        public void Clearentries() {
+            this.x = 0.0;
+            this.y = 0.0;
+            this.z = 0.0;
         }
 
         /// <summary>
@@ -456,19 +484,19 @@ namespace BoSSS.Platform.LinAlg {
         /// </summary>
         /// <param name="a">1st operand</param>
         /// <param name="b">2nd operand</param>
-        /// <returns>a*b*</returns>
+        /// <returns>a*b</returns>
         public static double operator *(Vector a, Vector b) {
              if(a.Dim != b.Dim)
                 throw new ArgumentException("Dimension mismatch");
 
             return (a.x * b.x + a.y * b.y + a.z * b.z);
         }
-
+        
         /// <summary>
-        /// Implicit conversion an array of doubles of length 2
+        /// Implicit conversion an array of doubles of length <see cref="Dim"/>
         /// </summary>
         /// <param name="v">The vector to be converted</param>
-        /// <returns>An array of doubles of length 2</returns>
+        /// <returns>An array of doubles of length <see cref="Dim"/></returns>
         public static implicit operator double[] (Vector v) {
             switch(v.Dim) {
                 case 1:
@@ -481,6 +509,16 @@ namespace BoSSS.Platform.LinAlg {
                 throw new NotSupportedException();
             }
         }
+
+        /// <summary>
+        /// Implicit conversion an array of doubles of length <see cref="Dim"/>
+        /// </summary>
+        /// <param name="v">The vector to be converted</param>
+        /// <returns>An array of doubles of length <see cref="Dim"/></returns>
+        public static implicit operator Vector( double[]  v) {
+            return new Vector(v);
+        }
+        
 
         /// <summary>
         /// a vector notation: (x|y);
@@ -596,6 +634,280 @@ namespace BoSSS.Platform.LinAlg {
 
             for (int i = 0; i < length; i++) {
                 destination[i + destinationIndex] = this[i];
+            }
+        }
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public int IndexOf(double item) {
+            for(int d = 0; d < Dim; d++) {
+                if (item == this[d])
+                    return d;
+            }
+            return -1;
+        }
+
+        /// <summary>
+        /// not supported - read-only (<see cref="Dim"/> could be changed)
+        /// </summary>
+        public void Insert(int index, double item) {
+            throw new NotSupportedException("Read-Only.");
+        }
+
+        /// <summary>
+        /// not supported - read-only (<see cref="Dim"/> could be changed)
+        /// </summary>
+        public void RemoveAt(int index) {
+            throw new NotSupportedException("Read-Only.");
+        }
+
+        /// <summary>
+        /// not supported - read-only (<see cref="Dim"/> could be changed)
+        /// </summary>
+        public void Add(double item) {
+            throw new NotSupportedException("Read-Only.");
+        }
+
+        /// <summary>
+        /// not supported - read-only (<see cref="Dim"/> could be changed)
+        /// </summary>
+        public void Clear() {
+            throw new NotSupportedException("Read-Only (to set all entries to 0.0, use 'ClearEntries(...)'.");
+        }
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public bool Contains(double item) {
+            return this.IndexOf(item) >= 0;
+        }
+
+        /// <summary>
+        /// not supported - read-only (<see cref="Dim"/> could be changed)
+        /// </summary>
+        public bool Remove(double item) {
+            throw new NotSupportedException("Read-Only.");
+        }
+
+        public IEnumerator<double> GetEnumerator() {
+            return new MyEnum(this);
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() {
+            return GetEnumerator();
+        }
+
+        class MyEnum : IEnumerator<double> {
+            internal MyEnum(Vector __vec) {
+                vec = __vec;
+            }
+
+            private Vector vec;
+            int pos = -1;
+
+            public double Current {
+                get {
+                    if (pos < 0)
+                        throw new InvalidOperationException();
+                    if (pos >= vec.Dim)
+                        throw new InvalidOperationException();
+                    return vec[pos];
+                }
+            }
+
+            object IEnumerator.Current {
+                get {
+                    return Current;
+                }
+            }
+
+            public void Dispose() {
+            }
+
+            public bool MoveNext() {
+                pos++;
+                return (pos < vec.Dim);
+            }
+
+            public void Reset() {
+                pos = -1;
+            }
+        }
+
+        /// <summary>
+        /// Initializes this from the second dimension of a 2D array
+        /// </summary>
+        /// <param name="mda">data origin</param>
+        /// <param name="i1">index into 1st dimension of <paramref name="mda"/></param>
+        public void SetFrom(MultidimensionalArray mda, int i1) {
+#if DEBUG
+            if (mda.Dimension != 2)
+                throw new ArgumentException("Expecting a 2D-array."); ;
+            if (mda.GetLength(1) != Dim)
+                throw new ArgumentException("Second dimension mismatch.");
+#endif
+            x = mda[i1, 0];
+            if(Dim > 1) 
+                y = mda[i1, 1];
+            if(Dim > 2) 
+                z = mda[i1, 2];
+        }
+
+        /// <summary>
+        /// Initializes this from the third dimension of a 3D array
+        /// </summary>
+        /// <param name="mda">data origin</param>
+        /// <param name="i1">index into 1st dimension of <paramref name="mda"/></param>
+        /// <param name="i2">index into 2nd dimension of <paramref name="mda"/></param>
+        public void SetFrom(MultidimensionalArray mda, int i1, int i2) {
+#if DEBUG
+            if (mda.Dimension != 3)
+                throw new ArgumentException("Expecting a 3D-array."); ;
+            if (mda.GetLength(2) != Dim)
+                throw new ArgumentException("Second dimension mismatch.");
+#endif
+            x = mda[i1, i2, 0];
+            if(Dim > 1) 
+                y = mda[i1, i2, 1];
+            if(Dim > 2) 
+                z = mda[i1, i2, 2];
+        }
+
+        /// <summary>
+        /// Initializes this from an array with arbitrary dimensions
+        /// </summary>
+        /// <param name="mda">data origin</param>
+        /// <param name="IndexOffset">the index into <paramref name="mda"/>, where to start reading data</param>
+        /// <param name="OriginDim">the dimension from which to take the vector entries</param>
+        public void SetFrom(int OriginDim, MultidimensionalArray mda, params int[] IndexOffset) {
+#if DEBUG
+            if (mda.Dimension != IndexOffset.Length)
+                throw new ArgumentException("Expecting an array of dimension equal to length of IndexOffset.");
+            if (mda.GetLength(OriginDim) != Dim)
+                throw new ArgumentException("Origin dimension has mismatching length."); 
+#endif
+            x = mda[IndexOffset];
+            if (Dim > 1) {
+                IndexOffset[OriginDim]++;
+                y = mda[IndexOffset];
+            }
+            if (Dim > 2) {
+                IndexOffset[OriginDim]++;
+                z = mda[IndexOffset];
+            }
+        }
+
+        /// <summary>
+        /// Initializes this from an array with arbitrary dimensions
+        /// </summary>
+        /// <param name="mda">data origin</param>
+        /// <param name="inc">index increase</param>
+        /// <param name="IndexOffset">the index into <paramref name="mda"/>, where to start reading data</param>
+        /// <param name="OriginDim">the dimension from which to take the vector entries</param>
+        public void SetFrom(int OriginDim, int inc, MultidimensionalArray mda, params int[] IndexOffset) {
+#if DEBUG
+            if (mda.Dimension != IndexOffset.Length)
+                throw new ArgumentException("Expecting an array of dimension equal to length of IndexOffset.");
+#endif
+            x = mda[IndexOffset];
+            if (Dim > 1) {
+                IndexOffset[OriginDim] += inc;
+                y = mda[IndexOffset];
+            }
+            if (Dim > 2) {
+                IndexOffset[OriginDim] += inc;
+                z = mda[IndexOffset];
+            }
+        }
+
+
+
+        /// <summary>
+        /// Writes the components of this vector to a 2D array
+        /// </summary>
+        /// <param name="mda">data origin</param>
+        /// <param name="i1">index into 1st dimension of <paramref name="mda"/></param>
+        public void WriteTo(MultidimensionalArray mda, int i1) {
+#if DEBUG
+            if (mda.Dimension != 2)
+                throw new ArgumentException("Expecting a 2D-array."); ;
+            if (mda.GetLength(1) != Dim)
+                throw new ArgumentException("Second dimension mismatch.");
+#endif
+            mda[i1, 0] = x;
+            if(Dim > 1) 
+                mda[i1, 1] = y;
+            if(Dim > 2) 
+                mda[i1, 2] = z;
+        }
+
+        /// <summary>
+        /// Writes the components of this vector to a 3D array
+        /// </summary>
+        /// <param name="mda">data origin</param>
+        /// <param name="i1">index into 1st dimension of <paramref name="mda"/></param>
+        /// <param name="i2">index into 2nd dimension of <paramref name="mda"/></param>
+        public void WriteTo(MultidimensionalArray mda, int i1, int i2) {
+#if DEBUG
+            if (mda.Dimension != 3)
+                throw new ArgumentException("Expecting a 3D-array."); ;
+            if (mda.GetLength(2) != Dim)
+                throw new ArgumentException("Second dimension mismatch.");
+#endif
+            mda[i1, i2, 0] = x;
+            if(Dim > 1) 
+                mda[i1, i2, 1] = y;
+            if(Dim > 2) 
+                mda[i1, i2, 2] = z;
+        }
+
+        /// <summary>
+        /// Writes the components of this vector to an array with arbitrary dimensions
+        /// </summary>
+        /// <param name="mda">data origin</param>
+        /// <param name="IndexOffset">the index into <paramref name="mda"/>, where to start writing data</param>
+        /// <param name="DestDim">the dimension from which to take the vector entries</param>
+        public void WriteTo(int DestDim, MultidimensionalArray mda, params int[] IndexOffset) {
+#if DEBUG
+            if (mda.Dimension != IndexOffset.Length)
+                throw new ArgumentException("Expecting an array of dimension equal to length of IndexOffset."); ;
+            if (mda.GetLength(DestDim) != Dim)
+                throw new ArgumentException("Destination dimension has mismatching length.");
+#endif
+
+            mda[IndexOffset] = x;
+            if (Dim > 1) {
+                IndexOffset[DestDim]++;
+                mda[IndexOffset] = y;
+            }
+            if (Dim > 2) {
+                IndexOffset[DestDim]++;
+                mda[IndexOffset] = z;
+            }
+        }
+
+        /// <summary>
+        /// Writes the components of this vector to an array with arbitrary dimensions
+        /// </summary>
+        /// <param name="mda">data origin</param>
+        /// <param name="inc">index increase</param>
+        /// <param name="IndexOffset">the index into <paramref name="mda"/>, where to start writing data</param>
+        /// <param name="DestDim">the dimension from which to take the vector entries</param>
+        public void WriteTo(int DestDim, int inc, MultidimensionalArray mda, params int[] IndexOffset) {
+#if DEBUG
+            if (mda.Dimension != IndexOffset.Length)
+                throw new ArgumentException("Expecting an array of dimension equal to length of IndexOffset."); ;
+#endif
+
+            mda[IndexOffset] = x;
+            if (Dim > 1) {
+                IndexOffset[DestDim] += inc;
+                mda[IndexOffset] = y;
+            }
+            if (Dim > 2) {
+                IndexOffset[DestDim] += inc;
+                mda[IndexOffset] = z;
             }
         }
     }

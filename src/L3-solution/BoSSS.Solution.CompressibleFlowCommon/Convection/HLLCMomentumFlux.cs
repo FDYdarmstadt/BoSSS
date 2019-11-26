@@ -69,7 +69,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// normal vector. Correct version follows from BattenEtAl1997, 
         /// equation 37
         /// </remarks>
-        protected override double GetModifiedVariableValue(StateVector state, double cellWaveSpeed, double cellNormalVelocity, double intermediateWaveSpeed, ref Vector normal) {
+        protected override double GetModifiedVariableValue(StateVector state, double cellWaveSpeed, double cellNormalVelocity, double intermediateWaveSpeed, ref ilPSP.Vector normal) {
             return state.Density
                 * (cellWaveSpeed - cellNormalVelocity)
                 / (cellWaveSpeed - intermediateWaveSpeed)

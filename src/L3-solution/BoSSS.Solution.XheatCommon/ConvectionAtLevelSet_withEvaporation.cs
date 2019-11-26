@@ -80,12 +80,12 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
 
-        public override double LevelSetForm(ref Foundation.XDG.CommonParamsLs cp,
+        public override double LevelSetForm(ref CommonParams cp,
             double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
 
-            double M = ComputeEvaporationMass(cp.ParamsNeg.GetSubVector(2 * D, D + 3), cp.ParamsPos.GetSubVector(2 * D, D + 3), cp.n, cp.jCell);
+            double M = ComputeEvaporationMass(cp.Parameters_IN.GetSubVector(2 * D, D + 3), cp.Parameters_OUT.GetSubVector(2 * D, D + 3), cp.Normal, cp.jCellIn);
             if (M == 0.0)
                 return 0.0;
 
@@ -93,19 +93,19 @@ namespace BoSSS.Solution.XheatCommon {
             double[] VelocityMeanIn = new double[D];
             double[] VelocityMeanOut = new double[D];
             for (int d = 0; d < D; d++) {
-                VelocityMeanIn[d] = cp.ParamsNeg[D + d];
-                VelocityMeanOut[d] = cp.ParamsPos[D + d];
+                VelocityMeanIn[d] = cp.Parameters_IN[D + d];
+                VelocityMeanOut[d] = cp.Parameters_OUT[D + d];
             }
 
             double LambdaIn;
             double LambdaOut;
 
-            LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.n, false);
-            LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.n, false);
+            LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.Normal, false);
+            LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.Normal, false);
 
             double Lambda = Math.Max(LambdaIn, LambdaOut);
 
-            double uJump = -M * ((1 / rhoA) - (1 / rhoB)) * cp.n[m_d];
+            double uJump = -M * ((1 / rhoA) - (1 / rhoB)) * cp.Normal[m_d];
 
             double flx = Lambda * uJump * 0.8;
 
@@ -190,23 +190,23 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
 
-        public override double LevelSetForm(ref Foundation.XDG.CommonParamsLs cp,
+        public override double LevelSetForm(ref CommonParams cp,
             double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
 
-            double M = ComputeEvaporationMass(cp.ParamsNeg.GetSubVector(2 * D, D + 3), cp.ParamsPos.GetSubVector(2 * D, D + 3), cp.n, cp.jCell);
+            double M = ComputeEvaporationMass(cp.Parameters_IN.GetSubVector(2 * D, D + 3), cp.Parameters_OUT.GetSubVector(2 * D, D + 3), cp.Normal, cp.jCellIn);
             if (M == 0.0)
                 return 0.0;
 
 
             double Ucentral = 0.0;
             for (int d = 0; d < D; d++) {
-                Ucentral += 0.5 * (cp.ParamsNeg[d] + cp.ParamsPos[d]) * cp.n[d];
+                Ucentral += 0.5 * (cp.Parameters_IN[d] + cp.Parameters_OUT[d]) * cp.Normal[d];
             }
 
-            double uAxN = Ucentral * (-M * (1 / rhoA) * cp.n[m_d]);
-            double uBxN = Ucentral * (-M * (1 / rhoB) * cp.n[m_d]);
+            double uAxN = Ucentral * (-M * (1 / rhoA) * cp.Normal[m_d]);
+            double uBxN = Ucentral * (-M * (1 / rhoB) * cp.Normal[m_d]);
 
             uAxN += -M * (1 / rhoA) * 0.5 * (U_Neg[0] + U_Pos[0]);
             uBxN += -M * (1 / rhoB) * 0.5 * (U_Neg[0] + U_Pos[0]);

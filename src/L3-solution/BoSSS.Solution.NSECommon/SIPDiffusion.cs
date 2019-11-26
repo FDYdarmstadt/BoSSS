@@ -146,9 +146,9 @@ namespace BoSSS.Solution.NSECommon {
 
                     for (int d = 0; d < inp.D; d++) {
                         // consistency term
-                        Acc += 0.5 * (DiffusivityA * _Grad_uA[0, d] + DiffusivityB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];
+                        Acc += 0.5 * (DiffusivityA * _Grad_uA[0, d] + DiffusivityB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normal[d];
                         // symmetry term                
-                        Acc += 0.5 * (DiffusivityA * _Grad_vA[d] + DiffusivityB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];
+                        Acc += 0.5 * (DiffusivityA * _Grad_vA[d] + DiffusivityB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normal[d];
                     }
                     // penalty term          
                     DiffusivityMax = (Math.Abs(DiffusivityA) > Math.Abs(DiffusivityB)) ? DiffusivityA : DiffusivityB;
@@ -164,9 +164,9 @@ namespace BoSSS.Solution.NSECommon {
 
                     for (int d = 0; d < inp.D; d++) {
                         // consistency term
-                        Acc += 0.5 * (DiffusivityA * rhoA * _Grad_uA[0, d] + rhoB * DiffusivityB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];
+                        Acc += 0.5 * (DiffusivityA * rhoA * _Grad_uA[0, d] + rhoB * DiffusivityB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normal[d];
                         // symmetry term                
-                        Acc += 0.5 * (DiffusivityA * rhoA * _Grad_vA[d] + DiffusivityB * rhoB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];
+                        Acc += 0.5 * (DiffusivityA * rhoA * _Grad_vA[d] + DiffusivityB * rhoB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normal[d];
                     }
                     // penalty term       
                     DiffusivityMax = (Math.Abs(DiffusivityA) > Math.Abs(DiffusivityB)) ? DiffusivityA : DiffusivityB;
@@ -207,8 +207,8 @@ namespace BoSSS.Solution.NSECommon {
                                 // =====================
                                 u_D = ArgumentFunction[inp.EdgeTag](inp.X, 0);
                                 for (int d = 0; d < inp.D; d++) {
-                                    Acc += (DiffusivityA * _Grad_uA[0, d]) * (_vA) * inp.Normale[d];
-                                    Acc += (DiffusivityA * _Grad_vA[d]) * (_uA[0] - u_D) * inp.Normale[d];
+                                    Acc += (DiffusivityA * _Grad_uA[0, d]) * (_vA) * inp.Normal[d];
+                                    Acc += (DiffusivityA * _Grad_vA[d]) * (_uA[0] - u_D) * inp.Normal[d];
                                 }
 
                                 Acc -= DiffusivityA * (_uA[0] - u_D) * (_vA - 0) * pnlty;
@@ -231,8 +231,8 @@ namespace BoSSS.Solution.NSECommon {
                             case DiffusionMode.Temperature:
                                 u_D = ArgumentFunction[inp.EdgeTag](inp.X, inp.time);
                                 for (int d = 0; d < inp.D; d++) {
-                                    Acc += (DiffusivityA * _Grad_uA[0, d]) * (_vA) * inp.Normale[d];
-                                    Acc += (DiffusivityA * _Grad_vA[d]) * (_uA[0] - u_D) * inp.Normale[d];
+                                    Acc += (DiffusivityA * _Grad_uA[0, d]) * (_vA) * inp.Normal[d];
+                                    Acc += (DiffusivityA * _Grad_vA[d]) * (_uA[0] - u_D) * inp.Normal[d];
                                 }
 
                                 Acc -= DiffusivityA * (_uA[0] - u_D) * (_vA - 0) * pnlty;
@@ -242,8 +242,8 @@ namespace BoSSS.Solution.NSECommon {
                                 rhoA = EoS.GetDensity(inp.Parameters_IN);
                                 u_D = ArgumentFunction[inp.EdgeTag](inp.X, inp.time);
                                 for (int d = 0; d < inp.D; d++) {
-                                    Acc += (DiffusivityA * rhoA * _Grad_uA[0, d]) * (_vA) * inp.Normale[d];
-                                    Acc += (DiffusivityA * rhoA * _Grad_vA[d]) * (_uA[0] - u_D) * inp.Normale[d];
+                                    Acc += (DiffusivityA * rhoA * _Grad_uA[0, d]) * (_vA) * inp.Normal[d];
+                                    Acc += (DiffusivityA * rhoA * _Grad_vA[d]) * (_uA[0] - u_D) * inp.Normal[d];
                                 }
 
                                 Acc -= DiffusivityA * rhoA * (_uA[0] - u_D) * (_vA - 0) * pnlty;
@@ -312,5 +312,6 @@ namespace BoSSS.Solution.NSECommon {
         public IList<string> ParameterOrdering {
             get { return m_ParameterOrdering; }
         }
+
     }
 }

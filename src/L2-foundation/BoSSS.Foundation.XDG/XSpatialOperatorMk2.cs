@@ -44,11 +44,6 @@ namespace BoSSS.Foundation.XDG {
     public partial class XSpatialOperatorMk2 {
 
 
-        //==========================================================================================================================
-        // new code
-        //==========================================================================================================================
-
-
         /// <summary>
         /// for constructing evaluators of the species terms
         /// </summary>
@@ -142,7 +137,6 @@ namespace BoSSS.Foundation.XDG {
 
         }
 
-
         SpeciesId[] m_Species;
 
         internal const int ___SpeciesIDOffest = 11111;  // not to be changed!!! -> value defined by levelSetTracker
@@ -185,25 +179,11 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
-        /// <summary>
-        /// hack
-        /// </summary>
-        IEvaluatorNonLin GetEvaluatorExBase(IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
-            return m_SpatialOperator.GetEvaluatorEx(DomainFields, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
-        }
-
-        IEvaluatorNonLin GetSpeciesEvaluatorExBase(SpeciesId spcId, IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
+        IEvaluatorNonLin_ GetSpeciesEvaluatorExBase(SpeciesId spcId, IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
             return m_SpeciesOperator[spcId].GetEvaluatorEx(DomainFields, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
         }
 
-        /// <summary>
-        /// nix für kleine Kinder (wilder hack)
-        /// </summary>
-        IEvaluatorLinear GetMatrixBuilderBase(UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
-            return m_SpatialOperator.GetMatrixBuilder(DomainVarMap, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
-        }
-
-        IEvaluatorLinear GetSpeciesMatrixBuilderBase(SpeciesId spcId, UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
+        IEvaluatorLinear_ GetSpeciesMatrixBuilderBase(SpeciesId spcId, UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
             return m_SpeciesOperator[spcId].GetMatrixBuilder(DomainVarMap, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
         }
 
@@ -337,7 +317,9 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
-
+        /// <summary>
+        /// This class acts as a frame for some other vector, and presents only those entries which are associated with a given species.
+        /// </summary>
         internal class SpeciesFrameVector<V> : IList<double>
             where V : IList<double> {
 
@@ -438,6 +420,10 @@ namespace BoSSS.Foundation.XDG {
             /// copy to array.
             /// </summary>
             public void CopyTo(double[] array, int arrayIndex) {
+#if DEBUG
+            if(array.GetType().IsValueType)
+                throw new NotSupportedException("CopyTo value type -- probably not the expected result! (Using vector struct in CopyTo(...) - operation?)");
+#endif
                 int L = this.Count;
                 for(int i = 0; i < L; i++)
                     array[i + arrayIndex] = this[i];
@@ -529,8 +515,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// This class acts as a frame fore some other matrix, and presents only those entries which are associated
-        /// with a given species.
+        /// This class acts as a frame for some other matrix, and presents only those entries which are associated with a given species.
         /// </summary>
         public class SpeciesFrameMatrix<M> : IMutableMatrixEx
             where M : IMutableMatrixEx {
@@ -1166,6 +1151,49 @@ namespace BoSSS.Foundation.XDG {
 
         #endregion
 
+        /// <summary>
+        /// An operator which computes the Jacobian matrix of this operator.
+        /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
+        /// </summary>
+        public XSpatialOperatorMk2 GetJacobiOperator() {
+            if (!this.IsCommited)
+                throw new InvalidOperationException("Invalid prior to calling Commit().");
+
+            var JacobianOp = new XSpatialOperatorMk2(
+                   this.DomainVar,
+                   ArrayTools.Cat(this.DomainVar.Select(fn => fn + "_lin"), this.ParameterVar),
+                   this.CodomainVar,
+                   this.QuadOrderFunction,
+                   this.m_Species);
+
+            foreach (string CodNmn in this.CodomainVar) {
+                foreach (var eq in this.EquationComponents[CodNmn]) {
+                    if (!(eq is ISupportsJacobianComponent _eq))
+                        throw new NotSupportedException(string.Format("Unable to handle component {0}: To obtain a Jacobian operator, all components must implement the {1} interface.", eq.GetType().Name, typeof(ISupportsJacobianComponent).Name));
+                    foreach (var eqj in _eq.GetJacobianComponents())
+                        JacobianOp.EquationComponents[CodNmn].Add(eqj);
+                }
+
+
+                foreach (var eq in this.GhostEdgesOperator.EquationComponents[CodNmn]) {
+                    if (!(eq is ISupportsJacobianComponent _eq))
+                        throw new NotSupportedException(string.Format("Unable to handle component {0}: To obtain a Jacobian operator, all components must implement the {1} interface.", eq.GetType().Name, typeof(ISupportsJacobianComponent).Name));
+                    foreach (var eqj in _eq.GetJacobianComponents())
+                        JacobianOp.GhostEdgesOperator.EquationComponents[CodNmn].Add(eqj);
+                }
+
+                foreach (var eq in this.SurfaceElementOperator.EquationComponents[CodNmn]) {
+                    if (!(eq is ISupportsJacobianComponent _eq))
+                        throw new NotSupportedException(string.Format("Unable to handle component {0}: To obtain a Jacobian operator, all components must implement the {1} interface.", eq.GetType().Name, typeof(ISupportsJacobianComponent).Name));
+                    foreach (var eqj in _eq.GetJacobianComponents())
+                        JacobianOp.SurfaceElementOperator.EquationComponents[CodNmn].Add(eqj);
+                }
+
+            }
+
+            JacobianOp.Commit();
+            return JacobianOp;
+        }
 
         //==========================================================================================================================
         // Reused from SpatialOperator without modifications
@@ -1182,8 +1210,6 @@ namespace BoSSS.Foundation.XDG {
             Array.Copy(A, i0, r, 0, len);
             return r;
         }
-
-
 
         /// <summary>
         /// verifies all equation components;
@@ -1297,6 +1323,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         
+
         /// <summary>
         /// <see cref="EquationComponents"/>
         /// </summary>

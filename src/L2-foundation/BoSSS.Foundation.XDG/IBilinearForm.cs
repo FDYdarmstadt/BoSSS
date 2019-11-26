@@ -21,6 +21,7 @@ using System.Text;
 using BoSSS.Platform;
 using System.Diagnostics;
 using ilPSP;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Foundation.XDG {
     
@@ -39,7 +40,7 @@ namespace BoSSS.Foundation.XDG {
 		///   <item>3rd index: spatial dimension</item>
 		/// </list>
 		/// </remarks>			
-		public MultidimensionalArray X;
+		public MultidimensionalArray Nodes;
 
 		/// <summary>
 		/// normals on level set at quadrature points
@@ -49,7 +50,7 @@ namespace BoSSS.Foundation.XDG {
 		///   <item>2nd index: quadrature node</item>
 		///   <item>3rd index: spatial direction</item>
 		/// </list>
-		public MultidimensionalArray Normal;
+		public MultidimensionalArray Normals;
 
 		/// <summary>
         /// Values of parameter fields at quadrature nodes on positive side, i.e. where the level-set function is positive.
@@ -72,7 +73,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public int Len {
             get {
-                int L = Normal.GetLength(0);
+                int L = Normals.GetLength(0);
                 return L;
             }
         }
@@ -87,30 +88,30 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public LevelSetTracker LsTrk;
 	}
-
+    /*
     /// <summary>
     /// common input parameters for the abstract functions
     /// </summary>
-    public struct CommonParamsLs {
+    public struct CommonParams {
 
         /// <summary>
         /// Position vector, in global/physical coordinates at which the integrand should be evaluated.
         /// Note: depending on the quadrature rule, that point is not necessarily located on the zero-level-set.
         /// </summary>
-        public double[] x;
+        public Vector X;
 
         /// <summary>
         /// Normal vector, parallel to the gradient of the level-set function.
         /// </summary>
-        public double[] n;
+        public Vector Normal;
 
         /// <summary>
         /// Guess what?
         /// </summary>
-        public int SpatialDim {
+        public int D {
             get {
-                Debug.Assert(x.Length == n.Length);
-                return n.Length;
+                Debug.Assert(X.Dim == Normal.Dim);
+                return Normal.Dim;
             }
         }
 
@@ -134,16 +135,8 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public double time;
 
-        ///// <summary>
-        ///// A characteristic length scale for the negative part of the cut cell, i.e. the respective part of the cut cell where the level-set field is negative.
-        ///// </summary>
-        //public double NegCellLengthScale;
-
-        ///// <summary>
-        ///// A characteristic length scale for the positive part of the cut cell, i.e. the respective part of the cut cell where the level-set field is positive.
-        ///// </summary>
-        //public double PosCellLengthScale;
     }
+    */
 
     /// <summary>
     /// this interface should be implemented by bulk equation components which require to switch coefficients based on species.
@@ -193,7 +186,7 @@ namespace BoSSS.Foundation.XDG {
 
         TermActivationFlags LevelSetTerms { get; }
 
-        double LevelSetForm(ref CommonParamsLs inp,
+        double LevelSetForm(ref CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB);
     }
