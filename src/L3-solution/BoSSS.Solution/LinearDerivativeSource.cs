@@ -30,7 +30,7 @@ namespace BoSSS.Solution.Utils {
     /// the function matrices and offsets (aka. intercept) are constructed from the user-defined
     /// functions by this class.
     /// </summary>
-    abstract public class LinearDerivativeSource : IVolumeForm {
+    abstract public class LinearDerivativeSource : IVolumeForm, ISupportsJacobianComponent {
 
         
         /// <summary>
@@ -109,5 +109,13 @@ namespace BoSSS.Solution.Utils {
                 return TermActivationFlags.GradUxV;
             }
         }
+
+        /// <summary>
+        /// Linear component - returns this object itself.
+        /// </summary>
+        virtual public IEquationComponent[] GetJacobianComponents() {
+            return new IEquationComponent[] { this };
+        }
+
     }
 }

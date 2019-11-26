@@ -167,8 +167,8 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             double AbsGradUIn = 0;
             double AbsGradUOut = 0;
             for (int d = 0; d < D; d++) {
-                GradUTimesNormalIn  += _Grad_uA[0, d] * inp.Normale[d];
-                GradUTimesNormalOut += _Grad_uB[0, d] * inp.Normale[d];
+                GradUTimesNormalIn  += _Grad_uA[0, d] * inp.Normal[d];
+                GradUTimesNormalOut += _Grad_uB[0, d] * inp.Normal[d];
                 AbsGradUIn = _Grad_uA[0, d] * _Grad_uA[0, d];
                 AbsGradUOut = _Grad_uB[0, d] * _Grad_uB[0, d];
             }

@@ -206,6 +206,87 @@ namespace ilPSP.Utils {
             }
             return Math.Sqrt(globRes);
         }
+
+
+        /// <summary>
+        /// L2-distance
+        /// </summary>
+        static public double MPI_L2Dist<TX, TY>(this TX a, TY b)
+            where TX : IList<double>
+            where TY : IList<double> //
+        {
+            return Math.Sqrt(MPI_L2DistPow2(a, b));
+        }
+
+        /// <summary>
+        /// L2-distance
+        /// </summary>
+        static public double MPI_L2Dist<TX, TY>(this TX a, TY b, MPI_Comm comm)
+            where TX : IList<double>
+            where TY : IList<double> //
+        {
+            return Math.Sqrt(MPI_L2DistPow2(a, b, comm));
+        }
+
+        /// <summary>
+        /// L2-Norm to the power of 2
+        /// </summary>
+        static public double MPI_L2NormPow2<T>(this T a, MPI_Comm comm) where T : IList<double> {
+            double l = a.L2NormPow2();
+            double g = l.MPISum(comm);
+            return g;
+        }
+
+        /// <summary>
+        /// L2-Norm to the power of 2
+        /// </summary>
+        static public double MPI_L2NormPow2<T>(this T a) where T : IList<double> {
+            return MPI_L2NormPow2(a, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// L2-distance to the power of 2
+        /// </summary>
+        static public double MPI_L2DistPow2<TX, TY>(this TX a, TY b, MPI_Comm comm)
+            where TX : IList<double>
+            where TY : IList<double> //
+        {
+            double l = a.L2DistPow2(b);
+            double g = l.MPISum(comm);
+            return g;
+        }
+
+        /// <summary>
+        /// L2-distance to the power of 2
+        /// </summary>
+        static public double MPI_L2DistPow2<TX, TY>(this TX a, TY b)
+            where TX : IList<double>
+            where TY : IList<double> //
+        {
+            return MPI_L2DistPow2(a, b, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// l2 inner product
+        /// </summary>
+        static public double MPI_InnerProd<TX, TY>(this TX a, TY b, MPI_Comm comm)
+            where TX : IList<double>
+            where TY : IList<double> // 
+        {
+            double l = a.InnerProd(b);
+            double g = l.MPISum(comm);
+            return g;
+        }
+
+        /// <summary>
+        /// l2 inner product
+        /// </summary>
+        static public double MPI_InnerProd<TX, TY>(this TX a, TY b)
+            where TX : IList<double>
+            where TY : IList<double> // 
+        {
+            return a.MPI_InnerProd(b, csMPI.Raw._COMM.WORLD);
+        }
     }
 
     /// <summary>

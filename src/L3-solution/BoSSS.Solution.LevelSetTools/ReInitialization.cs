@@ -138,7 +138,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.Iterative {
                 throw new NotSupportedException();
             }
 
-            SO.Evaluate(1.0, 0.0, LS.Mapping, null, CoDom, sgrd: Restriction, bndMode: SpatialOperator.SubGridBoundaryModes.OpenBoundary);
+            SO.Evaluate(1.0, 0.0, LS.Mapping, null, CoDom, sgrd: Restriction, bndMode: SubGridBoundaryModes.OpenBoundary);
         }
 
 

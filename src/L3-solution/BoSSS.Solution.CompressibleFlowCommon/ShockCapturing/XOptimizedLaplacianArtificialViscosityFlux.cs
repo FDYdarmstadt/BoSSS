@@ -118,8 +118,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             double nuB = inp.Parameters_OUT[0];
 
             for (int d = 0; d < inp.D; d++) {
-                Acc -= 0.5 * (nuA * _Grad_uA[0, d] + nuB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
-                Acc -= 0.5 * (nuA * _Grad_vA[d] + nuB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
+                Acc -= 0.5 * (nuA * _Grad_uA[0, d] + nuB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normal[d];  // consistency term
+                Acc -= 0.5 * (nuA * _Grad_vA[d] + nuB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normal[d];  // symmetry term
             }
 
             //Acc *= this.m_alpha;
@@ -145,7 +145,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                     double g_D = dirichletFunction(inp.X, inp.time);
 
                     for (int d = 0; d < inp.D; d++) {
-                        double nd = inp.Normale[d];
+                        double nd = inp.Normal[d];
                         Acc -= (nuA * _Grad_uA[0, d]) * (_vA) * nd;        // consistency
                         Acc -= (nuA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;  // symmetry
                     }
@@ -237,7 +237,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                     // Global node coordinates
                     double[] X = new double[dimension];
                     for (int i = 0; i < dimension; i++) {
-                        X[i] = efp.NodesGlobal[cell, node, i];
+                        X[i] = efp.Nodes[cell, node, i];
                     }
 
                     switch (edgeType) {
@@ -333,7 +333,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                     // Global node coordinates
                     double[] X = new double[dimension];
                     for (int i = 0; i < dimension; i++) {
-                        X[i] = efp.NodesGlobal[cell, node, i];
+                        X[i] = efp.Nodes[cell, node, i];
                     }
 
                     // SIPG Flux Loops

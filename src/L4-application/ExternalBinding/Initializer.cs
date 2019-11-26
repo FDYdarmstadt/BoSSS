@@ -25,6 +25,22 @@ namespace BoSSS.Application.ExternalBinding {
         }
 
 
+        /// <summary>
+        /// the main purpose of this property is to guarantee that the assembly for all types are linked.
+        /// </summary>
+        static public Type[] ExplicitHooks {
+            get {
+                return new[] {
+                    typeof(Foundation.Grid.Classic.GridData),
+                    typeof(OpenFOAMGrid),
+                    typeof(FixedOperators),
+                    typeof(Initializer)
+                };
+            }
+
+        }
+
+
         static bool mustFinalizeMPI;
 
         /// <summary>

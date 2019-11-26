@@ -40,7 +40,7 @@ namespace BoSSS.Foundation.XDG {
 		///   <item>3rd index: spatial dimension</item>
 		/// </list>
 		/// </remarks>			
-		public MultidimensionalArray X;
+		public MultidimensionalArray Nodes;
 
 		/// <summary>
 		/// normals on level set at quadrature points
@@ -50,7 +50,7 @@ namespace BoSSS.Foundation.XDG {
 		///   <item>2nd index: quadrature node</item>
 		///   <item>3rd index: spatial direction</item>
 		/// </list>
-		public MultidimensionalArray Normal;
+		public MultidimensionalArray Normals;
 
 		/// <summary>
         /// Values of parameter fields at quadrature nodes on positive side, i.e. where the level-set function is positive.
@@ -73,7 +73,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public int Len {
             get {
-                int L = Normal.GetLength(0);
+                int L = Normals.GetLength(0);
                 return L;
             }
         }
@@ -88,30 +88,30 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public LevelSetTracker LsTrk;
 	}
-
+    /*
     /// <summary>
     /// common input parameters for the abstract functions
     /// </summary>
-    public struct CommonParamsLs {
+    public struct CommonParams {
 
         /// <summary>
         /// Position vector, in global/physical coordinates at which the integrand should be evaluated.
         /// Note: depending on the quadrature rule, that point is not necessarily located on the zero-level-set.
         /// </summary>
-        public Vector x;
+        public Vector X;
 
         /// <summary>
         /// Normal vector, parallel to the gradient of the level-set function.
         /// </summary>
-        public Vector n;
+        public Vector Normal;
 
         /// <summary>
         /// Guess what?
         /// </summary>
-        public int SpatialDim {
+        public int D {
             get {
-                Debug.Assert(x.Dim == n.Dim);
-                return n.Dim;
+                Debug.Assert(X.Dim == Normal.Dim);
+                return Normal.Dim;
             }
         }
 
@@ -136,6 +136,7 @@ namespace BoSSS.Foundation.XDG {
         public double time;
 
     }
+    */
 
     /// <summary>
     /// this interface should be implemented by bulk equation components which require to switch coefficients based on species.
@@ -185,7 +186,7 @@ namespace BoSSS.Foundation.XDG {
 
         TermActivationFlags LevelSetTerms { get; }
 
-        double LevelSetForm(ref CommonParamsLs inp,
+        double LevelSetForm(ref CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB);
     }

@@ -93,8 +93,8 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
                 AbsGrad_uIn += Grad_uIn[0, d] * Grad_uIn[0, d];
                 AbsGrad_uOut += Grad_uOut[0, d] * Grad_uOut[0, d];
 
-                DirectionIn += inp.Parameters_IN[d + 1] * inp.Normale[d] * Math.Sign(inp.Parameters_IN[0]);
-                DirectionOut += inp.Parameters_OUT[d + 1] * inp.Normale[d] * Math.Sign(inp.Parameters_OUT[0]);
+                DirectionIn += inp.Parameters_IN[d + 1] * inp.Normal[d] * Math.Sign(inp.Parameters_IN[0]);
+                DirectionOut += inp.Parameters_OUT[d + 1] * inp.Normal[d] * Math.Sign(inp.Parameters_OUT[0]);
 
                 AbsMeanGradUIn += inp.Parameters_IN[d + 1] * inp.Parameters_IN[d + 1];
                 AbsMeanGradUOut += inp.Parameters_OUT[d + 1] * inp.Parameters_OUT[d + 1];
@@ -121,7 +121,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
                 //central differences
                 for (int d = 0; d < inp.D; d++) {
                     //return 0;
-                    Acc += 0.5 * (DiffusionRate(AbsGrad_uIn, cut) * Grad_uIn[0, d] * inp.Normale[d] + DiffusionRate(AbsGrad_uOut, cut) * Grad_uOut[0, d] * inp.Normale[d]) * (vIn-vOut);
+                    Acc += 0.5 * (DiffusionRate(AbsGrad_uIn, cut) * Grad_uIn[0, d] * inp.Normal[d] + DiffusionRate(AbsGrad_uOut, cut) * Grad_uOut[0, d] * inp.Normal[d]) * (vIn-vOut);
                 }
                 return Acc;
             }
@@ -140,13 +140,13 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
 
             if (DirectionSelector > 0) {
                 for (int d = 0; d < inp.D; d++) {
-                    Acc += 0.5 * (DiffusionRate(AbsGrad_uIn, cut) * Grad_uIn[0, d] * inp.Normale[d] + DiffusionRate(AbsGrad_uOut, cut) * Grad_uOut[0, d] * inp.Normale[d]) * (- vOut);
+                    Acc += 0.5 * (DiffusionRate(AbsGrad_uIn, cut) * Grad_uIn[0, d] * inp.Normal[d] + DiffusionRate(AbsGrad_uOut, cut) * Grad_uOut[0, d] * inp.Normal[d]) * (- vOut);
                 }
             }
             else // if (DirectionSelector <= 0) 
                 {
                 for (int d = 0; d < inp.D; d++) {
-                    Acc += 0.5 * (DiffusionRate(AbsGrad_uIn, cut) * Grad_uIn[0, d] * inp.Normale[d] + DiffusionRate(AbsGrad_uOut, cut) * Grad_uOut[0, d] * inp.Normale[d]) * inp.Normale[d] * (vIn );
+                    Acc += 0.5 * (DiffusionRate(AbsGrad_uIn, cut) * Grad_uIn[0, d] * inp.Normal[d] + DiffusionRate(AbsGrad_uOut, cut) * Grad_uOut[0, d] * inp.Normal[d]) * inp.Normal[d] * (vIn );
                 }
             }
             //else {
