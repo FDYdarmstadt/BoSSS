@@ -65,7 +65,7 @@ namespace BoSSS.Solution.EnergyCommon {
 
         public IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat(VariableNames.VelocityVector(m_D), VariableNames.GravityVector(m_D));
+                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.GravityVector(m_D));
             }
         }
 
@@ -112,9 +112,9 @@ namespace BoSSS.Solution.EnergyCommon {
 
 
         public double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            Debug.Assert(cp.ParamsPos[0] == cp.ParamsNeg[0], "interface velocityX must be continuous across interface");
-            Debug.Assert(cp.ParamsPos[1] == cp.ParamsNeg[1], "interface velocityY must be continuous across interface");
-            Debug.Assert(cp.ParamsPos[2] == cp.ParamsNeg[2], "curvature must be continuous across interface");
+            //Debug.Assert(cp.ParamsPos[0] == cp.ParamsNeg[0], "interface velocityX must be continuous across interface");
+            //Debug.Assert(cp.ParamsPos[1] == cp.ParamsNeg[1], "interface velocityY must be continuous across interface");
+            //Debug.Assert(cp.ParamsPos[2] == cp.ParamsNeg[2], "curvature must be continuous across interface");
 
             double curvature = cp.ParamsPos[m_D];
             double[] Vel = cp.ParamsPos.GetSubVector(0, m_D);
@@ -143,7 +143,7 @@ namespace BoSSS.Solution.EnergyCommon {
 
         public IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat((new string[] { "VelocityX_Mean", "VelocityY_Mean", "VelocityZ_Mean" }).GetSubVector(0, m_D), "Curvature");
+                return ArrayTools.Cat(VariableNames.Velocity0MeanVector(m_D), VariableNames.Curvature);
             }
         }
 

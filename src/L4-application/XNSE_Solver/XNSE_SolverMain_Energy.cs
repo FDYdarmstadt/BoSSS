@@ -91,7 +91,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         XDGField KineticEnergy;
 
-        XDGField prevKineticEnergy;
+        //XDGField prevKineticEnergy;
 
         /// <summary>
         /// Residual of the kinetic energy balance

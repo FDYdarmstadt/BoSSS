@@ -205,7 +205,7 @@ namespace BoSSS.Solution.EnergyCommon {
 
         public override IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat(VariableNames.VelocityVector(m_D), VariableNames.VelocityX_GradientVector(), VariableNames.VelocityY_GradientVector()); //, VariableNames.Pressure);
+                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.VelocityX_GradientVector(), VariableNames.VelocityY_GradientVector()); //, VariableNames.Pressure);
             }
         }
 
@@ -422,7 +422,7 @@ namespace BoSSS.Solution.EnergyCommon {
 
         public IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat(VariableNames.VelocityVector(m_D), VariableNames.VelocityX_GradientVector(), VariableNames.VelocityY_GradientVector()); //, VariableNames.Pressure);
+                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.VelocityX_GradientVector(), VariableNames.VelocityY_GradientVector()); //, VariableNames.Pressure);
             }
         }
 
@@ -444,9 +444,10 @@ namespace BoSSS.Solution.EnergyCommon {
 
         double mu;
 
-        public Dissipation(int SpatDim, double _mu) {
+        public Dissipation(int SpatDim, double _mu, SpeciesId spcId) {
             m_D = SpatDim;
             mu = _mu;
+            m_spcId = spcId;
         }
 
 
@@ -464,7 +465,7 @@ namespace BoSSS.Solution.EnergyCommon {
 
         public IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat(VariableNames.VelocityVector(m_D), VariableNames.VelocityX_GradientVector(), VariableNames.VelocityY_GradientVector());
+                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.VelocityX_GradientVector(), VariableNames.VelocityY_GradientVector());
             }
         }
 

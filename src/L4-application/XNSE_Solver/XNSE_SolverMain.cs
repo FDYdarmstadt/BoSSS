@@ -172,19 +172,17 @@ namespace BoSSS.Application.XNSE_Solver {
                 this.CreateLevelSetFields();
 
 
-                this.XDGvelocity = new VelocityRelatedVars<XDGField>();
-                InitFromAttributes.CreateFieldsAuto(this.XDGvelocity, this.GridData, base.Control.FieldOptions, base.Control.CutCellQuadratureType, base.IOFields, base.m_RegisteredFields);
-
-
                 this.Pressure = new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.Pressure].Degree), VariableNames.Pressure);
                 base.RegisterField(this.Pressure);
                 this.ResidualContinuity = new XDGField(this.Pressure.Basis, "ResidualConti");
                 base.RegisterField(this.ResidualContinuity);
 
+                this.XDGvelocity = new VelocityRelatedVars<XDGField>();
+                InitFromAttributes.CreateFieldsAuto(this.XDGvelocity, this.GridData, base.Control.FieldOptions, base.Control.CutCellQuadratureType, base.IOFields, base.m_RegisteredFields);
 
-                //if (this.Control.ComputeEnergy)
-                    this.CreateEnergyFields();
+                this.CreateUtilityFields();
 
+                this.CreateEnergyFields();
 
                 if (this.Control.solveCoupledHeatEquation) 
                     this.CreateHeatFields();
@@ -508,28 +506,26 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 Debug.Assert(object.ReferenceEquals(this.MultigridSequence[0].ParentGrid, this.GridData));
 
-                m_BDF_Timestepper.DataRestoreAfterBalancing(L,
-                    m_CurrentSolution.Mapping.Fields.ToArray(),
-                    m_CurrentResidual.Mapping.Fields.ToArray(),
-                    this.LsTrk, this.MultigridSequence);
 
-                //if (this.Control.solveCoupledHeatEquation) {
-                //    if (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP)
-                //        m_BDF_Timestepper.DataRestoreAfterBalancing(L,
-                //            ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure, this.Temperature),
-                //            ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity, this.ResidualHeat),
-                //            this.LsTrk, this.MultigridSequence);
-                //    else
-                //        m_BDF_Timestepper.DataRestoreAfterBalancing(L,
-                //            ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure, this.Temperature, this.HeatFlux.ToArray()),
-                //            ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity, this.ResidualHeat, this.ResidualAuxHeatFlux.ToArray()),
-                //            this.LsTrk, this.MultigridSequence);
-                //} else {
-                //    m_BDF_Timestepper.DataRestoreAfterBalancing(L,
-                //        ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure),
-                //        ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity),
-                //        this.LsTrk, this.MultigridSequence);
-                //}
+                DGField[] flds = ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure);
+                DGField[] resi = ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity);
+
+                if (this.Control.solveKineticEnergyEquation) {
+                    flds = ArrayTools.Cat<DGField>(flds, this.KineticEnergy);
+                    resi = ArrayTools.Cat<DGField>(resi, this.ResidualKineticEnergy);
+                }
+
+                if (this.Control.solveCoupledHeatEquation) {
+                    flds = ArrayTools.Cat<DGField>(flds, this.Temperature);
+                    resi = ArrayTools.Cat<DGField>(resi, this.ResidualHeat);
+                    if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+                        flds = ArrayTools.Cat<DGField>(flds, this.HeatFlux);
+                        resi = ArrayTools.Cat<DGField>(resi, this.ResidualAuxHeatFlux);
+                    }
+                }
+
+                m_BDF_Timestepper.DataRestoreAfterBalancing(L, flds, resi, this.LsTrk, this.MultigridSequence);
+
 
                 //PlotCurrentState(hack_Phystime, new TimestepNumber(hack_TimestepIndex, 13), 2);
 
@@ -667,7 +663,7 @@ namespace BoSSS.Application.XNSE_Solver {
                OpMtx, OpAffine, codMap, domMap,
                CurrentState, AgglomeratedCellLengthScales, phystime,
                this.m_HMForder, SurfaceForce, filtLevSetGradient, Curvature,
-               updateSolutionParams); //, HeatFluxExtParam);
+               updateSolutionParams, this.XDGvelocity.Gravity.ToArray()); //, HeatFluxExtParam);
                                       //(this.Control.solveCoupledHeatEquation ? this.Temperature.ToEnumerable() : null),
                                       //(this.Control.solveCoupledHeatEquation ? this.DisjoiningPressure.ToEnumerable() : null));                     
 
@@ -720,10 +716,13 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============================
             // Dimension: [ rho * G ] = mass / time^2 / len^2 == [ d/dt rho U ]
             var WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(this.XDGvelocity.Gravity.ToArray<DGField>(), new XDGField(this.Pressure.Basis)));
+            if (this.Control.solveKineticEnergyEquation) {
+                WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(WholeGravity.Mapping.Fields, new XDGField(this.KineticEnergy.Basis)));
+            }
             if (this.Control.solveCoupledHeatEquation) {
-                WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(this.XDGvelocity.Gravity.ToArray<DGField>(), new XDGField(this.Pressure.Basis), new XDGField(this.Temperature.Basis)));
+                WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(WholeGravity.Mapping.Fields, new XDGField(this.Temperature.Basis)));
                 if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
-                    WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(this.XDGvelocity.Gravity.ToArray<DGField>(), new XDGField(this.Pressure.Basis),
+                    WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(WholeGravity.Mapping.Fields,
                         new XDGField(this.Temperature.Basis), new VectorField<XDGField>(D, this.HeatFlux[0].Basis, XDGField.Factory)));
             }
             WholeMassMatrix.SpMV(1.0, WholeGravity, 1.0, OpAffine);

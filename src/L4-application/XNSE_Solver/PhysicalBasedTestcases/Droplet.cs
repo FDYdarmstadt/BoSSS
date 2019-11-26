@@ -43,7 +43,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control StaticDroplet_Free(int p = 2, int kelem = 16, string _DbPath = null) {
+        public static XNSE_Control StaticDroplet_Free(int p = 2, int kelem = 20, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -231,7 +231,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ==============
             #region init
 
-            double r = 0.2;
+            double r = 0.25;
 
             Func<double[], double> PhiFunc = (X => ((X[0] - 0.5).Pow2() + (X[1] - 0.5).Pow2()).Sqrt() - r);         // signed distance
             //Func<double[], double> PhiFunc = (X => ((X[0] - 0.5).Pow2() + (X[1] - 0.5).Pow2()) - r.Pow2());         // quadratic
@@ -311,8 +311,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
-            //C.ComputeInterfaceEnergy = true;
+            C.ComputeEnergyProperties = true;
+            C.solveKineticEnergyEquation = true;
 
             //C.CheckJumpConditions = true;
             //C.CheckInterfaceProps = true;
@@ -323,18 +323,18 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            C.AdaptiveMeshRefinement = true;
+            C.AdaptiveMeshRefinement = false;
             C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
             C.BaseRefinementLevel = 1;
 
 
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
-            C.NonLinearSolver.MaxSolverIterations = 80;
-            C.LinearSolver.MaxSolverIterations = 80;
+            C.NonLinearSolver.MaxSolverIterations = 10;
+            C.LinearSolver.MaxSolverIterations = 10;
             //C.Solver_MaxIterations = 80;
-            C.NonLinearSolver.ConvergenceCriterion = 1e-9;
-            C.LinearSolver.ConvergenceCriterion = 1e-9;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.LinearSolver.ConvergenceCriterion = 1e-8;
             //C.Solver_ConvergenceCriterion = 1e-9;
             C.LevelSet_ConvergenceCriterion = 1e-7;
 
@@ -414,11 +414,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.CompMode = compMode;
             //C.CompMode = AppControl._CompMode.Transient; 
 
-            double dt = 5e-5; //0.01;
+            double dt = 0.01;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 10000; // (int)(125.0 / dt);
+            C.NoOfTimesteps = 12500; // (int)(125.0 / dt);
             C.saveperiod = 10;
 
             #endregion

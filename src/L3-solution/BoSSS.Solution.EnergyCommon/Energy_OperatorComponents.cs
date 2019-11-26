@@ -103,7 +103,7 @@ namespace BoSSS.Solution.EnergyCommon {
                 // Dissipation
                 // ===========
                 {
-                    comps.Add(new Dissipation(D, muSpc));
+                    comps.Add(new Dissipation(D, muSpc, spcId));
                 }
 
             }

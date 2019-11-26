@@ -452,6 +452,12 @@ namespace BoSSS.Solution.NSECommon {
 
 
         /// <summary>
+        /// variable name for Pressure parameter
+        /// </summary>
+        public const string Pressure0 = "Pressure0";
+
+
+        /// <summary>
         /// x - component of the pressure gradient
         /// </summary>
         public const string PressureGradX = "PressureGradX";

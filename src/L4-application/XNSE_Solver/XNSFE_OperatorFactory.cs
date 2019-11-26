@@ -115,6 +115,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 Params = ArrayTools.Cat(Params,
                     VariableNames.VelocityX_GradientVector(),
                     VariableNames.VelocityY_GradientVector(),
+                    VariableNames.Pressure0,
                     VariableNames.PressureGradient(D),
                     VariableNames.GravityVector(D)
                     );
@@ -284,7 +285,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 throw new ArgumentException();
 
             int D = this.LsTrk.GridDat.SpatialDimension;
-            if (CurrentState != null && !config.solveHeat && CurrentState.Count() != (D + 1))
+            if (CurrentState != null && !config.solveEnergy && !config.solveHeat && CurrentState.Count() != (D + 1))
                 throw new ArgumentException();
 
             if (OpMatrix == null && CurrentState == null)
@@ -407,44 +408,44 @@ namespace BoSSS.Application.XNSE_Solver {
             }
 
 
-            //// velocity gradient vectors
-            //var VelMap = new CoordinateMapping(this.XDGvelocity.Velocity.ToArray());
-            //DGField[] VelParam = VelMap.Fields.ToArray();
+            // velocity gradient vectors
+            var VelMap = new CoordinateMapping(U0);
+            DGField[] VelParam = VelMap.Fields.ToArray();
 
-            //VectorField<DGField> GradVelX = new VectorField<DGField>(D, VelParam[0].Basis, "VelocityXGradient", XDGField.Factory);
-            //for (int d = 0; d < D; d++) {
-            //    foreach (var Spc in this.LsTrk.SpeciesIdS) {
-            //        DGField f_Spc = ((VelParam[0] as XDGField).GetSpeciesShadowField(Spc));
-            //        (GradVelX[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(1.0, f_Spc, d);
-            //    }
-            //}
-            //GradVelX.ForEach(F => F.CheckForNanOrInf(true, true, true));
+            VectorField<DGField> GradVelX = new VectorField<DGField>(D, VelParam[0].Basis, "VelocityXGradient", XDGField.Factory);
+            for (int d = 0; d < D; d++) {
+                foreach (var Spc in this.LsTrk.SpeciesIdS) {
+                    DGField f_Spc = ((VelParam[0] as XDGField).GetSpeciesShadowField(Spc));
+                    (GradVelX[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(1.0, f_Spc, d);
+                }
+            }
+            GradVelX.ForEach(F => F.CheckForNanOrInf(true, true, true));
 
-            //VectorField<DGField> GradVelY = new VectorField<DGField>(D, VelParam[0].Basis, "VelocityYGradient", XDGField.Factory);
-            //for (int d = 0; d < D; d++) {
-            //    foreach (var Spc in this.LsTrk.SpeciesIdS) {
-            //        DGField f_Spc = ((VelParam[1] as XDGField).GetSpeciesShadowField(Spc));
-            //        (GradVelY[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(1.0, f_Spc, d);
-            //    }
-            //}
-            //GradVelY.ForEach(F => F.CheckForNanOrInf(true, true, true));
+            VectorField<DGField> GradVelY = new VectorField<DGField>(D, VelParam[0].Basis, "VelocityYGradient", XDGField.Factory);
+            for (int d = 0; d < D; d++) {
+                foreach (var Spc in this.LsTrk.SpeciesIdS) {
+                    DGField f_Spc = ((VelParam[1] as XDGField).GetSpeciesShadowField(Spc));
+                    (GradVelY[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(1.0, f_Spc, d);
+                }
+            }
+            GradVelY.ForEach(F => F.CheckForNanOrInf(true, true, true));
 
-            //// pressure and gradient
-            //var PressMap = new CoordinateMapping(this.Pressure);
-            //DGField[] PressParam = PressMap.Fields.ToArray();
+            // pressure and gradient
+            var PressMap = new CoordinateMapping(CurrentState.ToArray()[D]);
+            DGField[] PressParam = PressMap.Fields.ToArray();
 
-            //VectorField<DGField> PressGrad = new VectorField<DGField>(D, PressParam[0].Basis, "PressureGrad", XDGField.Factory);
-            //for (int d = 0; d < D; d++) {
-            //    foreach (var Spc in this.LsTrk.SpeciesIdS) {
-            //        DGField f_Spc = ((PressParam[0] as XDGField).GetSpeciesShadowField(Spc));
-            //        (PressGrad[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(1.0, f_Spc, d);
-            //    }
-            //}
-            //PressGrad.ForEach(F => F.CheckForNanOrInf(true, true, true));
+            VectorField<DGField> PressGrad = new VectorField<DGField>(D, PressParam[0].Basis, "PressureGrad", XDGField.Factory);
+            for (int d = 0; d < D; d++) {
+                foreach (var Spc in this.LsTrk.SpeciesIdS) {
+                    DGField f_Spc = ((PressParam[0] as XDGField).GetSpeciesShadowField(Spc));
+                    (PressGrad[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(1.0, f_Spc, d);
+                }
+            }
+            PressGrad.ForEach(F => F.CheckForNanOrInf(true, true, true));
 
-            //// gravity
-            //var GravMap = new CoordinateMapping(this.XDGvelocity.Gravity.ToArray());
-            //DGField[] GravParam = GravMap.Fields.ToArray();
+            // gravity
+            var GravMap = new CoordinateMapping(ExtParams);
+            DGField[] GravParam = GravMap.Fields.ToArray();
 
 
             // heat flux for evaporation
@@ -476,10 +477,11 @@ namespace BoSSS.Application.XNSE_Solver {
 
             if (config.solveEnergy) {
                 Params = ArrayTools.Cat<DGField>(Params.ToArray<DGField>(),
-                    new SinglePhaseField[D],
-                    new SinglePhaseField[D],
-                    new SinglePhaseField[D],
-                    new SinglePhaseField[D]);
+                    GradVelX,
+                    GradVelY,
+                    PressParam,
+                    PressGrad,
+                    GravMap);
             }
 
             if (config.solveHeat) {

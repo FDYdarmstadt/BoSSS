@@ -64,7 +64,7 @@ namespace BoSSS.Solution.EnergyCommon {
 
         public override IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat(VariableNames.VelocityVector(m_D), VariableNames.Pressure);
+                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.Pressure0);
             }
         }
 
@@ -205,7 +205,7 @@ namespace BoSSS.Solution.EnergyCommon {
 
         public IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat(VariableNames.VelocityVector(m_D), VariableNames.Pressure);
+                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.Pressure0);
             }
         }
     }
@@ -241,7 +241,7 @@ namespace BoSSS.Solution.EnergyCommon {
 
         public IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat(VariableNames.VelocityVector(m_D), (new string[] { "PressureGradX", "PressureGradY", "PressureGradZ" }).GetSubVector(0, m_D));
+                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.PressureGradient(m_D));
             }
         }
 
