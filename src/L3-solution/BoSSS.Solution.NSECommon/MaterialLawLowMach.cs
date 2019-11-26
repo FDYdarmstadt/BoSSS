@@ -190,8 +190,12 @@ namespace BoSSS.Solution.NSECommon {
                 case MaterialParamsMode.Constant:
                     return 1.0;
                 case MaterialParamsMode.Sutherland: {
-                        //    throw new NotImplementedException();
-                        return 1.0; // Using a constant value! 
+                        double S = 110.5;
+                        double viscosity = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
+                        Debug.Assert(!double.IsNaN(viscosity));
+                        Debug.Assert(!double.IsInfinity(viscosity));
+                        double diff = viscosity; //// using viscosity = lambda for Sc = 1...
+                        return diff; // Using a constant value! 
                     }
                 case MaterialParamsMode.PowerLaw: {
                         throw new NotImplementedException();
