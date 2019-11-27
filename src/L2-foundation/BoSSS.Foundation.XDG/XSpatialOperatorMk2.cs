@@ -1198,7 +1198,7 @@ namespace BoSSS.Foundation.XDG {
                 foreach (var eq in this.EquationComponents[CodNmn]) {
                     if (!(eq is ISupportsJacobianComponent _eq))
                         throw new NotSupportedException(string.Format("Unable to handle component {0}: To obtain a Jacobian operator, all components must implement the {1} interface.", eq.GetType().Name, typeof(ISupportsJacobianComponent).Name));
-                    foreach (var eqj in _eq.GetJacobianComponents())
+                    foreach (var eqj in _eq.GetJacobianComponents(SpatialDimension))
                         JacobianOp.EquationComponents[CodNmn].Add(eqj);
                 }
 
@@ -1206,14 +1206,14 @@ namespace BoSSS.Foundation.XDG {
                 foreach (var eq in this.GhostEdgesOperator.EquationComponents[CodNmn]) {
                     if (!(eq is ISupportsJacobianComponent _eq))
                         throw new NotSupportedException(string.Format("Unable to handle component {0}: To obtain a Jacobian operator, all components must implement the {1} interface.", eq.GetType().Name, typeof(ISupportsJacobianComponent).Name));
-                    foreach (var eqj in _eq.GetJacobianComponents())
+                    foreach (var eqj in _eq.GetJacobianComponents(SpatialDimension))
                         JacobianOp.GhostEdgesOperator.EquationComponents[CodNmn].Add(eqj);
                 }
 
                 foreach (var eq in this.SurfaceElementOperator.EquationComponents[CodNmn]) {
                     if (!(eq is ISupportsJacobianComponent _eq))
                         throw new NotSupportedException(string.Format("Unable to handle component {0}: To obtain a Jacobian operator, all components must implement the {1} interface.", eq.GetType().Name, typeof(ISupportsJacobianComponent).Name));
-                    foreach (var eqj in _eq.GetJacobianComponents())
+                    foreach (var eqj in _eq.GetJacobianComponents(SpatialDimension))
                         JacobianOp.SurfaceElementOperator.EquationComponents[CodNmn].Add(eqj);
                 }
 

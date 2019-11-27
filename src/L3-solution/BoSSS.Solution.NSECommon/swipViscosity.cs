@@ -233,7 +233,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Linear component - returns this object itself.
         /// </summary>
-        virtual public IEquationComponent[] GetJacobianComponents() {
+        virtual public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             switch (m_ViscosityMode) {
                 case ViscosityOption.ConstantViscosity:
                 case ViscosityOption.ConstantViscosityDimensionless:

@@ -80,7 +80,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Pressure{
         /// <summary>
         /// Linear component - returns this object itself.
         /// </summary>
-        public IEquationComponent[] GetJacobianComponents() {
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             return new IEquationComponent[] { this };
         }
 

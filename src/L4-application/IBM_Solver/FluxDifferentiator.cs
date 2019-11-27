@@ -146,9 +146,9 @@ namespace BoSSS.Application.IBM_Solver {
             return BorderEdgeFlux(ref inp, _uA) * _vA;
         }
 
-        public IEquationComponent[] GetJacobianComponents() {
-            var ConvDerivEdg = new EdgeFormDifferentiator(this);
-            var ConvDerivVol = new VolumeFormDifferentiator(this);
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            var ConvDerivEdg = new EdgeFormDifferentiator(this, SpatialDimension);
+            var ConvDerivVol = new VolumeFormDifferentiator(this, SpatialDimension);
             return new IEquationComponent[] { ConvDerivEdg, ConvDerivVol };
         }
 
@@ -228,7 +228,7 @@ namespace BoSSS.Application.IBM_Solver {
 
         }
 
-        public IEquationComponent[] GetJacobianComponents() {
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             return new IEquationComponent[] { new NotImplemntedClass(this) };
         }
 
