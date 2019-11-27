@@ -93,6 +93,7 @@
     <Compile Include="DatabaseDriver_VersionedSerializer.cs" />
     <Compile Include="DGFieldExtensions.cs" />
     <Compile Include="EdgeInfo.cs" />
+    <Compile Include="FormDifferentiator.cs" />
     <Compile Include="GridComparer.cs" />
     <Compile Include="FileManager.cs" />
     <Compile Include="GridCommons_Comparer.cs" />
@@ -107,6 +108,7 @@
     <Compile Include="IGridData.cs" />
     <Compile Include="IGridData_Extensions.cs" />
     <Compile Include="IGridSerializationHandler.cs" />
+    <Compile Include="JacobianParamUpdate.cs" />
     <Compile Include="Line.cs" />
     <Compile Include="LinearFormVectorizer.cs" />
     <Compile Include="NodeCoordinateSystem.cs" />
