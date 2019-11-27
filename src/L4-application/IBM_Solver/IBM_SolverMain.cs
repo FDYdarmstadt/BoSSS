@@ -526,20 +526,20 @@ namespace BoSSS.Application.IBM_Solver {
 
                 // using ad-hoc linearization:
                 // - - - - - - - - - - - - - - 
-                //ParameterUpdate(CurrentState, Params);
-                //var mtxBuilder = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, FluidSpecies);
-                //mtxBuilder.time = phystime;
-                //mtxBuilder.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
-                //mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
+                ParameterUpdate(CurrentState, Params);
+                var mtxBuilder = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, FluidSpecies);
+                mtxBuilder.time = phystime;
+                mtxBuilder.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+                mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
 
                 // using finite difference Jacobi:
                 // - - - - - - - - - - - - - - - -
-                var mtxBuilder2 = IBM_Op.GetFDJacobianBuilder(LsTrk, CurrentState, Params, Mapping,
-                    ParameterUpdate,
-                    FluidSpecies);
-                mtxBuilder2.time = phystime;
-                mtxBuilder2.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
-                mtxBuilder2.ComputeMatrix(OpMatrix, OpAffine);
+                //var mtxBuilder2 = IBM_Op.GetFDJacobianBuilder(LsTrk, CurrentState, Params, Mapping,
+                //    ParameterUpdate,
+                //    FluidSpecies);
+                //mtxBuilder2.time = phystime;
+                //mtxBuilder2.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+                //mtxBuilder2.ComputeMatrix(OpMatrix, OpAffine);
 
                 // using the other kind of Jacobi:
                 // - - - - - - - - - - - - - - - -

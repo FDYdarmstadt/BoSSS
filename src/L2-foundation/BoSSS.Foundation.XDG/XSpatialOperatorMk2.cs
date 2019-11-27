@@ -1155,13 +1155,41 @@ namespace BoSSS.Foundation.XDG {
         /// An operator which computes the Jacobian matrix of this operator.
         /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
         /// </summary>
-        public XSpatialOperatorMk2 GetJacobiOperator() {
+        public (XSpatialOperatorMk2,DelParameterUpdate) GetJacobiOperator(int SpatialDimension) {
             if (!this.IsCommited)
                 throw new InvalidOperationException("Invalid prior to calling Commit().");
 
+
+            var allcomps = new List<IEquationComponent>();
+            foreach (var cdo in this.CodomainVar) {
+                allcomps.AddRange(this.EquationComponents[cdo]);
+                allcomps.AddRange(this.GhostEdgesOperator.EquationComponents[cdo]);
+                allcomps.AddRange(this.SurfaceElementOperator.EquationComponents[cdo]);
+            }
+            TermActivationFlags extractTaf(IEquationComponent c) {
+                TermActivationFlags ret = default(TermActivationFlags);
+                if (c is IVolumeForm vf) {
+                    ret = ret | vf.VolTerms;
+                }
+
+                if (c is IEdgeForm ef) {
+                    ret = ret | ef.BoundaryEdgeTerms;
+                    ret = ret | ef.InnerEdgeTerms;
+                }
+
+                if(c is ILevelSetForm lf) {
+                    ret = ret | lf.LevelSetTerms;
+                }
+
+                return ret;
+            }
+
+            var h = new JacobianParamUpdate(this.DomainVar, this.ParameterVar, allcomps, extractTaf, SpatialDimension);
+
+
             var JacobianOp = new XSpatialOperatorMk2(
                    this.DomainVar,
-                   ArrayTools.Cat(this.DomainVar.Select(fn => fn + "_lin"), this.ParameterVar),
+                   h.JacobianParameterVars,
                    this.CodomainVar,
                    this.QuadOrderFunction,
                    this.m_Species);
@@ -1192,7 +1220,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
             JacobianOp.Commit();
-            return JacobianOp;
+            return (JacobianOp, h.ParameterUpdate);
         }
 
         //==========================================================================================================================
