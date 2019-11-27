@@ -2201,8 +2201,9 @@ namespace BoSSS.Foundation {
 #if DEBUG
                 CoordinateVector ParamsVec;
                 double[] ParamsVecBkup;
-                if (Eval.Parameters.Count > 0) {
-                    ParamsVec = new CoordinateVector(Eval.Parameters);
+                if (Eval.Parameters.Where(f => f != null).Count() > 0) {
+                    var AllocatedParams = Eval.Parameters.Where(f => f != null).ToArray();
+                    ParamsVec = new CoordinateVector(AllocatedParams);
                     ParamsVecBkup = ParamsVec.ToArray();
                 } else {
                     ParamsVec = null;

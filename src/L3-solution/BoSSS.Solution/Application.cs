@@ -1745,12 +1745,13 @@ namespace BoSSS.Solution {
                     }
                 }
 
+                if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
+                    PlotCurrentState(physTime, i0, this.Control.SuperSampling);
+
                 var ts0 = SaveToDatabase(i0, physTime); // save the initial value
                 if (this.RollingSave > 0)
                     rollingSavesTsi.Add(Tuple.Create(0, ts0));
 
-                if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
-                    PlotCurrentState(physTime, i0, this.Control.SuperSampling);
 
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);

@@ -134,9 +134,7 @@ namespace BoSSS.Solution.Control {
         public virtual void SetDGdegree(int p) {
             throw new NotImplementedException();
         }
-
-
-
+               
         /// <summary>
         /// General checking of the control object.
         /// - all control file options satisfy the conditions

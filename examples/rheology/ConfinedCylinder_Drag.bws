@@ -5,10 +5,9 @@ restart
   _______________________
 
 Databases loaded:
-List of 3 instances of IDatabaseInfo {
-  0: { Session Count = 72; Grid Count = 8; Path = \\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_ConvergenceStudy_2 }
-  1: { Session Count = 58; Grid Count = 10; Path = \\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag }
-  2: { Session Count = 45; Grid Count = 6; Path = \\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_unsteady }
+List of 2 instances of IDatabaseInfo {
+  0: { Session Count = 1; Grid Count = 1; Path = D:\Users\kummer\Documents\BoSSS-master\public\src\L4-application\CNS\bin\Release\bosss_db_performance_3 }
+  1: { Session Count = 11; Grid Count = 9; Path = D:\Users\kummer\Documents\BoSSS-master\public\src\L4-application\CNS\bin\Debug\bosss_db_performance_3 }
 }
 
  Console ready for input. Type 'help' for help.
@@ -24,20 +23,23 @@ Project name is set to 'ConfinedCylinder_BodyforcesFix'.
 
 ==============
 // steady drag calculation
-var myDb = OpenOrCreateDatabase(@"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag");
+//var myDb = OpenOrCreateDatabase(@"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag");
 // unsteady calculation
 //var myDb = OpenOrCreateDatabase(@"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_unsteady");
+var myDb = OpenOrCreateDefaultDatabase();
 **************
-Opening existing database '\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag'.
+Opening existing database 'd:\Users\kummer\default_bosss_db'.
 
 ==============
 //var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\kikker\deploy_dir\","hpccluster",ComputeNodes : new[] {"hpccluster"});
-var myBatch = new MiniBatchProcessorClient(@"\\dc1\userspace\kikker\cluster\ConfinedCylinder");
+//var myBatch = new MiniBatchProcessorClient(@"\\dc1\userspace\kikker\cluster\ConfinedCylinder");
+var myBatch = new MiniBatchProcessorClient();
 **************
 ==============
 MiniBatchProcessor.Server.StartIfNotRunning();
 **************
-Mini batch processor is already running.
+Starting mini batch processor in external process...
+Started mini batch processor on local machine, process id is 61076.
 
 ==============
 // ======================
@@ -80,9 +82,15 @@ string SessionName = "ConfinedCylinder_drag_p"+degree+"_meshNo"+gridNo+"_Wi="+We
 **************
 ==============
 //GridCommons grid; //     = new GridCommons[numberGrids];
-Gmsh gmshGrid         = new Gmsh(@"c:\Users\kikker\AnnesBoSSSdb\Cylinder_GRIDS\mesh_karman_OriginalBox_MEDIUM_"+gridNo+"_half.msh");
+Gmsh gmshGrid         = new Gmsh(System.IO.Path.Combine(
+    CurrentDocDir,
+    @"Cylinder_GRIDS\mesh_karman_OriginalBox_MEDIUM_"+gridNo+"_half.msh"));
 GridCommons bosssGrid = gmshGrid.GenerateBoSSSGrid();
-bosssGrid.Name        = "confined_cylinder";
+**************
+
+
+==============
+bosssGrid.Name = "confined_cylinder";
 bosssGrid.EdgeTagNames.Add(1, "Velocity_inlet");
 //bosssGrid.EdgeTagNames.Add(2, "Wall_bottom");
 bosssGrid.EdgeTagNames.Add(2, "Freeslip");
@@ -120,8 +128,7 @@ bosssGrid.DefineEdgeTags(edgeTagFunc);
 myDb.SaveGrid(ref bosssGrid);
 //grid = bosssGrid;                
 **************
-
-438c8559-c572-464a-808f-5d5f4b443bdd
+b5ff1b27-15ba-4105-9284-5074c0de5d16
 ==============
 // =====================================
 // setup control object for a solver run
@@ -316,6 +323,8 @@ deployment finished.
 
 ==============
 WorkflowMgm.AllJobs.Pick(0).Value.
+**************
+==============
 **************
 ==============
 **************
