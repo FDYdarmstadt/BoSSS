@@ -248,6 +248,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 double[] rhoS = new double[] { this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B };
                 double currentKinEnergy = EnergyUtils.GetKineticEnergy(this.LsTrk, this.XDGvelocity.Velocity.ToArray(), rhoS, this.m_HMForder);
                 double currentSurfEnergy = EnergyUtils.GetSurfaceEnergy(this.LsTrk, this.Control.PhysicalParameters.Sigma, this.m_HMForder);
+                EnergyUtils.ProjectKineticEnergy(this.DerivedKineticEnergy, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), rhoS, this.m_HMForder);
 
                 // compute changerates (kinetic, surface)
                 double CR_KinEnergy = 0.0;

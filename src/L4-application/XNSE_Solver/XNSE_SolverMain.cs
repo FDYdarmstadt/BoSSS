@@ -1205,8 +1205,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 if(this.Control.solveKineticEnergyEquation) {
 
                     // derive kinetic Energy from flow solution
-                    double[] rhoS = new double[] { this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B };
-                    EnergyUtils.ProjectKineticEnergy(this.DerivedKineticEnergy, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), rhoS, this.m_HMForder);
+                    //double[] rhoS = new double[] { this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B };
+                    //EnergyUtils.ProjectKineticEnergy(this.DerivedKineticEnergy, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), rhoS, this.m_HMForder);
 
                     // compute generated kinetic energy
                     GeneratedKineticEnergy.Clear();

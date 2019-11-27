@@ -312,7 +312,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region solver
 
             C.ComputeEnergyProperties = true;
-            C.solveKineticEnergyEquation = true;
+            C.solveKineticEnergyEquation = false;
 
             //C.CheckJumpConditions = true;
             //C.CheckInterfaceProps = true;

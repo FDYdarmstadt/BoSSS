@@ -122,9 +122,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 //this.prevKineticEnergy = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions["KineticEnergy"].Degree)));
 
-                this.DerivedKineticEnergy = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions[VariableNames.KineticEnergy].Degree)), "DerivedKineticEnergy");
-                base.RegisterField(this.DerivedKineticEnergy);
-
                 this.GeneratedKineticEnergy = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions[VariableNames.KineticEnergy].Degree)), "KineticEnergyProduction");
                 base.RegisterField(this.GeneratedKineticEnergy);
 
@@ -139,6 +136,8 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
                 }
 
+                this.DerivedKineticEnergy = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions[VariableNames.KineticEnergy].Degree)), "DerivedKineticEnergy");
+                base.RegisterField(this.DerivedKineticEnergy);
 
                 this.KineticDissipation = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions[VariableNames.KineticEnergy].Degree)), "KineticDissipation");
                 base.RegisterField(this.KineticDissipation);
