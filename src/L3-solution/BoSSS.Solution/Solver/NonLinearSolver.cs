@@ -26,10 +26,10 @@ namespace BoSSS.Solution.Control {
 
     public enum NonLinearSolverCode {
 
-        ///// <summary>
-        //    /// NewtonKrylov GMRES (<see cref="BoSSS.Solution.AdvancedSolvers.NonLinearSolver"/>) with linear solver (<see cref="LinearSolverConfig.Code"/>) used as preconditioner for matrix-free GMRES 
-        ///// </summary>
-        //NewtonGMRES = 0,
+        /// <summary>
+        /// NewtonKrylov GMRES (<see cref="BoSSS.Solution.AdvancedSolvers.NonLinearSolver"/>) with linear solver (<see cref="LinearSolverConfig.Code"/>) used as preconditioner for matrix-free GMRES 
+        /// </summary>
+        NewtonGMRES = 0,
 
         /// <summary>
         /// The bald guy from the Enterprise.
