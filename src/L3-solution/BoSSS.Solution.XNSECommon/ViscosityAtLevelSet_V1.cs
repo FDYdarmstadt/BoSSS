@@ -72,7 +72,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
 
         public override void DerivativVar_LevelSetFlux(out double FlxNeg, out double FlxPos,
-            ref CommonParamsLs cp,
+            ref CommonParams cp,
             double[] U_A, double[] U_B, double[,] GradU_A, double[,] GradU_B) {
        
             int D = GradU_A.GetLength(1);
@@ -289,7 +289,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
 
         public override void PrimalVar_LevelSetFlux(out double FlxNeg, out double FlxPos,
-            ref CommonParamsLs cp,  
+            ref CommonParams cp,  
             double[] U_Neg, double[] U_Pos) {
 
             //EquationAndVarMode varMode = T.varmode;
@@ -320,7 +320,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             G = U[this.m_d]; //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
         }
 
-        public override void Nu(out double NuNeg, out double NuPos, ref CommonParamsLs cp) {
+        public override void Nu(out double NuNeg, out double NuPos, ref CommonParams cp) {
             NuPos = -this.m_muB;
             NuNeg = -this.m_muA;
         }

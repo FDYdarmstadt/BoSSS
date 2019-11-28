@@ -109,7 +109,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
 
             double flux;
-            var normal = inp.Normale;
+            var normal = inp.Normal;
             var EdgeTag = inp.EdgeTag;
             var x = inp.X;
 
@@ -185,20 +185,20 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             double Umean_dot_Normal = 0;
             for (int d = D - 1; d >= 0; d--) {
-                Umean_dot_Normal += (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * inp.Normale[d];
+                Umean_dot_Normal += (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * inp.Normal[d];
             }
             Umean_dot_Normal *= 0.5;
 
             double flux = 0;
             if (Umean_dot_Normal >= 0) {
                 for (int d = D - 1; d >= 0; d--) {
-                    flux += inp.Parameters_IN[d] * inp.Normale[d];
+                    flux += inp.Parameters_IN[d] * inp.Normal[d];
                 }
                 flux *= Uin[0];
             }
             else {
                 for (int d = D - 1; d >= 0; d--) {
-                    flux += inp.Parameters_OUT[d] * inp.Normale[d];
+                    flux += inp.Parameters_OUT[d] * inp.Normal[d];
                 }
                 flux *= Uout[0];
             }
@@ -223,7 +223,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
 
             double flux;
-            var normal = inp.Normale;
+            var normal = inp.Normal;
             var EdgeTag = inp.EdgeTag;
             var x = inp.X;
 
@@ -278,10 +278,10 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             double flux = 0;
 
             //Central Part
-            flux += Uin[0] * (inp.Parameters_IN[0] * inp.Normale[0] + inp.Parameters_IN[1] * inp.Normale[1]);
-            flux += Uout[0] * (inp.Parameters_OUT[0] * inp.Normale[0] + inp.Parameters_OUT[1] * inp.Normale[1]);
+            flux += Uin[0] * (inp.Parameters_IN[0] * inp.Normal[0] + inp.Parameters_IN[1] * inp.Normal[1]);
+            flux += Uout[0] * (inp.Parameters_OUT[0] * inp.Normal[0] + inp.Parameters_OUT[1] * inp.Normal[1]);
             if (D == 3) {
-                flux += Uin[0] * inp.Parameters_IN[2] * inp.Normale[2] + Uout[0] * inp.Parameters_OUT[2] * inp.Normale[2];
+                flux += Uin[0] * inp.Parameters_IN[2] * inp.Normal[2] + Uout[0] * inp.Parameters_OUT[2] * inp.Normal[2];
             }
 
             //Dissipative Part
@@ -296,8 +296,8 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             double LambdaIn;
             double LambdaOut;
-            LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normale, false);
-            LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normale, false);
+            LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, false);
+            LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, false);
 
             double Lambda = Math.Max(LambdaIn, LambdaOut);
             double Scalar_Jump = Uin[0] - Uout[0];

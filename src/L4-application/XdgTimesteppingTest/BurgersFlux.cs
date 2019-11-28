@@ -35,7 +35,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         public Vector Direction;
 
         protected override double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
-            Vector n = new Vector(2); n.x = inp.Normale[0]; n.y = inp.Normale[1];
+            Vector n = new Vector(2); n.x = inp.Normal[0]; n.y = inp.Normal[1];
 
             double u0In = inp.Parameters_IN[0];
             double u0Ot = Inflow(inp.X, inp.time);
@@ -46,7 +46,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         }
 
         protected override double InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout) {
-            Vector n = new Vector(2); n.x = inp.Normale[0]; n.y = inp.Normale[1];
+            Vector n = new Vector(2); n.x = inp.Normal[0]; n.y = inp.Normal[1];
 
             double u0In = inp.Parameters_IN[0];
             double u0Ot = inp.Parameters_OUT[0];
@@ -107,21 +107,21 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         }
                
 
-        public double LevelSetForm(ref CommonParamsLs inp,
+        public double LevelSetForm(ref CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-            Vector N = new Vector(inp.n);
+            Vector N = new Vector(inp.Normal);
             if (Math.Abs(N * m_Direction - 1.0) >= 1.0e-8)
                 throw new ArithmeticException("Normal Vector mismatch.");
 
-            double u0In = inp.ParamsNeg[0];
-            double u0Ot = inp.ParamsPos[0];
+            double u0In = inp.Parameters_IN[0];
+            double u0Ot = inp.Parameters_OUT[0];
             double uIn = uA[0];
             double uOt = uB[0];
 
             // interface speed
-            double s = m_NormalVel(inp.x, inp.time);
+            double s = m_NormalVel(inp.X, inp.time);
 
             // shock speed
             double sigma = 0.5 * (u0In + u0Ot);

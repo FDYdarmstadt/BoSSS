@@ -63,7 +63,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
-        double ILevelSetForm.LevelSetForm(ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        double ILevelSetForm.LevelSetForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             return OrgComponent.LevelSetForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB);
         }
 
@@ -72,7 +72,7 @@ namespace BoSSS.Foundation.XDG {
             int L = inp.Len;
             Debug.Assert(Koeff_V.GetLength(0) == L);
             int K = Koeff_V.GetLength(1); // no of nodes per cell
-            int D = inp.X.GetLength(2); // spatial dimension
+            int D = inp.Nodes.GetLength(2); // spatial dimension
             int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
             Debug.Assert(_NOParams == inp.ParamsNeg.Length);
             Debug.Assert(_NOParams == inp.ParamsPos.Length);
@@ -86,12 +86,14 @@ namespace BoSSS.Foundation.XDG {
             SpeciesId posSpc = this.PositiveSpecies;
             SpeciesId negSpc = this.NegativeSpecies;
 
-            CommonParamsLs cp;
-            cp.n = new Vector(D);
-            cp.x = new Vector(D);
-            cp.ParamsPos = new double[_NOParams];
-            cp.ParamsNeg = new double[_NOParams];
+            CommonParams cp;
+            cp.Normal = new Vector(D);
+            cp.X = new Vector(D);
+            cp.Parameters_OUT = new double[_NOParams];
+            cp.Parameters_IN = new double[_NOParams];
             cp.time = inp.time;
+            cp.iEdge = -123456;
+            cp.GridDat = null;
             double[] _Grad_vA = new double[D];
             double[] _Grad_vB = new double[D];
             double[,] _Grad_uA = new double[_NOargs, D];
@@ -102,7 +104,8 @@ namespace BoSSS.Foundation.XDG {
 
 
             for (int l = 0; l < L; l++) { // loop over cells...
-                cp.jCell = inp.i0 + l;
+                cp.jCellIn = inp.i0 + l;
+                cp.jCellOut = cp.jCellIn;
                 //if (inp.PosCellLengthScale != null)
                 //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
                 //else
@@ -121,12 +124,12 @@ namespace BoSSS.Foundation.XDG {
                 for (int k = 0; k < K; k++) { // loop over nodes...
 
                     for (int np = 0; np < _NOParams; np++) {
-                        cp.ParamsPos[np] = inp.ParamsPos[np][l, k];
-                        cp.ParamsNeg[np] = inp.ParamsNeg[np][l, k];
+                        cp.Parameters_OUT[np] = inp.ParamsPos[np][l, k];
+                        cp.Parameters_IN[np] = inp.ParamsNeg[np][l, k];
                     }
                     for (int d = 0; d < D; d++) {
-                        cp.x[d] = inp.X[l, k, d];
-                        cp.n[d] = inp.Normal[l, k, d];
+                        cp.X[d] = inp.Nodes[l, k, d];
+                        cp.Normal[d] = inp.Normals[l, k, d];
                     }
 
                     for (int na = 0; na < _NOargs; na++) {
@@ -168,7 +171,7 @@ namespace BoSSS.Foundation.XDG {
             int L = inp.Len;
             Debug.Assert(Koeff_GradV.GetLength(0) == L);
             int K = Koeff_GradV.GetLength(1); // no of nodes per cell
-            int D = inp.X.GetLength(2); // spatial dimension
+            int D = inp.Nodes.GetLength(2); // spatial dimension
             int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
             Debug.Assert(_NOParams == inp.ParamsNeg.Length);
             Debug.Assert(_NOParams == inp.ParamsPos.Length);
@@ -182,12 +185,14 @@ namespace BoSSS.Foundation.XDG {
             SpeciesId posSpc = this.PositiveSpecies;
             SpeciesId negSpc = this.NegativeSpecies;
 
-            CommonParamsLs cp;
-            cp.n = new Vector(D);
-            cp.x = new Vector(D);
-            cp.ParamsPos = new double[_NOParams];
-            cp.ParamsNeg = new double[_NOParams];
+            CommonParams cp;
+            cp.Normal = new Vector(D);
+            cp.X = new Vector(D);
+            cp.Parameters_OUT = new double[_NOParams];
+            cp.Parameters_IN = new double[_NOParams];
             cp.time = inp.time;
+            cp.iEdge = -123456;
+            cp.GridDat = null;
             double[] _Grad_vA = new double[D];
             double[] _Grad_vB = new double[D];
             double[,] _Grad_uA = new double[_NOargs, D];
@@ -198,7 +203,8 @@ namespace BoSSS.Foundation.XDG {
 
 
             for (int l = 0; l < L; l++) { // loop over cells...
-                cp.jCell = inp.i0 + l;
+                cp.jCellIn = inp.i0 + l;
+                cp.jCellOut = cp.jCellIn;
                 //if (inp.PosCellLengthScale != null)
                 //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
                 //else
@@ -217,12 +223,12 @@ namespace BoSSS.Foundation.XDG {
                 for (int k = 0; k < K; k++) { // loop over nodes...
 
                     for (int np = 0; np < _NOParams; np++) {
-                        cp.ParamsPos[np] = inp.ParamsPos[np][l, k];
-                        cp.ParamsNeg[np] = inp.ParamsNeg[np][l, k];
+                        cp.Parameters_OUT[np] = inp.ParamsPos[np][l, k];
+                        cp.Parameters_IN[np] = inp.ParamsNeg[np][l, k];
                     }
                     for (int d = 0; d < D; d++) {
-                        cp.x[d] = inp.X[l, k, d];
-                        cp.n[d] = inp.Normal[l, k, d];
+                        cp.X[d] = inp.Nodes[l, k, d];
+                        cp.Normal[d] = inp.Normals[l, k, d];
                     }
 
                     for (int na = 0; na < _NOargs; na++) {

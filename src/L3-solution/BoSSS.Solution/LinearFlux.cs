@@ -29,7 +29,7 @@ namespace BoSSS.Solution.Utils {
     /// an algebraic formula. All function matrices and offsets (aka. intercept)
     /// are constructed from the user-defined functions by this class.
     /// </summary>
-    public abstract class LinearFlux : IVolumeForm, IEdgeForm {
+    public abstract class LinearFlux : IVolumeForm, IEdgeForm, ISupportsJacobianComponent {
 
         /// <summary>
         /// not in use, returning null
@@ -123,6 +123,13 @@ namespace BoSSS.Solution.Utils {
         /// </summary>
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             return this.BorderEdgeFlux(ref inp, _uA) * _vA;
+        }
+
+        /// <summary>
+        /// Linear component - returns this object itself.
+        /// </summary>
+        virtual public IEquationComponent[] GetJacobianComponents() {
+            return new IEquationComponent[] { this };
         }
     }
 }

@@ -447,7 +447,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
                 // RHS part
                 RHSField.CoordinateVector.Clear();
                 //Operator_RHS.Evaluate(NewPhi.Mapping, RHSField.Mapping);
-                Operator_RHS.Evaluate(double.NaN, IncludingInterface ? Restriction : null, IncludingInterface ? SpatialOperator.SubGridBoundaryModes.BoundaryEdge : SpatialOperator.SubGridBoundaryModes.InnerEdge , ArrayTools.Cat(new DGField[] { Phi }, parameterFields, new DGField[] { RHSField }));
+                Operator_RHS.Evaluate(double.NaN, IncludingInterface ? Restriction : null, IncludingInterface ? SubGridBoundaryModes.BoundaryEdge : SubGridBoundaryModes.InnerEdge , ArrayTools.Cat(new DGField[] { Phi }, parameterFields, new DGField[] { RHSField }));
 #if DEBUG
             RHSField.CheckForNanOrInf();
 #endif

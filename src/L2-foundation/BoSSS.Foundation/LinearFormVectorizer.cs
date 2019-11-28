@@ -438,7 +438,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
 
         private double GetCoeff(ref double d1, ref double d2, ref CommonParams inp) {
-            int D = inp.Normale.Dim;
+            int D = inp.Normal.Dim;
             Debug.Assert(this.NoArgs == this.ArgumentOrdering.Count);
 
             Debug.Assert(uA.Length == NoArgs);
@@ -503,13 +503,13 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         /// </summary>
         void IEdgeform_GradUxV.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray GradUxV) {
             InitGlobals(efp);
-
+            var E2C = efp.GridDat.iGeomEdges.CellIndices;
             Debug.Assert(efp.ParameterVars_IN.Length == NoParams);
             Debug.Assert(efp.ParameterVars_OUT.Length == NoParams);
 
 
-            CommonParams cp = default(CommonParams);
-            cp.Normale = new Vector(D);
+            CommonParams cp;
+            cp.Normal = new Vector(D);
             cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.Parameters_OUT = new double[NoParams];
@@ -518,12 +518,14 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
             for(int l = 0; l < L; l++) { // loop over edges 
                 cp.iEdge = efp.e0 + l;
+                cp.jCellIn = E2C[cp.iEdge, 0];
+                cp.jCellOut = E2C[cp.iEdge, 1];
 
-                for(int k = 0; k < K; k++) { // loop over quadrature nodes
+                for (int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
-                        cp.Normale[d] = efp.Normals[l, k, d];
-                        cp.X[d] = efp.NodesGlobal[l, k, d];
+                        cp.Normal[d] = efp.Normals[l, k, d];
+                        cp.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int np = 0; np < NoParams; np++) {
@@ -549,8 +551,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         void IEdgeform_GradUxV.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray GradUxV) {
             InitGlobals(efp);
 
-            CommonParamsBnd cp = default(CommonParamsBnd);
-            cp.Normale = new Vector(D);
+            CommonParamsBnd cp;
+            cp.Normal = new Vector(D);
             cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.GridDat = efp.GridDat;
@@ -565,8 +567,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
-                        cp.Normale[d] = efp.Normals[l, k, d];
-                        cp.X[d] = efp.NodesGlobal[l, k, d];
+                        cp.Normal[d] = efp.Normals[l, k, d];
+                        cp.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int np = 0; np < NoParams; np++) {
@@ -587,6 +589,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         /// </summary>
         void IEdgeform_UxGradV.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray UxGradV) {
             InitGlobals(efp);
+            var E2C = efp.GridDat.iGeomEdges.CellIndices;
 
             Debug.Assert(L == efp.Len);
             Debug.Assert(efp.ParameterVars_IN.Length == NoParams);
@@ -597,21 +600,24 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             Debug.Assert(NoArgs == UxGradV.GetLength(4));
             Debug.Assert(D == UxGradV.GetLength(5));
 
-            CommonParams cp = default(CommonParams);
-            cp.Normale = new Vector(D);
+            CommonParams cp;
+            cp.Normal = new Vector(D);
             cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.Parameters_OUT = new double[NoParams];
             cp.GridDat = efp.GridDat;
+            cp.time = efp.time;
 
             for(int l = 0; l < L; l++) { // loop over edges 
                 cp.iEdge = efp.e0 + l;
+                cp.jCellIn = E2C[cp.iEdge, 0];
+                cp.jCellOut = E2C[cp.iEdge, 1];
 
-                for(int k = 0; k < K; k++) { // loop over quadrature nodes
+                for (int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
-                        cp.Normale[d] = efp.Normals[l, k, d];
-                        cp.X[d] = efp.NodesGlobal[l, k, d];
+                        cp.Normal[d] = efp.Normals[l, k, d];
+                        cp.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int np = 0; np < NoParams; np++) {
@@ -633,6 +639,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
         void IEdgeform_GradUxGradV.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray GradUxGradV) {
             InitGlobals(efp);
+            var E2C = efp.GridDat.iGeomEdges.CellIndices;
 
             Debug.Assert(L == efp.Len);
             Debug.Assert(efp.ParameterVars_IN.Length == NoParams);
@@ -644,21 +651,24 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             Debug.Assert(D == GradUxGradV.GetLength(6));
             Debug.Assert(D == GradUxGradV.GetLength(6));
 
-            CommonParams cp = default(CommonParams);
-            cp.Normale = new Vector(D);
+            CommonParams cp;
+            cp.Normal = new Vector(D);
             cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.Parameters_OUT = new double[NoParams];
             cp.GridDat = efp.GridDat;
+            cp.time = efp.time;
 
-            for(int l = 0; l < L; l++) { // loop over edges 
+            for (int l = 0; l < L; l++) { // loop over edges 
                 cp.iEdge = efp.e0 + l;
+                cp.jCellIn = E2C[cp.iEdge, 0];
+                cp.jCellOut = E2C[cp.iEdge, 1];
 
-                for(int k = 0; k < K; k++) { // loop over quadrature nodes
+                for (int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
-                        cp.Normale[d] = efp.Normals[l, k, d];
-                        cp.X[d] = efp.NodesGlobal[l, k, d];
+                        cp.Normal[d] = efp.Normals[l, k, d];
+                        cp.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int np = 0; np < NoParams; np++) {
@@ -701,8 +711,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         void IEdgeform_UxGradV.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray UxGradV) {
             InitGlobals(efp);
 
-            CommonParamsBnd cp = default(CommonParamsBnd);
-            cp.Normale = new Vector(D);
+            CommonParamsBnd cp;
+            cp.Normal = new Vector(D);
             cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.GridDat = efp.GridDat;
@@ -717,8 +727,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
-                        cp.Normale[d] = efp.Normals[l, k, d];
-                        cp.X[d] = efp.NodesGlobal[l, k, d];
+                        cp.Normal[d] = efp.Normals[l, k, d];
+                        cp.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int np = 0; np < NoParams; np++) {
@@ -738,8 +748,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         void IEdgeform_GradUxGradV.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray GradUxGradV) {
             InitGlobals(efp);
 
-            CommonParamsBnd cp = default(CommonParamsBnd);
-            cp.Normale = new Vector(D);
+            CommonParamsBnd cp;
+            cp.Normal = new Vector(D);
             cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.GridDat = efp.GridDat;
@@ -754,8 +764,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
-                        cp.Normale[d] = efp.Normals[l, k, d];
-                        cp.X[d] = efp.NodesGlobal[l, k, d];
+                        cp.Normal[d] = efp.Normals[l, k, d];
+                        cp.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int np = 0; np < NoParams; np++) {
@@ -778,24 +788,28 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         /// </summary>
         void IEdgeSource_V.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray V) {
             InitGlobals(efp);
+            var E2C = efp.GridDat.iGeomEdges.CellIndices;
 
-            CommonParams cp = default(CommonParams);
-            cp.Normale = new Vector(D);
+            CommonParams cp;
+            cp.Normal = new Vector(D);
             cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.Parameters_OUT = new double[NoParams];
             cp.GridDat = efp.GridDat;
+            cp.time = efp.time;
 
             var _EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
 
             for(int l = 0; l < L; l++) { // loop over edges
                 cp.iEdge = efp.e0 + l;
+                cp.jCellIn = E2C[cp.iEdge, 0];
+                cp.jCellOut = E2C[cp.iEdge, 1];
 
-                for(int k = 0; k < K; k++) { // loop over quadrature nodes
+                for (int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
-                        cp.Normale[d] = efp.Normals[l, k, d];
-                        cp.X[d] = efp.NodesGlobal[l, k, d];
+                        cp.Normal[d] = efp.Normals[l, k, d];
+                        cp.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int np = 0; np < NoParams; np++) {
@@ -815,8 +829,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         void IEdgeSource_V.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray V) {
             InitGlobals(efp);
 
-            CommonParamsBnd cp = default(CommonParamsBnd);
-            cp.Normale = new Vector(D);
+            CommonParamsBnd cp;
+            cp.Normal = new Vector(D);
             cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.GridDat = efp.GridDat;
@@ -831,8 +845,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
-                        cp.Normale[d] = efp.Normals[l, k, d];
-                        cp.X[d] = efp.NodesGlobal[l, k, d];
+                        cp.Normal[d] = efp.Normals[l, k, d];
+                        cp.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int np = 0; np < NoParams; np++) {
@@ -849,24 +863,28 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         /// </summary>
         void IEdgeSource_GradV.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray GradV) {
             InitGlobals(efp);
+            var E2C = efp.GridDat.iGeomEdges.CellIndices;
 
-            CommonParams cp = default(CommonParams);
-            cp.Normale = new Vector(D);
+            CommonParams cp;
+            cp.Normal = new Vector(D);
             cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.Parameters_OUT = new double[NoParams];
             cp.GridDat = efp.GridDat;
+            cp.time = efp.time;
 
             var _EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
 
             for(int l = 0; l < L; l++) { // loop over edges
                 cp.iEdge = efp.e0 + l;
+                cp.jCellIn = E2C[cp.iEdge, 0];
+                cp.jCellOut = E2C[cp.iEdge, 1];
 
-                for(int k = 0; k < K; k++) { // loop over quadrature nodes
+                for (int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
-                        cp.Normale[d] = efp.Normals[l, k, d];
-                        cp.X[d] = efp.NodesGlobal[l, k, d];
+                        cp.Normal[d] = efp.Normals[l, k, d];
+                        cp.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int np = 0; np < NoParams; np++) {
@@ -888,8 +906,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         void IEdgeSource_GradV.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray GradV) {
             InitGlobals(efp);
 
-            CommonParamsBnd cp = default(CommonParamsBnd);
-            cp.Normale = new Vector(D);
+            CommonParamsBnd cp;
+            cp.Normal = new Vector(D);
             cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.GridDat = efp.GridDat;
@@ -904,8 +922,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
-                        cp.Normale[d] = efp.Normals[l, k, d];
-                        cp.X[d] = efp.NodesGlobal[l, k, d];
+                        cp.Normal[d] = efp.Normals[l, k, d];
+                        cp.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int np = 0; np < NoParams; np++) {
@@ -924,25 +942,29 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         /// </summary>
         void IEdgeform_UxV.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray UxV) {
             InitGlobals(efp);
+            var E2C = efp.GridDat.iGeomEdges.CellIndices;
 
             Debug.Assert(efp.ParameterVars_IN.Length == NoParams);
             Debug.Assert(efp.ParameterVars_OUT.Length == NoParams);
 
-            CommonParams cp = default(CommonParams);
-            cp.Normale = new Vector(D);
+            CommonParams cp;
+            cp.Normal = new Vector(D);
             cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.Parameters_OUT = new double[NoParams];
             cp.GridDat = efp.GridDat;
+            cp.time = efp.time;
 
-            for(int l = 0; l < L; l++) { // loop over edges 
+            for (int l = 0; l < L; l++) { // loop over edges 
                 cp.iEdge = efp.e0 + l;
+                cp.jCellIn = E2C[cp.iEdge, 0];
+                cp.jCellOut = E2C[cp.iEdge, 1];
 
-                for(int k = 0; k < K; k++) { // loop over quadrature nodes
+                for (int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
-                        cp.Normale[d] = efp.Normals[l, k, d];
-                        cp.X[d] = efp.NodesGlobal[l, k, d];
+                        cp.Normal[d] = efp.Normals[l, k, d];
+                        cp.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int np = 0; np < NoParams; np++) {
@@ -966,8 +988,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         void IEdgeform_UxV.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray UxV) {
             InitGlobals(efp);
 
-            CommonParamsBnd cp = default(CommonParamsBnd);
-            cp.Normale = new Vector(D);
+            CommonParamsBnd cp;
+            cp.Normal = new Vector(D);
             cp.X = new Vector(D);
             cp.Parameters_IN = new double[NoParams];
             cp.GridDat = efp.GridDat;
@@ -982,8 +1004,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 for(int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
-                        cp.Normale[d] = efp.Normals[l, k, d];
-                        cp.X[d] = efp.NodesGlobal[l, k, d];
+                        cp.Normal[d] = efp.Normals[l, k, d];
+                        cp.X[d] = efp.Nodes[l, k, d];
                     }
 
                     for(int np = 0; np < NoParams; np++) {

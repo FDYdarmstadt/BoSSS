@@ -50,15 +50,15 @@ namespace BoSSS.Solution.XheatCommon {
         double hVapA;
 
 
-        public double LevelSetForm(ref CommonParamsLs inp, double[] pA, double[] pB, double[,] Grad_pA, double[,] Grad_pB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public double LevelSetForm(ref CommonParams inp, double[] pA, double[] pB, double[,] Grad_pA, double[,] Grad_pB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
             double acc = 0.0;
             if (hVapA > 0.0) {
-                acc += (0 - vA) * inp.n[m_d] * pSat;
-                acc += (vB - 0) * inp.n[m_d] * pB[0];
+                acc += (0 - vA) * inp.Normal[m_d] * pSat;
+                acc += (vB - 0) * inp.Normal[m_d] * pB[0];
             } else {
-                acc += (0 - vA) * inp.n[m_d] * pA[0];
-                acc += (vB - 0) * inp.n[m_d] * pSat;
+                acc += (0 - vA) * inp.Normal[m_d] * pA[0];
+                acc += (vB - 0) * inp.Normal[m_d] * pSat;
             }
             //return (vB - vA) * inp.n[m_d] * pSat;
             return -acc;

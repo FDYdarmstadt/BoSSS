@@ -1,68 +1,15 @@
 preparation:
->>>>>>>>>insert into controlfile>>>>>>>>>>>>>>>
-...
-//Partitioning
-c.GridPartType = GridPartType.Predefined;
-c.GridPartOptions = "hallo";
-
-Func<double[], int> MakeMyPartioning = delegate (double[] X) {
-	double x = X[0];
-	double y = X[1];
-
-	double[] separation = new double[] { 1, 1 };
-	switch (cores) {
-		case 4:
-			separation = new double[] { 2, 2 };
-			break;
-		case 8:
-			separation = new double[] { 4, 2 };
-			break;
-		case 16:
-			separation = new double[] { 4, 4 };
-			break;
-		case 32:
-			separation = new double[] { 8, 4 };
-			break;
-		case 64:
-			separation = new double[] { 8, 8 };
-			break;
-		default:
-			c.GridPartType = GridPartType.none;
-			break;
-	}
-
-	double xspan = (xMax - xMin) / separation[0];
-	double yspan = (yMax - yMin) / separation[1];
-	int rank=int.MaxValue;
-	int icore = 0;
-	for(int i=0; i < separation[0]; i++) {
-		for (int j = 0; j < separation[1]; j++) {
-			bool xtrue =  x <= xspan * (i + 1)+xMin;
-			bool ytrue =  y <= yspan * (j + 1)+yMin;
-			if (xtrue && ytrue) {
-				rank = icore;
-				return rank;
-			}
-			icore++;
-		}
-	}
-
-	return rank;
-};
-...
-grid.AddPredefinedPartitioning("hallo", MakeMyPartioning);
-...
-
->>>>>>>>>>>>>>>insert into Main/RunSolverOneStep>>>>>>>>>>>>>>>>
-...
-using (var ht = new FuncTrace()) {
-...
-	if (TimestepNo <= 5)
-		ilPSP.Tracing.Tracer.Current.ResetRecursive();
-}
-...
+1. 	Build the project ~\internal\src\experimental\ilPSP.Cube\ilPSP.Cube.csproj in Release Mode
+2. 	make folder "ilPSP.Cube_new" and copy the binaries there
+3. 	Get the cubew.dll from https://www.scalasca.org/scalasca/software/cube-3.x/download.html
+	and also put it into folder "ilPSP.Cube_new"
+4. 	done.
 
 execution:
-1.part1
-2.part2
-3.done
+1. 	type in cmd (%1: path to session): generating_CubeFiles %1
+	for example: generating_CubeFiles: generating_CubeFiles.bat V:\SyncHHLR\DB_Cube_2
+2.	The batch skript will execute GetSomeInfo.bws, which will generate session.txt,
+	which specifies the sessions to copy the profiling_bin.* from. GetSomeInfo.bws can also be executed 
+	manually. Do not forget to comment out the .bws execution in generating_CubeFiles.bat
+3.	done.
+	

@@ -106,7 +106,7 @@ namespace BoSSS.Solution.Utils {
                 0.0,
                 inp.iEdge,
                 MultidimensionalArray.CreateWrapper(inp.X, 1, 1, inp.D),
-                MultidimensionalArray.CreateWrapper(inp.Normale, 1, inp.D),
+                MultidimensionalArray.CreateWrapper(inp.Normal, 1, inp.D),
                 false,
                 new byte[] { inp.EdgeTag },
                 0,
@@ -127,7 +127,7 @@ namespace BoSSS.Solution.Utils {
                     0.0,
                     inp.iEdge,
                     MultidimensionalArray.CreateWrapper(inp.X, 1, 1, inp.D),
-                    MultidimensionalArray.CreateWrapper(inp.Normale, 1, inp.D),
+                    MultidimensionalArray.CreateWrapper(inp.Normal, 1, inp.D),
                     false,
                     new byte[] { inp.EdgeTag },
                     0,
@@ -173,7 +173,7 @@ namespace BoSSS.Solution.Utils {
                 0.0,
                 inp.iEdge,
                 MultidimensionalArray.CreateWrapper(inp.X, 1, 1, inp.D),
-                MultidimensionalArray.CreateWrapper(inp.Normale, 1, inp.D),
+                MultidimensionalArray.CreateWrapper(inp.Normal, 1, inp.D),
                 inp.Parameters_IN.Select(p =>
                     MultidimensionalArray.CreateWrapper(new double[] { p }, 1, 1)).ToArray(),
                 inp.Parameters_OUT.Select(p =>
@@ -193,7 +193,7 @@ namespace BoSSS.Solution.Utils {
                     0.0,
                     inp.iEdge,
                     MultidimensionalArray.CreateWrapper(inp.X, 1, 1, inp.D),
-                    MultidimensionalArray.CreateWrapper(inp.Normale, 1, inp.D),
+                    MultidimensionalArray.CreateWrapper(inp.Normal, 1, inp.D),
                     perturbedParameters.Select(p =>
                         MultidimensionalArray.CreateWrapper(new double[] { p }, 1, 1)).ToArray(),
                     inp.Parameters_OUT.Select(p =>
@@ -216,7 +216,7 @@ namespace BoSSS.Solution.Utils {
                     0.0,
                     inp.iEdge,
                     MultidimensionalArray.CreateWrapper(inp.X, 1, 1, inp.D),
-                    MultidimensionalArray.CreateWrapper(inp.Normale, 1, inp.D),
+                    MultidimensionalArray.CreateWrapper(inp.Normal, 1, inp.D),
                     inp.Parameters_IN.Select(p =>
                         MultidimensionalArray.CreateWrapper(new double[] { p }, 1, 1)).ToArray(),
                     perturbedParameters.Select(p =>
