@@ -60,6 +60,7 @@ using System.Collections;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 using BoSSS.Application.XNSE_Solver;
 using BoSSS.Solution.RheologyCommon;
+using BoSSS.Solution.Statistic;
 
 namespace BoSSS.Application.XRheology_Solver {
 
@@ -519,7 +520,7 @@ namespace BoSSS.Application.XRheology_Solver {
             //Quadrature Order
             //----------------
 
-            m_HMForder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
+            m_HMForder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 4 : 3);
 
 
             // Create Spatial Operator
@@ -740,7 +741,6 @@ namespace BoSSS.Application.XRheology_Solver {
                 CurrentState, AgglomeratedCellLengthScales, phystime,
                 this.m_HMForder, SurfaceForce, filtLevSetGradient, Curvature, currentWeissenberg);
 
-
             if (filtLevSetGradient != null) {
                 if (this.Control.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource == CurvatureAlgorithms.LevelSetSource.fromC0) {
                     this.LevSetGradient.Clear();
@@ -816,6 +816,9 @@ namespace BoSSS.Application.XRheology_Solver {
                 MassFact = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), m_HMForder, 1).MassMatrixFactory;// new MassMatrixFactory(maxB, CurrentAgg);
             var WholeMassMatrix = MassFact.GetMassMatrix(Mapping, MassScale); // mass matrix scaled with density rho
 
+            BlockMsrMatrix inverseMassMatrix = MassFact.GetMassMatrix(CurrentResidual.Mapping, true);
+            inverseMassMatrix.SpMV(1.0, OpAffine, 0.0, CurrentResidual);
+
 
             // ============================
             //  Add Gravity
@@ -829,21 +832,21 @@ namespace BoSSS.Application.XRheology_Solver {
             // Set Pressure Reference Point
             // ============================
 
-            if (OpMtx != null) {
-                if (!this.BcMap.DirichletPressureBoundary) {
-                    XNSEUtils.SetPressureReferencePoint(
-                        Mapping,
-                        this.GridData.SpatialDimension,
-                        this.LsTrk, OpMtx, OpAffine);
-                }
-            } else {
-                if (!this.BcMap.DirichletPressureBoundary) {
-                    XNSEUtils.SetPressureReferencePointResidual(
-                        new CoordinateVector(CurrentState),
-                        this.GridData.SpatialDimension,
-                        this.LsTrk, OpAffine);
-                }
-            }
+            //if (OpMtx != null) {
+            //    if (!this.BcMap.DirichletPressureBoundary) {
+            //        XNSEUtils.SetPressureReferencePoint(
+            //            Mapping,
+            //            this.GridData.SpatialDimension,
+            //            this.LsTrk, OpMtx, OpAffine);
+            //    }
+            //} else {
+            //    if (!this.BcMap.DirichletPressureBoundary) {
+            //        XNSEUtils.SetPressureReferencePointResidual(
+            //            new CoordinateVector(CurrentState),
+            //            this.GridData.SpatialDimension,
+            //            this.LsTrk, OpAffine);
+            //    }
+            //}
 
             // transform from RHS to Affine
             OpAffine.ScaleV(-1.0);
@@ -1013,76 +1016,6 @@ namespace BoSSS.Application.XRheology_Solver {
         /// </summary>
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
             using (var tr = new FuncTrace()) {
-
-                if (this.Control.OperatorMatrixAnalysis == true) {
-
-                    BlockMsrMatrix SaddlePointMatrix = new BlockMsrMatrix(this.CurrentSolution.Mapping);
-                    double[] AffineDummy = new double[this.CurrentSolution.Mapping.LocalLength];
-
-                    var agg = LsTrk.GetAgglomerator(LsTrk.SpeciesIdS.ToArray(), m_HMForder, this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold);
-
-                    DelComputeOperatorMatrix(SaddlePointMatrix, AffineDummy, this.CurrentSolution.Mapping,
-                    this.CurrentSolution.Mapping.Fields.ToArray(), agg.CellLengthScales, 0.0);
-
-                    AggregationGridBasis[][] MgBasis = AggregationGridBasis.CreateSequence(this.MultigridSequence, this.CurrentSolution.Mapping.BasisS);
-                    //todo: AsyncCallback update
-                    MgBasis.UpdateXdgAggregationBasis(agg);
-                    MultigridOperator mgOp = new MultigridOperator(MgBasis, CurrentSolution.Mapping,
-                        SaddlePointMatrix, this.MassFact.GetMassMatrix(CurrentSolution.Mapping, false),
-                        this.MultigridOperatorConfig);
-
-                    MsrMatrix FullMatrix = mgOp.OperatorMatrix.ToMsrMatrix();
-
-                    MsrMatrix DiffMatrix;
-                    {
-                        int[] VelVarIdx = new int[] { 3, 4, 5};
-
-                        int[] USubMatrixIdx_Row = mgOp.Mapping.GetSubvectorIndices(VelVarIdx);
-                        int[] USubMatrixIdx_Col = mgOp.Mapping.GetSubvectorIndices(VelVarIdx);
-                        int L = USubMatrixIdx_Row.Length;
-
-                        DiffMatrix = new MsrMatrix(L, L, 1, 1);
-                        FullMatrix.WriteSubMatrixTo(DiffMatrix, USubMatrixIdx_Row, default(int[]), USubMatrixIdx_Col, default(int[]));
-                    }
-
-                    MultidimensionalArray ret = MultidimensionalArray.Create(1, 2);
-                    Console.WriteLine("Calling MATLAB/Octave...");
-                    using (BatchmodeConnector bmc = new BatchmodeConnector()) {
-                        bmc.PutSparseMatrix(FullMatrix, "FullMatrix");
-                        bmc.PutSparseMatrix(DiffMatrix, "DiffMatrix");
-                        bmc.Cmd("DiffMatrix = 0.5*(DiffMatrix + DiffMatrix');");
-                        bmc.Cmd("condNoDiffMatrix = condest(DiffMatrix);");
-                        bmc.Cmd("condNoFullMatrix = condest(FullMatrix);");
-                        //bmc.Cmd("eigiMaxi = eigs(DiffMatrix,1,'lm')");
-                        //bmc.Cmd("eigiMini = eigs(DiffMatrix,1,'sm')");
-                        //bmc.Cmd("lasterr");
-                        //bmc.Cmd("[V,r]=chol(DiffMatrix);");
-                        bmc.Cmd("ret = [condNoFullMatrix, condNoDiffMatrix]");
-                        bmc.GetMatrix(ret, "ret");
-
-                        bmc.Execute(false);
-                    }
-
-                    double condNoFullMatrix = ret[0, 0];
-                    double condNoDiffMatrix = ret[0, 1];
-                    //double eigiMaxi = ret[0, 2];
-                    //double eigiMini = ret[0, 3];
-                    //posDef = ret[0, 4] == 0;
-
-                    //Console.WriteLine("Eigenvalue range of diffusion matrix: {0} to {1}", eigiMini, eigiMaxi);
-
-                    Console.WriteLine("Condition number diffusion operator: {0:0.####E-00}", condNoDiffMatrix);
-                    Console.WriteLine("Condition number full operator: {0:0.####E-00}", condNoFullMatrix);
-                    base.QueryHandler.ValueQuery("condFull", condNoFullMatrix, true);
-                    base.QueryHandler.ValueQuery("condDiff", condNoDiffMatrix, true);
-
-                    //OpAnalysisBase myAnalysis = new OpAnalysisBase(DelComputeOperatorMatrix, CurrentSolution.Mapping, CurrentSolution.Mapping.Fields.ToArray(), agg.CellLengthScales, phystime);
-                    //myAnalysis.VarGroup = new int[] { 3, 4, 5};
-                    ////myAnalysis.Analyse();
-                    //double[] condest = myAnalysis.CondNum();
-                    //Console.WriteLine("Condition number full system, full matrix: " + condest[0] + "full system inner matrix (excl. BC): " + condest[1]);
-
-                }
 
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
                 int D = this.GridData.SpatialDimension;
@@ -1351,7 +1284,140 @@ namespace BoSSS.Application.XRheology_Solver {
                                 }
                             } else {
 
+                                if (this.Control.OperatorMatrixAnalysis == true) {
+
+                                    BlockMsrMatrix SaddlePointMatrix = new BlockMsrMatrix(this.CurrentSolution.Mapping);
+                                    double[] AffineDummy = new double[this.CurrentSolution.Mapping.LocalLength];
+
+                                    var agg = LsTrk.GetAgglomerator(LsTrk.SpeciesIdS.ToArray(), m_HMForder, this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold);
+
+                                    DelComputeOperatorMatrix(SaddlePointMatrix, AffineDummy, this.CurrentSolution.Mapping,
+                                    this.CurrentSolution.Mapping.Fields.ToArray(), agg.CellLengthScales, 0.0);
+
+                                    AggregationGridBasis[][] MgBasis = AggregationGridBasis.CreateSequence(this.MultigridSequence, this.CurrentSolution.Mapping.BasisS);
+                                    //todo: AsyncCallback update
+                                    MgBasis.UpdateXdgAggregationBasis(agg);
+                                    MultigridOperator mgOp = new MultigridOperator(MgBasis, CurrentSolution.Mapping,
+                                        SaddlePointMatrix, this.MassFact.GetMassMatrix(CurrentSolution.Mapping, false),
+                                        this.MultigridOperatorConfig);
+
+                                    MsrMatrix FullMatrix = mgOp.OperatorMatrix.ToMsrMatrix();
+
+                                    MsrMatrix DiffMatrix;
+                                    {
+                                        int[] VelVarIdx = new int[] { 3, 4, 5 };
+
+                                        int[] USubMatrixIdx_Row = mgOp.Mapping.GetSubvectorIndices(VelVarIdx);
+                                        int[] USubMatrixIdx_Col = mgOp.Mapping.GetSubvectorIndices(VelVarIdx);
+                                        int L = USubMatrixIdx_Row.Length;
+
+                                        DiffMatrix = new MsrMatrix(L, L, 1, 1);
+                                        FullMatrix.WriteSubMatrixTo(DiffMatrix, USubMatrixIdx_Row, default(int[]), USubMatrixIdx_Col, default(int[]));
+                                    }
+
+                                    MultidimensionalArray ret = MultidimensionalArray.Create(1, 2);
+                                    Console.WriteLine("Calling MATLAB/Octave...");
+                                    using (BatchmodeConnector bmc = new BatchmodeConnector()) {
+                                        bmc.PutSparseMatrix(FullMatrix, "FullMatrix");
+                                        bmc.PutSparseMatrix(DiffMatrix, "DiffMatrix");
+                                        bmc.Cmd("DiffMatrix = 0.5*(DiffMatrix + DiffMatrix');");
+                                        bmc.Cmd("condNoDiffMatrix = condest(DiffMatrix);");
+                                        bmc.Cmd("condNoFullMatrix = condest(FullMatrix);");
+                                        //bmc.Cmd("eigiMaxi = eigs(DiffMatrix,1,'lm')");
+                                        //bmc.Cmd("eigiMini = eigs(DiffMatrix,1,'sm')");
+                                        //bmc.Cmd("lasterr");
+                                        //bmc.Cmd("[V,r]=chol(DiffMatrix);");
+                                        bmc.Cmd("ret = [condNoFullMatrix, condNoDiffMatrix]");
+                                        bmc.GetMatrix(ret, "ret");
+
+                                        bmc.Execute(false);
+                                    }
+
+                                    double condNoFullMatrix = ret[0, 0];
+                                    double condNoDiffMatrix = ret[0, 1];
+                                    //double eigiMaxi = ret[0, 2];
+                                    //double eigiMini = ret[0, 3];
+                                    //posDef = ret[0, 4] == 0;
+
+                                    //Console.WriteLine("Eigenvalue range of diffusion matrix: {0} to {1}", eigiMini, eigiMaxi);
+
+                                    Console.WriteLine("Condition number diffusion operator: {0:0.####E-00}", condNoDiffMatrix);
+                                    Console.WriteLine("Condition number full operator: {0:0.####E-00}", condNoFullMatrix);
+                                    base.QueryHandler.ValueQuery("condFull", condNoFullMatrix, true);
+                                    base.QueryHandler.ValueQuery("condDiff", condNoDiffMatrix, true);
+
+                                    //OpAnalysisBase myAnalysis = new OpAnalysisBase(DelComputeOperatorMatrix, CurrentSolution.Mapping, CurrentSolution.Mapping.Fields.ToArray(), agg.CellLengthScales, phystime);
+                                    //myAnalysis.VarGroup = new int[] { 3, 4, 5};
+                                    ////myAnalysis.Analyse();
+                                    //double[] condest = myAnalysis.CondNum();
+                                    //Console.WriteLine("Condition number full system, full matrix: " + condest[0] + "full system inner matrix (excl. BC): " + condest[1]);
+
+                                }
+
+
                                 m_BDF_Timestepper.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
+
+                                //===============================================================================
+
+                                #region Write residuals to text file
+
+                                // Sample points
+
+                                int noOfPoints = 1000;
+
+                                double[] nodes = GenericBlas.Linspace(-2, 2, noOfPoints);
+
+                                MultidimensionalArray points = MultidimensionalArray.Create(noOfPoints, 2);
+
+                                for (int i = 0; i < noOfPoints; i++) {
+
+                                    points[i, 0] = nodes[i];
+
+                                    points[i, 1] = 0.5;
+
+                                }
+
+
+
+                                // FieldEvaluation
+                                MultidimensionalArray results = MultidimensionalArray.Create(noOfPoints, CurrentResidual.Mapping.Count);
+
+                                for (int i = 0; i < CurrentResidual.Length; i++) {
+
+                                    FieldEvaluation fieldEvaluator = new FieldEvaluation((GridData)this.GridData);
+
+                                    fieldEvaluator.Evaluate(1.0, CurrentResidual.Mapping, points, 0.0, results);
+
+                                }
+
+
+
+                                // StreamWriter
+
+                                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(String.Format("Residuals{0}.txt", dt))) {
+
+                                    //Console.WriteLine("x \t y \t result");
+
+                                    sw.WriteLine("x \t y \t momX \t momY \t conti \t constXX \t constXY \t constYY");
+
+                                    string resultLine;
+
+                                    for (int i = 0; i < noOfPoints; i++) {
+
+                                        resultLine = points[i, 0] + "\t" + points[i, 1] + "\t" + results[i, 0] + "\t" + results[i, 1] + "\t" + results[i, 2] + "\t" + results[i, 3] + "\t" + results[i, 4] + "\t" + results[i, 5] + "\t";
+
+                                        //Console.WriteLine(resultLine);
+
+                                        sw.WriteLine(resultLine);
+
+                                    }
+
+                                    sw.Flush();
+
+                                }
+
+                                #endregion
+                                //=============================================================================================
                             }
                         }
                     }

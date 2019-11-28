@@ -46,7 +46,7 @@ namespace BoSSS.Application.XRheology_Solver {
         /// control object for various testing
         /// </summary>
         /// <returns></returns>
-        public static XRheology_Control ChannelFlow_WithInterface(int p = 2, int kelem = 8, int wallBC = 0) {
+        public static XRheology_Control ChannelFlow_WithInterface(int p = 3, int kelem = 16, int wallBC = 0) {
 
             XRheology_Control C = new XRheology_Control();
 
@@ -89,9 +89,9 @@ namespace BoSSS.Application.XRheology_Solver {
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            C.FieldOptions.Add("GravityY", new FieldOpts() {
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            //C.FieldOptions.Add("GravityY", new FieldOpts() {
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
             C.FieldOptions.Add("Pressure", new FieldOpts() {
                 Degree = p - 1,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
@@ -107,14 +107,14 @@ namespace BoSSS.Application.XRheology_Solver {
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            C.FieldOptions.Add("DivergenceVelocity", new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("KineticEnergy", new FieldOpts() {
-                Degree = 2*p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            //C.FieldOptions.Add("DivergenceVelocity", new FieldOpts() {
+            //    Degree = p,
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
+            //C.FieldOptions.Add("KineticEnergy", new FieldOpts() {
+            //    Degree = 2*p,
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
 
             #endregion
 
@@ -123,14 +123,8 @@ namespace BoSSS.Application.XRheology_Solver {
             // ===================
             #region physics
 
-            //C.PhysicalParameters.rho_A = 1;
-            //C.PhysicalParameters.rho_B = 1;
-            //C.PhysicalParameters.rho_A = 1e4;
-            //C.PhysicalParameters.rho_B = 1e4;
             C.PhysicalParameters.reynolds_A = 1.0;
             C.PhysicalParameters.reynolds_B = 1.0;
-            //C.PhysicalParameters.mu_A = 2;
-            //C.PhysicalParameters.mu_B = 1;
             C.PhysicalParameters.beta_a = 0.0;
             C.PhysicalParameters.beta_b = 0.0;
 
@@ -194,9 +188,9 @@ namespace BoSSS.Application.XRheology_Solver {
                         et = 1;
                     if(Math.Abs(X[1] - H) <= 1.0e-8)
                         et = 2;
-                    if (Math.Abs(X[0]) <= 1.0e-8)
-                        et = 3;
                     if (Math.Abs(X[0] - L) <= 1.0e-8)
+                        et = 3;
+                    if (Math.Abs(X[0]) <= 1.0e-8)
                         et = 4;
 
                     return et;
@@ -211,10 +205,11 @@ namespace BoSSS.Application.XRheology_Solver {
             // Initial Values
             // ==============
             #region init
-            double r = 0.5;
+            //double r = 0.5;
 
             //Func<double[], double> PhiFunc = (X => ((X[0]-5).Pow2() + (X[1]).Pow2()).Sqrt() - r);
-            Func<double[], double> PhiFunc = (X => X[1] - (H / 2.0+ 0.1)); // + (H/20)*Math.Cos(8 * Math.PI * X[0] / L)); //-1);
+            //Func<double[], double> PhiFunc = (X => X[1] - (H / 2.0+ 0.1)); // + (H/20)*Math.Cos(8 * Math.PI * X[0] / L)); //-1);
+            Func<double[], double> PhiFunc = (X => X[1] - 0.55);
             //Func<double[], double> PhiFunc = (X => -1);
             //double[] center = new double[] { H / 2.0, H / 2.0 };
             //double radius = 0.25;

@@ -35,6 +35,7 @@ using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Solution.RheologyCommon;
 using System.Collections;
+using BoSSS.Solution.Statistic;
 
 namespace BoSSS.Application.XRheology_Solver {
 

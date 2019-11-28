@@ -37,33 +37,29 @@ using BoSSS.Application.XNSE_Solver;
 namespace BoSSS.Application.XRheology_Solver {
 
     /// <summary>
-    /// class providing Controls for unphysical tests
+    /// class providing Controls for the channel flow type testcases
     /// </summary>
-    public static class GenericTestcases {
+    public static class DropletInShearFlow {
 
 
         /// <summary>
         /// control object for various testing
         /// </summary>
         /// <returns></returns>
-        public static XRheology_Control InterfaceTest(int p = 2) {
+        public static XRheology_Control DropletInShearFlow_1 (int p = 2, int kelem = 8) {
 
             XRheology_Control C = new XRheology_Control();
 
-            string _DbPath = null; // @"D:\local\local_test_db";
+            string _DbPath = null;
 
-            // basic options
+            // basic database options
             // ======================
             #region db
 
             C.DbPath = _DbPath;
             C.savetodb = C.DbPath != null;
-            C.ProjectName = "XRheology/InterfaceTest";
-            C.ProjectDescription = "Cell border replaced by vertical interface";
-            
-            C.OperatorMatrixAnalysis = true;
-            C.SkipSolveAndEvaluateResidual = true;
-            bool PHI = true;
+            C.ProjectName = "XRheology/Channel";
+            C.ProjectDescription = "Channel flow with droplet inside";
 
             C.ContinueOnIoError = false;
 
@@ -81,8 +77,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.FieldOptions.Add("VelocityY", new FieldOpts() {
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("StressXX", new FieldOpts() {
+            }); C.FieldOptions.Add("StressXX", new FieldOpts() {
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
@@ -123,15 +118,19 @@ namespace BoSSS.Application.XRheology_Solver {
             C.PhysicalParameters.beta_b = 0.0;
 
             C.RaiseWeissenberg = false;
-            C.PhysicalParameters.Weissenberg_a = 1.0;
-            C.PhysicalParameters.Weissenberg_b = 1.0;
+            C.PhysicalParameters.Weissenberg_a = 0.0;// .3;
+            C.PhysicalParameters.Weissenberg_b = 0.0;
             C.WeissenbergIncrement = 0.1;
 
             double sigma = 0.0;
             C.PhysicalParameters.Sigma = sigma;
 
+            //C.PhysicalParameters.beta_S = 0.05;
+            //C.PhysicalParameters.theta_e = Math.PI / 2.0;
+
             C.PhysicalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = true;
+            C.FixedStreamwisePeriodicBC = true;
 
             #endregion
 
@@ -140,39 +139,35 @@ namespace BoSSS.Application.XRheology_Solver {
             // ===============
             #region grid
 
+            double L = 10;
+            double H = 1;
+
             C.GridFunc = delegate () {
+                double[] Xnodes = GenericBlas.Linspace(0, L, 2 * kelem + 1);
+                double[] Ynodes = GenericBlas.Linspace(-H, H, kelem + 1);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: C.FixedStreamwisePeriodicBC);
 
-                double[] Xnodes;
+                grd.EdgeTagNames.Add(1, "wall_lower");
+                grd.EdgeTagNames.Add(2, "wall_upper");
 
-                if (PHI == true) {
-                    //with interface at 0
-                    Xnodes = new double[] { -2, -1, 1, 2 };
-                    Console.WriteLine("PHI is inserted at x = 0 instead of inner edge between cells");
-                } else {
-                    //without interface at 0
-                    Xnodes = new double[] { -2, -1, 0, 1, 2 };
+                if (!C.FixedStreamwisePeriodicBC) {
+                    grd.EdgeTagNames.Add(3, "velocity_inlet_left");
+                    grd.EdgeTagNames.Add(4, "pressure_outlet_right");
                 }
-
-                double[] Ynodes = new double[] { 0, 1};
-                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
-                //var grd = Grid2D.UnstructuredTriangleGrid(Xnodes, Ynodes);
-
-                grd.EdgeTagNames.Add(1, "velocity_inlet");
-                grd.EdgeTagNames.Add(4, "pressure_outlet");
-                grd.EdgeTagNames.Add(2, "wall");
-
 
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte et = 0;
-                    if(Math.Abs(X[1] - 1) <= 1.0e-8)
-                        et = 2;
-                    if(Math.Abs(X[1] ) <= 1.0e-8)
-                        et = 2;
-                    if (Math.Abs(X[0] - 2) <= 1.0e-8)
+                    if(Math.Abs(X[1] + H) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[0] + 2) <= 1.0e-8)
-                        et = 4;
+                    if(Math.Abs(X[1] - H) <= 1.0e-8)
+                        et = 2;
 
+                    if (!C.FixedStreamwisePeriodicBC) {
+                        if (Math.Abs(X[0]) <= 1.0e-8)
+                            et = 3;
+                        if (Math.Abs(X[0] - L) <= 1.0e-8)
+                            et = 4;
+                    }
                     return et;
                 });
 
@@ -181,37 +176,13 @@ namespace BoSSS.Application.XRheology_Solver {
 
             #endregion
 
-            // functions
-            // ===========
-            #region function definition
-
-            Func<double[], double> PhiFunc;
-
-            if (PHI == true) {
-                //with interface at 0
-                PhiFunc = (X => X[0]);
-            } else {
-                //without interface at 0
-                PhiFunc = (X => -1);
-            }
-
-            Func<double[], double, double> VelocityXfunction_A = (X, t) => (X[0] * X[0]);  
-            Func<double[], double, double> VelocityXfunction_B = (X, t) => (X[0] * X[0]);
-            Func<double[], double, double> VelocityYfunction_A = (X, t) => (X[0] * X[0]);
-            Func<double[], double, double> VelocityYfunction_B = (X, t) => (X[0] * X[0]);
-            Func<double[], double, double> Pressurefunction_A = (X, t) => (X[0] * X[0]);
-            Func<double[], double, double> Pressurefunction_B = (X, t) => (X[0] * X[0]);
-            Func<double[], double, double> StressXXfunction_A = (X, t) => (X[0] * X[0]);
-            Func<double[], double, double> StressXXfunction_B = (X, t) => (X[0] * X[0]);
-            Func<double[], double, double> StressXYfunction_A = (X, t) => (X[0] * X[0]);
-            Func<double[], double, double> StressXYfunction_B = (X, t) => (X[0] * X[0]);
-            Func<double[], double, double> StressYYfunction_A = (X, t) => (X[0] * X[0]); 
-            Func<double[], double, double> StressYYfunction_B = (X, t) => (X[0] * X[0]);
-            #endregion
 
             // Initial Values
             // ==============
             #region init
+            double r = 0.25;
+
+            Func<double[], double> PhiFunc = (X => ((X[0] - 5).Pow2() + (X[1]).Pow2()).Sqrt() - r);
 
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
@@ -220,6 +191,20 @@ namespace BoSSS.Application.XRheology_Solver {
             // exact solution
             // ==============
             #region exact
+
+            //Exact Solution Channel
+            Func<double[], double, double> VelocityXfunction_A = (X, t) => X[0];   
+            Func<double[], double, double> VelocityXfunction_B = (X, t) => X[0];
+            Func<double[], double, double> VelocityYfunction_A = (X, t) => 0;
+            Func<double[], double, double> VelocityYfunction_B = (X, t) => 0;
+            Func<double[], double, double> Pressurefunction_A = (X, t) => 0;
+            Func<double[], double, double> Pressurefunction_B = (X, t) => 0;
+            Func<double[], double, double> StressXXfunction_A = (X, t) => 0; // WEISSENBERG IS MULTIPLIED IN BC IN FLUX! 
+            Func<double[], double, double> StressXXfunction_B = (X, t) => 0;
+            Func<double[], double, double> StressXYfunction_A = (X, t) => 0;
+            Func<double[], double, double> StressXYfunction_B = (X, t) => 0;
+            Func<double[], double, double> StressYYfunction_A = (X, t) => (0.0);
+            Func<double[], double, double> StressYYfunction_B = (X, t) => (0.0);
 
             C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
             C.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { VelocityXfunction_A, VelocityYfunction_A });
@@ -230,8 +215,8 @@ namespace BoSSS.Application.XRheology_Solver {
             C.ExactSolutionPressure.Add("B", Pressurefunction_B);
 
             C.ExactSolutionStressXX = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionStressXX.Add("A", (X, t) => StressXXfunction_A(X, t));// * C.PhysicalParameters.Weissenberg_a);
-            C.ExactSolutionStressXX.Add("B", (X, t) => StressXXfunction_B(X, t));// * C.PhysicalParameters.Weissenberg_b);
+            C.ExactSolutionStressXX.Add("A", (X, t) => StressXXfunction_A(X,t) * C.PhysicalParameters.Weissenberg_a);
+            C.ExactSolutionStressXX.Add("B", (X, t) => StressXXfunction_B(X, t) * C.PhysicalParameters.Weissenberg_b);
 
             C.ExactSolutionStressXY = new Dictionary<string, Func<double[], double, double>>();
             C.ExactSolutionStressXY.Add("A", StressXYfunction_A);
@@ -247,23 +232,31 @@ namespace BoSSS.Application.XRheology_Solver {
             // ===================
             #region BC
 
-            C.AddBoundaryValue("Velocity_inlet", "VelocityX#A", VelocityXfunction_A);
-            C.AddBoundaryValue("Velocity_inlet", "VelocityX#B", VelocityXfunction_B);
+            C.AddBoundaryValue("wall_upper", "VelocityX#A", X => 1);
+            C.AddBoundaryValue("wall_upper", "VelocityX#B", X => 1);
 
-            C.AddBoundaryValue("Velocity_inlet", "VelocityY#A", VelocityYfunction_A);
-            C.AddBoundaryValue("Velocity_inlet", "VelocityY#B", VelocityYfunction_B);
+            C.AddBoundaryValue("wall_lower", "VelocityX#A", X => -1);
+            C.AddBoundaryValue("wall_lower", "VelocityX#B", X => -1);
 
-            C.AddBoundaryValue("Velocity_inlet", "StressXX#A", StressXXfunction_A);
-            C.AddBoundaryValue("Velocity_inlet", "StressXX#B", StressXXfunction_B);
+            if (!C.FixedStreamwisePeriodicBC) {
+                C.AddBoundaryValue("Velocity_inlet_left", "VelocityX#A", VelocityXfunction_A);
+                C.AddBoundaryValue("Velocity_inlet_left", "VelocityX#B", VelocityXfunction_B);
 
-            C.AddBoundaryValue("Velocity_inlet", "StressXY#A", StressXYfunction_A);
-            C.AddBoundaryValue("Velocity_inlet", "StressXY#B", StressXYfunction_B);
+                C.AddBoundaryValue("Velocity_inlet_left", "VelocityY#A", VelocityYfunction_A);
+                C.AddBoundaryValue("Velocity_inlet_left", "VelocityY#B", VelocityYfunction_B);
 
-            C.AddBoundaryValue("Velocity_inlet", "StressYY#A", StressYYfunction_A);
-            C.AddBoundaryValue("Velocity_inlet", "StressYY#B", StressYYfunction_B);
+                C.AddBoundaryValue("Velocity_inlet_left", "StressXX#A", StressXXfunction_A);
+                C.AddBoundaryValue("Velocity_inlet_left", "StressXX#B", StressXXfunction_B);
 
-            C.AddBoundaryValue("pressure_outlet");
-            C.AddBoundaryValue("wall");
+                C.AddBoundaryValue("Velocity_inlet_left", "StressXY#A", StressXYfunction_A);
+                C.AddBoundaryValue("Velocity_inlet_left", "StressXY#B", StressXYfunction_B);
+
+                C.AddBoundaryValue("Velocity_inlet_left", "StressYY#A", StressYYfunction_A);
+                C.AddBoundaryValue("Velocity_inlet_left", "StressYY#B", StressYYfunction_B);
+
+                C.AddBoundaryValue("pressure_outlet_right");
+            }
+
 
             #endregion
 
@@ -281,7 +274,8 @@ namespace BoSSS.Application.XRheology_Solver {
             C.LinearSolver.ConvergenceCriterion = 1e-8;
 
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.NonLinearSolver.MaxSolverIterations = 3;
+            C.NonLinearSolver.DoNotUsePresRefPoint = true;
+            C.NonLinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MinSolverIterations = 1;     
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
             
@@ -297,7 +291,11 @@ namespace BoSSS.Application.XRheology_Solver {
             C.AdvancedDiscretizationOptions.Penalty1[1] = 0;
             //C.AdvancedDiscretizationOptions.PresPenalty2 = 0.0;
 
-            C.AdaptiveMeshRefinement = false;
+            C.OperatorMatrixAnalysis = false;
+            C.SkipSolveAndEvaluateResidual = false;
+
+
+            C.AdaptiveMeshRefinement = true;
             C.RefinementLevel = 1;
 
             #endregion

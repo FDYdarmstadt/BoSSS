@@ -423,7 +423,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
-            C.CompMode = AppControl._CompMode.Steady;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
@@ -691,7 +691,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
-            C.CompMode = AppControl._CompMode.Steady;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
 
             double dt = 1e-1;
             C.dtMax = dt;
@@ -995,7 +995,7 @@ namespace BoSSS.Application.XRheology_Solver {
             // ============
             #region time
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.Timestepper_LevelSetHandling = lsHandl;
             C.Timestepper_Scheme = tsScheme;
 
@@ -1278,7 +1278,7 @@ namespace BoSSS.Application.XRheology_Solver {
             // ============
             #region time
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.Timestepper_LevelSetHandling = lsHandl;
             C.Timestepper_Scheme = tsScheme;
 

@@ -143,6 +143,8 @@ namespace BoSSS.Application.XRheology_Solver {
         /// </summary>
         public bool SkipSolveAndEvaluateResidual = false;
 
+        public bool FixedStreamwisePeriodicBC = false;
+
         /// <summary>
         /// Data to be written in LogFile
         /// </summary>
