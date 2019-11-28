@@ -269,6 +269,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                         // (and for Level-Set-Updates ...)
                         this.CurrentLin.TransformSolFrom(SolutionVec, xt);
 
+                        
 
                         // update linearization
                         if (itc  % constant_newton_it == 0) {

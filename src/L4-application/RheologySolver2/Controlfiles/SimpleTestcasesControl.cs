@@ -44,8 +44,9 @@ namespace BoSSS.Application.Rheology
         /// <summary>
         /// Channel Flow
         /// </summary>
-        static public RheologyControl Channel(string path = @"C:\Users\kikker\AnnesBoSSSdb\Channel", int degree = 4, int GridLevel = 6)
+        static public RheologyControl Channel(string path = null, int degree = 4, int GridLevel = 6)
         {
+            //path = @"C:\Users\kikker\AnnesBoSSSdb\Channel";
             RheologyControl C = new RheologyControl();
 
             //Solver Options
@@ -53,24 +54,20 @@ namespace BoSSS.Application.Rheology
             C.savetodb = false;
             //C.DbPath = path;
             C.ProjectName = "Channel";
-            C.NonLinearSolver.MaxSolverIterations = 30;
-            C.NonLinearSolver.ConvergenceCriterion = 1E-8;
-            C.LinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.MinSolverIterations = 3;
-            C.LinearSolver.ConvergenceCriterion = 1E-8;
-            C.dt = 1e6;
-            C.dtMax = C.dt;
-            C.dtMin = C.dt;
+            C.dtFixed = 1e6;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            //C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;//   .classic_pardiso;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
-            // Maximum analytical output ...
-            //C.NonLinearSolver.verbose = true;
-            //C.LinearSolver.verbose = true;
-            //C.NonLinearSolver.PrecondSolver.verbose = true;
-            //C.GridPartType = GridPartType.METIS;
 
+
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.PrecondSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            //C.NonLinearSolver.MaxSolverIterations = 30;
+            //C.NonLinearSolver.ConvergenceCriterion = 1E-8;
+            //C.LinearSolver.MaxSolverIterations = 100;
+            //C.LinearSolver.MinSolverIterations = 3;
+            //C.LinearSolver.ConvergenceCriterion = 1E-8;
+
+            // Maximum analytical output ...
             C.ObjectiveParam = 1.0;
 
             C.UsePerssonSensor = false;
@@ -135,15 +132,7 @@ namespace BoSSS.Application.Rheology
             C.ExSol_Stress = new Func<double[], double, double>[] { StressXXfunction, StressXYfunction, StressYYfunction };
 
             // Create Fields
-            C.FieldOptions.Add("VelocityX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("Pressure", new FieldOpts() { Degree = degree - 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-
-            C.FieldOptions.Add("StressXX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("StressXY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("StressYY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("Phi", new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            C.SetDGdegree(degree);
 
             // Create Grid
             C.GridFunc = delegate {
