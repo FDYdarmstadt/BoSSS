@@ -50,9 +50,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             int D = 2;
 
             //if(D == 3)
-                C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+                C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
 
-            AppControl._CompMode compMode = AppControl._CompMode.Transient;
+            AppControl._CompMode compMode = AppControl._CompMode.Steady;
 
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
             //_DbPath = @"D:\local\local_test_db";
@@ -144,7 +144,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //double sigma = 72.75e-3;                // kg / sec^2 
             //C.PhysicalParameters.Sigma = sigma;
 
-            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.IncludeConvection = false;
             C.PhysicalParameters.Material = true;
 
             #endregion
@@ -163,7 +163,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 C.GridFunc = delegate () {
                     double[] Xnodes = GenericBlas.Linspace(0, xSize, kelem + 1);
                     double[] Ynodes = GenericBlas.Linspace(0, ySize, kelem + 1);
-                    var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
+                    //var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
+                    var grd = Grid2D.UnstructuredTriangleGrid(Xnodes, Ynodes);
 
                     grd.EdgeTagNames.Add(1, "wall_lower");
                     grd.EdgeTagNames.Add(2, "wall_upper");
@@ -233,8 +234,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             double r = 0.25;
 
-            Func<double[], double> PhiFunc = (X => ((X[0] - 0.5).Pow2() + (X[1] - 0.5).Pow2()).Sqrt() - r);         // signed distance
-            //Func<double[], double> PhiFunc = (X => ((X[0] - 0.5).Pow2() + (X[1] - 0.5).Pow2()) - r.Pow2());         // quadratic
+            //Func<double[], double> PhiFunc = (X => ((X[0] - 0.5).Pow2() + (X[1] - 0.5).Pow2()).Sqrt() - r);         // signed distance
+            Func<double[], double> PhiFunc = (X => ((X[0] - 0.5).Pow2() + (X[1] - 0.5).Pow2()) - r.Pow2());         // quadratic
 
             if(D == 3) {
                 PhiFunc = (X => ((X[0] - 0.5).Pow2() + (X[1] - 0.5).Pow2() + (X[2] - 0.5).Pow2()) - r.Pow2());
@@ -317,11 +318,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.CheckJumpConditions = true;
             //C.CheckInterfaceProps = true;
 
-            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
 
 
-            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None;
 
             C.AdaptiveMeshRefinement = false;
             C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
