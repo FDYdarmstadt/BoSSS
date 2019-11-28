@@ -30,7 +30,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
         }
 
         public VoronoiGrid ConvertToVoronoiGrid(
-            Mesh<T> mesh)
+            IMesh<T> mesh)
         {
             (GridCommons grid, int[][] aggregation) = ExtractGridCommonsAndCellAggregation(mesh.Cells, boundaryConverter);
             VoronoiNodes nodes = ExtractVoronoiNodes(mesh);
@@ -39,7 +39,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
             return voronoiGrid;
         }
 
-        static VoronoiNodes ExtractVoronoiNodes(Mesh<T> mesh)
+        static VoronoiNodes ExtractVoronoiNodes(IMesh<T> mesh)
         {
             IList<T> nodeList = mesh.Nodes;
             IList<VoronoiNode> voronoiNodeList = CastAsVoronoiNodes(nodeList);

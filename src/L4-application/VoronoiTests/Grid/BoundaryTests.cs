@@ -11,7 +11,7 @@ namespace VoronoiTests.Grid
     {
         public override void Run()
         {
-            PeriodicBoundaryPair();
+            AllPeriodicBoundariesLarge();
         }
 
         [Test]
@@ -134,7 +134,6 @@ namespace VoronoiTests.Grid
                 { 181, "Periodic-X" },
                 { 1, "Dirichlet" }
             };
-
             VoronoiBoundary gridBoundary = new VoronoiBoundary
             {
                 Polygon = GridShapes.Rectangle(2, 2),
@@ -142,7 +141,7 @@ namespace VoronoiTests.Grid
                 EdgeTagNames = tagNames
             };
 
-            VoronoiGrid grid = VoronoiGrid2D.Polygonal(gridBoundary, 0, 500);
+            VoronoiGrid grid = VoronoiGrid2D.Polygonal(gridBoundary, 0, 200);
         }
 
         [Test]
@@ -190,7 +189,7 @@ namespace VoronoiTests.Grid
                 EdgeTagNames = tagNames
             };
 
-            VoronoiGrid grid = VoronoiGrid2D.Polygonal(gridBoundary, 0, 400);
+            VoronoiGrid grid = VoronoiGrid2D.Polygonal(gridBoundary, 10, 300);
         }
 
         [Test]

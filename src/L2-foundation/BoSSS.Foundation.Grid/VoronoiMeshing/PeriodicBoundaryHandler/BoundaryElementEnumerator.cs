@@ -5,25 +5,38 @@ using System.Collections.Generic;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 {
-    class BoundaryEdgeFinder<T>
+    class BoundaryElementEnumerator<T>
     {
         InsideCellEnumerator<T> cells;
 
-        public BoundaryEdgeFinder(Mesh<T> mesh)
+        public BoundaryElementEnumerator(Domain<T> mesh)
         {
             cells = new InsideCellEnumerator<T>(mesh);
         }
 
-        public IEnumerable<Edge<T>> Edges(Vector start, int firstCellNodeIndice)
+        public IEnumerable<MeshCell<T>> CycleCells()
         {
-            cells.SetFirstCell(start, firstCellNodeIndice);
-            MeshCell<T> firstCell = cells.GetFirstCell();
-            return IterativeYieldBoundaryEdges(firstCell);
+            IEnumerator<Edge<T>> edges = CycleEdges().GetEnumerator();
+            if (edges.MoveNext())
+            {
+                Edge<T> edge = edges.Current;
+                yield return edge.Cell;
+
+                int previousCellID = edge.Cell.ID;
+                while (edges.MoveNext())
+                {
+                    edge = edges.Current;
+                    if (edge.Cell.ID != previousCellID)
+                    {
+                        yield return edge.Cell;
+                        previousCellID = edge.Cell.ID;
+                    }
+                }
+            }
         }
 
-        public IEnumerable<Edge<T>> Edges(int firstCellNodeIndice)
+        public IEnumerable<Edge<T>> CycleEdges()
         {
-            cells.SetFirstCell(firstCellNodeIndice);
             MeshCell<T> firstCell = cells.GetFirstCell();
             return IterativeYieldBoundaryEdges(firstCell);
         }

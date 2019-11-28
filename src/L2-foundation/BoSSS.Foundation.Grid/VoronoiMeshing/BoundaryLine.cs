@@ -15,7 +15,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return length;
         }
 
-        public static BoundaryLine[] ToLines( Vector[] polygon)
+        public static BoundaryLine[] ToLines(Vector[] polygon)
         {
             BoundaryLine[] lines = new BoundaryLine[polygon.Length];
             BoundaryLine line;
@@ -50,6 +50,30 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 End = line.Start
             };
             return reverse;
+        }
+
+        public BoundaryLine Copy()
+        {
+            var copy = new BoundaryLine();
+            copy.Start = new Vertex
+            {
+                Position = new Vector(Start.Position)
+            };
+            copy.End = new Vertex
+            {
+                Position = new Vector(End.Position)
+            };
+            return copy;
+        }
+
+        public static BoundaryLine[] Copy(BoundaryLine[] source)
+        {
+            BoundaryLine[] copy = new BoundaryLine[source.Length];
+            for (int i = 0; i < copy.Length; ++i)
+            {
+                copy[i] = source[i].Copy();
+            }
+            return copy;
         }
     }
 }

@@ -39,9 +39,18 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
         {
             Debug.Assert((source.End.Position - target.Start.Position).Abs() < 1e-10,
                 "Edges do not touch.");
-            int ID = target.Start.ID; //hoho
             target.Start = source.Start;
-            target.Start.ID = ID;
+            if (target.IsBoundary)
+            {
+                if (source.IsBoundary)
+                {
+                    target.Twin = source.Twin;
+                }
+                else
+                {
+                    target.Twin.End = target.Start;
+                }
+            }
             return target;
         }
 
@@ -49,9 +58,18 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
         {
             Debug.Assert((target.End.Position - source.Start.Position).Abs() < 1e-10,
                 "Edges do not touch.");
-            int ID = target.End.ID;
             target.End = source.End;
-            target.End.ID = ID;
+            if (target.IsBoundary)
+            {
+                if (source.IsBoundary)
+                {
+                    target.Twin = source.Twin;
+                }
+                else
+                {
+                    target.Twin.Start = target.End;
+                }
+            }
             return target;
         }
 

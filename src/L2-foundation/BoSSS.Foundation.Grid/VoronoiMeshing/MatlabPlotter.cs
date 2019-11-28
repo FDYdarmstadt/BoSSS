@@ -29,6 +29,19 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             Path = "./";
         }
 
+        public static void Plot<T>(Mesh<T> mesh)
+            where T : ILocatable
+        {
+            MatlabPlotter plotter = new MatlabPlotter();
+            plotter.Plot(mesh, "mesh");
+        }
+
+        public void Plot<T>(Domain<T> mesh, string name)
+            where T: ILocatable
+        {
+            Plot(mesh.Mesh, name);
+        }
+
         public void Plot<T>(Mesh<T> mesh, string name)
             where T : ILocatable
         {

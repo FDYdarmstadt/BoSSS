@@ -5,13 +5,10 @@ using System.Collections.Generic;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 {
+    
+
     class PeriodicCornerBoundaryIdentifier<T>
     {
-        public PeriodicCornerBoundaryIdentifier(PeriodicMap map)
-        {
-            CrossingFinder.map = map;
-        }
-
         struct Crossing
         {
             public Edge<T> First;
@@ -25,9 +22,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
         {
             public Stack<Edge<T>> Visited { get; private set; }
 
-            IEnumerator<Edge<T>> inside;
+            readonly IEnumerator<Edge<T>> inside;
 
-            IEnumerator<Edge<T>> outside;
+            readonly IEnumerator<Edge<T>> outside;
 
             public static PeriodicMap map;
 
@@ -50,7 +47,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
                 Visited.Push(edge);
             }
 
-            public bool Increment()
+            public bool MoveForwardAndCheckForCrossing()
             {
                 if (inside.MoveNext() & outside.MoveNext())
                 {
@@ -86,6 +83,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             }
         }
 
+        public PeriodicCornerBoundaryIdentifier(PeriodicMap map)
+        {
+            CrossingFinder.map = map;
+        }
+
         public (Stack<Edge<T>>, Corner) FindEdges(MeshCell<T> cornerCell)
         {
             Edge<T> firstEdge = GetFirstEdgeOfBoundary(cornerCell);
@@ -99,7 +101,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             CrossingFinder third = new CrossingFinder(firstCrossing.Third);
             while (!stop)
             {
-                if (first.Increment())
+                if (first.MoveForwardAndCheckForCrossing())
                 {
                     stop = true;
                     edges = first.Visited;
@@ -108,9 +110,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
                         FirstEdge = firstCrossing.Third.Twin.BoundaryEdgeNumber,
                         SecondEdge = first.Crossing.First.BoundaryEdgeNumber
                     };
-                    
                 }
-                else if (second.Increment())
+                else if (second.MoveForwardAndCheckForCrossing())
                 {
                     stop = true;
                     edges = second.Visited;
@@ -120,7 +121,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
                         SecondEdge = second.Crossing.First.BoundaryEdgeNumber
                     };
                 }
-                else if (third.Increment())
+                else if (third.MoveForwardAndCheckForCrossing())
                 {
                     stop = true;
                     edges = third.Visited;
@@ -140,11 +141,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             CrossingFinder backwards = new CrossingFinder(firstEdge.Twin);
             while (true)
             {
-                if (forward.Increment())
+                if (forward.MoveForwardAndCheckForCrossing())
                 {
                     return forward.Crossing;
                 }
-                else if (backwards.Increment())
+                else if (backwards.MoveForwardAndCheckForCrossing())
                 {
                     return backwards.Crossing;
                 };
@@ -225,8 +226,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 
         static CyclicArray<Edge<T>> NegativeEdgeRotationOfCellAfter(Edge<T> first, int offset)
         {
-            Edge<T>[] cell = first.Cell.Edges;
-            Edge<T>[] reversedEdges = ArrayMethods.GetReverseOrderArray(cell);
+            Edge<T>[] edgesOfCell = first.Cell.Edges;
+            Edge<T>[] reversedEdges = ArrayMethods.GetReverseOrderArray(edgesOfCell);
             int firstEdgeIndice = FindIndiceOfEdgeInItsCell(reversedEdges, first);
             CyclicArray<Edge<T>> edges = new CyclicArray<Edge<T>>(reversedEdges, firstEdgeIndice + offset);
             return edges;

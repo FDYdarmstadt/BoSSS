@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BoSSS.Platform.LinAlg;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -36,7 +37,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             MeshCell<T> clone = new MeshCell<T>()
             {
                 Node = Clone(cell.Node),
-                type = cell.type,
+                Type = cell.Type,
                 ID = cell.ID,
                 Vertices = Clone(cell.Vertices),
                 Edges = Clone(cell.Edges)
@@ -57,8 +58,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         public static T Clone<T>(T node)
             where T : ILocatable, new()
         {
-            T clone = new T();
-            clone.Position = node.Position;
+            T clone = new T
+            {
+                Position = node.Position
+            };
             return clone;
         }
 
@@ -79,8 +82,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 IsBoundary = edge.IsBoundary,
                 Cell = edge.Cell,
                 BoundaryEdgeNumber = edge.BoundaryEdgeNumber,
-                Start = edge.Start,
-                End = edge.End,
+                Start = Clone(edge.Start),
+                End = Clone(edge.End),
                 Twin = edge.Twin
             };
             return clone;

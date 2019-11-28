@@ -84,5 +84,7 @@ namespace BoSSS.Foundation.Grid.Voronoi {
         {
             return EdgeTags[index];
         }
+
+        public VoronoiNode FirstCorner;
     }
 }

@@ -46,7 +46,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             newEdges.Clear();
             targetCell = target;
 
-            if (source.type != MeshCellType.Outside || target.type != MeshCellType.Outside)
+            if (source.Type != MeshCellType.Outside || target.Type != MeshCellType.Outside)
             {
                 Setup(source.Edges, sourceEdgeIndice, target.Edges, targetEdgeIndice);
                 ConstructNewEdges();

@@ -6,6 +6,13 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
+    class Mesh<T>
+    {
+        public List<MeshCell<T>> Cells;
+
+        public List<T> Nodes;
+    }
+
     class IDMesh<T> : Mesh<T>
     {
         public List<Vertex> Vertices;
@@ -23,12 +30,5 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             Vertices.Add(vert);
             return vert.ID;
         }
-    }
-
-    class Mesh<T>
-    {
-        public List<MeshCell<T>> Cells;
-
-        public List<T> Nodes;
     }
 }

@@ -10,17 +10,17 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
     {
         protected Mesh<T> mesh;
 
-        MeshCell<T> firstCell;
+        readonly Boundary<T> boundary;
 
-        public InsideCellEnumerator(Mesh<T> mesh)
+        public InsideCellEnumerator(Domain<T> mesh)
         {
-            firstCell = mesh.Cells[0];
-            this.mesh = mesh;
+            boundary = mesh.Boundary;
+            this.mesh = mesh.Mesh;
         }
 
-        public InsideCellEnumerator(Mesh<T> mesh, int firstCellNodeIndice)
+        public InsideCellEnumerator(Mesh<T> mesh, Boundary<T> boundary)
         {
-            this.firstCell = mesh.Cells[firstCellNodeIndice];
+            this.boundary = boundary;
             this.mesh = mesh;
         }
 
@@ -29,20 +29,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             SetFirstCellToCellContaining(start);
         }
 
-        public void SetFirstCell(Vector start, int firstCellNodeIndice)
-        {
-            this.firstCell = mesh.Cells[firstCellNodeIndice];
-            SetFirstCellToCellContaining(start);
-        }
-
-        public void SetFirstCell(int firstCellNodeIndice)
-        {
-            this.firstCell = mesh.Cells[firstCellNodeIndice];
-        }
-
         public MeshCell<T> GetFirstCell()
         {
-            return firstCell;
+            return boundary.FirstCorner;
         }
 
         void SetFirstCellToCellContaining(Vector start)
@@ -58,7 +47,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 if (isInside)
                 {
                     foundFirstCell = true;
-                    firstCell = cell;
+                    boundary.FirstCorner = cell;
                     break;
                 }
             }
@@ -70,9 +59,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         public virtual IEnumerable<MeshCell<T>> EnumerateCellsInConcentricCircles()
         {
-            Debug.Assert( firstCell != null, "Initialize before calling Cells()");
+            Debug.Assert( boundary.FirstCorner != null, "Initialize before calling Cells()");
             HashSet<int> visited = new HashSet<int>();//mesh.Cells.Count);
-            return IterativeYieldConnectedCells(firstCell, visited);
+            return IterativeYieldConnectedCells(boundary.FirstCorner, visited);
         }
 
         /// <summary>

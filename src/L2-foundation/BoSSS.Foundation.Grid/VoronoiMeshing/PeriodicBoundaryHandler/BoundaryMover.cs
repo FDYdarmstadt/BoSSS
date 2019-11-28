@@ -5,25 +5,44 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 {
     class BoundaryMover<T>
     {
-        readonly Mesh<T> mesh;
-
-        readonly InsideCellEnumerator<T> insideCells;
-
         readonly MeshEdgeDivider<T> edgeDivider;
 
-        public BoundaryMover(IDMesh<T> mesh, int firstCellNodeIndice)
+        readonly Boundary<T> boundary;
+
+        readonly BoundaryElementEnumerator<T> boundaryEnumerator;
+
+        public BoundaryMover(Domain<T> mesh)
         {
-            this.mesh = mesh;
-            insideCells = new InsideCellEnumerator<T>(mesh, firstCellNodeIndice);
-            edgeDivider = new MeshEdgeDivider<T>(mesh);
+            edgeDivider = new MeshEdgeDivider<T>(mesh.Mesh);
+            boundary = mesh.Boundary;
+            boundaryEnumerator = new BoundaryElementEnumerator<T>(mesh);
         }
 
         public void MoveBoundary(IList<MeshCell<T>> cells, int boundaryEdgeNumber, int pairedBoundaryEdgeNumber)
         {
             foreach (MeshCell<T> cell in cells)
             {
-                cell.type = MeshCellType.Outside;
+                cell.Type = MeshCellType.Outside;
+            }
+            if (boundary.FirstCorner.Type == MeshCellType.Outside)
+            {
+                MoveBoundaryCorner();
+            }
+            foreach (MeshCell<T> cell in cells)
+            {
                 SetAllEdgesToBoundary(cell.Edges, boundaryEdgeNumber, pairedBoundaryEdgeNumber);
+            }
+        }
+
+        void MoveBoundaryCorner()
+        {
+            foreach (MeshCell<T> cell in boundaryEnumerator.CycleCells())
+            {
+                if (cell.Type != MeshCellType.Outside)
+                {
+                    boundary.FirstCorner = cell;
+                    break;
+                }
             }
         }
 
@@ -31,11 +50,27 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
         {
             foreach (Edge<T> edge in edges)
             {
-                SwitchBoundary(edge, pairedBoundaryNumber);
-                if (edge.Twin != null)
+                if (IsNotPeriodic(edge))
                 {
-                    SwitchBoundary(edge.Twin, boundaryEdgeNumber);
+                    SwitchBoundary(edge, pairedBoundaryNumber);
+                    if (edge.Twin != null)
+                    {
+                        SwitchBoundary(edge.Twin, boundaryEdgeNumber);
+                    }
                 }
+            }
+        }
+
+        bool IsNotPeriodic(Edge<T> edge)
+        {
+            if (edge.Twin != null)
+            {
+                return ((edge.Twin.Start.ID == edge.End.ID) 
+                    || (edge.Twin.End.ID == edge.Start.ID));
+            }
+            else
+            {
+                return true;
             }
         }
 
@@ -65,21 +100,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
                         edgeDivider.DivideEdge(edge, i);
                     }
                 }
-            }
-        }
-
-        public void RemoveOuterCellsFromMesh()
-        {
-            List<MeshCell<T>> cells = new List<MeshCell<T>>(mesh.Cells.Count);
-            foreach (MeshCell<T> cell in insideCells.EnumerateCellsInConcentricCircles())
-            {
-                cells.Add(cell);
-            }
-            mesh.Cells = cells;
-            mesh.Nodes.Clear();
-            foreach (MeshCell<T> cell in mesh.Cells)
-            {
-                mesh.Nodes.Add(cell.Node);
             }
         }
     }

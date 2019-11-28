@@ -6,6 +6,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
     class Vertex
     {
         public Vector Position { get; set; }
+
         public int ID { get; set; }
 
         public static explicit operator Vector(Vertex vtx)
@@ -58,7 +59,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
     class MeshCell<T>
     {
-        public MeshCellType type = MeshCellType.NotDetermined;
+        public MeshCellType Type = MeshCellType.NotDetermined;
 
         public T Node;
         public int ID { get; set; }

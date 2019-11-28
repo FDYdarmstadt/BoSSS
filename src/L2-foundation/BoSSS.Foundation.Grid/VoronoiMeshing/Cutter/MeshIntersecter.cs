@@ -129,7 +129,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
         {
             //Divide Ridge and update Ridge Arrays
             //-------------------------------------
-            Vertex newVertex = DivideEdge(edge, alpha, out Edge<T> newRidge);
+            Vertex newVertex = DivideEdge(edge, alpha, out Edge<T> newEdge);
             edge.Twin.Cell.IntersectionVertex = newVertex.ID;
 
             //Find Intersection and insert Ridge
@@ -184,7 +184,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
             verticesOfNewRidgeBoundary[0] = firstCutEdge.End;
             verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 1] = mesh.Vertices[cell.IntersectionVertex];
             verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 2] = lines[0].Start;
-            int ID = mesh.AddVertex(lines[0].Start);
+            int ID = mesh.AddVertex(verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 2]);
 
             //Add Vertices of lines
             for (int i = 2; i < verticesOfNewRidgeBoundary.Length - 1; ++i)
@@ -212,15 +212,15 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
             //Divide this cell
             //================================================================
             //NewVertices
-            Vertex[] verticesOfNewRidgeBoundary = new Vertex[2];
-            verticesOfNewRidgeBoundary[0] = firstCutEdge.End;
-            verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 1] = mesh.Vertices[cell.IntersectionVertex];
+            Vertex[] verticesOfNewEdgeBoundary = new Vertex[2];
+            verticesOfNewEdgeBoundary[0] = firstCutEdge.End;
+            verticesOfNewEdgeBoundary[verticesOfNewEdgeBoundary.Length - 1] = mesh.Vertices[cell.IntersectionVertex];
 
             //New Edges
             MeshCell<T> newCell = new MeshCell<T>();
             mesh.AddCell(newCell);
             MeshMethods.CreateBoundaryEdge(
-                verticesOfNewRidgeBoundary, 
+                verticesOfNewEdgeBoundary, 
                 cell, 
                 newCell, 
                 out Edge<T>[] newEdges, 

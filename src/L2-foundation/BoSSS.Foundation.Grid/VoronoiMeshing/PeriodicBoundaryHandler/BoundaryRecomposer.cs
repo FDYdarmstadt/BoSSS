@@ -6,26 +6,23 @@ using System.Diagnostics;
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 {
     class BoundaryRecomposer<T>
-        where T : ILocatable, new()
+        where T : ILocatable
     {
         readonly PeriodicMap map;
-
-        readonly int firstCellNodeIndice;
 
         readonly PeriodicCornerMapper<T> cornerMapper;
 
         BoundaryMover<T> boundaryMover;
 
-        public BoundaryRecomposer(
-            PeriodicMap map,
-            int firstCellNodeIndice)
+        CornerCleaner cleaner;
+
+        public BoundaryRecomposer(PeriodicMap map)
         {
             this.map = map;
-            this.firstCellNodeIndice = firstCellNodeIndice;
             cornerMapper = new PeriodicCornerMapper<T>(map);
         }
 
-        public void RecomposePeriodicEdges(IDMesh<T> mesh, IEnumerable<Edge<T>> periodicEdges)
+        public void RecomposePeriodicEdges(Domain<T> mesh, IEnumerable<Edge<T>> periodicEdges)
         {
             CellPairCollection<T> candidates = CellPairCollecter<T>.FollowBoundaryAndCollectCandidates(periodicEdges);
             cornerMapper.FindPeriodicCorners(candidates);
@@ -33,22 +30,23 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             cornerMapper.ConnectPeriodicCorners();
         }
 
-        void RecomposeCutCells(IDMesh<T> mesh, CellPairCollection<T> candidates)
+        void RecomposeCutCells(Domain<T> mesh, CellPairCollection<T> candidates)
         {
-            boundaryMover = new BoundaryMover<T>(mesh, firstCellNodeIndice);
+            boundaryMover = new BoundaryMover<T>(mesh);
+            cleaner = new CornerCleaner(map.PeriodicCornerCorrelation.Count);
 
             MatlabPlotter plotter = new MatlabPlotter();
             int i = 0;
-            plotter.Plot(mesh, "intermediate" + i);
+            //plotter.Plot(mesh, "intermediate" + i);
             foreach (CellPairCollection<T>.EdgeCombo mergePair in CreateMergePairsOfEachEdge(candidates))
             {
                 ++i;
-                Debug.Assert(CellNodePositionsMatch(mergePair));
                 //plotter.Plot(mesh, "intermediate" + i);
-                
-                //MergeAtBoundary(mergePair);
+                Debug.Assert(CellNodePositionsMatch(mergePair));
+                MergeAtBoundary(mergePair);
             }
-            plotter.Plot(mesh, "ifinal");
+            RemoveOuterCellsFromMesh(mesh);
+            //plotter.Plot(mesh, "ifinal");
         }
 
         IEnumerable<CellPairCollection<T>.EdgeCombo> CreateMergePairsOfEachEdge(
@@ -59,12 +57,15 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
                 CellPairCollection<T>.EdgeCombo mergePair = ExtractMergePair(opposingEdges.Previous, candidates);
                 CellPairCollection<T>.EdgeCombo opposedMergePair = ExtractMergePair(opposingEdges.Current, candidates);
 
+                MoveBoundary(mergePair);
+                MoveBoundary(opposedMergePair);
+
                 Transform(mergePair);
                 Transform(opposedMergePair);
+
                 yield return mergePair;
                 yield return opposedMergePair;
             }
-            boundaryMover.RemoveOuterCellsFromMesh();
         }
 
         CellPairCollection<T>.EdgeCombo ExtractMergePair(
@@ -77,6 +78,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             candidates.TryGetOuterCells(pairedBoundary, out List<MeshCell<T>> pairedOuterCells);
             mergePair.Outer = pairedOuterCells;
             mergePair.Inner = new List<MeshCell<T>>(ArrayMethods.GetReverseOrderArray(edgePair.Inner));
+            cleaner.RemoveAlreadyDealtWithCornerCellMergePairsFrom(mergePair);
             InitializeGlueMapOf(mergePair);
 
             return mergePair;
@@ -131,13 +133,16 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             return glueMap;
         }
 
+        void MoveBoundary(CellPairCollection<T>.EdgeCombo mergePair)
+        {
+            int pairedBoundary = map.PeriodicBoundaryCorrelation[mergePair.EdgeNumber];
+            boundaryMover.MoveBoundary(mergePair.Outer, pairedBoundary, mergePair.EdgeNumber);
+            boundaryMover.DivideBoundary(mergePair.Outer);
+        }
+
         void Transform(CellPairCollection<T>.EdgeCombo mergePair)
         {
             int pairedBoundary = map.PeriodicBoundaryCorrelation[mergePair.EdgeNumber];
-
-            boundaryMover.MoveBoundary(mergePair.Outer, pairedBoundary, mergePair.EdgeNumber);
-            boundaryMover.DivideBoundary(mergePair.Outer);
-
             Transform(mergePair.Outer, pairedBoundary);
         }
 
@@ -145,7 +150,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             List<MeshCell<T>> cells,
             int boundaryNumber)
         {
-            //CloneAndTransformOuterCells
             map.PeriodicBoundaryTransformations.TryGetValue(boundaryNumber, out Transformation trafo);
             TransformCells(cells, trafo);
         }
@@ -224,6 +228,31 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
                 cellsOfABoundary.Inner,
                 cellsOfABoundary.GlueMap
                 );
+        }
+
+        static void RemoveOuterCellsFromMesh(Domain<T> mesh)
+        {
+            InsideCellEnumerator<T> insideCells = new InsideCellEnumerator<T>(mesh);
+            RemoveOuterCellsFromMesh(mesh.Mesh, insideCells);
+        }
+
+        static void RemoveOuterCellsFromMesh(Mesh<T> mesh, InsideCellEnumerator<T> insideCells)
+        {
+            List<MeshCell<T>> cells = new List<MeshCell<T>>(mesh.Cells.Count);
+            foreach (MeshCell<T> cell in insideCells.EnumerateCellsInConcentricCircles())
+            {
+                cells.Add(cell);
+            }
+            for(int i = 0; i < cells.Count; ++i)
+            {
+                cells[i].ID = i;
+            }
+            mesh.Cells = cells;
+            mesh.Nodes.Clear();
+            foreach (MeshCell<T> cell in mesh.Cells)
+            {
+                mesh.Nodes.Add(cell.Node);
+            }
         }
     }
 }

@@ -14,9 +14,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         readonly Vector[] boundingBox;
 
-        readonly BoundaryLine[] boundary;
-
-        readonly int firstCellNode_indice;
+        BoundaryLine[] boundaryLines;
 
         readonly PeriodicBoundaryHandler<T> boundaryHandler;
 
@@ -24,35 +22,51 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         {
             cutter = new Cutter<T>();
             boundingBox = settings.BoundingBox;
-            boundary = BoundaryLine.ToLines(settings.Boundary);
-            firstCellNode_indice = settings.FirstCellNode_indice;
-            boundaryHandler = new PeriodicBoundaryHandler<T>(
-                boundary, 
-                settings.FirstCellNode_indice,
-                settings.PeriodicMap);
+            boundaryLines = BoundaryLine.ToLines(settings.Boundary);
+            boundaryHandler = new PeriodicBoundaryHandler<T>(settings.PeriodicMap);
         }
 
-        public Mesh<T> Generate(IList<T> nodes)
+        public Domain<T> Generate(IList<T> nodes, MeshCell<T> firstCorner)
+        {
+            return Generate(nodes, firstCorner.ID);
+        }
+
+        public Domain<T> Generate(IList<T> nodes, int firstCornerNodeIndice)
         {
             Debug.Assert(nodes.Count > 0);
-            IDMesh<T> mesh = CreateMeshFrom(nodes);
+
+            Domain<T> mesh = CreateMeshFrom(nodes, firstCornerNodeIndice);
             if (boundaryHandler.ContainsPeriodicBoundaries)
             {
                 nodes = boundaryHandler.CloneNodesAlongPeriodicBoundaries(mesh);
-                mesh = CreateMeshFrom(nodes);
+                mesh = CreateMeshFrom(nodes, mesh.Boundary.FirstCorner);
                 boundaryHandler.RecomposePeriodicEdges(mesh);
             }
             return mesh;
         }
 
-        IDMesh<T> CreateMeshFrom(IList<T> nodes)
+        Domain<T> CreateMeshFrom(IList<T> nodes, int firstCornerNodeIndice)
         {
             AddDistantBoundingNodes(nodes, boundingBox);
-            
+
             IDMesh<T> mesh = MIConvexHullMeshGenerator.CreateMesh(nodes);
-            cutter.CutOut(mesh, boundary, firstCellNode_indice);
-            
-            return mesh;
+            Boundary<T> boundary = new Boundary<T>
+            {
+                BoundaryLines = boundaryLines,
+                FirstCorner = mesh.Cells[firstCornerNodeIndice]
+            };
+
+            cutter.CutOut(mesh, boundary);
+            return new Domain<T>
+            {
+                Mesh = mesh,
+                Boundary = boundary
+            };
+        }
+
+        Domain<T> CreateMeshFrom(IList<T> nodes, MeshCell<T> firstCorner)
+        {
+            return CreateMeshFrom(nodes, firstCorner.ID);
         }
 
         static void AddDistantBoundingNodes(IList<T> nodes, Vector[] boundingBox)

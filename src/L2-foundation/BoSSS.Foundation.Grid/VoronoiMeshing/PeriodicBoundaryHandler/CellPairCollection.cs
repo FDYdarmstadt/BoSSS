@@ -147,6 +147,19 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             return combos;
         }
 
+        public bool TryGetEdgeComboOf(int boundaryNumber, out EdgeCombo edgeCombo)
+        {
+            edgeCombo = null;
+            if (periodicEdges.TryGetValue(boundaryNumber, out edgeCombo))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         public IEnumerable<Pair<EdgeCombo>> GetCollectedEdgeComboPairs(PeriodicMap map)
         {
             IDictionary<int, int> boundaryMap = map.PeriodicBoundaryCorrelation;

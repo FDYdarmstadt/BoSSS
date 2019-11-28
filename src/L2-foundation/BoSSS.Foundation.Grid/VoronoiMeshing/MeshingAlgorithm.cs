@@ -1,4 +1,5 @@
 ﻿using BoSSS.Platform.LinAlg;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -21,52 +22,49 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
             public int NumberOfLloydIterations = 10;
 
-            public int FirstCellNode_indice = 0;
+            public int FirstCellNodeIndice = 0;
         }
 
         static void AssertCorrectness<T>(Settings settings, IList<T> nodes)
         {
             Debug.Assert(settings.BoundingBox.Length == 4);
             Debug.Assert(settings.Boundary.Length > 2);
-            Debug.Assert(settings.FirstCellNode_indice > -1 && settings.FirstCellNode_indice < nodes.Count);
+            Debug.Assert(settings.FirstCellNodeIndice > -1 && settings.FirstCellNodeIndice < nodes.Count);
         }
 
-        public static Mesh<T> ComputeMesh<T>(IList<T> nodes, Settings settings)
+        public static IMesh<T> ComputeMesh<T>(IList<T> nodes, Settings settings)
             where T : ILocatable, new()
         {
             AssertCorrectness(settings, nodes);
-            Mesh<T> mesh = null;
             MeshGenerator<T> voronoiMesher = new MeshGenerator<T>(settings);
-            
-            for (int iLloyd = 0; iLloyd <= settings.NumberOfLloydIterations; ++iLloyd)
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            Domain<T> domain = voronoiMesher.Generate(nodes, settings.FirstCellNodeIndice);
+            for (int iLloyd = 0; iLloyd < settings.NumberOfLloydIterations; ++iLloyd)
             {
-                mesh = voronoiMesher.Generate(nodes);
                 if (iLloyd != settings.NumberOfLloydIterations)
                 {
-                    MoveNodesTowardsCellCenter(mesh.Cells, ref settings.FirstCellNode_indice);
+                    MoveNodesTowardsCellCenter(domain.Cells);
                 }
-                nodes = mesh.Nodes;
+                //MatlabPlotter.Plot(domain.Mesh);
+                domain = voronoiMesher.Generate(domain.Nodes, domain.Boundary.FirstCorner);
             }
-            //Plot(mesh);
-
-            return mesh;
+            stopwatch.Stop();
+            Console.WriteLine(stopwatch.ElapsedMilliseconds);
+            
+            return domain;
         }
 
-        static void MoveNodesTowardsCellCenter<T>(IReadOnlyList<MeshCell<T>> Cells, ref int FirstCellNode_indice)
-            where T : ILocatable, new()
+        static void MoveNodesTowardsCellCenter<T>(IReadOnlyList<MeshCell<T>> cells)
+            where T : ILocatable
         {
-            for (int i = 0; i < Cells.Count; ++i)
+            for (int i = 0; i < cells.Count; ++i)
             {
-                MeshCell<T> cell = Cells[i];
+                MeshCell<T> cell = cells[i];
                 Vector centerOfGravity = CenterOf(cell);
                 double relaxValue = 0.1;
                 centerOfGravity = centerOfGravity * relaxValue + new Vector(cell.Node.Position) * (1 - relaxValue);
                 cell.Node.Position = centerOfGravity;
-
-                if (cell.ID == FirstCellNode_indice)
-                {
-                    FirstCellNode_indice = i;
-                }
             }
         }
 
@@ -79,13 +77,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             }
             centerOfGravity.Scale(1.0 / cell.Vertices.Length);
             return centerOfGravity;
-        }
-
-        static void Plot<T>(Mesh<T> mesh)
-            where T : ILocatable
-        {
-            MatlabPlotter plotter = new MatlabPlotter();
-            plotter.Plot(mesh, "mesh");
         }
     }
 }

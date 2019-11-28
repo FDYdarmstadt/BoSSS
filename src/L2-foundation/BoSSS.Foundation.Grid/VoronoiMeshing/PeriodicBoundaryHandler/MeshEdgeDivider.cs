@@ -15,7 +15,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 
         public void DivideEdge(Edge<T> edge, int edgeIndiceInCell)
         {
-            Edge<T> clone = edge = MeshElementCloner.Clone(edge);
+            Edge<T> clone = MeshElementCloner.Clone(edge);
             mesh.AddVertex(clone.Start);
             mesh.AddVertex(clone.End);
             SwitchEdges(edge, edgeIndiceInCell, clone);
@@ -39,8 +39,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             newEdge.Twin = old.Twin;
             newEdge.Twin.Twin = newEdge;
 
-            SwitchVertex(before.Twin.Start, before.Twin.Cell, newEdge.Start);
-            SwitchVertex(after.Twin.End, after.Twin.Cell, newEdge.End);
+            //SwitchVertex(before.Twin.Start, before.Twin.Cell, newEdge.Start);
+            //SwitchVertex(after.Twin.End, after.Twin.Cell, newEdge.End);
         }
 
         static void SwitchVertex(Vertex old, MeshCell<T> cell, Vertex newVertex)

@@ -16,7 +16,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             public int FirstCellNode_indice = 0;
         }
 
-        internal Mesh<T> mesh;
+        internal IMesh<T> mesh;
 
         MeshingAlgorithm.Settings mesherSettings;
 
@@ -52,7 +52,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 Boundary = settings.Boundary.Polygon,
                 BoundingBox = settings.Boundary.BoundingBox,
                 NumberOfLloydIterations = settings.NumberOfLloydIterations,
-                FirstCellNode_indice = settings.FirstCellNode_indice,
+                FirstCellNodeIndice = settings.FirstCellNode_indice,
             };
             mesherSettings.PeriodicMap = PeriodicMapGenerator.GeneratePeriodicMap(
                 mesherSettings, 

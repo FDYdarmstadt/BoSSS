@@ -12,10 +12,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
     {
         readonly IDictionary<int, Transformation> periodicTrafoMap;
 
-        readonly BoundaryLine[] boundary;
-
-        readonly int firstCellNodeIndice;
-
         readonly BoundaryNodeCloner<T> nodeCloner;
 
         readonly BoundaryRecomposer<T> recomposer;
@@ -23,19 +19,14 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
         public bool ContainsPeriodicBoundaries { get; private set; }
 
         public PeriodicBoundaryHandler(
-            BoundaryLine[] boundary,
-            int firstCellNodeIndice,
             PeriodicMap map = null)
         {
             if (map != null)
             {
                 ContainsPeriodicBoundaries = true;
-
-                this.boundary = boundary;
-                this.firstCellNodeIndice = firstCellNodeIndice;
                 periodicTrafoMap = map.PeriodicBoundaryTransformations;
                 nodeCloner = new BoundaryNodeCloner<T>(map);
-                recomposer = new BoundaryRecomposer<T>(map, firstCellNodeIndice); 
+                recomposer = new BoundaryRecomposer<T>(map); 
             }
             else
             {
@@ -43,15 +34,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             }
         }
 
-        IEnumerable<Edge<T>> PeriodicEdgesOf(Mesh<T> mesh)
+        IEnumerable<Edge<T>> PeriodicEdgesOf(Domain<T> mesh)
         {
-            Vector startFromEnclosingCell = boundary[0].Start.Position;
-            return PeriodicEdgesOf(mesh, startFromEnclosingCell);
-        }
-
-        IEnumerable<Edge<T>> PeriodicEdgesOf(Mesh<T> mesh, Vector start)
-        {
-            foreach (Edge<T> edge in BoundaryEdgesOf(mesh, start))
+            foreach (Edge<T> edge in BoundaryEdgesOf(mesh))
             {
                 if (periodicTrafoMap.ContainsKey(edge.BoundaryEdgeNumber))
                 {
@@ -60,40 +45,40 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             }
         }
 
-        IEnumerable<Edge<T>> BoundaryEdgesOf(Mesh<T> mesh, Vector start)
+        IEnumerable<Edge<T>> BoundaryEdgesOf(Domain<T> mesh)
         {
-            BoundaryEdgeFinder<T> edgeCells = new BoundaryEdgeFinder<T>(mesh);
+            BoundaryElementEnumerator<T> boundaryEdgeFinder = new BoundaryElementEnumerator<T>(mesh);
             
-            foreach (Edge<T> edge in edgeCells.Edges(start, firstCellNodeIndice))
+            foreach (Edge<T> edge in boundaryEdgeFinder.CycleEdges())
             {
                 yield return edge;
             }
         }
 
-        public IList<T> CloneNodesAlongPeriodicBoundaries(Mesh<T> mesh)
+        public IList<T> CloneNodesAlongPeriodicBoundaries(Domain<T> mesh)
         {
             Debug.Assert(ContainsPeriodicBoundaries == true);
 
             IEnumerable<Edge<T>> periodicEdges = PeriodicEdgesOf(mesh);
             List<T> clones = nodeCloner.CloneAndMirrorNodesOf(periodicEdges);
-            IList<T> nodes = mesh.Nodes;
+            IList<T> nodes = mesh.Mesh.Nodes;
             nodes.AddRange(clones);
             return nodes;
         }
 
-        public void RecomposePeriodicEdges(IDMesh<T> mesh)
+        public void RecomposePeriodicEdges(Domain<T> mesh)
         {
             Debug.Assert(ContainsPeriodicBoundaries == true);
 
             IEnumerable<Edge<T>> periodicEdges = PeriodicEdgesOf(mesh);
             recomposer.RecomposePeriodicEdges(mesh, periodicEdges);
 
-            Debug.Assert(PeriodicEdgeIDsLineUp(mesh));
+            //Debug.Assert(PeriodicEdgeIDsLineUp(mesh));
         }
 
-        bool PeriodicEdgeIDsLineUp(Mesh<T> mesh)
+        bool PeriodicEdgeIDsLineUp(Domain<T> mesh)
         {
-            IEnumerable<Edge<T>> periodicEdges = PeriodicEdgesOf(mesh, mesh.Cells[firstCellNodeIndice].Node.Position);
+            IEnumerable<Edge<T>> periodicEdges = PeriodicEdgesOf(mesh);
             List<Vertex> innerIds = new List<Vertex>();
             List<Vertex> outerIds = new List<Vertex>();
             foreach(var edge in periodicEdges)

@@ -12,16 +12,16 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
 
         InsideCellEnumerator<T> insideCells;
 
-        public Divider(Mesh<T> mesh, int firstCell_NodeIndice)
+        public Divider(Mesh<T> mesh, Boundary<T> boundary)
         {
-            insideCells = new InsideCellEnumerator<T>(mesh, firstCell_NodeIndice);
+            insideCells = new InsideCellEnumerator<T>(mesh, boundary);
             this.mesh = mesh;
         }
 
-        public Divider(Mesh<T> mesh)
+        public Divider(Domain<T> mesh)
         {
             insideCells = new InsideCellEnumerator<T>(mesh);
-            this.mesh = mesh;
+            this.mesh = mesh.Mesh;
         }
 
         public MeshCell<T> GetFirst(BoundaryLine boundaryLine)
@@ -44,8 +44,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
             List<MeshCell<T>> cells = new List<MeshCell<T>>(mesh.Cells.Count);
             foreach(MeshCell<T> cell in mesh.Cells)
             {
-                if(cell.type == MeshCellType.Inside)
+                if(cell.Type == MeshCellType.Inside)
                 {
+                    cell.ID = cells.Count;
                     cells.Add(cell);
                 }
             }
@@ -66,7 +67,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
         {
             foreach (MeshCell<T> cell in insideCells.EnumerateCellsInConcentricCircles())
             {
-                cell.type = MeshCellType.Inside;
+                cell.Type = MeshCellType.Inside;
             }
         }
     }

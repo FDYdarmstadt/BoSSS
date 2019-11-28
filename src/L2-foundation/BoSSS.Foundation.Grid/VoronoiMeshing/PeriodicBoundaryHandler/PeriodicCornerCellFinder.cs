@@ -3,30 +3,29 @@ using BoSSS.Platform;
 using BoSSS.Platform.LinAlg;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 {
     class PeriodicCornerCellFinder<T>
         where T : ILocatable
     {
-        readonly Queue<MeshCell<T>> cornerCells;
-
         readonly PeriodicMap map;
 
         public PeriodicCornerCellFinder(PeriodicMap map)
         {
             this.map = map;
-            cornerCells = new Queue<MeshCell<T>>();
         }
 
         public Queue<MeshCell<T>> FindInner(CellPairCollection<T> candidates)
         {
+            Queue<MeshCell<T>> cornerCells = new Queue<MeshCell<T>>();
             foreach (CellPairCollection<T>.EdgeCombo edge in candidates.GetCollectedEdgeCombos())
             {
                 if (edge.Inner.Count > 0)
                 {
                     MeshCell<T> first = edge.Inner[0];
-                    if (IsPeriodicCorner(first))
+                    if (IsInnerPeriodicCorner(first))
                     {
                         cornerCells.Enqueue(first);
                     }
@@ -35,11 +34,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             return cornerCells;
         }
 
-        bool IsPeriodicCorner(MeshCell<T> cell)
+        bool IsInnerPeriodicCorner(MeshCell<T> cell)
         {
             if (NodeIsInVoronoiCell(cell))
             {
-                if (IsCorner(cell, out Corner corner))
+                if (IsRegisteredCorner(cell, out Corner corner))
                 {
                     if (map.PeriodicCornerCorrelation.TryGetValue(corner, out int wayne))
                     {
@@ -50,27 +49,38 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             return false;
         }
 
-        bool IsCorner(MeshCell<T> cell, out Corner corner)
+        bool IsRegisteredCorner(MeshCell<T> cell, out Corner corner)
         {
-            foreach (Pair<Edge<T>> followingBoundaries in new Convolution<Edge<T>>(cell.Edges))
+            foreach (Pair<Edge<T>> edgePair in CornerPair(cell))
             {
-                Edge<T> current = followingBoundaries.Current;
-                Edge<T> following = followingBoundaries.Previous;
-                if(current.IsBoundary && following.IsBoundary)
+                corner = new Corner
                 {
-                    if (Math.Abs(current.BoundaryEdgeNumber - following.BoundaryEdgeNumber) == 1)
-                    {
-                        corner = new Corner
-                        {
-                            FirstEdge = current.BoundaryEdgeNumber,
-                            SecondEdge = following.BoundaryEdgeNumber
-                        };
-                        return true;
-                    }
+                    SecondEdge = edgePair.Current.BoundaryEdgeNumber,
+                    FirstEdge = edgePair.Previous.BoundaryEdgeNumber
+                };
+                if (map.PeriodicCornerCorrelation.ContainsKey(corner))
+                {
+                    return true;
                 }
             }
             corner = default;
             return false;
+        }
+
+        IEnumerable<Pair<Edge<T>>> CornerPair(MeshCell<T> cell)
+        {
+            foreach (Pair<Edge<T>> followingBoundaries in new Convolution<Edge<T>>(cell.Edges))
+            {
+                Edge<T> current = followingBoundaries.Current;
+                Edge<T> prevoius = followingBoundaries.Previous;
+                if (current.IsBoundary && prevoius.IsBoundary)
+                {
+                    if (current.BoundaryEdgeNumber != prevoius.BoundaryEdgeNumber)
+                    {
+                        yield return followingBoundaries;
+                    }
+                }
+            }
         }
 
         bool NodeIsInVoronoiCell(MeshCell<T> cell)
@@ -89,5 +99,29 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             return parents;
         }
 
+        public MeshCell<T> FindFirstCorner(Queue<MeshCell<T>> corners)
+        {
+            Corner second = new Corner
+            {
+                FirstEdge = 0,
+                SecondEdge = 1
+            };
+            MeshCell<T> firstCorner = null;
+            while (corners.Count > 0)
+            {
+                MeshCell<T> cell = corners.Dequeue();
+                if(IsRegisteredCorner(cell, out Corner corner))
+                {
+                    if(corner.FirstEdge == 0 || corner.SecondEdge == 0)
+                    {
+                        if (!corner.Equals(second))
+                        {
+                            firstCorner = cell;
+                        }
+                    }
+                }
+            }
+            return firstCorner;
+        }
     }
 }
