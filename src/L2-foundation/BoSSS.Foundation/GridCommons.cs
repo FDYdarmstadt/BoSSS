@@ -68,7 +68,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
         /// <summary>
         /// creates a new grid object; no data of this object is set;
-        /// A new Guid (<see cref="GridGuid"/>) is created;
+        /// A new Guid (<see cref="ID"/>) is created;
         /// </summary>
         public GridCommons(RefElement[] RefElm, RefElement[] EdgeRefElm) {
             using (new FuncTrace() ) { 

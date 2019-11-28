@@ -2484,29 +2484,54 @@ namespace BoSSS.Foundation {
         /// An operator which computes the Jacobian matrix of this operator.
         /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
         /// </summary>
-        public SpatialOperator GetJacobiOperator() {
+        public (SpatialOperator, DelParameterUpdate) GetJacobiOperator(int SpatialDimension) {
             if (!this.IsCommited)
                 throw new InvalidOperationException("Invalid prior to calling Commit().");
 
+            var allcomps = new List<IEquationComponent>();
+            foreach (var cdo in this.CodomainVar)
+                allcomps.AddRange(this.EquationComponents[cdo]);
+
+            TermActivationFlags extractTaf(IEquationComponent c) {
+                TermActivationFlags ret = default(TermActivationFlags);
+                if (c is IVolumeForm vf) {
+                    ret = ret | vf.VolTerms;
+                }
+
+                if (c is IEdgeForm ef) {
+                    ret = ret | ef.BoundaryEdgeTerms;
+                    ret = ret | ef.InnerEdgeTerms;
+                }
+
+                return ret;
+            }
+
+            var h = new JacobianParamUpdate(this.DomainVar, this.ParameterVar, allcomps, extractTaf, SpatialDimension);
+
             var JacobianOp = new SpatialOperator(
                    this.DomainVar,
-                   ArrayTools.Cat(this.DomainVar.Select(fn => fn + "_lin"), this.ParameterVar),
+                   h.JacobianParameterVars,
                    this.CodomainVar,
                    this.QuadOrderFunction);
 
-            foreach(string CodNmn in this.CodomainVar) {
-                foreach(var eq in this.EquationComponents[CodNmn]) {
+            foreach (string CodNmn in this.CodomainVar) {
+                foreach (var eq in this.EquationComponents[CodNmn]) {
 
                     if (!(eq is ISupportsJacobianComponent _eq))
                         throw new NotSupportedException(string.Format("Unable to handle component {0}: To obtain a Jacobian operator, all components must implement the {1} interface.", eq.GetType().Name, typeof(ISupportsJacobianComponent).Name));
 
-                    foreach (var eqj in _eq.GetJacobianComponents())
+                    foreach (var eqj in _eq.GetJacobianComponents(SpatialDimension))
                         JacobianOp.EquationComponents[CodNmn].Add(eqj);
                 }
             }
-            
+
             JacobianOp.Commit();
-            return JacobianOp;
+            return (JacobianOp, h.ParameterUpdate);
         }
+
+        
+
+
+
     }
 }

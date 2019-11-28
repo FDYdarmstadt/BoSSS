@@ -122,7 +122,7 @@ namespace BoSSS.Foundation {
         /// A collection of components which in sum for the derivative of this component;
         /// For (bi-) linear components, this is usually the flux itself.
         /// </summary>
-        IEquationComponent[] GetJacobianComponents();
+        IEquationComponent[] GetJacobianComponents(int SpatialDimension);
     }
 
     /// <summary>
