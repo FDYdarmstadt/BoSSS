@@ -187,25 +187,25 @@ namespace BoSSS.Solution {
                     };           
 
             break;
-                //in NewtonGMRES Newton is merged with GMRES, this is an optimized algorithm
-                //NonLinearSolver and LinearSolver can not be separated in this case
-                case NonLinearSolverCode.NewtonGMRES:
+                ////in NewtonGMRES Newton is merged with GMRES, this is an optimized algorithm
+                ////NonLinearSolver and LinearSolver can not be separated in this case
+                //case NonLinearSolverCode.NewtonGMRES:
 
-                    nonlinSolver = new Newton(
-                        ts_AssembleMatrixCallback,
-                        ts_MultigridBasis,
-                        MultigridOperatorConfig) {
-                        maxKrylovDim = lc.MaxKrylovDim,
-                        MaxIter = nc.MaxSolverIterations,
-                        MinIter = nc.MinSolverIterations,
-                        ApproxJac = Newton.ApproxInvJacobianOptions.GMRES,
-                        Precond = PrecondSolver,
-                        //Precond_solver = new RheologyJacobiPrecond() { m_We = 0.1},
-                        GMRESConvCrit = lc.ConvergenceCriterion,
-                        ConvCrit = nc.ConvergenceCriterion,
-                        m_SessionPath = SessionPath,
-                    };
-                    break;
+                //    nonlinSolver = new Newton(
+                //        ts_AssembleMatrixCallback,
+                //        ts_MultigridBasis,
+                //        MultigridOperatorConfig) {
+                //        maxKrylovDim = lc.MaxKrylovDim,
+                //        MaxIter = nc.MaxSolverIterations,
+                //        MinIter = nc.MinSolverIterations,
+                //        ApproxJac = Newton.ApproxInvJacobianOptions.GMRES,
+                //        Precond = PrecondSolver,
+                //        //Precond_solver = new RheologyJacobiPrecond() { m_We = 0.1},
+                //        GMRESConvCrit = lc.ConvergenceCriterion,
+                //        ConvCrit = nc.ConvergenceCriterion,
+                //        m_SessionPath = SessionPath,
+                //    };
+                //    break;
 
                 case NonLinearSolverCode.PicardGMRES:
 
@@ -1111,54 +1111,54 @@ namespace BoSSS.Solution {
 
             //var size = Timestepper.MultigridSequence[0].CellPartitioning.MpiSize;
 
-            // !!!!!!!!!!!UNTERSCHEIDUNG OB PICARD ODER NEWTON!!!!!!!!!!!!
-            if (nc.SolverCode == NonLinearSolverCode.NewtonGMRES) {
+            //// !!!!!!!!!!!UNTERSCHEIDUNG OB PICARD ODER NEWTON!!!!!!!!!!!!
+            //if (nc.SolverCode == NonLinearSolverCode.NewtonGMRES) {
 
-                // Spatial Dimension
-                switch (D) {
-                    case 1:
-                        break;
-                        throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
-                    //break;
+            //    // Spatial Dimension
+            //    switch (D) {
+            //        case 1:
+            //            break;
+            //            throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
+            //        //break;
 
-                    case 2:
-                        throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
-                    //break;
+            //        case 2:
+            //            throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
+            //        //break;
 
-                    case 3:
-                        //var dofsPerCell3D = (3 * (pV * pV * pV + 6 * pV * pV + 11 * pV + 6) / 6 + 1 * (pP * pP * pP + 6 * pP * pP + 11 * pP + 6) / 6);
-                        int dofsPerCell3D = LDOF[0] / NoCellsLoc;
-                        var dofsLoc = dofsPerCell3D * cellsLoc;
-                        int dofsGlo = dofsPerCell3D * cellsGlo;
+            //        case 3:
+            //            //var dofsPerCell3D = (3 * (pV * pV * pV + 6 * pV * pV + 11 * pV + 6) / 6 + 1 * (pP * pP * pP + 6 * pP * pP + 11 * pP + 6) / 6);
+            //            int dofsPerCell3D = LDOF[0] / NoCellsLoc;
+            //            var dofsLoc = dofsPerCell3D * cellsLoc;
+            //            int dofsGlo = dofsPerCell3D * cellsGlo;
 
-                        var PPP = (int)Math.Ceiling(dofsLoc / 6500.0);
+            //            var PPP = (int)Math.Ceiling(dofsLoc / 6500.0);
 
-                        Console.WriteLine("Analysing the problem yields " + PPP + " parts per process.");
+            //            Console.WriteLine("Analysing the problem yields " + PPP + " parts per process.");
 
-                        if (dofsGlo > 10000) {
+            //            if (dofsGlo > 10000) {
 
-                            if (lc.NoOfMultigridLevels < 2)
-                                throw new ApplicationException("At least 2 Multigridlevels are required");
+            //                if (lc.NoOfMultigridLevels < 2)
+            //                    throw new ApplicationException("At least 2 Multigridlevels are required");
 
-                            tempsolve = new Schwarz() {
-                                m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                                    NoOfPartsPerProcess = PPP,
-                                },
-                                Overlap = 1,
-                                CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2, lc)
-                            };
-                        } else {
-                            tempsolve = new SparseSolver() {
-                                WhichSolver = SparseSolver._whichSolver.MUMPS,
-                                LinConfig = lc
-                            };
-                        }
-                        break;
+            //                tempsolve = new Schwarz() {
+            //                    m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+            //                        NoOfPartsPerProcess = PPP,
+            //                    },
+            //                    Overlap = 1,
+            //                    CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2, lc)
+            //                };
+            //            } else {
+            //                tempsolve = new SparseSolver() {
+            //                    WhichSolver = SparseSolver._whichSolver.MUMPS,
+            //                    LinConfig = lc
+            //                };
+            //            }
+            //            break;
 
-                    default:
-                        throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
-                }
-            } else {
+            //        default:
+            //            throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
+            //    }
+            //} else {
                 // Spatial Dimension
                 switch (D) {
                     case 1:
@@ -1201,7 +1201,7 @@ namespace BoSSS.Solution {
 
                     default:
                         throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
-                }
+                //}
 
             }
 

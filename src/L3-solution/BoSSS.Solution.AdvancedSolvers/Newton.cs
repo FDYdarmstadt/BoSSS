@@ -38,6 +38,9 @@ namespace BoSSS.Solution.AdvancedSolvers
     /// </summary>
     public class Newton : NonlinearSolver
     {
+        /// <summary>
+        /// ctor
+        /// </summary>
         public Newton(OperatorEvalOrLin __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq, MultigridOperator.ChangeOfBasisConfig[][] __MultigridOperatorConfig) :
             base(__AssembleMatrix, __AggBasisSeq, __MultigridOperatorConfig) //
         {
