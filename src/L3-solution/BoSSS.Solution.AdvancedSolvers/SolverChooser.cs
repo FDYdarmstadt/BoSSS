@@ -1219,9 +1219,6 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Determines a solver sequence depending on MGlevels
         /// </summary>
-        /// <param name="MGlevels"></param>
-        /// <param name="CoarsestSolver"></param>
-        /// <returns></returns>
         private ISolverSmootherTemplate DetermineMGSquence(int MGlevels, LinearSolverConfig lc) {
             ISolverSmootherTemplate solver;
             if (MGlevels > 0) {
@@ -1668,7 +1665,7 @@ namespace BoSSS.Solution {
 
                 bool useDirect = false;
                 useDirect |= (SysSize < DirectKickIn);
-                useDirect |= iLevel == _lc.NoOfMultigridLevels - 1;
+                //useDirect |= iLevel == _lc.NoOfMultigridLevels - 1;
                 useDirect |= NoOfBlocks.MPISum() <= 1;
                 
                 //Console.WriteLine("KcycleMultiSchwarz: REMOVE HARDCODED LEVEL SETTINGS");
