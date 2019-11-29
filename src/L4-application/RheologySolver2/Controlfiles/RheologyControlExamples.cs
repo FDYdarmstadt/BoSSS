@@ -414,7 +414,7 @@ namespace BoSSS.Application.Rheology {
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.NonLinearSolver.PrecondSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
 
             //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;

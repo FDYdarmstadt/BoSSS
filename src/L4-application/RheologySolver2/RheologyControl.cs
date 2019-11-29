@@ -30,13 +30,13 @@ namespace BoSSS.Application.Rheology {
     /// </summary>
     [Serializable]
     [DataContract]
-    public class RheologyControl : AppControl {
+    public class RheologyControl : AppControlSolver {
 
         /// <summary>
         /// Ctor.
         /// </summary>
         public RheologyControl() {
-            base.LinearSolver.NoOfMultigridLevels = 1;
+            base.NoOfMultigridLevels = 1;
             //shift of Solver Information
             base.LinearSolver.MaxSolverIterations = 10; //MaxIter
             base.LinearSolver.MinSolverIterations = 1; //MinIter

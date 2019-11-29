@@ -63,8 +63,6 @@ namespace BoSSS.Solution {
                 m_nc.SolverCode = NonLinearSolverCode.selfmade;
             if (m_linsolver != null)
                 m_lc.SolverCode = LinearSolverCode.selfmade;
-            if (m_precond != null)
-                m_nc.PrecondSolver.SolverCode = LinearSolverCode.selfmade;
 
             linsolver = null;
             nonlinSolver = null;
@@ -72,10 +70,8 @@ namespace BoSSS.Solution {
 
             //This is a hack to get DOFperCell in every Multigridlevel
 
-            precondsolver = GenerateLinear_body(m_nc.PrecondSolver, m_nc, ts_MGS, ts_MultigridOperatorConfig, true);
             linsolver = GenerateLinear_body(m_lc, m_nc, ts_MGS, ts_MultigridOperatorConfig);
             Debug.Assert(linsolver != null);
-            Debug.Assert(precondsolver != null);
 
             nonlinSolver = GenerateNonLin_body(ts_AssembleMatrixCallback, ts_MultigridBasis, LevelSetConvergenceReached, PseudoNonlinear, m_nc, m_lc, linsolver, precondsolver, ts_MultigridOperatorConfig, ts_SessionPath);
 
@@ -260,9 +256,6 @@ namespace BoSSS.Solution {
         /// <summary>
         /// This one is the method-body of <see cref="GenerateLinear"/> and shall not be called from the outside. Some Solver aquire additional information, thus the timestepper is overgiven as well.
         /// </summary>
-        /// <param name="Timestepper"></param>
-        /// <param name="lc"></param>
-        /// <returns></returns>
         private ISolverSmootherTemplate GenerateLinear_body(LinearSolverConfig lc, NonLinearSolverConfig nc, AggregationGridData[] MultigridSequence, MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig, bool isNonLinPrecond = false) {
 
             // +++++++++++++++++++++++++++++++++++++++++++++
@@ -929,13 +922,13 @@ namespace BoSSS.Solution {
                     //NonlinearPrecond, LinearPrecond
                     _name[0] = "Precond";
                     _name[1] = "Precond";
-                    UseDefaultItCallback = m_nc.PrecondSolver.verbose;
+                    UseDefaultItCallback = m_lc.verbose;
                     break;
                 case 1:
                     //NonLinearPrecond, LinearSolver
                     _name[0] = "Precond";
                     _name[1] = "Solver";
-                    UseDefaultItCallback = m_nc.PrecondSolver.verbose;
+                    UseDefaultItCallback = m_lc.verbose;
                     break;
                 case 2:
                     //LinearizedESSolver, LinearPrecond

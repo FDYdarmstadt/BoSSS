@@ -29,7 +29,7 @@ namespace BoSSS.Application.IBM_Solver {
     /// </summary>
     [DataContract]
     [Serializable]
-    public class IBM_Control : AppControl {
+    public class IBM_Control : AppControlSolver {
 
         /// <summary>
         /// Ctor.

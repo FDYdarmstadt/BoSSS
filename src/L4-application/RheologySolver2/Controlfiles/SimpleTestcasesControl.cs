@@ -59,7 +59,7 @@ namespace BoSSS.Application.Rheology
 
 
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.NonLinearSolver.PrecondSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             //C.NonLinearSolver.MaxSolverIterations = 30;
             //C.NonLinearSolver.ConvergenceCriterion = 1E-8;
