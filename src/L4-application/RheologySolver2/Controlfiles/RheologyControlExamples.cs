@@ -444,7 +444,7 @@ namespace BoSSS.Application.Rheology {
             C.WeissenbergIncrement = 0.1;
 
             //Penalties
-            C.ViscousPenaltyScaling = 1;
+            C.ViscousPenaltyScaling = 1.0;
             C.Penalty2 = 1;
             C.Penalty1[0] = 0.0;
             C.Penalty1[1] = 0.0;
@@ -493,10 +493,10 @@ namespace BoSSS.Application.Rheology {
             // Create Grid
 
             // half channel mesh3 for cond tests
-            string grid = " 962bc97f-0298-4e2f-ac18-06940cb84956";
+            //string grid = " 962bc97f-0298-4e2f-ac18-06940cb84956";
 
             // half channel mesh0 for cond tests - schneller?
-            //string grid = "55c34774-1769-4f6b-bfc8-cc6c4d74076a";
+            string grid = "55c34774-1769-4f6b-bfc8-cc6c4d74076a";
 
             // full channel mesh0 for cond tests comparison - schneller?
             //string grid = "ecd6444f-ddfe-46c4-9df5-a1390f9371d7";

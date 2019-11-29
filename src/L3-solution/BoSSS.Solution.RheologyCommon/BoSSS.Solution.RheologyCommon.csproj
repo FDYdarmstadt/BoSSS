@@ -44,6 +44,8 @@
   <ItemGroup>
     <Compile Include="ArtificialViscosity.cs" />
     <Compile Include="IdentityAtLevelSet.cs" />
+    <Compile Include="ConvectiveAtLevelSet.cs" />
+    <Compile Include="ObjectiveAtLevelSet.cs" />
     <Compile Include="ViscosityAtLevelSet.cs" />
     <Compile Include="Constitutive_OperatorComponents.cs" />
     <Compile Include="DiffusionInBulk.cs" />

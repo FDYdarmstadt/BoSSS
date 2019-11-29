@@ -96,6 +96,10 @@ namespace BoSSS.Solution.RheologyCommon {
             double PosCellLengthScale = PosLengthScaleS[inp.jCellOut];
             double NegCellLengthScale = NegLengthScaleS[inp.jCellIn];
 
+            //double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
+            //if (hCutCellMin <= 1.0e-10 * hCellMin)
+            //    // very small cell -- clippling
+            //    hCutCellMin = hCellMin;
             double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
             if (hCutCellMin <= 1.0e-10 * hCellMin)
                 // very small cell -- clippling
@@ -109,20 +113,24 @@ namespace BoSSS.Solution.RheologyCommon {
             switch (Component) {
                 case 0:
                     res += 0.5 * ((UA[0] * betaA + UB[0] * betaB) * N[0] + (UA[1] * betaA + UB[1] * betaB) * N[0]); // central difference fo grad(u) and grad(u)^T
+                    //res += pen1[0] * ((UA[0] * betaA - UB[0] * betaB) * N[0]) + pen1[1] * ((UA[0] * betaA - UB[0] * betaB) * N[1]); // beta Penalty for grad(u)
+                    //res += pen1[0] * ((UA[1] * betaA - UB[1] * betaB) * N[0]) + pen1[1] * ((UA[1] * betaA - UB[1] * betaB) * N[1]); // beta penalty for grad(u)^T
                     res += pen1[0] * ((UA[0] * betaA - UB[0] * betaB) * N[0]) + pen1[1] * ((UA[0] * betaA - UB[0] * betaB) * N[1]); // beta Penalty for grad(u)
                     res += pen1[0] * ((UA[1] * betaA - UB[1] * betaB) * N[0]) + pen1[1] * ((UA[1] * betaA - UB[1] * betaB) * N[1]); // beta penalty for grad(u)^T
 
                     break;
                 case 1:
                     res += 0.5 * ((UA[0] * betaA + UB[0] * betaB) * N[1] + (UA[1] * betaA + UB[1] * betaB) * N[0]);
+                    //res += pen1[0] * ((UA[0] * betaA - UB[0] * betaB) * N[0]) + pen1[1] * ((UA[0] * betaA - UB[0] * betaB) * N[1]);
+                    //res += pen1[0] * ((UA[1] * betaA - UB[1] * betaB) * N[0]) + pen1[1] * ((UA[1] * betaA - UB[1] * betaB) * N[1]);
                     res += pen1[0] * ((UA[0] * betaA - UB[0] * betaB) * N[0]) + pen1[1] * ((UA[0] * betaA - UB[0] * betaB) * N[1]);
                     res += pen1[0] * ((UA[1] * betaA - UB[1] * betaB) * N[0]) + pen1[1] * ((UA[1] * betaA - UB[1] * betaB) * N[1]);
 
                     break;
                 case 2:
                     res += 0.5 * ((UA[0] * betaA + UB[0] * betaB) * N[1] + (UA[1] * betaA + UB[1] * betaB) * N[1]);
-                    res += pen1[0] * ((UA[0] * betaA - UB[0] * betaB) * N[0]) + pen1[1] * ((UA[0] * betaA - UB[0] * betaB) * N[1]);
-                    res += pen1[0] * ((UA[1] * betaA - UB[1] * betaB) * N[0]) + pen1[1] * ((UA[1] * betaA - UB[1] * betaB) * N[1]);
+                    //res += pen1[0] * ((UA[0] * betaA - UB[0] * betaB) * N[0]) + pen1[1] * ((UA[0] * betaA - UB[0] * betaB) * N[1]);
+                    //res += pen1[0] * ((UA[1] * betaA - UB[1] * betaB) * N[0]) + pen1[1] * ((UA[1] * betaA - UB[1] * betaB) * N[1]);
 
                     break;
                 default:
