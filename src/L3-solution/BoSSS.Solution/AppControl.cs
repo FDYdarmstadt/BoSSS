@@ -642,12 +642,12 @@ namespace BoSSS.Solution.Control {
 
 
         /// <summary>
-        /// See <see cref="CompMode"/>.
+        /// See <see cref="TimesteppingMode"/>.
         /// </summary>
-        public enum _CompMode {
+        public enum _TimesteppingMode {
 
             /// <summary>
-            /// Instationary/Transient simulation.
+            /// time-dependent/Transient simulation.
             /// </summary>
             Transient,
 
@@ -657,12 +657,25 @@ namespace BoSSS.Solution.Control {
             Steady
         }
 
+        [DataMember]
+        _TimesteppingMode m_TimesteppingMode;
 
         /// <summary>
         /// For solvers which support both, stationary as well as transient simulations, the corresponding switch.
         /// </summary>
-        [DataMember]
-        public _CompMode CompMode;
+        [JsonIgnore]
+        public _TimesteppingMode TimesteppingMode {
+            get {
+                return m_TimesteppingMode;
+            }
+            set {
+                if (value == _TimesteppingMode.Steady) {
+                    dtFixed = double.MaxValue / 1e4;
+                    NoOfTimesteps = 1;
+                }
+                m_TimesteppingMode = value;
+            }
+        }
 
 
         /// <summary>

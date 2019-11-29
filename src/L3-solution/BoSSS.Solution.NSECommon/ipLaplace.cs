@@ -94,7 +94,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </returns>
         protected abstract bool IsDirichlet(ref Foundation.CommonParamsBnd inp);
 
-        
+
         /// <summary>
         /// Currently, not operational - intended for update of penalty length scales.
         /// </summary>
@@ -113,16 +113,16 @@ namespace BoSSS.Solution.NSECommon {
 
             */
 
-            
+
         }
-        
+
 
 
         /// <summary>
         /// Length scales used in <see cref="GetPenalty"/>
         /// </summary>
-        protected  MultidimensionalArray InverseLengthScales;
-               
+        protected MultidimensionalArray InverseLengthScales;
+
         /// <summary>
         /// computation of penalty parameter according to:
         /// An explicit expression for the penalty parameter of the
@@ -131,7 +131,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         protected virtual double GetPenalty(int jCellIn, int jCellOut) {
             double cj_in = InverseLengthScales[jCellIn];
-            double mu = m_penalty* cj_in;
+            double mu = m_penalty * cj_in;
             if(jCellOut >= 0) {
                 double cj_out = InverseLengthScales[jCellOut];
                 mu = Math.Max(mu, m_penalty * cj_out);
@@ -162,6 +162,7 @@ namespace BoSSS.Solution.NSECommon {
                 return TermActivationFlags.GradUxGradV;
             }
         }
+
 
         /// <summary>
         /// Volume integrand of the SIP
@@ -194,7 +195,7 @@ namespace BoSSS.Solution.NSECommon {
 
 
             Acc -= (_uA[0] - _uB[0]) * (_vA - _vB) * pnlty * nuMax; // penalty term
-                        
+
 
             return Acc;
 

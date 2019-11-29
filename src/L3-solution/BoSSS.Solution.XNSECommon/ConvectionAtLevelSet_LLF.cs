@@ -563,6 +563,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             }
         }
 
+
         public int LevelSetIndex {
             get { return 0; }
         }
@@ -782,6 +783,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
                     VariableNames.HeatFlux0Vector(D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure);
             }
         }
+
 
 
         public int LevelSetIndex {

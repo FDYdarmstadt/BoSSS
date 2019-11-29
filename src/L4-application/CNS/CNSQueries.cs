@@ -147,7 +147,7 @@ namespace CNS {
             /// </summary>
             protected override double BorderEdgeFlux(double time, double[] x, double[] normal, byte EdgeTag, double[] Uin, int jEdge) {
                 StateVector state = new StateVector(
-                    material, Uin[0], new Vector(Uin[1], Uin[2], 0.0), Uin[3]);
+                    material, Uin[0], new ilPSP.Vector(Uin[1], Uin[2], 0.0), Uin[3]);
 
                 double mu = 0.0;
                 if (ReynoldsNumber != 0.0) {

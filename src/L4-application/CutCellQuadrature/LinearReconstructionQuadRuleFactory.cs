@@ -75,8 +75,8 @@ namespace CutCellQuadrature {
                                 LineSegment linearReconstruction = new LineSegment(
                                     RefElement.SpatialDimension,
                                     RefElement,
-                                    pointRule.Nodes.GetRow(0),
-                                    pointRule.Nodes.GetRow(1));
+                                    pointRule.Nodes.GetRowPt(0),
+                                    pointRule.Nodes.GetRowPt(1));
 
                                 reconstructedRule = QuadRule.CreateEmpty(
                                     RefElement, baseRule.NoOfNodes, RefElement.SpatialDimension);
@@ -107,9 +107,9 @@ namespace CutCellQuadrature {
                                     orderingDirection = 1;
                                 }
 
-                                double[][] roots = new double[pointRule.NoOfNodes][];
+                                Vector[] roots = new Vector[pointRule.NoOfNodes];
                                 for (int i = 0; i < roots.Length; i++) {
-                                    roots[i] = new double[] { pointRule.Nodes[i, 0], pointRule.Nodes[i, 1] };
+                                    roots[i] = new Vector( pointRule.Nodes[i, 0], pointRule.Nodes[i, 1] );
                                 }
                                 var orderedRoots = roots.OrderBy(t => t[orderingDirection]).ToArray();
 

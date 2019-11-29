@@ -52,7 +52,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //if(D == 3)
                 C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
-            AppControl._CompMode compMode = AppControl._CompMode.Transient;
+            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
             //_DbPath = @"D:\local\local_test_db";
@@ -339,7 +339,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.PARDISO };
 
-            C.Option_LevelSetEvolution = (compMode == AppControl._CompMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
+            C.Option_LevelSetEvolution = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
             //C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
@@ -404,11 +404,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
-            C.Timestepper_LevelSetHandling = (compMode == AppControl._CompMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
+            C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
             //C.LSunderrelax = 0.05;
             //C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
-            C.CompMode = compMode;
+            C.TimesteppingMode = compMode;
             //C.CompMode = AppControl._CompMode.Transient; 
 
             double dt = 5e-5; //0.01;
@@ -433,7 +433,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            AppControl._CompMode compMode = AppControl._CompMode.Transient;
+            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
             _DbPath = @"\\dc1\userspace\yotov\bosss-db";
@@ -658,7 +658,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
 
-            C.Option_LevelSetEvolution = (compMode == AppControl._CompMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.ExtensionVelocity;
+            C.Option_LevelSetEvolution = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.ExtensionVelocity;
             //C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
@@ -718,11 +718,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF2;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
-            C.Timestepper_LevelSetHandling = (compMode == AppControl._CompMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
+            C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
             //C.LSunderrelax = 0.5;
             //C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
-            C.CompMode = compMode;
+            C.TimesteppingMode = compMode;
             //C.CompMode = AppControl._CompMode.Transient; 
 
             double dt = 5e-2;
@@ -746,7 +746,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            AppControl._CompMode compMode = AppControl._CompMode.Transient;
+            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
             _DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
             //_DbPath = @"D:\local\local_Testcase_databases\Testcase_OscillatingDroplet";
@@ -955,7 +955,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.PARDISO };
 
-            C.Option_LevelSetEvolution = (compMode == AppControl._CompMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.ExtensionVelocity;
+            C.Option_LevelSetEvolution = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.ExtensionVelocity;
             //C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
@@ -1012,11 +1012,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
 
-            C.Timestepper_LevelSetHandling = (compMode == AppControl._CompMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
+            C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
             //C.LSunderrelax = 0.5;
             //C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
-            C.CompMode = compMode;
+            C.TimesteppingMode = compMode;
             //C.CompMode = AppControl._CompMode.Transient; 
 
             double dt = 1e-1;
@@ -1283,7 +1283,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.dt_increment = 20;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             //C.TimeStepper = XNSE_Control._Timestepper.BDF2;
             double dt = 5e-4;
             C.dtMax = dt;
@@ -1312,7 +1312,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            AppControl._CompMode compMode = AppControl._CompMode.Transient;
+            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
             //_DbPath = @"D:\local\local_test_db";
@@ -1526,7 +1526,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.PARDISO };
 
-            C.Option_LevelSetEvolution = (compMode == AppControl._CompMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
+            C.Option_LevelSetEvolution = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
             //C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
@@ -1583,11 +1583,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
 
-            C.Timestepper_LevelSetHandling = (compMode == AppControl._CompMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Iterative;
+            C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Iterative;
             //C.LSunderrelax = 0.05;
             //C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
-            C.CompMode = compMode;
+            C.TimesteppingMode = compMode;
             //C.CompMode = AppControl._CompMode.Transient; 
 
             double dt = 12.5e-4;
@@ -1612,7 +1612,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            AppControl._CompMode compMode = AppControl._CompMode.Transient;
+            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
             // basic database options
             // ======================
@@ -1800,7 +1800,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
 
-            C.Option_LevelSetEvolution = (compMode == AppControl._CompMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.Prescribed;
+            C.Option_LevelSetEvolution = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.Prescribed;
             //C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
@@ -1822,9 +1822,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
-            C.Timestepper_LevelSetHandling = (compMode == AppControl._CompMode.Steady) ? LevelSetHandling.None : LevelSetHandling.LieSplitting;
+            C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.LieSplitting;
 
-            C.CompMode = compMode;
+            C.TimesteppingMode = compMode;
 
             double dt = period / 100.0;
             C.dtMax = dt;
@@ -1852,7 +1852,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             if(D == 3)
                 C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
 
-            AppControl._CompMode compMode = AppControl._CompMode.Transient;
+            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
             // basic database options
             // ======================
@@ -2096,7 +2096,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
 
-            C.Option_LevelSetEvolution = (compMode == AppControl._CompMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.Prescribed;
+            C.Option_LevelSetEvolution = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.Prescribed;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
             C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
@@ -2115,9 +2115,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-            C.Timestepper_LevelSetHandling = (compMode == AppControl._CompMode.Steady) ? LevelSetHandling.None : LevelSetHandling.LieSplitting;
+            C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.LieSplitting;
 
-            C.CompMode = compMode;
+            C.TimesteppingMode = compMode;
 
             double dt = prescribedVel / 50.0;
             C.dtMax = dt;

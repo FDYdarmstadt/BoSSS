@@ -93,7 +93,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
             Debug.Assert(x.Length == stateIn.Dimension);
             int D = x.Length;
 
-            Vector uOut = new Vector(D);
+            ilPSP.Vector uOut = new ilPSP.Vector(D);
             for (int i = 0; i < D; i++) {
                 uOut[i] = VelocityFunctions[i](x, time);
             }

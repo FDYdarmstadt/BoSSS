@@ -229,6 +229,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             }
         }
 
+
         /*
 
         /// <summary>
@@ -391,7 +392,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             }
         } */
 
-        
+
     }
 
 

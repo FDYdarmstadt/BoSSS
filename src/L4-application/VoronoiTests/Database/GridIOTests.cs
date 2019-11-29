@@ -9,6 +9,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Voronoi;
 using NUnit.Framework;
+using ilPSP;
 
 namespace VoronoiTests.Database
 {

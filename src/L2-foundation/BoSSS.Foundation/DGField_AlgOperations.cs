@@ -391,7 +391,7 @@ namespace BoSSS.Foundation {
                     return null;
                 }
             }
-
+           
             #endregion
         }
 
@@ -548,7 +548,7 @@ namespace BoSSS.Foundation {
                     return null;
                 }
             }
-
+       
             /// <summary>
             /// Applies the given in each evaluation point.
             /// </summary>
@@ -758,6 +758,7 @@ namespace BoSSS.Foundation {
                     return null;
                 }
             }
+
         }
 
         /// <summary>

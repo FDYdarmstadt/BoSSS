@@ -11,7 +11,7 @@ using BoSSS.Foundation.Grid.RefElements;
 using static BoSSS.Foundation.XDG.Quadrature.HMF.LineSegment;
 using ilPSP;
 using System.Collections;
-
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Foundation.XDG.Quadrature
 {
@@ -308,9 +308,11 @@ namespace BoSSS.Foundation.XDG.Quadrature
         protected override double[] FindRoots(LinearPSI<Square> psi, MultidimensionalArray X, int heightDirection, double[] bounds, int cell)
         {
             MultidimensionalArray XonPsi = psi.ProjectOnto(X);
-            XonPsi = XonPsi.ExtractSubArrayShallow(new int[] { 0, -1 });
-            double[] start = XonPsi.To1DArray();
-            double[] end = XonPsi.To1DArray();
+            //XonPsi = XonPsi.ExtractSubArrayShallow(new int[] { 0, -1 });
+            //double[] start = XonPsi.To1DArray();
+            //double[] end = XonPsi.To1DArray();
+            Vector start = XonPsi.GetRowPt(0);
+            Vector end = XonPsi.GetRowPt(0);
 
             start[heightDirection] = -1;
             end[heightDirection] = 1;

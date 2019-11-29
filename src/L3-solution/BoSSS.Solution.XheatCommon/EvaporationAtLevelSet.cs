@@ -145,6 +145,7 @@ namespace BoSSS.Solution.XheatCommon {
             }
         }
 
+
         public int LevelSetIndex {
             get { return 0; }
         }

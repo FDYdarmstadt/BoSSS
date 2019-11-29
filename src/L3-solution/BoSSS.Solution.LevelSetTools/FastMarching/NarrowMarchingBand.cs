@@ -612,7 +612,6 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                     return new string[] { "Src" };
                 }
             }
-
         }
 
 

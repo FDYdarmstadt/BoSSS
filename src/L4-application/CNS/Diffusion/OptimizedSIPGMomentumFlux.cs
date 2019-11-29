@@ -136,6 +136,7 @@ namespace CNS.Diffusion {
                 return null;
             }
         }
+
         #endregion
 
         #region IEdgeComponent Members

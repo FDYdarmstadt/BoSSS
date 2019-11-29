@@ -108,6 +108,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 return new string[] { "artificialViscosity" };
             }
         }
+
         #endregion
 
         #region IEdgeComponent Members

@@ -138,7 +138,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             }
         }
 
-        public override double _DerivativeSource(double[] x, double[] Parameters, double[,] GradientU) {
+        public override double _DerivativeSource(ilPSP.Vector x, double[] Parameters, double[,] GradientU) {
             return base._DerivativeSource(x, Parameters, GradientU) * scale;
         }
 
@@ -357,6 +357,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         public IList<string> ParameterOrdering {
             get { return null; }
         }
+
 
         public int LevelSetIndex {
             get { return 0; }

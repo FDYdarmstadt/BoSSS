@@ -1692,7 +1692,6 @@ namespace BoSSS.Solution {
                         WhichSolver = SparseSolver._whichSolver.PARDISO,
                         TestSolution = false
                     };
-
                 } else {
 
                     var smoother1 = new Schwarz() {

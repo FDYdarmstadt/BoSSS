@@ -54,7 +54,6 @@ namespace BoSSS.Solution.Utils {
             get;
         }
 
-
         /// <summary>
         /// override this method to implement the linear source
         /// </summary>

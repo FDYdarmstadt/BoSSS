@@ -43,7 +43,7 @@ namespace BoSSS.Application.DerivativeTest {
         }
 
         protected override void Flux(ref CommonParamsVol inp, double[] U, double[] output) {
-            Debug.Assert(output.Length == inp.Xglobal.Length);
+            Debug.Assert(output.Length == inp.Xglobal.Dim);
             Array.Clear(output, 0, output.Length);
             output[d] = U[0];
         }
@@ -88,6 +88,7 @@ namespace BoSSS.Application.DerivativeTest {
                 return m_ArgumentOrdering;
             }
         }
+
 
         /// <summary>
         /// diffusion coefficient, set to 1.0 per default;

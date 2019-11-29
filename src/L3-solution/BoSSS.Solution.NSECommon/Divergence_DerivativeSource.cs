@@ -21,6 +21,7 @@ using System.Text;
 using BoSSS.Foundation;
 using BoSSS.Solution.Utils;
 using System.Diagnostics;
+using ilPSP;
 
 namespace BoSSS.Solution.NSECommon {
 
@@ -57,7 +58,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// bla bla bla.
         /// </summary>
-        public override double _DerivativeSource(double[] x, double[] Parameters, double[,] GradientU) {
+        public override double _DerivativeSource(Vector x, double[] Parameters, double[,] GradientU) {
             return GradientU[0, this.component];
         }
 

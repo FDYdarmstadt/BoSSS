@@ -422,7 +422,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             // get dt and check timestepping configuation
             // ------------------------------------------
 
-            if (base.Control.CompMode == Solution.Control.AppControl._CompMode.Transient) {
+            if (base.Control.TimesteppingMode == Solution.Control.AppControl._TimesteppingMode.Transient) {
                 dt = base.GetFixedTimestep();
                 Console.WriteLine("Timestep {0}, dt = {1} ...", TimestepNo, dt);
             } else {

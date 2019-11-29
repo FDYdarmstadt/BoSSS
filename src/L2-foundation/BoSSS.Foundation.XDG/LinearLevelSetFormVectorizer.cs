@@ -21,6 +21,7 @@ using System.Text;
 using BoSSS.Platform;
 using System.Diagnostics;
 using ilPSP;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -125,6 +126,7 @@ namespace BoSSS.Foundation.XDG {
             private set;
         }
 
+
         public double LevelSetForm(ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             throw new NotSupportedException("Should not be called.");
         }
@@ -142,15 +144,13 @@ namespace BoSSS.Foundation.XDG {
 
 
             // create temp mem:
-            double[] node = new double[D];
-            double[] normal = new double[D];
             int NP = (this.ParameterOrdering != null) ? this.ParameterOrdering.Count : 0;
 
             double[] ParamsPos = new double[NP];
             double[] ParamsNeg = new double[NP];
             CommonParamsLs cp = default(CommonParamsLs);
-            cp.n = normal;
-            cp.x = node;
+            cp.n = new Vector(D);
+            cp.x = new Vector(D);
             cp.ParamsNeg = ParamsNeg;
             cp.ParamsPos = ParamsPos;
             cp.time = inp.time;
@@ -194,8 +194,8 @@ namespace BoSSS.Foundation.XDG {
                     //    cp.NegCellLengthScale = double.NaN;
                     
                     for (int n = 0; n < N; n++) { // loop over nodes...
-                        inp.Normal.CopyTo(normal, j, n, -1);
-                        inp.X.CopyTo(node, j, n, -1);
+                        cp.n.SetFrom(inp.Normal, j, n);
+                        cp.x.SetFrom(inp.X, j, n);
                         for (int i = 0; i < NP; i++) {
                             ParamsPos[i] = inp.ParamsPos[i][j, n];
                             ParamsNeg[i] = inp.ParamsNeg[i][j, n];
@@ -224,15 +224,13 @@ namespace BoSSS.Foundation.XDG {
             
 
             // create temp mem:
-            double[] node = new double[D];
-            double[] normal = new double[D];
             int NP = (this.ParameterOrdering != null) ? this.ParameterOrdering.Count : 0;
 
             double[] ParamsPos = new double[NP];
             double[] ParamsNeg = new double[NP];
             CommonParamsLs cp = default(CommonParamsLs);
-            cp.n = normal;
-            cp.x = node;
+            cp.n = new Vector(D);
+            cp.x = new Vector(D);
             cp.ParamsNeg = ParamsNeg;
             cp.ParamsPos = ParamsPos;
             cp.time = inp.time;
@@ -277,8 +275,8 @@ namespace BoSSS.Foundation.XDG {
                     //    cp.NegCellLengthScale = double.NaN;
 
                     for (int n = 0; n < N; n++) { // loop over nodes...
-                        inp.Normal.CopyTo(normal, j, n, -1);
-                        inp.X.CopyTo(node, j, n, -1);
+                        cp.n.SetFrom(inp.Normal, j, n);
+                        cp.x.SetFrom(inp.X, j, n);
                         for (int i = 0; i < NP; i++) {
                             ParamsPos[i] = inp.ParamsPos[i][j, n];
                             ParamsNeg[i] = inp.ParamsNeg[i][j, n];
@@ -310,15 +308,13 @@ namespace BoSSS.Foundation.XDG {
 
 
             // create temp mem:
-            double[] node = new double[D];
-            double[] normal = new double[D];
             int NP = (this.ParameterOrdering != null) ? this.ParameterOrdering.Count : 0;
 
             double[] ParamsPos = new double[NP];
             double[] ParamsNeg = new double[NP];
             CommonParamsLs cp = default(CommonParamsLs);
-            cp.n = normal;
-            cp.x = node;
+            cp.n = new Vector(D);
+            cp.x = new Vector(D);
             cp.ParamsNeg = ParamsNeg;
             cp.ParamsPos = ParamsPos;
             cp.time = inp.time;
@@ -363,8 +359,8 @@ namespace BoSSS.Foundation.XDG {
                     //    cp.NegCellLengthScale = double.NaN;
 
                     for (int n = 0; n < N; n++) { // loop over nodes...
-                        inp.Normal.CopyTo(normal, j, n, -1);
-                        inp.X.CopyTo(node, j, n, -1);
+                        cp.n.SetFrom(inp.Normal, j, n);
+                        cp.x.SetFrom(inp.X, j, n);
                         for (int i = 0; i < NP; i++) {
                             ParamsPos[i] = inp.ParamsPos[i][j, n];
                             ParamsNeg[i] = inp.ParamsNeg[i][j, n];
@@ -395,15 +391,13 @@ namespace BoSSS.Foundation.XDG {
 
 
             // create temp mem:
-            double[] node = new double[D];
-            double[] normal = new double[D];
             int NP = (this.ParameterOrdering != null) ? this.ParameterOrdering.Count : 0;
 
             double[] ParamsPos = new double[NP];
             double[] ParamsNeg = new double[NP];
             CommonParamsLs cp = default(CommonParamsLs);
-            cp.n = normal;
-            cp.x = node;
+            cp.n = new Vector(D);
+            cp.x = new Vector(D);
             cp.ParamsNeg = ParamsNeg;
             cp.ParamsPos = ParamsPos;
             cp.time = inp.time;
@@ -449,8 +443,9 @@ namespace BoSSS.Foundation.XDG {
                     //    cp.NegCellLengthScale = double.NaN;
 
                     for (int n = 0; n < N; n++) { // loop over nodes...
-                        inp.Normal.CopyTo(normal, j, n, -1);
-                        inp.X.CopyTo(node, j, n, -1);
+                        cp.n.SetFrom(inp.Normal, j, n);
+                        cp.x.SetFrom(inp.X, j, n);
+
                         for (int i = 0; i < NP; i++) {
                             ParamsPos[i] = inp.ParamsPos[i][j, n];
                             ParamsNeg[i] = inp.ParamsNeg[i][j, n];
@@ -482,15 +477,13 @@ namespace BoSSS.Foundation.XDG {
 
 
             // create temp mem:
-            double[] node = new double[D];
-            double[] normal = new double[D];
             int NP = (this.ParameterOrdering != null) ? this.ParameterOrdering.Count : 0;
 
             double[] ParamsPos = new double[NP];
             double[] ParamsNeg = new double[NP];
             CommonParamsLs cp = default(CommonParamsLs);
-            cp.n = normal;
-            cp.x = node;
+            cp.n = new Vector(D);
+            cp.x = new Vector(D);
             cp.ParamsNeg = ParamsNeg;
             cp.ParamsPos = ParamsPos;
             cp.time = inp.time;
@@ -531,8 +524,8 @@ namespace BoSSS.Foundation.XDG {
                 //    cp.NegCellLengthScale = double.NaN;
 
                 for (int n = 0; n < N; n++) { // loop over nodes...
-                    inp.Normal.CopyTo(normal, j, n, -1);
-                    inp.X.CopyTo(node, j, n, -1);
+                    cp.n.SetFrom(inp.Normal, j, n);
+                    cp.x.SetFrom(inp.X, j, n);
                     for (int i = 0; i < NP; i++) {
                         ParamsPos[i] = inp.ParamsPos[i][j, n];
                         ParamsNeg[i] = inp.ParamsNeg[i][j, n];
@@ -559,15 +552,13 @@ namespace BoSSS.Foundation.XDG {
 
 
             // create temp mem:
-            double[] node = new double[D];
-            double[] normal = new double[D];
             int NP = (this.ParameterOrdering != null) ? this.ParameterOrdering.Count : 0;
 
             double[] ParamsPos = new double[NP];
             double[] ParamsNeg = new double[NP];
             CommonParamsLs cp = default(CommonParamsLs);
-            cp.n = normal;
-            cp.x = node;
+            cp.n = new Vector(D);
+            cp.x = new Vector(D);
             cp.ParamsNeg = ParamsNeg;
             cp.ParamsPos = ParamsPos;
             cp.time = inp.time;
@@ -611,8 +602,8 @@ namespace BoSSS.Foundation.XDG {
                 //    cp.NegCellLengthScale = double.NaN;
 
                 for (int n = 0; n < N; n++) { // loop over nodes...
-                    inp.Normal.CopyTo(normal, j, n, -1);
-                    inp.X.CopyTo(node, j, n, -1);
+                    cp.n.SetFrom(inp.Normal, j, n);
+                    cp.x.SetFrom(inp.X, j, n);
                     for (int i = 0; i < NP; i++) {
                         ParamsPos[i] = inp.ParamsPos[i][j, n];
                         ParamsNeg[i] = inp.ParamsNeg[i][j, n];
