@@ -269,11 +269,11 @@ namespace BoSSS.Solution.AdvancedSolvers
                         // (and for Level-Set-Updates ...)
                         this.CurrentLin.TransformSolFrom(SolutionVec, xt);
 
-                        if (DoNotUsePresRefPoint = true) {
+                        if (DoNotUsePresRefPoint == true) {
                             XDGField pres = (XDGField)this.m_SolutionVec.Mapping.Fields[2];
                             DGField presSpA = pres.GetSpeciesShadowField("A");
                             DGField presSpB = pres.GetSpeciesShadowField("B");
-                            var meanpres = presSpA.GetMeanValueTotal(null);
+                            var meanpres = presSpB.GetMeanValueTotal(null);
                             presSpA.AccConstant(-1.0 * meanpres);
                             presSpB.AccConstant(-1.0 * meanpres);
                         }

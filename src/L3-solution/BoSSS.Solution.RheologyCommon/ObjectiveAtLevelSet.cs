@@ -81,14 +81,14 @@ namespace BoSSS.Solution.RheologyCommon {
         /// <summary>
         /// default-implementation
         /// </summary>
-        public double LevelSetForm(ref CommonParamsLs inp,
+        public double LevelSetForm(ref CommonParams inp,
             double[] TA, double[] TB, double[,] Grad_uA, double[,] Grad_uB,
             double VA, double VB, double[] Grad_vA, double[] Grad_vB) {
-            double[] N = inp.n;
+            double[] N = inp.Normal;
 
 
-            double PosCellLengthScale = PosLengthScaleS[inp.jCell];
-            double NegCellLengthScale = NegLengthScaleS[inp.jCell];
+            double PosCellLengthScale = PosLengthScaleS[inp.jCellOut];
+            double NegCellLengthScale = NegLengthScaleS[inp.jCellIn];
 
             Debug.Assert(TA.Length == this.ArgumentOrdering.Count);
             Debug.Assert(TB.Length == this.ArgumentOrdering.Count);

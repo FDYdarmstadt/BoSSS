@@ -652,8 +652,8 @@ namespace BoSSS.Application.XRheology_Solver {
 
 
                 m_BDF_Timestepper.DataRestoreAfterBalancing(L,
-                    ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure),
-                    ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity),
+                    ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure, this.StressXX, this.StressXY, this.StressYY),
+                    ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity, this.ResidualStressXX, ResidualStressXY, this.ResidualStressYY),
                     this.LsTrk, this.MultigridSequence);
 
                 //PlotCurrentState(hack_Phystime, new TimestepNumber(hack_TimestepIndex, 13), 2);
@@ -816,8 +816,10 @@ namespace BoSSS.Application.XRheology_Solver {
                 MassFact = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), m_HMForder, 1).MassMatrixFactory;// new MassMatrixFactory(maxB, CurrentAgg);
             var WholeMassMatrix = MassFact.GetMassMatrix(Mapping, MassScale); // mass matrix scaled with density rho
 
-            BlockMsrMatrix inverseMassMatrix = MassFact.GetMassMatrix(CurrentResidual.Mapping, true);
-            inverseMassMatrix.SpMV(1.0, OpAffine, 0.0, CurrentResidual);
+            // For ResidualTest from Markus only
+            //======================================
+            //BlockMsrMatrix inverseMassMatrix = MassFact.GetMassMatrix(CurrentResidual.Mapping, true);
+            //inverseMassMatrix.SpMV(1.0, OpAffine, 0.0, CurrentResidual);
 
 
             // ============================
@@ -1361,60 +1363,60 @@ namespace BoSSS.Application.XRheology_Solver {
 
                                 #region Write residuals to text file
 
-                                // Sample points
+                                //// Sample points
 
-                                int noOfPoints = 1000;
+                                //int noOfPoints = 1000;
 
-                                double[] nodes = GenericBlas.Linspace(-2, 2, noOfPoints);
+                                //double[] nodes = GenericBlas.Linspace(-2, 2, noOfPoints);
 
-                                MultidimensionalArray points = MultidimensionalArray.Create(noOfPoints, 2);
+                                //MultidimensionalArray points = MultidimensionalArray.Create(noOfPoints, 2);
 
-                                for (int i = 0; i < noOfPoints; i++) {
+                                //for (int i = 0; i < noOfPoints; i++) {
 
-                                    points[i, 0] = nodes[i];
+                                //    points[i, 0] = nodes[i];
 
-                                    points[i, 1] = 0.5;
+                                //    points[i, 1] = 0.5;
 
-                                }
-
-
-
-                                // FieldEvaluation
-                                MultidimensionalArray results = MultidimensionalArray.Create(noOfPoints, CurrentResidual.Mapping.Count);
-
-                                for (int i = 0; i < CurrentResidual.Length; i++) {
-
-                                    FieldEvaluation fieldEvaluator = new FieldEvaluation((GridData)this.GridData);
-
-                                    fieldEvaluator.Evaluate(1.0, CurrentResidual.Mapping, points, 0.0, results);
-
-                                }
+                                //}
 
 
 
-                                // StreamWriter
+                                //// FieldEvaluation
+                                //MultidimensionalArray results = MultidimensionalArray.Create(noOfPoints, CurrentResidual.Mapping.Count);
 
-                                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(String.Format("Residuals{0}.txt", dt))) {
+                                //for (int i = 0; i < CurrentResidual.Length; i++) {
 
-                                    //Console.WriteLine("x \t y \t result");
+                                //    FieldEvaluation fieldEvaluator = new FieldEvaluation((GridData)this.GridData);
 
-                                    sw.WriteLine("x \t y \t momX \t momY \t conti \t constXX \t constXY \t constYY");
+                                //    fieldEvaluator.Evaluate(1.0, CurrentResidual.Mapping, points, 0.0, results);
 
-                                    string resultLine;
+                                //}
 
-                                    for (int i = 0; i < noOfPoints; i++) {
 
-                                        resultLine = points[i, 0] + "\t" + points[i, 1] + "\t" + results[i, 0] + "\t" + results[i, 1] + "\t" + results[i, 2] + "\t" + results[i, 3] + "\t" + results[i, 4] + "\t" + results[i, 5] + "\t";
 
-                                        //Console.WriteLine(resultLine);
+                                //// StreamWriter
 
-                                        sw.WriteLine(resultLine);
+                                //using (System.IO.StreamWriter sw = new System.IO.StreamWriter(String.Format("Residuals{0}.txt", dt))) {
 
-                                    }
+                                //    //Console.WriteLine("x \t y \t result");
 
-                                    sw.Flush();
+                                //    sw.WriteLine("x \t y \t momX \t momY \t conti \t constXX \t constXY \t constYY");
 
-                                }
+                                //    string resultLine;
+
+                                //    for (int i = 0; i < noOfPoints; i++) {
+
+                                //        resultLine = points[i, 0] + "\t" + points[i, 1] + "\t" + results[i, 0] + "\t" + results[i, 1] + "\t" + results[i, 2] + "\t" + results[i, 3] + "\t" + results[i, 4] + "\t" + results[i, 5] + "\t";
+
+                                //        //Console.WriteLine(resultLine);
+
+                                //        sw.WriteLine(resultLine);
+
+                                //    }
+
+                                //    sw.Flush();
+
+                                //}
 
                                 #endregion
                                 //=============================================================================================

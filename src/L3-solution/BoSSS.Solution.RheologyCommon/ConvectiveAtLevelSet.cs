@@ -84,10 +84,10 @@ namespace BoSSS.Solution.RheologyCommon {
         /// <summary>
         /// default-implementation
         /// </summary>
-        public double LevelSetForm(ref CommonParamsLs inp,
+        public double LevelSetForm(ref CommonParams inp,
             double[] TA, double[] TB, double[,] Grad_TA, double[,] Grad_TB,
             double VA, double VB, double[] Grad_vA, double[] Grad_vB) {
-            double[] Normale = inp.n;
+            double[] Normale = inp.Normal;
 
             //Flux In
             double res1 = 0;
@@ -95,7 +95,7 @@ namespace BoSSS.Solution.RheologyCommon {
             double n_u1 = 0;
 
             for (int d = 0; d < 2; d++) {
-                n_u1 += Normale[d] * 0.5 * (inp.ParamsNeg[d] + inp.ParamsPos[d]);
+                n_u1 += Normale[d] * 0.5 * (inp.Parameters_IN[d] + inp.Parameters_OUT[d]);
             }
 
             double factor;
@@ -115,7 +115,7 @@ namespace BoSSS.Solution.RheologyCommon {
 
             Normale.ScaleV(-1.0);
             for (int d = 0; d < 2; d++) {
-                n_u2 += Normale[d] * 0.5 * (inp.ParamsNeg[d] + inp.ParamsPos[d]);
+                n_u2 += Normale[d] * 0.5 * (inp.Parameters_IN[d] + inp.Parameters_OUT[d]);
             }
 
             double factor2;
