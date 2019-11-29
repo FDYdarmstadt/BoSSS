@@ -302,7 +302,7 @@ namespace BoSSS.Solution {
                             throw new Exception("wtf?Spacialdim=1,2,3 expected");
                     }
                 }
-                //This is not right in case of XDG ... because blocks have truncated size at this code level
+                //CHANGE THIS ASAP: This is not right in case of XDG ... because blocks have truncated size at this code level
                 LocalDOF[iLevel] = MultigridSequence[iLevel].CellPartitioning.LocalLength * DOFperCell[iLevel];
             }
 
@@ -326,14 +326,16 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.classic_mumps:
                     templinearSolve = new SparseSolver() {
                         WhichSolver = SparseSolver._whichSolver.MUMPS,
-                        LinConfig = lc
+                        LinConfig = lc,
+                        TestSolution = false
                     };
                     break;
 
                 case LinearSolverCode.classic_pardiso:
                     templinearSolve = new SparseSolver() {
                         WhichSolver = SparseSolver._whichSolver.PARDISO,
-                        LinConfig = lc
+                        LinConfig = lc,
+                        TestSolution = false
                     };
                     break;
 
@@ -643,7 +645,7 @@ namespace BoSSS.Solution {
                     break;
 
                 case LinearSolverCode.exp_gmres_levelpmg:
-                    _precond = new LevelPmg() { UseHiOrderSmoothing = true, CoarseLowOrder=1 };
+                    _precond = new LevelPmg() { UseHiOrderSmoothing = true, CoarseLowOrder=3 };
                     //_precond = new SparseSolver() { WhichSolver = SparseSolver._whichSolver.PARDISO };
                     SetLinItCallback(_precond, isNonLinPrecond, IsLinPrecond: true);
                     templinearSolve = new SoftGMRES() {
