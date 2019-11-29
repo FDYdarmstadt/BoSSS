@@ -1656,9 +1656,7 @@ namespace BoSSS.Solution {
                 int SysSize = _LocalDOF[iLevel].MPISum();
                 int NoOfBlocks = (int)Math.Ceiling(((double)SysSize) / ((double)DirectKickIn));
 
-                Console.WriteLine("KcycleMultiSchwarz: REMOVE HARDCODED LEVEL SETTINGS");
-                NoOfBlocks = 2;
-
+                
                 bool useDirect = false;
                 //useDirect |= (SysSize < DirectKickIn);
                 //useDirect |= iLevel == _lc.NoOfMultigridLevels - 1; // 

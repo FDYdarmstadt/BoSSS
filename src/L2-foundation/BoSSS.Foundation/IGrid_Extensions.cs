@@ -10,6 +10,16 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Foundation.Grid {
     
+    public class PoLoch {
+        public static implicit operator Func<Vector, byte> (Func<double, byte> f) {
+            Func<Vector, byte> R = delegate(Vector v) {
+                byte et = f(v.ToArray());
+                return et;
+            };
+            return R;
+        }
+    }
+
     /// <summary>
     /// Various extension methods.
     /// </summary>
@@ -37,7 +47,7 @@ namespace BoSSS.Foundation.Grid {
             });
         }
 
-        
+        /*
         /// <summary>
         /// sets values for <see cref="Cell.CellFaceTags"/> by using a
         /// <paramref name="EdgeTagFunc"/>-function; also adds entries with empty names
@@ -49,8 +59,9 @@ namespace BoSSS.Foundation.Grid {
         static public void DefineEdgeTags(this IGrid g, Func<double[], byte> EdgeTagFunc) {
             g.DefineEdgeTags((Vector v) => EdgeTagFunc(v));
         }
+        */
         
-
+        /*
         /// <summary>
         /// sets values for <see cref="Cell.CellFaceTags"/> by using a
         /// <paramref name="EdgeTagFunc"/>-function; also adds entries with empty names
@@ -62,6 +73,8 @@ namespace BoSSS.Foundation.Grid {
         static public void DefineEdgeTags(this IGrid g, Func<double[], string> EdgeTagFunc) {
             g.DefineEdgeTags((Vector v) => EdgeTagFunc(v));
         }
+        */
+
         
 
         /// <summary>
