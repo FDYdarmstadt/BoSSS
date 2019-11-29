@@ -1684,6 +1684,8 @@ namespace BoSSS.Solution {
                     };
                 } else {
 
+                    Console.WriteLine("Rem: PMG deakt.");
+
                     var smoother1 = new Schwarz() {
                         m_MaxIterations = 1,
                         CoarseSolver = null,
@@ -1695,7 +1697,7 @@ namespace BoSSS.Solution {
                         //},
                         Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
-                        UsePMGinBlocks = true
+                        UsePMGinBlocks = false
                     };
 
                     /*
@@ -1728,6 +1730,13 @@ namespace BoSSS.Solution {
                         PostSmoother = smoother1,
                         Tolerance = iLevel == 0 ? _lc.ConvergenceCriterion : 0.0
                     };
+
+
+                    ((OrthonormalizationMultigrid)levelSolver).IterationCallback =
+                        delegate (int iter, double[] X, double[] Res, MultigridOperator op) {
+                            double renorm = Res.MPI_L2Norm();
+                            Console.WriteLine("      OrthoMg: " + renorm);
+                        };
 
 
                 }

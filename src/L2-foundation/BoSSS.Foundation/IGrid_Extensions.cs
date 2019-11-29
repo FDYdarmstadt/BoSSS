@@ -125,14 +125,16 @@ namespace BoSSS.Foundation.Grid {
                         var _Cell = baseGrid.Cells[jCell];
                         var allCFTs = _Cell.CellFaceTags;
                         int found = 0;
-                        for(int i = 0; i < allCFTs.Length; i++) {
-                            if(allCFTs[i].NeighCell_GlobalID < 0 && allCFTs[i].FaceIndex == iFace) {
-                                found++;
-                                if(allCFTs[i].EdgeTag == et) {
-                                    // nop
-                                } else {
-                                    allCFTs[i].EdgeTag = et;
-                                    GridChanged = true;
+                        if (allCFTs != null) {
+                            for (int i = 0; i < allCFTs.Length; i++) {
+                                if (allCFTs[i].NeighCell_GlobalID < 0 && allCFTs[i].FaceIndex == iFace) {
+                                    found++;
+                                    if (allCFTs[i].EdgeTag == et) {
+                                        // nop
+                                    } else {
+                                        allCFTs[i].EdgeTag = et;
+                                        GridChanged = true;
+                                    }
                                 }
                             }
                         }

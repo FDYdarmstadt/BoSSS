@@ -485,9 +485,8 @@ namespace BoSSS.Application.Rheology {
 
             // half channel mesh3 for cond tests
             //string grid = "962bc97f-0298-4e2f-ac18-06940cb84956"; // anne
-            //string grid = "b5ff1b27-15ba-4105-9284-5074c0de5d16"; // florian
             //string grid = "99ca969c-5ced-4640-b9aa-db665c60ccc9"; // florian laptop (half)
-            string grid = "653f84bd-897d-46a8-b920-c950e329b76b"; // florian laptop (full)
+            string grid = "1c9cb150-88d3-4ee1-974d-7970eabd3cf8"; // florian laptop (full)
 
             // half channel mesh0 for cond tests - schneller?
             //string grid = "55c34774-1769-4f6b-bfc8-cc6c4d74076a";
@@ -565,10 +564,10 @@ namespace BoSSS.Application.Rheology {
             //C.AddBoundaryValue("Wall_bottom", "VelocityX", X => 0);
             C.AddBoundaryValue("Wall_top", "VelocityX", X => 0);
             //C.AddBoundaryValue("Wall_bottom", "VelocityY", X => 0);
-            C.AddBoundaryValue("Wall_top", "VelocityY", X => 0);
-            C.AddBoundaryValue("Wall_cylinder", "VelocityX", X => 0);
-            C.AddBoundaryValue("Wall_cylinder", "VelocityY", X => 0);
-            C.AddBoundaryValue("Freeslip");
+            //C.AddBoundaryValue("Wall_top", "VelocityY", X => 0);
+            //C.AddBoundaryValue("Wall_cylinder", "VelocityX", X => 0);
+            //C.AddBoundaryValue("Wall_cylinder", "VelocityY", X => 0);
+            //C.AddBoundaryValue("Freeslip");
 
 
             if (!C.FixedStreamwisePeriodicBC)

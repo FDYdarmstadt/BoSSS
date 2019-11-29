@@ -200,8 +200,10 @@ namespace BoSSS.Solution.Utils {
                         if (found > 1)
                             Problems.Add("Boundary condition in control file is specified more than once (" + found + " times) (EdgeTagName = '" + EdgeTagName + "', Edgetag = " + EdgeTag + ".");
 
-                        if (found == 0)
-                            Problems.Add("EdgeTagName = '" + EdgeTagName + "', Edgetag = " + EdgeTag + " is specified in the grid, but not in control file.");
+                        if (found == 0) {
+                            bndy.Add(EdgeTagName, new AppControl.BoundaryValueCollection());
+                            //Problems.Add("EdgeTagName = '" + EdgeTagName + "', Edgetag = " + EdgeTag + " is specified in the grid, but not in control file.");
+                        }
                     }
                 }
 

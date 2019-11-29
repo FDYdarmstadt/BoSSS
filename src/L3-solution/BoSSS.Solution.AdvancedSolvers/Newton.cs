@@ -191,6 +191,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                             solver.Init(CurrentLin);
                             step.ClearEntries();
                             var check = f0.CloneAs();
+                           
                             f0.ScaleV(-1.0);
                             solver.ResetStat();
                             solver.Solve(step, f0);
@@ -215,9 +216,6 @@ namespace BoSSS.Solution.AdvancedSolvers
                         } else {
                             throw new NotImplementedException("Your approximation option for the jacobian seems not to be existent.");
                         }
-
-     
-
 
                         // Start line search
                         xOld = x;
