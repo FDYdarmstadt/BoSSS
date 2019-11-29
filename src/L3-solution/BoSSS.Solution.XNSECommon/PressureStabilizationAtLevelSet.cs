@@ -54,14 +54,14 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         MultidimensionalArray h_max_Edge;
-        public double LevelSetForm(ref CommonParamsLs inp,
+        public double LevelSetForm(ref CommonParams inp,
             double[] UA, double[] UB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
             double Flx_InCell, Flx_OutCell;
 
-            double PosCellLengthScale = PosLengthScaleS[inp.jCell];
-            double NegCellLengthScale = NegLengthScaleS[inp.jCell];
+            double PosCellLengthScale = PosLengthScaleS[inp.jCellOut];
+            double NegCellLengthScale = NegLengthScaleS[inp.jCellIn];
 
             double h_max = Math.Max(NegCellLengthScale, PosCellLengthScale);
             double penalty = PressureStabilizationFactor * h_max;

@@ -115,7 +115,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.PhysicalParameters.reynolds_A = 1.0;
             C.PhysicalParameters.reynolds_B = 1.0;
             C.PhysicalParameters.beta_a = 0.0;
-            C.PhysicalParameters.beta_b = 0.0;
+            C.PhysicalParameters.beta_b = 1.0;
 
             C.RaiseWeissenberg = false;
             C.PhysicalParameters.Weissenberg_a = 0.0;// .3;
@@ -275,15 +275,15 @@ namespace BoSSS.Application.XRheology_Solver {
 
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.DoNotUsePresRefPoint = true;
-            C.NonLinearSolver.MaxSolverIterations = 10;
+            C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MinSolverIterations = 1;     
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
             
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
-            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None;
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ContinuousDG;
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.None;
+            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             C.AdvancedDiscretizationOptions.Penalty2 = 1;
@@ -296,7 +296,9 @@ namespace BoSSS.Application.XRheology_Solver {
 
 
             C.AdaptiveMeshRefinement = true;
-            C.RefinementLevel = 1;
+            C.RefineStrategy = XRheology_Control.RefinementStrategy.CurvatureRefined;
+            C.RefinementLevel = 3;
+            C.BaseRefinementLevel = 3;
 
             #endregion
 
@@ -307,15 +309,15 @@ namespace BoSSS.Application.XRheology_Solver {
 
             C.Timestepper_Scheme = XRheology_Control.TimesteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
-            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10;
-            C.NoOfTimesteps = 300;
-            C.saveperiod = 10;
+            C.NoOfTimesteps = 20;
+            C.saveperiod = 1;
 
             #endregion
 
