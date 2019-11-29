@@ -60,7 +60,7 @@ namespace BoSSS.Solution.XNSECommon {
 
                 long GlobalID, GlobalIndex;
                 bool IsInside, onthisProc;
-                double[] pt = (D == 2) ? new double[] { -5, -5 } : new double[] { -5.0, -5.0, -5.0 };
+                double[] pt = (D == 2) ? new double[] { -100, -100 } : new double[] { -5.0, -5.0, -5.0 };
                 grd.LocatePoint(pt, out GlobalID, out GlobalIndex, out IsInside, out onthisProc, LsTrk.Regions.GetCutCellSubGrid().VolumeMask.Complement());
 
 

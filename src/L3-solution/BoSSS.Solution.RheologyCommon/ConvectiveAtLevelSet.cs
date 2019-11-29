@@ -31,22 +31,26 @@ namespace BoSSS.Solution.RheologyCommon {
     /// <summary>
     /// Volume integral of viscosity part of constitutive equations.
     /// </summary>
-    public class IdentityAtLevelSet : BoSSS.Foundation.XDG.ILevelSetForm, ILevelSetEquationComponentCoefficient {
+    public class ConvectiveAtLevelSet : BoSSS.Foundation.XDG.ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
         LevelSetTracker m_LsTrk;
 
         int Component;           // equation index (0: xx, 1: xy, 2: yy)
         BoundaryCondMap<IncompressibleBcType> m_BcMap;
-        protected double betaA; // polymeric viscosity
-        protected double betaB;
+        protected double WeissenbergA;
+        protected double WeissenbergB;
         protected double[] pen1;
+        protected double alpha;
 
         /// <summary>
         /// Initialize viscosity part
         /// </summary>
-        public IdentityAtLevelSet(LevelSetTracker lstrk, int Component) {
+        public ConvectiveAtLevelSet(LevelSetTracker lstrk, int Component, double Weissenberg_a, double Weissenberg_b, double _alpha) {
             this.m_LsTrk = lstrk;
             this.Component = Component;
+            this.WeissenbergA = Weissenberg_a;
+            this.WeissenbergB = Weissenberg_b;
+            this.alpha = _alpha;
         }
 
         /// <summary>
@@ -72,7 +76,7 @@ namespace BoSSS.Solution.RheologyCommon {
         /// </summary>
         public IList<string> ParameterOrdering {
             get {
-                return null;
+                return VariableNames.Velocity0Vector(2);
             }
         }
 
@@ -80,33 +84,50 @@ namespace BoSSS.Solution.RheologyCommon {
         /// <summary>
         /// default-implementation
         /// </summary>
-        public double LevelSetForm(ref CommonParams inp,
-            double[] TA, double[] TB, double[,] Grad_uA, double[,] Grad_uB,
+        public double LevelSetForm(ref CommonParamsLs inp,
+            double[] TA, double[] TB, double[,] Grad_TA, double[,] Grad_TB,
             double VA, double VB, double[] Grad_vA, double[] Grad_vB) {
-            double[] N = inp.Normal;
-            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCellIn];
+            double[] Normale = inp.n;
 
-            int D = N.Length;
-            //Debug.Assert(this.ArgumentOrdering.Count == 3);
+            //Flux In
+            double res1 = 0;
+            double flxIn = 0;
+            double n_u1 = 0;
 
-            double PosCellLengthScale = PosLengthScaleS[inp.jCellIn];
-            double NegCellLengthScale = NegLengthScaleS[inp.jCellIn];
+            for (int d = 0; d < 2; d++) {
+                n_u1 += Normale[d] * 0.5 * (inp.ParamsNeg[d] + inp.ParamsPos[d]);
+            }
 
-            double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
-            if (hCutCellMin <= 1.0e-10 * hCellMin)
-                // very small cell -- clippling
-                hCutCellMin = hCellMin;
+            double factor;
+            if (n_u1 < 0)
+                factor = this.alpha;
+            else
+                factor = 1.0 - this.alpha;
 
-            Debug.Assert(TA.Length == this.ArgumentOrdering.Count);
-            Debug.Assert(TB.Length == this.ArgumentOrdering.Count);
+            res1 += factor * n_u1 * (TA[0] - TB[0]);
+            flxIn = WeissenbergA * res1 * VA;
 
-            double res = 0;
 
-            res += (TA[0] - TB[0]);
-            //res += 0.5 * (TA[0] + TB[0]);
+            //Flux out
+            double res2 = 0;
+            double flxOut = 0;
+            double n_u2 = 0;
 
-            return res * 0.5 * (VA + VB);
-            //return res * (VA - VB);
+            Normale.ScaleV(-1.0);
+            for (int d = 0; d < 2; d++) {
+                n_u2 += Normale[d] * 0.5 * (inp.ParamsNeg[d] + inp.ParamsPos[d]);
+            }
+
+            double factor2;
+            if (n_u2 < 0)
+                factor2 = this.alpha;
+            else
+                factor2 = 1.0 - this.alpha;
+
+            res2 += factor2 * n_u2 * (TA[0] - TB[0]);
+            flxOut = WeissenbergB * res2 * VB;
+
+            return flxIn + flxOut;
         }
 
 
@@ -116,6 +137,16 @@ namespace BoSSS.Solution.RheologyCommon {
         public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
             NegLengthScaleS = csA.CellLengthScales;
             PosLengthScaleS = csB.CellLengthScales;
+
+            if (csA.UserDefinedValues.Keys.Contains("Weissenbergnumber")) {
+                WeissenbergA = (double)csA.UserDefinedValues["Weissenbergnumber"];
+                //Console.WriteLine("Weissenbergnumber = {0}", m_Weissenberg);
+            }
+
+            if (csB.UserDefinedValues.Keys.Contains("Weissenbergnumber")) {
+                WeissenbergB = (double)csB.UserDefinedValues["Weissenbergnumber"];
+                //Console.WriteLine("Weissenbergnumber = {0}", m_Weissenberg);
+            }
         }
 
         //private static bool rem = true;

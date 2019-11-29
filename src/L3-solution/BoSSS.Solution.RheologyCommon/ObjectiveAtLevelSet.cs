@@ -31,22 +31,23 @@ namespace BoSSS.Solution.RheologyCommon {
     /// <summary>
     /// Volume integral of viscosity part of constitutive equations.
     /// </summary>
-    public class IdentityAtLevelSet : BoSSS.Foundation.XDG.ILevelSetForm, ILevelSetEquationComponentCoefficient {
+    public class ObjectiveAtLevelSet : BoSSS.Foundation.XDG.ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
         LevelSetTracker m_LsTrk;
 
         int Component;           // equation index (0: xx, 1: xy, 2: yy)
         BoundaryCondMap<IncompressibleBcType> m_BcMap;
-        protected double betaA; // polymeric viscosity
-        protected double betaB;
-        protected double[] pen1;
+        protected double WeissenbergA;
+        protected double WeissenbergB;
 
         /// <summary>
         /// Initialize viscosity part
         /// </summary>
-        public IdentityAtLevelSet(LevelSetTracker lstrk, int Component) {
+        public ObjectiveAtLevelSet(LevelSetTracker lstrk, int Component, double _WeissenbergA, double _WeissenbergB) {
             this.m_LsTrk = lstrk;
             this.Component = Component;
+            this.WeissenbergA = _WeissenbergA;
+            this.WeissenbergB = _WeissenbergB;
         }
 
         /// <summary>
@@ -56,11 +57,11 @@ namespace BoSSS.Solution.RheologyCommon {
             get {
                 switch (Component) {
                     case 0:
-                        return new string[] { VariableNames.StressXX };
+                        return new string[] { VariableNames.StressXX, VariableNames.StressXY, VariableNames.StressXX, VariableNames.StressXY };
                     case 1:
-                        return new string[] { VariableNames.StressXY };
+                        return new string[] { VariableNames.StressXY, VariableNames.StressYY, VariableNames.StressXX, VariableNames.StressXY };
                     case 2:
-                        return new string[] { VariableNames.StressYY };
+                        return new string[] { VariableNames.StressXY, VariableNames.StressYY, VariableNames.StressXY, VariableNames.StressYY };
                     default:
                         throw new NotImplementedException();
                 }
@@ -80,33 +81,21 @@ namespace BoSSS.Solution.RheologyCommon {
         /// <summary>
         /// default-implementation
         /// </summary>
-        public double LevelSetForm(ref CommonParams inp,
+        public double LevelSetForm(ref CommonParamsLs inp,
             double[] TA, double[] TB, double[,] Grad_uA, double[,] Grad_uB,
             double VA, double VB, double[] Grad_vA, double[] Grad_vB) {
-            double[] N = inp.Normal;
-            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCellIn];
+            double[] N = inp.n;
 
-            int D = N.Length;
-            //Debug.Assert(this.ArgumentOrdering.Count == 3);
 
-            double PosCellLengthScale = PosLengthScaleS[inp.jCellIn];
-            double NegCellLengthScale = NegLengthScaleS[inp.jCellIn];
-
-            double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
-            if (hCutCellMin <= 1.0e-10 * hCellMin)
-                // very small cell -- clippling
-                hCutCellMin = hCellMin;
+            double PosCellLengthScale = PosLengthScaleS[inp.jCell];
+            double NegCellLengthScale = NegLengthScaleS[inp.jCell];
 
             Debug.Assert(TA.Length == this.ArgumentOrdering.Count);
             Debug.Assert(TB.Length == this.ArgumentOrdering.Count);
 
-            double res = 0;
-
-            res += (TA[0] - TB[0]);
-            //res += 0.5 * (TA[0] + TB[0]);
-
-            return res * 0.5 * (VA + VB);
-            //return res * (VA - VB);
+            double res = 0.0;
+            res += (TA[0] * WeissenbergA - TB[0] * WeissenbergB) + (TA[1] * WeissenbergA - TB[1] * WeissenbergB) + (TA[2] * WeissenbergA - TB[2] * WeissenbergB) + (TA[3] * WeissenbergA - TB[3] * WeissenbergB);
+            return res * (VA - VB);
         }
 
 
@@ -116,6 +105,16 @@ namespace BoSSS.Solution.RheologyCommon {
         public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
             NegLengthScaleS = csA.CellLengthScales;
             PosLengthScaleS = csB.CellLengthScales;
+
+            if (csA.UserDefinedValues.Keys.Contains("Weissenbergnumber")) {
+                 WeissenbergA = (double)csA.UserDefinedValues["Weissenbergnumber"];
+                //Console.WriteLine("WeissenbergnumberA = {0}", WeissenbergA);
+            }
+
+            if (csB.UserDefinedValues.Keys.Contains("Weissenbergnumber")) {
+                WeissenbergB = (double)csB.UserDefinedValues["Weissenbergnumber"];
+                //Console.WriteLine("WeissenbergnumberB = {0}", WeissenbergB);
+            }
         }
 
         //private static bool rem = true;

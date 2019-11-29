@@ -298,6 +298,10 @@
       <Project>{383DE201-6871-437E-93C6-DDD41694BBAF}</Project>
       <Name>BoSSS.PlotGenerator</Name>
     </ProjectReference>
+    <ProjectReference Include="..\XRheology_Solver\XRheology_Solver.csproj">
+      <Project>{6f1f90ce-def6-4919-9a07-bb9b8eef0b55}</Project>
+      <Name>XRheology_Solver</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.5">

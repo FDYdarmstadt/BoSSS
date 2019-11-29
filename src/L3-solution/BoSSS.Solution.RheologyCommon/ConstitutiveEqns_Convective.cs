@@ -117,18 +117,19 @@ namespace BoSSS.Solution.RheologyCommon {
 
                 switch (Component) {
                     case 0:
-                        Tout = StressFunction[inp.EdgeTag, 0, 0](inp.X, inp.time); // stress_XX
+                        Tout = Tin[0];// StressFunction[inp.EdgeTag, 0, 0](inp.X, inp.time) * m_Weissenberg; // stress_XX
+                        //Console.WriteLine("Stressfunction is multiplied by " + m_Weissenberg + " Stress before: " + StressFunction[inp.EdgeTag, 0, 0](inp.X, inp.time) + ", Stress after " + Tout);
                         break;
                     case 1:
-                        Tout = StressFunction[inp.EdgeTag, 0, 1](inp.X, inp.time); // stress_XY
+                        Tout = Tin[0];// StressFunction[inp.EdgeTag, 0, 1](inp.X, inp.time); // stress_XY
                         break;
                     case 2:
-                        Tout = StressFunction[inp.EdgeTag, 1, 1](inp.X, inp.time); // stress_YY
+                        Tout = Tin[0];//StressFunction[inp.EdgeTag, 1, 1](inp.X, inp.time); // stress_YY
                         break;
                     default:
                         throw new NotImplementedException();
                 }
-            }
+            }   
 
             //Flux In
             double res1 = 0;

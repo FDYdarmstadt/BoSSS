@@ -32,23 +32,23 @@ using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.LevelSetTools.TestCases;
-using BoSSS.Foundation.XDG;
+using BoSSS.Application.XNSE_Solver;
 
-namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
+namespace BoSSS.Application.XRheology_Solver {
 
     /// <summary>
     /// class providing Controls for the channel flow type testcases
     /// </summary>
-    public static class ChannelFlow {
+    public static class ManSol {
 
 
         /// <summary>
         /// control object for various testing
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 8, int wallBC = 0) {
+        public static XRheology_Control ManSol_Consistency(int p = 2, int kelem = 16, int wallBC = 0) {
 
-            XNSE_Control C = new XNSE_Control();
+            XRheology_Control C = new XRheology_Control();
 
             string _DbPath = null; // @"D:\local\local_test_db";
 
@@ -58,8 +58,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.DbPath = _DbPath;
             C.savetodb = C.DbPath != null;
-            C.ProjectName = "XNSE/Channel";
-            C.ProjectDescription = "Channel flow with vertical interface";
+            C.ProjectName = "XRheology/Channel";
+            C.ProjectDescription = "Consistency test with non-polynomial manufactured solution";
 
             C.ContinueOnIoError = false;
 
@@ -77,8 +77,19 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.FieldOptions.Add("VelocityY", new FieldOpts() {
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            }); C.FieldOptions.Add("StressXX", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            C.FieldOptions.Add("GravityY", new FieldOpts() {
+            C.FieldOptions.Add("StressXY", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("StressYY", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Gravity", new FieldOpts() {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("Pressure", new FieldOpts() {
@@ -92,6 +103,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
+            //C.FieldOptions.Add("GravityXX", new FieldOpts() {
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
+            //C.FieldOptions.Add("GravityXY", new FieldOpts() {
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
+            //C.FieldOptions.Add("GravityYY", new FieldOpts() {
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
             C.FieldOptions.Add("Curvature", new FieldOpts() {
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
@@ -100,10 +120,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            C.FieldOptions.Add("KineticEnergy", new FieldOpts() {
-                Degree = 2*p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            //C.FieldOptions.Add("KineticEnergy", new FieldOpts() {
+            //    Degree = 2*p,
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
 
             #endregion
 
@@ -112,17 +132,23 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region physics
 
+            C.PhysicalParameters.reynolds_A = 1.0;
+            C.PhysicalParameters.reynolds_B = 1.0;
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.rho_B = 1;
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.mu_B = 1;
+            C.PhysicalParameters.Weissenberg_a = 0.0;
+            C.PhysicalParameters.Weissenberg_b = 0.0;
+            C.PhysicalParameters.beta_a = 1.0;
+            C.PhysicalParameters.beta_b = 1.0;
             double sigma = 0.0;
             C.PhysicalParameters.Sigma = sigma;
 
             //C.PhysicalParameters.beta_S = 0.05;
             //C.PhysicalParameters.theta_e = Math.PI / 2.0;
 
-            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = true;
 
             #endregion
@@ -132,52 +158,39 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===============
             #region grid
 
-            double L = 4;// 2;
-            double H = 1;
-
             C.GridFunc = delegate () {
-                double[] Xnodes = GenericBlas.Linspace(0, L, 2 * kelem + 1);
-                //double[] Ynodes = GenericBlas.Linspace(0, H, kelem + 1);
-                double[] Ynodes = GenericBlas.Linspace(-H, H, kelem + 1);
-                //var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX:false);
-                var grd = Grid2D.UnstructuredTriangleGrid(Xnodes, Ynodes);
+                double[] Xnodes = GenericBlas.Linspace(-1, 1, kelem + 1);
+                double[] Ynodes = GenericBlas.Linspace(-1, 1, kelem + 1);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);// periodicX:true, periodicY:true);
 
-                switch (wallBC) {
-                    case 0:
-                        goto default;
-                    case 1:
-                        grd.EdgeTagNames.Add(1, "velocity_inlet_lower");
-                        grd.EdgeTagNames.Add(2, "velocity_inlet_upper");
-                        break;
-                    case 2:
-                        grd.EdgeTagNames.Add(1, "navierslip_linear_lower");
-                        grd.EdgeTagNames.Add(2, "navierslip_linear_upper");
-                        break;
-                    default:
-                        grd.EdgeTagNames.Add(1, "wall_lower");
-                        grd.EdgeTagNames.Add(2, "wall_upper");
-                        break;
+                //grd.EdgeTagNames.Add(2, "Freeslip");
+                grd.EdgeTagNames.Add(1, "Velocity_inlet");
+                //grd.EdgeTagNames.Add(2, "Velocity_inlet_right");
+                //grd.EdgeTagNames.Add(3, "Pressure_Outlet");
 
-                }
-                grd.EdgeTagNames.Add(3, "velocity_inlet_left");
-                ////grd.EdgeTagNames.Add(3, "pressure_outlet_left");
-                grd.EdgeTagNames.Add(4, "pressure_outlet_right");
 
-                //grd.EdgeTagNames.Add(3, "freeslip_left");
-                //grd.EdgeTagNames.Add(4, "freeslip_right");
+                grd.DefineEdgeTags(delegate (double[] _X) {
+                    var X = _X;
+                    double x = X[0];
+                    double y = X[1];
 
-                grd.DefineEdgeTags(delegate (double[] X) {
-                    byte et = 0;
-                    if(Math.Abs(X[1] + H) <= 1.0e-8)
-                        et = 1;
-                    if(Math.Abs(X[1] - H) <= 1.0e-8)
-                        et = 2;
-                    if (Math.Abs(X[0]) <= 1.0e-8)
-                        et = 3;
-                    if (Math.Abs(X[0] - L) <= 1.0e-8)
-                        et = 4;
+                    if (Math.Abs(y - (-1)) < 1.0e-6)
+                        // bottom
+                        return 1;
 
-                    return et;
+                    if (Math.Abs(y - (+1)) < 1.0e-6)
+                        // top
+                        return 1;
+
+                    if (Math.Abs(x - (-1)) < 1.0e-6)
+                        // left
+                        return 1;
+
+                    if (Math.Abs(x - (+1)) < 1.0e-6)
+                        // right
+                        return 1;
+
+                    throw new ArgumentOutOfRangeException();
                 });
 
                 return grd;
@@ -185,36 +198,84 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             #endregion
 
+            // Functions for exact solution
+            // ==============
+            #region func
+
+            Func<double[], double, double> PhiFunc = (X,t) => X[1] - (1 / 2.0) + 0.2; // + (H/20)*Math.Cos(8 * Math.PI * X[0] / L)); //-1);
+
+            Func<double[], double, double> VelX_A_Func = (X, t) => -Math.Exp(X[0]) * (X[1] * Math.Cos(X[1]) + Math.Sin(X[1])); //X[0] * X[0];
+            Func<double[], double, double> VelY_A_Func = (X, t) => Math.Exp(X[0]) * X[1] * Math.Sin(X[1]); //-2 * X[0] * X[1];
+
+            Func<double[], double, double> VelX_B_Func = (X, t) => -Math.Exp(X[0]) * (X[1] * Math.Cos(X[1]) + Math.Sin(X[1]));// X[0] * X[0];
+            Func<double[], double, double> VelY_B_Func = (X, t) => Math.Exp(X[0]) * X[1] * Math.Sin(X[1]); //-2 * X[0] * X[1];
+
+            Func<double[], double, double> Pres_A_Func = (X, t) => 2 * Math.Exp(X[0]) * Math.Sin(X[1]); //2 * X[0];
+            Func<double[], double, double> Pres_B_Func = (X, t) => 2 * Math.Exp(X[0]) * Math.Sin(X[1]); //2 * X[0]; 
+
+            Func<double[], double, double> StressXX_A_Func = (X, t) => -2 * (1 - C.PhysicalParameters.beta_a) * Math.Exp(X[0]) * (X[1] * Math.Cos(X[1]) + Math.Sin(X[1]));
+            Func<double[], double, double> StressXY_A_Func = (X, t) => -2 * (1 - C.PhysicalParameters.beta_a) * Math.Exp(X[0]) * (Math.Cos(X[1]) - X[1] * Math.Sin(X[1]));
+            Func<double[], double, double> StressYY_A_Func = (X, t) => 2 * (1 - C.PhysicalParameters.beta_a) * Math.Exp(X[0]) * (X[1] * Math.Cos(X[1]) + Math.Sin(X[1]));
+
+            Func<double[], double, double> StressXX_B_Func = (X, t) => -2 * (1 - C.PhysicalParameters.beta_b) * Math.Exp(X[0]) * (X[1] * Math.Cos(X[1]) + Math.Sin(X[1]));
+            Func<double[], double, double> StressXY_B_Func = (X, t) => -2 * (1 - C.PhysicalParameters.beta_b) * Math.Exp(X[0]) * (Math.Cos(X[1]) - X[1] * Math.Sin(X[1]));
+            Func<double[], double, double> StressYY_B_Func = (X, t) => 2 * (1 - C.PhysicalParameters.beta_b) * Math.Exp(X[0]) * (X[1] * Math.Cos(X[1]) + Math.Sin(X[1]));
+
+            Func<double[], double, double> GravityX_A_Func = (X, t) => -1 / C.PhysicalParameters.reynolds_A * Math.Exp(X[0]) * (Math.Exp(X[0]) * Math.Cos(X[1]) * Math.Cos(X[1]) * C.PhysicalParameters.reynolds_A - Math.Exp(X[0]) * C.PhysicalParameters.reynolds_A * X[1] * X[1] - Math.Exp(X[0]) * C.PhysicalParameters.reynolds_A - 2 * Math.Sin(X[1]) * C.PhysicalParameters.reynolds_A + 2 * Math.Sin(X[1]));
+            Func<double[], double, double> GravityY_A_Func = (X, t) => 2 * Math.Exp(X[0]) * Math.Cos(X[1]) * ((C.PhysicalParameters.reynolds_A - 1) / C.PhysicalParameters.reynolds_A);
+
+            Func<double[], double, double> GravityX_B_Func = (X, t) => -1 / C.PhysicalParameters.reynolds_B * Math.Exp(X[0]) * (Math.Exp(X[0]) * Math.Cos(X[1]) * Math.Cos(X[1]) * C.PhysicalParameters.reynolds_B - Math.Exp(X[0]) * C.PhysicalParameters.reynolds_B * X[1] * X[1] - Math.Exp(X[0]) * C.PhysicalParameters.reynolds_B - 2 * Math.Sin(X[1]) * C.PhysicalParameters.reynolds_B + 2 * Math.Sin(X[1]));
+            Func<double[], double, double> GravityY_B_Func = (X, t) => 2 * Math.Exp(X[0]) * Math.Cos(X[1]) * ((C.PhysicalParameters.reynolds_B - 1) / C.PhysicalParameters.reynolds_B);
+
+            Func<double[], double, double> GravityXX_A_Func = (X, t) => 2 * Math.Exp(2 * X[0]) * C.PhysicalParameters.Weissenberg_a * (-2 * Math.Cos(X[1]) * Math.Sin(X[1]) * C.PhysicalParameters.beta_a * X[1] * C.PhysicalParameters.Weissenberg_a
+                + 3 * Math.Cos(X[1]) * Math.Cos(X[1]) * C.PhysicalParameters.beta_a + 2 * Math.Cos(X[1]) * Math.Sin(X[1]) * X[1] + C.PhysicalParameters.beta_a * X[1] * X[1] - 3 * Math.Cos(X[1]) * Math.Cos(X[1]) - X[1] * X[1] + C.PhysicalParameters.beta_a - 1);
+            Func<double[], double, double> GravityXY_A_Func = (X, t) => -2 * Math.Exp(2 * X[0]) * (C.PhysicalParameters.beta_a - 1) * C.PhysicalParameters.Weissenberg_a * (2 * Math.Pow(Math.Cos(X[1]), 2) * X[1] 
+                + 3 * Math.Cos(X[1]) * Math.Sin(X[1]) + X[1]);
+            Func<double[], double, double> GravityYY_A_Func = (X, t) => -2 * Math.Exp(2 * X[0]) * C.PhysicalParameters.Weissenberg_a * (-2 * Math.Cos(X[1]) * Math.Sin(X[1]) * C.PhysicalParameters.beta_a * X[1]
+                + 3 * Math.Cos(X[1]) * Math.Cos(X[1]) * C.PhysicalParameters.beta_a + 2 * Math.Cos(X[1]) * Math.Sin(X[1]) * X[1] - 3 * C.PhysicalParameters.beta_a * X[1] * X[1] - 3 * Math.Cos(X[1]) * Math.Cos(X[1]) 
+                + 3 * X[1] * X[1] - 3 * C.PhysicalParameters.beta_a + 3);
+
+            Func<double[], double, double> GravityXX_B_Func = (X, t) => 2 * Math.Exp(2 * X[0]) * C.PhysicalParameters.Weissenberg_b * (-2 * Math.Cos(X[1]) * Math.Sin(X[1]) * C.PhysicalParameters.beta_b * X[1] * C.PhysicalParameters.Weissenberg_b
+                + 3 * Math.Cos(X[1]) * Math.Cos(X[1]) * C.PhysicalParameters.beta_b + 2 * Math.Cos(X[1]) * Math.Sin(X[1]) * X[1] + C.PhysicalParameters.beta_b * X[1] * X[1] - 3 * Math.Cos(X[1]) * Math.Cos(X[1]) - X[1] * X[1] + C.PhysicalParameters.beta_b - 1);
+            Func<double[], double, double> GravityXY_B_Func = (X, t) => -2 * Math.Exp(2 * X[0]) * (C.PhysicalParameters.beta_b - 1) * C.PhysicalParameters.Weissenberg_b * (2 * Math.Pow(Math.Cos(X[1]), 2) * X[1]
+                + 3 * Math.Cos(X[1]) * Math.Sin(X[1]) + X[1]);
+            Func<double[], double, double> GravityYY_B_Func = (X, t) => -2 * Math.Exp(2 * X[0]) * C.PhysicalParameters.Weissenberg_b * (-2 * Math.Cos(X[1]) * Math.Sin(X[1]) * C.PhysicalParameters.beta_b * X[1]
+                + 3 * Math.Cos(X[1]) * Math.Cos(X[1]) * C.PhysicalParameters.beta_b + 2 * Math.Cos(X[1]) * Math.Sin(X[1]) * X[1] - 3 * C.PhysicalParameters.beta_b * X[1] * X[1] - 3 * Math.Cos(X[1]) * Math.Cos(X[1])
+                + 3 * X[1] * X[1] - 3 * C.PhysicalParameters.beta_b + 3);
+
+            #endregion
 
             // Initial Values
             // ==============
             #region init
 
-            Func<double[], double> PhiFunc = (X => X[1] - (H / 2.0) + 0.2); //(X => -1); // X[0] - (H / 2.0)); // + (H/20)*Math.Cos(8 * Math.PI * X[0] / L));
+            C.InitialValues_Evaluators.Add("Phi", X => PhiFunc(X,0));
 
-            //double[] center = new double[] { H / 2.0, H / 2.0 };
-            //double radius = 0.25;
+            C.InitialValues_Evaluators.Add("VelocityX#A", X => VelX_A_Func(X, 0));
+            C.InitialValues_Evaluators.Add("VelocityX#B", X => VelX_B_Func(X, 0));
 
-            //C.InitialValues_Evaluators.Add("Phi",
-            //    //(X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2())   // quadratic form
-            //    (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius)  // signed-distance form
-            //    );
+            C.InitialValues_Evaluators.Add("VelocityY#A", X => VelY_A_Func(X, 0));
+            C.InitialValues_Evaluators.Add("VelocityY#B", X => VelY_B_Func(X, 0));
 
-            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
-
-            double U = 0.125;
-
-            //C.InitialValues_Evaluators.Add("VelocityX#A", X => (-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U);
-            //C.InitialValues_Evaluators.Add("VelocityX#B", X => (4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U);
-
-            //C.InitialValues_Evaluators.Add("Pressure#A", X => 2.0 - X[0]);
-
-            //C.InitialValues_Evaluators.Add("KineticEnergy#A", X => 1.0 * ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U).Pow2() / 2.0);
-
+            C.InitialValues_Evaluators.Add("Pressure#A", X => Pres_A_Func(X, 0));
+            C.InitialValues_Evaluators.Add("Pressure#B", X => Pres_B_Func(X, 0));
             //double Pjump = sigma / radius;
             //C.InitialValues_Evaluators.Add("Pressure#A", X => Pjump);
 
-            //C.InitialValues_Evaluators.Add("GravityX#A", X => 4.0);
+            C.InitialValues_Evaluators.Add("GravityX#A", X => GravityX_A_Func(X, 0));
+            C.InitialValues_Evaluators.Add("GravityX#B", X => GravityX_B_Func(X, 0));
+
+            C.InitialValues_Evaluators.Add("GravityY#A", X => GravityY_A_Func(X, 0));
+            C.InitialValues_Evaluators.Add("GravityY#B", X => GravityY_B_Func(X, 0));
+
+            //C.InitialValues_Evaluators.Add("GravityXX#A", X => GravityXX_A_Func(X, 0));
+            //C.InitialValues_Evaluators.Add("GravityXX#B", X => GravityXX_B_Func(X, 0));
+
+            //C.InitialValues_Evaluators.Add("GravityXY#A", X => GravityXY_A_Func(X, 0));
+            //C.InitialValues_Evaluators.Add("GravityXY#B", X => GravityXY_B_Func(X, 0));
+
+            //C.InitialValues_Evaluators.Add("GravityYY#A", X => GravityYY_A_Func(X, 0));
+            //C.InitialValues_Evaluators.Add("GravityYY#B", X => GravityYY_B_Func(X, 0));
 
             //var database = new DatabaseInfo(_DbPath);
             //Guid restartID = new Guid("cf6bd7bf-a19f-409e-b8c2-0b89388daad6");
@@ -226,50 +287,97 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ==============
             #region exact
 
-            //C.Phi = ((X, t) => PhiFunc(X));
+            C.Phi = PhiFunc;
 
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            C.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { (X, t) => 1 - X[1] * X[1], (X, t) => 0 });
-            C.ExactSolutionVelocity.Add("B", new Func<double[], double, double>[] { (X, t) => 1 - X[1] * X[1], (X, t) => 0 });
+            //C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
+            //C.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { VelX_A_Func, VelY_A_Func });
+            //C.ExactSolutionVelocity.Add("B", new Func<double[], double, double>[] { VelX_B_Func, VelY_B_Func });
 
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionPressure.Add("A", (X, t) => 8 - 2 * X[0]);
-            C.ExactSolutionPressure.Add("B", (X, t) => 8 - 2 * X[0]);
+            //C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
+            //C.ExactSolutionPressure.Add("A", Pres_A_Func);
+            //C.ExactSolutionPressure.Add("B", Pres_B_Func);
+
+            //C.ExactSolutionStressXX = new Dictionary<string, Func<double[], double, double>>();
+            //C.ExactSolutionStressXX.Add("A", StressXX_A_Func);
+            //C.ExactSolutionStressXX.Add("B", StressXX_B_Func);
+
+            //C.ExactSolutionStressXY = new Dictionary<string, Func<double[], double, double>>();
+            //C.ExactSolutionStressXY.Add("A", StressXY_A_Func);
+            //C.ExactSolutionStressXY.Add("B", StressXY_B_Func);
+
+            //C.ExactSolutionStressYY = new Dictionary<string, Func<double[], double, double>>();
+            //C.ExactSolutionStressYY.Add("A", StressYY_A_Func);
+            //C.ExactSolutionStressYY.Add("B", StressYY_B_Func);
 
             #endregion
 
+            // gravity source
+            // ===================
+            #region gravity
+            C.GravityX = new Dictionary<string, Func<double[], double, double>>();
+            C.GravityX.Add("A", GravityX_A_Func);
+            C.GravityX.Add("B", GravityX_B_Func);
+
+            C.GravityY = new Dictionary<string, Func<double[], double, double>>();
+            C.GravityY.Add("A", GravityY_A_Func);
+            C.GravityY.Add("B", GravityY_B_Func);
+
+            //C.GravityXX = new Dictionary<string, Func<double[], double, double>>();
+            //C.GravityXX.Add("A", GravityXX_A_Func);
+            //C.GravityXX.Add("B", GravityXX_B_Func);
+
+            //C.GravityXY = new Dictionary<string, Func<double[], double, double>>();
+            //C.GravityXY.Add("A", GravityXY_A_Func);
+            //C.GravityXY.Add("B", GravityXY_B_Func);
+
+            //C.GravityYY = new Dictionary<string, Func<double[], double, double>>();
+            //C.GravityYY.Add("A", GravityYY_A_Func);
+            //C.GravityYY.Add("B", GravityYY_B_Func);
+
+            #endregion
 
             // boundary conditions
             // ===================
             #region BC
 
-            switch (wallBC) {
-                case 0:
-                    goto default;
-                case 1:
-                    C.AddBoundaryValue("velocity_inlet_lower", "VelocityY#A", X => U);
-                    C.AddBoundaryValue("velocity_inlet_lower", "VelocityY#B", X => U);
-                    C.AddBoundaryValue("velocity_inlet_upper", "VelocityY#A", X => U);
-                    C.AddBoundaryValue("velocity_inlet_upper", "VelocityY#B", X => U);
-                    break;
-                case 2:
-                    C.AddBoundaryValue("navierslip_linear_lower");
-                    C.AddBoundaryValue("navierslip_linear_upper");
-                    break;
-                default:
-                    C.AddBoundaryValue("wall_lower");
-                    C.AddBoundaryValue("wall_upper");
-                    break;
+            //C.AddBoundaryValue("Freeslip");
+            C.AddBoundaryValue("Velocity_inlet", "VelocityX#A", VelX_A_Func);
+            C.AddBoundaryValue("Velocity_inlet", "VelocityX#B", VelX_B_Func);
+            C.AddBoundaryValue("Velocity_inlet", "VelocityY#A", VelY_A_Func);
+            C.AddBoundaryValue("Velocity_inlet", "VelocityY#B", VelY_B_Func);
 
-            }
+            C.AddBoundaryValue("Velocity_inlet", "Pressure#A", Pres_A_Func);
+            C.AddBoundaryValue("Velocity_inlet", "Pressure#B", Pres_B_Func);
 
-            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", X => 1 - X[1] * X[1]); //(-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U);
-            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", X => 1 - X[1] * X[1]); //U);
-            //C.AddBoundaryValue("velocity_inlet_left", "KineticEnergy#A", X => 1.0 * ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U).Pow2() / 2.0);
-            ////C.AddBoundaryValue("velocity_inlet_left", "KineticEnergy#B", X => U.Pow2() / 2); 
-            ////C.AddBoundaryValue("pressure_outlet_left");
-            C.AddBoundaryValue("pressure_outlet_right");
+            //C.AddBoundaryValue("Velocity_inlet_right", "VelocityX#A", (X, t) => -Math.Exp(X[0]) * (X[1] * Math.Cos(X[1]) + Math.Sin(X[1])));
+            //C.AddBoundaryValue("Velocity_inlet_right", "VelocityX#B", (X, t) => -Math.Exp(X[0]) * (X[1] * Math.Cos(X[1]) + Math.Sin(X[1])));
+            //C.AddBoundaryValue("Velocity_inlet_right", "VelocityY#A", (X, t) => Math.Exp(X[0]) * X[1] * Math.Sin(X[1]));
+            //C.AddBoundaryValue("Velocity_inlet_right", "VelocityY#B", (X, t) => Math.Exp(X[0]) * X[1] * Math.Sin(X[1]));
 
+            //C.AddBoundaryValue("Velocity_inlet_right", "Pressure#A", (X, t) => 2 * Math.Exp(X[0]) * Math.Sin(X[1]));
+            //C.AddBoundaryValue("Velocity_inlet_right", "Pressure#B", (X, t) => 2 * Math.Exp(X[0]) * Math.Sin(X[1]));
+
+            //C.AddBoundaryValue("Pressure_Outlet");
+
+            //C.AddBoundaryValue("Velocity_inlet", "GravityX#A", GravityX_A_Func);
+            //C.AddBoundaryValue("Velocity_inlet", "GravityX#B", GravityX_B_Func);
+            //C.AddBoundaryValue("Velocity_inlet", "GravityY#A", GravityY_A_Func);
+            //C.AddBoundaryValue("Velocity_inlet", "GravityY#B", GravityY_B_Func);
+
+
+            //C.AddBoundaryValue("Velocity_inlet_right", "GravityX#A", GravityX_A_Func);
+            //C.AddBoundaryValue("Velocity_inlet_right", "GravityX#B", GravityX_B_Func);
+            //C.AddBoundaryValue("Velocity_inlet_right", "GravityY#A", GravityY_A_Func);
+            //C.AddBoundaryValue("Velocity_inlet_right", "GravityY#B", GravityY_B_Func);
+
+            //C.AddBoundaryValue("Velocity_inlet", "GravityXX#A", GravityXX_A_Func);
+            //C.AddBoundaryValue("Velocity_inlet", "GravityXX#B", GravityXX_B_Func);
+
+            //C.AddBoundaryValue("Velocity_inlet", "GravityXY#A", GravityXY_A_Func);
+            //C.AddBoundaryValue("Velocity_inlet", "GravityXY#B", GravityXY_B_Func);
+
+            //C.AddBoundaryValue("Velocity_inlet", "GravityYY#A", GravityYY_A_Func);
+            //C.AddBoundaryValue("Velocity_inlet", "GravityYY#B", GravityYY_B_Func);
 
             #endregion
 
@@ -281,8 +389,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ComputeEnergy = false;
 
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MinSolverIterations = 3;
             C.LinearSolver.MaxSolverIterations = 50;
             //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
@@ -295,7 +405,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
-            C.SkipSolveAndEvaluateResidual = true;
+            C.AdvancedDiscretizationOptions.Penalty2 = 1;
+            C.SkipSolveAndEvaluateResidual = false;
 
 
             C.AdaptiveMeshRefinement = false;
@@ -308,15 +419,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.Timestepper_Scheme = XRheology_Control.TimesteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
-            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.Endtime = 1000;
+            C.Endtime = 10;
             C.NoOfTimesteps = 300;
             C.saveperiod = 10;
 
@@ -337,13 +448,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control CF_BoundaryTest(int bc = 3, bool Xperiodic = true, bool init_exact = false, bool slip = false) {
+        public static XRheology_Control CF_BoundaryTest(int bc = 3, bool Xperiodic = true, bool init_exact = false, bool slip = false) {
 
             int p = 2;
             int kelem = 16;
 
 
-            XNSE_Control C = new XNSE_Control();
+            XRheology_Control C = new XRheology_Control();
 
             // basic database options
             // ======================
@@ -576,7 +687,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.Timestepper_Scheme = XRheology_Control.TimesteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
@@ -600,14 +711,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control CF_LevelSetMovementTest(int boundarySetup = 2, double characteristicLength = 1.0, LevelSetEvolution lsEvo = LevelSetEvolution.FastMarching, 
-            LevelSetHandling lsHandl = LevelSetHandling.Coupled_Once, XNSE_Control.TimesteppingScheme tsScheme = XNSE_Control.TimesteppingScheme.ImplicitEuler) {
+        public static XRheology_Control CF_LevelSetMovementTest(int boundarySetup = 2, double characteristicLength = 1.0, LevelSetEvolution lsEvo = LevelSetEvolution.FastMarching, 
+            LevelSetHandling lsHandl = LevelSetHandling.Coupled_Once, XRheology_Control.TimesteppingScheme tsScheme = XRheology_Control.TimesteppingScheme.ImplicitEuler) {
 
             int p = 2;
             int kelem = 16;
             double cLength = characteristicLength;
 
-            XNSE_Control C = new XNSE_Control();
+            XRheology_Control C = new XRheology_Control();
             
             // basic database options
             // ======================
@@ -905,15 +1016,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control CF_LevelSetRotationTest(int boundarySetup = 1, double characteristicLength = 1.0, LevelSetEvolution lsEvo = LevelSetEvolution.FastMarching,
-            LevelSetHandling lsHandl = LevelSetHandling.Coupled_Once, XNSE_Control.TimesteppingScheme tsScheme = XNSE_Control.TimesteppingScheme.ImplicitEuler)
+        public static XRheology_Control CF_LevelSetRotationTest(int boundarySetup = 1, double characteristicLength = 1.0, LevelSetEvolution lsEvo = LevelSetEvolution.FastMarching,
+            LevelSetHandling lsHandl = LevelSetHandling.Coupled_Once, XRheology_Control.TimesteppingScheme tsScheme = XRheology_Control.TimesteppingScheme.ImplicitEuler)
         {
 
             int p = 2;
             int kelem = 16;
             double cLength = characteristicLength;
 
-            XNSE_Control C = new XNSE_Control();
+            XRheology_Control C = new XRheology_Control();
 
             // basic database options
             // ======================
