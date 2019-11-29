@@ -312,9 +312,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                 int L = X.Length;
-                int Lc = m_MgOperator.CoarserLevel.Mapping.LocalLength; 
+                int Lc;
+                if (this.CoarserLevelSolver != null)
+                    Lc = m_MgOperator.CoarserLevel.Mapping.LocalLength;
+                else
+                    Lc = -1;
+
                 double[] rl = new double[L];
-                double[] rlc = new double[Lc];
+                double[] rlc = Lc > 0 ? new double[Lc] : null;
 
                 //double[] Xex = _B.ToArray();
                 //Xex.ClearEntries();

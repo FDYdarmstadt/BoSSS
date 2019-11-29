@@ -401,7 +401,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// DG degree at low order subblocks. This degree is the border, which divides into low order and high order blocks
+        /// DG degree at low order sub-blocks; If p-multi-grid is used (<see cref="UsePMGinBlocks"/>), 
+        /// this degree is the boundary which divides into low order and high order blocks.
         /// </summary>
         public int pLow = 1;
 
@@ -445,6 +446,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 this.m_MgOp = op;
                 int myMpiRank = MgMap.MpiRank;
                 int myMpisize = MgMap.MpiSize;
+                int D = m_MgOp.GridData.SpatialDimension;
 
                 if (!Mop.RowPartitioning.EqualsPartition(MgMap.Partitioning))
                     throw new ArgumentException("Row partitioning mismatch.");
@@ -707,7 +709,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     int p = Degrees[iVar];
                                     int NoOfSpc = BS[iVar].GetNoOfSpecies(j);
                                     int Np = BS[iVar].GetLength(j, p);
-                                    int NpLo = BS[iVar].GetLength(j, pLow);
+
+                                    int _pLow = this.pLow;
+                                    if (iVar == D)
+                                        _pLow -= 1; // Quick hack for Stokes systems
+
+                                    int NpLo = BS[iVar].GetLength(j, _pLow);
                                     NpLoTot += NpLo;
 
                                     int NpBase = Np / NoOfSpc; // DOFs in cell *per species*
