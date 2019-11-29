@@ -145,7 +145,7 @@ namespace CNS {
                 //var grid = Grid2D.Trapezoidal2dGrid(3, 2, 4, GenericBlas.Linspace(0, 1, 2));
 
                 grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
-                grid.DefineEdgeTags(X => 1);
+                grid.DefineEdgeTags((Vector X) => 1);
                 return grid;
             };
 
@@ -368,7 +368,7 @@ namespace CNS {
                 //var grid = Grid2D.Trapezoidal2dGrid(3, 2, 4, GenericBlas.Linspace(0, 1, 2));
 
                 grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
-                grid.DefineEdgeTags(X => 1);
+                grid.DefineEdgeTags((Vector X) => 1);
                 return grid;
             };
 
@@ -1869,7 +1869,7 @@ namespace CNS {
                     double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
                     var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
                     grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
-                    grid.DefineEdgeTags(X => 1);
+                    grid.DefineEdgeTags((Vector X) => 1);
                     return grid;
                 };
             }
@@ -2476,7 +2476,7 @@ namespace CNS {
                 double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
                 var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
                 grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
-                grid.DefineEdgeTags(X => 1);
+                grid.DefineEdgeTags((Vector X) => 1);
                 return grid;
             };
 

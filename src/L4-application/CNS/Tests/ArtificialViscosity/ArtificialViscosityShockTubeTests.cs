@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
@@ -232,8 +233,8 @@ namespace CNS.Tests.ArtificialViscosity {
 
                 // Boundary conditions
                 grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
-                grid.DefineEdgeTags(delegate (double[] _X) {
-                    return 1;
+                grid.DefineEdgeTags(delegate (Vector _X) {
+                    return (byte)1;
                 });
                 return grid;
             };

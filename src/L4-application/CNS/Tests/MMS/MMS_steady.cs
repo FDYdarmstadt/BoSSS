@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
@@ -22,6 +23,7 @@ using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.Residual;
 using CNS.Source;
+using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
@@ -93,7 +95,7 @@ namespace CNS.Tests.MMS {
                 double[] nodes = GenericBlas.Linspace(0.0, 1.0, noOfCellsPerDirection + 1);
                 var grid = Grid1D.LineGrid(nodes);
                 grid.EdgeTagNames.Add(1, "supersonicinlet");
-                grid.DefineEdgeTags(X => 1);
+                grid.DefineEdgeTags((Vector X) => 1);
                 return grid;
             };
 
@@ -211,7 +213,7 @@ namespace CNS.Tests.MMS {
                 double[] nodes = GenericBlas.Linspace(0.0, Math.PI / 2, noOfCellsPerDirection + 1);
                 var grid = Grid2D.Cartesian2DGrid(nodes, nodes);
                 grid.EdgeTagNames.Add(1, "supersonicinlet");
-                grid.DefineEdgeTags(X => 1);
+                grid.DefineEdgeTags((Vector X) => 1);
                 return grid;
             };
 

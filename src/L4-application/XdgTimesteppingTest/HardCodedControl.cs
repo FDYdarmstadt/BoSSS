@@ -73,7 +73,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                     GenericBlas.Linspace(-7, 7, 7 * GridResolutionFactor + 1)
                     );
                 grd.EdgeTagNames.Add(1, "Inflow");
-                grd.DefineEdgeTags(X => (byte)1);
+                grd.DefineEdgeTags((Vector X) => (byte)1);
                 return grd;
             };
 
@@ -272,7 +272,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                     GenericBlas.Linspace(-7, 7, 7 * GridResolutionFactor + 1),
                     GenericBlas.Linspace(-7, 7, 7 * GridResolutionFactor + 1));
                 grd.EdgeTagNames.Add(1, "Inflow");
-                grd.DefineEdgeTags(X => (byte)1);
+                grd.DefineEdgeTags((Vector X) => (byte)1);
                 return grd;
             };
 

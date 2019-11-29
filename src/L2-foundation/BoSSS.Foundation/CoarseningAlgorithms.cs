@@ -114,9 +114,19 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// <summary>
         /// creates an initial aggregated grid which is in fact equivalent to <paramref name="g"/>
         /// </summary>
-        public static AggregationGridData ZeroAggregation(IGridData g) {
+        public static AggregationGridData ZeroAggregation(IGridData gd) {
+            var g = gd.Grid;
+            var gc = ZeroAggregation(g);
+            return ((AggregationGridData)gc.iGridData);
+
+        }
+
+        /// <summary>
+        /// creates an initial aggregated grid which is in fact equivalent to <paramref name="g"/>
+        /// </summary>
+        public static AggregationGrid ZeroAggregation(IGrid g) {
             //var Cls = g.Cells;
-            int J = g.iLogicalCells.NoOfLocalUpdatedCells;
+            int J = g.CellPartitioning.LocalLength;
             int D = g.SpatialDimension;
 
             int[][] AggregateCells = new int[J][];
@@ -124,7 +134,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 AggregateCells[j] = new int[] { j };
             }
 
-            AggregationGridData ret = new AggregationGridData(g, AggregateCells);
+            AggregationGrid ret = new AggregationGrid(g, AggregateCells);
 
             return ret;
         }

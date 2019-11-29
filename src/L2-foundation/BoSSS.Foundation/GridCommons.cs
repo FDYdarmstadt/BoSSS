@@ -146,6 +146,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         private GridCommons() {
         }
 
+        /*
         /// <summary>
         /// sets values for <see cref="Cell.CellFaceTags"/> by using a
         /// <paramref name="EdgeTagFunc"/>-function; also adds entries with empty names
@@ -171,7 +172,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             double[] x = new double[D];
             MultidimensionalArray GlobalVerticesOut = MultidimensionalArray.CreateWrapper(x, 1, D);
 
-            int NoOfEdges = GrdDatTmp.Edges.Count;
+            int NoOfEdges = m_GridData.iGeomEdges.Count;
             for (int iEdge = 0; iEdge < NoOfEdges; iEdge++) {
                 if (GrdDatTmp.Edges.IsEdgeBoundaryEdge(iEdge)) {
                     int jCell = GrdDatTmp.Edges.CellIndices[iEdge, 0];
@@ -203,6 +204,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
          
         }
+        */
 
         /// <summary>
         /// This is a mapping from each used <em>EdgeTag</em> to a string that

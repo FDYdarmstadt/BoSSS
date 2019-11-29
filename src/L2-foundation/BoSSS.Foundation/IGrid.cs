@@ -74,6 +74,9 @@ namespace BoSSS.Foundation.Grid {
             get;
         }
 
+        /// <summary>
+        /// %
+        /// </summary>
         IGridSerializationHandler GridSerializationHandler {
             get;
         }

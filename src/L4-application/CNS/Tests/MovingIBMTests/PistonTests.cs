@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
@@ -279,7 +280,7 @@ namespace CNS.Tests.MovingIBMTests {
                 var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: true);
                 grid.EdgeTagNames.Add(1, "adiabaticSlipWall");
                 grid.EdgeTagNames.Add(2, "supersonicInlet");
-                grid.DefineEdgeTags(X => 2);
+                grid.DefineEdgeTags((Vector X) => 2);
                 return grid;
             };
 

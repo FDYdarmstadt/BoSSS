@@ -486,7 +486,8 @@ namespace BoSSS.Application.Rheology {
             // half channel mesh3 for cond tests
             //string grid = "962bc97f-0298-4e2f-ac18-06940cb84956"; // anne
             //string grid = "b5ff1b27-15ba-4105-9284-5074c0de5d16"; // florian
-            string grid = "99ca969c-5ced-4640-b9aa-db665c60ccc9"; // florian laptop
+            //string grid = "99ca969c-5ced-4640-b9aa-db665c60ccc9"; // florian laptop (half)
+            string grid = "653f84bd-897d-46a8-b920-c950e329b76b"; // florian laptop (full)
 
             // half channel mesh0 for cond tests - schneller?
             //string grid = "55c34774-1769-4f6b-bfc8-cc6c4d74076a";

@@ -1,14 +1,13 @@
 restart
 **************
-
   BoSSSpad C# interpreter
   _______________________
 
 Databases loaded:
-List of 2 instances of IDatabaseInfo {
-  0: { Session Count = 1; Grid Count = 1; Path = D:\Users\kummer\Documents\BoSSS-master\public\src\L4-application\CNS\bin\Release\bosss_db_performance_3 }
-  1: { Session Count = 11; Grid Count = 9; Path = D:\Users\kummer\Documents\BoSSS-master\public\src\L4-application\CNS\bin\Debug\bosss_db_performance_3 }
+List of 1 instances of IDatabaseInfo {
+  0: { Session Count = 1; Grid Count = 1; Path = C:\Users\florian\Documents\BoSSS-master\public\src\L4-application\CNS\bin\Debug\bosss_db_performance_3 }
 }
+Setting Matlab Connector to Octave...
 
  Console ready for input. Type 'help' for help.
 
@@ -28,7 +27,7 @@ Project name is set to 'ConfinedCylinder_BodyforcesFix'.
 //var myDb = OpenOrCreateDatabase(@"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_unsteady");
 var myDb = OpenOrCreateDefaultDatabase();
 **************
-Opening existing database 'd:\Users\kummer\default_bosss_db'.
+Opening existing database 'C:\Users\florian\default_bosss_db'.
 
 ==============
 //var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\kikker\deploy_dir\","hpccluster",ComputeNodes : new[] {"hpccluster"});
@@ -39,7 +38,7 @@ var myBatch = new MiniBatchProcessorClient();
 MiniBatchProcessor.Server.StartIfNotRunning();
 **************
 Starting mini batch processor in external process...
-Started mini batch processor on local machine, process id is 61076.
+Started mini batch processor on local machine, process id is 20688.
 
 ==============
 // ======================
@@ -84,16 +83,15 @@ string SessionName = "ConfinedCylinder_drag_p"+degree+"_meshNo"+gridNo+"_Wi="+We
 //GridCommons grid; //     = new GridCommons[numberGrids];
 Gmsh gmshGrid         = new Gmsh(System.IO.Path.Combine(
     CurrentDocDir,
-    @"Cylinder_GRIDS\mesh_karman_OriginalBox_MEDIUM_"+gridNo+"_half.msh"));
+    @"Cylinder_GRIDS\mesh_karman_OriginalBox_MEDIUM_"+gridNo+".msh"));
 GridCommons bosssGrid = gmshGrid.GenerateBoSSSGrid();
 **************
-
-
 ==============
 bosssGrid.Name = "confined_cylinder";
+bosssGrid.EdgeTagNames.Clear();
 bosssGrid.EdgeTagNames.Add(1, "Velocity_inlet");
-//bosssGrid.EdgeTagNames.Add(2, "Wall_bottom");
-bosssGrid.EdgeTagNames.Add(2, "Freeslip");
+bosssGrid.EdgeTagNames.Add(2, "Wall_bottom");
+//bosssGrid.EdgeTagNames.Add(2, "Freeslip");
 bosssGrid.EdgeTagNames.Add(3, "Wall_top");
 bosssGrid.EdgeTagNames.Add(4, "Pressure_Outlet");
 bosssGrid.EdgeTagNames.Add(5, "Wall_cylinder");
@@ -108,18 +106,21 @@ Func<double[], byte> edgeTagFunc = delegate (double[] X) {
                       if (Math.Abs(x - (15)) < 1.0e-10)
                           return 4;
 //                  }
-                    //if (Math.Abs(y - (-2)) < 1.0e-10)
-                    //    return 2;
-                    
-                    if (Math.Abs(y - (0)) < 1.0e-10)
+                    if (Math.Abs(y - (-2)) < 1.0e-10)
                         return 2;
+                    
+                    // for half cylinder
+                    //if (Math.Abs(y - (0)) < 1.0e-10)
+                    //    return 2;
                                         
                     if (Math.Abs(y - (+2)) < 1.0e-10)
                         return 3;
-                    //if (-1.0 < y && y < 1.0 && -1.0 < x  && x < 1.0)
-                    //    return 5;
-                    if (0 < y && y < 1.0 && -1.0 < x  && x < 1.0)
+                    if (-1.0 < y && y < 1.0 && -1.0 < x  && x < 1.0)
                         return 5;
+                    
+                    // for half cylinder
+                    //if (0 < y && y < 1.0 && -1.0 < x  && x < 1.0)
+                    //    return 5;
                     
                     throw new ArgumentOutOfRangeException("at x = " + x + "and y = " +y);
 };
@@ -128,7 +129,7 @@ bosssGrid.DefineEdgeTags(edgeTagFunc);
 myDb.SaveGrid(ref bosssGrid);
 //grid = bosssGrid;                
 **************
-b5ff1b27-15ba-4105-9284-5074c0de5d16
+653f84bd-897d-46a8-b920-c950e329b76b
 ==============
 // =====================================
 // setup control object for a solver run
@@ -245,25 +246,8 @@ var Wall = new Formula("X => 0");
     C.StressPenalty = 1.0;
 
     //Create Fields
-    C.FieldOptions.Add("VelocityX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("VelocityY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("Pressure", new FieldOpts() { Degree = degree - 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-
-    C.FieldOptions.Add("StressXX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("StressXY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("StressYY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-
-    C.FieldOptions.Add("ResidualMomentumX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("ResidualMomentumY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("ResidualConti", new FieldOpts() { Degree = degree - 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-
-    C.FieldOptions.Add("ResidualStressXX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("ResidualStressXY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("ResidualStressYY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-
-    C.FieldOptions.Add("PhiDG", new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("Phi", new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-
+    C.SetDGDegree(degree);
+    
     //Set initial values
     C.InitialValues.Add("VelocityX", GetFormulaObject(InitialValues.VelocityXfunction));
     C.InitialValues.Add("VelocityY", GetFormulaObject(InitialValues.VelocityYfunction));
@@ -323,6 +307,10 @@ deployment finished.
 
 ==============
 WorkflowMgm.AllJobs.Pick(0).Value.
+**************
+==============
+**************
+==============
 **************
 ==============
 **************
