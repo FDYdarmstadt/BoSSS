@@ -216,19 +216,25 @@ namespace BoSSS.Application.Rheology {
         /// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
         /// </summary>
         [DataMember]
-        public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib; //.LeftInverse_DiagBlock; // SymPart_DiagBlockEquilib_DropIndefinite;
+        public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.Eye;// LeftInverse_DiagBlock;// LeftInverse_DiagBlock;  // SymPart_DiagBlockEquilib_DropIndefinite;
+
+        /// <summary>
+        /// Block-Preconditiond for the velocity/momentum + pressure/conti-block of the saddle-point system
+        /// </summary>
+        [DataMember]
+        public MultigridOperator.Mode NSEBlockPrecondMode = MultigridOperator.Mode.Eye;// LeftInverse_DiagBlock; //.LeftInverse_DiagBlock; // SymPart_DiagBlockEquilib_DropIndefinite;
 
         /// <summary>
         /// Block-Preconditiond for the pressure/continuity-block of the saddle-point system
         /// </summary>
         [DataMember]
-        public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.Eye; // no SymPart_Diag-Präcon, because there may be no zero on the diagonal!!!
+        public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.Eye;// SymPart_DiagBlockEquilib;//LeftInverse_DiagBlock; // no SymPart_Diag-Präcon, because there may be no zero on the diagonal!!!
 
         /// <summary>
         /// Block-Preconditiond for the stresses/constitutive-block of the system
         /// </summary>
         [DataMember]
-        public MultigridOperator.Mode StressBlockPrecondMode = MultigridOperator.Mode.Eye;
+        public MultigridOperator.Mode StressBlockPrecondMode = MultigridOperator.Mode.Eye;// SymPart_DiagBlockEquilib;//LeftInverse_DiagBlock;
 
         /// <summary>
         /// Block-Preconditiond for the stresses/constitutive-block of the system

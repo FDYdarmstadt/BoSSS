@@ -30,7 +30,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
     /// <summary>
     /// velocity jump penalty for the divergence operator, on the level set
     /// </summary>
-    public class DivergenceAtIB : ILevelSetForm {
+    public class DivergenceAtIB : ILevelSetForm, ISupportsJacobianComponent {
 
         LevelSetTracker m_LsTrk;
 
@@ -57,21 +57,21 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
             return (UxN_in - UxN_out);
         }
 
-        public double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+        public double LevelSetForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
             
-            double uAxN = GenericBlas.InnerProd(U_Neg, cp.n);
+            double uAxN = GenericBlas.InnerProd(U_Neg, cp.Normal);
 
-            var parameters_P = m_getParticleParams(cp.x, cp.time);
+            var parameters_P = m_getParticleParams(cp.X, cp.time);
             double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
             double wLevSet = parameters_P[2];
             pRadius = parameters_P[3];
 
             double[] _uLevSet = new double[D];
 
-            _uLevSet[0] = uLevSet[0]+pRadius*wLevSet*-cp.n[1];
-            _uLevSet[1] = uLevSet[1] + pRadius * wLevSet * cp.n[0];
+            _uLevSet[0] = uLevSet[0]+pRadius*wLevSet*-cp.Normal[1];
+            _uLevSet[1] = uLevSet[1] + pRadius * wLevSet * cp.Normal[0];
 
-            double uBxN = GenericBlas.InnerProd(_uLevSet, cp.n);
+            double uBxN = GenericBlas.InnerProd(_uLevSet, cp.Normal);
           
             // transform from species B to A: we call this the "A-fictitious" value
             double uAxN_fict;
@@ -85,7 +85,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
 
         /*
         public override void PrimalVar_LevelSetFlux(out double FlxNeg, out double FlxPos,
-            ref CommonParamsLs cp,
+            ref CommonParams cp,
             double[] U_Neg, double[] U_Pos) {
             FlxNeg = 0;
             FlxPos = 0;
@@ -95,7 +95,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
             G = 0;
         }
 
-        public override void Nu(out double NuNeg, out double NuPos, ref CommonParamsLs cp) {
+        public override void Nu(out double NuNeg, out double NuPos, ref CommonParams cp) {
             NuNeg = 1.0;
             NuPos = 1.0;
         }
@@ -132,5 +132,13 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
                 return TermActivationFlags.V | TermActivationFlags.UxV;
             }
         }
+
+        /// <summary>
+        /// Linear component - returns this object itself.
+        /// </summary>
+        virtual public IEquationComponent[] GetJacobianComponents() {
+            return new IEquationComponent[] { this };
+        }
+
     }
 }

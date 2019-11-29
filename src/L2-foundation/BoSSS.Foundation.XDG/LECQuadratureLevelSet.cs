@@ -506,9 +506,9 @@ namespace BoSSS.Foundation.XDG {
                 // - - - - - - - - - 
 
                 // set Normal's
-                _inParams.Normal = Normals;
+                _inParams.Normals = Normals;
                 // set Nodes Global
-                _inParams.X = NodesGlobal;
+                _inParams.Nodes = NodesGlobal;
                 _inParams.time = this.time;
                 _inParams.LsTrk = this.m_lsTrk;
                 // set length scales

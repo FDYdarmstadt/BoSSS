@@ -43,7 +43,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             for(int d = 0; d < inp.D; d++) {
                 //Acc += 0.5 * (muA * _Grad_uA[0, d] + muB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
                 //Acc += 0.5 * (muA * _Grad_vA[d] + muB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
-                Acc += (muA * _Grad_uA[0, d]) * (_vA) * inp.Normale[d];  // consistency term
+                Acc += (muA * _Grad_uA[0, d]) * (_vA) * inp.Normal[d];  // consistency term
                                                                          //Acc += (muA * _Grad_vA[d]) * (_uA[0]) * inp.Normale[d];  // symmetry term
             }
             Acc *= base.m_alpha;

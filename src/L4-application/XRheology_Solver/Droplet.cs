@@ -137,8 +137,8 @@ namespace BoSSS.Application.XRheology_Solver {
 
             //C.Tags.Add("Hysing");
             C.Tags.Add("La = 5000");
-            //C.PhysicalParameters.rho_A = 1e4;
-            //C.PhysicalParameters.rho_B = 1e4;
+            //C.PhysicalParameters.rho_A = 1;
+            //C.PhysicalParameters.rho_B = 1;
             C.PhysicalParameters.reynolds_A = 1.0;
             C.PhysicalParameters.reynolds_B = 1.0;
             //C.PhysicalParameters.mu_A = 1;
@@ -147,6 +147,11 @@ namespace BoSSS.Application.XRheology_Solver {
             C.PhysicalParameters.beta_b = 0.0;
             double sigma = 1.0;
             C.PhysicalParameters.Sigma = sigma;
+
+            C.RaiseWeissenberg = true;
+            C.PhysicalParameters.Weissenberg_a = 0.2;// .3;
+            C.PhysicalParameters.Weissenberg_b = 0.5;
+            C.WeissenbergIncrement = 0.1;
 
             //C.Tags.Add("La = 0.005");
             //C.PhysicalParameters.rho_A = 1;
@@ -271,7 +276,7 @@ namespace BoSSS.Application.XRheology_Solver {
                 Pjump *= 2.0;
 
             //C.InitialValues_Evaluators.Add("Pressure#A", X => Pjump);
-            C.InitialValues_Evaluators.Add("Pressure#B", X => 0.0);
+            //C.InitialValues_Evaluators.Add("Pressure#B", X => 0.0);
 
             //C.InitialValues_Evaluators.Add("GravityY#A", X => 0.0);
             //C.InitialValues_Evaluators.Add("GravityY#B", X => 0.0);
@@ -302,9 +307,9 @@ namespace BoSSS.Application.XRheology_Solver {
                 C.ExactSolutionVelocity.Add("B", new Func<double[], double, double>[] { (X, t) => 0.0, (X, t) => 0.0, (X, t) => 0.0 });
             }
 
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionPressure.Add("A", (X, t) => Pjump);
-            C.ExactSolutionPressure.Add("B", (X, t) => 0.0);
+            //C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
+            //C.ExactSolutionPressure.Add("A", (X, t) => Pjump);
+            //C.ExactSolutionPressure.Add("B", (X, t) => 0.0);
 
             #endregion
 
@@ -350,7 +355,7 @@ namespace BoSSS.Application.XRheology_Solver {
             //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.LinearSolver.NoOfMultigridLevels = 1;
-            C.NonLinearSolver.MaxSolverIterations = 10;
+            C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MinSolverIterations = 3;
             C.LinearSolver.MaxSolverIterations = 80;
             C.LinearSolver.MinSolverIterations = 3;
@@ -363,7 +368,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.AdvancedDiscretizationOptions.Penalty2 = 10;
             //C.AdvancedDiscretizationOptions.PresPenalty2 = 10;
 
-            //C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Viscoelastic;
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Viscoelastic;
 
             //C.LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.PARDISO };
 
@@ -443,8 +448,8 @@ namespace BoSSS.Application.XRheology_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 10000; // (int)(125.0 / dt);
-            C.saveperiod = 10;
+            C.NoOfTimesteps = 100;// 10000; // (int)(125.0 / dt);
+            C.saveperiod = 1;// 10;
 
             #endregion
 
@@ -452,6 +457,7 @@ namespace BoSSS.Application.XRheology_Solver {
             return C;
 
         }
+
 
         /// <summary>
         /// 

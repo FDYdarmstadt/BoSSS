@@ -53,16 +53,16 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         /// <summary>
         /// default-implementation
         /// </summary>
-        public double LevelSetForm(ref CommonParamsLs inp,
+        public double LevelSetForm(ref CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            double[] N = inp.n;
-            double _penalty = m_PenaltyFunc(m_penalty, inp.jCell);
+            double[] N = inp.Normal;
+            double _penalty = m_PenaltyFunc(m_penalty, inp.jCellIn);
             int D = N.Length;
 
             // Particle parameters
             // ============================= 
-            var parameters_P = m_GetParticleParams(inp.x);
+            var parameters_P = m_GetParticleParams(inp.X);
             double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
             double wLevSet = parameters_P[2];
 
@@ -91,7 +91,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
             // 3D for IBM_Solver
             // ============================= 
-            if (inp.x.Dim == 3) {
+            if (inp.X.Dim == 3) {
 
                 Ret -= Grad_uA_xN * (vA);                                     // consistency term
                 Ret -= Grad_vA_xN * (uA[component] - 0) * (1 - scaleActiveBoundary);        // symmetry term
@@ -106,11 +106,11 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             double uAFict = uLevSet[component] + RadialLength * wLevSet * RadialNormalVector[component];
             double[] orientation = new double[] { -Math.Sin(Ang_P), Math.Cos(Ang_P) };
             double f_xT;
-            if (orientation[0] * inp.n[0] + orientation[1] * inp.n[1] > 0) {
-                f_xT = component == 0 ? -active_stress * (inp.n[1]) : active_stress * (inp.n[0]);
+            if (orientation[0] * inp.Normal[0] + orientation[1] * inp.Normal[1] > 0) {
+                f_xT = component == 0 ? -active_stress * (inp.Normal[1]) : active_stress * (inp.Normal[0]);
             }
             else {
-                f_xT = component == 0 ? active_stress * (inp.n[1]) : -active_stress * (inp.n[0]);
+                f_xT = component == 0 ? active_stress * (inp.Normal[1]) : -active_stress * (inp.Normal[0]);
             }
 
             // Dirichlet

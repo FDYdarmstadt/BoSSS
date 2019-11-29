@@ -1227,7 +1227,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         efp.e0 = chk.i0;
                         efp.Len = chk.Len;
                         efp.Normals = this.NormalBuffer.ExtractSubArrayShallow(new int[] { chk.i0 - i0, 0, 0 }, new int[] { chk.i0 + chk.Len - 1 - i0, NoOfNodes - 1, D - 1 });
-                        efp.NodesGlobal = this.GlobalNodes.ExtractSubArrayShallow(new int[] { chk.i0 - i0, 0, 0 }, new int[] { chk.i0 + chk.Len - 1 - i0, NoOfNodes - 1, D - 1 });
+                        efp.Nodes = this.GlobalNodes.ExtractSubArrayShallow(new int[] { chk.i0 - i0, 0, 0 }, new int[] { chk.i0 + chk.Len - 1 - i0, NoOfNodes - 1, D - 1 });
 
                         I0[0] = chk.i0 - i0;
                         IE[0] = chk.Len + I0[0] - 1;

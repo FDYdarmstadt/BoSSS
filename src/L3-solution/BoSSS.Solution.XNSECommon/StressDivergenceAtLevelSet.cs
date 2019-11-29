@@ -61,17 +61,17 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         /// <summary>
         /// default-implementation
         /// </summary>
-        public double LevelSetForm(ref CommonParamsLs inp,
+        public double LevelSetForm(ref CommonParams inp,
             double[] TA, double[] TB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            double[] N = inp.n;
-            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCell];
+            double[] N = inp.Normal;
+            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCellIn];
 
             int D = N.Length;
             Debug.Assert(this.ArgumentOrdering.Count == 3);
 
-            double PosCellLengthScale = PosLengthScaleS[inp.jCell];
-            double NegCellLengthScale = NegLengthScaleS[inp.jCell];
+            double PosCellLengthScale = PosLengthScaleS[inp.jCellOut];
+            double NegCellLengthScale = NegLengthScaleS[inp.jCellIn];
 
             double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
             if (hCutCellMin <= 1.0e-10 * hCellMin)
@@ -85,7 +85,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             double res = 0;
 
             res -= (0.5 * (TA[0] * muA + TB[0] * muB) * N[0] + 0.5 * (TA[1] * muA + TB[1] * muB) * N[1]) * (vA - vB); // central difference for stress divergence
-            res += penalty2 / hCellMin * (TA[2] * muA - TB[2] * muB) * (vA - vB);
+            res += penalty2 / hCutCellMin * (TA[2] * muA - TB[2] * muB) * (vA - vB);
 
             return  res;
         }

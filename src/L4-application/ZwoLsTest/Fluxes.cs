@@ -34,11 +34,11 @@ namespace BoSSS.Application.ZwoLsTest {
         }
 
         protected override double BorderEdgeFlux(ref Foundation.CommonParamsBnd inp, double[] Uin) {
-            return Uin[0]*inp.Normale[0];
+            return Uin[0]*inp.Normal[0];
         }
 
         protected override double InnerEdgeFlux(ref Foundation.CommonParams inp, double[] Uin, double[] Uout) {
-            return 0.5*(Uin[0] + Uout[0])*inp.Normale[0];
+            return 0.5*(Uin[0] + Uout[0])*inp.Normal[0];
         }
 
         protected override void Flux(ref Foundation.CommonParamsVol inp, double[] U, double[] output) {
@@ -89,7 +89,7 @@ namespace BoSSS.Application.ZwoLsTest {
             private set;
         }
 
-        abstract public double LevelSetForm(ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB);
+        abstract public double LevelSetForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB);
     }
 
     /// <summary>
@@ -99,10 +99,10 @@ namespace BoSSS.Application.ZwoLsTest {
 
         public LevSetFlx_phi0(LevelSetTracker _LsTrk) : base(_LsTrk) { }
 
-        public override double LevelSetForm(ref CommonParamsLs inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) { 
+        public override double LevelSetForm(ref CommonParams inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) { 
         //public override void DerivativVar_LevelSetFlux(out double FlxNeg, out double FlxPos, ref CommonParams input, double[] U_Neg, double[] U_Pos, double[,] GradU_Neg, double[,] GradU_Pos) {
             double FlxPos = 0; // we are not interested in "A"
-            double FlxNeg = U_Neg[0]*inp.n[0];
+            double FlxNeg = U_Neg[0]*inp.Normal[0];
 
             return FlxNeg * vA - FlxPos * vB;
         }
@@ -131,10 +131,10 @@ namespace BoSSS.Application.ZwoLsTest {
 
         public LevSetFlx_phi1(LevelSetTracker _LsTrk) : base(_LsTrk) { }
 
-        public override double LevelSetForm(ref CommonParamsLs inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public override double LevelSetForm(ref CommonParams inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             //public override void DerivativVar_LevelSetFlux(out double FlxNeg, out double FlxPos, ref CommonParams input, double[] U_Neg, double[] U_Pos, double[,] GradU_Neg, double[,] GradU_Pos) {
             double FlxNeg = 0; // we are not interested in "A"
-            double FlxPos = U_Pos[0]*inp.n[0];
+            double FlxPos = U_Pos[0]*inp.Normal[0];
 
             return FlxNeg * vA - FlxPos * vB;
         }

@@ -24,7 +24,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 
 namespace BoSSS.Solution.NSECommon.Operator.Pressure{
-    public class PressureFormAtIB : ILevelSetForm {
+    public class PressureFormAtIB : ILevelSetForm, ISupportsJacobianComponent {
         public PressureFormAtIB(int _d, int _D, LevelSetTracker LsTrk) {
             m_d = _d;
             m_D = _D;
@@ -73,8 +73,16 @@ namespace BoSSS.Solution.NSECommon.Operator.Pressure{
             }
         }
 
-        public double LevelSetForm(ref CommonParamsLs inp, double[] pA, double[] pB, double[,] Grad_pA, double[,] Grad_pB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            return vA * inp.n[m_d] * pA[0];
+        public double LevelSetForm(ref CommonParams inp, double[] pA, double[] pB, double[,] Grad_pA, double[,] Grad_pB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+            return vA * inp.Normal[m_d] * pA[0];
         }
+
+        /// <summary>
+        /// Linear component - returns this object itself.
+        /// </summary>
+        public IEquationComponent[] GetJacobianComponents() {
+            return new IEquationComponent[] { this };
+        }
+
     }
 }

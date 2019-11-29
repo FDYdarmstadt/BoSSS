@@ -95,12 +95,12 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
-            /// see <see cref="DGField.LaplacianByFlux(double,DGField,DGField,SubGrid,SpatialOperator.SubGridBoundaryModes,SpatialOperator.SubGridBoundaryModes)"/>;
+            /// see <see cref="DGField.LaplacianByFlux(double,DGField,DGField,SubGrid,SubGridBoundaryModes,SubGridBoundaryModes)"/>;
             /// </summary>
             override public void LaplacianByFlux(double alpha, DGField f, DGField tmp,
                 SubGrid optionalSubGrid = null,
-                SpatialOperator.SubGridBoundaryModes bndMode_1stDeriv = SpatialOperator.SubGridBoundaryModes.OpenBoundary,
-                SpatialOperator.SubGridBoundaryModes bndMode_2ndDeriv = SpatialOperator.SubGridBoundaryModes.OpenBoundary) {
+                SubGridBoundaryModes bndMode_1stDeriv = SubGridBoundaryModes.OpenBoundary,
+                SubGridBoundaryModes bndMode_2ndDeriv = SubGridBoundaryModes.OpenBoundary) {
                 if (tmp == null)
                     // the base implementation will create the temporary field by cloning, which is a bad idea for 
                     // the species-shadow-field

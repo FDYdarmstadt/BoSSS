@@ -24,6 +24,7 @@ using BoSSS.Platform;
 using BoSSS.Solution.Gnuplot;
 using ilPSP;
 using System.Runtime.Serialization;
+using ilPSP.Utils;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -156,6 +157,30 @@ namespace BoSSS.Application.BoSSSpad {
         [DataMember]
         public XYvalues[] dataGroups;
 
+        /// <summary>
+        /// Adds a new <see cref="XYvalues"/> objects to <see cref="dataGroups"/>.
+        /// </summary>
+        public XYvalues AddDataGroup(XYvalues dataGroup) {
+            dataGroup.AddToArray(ref dataGroups);
+            return dataGroup;
+        }
+
+        /// <summary>
+        /// Adds a new <see cref="XYvalues"/> objects to <see cref="dataGroups"/>.
+        /// </summary>
+        public XYvalues AddDataGroup(string name, IEnumerable<double> Abscissas, IEnumerable<double> values) {
+            var r = new XYvalues(name, Abscissas.ToArray(), values.ToArray());
+            return AddDataGroup(r);
+        }
+
+        /// <summary>
+        /// Adds a new <see cref="XYvalues"/> objects to <see cref="dataGroups"/>.
+        /// </summary>
+        public XYvalues AddDataGroup(IEnumerable<double> Abscissas, IEnumerable<double> values) {
+            var r = new XYvalues(null, Abscissas.ToArray(), values.ToArray());
+            return AddDataGroup(r);
+        }
+        
         /// <summary>
         /// Indicates whether the abscissas should be scaled logarithmically.
         /// </summary>
