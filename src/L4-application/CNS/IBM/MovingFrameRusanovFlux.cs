@@ -27,7 +27,7 @@ namespace CNS.IBM {
         private Func<double[], double, ilPSP.Vector> levelSetVelocity;
 
         public MovingFrameRusanovFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, ImmersedSpeciesMap speciesMap)
-            : base(config, boundaryMap, equationComponent, speciesMap) {
+            : base(config, boundaryMap, equationComponent, speciesMap.GetMaterial(double.NaN)) {
             this.levelSetVelocity = speciesMap.Control.LevelSetVelocity;
         }
 

@@ -20,6 +20,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
@@ -40,9 +41,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         protected IBoundaryConditionMap boundaryMap;
 
         /// <summary>
-        /// Mapping that determines the active species in some point.
+        /// The material being used
         /// </summary>
-        protected ISpeciesMap speciesMap;
+        protected Material material;
 
         /// <summary>
         /// Concerned component of the Euler equations
@@ -57,14 +58,14 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <param name="equationComponent">
         /// Concerned component of the Euler equations
         /// </param>
-        /// <param name="speciesMap">
+        /// <param name="material">
         /// Mapping that determines the active species in some point.
         /// </param>
-        protected EulerFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, ISpeciesMap speciesMap) {
+        protected EulerFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, Material material) {
             this.config = config;
             this.boundaryMap = boundaryMap;
             this.equationComponent = equationComponent;
-            this.speciesMap = speciesMap;
+            this.material = material;
         }
 
         /// <summary>
@@ -103,8 +104,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
         /// </returns>
         protected override double InnerEdgeFlux(double time, double[] x, double[] normal, double[] Uin, double[] Uout, int jEdge) {
-            StateVector stateIn = new StateVector(Uin, speciesMap.GetMaterial(double.NaN));
-            StateVector stateOut = new StateVector(Uout, speciesMap.GetMaterial(double.NaN));
+            StateVector stateIn = new StateVector(Uin, material);
+            StateVector stateOut = new StateVector(Uout, material);
 
             ilPSP.Vector Normal = new ilPSP.Vector(stateIn.Dimension);
             for (int i = 0; i < normal.Length; i++) {
@@ -138,7 +139,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <see cref="InnerEdgeFlux(double, double[], double[], double[], double[], int)"/>
         /// </summary>
         protected override double BorderEdgeFlux(double time, double[] x, double[] normal, byte EdgeTag, double[] Uin, int jEdge) {
-            StateVector stateIn = new StateVector(Uin, speciesMap.GetMaterial(double.NaN));
+            StateVector stateIn = new StateVector(Uin, material);
 
             ilPSP.Vector Normal = new ilPSP.Vector(stateIn.Dimension);
             for (int i = 0; i < normal.Length; i++) {
@@ -171,7 +172,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <see cref="NonlinearFlux.Flux(double, double[], double[], double[])"/>
         /// </param>
         protected override void Flux(double time, double[] x, double[] U, double[] output) {
-            StateVector state = new StateVector(U, speciesMap.GetMaterial(double.NaN));
+            StateVector state = new StateVector(U, material);
             equationComponent.Flux(state).CopyTo(output, output.Length);
         }
 
@@ -200,7 +201,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
             double meanPressure = 0.5 * (stateIn.Pressure + stateOut.Pressure);
             double meanDensity = 0.5 * (stateIn.Density + stateOut.Density);
             double meanSpeedOfSound = 0.5 * (stateIn.SpeedOfSound + stateOut.SpeedOfSound);
-            
+
             double velocityJump = normalVelocityOut - normalVelocityIn;
             double gamma = config.EquationOfState.HeatCapacityRatio;
             double MachScaling = gamma * config.MachNumber * config.MachNumber;
