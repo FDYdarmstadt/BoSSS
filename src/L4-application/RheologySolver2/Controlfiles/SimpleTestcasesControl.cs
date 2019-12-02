@@ -46,6 +46,7 @@ namespace BoSSS.Application.Rheology
         /// </summary>
         static public RheologyControl Channel(string path = null, int degree = 4, int GridLevel = 6)
         {
+            //BoSSS.Application.Rheology.SimpleTestcasesControl.Channel(degree:4,GridLevel:4)
             //path = @"C:\Users\kikker\AnnesBoSSSdb\Channel";
             RheologyControl C = new RheologyControl();
 

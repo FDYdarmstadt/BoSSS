@@ -26,7 +26,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// The basic interface for a linear solver. 
     /// </summary>
-    public interface ISolverSmootherTemplate {
+    public interface ISolverSmootherTemplate : ICloneable {
 
 
         /// <summary>
@@ -77,7 +77,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         void ResetStat();
 
-        ISolverSmootherTemplate Clone();
+
+        ///// <summary>
+        ///// 
+        ///// </summary>
+        //ISolverSmootherTemplate Clone();
     }
 
     /// <summary>

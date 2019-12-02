@@ -26,7 +26,7 @@ namespace BoSSS.Solution.NSECommon {
     /// Symmetric Interior Penalty - discetization of the (positive) Laplace operator,
     /// i.e. \f$ + \text{div}( \nu \nabla u ) \f$.
     /// </summary>
-    abstract public class SIPLaplace : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, BoSSS.Foundation.IEquationComponentCoefficient {
+    abstract public class SIPLaplace : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, BoSSS.Foundation.IEquationComponentCoefficient, ISupportsJacobianComponent {
 
         /// <summary>
         /// no parameters in default implementation
@@ -232,6 +232,13 @@ namespace BoSSS.Solution.NSECommon {
                 Acc += nuA * g_N * _vA * this.m_alpha;
             }
             return Acc;
+        }
+
+        /// <summary>
+        /// Linear component - derivative is just this.
+        /// </summary>
+        virtual public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new[] { this };
         }
     }
 

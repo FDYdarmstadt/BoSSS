@@ -194,6 +194,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                            
                             f0.ScaleV(-1.0);
                             solver.ResetStat();
+                            
                             solver.Solve(step, f0);
                             /*
                             double check_norm; 

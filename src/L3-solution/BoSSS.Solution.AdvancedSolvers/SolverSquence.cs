@@ -209,11 +209,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 s.ResetStat();
         }
 
-        public ISolverSmootherTemplate Clone() {
+        public object Clone() {
             var clone = new SolverSquence();
             List<ISolverSmootherTemplate> clonelist =new List<ISolverSmootherTemplate>();
             foreach (ISolverSmootherTemplate solver in this.SolverChain)
-                clonelist.Add(solver.Clone());
+                clonelist.Add(solver.CloneAs());
             clone.SolverChain=clonelist.ToArray();
             return clone;
         }

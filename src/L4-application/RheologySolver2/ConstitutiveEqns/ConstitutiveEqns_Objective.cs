@@ -28,7 +28,7 @@ namespace BoSSS.Application.Rheology {
     /// <summary>
     /// Volume integral of objective part of constitutive equations.
     /// </summary>
-    public class ConstitutiveEqns_Objective : IVolumeForm, IEquationComponent, IEquationComponentCoefficient {
+    public class ConstitutiveEqns_Objective : IVolumeForm, IEquationComponent, IEquationComponentCoefficient, ISupportsJacobianComponent {
 
         int Component;           // equation index (0: xx, 1: xy, 2: yy)
         BoundaryCondMap<IncompressibleBcType> m_BcMap;
@@ -54,7 +54,7 @@ namespace BoSSS.Application.Rheology {
         /// </summary>
         public TermActivationFlags VolTerms
         {
-            get { return TermActivationFlags.V | TermActivationFlags.UxV; }
+            get { return TermActivationFlags.GradUxV | TermActivationFlags.UxV; }
         }
 
         /// <summary>
@@ -78,16 +78,28 @@ namespace BoSSS.Application.Rheology {
         {
             get
             {
+                string[] stresses;
                 switch (Component) {
                     case 0:
-                        return new string[] { VariableNames.StressXX, VariableNames.StressXY, VariableNames.StressXX, VariableNames.StressXY };
+                    stresses = new string[] { VariableNames.StressXX, VariableNames.StressXY, VariableNames.StressXX, VariableNames.StressXY };
+                    break;
+
                     case 1:
-                        return new string[] { VariableNames.StressXY, VariableNames.StressYY, VariableNames.StressXX, VariableNames.StressXY };
+                    stresses = new string[] { VariableNames.StressXY, VariableNames.StressYY, VariableNames.StressXX, VariableNames.StressXY };
+                    break;
+
                     case 2:
-                        return new string[] { VariableNames.StressXY, VariableNames.StressYY, VariableNames.StressXY, VariableNames.StressYY };
+                    stresses = new string[] { VariableNames.StressXY, VariableNames.StressYY, VariableNames.StressXY, VariableNames.StressYY };
+                    break;
+
                     default:
-                        throw new NotImplementedException();
+                    throw new NotImplementedException();
                 }
+
+                string[] Vels = VariableNames.VelocityVector(2);
+
+                return stresses.Cat(Vels);
+
             }
         }
 
@@ -97,16 +109,50 @@ namespace BoSSS.Application.Rheology {
         public IList<string> ParameterOrdering
         {
             get {
-                switch (Component) {
-                    case 0:
-                        return new string[] { VariableNames.VelocityX_GradientX, VariableNames.VelocityX_GradientY, VariableNames.VelocityX_GradientX, VariableNames.VelocityX_GradientY };
-                    case 1:
-                        return new string[] { VariableNames.VelocityX_GradientX, VariableNames.VelocityX_GradientY, VariableNames.VelocityY_GradientX, VariableNames.VelocityY_GradientY };
-                    case 2:
-                        return new string[] { VariableNames.VelocityY_GradientX, VariableNames.VelocityY_GradientY, VariableNames.VelocityY_GradientX, VariableNames.VelocityY_GradientY };
-                    default:
-                        throw new NotImplementedException();
-                }
+                //switch (Component) {
+                //    case 0:
+                //        return new string[] { VariableNames.VelocityX_GradientX, VariableNames.VelocityX_GradientY, VariableNames.VelocityX_GradientX, VariableNames.VelocityX_GradientY };
+                //    case 1:
+                //        return new string[] { VariableNames.VelocityX_GradientX, VariableNames.VelocityX_GradientY, VariableNames.VelocityY_GradientX, VariableNames.VelocityY_GradientY };
+                //    case 2:
+                //        return new string[] { VariableNames.VelocityY_GradientX, VariableNames.VelocityY_GradientY, VariableNames.VelocityY_GradientX, VariableNames.VelocityY_GradientY };
+                //    default:
+                //        throw new NotImplementedException();
+                //}
+                return null;
+            }
+        }
+
+
+        void GetVelocityGrad(out double Grad1, out double Grad2, out double Grad3, out double Grad4, double[,] U) {
+            int offset = 3; // offset into trial var array
+            switch (Component) {
+                case 0:
+                //VelGrads = new string[] { VariableNames.VelocityX_GradientX, VariableNames.VelocityX_GradientY, VariableNames.VelocityX_GradientX, VariableNames.VelocityX_GradientY };
+                Grad1 = U[offset + 0, 0];
+                Grad2 = U[offset + 0, 1];
+                Grad3 = U[offset + 0, 0];
+                Grad4 = U[offset + 0, 1];
+                break;
+
+                case 1:
+                //VelGrads = new string[] { VariableNames.VelocityX_GradientX, VariableNames.VelocityX_GradientY, VariableNames.VelocityY_GradientX, VariableNames.VelocityY_GradientY };
+                Grad1 = U[offset + 0, 0];
+                Grad2 = U[offset + 0, 1];
+                Grad3 = U[offset + 1, 0];
+                Grad4 = U[offset + 1, 1];
+                break;
+
+                case 2:
+                //VelGrads = new string[] { VariableNames.VelocityY_GradientX, VariableNames.VelocityY_GradientY, VariableNames.VelocityY_GradientX, VariableNames.VelocityY_GradientY };
+                Grad1 = U[offset + 0, 0];
+                Grad2 = U[offset + 0, 1];
+                Grad3 = U[offset + 1, 0];
+                Grad4 = U[offset + 1, 1];
+                break;
+
+                default:
+                throw new NotImplementedException();
             }
         }
 
@@ -116,10 +162,12 @@ namespace BoSSS.Application.Rheology {
         /// Calculating the integral of the volume part
         /// </summary>
         public double VolumeForm(ref CommonParamsVol cpv, double[] T, double[,] Grad_T, double V, double[] GradV) {
-            double Grad1 = cpv.Parameters[0];
-            double Grad2 = cpv.Parameters[1];
-            double Grad3 = cpv.Parameters[2];
-            double Grad4 = cpv.Parameters[3];
+            //double Grad1 = cpv.Parameters[0];
+            //double Grad2 = cpv.Parameters[1];
+            //double Grad3 = cpv.Parameters[2];
+            //double Grad4 = cpv.Parameters[3];
+
+            GetVelocityGrad(out double Grad1, out double Grad2, out double Grad3, out double Grad4, Grad_T);
 
             double res = 0.0;
             if(Component == 1)
@@ -162,5 +210,47 @@ namespace BoSSS.Application.Rheology {
             }
         }
 
+        /// <summary>
+        /// Used by <see cref="GetJacobianComponents"/>:
+        /// Since the edge forms of <see cref="ConstitutiveEqns_Objective"/> are linear (they are only penalties)
+        /// one can use the implementation form the original object.
+        /// Remark: the volume terms, on the other hand, are non-linear and must be differentiated.
+        /// </summary>
+        class OwnerCaller : IEdgeForm {
+            public OwnerCaller(ConstitutiveEqns_Objective __owner) {
+                owner = __owner;
+            }
+            ConstitutiveEqns_Objective owner;
+
+            public TermActivationFlags BoundaryEdgeTerms => owner.BoundaryEdgeTerms;
+
+            public TermActivationFlags InnerEdgeTerms => owner.InnerEdgeTerms;
+
+            public IList<string> ArgumentOrdering => owner.ArgumentOrdering.GetSubVector(0, 3); // for the boundary, the first arguments are sufficient.
+
+            public IList<string> ParameterOrdering => null;
+
+            public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+                return owner.BoundaryEdgeForm(ref inp, _uA, _Grad_uA, _vA, _Grad_vA);
+            }
+
+            public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
+                return owner.InnerEdgeForm(ref inp, _uIN, _uOUT, _Grad_uIN, _Grad_uOUT, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
+            }
+        }
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            if (SpatialDimension != 2)
+                throw new NotImplementedException("Only supporting 2D.");
+
+
+            return new IEquationComponent[] {
+                new VolumeFormDifferentiator(this, SpatialDimension),
+                new OwnerCaller(this)
+            };
+        }
     }
 }

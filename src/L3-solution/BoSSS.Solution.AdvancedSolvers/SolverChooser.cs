@@ -1234,8 +1234,8 @@ namespace BoSSS.Solution {
             {
                 solver = new ClassicMultigrid() {
                     CoarserLevelSolver = BareMGSquence(MGlevels - 1, coarseSolver, smoother),
-                    PreSmoother= smoother.Clone(),
-                    PostSmoother= smoother.Clone(),
+                    PreSmoother= smoother.CloneAs(),
+                    PostSmoother= smoother.CloneAs(),
                 };
             }
             else
@@ -1259,8 +1259,8 @@ namespace BoSSS.Solution {
             {
                 solver = new ClassicMultigrid() {
                     CoarserLevelSolver = BareMGSquence(MGlevels - 1, coarseSolver, smoother),
-                    PreSmoother= topsmoother.Clone(),
-                    PostSmoother= topsmoother.Clone()
+                    PreSmoother= topsmoother.CloneAs(),
+                    PostSmoother= topsmoother.CloneAs()
                 };
             }
             else
@@ -1425,12 +1425,12 @@ namespace BoSSS.Solution {
                         
 
                         for(int i=0;i< prechain.Length;i++) {
-                            newprechain[i] = prechain[i].Clone();
+                            newprechain[i] = prechain[i].CloneAs();
                             SetLinItCallback(newprechain[i], isNonLinPrecond, IsLinPrecond: true);
                         }
 
                         for (int i = 0; i <postchain.Length; i++) {
-                            newpostchain[i] = postchain[i].Clone();
+                            newpostchain[i] = postchain[i].CloneAs();
                             SetLinItCallback(newpostchain[i], isNonLinPrecond, IsLinPrecond: true);
                         }
 
@@ -1592,7 +1592,7 @@ namespace BoSSS.Solution {
                 ISolverSmootherTemplate solvertoinject;
 
                 if (iDepth == 0) {
-                    solvertoinject = toplevelsmootherchain.Clone();
+                    solvertoinject = toplevelsmootherchain.CloneAs();
                 }
                 else if (iDepth == MaxMGDepth) {
                     solvertoinject = new SparseSolver()
@@ -1603,7 +1603,7 @@ namespace BoSSS.Solution {
                     SetLinItCallback(solvertoinject, isNonLinPrecond, IsLinPrecond: true);
                 } else {
 
-                    solvertoinject = subsmootherchain.Clone();
+                    solvertoinject = subsmootherchain.CloneAs();
                 }
                
                 ISolverSmootherTemplate MG = BareMGSquence(iDepth, solvertoinject, subsmootherchain, toplevelsmootherchain);

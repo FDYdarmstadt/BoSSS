@@ -52,6 +52,16 @@ namespace BoSSS.Solution.Utils {
     public class BoundaryCondMap<BCType> where BCType : struct {
 
         /// <summary>
+        /// Length of arrays returned by <see cref="bndFunction"/>.
+        /// </summary>
+        public int MaxEdgeTagNo {
+            get {
+                return GridCommons.FIRST_PERIODIC_BC_TAG;
+            }
+        }
+
+
+        /// <summary>
         /// - keys: the names of the members of <typeparamref name="BCType"/>,
         ///   i.e. all enum entries as strings;
         /// - values: the corresponding <typeparamref name="BCType"/>-values;
@@ -94,7 +104,7 @@ namespace BoSSS.Solution.Utils {
         /// scalar functions that encode boundary values;
         /// - Keys: User-defined names that were provided with the constructor
         ///   (e.g. 'VelocityX', 'Pressure',...) 
-        /// - Values: a function, to evaluate the BC values
+        /// - Values: an array of functions, to evaluate the BC values; array length is equal to <see cref="MaxEdgeTagNo"/>
         /// - Array index: edge tag;        
         /// </summary>
         public Dictionary<string, Func<double[], double, double>[]> bndFunction {

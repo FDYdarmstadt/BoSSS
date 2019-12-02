@@ -379,9 +379,7 @@ namespace BoSSS.Application.Rheology {
                     BcMap = new IncompressibleBoundaryCondMap(this.GridData, this.Control.BoundaryValues, PhysicsMode.Viscoelastic);
 
                     string[] CodName = new string[] { "momX", "momY", "div", "constitutiveXX", "constitutiveXY", "constitutiveYY" };
-
                     string[] Params = ArrayTools.Cat(VariableNames.Velocity0Vector(D), VariableNames.Velocity0MeanVector(D), VariableNames.VelocityX_GradientVector(), VariableNames.VelocityY_GradientVector(), VariableNames.StressXXP, VariableNames.StressXYP, VariableNames.StressYYP, "artificialViscosity");
-
                     string[] DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure, VariableNames.StressXX, VariableNames.StressXY, VariableNames.StressYY);
 
                     XOP = new SpatialOperator(DomName, Params, CodName, QuadOrderFunc.NonLinear(2));
@@ -393,7 +391,8 @@ namespace BoSSS.Application.Rheology {
 
                         // convective part:
                         if (!this.Control.Stokes) {
-                            comps.Add(new LinearizedConvection(D, BcMap, d));
+                            //comps.Add(new LinearizedConvection(D, BcMap, d));
+                            comps.Add(new UpwindMomentumConvection(D, BcMap, d, 1.0));
                         }
 
                         // pressure part:
@@ -492,6 +491,9 @@ namespace BoSSS.Application.Rheology {
 
                     // Build spatial operator
                     XOP.Commit();
+
+                    (var testi, var Mctest) = XOP.GetJacobiOperator(2);
+
 
 
                     // create timestepper

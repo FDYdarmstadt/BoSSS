@@ -28,7 +28,7 @@ namespace BoSSS.Application.Rheology {
     /// <summary>
     /// Volume integral of identity part of constitutive equations.
     /// </summary>
-    public class ConstitutiveEqns_Identity : IVolumeForm, IEquationComponent {
+    public class ConstitutiveEqns_Identity : IVolumeForm, IEquationComponent, ISupportsJacobianComponent {
 
         private int component; // equation index (0: xx, 1: xy, 2: yy)
 
@@ -74,5 +74,11 @@ namespace BoSSS.Application.Rheology {
             return T[0] * V;
         }
 
+        /// <summary>
+        /// Linear component / just the flux itself
+        /// </summary>
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new[] { this };
+        }
     }
 }
