@@ -179,7 +179,7 @@ namespace BoSSS.Application.Rheology {
                 res = ((Grad1 * T[0] + Grad2 * T[1]) + (Grad3 * T[2] + Grad4 * T[3]));
             }
 
-            return m_ObjectiveParam * -m_Weissenberg * res * V;
+            return m_ObjectiveParam * (-m_Weissenberg) * res * V;
         }
 
         /// <summary>
