@@ -21,6 +21,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution;
 using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.Convection;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using BoSSS.Solution.GridImport;
@@ -3773,7 +3774,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl StationaryShockWave(string dbPath = null, int savePeriod = 10000, int dgDegree = 2, int numOfCellsX = 20, int numOfCellsY = 2, double dtFixed = 1e-4) {
+        public static CNSControl StationaryShockWave(string dbPath = null, int savePeriod = 100, int dgDegree = 0, int numOfCellsX = 10, int numOfCellsY = 1, double dtFixed = 1e-4) {
             CNSControl c = new CNSControl();
 
             // ### Database ###
@@ -3820,6 +3821,7 @@ namespace CNS {
             //}
 
             c.ActiveOperators = Operators.Convection;
+            c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
 
             //### Shock-capturing ###
             //double epsilon0 = 1.0;
@@ -3871,7 +3873,7 @@ namespace CNS {
             // Parameters
             // #########################
             double gamma = IdealGas.Air.HeatCapacityRatio;
-            double Ms = 1.5;
+            double Ms = 5.0;
 
             // #########################
             // Shock
@@ -3963,10 +3965,10 @@ namespace CNS {
             // ### Time configuration ###
             c.dtMin = 0.0;
             c.dtMax = 1.0;
-            //c.CFLFraction = 0.3;
-            c.dtFixed = dtFixed;
+            c.CFLFraction = 0.1;
+            //c.dtFixed = dtFixed;
 
-            c.Endtime = 3.0;
+            c.Endtime = 6.0;
             c.NoOfTimesteps = int.MaxValue;
 
             // ### Project and sessions name ###

@@ -22,9 +22,7 @@ using BoSSS.Platform.LinAlg;
 using ilPSP;
 using ilPSP.Utils;
 
-namespace CNS.LinAlg {
-
-
+namespace BoSSS.Solution.CompressibleFlowCommon {
 
     /// <summary>
     /// Extension methods for the <see cref="Vector"/> structure

@@ -14,14 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Platform.LinAlg;
-using BoSSS.Solution.CompressibleFlowCommon;
-using BoSSS.Solution.CompressibleFlowCommon.Convection;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using System;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 
-namespace CNS.Convection {
+namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
     /// <summary>
     /// Flux based on the exact Riemann solver by Toro.
@@ -76,7 +73,7 @@ namespace CNS.Convection {
         /// <returns>
         /// <see cref="ExactRiemannSolver.GetCentralState"/>
         /// </returns>
-        protected override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex) {
+        protected internal override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex) {
             ExactRiemannSolver riemannSolver = new ExactRiemannSolver(
                 stateIn, stateOut, normal);
 

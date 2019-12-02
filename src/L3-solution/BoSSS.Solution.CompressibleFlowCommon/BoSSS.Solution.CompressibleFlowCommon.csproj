@@ -57,6 +57,8 @@
     <Compile Include="Convection\EulerEnergyComponent.cs" />
     <Compile Include="Convection\EulerFlux.cs" />
     <Compile Include="Convection\EulerMomentumComponent.cs" />
+    <Compile Include="Convection\ExactRiemannSolver.cs" />
+    <Compile Include="Convection\GodunovFlux.cs" />
     <Compile Include="Convection\HLLCDensityFlux.cs" />
     <Compile Include="Convection\HLLCEnergyFlux.cs" />
     <Compile Include="Convection\HLLCFlux.cs" />
@@ -92,6 +94,7 @@
     <Compile Include="StateVector.cs" />
     <Compile Include="Variable.cs" />
     <Compile Include="CompressibleVariables.cs" />
+    <Compile Include="Vector_Extensions.cs" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
