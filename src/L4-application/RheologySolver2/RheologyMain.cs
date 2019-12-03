@@ -425,7 +425,7 @@ namespace BoSSS.Application.Rheology {
                         }
                         if (this.Control.beta > 0.0) {
                             var Visc = new swipViscosity_Term1(
-                                this.Control.ViscousPenaltyScaling * PenaltyBase,
+                                this.Control.ViscousPenaltyScaling,// * PenaltyBase,
                                 d,
                                 D,
                                 BcMap,
@@ -1038,6 +1038,15 @@ namespace BoSSS.Application.Rheology {
                 MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
                 for (int iLevel = 0; iLevel < configs.Length; iLevel++) {
                     configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 4];
+
+                    // configurations for momentum+conti
+                    //for (int d = 0; d < D + 1; d++) {
+                    //    configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
+                    //        Degree = Math.Max(1, pVel - iLevel),
+                    //        mode = this.Control.NSEBlockPrecondMode,
+                    //        VarIndex = new int[] { d }
+                    //    };
+                    //}
 
                     // configurations for velocity
                     for (int d = 0; d < D; d++) {

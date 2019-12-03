@@ -165,6 +165,8 @@ namespace BoSSS.Solution.XNSECommon {
             cl.mu_B = this.mu_B;
             cl.reynolds_A = this.reynolds_A;
             cl.reynolds_B = this.reynolds_B;
+            cl.Weissenberg_a = this.Weissenberg_a;
+            cl.Weissenberg_b = this.Weissenberg_b;
             cl.Sigma = this.Sigma;
             cl.mu_I = this.mu_I;
             cl.lambda_I = this.lambda_I;

@@ -11,7 +11,7 @@ namespace BoSSS.Foundation {
     /// <summary>
     /// Utility to define parameter variables for Jacobian operators (<see cref="SpatialOperator.GetJacobiOperator"/>)
     /// </summary>
-    public class JacobianParamUpdate {
+    public class JacobianParamUpdate : IParameterUpdate {
 
         /// <summary>
         /// Not intended for direct user interaction, but for use by <see cref="SpatialOperator.GetJacobiOperator"/>
@@ -96,12 +96,11 @@ namespace BoSSS.Foundation {
 
         int[,] DomainDerivToParam;
 
-
         /// <summary>
         /// Parameter update function, 
         /// compatible with <see cref="DelParameterUpdate"/>.
         /// </summary>
-        public void ParameterUpdate(IEnumerable<DGField> DomainVar, IEnumerable<DGField> ParameterVar) {
+        virtual public void ParameterUpdate(IEnumerable<DGField> DomainVar, IEnumerable<DGField> ParameterVar) {
             DGField[] __DomainVar = DomainVar.ToArray();
             DGField[] __ParameterVar = ParameterVar.ToArray();
 
@@ -145,6 +144,49 @@ namespace BoSSS.Foundation {
                     dst.Derivative(1.0, dst, d);
                 }
             }
+        }
+
+        /// <summary>
+        /// creates clones of the domain fields to store parameter fields
+        /// </summary>
+        virtual public DGField[] AllocateParameters(IEnumerable<DGField> DomainVar) {
+            DGField[] ret = new DGField[this.ParameterVar.Length];
+            DGField[] __DomainVar = DomainVar.ToArray();
+            
+            if (DomainVar.Count() != DomainToParam.Length)
+                throw new ApplicationException("mismatch in number of domain variables");
+            int GAMMA = DomainToParam.Length;
+            int D = DomainVar.First().GridDat.SpatialDimension;
+            if (D != DomainDerivToParam.GetLength(1))
+                throw new ApplicationException("spatial dimension mismatch.");
+
+            for (int i = 0; i < __DomainVar.Length; i++) {
+                int iDest = DomainToParam[i];
+                if (iDest < 0)
+                    continue;
+
+                DGField src = __DomainVar[i];
+                DGField dst = src;
+
+                ret[iDest] = dst;
+            }
+
+
+            for (int i = 0; i < __DomainVar.Length; i++) {
+                for (int d = 0; d < D; d++) {
+
+                    int iDest = DomainToParam[i];
+                    if (iDest < 0)
+                        continue;
+
+                    DGField src = __DomainVar[i];
+                    DGField dst = src.CloneAs();
+
+                    ret[iDest] = dst;
+                }
+            }
+
+            return ret;
         }
     }
 }

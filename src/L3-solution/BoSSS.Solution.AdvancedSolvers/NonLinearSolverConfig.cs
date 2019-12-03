@@ -98,6 +98,11 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [DataMember]
         public int constantNewtonIterations = 1;
+
+        /// <summary>
+        /// This will print out more information about iterations.
+        /// </summary>
+        public bool DoNotUsePresRefPoint = false;
     }
 
 }

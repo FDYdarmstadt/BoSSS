@@ -190,7 +190,7 @@ namespace BoSSS.Application.Rheology {
 
             double res = 0.0;
             res += (Tin[0] - Tout[0]) + (Tin[1] - Tout[1]) + (Tin[2] - Tout[2]) + (Tin[3] - Tout[3]);
-            return res * (Vin - Vout);
+            return (-m_Weissenberg) * res * (Vin - Vout);
         }
 
         /// <summary>

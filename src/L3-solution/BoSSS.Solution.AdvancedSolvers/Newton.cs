@@ -28,6 +28,7 @@ using ilPSP.Connectors.Matlab;
 using ilPSP.Tracing;
 using System.IO;
 using System.Diagnostics;
+using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Solution.AdvancedSolvers
 {
@@ -96,6 +97,8 @@ namespace BoSSS.Solution.AdvancedSolvers
         public string m_SessionPath;
 
         public ISolverSmootherTemplate linsolver;
+
+        public bool DoNotUsePresRefPoint;
 
         //bool solveVelocity = true;
 
@@ -268,7 +271,15 @@ namespace BoSSS.Solution.AdvancedSolvers
                         // (and for Level-Set-Updates ...)
                         this.CurrentLin.TransformSolFrom(SolutionVec, xt);
 
-                        
+                        if (DoNotUsePresRefPoint == true) {
+                            XDGField pres = (XDGField)this.m_SolutionVec.Mapping.Fields[2];
+                            DGField presSpA = pres.GetSpeciesShadowField("A");
+                            DGField presSpB = pres.GetSpeciesShadowField("B");
+                            var meanpres = presSpB.GetMeanValueTotal(null);
+                            presSpA.AccConstant(-1.0 * meanpres);
+                            presSpB.AccConstant(-1.0 * meanpres);
+                        }
+
 
                         // update linearization
                         if (itc  % constant_newton_it == 0) {

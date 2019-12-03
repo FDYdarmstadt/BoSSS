@@ -53,6 +53,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DropletInShearFlow.cs" />
+    <Compile Include="GenericTestcases.cs" />
+    <Compile Include="ManSol.cs" />
     <Compile Include="ChannelFlow.cs" />
     <Compile Include="Droplet.cs" />
     <Compile Include="XRheology_OperatorConfiguration.cs" />
@@ -112,6 +115,10 @@
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.RheologyCommon\BoSSS.Solution.RheologyCommon.csproj">
       <Project>{02864872-ff49-4bd2-96fc-9769ac268b5a}</Project>
       <Name>BoSSS.Solution.RheologyCommon</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Statistic\BoSSS.Solution.Statistic.csproj">
+      <Project>{45BCA5F9-27E7-43C0-B021-4312BF442C7D}</Project>
+      <Name>BoSSS.Solution.Statistic</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj">
       <Project>{d0546422-ec92-4964-82e9-8ee819a2f786}</Project>

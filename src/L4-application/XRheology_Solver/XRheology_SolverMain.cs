@@ -60,6 +60,7 @@ using System.Collections;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 using BoSSS.Application.XNSE_Solver;
 using BoSSS.Solution.RheologyCommon;
+using BoSSS.Solution.Statistic;
 
 namespace BoSSS.Application.XRheology_Solver {
 
@@ -159,20 +160,22 @@ namespace BoSSS.Application.XRheology_Solver {
         //            true, true,
         //            IOListOption.ControlFileDetermined)]
         //public VectorField<XDGField> Gravity;
+        //XDGField GravityX;
+        //XDGField GravityY;
 
-        //// Gravity source constitutive
+        // Gravity source constitutive
         //[InstantiateFromControlFile("GravityXX", "StressXX", IOListOption.ControlFileDetermined)]
-        //public SinglePhaseField GravityXX;
+        //XDGField GravityXX;
 
         //[InstantiateFromControlFile("GravityXY", "StressXY", IOListOption.ControlFileDetermined)]
-        //public SinglePhaseField GravityXY;
+        //XDGField GravityXY;
 
         //[InstantiateFromControlFile("GravityYY", "StressYY", IOListOption.ControlFileDetermined)]
-        //public SinglePhaseField GravityYY;
+        //XDGField GravityYY;
 
-        ////Gravity source for divergence of u
+        //Gravity source for divergence of u
         //[InstantiateFromControlFile("GravityDiv", VariableNames.Pressure, IOListOption.ControlFileDetermined)]
-        //public SinglePhaseField GravityDiv;
+        //public XDGField GravityDiv;
 
 
         /// <summary>
@@ -237,6 +240,11 @@ namespace BoSSS.Application.XRheology_Solver {
                 this.XDGvelocity = new VelocityRelatedVars<XDGField>();
                 InitFromAttributes.CreateFieldsAuto(this.XDGvelocity, this.GridData, base.Control.FieldOptions, base.Control.CutCellQuadratureType, base.IOFields, base.m_RegisteredFields);
 
+                //this.GravityX = new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.StressXX].Degree), "GravityX");
+                //base.RegisterField(this.GravityX);
+                //this.GravityY = new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.StressXX].Degree), "GravityY");
+                //base.RegisterField(this.GravityY);
+
                 // ALL STRESS RELATED FIELDS
                 this.StressXX = new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.StressXX].Degree), VariableNames.StressXX);
                 base.RegisterField(this.StressXX);
@@ -258,6 +266,13 @@ namespace BoSSS.Application.XRheology_Solver {
                 base.RegisterField(this.StressXYP);
                 this.StressYYP = new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.StressYY].Degree), VariableNames.StressYYP);
                 base.RegisterField(this.StressYYP);
+
+                //this.GravityXX = new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.StressXX].Degree), "GravityXX");
+                //base.RegisterField(this.GravityXX);
+                //this.GravityXY = new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.StressXY].Degree), "GravityXY");
+                //base.RegisterField(this.GravityXY);
+                //this.GravityYY = new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.StressYY].Degree), "GravityYY");
+                //base.RegisterField(this.GravityYY);
 
 
                 //PERSSON SENSOR FIELD
@@ -402,7 +417,7 @@ namespace BoSSS.Application.XRheology_Solver {
         /// <summary>
         /// current Weissenberg number
         /// </summary>
-        public double currentWeissenberg;
+        public double[] currentWeissenberg = new double[] { 0.0, 0.0 };
         bool ChangeMesh = true;
 
         // Persson sensor and artificial viscosity
@@ -505,7 +520,7 @@ namespace BoSSS.Application.XRheology_Solver {
             //Quadrature Order
             //----------------
 
-            m_HMForder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
+            m_HMForder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 4 : 3);
 
 
             // Create Spatial Operator
@@ -637,8 +652,8 @@ namespace BoSSS.Application.XRheology_Solver {
 
 
                 m_BDF_Timestepper.DataRestoreAfterBalancing(L,
-                    ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure),
-                    ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity),
+                    ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure, this.StressXX, this.StressXY, this.StressYY),
+                    ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity, this.ResidualStressXX, ResidualStressXY, this.ResidualStressYY),
                     this.LsTrk, this.MultigridSequence);
 
                 //PlotCurrentState(hack_Phystime, new TimestepNumber(hack_TimestepIndex, 13), 2);
@@ -726,7 +741,6 @@ namespace BoSSS.Application.XRheology_Solver {
                 CurrentState, AgglomeratedCellLengthScales, phystime,
                 this.m_HMForder, SurfaceForce, filtLevSetGradient, Curvature, currentWeissenberg);
 
-
             if (filtLevSetGradient != null) {
                 if (this.Control.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource == CurvatureAlgorithms.LevelSetSource.fromC0) {
                     this.LevSetGradient.Clear();
@@ -772,14 +786,40 @@ namespace BoSSS.Application.XRheology_Solver {
             // multiply by -1 to make it RHS
             OpAffine.ScaleV(-1.0);
 
+            //foreach (string spc in LsTrk.SpeciesNames) {
+            //    GravityX.GetSpeciesShadowField(spc).ProjectField(Control.GravityX[spc].Convert_Xt2X(phystime));
+            //    int[] MomEqIdx1 = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 0);
+            //    OpAffine.AccV(-1.0, this.XDGvelocity.Gravity.CoordinateVector, MomEqIdx1, default(int[]));
 
-            // ============================
-            // Generate MassMatrix
-            // ============================
+            //    GravityY.GetSpeciesShadowField(spc).ProjectField(Control.GravityY[spc].Convert_Xt2X(phystime));
+            //    int[] MomEqIdx2 = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 1);
+            //    OpAffine.AccV(-1.0, this.XDGvelocity.Gravity.CoordinateVector, MomEqIdx2, default(int[]));
 
-            // mass matrix factory
-            MassFact = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), m_HMForder, 1).MassMatrixFactory;// new MassMatrixFactory(maxB, CurrentAgg);
+                //GravityXX.GetSpeciesShadowField(spc).ProjectField(Control.GravityXX[spc].Convert_Xt2X(phystime));
+                //int[] ConstEqIdx1 = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 3);
+                //OpAffine.AccV(-1.0, this.GravityXX.CoordinateVector, ConstEqIdx1, default(int[]));
+
+                //GravityXY.GetSpeciesShadowField(spc).ProjectField(Control.GravityXY[spc].Convert_Xt2X(phystime));
+                //int[] ConstEqIdx2 = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 3);
+                //OpAffine.AccV(-1.0, this.GravityXY.CoordinateVector, ConstEqIdx2, default(int[]));
+
+                //GravityYY.GetSpeciesShadowField(spc).ProjectField(Control.GravityYY[spc].Convert_Xt2X(phystime));
+                //int[] ConstEqIdx3 = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 3);
+                //OpAffine.AccV(-1.0, this.GravityXX.CoordinateVector, ConstEqIdx3, default(int[]));
+            //}
+
+                // ============================
+                // Generate MassMatrix
+                // ============================
+
+                // mass matrix factory
+                MassFact = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), m_HMForder, 1).MassMatrixFactory;// new MassMatrixFactory(maxB, CurrentAgg);
             var WholeMassMatrix = MassFact.GetMassMatrix(Mapping, MassScale); // mass matrix scaled with density rho
+
+            // For ResidualTest from Markus only
+            //======================================
+            //BlockMsrMatrix inverseMassMatrix = MassFact.GetMassMatrix(CurrentResidual.Mapping, true);
+            //inverseMassMatrix.SpMV(1.0, OpAffine, 0.0, CurrentResidual);
 
 
             // ============================
@@ -794,21 +834,21 @@ namespace BoSSS.Application.XRheology_Solver {
             // Set Pressure Reference Point
             // ============================
 
-            if (OpMtx != null) {
-                if (!this.BcMap.DirichletPressureBoundary) {
-                    XNSEUtils.SetPressureReferencePoint(
-                        Mapping,
-                        this.GridData.SpatialDimension,
-                        this.LsTrk, OpMtx, OpAffine);
-                }
-            } else {
-                if (!this.BcMap.DirichletPressureBoundary) {
-                    XNSEUtils.SetPressureReferencePointResidual(
-                        new CoordinateVector(CurrentState),
-                        this.GridData.SpatialDimension,
-                        this.LsTrk, OpAffine);
-                }
-            }
+            //if (OpMtx != null) {
+            //    if (!this.BcMap.DirichletPressureBoundary) {
+            //        XNSEUtils.SetPressureReferencePoint(
+            //            Mapping,
+            //            this.GridData.SpatialDimension,
+            //            this.LsTrk, OpMtx, OpAffine);
+            //    }
+            //} else {
+            //    if (!this.BcMap.DirichletPressureBoundary) {
+            //        XNSEUtils.SetPressureReferencePointResidual(
+            //            new CoordinateVector(CurrentState),
+            //            this.GridData.SpatialDimension,
+            //            this.LsTrk, OpAffine);
+            //    }
+            //}
 
             // transform from RHS to Affine
             OpAffine.ScaleV(-1.0);
@@ -979,16 +1019,6 @@ namespace BoSSS.Application.XRheology_Solver {
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
             using (var tr = new FuncTrace()) {
 
-                if (this.Control.OperatorMatrixAnalysis == true) {
-                    var agg = LsTrk.GetAgglomerator(LsTrk.SpeciesIdS.ToArray(), m_HMForder, this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold).CellLengthScales;
-                    OpAnalysisBase myAnalysis = new OpAnalysisBase(DelComputeOperatorMatrix, CurrentSolution.Mapping, CurrentSolution.Mapping.Fields.ToArray(), agg, phystime);
-                    //myAnalysis.VarGroup = new int[] { 0};
-                    //myAnalysis.Analyse();
-                    double[] condest = myAnalysis.CondNum();
-                    Console.WriteLine("Condition number full system, full matrix: " + condest[0] + "full system inner matrix (excl. BC): " + condest[1]);
-
-                }
-
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
                 int D = this.GridData.SpatialDimension;
                 base.ResLogger.TimeStep = TimestepInt;
@@ -1016,6 +1046,9 @@ namespace BoSSS.Application.XRheology_Solver {
                             Vel_d.ProjectField(Control.ExactSolutionVelocity[spc][d].Convert_Xt2X(phystime + dt));
                         }
                         Pressure.GetSpeciesShadowField(spc).ProjectField(Control.ExactSolutionPressure[spc].Convert_Xt2X(phystime + dt));
+                        StressXX.GetSpeciesShadowField(spc).ProjectField(Control.ExactSolutionStressXX[spc].Convert_Xt2X(phystime + dt));
+                        StressXY.GetSpeciesShadowField(spc).ProjectField(Control.ExactSolutionStressXY[spc].Convert_Xt2X(phystime + dt));
+                        StressYY.GetSpeciesShadowField(spc).ProjectField(Control.ExactSolutionStressYY[spc].Convert_Xt2X(phystime + dt));
                     }
                 }
 
@@ -1139,24 +1172,21 @@ namespace BoSSS.Application.XRheology_Solver {
                     if (m_BDF_Timestepper != null) {
                         if (Control.RaiseWeissenberg == true) {
 
-                            currentWeissenberg = 0.0;
+                           // currentWeissenberg = new double[] { 0.0, 0.0 };
 
-                            if (Control.PhysicalParameters.Weissenberg_a != 0.0) {
+                            if (Control.PhysicalParameters.Weissenberg_a != 0.0 || Control.PhysicalParameters.Weissenberg_b != 0.0) {
 
                                 if (Control.WeissenbergIncrement != 0.0) {
-                                    NoIncrementTimestep = (int)(Control.PhysicalParameters.Weissenberg_a / Control.WeissenbergIncrement);
+                                    NoIncrementTimestep = 1;
+                                    if(Control.PhysicalParameters.Weissenberg_a > Control.PhysicalParameters.Weissenberg_b)
+                                        NoIncrementTimestep = (int)(Control.PhysicalParameters.Weissenberg_a / Control.WeissenbergIncrement);
+                                    else if(Control.PhysicalParameters.Weissenberg_b > Control.PhysicalParameters.Weissenberg_a)
+                                        NoIncrementTimestep = (int)(Control.PhysicalParameters.Weissenberg_b / Control.WeissenbergIncrement);
+                                    else if (Control.PhysicalParameters.Weissenberg_b == Control.PhysicalParameters.Weissenberg_a)
+                                        NoIncrementTimestep = (int)(Control.PhysicalParameters.Weissenberg_a / Control.WeissenbergIncrement);
                                 } else {
                                     throw new ArgumentException("Raise Weissenberg is turned on, but WeissenbergIncrement is zero!");
                                 }
-
-                            } else if (Control.PhysicalParameters.Weissenberg_b != 0.0) {
-
-                                if (Control.WeissenbergIncrement != 0.0) {
-                                    NoIncrementTimestep = (int)(Control.PhysicalParameters.Weissenberg_b / Control.WeissenbergIncrement);
-                                } else {
-                                    throw new ArgumentException("Raise Weissenberg is turned on, but WeissenbergIncrement is zero!");
-                                }
-
                             } else {
                                 throw new ArgumentException("Raise Weissenberg is turned on, but aim Weissenberg is 0.0 (Newtonian)!");
                             }
@@ -1205,21 +1235,29 @@ namespace BoSSS.Application.XRheology_Solver {
                                     PlotCurrentState(phystime, TimestepNo);
                                 }
 
-                                if (currentWeissenberg < Control.PhysicalParameters.Weissenberg_a || currentWeissenberg < Control.PhysicalParameters.Weissenberg_b) {
-                                    currentWeissenberg = currentWeissenberg + Control.WeissenbergIncrement;
+                                if (currentWeissenberg[0] < Control.PhysicalParameters.Weissenberg_a) {
+                                    currentWeissenberg[0] = currentWeissenberg[0] + Control.WeissenbergIncrement;
                                     Console.WriteLine();
-                                    Console.WriteLine("Raise Weissenberg number to " + currentWeissenberg);
+                                    Console.WriteLine("Raise Weissenberg number A to " + currentWeissenberg[0]);
+                                    Console.WriteLine();
+                                }
+
+                                if (currentWeissenberg[1] < Control.PhysicalParameters.Weissenberg_b) {
+                                    currentWeissenberg[1] = currentWeissenberg[1] + Control.WeissenbergIncrement;
+                                    Console.WriteLine();
+                                    Console.WriteLine("Raise Weissenberg number B to " + currentWeissenberg[1]);
                                     Console.WriteLine();
                                 }
 
                             }
                         } else {
                             //current Weissenberg is set to the HIGHER value... DIRTY HACK AT THE MOMENT!
+                            Console.WriteLine("current Weissenberg is set to the HIGHER value... DIRTY HACK AT THE MOMENT!");
 
                             if (Control.PhysicalParameters.Weissenberg_b < Control.PhysicalParameters.Weissenberg_a) {
-                                currentWeissenberg = Control.PhysicalParameters.Weissenberg_a;
+                                currentWeissenberg[0] = Control.PhysicalParameters.Weissenberg_a;
                             } else {
-                                currentWeissenberg = Control.PhysicalParameters.Weissenberg_b;
+                                currentWeissenberg[1] = Control.PhysicalParameters.Weissenberg_b;
                             }
 
                             if (Control.UseArtificialDiffusion == true) {
@@ -1248,7 +1286,140 @@ namespace BoSSS.Application.XRheology_Solver {
                                 }
                             } else {
 
+                                if (this.Control.OperatorMatrixAnalysis == true) {
+
+                                    BlockMsrMatrix SaddlePointMatrix = new BlockMsrMatrix(this.CurrentSolution.Mapping);
+                                    double[] AffineDummy = new double[this.CurrentSolution.Mapping.LocalLength];
+
+                                    var agg = LsTrk.GetAgglomerator(LsTrk.SpeciesIdS.ToArray(), m_HMForder, this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold);
+
+                                    DelComputeOperatorMatrix(SaddlePointMatrix, AffineDummy, this.CurrentSolution.Mapping,
+                                    this.CurrentSolution.Mapping.Fields.ToArray(), agg.CellLengthScales, 0.0);
+
+                                    AggregationGridBasis[][] MgBasis = AggregationGridBasis.CreateSequence(this.MultigridSequence, this.CurrentSolution.Mapping.BasisS);
+                                    //todo: AsyncCallback update
+                                    MgBasis.UpdateXdgAggregationBasis(agg);
+                                    MultigridOperator mgOp = new MultigridOperator(MgBasis, CurrentSolution.Mapping,
+                                        SaddlePointMatrix, this.MassFact.GetMassMatrix(CurrentSolution.Mapping, false),
+                                        this.MultigridOperatorConfig);
+
+                                    MsrMatrix FullMatrix = mgOp.OperatorMatrix.ToMsrMatrix();
+
+                                    MsrMatrix DiffMatrix;
+                                    {
+                                        int[] VelVarIdx = new int[] { 3, 4, 5 };
+
+                                        int[] USubMatrixIdx_Row = mgOp.Mapping.GetSubvectorIndices(VelVarIdx);
+                                        int[] USubMatrixIdx_Col = mgOp.Mapping.GetSubvectorIndices(VelVarIdx);
+                                        int L = USubMatrixIdx_Row.Length;
+
+                                        DiffMatrix = new MsrMatrix(L, L, 1, 1);
+                                        FullMatrix.WriteSubMatrixTo(DiffMatrix, USubMatrixIdx_Row, default(int[]), USubMatrixIdx_Col, default(int[]));
+                                    }
+
+                                    MultidimensionalArray ret = MultidimensionalArray.Create(1, 2);
+                                    Console.WriteLine("Calling MATLAB/Octave...");
+                                    using (BatchmodeConnector bmc = new BatchmodeConnector()) {
+                                        bmc.PutSparseMatrix(FullMatrix, "FullMatrix");
+                                        bmc.PutSparseMatrix(DiffMatrix, "DiffMatrix");
+                                        bmc.Cmd("DiffMatrix = 0.5*(DiffMatrix + DiffMatrix');");
+                                        bmc.Cmd("condNoDiffMatrix = condest(DiffMatrix);");
+                                        bmc.Cmd("condNoFullMatrix = condest(FullMatrix);");
+                                        //bmc.Cmd("eigiMaxi = eigs(DiffMatrix,1,'lm')");
+                                        //bmc.Cmd("eigiMini = eigs(DiffMatrix,1,'sm')");
+                                        //bmc.Cmd("lasterr");
+                                        //bmc.Cmd("[V,r]=chol(DiffMatrix);");
+                                        bmc.Cmd("ret = [condNoFullMatrix, condNoDiffMatrix]");
+                                        bmc.GetMatrix(ret, "ret");
+
+                                        bmc.Execute(false);
+                                    }
+
+                                    double condNoFullMatrix = ret[0, 0];
+                                    double condNoDiffMatrix = ret[0, 1];
+                                    //double eigiMaxi = ret[0, 2];
+                                    //double eigiMini = ret[0, 3];
+                                    //posDef = ret[0, 4] == 0;
+
+                                    //Console.WriteLine("Eigenvalue range of diffusion matrix: {0} to {1}", eigiMini, eigiMaxi);
+
+                                    Console.WriteLine("Condition number diffusion operator: {0:0.####E-00}", condNoDiffMatrix);
+                                    Console.WriteLine("Condition number full operator: {0:0.####E-00}", condNoFullMatrix);
+                                    base.QueryHandler.ValueQuery("condFull", condNoFullMatrix, true);
+                                    base.QueryHandler.ValueQuery("condDiff", condNoDiffMatrix, true);
+
+                                    //OpAnalysisBase myAnalysis = new OpAnalysisBase(DelComputeOperatorMatrix, CurrentSolution.Mapping, CurrentSolution.Mapping.Fields.ToArray(), agg.CellLengthScales, phystime);
+                                    //myAnalysis.VarGroup = new int[] { 3, 4, 5};
+                                    ////myAnalysis.Analyse();
+                                    //double[] condest = myAnalysis.CondNum();
+                                    //Console.WriteLine("Condition number full system, full matrix: " + condest[0] + "full system inner matrix (excl. BC): " + condest[1]);
+
+                                }
+
+
                                 m_BDF_Timestepper.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
+
+                                //===============================================================================
+
+                                #region Write residuals to text file
+
+                                //// Sample points
+
+                                //int noOfPoints = 1000;
+
+                                //double[] nodes = GenericBlas.Linspace(-2, 2, noOfPoints);
+
+                                //MultidimensionalArray points = MultidimensionalArray.Create(noOfPoints, 2);
+
+                                //for (int i = 0; i < noOfPoints; i++) {
+
+                                //    points[i, 0] = nodes[i];
+
+                                //    points[i, 1] = 0.5;
+
+                                //}
+
+
+
+                                //// FieldEvaluation
+                                //MultidimensionalArray results = MultidimensionalArray.Create(noOfPoints, CurrentResidual.Mapping.Count);
+
+                                //for (int i = 0; i < CurrentResidual.Length; i++) {
+
+                                //    FieldEvaluation fieldEvaluator = new FieldEvaluation((GridData)this.GridData);
+
+                                //    fieldEvaluator.Evaluate(1.0, CurrentResidual.Mapping, points, 0.0, results);
+
+                                //}
+
+
+
+                                //// StreamWriter
+
+                                //using (System.IO.StreamWriter sw = new System.IO.StreamWriter(String.Format("Residuals{0}.txt", dt))) {
+
+                                //    //Console.WriteLine("x \t y \t result");
+
+                                //    sw.WriteLine("x \t y \t momX \t momY \t conti \t constXX \t constXY \t constYY");
+
+                                //    string resultLine;
+
+                                //    for (int i = 0; i < noOfPoints; i++) {
+
+                                //        resultLine = points[i, 0] + "\t" + points[i, 1] + "\t" + results[i, 0] + "\t" + results[i, 1] + "\t" + results[i, 2] + "\t" + results[i, 3] + "\t" + results[i, 4] + "\t" + results[i, 5] + "\t";
+
+                                //        //Console.WriteLine(resultLine);
+
+                                //        sw.WriteLine(resultLine);
+
+                                //    }
+
+                                //    sw.Flush();
+
+                                //}
+
+                                #endregion
+                                //=============================================================================================
                             }
                         }
                     }

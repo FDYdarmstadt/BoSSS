@@ -90,6 +90,25 @@ namespace BoSSS.Foundation {
             return r;
         }
 
+
+        IParameterUpdate m_ParameterUpdate;
+
+        /// <summary>
+        /// If set, used to update parameters before evaluation.
+        /// </summary>
+        public IParameterUpdate ParameterUpdate {
+            get {
+                return m_ParameterUpdate;
+            }
+            set {
+                if (IsCommited)
+                    throw new NotSupportedException("unable to change after 'Commit()'");
+                m_ParameterUpdate = value;
+            }
+        }
+
+
+
         /// <summary>
         /// ctor
         /// </summary>
@@ -2476,9 +2495,12 @@ namespace BoSSS.Foundation {
         /// An operator which computes the Jacobian matrix of this operator.
         /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
         /// </summary>
-        public (SpatialOperator, DelParameterUpdate) GetJacobiOperator(int SpatialDimension) {
+        public SpatialOperator GetJacobiOperator(int SpatialDimension) {
             if (!this.IsCommited)
                 throw new InvalidOperationException("Invalid prior to calling Commit().");
+
+            // parameters and activation flags
+            // ===============================
 
             var allcomps = new List<IEquationComponent>();
             foreach (var cdo in this.CodomainVar)
@@ -2499,6 +2521,9 @@ namespace BoSSS.Foundation {
             }
 
             var h = new JacobianParamUpdate(this.DomainVar, this.ParameterVar, allcomps, extractTaf, SpatialDimension);
+            
+            // create derivative operator
+            // ==========================
 
             var JacobianOp = new SpatialOperator(
                    this.DomainVar,
@@ -2517,8 +2542,11 @@ namespace BoSSS.Foundation {
                 }
             }
 
+            // return
+            // =====
+            JacobianOp.ParameterUpdate = h;
             JacobianOp.Commit();
-            return (JacobianOp, h.ParameterUpdate);
+            return JacobianOp;
         }
 
         
