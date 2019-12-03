@@ -73,7 +73,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <returns>
         /// <see cref="ExactRiemannSolver.GetCentralState"/>
         /// </returns>
-        protected internal override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex) {
+        public override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex) {
             ExactRiemannSolver riemannSolver = new ExactRiemannSolver(
                 stateIn, stateOut, normal);
 

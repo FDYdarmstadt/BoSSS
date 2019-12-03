@@ -31,7 +31,7 @@ namespace CNS.IBM {
             this.levelSetVelocity = speciesMap.Control.LevelSetVelocity;
         }
 
-        protected override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex) {
+        public override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex) {
             // Version: Subtract -s * flux from upwind
             double uIn = stateIn.Velocity * normal;
             double uOut = stateOut.Velocity * normal;

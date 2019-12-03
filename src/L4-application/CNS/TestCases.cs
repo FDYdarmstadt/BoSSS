@@ -3774,7 +3774,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl StationaryShockWave(string dbPath = null, int savePeriod = 100, int dgDegree = 0, int numOfCellsX = 10, int numOfCellsY = 1, double dtFixed = 1e-4) {
+        public static CNSControl StationaryShockWave(string dbPath = null, int savePeriod = 100, int dgDegree = 3, int numOfCellsX = 10, int numOfCellsY = 1, double dtFixed = 1e-4) {
             CNSControl c = new CNSControl();
 
             // ### Database ###
@@ -3821,7 +3821,7 @@ namespace CNS {
             //}
 
             c.ActiveOperators = Operators.Convection;
-            c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
+            c.ConvectiveFluxType = ConvectiveFluxTypes.Godunov;
 
             //### Shock-capturing ###
             //double epsilon0 = 1.0;
@@ -3873,7 +3873,7 @@ namespace CNS {
             // Parameters
             // #########################
             double gamma = IdealGas.Air.HeatCapacityRatio;
-            double Ms = 5.0;
+            double Ms = 1.5;
 
             // #########################
             // Shock

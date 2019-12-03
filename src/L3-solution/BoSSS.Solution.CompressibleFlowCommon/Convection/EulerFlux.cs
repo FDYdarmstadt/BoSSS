@@ -136,7 +136,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// Processor-local index of the current edge
         /// </param>
         /// <returns>See Toro2009 (p. 332)</returns>
-        protected internal abstract double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex);
+        public abstract double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex);
 
         /// <summary>
         /// Weakly imposes the specific boundary condition for this boundary
