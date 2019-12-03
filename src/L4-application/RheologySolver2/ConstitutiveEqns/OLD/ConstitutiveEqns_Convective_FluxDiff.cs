@@ -39,7 +39,7 @@ namespace BoSSS.Application.Rheology {
         int Component;           // equation index (0: xx, 1: xy, 2: yy)
         BoundaryCondMap<IncompressibleBcType> m_BcMap;
         double m_Weissenberg; // Weissenberg number
-        double m_alpha;
+        //double m_alpha;
 
         /// <summary>
         /// Mapping from edge tags to boundary values.<br/>
@@ -59,7 +59,7 @@ namespace BoSSS.Application.Rheology {
             this.Component = Component;
             this.m_BcMap = _BcMap;
             this.m_Weissenberg = Weissenberg;
-            this.m_alpha = 0.5; // alpha;
+            //this.m_alpha = 0.5; // alpha;
 
             StressFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, 3];
 

@@ -223,23 +223,32 @@ namespace BoSSS.Application.Rheology {
         // Some initialisation of variables
         //============================================
         IncompressibleBoundaryCondMap BcMap;
-        int D; // Spatial Dimension
+        
         /// <summary>
         /// current Weissenberg number
         /// </summary>
         public double currentWeissenberg;
+
+
         bool ChangeMesh = true;
+        
+        /// <summary>
+        /// Spatial operator 
+        /// </summary>
         SpatialOperator XOP;
-        CoordinateVector m_CurrentSolution = null;
-        CoordinateVector m_CurrentResidual = null;
 
         /// <summary>
-        /// initialisation of BDF Timestepper
+        /// Linearization of <see cref="XOP"/>
+        /// </summary>
+        SpatialOperator JacobiOp;
+        
+        /// <summary>
+        /// Timestepping object
         /// </summary>
         protected XdgBDFTimestepping m_BDF_Timestepper;
 
         /// <summary>
-        /// initialisation of spatial operator matrix analysis
+        /// Instance of spatial operator matrix analysis
         /// </summary>
         protected SpatialOperatorAnalysis SpatialOperatorAnalysis;
 
@@ -247,17 +256,17 @@ namespace BoSSS.Application.Rheology {
         // Persson sensor and artificial viscosity
         //=============================================
         /// <summary>
-        /// initialisation of Persson sensor
+        /// Instance of Persson sensor
         /// </summary>
         protected PerssonSensor perssonsensor;
 
         /// <summary>
-        /// initialisation of artificial viscosity
+        /// Instance of artificial viscosity
         /// </summary>
         protected SinglePhaseField artificalViscosity;
 
         /// <summary>
-        /// initialisation of max value of artificial viscosity
+        /// Instance of max value of artificial viscosity
         /// </summary>
         protected double artificialMaxViscosity;
 
@@ -297,6 +306,8 @@ namespace BoSSS.Application.Rheology {
             }
         }
 
+        CoordinateVector m_CurrentSolution = null;
+        
         /// <summary>
         /// Current solution vector
         /// </summary>
@@ -308,6 +319,8 @@ namespace BoSSS.Application.Rheology {
                 return m_CurrentSolution;
             }
         }
+
+        CoordinateVector m_CurrentResidual = null;
 
         /// <summary>
         /// Current residual vector
@@ -355,6 +368,7 @@ namespace BoSSS.Application.Rheology {
         /// Initialize Calculation, Create Equations
         /// </summary>
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+            int D = this.GridData.SpatialDimension;
 
             if (XOP != null && L == null && Control.Weissenberg == 0.0)
                 return;
@@ -363,8 +377,8 @@ namespace BoSSS.Application.Rheology {
                 if (L != null) {
 
                     m_BDF_Timestepper.DataRestoreAfterBalancing(L,
-                        ArrayTools.Cat<DGField>(Velocity.Current, Pressure, StressXX, StressXY, StressYY),
-                        ArrayTools.Cat<DGField>(ResidualMomentum, ResidualConti, ResidualStressXX, ResidualStressXY, ResidualStressYY),
+                        CurrentSolution.Fields,
+                        CurrentResidual.Fields,
                         this.LsTrk, this.MultigridSequence);
 
                     m_CurrentSolution = null;
@@ -492,7 +506,7 @@ namespace BoSSS.Application.Rheology {
                     // Build spatial operator
                     XOP.Commit();
 
-                    (var testi, var Mctest) = XOP.GetJacobiOperator(2);
+                    JacobiOp = XOP.GetJacobiOperator(2);
 
 
 
@@ -516,8 +530,9 @@ namespace BoSSS.Application.Rheology {
                         throw new NotImplementedException("The chosen timestepper is not implemented!");
 
 
-                    m_BDF_Timestepper = new XdgBDFTimestepping(ArrayTools.Cat(this.Velocity.Current, this.Pressure, this.StressXX, this.StressXY, this.StressYY),
-                        ArrayTools.Cat(this.ResidualMomentum, this.ResidualConti, this.ResidualStressXX, this.ResidualStressXY, this.ResidualStressYY),
+                    m_BDF_Timestepper = new XdgBDFTimestepping(
+                        CurrentSolution.Fields,
+                        CurrentResidual.Fields,
                         LsTrk, false,
                         DelComputeOperatorMatrix, null, DelUpdateLevelset,
                         bdfOrder,
@@ -874,6 +889,7 @@ namespace BoSSS.Application.Rheology {
 
 
         void ParameterUpdate(IEnumerable<DGField> CurrentState, IEnumerable<DGField> ParameterVar) {
+            int D = this.GridData.SpatialDimension;
 
             var U0 = new VectorField<SinglePhaseField>(CurrentState.Take(D).Select(F => (SinglePhaseField)F).ToArray());
             var Stress0 = new VectorField<SinglePhaseField>(CurrentState.Skip(D + 1).Take(3).Select(F => (SinglePhaseField)F).ToArray());
@@ -919,16 +935,16 @@ namespace BoSSS.Application.Rheology {
         /// Computation of operator matrix to be used by DelComputeOperatorMatrix, the SpatialOperatorAnalysis and some unit tests(<see cref="m_BDF_Timestepper"/>).
         /// </summary>
         public void AssembleMatrix(out BlockMsrMatrix OpMatrix, out double[] OpAffine, DGField[] CurrentState, bool Linearization) {
+            int D = this.GridData.SpatialDimension;
 
-            D = this.GridData.SpatialDimension;
             var U0 = new VectorField<SinglePhaseField>(CurrentState.Take(D).Select(F => (SinglePhaseField)F).ToArray());
             var Stress0 = new VectorField<SinglePhaseField>(CurrentState.Skip(D + 1).Take(3).Select(F => (SinglePhaseField)F).ToArray());
 
             if (U0.Count != D)
-                throw new ArgumentException("Spatial dimesion and number of velocity parameter components does not match!");
+                throw new ArgumentException("Spatial dimension and number of velocity parameter components does not match!");
 
             if (Stress0.Count != (D*D + D)/2)
-                throw new ArgumentException("Spatial dimesion and number of stress parameter components does not match!");
+                throw new ArgumentException("Spatial dimension and number of stress parameter components does not match!");
 
 
             // parameters
@@ -977,12 +993,25 @@ namespace BoSSS.Application.Rheology {
                 } else {
                     // Finite Difference Linearization
                     var FDbuilder = XOP.GetFDJacobianBuilder(domMap, Params, codMap, this.ParameterUpdate);
+                    FDbuilder.OperatorCoefficients.UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
                     FDbuilder.ComputeMatrix(OpMatrix, OpAffine);
+
+                    // Jacobian
+                    var JacParams = JacobiOp.ParameterUpdate;
+                    var TmpParams = JacParams.AllocateParameters(CurrentState);
+                    var map = new CoordinateMapping(CurrentState);
+                    var JacBuilder = JacobiOp.GetMatrixBuilder(map, TmpParams, map);
+                    var JacMtx = new BlockMsrMatrix(map);
+                    var JacAff = new double[map.LocalLength];
+                    JacBuilder.ComputeMatrix(JacMtx, JacAff);
+
+
+
+
 
                     // FDJacobian has (Mx +b) as RHS, for unsteady calc. we must subtract Mx for real affine Vector!
                     OpMatrix.SpMV(-1.0, new CoordinateVector(CurrentState), 1.0, OpAffine);
 
-                    FDbuilder.OperatorCoefficients.UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
                 }
 
                 // Set Pressure Reference Point
@@ -1122,6 +1151,10 @@ namespace BoSSS.Application.Rheology {
         /// Initialising the DG fields
         /// </summary>
         protected override void SetInitial() {
+            int D = GridData.SpatialDimension;
+            if (D != 2)
+                throw new NotImplementedException("currently only support for 2 dimensions.");
+
             base.SetInitial();
             this.LsTrk.UpdateTracker();
             CreateEquationsAndSolvers(null);
