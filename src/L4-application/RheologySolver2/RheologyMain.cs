@@ -393,7 +393,7 @@ namespace BoSSS.Application.Rheology {
                     BcMap = new IncompressibleBoundaryCondMap(this.GridData, this.Control.BoundaryValues, PhysicsMode.Viscoelastic);
 
                     string[] CodName = new string[] { "momX", "momY", "div", "constitutiveXX", "constitutiveXY", "constitutiveYY" };
-                    string[] Params = ArrayTools.Cat(VariableNames.Velocity0Vector(D), VariableNames.Velocity0MeanVector(D), VariableNames.VelocityX_GradientVector(), VariableNames.VelocityY_GradientVector(), VariableNames.StressXXP, VariableNames.StressXYP, VariableNames.StressYYP, "artificialViscosity");
+                    string[] Params = null; // ArrayTools.Cat(VariableNames.Velocity0Vector(D), VariableNames.Velocity0MeanVector(D), VariableNames.VelocityX_GradientVector(), VariableNames.VelocityY_GradientVector(), VariableNames.StressXXP, VariableNames.StressXYP, VariableNames.StressYYP, "artificialViscosity");
                     string[] DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure, VariableNames.StressXX, VariableNames.StressXY, VariableNames.StressYY);
 
                     XOP = new SpatialOperator(DomName, Params, CodName, QuadOrderFunc.NonLinear(2));
@@ -991,8 +991,16 @@ namespace BoSSS.Application.Rheology {
                     Mbuilder.OperatorCoefficients.UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
 
                 } else {
+                    void Dummy(IEnumerable<DGField> ZZtop, IEnumerable<DGField> ParameterVar) {
+                        Debug.Assert(ParameterVar.Count() == 0);
+                    }
+
+
                     // Finite Difference Linearization
-                    var FDbuilder = XOP.GetFDJacobianBuilder(domMap, Params, codMap, this.ParameterUpdate);
+                    var FDbuilder = XOP.GetFDJacobianBuilder(domMap, null, //Params,
+                        codMap,
+                        //this.ParameterUpdate
+                        Dummy);
                     FDbuilder.OperatorCoefficients.UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
                     FDbuilder.ComputeMatrix(OpMatrix, OpAffine);
 
@@ -1001,11 +1009,15 @@ namespace BoSSS.Application.Rheology {
                     var TmpParams = JacParams.AllocateParameters(CurrentState);
                     var map = new CoordinateMapping(CurrentState);
                     var JacBuilder = JacobiOp.GetMatrixBuilder(map, TmpParams, map);
+                    JacParams.ParameterUpdate(CurrentState, TmpParams);
                     var JacMtx = new BlockMsrMatrix(map);
                     var JacAff = new double[map.LocalLength];
                     JacBuilder.ComputeMatrix(JacMtx, JacAff);
 
-
+                    var ErrMtx = OpMatrix.CloneAs();
+                    ErrMtx.Acc(-1.0, JacMtx);
+                    double InfNorm_ErrMtx = ErrMtx.InfNorm();
+                    Console.WriteLine("Shitty Matrix Error: " + InfNorm_ErrMtx);
 
 
 

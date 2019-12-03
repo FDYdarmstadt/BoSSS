@@ -19,19 +19,19 @@ namespace BoSSS.Foundation {
         public JacobianParamUpdate(IEnumerable<string> __DomainVar, IEnumerable<string> __ParamterVar, List<IEquationComponent> comps, Func<IEquationComponent,TermActivationFlags> extractTaf, int SpatialDimension) {
             Components.AddRange(comps);
             DomainVar = __DomainVar.ToArray();
-            ParameterVar = __ParamterVar.ToArray();
-            FindJacobianParams(SpatialDimension, extractTaf);
+            var ParameterVar = __ParamterVar != null ? __ParamterVar.ToArray() : new string[0];
+            FindJacobianParams(SpatialDimension, ParameterVar, extractTaf);
         }
 
         List<IEquationComponent> Components = new List<IEquationComponent>();
 
         string[] DomainVar;
-        string[] ParameterVar;
+        
 
         /// <summary>
         /// Implementation of constructor functionality.
         /// </summary>
-        private void FindJacobianParams(int SpatialDimension, Func<IEquationComponent,TermActivationFlags> extractTaf) {
+        private void FindJacobianParams(int SpatialDimension, string[] ParameterVar, Func<IEquationComponent,TermActivationFlags> extractTaf) {
             string[] DomVar = DomainVar.ToArray();
             bool[] DomVarAsParam = new bool[DomVar.Length];
             bool[] DomVarDerivAsParam = new bool[DomVar.Length];
@@ -150,7 +150,7 @@ namespace BoSSS.Foundation {
         /// creates clones of the domain fields to store parameter fields
         /// </summary>
         virtual public DGField[] AllocateParameters(IEnumerable<DGField> DomainVar) {
-            DGField[] ret = new DGField[this.ParameterVar.Length];
+            DGField[] ret = new DGField[this.JacobianParameterVars.Length];
             DGField[] __DomainVar = DomainVar.ToArray();
             
             if (DomainVar.Count() != DomainToParam.Length)

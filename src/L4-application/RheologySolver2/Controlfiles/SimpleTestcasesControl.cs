@@ -57,7 +57,7 @@ namespace BoSSS.Application.Rheology
             C.ProjectName = "Channel";
             C.dtFixed = 1e6;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-
+            C.useJacobianForOperatorMatrix = true;
 
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
