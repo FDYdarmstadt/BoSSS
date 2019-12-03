@@ -5,10 +5,10 @@ restart
   _______________________
 
 Databases loaded:
-List of 1 instances of IDatabaseInfo {
-  0: { Session Count = 1; Grid Count = 1; Path = C:\Users\florian\Documents\BoSSS-master\public\src\L4-application\CNS\bin\Debug\bosss_db_performance_3 }
+List of 2 instances of IDatabaseInfo {
+  0: { Session Count = 1; Grid Count = 1; Path = D:\Users\kummer\Documents\BoSSS-master\public\src\L4-application\CNS\bin\Release\bosss_db_performance_3 }
+  1: { Session Count = 11; Grid Count = 9; Path = D:\Users\kummer\Documents\BoSSS-master\public\src\L4-application\CNS\bin\Debug\bosss_db_performance_3 }
 }
-Setting Matlab Connector to Octave...
 
  Console ready for input. Type 'help' for help.
 
@@ -28,7 +28,7 @@ Project name is set to 'ConfinedCylinder_BodyforcesFix'.
 //var myDb = OpenOrCreateDatabase(@"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_unsteady");
 var myDb = OpenOrCreateDefaultDatabase();
 **************
-Opening existing database 'C:\Users\florian\default_bosss_db'.
+Opening existing database 'd:\Users\kummer\default_bosss_db'.
 
 ==============
 //var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\kikker\deploy_dir\","hpccluster",ComputeNodes : new[] {"hpccluster"});
@@ -38,7 +38,8 @@ var myBatch = new MiniBatchProcessorClient();
 ==============
 MiniBatchProcessor.Server.StartIfNotRunning();
 **************
-Mini batch processor is already running.
+Starting mini batch processor in external process...
+Started mini batch processor on local machine, process id is 72676.
 
 ==============
 // ======================
@@ -47,7 +48,7 @@ Mini batch processor is already running.
 **************
 ==============
 int degree = 2;
-int gridNo = 0;
+int gridNo = 2;
 int[] procs = new int[] {4};
 **************
 ==============
@@ -118,8 +119,7 @@ bosssGrid.DefineEdgeTags(edgeTagFunc);
 myDb.SaveGrid(ref bosssGrid);
 **************
 Grid Edge Tags changed.
-An equivalent grid is already present in the database -- the grid will not be saved.
-1c9cb150-88d3-4ee1-974d-7970eabd3cf8
+51aadb49-e3d5-4e88-897e-13b6b329995b
 ==============
 // =====================================
 // setup control object for a solver run
@@ -304,6 +304,8 @@ WorkflowMgm.AllJobs.Pick(0).Value.
 **************
 C# evaluator not initialized: use 'restart'.
 
+==============
+**************
 ==============
 **************
 ==============

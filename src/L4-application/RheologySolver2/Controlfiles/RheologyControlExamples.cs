@@ -382,8 +382,8 @@ namespace BoSSS.Application.Rheology {
         /// </summary>
         static public RheologyControl ConfinedCylinder(
             //string path = @"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag", 
-            //string path = @"d:\Users\kummer\default_bosss_db",
-            string path = @"c:\Users\florian\default_bosss_db",
+            string path = @"d:\Users\kummer\default_bosss_db",
+            //string path = @"c:\Users\florian\default_bosss_db",
             int degree = 2) {
             //BoSSS.Application.Rheology.RheologyControlExamples.ConfinedCylinder();
             RheologyControl C = new RheologyControl();
@@ -490,7 +490,6 @@ namespace BoSSS.Application.Rheology {
 
             // half channel mesh3 for cond tests
             //string grid = "962bc97f-0298-4e2f-ac18-06940cb84956"; // anne
-
 
             // half channel mesh0 for cond tests - schneller?
             //string grid = "55c34774-1769-4f6b-bfc8-cc6c4d74076a";
