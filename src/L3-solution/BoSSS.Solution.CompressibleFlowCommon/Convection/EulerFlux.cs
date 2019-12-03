@@ -21,6 +21,7 @@ using System.Runtime.CompilerServices;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
+using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
@@ -28,7 +29,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
     /// Abstract class for all numerical flux function applicable to the Euler
     /// equation system.
     /// </summary>
-    public abstract class EulerFlux : NonlinearFlux {
+    public abstract class EulerFlux : NonlinearFlux, IEquationComponentSpeciesNotification {
 
         /// <summary>
         /// Configuration options
@@ -49,6 +50,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// Concerned component of the Euler equations
         /// </summary>
         protected IEulerEquationComponent equationComponent;
+
+        private string speciesName;
 
         /// <summary>
         /// Constructs a new Euler flux
@@ -75,6 +78,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
             get {
                 return CompressibleEnvironment.PrimalArgumentOrdering;
             }
+        }
+
+        public void SetParameter(string speciesName, SpeciesId SpcId) {
+            this.speciesName = speciesName;
         }
 
         /// <summary>
@@ -146,8 +153,20 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
                 Normal[i] = normal[i];
             }
 
-            StateVector stateBoundary = boundaryMap.GetBoundaryState(
-                EdgeTag, time, x, normal, stateIn);
+            // Get boundary condition on this edge
+            BoundaryCondition boundaryCondition;
+            if (this.boundaryMap is XDGCompressibleBoundaryCondMap xdgBoudaryMap) {
+                boundaryCondition = xdgBoudaryMap.GetBoundaryConditionForSpecies(EdgeTag, this.speciesName);
+            } else if (this.boundaryMap is CompressibleBoundaryCondMap boundaryMap) {
+                boundaryCondition = boundaryMap.GetBoundaryCondition(EdgeTag);
+            } else {
+                throw new NotSupportedException("This type of boundary condition map is not supported.");
+            }
+
+            //StateVector stateBoundary = boundaryMap.GetBoundaryState(
+            //    EdgeTag, time, x, normal, stateIn);
+
+            StateVector stateBoundary = boundaryCondition.GetBoundaryState(time, x, normal, stateIn);
 
             double flux = InnerEdgeFlux(x, time, stateIn, stateBoundary, ref Normal, jEdge);
             Debug.Assert(!double.IsNaN(flux));
