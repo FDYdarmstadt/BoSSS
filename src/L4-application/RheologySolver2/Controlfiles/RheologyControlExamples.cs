@@ -405,7 +405,8 @@ namespace BoSSS.Application.Rheology {
             C.NonLinearSolver.ConvergenceCriterion = 1E-7;
 
             C.LinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MinSolverIterations = 1;          
+            C.LinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.TargetBlockSize = 100000;
             C.LinearSolver.ConvergenceCriterion = 1E-7;
 
             //C.UnderRelax = 1.0;
