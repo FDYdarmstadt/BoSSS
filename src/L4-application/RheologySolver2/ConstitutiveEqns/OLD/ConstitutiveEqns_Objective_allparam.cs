@@ -34,7 +34,7 @@ namespace BoSSS.Application.Rheology {
         int Component;           // equation index (0: xx, 1: xy, 2: yy)
         BoundaryCondMap<IncompressibleBcType> m_BcMap;
         double m_Weissenberg; // relaxation factor lambda_1
-        double m_ObjectiveParam;
+        //double m_ObjectiveParam;
 
 
         public ConstitutiveEqns_Objective_allparam(int Component, BoundaryCondMap<IncompressibleBcType> _BcMap, double Weissenberg) {

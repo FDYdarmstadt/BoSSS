@@ -31,7 +31,7 @@ namespace BoSSS.Application.Rheology {
     /// <summary>
     /// Volume integral of viscosity part of constitutive equations.
     /// </summary>
-    public class ConstitutiveEqns_Viscosity : IVolumeForm, IEdgeForm {
+    public class ConstitutiveEqns_Viscosity : IVolumeForm, IEdgeForm, ISupportsJacobianComponent {
 
         int Component;           // equation index (0: xx, 1: xy, 2: yy)
         BoundaryCondMap<IncompressibleBcType> m_BcMap;
@@ -260,6 +260,13 @@ namespace BoSSS.Application.Rheology {
             }
 
             return -2 * m_ViscosityNonNewton * 0.5 * res * Vin;
+        }
+
+        /// <summary>
+        /// Linear Component - flux is just this component itself
+        /// </summary>
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new[] { this };
         }
     }
 }

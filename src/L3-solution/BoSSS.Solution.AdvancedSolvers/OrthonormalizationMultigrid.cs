@@ -510,7 +510,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (this.CoarserLevelSolver != null)
                 this.CoarserLevelSolver.ResetStat();
         }
-        public ISolverSmootherTemplate Clone() {
+        public object Clone() {
             throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
         }
     }

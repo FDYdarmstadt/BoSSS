@@ -35,6 +35,7 @@ using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Solution.RheologyCommon;
 using System.Collections;
+using BoSSS.Solution.Statistic;
 
 namespace BoSSS.Application.XRheology_Solver {
 
@@ -178,10 +179,10 @@ namespace BoSSS.Application.XRheology_Solver {
 
             }
 
-            // interface components
+            //// interface components
             XOperatorComponentsFactory.AddInterfaceNSE(m_XOp, config, this.D, BcMap, LsTrk);    // surface stress tensor
             XOperatorComponentsFactory.AddSurfaceTensionForce(m_XOp, config, this.D, BcMap, LsTrk, degU, out NormalsRequired, out CurvatureRequired);     // surface tension force
-            XConstitutiveOperatorComponentsFactory.AddInterfaceConstitutive(m_XOp, config, this.D, BcMap, LsTrk); //viscosity of stresses at constitutive
+            XConstitutiveOperatorComponentsFactory.AddInterfaceConstitutive(m_XOp, config, this.D, BcMap, LsTrk, out U0meanrequired); //constitutive eq at interfeac
 
             if (config.isContinuity)
                 XOperatorComponentsFactory.AddInterfaceContinuityEq(m_XOp, config, this.D, LsTrk);       // continuity equation
@@ -209,7 +210,7 @@ namespace BoSSS.Application.XRheology_Solver {
             UnsetteledCoordinateMapping RowMapping, UnsetteledCoordinateMapping ColMapping,
             IEnumerable<T> CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time,
             int CutCellQuadOrder, VectorField<SinglePhaseField> SurfaceForce,
-            VectorField<SinglePhaseField> LevelSetGradient, SinglePhaseField ExternalyProvidedCurvature, double currentWeissenberg,
+            VectorField<SinglePhaseField> LevelSetGradient, SinglePhaseField ExternalyProvidedCurvature, double[] currentWeissenberg,
             IEnumerable<T> CoupledCurrentState = null, IEnumerable<T> CoupledParams = null) where T : DGField {
 
             // checks:
@@ -352,9 +353,9 @@ namespace BoSSS.Application.XRheology_Solver {
             var Params = ArrayTools.Cat<DGField>(
                 U0_U0mean,
                 VelocityXGradient, 
-               VelocityYGradient, 
+                VelocityYGradient, 
                 Stress0, 
-                //artificalViscosity,
+                //artificialViscosity,
                 Normals,
                 Curvature,
                 ((SurfaceForce != null) ? SurfaceForce.ToArray() : new SinglePhaseField[D]));
@@ -382,17 +383,13 @@ namespace BoSSS.Application.XRheology_Solver {
             // compute matrix
             if (OpMatrix != null) {
 
-                
-                
-
-
                 if (!useJacobianForOperatorMatrix) {
                     XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = this.m_XOp.GetMatrixBuilder(LsTrk, ColMapping, Params, RowMapping, SpcToCompute);
                     this.ParameterUpdate(CurrentState, Params, CutCellQuadOrder, AgglomeratedCellLengthScales);
 
                     foreach (var kv in AgglomeratedCellLengthScales) {
                         mtxBuilder.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
-                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].EdgeLengthScales = this.LsTrk.GridDat.Edges.h_max_Edge;
+                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].EdgeLengthScales = kv.Value; // this.LsTrk.GridDat.Edges.h_max_Edge;
                         mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
                         mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
                     }
@@ -403,12 +400,18 @@ namespace BoSSS.Application.XRheology_Solver {
                         }
                     }
 
+                    foreach (var kv in AgglomeratedCellLengthScales) {
+                        int id;
+                        if (kv.Key == LsTrk.SpeciesIdS[0])
+                            id = 0;
+                        else 
+                            id = 1;
+                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg[id]);
+                    }
+
                     mtxBuilder.time = time;
                     mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
 
-                    foreach (var kv in AgglomeratedCellLengthScales) {
-                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
-                    }
 
                 } else {
 
@@ -446,16 +449,23 @@ namespace BoSSS.Application.XRheology_Solver {
 
                 foreach (var kv in AgglomeratedCellLengthScales) {
                     eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
-                    eval.SpeciesOperatorCoefficients[kv.Key].EdgeLengthScales = this.LsTrk.GridDat.Edges.h_max_Edge;
+                    eval.SpeciesOperatorCoefficients[kv.Key].EdgeLengthScales = kv.Value; //this.LsTrk.GridDat.Edges.h_max_Edge;
                     eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
-                    eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
-                    eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
                 }
 
                 if (this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
                     foreach (var kv in InterfaceLengths) {
                         eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("InterfaceLengths", kv.Value);
                     }
+                }
+
+                foreach (var kv in AgglomeratedCellLengthScales) {
+                    int id;
+                    if (kv.Key == LsTrk.SpeciesIdS[0])
+                        id = 0;
+                    else
+                        id = 1;
+                    eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg[id]);
                 }
 
                 eval.time = time;

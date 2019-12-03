@@ -15,6 +15,8 @@ namespace BoSSS.Foundation.Grid {
     /// </summary>
     static public class IGrid_Extensions {
 
+        
+
         /// <summary>
         /// sets values for <see cref="Cell.CellFaceTags"/> by using a
         /// <paramref name="EdgeTagFunc"/>-function; also adds entries with empty names

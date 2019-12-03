@@ -972,6 +972,63 @@ namespace ilPSP {
                 throw new NotImplementedException();
             }
         }
+
+
+         /// <summary>
+        /// extracts the <paramref name="RowNo"/>-th row from
+        /// <paramref name="inp"/>.
+        /// </summary>
+        /// <param name="inp">
+        /// input matrix
+        /// </param>
+        /// <param name="RowNo">
+        /// row which should be extracted
+        /// </param>
+        /// <returns>
+        /// A vector with dimension (<see cref="Vector.Dim"/>) equal to 2nd length of <paramref name="inp"/>, containing the
+        /// <paramref name="RowNo"/>-th row of <paramref name="inp"/>
+        /// </returns>
+        public static Vector GetRowPt(this double[,] inp, int RowNo) {
+            switch(inp.GetLength(1)) {
+                case 1:
+                return new Vector(inp[RowNo, 0]);
+                case 2:
+                return new Vector(inp[RowNo, 0], inp[RowNo, 1]);
+                case 3:
+                return new Vector(inp[RowNo, 0], inp[RowNo, 1], inp[RowNo, 2]);
+                default:
+                throw new ArgumentException("Matrix has " + inp.GetLength(1) + " columns, this cannot be a spatial dimension.");
+            }
+        }
+
+
+        /// <summary>
+        /// sets the <paramref name="RowNo"/>-th row from <paramref name="inp"/> to values provided by <paramref name="row"/>.
+        /// </summary>
+        /// <param name="inp">
+        /// matrix that should be altered
+        /// </param>
+        /// <param name="RowNo">
+        /// row index of the row to set
+        /// </param>
+        /// <param name="row">
+        /// a vector 
+        /// </param>
+        public static void SetRowPt(this double[,] inp, int RowNo, Vector row) {
+            if (row.Dim != inp.GetLength(1))
+                throw new ArgumentException("Dimension mismatch.");
+
+            switch(row.Dim) {
+                case 1:
+                inp[RowNo, 0] = row.x; return;
+                case 2:
+                inp[RowNo, 0] = row.x; inp[RowNo, 1] = row.y; return;
+                case 3:
+                inp[RowNo, 0] = row.x; inp[RowNo, 1] = row.y; inp[RowNo, 2] = row.z; return;
+                default:
+                throw new NotImplementedException();
+            }
+        }
     }
 
 }

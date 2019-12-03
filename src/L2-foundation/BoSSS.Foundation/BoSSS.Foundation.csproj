@@ -109,6 +109,7 @@
     <Compile Include="IGridData_Extensions.cs" />
     <Compile Include="IGridSerializationHandler.cs" />
     <Compile Include="IGrid_Extensions.cs" />
+    <Compile Include="IParameterUpdate.cs" />
     <Compile Include="JacobianParamUpdate.cs" />
     <Compile Include="Line.cs" />
     <Compile Include="LinearFormVectorizer.cs" />

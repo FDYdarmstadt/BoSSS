@@ -46,6 +46,7 @@ namespace BoSSS.Application.Rheology
         /// </summary>
         static public RheologyControl Channel(string path = null, int degree = 4, int GridLevel = 6)
         {
+            //BoSSS.Application.Rheology.SimpleTestcasesControl.Channel(degree:4,GridLevel:4)
             //path = @"C:\Users\kikker\AnnesBoSSSdb\Channel";
             RheologyControl C = new RheologyControl();
 
@@ -60,12 +61,14 @@ namespace BoSSS.Application.Rheology
 
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-            //C.NonLinearSolver.MaxSolverIterations = 30;
-            //C.NonLinearSolver.ConvergenceCriterion = 1E-8;
-            //C.LinearSolver.MaxSolverIterations = 100;
-            //C.LinearSolver.MinSolverIterations = 3;
-            //C.LinearSolver.ConvergenceCriterion = 1E-8;
+            C.NonLinearSolver.verbose = true;
+            C.LinearSolver.verbose = true;
+
+            //C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;//   .classic_pardiso;
+            //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            // Maximum analytical output ...
+            //C.NonLinearSolver.PrecondSolver.verbose = true;
+            //C.GridPartType = GridPartType.METIS;
 
             // Maximum analytical output ...
             C.ObjectiveParam = 1.0;
@@ -84,8 +87,8 @@ namespace BoSSS.Application.Rheology
             //Debugging and Solver Analysis
             C.OperatorMatrixAnalysis = false;
             C.SkipSolveAndEvaluateResidual = false;
-            C.SetInitialConditions = true;
-            C.SetInitialPressure = true;
+            C.SetInitialConditions = false;
+            C.SetInitialPressure = false;
             C.SetParamsAnalyticalSol = false;
             C.ComputeL2Error = true;
             C.GravitySource = false;
@@ -97,8 +100,8 @@ namespace BoSSS.Application.Rheology
             C.FixedStreamwisePeriodicBC = false;
             C.beta = 0;// 0.59;
             C.Reynolds = 1;
-            C.Weissenberg = 0.0; //aim Weissenberg number!
-            C.RaiseWeissenberg = false;
+            C.Weissenberg = 0.3; //aim Weissenberg number!
+            C.RaiseWeissenberg = true;
             C.WeissenbergIncrement = 0.1;
 
             //Grid Params
@@ -137,8 +140,8 @@ namespace BoSSS.Application.Rheology
             // Create Grid
             C.GridFunc = delegate {
                 var _xNodes = GenericBlas.Linspace(0, 20, cells2 + 1);
-                //var _yNodes = GenericBlas.Linspace(-1, 1, (cells2 / 4) + 1);
-                var _yNodes = GenericBlas.Linspace(0, 1, (cells2 / 4) + 1);
+                var _yNodes = GenericBlas.Linspace(-1, 1, (cells2 / 4) + 1);
+                //var _yNodes = GenericBlas.Linspace(0, 1, (cells2 / 4) + 1);
 
                 var grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes, CellType.Square_Linear, C.FixedStreamwisePeriodicBC);
 
@@ -148,17 +151,17 @@ namespace BoSSS.Application.Rheology
                     grd.EdgeTagNames.Add(4, "Pressure_Outlet");
                 }
 
-                //grd.EdgeTagNames.Add(2, "Wall_bottom");
+                grd.EdgeTagNames.Add(2, "Wall_bottom");
                 grd.EdgeTagNames.Add(3, "Wall_top");
-                grd.EdgeTagNames.Add(2, "FreeSlip");
+                //grd.EdgeTagNames.Add(2, "FreeSlip");
 
                 grd.DefineEdgeTags(delegate (double[] _X) {
                     var X = _X;
                     double x = X[0];
                     double y = X[1];
 
-                    //if (Math.Abs(y - (-1)) < 1.0e-6)
-                    if (Math.Abs(y - (0)) < 1.0e-6)
+                    if (Math.Abs(y - (-1)) < 1.0e-6)
+                        //if (Math.Abs(y - (0)) < 1.0e-6)
                         // bottom
                         return 2;
 
@@ -209,15 +212,15 @@ namespace BoSSS.Application.Rheology
             C.InitialValues_Evaluators.Add("Phi", X => -1);
 
             // Set Boundary Conditions
-            //C.AddBoundaryValue("Wall_bottom", "VelocityX", VelocityXfunction);
-            C.AddBoundaryValue("Wall_top", "VelocityX", VelocityXfunction);
+            C.AddBoundaryValue("Wall_bottom");//, "VelocityX", VelocityXfunction);
+            C.AddBoundaryValue("Wall_top");//, "VelocityX", VelocityXfunction);
             //C.AddBoundaryValue("Wall_bottom", "VelocityY", VelocityYfunction);
-            C.AddBoundaryValue("Wall_top", "VelocityY", VelocityYfunction);
+            //C.AddBoundaryValue("Wall_top", "VelocityY", VelocityYfunction);
             //C.AddBoundaryValue("Wall_bottom", "VelocityX", X => 0);
             //C.AddBoundaryValue("Wall_top", "VelocityX", X => 0);
             //C.AddBoundaryValue("Wall_bottom", "VelocityY", X => 0);
             //C.AddBoundaryValue("Wall_top", "VelocityY", X => 0);
-            C.AddBoundaryValue("FreeSlip");//, "VelocityX", VelocityXfunction);
+            //C.AddBoundaryValue("FreeSlip");//, "VelocityX", VelocityXfunction);
 
             if (!C.FixedStreamwisePeriodicBC)
             {
@@ -681,7 +684,7 @@ namespace BoSSS.Application.Rheology
             RheologyControl C = new RheologyControl();
 
             // Solver Options
-            C.NoOfTimesteps = 5;
+            C.NoOfTimesteps = 1;
             C.savetodb = false;
             C.DbPath = path;
             C.SessionName = "Degree" + degree + ", GridLevel" + GridLevel;
@@ -703,8 +706,8 @@ namespace BoSSS.Application.Rheology
             //C.NonlinearMethod = NonlinearSolverMethod.Newton;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.ObjectiveParam = 1.0;
-            C.UsePerssonSensor = true;
-            C.AdaptiveMeshRefinement = true;
+            C.UsePerssonSensor = false;
+            C.AdaptiveMeshRefinement = false;
             C.RefinementLevel = 3;
 
             //Grid Params
@@ -715,7 +718,7 @@ namespace BoSSS.Application.Rheology
 
             //Debugging and Solver Analysis
             C.OperatorMatrixAnalysis = false;
-            C.SkipSolveAndEvaluateResidual = false;
+            C.SkipSolveAndEvaluateResidual = true;
             C.SetInitialConditions = true;
             C.SetInitialPressure = false;
             C.SetParamsAnalyticalSol = false;
@@ -725,7 +728,7 @@ namespace BoSSS.Application.Rheology
             C.Stokes = false;
             C.FixedStreamwisePeriodicBC = false;
             C.GravitySource = true;
-            C.beta = 0;
+            C.beta = 1;
             C.Reynolds = 1;
             C.Weissenberg = 0.0;
             C.RaiseWeissenberg = false;

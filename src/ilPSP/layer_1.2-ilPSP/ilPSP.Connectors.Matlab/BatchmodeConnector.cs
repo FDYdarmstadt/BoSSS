@@ -118,6 +118,7 @@ namespace ilPSP.Connectors.Matlab {
         /// </summary>
         static BatchmodeConnector() {
             Flav = Flavor.Matlab;
+            //Flav = Flavor.Octave;
             MatlabExecuteable = null;  //"D:\\cygwin64\\bin\\bash.exe";
         }
 
@@ -208,7 +209,7 @@ namespace ilPSP.Connectors.Matlab {
                             if (MatlabExecuteable == null) {
                                 MatlabExecuteable = get_program_path("octave-cli.exe");
                                 if (MatlabExecuteable == null)
-                                    throw new ApplicationException("Unable to find 'octave-cli.exe' in your PATH environment; please provide path to 'matlab.exe'.");
+                                    throw new ApplicationException("Unable to find 'octave-cli.exe' in your PATH environment; please provide path to 'octave-cli.exe'.");
                             }
 
                             psi.FileName = MatlabExecuteable;

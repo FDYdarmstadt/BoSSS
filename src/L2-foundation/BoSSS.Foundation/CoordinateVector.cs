@@ -387,6 +387,16 @@ namespace BoSSS.Foundation {
             }
         }
 
+        /// <summary>
+        /// DG fields that are presented by this vector 
+        /// </summary>
+        public IList<DGField> Fields {
+            get {
+                return Mapping.Fields;
+            }
+        }
+
+
         #region IList<double> Member
 
         /// <summary>

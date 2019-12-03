@@ -1766,7 +1766,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        public ISolverSmootherTemplate Clone() {
+        public object Clone() {
             Schwarz Clone = new Schwarz();
             if (this.m_BlockingStrategy is METISBlockingStrategy) {
                 Clone.m_BlockingStrategy = new METISBlockingStrategy() {
@@ -1792,7 +1792,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Clone.m_Overlap = this.m_Overlap;
             Clone.IterationCallback = this.IterationCallback;
             if (this.CoarseSolver != null)
-                Clone.CoarseSolver = this.CoarseSolver.Clone();
+                Clone.CoarseSolver = this.CoarseSolver.CloneAs();
             return Clone;
         }
 
