@@ -200,6 +200,8 @@ namespace BoSSS.Application.XRheology_Solver {
 
         public bool TestMode = false;
 
+        public bool InterfaceTest = false;
+
         ///// <summary>
         ///// switch for the initialization of the <see cref="XdgBDFTimestepping"/> 
         ///// </summary>

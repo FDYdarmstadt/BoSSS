@@ -95,7 +95,7 @@ namespace BoSSS.Solution.AdvancedSolvers
 
         public ISolverSmootherTemplate linsolver;
 
-        public bool DoNotUsePresRefPoint;
+        public bool UsePresRefPoint;
 
         //bool solveVelocity = true;
 
@@ -269,7 +269,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                         // (and for Level-Set-Updates ...)
                         this.CurrentLin.TransformSolFrom(SolutionVec, xt);
 
-                        if (DoNotUsePresRefPoint == true) {
+                        if (UsePresRefPoint == false) {
                             XDGField pres = (XDGField)this.m_SolutionVec.Mapping.Fields[2];
                             DGField presSpA = pres.GetSpeciesShadowField("A");
                             DGField presSpB = pres.GetSpeciesShadowField("B");

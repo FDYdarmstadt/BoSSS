@@ -93,7 +93,6 @@ namespace BoSSS.Application.XRheology_Solver {
         /// <summary>
         /// Pressure
         /// </summary>
-        //[InstantiateFromControlFile(VariableNames.Pressure, null, IOListOption.ControlFileDetermined)]
         XDGField Pressure;
 
         /// <summary>
@@ -834,21 +833,23 @@ namespace BoSSS.Application.XRheology_Solver {
             // Set Pressure Reference Point
             // ============================
 
-            //if (OpMtx != null) {
-            //    if (!this.BcMap.DirichletPressureBoundary) {
-            //        XNSEUtils.SetPressureReferencePoint(
-            //            Mapping,
-            //            this.GridData.SpatialDimension,
-            //            this.LsTrk, OpMtx, OpAffine);
-            //    }
-            //} else {
-            //    if (!this.BcMap.DirichletPressureBoundary) {
-            //        XNSEUtils.SetPressureReferencePointResidual(
-            //            new CoordinateVector(CurrentState),
-            //            this.GridData.SpatialDimension,
-            //            this.LsTrk, OpAffine);
-            //    }
-            //}
+            if (Control.NonLinearSolver.UsePresRefPoint == true) {
+                if (OpMtx != null) {
+                    if (!this.BcMap.DirichletPressureBoundary) {
+                        XNSEUtils.SetPressureReferencePoint(
+                            Mapping,
+                            this.GridData.SpatialDimension,
+                            this.LsTrk, OpMtx, OpAffine);
+                    }
+                } else {
+                    if (!this.BcMap.DirichletPressureBoundary) {
+                        XNSEUtils.SetPressureReferencePointResidual(
+                            new CoordinateVector(CurrentState),
+                            this.GridData.SpatialDimension,
+                            this.LsTrk, OpAffine);
+                    }
+                }
+            }
 
             // transform from RHS to Affine
             OpAffine.ScaleV(-1.0);
@@ -1222,18 +1223,18 @@ namespace BoSSS.Application.XRheology_Solver {
 
                                     //this.ResLogger.NextTimestep(false);
 
-                                    // this evaluation must later out of this loop. now here for comparing resluts with  
+                                    // this evaluation must later out of this loop. now here for comparing results with  
                                     PlotCurrentState(phystime, new TimestepNumber(TimestepNo.MajorNumber, i));
                                     SaveToDatabase(new TimestepNumber(TimestepNo.MajorNumber, i), phystime);
 
                                 }
 
-                                ChangeMesh = Control.AdaptiveMeshRefinement;
-                                while (ChangeMesh == true) {
-                                    this.MpiRedistributeAndMeshAdapt(TimestepNo.MajorNumber, phystime);
-                                    perssonsensor.Update(StressXX);
-                                    PlotCurrentState(phystime, TimestepNo);
-                                }
+                                //ChangeMesh = Control.AdaptiveMeshRefinement;
+                                //while (ChangeMesh == true) {
+                                //    this.MpiRedistributeAndMeshAdapt(TimestepNo.MajorNumber, phystime);
+                                //    perssonsensor.Update(StressXX);
+                                //    PlotCurrentState(phystime, TimestepNo);
+                                //}
 
                                 if (currentWeissenberg[0] < Control.PhysicalParameters.Weissenberg_a) {
                                     currentWeissenberg[0] = currentWeissenberg[0] + Control.WeissenbergIncrement;
@@ -1252,13 +1253,10 @@ namespace BoSSS.Application.XRheology_Solver {
                             }
                         } else {
                             //current Weissenberg is set to the HIGHER value... DIRTY HACK AT THE MOMENT!
-                            Console.WriteLine("current Weissenberg is set to the HIGHER value... DIRTY HACK AT THE MOMENT!");
 
-                            if (Control.PhysicalParameters.Weissenberg_b < Control.PhysicalParameters.Weissenberg_a) {
                                 currentWeissenberg[0] = Control.PhysicalParameters.Weissenberg_a;
-                            } else {
                                 currentWeissenberg[1] = Control.PhysicalParameters.Weissenberg_b;
-                            }
+
 
                             if (Control.UseArtificialDiffusion == true) {
                                 artificialMaxViscosity = 1.0;
@@ -1362,62 +1360,62 @@ namespace BoSSS.Application.XRheology_Solver {
                                 //===============================================================================
 
                                 #region Write residuals to text file
+                                if (Control.InterfaceTest == true) {
+                                    // Sample points
 
-                                //// Sample points
+                                    int noOfPoints = 1000;
 
-                                //int noOfPoints = 1000;
+                                    double[] nodes = GenericBlas.Linspace(-2, 2, noOfPoints);
 
-                                //double[] nodes = GenericBlas.Linspace(-2, 2, noOfPoints);
+                                    MultidimensionalArray points = MultidimensionalArray.Create(noOfPoints, 2);
 
-                                //MultidimensionalArray points = MultidimensionalArray.Create(noOfPoints, 2);
+                                    for (int i = 0; i < noOfPoints; i++) {
 
-                                //for (int i = 0; i < noOfPoints; i++) {
+                                        points[i, 0] = nodes[i];
 
-                                //    points[i, 0] = nodes[i];
+                                        points[i, 1] = 0.5;
 
-                                //    points[i, 1] = 0.5;
-
-                                //}
-
-
-
-                                //// FieldEvaluation
-                                //MultidimensionalArray results = MultidimensionalArray.Create(noOfPoints, CurrentResidual.Mapping.Count);
-
-                                //for (int i = 0; i < CurrentResidual.Length; i++) {
-
-                                //    FieldEvaluation fieldEvaluator = new FieldEvaluation((GridData)this.GridData);
-
-                                //    fieldEvaluator.Evaluate(1.0, CurrentResidual.Mapping, points, 0.0, results);
-
-                                //}
+                                    }
 
 
 
-                                //// StreamWriter
+                                    // FieldEvaluation
+                                    MultidimensionalArray results = MultidimensionalArray.Create(noOfPoints, CurrentResidual.Mapping.Count);
 
-                                //using (System.IO.StreamWriter sw = new System.IO.StreamWriter(String.Format("Residuals{0}.txt", dt))) {
+                                    for (int i = 0; i < CurrentResidual.Length; i++) {
 
-                                //    //Console.WriteLine("x \t y \t result");
+                                        FieldEvaluation fieldEvaluator = new FieldEvaluation((GridData)this.GridData);
 
-                                //    sw.WriteLine("x \t y \t momX \t momY \t conti \t constXX \t constXY \t constYY");
+                                        fieldEvaluator.Evaluate(1.0, CurrentResidual.Mapping, points, 0.0, results);
 
-                                //    string resultLine;
+                                    }
 
-                                //    for (int i = 0; i < noOfPoints; i++) {
 
-                                //        resultLine = points[i, 0] + "\t" + points[i, 1] + "\t" + results[i, 0] + "\t" + results[i, 1] + "\t" + results[i, 2] + "\t" + results[i, 3] + "\t" + results[i, 4] + "\t" + results[i, 5] + "\t";
 
-                                //        //Console.WriteLine(resultLine);
+                                    // StreamWriter
 
-                                //        sw.WriteLine(resultLine);
+                                    using (System.IO.StreamWriter sw = new System.IO.StreamWriter(String.Format("Residuals{0}.txt", dt))) {
 
-                                //    }
+                                        //Console.WriteLine("x \t y \t result");
 
-                                //    sw.Flush();
+                                        sw.WriteLine("x \t y \t momX \t momY \t conti \t constXX \t constXY \t constYY");
 
-                                //}
+                                        string resultLine;
 
+                                        for (int i = 0; i < noOfPoints; i++) {
+
+                                            resultLine = points[i, 0] + "\t" + points[i, 1] + "\t" + results[i, 0] + "\t" + results[i, 1] + "\t" + results[i, 2] + "\t" + results[i, 3] + "\t" + results[i, 4] + "\t" + results[i, 5] + "\t";
+
+                                            //Console.WriteLine(resultLine);
+
+                                            sw.WriteLine(resultLine);
+
+                                        }
+
+                                        sw.Flush();
+
+                                    }
+                                }
                                 #endregion
                                 //=============================================================================================
                             }
