@@ -18,9 +18,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
+using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
@@ -28,7 +29,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
     /// Abstract class for all numerical flux function applicable to the Euler
     /// equation system.
     /// </summary>
-    public abstract class EulerFlux : NonlinearFlux {
+    public abstract class EulerFlux : NonlinearFlux, IEquationComponentSpeciesNotification {
 
         /// <summary>
         /// Configuration options
@@ -41,14 +42,16 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         protected IBoundaryConditionMap boundaryMap;
 
         /// <summary>
-        /// Mapping that determines the active species in some point.
+        /// The material being used
         /// </summary>
-        protected ISpeciesMap speciesMap;
+        protected Material material;
 
         /// <summary>
         /// Concerned component of the Euler equations
         /// </summary>
         protected IEulerEquationComponent equationComponent;
+
+        private string speciesName;
 
         /// <summary>
         /// Constructs a new Euler flux
@@ -58,14 +61,14 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <param name="equationComponent">
         /// Concerned component of the Euler equations
         /// </param>
-        /// <param name="speciesMap">
+        /// <param name="material">
         /// Mapping that determines the active species in some point.
         /// </param>
-        protected EulerFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, ISpeciesMap speciesMap) {
+        protected EulerFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, Material material) {
             this.config = config;
             this.boundaryMap = boundaryMap;
             this.equationComponent = equationComponent;
-            this.speciesMap = speciesMap;
+            this.material = material;
         }
 
         /// <summary>
@@ -75,6 +78,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
             get {
                 return CompressibleEnvironment.PrimalArgumentOrdering;
             }
+        }
+
+        public void SetParameter(string speciesName, SpeciesId SpcId) {
+            this.speciesName = speciesName;
         }
 
         /// <summary>
@@ -104,8 +111,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
         /// </returns>
         protected override double InnerEdgeFlux(double time, double[] x, double[] normal, double[] Uin, double[] Uout, int jEdge) {
-            StateVector stateIn = new StateVector(Uin, speciesMap.GetMaterial(double.NaN));
-            StateVector stateOut = new StateVector(Uout, speciesMap.GetMaterial(double.NaN));
+            StateVector stateIn = new StateVector(Uin, material);
+            StateVector stateOut = new StateVector(Uout, material);
 
             ilPSP.Vector Normal = new ilPSP.Vector(stateIn.Dimension);
             for (int i = 0; i < normal.Length; i++) {
@@ -129,7 +136,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// Processor-local index of the current edge
         /// </param>
         /// <returns>See Toro2009 (p. 332)</returns>
-        protected internal abstract double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex);
+        public abstract double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex);
 
         /// <summary>
         /// Weakly imposes the specific boundary condition for this boundary
@@ -139,15 +146,27 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <see cref="InnerEdgeFlux(double, double[], double[], double[], double[], int)"/>
         /// </summary>
         protected override double BorderEdgeFlux(double time, double[] x, double[] normal, byte EdgeTag, double[] Uin, int jEdge) {
-            StateVector stateIn = new StateVector(Uin, speciesMap.GetMaterial(double.NaN));
+            StateVector stateIn = new StateVector(Uin, material);
 
             ilPSP.Vector Normal = new ilPSP.Vector(stateIn.Dimension);
             for (int i = 0; i < normal.Length; i++) {
                 Normal[i] = normal[i];
             }
 
-            StateVector stateBoundary = boundaryMap.GetBoundaryState(
-                EdgeTag, time, x, normal, stateIn);
+            // Get boundary condition on this edge
+            BoundaryCondition boundaryCondition;
+            if (this.boundaryMap is XDGCompressibleBoundaryCondMap xdgBoudaryMap) {
+                boundaryCondition = xdgBoudaryMap.GetBoundaryConditionForSpecies(EdgeTag, this.speciesName);
+            } else if (this.boundaryMap is CompressibleBoundaryCondMap boundaryMap) {
+                boundaryCondition = boundaryMap.GetBoundaryCondition(EdgeTag);
+            } else {
+                throw new NotSupportedException("This type of boundary condition map is not supported.");
+            }
+
+            //StateVector stateBoundary = boundaryMap.GetBoundaryState(
+            //    EdgeTag, time, x, normal, stateIn);
+
+            StateVector stateBoundary = boundaryCondition.GetBoundaryState(time, x, normal, stateIn);
 
             double flux = InnerEdgeFlux(x, time, stateIn, stateBoundary, ref Normal, jEdge);
             Debug.Assert(!double.IsNaN(flux));
@@ -172,7 +191,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <see cref="NonlinearFlux.Flux(double, double[], double[], double[])"/>
         /// </param>
         protected override void Flux(double time, double[] x, double[] U, double[] output) {
-            StateVector state = new StateVector(U, speciesMap.GetMaterial(double.NaN));
+            StateVector state = new StateVector(U, material);
             equationComponent.Flux(state).CopyTo(output, output.Length);
         }
 
@@ -201,7 +220,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
             double meanPressure = 0.5 * (stateIn.Pressure + stateOut.Pressure);
             double meanDensity = 0.5 * (stateIn.Density + stateOut.Density);
             double meanSpeedOfSound = 0.5 * (stateIn.SpeedOfSound + stateOut.SpeedOfSound);
-            
+
             double velocityJump = normalVelocityOut - normalVelocityIn;
             double gamma = config.EquationOfState.HeatCapacityRatio;
             double MachScaling = gamma * config.MachNumber * config.MachNumber;
