@@ -14,14 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Platform.LinAlg;
-using BoSSS.Solution.CompressibleFlowCommon;
-using BoSSS.Solution.CompressibleFlowCommon.Convection;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using System;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 
-namespace CNS.Convection {
+namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
     /// <summary>
     /// Flux based on the exact Riemann solver by Toro.
@@ -44,8 +41,8 @@ namespace CNS.Convection {
         /// <param name="speciesMap">
         /// <see cref="EulerFlux.EulerFlux"/>
         /// </param>
-        public GodunovFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, ISpeciesMap speciesMap)
-            : base(config, boundaryMap, equationComponent, speciesMap) {
+        public GodunovFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent,  Material material)
+            : base(config, boundaryMap, equationComponent, material) {
             if (config.EquationOfState is IdealGas == false) {
                 throw new Exception("Riemann solver currently only supports ideal gases");
             }
@@ -76,7 +73,7 @@ namespace CNS.Convection {
         /// <returns>
         /// <see cref="ExactRiemannSolver.GetCentralState"/>
         /// </returns>
-        protected override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex) {
+        public override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex) {
             ExactRiemannSolver riemannSolver = new ExactRiemannSolver(
                 stateIn, stateOut, normal);
 

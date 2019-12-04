@@ -27,11 +27,11 @@ namespace CNS.IBM {
         private Func<double[], double, ilPSP.Vector> levelSetVelocity;
 
         public MovingFrameRusanovFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, ImmersedSpeciesMap speciesMap)
-            : base(config, boundaryMap, equationComponent, speciesMap) {
+            : base(config, boundaryMap, equationComponent, speciesMap.GetMaterial(double.NaN)) {
             this.levelSetVelocity = speciesMap.Control.LevelSetVelocity;
         }
 
-        protected override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex) {
+        public override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex) {
             // Version: Subtract -s * flux from upwind
             double uIn = stateIn.Velocity * normal;
             double uOut = stateOut.Velocity * normal;

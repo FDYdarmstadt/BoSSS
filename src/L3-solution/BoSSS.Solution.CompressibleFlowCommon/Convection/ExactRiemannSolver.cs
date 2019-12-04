@@ -14,13 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Platform.LinAlg;
-using BoSSS.Solution.CompressibleFlowCommon;
 using System;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
-using CNS.LinAlg;
 
-namespace CNS.Convection {
+namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
     /// <summary>
     /// C# port of E.F. Toro's exact Riemann solver for the Euler equations
