@@ -60,6 +60,7 @@ namespace BoSSS.Solution.NSECommon {
         /// flux at the boundary
         /// </summary>
         double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
+            return 0.0;
             var _Uin = new Vector(Uin);
             Debug.Assert(inp.D == _Uin.Dim);
             
@@ -97,18 +98,25 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         double InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout) {
             double r = 0.0;
-            
+
             var _Uin = new Vector(Uin);
             var _Uot = new Vector(Uout);
 
             Vector Umean = (_Uin + _Uot) * 0.5;
-            if(Umean*inp.Normal >= 0) {
-                r = _Uin * inp.Normal * _Uin[m_component];
+            if (Umean * inp.Normal >= 0) {
+                //dir = Xot.x - Xin.x;
+                r = _Uin * inp.Normal;// * _Uin[m_component];
+                BoSSS.Foundation.EdgeFormDifferentiator.Dir = 1;
             } else {
-                r = _Uot * inp.Normal * _Uot[m_component];
+                //dir = Xin.x - Xot.x;
+                r = _Uot * inp.Normal;// * _Uot[m_component];
+                r = 0;
+                BoSSS.Foundation.EdgeFormDifferentiator.Dir = -1;
             }
 
-            return r*m_rho;
+            
+
+            return r * m_rho;
         }
 
         /// <summary>
@@ -124,7 +132,7 @@ namespace BoSSS.Solution.NSECommon {
             Debug.Assert(inp.D == _U.Dim);
 
             output.SetV(_U * _U[m_component] * m_rho);
-            
+            //output.ClearEntries();
         }
 
         /// <summary>
@@ -155,6 +163,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             var ConvDerivEdg = new EdgeFormDifferentiator(this, SpatialDimension);
+            //var ConvDerivEdg = new OldEdgeFormDifferentiator(this);
             var ConvDerivVol = new VolumeFormDifferentiator(this, SpatialDimension);
             return new IEquationComponent[] { ConvDerivEdg, ConvDerivVol };
         }

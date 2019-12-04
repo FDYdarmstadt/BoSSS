@@ -226,7 +226,7 @@ namespace BoSSS.Application.Rheology {
 
             public TermActivationFlags InnerEdgeTerms => owner.InnerEdgeTerms;
 
-            public IList<string> ArgumentOrdering => owner.ArgumentOrdering.GetSubVector(0, 3); // for the boundary, the first arguments are sufficient.
+            public IList<string> ArgumentOrdering => owner.ArgumentOrdering.GetSubVector(0, 4); // for the boundary, the first arguments are sufficient.
 
             public IList<string> ParameterOrdering => null;
 

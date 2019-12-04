@@ -27,7 +27,6 @@ namespace BoSSS.Foundation {
 
         string[] DomainVar;
         
-
         /// <summary>
         /// Implementation of constructor functionality.
         /// </summary>
@@ -130,7 +129,7 @@ namespace BoSSS.Foundation {
             for (int i = 0; i < __DomainVar.Length; i++) {
                 for (int d = 0; d < D; d++) {
 
-                    int iDest = DomainToParam[i];
+                    int iDest = DomainDerivToParam[i, d];
                     if (iDest < 0)
                         continue;
 
@@ -175,12 +174,13 @@ namespace BoSSS.Foundation {
             for (int i = 0; i < __DomainVar.Length; i++) {
                 for (int d = 0; d < D; d++) {
 
-                    int iDest = DomainToParam[i];
+                    int iDest = DomainDerivToParam[i, d];
                     if (iDest < 0)
                         continue;
 
                     DGField src = __DomainVar[i];
                     DGField dst = src.CloneAs();
+                    dst.Identification = dst.Identification + "_d[" + d + "]";
 
                     ret[iDest] = dst;
                 }

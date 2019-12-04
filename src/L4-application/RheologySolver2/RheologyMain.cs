@@ -404,9 +404,11 @@ namespace BoSSS.Application.Rheology {
                         var comps = XOP.EquationComponents[CodName[d]];
 
                         // convective part:
-                        if (!this.Control.Stokes) {
+                        if (!this.Control.Stokes && d < 1) {
                             //comps.Add(new LinearizedConvection(D, BcMap, d));
                             comps.Add(new UpwindMomentumConvection(D, BcMap, d, 1.0));
+                        } else {
+                            Console.WriteLine("Rem: skipping convection.");
                         }
 
                         // pressure part:
@@ -462,7 +464,7 @@ namespace BoSSS.Application.Rheology {
                         var presStab = new PressureStabilization(this.Control.PresPenalty2, this.Control.Reynolds);
                         XOP.EquationComponents["div"].Add(presStab);
                     }
-
+                    /*
                     // Constitutive equations
                     // ===============================================================================
 
@@ -502,6 +504,7 @@ namespace BoSSS.Application.Rheology {
                         XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Diffusion(this.StressXY.Basis.Degree, Grid.SpatialDimension, ((GridData)GridData).Cells.cj, VariableNames.StressXY));
                         XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Diffusion(this.StressYY.Basis.Degree, Grid.SpatialDimension, ((GridData)GridData).Cells.cj, VariableNames.StressYY));
                     }
+                    */
 
                     // Build spatial operator
                     XOP.Commit();
@@ -995,6 +998,15 @@ namespace BoSSS.Application.Rheology {
                         Debug.Assert(ParameterVar.Count() == 0);
                     }
 
+                    var CV = new CoordinateVector(CurrentState);
+                    Random r = new Random(0);
+                    //for(int i = 0; i < CV.Length; i++) {
+                    //    CV[i] = r.NextDouble();
+                    //}
+                    CV.ClearEntries();
+                    //CurrentState[0].ProjectField(X => 2 - X[1].Pow2());
+                    CurrentState[0].ProjectField((double[] X) => 2.0);
+
 
                     // Finite Difference Linearization
                     var FDbuilder = XOP.GetFDJacobianBuilder(domMap, null, //Params,
@@ -1018,6 +1030,16 @@ namespace BoSSS.Application.Rheology {
                     ErrMtx.Acc(-1.0, JacMtx);
                     double InfNorm_ErrMtx = ErrMtx.InfNorm();
                     Console.WriteLine("Shitty Matrix Error: " + InfNorm_ErrMtx);
+
+                    var ErrAff = OpAffine.CloneAs();
+                    OpAffine.AccV(-1.0, JacAff);
+                    double InfNorm_ErrAff = OpAffine.MPI_L2Norm();
+                    Console.WriteLine("Shitty affine Error: " + InfNorm_ErrAff);
+
+                    double l2_CV = CV.MPI_L2Norm();
+                    Console.WriteLine("  check L2 : " + l2_CV);
+
+                    Debug.Assert(InfNorm_ErrMtx / l2_CV < 1);
                     
 
                     // FDJacobian has (Mx +b) as RHS, for unsteady calc. we must subtract Mx for real affine Vector!

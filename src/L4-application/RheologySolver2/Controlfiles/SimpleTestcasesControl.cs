@@ -235,6 +235,200 @@ namespace BoSSS.Application.Rheology
             }
             return C;
         }
+
+        /// <summary>
+        /// Channel Flow
+        /// </summary>
+        static public RheologyControl Wirdo(string path = null)
+        {
+            int degree = 2;
+            //BoSSS.Application.Rheology.SimpleTestcasesControl.Channel(degree:4,GridLevel:4)
+            //path = @"C:\Users\kikker\AnnesBoSSSdb\Channel";
+            RheologyControl C = new RheologyControl();
+
+            //Solver Options
+            C.NoOfTimesteps = 1;
+            C.savetodb = false;
+            //C.DbPath = path;
+            C.ProjectName = "Channel";
+            C.dtFixed = 1e6;
+            C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
+            C.useJacobianForOperatorMatrix = true;
+
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.NonLinearSolver.verbose = true;
+            C.LinearSolver.verbose = true;
+
+            //C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;//   .classic_pardiso;
+            //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            // Maximum analytical output ...
+            //C.NonLinearSolver.PrecondSolver.verbose = true;
+            //C.GridPartType = GridPartType.METIS;
+
+            // Maximum analytical output ...
+            C.ObjectiveParam = 1.0;
+
+            C.UsePerssonSensor = false;
+            C.SensorLimit = 1e-4;
+
+            C.AdaptiveMeshRefinement = false;
+            C.RefinementLevel = 10;
+
+            C.UseArtificialDiffusion = false;
+
+            C.Bodyforces = false;
+            //C.WhichWall = "Wall_Cylinder";
+
+            //Debugging and Solver Analysis
+            C.OperatorMatrixAnalysis = false;
+            C.SkipSolveAndEvaluateResidual = false;
+            C.SetInitialConditions = false;
+            C.SetInitialPressure = false;
+            C.SetParamsAnalyticalSol = false;
+            C.ComputeL2Error = true;
+            C.GravitySource = false;
+            C.GravityX = (X, t) => 1;
+            C.GravityY = (X, t) => 0;
+
+            //Physical Params
+            C.Stokes = false;
+            C.FixedStreamwisePeriodicBC = false;
+            C.beta = 0;// 0.59;
+            C.Reynolds = 1;
+            C.Weissenberg = 0.3; //aim Weissenberg number!
+            C.RaiseWeissenberg = true;
+            C.WeissenbergIncrement = 0.1;
+
+            
+
+            //Penalties
+            C.ViscousPenaltyScaling = 1;
+            C.Penalty2 = 1;
+            C.Penalty1[0] = 0.0;
+            C.Penalty1[1] = 0.0;
+            C.PresPenalty2 = 1;
+            C.PresPenalty1[0] = 0.0;
+            C.PresPenalty1[1] = 0.0;
+            C.alpha = 1;
+            C.StressPenalty = 1.0;
+
+            //Exact Solution Channel
+            Func<double[], double, double> VelocityXfunction = (X, t) => 1 - (X[1] * X[1]);
+            Func<double[], double, double> VelocityYfunction = (X, t) => 0;
+            Func<double[], double, double> Pressurefunction = (X, t) => 2 * C.Reynolds * (20 - X[0]);
+            Func<double[], double, double> StressXXfunction = (X, t) => 2 * C.Weissenberg * (1 - C.beta) * ((-2 * X[1]) * (-2 * X[1]));
+            Func<double[], double, double> StressXYfunction = (X, t) => (1 - C.beta) * (-2 * X[1]);
+            Func<double[], double, double> StressYYfunction = (X, t) => (0.0);
+
+            // Insert Exact Solution
+            C.ExSol_Velocity = new Func<double[], double, double>[] { VelocityXfunction, VelocityYfunction };
+            C.ExSol_Pressure = Pressurefunction;
+            C.ExSol_Stress = new Func<double[], double, double>[] { StressXXfunction, StressXYfunction, StressYYfunction };
+
+            // Create Fields
+            C.SetDGdegree(degree);
+
+            // Create Grid
+            C.GridFunc = delegate {
+                var _xNodes = GenericBlas.Linspace(0, 20, 7);
+                var _yNodes = GenericBlas.Linspace(-1, 1, 5);
+                //var _yNodes = GenericBlas.Linspace(0, 1, (cells2 / 4) + 1);
+
+                var grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes, CellType.Square_Linear, C.FixedStreamwisePeriodicBC);
+
+                if (!C.FixedStreamwisePeriodicBC)
+                {
+                    grd.EdgeTagNames.Add(1, "Velocity_inlet");
+                    grd.EdgeTagNames.Add(4, "Pressure_Outlet");
+                }
+
+                grd.EdgeTagNames.Add(2, "Wall_bottom");
+                grd.EdgeTagNames.Add(3, "Wall_top");
+                //grd.EdgeTagNames.Add(2, "FreeSlip");
+
+                grd.DefineEdgeTags(delegate (double[] _X) {
+                    var X = _X;
+                    double x = X[0];
+                    double y = X[1];
+
+                    if (Math.Abs(y - (-1)) < 1.0e-6)
+                        //if (Math.Abs(y - (0)) < 1.0e-6)
+                        // bottom
+                        return 2;
+
+                    if (Math.Abs(y - (1)) < 1.0e-6)
+                        // top
+                        return 3;
+
+                    if (!C.FixedStreamwisePeriodicBC)
+                    {
+                        if (Math.Abs(x - (0)) < 1.0e-6)
+                            // left
+                            return 1;
+
+                        if (Math.Abs(x - (20)) < 1.0e-6)
+                            // right
+                            return 4;
+                    }
+                    throw new ArgumentOutOfRangeException();
+                });
+
+                return grd;
+            };
+
+            // Analytical Sol for Params
+            if (C.SetParamsAnalyticalSol == true)
+            {
+                C.VelFunctionU = X => VelocityXfunction(X, 0);
+                C.VelFunctionV = X => VelocityYfunction(X, 0);
+                C.PresFunction = X => Pressurefunction(X, 0);
+            }
+
+            // Set Initial Conditions
+            if (C.SetInitialConditions == true)
+            {
+
+                C.InitialValues_Evaluators.Add("VelocityX", X => VelocityXfunction(X, 0));
+                C.InitialValues_Evaluators.Add("VelocityY", X => VelocityYfunction(X, 0));
+                C.InitialValues_Evaluators.Add("StressXX", X => StressXXfunction(X, 0));
+                C.InitialValues_Evaluators.Add("StressXY", X => StressXYfunction(X, 0));
+                C.InitialValues_Evaluators.Add("StressYY", X => StressYYfunction(X, 0));
+
+                if (C.SetInitialPressure == true || C.SkipSolveAndEvaluateResidual == true)
+                {
+                    C.InitialValues_Evaluators.Add("Pressure", X => Pressurefunction(X, 0));
+                }
+            }
+
+            C.InitialValues_Evaluators.Add("Phi", X => -1);
+
+            // Set Boundary Conditions
+            C.AddBoundaryValue("Wall_bottom");//, "VelocityX", VelocityXfunction);
+            C.AddBoundaryValue("Wall_top");//, "VelocityX", VelocityXfunction);
+            //C.AddBoundaryValue("Wall_bottom", "VelocityY", VelocityYfunction);
+            //C.AddBoundaryValue("Wall_top", "VelocityY", VelocityYfunction);
+            //C.AddBoundaryValue("Wall_bottom", "VelocityX", X => 0);
+            //C.AddBoundaryValue("Wall_top", "VelocityX", X => 0);
+            //C.AddBoundaryValue("Wall_bottom", "VelocityY", X => 0);
+            //C.AddBoundaryValue("Wall_top", "VelocityY", X => 0);
+            //C.AddBoundaryValue("FreeSlip");//, "VelocityX", VelocityXfunction);
+
+            if (!C.FixedStreamwisePeriodicBC)
+            {
+                C.AddBoundaryValue("Velocity_inlet", "VelocityX", VelocityXfunction);
+                C.AddBoundaryValue("Velocity_inlet", "VelocityY", VelocityYfunction);
+                C.AddBoundaryValue("Velocity_inlet", "StressXX", StressXXfunction);
+                C.AddBoundaryValue("Velocity_inlet", "StressXY", StressXYfunction);
+                C.AddBoundaryValue("Velocity_inlet", "StressYY", StressYYfunction);
+                //C.AddBoundaryCondition("Velocity_inlet", "Pressure", Pressurefunction);
+                C.AddBoundaryValue("Pressure_Outlet");
+
+            }
+            return C;
+        }
+
+
         //__________________________________________________________________________________________________________________
         /// <summary>
         /// Consistency Constitutive equation

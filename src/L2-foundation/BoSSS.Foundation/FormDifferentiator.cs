@@ -140,16 +140,19 @@ namespace BoSSS.Foundation {
             Utmp = new double[GAMMA];
             GradUtmp = new double[GAMMA, D];
             for (int iVar = 0; iVar < GAMMA; iVar++) {
-
-                Utmp[iVar] = Parameters[iVar + OffsetUparams];
-                delta += Utmp[iVar].Pow2();
-                for (int d = 0; d < D; d++) {
-                    GradUtmp[iVar, d] = Parameters[iVar * D + d + OffsetGradUparams];
-                    delta += GradUtmp[iVar, d].Pow2();
+                if (ParamUreq) {
+                    Utmp[iVar] = Parameters[iVar + OffsetUparams];
+                    delta += Utmp[iVar].Pow2();
+                }
+                if (ParamGradUreq) {
+                    for (int d = 0; d < D; d++) {
+                        GradUtmp[iVar, d] = Parameters[iVar * D + d + OffsetGradUparams];
+                        delta += GradUtmp[iVar, d].Pow2();
+                    }
                 }
             }
 
-            delta = Math.Min(eps, Math.Sqrt(delta) * eps);
+            delta = Math.Max(eps, Math.Sqrt(delta) * eps);
             Debug.Assert(delta > 0);
             return delta;
         }
@@ -222,6 +225,7 @@ namespace BoSSS.Foundation {
             ref CommonParamsVol clonedParams, 
             double[] Utmp, double[,] GradUtmp, double V, double[] GradV, 
             double delta, double f0) {
+            
             // add perturbation
             double bkup = PertubVar;
             PertubVar += delta;
@@ -288,7 +292,10 @@ namespace BoSSS.Foundation {
                 return base.Terms;
             }
         }
-                
+
+        //static public int SetDir = 0;
+        static public int Dir = 0;
+
 
         public double InnerEdgeForm(ref CommonParams inp, double[] U_IN, double[] U_OT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
             double ret = 0.0;
@@ -306,20 +313,36 @@ namespace BoSSS.Foundation {
             double delta = Math.Max(deltaIn, deltaOt);
 
 
-            //double[] dU = new double[GAMMA];
-            double f0 = m_EdgForm.InnerEdgeForm(ref clonedParams, U_IN_temp, U_OT_temp, null, null, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
+            //SetDir = 0;
+            
+            double f0 = m_EdgForm.InnerEdgeForm(ref clonedParams, U_IN_temp, U_OT_temp, GradU_IN_temp, GradU_OT_temp, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
+            
             ret += f0; // affine contribution - contains V and GradV contribution
 
             for (int iVar = 0; iVar < GAMMA; iVar++) { // loop over trial variables
                 if (((m_EdgForm.InnerEdgeTerms & (TermActivationFlags.UxV | TermActivationFlags.UxGradV)) != 0)) {
                     //if (U_IN[iVar] != 0.0) {
                     {
-                        ret += Diff(ref U_IN_temp[iVar], U_IN[iVar], ref clonedParams, U_IN_temp, U_OT_temp, GradU_IN_temp, GradU_IN_temp, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT, delta, f0);
+                        //if (U_IN[iVar] != 0.0 && (_vIN != 0 || _vOUT != 0))
+                        //    Console.Write("");
+
+                        ret += Diff(ref U_IN_temp[iVar], U_IN[iVar], 
+                            ref clonedParams, U_IN_temp, U_OT_temp, GradU_IN_temp, GradU_OT_temp, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT, 
+                            delta, f0);
+
+                       
                     }
 
                     //if(U_OT[iVar] != 0.0) {
                     {
-                        ret += Diff(ref U_OT_temp[iVar], U_OT[iVar], ref clonedParams, U_IN_temp, U_OT_temp, GradU_IN_temp, GradU_IN_temp, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT, delta, f0);
+                        //if (U_OT[iVar] != 0.0 && (_vIN != 0 || _vOUT != 0))
+                        //    Console.Write("");
+
+                        ret += Diff(ref U_OT_temp[iVar], U_OT[iVar], 
+                            ref clonedParams, U_IN_temp, U_OT_temp, GradU_IN_temp, GradU_OT_temp, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT, 
+                            delta, f0);
+
+                       
                     }
                 }
 
@@ -327,18 +350,23 @@ namespace BoSSS.Foundation {
                     for (int d = 0; d < D; d++) {
                         //if (U_IN[iVar] != 0.0) {
                         {
-                            ret += Diff(ref GradU_IN_temp[iVar, d], _Grad_uIN[iVar, d], ref clonedParams, U_IN_temp, U_OT_temp, GradU_IN_temp, GradU_IN_temp, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT, delta, f0);
+                            ret += Diff(ref GradU_IN_temp[iVar, d], _Grad_uIN[iVar, d], 
+                                ref clonedParams, U_IN_temp, U_OT_temp, GradU_IN_temp, GradU_OT_temp, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT, 
+                                delta, f0);
                         }
 
                         //if(U_OT[iVar] != 0.0) {
                         {
-                            ret += Diff(ref GradU_OT_temp[iVar, d], _Grad_uOUT[iVar, d], ref clonedParams, U_IN_temp, U_OT_temp, GradU_IN_temp, GradU_IN_temp, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT, delta, f0);
+                            ret += Diff(ref GradU_OT_temp[iVar, d], _Grad_uOUT[iVar, d], 
+                                ref clonedParams, U_IN_temp, U_OT_temp, GradU_IN_temp, GradU_OT_temp, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT, 
+                                delta, f0);
                         }
                     }
                 }
 
             }
 
+            //Dir = 0;
             return ret;
         }
 
@@ -390,14 +418,15 @@ namespace BoSSS.Foundation {
             
             double delta = GetTmpTrialVals(inp.Parameters_IN, out var U_IN_temp, out var GradU_IN_temp);
 
-            double f0 = m_EdgForm.BoundaryEdgeForm(ref clonedParams, U_IN_temp, null, _vIN, _Grad_vIN);
+            double f0 = m_EdgForm.BoundaryEdgeForm(ref clonedParams, U_IN_temp, GradU_IN_temp, _vIN, _Grad_vIN);
             ret += f0; // affine contribution - contains V and GradV contribution
 
             for (int iVar = 0; iVar < GAMMA; iVar++) { // loop over trial variables
                 if (((m_EdgForm.InnerEdgeTerms & (TermActivationFlags.UxV | TermActivationFlags.UxGradV)) != 0)) {
                     //if (U_IN[iVar] != 0.0) {
                     {
-                        ret += DiffBnd(ref U_IN_temp[iVar], U_IN[iVar], ref clonedParams, U_IN_temp, GradU_IN_temp, _vIN, _Grad_vIN, delta, f0);
+                        ret += DiffBnd(ref U_IN_temp[iVar], U_IN[iVar], 
+                            ref clonedParams, U_IN_temp, GradU_IN_temp, _vIN, _Grad_vIN, delta, f0);
                     }
                 }
 
@@ -405,7 +434,8 @@ namespace BoSSS.Foundation {
                     for (int d = 0; d < D; d++) {
                         //if (U_IN[iVar] != 0.0) {
                         {
-                            ret += DiffBnd(ref GradU_IN_temp[iVar, d], _Grad_uIn[iVar, d], ref clonedParams, U_IN_temp, GradU_IN_temp, _vIN, _Grad_vIN, delta, f0);
+                            ret += DiffBnd(ref GradU_IN_temp[iVar, d], _Grad_uIn[iVar, d], 
+                                ref clonedParams, U_IN_temp, GradU_IN_temp, _vIN, _Grad_vIN, delta, f0);
                         }
                     }
                 }
@@ -450,5 +480,180 @@ namespace BoSSS.Foundation {
         }
     }
 
+
+    public class OldEdgeFormDifferentiator : IEdgeForm {
+
+        public OldEdgeFormDifferentiator(IEdgeForm ef) {
+            m_EdgForm = ef;
+            m_eps = Math.Sqrt(BLAS.MachineEps);
+            m_ParameterOrdering = ArrayTools.Cat(ef.ArgumentOrdering.Select(fn => fn + "_lin"), 
+                ef.ParameterOrdering != null ? ef.ParameterOrdering : new string[0]);
+        }
+
+        double m_eps;
+
+        IEdgeForm m_EdgForm;
+
+        public TermActivationFlags InnerEdgeTerms => m_EdgForm.InnerEdgeTerms;
+
+        public TermActivationFlags BoundaryEdgeTerms => m_EdgForm.BoundaryEdgeTerms;
+
+        public IList<string> ArgumentOrdering => m_EdgForm.ArgumentOrdering;
+        
+        string[] m_ParameterOrdering;
+
+        public IList<string> ParameterOrdering {
+            get {
+                return m_ParameterOrdering;
+            }
+        }
+
+        public bool IgnoreVectorizedImplementation => false;
+
+        public double InnerEdgeForm(ref CommonParams inp, double[] U_IN, double[] U_OT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
+            double ret = 0.0;
+            int GAMMA = m_EdgForm.ArgumentOrdering.Count;
+
+            double eps = m_eps;
+            
+            int NoOfParams = m_EdgForm.ParameterOrdering != null ? m_EdgForm.ParameterOrdering.Count : 0;
+            double[] OrgParams_IN = new double[NoOfParams];
+            double[] OrgParams_OT = new double[NoOfParams];
+            OrgParams_IN.SetSubVector(inp.Parameters_IN, GAMMA, NoOfParams);
+            OrgParams_OT.SetSubVector(inp.Parameters_OUT, GAMMA, NoOfParams);
+
+            CommonParams clonedParams = inp;
+            Debug.Assert(object.ReferenceEquals(inp, clonedParams) == false);
+            clonedParams.Parameters_IN = OrgParams_IN;
+            clonedParams.Parameters_OUT = OrgParams_OT;
+
+            double[] U_IN_temp = new double[GAMMA];
+            double[] U_OT_temp = new double[GAMMA];
+            U_IN_temp.SetSubVector(inp.Parameters_IN, 0, GAMMA);
+            U_OT_temp.SetSubVector(inp.Parameters_OUT, 0, GAMMA);
+
+
+            //double[] dU = new double[GAMMA];
+            double f0 = m_EdgForm.InnerEdgeForm(ref clonedParams, U_IN_temp, U_OT_temp, null, null, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
+            for (int iVar = 0; iVar < GAMMA; iVar++) { // loop over trial variables
+                if (((m_EdgForm.InnerEdgeTerms & (TermActivationFlags.UxV | TermActivationFlags.UxGradV)) != 0)) {
+                    if (U_IN[iVar] != 0.0) {
+                        // add perturbation
+                        double bkup = U_IN_temp[iVar];
+                        double delta = Math.Abs(U_IN[iVar]) * eps;
+                        Debug.Assert(delta > 0);
+                        U_IN_temp[iVar] += delta;
+
+                        // flux eval
+                        double f1 = m_EdgForm.InnerEdgeForm(ref clonedParams, U_IN_temp, U_OT_temp, null, null, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
+                        if (double.IsInfinity(f1))
+                            throw new ArithmeticException();
+                        if (double.IsNaN(f1))
+                            throw new ArithmeticException();
+
+                        // restore un-perturbed state
+                        U_IN_temp[iVar] = bkup;
+
+                        // compute finite difference
+                        double dU_iVar = (f1 - f0) / delta;
+                        if (double.IsInfinity(dU_iVar))
+                            throw new ArithmeticException();
+                        if (double.IsNaN(dU_iVar))
+                            throw new ArithmeticException();
+
+                        // inner product
+                        ret += dU_iVar * U_IN[iVar];
+                    }
+                    
+                    if(U_OT[iVar] != 0.0) {
+                        // add perturbation
+                        double bkup = U_OT_temp[iVar];
+                        double delta = Math.Abs(U_OT[iVar]) * eps;
+                        Debug.Assert(delta > 0);
+                        U_OT_temp[iVar] += delta;
+
+                        // flux eval
+                        double f1 = m_EdgForm.InnerEdgeForm(ref clonedParams, U_IN_temp, U_OT_temp, null, null, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
+                        if (double.IsInfinity(f1))
+                            throw new ArithmeticException();
+                        if (double.IsNaN(f1))
+                            throw new ArithmeticException();
+
+                        // restore un-perturbed state
+                        U_OT_temp[iVar] = bkup;
+
+                        // compute finite difference
+                        double dU_iVar = (f1 - f0) / delta;
+                        if (double.IsInfinity(dU_iVar))
+                            throw new ArithmeticException();
+                        if (double.IsNaN(dU_iVar))
+                            throw new ArithmeticException();
+
+                        // inner product
+                        ret += dU_iVar * U_OT[iVar];
+                    }
+                }
+
+            }
+
+
+
+            return ret;
+        }
+
+        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] U_IN, double[,] _Grad_uA, double _vIN, double[] _Grad_vIN) {
+            double ret = 0.0;
+            int GAMMA = m_EdgForm.ArgumentOrdering.Count;
+
+            double eps = m_eps;
+            
+            int NoOfParams = m_EdgForm.ParameterOrdering != null ? m_EdgForm.ParameterOrdering.Count : 0;
+            double[] OrgParams_IN = new double[NoOfParams];
+            OrgParams_IN.SetSubVector(inp.Parameters_IN, GAMMA, NoOfParams);
+
+            CommonParamsBnd clonedParams = inp;
+            Debug.Assert(object.ReferenceEquals(inp, clonedParams) == false);
+            clonedParams.Parameters_IN = OrgParams_IN;
+
+            double[] U_IN_temp = new double[GAMMA];
+            U_IN_temp.SetSubVector(inp.Parameters_IN, 0, GAMMA);
+
+            //double[] dU = new double[GAMMA];
+            double f0 = m_EdgForm.BoundaryEdgeForm(ref clonedParams, U_IN_temp, null, _vIN, _Grad_vIN);
+            for (int iVar = 0; iVar < GAMMA; iVar++) { // loop over trial variables
+                if (((m_EdgForm.InnerEdgeTerms & (TermActivationFlags.UxV | TermActivationFlags.UxGradV)) != 0)) {
+                    if (U_IN[iVar] != 0.0) {
+                        // add perturbation
+                        double bkup = U_IN_temp[iVar];
+                        double delta = Math.Abs(U_IN[iVar]) * eps;
+                        Debug.Assert(delta > 0);
+                        U_IN_temp[iVar] += delta;
+
+                        // flux eval
+                        double f1 = m_EdgForm.BoundaryEdgeForm(ref clonedParams, U_IN_temp, null, _vIN, _Grad_vIN);
+                        if (double.IsInfinity(f1))
+                            throw new ArithmeticException();
+                        if (double.IsNaN(f1))
+                            throw new ArithmeticException();
+                        
+                        // restore un-perturbed state
+                        U_IN_temp[iVar] = bkup;
+
+                        // compute finite difference
+                        double dU_iVar = (f1 - f0) / delta;
+                        if (double.IsInfinity(dU_iVar))
+                            throw new ArithmeticException();
+                        if (double.IsNaN(dU_iVar))
+                            throw new ArithmeticException();
+
+                        // inner product
+                        ret += dU_iVar * U_IN[iVar];
+                    }
+                }
+            }
+
+            return ret;
+        }
+    }
 
 }
