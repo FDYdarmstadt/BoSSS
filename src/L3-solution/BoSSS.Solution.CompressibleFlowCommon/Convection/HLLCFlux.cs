@@ -35,7 +35,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <param name="equationComponent"><see cref="EulerFlux"/></param>
         /// <param name="speciesMap"><see cref="EulerFlux"/></param>
         protected HLLCFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, ISpeciesMap speciesMap)
-            : base(config, boundaryMap, equationComponent, speciesMap) {
+            : base(config, boundaryMap, equationComponent, speciesMap.GetMaterial(double.NaN)) {
             if (config.EquationOfState is IdealGas == false) {
                 throw new Exception("HLLC flux currently only works for ideal gases");
             }
@@ -63,7 +63,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
         /// </param>
         /// <returns>see Toro2009, equation 10.71</returns>
-        protected internal override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex) {
+        public override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex) {
             double waveSpeedIn;
             double waveSpeedOut;
             EstimateWaveSpeeds(stateIn, stateOut, ref normal, out waveSpeedIn, out waveSpeedOut);
