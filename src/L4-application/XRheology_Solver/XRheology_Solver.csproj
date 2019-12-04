@@ -53,11 +53,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DropletInShearFlow.cs" />
+    <Compile Include="Physical_Testcases\DropletInShearFlow.cs" />
     <Compile Include="GenericTestcases.cs" />
-    <Compile Include="ManSol.cs" />
-    <Compile Include="ChannelFlow.cs" />
-    <Compile Include="Droplet.cs" />
+    <Compile Include="Physical_Testcases\ChannelFlow.cs" />
+    <Compile Include="Physical_Testcases\Droplet.cs" />
     <Compile Include="XRheology_OperatorConfiguration.cs" />
     <Compile Include="XRheology_Control.cs" />
     <Compile Include="XRheology_OperatorFactory.cs" />

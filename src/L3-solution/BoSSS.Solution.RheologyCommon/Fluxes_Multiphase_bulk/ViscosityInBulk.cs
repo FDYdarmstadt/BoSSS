@@ -24,26 +24,26 @@ using BoSSS.Solution.XNSECommon;
 using ilPSP.Utils;
 
 namespace BoSSS.Solution.RheologyCommon {
+
     /// <summary>
-    /// Volume integral of identity part of constitutive equations.
+    /// Viscosity part of constitutive equations in bulk for multiphase.
     /// </summary>
-    public class StressDivergenceInBulk : StressDivergence_Cockburn, ISpeciesFilter {
+    public class ViscosityInBulk : ConstitutiveEqns_Viscosity, ISpeciesFilter {
 
         IncompressibleMultiphaseBoundaryCondMap m_bcMap;
 
         /// <summary>
-        /// Initialize Convection
+        /// Initialize Viscosity
         /// </summary>
-        public StressDivergenceInBulk(int _Component, IncompressibleMultiphaseBoundaryCondMap _BcMap, double _Reynolds, double[] _Penalty1, double _Penalty2, string spcName, SpeciesId spcId) : base(_Component, _BcMap, _Reynolds, _Penalty1, _Penalty2) {
-            this.m_bcMap = _BcMap;
+        public ViscosityInBulk(int _Component, IncompressibleMultiphaseBoundaryCondMap _BcMap, double _beta, double[] _Penalty1, string spcName, SpeciesId spcId) : base(_Component, _BcMap, _beta, _Penalty1) {
             this.validSpeciesId = spcId;
+            this.m_bcMap = _BcMap;
 
             base.VelFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, 2];
             base.VelFunction.SetColumn(m_bcMap.bndFunction[VariableNames.VelocityX + "#" + spcName], 0);
             base.VelFunction.SetColumn(m_bcMap.bndFunction[VariableNames.VelocityY + "#" + spcName], 1);
-
         }
 
-    public SpeciesId validSpeciesId { get;}
+        public SpeciesId validSpeciesId { get; }
     }
 }

@@ -106,9 +106,9 @@ namespace BoSSS.Solution.Control {
         public int constantNewtonIterations = 1;
 
         /// <summary>
-        /// This will print out more information about iterations.
+        /// When pressure ref point can not be used (Option: false), a mean pressure field is calculated and substracted from the current pressure field.
         /// </summary>
-        public bool DoNotUsePresRefPoint = false;
+        public bool UsePresRefPoint = true;
     }
 
 }
