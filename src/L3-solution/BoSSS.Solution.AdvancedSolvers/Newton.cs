@@ -270,12 +270,18 @@ namespace BoSSS.Solution.AdvancedSolvers
                         this.CurrentLin.TransformSolFrom(SolutionVec, xt);
 
                         if (UsePresRefPoint == false) {
-                            XDGField pres = (XDGField)this.m_SolutionVec.Mapping.Fields[2];
-                            DGField presSpA = pres.GetSpeciesShadowField("A");
-                            DGField presSpB = pres.GetSpeciesShadowField("B");
-                            var meanpres = presSpB.GetMeanValueTotal(null);
-                            presSpA.AccConstant(-1.0 * meanpres);
-                            presSpB.AccConstant(-1.0 * meanpres);
+
+                            if (this.m_SolutionVec.Mapping.Fields[2] is XDGField  Xpres) {
+                                DGField presSpA = Xpres.GetSpeciesShadowField("A");
+                                DGField presSpB = Xpres.GetSpeciesShadowField("B");
+                                var meanpres = presSpB.GetMeanValueTotal(null);
+                                presSpA.AccConstant(-1.0 * meanpres);
+                                presSpB.AccConstant(-1.0 * meanpres);
+                            } else {
+                                DGField pres = this.m_SolutionVec.Mapping.Fields[2];
+                                var meanpres = pres.GetMeanValueTotal(null);
+                                pres.AccConstant(-1.0 * meanpres);
+                            }
                         }
 
 
