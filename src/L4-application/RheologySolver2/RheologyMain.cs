@@ -1018,8 +1018,7 @@ namespace BoSSS.Application.Rheology {
                     ErrMtx.Acc(-1.0, JacMtx);
                     double InfNorm_ErrMtx = ErrMtx.InfNorm();
                     Console.WriteLine("Shitty Matrix Error: " + InfNorm_ErrMtx);
-
-
+                    
 
                     // FDJacobian has (Mx +b) as RHS, for unsteady calc. we must subtract Mx for real affine Vector!
                     OpMatrix.SpMV(-1.0, new CoordinateVector(CurrentState), 1.0, OpAffine);
