@@ -1050,26 +1050,25 @@ namespace BoSSS.Application.Rheology {
 
                 // 'custom' Linearization 
                 if (!useJacobianForOperatorMatrix) {
-                    var Mbuilder = XOP.GetMatrixBuilder(domMap, Params, codMap);
-                    this.ParameterUpdate(domMap.Fields, Params);
-                    Mbuilder.ComputeMatrix(OpMatrix, OpAffine);
-                    Mbuilder.OperatorCoefficients.UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
+                    //var Mbuilder = XOP.GetMatrixBuilder(domMap, Params, codMap);
+                    //this.ParameterUpdate(domMap.Fields, Params);
+                    //Mbuilder.ComputeMatrix(OpMatrix, OpAffine);
+                    //Mbuilder.OperatorCoefficients.UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
+
+                     // Jacobian
+                    var JacParams = JacobiOp.ParameterUpdate;
+                    var TmpParams = JacParams.AllocateParameters(CurrentState);
+                    var map = new CoordinateMapping(CurrentState);
+                    var JacBuilder = JacobiOp.GetMatrixBuilder(map, TmpParams, map);
+                    JacBuilder.OperatorCoefficients.UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
+                    JacParams.ParameterUpdate(CurrentState, TmpParams);
+                    JacBuilder.ComputeMatrix(OpMatrix, OpAffine);
+
 
                 } else {
                     void Dummy(IEnumerable<DGField> ZZtop, IEnumerable<DGField> ParameterVar) {
                         Debug.Assert(ParameterVar.Count() == 0);
                     }
-
-                    var CV = new CoordinateVector(CurrentState);
-                    Random r = new Random(0);
-                    for (int i = 0; i < CV.Length; i++) {
-                        CV[i] = r.NextDouble();
-                    }
-                    CV.ClearEntries();
-                    CurrentState[0].ProjectField(X => 2 - X[1].Pow2());
-                    //CurrentState[0].ProjectField((double[] X) => 2.0);
-                    //CurrentState[1].ProjectField((double[] X) => 0.2);
-
 
                     // Finite Difference Linearization
                     var FDbuilder = XOP.GetFDJacobianBuilder(domMap, null, //Params,
@@ -1078,35 +1077,6 @@ namespace BoSSS.Application.Rheology {
                         Dummy);
                     FDbuilder.OperatorCoefficients.UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
                     FDbuilder.ComputeMatrix(OpMatrix, OpAffine);
-                                     
-                    // Jacobian
-                    var JacParams = JacobiOp.ParameterUpdate;
-                    var TmpParams = JacParams.AllocateParameters(CurrentState);
-                    var map = new CoordinateMapping(CurrentState);
-                    var JacBuilder = JacobiOp.GetMatrixBuilder(map, TmpParams, map);
-                    JacParams.ParameterUpdate(CurrentState, TmpParams);
-                    var JacMtx = new BlockMsrMatrix(map);
-                    var JacAff = new double[map.LocalLength];
-                    JacBuilder.ComputeMatrix(JacMtx, JacAff);
-
-                    var ErrMtx = OpMatrix.CloneAs();
-                    ErrMtx.Acc(-1.0, JacMtx);
-                    double InfNorm_ErrMtx = ErrMtx.InfNorm();
-                    Console.WriteLine("Shitty Matrix Error: " + InfNorm_ErrMtx);
-
-                    var ErrAff = OpAffine.CloneAs();
-                    OpAffine.AccV(-1.0, JacAff);
-                    double InfNorm_ErrAff = OpAffine.MPI_L2Norm();
-                    Console.WriteLine("Shitty affine Error: " + InfNorm_ErrAff);
-
-                    double l2_CV = CV.MPI_L2Norm();
-                    Console.WriteLine("  check L2 : " + l2_CV);
-
-                    //JacMtx.SaveToTextFileSparse("P:\\tmp\\Jac.txt");
-                    //OpMatrix.SaveToTextFileSparse("P:\\tmp\\Ref.txt");
-                    //ErrMtx.SaveToTextFileSparse("P:\\tmp\\Err.txt");
-
-                    Debug.Assert(InfNorm_ErrMtx / l2_CV < 1);
                     
                     // FDJacobian has (Mx +b) as RHS, for unsteady calc. we must subtract Mx for real affine Vector!
                     OpMatrix.SpMV(-1.0, new CoordinateVector(CurrentState), 1.0, OpAffine);
