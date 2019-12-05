@@ -241,7 +241,7 @@ namespace BoSSS.Application.Rheology
         /// </summary>
         static public RheologyControl Wirdo(string path = null)
         {
-            int degree = 2;
+            int degree = 1;
             //BoSSS.Application.Rheology.SimpleTestcasesControl.Channel(degree:4,GridLevel:4)
             //path = @"C:\Users\kikker\AnnesBoSSSdb\Channel";
             RheologyControl C = new RheologyControl();
@@ -331,8 +331,8 @@ namespace BoSSS.Application.Rheology
 
             // Create Grid
             C.GridFunc = delegate {
-                var _xNodes = GenericBlas.Linspace(0, 20, 7);
-                var _yNodes = GenericBlas.Linspace(-1, 1, 5);
+                var _xNodes = GenericBlas.Linspace(0, 20, 2);
+                var _yNodes = GenericBlas.Linspace(-1, 1, 3);
                 //var _yNodes = GenericBlas.Linspace(0, 1, (cells2 / 4) + 1);
 
                 var grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes, CellType.Square_Linear, C.FixedStreamwisePeriodicBC);

@@ -60,11 +60,9 @@ namespace BoSSS.Solution.NSECommon {
         /// flux at the boundary
         /// </summary>
         double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
-            return 0.0;
             var _Uin = new Vector(Uin);
             Debug.Assert(inp.D == _Uin.Dim);
             
-
             IncompressibleBcType edgeType = m_bcmap.EdgeTag2Type[inp.EdgeTag];
 
             switch (edgeType) {
@@ -102,19 +100,12 @@ namespace BoSSS.Solution.NSECommon {
             var _Uin = new Vector(Uin);
             var _Uot = new Vector(Uout);
 
-            Vector Umean = (_Uin + _Uot) * 0.5;
-            if (Umean * inp.Normal >= 0) {
-                //dir = Xot.x - Xin.x;
-                r = _Uin * inp.Normal;// * _Uin[m_component];
-                BoSSS.Foundation.EdgeFormDifferentiator.Dir = 1;
+            Vector Umean =  (_Uin + _Uot) * 0.5;
+            if (Umean * inp.Normal > 0) {
+                r = _Uin * inp.Normal * _Uin[m_component];
             } else {
-                //dir = Xin.x - Xot.x;
-                r = _Uot * inp.Normal;// * _Uot[m_component];
-                r = 0;
-                BoSSS.Foundation.EdgeFormDifferentiator.Dir = -1;
+                r = _Uot * inp.Normal * _Uot[m_component];
             }
-
-            
 
             return r * m_rho;
         }
@@ -141,6 +132,7 @@ namespace BoSSS.Solution.NSECommon {
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double[] R = new double[m_SpatialDimension];
             Flux(ref cpv, U, R);
+            return 0.0;
             return -R.InnerProd(GradV);
         }
 

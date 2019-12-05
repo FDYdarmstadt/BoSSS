@@ -396,7 +396,7 @@ namespace BoSSS.Application.Rheology {
                     string[] Params = null; // ArrayTools.Cat(VariableNames.Velocity0Vector(D), VariableNames.Velocity0MeanVector(D), VariableNames.VelocityX_GradientVector(), VariableNames.VelocityY_GradientVector(), VariableNames.StressXXP, VariableNames.StressXYP, VariableNames.StressYYP, "artificialViscosity");
                     string[] DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure, VariableNames.StressXX, VariableNames.StressXY, VariableNames.StressYY);
 
-                    XOP = new SpatialOperator(DomName, Params, CodName, QuadOrderFunc.NonLinear(2));
+                    XOP = new SpatialOperator(DomName, Params, CodName, QuadOrderFunc.NonLinearWithoutParameters(2));
 
                     // Momentum equation
                     //================================================================================
@@ -411,6 +411,7 @@ namespace BoSSS.Application.Rheology {
                             Console.WriteLine("Rem: skipping convection.");
                         }
 
+                        /*
                         // pressure part:
                         var pres = new PressureGradientLin_d(d, BcMap);
                         comps.Add(pres);
@@ -452,8 +453,10 @@ namespace BoSSS.Application.Rheology {
 
                         // extra stress divergence part:
                         comps.Add(new StressDivergence_Cockburn(d, BcMap, this.Control.Reynolds, this.Control.Penalty1, this.Control.Penalty2));
+                        */
                     }
 
+                    /*
                     // Continuum equation
                     // ===============================================================================
                     for (int d = 0; d < D; d++) {
@@ -1000,12 +1003,13 @@ namespace BoSSS.Application.Rheology {
 
                     var CV = new CoordinateVector(CurrentState);
                     Random r = new Random(0);
-                    //for(int i = 0; i < CV.Length; i++) {
-                    //    CV[i] = r.NextDouble();
-                    //}
-                    CV.ClearEntries();
+                    for (int i = 0; i < CV.Length; i++) {
+                        CV[i] = r.NextDouble();
+                    }
+                    //CV.ClearEntries();
                     //CurrentState[0].ProjectField(X => 2 - X[1].Pow2());
-                    CurrentState[0].ProjectField((double[] X) => 2.0);
+                    //CurrentState[0].ProjectField((double[] X) => 2.0);
+                    //CurrentState[1].ProjectField((double[] X) => 0.2);
 
 
                     // Finite Difference Linearization
@@ -1015,6 +1019,41 @@ namespace BoSSS.Application.Rheology {
                         Dummy);
                     FDbuilder.OperatorCoefficients.UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
                     FDbuilder.ComputeMatrix(OpMatrix, OpAffine);
+
+                    /*{
+                        int L = OpMatrix.NoOfCols;
+                        MultidimensionalArray __OpMatrix = MultidimensionalArray.Create(L, L);
+                        double eps = BLAS.MachineEps.Sqrt();
+                        double[] F0 = new double[L];
+                        double[] F1 = new double[L];
+                        var eval = XOP.GetEvaluatorEx(CurrentState, null, domMap);
+                        
+                        ParameterUpdate(CurrentState, Params);
+                        eval.Evaluate(1.0, 0.0, F0);
+                        CoordinateVector CurrentStateVec = new CoordinateVector(CurrentState);
+                        var StateBkUp = CurrentStateVec.ToArray();
+                        double[] Diff = new double[L];
+                        for (int i = 0; i < L; i++) {
+                            double bkup = CurrentStateVec[i];
+                            CurrentStateVec[i] += eps;
+
+                            F1.Clear();
+                            ParameterUpdate(CurrentState, Params);
+                            eval.Evaluate(1.0, 0.0, F1);
+
+                            Diff.SetV(F1);
+                            Diff.AccV(-1.0, F0);
+                            Diff.ScaleV(1 / eps);
+
+                            __OpMatrix.SetColumn(i, Diff);
+
+
+                            CurrentStateVec[i] = bkup;
+                        }
+                        __OpMatrix.SaveToTextFile("P:\\tmp\\RefRef.txt");
+                    }*/
+
+                    Console.WriteLine();
 
                     // Jacobian
                     var JacParams = JacobiOp.ParameterUpdate;
@@ -1038,6 +1077,10 @@ namespace BoSSS.Application.Rheology {
 
                     double l2_CV = CV.MPI_L2Norm();
                     Console.WriteLine("  check L2 : " + l2_CV);
+
+                    //JacMtx.SaveToTextFileSparse("P:\\tmp\\Jac.txt");
+                    //OpMatrix.SaveToTextFileSparse("P:\\tmp\\Ref.txt");
+                    //ErrMtx.SaveToTextFileSparse("P:\\tmp\\Err.txt");
 
                     Debug.Assert(InfNorm_ErrMtx / l2_CV < 1);
                     
