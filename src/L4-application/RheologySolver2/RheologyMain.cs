@@ -404,14 +404,15 @@ namespace BoSSS.Application.Rheology {
                         var comps = XOP.EquationComponents[CodName[d]];
 
                         // convective part:
-                        if (!this.Control.Stokes && d < 1) {
+                        if (!this.Control.Stokes ) {
                             //comps.Add(new LinearizedConvection(D, BcMap, d));
-                            comps.Add(new UpwindMomentumConvection(D, BcMap, d, 1.0));
+                            //comps.Add(new UpwindMomentumConvection(D, BcMap, d, 1.0));
+                            comps.Add(new LocalLaxFriedrichsConvection(D, BcMap, d, 1.0));
                         } else {
-                            Console.WriteLine("Rem: skipping convection.");
+                            //Console.WriteLine("Rem: skipping convection.");
                         }
 
-                        /*
+                        
                         // pressure part:
                         var pres = new PressureGradientLin_d(d, BcMap);
                         comps.Add(pres);
@@ -453,10 +454,10 @@ namespace BoSSS.Application.Rheology {
 
                         // extra stress divergence part:
                         comps.Add(new StressDivergence_Cockburn(d, BcMap, this.Control.Reynolds, this.Control.Penalty1, this.Control.Penalty2));
-                        */
+                       
                     }
 
-                    /*
+                    
                     // Continuum equation
                     // ===============================================================================
                     for (int d = 0; d < D; d++) {
@@ -467,7 +468,7 @@ namespace BoSSS.Application.Rheology {
                         var presStab = new PressureStabilization(this.Control.PresPenalty2, this.Control.Reynolds);
                         XOP.EquationComponents["div"].Add(presStab);
                     }
-                    /*
+                    
                     // Constitutive equations
                     // ===============================================================================
 
@@ -507,7 +508,7 @@ namespace BoSSS.Application.Rheology {
                         XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Diffusion(this.StressXY.Basis.Degree, Grid.SpatialDimension, ((GridData)GridData).Cells.cj, VariableNames.StressXY));
                         XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Diffusion(this.StressYY.Basis.Degree, Grid.SpatialDimension, ((GridData)GridData).Cells.cj, VariableNames.StressYY));
                     }
-                    */
+                    
 
                     // Build spatial operator
                     XOP.Commit();
@@ -936,6 +937,64 @@ namespace BoSSS.Application.Rheology {
             }
         }
 
+        /// <summary>
+        /// Only for testing / NUnit:
+        /// checks whether the finite difference approximation of the Jacobian of <see cref="XOP"/>
+        /// and the Jacobian operator (<see cref="JacobiOp"/>)
+        /// provide approximately the same matrix and affine vector.
+        /// </summary>
+        internal void CheckJacobian() {
+
+            // initialize linearization point with random numbers
+            var CurrentState = this.CurrentSolution.Fields.Select(f => f.CloneAs()).ToArray();
+            var CurrentVector = new CoordinateVector(CurrentState);
+            Random r = new Random(0); // seed of 0 guarantees the same random numbers on every run
+            int L = CurrentVector.Count;
+            for (int i = 0; i < L; i++) {
+                CurrentVector[i] = r.NextDouble();
+            }
+
+            var domMap = CurrentVector.Mapping;
+            var codMap = domMap;
+            Assert.IsTrue(codMap.EqualsPartition(this.CurrentResidual.Mapping));
+
+            // Finite Difference Linearization
+            var FDbuilder = XOP.GetFDJacobianBuilder(domMap, null, codMap, null);
+            FDbuilder.OperatorCoefficients.UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
+            var JacobianFD = new BlockMsrMatrix(codMap, domMap);
+            var AffineFD = new double[JacobianFD.NoOfRows];
+            FDbuilder.ComputeMatrix(JacobianFD, AffineFD);
+
+            // Jacobian Operator
+            var JacParams = JacobiOp.ParameterUpdate;
+            var TmpParams = JacParams.AllocateParameters(CurrentState);
+            var map = new CoordinateMapping(CurrentState);
+            var JacBuilder = JacobiOp.GetMatrixBuilder(map, TmpParams, map);
+            JacParams.ParameterUpdate(CurrentState, TmpParams);
+            var JacobiDX = new BlockMsrMatrix(map);
+            var AffineDX = new double[map.LocalLength];
+            JacBuilder.ComputeMatrix(JacobiDX, AffineDX);
+
+            // Comparison
+            Console.WriteLine("Comparison of finite difference and direct Jacobian matrix:");
+            var ErrMtx = JacobianFD.CloneAs();
+            ErrMtx.Acc(-1.0, JacobiDX);
+            double InfNorm_ErrMtx = ErrMtx.InfNorm();
+            Console.WriteLine("  Jacobian Matrix Delta Norm: " + InfNorm_ErrMtx);
+
+            var ErrAff = AffineFD.CloneAs();
+            ErrAff.AccV(-1.0, AffineDX);
+            double InfNorm_ErrAff = ErrAff.MPI_L2Norm();
+            Console.WriteLine("  Affine Vector Delta Norm: " + InfNorm_ErrAff);
+
+            // Error Threshold checks
+            double DenomM = (JacobianFD.InfNorm(), JacobiDX.InfNorm()).Max();
+            Assert.Less(InfNorm_ErrMtx / DenomM, 0.01, "Mismatch in between finite difference Jacobi matrix and direct Jacobi matrix");
+
+            double DenomA = (CurrentVector.MPI_L2Norm(), AffineFD.MPI_L2Norm(), AffineDX.MPI_L2Norm()).Max();
+            Assert.Less(InfNorm_ErrAff / DenomA, 0.01, "Mismatch in Affine Vector between finite difference Jacobi and direct Jacobi");
+        }
+
 
         /// <summary>
         /// Computation of operator matrix to be used by DelComputeOperatorMatrix, the SpatialOperatorAnalysis and some unit tests(<see cref="m_BDF_Timestepper"/>).
@@ -1006,8 +1065,8 @@ namespace BoSSS.Application.Rheology {
                     for (int i = 0; i < CV.Length; i++) {
                         CV[i] = r.NextDouble();
                     }
-                    //CV.ClearEntries();
-                    //CurrentState[0].ProjectField(X => 2 - X[1].Pow2());
+                    CV.ClearEntries();
+                    CurrentState[0].ProjectField(X => 2 - X[1].Pow2());
                     //CurrentState[0].ProjectField((double[] X) => 2.0);
                     //CurrentState[1].ProjectField((double[] X) => 0.2);
 
@@ -1019,42 +1078,7 @@ namespace BoSSS.Application.Rheology {
                         Dummy);
                     FDbuilder.OperatorCoefficients.UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
                     FDbuilder.ComputeMatrix(OpMatrix, OpAffine);
-
-                    /*{
-                        int L = OpMatrix.NoOfCols;
-                        MultidimensionalArray __OpMatrix = MultidimensionalArray.Create(L, L);
-                        double eps = BLAS.MachineEps.Sqrt();
-                        double[] F0 = new double[L];
-                        double[] F1 = new double[L];
-                        var eval = XOP.GetEvaluatorEx(CurrentState, null, domMap);
-                        
-                        ParameterUpdate(CurrentState, Params);
-                        eval.Evaluate(1.0, 0.0, F0);
-                        CoordinateVector CurrentStateVec = new CoordinateVector(CurrentState);
-                        var StateBkUp = CurrentStateVec.ToArray();
-                        double[] Diff = new double[L];
-                        for (int i = 0; i < L; i++) {
-                            double bkup = CurrentStateVec[i];
-                            CurrentStateVec[i] += eps;
-
-                            F1.Clear();
-                            ParameterUpdate(CurrentState, Params);
-                            eval.Evaluate(1.0, 0.0, F1);
-
-                            Diff.SetV(F1);
-                            Diff.AccV(-1.0, F0);
-                            Diff.ScaleV(1 / eps);
-
-                            __OpMatrix.SetColumn(i, Diff);
-
-
-                            CurrentStateVec[i] = bkup;
-                        }
-                        __OpMatrix.SaveToTextFile("P:\\tmp\\RefRef.txt");
-                    }*/
-
-                    Console.WriteLine();
-
+                                     
                     // Jacobian
                     var JacParams = JacobiOp.ParameterUpdate;
                     var TmpParams = JacParams.AllocateParameters(CurrentState);
@@ -1084,7 +1108,6 @@ namespace BoSSS.Application.Rheology {
 
                     Debug.Assert(InfNorm_ErrMtx / l2_CV < 1);
                     
-
                     // FDJacobian has (Mx +b) as RHS, for unsteady calc. we must subtract Mx for real affine Vector!
                     OpMatrix.SpMV(-1.0, new CoordinateVector(CurrentState), 1.0, OpAffine);
 

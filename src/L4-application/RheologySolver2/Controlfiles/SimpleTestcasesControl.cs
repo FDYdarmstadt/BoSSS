@@ -37,7 +37,7 @@ using BoSSS.Solution.XdgTimestepping;
 namespace BoSSS.Application.Rheology
 {
     /// <summary>
-    /// Control file of all simple testcases for debugging purpose, e.g. channel or cnsistency checks
+    /// Control file of all simple testcases for debugging purpose, e.g. channel or consistency checks
     /// </summary>
     static public class SimpleTestcasesControl
     {

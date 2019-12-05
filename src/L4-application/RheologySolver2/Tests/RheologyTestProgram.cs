@@ -196,6 +196,7 @@ namespace BoSSS.Application.Rheology
 
                 solver.Init(C);
                 solver.RunSolverMode();
+                solver.CheckJacobian();
 
                 // matrix analysis
                 // ===============
