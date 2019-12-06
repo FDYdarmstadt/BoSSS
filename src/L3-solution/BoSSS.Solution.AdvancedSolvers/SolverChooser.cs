@@ -646,7 +646,7 @@ namespace BoSSS.Solution {
                     break;
 
                 case LinearSolverCode.exp_gmres_levelpmg:
-                    _precond = new LevelPmg() { UseHiOrderSmoothing = true, CoarseLowOrder=3 };
+                    _precond = new LevelPmg() { UseHiOrderSmoothing = true, CoarseLowOrder=1 };
                     //_precond = new SparseSolver() { WhichSolver = SparseSolver._whichSolver.PARDISO };
                     SetLinItCallback(_precond, isNonLinPrecond, IsLinPrecond: true);
                     templinearSolve = new SoftGMRES() {

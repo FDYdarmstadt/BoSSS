@@ -247,5 +247,6 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [DataMember]
         public string Parallelism = "SEQ";
+
     }
 }
