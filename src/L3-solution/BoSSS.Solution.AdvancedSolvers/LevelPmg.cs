@@ -164,6 +164,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 #if TEST
             var debugerSW = new StreamWriter(String.Concat("debug_of_", ilPSP.Environment.MPIEnv.MPI_Rank));
+            Console.WriteLine("variable TEST is defined");
             //debugerSW.WriteLine("proc {0} reporting Num of Blocks {1}", ilPSP.Environment.MPIEnv.MPI_Rank, HighOrderBlocks_LUpivots.Length);
 #endif
 
