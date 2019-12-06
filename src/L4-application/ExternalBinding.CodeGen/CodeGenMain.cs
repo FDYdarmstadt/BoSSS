@@ -10,6 +10,7 @@ using ilPSP;
 using ilPSP.Connectors;
 using ilPSP.Utils;
 
+
 namespace BoSSS.Application.ExternalBinding.CodeGen {
 
     /// <summary>
@@ -714,9 +715,6 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
 
             // write code
             // ==========
-
-            //string outputDir = @"C:\Users\florian\Documents\Visual Studio 2017\Projects\ExtBindingTest\ExtBindingTest";
-            //string outputDir = @"C:\tmp\ExtBindingTest";
 
             foreach(var Cf in Cppfiles) {
                 Cf.WriteFile(outputDir);

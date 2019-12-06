@@ -40,6 +40,7 @@ using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using CNS.Convection;
 using BoSSS.Foundation.Grid;
 using ilPSP.Utils;
+using BoSSS.Solution.Statistic;
 
 namespace CNS {
 
@@ -289,6 +290,44 @@ namespace CNS {
                 // Create TimeInformation object in order to make information available for
                 // the time stepper
                 TimeStepper.UpdateTimeInfo(new TimeInformation(TimestepNo, phystime, dt));
+
+                //#region Evaluate operator for testing
+                //// Evaluate the operator
+                //CoordinateMapping mapping = new CoordinateMapping(WorkingSet.ConservativeVariables);
+                //double[] OpAffine = new double[mapping.LocalLength];
+                //SpatialOperator spatialOperator = FullOperator.ToSpatialOperator(WorkingSet);
+                //IEvaluatorNonLin_ ev = spatialOperator.GetEvaluatorEx(WorkingSet.ConservativeVariables, null, mapping);
+                //ev.Evaluate(1.0, 0.0, OpAffine, null);
+                //#endregion
+
+                //// Sample points
+                //int noOfPoints = 1000;
+                //double[] nodes = GenericBlas.Linspace(0.0, 1.0, noOfPoints);
+                //MultidimensionalArray points = MultidimensionalArray.Create(noOfPoints, 2);
+                //for (int i = 0; i < noOfPoints; i++) {
+                //    points[i, 0] = nodes[i];
+                //    points[i, 1] = 0.5;
+                //}
+
+                // FieldEvaluation
+                //MultidimensionalArray results = MultidimensionalArray.Create(noOfPoints, Resi.Length);
+                //for (int i = 0; i < Residuals.Length; i++) {
+                //    FieldEvaluation fieldEvaluator = new FieldEvaluation((GridData)this.GridData);
+                //    fieldEvaluator.Evaluate(1.0, Residuals, points, 0.0, results);
+                //}
+
+                //// StreamWriter
+                //using (System.IO.StreamWriter sw = new System.IO.StreamWriter(String.Format("Residuals{0}.txt", timestepNo))) {
+                //    //Console.WriteLine("x \t y \t result");
+                //    sw.WriteLine("x \t y \t rho \t xMom \t yMom \t rhoE");
+                //    string resultLine;
+                //    for (int i = 0; i < noOfPoints; i++) {
+                //        resultLine = points[i, 0] + "\t" + points[i, 1] + "\t" + results[i, 0] + "\t" + results[i, 1] + "\t" + results[i, 2] + "\t" + results[i, 3] + "\t";
+                //        //Console.WriteLine(resultLine);
+                //        sw.WriteLine(resultLine);
+                //    }
+                //    sw.Flush();
+                //}
 
                 using (new BlockTrace("TimeStepper.Perform", ht)) {
                     Exception e = null;

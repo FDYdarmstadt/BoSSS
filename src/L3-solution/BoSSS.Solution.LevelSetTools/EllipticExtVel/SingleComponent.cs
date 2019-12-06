@@ -72,9 +72,9 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
         /// <param name="Grad_vA">not needed</param>
         /// <param name="Grad_vB">not needed</param>
         /// <returns>the evaluated penalty flux</returns>
-        public double LevelSetForm(ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            double NegCellLengthScale = NegCellLengthScaleS[inp.jCell];
-            double PosCellLengthScale = (PosCellLengthScaleS != null) ? PosCellLengthScaleS[inp.jCell] : NegCellLengthScaleS[inp.jCell];
+        public double LevelSetForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+            double NegCellLengthScale = NegCellLengthScaleS[inp.jCellIn];
+            double PosCellLengthScale = (PosCellLengthScaleS != null) ? PosCellLengthScaleS[inp.jCellOut] : NegCellLengthScaleS[inp.jCellOut];
 
 
             double hmin;
@@ -89,7 +89,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
             }
 
             //return PenaltyBase * 2 / hmin * (uA[0] + uB[0] - inp.ParamsNeg[0] - inp.ParamsPos[0]) * (vA+vB) /4 ;
-            return PenaltyBase * 2 / hmin * (uA[0] - inp.ParamsNeg[0]) * (vA);
+            return PenaltyBase * 2 / hmin * (uA[0] - inp.Parameters_IN[0]) * (vA);
             //return PenaltyBase * 2 / hmin * (uB[0] - inp.ParamsPos[0]) * (vB);
         }
 

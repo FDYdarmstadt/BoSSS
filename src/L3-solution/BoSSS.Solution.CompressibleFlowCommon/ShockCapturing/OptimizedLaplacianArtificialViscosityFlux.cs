@@ -136,8 +136,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             double nuB = inp.Parameters_OUT[0];
 
             for (int d = 0; d < inp.D; d++) {
-                Acc -= 0.5 * (nuA * _Grad_uA[0, d] + nuB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
-                Acc -= 0.5 * (nuA * _Grad_vA[d] + nuB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
+                Acc -= 0.5 * (nuA * _Grad_uA[0, d] + nuB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normal[d];  // consistency term
+                Acc -= 0.5 * (nuA * _Grad_vA[d] + nuB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normal[d];  // symmetry term
             }
 
             double nuMax = (Math.Abs(nuA) > Math.Abs(nuB)) ? nuA : nuB;

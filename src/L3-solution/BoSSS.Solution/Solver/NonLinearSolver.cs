@@ -104,6 +104,11 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [DataMember]
         public int constantNewtonIterations = 1;
+
+        /// <summary>
+        /// When pressure ref point can not be used (Option: false), a mean pressure field is calculated and substracted from the current pressure field.
+        /// </summary>
+        public bool UsePresRefPoint = true;
     }
 
 }

@@ -515,7 +515,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// If true, the residual will we transformed back to the original XDG basis (before agglomeration and block preconditioning)
         /// before the L2-norm is computed.
         /// </summary>
-        public bool m_TransformedResi = false;//false;
+        public bool m_TransformedResi = true;
 
         /// <summary>
         /// Logging of residuals (provisional).

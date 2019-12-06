@@ -74,9 +74,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
                 // 2 * {u_i * u_j} * n_j,
                 // same as standard flux without outer values
-                flx += rhoIn * Uin[0] * (inp.Parameters_IN[0] * inp.Normale[0] + inp.Parameters_IN[1] * inp.Normale[1]);
+                flx += rhoIn * Uin[0] * (inp.Parameters_IN[0] * inp.Normal[0] + inp.Parameters_IN[1] * inp.Normal[1]);
                 if(m_SpatialDimension == 3) {
-                    flx += rhoIn * Uin[0] * inp.Parameters_IN[2] * inp.Normale[2];
+                    flx += rhoIn * Uin[0] * inp.Parameters_IN[2] * inp.Normal[2];
                 }
 
                 // Calculate dissipative part

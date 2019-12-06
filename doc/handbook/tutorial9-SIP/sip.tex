@@ -166,14 +166,14 @@ public class SipLaplace :\newline
  \newline 
 \btab \btab double Acc = 0.0;\newline 
 \btab \btab for(int d = 0; d < inp.D; d++) \{ // loop over vector components \newline 
-\btab \btab \btab // consistency term: -(\{\{ \textbackslash /u \}\} [[ v ]])*Normale\newline 
+\btab \btab \btab // consistency term: -(\{\{ \textbackslash /u \}\} [[ v ]])*Normal\newline 
 \btab \btab \btab // index d: spatial direction\newline 
 \btab \btab \btab Acc -= 0.5 * (GradU\_IN[0, d] + GradU\_OT[0, d])*(V\_IN - V\_OT)\newline 
-\btab \btab \btab \btab \btab    * inp.Normale[d];\newline 
+\btab \btab \btab \btab \btab    * inp.Normal[d];\newline 
  \newline 
-\btab \btab \btab // symmetry term: -(\{\{ \textbackslash /v \}\} [[ u ]])*Normale\newline 
+\btab \btab \btab // symmetry term: -(\{\{ \textbackslash /v \}\} [[ u ]])*Normal\newline 
 \btab \btab \btab Acc -= 0.5 * (GradV\_IN[d] + GradV\_OT[d])*(U\_IN[0] - U\_OT[0])\newline 
-\btab \btab \btab \btab \btab    * inp.Normale[d];;\newline 
+\btab \btab \btab \btab \btab    * inp.Normal[d];\newline 
 \btab \btab \}\newline 
  \newline 
 \btab \btab // penalty term: eta*[[u]]*[[v]]\newline 
@@ -197,10 +197,10 @@ public class SipLaplace :\newline
 \btab \btab for(int d = 0; d < inp.D; d++) \{ // loop over vector components \newline 
 \btab \btab \btab // consistency term: -(\{\{ \textbackslash /u \}\} [[ v ]])*Normale\newline 
 \btab \btab \btab // index d: spatial direction\newline 
-\btab \btab \btab Acc -= (GradU\_IN[0, d])*(V\_IN) * inp.Normale[d];\newline 
+\btab \btab \btab Acc -= (GradU\_IN[0, d])*(V\_IN) * inp.Normal[d];\newline 
  \newline 
 \btab \btab \btab // symmetry term: -(\{\{ \textbackslash /v \}\} [[ u ]])*Normale\newline 
-\btab \btab \btab Acc -= (GradV\_IN[d])*(U\_IN[0]) * inp.Normale[d];;\newline 
+\btab \btab \btab Acc -= (GradV\_IN[d])*(U\_IN[0]) * inp.Normal[d];\newline 
 \btab \btab \}\newline 
  \newline 
 \btab \btab // penalty term: eta*[[u]]*[[v]]\newline 

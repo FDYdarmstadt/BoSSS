@@ -224,7 +224,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
             {
                 GradUGradPhi += Grad_uA[0, d] * inp.Parameters_IN[d];
                 GradVGradPhi += Grad_vA[d] * inp.Parameters_IN[d];
-                nGradPhi += inp.Normale[d] * inp.Parameters_IN[d];
+                nGradPhi += inp.Normal[d] * inp.Parameters_IN[d];
                 AbsGradPhi += inp.Parameters_IN[d] * inp.Parameters_IN[d];
             }
             AbsGradPhi = Math.Sqrt(AbsGradPhi) + myEps;
@@ -236,7 +236,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
             // Central Differences for Isotropic Viscosity
             //============================================
             for (int d = 0; d < inp.D; d++){
-                Acc += IsotropicViscosity *  (Grad_uA[0, d]) * (vA) * inp.Normale[d] ;
+                Acc += IsotropicViscosity *  (Grad_uA[0, d]) * (vA) * inp.Normal[d] ;
              //   Acc += IsotropicViscosity *  (Grad_vA[d]   ) * (uA - uOut[0]) * inp.Normale[d];
             }
             Acc -= IsotropicViscosity * GradUGradPhi * vA * nGradPhi;
@@ -301,7 +301,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
                 GradVAGradPhi += Grad_vA[d] * inp.Parameters_IN[d];
                 GradVBGradPhi += Grad_vB[d] * inp.Parameters_OUT[d];
                 GradUBGradPhi += Grad_uB[0, d] * inp.Parameters_OUT[d];
-                nGradPhi += inp.Normale[d] * 0.5 * (inp.Parameters_IN[d] + inp.Parameters_OUT[d]);
+                nGradPhi += inp.Normal[d] * 0.5 * (inp.Parameters_IN[d] + inp.Parameters_OUT[d]);
             }
             Acc += 0.5 * (GradUAGradPhi + GradUBGradPhi) * (vA - vB) * nGradPhi;
             Acc += 0.5 * (GradVAGradPhi + GradVBGradPhi) * (uA[0] - uB[0]) * nGradPhi;
@@ -311,8 +311,8 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
             double deltaKA = 0;
             double deltaKB = 0;
             for (int d = 0; d < D; d++) {
-                deltaKA = inp.Parameters_IN[d] * inp.Normale[d];
-                deltaKB = inp.Parameters_OUT[d] * inp.Normale[d];
+                deltaKA = inp.Parameters_IN[d] * inp.Normal[d];
+                deltaKB = inp.Parameters_OUT[d] * inp.Normal[d];
             }
             deltaKA = deltaKA * deltaKA;
             deltaKB = deltaKB * deltaKB;
@@ -367,7 +367,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
         double ScalarVelocity(CommonParamsBnd inp) {
             double S0 = 0; // velocity in normal direction, at the interface
             for (int d = 0; d < D; d++) {
-                S0 += inp.Normale[d] * inp.Parameters_IN[d];
+                S0 += inp.Normal[d] * inp.Parameters_IN[d];
             }
             return S0;
         }
@@ -419,8 +419,8 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
                 GradVInGradPhi += Grad_vIn[d] * inp.Parameters_IN[d];
                 GradVOutGradPhi += Grad_vOut[d] * inp.Parameters_OUT[d];
                 GradUOutGradPhi += Grad_uOut[0, d] * inp.Parameters_OUT[d];
-                nGradPhiIn += inp.Normale[d] * inp.Parameters_IN[d];
-                nGradPhiOut += inp.Normale[d] * inp.Parameters_OUT[d];
+                nGradPhiIn += inp.Normal[d] * inp.Parameters_IN[d];
+                nGradPhiOut += inp.Normal[d] * inp.Parameters_OUT[d];
                 AbsGradPhiIn += inp.Parameters_IN[d] * inp.Parameters_IN[d];
                 AbsGradPhiOut += inp.Parameters_OUT[d] * inp.Parameters_OUT[d];
             }
@@ -443,8 +443,8 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
             double Direction_IN = 0;
             double Direction_OUT = 0;
             for (int d = 0; d < inp.D; d++){
-                Direction_IN += inp.Parameters_IN[d + D + 1] * inp.Normale[d] * Math.Sign(inp.Parameters_IN[D]);
-                Direction_OUT += inp.Parameters_OUT[d + D + 1] * inp.Normale[d] * Math.Sign(inp.Parameters_OUT[D]);
+                Direction_IN += inp.Parameters_IN[d + D + 1] * inp.Normal[d] * Math.Sign(inp.Parameters_IN[D]);
+                Direction_OUT += inp.Parameters_OUT[d + D + 1] * inp.Normal[d] * Math.Sign(inp.Parameters_OUT[D]);
                 AbsGradPhiMeanIn += inp.Parameters_IN[d + D + 1] * inp.Parameters_IN[d + D + 1];
                 AbsGradPhiMeanOut += inp.Parameters_OUT[d + D + 1] * inp.Parameters_OUT[d + D + 1];
             }
@@ -468,8 +468,8 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
                 Acc -= (uIn[0] - uOut[0]) * (vIn - vOut) * 1.5 * pnlty;
 
                 for (int d = 0; d < inp.D; d++) {
-                    Acc += IsotropicViscosity * 0.5 * (Grad_uIn[0, d] + Grad_uOut[0, d]) * (vIn - vOut) * inp.Normale[d];
-                    Acc += IsotropicViscosity * 0.5 * (Grad_vIn[d] + Grad_vOut[d]) * (uIn[0] - uOut[0]) * inp.Normale[d];
+                    Acc += IsotropicViscosity * 0.5 * (Grad_uIn[0, d] + Grad_uOut[0, d]) * (vIn - vOut) * inp.Normal[d];
+                    Acc += IsotropicViscosity * 0.5 * (Grad_vIn[d] + Grad_vOut[d]) * (uIn[0] - uOut[0]) * inp.Normal[d];
                 }
                 Acc -= IsotropicViscosity * (uIn[0] - uOut[0]) * (vIn - vOut) * 1.5 * pnlty;
 
@@ -505,8 +505,8 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
             // Central Differences for Isotropic Viscosity
             //============================================
             for (int d = 0; d < inp.D; d++) {
-                Acc += IsotropicViscosity * 0.5 * (Grad_uIn[0, d] + Grad_uOut[0, d]) * (vIn - vOut) * inp.Normale[d];
-                Acc += IsotropicViscosity * 0.5 * (Grad_vIn[d] + Grad_vOut[d]) * (uIn[0] - uOut[0]) * inp.Normale[d];
+                Acc += IsotropicViscosity * 0.5 * (Grad_uIn[0, d] + Grad_uOut[0, d]) * (vIn - vOut) * inp.Normal[d];
+                Acc += IsotropicViscosity * 0.5 * (Grad_vIn[d] + Grad_vOut[d]) * (uIn[0] - uOut[0]) * inp.Normal[d];
             }
             Acc -= IsotropicViscosity * (uIn[0] - uOut[0]) * (vIn - vOut) * 1.5 * pnlty;
 
@@ -539,7 +539,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
             {
                 GradUGradPhi += Grad_uA[0, d] * inp.Parameters_IN[d];                    
                 GradVGradPhi += Grad_vA[d] * inp.Parameters_IN[d];
-                nGradPhi += inp.Normale[d] * inp.Parameters_IN[d];
+                nGradPhi += inp.Normal[d] * inp.Parameters_IN[d];
                 AbsGradPhi += inp.Parameters_IN[d] * inp.Parameters_IN[d];
             }
             AbsGradPhi = Math.Sqrt(AbsGradPhi) + myEps;
@@ -552,7 +552,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
             //============================================
             for (int d = 0; d < inp.D; d++)
             {
-                Acc += IsotropicViscosity * (Grad_uA[0, d]) * (vA) * inp.Normale[d];
+                Acc += IsotropicViscosity * (Grad_uA[0, d]) * (vA) * inp.Normal[d];
                 //   Acc += IsotropicViscosity *  (Grad_vA[d]   ) * (uA - uOut[0]) * inp.Normale[d];
             }
             Acc -= IsotropicViscosity * GradUGradPhi * vA * nGradPhi;
@@ -568,7 +568,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
             for (int d = 0; d < inp.D; d++){
                 // No normalization required, since we are only using one component.
                 //Thus the sign is indepoendent of the absolute value.
-                Direction += inp.Parameters_IN[d + D + 1] * inp.Normale[d] * Math.Sign(inp.Parameters_IN[D]);
+                Direction += inp.Parameters_IN[d + D + 1] * inp.Normal[d] * Math.Sign(inp.Parameters_IN[D]);
             }
             
             
@@ -653,8 +653,8 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
                 GradVInGradPhi += Grad_vIn[d] * inp.Parameters_IN[d];
                 GradVOutGradPhi += Grad_vOut[d] * inp.Parameters_OUT[d];
                 GradUOutGradPhi += Grad_uOut[0, d] * inp.Parameters_OUT[d];
-                nGradPhiIn += inp.Normale[d] * inp.Parameters_IN[d];
-                nGradPhiOut += inp.Normale[d] * inp.Parameters_OUT[d];
+                nGradPhiIn += inp.Normal[d] * inp.Parameters_IN[d];
+                nGradPhiOut += inp.Normal[d] * inp.Parameters_OUT[d];
                 AbsGradPhiIn += inp.Parameters_IN[d] * inp.Parameters_IN[d];
                 AbsGradPhiOut += inp.Parameters_OUT[d] * inp.Parameters_OUT[d];
             }

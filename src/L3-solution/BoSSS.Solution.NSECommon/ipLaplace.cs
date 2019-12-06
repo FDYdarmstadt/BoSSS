@@ -186,8 +186,8 @@ namespace BoSSS.Solution.NSECommon {
 
 
             for(int d = 0; d < inp.D; d++) {
-                Acc += 0.5 * (nuA * _Grad_uA[0, d] + nuB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
-                Acc += 0.5 * (nuA * _Grad_vA[d] + nuB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
+                Acc += 0.5 * (nuA * _Grad_uA[0, d] + nuB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normal[d];  // consistency term
+                Acc += 0.5 * (nuA * _Grad_vA[d] + nuB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normal[d];  // symmetry term
             }
             Acc *= this.m_alpha;
 
@@ -217,7 +217,7 @@ namespace BoSSS.Solution.NSECommon {
                 double g_D = this.g_Diri(ref inp);
 
                 for(int d = 0; d < inp.D; d++) {
-                    double nd = inp.Normale[d];
+                    double nd = inp.Normal[d];
                     Acc += (nuA * _Grad_uA[0, d]) * (_vA) * nd;        // consistency
                     Acc += (nuA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;  // symmetry
                 }
