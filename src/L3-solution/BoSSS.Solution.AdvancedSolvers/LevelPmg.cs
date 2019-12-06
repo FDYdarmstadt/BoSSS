@@ -167,20 +167,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //debugerSW.WriteLine("proc {0} reporting Num of Blocks {1}", ilPSP.Environment.MPIEnv.MPI_Rank, HighOrderBlocks_LUpivots.Length);
 #endif
 
-            var DGlowSelect = new SubBlockSelector(op);
+            var DGlowSelect = new SubBlockSelector();
             DGlowSelect.ModeSelector((int x) => x <= CoarseLowOrder);
-            lMask = new BlockMask(DGlowSelect);
+            lMask = new BlockMask(DGlowSelect, op.Mapping);
             m_lowMaskLen = lMask.LocalDOF;
 
-            var DGhighSelect = new SubBlockSelector(op);
+            var DGhighSelect = new SubBlockSelector();
             DGhighSelect.ModeSelector((int x) => x > CoarseLowOrder);
-            hMask = new BlockMask(DGhighSelect);
+            hMask = new BlockMask(DGhighSelect, op.Mapping);
             m_highMaskLen = hMask.LocalDOF;
 
             BlockMsrMatrix P01HiMatrix=null;
 
             if(UseDiagonalPmg) {
-                HighOrderBlocks_LU = hMask.GetSubBlocks(true, false, false);
+                HighOrderBlocks_LU = hMask.GetSubBlocks(op.OperatorMatrix,true, false, false);
                 int NoOfBlocks = HighOrderBlocks_LU.Length;
                 HighOrderBlocks_LUpivots = new int[NoOfBlocks][];
 
@@ -190,7 +190,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     HighOrderBlocks_LU[jLoc].FactorizeLU(HighOrderBlocks_LUpivots[jLoc]);
                 }
             } else {
-                P01HiMatrix = hMask.GetSubBlockMatrix(true, false, true);
+                P01HiMatrix = hMask.GetSubBlockMatrix(op.OperatorMatrix,true, false, true);
 
                 hiSolver = new PARDISOSolver() {
                     CacheFactorization = true,
@@ -200,7 +200,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
 
-            var P01SubMatrix = lMask.GetSubBlockMatrix();
+            var P01SubMatrix = lMask.GetSubBlockMatrix(op.OperatorMatrix);
 
             intSolver = new PARDISOSolver() {
                 CacheFactorization = true,

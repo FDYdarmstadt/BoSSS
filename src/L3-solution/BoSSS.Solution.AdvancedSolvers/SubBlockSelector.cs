@@ -45,12 +45,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Specifies, which blocks in a matrix shall be selected. Blocksubdivision Default: Selects all blocks.  
         /// </summary>
-        /// <param name="mgo"></param>
-        public SubBlockSelector(MultigridOperator mgo) {
-            m_mgo = mgo;
-            m_map = mgo.Mapping;
-            m_AggBS = mgo.Mapping.AggBasis;
-            m_DG = mgo.Mapping.DgDegree;
+        /// <param name="map"></param>
+        public SubBlockSelector() {
             this.CellSelector();
             this.VariableSelector();
             this.SpeciesSelector();
@@ -58,10 +54,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         //internal get
-        private MultigridOperator m_mgo;
         private MultigridMapping m_map;
-        private AggregationGridBasis[] m_AggBS;
-        private int[] m_DG;
         //internal set
         private Func<int, bool> m_CellSelInstruction = null;
         private Func<int, int, bool> m_VariableSelInstruction = null;
@@ -98,14 +91,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             if (global) {
                 //translate into local index ...
-                CellIdx -= m_mgo.Mapping.i0;
+                CellIdx -= m_map.i0;
 
                 int idxfound = 0;
-                if (m_mgo.Mapping.i0 <= CellIdx && m_mgo.Mapping.iE >= CellIdx)
+                if (m_map.i0 <= CellIdx && m_map.iE >= CellIdx)
                     idxfound = 1;
                 Debug.Assert(idxfound.MPISum()==1);
 
-                if (m_mgo.Mapping.i0 > CellIdx || m_mgo.Mapping.iE < CellIdx) {
+                if (m_map.i0 > CellIdx || m_map.iE < CellIdx) {
                     this.m_CellSelInstruction = GetDoNothingInstruction();
                     return this;
                 }
@@ -121,8 +114,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="global"></param>
         /// <returns></returns>
         public SubBlockSelector CellSelector(List<int> ListOfCellIdx, bool global=true) {
-            int LocNoOfBlocks = m_mgo.Mapping.LocalNoOfBlocks;
-            int GlobNoOfBlocks = m_mgo.Mapping.TotalNoOfBlocks;
+            int LocNoOfBlocks = m_map.LocalNoOfBlocks;
+            int GlobNoOfBlocks = m_map.TotalNoOfBlocks;
 
             foreach (int CellIdx in ListOfCellIdx) {
                 if (global) {
@@ -139,10 +132,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (global) {
                 foreach (int CellIdx in ListOfCellIdx) {
                     int tmpIdx = CellIdx;
-                    tmpIdx -= m_mgo.Mapping.i0;
+                    tmpIdx -= m_map.i0;
 
                     int idxfound = 0;
-                    if (m_mgo.Mapping.i0 <= tmpIdx && m_mgo.Mapping.iE >= tmpIdx)
+                    if (m_map.i0 <= tmpIdx && m_map.iE >= tmpIdx)
                         idxfound = 1;
                     Debug.Assert(idxfound.MPISum()==1);
 
@@ -337,16 +330,37 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public Func<int, int, int, int,bool> GetModeInstruction {
             get { return m_ModeSelInstruction; }
         }
-        
+
 
         /// <summary>
         /// gets the multigrid operator on which this selector shall work on 
         /// </summary>
-        public MultigridOperator GetMultigridOperator {
-            get {
-                return m_mgo;
+        public MultigridMapping SetMapping {
+            set {
+                m_map=value;
             }
         }
+
+        private AggregationGridBasis[] m_AggBS {
+            get {
+                if (m_map != null) {
+                    return m_map.AggBasis;
+                } else {
+                    throw new Exception("No Mapping set.");
+                }
+            }
+        }
+
+        private int[] m_DG {
+            get {
+                if (m_map != null) {
+                    return m_map.DgDegree;
+                } else {
+                    throw new Exception("No Mapping set.");
+                }
+            }
+        }
+
         #endregion
     }
 
@@ -409,12 +423,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Generates Block Mask from Sub block selection. Sub matrix can be generated of the mutligrid operator overgiven to Sub block selection. It also contains methods to translate Vectors from full matrix to sub matrix and vice versa.
         /// </summary>
         /// <param name="SBS"></param>
-        public BlockMask(SubBlockSelector SBS) {
-            m_mgo = SBS.GetMultigridOperator;
+        public BlockMask(SubBlockSelector SBS, MultigridMapping map) {
+            SBS.SetMapping=map;
             m_sbs = SBS;
-            m_map = m_mgo.Mapping;
-            m_AggBS = m_mgo.Mapping.AggBasis;
-            m_DG = m_mgo.Mapping.DgDegree;
+            m_AggBS = m_map.AggBasis;
+            m_DG = m_map.DgDegree;
             m_Ni0 = Ni0Gen();
             m_NoOfCells = m_map.LocalNoOfBlocks;
             m_NoOfVariables = m_AggBS.Length;
@@ -431,7 +444,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         //internal get
-        private MultigridOperator m_mgo;
         private SubBlockSelector m_sbs;
         private MultigridMapping m_map;
         private AggregationGridBasis[] m_AggBS;
@@ -712,10 +724,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// Get Array of CellBlocks
+        /// Get Array of Cellblocks
         /// </summary>
+        /// <param name="target"></param>
+        /// <param name="ignoreCellCoupling"></param>
+        /// <param name="ignoreVarCoupling"></param>
+        /// <param name="ignoreSpecCoupling"></param>
         /// <returns></returns>
-        public MultidimensionalArray[] GetSubBlocks(bool ignoreCellCoupling, bool ignoreVarCoupling, bool ignoreSpecCoupling) {
+        public MultidimensionalArray[] GetSubBlocks(BlockMsrMatrix target, bool ignoreCellCoupling, bool ignoreVarCoupling, bool ignoreSpecCoupling) {
             int NoOfCells = m_StructuredNi0.Length;
             int size = ignoreCellCoupling ? NoOfCells : NoOfCells * NoOfCells;
 
@@ -750,7 +766,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                             int Subie = Subi0 + RowNi0.N-1;
                                             int Subje = Subj0 + ColNi0.N-1;
 
-                                            m_mgo.OperatorMatrix.ReadBlock(Targeti0, Targetj0,
+                                            target.ReadBlock(Targeti0, Targetj0,
                                                 Sblocks[auxIdx].ExtractSubArrayShallow(new int[] { Subi0, Subj0 }, new int[] { Subie, Subje }));
                                         }
                                     }
@@ -768,7 +784,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// If you want nothing special. Take this one. If you want only diagonal block matrix choose one of the other methods
         /// </summary>
         /// <returns></returns>
-        public BlockMsrMatrix GetSubBlockMatrix() {
+        public BlockMsrMatrix GetSubBlockMatrix(BlockMsrMatrix target) {
             int Loclength = m_MaskLen;
 
             var tmpN = GetAllSubMatrixCellLength();
@@ -776,18 +792,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             BlockPartitioning localBlocking = new BlockPartitioning(Loclength, tmpi0.ToArray(), tmpN.ToArray(), m_map.MPI_Comm, i0isLocal: true);
             var SubMSR = new BlockMsrMatrix(localBlocking);
-            m_mgo.OperatorMatrix.AccSubMatrixTo(1.0, SubMSR, m_GlobalMask, default(int[]), m_GlobalMask, default(int[]));
+            target.AccSubMatrixTo(1.0, SubMSR, m_GlobalMask, default(int[]), m_GlobalMask, default(int[]));
             return SubMSR;
         }
 
         /// <summary>
         /// Coupling can be ignored. If you want full output take the basic GetSubBlockMatrix() method, which will be faster.
         /// </summary>
+        /// <param name="target"></param>
         /// <param name="ignoreCellCoupling"></param>
         /// <param name="ignoreVarCoupling"></param>
         /// <param name="ignoreSpecCoupling"></param>
         /// <returns></returns>
-        public BlockMsrMatrix GetSubBlockMatrix(bool ignoreCellCoupling, bool ignoreVarCoupling, bool ignoreSpecCoupling) {
+        public BlockMsrMatrix GetSubBlockMatrix(BlockMsrMatrix target, bool ignoreCellCoupling, bool ignoreVarCoupling, bool ignoreSpecCoupling) {
             int Loclength = m_MaskLen;
 
             var tmpN = GetAllSubMatrixCellLength();
@@ -826,7 +843,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                             int Targetj0 = ColNi0.Gi0;
 
                                             var tmpBlock = MultidimensionalArray.Create(RowNi0.N, ColNi0.N);
-                                            m_mgo.OperatorMatrix.ReadBlock(Targeti0, Targetj0,
+                                            target.ReadBlock(Targeti0, Targetj0,
                                                 tmpBlock);
                                             SubMSR.AccBlock(SubRowIdx, SubColIdx, 1, tmpBlock);
                                             SubColIdx += ColNi0.N;
