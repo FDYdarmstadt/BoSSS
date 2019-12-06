@@ -17,9 +17,11 @@ limitations under the License.
 using System;
 using System.Collections.Generic;
 using BoSSS.Foundation;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XNSECommon;
+using ilPSP.Utils;
 
 namespace BoSSS.Solution.RheologyCommon {
     /// <summary>
@@ -27,33 +29,21 @@ namespace BoSSS.Solution.RheologyCommon {
     /// </summary>
     public class StressDivergenceInBulk : StressDivergence_Cockburn, ISpeciesFilter {
 
-        SpeciesId m_spcId;
-        int Component;
         IncompressibleMultiphaseBoundaryCondMap m_bcMap;
-
 
         /// <summary>
         /// Initialize Convection
         /// </summary>
-        public StressDivergenceInBulk(int _Component, IncompressibleMultiphaseBoundaryCondMap _BcMap, double _ReynoldsA, double _ReynoldsB, double[] _Penalty1, double _Penalty2, string spcName, SpeciesId spcId) : base(_Component, _BcMap, 0.0, _Penalty1, _Penalty2) {
-            this.Component = _Component;
-            this.m_spcId = spcId;
+        public StressDivergenceInBulk(int _Component, IncompressibleMultiphaseBoundaryCondMap _BcMap, double _Reynolds, double[] _Penalty1, double _Penalty2, string spcName, SpeciesId spcId) : base(_Component, _BcMap, _Reynolds, _Penalty1, _Penalty2) {
             this.m_bcMap = _BcMap;
-            //this.m_ReynoldsA = _ReynoldsA;
-            //this.m_ReynoldsB = _ReynoldsB;
-            base.pen1 = _Penalty1;
-            base.pen2 = _Penalty2;
+            this.validSpeciesId = spcId;
 
-            switch (spcName) {
-                case "A": base.InverseReynolds = -1 / _ReynoldsA; break;
-                case "B": base.InverseReynolds = -1 / _ReynoldsB; break;
-                default: throw new ArgumentException("Unknown species.");
-            }
+            base.VelFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, 2];
+            base.VelFunction.SetColumn(m_bcMap.bndFunction[VariableNames.VelocityX + "#" + spcName], 0);
+            base.VelFunction.SetColumn(m_bcMap.bndFunction[VariableNames.VelocityY + "#" + spcName], 1);
 
         }
 
-    public SpeciesId validSpeciesId {
-            get { return m_spcId; }
-        }
+    public SpeciesId validSpeciesId { get;}
     }
 }

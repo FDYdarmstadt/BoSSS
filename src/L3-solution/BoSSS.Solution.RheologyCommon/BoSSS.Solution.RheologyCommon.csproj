@@ -42,23 +42,22 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ArtificialViscosity.cs" />
-    <Compile Include="IdentityAtLevelSet.cs" />
-    <Compile Include="ViscosityAtLevelSet.cs" />
+    <Compile Include="Stabilization\ArtificialViscosity.cs" />
+    <Compile Include="Fluxes_Multiphase_Interface\ConvectiveAtLevelSet.cs" />
+    <Compile Include="Fluxes_Multiphase_Interface\ObjectiveAtLevelSet.cs" />
+    <Compile Include="Fluxes_Multiphase_Interface\ViscosityAtLevelSet.cs" />
     <Compile Include="Constitutive_OperatorComponents.cs" />
-    <Compile Include="DiffusionInBulk.cs" />
-    <Compile Include="ObjectiveInBulk_Tparam.cs" />
-    <Compile Include="ViscosityInBulk.cs" />
-    <Compile Include="ObjectiveInBulk.cs" />
-    <Compile Include="ConvectiveInBulk.cs" />
-    <Compile Include="IdentityInBulk.cs" />
-    <Compile Include="ConstitutiveEqns_Viscosity.cs" />
-    <Compile Include="ConstitutiveEqns_Objective_Tparam.cs" />
-    <Compile Include="ConstitutiveEqns_Objective.cs" />
-    <Compile Include="ConstitutiveEqns_Identity.cs" />
-    <Compile Include="ConstitutiveEqns_Diffusion.cs" />
-    <Compile Include="ConstitutiveEqns_Convective.cs" />
-    <Compile Include="PerssonSensor.cs" />
+    <Compile Include="Stabilization\DiffusionInBulk.cs" />
+    <Compile Include="Fluxes_Multiphase_bulk\ViscosityInBulk.cs" />
+    <Compile Include="Fluxes_Multiphase_bulk\ObjectiveInBulk.cs" />
+    <Compile Include="Fluxes_Multiphase_bulk\ConvectiveInBulk.cs" />
+    <Compile Include="Fluxes_Multiphase_bulk\IdentityInBulk.cs" />
+    <Compile Include="Fluxes_Singlephase\ConstitutiveEqns_Viscosity.cs" />
+    <Compile Include="Fluxes_Singlephase\ConstitutiveEqns_Objective.cs" />
+    <Compile Include="Fluxes_Singlephase\ConstitutiveEqns_Identity.cs" />
+    <Compile Include="Stabilization\ConstitutiveEqns_Diffusion.cs" />
+    <Compile Include="Fluxes_Singlephase\ConstitutiveEqns_Convective.cs" />
+    <Compile Include="Stabilization\PerssonSensor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

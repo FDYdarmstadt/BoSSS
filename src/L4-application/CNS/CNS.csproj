@@ -79,8 +79,6 @@
     <Compile Include="Convection\ConvectiveFluxTypes.cs" />
     <Compile Include="Convection\EulerDummy.cs" />
     <Compile Include="Convection\GodunovFluxBuilder.cs" />
-    <Compile Include="Convection\GodunovFlux.cs" />
-    <Compile Include="Convection\ExactRiemannSolver.cs" />
     <Compile Include="Convection\OptimizedHLLCFluxBuilder.cs" />
     <Compile Include="Convection\RusanovFluxBuilder.cs" />
     <Compile Include="Convection\RusanovFlux.cs" />
@@ -197,7 +195,6 @@
     <Compile Include="Source\AdHocSourceTerm.cs" />
     <Compile Include="CNSFieldSet.cs" />
     <Compile Include="CNSVariables.cs" />
-    <Compile Include="Vector_Extensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">

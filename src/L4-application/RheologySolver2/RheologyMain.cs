@@ -42,6 +42,7 @@ using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;
+using BoSSS.Solution.RheologyCommon;
 using BoSSS.Solution.Gnuplot;
 
 using MPI.Wrappers;
@@ -279,12 +280,6 @@ namespace BoSSS.Application.Rheology {
         /// </summary>
         protected XdgBDFTimestepping m_BDF_Timestepper;
 
-        /// <summary>
-        /// initialisation of spatial operator matrix analysis
-        /// </summary>
-        protected SpatialOperatorAnalysis SpatialOperatorAnalysis;
-
-
         // Persson sensor and artificial viscosity
         //=============================================
         /// <summary>
@@ -467,7 +462,7 @@ namespace BoSSS.Application.Rheology {
                         }
                         if (this.Control.beta > 0.0) {
                             var Visc = new swipViscosity_Term1(
-                                this.Control.ViscousPenaltyScaling * PenaltyBase,
+                                this.Control.ViscousPenaltyScaling,
                                 d,
                                 D,
                                 BcMap,
@@ -503,21 +498,11 @@ namespace BoSSS.Application.Rheology {
                     XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Convective(0, BcMap, this.Control.Weissenberg, this.Control.alpha));
                     XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Convective(1, BcMap, this.Control.Weissenberg, this.Control.alpha));
                     XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Convective(2, BcMap, this.Control.Weissenberg, this.Control.alpha));
-                    //XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_CellWiseForm(0, 0, BcMap, this.Control.Weissenberg, this.Control.alpha));
-                    //XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_CellWiseForm(0, 1, BcMap, this.Control.Weissenberg, this.Control.alpha));
-                    //XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_CellWiseForm(1, 1, BcMap, this.Control.Weissenberg, this.Control.alpha));
 
                     //Objective Part
-
-                    // GradU as params
-                    XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Objective(0, BcMap, this.Control.Weissenberg, this.Control.ObjectiveParam, this.Control.StressPenalty));
-                    XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Objective(1, BcMap, this.Control.Weissenberg, this.Control.ObjectiveParam, this.Control.StressPenalty));
-                    XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Objective(2, BcMap, this.Control.Weissenberg, this.Control.ObjectiveParam, this.Control.StressPenalty));
-
-                    //T as params
-                    //XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Objective_Tparam(0, BcMap, this.Control.Weissenberg, this.Control.ObjectiveParam));
-                    //XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Objective_Tparam(1, BcMap, this.Control.Weissenberg, this.Control.ObjectiveParam));
-                    //XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Objective_Tparam(2, BcMap, this.Control.Weissenberg, this.Control.ObjectiveParam));
+                    XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Objective(0, BcMap, this.Control.Weissenberg, this.Control.StressPenalty));
+                    XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Objective(1, BcMap, this.Control.Weissenberg, this.Control.StressPenalty));
+                    XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Objective(2, BcMap, this.Control.Weissenberg, this.Control.StressPenalty));
 
                     // Viscous Part
                     XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Viscosity(0, BcMap, this.Control.beta, this.Control.Penalty1));
@@ -1078,6 +1063,15 @@ namespace BoSSS.Application.Rheology {
                 MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
                 for (int iLevel = 0; iLevel < configs.Length; iLevel++) {
                     configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 4];
+
+                    // configurations for momentum+conti
+                    //for (int d = 0; d < D + 1; d++) {
+                    //    configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
+                    //        Degree = Math.Max(1, pVel - iLevel),
+                    //        mode = this.Control.NSEBlockPrecondMode,
+                    //        VarIndex = new int[] { d }
+                    //    };
+                    //}
 
                     // configurations for velocity
                     for (int d = 0; d < D; d++) {
