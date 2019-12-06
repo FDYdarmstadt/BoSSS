@@ -46,7 +46,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Specifies, which blocks in a matrix shall be selected. Blocksubdivision Default: Selects all blocks.  
         /// </summary>
         /// <param name="map"></param>
-        public SubBlockSelector() {
+        public SubBlockSelector(MultigridMapping map) {
+            m_map = map;
             this.CellSelector();
             this.VariableSelector();
             this.SpeciesSelector();
@@ -79,6 +80,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="global"></param>
         /// <returns></returns>
         public SubBlockSelector CellSelector(int CellIdx, bool global = true) {
+
             int LocNoOfBlocks = m_map.LocalNoOfBlocks;
             int GlobNoOfBlocks = m_map.TotalNoOfBlocks;
             if (global) {
@@ -86,7 +88,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     throw new ArgumentOutOfRangeException(CellIdx + " is greater then global No of Blocks: " + GlobNoOfBlocks + " or smaller than 0");
             } else {
                 if (CellIdx >= LocNoOfBlocks || CellIdx < 0)
-                throw new ArgumentOutOfRangeException(CellIdx + " is greater then Local No of Blocks: " + LocNoOfBlocks + " or smaller than 0");
+                    throw new ArgumentOutOfRangeException(CellIdx + " is greater then Local No of Blocks: " + LocNoOfBlocks + " or smaller than 0");
             }
 
             if (global) {
@@ -96,7 +98,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int idxfound = 0;
                 if (m_map.i0 <= CellIdx && m_map.iE >= CellIdx)
                     idxfound = 1;
-                Debug.Assert(idxfound.MPISum()==1);
+                Debug.Assert(idxfound.MPISum() == 1);
 
                 if (m_map.i0 > CellIdx || m_map.iE < CellIdx) {
                     this.m_CellSelInstruction = GetDoNothingInstruction();
@@ -113,7 +115,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="ListOfCellIdx"></param>
         /// <param name="global"></param>
         /// <returns></returns>
-        public SubBlockSelector CellSelector(List<int> ListOfCellIdx, bool global=true) {
+        public SubBlockSelector CellSelector(List<int> ListOfCellIdx, bool global = true) {
             int LocNoOfBlocks = m_map.LocalNoOfBlocks;
             int GlobNoOfBlocks = m_map.TotalNoOfBlocks;
 
@@ -137,10 +139,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     int idxfound = 0;
                     if (m_map.i0 <= tmpIdx && m_map.iE >= tmpIdx)
                         idxfound = 1;
-                    Debug.Assert(idxfound.MPISum()==1);
+                    Debug.Assert(idxfound.MPISum() == 1);
 
-                    if(idxfound==1)
-                    tmpList.Add(tmpIdx);
+                    if (idxfound == 1)
+                        tmpList.Add(tmpIdx);
                 }
             } else {
                 tmpList = ListOfCellIdx;
@@ -241,7 +243,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public SubBlockSelector ModeSelector() {
             this.m_ModeSelInstruction = delegate (int iCell, int iVar, int iSpec, int iMode) {
                 int maxDG = m_DG[iVar];
-                return GetAllInstruction(maxDG+1)(iMode);
+                return GetAllInstruction(maxDG + 1)(iMode);
             };
             return this;
         }
@@ -251,7 +253,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         /// <param name="boolinstruct"></param>
         /// <returns></returns>
-        public SubBlockSelector ModeSelector(Func<int,bool> boolinstruct) {
+        public SubBlockSelector ModeSelector(Func<int, bool> boolinstruct) {
             this.m_ModeSelInstruction = delegate (int iCell, int iVar, int iSpec, int iMode) {
                 return boolinstruct(iMode);
             };
@@ -305,9 +307,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public Func<int, int, int, int, bool> GetAllInstructions {
             get {
                 return delegate (int iCell, int iVar, int iSpec, int iMod) {
-                    bool result=false;
+                    bool result = false;
                     result &= m_CellSelInstruction(iCell);
-                    result &= m_VariableSelInstruction(iCell,iVar);
+                    result &= m_VariableSelInstruction(iCell, iVar);
                     result &= m_SpeciesSelInstruction(iCell, iVar, iSpec);
                     result &= m_ModeSelInstruction(iCell, iVar, iSpec, iMod);
                     return result;
@@ -323,11 +325,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
             get { return m_VariableSelInstruction; }
         }
 
-        public Func<int, int ,int ,bool> GetSpecInstruction {
+        public Func<int, int, int, bool> GetSpecInstruction {
             get { return m_SpeciesSelInstruction; }
         }
 
-        public Func<int, int, int, int,bool> GetModeInstruction {
+        public Func<int, int, int, int, bool> GetModeInstruction {
             get { return m_ModeSelInstruction; }
         }
 
@@ -335,9 +337,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// gets the multigrid operator on which this selector shall work on 
         /// </summary>
-        public MultigridMapping SetMapping {
-            set {
-                m_map=value;
+        public MultigridMapping GetMapping {
+            get {
+                return m_map;
             }
         }
 
@@ -379,7 +381,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 m_Si0 = Si0;
                 m_N = N;
             }
-            private int m_Li0, m_Gi0 ,m_Si0, m_N;
+            private int m_Li0, m_Gi0, m_Si0, m_N;
             public int N {
                 get {
                     return m_N;
@@ -423,8 +425,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Generates Block Mask from Sub block selection. Sub matrix can be generated of the mutligrid operator overgiven to Sub block selection. It also contains methods to translate Vectors from full matrix to sub matrix and vice versa.
         /// </summary>
         /// <param name="SBS"></param>
-        public BlockMask(SubBlockSelector SBS, MultigridMapping map) {
-            SBS.SetMapping=map;
+        public BlockMask(SubBlockSelector SBS) {
+            m_map = SBS.GetMapping;
             m_sbs = SBS;
             m_AggBS = m_map.AggBasis;
             m_DG = m_map.DgDegree;
@@ -468,7 +470,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int NoOfVariables = m_NoOfVariables;
             int[][] NoOfSpecies = m_NoOfSpecies;
             int[] NoOfDG = m_DG.CloneAs();
-            for(int iDG=0;iDG < NoOfDG.Length; iDG++) {
+            for (int iDG = 0; iDG < NoOfDG.Length; iDG++) {
                 NoOfDG[iDG] += 1;
             }
 
@@ -500,7 +502,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 int GlobalModeOffset = m_Ni0[iMode].i0 + GlobalOffset;
                                 int LocalModeOffset = m_Ni0[iMode].i0 + LocalOffset;
                                 int ModeLength = m_Ni0[iMode].N;
-                                var newNi0 = new extNi0(LocalModeOffset, GlobalModeOffset,SubOffset, ModeLength);
+                                var newNi0 = new extNi0(LocalModeOffset, GlobalModeOffset, SubOffset, ModeLength);
                                 SubOffset += ModeLength;
                                 // Fill int lists
                                 for (int i = 0; i < newNi0.N; i++) {
@@ -512,7 +514,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 tmpMod.Add(newNi0);
                                 Ni0Length++;
                                 ListNi0.Add(newNi0);
-                                Debug.Assert(m_map.LocalUniqueIndex(iVar, jLoc, iSpc, GetNp(iMode)-1) == LocalModeOffset + ModeLength-1);
+                                Debug.Assert(m_map.LocalUniqueIndex(iVar, jLoc, iSpc, GetNp(iMode) - 1) == LocalModeOffset + ModeLength - 1);
                             }
                         }
                         tmpSpc.Add(tmpMod.ToArray());
@@ -602,7 +604,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         private List<int> GetAllSubMatrixCellOffsets() {
             var intList = new List<int>();
-            for (int iCell = 0; iCell < m_StructuredNi0.Length;iCell++)
+            for (int iCell = 0; iCell < m_StructuredNi0.Length; iCell++)
                 intList.Add(GetCellwiseSubIdx(iCell));
             return intList;
         }
@@ -654,7 +656,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         private Ni0[] Ni0Gen() {
             int maxDG = m_DG.Max();
             var ModeOffsetNLengt = new List<Ni0>();
-            for (int p = 0; p < maxDG+1; p++) {
+            for (int p = 0; p < maxDG + 1; p++) {
                 int aux = p == 0 ? 0 : GetNp(p - 1);
                 int pOffset = aux;
                 int pLength = GetNp(p) - aux;
@@ -670,7 +672,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         private int GetNp(int p) {
             int Np = -1;
             int SpacDim = m_map.AggGrid.SpatialDimension;
-            Debug.Assert(p>=0);
+            Debug.Assert(p >= 0);
             switch (SpacDim) {
                 case 1:
                     Np = p + 1 + p + 1;
@@ -763,8 +765,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                             int Targetj0 = ColNi0.Gi0;
                                             int Subi0 = GetRelativeSubBlockOffset(iLoc, iVar, iSpc, iMode);
                                             int Subj0 = GetRelativeSubBlockOffset(jLoc, jVar, jSpc, jMode);
-                                            int Subie = Subi0 + RowNi0.N-1;
-                                            int Subje = Subj0 + ColNi0.N-1;
+                                            int Subie = Subi0 + RowNi0.N - 1;
+                                            int Subje = Subj0 + ColNi0.N - 1;
 
                                             target.ReadBlock(Targeti0, Targetj0,
                                                 Sblocks[auxIdx].ExtractSubArrayShallow(new int[] { Subi0, Subj0 }, new int[] { Subie, Subje }));
@@ -893,10 +895,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 throw new ArgumentOutOfRangeException("iCell is greater than Cells in mask");
             if (accVector.Count() != GetCellwiseLength(iCell))
                 throw new ArgumentException("accVector length is not equal to length of mask");
-            if(targetVector.Count()!= m_map.LocalLength)
+            if (targetVector.Count() != m_map.LocalLength)
                 throw new ArgumentException("Length of targetVector not equal Length of original");
-            var Cidx=GetCellwiseLocalidx(iCell);
-            Debug.Assert(accVector.Count()==Cidx.Count());
+            var Cidx = GetCellwiseLocalidx(iCell);
+            Debug.Assert(accVector.Count() == Cidx.Count());
             targetVector.AccV(1.0, accVector, Cidx, default(int[]));
         }
 
@@ -912,7 +914,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (fullVector.Count() != m_map.LocalLength)
                 throw new ArgumentException("Length of targetVector not equal Length of original");
             double[] subVector = new double[GetCellwiseLength(iCell)];
-            var Cidx=GetCellwiseLocalidx(iCell);
+            var Cidx = GetCellwiseLocalidx(iCell);
             Debug.Assert(subVector.Length == Cidx.Length);
             ArrayTools.GetSubVector<int[], int[], double>(fullVector, subVector, Cidx);
             return subVector;

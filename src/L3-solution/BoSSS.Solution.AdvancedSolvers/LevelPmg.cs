@@ -168,14 +168,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //debugerSW.WriteLine("proc {0} reporting Num of Blocks {1}", ilPSP.Environment.MPIEnv.MPI_Rank, HighOrderBlocks_LUpivots.Length);
 #endif
 
-            var DGlowSelect = new SubBlockSelector();
+            var DGlowSelect = new SubBlockSelector(op.Mapping);
             DGlowSelect.ModeSelector((int x) => x <= CoarseLowOrder);
-            lMask = new BlockMask(DGlowSelect, op.Mapping);
+            lMask = new BlockMask(DGlowSelect);
             m_lowMaskLen = lMask.LocalDOF;
 
-            var DGhighSelect = new SubBlockSelector();
+            var DGhighSelect = new SubBlockSelector(op.Mapping);
             DGhighSelect.ModeSelector((int x) => x > CoarseLowOrder);
-            hMask = new BlockMask(DGhighSelect, op.Mapping);
+            hMask = new BlockMask(DGhighSelect);
             m_highMaskLen = hMask.LocalDOF;
 
             BlockMsrMatrix P01HiMatrix=null;
