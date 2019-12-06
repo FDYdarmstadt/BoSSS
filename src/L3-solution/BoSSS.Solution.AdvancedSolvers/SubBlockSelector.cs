@@ -511,9 +511,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
             var tmpStructNi0 = tmpCell.ToArray();
 
+            int NumOfNi0 = 0;
 #if DEBUG
-            int NumOfNi0=0;
-            for(int iCell=0; iCell < tmpStructNi0.Length; iCell++){
+            for (int iCell=0; iCell < tmpStructNi0.Length; iCell++){
                 for(int iVar=0; iVar < tmpStructNi0[iCell].Length; iVar++){
                     for(int iSpc=0; iSpc < tmpStructNi0[iCell][iVar].Length; iSpc++){
                         NumOfNi0+=tmpStructNi0[iCell][iVar][iSpc].Length;
