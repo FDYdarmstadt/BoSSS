@@ -247,5 +247,12 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [DataMember]
         public string Parallelism = "SEQ";
+
+        /// <summary>
+        /// Determines, if a Testsolution shall be calculated. May result in lower perfromance.
+        /// </summary>
+        [DataMember]
+        public bool TestSolution = false;
+
     }
 }

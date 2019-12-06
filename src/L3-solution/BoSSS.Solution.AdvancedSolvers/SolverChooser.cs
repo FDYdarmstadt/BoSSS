@@ -326,15 +326,17 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.classic_mumps:
                     templinearSolve = new SparseSolver() {
                         WhichSolver = SparseSolver._whichSolver.MUMPS,
-                        LinConfig = lc
+                        LinConfig = lc,
+                        TestSolution = lc.TestSolution
                     };
                     break;
 
                 case LinearSolverCode.classic_pardiso:
                     templinearSolve = new SparseSolver() {
                         WhichSolver = SparseSolver._whichSolver.PARDISO,
-                        LinConfig = lc
-                    };
+                        LinConfig = lc,
+                        TestSolution = lc.TestSolution
+        };
                     break;
 
                 case LinearSolverCode.exp_schwarz_directcoarse_overlap:
