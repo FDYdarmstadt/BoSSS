@@ -74,17 +74,15 @@ namespace ProjectionTest {
                 CellType.Square_Linear,
                 periodicX: true,
                 periodicY: false);
-            grid.EdgeTagNames.Add(1, "subsonicOutlet");
-            grid.EdgeTagNames.Add(2, "supersonicInlet");
             grid.DefineEdgeTags(delegate (double[] x) {
                 if (x[1] > 0.0) {
-                    return 2;
+                    return "supersonicInlet";
                 } else {
-                    return 1;
+                    return "subsonicOutlet";
                 }
             });
-            gridData = new GridData(grid);
-
+            gridData = grid.GridData;
+            
             // Read the values
             MultidimensionalArray rho = ReadVariableValues("rho");
             MultidimensionalArray u = ReadVariableValues("vx1");

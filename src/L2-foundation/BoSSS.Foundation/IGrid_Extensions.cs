@@ -165,6 +165,7 @@ namespace BoSSS.Foundation.Grid {
             }
 
             if (GridChanged) {
+                g.InvalidateGridData();
                 Console.WriteLine("Grid Edge Tags changed.");
             }
         }

@@ -1069,6 +1069,8 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
         }
 
+        
+
         /// <summary>
         /// 
         /// </summary>
@@ -1090,7 +1092,12 @@ namespace BoSSS.Foundation.Grid.Classic {
         [JsonIgnore]
         GridData m_GridData;
 
-        void InvalidateGridData () {
+
+        /// <summary>
+        /// Releases the object cached in <see cref="iGridData"/>; this is necessary if 
+        /// the grid object was changed somehow.
+        /// </summary>
+        public void InvalidateGridData () {
             if(m_GridData == null)
                 return; // nothing to do
             m_GridData.Invalidate();

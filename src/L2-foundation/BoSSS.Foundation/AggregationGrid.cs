@@ -402,6 +402,17 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         }
 
         /// <summary>
+        /// Releases the object cached in <see cref="iGridData"/>; this is necessary if 
+        /// the grid object was changed somehow.
+        /// </summary>
+        public void InvalidateGridData() {
+            if (m_GridData == null)
+                return; // nothing to do
+            m_GridData.Invalidate();
+            m_GridData = null;
+        }
+
+        /// <summary>
         /// MPI process rank (within world communicator)
         /// </summary>
         public int MyRank {
