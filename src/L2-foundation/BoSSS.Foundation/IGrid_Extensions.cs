@@ -62,7 +62,38 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="EdgeTagFunc"></param>
         static public void DefineEdgeTags(this IGrid g, Func<double[], string> EdgeTagFunc) {
             g.DefineEdgeTags((Vector v) => EdgeTagFunc(v));
-        }  
+        }
+
+        /// <summary>
+        /// Adds the edge tag name <paramref name="EdgeTagName"/> to the grid, 
+        /// regardless of whether it is used or not.
+        /// </summary>
+        static public byte AddEdgeTag(this IGrid g, string EdgeTagName) {
+
+            bool[] UsedEt = new bool[byte.MaxValue];
+            foreach (var kv in g.EdgeTagNames) {
+                UsedEt[kv.Key] = true;
+                if (kv.Value.Equals(EdgeTagName))
+                    return kv.Key;
+
+            }
+
+            byte NewEt = byte.MaxValue;
+            for(int i = 1; i < UsedEt.Length; i++) {
+                if (i >= GridCommons.FIRST_PERIODIC_BC_TAG)
+                    throw new ArgumentOutOfRangeException("already all edge tags used");
+
+                if (UsedEt[i] == false) {
+                    NewEt = (byte)i;
+                    break;
+                }
+            }
+            Debug.Assert(g.EdgeTagNames.Keys.Contains(NewEt) == false);
+            g.EdgeTagNames.Add(NewEt, EdgeTagName);
+
+            return NewEt;
+        }
+
 
         /// <summary>
         /// sets values for <see cref="Cell.CellFaceTags"/> by using a
@@ -80,14 +111,17 @@ namespace BoSSS.Foundation.Grid {
 
             Dictionary<string, byte> EdgeTagNames_Reverse = new Dictionary<string, byte>();
             EdgeTagNames_Reverse.Add("inner edge", 0);
+            int[] etUseCount = new int[byte.MaxValue];
             foreach(var kv in g.EdgeTagNames) {
                 if(kv.Key == 0) {
                     
                 } else {
                     EdgeTagNames_Reverse.Add(kv.Value, kv.Key);
+
+                    if (kv.Key >= GridCommons.FIRST_PERIODIC_BC_TAG)
+                        etUseCount[kv.Key] = 1;
                 }
             }
-            int[] etUseCount = new int[byte.MaxValue];
 
 
 
