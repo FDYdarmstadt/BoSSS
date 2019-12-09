@@ -155,7 +155,7 @@ namespace BoSSS.Solution.RheologyCommon {
             //    n_u1 += Normale[d] * 0.5 * (inp.Parameters_IN[d] + inp.Parameters_IN[d]);
             //}
             Vector Velocity_IN = new Vector(_Tin, 1, inp.D);
-            n_u1 = 0.5 * (Normale * Velocity_IN);
+            n_u1 = Normale * Velocity_IN;
 
             double factor;
             if (n_u1 < 0)
