@@ -114,8 +114,8 @@ namespace BoSSS.Application.XRheology_Solver {
 
             C.PhysicalParameters.reynolds_A = 1.0;
             C.PhysicalParameters.reynolds_B = 1.0;
-            C.PhysicalParameters.beta_a = 0.6;
-            C.PhysicalParameters.beta_b = 0.4;
+            C.PhysicalParameters.beta_a = 1.0;
+            C.PhysicalParameters.beta_b = 0.0;
 
             C.RaiseWeissenberg = false;
             C.PhysicalParameters.Weissenberg_a = 0.0;// .3;
@@ -291,6 +291,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.AdvancedDiscretizationOptions.Penalty1[0] = 0;
             C.AdvancedDiscretizationOptions.Penalty1[1] = 0;
             //C.AdvancedDiscretizationOptions.PresPenalty2 = 0.0;
+            C.AdvancedDiscretizationOptions.UseWeightedAverages = true;
 
             C.OperatorMatrixAnalysis = false;
             C.SkipSolveAndEvaluateResidual = false;
