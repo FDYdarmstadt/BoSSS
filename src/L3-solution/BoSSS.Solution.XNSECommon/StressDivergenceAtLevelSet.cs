@@ -36,7 +36,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
         LevelSetTracker m_LsTrk;
 
-        public StressDivergenceAtLevelSet(LevelSetTracker lstrk, double _reynoldsA, double _reynoldsB, double[] _penalty1, double _penalty2, int _component,
+        public StressDivergenceAtLevelSet(LevelSetTracker lstrk, double _reynoldsA, double _reynoldsB, double[] _penalty1, double _penalty2, int _component, bool _weighted,
             bool _staticInt = false) {
             this.m_LsTrk = lstrk;
             this.muA = 1 / _reynoldsA;
@@ -46,6 +46,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             this.component = _component;
             this.m_D = lstrk.GridDat.SpatialDimension;
             this.staticInt = _staticInt;
+            this.weighted = _weighted;
         }
 
         double muA;
@@ -56,7 +57,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         int m_D;
 
         bool staticInt;
-
+        bool weighted;
 
         /// <summary>
         /// default-implementation
@@ -81,10 +82,25 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             Debug.Assert(TA.Length == this.ArgumentOrdering.Count);
             Debug.Assert(TB.Length == this.ArgumentOrdering.Count);
 
+            double wA;
+            double wB;
+            double wPenalty;
+            if (!weighted) {
+                wA = 0.5;
+                wB = 0.5;
+                wPenalty = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
+            } else {
+                wA = muB / (muA + muB);
+                wB = muA / (muA + muB);
+                wPenalty = muA * muB / (muA + muB);
+            }
 
             double res = 0;
 
-            res -= (0.5 * (TA[0] * muA + TB[0] * muB) * N[0] + 0.5 * (TA[1] * muA + TB[1] * muB) * N[1]) * (vA - vB); // central difference for stress divergence
+            //res -= ((TA[0] * muA * wA + TB[0] * muB * wB) * N[0] + (TA[1] * muA * wA + TB[1] * muB * wB) * N[1]) * (vA - vB); // central difference for stress divergence
+            //res += penalty2 / hCutCellMin * (TA[2] * muA - TB[2] * muB) * (vA - vB) * wPenalty;
+
+            res -= 0.5 * ((TA[0] * muA+ TB[0] * muB) * N[0] + (TA[1] * muA + TB[1] * muB) * N[1]) * (vA - vB); // central difference for stress divergence
             res += penalty2 / hCutCellMin * (TA[2] * muA - TB[2] * muB) * (vA - vB);
 
             return  res;
