@@ -93,6 +93,11 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         [NonSerialized]
         protected ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure;
+        /// <summary>
+        /// 
+        /// </summary>
+        [NonSerialized]
+        public double ThermodynamicPressureValue = 1.0;
         
         /// <summary>
         /// Hack to initalize ThermodynamicPressure - called by NSE_SIMPLE.VariableSet.Initialize()
@@ -116,10 +121,14 @@ namespace BoSSS.Solution.NSECommon {
         /// </returns>
         public override double GetDensity(params double[] phi) {
             if (IsInitialized) {
-                double rho = this.ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
-                if (rhoOne)  
-                rho = 1.0;
-                
+                double rho;
+                if(!rhoOne) {//                
+  //rho = ThermodynamicPressureValue / phi[0];
+                    rho = ThermodynamicPressure.Current.GetMeanValue(0)/phi[0];
+                }
+                else {
+                    rho = 1.0;
+                }
                 return rho;
             } else {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");
@@ -252,7 +261,6 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="Temperature"></param>
         /// <returns></returns>
         public override double GetMassDeterminedThermodynamicPressure(double InitialMass, SinglePhaseField Temperature) {
-
             SinglePhaseField omega = new SinglePhaseField(Temperature.Basis);
             omega.ProjectField(1.0,
                 delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
@@ -266,11 +274,8 @@ namespace BoSSS.Solution.NSECommon {
                     }
                 }, new Foundation.Quadrature.CellQuadratureScheme(true, null));
             return (InitialMass / omega.IntegralOver(null));
-
-            //SinglePhaseField OneOverTemperature = new SinglePhaseField(Temperature.Basis);
-            // OneOverTemperature.ProjectPow(1.0, Temperature, -1.0);
-            //return (InitialMass / OneOverTemperature.IntegralOver(null));
         }
+
         /// <summary>
         /// 
         /// </summary>

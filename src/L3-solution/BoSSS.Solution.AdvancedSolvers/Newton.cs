@@ -311,7 +311,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                         #region second criterium
                         /// Just testing. According to "Pawlowski et al. - 2006 - Globalization Techniques for Newton–Krylov Methods"
                         /// this criterium is useful to "ensure that even finer phisical details of the flow and are resolved"
-
+                        /*
                         double[] WMat_s = new double[x.Length];
                         double psi_r = 1e-3;
                         double psi_a = 1e-8;
@@ -323,17 +323,18 @@ namespace BoSSS.Solution.AdvancedSolvers
                         WMat_s.CheckForNanOrInfV();
 
                         double secondCriterium = WMat_s.L2Norm()/x.Length;
-                        Console.WriteLine("Norm Of the thing {0}", secondCriterium);
+                    
                         if(secondCriterium < 1) {
                             secondCriteriumConverged = true;
                         }
-
-                        if((fnorm < ConvCrit * fnorminit * 0 + ConvCrit))
-                            Console.WriteLine("Criterium 1 fulfilled");
-                        if((secondCriteriumConverged == true))
-                            Console.WriteLine("Criterium 2 fulfilled");
-                        if(itc > MaxIter)
-                            Console.WriteLine("Criterium 3 fulfilled");
+                        //Console.WriteLine("Norm Of the second criterium {0}", secondCriterium);
+                        //if((fnorm < ConvCrit * fnorminit * 0 + ConvCrit))
+                        //    Console.WriteLine("Criterium 1 fulfilled");
+                        //if((secondCriteriumConverged == true))
+                        //    Console.WriteLine("Criterium 2 fulfilled");
+                        //if(itc > MaxIter)
+                        //    Console.WriteLine("Criterium 3 fulfilled");
+                    */
                         #endregion
 
                     }

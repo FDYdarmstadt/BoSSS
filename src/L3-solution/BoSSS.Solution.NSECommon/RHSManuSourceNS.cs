@@ -31,7 +31,7 @@ namespace BoSSS.Solution.NSECommon {
     /// See also ControlManuSol() control function.
     /// </summary>
     //public class RHSManuSourceNS : BoSSS.Solution.Utils.LinearSource {
-    public class RHSManuSourceNS : IVolumeForm{
+    public class RHSManuSourceNS : IVolumeForm, ISupportsJacobianComponent{
         double[] MolarMasses;
         string direction;
         double Reynolds;
@@ -85,6 +85,12 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
+        /// <summary>
+        /// Linear component - returns this object itself.
+        /// </summary>
+        virtual public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
+        }
 
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {

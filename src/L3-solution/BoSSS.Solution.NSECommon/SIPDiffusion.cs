@@ -45,7 +45,7 @@ namespace BoSSS.Solution.NSECommon {
     /// <summary>
     /// SIP discretization of diffusion operators for scalar transport equations (i.e. species mass transport and temperature). Analog to swipViscosity_Term1.
     /// </summary>
-    public class SIPDiffusion : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient    {
+    public class SIPDiffusion : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient, ISupportsJacobianComponent    {
  
         double m_Reynolds;
         double m_Schmidt;
@@ -122,15 +122,66 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         /// <param name="inp"></param>
         /// <returns></returns>
-        private double GetPenalty(int jCellIn, int jCellOut) {
-            double cj_in = cj[jCellIn];
-            double mu = PenaltyBase * cj_in;
-            if (jCellOut >= 0) {
-                double cj_out = cj[jCellOut];
-                mu = Math.Max(mu, PenaltyBase * cj_out);
-            }
-            return mu;
+        //private double GetPenalty(int jCellIn, int jCellOut) {
+        //    double cj_in = cj[jCellIn];
+        //    double mu = PenaltyBase * cj_in;
+        //    if (jCellOut >= 0) {
+        //        double cj_out = cj[jCellOut];
+        //        mu = Math.Max(mu, PenaltyBase * cj_out);
+        //    }
+        //    return mu;
+        //}
+
+        protected double GetPenalty(int jCellIn, int jCellOut) {
+
+            double penaltySizeFactor_A = 1.0 / cj[jCellIn];
+            double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / cj[jCellOut] : 0;
+            double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
+
+            Debug.Assert(!double.IsNaN(penaltySizeFactor_A));
+            Debug.Assert(!double.IsNaN(penaltySizeFactor_B));
+            Debug.Assert(!double.IsInfinity(penaltySizeFactor_A));
+            Debug.Assert(!double.IsInfinity(penaltySizeFactor_B));
+            Debug.Assert(!double.IsInfinity(m_penalty));
+            Debug.Assert(!double.IsInfinity(m_penalty));
+
+            return penaltySizeFactor * m_penalty * PenaltyBase;
         }
+
+        /// <summary>
+        /// spatial dimension
+        /// </summary>
+        protected int m_D;
+
+        /// <summary>
+        /// penalty adapted for spatial dimension and DG-degree
+        /// </summary>
+        double m_penalty;
+
+        /// <summary>
+        /// Update of penalty length scales.
+        /// </summary>
+        /// <param name="cs"></param>
+        /// <param name="DomainDGdeg"></param>
+        /// <param name="TestDGdeg"></param>
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            m_D = cs.GrdDat.SpatialDimension;
+            double _D = m_D;
+            double _p = DomainDGdeg.Max();
+
+            double penalty_deg_tri = (_p + 1) * (_p + _D) / _D; // formula for triangles/tetras
+            double penalty_deg_sqr = (_p + 1.0) * (_p + 1.0); // formula for squares/cubes
+
+            m_penalty = Math.Max(penalty_deg_tri, penalty_deg_sqr); // the conservative choice
+
+            cj = cs.CellLengthScales;
+                        
+            // Set the Reynolds number to a user defined value contained in the CoefficientSet cs
+            // Useful in case that the Reynolds number changes during a simulation...
+            if(cs.UserDefinedValues.Keys.Contains("Reynolds"))
+                m_Reynolds = (double)cs.UserDefinedValues["Reynolds"];
+        }
+
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
             double Acc = 0.0;
@@ -308,12 +359,13 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         /// <summary>
-        /// 
+        /// Linear component - returns this object itself.
         /// </summary>
-        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
-            if (cs.UserDefinedValues.Keys.Contains("Reynolds"))
-                m_Reynolds = (double)cs.UserDefinedValues["Reynolds"];
+        virtual public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
         }
+
+  
 
         /// <summary>
         /// Arguments
