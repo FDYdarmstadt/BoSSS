@@ -57,6 +57,10 @@ namespace BoSSS.Application.Rheology {
     /// </summary>
     public class Rheology : BoSSS.Solution.Application<RheologyControl> {
         static void Main(string[] args) {
+            RheologyTestProgram.Init();
+            RheologyTestProgram.ConsistencyConstitutiveTestComputeRes(3, 2, 0);
+            Assert.IsTrue(false, "remove me");
+
             Rheology._Main(args, false, () => new Rheology());
         }
 
@@ -402,7 +406,6 @@ namespace BoSSS.Application.Rheology {
                         // convective part:
                         if (!this.Control.Stokes ) {
                             //comps.Add(new LinearizedConvection(D, BcMap, d));
-                            //comps.Add(new UpwindMomentumConvection(D, BcMap, d, 1.0));
                             comps.Add(new LocalLaxFriedrichsConvection(D, BcMap, d, 1.0));
                         } else {
                             //Console.WriteLine("Rem: skipping convection.");
@@ -467,7 +470,7 @@ namespace BoSSS.Application.Rheology {
                     
                     // Constitutive equations
                     // ===============================================================================
-
+                    
                     // Identity part
                     XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Identity(0));
                     XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Identity(1));
@@ -480,14 +483,15 @@ namespace BoSSS.Application.Rheology {
 
                     //Objective Part
                     XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Objective(0, BcMap, this.Control.Weissenberg, this.Control.StressPenalty));
-                    XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Objective(1, BcMap, this.Control.Weissenberg, this.Control.StressPenalty));
-                    XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Objective(2, BcMap, this.Control.Weissenberg, this.Control.StressPenalty));
+                    //XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Objective(1, BcMap, this.Control.Weissenberg, this.Control.StressPenalty));
+                    //XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Objective(2, BcMap, this.Control.Weissenberg, this.Control.StressPenalty));
+                    
 
                     // Viscous Part
                     XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Viscosity(0, BcMap, this.Control.beta, this.Control.Penalty1));
                     XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Viscosity(1, BcMap, this.Control.beta, this.Control.Penalty1));
                     XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Viscosity(2, BcMap, this.Control.beta, this.Control.Penalty1));
-
+                    
                     // artificial diffusion part
                     if (this.Control.UseArtificialDiffusion == true) {
                         XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Diffusion(this.StressXX.Basis.Degree, Grid.SpatialDimension, ((GridData)GridData).Cells.cj, VariableNames.StressXX));
@@ -495,13 +499,14 @@ namespace BoSSS.Application.Rheology {
                         XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Diffusion(this.StressYY.Basis.Degree, Grid.SpatialDimension, ((GridData)GridData).Cells.cj, VariableNames.StressYY));
                     }
                     
-
                     // Build spatial operator
                     XOP.Commit();
 
                     JacobiOp = XOP.GetJacobiOperator(2);
 
-
+                    currentWeissenberg = 1.0;
+                    this.CheckJacobian();
+                    Assert.IsTrue(false, "remove me");
 
                     // create timestepper
                     //===============================================================
@@ -965,6 +970,7 @@ namespace BoSSS.Application.Rheology {
             var TmpParams = JacParams.AllocateParameters(CurrentState, Params);
             var map = new CoordinateMapping(CurrentState);
             var JacBuilder = JacobiOp.GetMatrixBuilder(map, TmpParams, map);
+            JacBuilder.OperatorCoefficients.UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
             this.ParameterUpdate(CurrentState, TmpParams);
             JacParams.ParameterUpdate(CurrentState, TmpParams);
             var JacobiDX = new BlockMsrMatrix(map);

@@ -148,7 +148,7 @@ namespace BoSSS.Foundation {
                         throw new ApplicationException("Separate DG field must be allocated to store Parameters.");
 
                     dst.Clear();
-                    dst.Derivative(1.0, dst, d);
+                    dst.Derivative(1.0, src, d);
                 }
             }
         }

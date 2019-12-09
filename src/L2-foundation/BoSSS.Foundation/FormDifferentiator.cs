@@ -202,18 +202,19 @@ namespace BoSSS.Foundation {
             ret += f0; // affine contribution - contains V and GradV contribution
 
             for (int iVar = 0; iVar < GAMMA; iVar++) { // loop over trial variables
+
                 if (((m_VolForm.VolTerms & (TermActivationFlags.UxV | TermActivationFlags.UxGradV)) != 0)
                     ) {
                     //&& (U[iVar] != 0.0)) { // perf. opt.
-                    ret += Diff(ref Utmp[iVar], U[iVar], ref clonedParams, Utmp, GradUtmp, V, GradV, delta, f0);
+                    ret += Diff(ref Utmp[iVar], U[iVar], ref clonedParams, Utmp, GradUtmp, V, GradV, delta, f0, -1, iVar);
                 }
 
-                if (((m_VolForm.VolTerms & (TermActivationFlags.GradUxGradV | TermActivationFlags.GradUxGradV)) != 0)
+                if (((m_VolForm.VolTerms & (TermActivationFlags.GradUxGradV | TermActivationFlags.GradUxV)) != 0)
                     //&& (GradU.GetRow(iVar).L2NormPow2() != 0.0)) {
                     ) {
 
                     for (int d = 0; d < D; d++) {
-                        ret += Diff(ref GradUtmp[iVar, d], GradU[iVar, d], ref clonedParams, Utmp, GradUtmp, V, GradV, delta, f0);
+                        ret += Diff(ref GradUtmp[iVar, d], GradU[iVar, d], ref clonedParams, Utmp, GradUtmp, V, GradV, delta, f0, d, iVar);
                     }
                 }
             }
@@ -224,7 +225,8 @@ namespace BoSSS.Foundation {
         private double Diff(ref double PertubVar, double Var,
             ref CommonParamsVol clonedParams, 
             double[] Utmp, double[,] GradUtmp, double V, double[] GradV, 
-            double delta, double f0) {
+            double delta, double f0,
+            int d, int iVar) {
             
             // add perturbation
             double bkup = PertubVar;
@@ -249,6 +251,34 @@ namespace BoSSS.Foundation {
 
             // restore un-perturbed state
             PertubVar = bkup;
+
+            // test
+            /*
+            if(V == 1 && GradV.L2Norm() == 0) {
+                double u = Utmp[1];
+                double v = Utmp[2];
+                double Tx = GradUtmp[0, 0];
+                double Ty = GradUtmp[0, 1];
+
+                double soll;
+                if(d < 0 && iVar == 1) {
+                    soll = Tx;
+                } else if(d < 0 && iVar == 2) {
+                    soll = Ty;
+                } else if(d == 0 && iVar == 0) {
+                    soll = u;
+                } else if(d == 1 && iVar == 0) {
+                    soll = v;
+                } else {
+                    soll = 0;
+                }
+
+                Debug.Assert((dU_iVar - soll).Abs() < delta*1000);
+
+            }
+            */
+
+
 
             // inner product
             double ret = 0;

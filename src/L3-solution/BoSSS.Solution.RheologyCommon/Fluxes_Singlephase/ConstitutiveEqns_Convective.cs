@@ -78,7 +78,7 @@ namespace BoSSS.Solution.RheologyCommon {
 
 
         public TermActivationFlags VolTerms {
-            get { return TermActivationFlags.GradUxV; }
+            get { return TermActivationFlags.GradUxV | TermActivationFlags.UxV; }
         }
 
         public TermActivationFlags BoundaryEdgeTerms {
@@ -121,23 +121,25 @@ namespace BoSSS.Solution.RheologyCommon {
         }
 
 
-        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] Tin, double[,] Grad_Tin, double Vin, double[] Grad_Vin) {
+        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _Tin, double[,] Grad_Tin, double Vin, double[] Grad_Vin) {
             Vector Normale = inp.Normal;
             double Tout;
+            double Tin = _Tin[0];
+            
 
             if (m_BcMap.EdgeTag2Type[inp.EdgeTag] == IncompressibleBcType.Wall || m_BcMap.EdgeTag2Type[inp.EdgeTag] == IncompressibleBcType.FreeSlip) {
-                Tout = Tin[0];
+                Tout = Tin;
             } else {
 
                 switch (Component) {
                     case 0:
-                        Tout = Tin[0];// StressFunction[inp.EdgeTag, 0, 0](inp.X, inp.time) * m_Weissenberg; // stress_XX
+                        Tout = Tin;// StressFunction[inp.EdgeTag, 0, 0](inp.X, inp.time) * m_Weissenberg; // stress_XX
                         break;
                     case 1:
-                        Tout = Tin[0];// StressFunction[inp.EdgeTag, 0, 1](inp.X, inp.time); // stress_XY
+                        Tout = Tin;// StressFunction[inp.EdgeTag, 0, 1](inp.X, inp.time); // stress_XY
                         break;
                     case 2:
-                        Tout = Tin[0];//StressFunction[inp.EdgeTag, 1, 1](inp.X, inp.time); // stress_YY
+                        Tout = Tin;//StressFunction[inp.EdgeTag, 1, 1](inp.X, inp.time); // stress_YY
                         break;
                     default:
                         throw new NotImplementedException();
@@ -152,7 +154,7 @@ namespace BoSSS.Solution.RheologyCommon {
             //for (int d = 0; d < 2; d++) {
             //    n_u1 += Normale[d] * 0.5 * (inp.Parameters_IN[d] + inp.Parameters_IN[d]);
             //}
-            Vector Velocity_IN = new Vector(Tin, 1, inp.D);
+            Vector Velocity_IN = new Vector(_Tin, 1, inp.D);
             n_u1 = 0.5 * (Normale * Velocity_IN);
 
             double factor;
@@ -161,7 +163,7 @@ namespace BoSSS.Solution.RheologyCommon {
             else
                 factor = 1.0 - this.m_alpha;
 
-            res1 += factor * n_u1 * (Tout - Tin[0]);
+            res1 += factor * n_u1 * (Tout - Tin);
             flxIn = m_Weissenberg * res1 * Vin;
 
             return flxIn;
@@ -222,9 +224,16 @@ namespace BoSSS.Solution.RheologyCommon {
             //return m_Weissenberg * res * V;
 
             Vector Velocity = new Vector(T, 1, cpv.D);
+            //Velocity.x = 1;
+            //Velocity.y = 3;
+
             Vector _GradT = GradT.GetRowPt(0);
+            //_GradT.x = 1;
+            //_GradT.y = -2;
+
             double res = Velocity*_GradT;
             return m_Weissenberg * res * V;
+            //return 0.0;
         }
 
         /// <summary>
