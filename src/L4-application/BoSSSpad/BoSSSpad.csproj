@@ -166,10 +166,6 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\internal\src\private-die\L4-application\StokesHelical\StokesHelical.csproj">
-      <Project>{af092a39-7916-4a59-a2b4-5820fbd33b63}</Project>
-      <Name>StokesHelical</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.MUMPS\ilPSP.LinSolvers.MUMPS.csproj">
       <Project>{757e59f0-53bf-4c0d-87b3-3329161cb148}</Project>
       <Name>ilPSP.LinSolvers.MUMPS</Name>
@@ -297,10 +293,6 @@
     <ProjectReference Include="..\PlotGenerator\BoSSS.PlotGenerator.csproj">
       <Project>{383DE201-6871-437E-93C6-DDD41694BBAF}</Project>
       <Name>BoSSS.PlotGenerator</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\XRheology_Solver\XRheology_Solver.csproj">
-      <Project>{6f1f90ce-def6-4919-9a07-bb9b8eef0b55}</Project>
-      <Name>XRheology_Solver</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
