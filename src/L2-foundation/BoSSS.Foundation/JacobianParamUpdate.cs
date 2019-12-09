@@ -64,13 +64,18 @@ namespace BoSSS.Foundation {
             DomainToParam.SetAll(-1234);
             DomainDerivToParam.SetAll(-1235);
 
+            // insert parameters from the original operator at the beginning
             newParamVar = newParamVar.Cat(ParameterVar);
+
+            // parameters for field values in the middle 
             for (int iVar = 0; iVar < DomVar.Length; iVar++) {
                 if (DomVarAsParam[iVar]) {
                     DomainToParam[iVar] = newParamVar.Length;
                     newParamVar = newParamVar.Cat(DomVar[iVar] + "_lin");
                 }
             }
+
+            // after this, the gradients
             for (int iVar = 0; iVar < DomVar.Length; iVar++) {
                 if (DomVarDerivAsParam[iVar]) {
                     for (int d = 0; d < SpatialDimension; d++) {
@@ -148,9 +153,10 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// creates clones of the domain fields to store parameter fields
         /// </summary>
-        virtual public DGField[] AllocateParameters(IEnumerable<DGField> DomainVar) {
+        virtual public DGField[] AllocateParameters(IEnumerable<DGField> DomainVar, IEnumerable<DGField> ParameterVar) {
             DGField[] ret = new DGField[this.JacobianParameterVars.Length];
             DGField[] __DomainVar = DomainVar.ToArray();
+            DGField[] __ParameterVar = ParameterVar.ToArray();
             
             if (DomainVar.Count() != DomainToParam.Length)
                 throw new ApplicationException("mismatch in number of domain variables");
@@ -159,6 +165,10 @@ namespace BoSSS.Foundation {
             if (D != DomainDerivToParam.GetLength(1))
                 throw new ApplicationException("spatial dimension mismatch.");
 
+            for(int i = 0; i < __ParameterVar.Length; i++) {
+                ret[i] = __ParameterVar[i];
+            }
+            
             for (int i = 0; i < __DomainVar.Length; i++) {
                 int iDest = DomainToParam[i];
                 if (iDest < 0)

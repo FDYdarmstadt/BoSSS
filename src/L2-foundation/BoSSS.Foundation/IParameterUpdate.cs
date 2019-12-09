@@ -27,7 +27,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Allocates DG fields to store parameters
         /// </summary>
-        DGField[] AllocateParameters(IEnumerable<DGField> DomainVar);
+        DGField[] AllocateParameters(IEnumerable<DGField> DomainVar, IEnumerable<DGField> ParameterVar);
         
         /// <summary>
         /// Update of parameter fields (e.g. when computing finite difference Jacobian, see e.g. <see cref="SpatialOperator.GetFDJacobianBuilder"/>).

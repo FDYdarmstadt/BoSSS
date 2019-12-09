@@ -147,6 +147,15 @@ namespace BoSSS.Solution.XNSECommon {
                             break;
                         }
                     case ViscosityMode.Viscoelastic: {
+
+                            //set species arguments
+                            double ReSpc, betaSpc;
+                            switch (spcName) {
+                                case "A": { ReSpc = physParams.reynolds_A; betaSpc = physParams.beta_a; break; }
+                                case "B": { ReSpc = physParams.reynolds_B; betaSpc = physParams.beta_b; break; }
+                                default: throw new ArgumentException("Unknown species.");
+                            }
+
                             // Bulk operator:
                             var Visc1 = new Operator.Viscosity.DimensionlessViscosityInSpeciesBulk_GradUTerm(
                                 dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
@@ -158,7 +167,7 @@ namespace BoSSS.Solution.XNSECommon {
                                 BcMap, spcName, spcId, d, D, physParams.reynolds_A / physParams.beta_a, physParams.reynolds_B / physParams.beta_b);
                             comps.Add(Visc2);
 
-                            var div = new StressDivergenceInBulk(d, BcMap, physParams.reynolds_A, physParams.reynolds_B, dntParams.Penalty1, dntParams.Penalty2, spcName, spcId);
+                            var div = new StressDivergenceInBulk(d, BcMap, ReSpc, dntParams.Penalty1, dntParams.Penalty2, spcName, spcId);
                             comps.Add(div);
 
                             break;

@@ -14,32 +14,43 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Platform.LinAlg;
-using BoSSS.Solution.CompressibleFlowCommon;
-using BoSSS.Solution.CompressibleFlowCommon.Convection;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
+using System;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 
-namespace CNS.Convection {
+namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
     /// <summary>
-    /// Implementation of the HLL flux as described by BattenEtAl1997
+    /// Flux based on the exact Riemann solver by Toro.
     /// </summary>
-    public class HLLFlux : EulerFlux {
+    /// <seealso cref="ExactRiemannSolver"/>
+    public class GodunovFlux : EulerFlux {
 
         /// <summary>
-        /// <see cref="EulerFlux"/>
+        /// <see cref="EulerFlux.EulerFlux"/>
         /// </summary>
-        /// <param name="config"><see cref="EulerFlux"/></param>
-        /// <param name="boundaryMap"><see cref="EulerFlux"/></param>
-        /// <param name="equationComponent"><see cref="EulerFlux"/></param>
-        /// <param name="speciesMap"><see cref="EulerFlux"/></param>
-        public HLLFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, ISpeciesMap speciesMap)
-            : base(config, boundaryMap, equationComponent, speciesMap.GetMaterial(double.NaN)) {
+        /// <param name="config">
+        /// <see cref="EulerFlux.EulerFlux"/>
+        /// </param>
+        /// <param name="boundaryMap">
+        /// <see cref="EulerFlux.EulerFlux"/>
+        /// </param>
+        /// <param name="equationComponent">
+        /// <see cref="EulerFlux.EulerFlux"/>
+        /// </param>
+        /// <param name="speciesMap">
+        /// <see cref="EulerFlux.EulerFlux"/>
+        /// </param>
+        public GodunovFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent,  Material material)
+            : base(config, boundaryMap, equationComponent, material) {
+            if (config.EquationOfState is IdealGas == false) {
+                throw new Exception("Riemann solver currently only supports ideal gases");
+            }
         }
 
         /// <summary>
-        /// Evaluates the HLL flux as described in BattenEtAl1997 in the form
-        /// of equation 24.
+        /// Uses <see cref="ExactRiemannSolver"/> in order to compute the exact
+        /// solution of the Riemann problem.
         /// </summary>
         /// <param name="x">
         /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
@@ -59,23 +70,15 @@ namespace CNS.Convection {
         /// <param name="edgeIndex">
         /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
         /// </param>
-        /// <returns>See BattenEtAl1997, equation 24</returns>
+        /// <returns>
+        /// <see cref="ExactRiemannSolver.GetCentralState"/>
+        /// </returns>
         public override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex) {
-            double waveSpeedIn;
-            double waveSpeedOut;
-            EstimateWaveSpeeds(stateIn, stateOut, ref normal, out waveSpeedIn, out waveSpeedOut);
+            ExactRiemannSolver riemannSolver = new ExactRiemannSolver(
+                stateIn, stateOut, normal);
 
-            if (waveSpeedIn > 0.0) {
-                return equationComponent.Flux(stateIn) * normal;
-            } else if (waveSpeedOut < 0.0) {
-                return equationComponent.Flux(stateOut) * normal;
-            } else {
-                double valueIn = equationComponent.VariableValue(stateIn);
-                double valueOut = equationComponent.VariableValue(stateOut);
-                double fluxIn = equationComponent.Flux(stateIn) * normal;
-                double fluxOut = equationComponent.Flux(stateOut) * normal;
-                return (waveSpeedOut * fluxIn - waveSpeedIn * fluxOut + waveSpeedIn * waveSpeedOut * (valueOut - valueIn)) / (waveSpeedOut - waveSpeedIn);
-            }
+            StateVector stateEdge = riemannSolver.GetCentralState();
+            return equationComponent.Flux(stateEdge) * normal;
         }
     }
 }

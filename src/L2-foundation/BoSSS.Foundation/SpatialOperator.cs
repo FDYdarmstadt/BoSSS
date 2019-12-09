@@ -1484,6 +1484,11 @@ namespace BoSSS.Foundation {
                 if(!m_IsCommited)
                     throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
 #endif
+                if(__delParameterUpdate == null) {
+                    if(this.ParameterVar.Count > 0) {
+                        throw new ArgumentException("Provided parameter update delegate '__delParameterUpdate' is null, but this operator contains " + this.ParameterVar.Count + " parameters.", "__delParameterUpdate");
+                    }
+                }
 
 
                 var e = new FDJacobianBuilder(new EvaluatorNonLin(
