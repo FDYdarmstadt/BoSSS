@@ -138,7 +138,7 @@ namespace BoSSS.Solution {
                         maxKrylovDim = lc.MaxKrylovDim,
                         MaxIter = nc.MaxSolverIterations,
                         MinIter = nc.MinSolverIterations,
-                        DoNotUsePresRefPoint = nc.DoNotUsePresRefPoint,
+                        UsePresRefPoint = nc.UsePresRefPoint,
                         ApproxJac = Newton.ApproxInvJacobianOptions.DirectSolver, //MUMPS is taken, todo: enable all linear solvers
                         linsolver = LinSolver,
                         Precond = PrecondSolver,

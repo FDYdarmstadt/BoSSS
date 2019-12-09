@@ -128,7 +128,7 @@ namespace BoSSS.Solution.Utils {
         /// <summary>
         /// Linear component - returns this object itself.
         /// </summary>
-        virtual public IEquationComponent[] GetJacobianComponents() {
+        virtual public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             return new IEquationComponent[] { this };
         }
     }

@@ -492,7 +492,9 @@ namespace BoSSS.Application.IBM_Solver {
             }
         }
 
-
+        /// <summary>
+        /// Used by <see cref="m_BDF_Timestepper"/> to compute operator matrices (linearizations) and/or to evaluate residuals of current solution.
+        /// </summary>
         protected virtual void DelComputeOperatorMatrix(BlockMsrMatrix OpMatrix, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
             DelComputeOperatorMatrix_CallCounter++;
             int D = this.LsTrk.GridDat.SpatialDimension;
@@ -532,8 +534,8 @@ namespace BoSSS.Application.IBM_Solver {
 
                 // using finite difference Jacobi:
                 // - - - - - - - - - - - - - - - -
-                //var mtxBuilder2 = IBM_Op.GetFDJacobianBuilder(LsTrk, CurrentState, null, Mapping,
-                //    null,
+                //var mtxBuilder2 = IBM_Op.GetFDJacobianBuilder(LsTrk, CurrentState, Params, Mapping,
+                //    ParameterUpdate,
                 //    FluidSpecies);
                 //mtxBuilder2.time = phystime;
                 //mtxBuilder2.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];

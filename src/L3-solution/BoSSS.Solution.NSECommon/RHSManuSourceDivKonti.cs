@@ -31,7 +31,7 @@ namespace BoSSS.Solution.NSECommon {
     /// See also ControlManuSol() control function.
     /// </summary>
     //public class RHSManuSourceDivKonti : BoSSS.Solution.Utils.LinearSource {
-    public class RHSManuSourceDivKonti : IVolumeForm
+    public class RHSManuSourceDivKonti : IVolumeForm, ISupportsJacobianComponent
     {
         double ReynoldsNumber;
         double[] MolarMasses;
@@ -78,6 +78,14 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
+        /// <summary>
+        /// Linear component - returns this object itself.
+        /// </summary>
+        virtual public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
+        }
+
+
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             //    throw new NotImplementedException();
             //}
@@ -100,18 +108,6 @@ namespace BoSSS.Solution.NSECommon {
             //double conti = -p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Cos(x_ * t_) * y_ * t_ * Math.Sin(x_ * y_ * t_) + p0 / Math.Cos(x_ * y_ * t_) * t_ * Math.Sin(x_ * t_) - p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Cos(y_ * t_) * x_ * t_ * Math.Sin(x_ * y_ * t_) + p0 / Math.Cos(x_ * y_ * t_) * t_ * Math.Sin(y_ * t_);
 
             //return -1 * conti;
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

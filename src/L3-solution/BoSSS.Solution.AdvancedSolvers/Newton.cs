@@ -95,7 +95,7 @@ namespace BoSSS.Solution.AdvancedSolvers
 
         public ISolverSmootherTemplate linsolver;
 
-        public bool DoNotUsePresRefPoint;
+        public bool UsePresRefPoint;
 
         //bool solveVelocity = true;
 
@@ -145,11 +145,14 @@ namespace BoSSS.Solution.AdvancedSolvers
                 double[] step = new double[x.Length];
                 double[] stepOld = new double[x.Length];
                 //BlockMsrMatrix CurrentJac;
-
+                bool secondCriteriumConverged = false;
                 OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
                 double fnorminit = fnorm;
                 using (new BlockTrace("Slv Iter", tr)) {
-                    while ((fnorm > ConvCrit * fnorminit*0 + ConvCrit && itc < MaxIter) || itc < MinIter) {
+                    while (
+                        (fnorm > ConvCrit * fnorminit*0 + ConvCrit && 
+                        /*secondCriteriumConverged == false &&*/ itc < MaxIter)   
+                        || itc < MinIter) {
                         //Console.WriteLine("The convergence criterion is {0}", ConvCrit * fnorminit + ConvCrit);
                         rat = fnorm / fNormo;
                         fNormo = fnorm;
@@ -269,13 +272,19 @@ namespace BoSSS.Solution.AdvancedSolvers
                         // (and for Level-Set-Updates ...)
                         this.CurrentLin.TransformSolFrom(SolutionVec, xt);
 
-                        if (DoNotUsePresRefPoint == true) {
-                            XDGField pres = (XDGField)this.m_SolutionVec.Mapping.Fields[2];
-                            DGField presSpA = pres.GetSpeciesShadowField("A");
-                            DGField presSpB = pres.GetSpeciesShadowField("B");
-                            var meanpres = presSpB.GetMeanValueTotal(null);
-                            presSpA.AccConstant(-1.0 * meanpres);
-                            presSpB.AccConstant(-1.0 * meanpres);
+                        if (UsePresRefPoint == false) {
+
+                            if (this.m_SolutionVec.Mapping.Fields[2] is XDGField  Xpres) {
+                                DGField presSpA = Xpres.GetSpeciesShadowField("A");
+                                DGField presSpB = Xpres.GetSpeciesShadowField("B");
+                                var meanpres = presSpB.GetMeanValueTotal(null);
+                                presSpA.AccConstant(-1.0 * meanpres);
+                                presSpB.AccConstant(-1.0 * meanpres);
+                            } else {
+                                DGField pres = this.m_SolutionVec.Mapping.Fields[2];
+                                var meanpres = pres.GetMeanValueTotal(null);
+                                pres.AccConstant(-1.0 * meanpres);
+                            }
                         }
 
 
@@ -299,6 +308,34 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                         OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
 
+                        #region second criterium
+                        /// Just testing. According to "Pawlowski et al. - 2006 - Globalization Techniques for Newton–Krylov Methods"
+                        /// this criterium is useful to "ensure that even finer phisical details of the flow and are resolved"
+                        /*
+                        double[] WMat_s = new double[x.Length];
+                        double psi_r = 1e-3;
+                        double psi_a = 1e-8;
+                        double[] truestep = step;
+                        truestep.ScaleV(lambda);
+                        for(int i = 0; i < WMat_s.Length; i++) {
+                            WMat_s[i] = 1 / (psi_r * x[i] + psi_a) * truestep[i];
+                        }
+                        WMat_s.CheckForNanOrInfV();
+
+                        double secondCriterium = WMat_s.L2Norm()/x.Length;
+                    
+                        if(secondCriterium < 1) {
+                            secondCriteriumConverged = true;
+                        }
+                        //Console.WriteLine("Norm Of the second criterium {0}", secondCriterium);
+                        //if((fnorm < ConvCrit * fnorminit * 0 + ConvCrit))
+                        //    Console.WriteLine("Criterium 1 fulfilled");
+                        //if((secondCriteriumConverged == true))
+                        //    Console.WriteLine("Criterium 2 fulfilled");
+                        //if(itc > MaxIter)
+                        //    Console.WriteLine("Criterium 3 fulfilled");
+                    */
+                        #endregion
 
                     }
                 }
