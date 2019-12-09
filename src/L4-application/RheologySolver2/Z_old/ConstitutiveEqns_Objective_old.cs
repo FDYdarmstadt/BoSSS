@@ -17,7 +17,6 @@ limitations under the License.
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using BoSSS.Foundation;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.NSECommon;

@@ -2541,9 +2541,15 @@ namespace BoSSS.Foundation {
 
                     if (!(eq is ISupportsJacobianComponent _eq))
                         throw new NotSupportedException(string.Format("Unable to handle component {0}: To obtain a Jacobian operator, all components must implement the {1} interface.", eq.GetType().Name, typeof(ISupportsJacobianComponent).Name));
+                    bool eq_suppCoeffUpd = eq is IEquationComponentCoefficient;
 
-                    foreach (var eqj in _eq.GetJacobianComponents(SpatialDimension))
+                    foreach (var eqj in _eq.GetJacobianComponents(SpatialDimension)) {
+                        bool eqj_suppCoeffUpd = eqj is IEquationComponentCoefficient;
+                        if (eq_suppCoeffUpd && !eqj_suppCoeffUpd)
+                            throw new NotSupportedException("Form '" + eq.GetType().Name + "' supports '" + typeof(IEquationComponentCoefficient).Name + "', but Jacobian Form '" + eqj.GetType().Name + "' does not!");
+
                         JacobianOp.EquationComponents[CodNmn].Add(eqj);
+                    }
                 }
             }
 

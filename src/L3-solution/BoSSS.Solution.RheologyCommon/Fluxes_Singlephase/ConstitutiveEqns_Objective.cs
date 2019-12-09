@@ -24,9 +24,9 @@ using ilPSP.Utils;
 
 namespace BoSSS.Solution.RheologyCommon {
     /// <summary>
-    /// Objective part of constitutive equations for singlephase flow.
+    /// Objective part of constitutive equations for single-phase flow.
     /// </summary>
-    public class ConstitutiveEqns_Objective : IVolumeForm, IEquationComponent, IEquationComponentCoefficient, ISupportsJacobianComponent {
+    public class ConstitutiveEqns_Objective : IVolumeForm, IEdgeForm, IEquationComponent, IEquationComponentCoefficient, ISupportsJacobianComponent {
 
         int Component;           // equation index (0: xx, 1: xy, 2: yy)
         BoundaryCondMap<IncompressibleBcType> m_BcMap;
@@ -200,7 +200,7 @@ namespace BoSSS.Solution.RheologyCommon {
         /// one can use the implementation form the original object.
         /// Remark: the volume terms, on the other hand, are non-linear and must be differentiated.
         /// </summary>
-        class OwnerCaller : IEdgeForm {
+        class OwnerCaller : IEdgeForm, IEquationComponentCoefficient {
             public OwnerCaller(ConstitutiveEqns_Objective __owner) {
                 owner = __owner;
             }
@@ -220,6 +220,10 @@ namespace BoSSS.Solution.RheologyCommon {
 
             public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
                 return owner.InnerEdgeForm(ref inp, _uIN, _uOUT, _Grad_uIN, _Grad_uOUT, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
+            }
+
+            public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+                owner.CoefficientUpdate(cs, DomainDGdeg, TestDGdeg);
             }
         }
 

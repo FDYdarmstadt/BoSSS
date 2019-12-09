@@ -9,7 +9,11 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Foundation {
 
-    abstract public class FormDifferentiatorCommon : IEquationComponent, IEquationComponentChecking {
+    /// <summary>
+    /// Base-Functionality for utilities for computation of Spatial Operator Jacobians, (<see cref="SpatialOperator.GetJacobiOperator"/>,
+    /// i.e. approximate differentiation of equation components.
+    /// </summary>
+    abstract public class FormDifferentiatorCommon : IEquationComponent, IEquationComponentChecking, IEquationComponentCoefficient {
 
 
         /// <summary>
@@ -155,6 +159,15 @@ namespace BoSSS.Foundation {
             delta = Math.Max(eps, Math.Sqrt(delta) * eps);
             Debug.Assert(delta > 0);
             return delta;
+        }
+
+        /// <summary>
+        /// passes the coefficients to original form
+        /// </summary>
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            if(m_OrgForm is IEquationComponentCoefficient eqc) {
+                eqc.CoefficientUpdate(cs, DomainDGdeg, TestDGdeg);
+            }
         }
     }
 

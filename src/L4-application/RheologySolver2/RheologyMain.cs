@@ -405,7 +405,6 @@ namespace BoSSS.Application.Rheology {
 
                         // convective part:
                         if (!this.Control.Stokes ) {
-                            //comps.Add(new LinearizedConvection(D, BcMap, d));
                             comps.Add(new LocalLaxFriedrichsConvection(D, BcMap, d, 1.0));
                         } else {
                             //Console.WriteLine("Rem: skipping convection.");
@@ -483,10 +482,9 @@ namespace BoSSS.Application.Rheology {
 
                     //Objective Part
                     XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Objective(0, BcMap, this.Control.Weissenberg, this.Control.StressPenalty));
-                    //XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Objective(1, BcMap, this.Control.Weissenberg, this.Control.StressPenalty));
-                    //XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Objective(2, BcMap, this.Control.Weissenberg, this.Control.StressPenalty));
+                    XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Objective(1, BcMap, this.Control.Weissenberg, this.Control.StressPenalty));
+                    XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Objective(2, BcMap, this.Control.Weissenberg, this.Control.StressPenalty));
                     
-
                     // Viscous Part
                     XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Viscosity(0, BcMap, this.Control.beta, this.Control.Penalty1));
                     XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Viscosity(1, BcMap, this.Control.beta, this.Control.Penalty1));
@@ -503,10 +501,6 @@ namespace BoSSS.Application.Rheology {
                     XOP.Commit();
 
                     JacobiOp = XOP.GetJacobiOperator(2);
-
-                    currentWeissenberg = 1.0;
-                    this.CheckJacobian();
-                    Assert.IsTrue(false, "remove me");
 
                     // create timestepper
                     //===============================================================
