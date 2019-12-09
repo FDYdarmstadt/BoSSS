@@ -69,18 +69,10 @@
     <Reference Include="System.Runtime.Serialization" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Z_OLD\ConstitutiveEqns_Convective_old.cs" />
-    <Compile Include="Z_OLD\ConstitutiveEqns_Diffusion_old.cs" />
-    <Compile Include="Z_OLD\ArtificialViscosity_old.cs" />
-    <Compile Include="Z_OLD\PerssonSensor_old.cs" />
-    <Compile Include="Z_OLD\StressDivergence_Cockburn_old.cs" />
     <Compile Include="Tests\RheologyChannelTest.cs" />
     <Compile Include="Tests\RheologyConsistencyTest.cs" />
     <Compile Include="Tests\RheologyLocalDGTest.cs" />
     <Compile Include="Controlfiles\SimpleTestcasesControl.cs" />
-    <Compile Include="Z_OLD\ConstitutiveEqns_Identity_old.cs" />
-    <Compile Include="Z_OLD\ConstitutiveEqns_Objective_old.cs" />
-    <Compile Include="Z_OLD\ConstitutiveEqns_Viscosity_old.cs" />
     <Compile Include="Controlfiles\RheologyControlExamples.cs" />
     <Compile Include="RheologyControl.cs" />
     <Compile Include="RheologyMain.cs" />
