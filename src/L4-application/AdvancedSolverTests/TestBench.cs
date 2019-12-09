@@ -1,5 +1,7 @@
-﻿using NUnit.Framework;
+﻿using BoSSS.Solution;
 using MPI.Wrappers;
+using NUnit.Framework;
+using System;
 
 namespace AdvancedSolverTests {
     [TestFixture]
@@ -15,6 +17,9 @@ namespace AdvancedSolverTests {
 
         public abstract void Run();
 
+        /// <summary>
+        /// 
+        /// </summary>
         [TestFixtureTearDown]
         public virtual void TearDown() {
             csMPI.Raw.mpiFinalize();
