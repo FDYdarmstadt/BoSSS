@@ -23,9 +23,6 @@ namespace BoSSS.Foundation {
             FindJacobianParams(SpatialDimension, ParameterVar, extractTaf);
         }
 
-        List<IEquationComponent> Components = new List<IEquationComponent>();
-
-        string[] DomainVar;
         
         /// <summary>
         /// Implementation of constructor functionality.
@@ -34,7 +31,7 @@ namespace BoSSS.Foundation {
             string[] DomVar = DomainVar.ToArray();
             bool[] DomVarAsParam = new bool[DomVar.Length];
             bool[] DomVarDerivAsParam = new bool[DomVar.Length];
-
+            NoOfOrgParams = ParameterVar.Length;
 
             foreach (var eq in Components) {
 
@@ -96,6 +93,12 @@ namespace BoSSS.Foundation {
             private set;
         }
 
+        int NoOfOrgParams;
+
+        List<IEquationComponent> Components = new List<IEquationComponent>();
+
+        string[] DomainVar;
+
         int[] DomainToParam;
 
         int[,] DomainDerivToParam;
@@ -156,10 +159,12 @@ namespace BoSSS.Foundation {
         virtual public DGField[] AllocateParameters(IEnumerable<DGField> DomainVar, IEnumerable<DGField> ParameterVar) {
             DGField[] ret = new DGField[this.JacobianParameterVars.Length];
             DGField[] __DomainVar = DomainVar.ToArray();
-            DGField[] __ParameterVar = ParameterVar.ToArray();
+            DGField[] __ParameterVar = ParameterVar != null ? ParameterVar.ToArray() : new DGField[0];
             
             if (DomainVar.Count() != DomainToParam.Length)
                 throw new ApplicationException("mismatch in number of domain variables");
+            if (__ParameterVar.Count() != NoOfOrgParams)
+                throw new ApplicationException("mismatch in number of parameter variables");
             int GAMMA = DomainToParam.Length;
             int D = DomainVar.First().GridDat.SpatialDimension;
             if (D != DomainDerivToParam.GetLength(1))
