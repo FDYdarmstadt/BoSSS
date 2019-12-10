@@ -184,25 +184,25 @@ namespace BoSSS.Solution {
                     };           
 
             break;
-                ////in NewtonGMRES Newton is merged with GMRES, this is an optimized algorithm
-                ////NonLinearSolver and LinearSolver can not be separated in this case
-                //case NonLinearSolverCode.NewtonGMRES:
+                //in NewtonGMRES Newton is merged with GMRES, this is an optimized algorithm
+                //NonLinearSolver and LinearSolver can not be separated in this case
+                case NonLinearSolverCode.NewtonGMRES:
 
-                //    nonlinSolver = new Newton(
-                //        ts_AssembleMatrixCallback,
-                //        ts_MultigridBasis,
-                //        MultigridOperatorConfig) {
-                //        maxKrylovDim = lc.MaxKrylovDim,
-                //        MaxIter = nc.MaxSolverIterations,
-                //        MinIter = nc.MinSolverIterations,
-                //        ApproxJac = Newton.ApproxInvJacobianOptions.GMRES,
-                //        Precond = PrecondSolver,
-                //        //Precond_solver = new RheologyJacobiPrecond() { m_We = 0.1},
-                //        GMRESConvCrit = lc.ConvergenceCriterion,
-                //        ConvCrit = nc.ConvergenceCriterion,
-                //        m_SessionPath = SessionPath,
-                //    };
-                //    break;
+                nonlinSolver = new Newton(
+                    ts_AssembleMatrixCallback,
+                    ts_MultigridBasis,
+                    MultigridOperatorConfig) {
+                    maxKrylovDim = lc.MaxKrylovDim,
+                    MaxIter = nc.MaxSolverIterations,
+                    MinIter = nc.MinSolverIterations,
+                    ApproxJac = Newton.ApproxInvJacobianOptions.GMRES,
+                    Precond = PrecondSolver,
+                    //Precond_solver = new RheologyJacobiPrecond() { m_We = 0.1},
+                    GMRESConvCrit = lc.ConvergenceCriterion,
+                    ConvCrit = nc.ConvergenceCriterion,
+                    m_SessionPath = SessionPath,
+                };
+                break;
 
                 case NonLinearSolverCode.PicardGMRES:
 
