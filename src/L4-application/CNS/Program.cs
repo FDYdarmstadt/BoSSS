@@ -90,6 +90,8 @@ namespace CNS {
                 args,
                 false,
                 () => new Program());
+
+            BoSSS.Foundation.Quadrature.NonLin.TempTimers.WriteStat();
         }
     }
 
@@ -278,6 +280,8 @@ namespace CNS {
                     Console.Write("Starting time step #" + TimestepNo + "...");
                 }
 
+                if (TimestepNo == 2)
+                    BoSSS.Foundation.Quadrature.NonLin.TempTimers.Reset();
 
 
                 // Update shock-capturing variables before performing a time step

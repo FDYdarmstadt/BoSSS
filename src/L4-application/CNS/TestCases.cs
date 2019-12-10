@@ -1683,6 +1683,8 @@ namespace CNS {
         /// Version to be submitted on the TU Darmstadt HHLR Lichtenberg cluster
         /// </summary>
         public static CNSControl DoubleMachReflectionHHLR(int savePeriod, int dgDegree, double xMax, double yMax, int numOfCellsX, int numOfCellsY, double sensorLimit, double CFLFraction, int explicitScheme, int explicitOrder, int numberOfSubGrids, int reclusteringInterval, int maxNumOfSubSteps, double endTime, int timeSteps, int cores) {
+            //CNS.TestCases.DoubleMachReflectionHHLR(100, 2, 4, 1, 100, 25, 0.001, 0.1, 1, 1, 3, 1, 0, 0.7, 10, 1);
+
 
             // Lichtenberg
             //string dbPath = @"/home/yp19ysog/bosss_db_paper_ibmdmr2";
@@ -1690,7 +1692,8 @@ namespace CNS {
             //string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr_run3_test";
             //string dbPath = @"C:\bosss_db_paper_ibmdmr_scratch_run3_test";
             //string dbPath = @"/work/scratch/jw52xeqa/DB_Cube";
-            string dbPath = @"V:\testDB";
+            //string dbPath = @"V:\testDB";
+            string dbPath = @"D:\tmp\test_db";
             string restart = "False";
 
             CNSControl c = DMR_Cube(dbPath, savePeriod, dgDegree, xMax, yMax, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, endTime, restart, cores);
