@@ -3774,7 +3774,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl StationaryShockWave(string dbPath = null, int savePeriod = 100, int dgDegree = 3, int numOfCellsX = 10, int numOfCellsY = 1, double dtFixed = 1e-4) {
+        public static CNSControl StationaryShockWave(string dbPath = null, int savePeriod = 100, int dgDegree = 3, int numOfCellsX = 10, int numOfCellsY = 1, double dtFixed = 1e-8) {
             CNSControl c = new CNSControl();
 
             // ### Database ###
@@ -3803,10 +3803,10 @@ namespace CNS {
             c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
             c.AddVariable(CompressibleVariables.Energy, dgDegree);
 
-            //c.AddVariable(CNSVariables.Pressure, dgDegree);
-            //c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
-            //c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
-            //c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
+            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
 
             //if (dgDegree > 0) {
             //    c.AddVariable(CNSVariables.CFLArtificialViscosity, 0);
@@ -3848,13 +3848,14 @@ namespace CNS {
 
                 grid.EdgeTagNames.Add(1, "SupersonicInlet");
                 grid.EdgeTagNames.Add(2, "SubsonicOutlet");
+                //grid.EdgeTagNames.Add(2, "SupersonicOutlet");
                 grid.EdgeTagNames.Add(3, "AdiabaticSlipWall");
 
                 grid.DefineEdgeTags(delegate (double[] X) {
                     if (Math.Abs(X[1]) < 1e-14) {   // bottom
-                        return 3;
+                        return 1;
                     } else if (Math.Abs(X[1] - (yMax - yMin)) < 1e-14) {    // top
-                        return 3;
+                        return 1;
                     } else if (Math.Abs(X[0]) < 1e-14) {                    // left
                         return 1;
                     } else if (Math.Abs(X[0] - (xMax - xMin)) < 1e-14) {    // right
@@ -3873,21 +3874,31 @@ namespace CNS {
             // Parameters
             // #########################
             double gamma = IdealGas.Air.HeatCapacityRatio;
-            double Ms = 1.5;
 
             // #########################
             // Shock
             // #########################
-            double densityLeft = 1;
-            double densityRight = (gamma + 1) * Ms * Ms / (2 + (gamma - 1) * Ms * Ms) * densityLeft;
-            double pressureLeft = 1;
-            double pressureRight = (1 + 2 * gamma / (gamma + 1) * (Ms * Ms - 1)) * pressureLeft;
+            //double Ms = 1.5;
+            //double densityLeft = 1;
+            //double pressureLeft = 1;
+            //double velocityXLeft = Ms * Math.Sqrt(gamma * pressureLeft / densityLeft);
+            //double velocityYLeft = 0;
+
+            // DMR
+            double Ms = 10;
+            double densityLeft = 8;
+            double pressureLeft = 116.5;
             double velocityXLeft = Ms * Math.Sqrt(gamma * pressureLeft / densityLeft);
+            //double velocityXLeft2 = 8.25 * Math.Sin(Math.PI / 3);
+            //double velocityYLeft = -8.25 * Math.Cos(Math.PI / 3);
+            double velocityYLeft = 0;
+
+            double densityRight = (gamma + 1) * Ms * Ms / (2 + (gamma - 1) * Ms * Ms) * densityLeft;
+            double pressureRight = (1 + 2 * gamma / (gamma + 1) * (Ms * Ms - 1)) * pressureLeft;
             double velocityXRight = (2 + (gamma - 1) * Ms * Ms) / ((gamma + 1) * Ms * Ms) * velocityXLeft;    // (1)
             //double velocityXRight = velocityXLeft * densityLeft / densityRight; // equivalent to (1)
             //double MsPostShock = Math.Sqrt((1 + ((gamma - 1) / 2) * Ms * Ms) / (gamma * Ms * Ms - (gamma - 1) / 2));
             //double velocityXRight3 = MsPostShock * Math.Sqrt(gamma * pressureRight / densityRight);     // equivalent to (1)
-            double velocityYLeft = 0;
             double velocityYRight = 0;
 
             double cellSize = Math.Min((xMax - xMin) / numOfCellsX, (yMax - yMin) / numOfCellsY);
@@ -3948,6 +3959,11 @@ namespace CNS {
             double totalEnergyLeft = innerEnergyLeft + kineticEnergyLeft;
             double totalEnergyRight = innerEnergyRight + kineticEnergyRight;
 
+            //c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => X[0] <= shockPosition ? densityLeft : densityRight);
+            //c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => X[0] <= shockPosition ? velocityXLeft : velocityXRight);
+            //c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => X[0] <= shockPosition ? velocityYLeft : velocityYRight);
+            //c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => X[0] <= shockPosition ? pressureLeft : pressureRight);
+
             c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => X[0] <= shockPosition ? densityLeft : densityRight);
             c.InitialValues_Evaluators.Add(CompressibleVariables.Momentum.xComponent, X => X[0] <= shockPosition ? momentumXLeft : momentumXRight);
             c.InitialValues_Evaluators.Add(CompressibleVariables.Momentum.yComponent, X => X[0] <= shockPosition ? momentumYLeft : momentumYRight);
@@ -3959,14 +3975,15 @@ namespace CNS {
             c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.yComponent, (X, t) => X[0] <= shockPosition ? velocityYLeft : velocityYRight);
             c.AddBoundaryValue("SupersonicInlet", CNSVariables.Pressure, (X, t) => X[0] <= shockPosition ? pressureLeft : pressureRight);
             c.AddBoundaryValue("SubsonicOutlet", CNSVariables.Pressure, (X, t) => X[0] <= shockPosition ? pressureLeft : pressureRight);
+            //c.AddBoundaryValue("SupersonicOutlet", CNSVariables.Pressure, (X, t) => X[0] <= shockPosition ? pressureLeft : pressureRight);
             c.AddBoundaryValue("AdiabaticSlipWall");
 
 
             // ### Time configuration ###
             c.dtMin = 0.0;
             c.dtMax = 1.0;
-            c.CFLFraction = 0.1;
-            //c.dtFixed = dtFixed;
+            //c.CFLFraction = 0.1;
+            c.dtFixed = dtFixed;
 
             c.Endtime = 6.0;
             c.NoOfTimesteps = int.MaxValue;
