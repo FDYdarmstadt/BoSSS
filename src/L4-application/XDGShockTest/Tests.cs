@@ -106,7 +106,7 @@ namespace XDGShockTube {
         #endregion
     }
 
-    public static class XDGShockTestsControlExamples {
+    public static class XDGShockTubeControlExamples {
 
         public static XDGShockControl XDGTestsShockTube(string speciesName) {
             XDGShockControl c = new XDGShockControl();
