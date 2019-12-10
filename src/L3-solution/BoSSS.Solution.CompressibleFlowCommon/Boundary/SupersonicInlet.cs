@@ -80,7 +80,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// \f$ (\rho^*, u_0^*[, u_1^*[, u_2^*]], p*)^T\f$ 
         /// </returns>
         public override StateVector GetBoundaryState(double time, Vector x, Vector normal, StateVector stateIn) {
-            Convection.OptimizedHLLCFlux.SupersonicInlet.Start();
+            //Convection.OptimizedHLLCFlux.SupersonicInlet.Start();
 
             Debug.Assert(x.Dim == stateIn.Dimension);
             int D = x.Dim;
@@ -95,7 +95,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
                 DensityFunction(x, time),
                 uOut,
                 PressureFunction(x, time));
-            Convection.OptimizedHLLCFlux.SupersonicInlet.Stop();
+            //Convection.OptimizedHLLCFlux.SupersonicInlet.Stop();
             return retval;
         }
 
@@ -104,7 +104,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// Vectorized implementation of <see cref="GetBoundaryState(double, Vector, Vector, StateVector)"/>
         /// </summary>
         public override void GetBoundaryState(MultidimensionalArray[] StateOut, double time, MultidimensionalArray X, MultidimensionalArray Normals, MultidimensionalArray[] StateIn, int Offset, int NoOfEdges, bool normalFlipped, Material material) {
-            Convection.OptimizedHLLCFlux.SupersonicInlet.Start();
+            //Convection.OptimizedHLLCFlux.SupersonicInlet.Start();
             if (X.Dimension != 3)
                 throw new ArgumentException();
             int D = X.GetLength(2);
@@ -125,10 +125,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
             var MomentumZ = is3D ? StateOut[3] : null;
 
             var DensityIn = StateIn[0];
-            var EnergyIn = StateIn[D + 1];
-            var MomentumXin = StateIn[1];
-            var MomentumYin = StateIn[2];
-            var MomentumZin = is3D ? StateIn[3] : null;
+            //var EnergyIn = StateIn[D + 1];
+            //var MomentumXin = StateIn[1];
+            //var MomentumYin = StateIn[2];
+            //var MomentumZin = is3D ? StateIn[3] : null;
 
             double MachScaling = material.EquationOfState.HeatCapacityRatio * material.MachNumber * material.MachNumber;
 
@@ -169,7 +169,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
                 }
             }
 
-            Convection.OptimizedHLLCFlux.SupersonicInlet.Stop();
+            //Convection.OptimizedHLLCFlux.SupersonicInlet.Stop();
         }
 
     }

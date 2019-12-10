@@ -96,9 +96,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
                     }
 
                     StateVector stateIn = new StateVector(material, StateIn, edge, n, D);
-                    OptimizedHLLCFlux.State.Start();
+                    //OptimizedHLLCFlux.State.Start();
                     StateVector stateBoundary = GetBoundaryState(time, xLocal, normalLocal, stateIn);
-                    OptimizedHLLCFlux.State.Stop();
+                    //OptimizedHLLCFlux.State.Stop();
 
                     Density[edge, n] = stateBoundary.Density;
                     MomentumX[edge, n] = stateBoundary.Momentum.x;

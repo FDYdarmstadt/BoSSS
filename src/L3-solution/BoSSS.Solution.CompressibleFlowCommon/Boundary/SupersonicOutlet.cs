@@ -52,7 +52,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// Vectorized implementation
         /// </summary>
         public override void GetBoundaryState(MultidimensionalArray[] StateOut, double time, MultidimensionalArray X, MultidimensionalArray Normals, MultidimensionalArray[] StateIn, int Offset, int NoOfEdges, bool normalFlipped, Material material) {
-            Convection.OptimizedHLLCFlux.SupersonicOutlet.Start();
+            //Convection.OptimizedHLLCFlux.SupersonicOutlet.Start();
             if(StateOut.Length != StateIn.Length) {
                 throw new ArgumentException();
             }
@@ -65,7 +65,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
                 StateOut[l].ExtractSubArrayShallow(I0, IE)
                     .Set(StateIn[l].ExtractSubArrayShallow(I0, IE));
             }
-            Convection.OptimizedHLLCFlux.SupersonicOutlet.Stop();
+            //Convection.OptimizedHLLCFlux.SupersonicOutlet.Stop();
         }
         
     }

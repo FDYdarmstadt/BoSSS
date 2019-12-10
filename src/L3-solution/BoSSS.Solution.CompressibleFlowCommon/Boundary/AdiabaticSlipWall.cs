@@ -53,7 +53,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// which mimics a mirrored flow at the other side of the wall.
         /// </summary>
         public override StateVector GetBoundaryState(double time, Vector x, Vector normal, StateVector stateIn) {
-            Convection.OptimizedHLLCFlux.AdiabaticSlipWall.Start();
+            //Convection.OptimizedHLLCFlux.AdiabaticSlipWall.Start();
             Vector normalVector = normal;
 
             Debug.Assert(normal.Dim == stateIn.Dimension);
@@ -76,7 +76,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
                     stateIn.Material, stateIn.Density, uOut, stateIn.Pressure);
             }
 
-            Convection.OptimizedHLLCFlux.AdiabaticSlipWall.Stop();
+            //Convection.OptimizedHLLCFlux.AdiabaticSlipWall.Stop();
             return stateOut;
         }
 

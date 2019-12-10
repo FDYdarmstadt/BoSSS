@@ -28,6 +28,7 @@ using BoSSS.Foundation.Grid.Classic;
 
 namespace BoSSS.Foundation.Quadrature.NonLin {
 
+    /*
     public static class TempTimers {
         static public int bndItems = 0;
         static public int intItems = 0;
@@ -66,6 +67,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
         }
     }
+    */
 
     /// <summary>
     /// edge quadrature of nonlinear equation components
@@ -1404,8 +1406,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         int __Len = m_InnerEdgesIEs[l] - m_InnerEdgesI0s[l] + 1;
                         int jEdge = m_InnerEdgesI0s[l] + i0;
 
-                        TempTimers.intItems += __Len;
-                        TempTimers.intWatch.Start();
+                        //TempTimers.intItems += __Len;
+                        //TempTimers.intWatch.Start();
 
 
                         CallInner(nonlinFlx, jEdge, IndexOffset, __Len, NoArgs, NoParams,
@@ -1416,7 +1418,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                             MapAlsoGradient ? components.MapArguments(m_FieldGradientIN, nonlinFlx, true) : null,
                             MapAlsoGradient ? components.MapArguments(m_FieldGradientOT, nonlinFlx, true) : null);
 
-                        TempTimers.intWatch.Stop();
+                        //TempTimers.intWatch.Stop();
 
                     }
                     timers[iComp].Stop();
@@ -1477,8 +1479,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                             // an edge on the domain boundary
                             // ++++++++++++++++++++++++++++++
 
-                            TempTimers.bndItems += __Len;
-                            TempTimers.bndWatch.Start();
+                            //TempTimers.bndItems += __Len;
+                            //TempTimers.bndWatch.Start();
 
 
                             // Vektorisierung für Rand-Flussfunktionen im Moment ungenutzt
@@ -1487,7 +1489,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                                 MapAlsoMean ? components.MapArguments(m_MeanFieldValuesIN, nonlinFlx, true) : null,
                                 MapAlsoGradient ? components.MapArguments(m_FieldGradientIN, nonlinFlx, true) : null);
 
-                            TempTimers.bndWatch.Stop();
+                            //TempTimers.bndWatch.Stop();
 
                         } else {
                             // an internal edge, but on the boundary of the subgrid

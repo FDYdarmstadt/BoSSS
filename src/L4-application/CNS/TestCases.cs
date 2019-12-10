@@ -1609,7 +1609,7 @@ namespace CNS {
             Debug.Assert((tan60 - Math.Tan(Math.PI / 3).Abs() < BLAS.MachineEps * 100));
 
             double DistanceToInitialShock(double[] X, double t) {
-                OptimizedHLLCFlux.DistanceToInitialShock.Start();
+                //OptimizedHLLCFlux.DistanceToInitialShock.Start();
                 // direction vector
                 //Vector p1 = new Vector(xWall, 0.0);
                 //Vector p2 = new Vector(xWall + 1 / tan60, 1.0);
@@ -1633,19 +1633,19 @@ namespace CNS {
                 // distance to line
                 double distance = nDotX - (sin60 * xWall + vs * t);
 
-                OptimizedHLLCFlux.DistanceToInitialShock.Stop();
+                //OptimizedHLLCFlux.DistanceToInitialShock.Stop();
                 return distance;
             }
 
             // Function for smoothing the initial and top boundary conditions
             double SmoothJump(double distance) {
-                OptimizedHLLCFlux.SmoothJump.Start();
+                //OptimizedHLLCFlux.SmoothJump.Start();
                 // smoothing should be in the range of h/p
                 double maxDistance = 2.0 * cellSize / Math.Max(dgDegree, 1);
 
                 //double retval = (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
                 double retval = (FastTanh((float)(distance / maxDistance)) + 1.0) * 0.5; // ca 20%
-                OptimizedHLLCFlux.SmoothJump.Stop();
+                //OptimizedHLLCFlux.SmoothJump.Stop();
                 return retval;
             }
 

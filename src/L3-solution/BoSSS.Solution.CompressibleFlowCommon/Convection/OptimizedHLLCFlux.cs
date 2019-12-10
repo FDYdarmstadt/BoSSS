@@ -68,8 +68,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
             int Lenght,
             MultidimensionalArray Output) {
 
-            Total.Start();
-            Alloc.Start();
+            //Total.Start();
+            //Alloc.Start();
 
             int NoOfNodes = Uin[0].GetLength(1);
             int D = CompressibleEnvironment.NumberOfDimensions;
@@ -92,10 +92,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
             Vector xLocal = new Vector(D);
             Vector normalLocal = new Vector(D);
 
-            Alloc.Stop();
+            //Alloc.Stop();
 
             // Loop over edges
-            Loops.Start();
+            //Loops.Start();
             for (int e = 0; e < Lenght; e++) {
                 byte EdgeTag = EdgeTags[e + EdgeTagsOffset];
 
@@ -150,14 +150,15 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
                 //    Energy[edge, n] = stateBoundary.Energy;
                 //}
             }
-            Loops.Stop();
+            //Loops.Stop();
 
-            Inner.Start();
+            //Inner.Start();
             InnerEdgeFlux(time, jEdge, x, normal, Uin, Uout, Offset, Lenght, Output);
-            Inner.Stop();
-            Total.Stop();
+            //Inner.Stop();
+            //Total.Stop();
         }
 
+        /*
         public static Stopwatch Inner = new Stopwatch();
         public static Stopwatch Alloc = new Stopwatch();
         public static Stopwatch Total = new Stopwatch();
@@ -181,7 +182,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
             SupersonicOutlet.Reset();
             AdiabaticSlipWall.Reset();
         }
-
+        */
 
 
         /// <summary>
