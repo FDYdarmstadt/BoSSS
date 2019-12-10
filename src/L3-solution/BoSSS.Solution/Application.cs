@@ -172,7 +172,7 @@ namespace BoSSS.Solution {
                 args,
                 GetBoSSSInstallDir(),
                 out m_MustFinalizeMPI);
-            {
+            if(m_MustFinalizeMPI) {
                 int rank, size;
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
                 csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);

@@ -178,7 +178,7 @@ namespace ilPSP {
                 case 3: {
                     int L0 = this.GetLength(0);
                     int L1 = this.GetLength(1);
-                    int L2 = this.GetLength(1);
+                    int L2 = this.GetLength(2);
                     for(int i0 = 0; i0 < L0; i0++)
                         for(int i1 = 0; i1 < L1; i1++) {
                             for (int i2 = 0; i2 < L2; i2++) {

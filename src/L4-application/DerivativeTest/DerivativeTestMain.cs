@@ -202,8 +202,8 @@ namespace BoSSS.Application.DerivativeTest {
 
             //Quadrature_Bulksize.CHUNK_DATA_LIMIT = 1;
             //BoSSS.Foundation.Caching.Cache.MaxMem = 1024;
-            /*
-            for (int i = 18; i <= 18; i++) {
+            
+            for (int i = 1; i <= 5; i++) {
                 BoSSS.Solution.Application._Main(args, true,  delegate () {
                     var R = new DerivativeTestMain();
                     GRID_CASE = i;
@@ -214,7 +214,7 @@ namespace BoSSS.Application.DerivativeTest {
 
             // gmsh Grids
             // ==========
-
+            /*
             string[] gmshMeshFiles = Directory.GetFiles(@"../../TestGrids/", "QuadTest4th.msh");
             //string[] gmshMeshFiles = Directory.GetFiles(@"../../TestGrids/", "WallMountedCube.cgns");
             //string[] gmshMeshFiles = Directory.GetFiles(@"../../TestGrids/", "ring.cgns");
