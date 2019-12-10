@@ -27,7 +27,7 @@ using XDGShock;
 using XDGShock.TimeStepping;
 using XDGShock.Variables;
 
-namespace XDGShockTest {
+namespace XDGShockTube {
 
     /// <summary>
     /// NUnit tests for the XDGShock project

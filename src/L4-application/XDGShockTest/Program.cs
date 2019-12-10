@@ -47,7 +47,7 @@ using XDGShock.ShockCapturing;
 using XDGShock.TimeStepping;
 using XDGShock.Variables;
 
-namespace XDGShockTest {
+namespace XDGShockTube {
 
     public class Program : Application<XDGShockControl> {
         static void Main(string[] args) {

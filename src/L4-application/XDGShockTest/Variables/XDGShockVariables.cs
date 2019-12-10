@@ -27,7 +27,7 @@ using System.Threading.Tasks;
 using XDGShock.ShockCapturing;
 using static BoSSS.Solution.CompressibleFlowCommon.Variable;
 
-namespace XDGShockTest {
+namespace XDGShockTube {
     public static class XDGShockVariables {
 
         /// <summary>
