@@ -201,6 +201,7 @@ namespace BoSSS.Solution {
                     GMRESConvCrit = lc.ConvergenceCriterion,
                     ConvCrit = nc.ConvergenceCriterion,
                     m_SessionPath = SessionPath,
+                    UsePresRefPoint = nc.UsePresRefPoint,
                 };
                 break;
 
