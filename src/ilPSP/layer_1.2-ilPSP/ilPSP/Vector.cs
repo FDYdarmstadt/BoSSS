@@ -22,6 +22,7 @@ using System.Diagnostics;
 using ilPSP.Utils;
 using ilPSP;
 using System.Collections;
+using System.Runtime.CompilerServices;
 
 namespace ilPSP {
 
@@ -177,10 +178,11 @@ namespace ilPSP {
         /// <param name="i">either 0 (x-component) or 1 (y-component)</param>
         /// <returns></returns>
         public double this[int i] {
+            //[MethodImpl(MethodImplOptions.AggressiveInlining)]
             set {
                 if(i < 0 || i >= this.Dim)
                     throw new IndexOutOfRangeException("vector component out of range.");
-
+                
                 if (i == 0)
                     x = value;
                 else if (i == 1 && Dim > 1)
@@ -189,9 +191,16 @@ namespace ilPSP {
                     z = value;
                 else
                     throw new IndexOutOfRangeException("vector component index must be either 0 or 1.");
+                
+                //unsafe {
+                //    fixed(Vector* d = &this) {
+                //        ((double*)d)[i] = value;
+                //    }
+                //}
             }
+            //[MethodImpl(MethodImplOptions.AggressiveInlining)]
             get {
-                if (i < 0 || i >= this.Dim)
+                if(i < 0 || i >= this.Dim)
                     throw new IndexOutOfRangeException("vector component out of range.");
 
                 if (i == 0)
@@ -202,6 +211,12 @@ namespace ilPSP {
                     return z;
                 else
                     throw new IndexOutOfRangeException("vector component index must be either 0 or 1.");
+                    
+                //unsafe {
+                //    fixed(Vector* d = &this) {
+                //        return ((double*)d)[i];
+                //    }
+                //}
 
             }
         }

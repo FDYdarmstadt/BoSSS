@@ -41,6 +41,7 @@ using CNS.Convection;
 using BoSSS.Foundation.Grid;
 using ilPSP.Utils;
 using BoSSS.Solution.Statistic;
+using BoSSS.Solution.CompressibleFlowCommon.Convection;
 
 namespace CNS {
 
@@ -80,6 +81,16 @@ namespace CNS {
                 () => new Program());
 
             BoSSS.Foundation.Quadrature.NonLin.TempTimers.WriteStat();
+            Console.WriteLine("   Total boundary edge flux: " + OptimizedHLLCFlux.Total.Elapsed.TotalSeconds);
+            Console.WriteLine("      allocation:            " + OptimizedHLLCFlux.Alloc.Elapsed.TotalSeconds);
+            Console.WriteLine("      loops:                 " + OptimizedHLLCFlux.Loops.Elapsed.TotalSeconds);
+            Console.WriteLine("         state comp:         " + OptimizedHLLCFlux.State.Elapsed.TotalSeconds);
+            Console.WriteLine("            SupersonicInlet:           " + OptimizedHLLCFlux.SupersonicInlet.Elapsed.TotalSeconds);
+            Console.WriteLine("               DistanceToInitialShock: " + OptimizedHLLCFlux.DistanceToInitialShock.Elapsed.TotalSeconds);
+            Console.WriteLine("               SmoothJump:             " + OptimizedHLLCFlux.SmoothJump.Elapsed.TotalSeconds);
+            Console.WriteLine("            SupersonicOutlet:          " + OptimizedHLLCFlux.SupersonicOutlet.Elapsed.TotalSeconds);
+            Console.WriteLine("            AdiabaticSlipWall:         " + OptimizedHLLCFlux.AdiabaticSlipWall.Elapsed.TotalSeconds);
+            Console.WriteLine("      inner edge flux:       " + OptimizedHLLCFlux.Inner.Elapsed.TotalSeconds);
         }
     }
 
@@ -268,9 +279,10 @@ namespace CNS {
                     Console.Write("Starting time step #" + TimestepNo + "...");
                 }
 
-                if (TimestepNo == 2)
+                if (TimestepNo == 2) {
                     BoSSS.Foundation.Quadrature.NonLin.TempTimers.Reset();
-
+                    OptimizedHLLCFlux.Reset();
+                }
 
                 // Update shock-capturing variables before performing a time step
                 // as the time step constraints (could) depend on artificial viscosity.
@@ -325,15 +337,15 @@ namespace CNS {
 
                 using (new BlockTrace("TimeStepper.Perform", ht)) {
                     Exception e = null;
-                    try {
+                    //try {
                         //TimeStepper.CurrentState.SaveToTextFile("tsinp-lts.txt");
                         //ilPSP.Environment.GlobalVec =  TimeStepper.CurrentState.ToArray();
                         //double dist = ilPSP.Environment.CompareTo(TimeStepper.CurrentState);
                         dt = TimeStepper.Perform(dt);
-                    } catch (Exception ee) {
-                        e = ee;
-                    }
-                    e.ExceptionBcast();
+                    //} catch (Exception ee) {
+                    //    e = ee;
+                    //}
+                    //e.ExceptionBcast();
 
 
                     if (DatabaseDriver.MyRank == 0 && TimestepNo % printInterval == 0) {

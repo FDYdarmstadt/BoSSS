@@ -18,6 +18,8 @@ using System;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
 using System.Diagnostics;
+using ilPSP;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
@@ -74,35 +76,101 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// calculate the complete state from the given density, momentum and
         /// pressure
         /// </summary>
-        /// <param name="time">
-        /// <see cref="BoundaryCondition.GetBoundaryState"/>
-        /// </param>
-        /// <param name="x">
-        /// <see cref="BoundaryCondition.GetBoundaryState"/>
-        /// </param>
-        /// <param name="normal">
-        /// <see cref="BoundaryCondition.GetBoundaryState"/>
-        /// </param>
-        /// <param name="stateIn">
-        /// <see cref="BoundaryCondition.GetBoundaryState"/>
-        /// </param>
         /// <returns>
         /// \f$ (\rho^*, u_0^*[, u_1^*[, u_2^*]], p*)^T\f$ 
         /// </returns>
-        public override StateVector GetBoundaryState(double time, double[] x, double[] normal, StateVector stateIn) {
-            Debug.Assert(x.Length == stateIn.Dimension);
-            int D = x.Length;
+        public override StateVector GetBoundaryState(double time, Vector x, Vector normal, StateVector stateIn) {
+            Convection.OptimizedHLLCFlux.SupersonicInlet.Start();
 
-            ilPSP.Vector uOut = new ilPSP.Vector(D);
+            Debug.Assert(x.Dim == stateIn.Dimension);
+            int D = x.Dim;
+
+            Vector uOut = new Vector(D);
             for (int i = 0; i < D; i++) {
                 uOut[i] = VelocityFunctions[i](x, time);
             }
 
-            return StateVector.FromPrimitiveQuantities(
+            StateVector retval = StateVector.FromPrimitiveQuantities(
                 stateIn.Material,
                 DensityFunction(x, time),
                 uOut,
                 PressureFunction(x, time));
+            Convection.OptimizedHLLCFlux.SupersonicInlet.Stop();
+            return retval;
         }
+
+      
+        /// <summary>
+        /// Vectorized implementation of <see cref="GetBoundaryState(double, Vector, Vector, StateVector)"/>
+        /// </summary>
+        public override void GetBoundaryState(MultidimensionalArray[] StateOut, double time, MultidimensionalArray X, MultidimensionalArray Normals, MultidimensionalArray[] StateIn, int Offset, int NoOfEdges, bool normalFlipped, Material material) {
+            Convection.OptimizedHLLCFlux.SupersonicInlet.Start();
+            if (X.Dimension != 3)
+                throw new ArgumentException();
+            int D = X.GetLength(2);
+            int NoOfNodes = X.GetLength(1);
+            
+            if (StateIn.Length != D + 2)
+                throw new ArgumentException();
+            if (StateOut.Length != D + 2)
+                throw new ArgumentException();
+            bool is3D = D >= 3;
+            if (D < 2)
+                throw new NotSupportedException();
+
+            var Density = StateOut[0];
+            var Energy = StateOut[D + 1];
+            var MomentumX = StateOut[1];
+            var MomentumY = StateOut[2];
+            var MomentumZ = is3D ? StateOut[3] : null;
+
+            var DensityIn = StateIn[0];
+            var EnergyIn = StateIn[D + 1];
+            var MomentumXin = StateIn[1];
+            var MomentumYin = StateIn[2];
+            var MomentumZin = is3D ? StateIn[3] : null;
+
+            double MachScaling = material.EquationOfState.HeatCapacityRatio * material.MachNumber * material.MachNumber;
+
+            double[] xLocal = new double[D];
+            //Vector uOut = new Vector(D);
+            for (int e = 0; e < NoOfEdges; e++) {
+                int edge = e + Offset;
+
+                // Loop over nodes
+                for (int n = 0; n < NoOfNodes; n++) {
+                    xLocal[0] = X[edge, n, 0];
+                    xLocal[1] = X[edge, n, 1];
+                    double uOut_x = VelocityFunctions[0](xLocal, time);
+                    double uOut_y = VelocityFunctions[1](xLocal, time);
+                    double uOut_z = 0.0;
+                    double velocity_AbsSquare = uOut_x * uOut_x + uOut_y * uOut_y;
+                    if(is3D) {
+                        xLocal[2] = X[edge, n, 2];
+                        uOut_z = VelocityFunctions[2](xLocal, time);
+                        velocity_AbsSquare += uOut_z * uOut_z;
+                    }
+
+                    //StateVector stateBoundary = StateVector.FromPrimitiveQuantities(
+                    //    material,
+                    //    DensityFunction(xLocal, time),
+                    //    uOut,
+                    //    PressureFunction(xLocal, time));
+                    double density = DensityIn[edge, n];
+                    double pressure = PressureFunction(xLocal, time);
+
+                    Density[edge, n] = density;
+                    MomentumX[edge, n] = uOut_x*density;
+                    MomentumY[edge, n] = uOut_y*density;
+                    if(is3D)
+                        MomentumZ[edge, n] = uOut_z*density;
+                    Energy[edge, n] = material.EquationOfState.GetInnerEnergy(density, pressure) + 0.5 * MachScaling * density * velocity_AbsSquare;
+                    
+                }
+            }
+
+            Convection.OptimizedHLLCFlux.SupersonicInlet.Stop();
+        }
+
     }
 }

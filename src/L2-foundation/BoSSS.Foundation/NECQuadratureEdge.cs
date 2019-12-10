@@ -56,11 +56,12 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             double bndAvg = bndWatch.Elapsed.TotalMilliseconds / bndItems;
             double intAvg = intWatch.Elapsed.TotalMilliseconds / intItems;
             double ratio = bndAvg / intAvg;
+            double totRatio = bndWatch.Elapsed.TotalMilliseconds / intWatch.Elapsed.TotalMilliseconds;
 
             Console.WriteLine("    Average time for interior edge [msec]: " + intAvg);
             Console.WriteLine("    Average time for boundary edge [msec]: " + bndAvg);
             Console.WriteLine("    boundary edges are {0:0.##E-00} times {1} expensive.", ratio, ratio <= 1 ? "less" : "more");
-
+            Console.WriteLine("    boundary edges {0} % of interior edges.", totRatio*100);
             Console.WriteLine("----------------------------------------------");
 
         }
@@ -1471,7 +1472,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                             Debug.Assert(_SubGrdBnd == SubGrdBnd);
                         }
 
-#endif
+#endif 
                         if(DomainBnd) {
                             // an edge on the domain boundary
                             // ++++++++++++++++++++++++++++++

@@ -43,24 +43,6 @@ namespace CNS.Convection {
         /// Evaluates the Rusanov flux (also known as the local Lax-Friedrichs
         /// flux as stated in Toro2009, equations 10.55 and 10.56.
         /// </summary>
-        /// <param name="x">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <param name="time">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <param name="stateIn">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <param name="stateOut">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <param name="normal">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <param name="edgeIndex">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
         /// <returns>
         /// \f$ 
         /// \frac{1}{2} (F_L + F_R - S^+ (U_R - U_L))

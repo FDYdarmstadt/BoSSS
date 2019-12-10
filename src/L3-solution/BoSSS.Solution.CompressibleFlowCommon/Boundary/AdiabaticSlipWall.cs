@@ -18,6 +18,7 @@ using System;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
 using System.Diagnostics;
+using ilPSP;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
@@ -51,26 +52,12 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// \f$ \vec{m}^+ = \vec{m}^- - 2((\rho \vec{u})^- \cdot \vec{n})\vec{n}\f$ 
         /// which mimics a mirrored flow at the other side of the wall.
         /// </summary>
-        /// <param name="time">
-        /// <see cref="BoundaryCondition.GetBoundaryState"/>
-        /// </param>
-        /// <param name="x">
-        /// <see cref="BoundaryCondition.GetBoundaryState"/>
-        /// </param>
-        /// <param name="normal">
-        /// <see cref="BoundaryCondition.GetBoundaryState"/>
-        /// </param>
-        /// <param name="stateIn">
-        /// <see cref="BoundaryCondition.GetBoundaryState"/>
-        /// </param>
-        /// <returns>
-        /// <see cref="BoundaryCondition.GetBoundaryState"/>
-        /// </returns>
-        public override StateVector GetBoundaryState(double time, double[] x, double[] normal, StateVector stateIn) {
-            ilPSP.Vector normalVector = GetNormalVector(normal);
+        public override StateVector GetBoundaryState(double time, Vector x, Vector normal, StateVector stateIn) {
+            Convection.OptimizedHLLCFlux.AdiabaticSlipWall.Start();
+            Vector normalVector = normal;
 
-            Debug.Assert(normal.Length == stateIn.Dimension);
-            int D = normal.Length;
+            Debug.Assert(normal.Dim == stateIn.Dimension);
+            int D = normal.Dim;
             
             StateVector stateOut;
             if (WallVelocities == null) {
@@ -89,7 +76,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
                     stateIn.Material, stateIn.Density, uOut, stateIn.Pressure);
             }
 
+            Convection.OptimizedHLLCFlux.AdiabaticSlipWall.Stop();
             return stateOut;
         }
+
+        
     }
 }
