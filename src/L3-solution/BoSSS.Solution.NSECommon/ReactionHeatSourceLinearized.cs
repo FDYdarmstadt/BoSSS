@@ -28,7 +28,7 @@ namespace BoSSS.Solution.NSECommon {
     /// <summary>
     /// Reaction heat source in temperature equation.
     /// </summary>
-    public class ReactionHeatSourceLinearized : BoSSS.Solution.Utils.LinearSource {
+    public class ReactionHeatSourceLinearized : BoSSS.Solution.Utils.LinearSource, IEquationComponentCoefficient {
         string[] m_ArgumentOrdering;
         string[] m_ParameterOrdering;
         double ReactionRate;
@@ -38,7 +38,7 @@ namespace BoSSS.Solution.NSECommon {
 
         MaterialLaw EoS;
         double rho;
-
+        double m_Da;
         /// <summary>
         /// Ctor.
         /// </summary>
@@ -53,6 +53,8 @@ namespace BoSSS.Solution.NSECommon {
             this.ReactionRateConstants = ReactionRateConstants;
             this.OneOverMolarMass0MolarMass1 = OneOverMolarMass0MolarMass1;
             this.EoS = EoS;
+            m_Da = ReactionRateConstants[0]; // Damköhler number 
+
          
         }
 
@@ -71,6 +73,12 @@ namespace BoSSS.Solution.NSECommon {
             get { return m_ParameterOrdering; }
         }
 
+
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            if(cs.UserDefinedValues.Keys.Contains("Damkoehler"))
+                m_Da = (double)cs.UserDefinedValues["Damkoehler"];
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -79,7 +87,7 @@ namespace BoSSS.Solution.NSECommon {
             Debug.Assert(!double.IsNaN(rho));
             Debug.Assert(!double.IsInfinity(rho));
                       
-                ReactionRate = ReactionRateConstants[0] * Math.Exp(-ReactionRateConstants[1] / parameters[0]) * OneOverMolarMass0MolarMass1 * Math.Pow(rho * parameters[1], ReactionRateConstants[2]) * Math.Pow(rho * parameters[2], ReactionRateConstants[3]); 
+                ReactionRate = m_Da * Math.Exp(-ReactionRateConstants[1] / parameters[0]) * OneOverMolarMass0MolarMass1 * Math.Pow(rho * parameters[1], ReactionRateConstants[2]) * Math.Pow(rho * parameters[2], ReactionRateConstants[3]); 
 
             return HeatReleaseFactor * U[0] * ReactionRate;
             

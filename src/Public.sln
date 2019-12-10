@@ -149,6 +149,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "btail", "Utils\btail\btail.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoronoiTests", "L4-application\VoronoiTests\VoronoiTests.csproj", "{B8E3E969-8763-4EA7-82AA-4CA3DB8C3134}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.RheologyCommon", "L3-solution\BoSSS.Solution.RheologyCommon\BoSSS.Solution.RheologyCommon.csproj", "{02864872-FF49-4BD2-96FC-9769AC268B5A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -387,6 +389,10 @@ Global
 		{B8E3E969-8763-4EA7-82AA-4CA3DB8C3134}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B8E3E969-8763-4EA7-82AA-4CA3DB8C3134}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B8E3E969-8763-4EA7-82AA-4CA3DB8C3134}.Release|Any CPU.Build.0 = Release|Any CPU
+		{02864872-FF49-4BD2-96FC-9769AC268B5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{02864872-FF49-4BD2-96FC-9769AC268B5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{02864872-FF49-4BD2-96FC-9769AC268B5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{02864872-FF49-4BD2-96FC-9769AC268B5A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -457,6 +463,7 @@ Global
 		{EFBEFF7A-E40D-4808-BE79-536040C0FADC} = {D9C6B595-1F33-48F4-A87F-13C7D35F5199}
 		{DFAFE1D1-0235-4125-9364-E8DE47546CC6} = {3A4009EF-FAE4-4514-BC3A-2161437194CE}
 		{B8E3E969-8763-4EA7-82AA-4CA3DB8C3134} = {0AF02196-DCBF-4066-AC5A-CC14525B390C}
+		{02864872-FF49-4BD2-96FC-9769AC268B5A} = {3303F7B6-36AF-43F0-AD12-217ADDE38B43}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B302C86E-A207-460C-8E9F-13EA258F7D8B}

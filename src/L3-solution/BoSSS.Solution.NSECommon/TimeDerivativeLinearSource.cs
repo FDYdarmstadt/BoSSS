@@ -78,8 +78,11 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="U"></param>
         /// <returns></returns>
         protected override double Source(double[] x, double[] parameters, double[] U) {
-            Debug.Assert(ParameterOrdering[1] == VariableNames.Rho);
-            rho = parameters[1];
+
+            //Debug.Assert(ParameterOrdering[1] == VariableNames.Rho);
+            // rho = parameters[1];
+            rho = EoS.GetDensity(parameters);
+
             double T = parameters[0];
             double mult = 1.0;
 
