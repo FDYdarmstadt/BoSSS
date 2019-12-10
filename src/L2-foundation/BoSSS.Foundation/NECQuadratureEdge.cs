@@ -1406,6 +1406,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         TempTimers.intItems += __Len;
                         TempTimers.intWatch.Start();
 
+
                         CallInner(nonlinFlx, jEdge, IndexOffset, __Len, NoArgs, NoParams,
                             components.MapArguments(m_FieldValuesIN, nonlinFlx, false),
                             components.MapArguments(m_FieldValuesOT, nonlinFlx, false),
@@ -1446,16 +1447,38 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         Debug.Assert(DomainBnd || SubGrdBnd);
 
                         int jEdge = IndexOffset + i0;
+
                         int __Len = 1;
+                        for(; IndexOffset + __Len < Length; __Len++) {
+                            int _jCell1 = grid.iGeomEdges.CellIndices[IndexOffset + i0 + __Len, 0];
+                            int _jCell2 = grid.iGeomEdges.CellIndices[IndexOffset + i0 + __Len, 1];
+                            bool _DomainBnd = _jCell2 < 0;
+                            bool _SubGrdBnd = (SubGridCellsMarker != null) && (!_DomainBnd) && (SubGridCellsMarker[_jCell1] != SubGridCellsMarker[_jCell2]); 
+                            
+                            if (_DomainBnd != DomainBnd)
+                                break;
+                            if (_SubGrdBnd != SubGrdBnd)
+                                break;
+                        }
+#if DEBUG
+                        for(int jEdgeTest = jEdge; jEdgeTest < jEdge + __Len; jEdgeTest++) {
+                            int _jCell1 = grid.iGeomEdges.CellIndices[jEdgeTest, 0];
+                            int _jCell2 = grid.iGeomEdges.CellIndices[jEdgeTest, 1];
+                            bool _DomainBnd = _jCell2 < 0;
+                            bool _SubGrdBnd = (SubGridCellsMarker != null) && (!_DomainBnd) && (SubGridCellsMarker[_jCell1] != SubGridCellsMarker[_jCell2]);
+                            Debug.Assert(_DomainBnd || _SubGrdBnd);
+                            Debug.Assert(_DomainBnd == DomainBnd);
+                            Debug.Assert(_SubGrdBnd == SubGrdBnd);
+                        }
 
-
-
+#endif
                         if(DomainBnd) {
                             // an edge on the domain boundary
                             // ++++++++++++++++++++++++++++++
 
                             TempTimers.bndItems += __Len;
                             TempTimers.bndWatch.Start();
+
 
                             // Vektorisierung für Rand-Flussfunktionen im Moment ungenutzt
                             CallBorder(nonlinFlx, jEdge, IndexOffset, __Len, jEdge, false, NoArgs, NoParams,
@@ -1529,6 +1552,9 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                                 throw new NotImplementedException();
                             }
                         }
+
+
+                        IndexOffset += (__Len - 1);
                     }
                     timers[iComp].Stop();
                 }

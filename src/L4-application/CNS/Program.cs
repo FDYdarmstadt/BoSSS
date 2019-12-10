@@ -56,23 +56,11 @@ namespace CNS {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-            //int L = 5;
-            //var A = MultidimensionalArray.Create(L, L); 
-            //var B = MultidimensionalArray.Create(L, L); 
-            //var C = MultidimensionalArray.Create(L, L);
-
-            //for (int l = 0; l < L; l++)
-            //    A[l, l] = l + 1 + l * 2;
-
-            //A.InvertTo(B);
-
-            //C.GEMM(1.0, A, B, 0.0);
-
-            //Console.WriteLine("BLAS-LAPACK ok");
-
-            //return;
+           
 
             //Application.InitMPI(args);
+            //CNS.Tests.BoundaryConditions.EulerBoundaryConditionTest.TestSubsonicInletAndOutletBoundaryCondition1D();
+            //CNS.Tests.ArtificialViscosity.ArtificialViscosityShockTubeTests.ToroTest1_ALTS1_3();
             //CNS.Tests.MovingIBMTests.PistonTests.MovingMeshIBMPiston0thOrderNoAgglomeration();
             //CNS.Tests.MovingIBMTests.PistonTests.SplittingIBMPiston0thOrderNoAgglomeration();
             ////CNS.Tests.ConvectiveFlux.ShockTubeTests.Toro1RusanovTest();
