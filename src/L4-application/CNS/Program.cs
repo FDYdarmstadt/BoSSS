@@ -59,9 +59,9 @@ namespace CNS {
 
            
 
-            //Application.InitMPI(args);
+            Application.InitMPI(args);
             //CNS.Tests.BoundaryConditions.EulerBoundaryConditionTest.TestSubsonicInletAndOutletBoundaryCondition1D();
-            //CNS.Tests.ArtificialViscosity.ArtificialViscosityShockTubeTests.ToroTest1_ALTS1_3();
+            CNS.Tests.ArtificialViscosity.ArtificialViscosityShockTubeTests.ToroTest1_ALTS1_3();
             //CNS.Tests.MovingIBMTests.PistonTests.MovingMeshIBMPiston0thOrderNoAgglomeration();
             //CNS.Tests.MovingIBMTests.PistonTests.SplittingIBMPiston0thOrderNoAgglomeration();
             ////CNS.Tests.ConvectiveFlux.ShockTubeTests.Toro1RusanovTest();
@@ -336,16 +336,16 @@ namespace CNS {
                 //}
 
                 using (new BlockTrace("TimeStepper.Perform", ht)) {
-                    Exception e = null;
-                    try {
+                    //Exception e = null;
+                    //try {
                         //TimeStepper.CurrentState.SaveToTextFile("tsinp-lts.txt");
                         //ilPSP.Environment.GlobalVec =  TimeStepper.CurrentState.ToArray();
                         //double dist = ilPSP.Environment.CompareTo(TimeStepper.CurrentState);
                         dt = TimeStepper.Perform(dt);
-                    } catch (Exception ee) {
-                        e = ee;
-                    }
-                    e.ExceptionBcast();
+                    //} catch (Exception ee) {
+                    //    e = ee;
+                    //}
+                    //e.ExceptionBcast();
 
 
                     if (DatabaseDriver.MyRank == 0 && TimestepNo % printInterval == 0) {

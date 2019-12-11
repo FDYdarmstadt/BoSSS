@@ -69,15 +69,16 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
                 throw new ArgumentException();
             if (StateOut.Length != D + 2)
                 throw new ArgumentException();
+            bool is2D = D >= 2;
             bool is3D = D >= 3;
-            if (D < 2)
+            if (D < 1 || D > 3)
                 throw new NotSupportedException();
 
             var Density = StateOut[0];
             var Energy = StateOut[D + 1];
             var MomentumX = StateOut[1];
-            var MomentumY = StateOut[2];
-            var MomentumZ = D >= 3 ? StateOut[3] : null;
+            var MomentumY = is2D ? StateOut[2] : null;
+            var MomentumZ = is3D ? StateOut[3] : null;
 
             Vector xLocal = new Vector(D);
             Vector normalLocal = new Vector(D);
@@ -87,9 +88,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
                 // Loop over nodes
                 for (int n = 0; n < NoOfNodes; n++) {
                     xLocal.x = X[edge, n, 0];
-                    xLocal.y = X[edge, n, 1];
                     normalLocal.x = Normals[edge, n, 0] * sign;
-                    normalLocal.y = Normals[edge, n, 1] * sign;
+                    if (is2D) {
+                        xLocal.y = X[edge, n, 1];
+                        normalLocal.y = Normals[edge, n, 1] * sign;
+                    }
                     if(is3D) {
                         xLocal.z = X[edge, n, 2];
                         normalLocal.z = Normals[edge, n, 2] * sign;
@@ -102,7 +105,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
                     Density[edge, n] = stateBoundary.Density;
                     MomentumX[edge, n] = stateBoundary.Momentum.x;
-                    MomentumY[edge, n] = stateBoundary.Momentum.y;
+                    if(is2D)
+                        MomentumY[edge, n] = stateBoundary.Momentum.y;
                     if(is3D)
                         MomentumZ[edge, n] = stateBoundary.Momentum.z;
                     Energy[edge, n] = stateBoundary.Energy;
