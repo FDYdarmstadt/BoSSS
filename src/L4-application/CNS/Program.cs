@@ -59,21 +59,11 @@ namespace CNS {
 
            
 
-            //Application.InitMPI(args);
-            //CNS.Tests.BoundaryConditions.EulerBoundaryConditionTest.TestSubsonicInletAndOutletBoundaryCondition1D();
-            //CNS.Tests.ArtificialViscosity.ArtificialViscosityShockTubeTests.ToroTest1_ALTS1_3();
-            //CNS.Tests.MovingIBMTests.PistonTests.MovingMeshIBMPiston0thOrderNoAgglomeration();
-            //CNS.Tests.MovingIBMTests.PistonTests.SplittingIBMPiston0thOrderNoAgglomeration();
-            ////CNS.Tests.ConvectiveFlux.ShockTubeTests.Toro1RusanovTest();
-            //CNS.Tests.ConvectiveFlux.ShockTubeTests.Toro1AllButRusanovTest(ConvectiveFluxTypes.Godunov);
-            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder0th();
-            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder1st();
-            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder2nd();
-            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder3rd();
-            //CNS.Tests.IBMTests.IBMIsentropicVortexTest.IBMVortexLocalTimeSteppingTest();
-            //Debug.Assert(false, "remove me");
-            //csMPI.Raw.mpiFinalize();
-            //return;
+            Application.InitMPI(args);
+            CNS.Tests.BoundaryConditions.EulerBoundaryConditionTest.TestSubsonicInletBoundaryCondition1D();
+            Debug.Assert(false, "remove me");
+            csMPI.Raw.mpiFinalize();
+            return;
 
             Application<CNSControl>._Main(
                 args,

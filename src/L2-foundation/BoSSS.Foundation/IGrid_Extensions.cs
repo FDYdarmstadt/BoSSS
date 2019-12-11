@@ -24,7 +24,6 @@ namespace BoSSS.Foundation.Grid {
         /// returned by the <paramref name="EdgeTagFunc"/>-function is not in
         /// the dictionary
         /// </summary>
-        /// <param name="EdgeTagFunc"></param>
         static public void DefineEdgeTags(this IGrid g, Func<Vector, byte> EdgeTagFunc, params string[] EdgeTagNamesToEnsure) {
             g.DefineEdgeTags(delegate (Vector v) {
                 string EdgeTagName = null;

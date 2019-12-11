@@ -115,8 +115,13 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
             if (StateOut.Length != D + 2)
                 throw new ArgumentException();
             bool is3D = D >= 3;
-            if (D < 2)
-                throw new NotSupportedException();
+            if (D < 2) {
+                // base-implementation supports also 1D;
+                // The implementation here is (a bit) tuned for performance, we only support 2D and 3D;
+                // in 1D, performance is not so relevant anyway.
+                base.GetBoundaryState(StateOut, time, X, Normals, StateIn, Offset, NoOfEdges, normalFlipped, material);
+                return;
+            }
 
             var Density = StateOut[0];
             var Energy = StateOut[D + 1];
