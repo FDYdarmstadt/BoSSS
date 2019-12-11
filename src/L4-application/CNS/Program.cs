@@ -60,7 +60,7 @@ namespace CNS {
            
 
             Application.InitMPI(args);
-            CNS.Tests.BoundaryConditions.EulerBoundaryConditionTest.TestSubsonicInletBoundaryCondition1D();
+            CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder0th();
             Debug.Assert(false, "remove me");
             csMPI.Raw.mpiFinalize();
             return;

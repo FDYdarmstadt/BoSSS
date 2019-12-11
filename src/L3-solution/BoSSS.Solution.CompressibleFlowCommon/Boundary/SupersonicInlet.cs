@@ -99,6 +99,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
             return retval;
         }
 
+        
       
         /// <summary>
         /// Vectorized implementation of <see cref="GetBoundaryState(double, Vector, Vector, StateVector)"/>
@@ -156,12 +157,18 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
                         velocity_AbsSquare += uOut_z * uOut_z;
                     }
 
-                    //StateVector stateBoundary = StateVector.FromPrimitiveQuantities(
-                    //    material,
-                    //    DensityFunction(xLocal, time),
-                    //    uOut,
-                    //    PressureFunction(xLocal, time));
-                    double density = DensityIn[edge, n];
+#if DEBUG
+                    var uOutVec = new Vector(D);
+                    uOutVec.x = uOut_x;
+                    uOutVec.y = uOut_y;
+                    uOutVec.z = uOut_z;
+                    StateVector stateBoundary = StateVector.FromPrimitiveQuantities(
+                        material,
+                        DensityFunction(xLocal, time),
+                        uOutVec,
+                        PressureFunction(xLocal, time));
+#endif
+                    double density = DensityFunction(xLocal, time);
                     double pressure = PressureFunction(xLocal, time);
 
                     Density[edge, n] = density;
@@ -170,12 +177,19 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
                     if(is3D)
                         MomentumZ[edge, n] = uOut_z*density;
                     Energy[edge, n] = material.EquationOfState.GetInnerEnergy(density, pressure) + 0.5 * MachScaling * density * velocity_AbsSquare;
-                    
+#if DEBUG
+                    Debug.Assert(Density[edge, n].RelErrorSmallerEps(stateBoundary.Density), "density error");
+                    for(int d = 0; d < D; d++)
+                        Debug.Assert(StateOut[d + 1][edge, n].RelErrorSmallerEps(stateBoundary.Momentum[d]), "momentum error");
+                    Debug.Assert(Energy[edge, n].RelErrorSmallerEps(stateBoundary.Energy), "energy error");
+
+#endif
                 }
             }
 
             //Convection.OptimizedHLLCFlux.SupersonicInlet.Stop();
-        }
 
+
+        }
     }
 }
