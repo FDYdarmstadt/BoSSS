@@ -53,6 +53,25 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// Relative distance between two numbers
+        /// </summary>
+        public static double RelErrorTo(this double a, double b) {
+            double errTot = Math.Abs(a - b);
+            double denom = Math.Max(Math.Abs(a), Math.Abs(b));
+            denom = Math.Max(denom, double.MinValue * 10);
+            return errTot / denom;
+        }
+
+        /// <summary>
+        /// Tests whether the relative distance between two numbers is smaller than the machine epsilon (<see cref="BLAS.MachineEps"/>) times <paramref name="mag"/>.
+        /// </summary>
+        public static bool RelErrorSmallerEps(this double a, double b, double mag = 1000) {
+            double errRel = a.RelErrorTo(b);
+            return errRel < BLAS.MachineEps*mag;
+        }
+
+
+        /// <summary>
         /// <see cref="double.IsNaN"/>
         /// </summary>
         /// <param name="d"><see cref="double.IsNaN"/></param>
