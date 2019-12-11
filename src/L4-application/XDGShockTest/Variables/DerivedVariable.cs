@@ -24,7 +24,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace XDGShockTest {
+namespace XDGShockTube {
     public class DerivedVariable<T> : Variable {
 
         /// <summary>

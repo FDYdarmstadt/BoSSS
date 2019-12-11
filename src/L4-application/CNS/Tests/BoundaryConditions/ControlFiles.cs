@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
@@ -22,6 +23,7 @@ using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.Residual;
 using CNS.Source;
+using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
@@ -140,7 +142,7 @@ namespace CNS.Tests.BoundaryConditions {
                     GridCommons grid = Grid1D.LineGrid(
                         GenericBlas.Linspace(0.0, Math.PI / 2.0 + 0.0, noOfCells + 1));
                     grid.EdgeTagNames.Add(1, "supersonicInlet");
-                    grid.DefineEdgeTags(x => 1);
+                    grid.DefineEdgeTags((Vector X) => 1);
                     return grid;
                 };
                 c.ProjectName += "_supersonicAll";
@@ -170,7 +172,7 @@ namespace CNS.Tests.BoundaryConditions {
                         GenericBlas.Linspace(0.0, Math.PI / 2.0 + 0.0, noOfCells + 1));
                     grid.EdgeTagNames.Add(1, "supersonicInlet");
                     grid.EdgeTagNames.Add(2, "subsonicOutlet");
-                    grid.DefineEdgeTags(x => Math.Abs(x[0]) < 1e-14 ? (byte)1 : (byte)2);
+                    grid.DefineEdgeTags((Vector x) => Math.Abs(x[0]) < 1e-14 ? (byte)1 : (byte)2);
                     return grid;
                 };
                 c.ProjectName += "_subsonicOutlet";
@@ -202,7 +204,7 @@ namespace CNS.Tests.BoundaryConditions {
                         GenericBlas.Linspace(0.0, Math.PI / 2.0 + 0.0, noOfCells + 1));
                     grid.EdgeTagNames.Add(1, "supersonicInlet");
                     grid.EdgeTagNames.Add(2, "subsonicInlet");
-                    grid.DefineEdgeTags(x => Math.Abs(x[0]) < 1e-14 ? (byte)2 : (byte)1);
+                    grid.DefineEdgeTags((Vector x) => Math.Abs(x[0]) < 1e-14 ? (byte)2 : (byte)1);
                     return grid;
                 };
                 c.ProjectName += "_subsonicInlet2";
@@ -236,7 +238,7 @@ namespace CNS.Tests.BoundaryConditions {
                         GenericBlas.Linspace(0.0, Math.PI / 2.0 + 0.0, noOfCells + 1));
                     grid.EdgeTagNames.Add(1, "subsonicInlet");
                     grid.EdgeTagNames.Add(2, "subsonicOutlet");
-                    grid.DefineEdgeTags(x => Math.Abs(x[0]) < 1e-14 ? (byte)1 : (byte)2);
+                    grid.DefineEdgeTags((Vector x) => Math.Abs(x[0]) < 1e-14 ? (byte)1 : (byte)2);
                     return grid;
                 };
                 c.ProjectName += "_subsonicAll";
@@ -267,7 +269,7 @@ namespace CNS.Tests.BoundaryConditions {
                         GenericBlas.Linspace(0.0, Math.PI / 2.0 + 0.0, noOfCells + 1));
                     grid.EdgeTagNames.Add(1, "supersonicInlet");
                     grid.EdgeTagNames.Add(2, "subsonicPressureInlet");
-                    grid.DefineEdgeTags(x => Math.Abs(x[0]) < 1e-14 ? (byte)2 : (byte)1);
+                    grid.DefineEdgeTags((Vector x) => Math.Abs(x[0]) < 1e-14 ? (byte)2 : (byte)1);
                     return grid;
                 };
 
@@ -300,7 +302,7 @@ namespace CNS.Tests.BoundaryConditions {
                         GenericBlas.Linspace(0.0, Math.PI / 2.0 + 0.0, noOfCells + 1));
                     grid.EdgeTagNames.Add(1, "subsonicPressureInlet");
                     grid.EdgeTagNames.Add(2, "subsonicOutlet");
-                    grid.DefineEdgeTags(x => Math.Abs(x[0]) < 1e-14 ? (byte)1 : (byte)2);
+                    grid.DefineEdgeTags((Vector x) => Math.Abs(x[0]) < 1e-14 ? (byte)1 : (byte)2);
                     return grid;
                 };
 

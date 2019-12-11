@@ -342,7 +342,21 @@ namespace BoSSS.Foundation.XDG.Quadrature
             ISayeGaussRule rule = new SayeFactory_Cube(
                 _lsData,
                 RootFinder,
-                SayeFactory_Cube.QuadratureMode.Volume);
+                SayeFactory_Cube.QuadratureMode.PositiveVolume);
+            return new SayeGaussRuleFactory(rule);
+        }
+
+        /// <summary>
+        /// Gauss rules for \f$ \oint_{\frakI \cap K_j } \ldots \dS \f$ in the 3D case
+        /// </summary>
+        /// 
+        public static IQuadRuleFactory<QuadRule> SayeGaussRule_NegativeVolume3D(
+            LevelSetTracker.LevelSetData _lsData,
+            IRootFindingAlgorithm RootFinder) {
+            ISayeGaussRule rule = new SayeFactory_Cube(
+                _lsData,
+                RootFinder,
+                SayeFactory_Cube.QuadratureMode.NegativeVolume);
             return new SayeGaussRuleFactory(rule);
         }
 
@@ -366,12 +380,28 @@ namespace BoSSS.Foundation.XDG.Quadrature
         /// </summary>
         public static IQuadRuleFactory<QuadRule> SayeGaussRule_Volume2D( 
             LevelSetTracker.LevelSetData _lsData, 
-            IRootFindingAlgorithm RootFinder)
+            IRootFindingAlgorithm RootFinder
+            )
         {
             ISayeGaussRule rule = new SayeFactory_Square(
                 _lsData,
                 RootFinder,
                 SayeFactory_Square.QuadratureMode.PositiveVolume
+                );
+            return new SayeGaussRuleFactory(rule);
+        }
+
+        /// <summary>
+        /// Gauss rules for \f$ \int_{\frakA \cap K_j } \ldots \dV \f$ in the 2D case
+        /// </summary>
+        public static IQuadRuleFactory<QuadRule> SayeGaussRule_NegativeVolume2D(
+            LevelSetTracker.LevelSetData _lsData,
+            IRootFindingAlgorithm RootFinder
+            ) {
+            ISayeGaussRule rule = new SayeFactory_Square(
+                _lsData,
+                RootFinder,
+                SayeFactory_Square.QuadratureMode.NegativeVolume
                 );
             return new SayeGaussRuleFactory(rule);
         }
@@ -429,9 +459,22 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }
         }
 
-#endregion
+        public static IQuadRuleFactory<QuadRule> SayeGaussRule_NegativeVolume(
+           LevelSetTracker.LevelSetData _lsData,
+           IRootFindingAlgorithm RootFinder) {
+            RefElement refElem = _lsData.GridDat.Grid.GetRefElement(0);
+            if (refElem is Grid.RefElements.Square) {
+                return SayeGaussRule_NegativeVolume2D(_lsData, RootFinder);
+            } else if (refElem is Grid.RefElements.Cube) {
+                return SayeGaussRule_NegativeVolume3D(_lsData, RootFinder);
+            } else {
+                throw new NotImplementedException("Saye quadrature not available for this RefElement");
+            }
+        }
 
-    #region Combo QuadRules
+        #endregion
+
+        #region Combo QuadRules
 
         public static SayeGaussComboRuleFactory SayeGaussRule_Combo2D(
             LevelSetTracker.LevelSetData _lsData,

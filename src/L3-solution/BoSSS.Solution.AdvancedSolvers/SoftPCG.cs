@@ -276,7 +276,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// ToDo: Cloning of Preconditioner is not supported.
         /// </summary>
         /// <returns></returns>
-        public ISolverSmootherTemplate Clone() {
+        public object Clone() {
             var clone = new SoftPCG();
             clone.IterationCallback = this.IterationCallback;
             clone.NoOfIterations = this.NoOfIterations;

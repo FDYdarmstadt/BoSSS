@@ -16,6 +16,7 @@ limitations under the License.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
@@ -92,6 +93,11 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         [NonSerialized]
         protected ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure;
+        /// <summary>
+        /// 
+        /// </summary>
+        [NonSerialized]
+        public double ThermodynamicPressureValue = 1.0;
         
         /// <summary>
         /// Hack to initalize ThermodynamicPressure - called by NSE_SIMPLE.VariableSet.Initialize()
@@ -115,10 +121,14 @@ namespace BoSSS.Solution.NSECommon {
         /// </returns>
         public override double GetDensity(params double[] phi) {
             if (IsInitialized) {
-                double rho = this.ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
-                if (rhoOne)  
-                rho = 1.0;
-                
+                double rho;
+                if(!rhoOne) {//                
+  //rho = ThermodynamicPressureValue / phi[0];
+                    rho = ThermodynamicPressure.Current.GetMeanValue(0)/phi[0];
+                }
+                else {
+                    rho = 1.0;
+                }
                 return rho;
             } else {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");
@@ -139,6 +149,8 @@ namespace BoSSS.Solution.NSECommon {
                 case MaterialParamsMode.Sutherland: {
                         double S = 110.5;
                         double viscosity = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
+                        Debug.Assert(!double.IsNaN(viscosity));
+                        Debug.Assert(!double.IsInfinity(viscosity));
                         return viscosity;
                     }
                 case MaterialParamsMode.PowerLaw: {
@@ -162,6 +174,8 @@ namespace BoSSS.Solution.NSECommon {
                 case MaterialParamsMode.Sutherland: {
                         double S = 110.5;
                         double viscosity = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
+                        Debug.Assert(!double.IsNaN(viscosity));
+                        Debug.Assert(!double.IsInfinity(viscosity));
                         double lambda = viscosity; //// using viscosity = lambda for Pr = cte...
                         return lambda;
                     }
@@ -185,8 +199,12 @@ namespace BoSSS.Solution.NSECommon {
                 case MaterialParamsMode.Constant:
                     return 1.0;
                 case MaterialParamsMode.Sutherland: {
-                        //    throw new NotImplementedException();
-                        return 1.0; // Using a constant value! 
+                        double S = 110.5;
+                        double viscosity = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
+                        Debug.Assert(!double.IsNaN(viscosity));
+                        Debug.Assert(!double.IsInfinity(viscosity));
+                        double diff = viscosity; //// using viscosity = lambda for Sc = 1...
+                        return diff; // Using a constant value! 
                     }
                 case MaterialParamsMode.PowerLaw: {
                         throw new NotImplementedException();
@@ -243,7 +261,6 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="Temperature"></param>
         /// <returns></returns>
         public override double GetMassDeterminedThermodynamicPressure(double InitialMass, SinglePhaseField Temperature) {
-
             SinglePhaseField omega = new SinglePhaseField(Temperature.Basis);
             omega.ProjectField(1.0,
                 delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
@@ -257,11 +274,8 @@ namespace BoSSS.Solution.NSECommon {
                     }
                 }, new Foundation.Quadrature.CellQuadratureScheme(true, null));
             return (InitialMass / omega.IntegralOver(null));
-
-            //SinglePhaseField OneOverTemperature = new SinglePhaseField(Temperature.Basis);
-            // OneOverTemperature.ProjectPow(1.0, Temperature, -1.0);
-            //return (InitialMass / OneOverTemperature.IntegralOver(null));
         }
+
         /// <summary>
         /// 
         /// </summary>

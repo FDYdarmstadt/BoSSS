@@ -483,33 +483,33 @@ namespace BoSSS.Solution.NSECommon {
         public const string Temperature0Mean = "Temperature0Mean";
 
         /// <summary>
-        /// x - component of the Tenperature gradient
+        /// x - component of the Temperature gradient
         /// </summary>
         public const string TemperatureGradient0 = "TemperatureGradient[0]";
 
         /// <summary>
-        /// y - component of the Tenperature gradient
+        /// y - component of the Temperature gradient
         /// </summary>
         public const string TemperatureGradient1 = "TemperatureGradient[1]";
 
         /// <summary>
-        /// z - component of the Tenperature gradient
+        /// z - component of the Temperature gradient
         /// </summary>
         public const string TemperatureGradient2 = "TemperatureGradient[2]";
 
-        /// <summary>
-        /// x - component of the Tenperature gradient (linearization point)
-        /// </summary>
+        ///// <summary>
+        ///// x - component of the Temperature gradient (linearization point)
+        ///// </summary>
         //public const string Temperature0Gradient0 = "Temperature0Gradient[0]";
 
-        /// <summary>
-        /// y - component of the Tenperature gradient (linearization point)
-        /// </summary>
+        ///// <summary>
+        ///// y - component of the Temperature gradient (linearization point)
+        ///// </summary>
         //public const string Temperature0Gradient1 = "Temperature0Gradient[1]";
 
-        /// <summary>
-        /// z - component of the Tenperature gradient (linearization point)
-        /// </summary>
+        ///// <summary>
+        ///// z - component of the Temperature gradient (linearization point)
+        ///// </summary>
         //public const string Temperature0Gradient2 = "Temperature0Gradient[2]";
 
         /// <summary>
@@ -525,7 +525,7 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         /// <summary>
-        /// Components of the Temeprature gradient
+        /// Components of the Temperature gradient
         /// </summary>
         static public string TemperatureGradientComponent(int i) {
             switch (i) {

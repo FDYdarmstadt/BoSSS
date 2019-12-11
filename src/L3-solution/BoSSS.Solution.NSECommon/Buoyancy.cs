@@ -19,21 +19,24 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using BoSSS.Foundation;
+using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.Utils;
+using ilPSP;
 
 namespace BoSSS.Solution.NSECommon {
-
+    
     /// <summary>
     /// [LowMach] Buoyant force.
     /// </summary>
     //public class Buoyancy : BoSSS.Foundation.IVolumeForm {
     public class Buoyancy : LinearSource { 
-        double[] GravityDirection;
+        Vector GravityDirection;
         int SpatialComponent;
         double Froude;
         MaterialLaw EoS;
         PhysicsMode physicsMode;
         string[] m_ParameterOrdering;
+
         /// <summary>
         /// Ctor.
         /// </summary>
@@ -42,14 +45,9 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="Froude">Dimensionless Froude number.</param>
         /// <param name="physicsMode"></param>
         /// <param name="EoS">Equation of state for calculating density.</param>
-        public Buoyancy(double[] GravityDirection, int SpatialComponent, double Froude, PhysicsMode physicsMode, MaterialLaw EoS) {
+        public Buoyancy(Vector GravityDirection, int SpatialComponent, double Froude, PhysicsMode physicsMode, MaterialLaw EoS) {
             // Check direction
-            double sum = 0.0;
-            for (int i = 0; i < GravityDirection.Length; i++) {
-                sum += GravityDirection[i] * GravityDirection[i];
-            }
-            double DirectionNorm = Math.Sqrt(sum);
-            if ((DirectionNorm - 1.0) > 1.0e-13)
+            if ((GravityDirection.Abs() - 1.0) > 1.0e-13)
                 throw new ArgumentException("Length of GravityDirection vector has to be 1.0");
 
             // Initialize
@@ -58,23 +56,19 @@ namespace BoSSS.Solution.NSECommon {
             this.Froude = Froude;
             this.EoS = EoS;
             this.physicsMode = physicsMode;
-            
+
             switch (physicsMode) {
                 case PhysicsMode.LowMach:
-                    this.m_ParameterOrdering = new string[] { VariableNames.Temperature0};
+                    this.m_ParameterOrdering = new string[] { VariableNames.Temperature0 };
                     break;
                 case PhysicsMode.Combustion:
                     this.m_ParameterOrdering = new string[] { VariableNames.Temperature0, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0 };
                     break;
                 default:
                     throw new ApplicationException("wrong physicsmode");
-                }
             }
+        }
 
-        
-
-           
-        
         /// <summary>
         /// 
         /// </summary>
@@ -122,4 +116,98 @@ namespace BoSSS.Solution.NSECommon {
 
  
     }
+    
+
+    /// <summary>
+    /// [LowMach] Buoyant force.
+    /// </summary>
+    //public class Buoyancy : BoSSS.Foundation.IVolumeForm {
+    public class BuoyancyJacobi : LinearSource {
+        Vector GravityDirection;
+        int SpatialComponent;
+        double Froude;
+        MaterialLaw EoS;
+        PhysicsMode physicsMode;
+        string[] m_ParameterOrdering;
+
+        /// <summary>
+        /// Ctor.
+        /// </summary>
+        /// <param name="GravityDirection">Unit vector for spatial direction of gravity.</param>
+        /// <param name="SpatialComponent">Spatial component of source.</param>
+        /// <param name="Froude">Dimensionless Froude number.</param>
+        /// <param name="physicsMode"></param>
+        /// <param name="EoS">Equation of state for calculating density.</param>
+        public BuoyancyJacobi(Vector GravityDirection, int SpatialComponent, double Froude, PhysicsMode physicsMode, MaterialLaw EoS) {
+            // Check direction
+            if((GravityDirection.Abs() - 1.0) > 1.0e-13)
+                throw new ArgumentException("Length of GravityDirection vector has to be 1.0");
+
+            // Initialize
+            this.GravityDirection = GravityDirection;
+            this.SpatialComponent = SpatialComponent;
+            this.Froude = Froude;
+            this.EoS = EoS;
+            this.physicsMode = physicsMode;
+
+            switch(physicsMode) {
+                case PhysicsMode.LowMach:
+                    this.m_ParameterOrdering = new string[] { VariableNames.Temperature0 };
+                    break;
+                case PhysicsMode.Combustion:
+                    this.m_ParameterOrdering = new string[] { VariableNames.Temperature0, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0 };
+                    break;
+                default:
+                    throw new ApplicationException("wrong physicsmode");
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="parameters"></param>
+        /// <param name="U"></param>
+        /// <returns></returns>
+        protected override double Source(double[] x, double[] parameters, double[] U) {
+            double src = 0.0;
+
+            //double rho = EoS.GetDensity(U[0]);
+            double rho = EoS.GetDensity(parameters);
+
+            src = 1.0 / (Froude * Froude) * rho * GravityDirection[SpatialComponent];
+
+            return src;
+        }
+
+        /// <summary>
+        /// Temperature
+        /// </summary>
+        public override IList<string> ArgumentOrdering {
+            get {
+                return new string[] {
+                    //VariableNames.Temperature 
+                };
+            }
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        public override TermActivationFlags VolTerms {
+            get {
+                return TermActivationFlags.UxV | TermActivationFlags.V;
+            }
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        public override IList<string> ParameterOrdering {
+            get {
+                return m_ParameterOrdering;
+            }
+        }
+
+
+    }
+
 }

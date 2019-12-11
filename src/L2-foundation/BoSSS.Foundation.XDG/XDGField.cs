@@ -1041,12 +1041,12 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// equal to implementation in base class, see
-        /// <see cref="DGField.DerivativeByFlux(double,DGField,int,SubGrid,SpatialOperator.SubGridBoundaryModes)"/>;
+        /// <see cref="DGField.DerivativeByFlux(double,DGField,int,SubGrid,SubGridBoundaryModes)"/>;
         /// The DG coordinates of all species are computed equally;
         /// </summary>
         public override void DerivativeByFlux(double alpha, DGField f, int d,
             SubGrid optionalSubGrid = null,
-            SpatialOperator.SubGridBoundaryModes bndMode = SpatialOperator.SubGridBoundaryModes.OpenBoundary) {
+            SubGridBoundaryModes bndMode = SubGridBoundaryModes.OpenBoundary) {
 
             foreach (var SpcId in this.Basis.Tracker.SpeciesIdS) {
                 DGField _f;

@@ -184,7 +184,7 @@ class Divergence\_cendiff : BaseDivergence \{ \newline
  \newline 
 \btab \btab double Acc = 0; \newline 
 \btab \btab for(int d = 0; d < inp.D; d++) \{ \newline 
-\btab \btab \btab Acc += 0.5*(Sigma\_IN[d] + Sigma\_OT[d])*inp.Normale[d]*(V\_IN - V\_OT); \newline 
+\btab \btab \btab Acc += 0.5*(Sigma\_IN[d] + Sigma\_OT[d])*inp.Normal[d]*(V\_IN - V\_OT); \newline 
 \btab \btab \} \newline 
 \btab \btab return Acc; \newline 
 \btab \} \newline 
@@ -198,7 +198,7 @@ class Divergence\_cendiff : BaseDivergence \{ \newline
             /// Dirichlet-boundary: by taking the inner value of $\vec{\sigma}$, 
             /// this is a free boundary with respect to $\vec{\sigma}$.
 \btab \btab \btab for(int d = 0; d < inp.D; d++) \{ \newline 
-\btab \btab \btab \btab Acc += Sigma\_IN[d]*inp.Normale[d]*V\_IN; \newline 
+\btab \btab \btab \btab Acc += Sigma\_IN[d]*inp.Normal[d]*V\_IN; \newline 
 \btab \btab \btab \} \newline 
 \btab \btab \} else \{ \newline 
             /// Neumann-boundary
@@ -243,7 +243,7 @@ class Divergence\_strong : BaseDivergence \{ \newline
  \newline 
 \btab \btab double Acc = 0; \newline 
 \btab \btab for(int d = 0; d < inp.D; d++) \{ \newline 
-\btab \btab \btab Acc += 0.5*(V\_IN + V\_OT)*(Sigma\_IN[d] - Sigma\_OT[d])*inp.Normale[d]; \newline 
+\btab \btab \btab Acc += 0.5*(V\_IN + V\_OT)*(Sigma\_IN[d] - Sigma\_OT[d])*inp.Normal[d]; \newline 
 \btab \btab \} \newline 
 \btab \btab return Acc; \newline 
 \btab \} \newline 
@@ -258,7 +258,7 @@ class Divergence\_strong : BaseDivergence \{ \newline
 \btab \btab \} else \{ \newline 
 \btab \btab \btab double gNeu = 0.0; \newline 
 \btab \btab \btab for(int d = 0; d < inp.D; d++) \{ \newline 
-\btab \btab \btab \btab Acc += Sigma\_IN[d]*inp.Normale[d]*V\_IN; \newline 
+\btab \btab \btab \btab Acc += Sigma\_IN[d]*inp.Normal[d]*V\_IN; \newline 
 \btab \btab \btab \} \newline 
 \btab \btab \btab Acc -= gNeu*V\_IN; \newline 
 \btab \btab \} \newline 
@@ -369,7 +369,7 @@ class Gradient\_d : \newline
 \btab \btab double V\_IN, double V\_OT, double[] GradV\_IN, double[] GradV\_OT) \{ \newline 
  \newline 
 \btab \btab double Acc = 0; \newline 
-\btab \btab Acc += 0.5*(U\_IN[0] + U\_OT[0])*inp.Normale[this.d]*(V\_IN - V\_OT); \newline 
+\btab \btab Acc += 0.5*(U\_IN[0] + U\_OT[0])*inp.Normal[this.d]*(V\_IN - V\_OT); \newline 
 \btab \btab return Acc;   \newline 
 \btab  \} \newline 
  \newline 
@@ -379,9 +379,9 @@ class Gradient\_d : \newline
 \btab \btab double Acc = 0; \newline 
 \btab \btab if(IsDirichletBndy(inp.X)) \{ \newline 
 \btab \btab \btab double u\_Diri = 0.0; \newline 
-\btab \btab \btab Acc += u\_Diri*inp.Normale[this.d]*V\_IN; \newline 
+\btab \btab \btab Acc += u\_Diri*inp.Normal[this.d]*V\_IN; \newline 
 \btab \btab \} else \{ \newline 
-\btab \btab \btab Acc += U\_IN[0]*inp.Normale[this.d]*V\_IN; \newline 
+\btab \btab \btab Acc += U\_IN[0]*inp.Normal[this.d]*V\_IN; \newline 
 \btab \btab \} \newline 
 \btab \btab return Acc;               \newline 
 \btab \} \newline 

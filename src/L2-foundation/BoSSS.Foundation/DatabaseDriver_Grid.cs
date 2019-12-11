@@ -49,12 +49,12 @@ namespace BoSSS.Foundation.IO
         /// Searches for an equivalent grid in the database and, if none is found
         /// saves a grid object to the database.
         /// </summary>
-        /// <param name="_grd">
+        /// <param name="grid">
         /// On entry, the grid which should be saved to the database.
         /// On exit, either unchanged, or the equivalent grid.
         /// </param>
         /// <param name="EquivalentGridFound">
-        /// Inidicates that an equivalent grid was found.
+        /// Indicates that an equivalent grid was found.
         /// </param>
         /// <param name="database"></param>
         public Guid SaveGridIfUnique(ref IGrid grid, out bool EquivalentGridFound, IDatabaseInfo database)

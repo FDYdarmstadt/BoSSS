@@ -85,6 +85,8 @@
     <Compile Include="ControlFiles\HardcodedControl\FourCellsTest.cs" />
     <Compile Include="ControlFiles\HardcodedControl\DryParticles.cs" />
     <Compile Include="ControlFiles\HardcodedControl\HardcodedControlDeussen.cs" />
+    <Compile Include="ControlFiles\HardcodedControl\HC_2ParticleInteraction.cs" />
+    <Compile Include="ControlFiles\HardcodedControl\HC_CollisionRuntime.cs" />
     <Compile Include="ControlFiles\HardcodedControl\HardcodedControl_multipleActiveParticles .cs" />
     <Compile Include="ControlFiles\HardcodedControl\HardcodedControl_tiltedChannel.cs" />
     <Compile Include="ControlFiles\HardcodedControl\HardcodedControl_straightChannel.cs" />
@@ -92,10 +94,10 @@
     <Compile Include="ControlFiles\HardcodedControl\ParticleStokesFlow.cs" />
     <Compile Include="ControlFiles\Tests\HardcodedTestExamples.cs" />
     <Compile Include="ControlFiles\Tests\TestProgram.cs" />
-    <Compile Include="FluxesAtBoundary\ActiveConvectionAtIB.cs" />
-    <Compile Include="FluxesAtBoundary\ActiveDivergenceAtIB.cs" />
-    <Compile Include="FluxesAtBoundary\ActivePressureAtIB.cs" />
-    <Compile Include="FluxesAtBoundary\ActiveViscosityAtIB.cs" />
+    <Compile Include="FluxesAtBoundary\FSI_ConvectionAtIB.cs" />
+    <Compile Include="FluxesAtBoundary\FSI_DivergenceAtIB.cs" />
+    <Compile Include="FluxesAtBoundary\FSI_PressureAtIB.cs" />
+    <Compile Include="FluxesAtBoundary\FSI_ViscosityAtIB.cs" />
     <Compile Include="FSI_Collision.cs" />
     <Compile Include="FSI_TimestepInfo.cs" />
     <Compile Include="FSI_LevelSetUpdate.cs" />
@@ -111,8 +113,10 @@
     <Compile Include="Particle\ParticleAddedDamping.cs" />
     <Compile Include="Particle\ParticleForceIntegration.cs" />
     <Compile Include="Particle\Motion\_Motion_Main.cs" />
-    <Compile Include="Particle\ParticlePhysicalParameters.cs" />
     <Compile Include="Particle\ParticleUnderrelaxation.cs" />
+    <Compile Include="Particle\ParticleUnderrelaxationParam.cs" />
+    <Compile Include="Particle\Shapes\Particle_Shell.cs" />
+    <Compile Include="Particle\Shapes\Particle_Rectangle.cs" />
     <Compile Include="Particle\Shapes\Particle_TrapRight.cs" />
     <Compile Include="Particle\Shapes\Particle_TrapLeft.cs" />
     <Compile Include="Particle\Shapes\Particle_Pentagone.cs" />
@@ -120,7 +124,6 @@
     <Compile Include="Particle\Shapes\Particle_superEllipsoid.cs" />
     <Compile Include="Particle\Shapes\Particle_Sphere.cs" />
     <Compile Include="Particle\Shapes\Particle_Hippopede.cs" />
-    <Compile Include="Particle\Shapes\Particle_Squircle.cs" />
     <Compile Include="Particle\Shapes\Particle_Ellipsoid.cs" />
     <Compile Include="FSI_Control.cs" />
     <Compile Include="FSI_SolverMain.cs" />

@@ -963,7 +963,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             p.AddCoeff(-3.4938207390846438e+00, new int[] { 1, 1, 1 });
             p.AddCoeff(-2.4705043368569470e+00, new int[] { 1, 2, 0 });
             p.AddCoeff(1.2352521684284735e+01, new int[] { 3, 0, 0 });
-
+            
             //----------------------------------------------------------------------------------------
             p = new Polynomial(new Guid("{E7FE3BFB-6BAE-443a-ADCA-6EFA0039F507}"));
             OrthonormalPolynomials[20] = p;

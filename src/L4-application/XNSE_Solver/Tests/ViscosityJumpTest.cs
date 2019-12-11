@@ -31,7 +31,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     /// \f[ 
     ///   \left\llbracket \mu \left( \vec{u} + \vec{u}^T \right) \vec{n}_{\mathfrak{I}} \right\rrbracket = 0
     /// \f]
-    /// Important for this testcase is that here,
+    /// Important for this testcase is,
     /// the individual terms of the jump condition are nonzero and only the sum of them cancels out, i.e.
     /// \f[ 
     ///   \left\llbracket \mu \vec{u} \cdot \vec{n}_{\mathfrak{I}} \right\rrbracket \neq 0
@@ -77,6 +77,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public GridCommons CreateGrid() {
 
             var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-2, 2, 5), GenericBlas.Linspace(-2, 2, 5));
+            //var grd = Grid2D.UnstructuredTriangleGrid(GenericBlas.Linspace(-2, 2, 6), GenericBlas.Linspace(-2, 2, 5));
             //var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-2, 2, 3), GenericBlas.Linspace(-2, 2, 3));
 
             grd.EdgeTagNames.Add(1, "Velocity_Inlet");

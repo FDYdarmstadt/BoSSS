@@ -17,6 +17,7 @@ limitations under the License.
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using BoSSS.Platform.LinAlg;
 using ilPSP.Utils;
 
@@ -112,6 +113,17 @@ namespace BoSSS.Foundation {
         /// </remarks>
         public CoordinateVector(params DGField[] fields) :
             this(false, fields) {
+        }
+
+        /// <summary>
+        /// Constructs a new vector, based on the list of DG fields,
+        /// <paramref name="fields"/>;
+        /// </summary>
+        /// <remarks>
+        /// <see cref="PresentExternal"/> is initialized to false.
+        /// </remarks>
+        public CoordinateVector(IEnumerable<DGField> fields) :
+            this(false, fields.ToArray()) {
         }
 
         /// <summary>
@@ -375,6 +387,16 @@ namespace BoSSS.Foundation {
             }
         }
 
+        /// <summary>
+        /// DG fields that are presented by this vector 
+        /// </summary>
+        public IList<DGField> Fields {
+            get {
+                return Mapping.Fields;
+            }
+        }
+
+
         #region IList<double> Member
 
         /// <summary>
@@ -466,6 +488,10 @@ namespace BoSSS.Foundation {
         /// <param name="array">the destination array</param>
         /// <param name="arrayIndex">offset index into the destination array</param>
         public void CopyTo<T>(T array, int arrayIndex) where T : IList<double> {
+#if DEBUG
+            if(array.GetType().IsValueType)
+                throw new NotSupportedException("CopyTo value type -- probably not the expected result! (Using vector struct in CopyTo(...) - operation?)");
+#endif
             Copy(array, arrayIndex, true);
         }
 

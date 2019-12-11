@@ -79,7 +79,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 eq => ((eq.VolTerms & (TermActivationFlags.UxGradV | TermActivationFlags.GradV | TermActivationFlags.GradUxGradV)) != 0),
                 eq => (eq is IVolumeForm ? new NonlinVolumeFormVectorizer((IVolumeForm)eq) : null));
 
-            Debug.Assert(base.m_DomainFields.Length >= Gamma);
+             Debug.Assert(base.m_DomainFields.Length >= Gamma);
             m_ValueRequired = new bool[base.m_DomainFields.Length];
             m_GradientRequired = new bool[Gamma];
 

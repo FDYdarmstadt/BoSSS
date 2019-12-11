@@ -398,7 +398,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
 
             C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
@@ -714,7 +714,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
 
             C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
@@ -1075,7 +1075,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
 
             C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;

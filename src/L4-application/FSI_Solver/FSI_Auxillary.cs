@@ -29,7 +29,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace FSI_Solver {
-    class FSI_Auxillary {
+    public class FSI_Auxillary {
         /// <summary>
         /// This method saves the list value at list position "0" to the next position.
         /// Use this method for onedimensional vars.
@@ -268,11 +268,11 @@ namespace FSI_Solver {
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             double residual = 0;
             if (iterationCounter == 0)
-                residual = 1e12;
+                residual = double.MaxValue;
             else {
                 foreach (Particle p in Particles) {
-                    double diffForcesX = (p.Motion.GetForcesPreviousIter()[0] - p.Motion.GetHydrodynamicForces(0)[0]).Pow2();
-                    double diffForcesY = (p.Motion.GetForcesPreviousIter()[1] - p.Motion.GetHydrodynamicForces(0)[1]).Pow2();
+                    double diffForcesX = (p.Motion.GetForcesPreviousIteration()[0] - p.Motion.GetHydrodynamicForces(0)[0]).Pow2();
+                    double diffForcesY = (p.Motion.GetForcesPreviousIteration()[1] - p.Motion.GetHydrodynamicForces(0)[1]).Pow2();
                     double diffTorque = (p.Motion.GetTorquePreviousIteration() - p.Motion.GetHydrodynamicTorque(0)).Pow2();
                     double absSolution = Math.Sqrt(p.Motion.GetHydrodynamicForces(0)[0].Pow2() + p.Motion.GetHydrodynamicForces(0)[1].Pow2() + p.Motion.GetHydrodynamicTorque(0).Pow2());
                     residual += Math.Sqrt(diffForcesX + diffForcesY + diffTorque) / absSolution;
@@ -354,6 +354,18 @@ namespace FSI_Solver {
         /// <param name="Particles">
         /// A list of all particles
         /// </param>
+        /// <param name="phystime"></param>
+        /// <param name="IterationCounter"> </param>
+        internal void PrintResultToConsole(double phystime, double residual, int IterationCounter) {
+            Console.WriteLine("Iteration, Residual: {1}, {0}", residual, IterationCounter);
+        }
+
+        /// <summary>
+        /// Residual for fully coupled system
+        /// </summary>
+        /// <param name="Particles">
+        /// A list of all particles
+        /// </param>
         /// <param name="FluidViscosity"></param>
         /// <param name="phystime"></param>
         /// <param name="TimestepInt"></param>
@@ -386,7 +398,7 @@ namespace FSI_Solver {
                 totalKE[2] += SingleParticleKineticEnergy[SingleParticleMomentum.Length - 1];
                 ParticleReynoldsNumber[Particles.IndexOf(CurrentParticle)] = CurrentParticle.Motion.ComputeParticleRe(FluidViscosity);
                 ParticleStokesNumber[Particles.IndexOf(CurrentParticle)] = CurrentParticle.Motion.ComputeParticleSt(FluidViscosity, FluidDensity);
-                volumeFraction += CurrentParticle.Area_P();
+                volumeFraction += CurrentParticle.Area;
             }
 
             volumeFraction /= FluidDomainVolume;

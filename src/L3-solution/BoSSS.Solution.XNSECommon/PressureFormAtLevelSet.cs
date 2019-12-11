@@ -50,12 +50,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
         double wA;
         double wB;
 
-        public double LevelSetForm(ref CommonParamsLs inp, double[] pA, double[] pB, double[,] Grad_pA, double[,] Grad_pB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public double LevelSetForm(ref CommonParams inp, double[] pA, double[] pB, double[,] Grad_pA, double[,] Grad_pB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
             if (!weighted) {
-                return -(vB - vA) * inp.n[m_d] * 0.5 * (pB[0] + pA[0]);
+                return -(vB - vA) * inp.Normal[m_d] * 0.5 * (pB[0] + pA[0]);
             } else {
-                return -(vB - vA) * inp.n[m_d] * (wA * pB[0] + wB * pA[0]) / (wA + wB);
+                return -(vB - vA) * inp.Normal[m_d] * (wA * pB[0] + wB * pA[0]) / (wA + wB);
             }
             
         }
@@ -89,6 +89,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
         public IList<string> ParameterOrdering {
             get { return null; }
         }
+
+
     }
 
 

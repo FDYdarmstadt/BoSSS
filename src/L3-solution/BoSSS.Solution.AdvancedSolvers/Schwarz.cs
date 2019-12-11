@@ -400,7 +400,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set;
         }
 
-        int pLow = 1;
+        /// <summary>
+        /// DG degree at low order sub-blocks; If p-multi-grid is used (<see cref="UsePMGinBlocks"/>), 
+        /// this degree is the boundary which divides into low order and high order blocks.
+        /// </summary>
+        public int pLow = 1;
 
 
         /// <summary>
@@ -442,6 +446,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 this.m_MgOp = op;
                 int myMpiRank = MgMap.MpiRank;
                 int myMpisize = MgMap.MpiSize;
+                int D = m_MgOp.GridData.SpatialDimension;
 
                 if (!Mop.RowPartitioning.EqualsPartition(MgMap.Partitioning))
                     throw new ArgumentException("Row partitioning mismatch.");
@@ -704,7 +709,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     int p = Degrees[iVar];
                                     int NoOfSpc = BS[iVar].GetNoOfSpecies(j);
                                     int Np = BS[iVar].GetLength(j, p);
-                                    int NpLo = BS[iVar].GetLength(j, pLow);
+
+                                    int _pLow = this.pLow;
+                                    if (iVar == D)
+                                        _pLow -= 1; // Quick hack for Stokes systems
+
+                                    int NpLo = BS[iVar].GetLength(j, _pLow);
                                     NpLoTot += NpLo;
 
                                     int NpBase = Np / NoOfSpc; // DOFs in cell *per species*
@@ -1756,7 +1766,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        public ISolverSmootherTemplate Clone() {
+        public object Clone() {
             Schwarz Clone = new Schwarz();
             if (this.m_BlockingStrategy is METISBlockingStrategy) {
                 Clone.m_BlockingStrategy = new METISBlockingStrategy() {
@@ -1782,7 +1792,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Clone.m_Overlap = this.m_Overlap;
             Clone.IterationCallback = this.IterationCallback;
             if (this.CoarseSolver != null)
-                Clone.CoarseSolver = this.CoarseSolver.Clone();
+                Clone.CoarseSolver = this.CoarseSolver.CloneAs();
             return Clone;
         }
 

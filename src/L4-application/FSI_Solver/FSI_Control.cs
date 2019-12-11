@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.XdgTimestepping;
 using ilPSP.Utils;
@@ -109,8 +110,8 @@ namespace BoSSS.Application.FSI_Solver {
                 q = (int)(cellsPerUnitLength * lengthX);
                 r = (int)(cellsPerUnitLength * lengthY);
 
-                double[] Xnodes = GenericBlas.Linspace(-lengthX / 2, lengthX / 2, q);
-                double[] Ynodes = GenericBlas.Linspace(-lengthY / 2, lengthY / 2, r);
+                double[] Xnodes = GenericBlas.Linspace(-lengthX / 2, lengthX / 2, q + 1);
+                double[] Ynodes = GenericBlas.Linspace(-lengthY / 2, lengthY / 2, r + 1);
 
                 Grid2D grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: periodicX, periodicY: periodicY);
 
@@ -227,7 +228,7 @@ namespace BoSSS.Application.FSI_Solver {
         public double CoefficientOfRestitution = 1.0;
 
         [DataMember]
-        public ParticleUnderrelaxationParam underrelaxationParam = new ParticleUnderrelaxationParam(1e-8, 1, false);
+        public ParticleUnderrelaxationParam underrelaxationParam = new ParticleUnderrelaxationParam(1e-8, ParticleUnderrelaxationParam.UnderrelaxationMethod.ProcentualRelaxation, 1, false);
 
         /// <summary>
         /// Gravity acting on the particles, zero by default.

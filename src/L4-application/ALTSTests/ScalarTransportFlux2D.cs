@@ -34,15 +34,15 @@ namespace ALTSTests {
         /// <summary>
         /// the predefined, div-free flow field
         /// </summary>
-        Vector FlowField(double[] x, double[] Uin, double[] Uot) {
-            Vector u = new Vector(2);
+        ilPSP.Vector FlowField(double[] x, double[] Uin, double[] Uot) {
+            ilPSP.Vector u = new ilPSP.Vector(2);
             u.x = 0.5 * (Uin[1] + Uot[1]);
             u.y = 0.5 * (Uin[2] + Uot[2]);
             return u;
         }
 
         protected override double BorderEdgeFlux(double time, double[] x, double[] normal, byte EdgeTag, double[] Uin, int jEdge) {
-            Vector n = new Vector(2);
+            ilPSP.Vector n = new ilPSP.Vector(2);
             n.x = normal[0];
             n.y = normal[1];
 
@@ -62,7 +62,7 @@ namespace ALTSTests {
         /// calculating the inner edge fluxes by using a first oder upwind scheme
         /// </summary>
         protected override double InnerEdgeFlux(double time, double[] x, double[] normal, double[] Uin, double[] Uout, int jEdge) {
-            Vector n= new Vector(2);
+            ilPSP.Vector n= new ilPSP.Vector(2);
             n.x = normal[0];
             n.y = normal[1];
 
@@ -75,7 +75,7 @@ namespace ALTSTests {
         }
 
         protected override void Flux(double time, double[] x, double[] U, double[] output) {
-            Vector o;
+            ilPSP.Vector o;
             o = FlowField(x, U, U) * U[0];
             output[0] = o.x;
             output[1] = o.y;

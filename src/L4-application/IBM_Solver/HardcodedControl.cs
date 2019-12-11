@@ -46,12 +46,6 @@ namespace BoSSS.Application.IBM_Solver {
         static public IBM_Control ChannelFlow(int k = 2, bool periodic = false, int xCells = 10, int yCells = 10, string dbpath = null) {
             IBM_Control C = new IBM_Control();
 
-            // Solver Options
-            C.NoOfTimesteps = 100;
-            C.LinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.MinSolverIterations = 1;
-            C.NonLinearSolver.MaxSolverIterations = 100;
-            C.NonLinearSolver.MinSolverIterations = 1;
             C.savetodb = false;
             C.DbPath = null;
             C.ProjectName = "ChannelFlow";
@@ -62,22 +56,11 @@ namespace BoSSS.Application.IBM_Solver {
 
             // Timestepper
             C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.ImplicitEuler;
-            double dt = 1E30;
-            C.dtMax = dt;
-            C.dtMin = dt;
-            C.Endtime = 60;
-            C.NoOfTimesteps = 1;
-            C.LinearSolver.MaxKrylovDim = 1000;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.NewtonGMRES;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_localPrec;
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
 
             // Physical values
             C.PhysicalParameters.rho_A = 1;
-
-            // 1/Re
-            C.PhysicalParameters.mu_A = 2.0 / 200;
-
+            C.PhysicalParameters.mu_A = 2.0 / 200; // 1 / Reynolds
 
             // Create Fields
             C.SetDGdegree(k);
@@ -143,7 +126,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.AddBoundaryValue("Wall_top");
 
             // Set Initial Conditions
-            //C.InitialValues_Evaluators.Add("VelocityX", X => 1 - X[1] * X[1]);
+            //C.InitialValues_Evaluators.Add("VelocityX", X => VelocityXex(X,0.0));
             //C.InitialValues_Evaluators.Add("VelocityY", X => 0);
             //C.InitialValues_Evaluators.Add("Pressure", X => 2.0*C.PhysicalParameters.mu_A*(-X[0] + 10));
             C.InitialValues_Evaluators.Add("VelocityX", X => 0.0);
@@ -329,29 +312,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                 // DG degrees
                 // ==========
-
-                C.FieldOptions.Add("VelocityX", new FieldOpts() {
-                    Degree = k,
-                    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-                });
-                C.FieldOptions.Add("VelocityY", new FieldOpts() {
-                    Degree = k,
-                    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-                });
-                //Console.WriteLine("Achtung: equal order!!!!");
-                C.FieldOptions.Add("Pressure", new FieldOpts() {
-                    Degree = k - 1,
-
-                    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-                });
-                C.FieldOptions.Add("PhiDG", new FieldOpts() {
-                    Degree = 2,
-                    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-                });
-                C.FieldOptions.Add("Phi", new FieldOpts() {
-                    Degree = 2,
-                    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-                });
+                C.SetDGdegree(k);
 
                 //grid and boundary conditions
                 // ============================
@@ -1231,26 +1192,22 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             // Solver Options
-            C.LinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.MinSolverIterations = 1;
-            C.NonLinearSolver.MaxSolverIterations = 100;
-            C.NonLinearSolver.MinSolverIterations = 1;
+            //C.LinearSolver.MaxSolverIterations = 100;
+            //C.LinearSolver.MinSolverIterations = 1;
+            //C.NonLinearSolver.MaxSolverIterations = 100;
+            //C.NonLinearSolver.MinSolverIterations = 1;
             C.savetodb = false;
             C.DbPath = null;
-            C.ProjectName = "ChannelFlow";
-            C.SessionName = "Channel";
-            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.ProjectName = "Incompressibel";
+            C.SessionName = "DrivenCavity";
+            //C.LinearSolver.NoOfMultigridLevels = 1;
 
             // Calculate Navier-Stokes? 
             C.PhysicalParameters.IncludeConvection = true;
 
             // Timestepper
             C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.ImplicitEuler;
-            double dt = 1E50;
-            C.dtMax = dt;
-            C.dtMin = dt;
-            C.Endtime = 60;
-            C.NoOfTimesteps = 1;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
 
             // Physical values
             C.PhysicalParameters.rho_A = 1;
@@ -1260,26 +1217,7 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             // Create Fields
-            C.FieldOptions.Add("VelocityX", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = k - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            C.SetDGdegree(k);
 
             // Create Grid
             C.GridFunc = delegate {
@@ -1287,10 +1225,7 @@ namespace BoSSS.Application.IBM_Solver {
                 var _yNodes = GenericBlas.Linspace(-1, 1, Cells + 1);
 
                 var grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes, CellType.Square_Linear);
-
-
                 grd.EdgeTagNames.Add(1, "Velocity_inlet");
-
                 grd.EdgeTagNames.Add(2, "Wall");
 
 
@@ -1327,13 +1262,9 @@ namespace BoSSS.Application.IBM_Solver {
             VelocityYex = (X, t) => (0);
             Pressure = (X, t) => (0);
 
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.PicardGMRES;
+  
 
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_Schur;
-
-
-
-            C.AddBoundaryValue("Velocity_inlet", "VelocityX", X => 1);
+            C.AddBoundaryValue("Velocity_inlet", "VelocityX", X => 1.0);
             //C.AddBoundaryCondition("Pressure_Outlet");
 
             C.AddBoundaryValue("Wall");
@@ -1347,6 +1278,8 @@ namespace BoSSS.Application.IBM_Solver {
             C.InitialValues_Evaluators.Add("Pressure", X => 0.0);
             C.InitialValues_Evaluators.Add("Phi", X => -1);
             //C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + 0.5.Pow2());
+
+            C.PhysicalParameters.IncludeConvection = true;
 
             return C;
         }
@@ -1396,26 +1329,7 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             // Create Fields
-            C.FieldOptions.Add("VelocityX", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = k - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            C.SetDGdegree(k);
 
             // Create Grid
             C.GridFunc = delegate {

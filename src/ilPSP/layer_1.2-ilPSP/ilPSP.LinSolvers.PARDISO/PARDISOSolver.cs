@@ -24,7 +24,7 @@ using System.IO;
 using ilPSP.Utils;
 
 namespace ilPSP.LinSolvers.PARDISO {
-    
+
     
     /// <summary>
     /// a direct solver using the PARDISO library from the Intel MKL

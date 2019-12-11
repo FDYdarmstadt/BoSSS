@@ -30,6 +30,7 @@ using ilPSP.Utils;
 using log4net;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.RefElements;
+using ilPSP.Connectors;
 
 namespace BoSSS.Foundation.Grid.Classic {
 
@@ -39,7 +40,9 @@ namespace BoSSS.Foundation.Grid.Classic {
     /// disk but computed at run-time, i.e. load-time. This information is
     /// essential for the Discontinuous Galerkin algorithms.
     /// </summary>
-    sealed public partial class GridData : IGridData {
+    sealed public partial class GridData : IGridData, IForeignLanguageProxy {
+
+
 
         private static ILog Logger = LogManager.GetLogger(typeof(GridData));
 
@@ -100,11 +103,17 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
         }
 
+        static int Counter = 0;
+
+        int MyCount;
+
         /// <summary>
         /// constructor 
         /// </summary>
         public GridData(GridCommons grd) {
-            //Console.WriteLine("3.1.10.1");
+            Counter++;
+            MyCount = Counter;
+
             if (grd.RefElements.Length != 1)
                 throw new ApplicationException("Currently only grids with _one_ RefElement are supported!!!");
 
@@ -235,12 +244,20 @@ namespace BoSSS.Foundation.Grid.Classic {
 
 
         /// <summary>
-        /// Clears all internal references for this object, to make sure that any attempt to use it leads to an exception.
+        /// Clears (lots of) internal references for this object, to make sure that any attempt to use it leads to an exception.
         /// </summary>
         public void Invalidate() {
+            this.m_Cells.CellCenter = null;
+            this.m_Cells.Cells2Edges = null;
             this.m_Cells = null;
+            
+            this.m_CurrentGlobalIdPermutation = null;
+            this.m_InnerCells = null;
+                        
             this.m_Edges = null;
+
             this.m_GlobalNodes = null;
+
             this.m_Grid = null;
             this.m_Parallel = null;
             this.m_VerticeData = null;
@@ -1750,5 +1767,29 @@ namespace BoSSS.Foundation.Grid.Classic {
 
         BoundingBox m_GlobalBoundingBox;
 
+
+        IntPtr m_ForeignPtr;
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public void _SetForeignPointer(IntPtr ptr) {
+            if (ptr == IntPtr.Zero) {
+                m_ForeignPtr = IntPtr.Zero;
+            } else {
+
+                if (m_ForeignPtr != IntPtr.Zero) {
+                    throw new ApplicationException("already registered");
+                }
+                m_ForeignPtr = ptr;
+            }
+        }
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public IntPtr _GetForeignPointer() {
+            return m_ForeignPtr;
+        }
     }
 }

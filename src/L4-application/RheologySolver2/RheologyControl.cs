@@ -30,13 +30,13 @@ namespace BoSSS.Application.Rheology {
     /// </summary>
     [Serializable]
     [DataContract]
-    public class RheologyControl : AppControl {
+    public class RheologyControl : AppControlSolver {
 
         /// <summary>
         /// Ctor.
         /// </summary>
         public RheologyControl() {
-            base.LinearSolver.NoOfMultigridLevels = 1;
+            base.NoOfMultigridLevels = 1;
             //shift of Solver Information
             base.LinearSolver.MaxSolverIterations = 10; //MaxIter
             base.LinearSolver.MinSolverIterations = 1; //MinIter
@@ -216,19 +216,25 @@ namespace BoSSS.Application.Rheology {
         /// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
         /// </summary>
         [DataMember]
-        public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite; //.LeftInverse_DiagBlock; // SymPart_DiagBlockEquilib;
+        public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.Eye;// LeftInverse_DiagBlock;// LeftInverse_DiagBlock;  // SymPart_DiagBlockEquilib_DropIndefinite;
+
+        /// <summary>
+        /// Block-Preconditiond for the velocity/momentum + pressure/conti-block of the saddle-point system
+        /// </summary>
+        [DataMember]
+        public MultigridOperator.Mode NSEBlockPrecondMode = MultigridOperator.Mode.Eye;// LeftInverse_DiagBlock; //.LeftInverse_DiagBlock; // SymPart_DiagBlockEquilib_DropIndefinite;
 
         /// <summary>
         /// Block-Preconditiond for the pressure/continuity-block of the saddle-point system
         /// </summary>
         [DataMember]
-        public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.Eye; // no SymPart_Diag-Präcon, because there may be no zero on the diagonal!!!
+        public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.Eye;// SymPart_DiagBlockEquilib;//LeftInverse_DiagBlock; // no SymPart_Diag-Präcon, because there may be no zero on the diagonal!!!
 
         /// <summary>
         /// Block-Preconditiond for the stresses/constitutive-block of the system
         /// </summary>
         [DataMember]
-        public MultigridOperator.Mode StressBlockPrecondMode = MultigridOperator.Mode.Eye;
+        public MultigridOperator.Mode StressBlockPrecondMode = MultigridOperator.Mode.Eye;// SymPart_DiagBlockEquilib;//LeftInverse_DiagBlock;
 
         /// <summary>
         /// Block-Preconditiond for the stresses/constitutive-block of the system
@@ -422,6 +428,29 @@ namespace BoSSS.Application.Rheology {
 
         //_____________________________________________________________________________________________
 
+        /// <summary>
+        /// %
+        /// </summary>
+        public override void SetDGdegree(int degree) {
+            FieldOptions.Add("VelocityX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            FieldOptions.Add("VelocityY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            FieldOptions.Add("Pressure", new FieldOpts() { Degree = degree - 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+
+            FieldOptions.Add("StressXX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            FieldOptions.Add("StressXY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            FieldOptions.Add("StressYY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+
+            FieldOptions.Add("ResidualMomentumX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            FieldOptions.Add("ResidualMomentumY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            FieldOptions.Add("ResidualConti", new FieldOpts() { Degree = degree - 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+
+            FieldOptions.Add("ResidualStressXX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            FieldOptions.Add("ResidualStressXY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            FieldOptions.Add("ResidualStressYY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+
+            FieldOptions.Add("PhiDG", new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            FieldOptions.Add("Phi", new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+        }
 
 
     }

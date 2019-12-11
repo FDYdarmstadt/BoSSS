@@ -5,6 +5,7 @@ using System.Linq;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Platform;
 using BoSSS.Foundation.Grid.Aggregation;
+using ilPSP;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {

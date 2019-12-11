@@ -16,6 +16,9 @@ limitations under the License.
 
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.Convection;
+using ilPSP;
+using System;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
@@ -50,24 +53,68 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// <param name="normal">The outward normal vector</param>
         /// <param name="stateIn">The values on the inside of the cell</param>
         /// <returns>The values on the outside of the cell</returns>
-        abstract public StateVector GetBoundaryState(double time, double[] x, double[] normal, StateVector stateIn);
+        abstract public StateVector GetBoundaryState(double time, Vector x, Vector normal, StateVector stateIn);
 
         /// <summary>
-        /// Utility function create a <see cref="Vector"/> out of double[]
-        /// representation of the outward unit normal.
+        /// Vectorized version of <see cref="GetBoundaryState(double, Vector, Vector, StateVector)"/>
         /// </summary>
-        /// <param name="normal">The original normal to be transformed</param>
-        /// <returns>
-        /// A 3D vector representation of the normal. If
-        /// <paramref name="normal"/>.Length is smaller than three the
-        /// remaining elements of the vector are set to zero.
-        /// </returns>
-        protected static Vector GetNormalVector(double[] normal) {
-            Vector normalVector = new Vector(normal.Length);
-            for (int i = 0; i < normal.Length; i++) {
-                normalVector[i] = normal[i];
+        public virtual void GetBoundaryState(MultidimensionalArray[] StateOut, double time, MultidimensionalArray X, MultidimensionalArray Normals, MultidimensionalArray[] StateIn, int Offset, int NoOfEdges, bool normalFlipped, MaterialProperty.Material material) {
+            if (X.Dimension != 3)
+                throw new ArgumentException();
+            int D = X.GetLength(2);
+            int NoOfNodes = X.GetLength(1);
+            double sign = normalFlipped ? -1.0 : 1.0;
+
+            if (StateIn.Length != D + 2)
+                throw new ArgumentException();
+            if (StateOut.Length != D + 2)
+                throw new ArgumentException();
+            bool is2D = D >= 2;
+            bool is3D = D >= 3;
+            if (D < 1 || D > 3)
+                throw new NotSupportedException();
+
+            var Density = StateOut[0];
+            var Energy = StateOut[D + 1];
+            var MomentumX = StateOut[1];
+            var MomentumY = is2D ? StateOut[2] : null;
+            var MomentumZ = is3D ? StateOut[3] : null;
+
+            Vector xLocal = new Vector(D);
+            Vector normalLocal = new Vector(D);
+            for (int e = 0; e < NoOfEdges; e++) {
+                int edge = e + Offset;
+
+                // Loop over nodes
+                for (int n = 0; n < NoOfNodes; n++) {
+                    xLocal.x = X[edge, n, 0];
+                    normalLocal.x = Normals[edge, n, 0] * sign;
+                    if (is2D) {
+                        xLocal.y = X[edge, n, 1];
+                        normalLocal.y = Normals[edge, n, 1] * sign;
+                    }
+                    if(is3D) {
+                        xLocal.z = X[edge, n, 2];
+                        normalLocal.z = Normals[edge, n, 2] * sign;
+                    }
+
+                    StateVector stateIn = new StateVector(material, StateIn, edge, n, D);
+                    //OptimizedHLLCFlux.State.Start();
+                    StateVector stateBoundary = GetBoundaryState(time, xLocal, normalLocal, stateIn);
+                    //OptimizedHLLCFlux.State.Stop();
+
+                    Density[edge, n] = stateBoundary.Density;
+                    MomentumX[edge, n] = stateBoundary.Momentum.x;
+                    if(is2D)
+                        MomentumY[edge, n] = stateBoundary.Momentum.y;
+                    if(is3D)
+                        MomentumZ[edge, n] = stateBoundary.Momentum.z;
+                    Energy[edge, n] = stateBoundary.Energy;
+                }
             }
-            return normalVector;
+
+
+
         }
     }
 }

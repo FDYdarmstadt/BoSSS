@@ -110,7 +110,7 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
 
-        public abstract double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB);
+        public abstract double LevelSetForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB);
 
 
         protected LevelSetTracker m_LsTrk;
@@ -144,6 +144,7 @@ namespace BoSSS.Solution.XheatCommon {
                 return ArrayTools.Cat(VariableNames.HeatFlux0Vector(D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure);
             }
         }
+
 
         public int LevelSetIndex {
             get { return 0; }
@@ -193,9 +194,9 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
 
-        public override double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public override double LevelSetForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-            double qEvap = ComputeHeatFlux(cp.ParamsNeg, cp.ParamsPos, cp.n, cp.jCell);
+            double qEvap = ComputeHeatFlux(cp.Parameters_IN, cp.Parameters_OUT, cp.Normal, cp.jCellIn);
             //Console.WriteLine("qEvap - HeatFluxAtLevelSet: {0}", qEvap);
             if (qEvap == 0.0)
                 return 0.0;
@@ -242,9 +243,9 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
 
-        public override double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public override double LevelSetForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-            double qEvap = ComputeHeatFlux(cp.ParamsNeg, cp.ParamsPos, cp.n, cp.jCell);
+            double qEvap = ComputeHeatFlux(cp.Parameters_IN, cp.Parameters_OUT, cp.Normal, cp.jCellIn);
             //Console.WriteLine("qEvap - HeatFluxAtLevelSet: {0}", qEvap);
             if (qEvap == 0.0)
                 return 0.0;

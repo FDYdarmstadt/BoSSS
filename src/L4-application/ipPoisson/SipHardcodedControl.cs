@@ -59,7 +59,7 @@ namespace BoSSS.Application.SipPoisson {
             {
                 var grd = Grid2D.CurvedSquareGrid(GenericBlas.Linspace(1, 2, 3), GenericBlas.Linspace(0, 1, 11), CellType.Square_9, true);
                 grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
-                grd.DefineEdgeTags(X => 1);
+                grd.DefineEdgeTags((Vector X) => 1);
                 return grd;
             };
 
@@ -186,9 +186,9 @@ namespace BoSSS.Application.SipPoisson {
 
             //R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_jacobi_mg;
             //R.LinearSolver.SolverCode = LinearSolverCode.exp_decomposedMG_OrthoScheme;
-            //R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             //R.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
-            R.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
+            //R.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
             R.LinearSolver.NoOfMultigridLevels = 10;
             R.LinearSolver.TargetBlockSize = 40;
             R.LinearSolver.ConvergenceCriterion = 1e-8;

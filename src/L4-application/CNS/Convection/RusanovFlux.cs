@@ -36,31 +36,13 @@ namespace CNS.Convection {
         /// <param name="equationComponent"><see cref="EulerFlux"/></param>
         /// <param name="speciesMap"><see cref="EulerFlux"/></param>
         public RusanovFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, ISpeciesMap speciesMap)
-            : base(config, boundaryMap, equationComponent, speciesMap) {
+            : base(config, boundaryMap, equationComponent, speciesMap.GetMaterial(double.NaN)) {
         }
 
         /// <summary>
         /// Evaluates the Rusanov flux (also known as the local Lax-Friedrichs
         /// flux as stated in Toro2009, equations 10.55 and 10.56.
         /// </summary>
-        /// <param name="x">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <param name="time">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <param name="stateIn">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <param name="stateOut">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <param name="normal">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <param name="edgeIndex">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
         /// <returns>
         /// \f$ 
         /// \frac{1}{2} (F_L + F_R - S^+ (U_R - U_L))
@@ -70,7 +52,7 @@ namespace CNS.Convection {
         /// S^+ = \max \{|u_L| + a_L, |u_r| + a_R\}
         /// \f$ 
         /// </returns>
-        protected override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref Vector normal, int edgeIndex) {
+        public override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex) {
             double waveSpeedIn = Math.Abs(stateIn.Velocity * normal) + stateIn.SpeedOfSound;
             double waveSpeedOut = Math.Abs(stateOut.Velocity * normal) + stateOut.SpeedOfSound;
             double penalty = Math.Max(waveSpeedIn, waveSpeedOut);

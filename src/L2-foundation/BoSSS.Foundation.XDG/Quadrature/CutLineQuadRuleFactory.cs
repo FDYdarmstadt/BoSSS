@@ -25,6 +25,7 @@ using ilPSP;
 using System.Linq;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
@@ -235,7 +236,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         continue;
                     }
 
-                    List<double[]> nodes = new List<double[]>();
+                    List<Vector> nodes = new List<Vector>();
                     List<double> weights = new List<double>();
                     int[] noOfNodesPerEdge = new int[referenceLineSegments.Length];
 
@@ -288,7 +289,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                             for (int m = 0; m < baseRule.NoOfNodes; m++) {
                                 // Base rule _always_ is a line rule, thus Nodes[*, _0_]
-                                double[] point = subSegments[k].GetPointOnSegment(baseRule.Nodes[m, 0]);
+                                var point = subSegments[k].GetPointOnSegment(baseRule.Nodes[m, 0]);
 
                                 weights.Add(weightFactor * baseRule.Weights[m]);
                                 nodes.Add(point);
@@ -404,9 +405,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             List<LineSegment> lineSegments = new List<LineSegment>(initialNumberOfLineSegments);
             for (int i = 0; i < initialNumberOfLineSegments; i++) {
 
-                var p0 = vertexCoordinates.GetRow(2 * i + 0);
+                Vector p0 = vertexCoordinates.GetRowPt(2 * i + 0);
                 int iP0 = this.RefElement.Vertices.FindRow(p0, 1.0e-8);
-                var p1 = vertexCoordinates.GetRow(2 * i + 1);
+                Vector p1 = vertexCoordinates.GetRowPt(2 * i + 1);
                 int iP1 = this.RefElement.Vertices.FindRow(p1, 1.0e-8);
 
                 LineSegment newSegment = new LineSegment(spatialDimension, this.RefElement,

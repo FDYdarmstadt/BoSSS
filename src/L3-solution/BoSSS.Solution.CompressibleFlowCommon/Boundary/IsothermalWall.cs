@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
+using ilPSP;
 using System;
 using System.Diagnostics;
 
@@ -85,13 +86,13 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// \f$ (\rho^-, 0[, 0[, 0]], \rho^- e^*)^T\f$  where
         /// \f$ e* = (\gamma - 1.0) T^*\f$ 
         /// </returns>
-        public override StateVector GetBoundaryState(double time, double[] x, double[] normal, StateVector stateIn) {
+        public override StateVector GetBoundaryState(double time, Vector x, Vector normal, StateVector stateIn) {
             double gamma = config.EquationOfState.HeatCapacityRatio;
             double innerEnergy = TemperatureFunction(x, time) / (gamma - 1.0);
             double MachScaling = gamma * config.MachNumber * config.MachNumber;
 
-            Debug.Assert(stateIn.Dimension == normal.Length);
-            int D = normal.Length;
+            Debug.Assert(stateIn.Dimension == normal.Dim);
+            int D = normal.Dim;
 
             if (WallVelocities == null) {
                 // Kinetic energy is zero at a no-slip boundary, we can omit it
@@ -107,7 +108,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
                 }
 
 #if DEBUG
-                Vector n = new Vector(normal);
+                ilPSP.Vector n = new ilPSP.Vector(normal);
                 if (Math.Abs(velocity * n) > 1e-10) {
                     throw new Exception(
                         "Wall velocity must be tangent to the wall");

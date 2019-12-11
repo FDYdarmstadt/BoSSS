@@ -192,22 +192,22 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                     // => flux penalizes the OUT-Cell
                     Debug.Assert(jCell == inp.jCellOut);
 
-                    Acc = -PenalizedEdge(PhiOt, Grad_PhiOt, _vOt, _Grad_vOt, inp.Normale, inp.Parameters_OUT, inp.Parameters_IN, -penalty);
+                    Acc = -PenalizedEdge(PhiOt, Grad_PhiOt, _vOt, _Grad_vOt, inp.Normal, inp.Parameters_OUT, inp.Parameters_IN, -penalty);
 
 
                 } else if(this.AcceptedBitmask[inp.jCellIn] == false && this.AcceptedBitmask[inp.jCellOut] == true) {
                     // ... vice-versa
                     Debug.Assert(jCell == inp.jCellIn);
 
-                    Acc = +PenalizedEdge(PhiIn, Grad_PhiIn, _vIn, _Grad_vIn, inp.Normale, inp.Parameters_IN, inp.Parameters_OUT, penalty);
+                    Acc = +PenalizedEdge(PhiIn, Grad_PhiIn, _vIn, _Grad_vIn, inp.Normal, inp.Parameters_IN, inp.Parameters_OUT, penalty);
 
                 } else {
                     // free edge
 
                     if(jCell == inp.jCellIn) {
-                        Acc = +FreeEdge(Grad_PhiIn, _vIn, inp.Normale, inp.Parameters_IN);
+                        Acc = +FreeEdge(Grad_PhiIn, _vIn, inp.Normal, inp.Parameters_IN);
                     } else if(jCell == inp.jCellOut) {
-                        Acc = -FreeEdge(Grad_PhiOt, _vOt, inp.Normale, inp.Parameters_OUT);
+                        Acc = -FreeEdge(Grad_PhiOt, _vOt, inp.Normal, inp.Parameters_OUT);
                     } else {
                         Debug.Assert(false);
                     }
@@ -269,7 +269,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
             public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] PhiIn, double[,] Grad_PhiIn, double _vIn, double[] _Grad_vIn) {
                 // free edge
 
-                double Acc = FreeEdge(Grad_PhiIn, _vIn, inp.Normale, inp.Parameters_IN);
+                double Acc = FreeEdge(Grad_PhiIn, _vIn, inp.Normal, inp.Parameters_IN);
                 return Acc;
             }
         }

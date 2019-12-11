@@ -115,9 +115,9 @@ namespace BoSSS.Solution.LevelSetTools.Smoothing {
 
                 for(int d = 0; d < D; d++) {
                     if(ATerm)
-                        R -= (_Grad_uA[0, d] - _Grad_uB[0, d]) * inp.Normale[d] * (_vA - _vB);
+                        R -= (_Grad_uA[0, d] - _Grad_uB[0, d]) * inp.Normal[d] * (_vA - _vB);
                     if(BTerm)
-                        R -= (_uA[0] - _uB[0]) * inp.Normale[d] * (_Grad_vA[d] - _Grad_vB[d]);
+                        R -= (_uA[0] - _uB[0]) * inp.Normal[d] * (_Grad_vA[d] - _Grad_vB[d]);
                 }
 
                 return R;
@@ -264,7 +264,7 @@ namespace BoSSS.Solution.LevelSetTools.Smoothing {
                 inp_LevSet_Mapping, new DGField[0], outp_Result_Mapping);//,
                 //qInsEdge: new EdgeQuadratureScheme(true, S.InnerEdgesMask),
                 //qInsVol: new CellQuadratureScheme(true, CellMask.GetEmptyMask(S._GridData)),
-                //bndMode: SpatialOperator.SubGridBoundaryModes.InnerEdge,
+                //bndMode: SubGridBoundaryModes.InnerEdge,
                 //sgrd: S);                
         }
 

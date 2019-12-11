@@ -70,7 +70,7 @@ namespace BoSSS.Application.Rheology {
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.NewtonGMRES;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.ObjectiveParam = 1.0;
 
             //Debugging and Solver Analysis
@@ -380,7 +380,12 @@ namespace BoSSS.Application.Rheology {
         /// <summary>
         /// Confined cylinder in a channel flow
         /// </summary>
-        static public RheologyControl ConfinedCylinder(string path = @"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder", int degree = 2) {
+        static public RheologyControl ConfinedCylinder(
+            //string path = @"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag", 
+            string path = @"d:\Users\kummer\default_bosss_db",
+            //string path = @"c:\Users\florian\default_bosss_db",
+            int degree = 2) {
+            //BoSSS.Application.Rheology.RheologyControlExamples.ConfinedCylinder();
             RheologyControl C = new RheologyControl();
 
             //Path für cluster
@@ -400,7 +405,8 @@ namespace BoSSS.Application.Rheology {
             C.NonLinearSolver.ConvergenceCriterion = 1E-7;
 
             C.LinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MinSolverIterations = 1;          
+            C.LinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.TargetBlockSize = 100000;
             C.LinearSolver.ConvergenceCriterion = 1E-7;
 
             //C.UnderRelax = 1.0;
@@ -409,11 +415,16 @@ namespace BoSSS.Application.Rheology {
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
-            C.ObjectiveParam = 1.0;
-            C.useJacobianForOperatorMatrix = false;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
 
-            C.UsePerssonSensor = true;
+            //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver.NoOfMultigridLevels = 1;
+            
+            C.ObjectiveParam = 1.0;
+            C.useJacobianForOperatorMatrix = true;
+
+            C.UsePerssonSensor = false;
             C.SensorLimit = 1e-4;
 
             C.AdaptiveMeshRefinement = false;
@@ -439,12 +450,12 @@ namespace BoSSS.Application.Rheology {
             C.FixedStreamwisePeriodicBC = false;
             C.beta = 0.59;
             C.Reynolds = 1;
-            C.Weissenberg = 0.1; //aim Weissenberg number!
-            C.RaiseWeissenberg = true;
+            C.Weissenberg = 0.0; //aim Weissenberg number!
+            C.RaiseWeissenberg = false;
             C.WeissenbergIncrement = 0.1;
 
             //Penalties
-            C.ViscousPenaltyScaling = 1;
+            C.ViscousPenaltyScaling = 1.0;
             C.Penalty2 = 1;
             C.Penalty1[0] = 0.0;
             C.Penalty1[1] = 0.0;
@@ -469,28 +480,24 @@ namespace BoSSS.Application.Rheology {
             C.ExSol_Pressure = Pressurefunction;
             C.ExSol_Stress = new Func<double[], double, double>[] { StressXXfunction, StressXYfunction, StressYYfunction };
 
-            // Create Fields
-            //int degree = 2;
-            C.FieldOptions.Add("VelocityX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("Pressure", new FieldOpts() { Degree = degree - 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-
-            C.FieldOptions.Add("StressXX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("StressXY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("StressYY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-
-            C.FieldOptions.Add("ResidualMomentumX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("ResidualMomentumY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("ResidualConti", new FieldOpts() { Degree = degree - 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-
-            C.FieldOptions.Add("ResidualStressXX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("ResidualStressXY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("ResidualStressYY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-
-            C.FieldOptions.Add("PhiDG", new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            C.FieldOptions.Add("Phi", new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            C.SetDGdegree(degree);
 
             // Create Grid
+
+            // grids used by florian
+            //string grid = "99ca969c-5ced-4640-b9aa-db665c60ccc9"; // florian laptop (half)
+            //string grid = "1c9cb150-88d3-4ee1-974d-7970eabd3cf8"; // florian laptop (full, level 0)
+            string grid = "db1797a9-6bc4-4194-984a-03b67598fa19"; // florian laptop (full, level 2)
+
+            // half channel mesh3 for cond tests
+            //string grid = "962bc97f-0298-4e2f-ac18-06940cb84956"; // anne
+
+            // half channel mesh0 for cond tests - schneller?
+            //string grid = "55c34774-1769-4f6b-bfc8-cc6c4d74076a";
+
+            // full channel mesh0 for cond tests comparison - schneller?
+            //string grid = "ecd6444f-ddfe-46c4-9df5-a1390f9371d7";
+
             //fine grid - only on cluster!           
             //string grid = "70797022-eba0-4c77-b179-334c665044b5";
 
@@ -499,7 +506,7 @@ namespace BoSSS.Application.Rheology {
 
 
             //coarser grid - works without cluster!
-            string grid = "f9aa12dc-53bb-4e2c-81b3-ffccc251a3f7";
+            //string grid = "f9aa12dc-53bb-4e2c-81b3-ffccc251a3f7";
 
             //very coarse grid as starting point for refinement
             //string grid = "e296a1b2-98f9-4fdf-8a32-04e0954ff369";
@@ -558,12 +565,13 @@ namespace BoSSS.Application.Rheology {
             C.InitialValues_Evaluators.Add("Phi", X => -1);
 
             // Set Boundary Conditions
-            C.AddBoundaryValue("Wall_bottom", "VelocityX", X => 0);
+            //C.AddBoundaryValue("Wall_bottom", "VelocityX", X => 0);
             C.AddBoundaryValue("Wall_top", "VelocityX", X => 0);
-            C.AddBoundaryValue("Wall_bottom", "VelocityY", X => 0);
-            C.AddBoundaryValue("Wall_top", "VelocityY", X => 0);
-            C.AddBoundaryValue("Wall_cylinder", "VelocityX", X => 0);
-            C.AddBoundaryValue("Wall_cylinder", "VelocityY", X => 0);
+            //C.AddBoundaryValue("Wall_bottom", "VelocityY", X => 0);
+            //C.AddBoundaryValue("Wall_top", "VelocityY", X => 0);
+            //C.AddBoundaryValue("Wall_cylinder", "VelocityX", X => 0);
+            //C.AddBoundaryValue("Wall_cylinder", "VelocityY", X => 0);
+            //C.AddBoundaryValue("Freeslip");
 
 
             if (!C.FixedStreamwisePeriodicBC)

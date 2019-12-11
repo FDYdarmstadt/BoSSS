@@ -36,7 +36,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
         LevelSetTracker m_LsTrk;
 
-        public StressDivergenceAtLevelSet(LevelSetTracker lstrk, double _reynoldsA, double _reynoldsB, double[] _penalty1, double _penalty2, int _component,
+        public StressDivergenceAtLevelSet(LevelSetTracker lstrk, double _reynoldsA, double _reynoldsB, double[] _penalty1, double _penalty2, int _component, bool _weighted,
             bool _staticInt = false) {
             this.m_LsTrk = lstrk;
             this.muA = 1 / _reynoldsA;
@@ -46,6 +46,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             this.component = _component;
             this.m_D = lstrk.GridDat.SpatialDimension;
             this.staticInt = _staticInt;
+            this.weighted = _weighted;
         }
 
         double muA;
@@ -56,37 +57,22 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         int m_D;
 
         bool staticInt;
-
+        bool weighted;
 
         /// <summary>
         /// default-implementation
         /// </summary>
-        public double LevelSetForm(ref CommonParamsLs inp,
+        public double LevelSetForm(ref CommonParams inp,
             double[] TA, double[] TB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            double[] N = inp.n;
-            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCell];
+            double[] N = inp.Normal;
+            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCellIn];
 
             int D = N.Length;
             Debug.Assert(this.ArgumentOrdering.Count == 3);
-            //Debug.Assert(Grad_uA.GetLength(0) == this.ArgumentOrdering.Count);
-            //Debug.Assert(Grad_uB.GetLength(0) == this.ArgumentOrdering.Count);
-            //Debug.Assert(Grad_uA.GetLength(1) == D);
-            //Debug.Assert(Grad_uB.GetLength(1) == D);
 
-            //double[] Grad_uA_xN = new double[2], Grad_uB_xN = new double[2];
-            //double Grad_vA_xN = 0, Grad_vB_xN = 0;
-            //for (int d = 0; d < D; d++) {
-            //    for (int dd = 0; dd < D; dd++) {
-            //        Grad_uA_xN[dd] += Grad_uA[dd, d] * N[d];
-            //        Grad_uB_xN[dd] += Grad_uB[dd, d] * N[d];
-            //    }
-            //    Grad_vA_xN += Grad_vA[d] * N[d];
-            //    Grad_vB_xN += Grad_vB[d] * N[d];
-            //}
-
-            double PosCellLengthScale = PosLengthScaleS[inp.jCell];
-            double NegCellLengthScale = NegLengthScaleS[inp.jCell];
+            double PosCellLengthScale = PosLengthScaleS[inp.jCellOut];
+            double NegCellLengthScale = NegLengthScaleS[inp.jCellIn];
 
             double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
             if (hCutCellMin <= 1.0e-10 * hCellMin)
@@ -96,24 +82,26 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             Debug.Assert(TA.Length == this.ArgumentOrdering.Count);
             Debug.Assert(TB.Length == this.ArgumentOrdering.Count);
 
+            double wA;
+            double wB;
+            double wPenalty;
+            if (!weighted) {
+                wA = 0.5;
+                wB = 0.5;
+                wPenalty = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
+            } else {
+                wA = muB / (muA + muB);
+                wB = muA / (muA + muB);
+                wPenalty = muA * muB / (muA + muB);
+            }
 
             double res = 0;
 
+            //res -= ((TA[0] * muA * wA + TB[0] * muB * wB) * N[0] + (TA[1] * muA * wA + TB[1] * muB * wB) * N[1]) * (vA - vB); // central difference for stress divergence
+            //res += penalty2 / hCutCellMin * (TA[2] * muA - TB[2] * muB) * (vA - vB) * wPenalty;
 
-            res +=( 0.5 * (TA[0]* muA + TB[0]* muB) * N[0] + 0.5 * (TA[1]* muA + TB[1]* muB) * N[1]) *(vA-vB); // central difference for stress divergence
-
-            switch (component) {
-                case 0:
-                    res += -penalty2 / hCellMin * (TA[2]* muA - TB[2]* muB) * (vA - vB);
-                    break;
-                case 1:
-                    res += -penalty2 / hCellMin * (TA[2] * muA - TB[2]* muB) * (vA - vB);
-                    break;
-                default:
-                    throw new NotImplementedException();
-
-
-            }
+            res -= 0.5 * ((TA[0] * muA+ TB[0] * muB) * N[0] + (TA[1] * muA + TB[1] * muB) * N[1]) * (vA - vB); // central difference for stress divergence
+            res += penalty2 / hCutCellMin * (TA[2] * muA - TB[2] * muB) * (vA - vB);
 
             return  res;
         }
@@ -163,5 +151,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         public IList<string> ParameterOrdering {
             get { return null; }
         }
+
     }
 }
