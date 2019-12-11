@@ -66,7 +66,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
             double wLevSet = parameters_P[2];
 
-            double[] RadialNormalVector = new double[] { parameters_P[3], parameters_P[4] };
+            double[] RadialVector = new double[] { parameters_P[3], parameters_P[4] };
             double RadialLength = parameters_P[5];
 
             double active_stress = parameters_P[6];
@@ -93,7 +93,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             // ============================= 
             if (inp.x.Length == 3) {
 
-                Ret -= Grad_uA_xN * (vA);                                     // consistency term
+                Ret -= Grad_uA_xN * (vA);                                                   // consistency term
                 Ret -= Grad_vA_xN * (uA[component] - 0) * (1 - scaleActiveBoundary);        // symmetry term
                 Ret += _penalty * (uA[component] - 0) * (vA) * (1 - scaleActiveBoundary);   // penalty term
 
@@ -103,7 +103,9 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
             // 2D
             // ============================= 
-            double uAFict = uLevSet[component] + RadialLength * wLevSet * RadialNormalVector[component];
+            double uAFict = component == 0
+                ? uLevSet[component] - RadialLength * wLevSet * RadialVector[1]
+                : uLevSet[component] + RadialLength * wLevSet * RadialVector[0];
             double[] orientation = new double[] { -Math.Sin(Ang_P), Math.Cos(Ang_P) };
             double f_xT;
             if (orientation[0] * inp.n[0] + orientation[1] * inp.n[1] > 0) {
@@ -130,8 +132,9 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
                         Ret -= muA * (N[component] * Grad_vA[dD] * N[dD]) * uA[dN] * N[dN];     // symmetry term 
                     }                                                                           //
                     Ret += muA * (uA[dN] * N[dN]) * (vA * N[component]) * _penalty;             // penalty term
-                }                                                                               //
-                                                                                                //tangential         
+                }
+
+                //tangential    
                 double[,] P = new double[D, D];
                 for (int d1 = 0; d1 < D; d1++) {
                     for (int d2 = 0; d2 < D; d2++) {
@@ -150,17 +153,11 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
                         }
                     }
                 }
-                //for (int d1 = 0; d1 < D; d1++) {
-                //    for (int d2 = 0; d2 < D; d2++) {
-                //        Ret += (P[d1, d2] * f_xT * muA * scaleActiveBoundary) * (P[d1, component] * vA);
-                //    }
-                //}
                 for (int d1 = 0; d1 < D; d1++) {
                     for (int d2 = 0; d2 < D; d2++) {
-                        Ret -= (P[d1, d2] * f_xT * muA) * (P[d1, component] * vA);
+                        Ret -= (P[d1, d2] * f_xT) * (P[d1, component] * vA);
                     }
                 }
-                //Ret += f_xT * (vA) * muA * scaleActiveBoundary;                                 // active force term
             }
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));

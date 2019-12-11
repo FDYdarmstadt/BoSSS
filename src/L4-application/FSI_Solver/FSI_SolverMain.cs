@@ -414,16 +414,16 @@ namespace BoSSS.Application.FSI_Solver {
             double[] couplingArray = new double[X.Length + 7];
             Vector point = new Vector(X);
             foreach (Particle p in m_Particles) {
-                p.CalculateRadialNormalVector(point, out Vector RadialNormalVector);
+                p.CalculateRadialVector(point, out Vector RadialVector, out double radialLength);
                 double seperateBoundaryRegions = p.ActiveStress != 0 ? p.SeperateBoundaryRegions(X) : 0;
                 bool containsParticle = m_Particles.Count == 1 ? true : p.Contains(point, GridData.iGeomCells.h_min.Min());
                 if (containsParticle) {
                     couplingArray[0] = p.Motion.GetTranslationalVelocity(0)[0];
                     couplingArray[1] = p.Motion.GetTranslationalVelocity(0)[1];
                     couplingArray[2] = p.Motion.GetRotationalVelocity(0);
-                    couplingArray[3] = RadialNormalVector[0];
-                    couplingArray[4] = RadialNormalVector[1];
-                    couplingArray[5] = p.Motion.GetPosition(0).L2Distance(X);
+                    couplingArray[3] = RadialVector[0];
+                    couplingArray[4] = RadialVector[1];
+                    couplingArray[5] = radialLength;
                     couplingArray[6] = p.ActiveStress; // zero for passive particles
                     couplingArray[7] = -seperateBoundaryRegions;
                     couplingArray[8] = p.Motion.GetAngle(0);
@@ -850,8 +850,9 @@ namespace BoSSS.Application.FSI_Solver {
                                 m_BDF_Timestepper.Solve(phystime, dt, false);
                                 ParticleHydrodynamicsIntegration hydrodynamicsIntegration = new ParticleHydrodynamicsIntegration(2, Velocity, Pressure, LsTrk, FluidViscosity);
                                 AllParticleHydrodynamics.CalculateHydrodynamics(m_Particles, hydrodynamicsIntegration, FluidDensity, IsFullyCoupled);
-                                if (iterationCounter != 1) {
-                                    double underrelax = 0.5;
+                                if (iterationCounter != 1) 
+                                {
+                                    double underrelax = 0.01;
                                     Velocity.Scale(underrelax);
                                     Velocity.Acc((1 - underrelax), velocityOld);
                                     Pressure.Scale(underrelax);
@@ -871,8 +872,8 @@ namespace BoSSS.Application.FSI_Solver {
 
                             // print iteration status
                             // -------------------------------------------------
-                            Auxillary.PrintResultToConsole(m_Particles, phystime, hydroDynForceTorqueResidual, iterationCounter);
-                            //Auxillary.PrintResultToConsole(phystime, hydroDynForceTorqueResidual, iterationCounter);
+                            //Auxillary.PrintResultToConsole(m_Particles, phystime, hydroDynForceTorqueResidual, iterationCounter);
+                            Auxillary.PrintResultToConsole(phystime, hydroDynForceTorqueResidual, iterationCounter);
                             LogResidual(phystime, iterationCounter, hydroDynForceTorqueResidual);
                         }
                         if (TimestepInt == 1 || IsMultiple(TimestepInt, 10)) {
@@ -1242,9 +1243,12 @@ namespace BoSSS.Application.FSI_Solver {
                 // Multiple particles with the same colour, trigger collision detection
                 // =================================================
                 if (ParticlesOfCurrentColor.Length >= 1 && CurrentColor != 0) {
-                    List<Particle> currentParticles = levelSetUpdate.GetParticleListOneColor(m_Particles, _GlobalParticleColor, CurrentColor);
+                    Particle[] currentParticles = new Particle[ParticlesOfCurrentColor.Length];
+                    for (int j = 0; j < ParticlesOfCurrentColor.Length; j++) {
+                        currentParticles[j] = m_Particles[ParticlesOfCurrentColor[j]];
+                    }
                     FSI_Collision _Collision = new FSI_Collision(LsTrk, CurrentColor, ((FSI_Control)Control).CoefficientOfRestitution, dt);
-                    _Collision.CalculateCollision(currentParticles, GridData, CellColor);
+                    _Collision.CalculateCollision(currentParticles, GridData, CellColor, LsTrk);
                 }
 
                 // Remove already investigated particles/colours from array
@@ -1370,37 +1374,30 @@ namespace BoSSS.Application.FSI_Solver {
             BitArray coarseCells = new BitArray(noOfLocalCells);
             BitArray mediumCells = new BitArray(noOfLocalCells);
             BitArray fineCells = new BitArray(noOfLocalCells);
-            BitArray collisionFineCells = new BitArray(noOfLocalCells);
             double radiusCoarseCells = 2 * LsTrk.GridDat.Cells.h_maxGlobal;
             double radiusMediumCells = LsTrk.GridDat.Cells.h_maxGlobal;
-            double radiusFineCells = 3 * LsTrk.GridDat.Cells.h_minGlobal;
-            double radiusCollision = LsTrk.GridDat.Cells.h_minGlobal;
+            double radiusFineCells = 4 * LsTrk.GridDat.Cells.h_minGlobal;
             for (int p = 0; p < m_Particles.Count; p++) {
                 Particle particle = m_Particles[p];
                 for (int j = 0; j < noOfLocalCells; j++) {
                     Vector centerPoint = new Vector(CellCenters[j, 0], CellCenters[j, 1]);
-                    if (!coarseCells[j]) {
+                    if (!coarseCells[j] && LsTrk.Regions.IsSpeciesPresentInCell(LsTrk.GetSpeciesId("A"), j)) {
                         coarseCells[j] = particle.Contains(centerPoint, radiusCoarseCells);
                     }
-                    if (!mediumCells[j]) {
+                    if (!mediumCells[j] && LsTrk.Regions.IsSpeciesPresentInCell(LsTrk.GetSpeciesId("A"), j)) {
                         mediumCells[j] = particle.Contains(centerPoint, radiusMediumCells);
                     }
-                    if (!fineCells[j] && LsTrk.Regions.IsSpeciesPresentInCell(LsTrk.GetSpeciesId("A"), j)){// && particle.SeperateCellRegions(centerPoint)) {
+                    if (!fineCells[j] && LsTrk.Regions.IsSpeciesPresentInCell(LsTrk.GetSpeciesId("A"), j)){
                         fineCells[j] = particle.Contains(centerPoint, radiusFineCells);
                     }
-                    //if (particle.Contains(centerPoint, radiusCollision) && GridData.GetBoundaryCells().Contains(j))
-                      //  collisionFineCells[j] = true;
                 }
             }
-            int medioumRefinementLevel = refinementLevel > 2 ? refinementLevel / 2 + 1 : 1;// refinementLevel == 2 ? 2 : 1;
+            int medioumRefinementLevel = refinementLevel > 2 ? refinementLevel / 2 + 1 : 1;
             int coarseRefinementLevel = refinementLevel > 4 ? refinementLevel / 4 : 1;
-            //if (refinementLevel - coarseRefinementLevel > coarseRefinementLevel)
-            //    coarseRefinementLevel += 1;
             List<Tuple<int, BitArray>> AllCellsWithMaxRefineLevel = new List<Tuple<int, BitArray>> {
                 new Tuple<int, BitArray>(refinementLevel, fineCells),
                 new Tuple<int, BitArray>(medioumRefinementLevel, mediumCells),
-                //new Tuple<int, BitArray>(coarseRefinementLevel, coarseCells),
-                //new Tuple<int, BitArray>(refinementLevel + 1, collisionFineCells),
+                new Tuple<int, BitArray>(coarseRefinementLevel, coarseCells),
             };
             return AllCellsWithMaxRefineLevel;
         }

@@ -52,13 +52,13 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
             double[] parameters_P = m_getParticleParams(cp.x, cp.time);
             double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
             double wLevSet = parameters_P[2];
-            double[] RadialNormalVector = new double[] { parameters_P[3], parameters_P[4] };
+            double[] RadialVector = new double[] { parameters_P[3], parameters_P[4] };
             double RadialLength = parameters_P[5];
 
             double[] _uLevSet = new double[D];
 
-            _uLevSet[0] = uLevSet[0] + RadialLength * wLevSet * RadialNormalVector[0];
-            _uLevSet[1] = uLevSet[1] + RadialLength * wLevSet * RadialNormalVector[1];
+            _uLevSet[0] = uLevSet[0] - (RadialLength * wLevSet * RadialVector[1]);
+            _uLevSet[1] = uLevSet[1] + (RadialLength * wLevSet * RadialVector[0]);
 
             double uAxN = GenericBlas.InnerProd(U_Neg, cp.n);
             double uBxN = GenericBlas.InnerProd(_uLevSet, cp.n);

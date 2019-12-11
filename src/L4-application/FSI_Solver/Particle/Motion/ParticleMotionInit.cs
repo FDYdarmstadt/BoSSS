@@ -42,13 +42,14 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="addedDampingCoefficient">
         /// The added damping coefficient is a scaling factor for the model. If the value is smaller than zero no added damping is applied. Otherwise it should be between 0.5 and 1.5, for reference: Banks et.al. 2017.
         /// </param>
-        public ParticleMotionInit(double[] gravity = null, double particleDensity = 0, bool isDry = false, bool noRotation = false, bool noTranslation = false, double addedDampingCoefficient = 0) {
+        public ParticleMotionInit(double[] gravity = null, double particleDensity = 0, bool isDry = false, bool noRotation = false, bool noTranslation = false, double addedDampingCoefficient = 0, bool withForces = false) {
             m_Gravity = gravity.IsNullOrEmpty() ? new Vector(0, -9.81 ) : new Vector(gravity);
             m_Density = particleDensity == 0 ? 1 : particleDensity;
             m_IsDry = isDry;
             m_NoRotation = noRotation;
             m_NoTranslation = noTranslation;
             m_AddedDampingCoefficient = addedDampingCoefficient;
+            m_WithForces = withForces;
         }
 
         private readonly FSI_Auxillary Aux = new FSI_Auxillary();
@@ -57,6 +58,7 @@ namespace BoSSS.Application.FSI_Solver {
         private readonly bool m_IsDry;
         private readonly bool m_NoRotation;
         private readonly bool m_NoTranslation;
+        private readonly bool m_WithForces;
         private readonly double m_AddedDampingCoefficient;
 
         /// <summary>
@@ -77,8 +79,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         public Motion_Wet ParticleMotion {
             get {
-                if (m_NoRotation && m_NoTranslation)
-                    return new Motion_Fixed();
+                if (m_NoRotation && m_NoTranslation) {
+                    if (m_WithForces)
+                        return new Motion_Fixed_withForces(m_Gravity, m_Density);
+                    else
+                        return new Motion_Fixed(m_Gravity);
+                }
                 if (m_IsDry) {
                     return m_NoRotation ? new Motion_Dry_NoRotation(m_Gravity, m_Density)
                         : m_NoTranslation ? new Motion_Dry_NoTranslation(m_Gravity, m_Density)

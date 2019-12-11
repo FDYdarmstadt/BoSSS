@@ -146,12 +146,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// Necessary for active particles. Returns 0 for the non active boundary region and a number between 0 and 1 for the active region.
         /// </summary>
         public double SeperateBoundaryRegions(double[] X) => Math.Cos(Motion.GetAngle(0)) * (X[0] - Motion.GetPosition(0)[0]) + Math.Sin(Motion.GetAngle(0)) * (X[1] - Motion.GetPosition(0)[1]) < 1e-8
-            ? (Math.Cos(Motion.GetAngle(0)) * (X[0] - Motion.GetPosition(0)[0]) + Math.Sin(Motion.GetAngle(0)) * (X[1] - Motion.GetPosition(0)[1])) / Math.Sqrt((X[0] - Motion.GetPosition(0)[0]).Pow2() + (X[1] - Motion.GetPosition(0)[1]).Pow2())
+            ? 1// (Math.Cos(Motion.GetAngle(0)) * (X[0] - Motion.GetPosition(0)[0]) + Math.Sin(Motion.GetAngle(0)) * (X[1] - Motion.GetPosition(0)[1])) / Math.Sqrt((X[0] - Motion.GetPosition(0)[0]).Pow2() + (X[1] - Motion.GetPosition(0)[1]).Pow2())
             : 0;
-
-        public bool SeperateCellRegions(double[] X) {
-            return Math.Cos(Motion.GetAngle(0)) * (X[0] - Motion.GetPosition(0)[0]) + Math.Sin(Motion.GetAngle(0)) * (X[1] - Motion.GetPosition(0)[1]) < 1e-8;
-        }
 
         /// <summary>
         /// Circumference of the current particle.
@@ -172,14 +168,11 @@ namespace BoSSS.Application.FSI_Solver {
             BitArray CellArray = new BitArray(LsTrk.GridDat.Cells.NoOfLocalUpdatedCells);
             MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
             double h_min = LsTrk.GridDat.Cells.h_minGlobal;
-            double h_max = LsTrk.GridDat.Cells.h_maxGlobal;
-            double tolerance = Math.Sqrt(h_min.Pow2() + h_max.Pow2());
 
             for (int i = 0; i < CellArray.Length; i++) {
-                CellArray[i] = Contains(new Vector(CellCenters[i, 0], CellCenters[i, 1]), tolerance);
+                CellArray[i] = Contains(new Vector(CellCenters[i, 0], CellCenters[i, 1]), h_min);
             }
             CellMask CutCells = new CellMask(LsTrk.GridDat, CellArray, MaskType.Logical);
-            CutCells = CutCells.Intersect(LsTrk.Regions.GetCutCellMask());
             return CutCells;
         }
 
@@ -197,9 +190,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// Gives a bool whether the particle contains a certain point or not
         /// </summary>
         /// <param name="point"></param>
-        /// <param name="h_min"></param>
-        /// <param name="h_max"></param>
-        /// <param name="WithoutTolerance"></param>
         public virtual bool Contains(Vector point, double tolerance = 0) => throw new NotImplementedException();
 
         /// <summary>

@@ -20,7 +20,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Application.FSI_Solver {
-    public class Motion_Fixed : Motion_Wet {
+    public class Motion_Fixed_withForces : Motion_Wet {
 
         /// <summary>
         /// No motion
@@ -31,7 +31,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public Motion_Fixed(Vector gravity, double density = 0) : base(new Vector(gravity), density) {
+        public Motion_Fixed_withForces(Vector gravity, double density = 0) : base(new Vector(gravity), density) {
             IncludeRotation = false;
             IncludeTranslation = false;
         }
@@ -121,28 +121,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         protected override double CalculateRotationalAcceleration(double dt) {
-            return 0;
-        }
-
-        /// <summary>
-        /// Update Forces and Torque acting from fluid onto the particle
-        /// </summary>
-        /// <param name="hydrodynamicsIntegration"></param>
-        /// <param name="fluidDensity"></param>
-        public override Vector CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, CellMask cutCells, double dt) {
-            return new Vector(m_Dim);
-        }
-
-        /// <summary>
-        /// Update Forces and Torque acting from fluid onto the particle
-        /// </summary>
-        /// <param name="U"></param>
-        /// <param name="P"></param>
-        /// <param name="levelSetTracker"></param>
-        /// <param name="fluidViscosity"></param>
-        /// <param name="cutCells"></param>
-        /// <param name="dt"></param>
-        public override double CalculateHydrodynamicTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, CellMask cutCells, double dt) {
             return 0;
         }
     }
