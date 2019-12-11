@@ -24,15 +24,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace XDGShockTube {
+namespace XDGShockTest {
     public class DerivedVariable<T> : Variable {
 
         /// <summary>
         /// The update function to be invoked after each (sub-)time-step
         /// </summary>
-        public Action<T, Program> UpdateFunction;
+        public Action<T, XDGShockTestMain> UpdateFunction;
 
-        public DerivedVariable(string name, VariableTypes type, Action<T, Program> updateFunction) : base(name, type) {
+        public DerivedVariable(string name, VariableTypes type, Action<T, XDGShockTestMain> updateFunction) : base(name, type) {
             this.UpdateFunction = updateFunction;
         }
     }
