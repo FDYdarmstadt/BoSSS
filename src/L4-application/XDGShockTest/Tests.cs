@@ -27,7 +27,7 @@ using XDGShock;
 using XDGShock.TimeStepping;
 using XDGShock.Variables;
 
-namespace XDGShockTube {
+namespace XDGShockTest {
 
     /// <summary>
     /// NUnit tests for the XDGShock project
@@ -51,12 +51,12 @@ namespace XDGShockTube {
         #region Tests
         [Test]
         public static void XDGShockTube_SpeciesA() {
-            Program program = null;
+            XDGShockTestMain program = null;
             BoSSS.Solution.Application<XDGShockControl>._Main(
                 new string[] { "--control", "cs:XDGShockTest.XDGShockTestsControlExamples.XDGTestsShockTube(@\"A\")" },
                 false,
                 delegate () {
-                    program = new Program();
+                    program = new XDGShockTestMain();
                     return program;
                 });
 
@@ -66,12 +66,12 @@ namespace XDGShockTube {
 
         [Test]
         public static void XDGShockTube_SpeciesB() {
-            Program program = null;
+            XDGShockTestMain program = null;
             BoSSS.Solution.Application<XDGShockControl>._Main(
                 new string[] { "--control", "cs:XDGShockTest.XDGShockTestsControlExamples.XDGTestsShockTube(@\"B\")" },
                 false,
                 delegate () {
-                    program = new Program();
+                    program = new XDGShockTestMain();
                     return program;
                 });
 
@@ -79,7 +79,7 @@ namespace XDGShockTube {
             CompareErrors(program);
         }
 
-        private static void CompareErrors(Program program) {
+        private static void CompareErrors(XDGShockTestMain program) {
             double densityL2Norm = (double)program.QueryHandler.QueryResults["L2NormDensity"];
             double densityCorrect = 0.711325556421112;
 
