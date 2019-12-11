@@ -57,13 +57,13 @@ namespace CNS {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-           
 
-            Application.InitMPI(args);
-            CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder0th();
-            Debug.Assert(false, "remove me");
-            csMPI.Raw.mpiFinalize();
-            return;
+
+            //Application.InitMPI(args);
+            //CNS.Tests.MovingIBMTests.PistonTests.MovingMeshIBMPiston1stOrderWithAgglomeration();
+            //Debug.Assert(false, "remove me");
+            //csMPI.Raw.mpiFinalize();
+            //return;
 
             Application<CNSControl>._Main(
                 args,
