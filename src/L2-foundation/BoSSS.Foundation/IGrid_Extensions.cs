@@ -25,7 +25,7 @@ namespace BoSSS.Foundation.Grid {
         /// the dictionary
         /// </summary>
         /// <param name="EdgeTagFunc"></param>
-        static public void DefineEdgeTags(this IGrid g, Func<Vector, byte> EdgeTagFunc) {
+        static public void DefineEdgeTags(this IGrid g, Func<Vector, byte> EdgeTagFunc, params string[] EdgeTagNamesToEnsure) {
             g.DefineEdgeTags(delegate (Vector v) {
                 string EdgeTagName = null;
                 byte et = EdgeTagFunc(v);
@@ -102,8 +102,7 @@ namespace BoSSS.Foundation.Grid {
         /// returned by the <paramref name="EdgeTagFunc"/>-function is not in
         /// the dictionary
         /// </summary>
-        /// <param name="EdgeTagFunc"></param>
-        static public void DefineEdgeTags(this IGrid g, Func<Vector, string> EdgeTagFunc) {
+        static public void DefineEdgeTags(this IGrid g, Func<Vector, string> EdgeTagFunc, params string[] EdgeTagNamesToEnsure) {
 
             int D = g.SpatialDimension;
             double[] x = new double[D];
@@ -201,6 +200,10 @@ namespace BoSSS.Foundation.Grid {
             if (GridChanged) {
                 g.InvalidateGridData();
                 Console.WriteLine("Grid Edge Tags changed.");
+            }
+
+            foreach(string EdgeTagName in EdgeTagNamesToEnsure) {
+                g.AddEdgeTag(EdgeTagName);
             }
         }
     }
