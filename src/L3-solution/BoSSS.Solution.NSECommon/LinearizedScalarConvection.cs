@@ -22,13 +22,15 @@ using BoSSS.Solution.Utils;
 using ilPSP.Utils;
 using System.Diagnostics;
 
-namespace BoSSS.Solution.NSECommon {
+namespace BoSSS.Solution.NSECommon
+{
 
     /// <summary>
     /// Linearized convection for scalar quantities like e.g. temperature for low Mach number flows.
     /// In fact this operator is the analog to <see cref="LinearizedConvection"/> for velocity.
     /// </summary>
-    public class LinearizedScalarConvection : LinearFlux {
+    public class LinearizedScalarConvection : LinearFlux
+    {
 
         int m_SpatialDimension;
         IncompressibleBoundaryCondMap m_bcmap;
@@ -50,7 +52,8 @@ namespace BoSSS.Solution.NSECommon {
         /// Null for multiphase.
         /// Has to be given for Low-Mach to calculate density.
         /// </param>
-        public LinearizedScalarConvection(int SpatDim, IncompressibleBoundaryCondMap BcMap, MaterialLaw EoS) {
+        public LinearizedScalarConvection(int SpatDim, IncompressibleBoundaryCondMap BcMap, MaterialLaw EoS)
+        {
 
             m_SpatialDimension = SpatDim;
             m_bcmap = BcMap;
@@ -59,7 +62,8 @@ namespace BoSSS.Solution.NSECommon {
             for (int d = 0; d < SpatDim; d++)
                 velFunction[d] = m_bcmap.bndFunction[VariableNames.Velocity_d(d)];
 
-            switch (BcMap.PhysMode) {
+            switch (BcMap.PhysMode)
+            {
                 case PhysicsMode.Multiphase:
                     scalarFunction = m_bcmap.bndFunction[VariableNames.LevelSet];
                     m_ArgumentOrdering = new string[] { VariableNames.LevelSet };
@@ -85,8 +89,10 @@ namespace BoSSS.Solution.NSECommon {
         /// Ctor
         /// intended for use in the context of RANS turbulence model equations
         /// </summary>
-        public LinearizedScalarConvection(int SpatDim, IncompressibleBoundaryCondMap BcMap, string TurbulentVariable, string TurbulentVariable0, string TurbulentVariable0Mean){
-            if (BcMap.PhysMode != PhysicsMode.RANS) {
+        public LinearizedScalarConvection(int SpatDim, IncompressibleBoundaryCondMap BcMap, string TurbulentVariable, string TurbulentVariable0, string TurbulentVariable0Mean)
+        {
+            if (BcMap.PhysMode != PhysicsMode.RANS)
+            {
                 throw new ApplicationException("This Constructor is only intended for RANS turbulence model equations");
             }
             m_SpatialDimension = SpatDim;
@@ -105,12 +111,15 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// flux at the boundary
         /// </summary>
-        protected override double BorderEdgeFlux(ref Foundation.CommonParamsBnd inp, double[] Uin) {
+        protected override double BorderEdgeFlux(ref Foundation.CommonParamsBnd inp, double[] Uin)
+        {
             IncompressibleBcType edgeType = m_bcmap.EdgeTag2Type[inp.EdgeTag];
 
-            switch (edgeType) {
+            switch (edgeType)
+            {
                 case IncompressibleBcType.Wall:
-                case IncompressibleBcType.Velocity_Inlet: {
+                case IncompressibleBcType.Velocity_Inlet:
+                    {
 
                         if ((edgeType == IncompressibleBcType.Wall) && (m_bcmap.PhysMode == PhysicsMode.Multiphase))
                             throw new ApplicationException("Use NoSlipNeumann boundary condition for multiphase flows instead of Wall.");
@@ -137,53 +146,58 @@ namespace BoSSS.Solution.NSECommon {
                         // ==============================
                         inp2.Parameters_OUT = new double[inp.Parameters_IN.Length];
 
-                    // Temperature
-                    switch (m_bcmap.PhysMode) {
-                        case PhysicsMode.LowMach: {
-                            // opt1:
-                            inp2.Parameters_OUT[2 * m_SpatialDimension] = scalarFunction[inp.EdgeTag](inp.X, 0);
-                            // opt2: inner values
-                            //inp2.Parameters_OUT[2 * m_SpatialDimension] = inp2.Parameters_IN[2 * m_SpatialDimension];
-                            // Use inner value for TemperatureMean, i.e. LambdaIn is used.
-                            inp2.Parameters_OUT[2 * m_SpatialDimension + 1] = inp.Parameters_IN[2 * m_SpatialDimension + 1];
-                            break;
+                        // Temperature
+                        switch (m_bcmap.PhysMode)
+                        {
+                            case PhysicsMode.LowMach:
+                                {
+                                    // opt1:
+                                    inp2.Parameters_OUT[2 * m_SpatialDimension] = scalarFunction[inp.EdgeTag](inp.X, 0);
+                                    // opt2: inner values
+                                    //inp2.Parameters_OUT[2 * m_SpatialDimension] = inp2.Parameters_IN[2 * m_SpatialDimension];
+                                    // Use inner value for TemperatureMean, i.e. LambdaIn is used.
+                                    inp2.Parameters_OUT[2 * m_SpatialDimension + 1] = inp.Parameters_IN[2 * m_SpatialDimension + 1];
+                                    break;
+                                }
+                            case PhysicsMode.Multiphase:
+                            case PhysicsMode.RANS:
+                                break;
+                            default:
+                                throw new NotImplementedException();
                         }
-                        case PhysicsMode.Multiphase:
-                        case PhysicsMode.RANS:
-                            break;
-                        default:
-                            throw new NotImplementedException();
+
+                        // Calculate BorderEdgeFlux as InnerEdgeFlux
+                        // =========================================    
+                        r = InnerEdgeFlux(ref inp2, Uin, new double[] { Uout });
+
+                        return r;
                     }
-
-                    // Calculate BorderEdgeFlux as InnerEdgeFlux
-                    // =========================================    
-                    r = InnerEdgeFlux(ref inp2, Uin, new double[] { Uout });
-
-                    return r;
-                }
                 case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.Outflow:
                 case IncompressibleBcType.Pressure_Outlet:
-                case IncompressibleBcType.NoSlipNeumann: {
-                    double r = 0.0;
-                    double u1, u2, u3 = 0, phi;
+                case IncompressibleBcType.NoSlipNeumann:
+                    {
+                        double r = 0.0;
+                        double u1, u2, u3 = 0, phi;
 
-                    phi = Uin[0];
-                    u1 = inp.Parameters_IN[0];
-                    u2 = inp.Parameters_IN[1];
+                        phi = Uin[0];
+                        u1 = inp.Parameters_IN[0];
+                        u2 = inp.Parameters_IN[1];
                         r += phi * (u1 * inp.Normal[0] + u2 * inp.Normal[1]);
-                        if (m_SpatialDimension == 3) {
+                        if (m_SpatialDimension == 3)
+                        {
                             u3 = inp.Parameters_IN[2];
                             r += phi * u3 * inp.Normal[2];
                         }
 
-                    if (m_bcmap.PhysMode == PhysicsMode.LowMach) {
-                        double rho = EoS.GetDensity(inp.Parameters_IN[2 * m_SpatialDimension]);
-                        r *= rho;
-                    }
+                        if (m_bcmap.PhysMode == PhysicsMode.LowMach)
+                        {
+                            double rho = EoS.GetDensity(inp.Parameters_IN[2 * m_SpatialDimension]);
+                            r *= rho;
+                        }
 
-                    return r;
-                }
+                        return r;
+                    }
                 default:
                     throw new NotImplementedException("Boundary condition not implemented!");
             }
@@ -192,7 +206,8 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// flux at inner edges
         /// </summary>        
-        protected override double InnerEdgeFlux(ref Foundation.CommonParams inp, double[] Uin, double[] Uout) {
+        protected override double InnerEdgeFlux(ref Foundation.CommonParams inp, double[] Uin, double[] Uout)
+        {
             double r = 0.0;
 
             // Calculate central part
@@ -202,14 +217,16 @@ namespace BoSSS.Solution.NSECommon {
             // 2 * {rho u_j * T} * n_j for Low-Mach advection
             double rhoIn = 1.0;
             double rhoOut = 1.0;
-            if (m_bcmap.PhysMode == PhysicsMode.LowMach) {
+            if (m_bcmap.PhysMode == PhysicsMode.LowMach)
+            {
                 rhoIn = EoS.GetDensity(inp.Parameters_IN[2 * m_SpatialDimension]);
                 rhoOut = EoS.GetDensity(inp.Parameters_OUT[2 * m_SpatialDimension]);
             }
 
             r += rhoIn * Uin[0] * (inp.Parameters_IN[0] * inp.Normal[0] + inp.Parameters_IN[1] * inp.Normal[1]);
             r += rhoOut * Uout[0] * (inp.Parameters_OUT[0] * inp.Normal[0] + inp.Parameters_OUT[1] * inp.Normal[1]);
-            if (m_SpatialDimension == 3) {
+            if (m_SpatialDimension == 3)
+            {
                 r += rhoIn * Uin[0] * inp.Parameters_IN[2] * inp.Normal[2] + rhoOut * Uout[0] * inp.Parameters_OUT[2] * inp.Normal[2];
             }
 
@@ -218,7 +235,8 @@ namespace BoSSS.Solution.NSECommon {
 
             IList<double> _VelocityMeanIn = new List<double>();
             IList<double> _VelocityMeanOut = new List<double>();
-            for (int d = 0; d < m_SpatialDimension; d++) {
+            for (int d = 0; d < m_SpatialDimension; d++)
+            {
                 _VelocityMeanIn.Add(inp.Parameters_IN[m_SpatialDimension + d]);
                 _VelocityMeanOut.Add(inp.Parameters_OUT[m_SpatialDimension + d]);
             }
@@ -227,7 +245,8 @@ namespace BoSSS.Solution.NSECommon {
 
             double LambdaIn;
             double LambdaOut;
-            switch (m_bcmap.PhysMode) {
+            switch (m_bcmap.PhysMode)
+            {
                 case PhysicsMode.Multiphase:
                     LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, false);
                     LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, false);
@@ -239,9 +258,9 @@ namespace BoSSS.Solution.NSECommon {
                     LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, EoS, false, ScalarMeanOut);
                     break;
                 case PhysicsMode.RANS:
-                    Func<IEnumerable<double>, IEnumerable<double>, double> ScalarProduct = (a,b) => (a.Zip(b, (ai,bi) => ai*bi)).Sum();
-                    LambdaIn = ScalarProduct(VelocityMeanIn, inp.Normale);
-                    LambdaOut = ScalarProduct(VelocityMeanOut, inp.Normale);
+                    Func<IEnumerable<double>, IEnumerable<double>, double> ScalarProduct = (a, b) => (a.Zip(b, (ai, bi) => ai * bi)).Sum();
+                    LambdaIn = ScalarProduct(VelocityMeanIn, inp.Normal);
+                    LambdaOut = ScalarProduct(VelocityMeanOut, inp.Normal);
                     break;
                 default:
                     throw new NotImplementedException();
@@ -263,19 +282,22 @@ namespace BoSSS.Solution.NSECommon {
         /// \f]
         /// where \f$ \vec{v}\f$  is the linearization point.
         /// </summary>
-        protected override void Flux(ref Foundation.CommonParamsVol inp, double[] U, double[] output) {
+        protected override void Flux(ref Foundation.CommonParamsVol inp, double[] U, double[] output)
+        {
 
             double u = inp.Parameters[0];
             double v = inp.Parameters[1];
 
             output[0] = u * U[0];
             output[1] = v * U[0];
-            if (m_SpatialDimension == 3) {
+            if (m_SpatialDimension == 3)
+            {
                 double w = inp.Parameters[2];
                 output[2] = w * U[0];
             }
 
-            if (m_bcmap.PhysMode == PhysicsMode.LowMach) {
+            if (m_bcmap.PhysMode == PhysicsMode.LowMach)
+            {
                 double rho = EoS.GetDensity(inp.Parameters[2 * m_SpatialDimension]);
                 for (int d = 0; d < m_SpatialDimension; d++)
                     output[d] *= rho;
@@ -286,14 +308,18 @@ namespace BoSSS.Solution.NSECommon {
         /// Level-Set for multiphase.
         /// Temperature for Low-Mach.
         /// </summary>
-        public override IList<string> ArgumentOrdering {
-            get {
+        public override IList<string> ArgumentOrdering
+        {
+            get
+            {
                 return m_ArgumentOrdering;
             }
         }
 
-        public override IList<string> ParameterOrdering {
-            get {
+        public override IList<string> ParameterOrdering
+        {
+            get
+            {
                 return m_ParameterOrdering;
             }
         }
