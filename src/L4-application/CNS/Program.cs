@@ -59,9 +59,9 @@ namespace CNS {
 
            
 
-            Application.InitMPI(args);
+            //Application.InitMPI(args);
             //CNS.Tests.BoundaryConditions.EulerBoundaryConditionTest.TestSubsonicInletAndOutletBoundaryCondition1D();
-            CNS.Tests.ArtificialViscosity.ArtificialViscosityShockTubeTests.ToroTest1_ALTS1_3();
+            //CNS.Tests.ArtificialViscosity.ArtificialViscosityShockTubeTests.ToroTest1_ALTS1_3();
             //CNS.Tests.MovingIBMTests.PistonTests.MovingMeshIBMPiston0thOrderNoAgglomeration();
             //CNS.Tests.MovingIBMTests.PistonTests.SplittingIBMPiston0thOrderNoAgglomeration();
             ////CNS.Tests.ConvectiveFlux.ShockTubeTests.Toro1RusanovTest();
