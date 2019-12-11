@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{A968F7F3-882E-4BD5-BF33-5EE9C823D4F5}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>XDGShockTube</RootNamespace>
-    <AssemblyName>XDGShockTube</AssemblyName>
+    <RootNamespace>XDGShockTest</RootNamespace>
+    <AssemblyName>XDGShockTest</AssemblyName>
     <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -51,7 +51,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="XDGShockTestMain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Tests.cs" />
     <Compile Include="Variables\DerivedVariable.cs" />
