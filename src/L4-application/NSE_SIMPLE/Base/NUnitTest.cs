@@ -123,7 +123,7 @@ namespace NSE_SIMPLE {
                 if (p.SIMPLEStatus.CntMaxNoSIMPLEsteps > 0) {
                     Console.WriteLine("WARNING: For this NUnitTest all time steps are expected to converge!");
                 }
-                //Assert.IsTrue(p.SIMPLEStatus.CntMaxNoSIMPLEsteps == 0);
+                Assert.IsTrue(p.SIMPLEStatus.CntMaxNoSIMPLEsteps == 0);
 
                 Console.WriteLine("L2 Error of solution u: " + err_u + " (threshold is " + thres_u + ")");
                 Console.WriteLine("L2 Error of solution p: " + err_p + " (threshold is " + thres_p + ")");
