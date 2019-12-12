@@ -211,7 +211,7 @@ namespace BoSSS.Solution.EnergyCommon {
     }
 
 
-    public class KineticEnergyConvectionInSpeciesBulk : LinearizedConvection, ISpeciesFilter {
+    public class KineticEnergyConvectionInSpeciesBulk : LinearizedConvection, ISpeciesFilter, IEquationComponentCoefficient {
 
 
         public KineticEnergyConvectionInSpeciesBulk(int SpatDim, IncompressibleMultiphaseBoundaryCondMap _bcmap, string spcName, SpeciesId spcId, double _rho, double _LFF, LevelSetTracker _lsTrk)
@@ -234,11 +234,7 @@ namespace BoSSS.Solution.EnergyCommon {
         IncompressibleMultiphaseBoundaryCondMap m_bcMap;
         LevelSetTracker lsTrk;
 
-        double LFFA;
-        double LFFB;
 
-        double rhoA;
-        double rhoB;
         protected double rho;
 
         SpeciesId m_spcId;
@@ -249,6 +245,10 @@ namespace BoSSS.Solution.EnergyCommon {
 
 
         protected System.Collections.BitArray SubGrdMask;
+
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            SubGrdMask = lsTrk.Regions.GetSpeciesSubGrid(m_spcId).VolumeMask.GetBitMaskWithExternal();
+        }
 
 
         public override IList<string> ArgumentOrdering {
@@ -453,10 +453,116 @@ namespace BoSSS.Solution.EnergyCommon {
 
         public TermActivationFlags LevelSetTerms {
             get {
-                return TermActivationFlags.UxV;
+                return TermActivationFlags.UxV | TermActivationFlags.V;
             }
         }
     }
 
+
+
+    public class KineticEnergyConvectionInSpeciesBulk_Upwind : LinearFlux, ISpeciesFilter {
+
+        /// <summary>
+        /// Spatial dimension;
+        /// </summary>
+        protected int m_SpatialDimension;
+
+        IncompressibleMultiphaseBoundaryCondMap m_bcmap;
+
+        /// <summary>
+        /// Mapping from edge tags to boundary values.<br/>
+        /// 1st index: edge tag;<br/>
+        /// 2nd index: spatial direction
+        /// </summary>
+        protected Func<double[], double, double>[,] VelFunction;
+
+
+        public KineticEnergyConvectionInSpeciesBulk_Upwind(int SpatDim, IncompressibleMultiphaseBoundaryCondMap _bcmap, string spcName, SpeciesId spcId, double _rho) {
+
+            this.m_SpatialDimension = SpatDim;
+
+            this.rho = _rho;
+            this.m_spcId = spcId;
+
+            this.m_bcmap = _bcmap;
+
+            this.VelFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, SpatDim];
+            for (int d = 0; d < SpatDim; d++)
+                this.VelFunction.SetColumn(m_bcmap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName], d);
+
+        }
+
+        double rho;
+
+        SpeciesId m_spcId;
+
+        public SpeciesId validSpeciesId {
+            get { return m_spcId; }
+        }
+
+
+        public override IList<string> ArgumentOrdering {
+            get {
+                return new string[] { VariableNames.KineticEnergy };
+            }
+        }
+
+        public override IList<string> ParameterOrdering {
+            get {
+                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_SpatialDimension)); //, VariableNames.Velocity0MeanVector(m_SpatialDimension));
+            }
+        }
+
+
+        protected override void Flux(ref CommonParamsVol inp, double[] U, double[] output) {
+
+            for (int d = 0; d < m_SpatialDimension; d++)
+                output[d] = rho * U[0] * inp.Parameters[d];
+
+        }
+
+
+        protected override double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
+
+            double c = 0.0;
+            for (int d = 0; d < m_SpatialDimension; d++)
+                c += inp.Parameters_IN[d] * inp.Normale[d];
+
+            IncompressibleBcType edgeType = m_bcmap.EdgeTag2Type[inp.EdgeTag];
+
+            switch (edgeType) {
+                case IncompressibleBcType.Wall:
+                case IncompressibleBcType.Velocity_Inlet:  {
+                        double kinE_Diri = 0.0;
+                        for (int i = 0; i < m_SpatialDimension; i++) {
+                            Func<double[], double, double> boundVel = this.VelFunction[inp.EdgeTag, i];
+                            kinE_Diri += 0.5 * (boundVel(inp.X, inp.time) * boundVel(inp.X, inp.time));
+                        }
+                        return (c * rho * kinE_Diri);
+                    }
+                case IncompressibleBcType.Pressure_Outlet:
+                case IncompressibleBcType.Pressure_Dirichlet: {
+                        return (c * rho * Uin[0]);
+                    }
+                default:
+                    throw new NotImplementedException("Boundary condition not implemented!");
+            }
+        }
+
+
+        protected override double InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout) {
+
+            double c = 0.0;
+            for (int d = 0; d < m_SpatialDimension; d++)
+                c += 0.5 * (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * inp.Normale[d];
+
+            if (c > 0)
+                return (c * rho * Uin[0]);
+            else
+                return (c * rho * Uout[0]);
+
+
+        }
+    }
 
 }

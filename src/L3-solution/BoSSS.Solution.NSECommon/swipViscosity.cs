@@ -566,7 +566,7 @@ namespace BoSSS.Solution.NSECommon {
                     // inhom. Dirichlet b.c.
                     // +++++++++++++++++++++
 
-                    double g_D = base.g_Diri(inp.X, inp.time, inp.EdgeTag, m_iComp);
+                    double g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, m_iComp);
 
                     for (int d = 0; d < inp.D; d++) {
                         double nd = inp.Normale[d];
@@ -588,7 +588,7 @@ namespace BoSSS.Solution.NSECommon {
                         double g_D;
 
                         for(int dN = 0; dN < D; dN++) {
-                            g_D = base.g_Diri(inp.X, inp.time, inp.EdgeTag, dN);
+                            g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, dN);
 
                             for(int dD = 0; dD < D; dD++) {
                                 // consistency
@@ -615,7 +615,7 @@ namespace BoSSS.Solution.NSECommon {
                         double g_D;
 
                         for(int dN = 0; dN < D; dN++) {
-                            g_D = base.g_Diri(inp.X, inp.time, inp.EdgeTag, dN);
+                            g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, dN);
 
                             for(int dD = 0; dD < D; dD++) {
                                 // consistency
@@ -644,7 +644,7 @@ namespace BoSSS.Solution.NSECommon {
                         // tangential dissipation force term
                         for(int d1 = 0; d1 < D; d1++) {
                             for(int d2 = 0; d2 < D; d2++) {
-                                g_D = base.g_Diri(inp.X, inp.time, inp.EdgeTag, d2);
+                                g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, d2);
                                 Acc -= (m_beta * P[d1, d2] * (_uA[d2] - g_D)) * (P[d1, m_iComp] * _vA) * base.m_alpha;
                             }
                         }

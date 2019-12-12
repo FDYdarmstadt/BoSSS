@@ -255,6 +255,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 scale_A[D] = 0; // no  mass matrix for continuity equation
                 scale_B.SetAll(rho_B); // mass matrix in momentum equation (kinetic energy equation)
                 scale_B[D] = 0; // no  mass matrix for continuity equation
+                //scale_A.GetSubVector(0, D).SetAll(rho_A);
+                //scale_B.GetSubVector(0, D).SetAll(rho_B);
 
                 if (this.Control.solveCoupledHeatEquation) {
                     scale_A[mD + 1] = rho_A * c_A;
@@ -566,7 +568,7 @@ namespace BoSSS.Application.XNSE_Solver {
                             this.Control.AdvancedDiscretizationOptions.FilterConfiguration,
                             out filtLevSetGradient, this.LsTrk,
                             this.DGLevSet.Current);
-                        if (this.Control.AdvancedDiscretizationOptions.CurvatureNeeded || XOpConfig.isEvaporation) {
+                        if ((this.Control.solveKineticEnergyEquation && !this.LsTrk.Regions.GetCutCellMask().IsEmpty) || XOpConfig.isEvaporation) {
                             VectorField<SinglePhaseField> filtLevSetGradient_dummy;
                             CurvatureAlgorithms.CurvatureDriver(
                                 SurfaceStressTensor_IsotropicMode.Curvature_Projected,
@@ -1132,16 +1134,28 @@ namespace BoSSS.Application.XNSE_Solver {
                             double underrelax = Math.Round(dt_LevSetCFL / dt, 1);
                             m_BDF_Timestepper.IterUnderrelax = underrelax;
                             Console.WriteLine("Exceeding Level-Set CFL: Setting underrelaxation factor to {0}", underrelax);
+                            if (this.Control.solveKineticEnergyEquation && (dt / (dt_LevSetCFL / 4.0)) > 1.0) {
+                                Console.WriteLine("Exceeding Level-Set CFL for kinetic energy equation: dt = {0}, dt_sigma = {1}, frac = {2}", dt, dt_LevSetCFL/4.0, (dt / (dt_LevSetCFL / 4.0)));
+                            }
                         } else {
                             m_BDF_Timestepper.IterUnderrelax = 1.0;
                         }
                     }
 
+                    if (this.Control.solveKineticEnergyEquation) { 
+                        double kinE_Deg2 = this.KineticEnergy.Basis.Degree;
+                        kinE_Deg2 = kinE_Deg2 * kinE_Deg2;
+                        double dt_kinECFL = base.GridData.ComputeCFLTime(this.KineticEnergy.ToEnumerable(), dt * kinE_Deg2);
+                        dt_kinECFL = dt_kinECFL / kinE_Deg2;
+                        if (dt / dt_kinECFL > 1.0) {
+                            Console.WriteLine("Exceeding CFL-condition for kinetic energy equation: dt = {0}, dt_sigma = {1}, frac = {2}", dt, dt_kinECFL, dt / dt_kinECFL);
+                        }
+                    }
 
                     //dt = Math.Min(dt, dt_LevSetCFL);
 
                     // Capillary Timestep restriction
-                    if(this.Control.PhysicalParameters.Sigma != 0.0) {
+                    if (this.Control.PhysicalParameters.Sigma != 0.0) {
                         MultidimensionalArray h_mins = ((GridData)this.GridData).Cells.h_min;
                         double h = h_mins.Min();
                         double LevSet_Deg = this.LevSet.Basis.Degree + 1;
@@ -1198,20 +1212,6 @@ namespace BoSSS.Application.XNSE_Solver {
                     } else {
                         //m_RK_Timestepper.Solve(phystime, dt);
                     }
-
-                }
-
-
-                if(this.Control.solveKineticEnergyEquation) {
-
-                    // derive kinetic Energy from flow solution
-                    //double[] rhoS = new double[] { this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B };
-                    //EnergyUtils.ProjectKineticEnergy(this.DerivedKineticEnergy, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), rhoS, this.m_HMForder);
-
-                    // compute generated kinetic energy
-                    GeneratedKineticEnergy.Clear();
-                    GeneratedKineticEnergy.Acc(1.0, this.KineticEnergy);
-                    GeneratedKineticEnergy.Acc(-1.0, this.DerivedKineticEnergy);
 
                 }
 

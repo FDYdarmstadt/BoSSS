@@ -66,8 +66,9 @@ namespace BoSSS.Solution.EnergyCommon {
             // convective part
             // ================
             if (config.isTransport) {
-
+                
                 var convK = new KineticEnergyConvectionInSpeciesBulk(D, BcMap, spcName, spcId, rhoSpc, LFFSpc, LsTrk);
+                //var convK = new KineticEnergyConvectionInSpeciesBulk_Upwind(D, BcMap, spcName, spcId, rhoSpc);
                 comps.Add(convK);
 
             }
@@ -97,13 +98,14 @@ namespace BoSSS.Solution.EnergyCommon {
                 // Divergence of stress tensor
                 // ===========================
                 {
-                    comps.Add(new StressDivergenceInSpeciesBulk(D, BcMap, spcId, muSpc));
+                    comps.Add(new StressDivergenceInSpeciesBulk(D, BcMap, spcName, spcId, muSpc, transposed: false));
+                    //comps.Add(new StressDivergence_Local(D, muSpc, spcId, transposed: true));
                 }
 
                 // Dissipation
                 // ===========
                 {
-                    comps.Add(new Dissipation(D, muSpc, spcId));
+                    comps.Add(new Dissipation(D, muSpc, spcId, _withPressure: true));
                 }
 
             }
@@ -112,7 +114,7 @@ namespace BoSSS.Solution.EnergyCommon {
             // =============
             if (config.isPressureGradient) {
 
-                comps.Add(new DivergencePressureEnergyInSpeciesBulk(D, BcMap, spcId));
+                comps.Add(new DivergencePressureEnergyInSpeciesBulk(D, BcMap, spcName, spcId));
                 //comps.Add(new PressureConvectionInBulk(D, energyBcMap, LFFA, LFFB, LsTrk));
                 //comps.Add(new PressureGradientConvection(D, spcId));
             }
@@ -120,7 +122,7 @@ namespace BoSSS.Solution.EnergyCommon {
             // gravity (volume forces)
             // =======================
             {
-                comps.Add(new PowerofGravity(D, spcId, rhoSpc));
+                //comps.Add(new PowerofGravity(D, spcId, rhoSpc));
             }
 
 
@@ -158,20 +160,6 @@ namespace BoSSS.Solution.EnergyCommon {
             // convective part
             // ================
             if (config.isTransport) {
-                bool movingmesh;
-                //switch (this.Control.Timestepper_LevelSetHandling) {
-                //    case LevelSetHandling.Coupled_Once:
-                //        movingmesh = true;
-                //        break;
-                //    case LevelSetHandling.LieSplitting:
-                //    case LevelSetHandling.StrangSplitting:
-                //    case LevelSetHandling.None:
-                //        movingmesh = false;
-                //        break;
-                //    case LevelSetHandling.Coupled_Iterative:
-                //    default:
-                //        throw new NotImplementedException();
-                //}
 
                 comps.Add(new KineticEnergyConvectionAtLevelSet(D, LsTrk, rhoA, rhoB, LFFA, LFFB, physParams.Material, BcMap, config.isMovingMesh));
             }
@@ -196,7 +184,7 @@ namespace BoSSS.Solution.EnergyCommon {
             // surface energy
             // ==============
             {
-                comps.Add(new SurfaceEnergy(D, LsTrk, sigma));
+                comps.Add(new SurfaceEnergy(D, LsTrk, sigma, rhoA, rhoB));
             }
 
         }

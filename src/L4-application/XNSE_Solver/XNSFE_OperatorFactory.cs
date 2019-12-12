@@ -115,6 +115,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 Params = ArrayTools.Cat(Params,
                     VariableNames.VelocityX_GradientVector(),
                     VariableNames.VelocityY_GradientVector(),
+                    new string[] { "VelocityXGradX_GradientX", "VelocityXGradX_GradientY" },
+                    new string[] { "VelocityXGradY_GradientX", "VelocityXGradY_GradientY" },
+                    new string[] { "VelocityYGradX_GradientX", "VelocityYGradX_GradientY" },
+                    new string[] { "VelocityYGradY_GradientX", "VelocityYGradY_GradientY" },
                     VariableNames.Pressure0,
                     VariableNames.PressureGradient(D),
                     VariableNames.GravityVector(D)
@@ -210,6 +214,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 // interface components
                 Solution.EnergyCommon.XOperatorComponentsFactory.AddInterfaceKineticEnergyEquation(m_XOp, config, D, BcMap, LsTrk, degU);
+                CurvatureRequired = true;
             }
 
 
@@ -416,7 +421,8 @@ namespace BoSSS.Application.XNSE_Solver {
             for (int d = 0; d < D; d++) {
                 foreach (var Spc in this.LsTrk.SpeciesIdS) {
                     DGField f_Spc = ((VelParam[0] as XDGField).GetSpeciesShadowField(Spc));
-                    (GradVelX[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(1.0, f_Spc, d);
+                    SubGrid sf = this.LsTrk.Regions.GetSpeciesSubGrid(Spc);
+                    (GradVelX[d] as XDGField).GetSpeciesShadowField(Spc).DerivativeByFlux(1.0, f_Spc, d, optionalSubGrid: sf);
                 }
             }
             GradVelX.ForEach(F => F.CheckForNanOrInf(true, true, true));
@@ -425,10 +431,54 @@ namespace BoSSS.Application.XNSE_Solver {
             for (int d = 0; d < D; d++) {
                 foreach (var Spc in this.LsTrk.SpeciesIdS) {
                     DGField f_Spc = ((VelParam[1] as XDGField).GetSpeciesShadowField(Spc));
-                    (GradVelY[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(1.0, f_Spc, d);
+                    SubGrid sf = this.LsTrk.Regions.GetSpeciesSubGrid(Spc);
+                    (GradVelY[d] as XDGField).GetSpeciesShadowField(Spc).DerivativeByFlux(1.0, f_Spc, d, optionalSubGrid: sf);
                 }
             }
             GradVelY.ForEach(F => F.CheckForNanOrInf(true, true, true));
+
+
+            VectorField<DGField> GradVelXGradX = new VectorField<DGField>(D, VelParam[0].Basis, "VelocityXGradX_Gradient", XDGField.Factory);
+            for (int d = 0; d < D; d++) {
+                foreach (var Spc in this.LsTrk.SpeciesIdS) {
+                    DGField f_Spc = ((GradVelX[0] as XDGField).GetSpeciesShadowField(Spc));
+                    SubGrid sf = this.LsTrk.Regions.GetSpeciesSubGrid(Spc);
+                    (GradVelXGradX[d] as XDGField).GetSpeciesShadowField(Spc).DerivativeByFlux(1.0, f_Spc, d, optionalSubGrid: sf);
+                }
+            }
+            GradVelXGradX.ForEach(F => F.CheckForNanOrInf(true, true, true));
+
+            VectorField<DGField> GradVelXGradY = new VectorField<DGField>(D, VelParam[0].Basis, "VelocityXGradY_Gradient", XDGField.Factory);
+            for (int d = 0; d < D; d++) {
+                foreach (var Spc in this.LsTrk.SpeciesIdS) {
+                    DGField f_Spc = ((GradVelX[1] as XDGField).GetSpeciesShadowField(Spc));
+                    SubGrid sf = this.LsTrk.Regions.GetSpeciesSubGrid(Spc);
+                    (GradVelXGradY[d] as XDGField).GetSpeciesShadowField(Spc).DerivativeByFlux(1.0, f_Spc, d, optionalSubGrid: sf);
+                }
+            }
+            GradVelXGradY.ForEach(F => F.CheckForNanOrInf(true, true, true));
+
+            VectorField<DGField> GradVelYGradX = new VectorField<DGField>(D, VelParam[0].Basis, "VelocityYGradX_Gradient", XDGField.Factory);
+            for (int d = 0; d < D; d++) {
+                foreach (var Spc in this.LsTrk.SpeciesIdS) {
+                    DGField f_Spc = ((GradVelY[0] as XDGField).GetSpeciesShadowField(Spc));
+                    SubGrid sf = this.LsTrk.Regions.GetSpeciesSubGrid(Spc);
+                    (GradVelYGradX[d] as XDGField).GetSpeciesShadowField(Spc).DerivativeByFlux(1.0, f_Spc, d, optionalSubGrid: sf);
+                }
+            }
+            GradVelYGradX.ForEach(F => F.CheckForNanOrInf(true, true, true));
+
+            VectorField<DGField> GradVelYGradY = new VectorField<DGField>(D, VelParam[0].Basis, "VelocityYGradY_Gradient", XDGField.Factory);
+            for (int d = 0; d < D; d++) {
+                foreach (var Spc in this.LsTrk.SpeciesIdS) {
+                    DGField f_Spc = ((GradVelY[1] as XDGField).GetSpeciesShadowField(Spc));
+                    SubGrid sf = this.LsTrk.Regions.GetSpeciesSubGrid(Spc);
+                    (GradVelYGradY[d] as XDGField).GetSpeciesShadowField(Spc).DerivativeByFlux(1.0, f_Spc, d, optionalSubGrid: sf);
+                }
+            }
+            GradVelYGradY.ForEach(F => F.CheckForNanOrInf(true, true, true));
+
+
 
             // pressure and gradient
             var PressMap = new CoordinateMapping(CurrentState.ToArray()[D]);
@@ -438,7 +488,8 @@ namespace BoSSS.Application.XNSE_Solver {
             for (int d = 0; d < D; d++) {
                 foreach (var Spc in this.LsTrk.SpeciesIdS) {
                     DGField f_Spc = ((PressParam[0] as XDGField).GetSpeciesShadowField(Spc));
-                    (PressGrad[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(1.0, f_Spc, d);
+                    SubGrid sf = this.LsTrk.Regions.GetSpeciesSubGrid(Spc);
+                    (PressGrad[d] as XDGField).GetSpeciesShadowField(Spc).DerivativeByFlux(1.0, f_Spc, d, optionalSubGrid: sf);
                 }
             }
             PressGrad.ForEach(F => F.CheckForNanOrInf(true, true, true));
@@ -479,6 +530,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 Params = ArrayTools.Cat<DGField>(Params.ToArray<DGField>(),
                     GradVelX,
                     GradVelY,
+                    GradVelXGradX,
+                    GradVelXGradY,
+                    GradVelYGradX,
+                    GradVelYGradY,
                     PressParam,
                     PressGrad,
                     GravMap);

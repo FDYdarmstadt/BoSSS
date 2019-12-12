@@ -266,8 +266,26 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 // changerate of kinetic energy from discretization
                 double[] muS = new double[] { this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B };
+                DGField[] extForce = new DGField[this.LsTrk.GridDat.SpatialDimension];
+                for (int i = 0; i < this.LsTrk.GridDat.SpatialDimension; i++) {
+                    extForce[i] = this.XDGvelocity.Gravity[i].CloneAs();
+                    for (int iSpc = 0; iSpc < LsTrk.SpeciesIdS.Count; iSpc++) {
+                        SpeciesId spcId = LsTrk.SpeciesIdS[iSpc];
+                        switch (LsTrk.GetSpeciesName(spcId)) {
+                            case "A": {
+                                    (extForce[i] as XDGField).GetSpeciesShadowField("A").Scale(this.Control.PhysicalParameters.rho_A);
+                                    break;
+                                }
+                            case "B": {
+                                    (extForce[i] as XDGField).GetSpeciesShadowField("B").Scale(this.Control.PhysicalParameters.rho_B);
+                                    break;
+                                }
+                        }
+                    }
+                }
                 double kineticDissipationBulk = EnergyUtils.GetKineticDissipation(this.LsTrk, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
-                EnergyUtils.ProjectKineticDissipation(this.KineticDissipation, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
+                EnergyUtils.ProjectKineticDissipation(this.KineticDissipation, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder); //, extForce);
+                EnergyUtils.ProjectPowerOfStresses(this.PowerOfStresses, this.LsTrk, this.Pressure, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
 
                 // changerate of surface energy form discretization
                 ConventionalDGField[] meanVelocity = XNSEUtils.GetMeanVelocity(this.XDGvelocity.Velocity, this.LsTrk,
@@ -352,6 +370,26 @@ namespace BoSSS.Application.XNSE_Solver {
                 //this.EnergyLogger.CustomValue(surfEnergy, "SurfaceEnergy");
 
                 //this.EnergyLogger.NextTimestep(true);
+
+            }
+
+            if (this.Control.solveKineticEnergyEquation) {
+
+                // derive kinetic Energy from flow solution
+                //double[] rhoS = new double[] { this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B };
+                //EnergyUtils.ProjectKineticEnergy(this.DerivedKineticEnergy, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), rhoS, this.m_HMForder);
+
+                ProjectedKineticEnergy.Acc(1.0, this.PowerOfStresses);
+                ProjectedKineticEnergy.Acc(1.0, this.KineticDissipation);
+
+                // compute generated kinetic energy
+                GeneratedKineticEnergy.Clear();
+                GeneratedKineticEnergy.Acc(1.0, this.DerivedKineticEnergy);
+                GeneratedKineticEnergy.Acc(-1.0, this.KineticEnergy);
+                //GeneratedKineticEnergy.Acc(-1.0, this.ProjectedKineticEnergy);
+
+                //GeneratedKineticEnergy.Acc(1.0, this.PowerOfStresses);
+                //GeneratedKineticEnergy.Acc(1.0, this.KineticDissipation);
 
             }
 

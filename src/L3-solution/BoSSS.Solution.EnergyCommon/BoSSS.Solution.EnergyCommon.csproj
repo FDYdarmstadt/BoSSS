@@ -44,6 +44,7 @@
   <ItemGroup>
     <Compile Include="ConvectiveEnergyTerms.cs" />
     <Compile Include="EnergySourceTerms.cs" />
+    <Compile Include="EnergyUtils.cs" />
     <Compile Include="Energy_OperatorComponents.cs" />
     <Compile Include="PressureEnergyTerms.cs" />
     <Compile Include="ViscousEnergyTerms.cs" />

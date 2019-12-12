@@ -125,7 +125,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.PhysicalParameters.rho_B = 1e4;
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.mu_B = 1;
-            double sigma = 1.0;
+            double sigma = 0.0;
             C.PhysicalParameters.Sigma = sigma;
 
             //C.Tags.Add("La = 0.005");

@@ -21,6 +21,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using BoSSS.Foundation;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Utils;
@@ -39,10 +40,27 @@ namespace BoSSS.Solution.EnergyCommon {
         int m_D;
 
 
-        public DivergencePressureEnergyInSpeciesBulk(int SpatDim, IncompressibleMultiphaseBoundaryCondMap _bcmap, SpeciesId spcId) {
+        /// <summary>
+        /// Mapping from edge tags to boundary values.<br/>
+        /// 1st index: edge tag;<br/>
+        /// 2nd index: spatial direction
+        /// </summary>
+        protected Func<double[], double, double>[,] VelocFunction;
+
+        protected Func<double[], double, double>[] PressFunction;
+
+
+        public DivergencePressureEnergyInSpeciesBulk(int SpatDim, IncompressibleMultiphaseBoundaryCondMap _bcmap, string spcName, SpeciesId spcId) {
             m_D = SpatDim;
             m_bcMap = _bcmap;
             m_spcId = spcId;
+
+
+            VelocFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, SpatDim];
+            for (int d = 0; d < m_D; d++)
+                VelocFunction.SetColumn(m_bcMap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName], d);
+
+            PressFunction = m_bcMap.bndFunction[VariableNames.Pressure + "#" + spcName];
         }
 
 
@@ -75,9 +93,9 @@ namespace BoSSS.Solution.EnergyCommon {
             double Press = inp.Parameters[m_D];
 
             for (int d = 0; d < m_D; d++) {
-                output[d] = -Press * Vel[d];        // pressure term
+                output[d] = Press * Vel[d];        // pressure term
             }
-            output.ScaleV(-1.0);
+            //output.ScaleV(-1.0);
         }
 
 
@@ -91,16 +109,23 @@ namespace BoSSS.Solution.EnergyCommon {
             IncompressibleBcType edgType = m_bcMap.EdgeTag2Type[inp.EdgeTag];
 
             switch (edgType) {
-                case IncompressibleBcType.Wall:
+                case IncompressibleBcType.Wall: {
+                        //for (int d = 0; d < m_D; d++) {
+                        //    acc -= Press_IN * Vel_IN[d] * inp.Normale[d];
+                        //}
+                        break;
+                    }
                 case IncompressibleBcType.Velocity_Inlet: {
                         for (int d = 0; d < m_D; d++) {
-                            acc -= Press_IN * Vel_IN[d] * inp.Normale[d];
+                            double VelD = VelocFunction[inp.EdgeTag,d](inp.X, inp.time);
+                            acc -= Press_IN * VelD * inp.Normale[d];
                         }
                         break;
                     }
                 case IncompressibleBcType.Pressure_Outlet: {
+                        double pD = PressFunction[inp.EdgeTag](inp.X, inp.time);
                         for (int d = 0; d < m_D; d++) {
-                            acc -= Press_IN * Vel_IN[d] * inp.Normale[d];
+                            acc -= pD * Vel_IN[d] * inp.Normale[d];
                         }
                         break;
                     }
@@ -254,10 +279,10 @@ namespace BoSSS.Solution.EnergyCommon {
             double ret = 0;
 
             for (int d = 0; d < m_D; d++) {
-                ret -= PressGrad[d] * Vel[d];
+                ret += PressGrad[d] * Vel[d];
             }
 
-            return -ret * V;
+            return ret * V;
         }
 
 

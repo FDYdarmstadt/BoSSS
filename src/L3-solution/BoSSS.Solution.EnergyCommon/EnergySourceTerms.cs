@@ -70,7 +70,7 @@ namespace BoSSS.Solution.EnergyCommon {
         }
 
 
-        public double VolumeForm(ref CommonParamsVol cpv, Double[] U, Double[,] GradU, Double V, Double[] GradV) {
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
 
             double[] Vel = cpv.Parameters.GetSubVector(0, m_D);
             double[] Grav = cpv.Parameters.GetSubVector(m_D, m_D);
@@ -78,10 +78,10 @@ namespace BoSSS.Solution.EnergyCommon {
             double ret = 0;
 
             for (int d = 0; d < m_D; d++) {
-                ret += Grav[d] * Vel[d];
+                ret -= Grav[d] * Vel[d];
             }
 
-            return -rho * ret * V;
+            return rho * ret * V;
         }
 
 
@@ -100,29 +100,45 @@ namespace BoSSS.Solution.EnergyCommon {
 
         LevelSetTracker m_LsTrk;
 
-        public SurfaceEnergy(int _D, LevelSetTracker LsTrk, double _sigma) {
+        public SurfaceEnergy(int _D, LevelSetTracker LsTrk, double _sigma, double _rhoA, double _rhoB) {
             m_LsTrk = LsTrk;
             this.m_D = _D;
             this.sigma = _sigma;
+            this.rhoA = _rhoA;
+            this.rhoB = _rhoB;
         }
 
         int m_D;
 
         double sigma;
+        double rhoA;
+        double rhoB;
+
+
+        private double[] GetInterfaceVelocity(double[] VelA, double[] VelB) {
+
+            double[] VelI = new double[m_D];
+            for (int d = 0; d < m_D; d++) {
+                VelI[d] = (rhoA * VelA[d] + rhoB * VelB[d]) / (rhoA + rhoB);
+            }
+
+            return VelI;
+
+        }
 
 
         public double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             //Debug.Assert(cp.ParamsPos[0] == cp.ParamsNeg[0], "interface velocityX must be continuous across interface");
             //Debug.Assert(cp.ParamsPos[1] == cp.ParamsNeg[1], "interface velocityY must be continuous across interface");
-            //Debug.Assert(cp.ParamsPos[2] == cp.ParamsNeg[2], "curvature must be continuous across interface");
+            Debug.Assert(cp.ParamsPos[m_D] == cp.ParamsNeg[m_D], "curvature must be continuous across interface");
 
-            double curvature = cp.ParamsPos[m_D];
-            double[] Vel = cp.ParamsPos.GetSubVector(0, m_D);
+            double curvature = cp.ParamsNeg[m_D];
+            double[] VelI = GetInterfaceVelocity(cp.ParamsNeg.GetSubVector(0, m_D), cp.ParamsPos.GetSubVector(0, m_D));
             double[] Normal = cp.n;
 
             double surfE = 0;
             for (int d = 0; d < m_D; d++) {
-                surfE -= curvature * sigma * (Vel[d] * Normal[d]);
+                surfE -= curvature * sigma * (VelI[d] * Normal[d]);
             }
 
             double FlxNeg = -0.5 * surfE;
@@ -143,7 +159,7 @@ namespace BoSSS.Solution.EnergyCommon {
 
         public IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat(VariableNames.Velocity0MeanVector(m_D), VariableNames.Curvature);
+                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.Curvature);
             }
         }
 

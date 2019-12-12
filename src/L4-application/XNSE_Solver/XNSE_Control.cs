@@ -50,7 +50,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public XNSE_Control() {
             base.LinearSolver.NoOfMultigridLevels = 1;
-            base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            //base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             //shift of Solver Information
             base.LinearSolver.MaxKrylovDim = 100; //Solver_MaxKrylovDim;
             base.LinearSolver.MaxSolverIterations = 2000; //Solver_MaxIterations

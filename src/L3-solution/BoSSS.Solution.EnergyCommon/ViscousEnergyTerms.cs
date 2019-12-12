@@ -21,6 +21,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using BoSSS.Foundation;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Utils;
@@ -181,12 +182,30 @@ namespace BoSSS.Solution.EnergyCommon {
 
         double mu;
 
-        public StressDivergenceInSpeciesBulk(int SpatDim, IncompressibleMultiphaseBoundaryCondMap bcMap, SpeciesId spcId, double _mu) {
+        bool transposedTerm; 
+
+        /// <summary>
+        /// Mapping from edge tags to boundary values.<br/>
+        /// 1st index: edge tag;<br/>
+        /// 2nd index: spatial direction
+        /// </summary>
+        protected Func<double[], double, double>[,] VelFunction;
+
+        public StressDivergenceInSpeciesBulk(int SpatDim, IncompressibleMultiphaseBoundaryCondMap bcMap, 
+            string spcName, SpeciesId spcId, double _mu, bool transposed = false) {
+
             m_D = SpatDim;
             this.m_bcMap = bcMap;
             m_spcId = spcId;
             mu = _mu;
+
+            transposedTerm = transposed;
+
+            VelFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, SpatDim];
+            for (int d = 0; d < m_D; d++)
+                VelFunction.SetColumn(m_bcMap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName], d);
         }
+
 
         IncompressibleMultiphaseBoundaryCondMap m_bcMap;
 
@@ -209,7 +228,7 @@ namespace BoSSS.Solution.EnergyCommon {
             }
         }
 
-        static double[,] VelociytGradient(double[] GradVelX, double[] GradVelY) {
+        static double[,] VelocityGradient(double[] GradVelX, double[] GradVelY) {
             Debug.Assert(GradVelX.Length == 2);
             Debug.Assert(GradVelY.Length == 2);
 
@@ -229,24 +248,25 @@ namespace BoSSS.Solution.EnergyCommon {
         protected override void Flux(ref CommonParamsVol inp, Double[] U, Double[] output) {
 
             double[] Vel = inp.Parameters.GetSubVector(0, m_D);
-            double[,] GradVel = VelociytGradient(inp.Parameters.GetSubVector(m_D, m_D), inp.Parameters.GetSubVector(2 * m_D, m_D));
+            double[,] GradVel = VelocityGradient(inp.Parameters.GetSubVector(m_D, m_D), inp.Parameters.GetSubVector(2 * m_D, m_D));
             //double Press = inp.Parameters[3 * m_D];
 
             for (int d = 0; d < m_D; d++) {
                 output[d] = 0; // -Press * Vel[d];        // pressure term
                 for (int dd = 0; dd < m_D; dd++) {
-                    output[d] += mu * GradVel[d, dd] * Vel[dd];      // velocity grad
-                    //output[d] += mu * GradVel[dd, d] * Vel[dd];      // velocity grad transposed term
+                    output[d] -= mu * GradVel[d, dd] * Vel[dd];      // velocity grad
+                    if(transposedTerm)
+                        output[d] -= mu * GradVel[dd, d] * Vel[dd];      // velocity grad transposed term
                 }
             }
-            output.ScaleV(-1.0);
+            //output.ScaleV(-1.0);
         }
 
 
         protected override double BorderEdgeFlux(ref CommonParamsBnd inp, Double[] Uin) {
 
             double[] Vel_IN = inp.Parameters_IN.GetSubVector(0, m_D);
-            double[,] GradVel_IN = VelociytGradient(inp.Parameters_IN.GetSubVector(m_D, m_D), inp.Parameters_IN.GetSubVector(2 * m_D, m_D));
+            double[,] GradVel_IN = VelocityGradient(inp.Parameters_IN.GetSubVector(m_D, m_D), inp.Parameters_IN.GetSubVector(2 * m_D, m_D));
             //double Press_IN = inp.Parameters_IN[3 * m_D];
 
             double acc = 0;
@@ -255,21 +275,24 @@ namespace BoSSS.Solution.EnergyCommon {
 
             switch (edgType) {
                 case IncompressibleBcType.Wall: {
-                        for (int d = 0; d < m_D; d++) {
-                            //acc -= Press_IN * Vel_IN[d] * inp.Normale[d];
-                            for (int dd = 0; dd < m_D; dd++) {
-                                acc += mu * (GradVel_IN[d, dd] * Vel_IN[dd]) * inp.Normale[d];
-                                //acc += mu * (GradVel_IN[dd, d] * Vel_IN[dd]) * inp.Normale[d];  // transposed term
-                            }
-                        }
+                        //for (int d = 0; d < m_D; d++) {
+                        //    //acc -= Press_IN * Vel_IN[d] * inp.Normale[d];
+                        //    for (int dd = 0; dd < m_D; dd++) {
+                        //        acc += mu * (GradVel_IN[d, dd] * Vel_IN[dd]) * inp.Normale[d];
+                        //        //acc += mu * (GradVel_IN[dd, d] * Vel_IN[dd]) * inp.Normale[d];  // transposed term
+                        //    }
+                        //}
                         break;
                     }
                 case IncompressibleBcType.Velocity_Inlet: {
                         for (int d = 0; d < m_D; d++) {
                             //acc -= Press_IN * Vel_IN[d] * inp.Normale[d];
                             for (int dd = 0; dd < m_D; dd++) {
-                                acc += mu * (GradVel_IN[d, dd] * Vel_IN[dd]) * inp.Normale[d];
-                                //acc += mu * (GradVel_IN[dd, d] * Vel_IN[dd]) * inp.Normale[d];  // transposed term
+                                double VelD = VelFunction[inp.EdgeTag, dd](inp.X, inp.time);
+                                acc += mu * (GradVel_IN[d, dd] * VelD) * inp.Normale[d];
+                                if (transposedTerm) {
+                                    acc += mu * (GradVel_IN[dd, d] * VelD) * inp.Normale[d];  // transposed term
+                                }
                             }
                         }
                         break;
@@ -280,7 +303,9 @@ namespace BoSSS.Solution.EnergyCommon {
                             //acc -= Press_IN * Vel_IN[d] * inp.Normale[d];
                             for (int dd = 0; dd < m_D; dd++) {
                                 acc += mu * (GradVel_IN[d, dd] * Vel_IN[dd]) * inp.Normale[d];
-                                //acc += mu * (GradVel_IN[dd, d] * Vel_IN[dd]) * inp.Normale[d];  // transposed term
+                                if (transposedTerm) {
+                                    acc += mu * (GradVel_IN[dd, d] * Vel_IN[dd]) * inp.Normale[d];  // transposed term
+                                }
                             }
                         }
                         break;
@@ -298,8 +323,8 @@ namespace BoSSS.Solution.EnergyCommon {
 
             double[] Vel_IN = inp.Parameters_IN.GetSubVector(0, m_D);
             double[] Vel_OUT = inp.Parameters_OUT.GetSubVector(0, m_D);
-            double[,] GradVel_IN = VelociytGradient(inp.Parameters_IN.GetSubVector(m_D, m_D), inp.Parameters_IN.GetSubVector(2 * m_D, m_D));
-            double[,] GradVel_OUT = VelociytGradient(inp.Parameters_OUT.GetSubVector(m_D, m_D), inp.Parameters_OUT.GetSubVector(2 * m_D, m_D));
+            double[,] GradVel_IN = VelocityGradient(inp.Parameters_IN.GetSubVector(m_D, m_D), inp.Parameters_IN.GetSubVector(2 * m_D, m_D));
+            double[,] GradVel_OUT = VelocityGradient(inp.Parameters_OUT.GetSubVector(m_D, m_D), inp.Parameters_OUT.GetSubVector(2 * m_D, m_D));
             //double Press_IN = inp.Parameters_IN[3 * m_D];
             //double Press_OUT = inp.Parameters_OUT[3 * m_D];
 
@@ -309,7 +334,9 @@ namespace BoSSS.Solution.EnergyCommon {
                 //acc -= 0.5 * (Press_IN * Vel_IN[d] + Press_OUT * Vel_OUT[d]) * inp.Normale[d];
                 for (int dd = 0; dd < m_D; dd++) {
                     acc += 0.5 * mu * (GradVel_IN[d, dd] * Vel_IN[dd] + GradVel_OUT[d, dd] * Vel_OUT[dd]) * inp.Normale[d];
-                    //acc += 0.5 * mu * (GradVel_IN[dd, d] * Vel_IN[dd] + GradVel_OUT[dd, d] * Vel_OUT[dd]) * inp.Normale[d];  // transposed term
+                    if (transposedTerm) {
+                        acc += 0.5 * mu * (GradVel_IN[dd, d] * Vel_IN[dd] + GradVel_OUT[dd, d] * Vel_OUT[dd]) * inp.Normale[d];  // transposed term
+                    }
                 }
             }
 
@@ -373,7 +400,7 @@ namespace BoSSS.Solution.EnergyCommon {
         }
 
 
-        public Double LevelSetForm(ref CommonParamsLs inp, Double[] uA, Double[] uB, Double[,] Grad_uA, Double[,] Grad_uB, Double vA, Double vB, Double[] Grad_vA, Double[] Grad_vB) {
+        public double LevelSetForm(ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
             double[] Vel_A = inp.ParamsNeg.GetSubVector(0, m_D);
             double[] Vel_B = inp.ParamsPos.GetSubVector(0, m_D);
@@ -430,11 +457,8 @@ namespace BoSSS.Solution.EnergyCommon {
     }
 
 
-    // Dissipation
-    // ===========
 
-
-    public class Dissipation : IVolumeForm, ISpeciesFilter {
+    public class StressDivergence_Local : IVolumeForm, ISpeciesFilter {
 
 
         /// <summary>
@@ -444,10 +468,14 @@ namespace BoSSS.Solution.EnergyCommon {
 
         double mu;
 
-        public Dissipation(int SpatDim, double _mu, SpeciesId spcId) {
+        bool transposedTerm;
+
+
+        public StressDivergence_Local(int SpatDim, double _mu, SpeciesId spcId, bool transposed = false) {
             m_D = SpatDim;
             mu = _mu;
             m_spcId = spcId;
+            transposedTerm = transposed;
         }
 
 
@@ -465,7 +493,11 @@ namespace BoSSS.Solution.EnergyCommon {
 
         public IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.VelocityX_GradientVector(), VariableNames.VelocityY_GradientVector());
+                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.VelocityX_GradientVector(), VariableNames.VelocityY_GradientVector(), 
+                    new string[] { "VelocityXGradX_GradientX", "VelocityXGradX_GradientY" },
+                    new string[] { "VelocityXGradY_GradientX", "VelocityXGradY_GradientY" },
+                    new string[] { "VelocityYGradX_GradientX", "VelocityYGradX_GradientY" },
+                    new string[] { "VelocityYGradY_GradientX", "VelocityYGradY_GradientY" });
             }
         }
 
@@ -487,12 +519,128 @@ namespace BoSSS.Solution.EnergyCommon {
         }
 
 
+        //static double[] LaplaceU(double uxx, double uyy, double vxx, double vyy) {
+
+        //    double[] LapU = new double[2];
+
+        //    LapU[0] = uxx + uyy;
+        //    LapU[1] = vxx + vyy;
+
+        //    return LapU;
+        //}
+ 
+
         public double VolumeForm(ref CommonParamsVol cpv, Double[] U, Double[,] GradU, Double V, Double[] GradV) {
 
             double[] Vel = cpv.Parameters.GetSubVector(0, m_D);
             double[,] GradVel = VelociytGradient(cpv.Parameters.GetSubVector(m_D, m_D), cpv.Parameters.GetSubVector(2 * m_D, m_D));
 
+            double[] LapU = new double[2];
+            LapU[0] = cpv.Parameters[3 * m_D] + cpv.Parameters[4 * m_D + 1];
+            LapU[1] = cpv.Parameters[5 * m_D] + cpv.Parameters[6 * m_D + 1];
+
+            double[] DivGradUT = new double[2];
+            DivGradUT[0] = cpv.Parameters[3 * m_D] + cpv.Parameters[5 * m_D + 1];
+            DivGradUT[1] = cpv.Parameters[4 * m_D] + cpv.Parameters[6 * m_D + 1];
+
             double ret = 0;
+
+            for (int d = 0; d < m_D; d++) {
+                ret += DivGradUT[d] * Vel[d];
+                if (transposedTerm)
+                    ret += LapU[d] * Vel[d];
+                for (int dd = 0; dd < m_D; dd++) {
+                    ret += GradVel[dd, d] * GradVel[d, dd];
+                    if(transposedTerm)
+                            ret += GradVel[d, dd] * GradVel[d, dd];
+                    }
+            }
+
+            return -mu * ret * V;
+        }
+
+
+        public TermActivationFlags VolTerms {
+            get {
+                return TermActivationFlags.V;
+            }
+        }
+
+
+    }
+
+
+
+
+
+    // Dissipation
+    // ===========
+
+
+    public class Dissipation : IVolumeForm, ISpeciesFilter {
+
+
+        /// <summary>
+        /// Spatial dimension;
+        /// </summary>
+        int m_D;
+
+        double mu;
+
+        bool withPressure;
+
+        public Dissipation(int SpatDim, double _mu, SpeciesId spcId, bool _withPressure) {
+            m_D = SpatDim;
+            mu = _mu;
+            m_spcId = spcId;
+            this.withPressure = _withPressure;
+        }
+
+
+        SpeciesId m_spcId;
+
+        public SpeciesId validSpeciesId {
+            get { return m_spcId; }
+        }
+
+        public IList<String> ArgumentOrdering {
+            get {
+                return new string[] { };
+            }
+        }
+
+        public IList<string> ParameterOrdering {
+            get {
+                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), 
+                    VariableNames.VelocityX_GradientVector(), VariableNames.VelocityY_GradientVector(), 
+                    VariableNames.Pressure0);
+            }
+        }
+
+
+        static double[,] VelociytGradient(double[] GradVelX, double[] GradVelY) {
+            Debug.Assert(GradVelX.Length == 2);
+            Debug.Assert(GradVelY.Length == 2);
+
+            int D = GradVelX.Length;
+            double[,] GradVel = new double[D, D];
+
+            GradVel[0, 0] = GradVelX[0];
+            GradVel[0, 1] = GradVelX[1];
+            GradVel[1, 0] = GradVelY[0];
+            GradVel[1, 1] = GradVelY[1];
+
+            return GradVel;
+
+        }
+
+
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+
+            double[] Vel = cpv.Parameters.GetSubVector(0, m_D);
+            double[,] GradVel = VelociytGradient(cpv.Parameters.GetSubVector(m_D, m_D), cpv.Parameters.GetSubVector(2 * m_D, m_D));
+
+            double ret = (withPressure) ? -cpv.Parameters[3 * m_D] * (GradVel[0, 0] + GradVel[1, 1]) : 0.0;
 
             for (int d = 0; d < m_D; d++) {
                 for (int dd = 0; dd < m_D; dd++) {
