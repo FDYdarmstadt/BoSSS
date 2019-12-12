@@ -247,8 +247,10 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// Clears (lots of) internal references for this object, to make sure that any attempt to use it leads to an exception.
         /// </summary>
         public void Invalidate() {
-            this.m_Cells.CellCenter = null;
-            this.m_Cells.Cells2Edges = null;
+            if (m_Cells != null) {
+                this.m_Cells.CellCenter = null;
+                this.m_Cells.Cells2Edges = null;
+            }
             this.m_Cells = null;
             
             this.m_CurrentGlobalIdPermutation = null;
