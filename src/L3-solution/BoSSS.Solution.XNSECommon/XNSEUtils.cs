@@ -129,7 +129,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// modifies a residual (i.e. an operator evaluation)
         /// in order to fix the pressure at some reference point
         /// </summary>
-        /// <param name="currentState">current state of velocity & pressure</param>
+        /// <param name="currentState">current state of velocity and pressure</param>
         /// <param name="iVar">the index of the pressure variable in the mapping <paramref name="map"/>.</param>
         /// <param name="LsTrk"></param>
         /// <param name="Residual"></param>
