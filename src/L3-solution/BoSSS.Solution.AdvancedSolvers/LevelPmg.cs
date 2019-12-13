@@ -132,7 +132,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-        public ISolverSmootherTemplate Clone() {
+        public object Clone() {
             throw new NotImplementedException();
         }
 

@@ -52,6 +52,16 @@ namespace BoSSS.Solution.Utils {
     public class BoundaryCondMap<BCType> where BCType : struct {
 
         /// <summary>
+        /// Length of arrays returned by <see cref="bndFunction"/>.
+        /// </summary>
+        public int MaxEdgeTagNo {
+            get {
+                return GridCommons.FIRST_PERIODIC_BC_TAG;
+            }
+        }
+
+
+        /// <summary>
         /// - keys: the names of the members of <typeparamref name="BCType"/>,
         ///   i.e. all enum entries as strings;
         /// - values: the corresponding <typeparamref name="BCType"/>-values;
@@ -94,7 +104,7 @@ namespace BoSSS.Solution.Utils {
         /// scalar functions that encode boundary values;
         /// - Keys: User-defined names that were provided with the constructor
         ///   (e.g. 'VelocityX', 'Pressure',...) 
-        /// - Values: a function, to evaluate the BC values
+        /// - Values: an array of functions, to evaluate the BC values; array length is equal to <see cref="MaxEdgeTagNo"/>
         /// - Array index: edge tag;        
         /// </summary>
         public Dictionary<string, Func<double[], double, double>[]> bndFunction {
@@ -200,8 +210,10 @@ namespace BoSSS.Solution.Utils {
                         if (found > 1)
                             Problems.Add("Boundary condition in control file is specified more than once (" + found + " times) (EdgeTagName = '" + EdgeTagName + "', Edgetag = " + EdgeTag + ".");
 
-                        if (found == 0)
-                            Problems.Add("EdgeTagName = '" + EdgeTagName + "', Edgetag = " + EdgeTag + " is specified in the grid, but not in control file.");
+                        if (found == 0) {
+                            bndy.Add(EdgeTagName, new AppControl.BoundaryValueCollection());
+                            //Problems.Add("EdgeTagName = '" + EdgeTagName + "', Edgetag = " + EdgeTag + " is specified in the grid, but not in control file.");
+                        }
                     }
                 }
 

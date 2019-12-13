@@ -569,7 +569,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// ~
         /// </summary>
-        public ISolverSmootherTemplate Clone() {
+        public object Clone() {
             throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
         }
     }

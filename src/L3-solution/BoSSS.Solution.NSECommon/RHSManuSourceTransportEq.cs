@@ -31,7 +31,7 @@ namespace BoSSS.Solution.NSECommon {
     /// See also ControlManuSol() control function.
     /// </summary>
     //public class RHSManuSourceTransportEq : BoSSS.Solution.Utils.LinearSource {
-    public class RHSManuSourceTransportEq : IVolumeForm
+    public class RHSManuSourceTransportEq : IVolumeForm, ISupportsJacobianComponent
     {
 
         double HeatReleaseFactor;
@@ -113,6 +113,12 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public IList<string> ParameterOrdering {
             get { return null; }
+        }
+        /// <summary>
+        /// Linear component - returns this object itself.
+        /// </summary>
+        virtual public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
         }
 
 

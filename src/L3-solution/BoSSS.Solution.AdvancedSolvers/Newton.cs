@@ -39,6 +39,9 @@ namespace BoSSS.Solution.AdvancedSolvers
     /// </summary>
     public class Newton : NonlinearSolver
     {
+        /// <summary>
+        /// ctor
+        /// </summary>
         public Newton(OperatorEvalOrLin __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq, MultigridOperator.ChangeOfBasisConfig[][] __MultigridOperatorConfig) :
             base(__AssembleMatrix, __AggBasisSeq, __MultigridOperatorConfig) //
         {
@@ -145,11 +148,14 @@ namespace BoSSS.Solution.AdvancedSolvers
                 double[] step = new double[x.Length];
                 double[] stepOld = new double[x.Length];
                 //BlockMsrMatrix CurrentJac;
-
+                bool secondCriteriumConverged = false;
                 OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
                 double fnorminit = fnorm;
                 using (new BlockTrace("Slv Iter", tr)) {
-                    while ((fnorm > ConvCrit * fnorminit*0 + ConvCrit && itc < MaxIter) || itc < MinIter) {
+                    while (
+                        (fnorm > ConvCrit * fnorminit*0 + ConvCrit && 
+                        /*secondCriteriumConverged == false &&*/ itc < MaxIter)   
+                        || itc < MinIter) {
                         //Console.WriteLine("The convergence criterion is {0}", ConvCrit * fnorminit + ConvCrit);
                         rat = fnorm / fNormo;
                         fNormo = fnorm;
@@ -191,8 +197,10 @@ namespace BoSSS.Solution.AdvancedSolvers
                             solver.Init(CurrentLin);
                             step.ClearEntries();
                             var check = f0.CloneAs();
+                           
                             f0.ScaleV(-1.0);
                             solver.ResetStat();
+                            
                             solver.Solve(step, f0);
                             /*
                             double check_norm; 
@@ -215,9 +223,6 @@ namespace BoSSS.Solution.AdvancedSolvers
                         } else {
                             throw new NotImplementedException("Your approximation option for the jacobian seems not to be existent.");
                         }
-
-     
-
 
                         // Start line search
                         xOld = x;
@@ -305,6 +310,34 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                         OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
 
+                        #region second criterium
+                        /// Just testing. According to "Pawlowski et al. - 2006 - Globalization Techniques for Newton–Krylov Methods"
+                        /// this criterium is useful to "ensure that even finer phisical details of the flow and are resolved"
+                        /*
+                        double[] WMat_s = new double[x.Length];
+                        double psi_r = 1e-3;
+                        double psi_a = 1e-8;
+                        double[] truestep = step;
+                        truestep.ScaleV(lambda);
+                        for(int i = 0; i < WMat_s.Length; i++) {
+                            WMat_s[i] = 1 / (psi_r * x[i] + psi_a) * truestep[i];
+                        }
+                        WMat_s.CheckForNanOrInfV();
+
+                        double secondCriterium = WMat_s.L2Norm()/x.Length;
+                    
+                        if(secondCriterium < 1) {
+                            secondCriteriumConverged = true;
+                        }
+                        //Console.WriteLine("Norm Of the second criterium {0}", secondCriterium);
+                        //if((fnorm < ConvCrit * fnorminit * 0 + ConvCrit))
+                        //    Console.WriteLine("Criterium 1 fulfilled");
+                        //if((secondCriteriumConverged == true))
+                        //    Console.WriteLine("Criterium 2 fulfilled");
+                        //if(itc > MaxIter)
+                        //    Console.WriteLine("Criterium 3 fulfilled");
+                    */
+                        #endregion
 
                     }
                 }

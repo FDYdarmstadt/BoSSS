@@ -52,7 +52,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// The factory to be wrapped
         /// </param>
         /// <param name="s">
-        /// some reference element of the grid, see <see cref="GridCommons.RefElements"/>
+        /// some reference element of the grid, see <see cref="BoSSS.Foundation.Grid.Classic.GridCommons.RefElements"/>
         /// </param>
         public CellBoundaryFromEdgeRuleFactory(IGridData context, RefElement s, IQuadRuleFactory<QuadRule> edgeRuleFactory) {
             this.context = context;

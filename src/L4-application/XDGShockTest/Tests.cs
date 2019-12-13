@@ -14,10 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.Queries;
+using ilPSP;
 using ilPSP.Utils;
 using NUnit.Framework;
 using System;
@@ -47,37 +49,35 @@ namespace XDGShockTest {
         #endregion
 
         #region Tests
-        [Test]
-        public static void XDGShockTube_SpeciesA() {
-            Program program = null;
-            BoSSS.Solution.Application<XDGShockControl>._Main(
-                new string[] { "--control", "cs:XDGShockTest.XDGShockTestsControlExamples.XDGTestsShockTube(@\"A\")" },
-                false,
-                delegate () {
-                    program = new Program();
-                    return program;
-                });
+        //[Test]
+        //public static void XDGShockTube_SpeciesA() {
+        //    XDGShockTestMain program = null;
+        //    BoSSS.Solution.Application<XDGShockControl>._Main(
+        //        new string[] { "--control", "cs:XDGShockTest.XDGShockTestsControlExamples.XDGTestsShockTube(@\"A\")" },
+        //        false,
+        //        delegate () {
+        //            program = new XDGShockTestMain();
+        //            return program;
+        //        });
 
-            // Compare results
-            CompareErrors(program);
+        //    // Compare results
+        //    CompareErrors(program);
+        //}
+
+        [Test]
+        public static void XDGShockTube([Values("A","B")] string species) {
+            var C = XDGShockTest.XDGShockTubeControlExamples.XDGTestsShockTube(species);
+
+            using (XDGShockTestMain program = new XDGShockTestMain()) {
+                program.Init(C);
+                program.RunSolverMode();
+
+                // Compare results
+                CompareErrors(program);
+            }
         }
 
-        [Test]
-        public static void XDGShockTube_SpeciesB() {
-            Program program = null;
-            BoSSS.Solution.Application<XDGShockControl>._Main(
-                new string[] { "--control", "cs:XDGShockTest.XDGShockTestsControlExamples.XDGTestsShockTube(@\"B\")" },
-                false,
-                delegate () {
-                    program = new Program();
-                    return program;
-                });
-
-            // Compare results
-            CompareErrors(program);
-        }
-
-        private static void CompareErrors(Program program) {
+        private static void CompareErrors(XDGShockTestMain program) {
             double densityL2Norm = (double)program.QueryHandler.QueryResults["L2NormDensity"];
             double densityCorrect = 0.711325556421112;
 
@@ -106,7 +106,7 @@ namespace XDGShockTest {
         #endregion
     }
 
-    public static class XDGShockTestsControlExamples {
+    public static class XDGShockTubeControlExamples {
 
         public static XDGShockControl XDGTestsShockTube(string speciesName) {
             XDGShockControl c = new XDGShockControl();
@@ -179,8 +179,7 @@ namespace XDGShockTest {
                 double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
                 var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
 
-                grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
-                grid.DefineEdgeTags(X => 1);
+                grid.DefineEdgeTags((Vector X) => "AdiabaticSlipWall");
                 return grid;
             };
 
@@ -190,8 +189,8 @@ namespace XDGShockTest {
             // ### Initial conditions ###
             double densityLeft = 1.0;
             double densityRight = 0.125;
-            double xMom = 0.0;
-            double yMom = 0.0;
+            //double xMom = 0.0;
+            //double yMom = 0.0;
             double xVel = 0.0;
             double yVel = 0.0;
             double pressureLeft = 1.0;

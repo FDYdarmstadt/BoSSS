@@ -36,16 +36,18 @@ namespace BoSSS.Solution.RheologyCommon {
         protected double betaA;
         protected double betaB;
         protected double[] pen1;
+        bool weighted;
 
         /// <summary>
         /// Initialize viscosity part
         /// </summary>
-        public ViscosityAtLevelSet(LevelSetTracker lstrk, int Component, double beta_a, double beta_b, double[] Penalty1) {
+        public ViscosityAtLevelSet(LevelSetTracker lstrk, int Component, double beta_a, double beta_b, double[] Penalty1, bool _weighted) {
             this.m_LsTrk = lstrk;
             this.Component = Component;
             this.betaA = 1.0 - beta_a;
             this.betaB = 1.0 - beta_b;
             this.pen1 = Penalty1;
+            this.weighted = _weighted;
         }
 
         /// <summary>
@@ -98,25 +100,61 @@ namespace BoSSS.Solution.RheologyCommon {
             Debug.Assert(UA.Length == this.ArgumentOrdering.Count);
             Debug.Assert(UB.Length == this.ArgumentOrdering.Count);
 
+            double wA;
+            double wB;
+            double wPenalty;
+            if (!weighted) {
+                wA = 0.5;
+                wB = 0.5;
+                wPenalty = (Math.Abs(betaA) > Math.Abs(betaB)) ? betaA : betaB;
+            } else {
+                wA = betaB / (betaA + betaB);
+                wB = betaA / (betaA + betaB);
+                wPenalty = betaA * betaB / (betaA + betaB);
+            }
+
             double res = 0;
+
+            //switch (Component) {
+            //    case 0:
+            //        res += ((UA[0] * betaA * wA + UB[0] * betaB * wB) * N[0] + (UA[1] * betaA * wA + UB[1] * betaB * wB) * N[0]); // central difference fo grad(u) and grad(u)^T
+            //        res += pen1[0] * ((UA[0] * betaA - UB[0] * betaB) * N[0]) * wPenalty + pen1[1] * ((UA[0] * betaA - UB[0] * betaB) * N[1]) * wPenalty; // beta Penalty for grad(u)
+            //        res += pen1[0] * ((UA[1] * betaA - UB[1] * betaB) * N[0]) * wPenalty + pen1[1] * ((UA[1] * betaA - UB[1] * betaB) * N[1]) * wPenalty; // beta penalty for grad(u)^T
+
+            //        break;
+            //    case 1:
+            //        res += ((UA[0] * betaA * wA + UB[0] * betaB * wB) * N[1] + (UA[1] * betaA * wA + UB[1] * betaB * wB) * N[0]);
+            //        res += pen1[0] * ((UA[0] * betaA - UB[0] * betaB) * N[0]) * wPenalty + pen1[1] * ((UA[0] * betaA - UB[0] * betaB) * N[1]) * wPenalty;
+            //        res += pen1[0] * ((UA[1] * betaA - UB[1] * betaB) * N[0]) * wPenalty + pen1[1] * ((UA[1] * betaA - UB[1] * betaB) * N[1]) * wPenalty;
+
+            //        break;
+            //    case 2:
+            //        res += ((UA[0] * betaA * wA + UB[0] * betaB * wB) * N[1] + (UA[1] * betaA * wA + UB[1] * betaB * wB) * N[1]);
+            //        res += pen1[0] * ((UA[0] * betaA - UB[0] * betaB) * N[0]) * wPenalty + pen1[1] * ((UA[0] * betaA - UB[0] * betaB) * N[1]) * wPenalty;
+            //        res += pen1[0] * ((UA[1] * betaA - UB[1] * betaB) * N[0]) * wPenalty + pen1[1] * ((UA[1] * betaA - UB[1] * betaB) * N[1]) * wPenalty;
+
+            //        break;
+            //    default:
+            //        throw new NotImplementedException();
+            //}
 
             switch (Component) {
                 case 0:
-                    res += 0.5 * ((UA[0] * betaA + UB[0] * betaB) * N[0] + (UA[1] * betaA + UB[1] * betaB) * N[0]); // central difference fo grad(u) and grad(u)^T
-                    res += pen1[0] * ((UA[0] * betaA - UB[0] * betaB) * N[0]) + pen1[1] * ((UA[0] * betaA - UB[0] * betaB) * N[1]); // beta Penalty for grad(u)
-                    res += pen1[0] * ((UA[1] * betaA - UB[1] * betaB) * N[0]) + pen1[1] * ((UA[1] * betaA - UB[1] * betaB) * N[1]); // beta penalty for grad(u)^T
+                    res += 0.5 * ((UA[0] * betaA+ UB[0] * betaB) * N[0] + (UA[1] * betaA+ UB[1] * betaB) * N[0]); // central difference fo grad(u) and grad(u)^T
+                    res += pen1[0] * ((UA[0] * betaA - UB[0] * betaB) * N[0])+ pen1[1] * ((UA[0] * betaA - UB[0] * betaB) * N[1]); // beta Penalty for grad(u)
+                    res += pen1[0] * ((UA[1] * betaA - UB[1] * betaB) * N[0])+ pen1[1] * ((UA[1] * betaA - UB[1] * betaB) * N[1]); // beta penalty for grad(u)^T
 
                     break;
                 case 1:
-                    res += 0.5 * ((UA[0] * betaA + UB[0] * betaB) * N[1] + (UA[1] * betaA + UB[1] * betaB) * N[0]);
-                    res += pen1[0] * ((UA[0] * betaA - UB[0] * betaB) * N[0]) + pen1[1] * ((UA[0] * betaA - UB[0] * betaB) * N[1]);
-                    res += pen1[0] * ((UA[1] * betaA - UB[1] * betaB) * N[0]) + pen1[1] * ((UA[1] * betaA - UB[1] * betaB) * N[1]);
+                    res += 0.5 * ((UA[0] * betaA+ UB[0] * betaB) * N[1] + (UA[1] * betaA * wA + UB[1] * betaB) * N[0]);
+                    res += pen1[0] * ((UA[0] * betaA - UB[0] * betaB) * N[0])+ pen1[1] * ((UA[0] * betaA - UB[0] * betaB) * N[1]);
+                    res += pen1[0] * ((UA[1] * betaA - UB[1] * betaB) * N[0])+ pen1[1] * ((UA[1] * betaA - UB[1] * betaB) * N[1]);
 
                     break;
                 case 2:
-                    res += 0.5 * ((UA[0] * betaA + UB[0] * betaB) * N[1] + (UA[1] * betaA + UB[1] * betaB) * N[1]);
-                    res += pen1[0] * ((UA[0] * betaA - UB[0] * betaB) * N[0]) + pen1[1] * ((UA[0] * betaA - UB[0] * betaB) * N[1]);
-                    res += pen1[0] * ((UA[1] * betaA - UB[1] * betaB) * N[0]) + pen1[1] * ((UA[1] * betaA - UB[1] * betaB) * N[1]);
+                    res += 0.5 * ((UA[0] * betaA+ UB[0] * betaB) * N[1] + (UA[1] * betaA+ UB[1] * betaB) * N[1]);
+                    res += pen1[0] * ((UA[0] * betaA - UB[0] * betaB) * N[0])+ pen1[1] * ((UA[0] * betaA - UB[0] * betaB) * N[1]);
+                    res += pen1[0] * ((UA[1] * betaA - UB[1] * betaB) * N[0])+ pen1[1] * ((UA[1] * betaA - UB[1] * betaB) * N[1]);
 
                     break;
                 default:

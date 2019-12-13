@@ -103,11 +103,17 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
         }
 
+        static int Counter = 0;
+
+        int MyCount;
+
         /// <summary>
         /// constructor 
         /// </summary>
         public GridData(GridCommons grd) {
-            //Console.WriteLine("3.1.10.1");
+            Counter++;
+            MyCount = Counter;
+
             if (grd.RefElements.Length != 1)
                 throw new ApplicationException("Currently only grids with _one_ RefElement are supported!!!");
 
@@ -238,12 +244,22 @@ namespace BoSSS.Foundation.Grid.Classic {
 
 
         /// <summary>
-        /// Clears all internal references for this object, to make sure that any attempt to use it leads to an exception.
+        /// Clears (lots of) internal references for this object, to make sure that any attempt to use it leads to an exception.
         /// </summary>
         public void Invalidate() {
+            if (m_Cells != null) {
+                this.m_Cells.CellCenter = null;
+                this.m_Cells.Cells2Edges = null;
+            }
             this.m_Cells = null;
+            
+            this.m_CurrentGlobalIdPermutation = null;
+            this.m_InnerCells = null;
+                        
             this.m_Edges = null;
+
             this.m_GlobalNodes = null;
+
             this.m_Grid = null;
             this.m_Parallel = null;
             this.m_VerticeData = null;

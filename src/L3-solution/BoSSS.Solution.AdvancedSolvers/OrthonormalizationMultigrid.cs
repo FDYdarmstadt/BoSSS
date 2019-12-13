@@ -66,18 +66,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             // set operator
             // ============
-            if (op.CoarserLevel == null) {
-                throw new NotSupportedException("Multigrid algorithm cannot be used as a solver on the finest level.");
-            }
+            //if (op.CoarserLevel == null) {
+            //    throw new NotSupportedException("Multigrid algorithm cannot be used as a solver on the finest level.");
+            //}
             this.OpMatrix = Mtx;
 
 
             // initiate coarser level
             // ======================
-            if (this.CoarserLevelSolver == null)
-                throw new NotSupportedException("Missing coarse level solver.");
-            this.CoarserLevelSolver.Init(op.CoarserLevel);
-
+            if (this.CoarserLevelSolver == null) {
+                //throw new NotSupportedException("Missing coarse level solver.");
+                Console.WriteLine("OrthonormalizationMultigrid: running without coarse solver.");
+            } else {
+                this.CoarserLevelSolver.Init(op.CoarserLevel);
+            }
 
             // init smoother
             // =============
@@ -310,9 +312,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                 int L = X.Length;
-                int Lc = m_MgOperator.CoarserLevel.Mapping.LocalLength; // RestrictionOperator.RowPartitioning.LocalLength;
+                int Lc;
+                if (this.CoarserLevelSolver != null)
+                    Lc = m_MgOperator.CoarserLevel.Mapping.LocalLength;
+                else
+                    Lc = -1;
+
                 double[] rl = new double[L];
-                double[] rlc = new double[Lc];
+                double[] rlc = Lc > 0 ? new double[Lc] : null;
 
                 //double[] Xex = _B.ToArray();
                 //Xex.ClearEntries();
@@ -353,7 +360,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     // coarse grid correction
                     // ----------------------
-                    {
+                    if(this.CoarserLevelSolver != null) {
                         //Residual(rl, X, B); // Residual on this level / already computed by 'MinimizeResidual' above
                         this.m_MgOperator.CoarserLevel.Restrict(rl, rlc);
 
@@ -503,7 +510,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (this.CoarserLevelSolver != null)
                 this.CoarserLevelSolver.ResetStat();
         }
-        public ISolverSmootherTemplate Clone() {
+        public object Clone() {
             throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
         }
     }

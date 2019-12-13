@@ -22,6 +22,7 @@ using System.Diagnostics;
 using ilPSP.Utils;
 using ilPSP;
 using System.Collections;
+using System.Runtime.CompilerServices;
 
 namespace ilPSP {
 
@@ -177,10 +178,11 @@ namespace ilPSP {
         /// <param name="i">either 0 (x-component) or 1 (y-component)</param>
         /// <returns></returns>
         public double this[int i] {
+            //[MethodImpl(MethodImplOptions.AggressiveInlining)]
             set {
                 if(i < 0 || i >= this.Dim)
                     throw new IndexOutOfRangeException("vector component out of range.");
-
+                
                 if (i == 0)
                     x = value;
                 else if (i == 1 && Dim > 1)
@@ -189,9 +191,16 @@ namespace ilPSP {
                     z = value;
                 else
                     throw new IndexOutOfRangeException("vector component index must be either 0 or 1.");
+                
+                //unsafe {
+                //    fixed(Vector* d = &this) {
+                //        ((double*)d)[i] = value;
+                //    }
+                //}
             }
+            //[MethodImpl(MethodImplOptions.AggressiveInlining)]
             get {
-                if (i < 0 || i >= this.Dim)
+                if(i < 0 || i >= this.Dim)
                     throw new IndexOutOfRangeException("vector component out of range.");
 
                 if (i == 0)
@@ -202,6 +211,12 @@ namespace ilPSP {
                     return z;
                 else
                     throw new IndexOutOfRangeException("vector component index must be either 0 or 1.");
+                    
+                //unsafe {
+                //    fixed(Vector* d = &this) {
+                //        return ((double*)d)[i];
+                //    }
+                //}
 
             }
         }
@@ -959,6 +974,63 @@ namespace ilPSP {
         /// </param>
         public static void SetRowPt(this IMatrix inp, int RowNo, Vector row) {
             if (row.Dim != inp.NoOfCols)
+                throw new ArgumentException("Dimension mismatch.");
+
+            switch(row.Dim) {
+                case 1:
+                inp[RowNo, 0] = row.x; return;
+                case 2:
+                inp[RowNo, 0] = row.x; inp[RowNo, 1] = row.y; return;
+                case 3:
+                inp[RowNo, 0] = row.x; inp[RowNo, 1] = row.y; inp[RowNo, 2] = row.z; return;
+                default:
+                throw new NotImplementedException();
+            }
+        }
+
+
+         /// <summary>
+        /// extracts the <paramref name="RowNo"/>-th row from
+        /// <paramref name="inp"/>.
+        /// </summary>
+        /// <param name="inp">
+        /// input matrix
+        /// </param>
+        /// <param name="RowNo">
+        /// row which should be extracted
+        /// </param>
+        /// <returns>
+        /// A vector with dimension (<see cref="Vector.Dim"/>) equal to 2nd length of <paramref name="inp"/>, containing the
+        /// <paramref name="RowNo"/>-th row of <paramref name="inp"/>
+        /// </returns>
+        public static Vector GetRowPt(this double[,] inp, int RowNo) {
+            switch(inp.GetLength(1)) {
+                case 1:
+                return new Vector(inp[RowNo, 0]);
+                case 2:
+                return new Vector(inp[RowNo, 0], inp[RowNo, 1]);
+                case 3:
+                return new Vector(inp[RowNo, 0], inp[RowNo, 1], inp[RowNo, 2]);
+                default:
+                throw new ArgumentException("Matrix has " + inp.GetLength(1) + " columns, this cannot be a spatial dimension.");
+            }
+        }
+
+
+        /// <summary>
+        /// sets the <paramref name="RowNo"/>-th row from <paramref name="inp"/> to values provided by <paramref name="row"/>.
+        /// </summary>
+        /// <param name="inp">
+        /// matrix that should be altered
+        /// </param>
+        /// <param name="RowNo">
+        /// row index of the row to set
+        /// </param>
+        /// <param name="row">
+        /// a vector 
+        /// </param>
+        public static void SetRowPt(this double[,] inp, int RowNo, Vector row) {
+            if (row.Dim != inp.GetLength(1))
                 throw new ArgumentException("Dimension mismatch.");
 
             switch(row.Dim) {

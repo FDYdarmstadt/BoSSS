@@ -731,5 +731,23 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 return ParentGrid.EdgeTagNames;
             }
         }
+
+        /// <summary>
+        /// Clears (lots of) internal references for this object, to make sure that any attempt to use it leads to an exception.
+        /// </summary>
+        public void Invalidate() {
+            this.m_GeomCellData = null;
+            this.m_LogicalCellData = null;
+
+            this.m_GeomEdgeData = null;
+            this.m_LogEdgeData = null;
+
+            this.m_ChefBasis = null;
+
+            this.m_Parallel = null;
+            this.m_VertexData = null;
+            this.aggregationGrid = null;
+            this.CellPartitioning = null;
+        }
     }
 }

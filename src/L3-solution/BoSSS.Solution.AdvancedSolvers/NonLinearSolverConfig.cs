@@ -27,7 +27,7 @@ namespace BoSSS.Solution.Control {
     public enum NonLinearSolverCode {
 
         /// <summary>
-            /// NewtonKrylov GMRES (<see cref="BoSSS.Solution.AdvancedSolvers.NonLinearSolver"/>) with linear solver (<see cref="LinearSolverConfig.Code"/>) used as preconditioner for matrix-free GMRES 
+        /// NewtonKrylov GMRES (<see cref="BoSSS.Solution.AdvancedSolvers.NonLinearSolver"/>) with linear solver (<see cref="LinearSolverConfig.Code"/>) used as preconditioner for matrix-free GMRES 
         /// </summary>
         NewtonGMRES = 0,
 
@@ -52,6 +52,9 @@ namespace BoSSS.Solution.Control {
         selfmade = 999,
     }
 
+    /// <summary>
+    /// User-Options for nonlinear solver configuration; 
+    /// </summary>
     public class NonLinearSolverConfig {
 
         /// <summary>
@@ -59,16 +62,7 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         public bool verbose = false;
 
-        /// <summary>
-        /// preconditioner class derived from LinearSolver class.
-        /// </summary>
-        public class _Precond : LinearSolverConfig {}
-
-        /// <summary>
-        /// preconditioner of nonlinear solver, which is a <code>typeof(ISmootherTemplate)</code> with <code>typeof(LinearSolverConfig)</code>.
-        /// </summary>
-        public _Precond PrecondSolver = new _Precond();
-
+        
         /// <summary>
         /// If iterative solvers are used, the maximum number of iterations.
         /// </summary>

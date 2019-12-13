@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
+using ilPSP;
 using System;
 using System.Diagnostics;
 
@@ -85,23 +86,23 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// \f$ (\rho^-, 0[, 0[, 0]], \rho^- e^*)^T\f$  where
         /// \f$ e* = (\gamma - 1.0) T^*\f$ 
         /// </returns>
-        public override StateVector GetBoundaryState(double time, double[] x, double[] normal, StateVector stateIn) {
+        public override StateVector GetBoundaryState(double time, Vector x, Vector normal, StateVector stateIn) {
             double gamma = config.EquationOfState.HeatCapacityRatio;
             double innerEnergy = TemperatureFunction(x, time) / (gamma - 1.0);
             double MachScaling = gamma * config.MachNumber * config.MachNumber;
 
-            Debug.Assert(stateIn.Dimension == normal.Length);
-            int D = normal.Length;
+            Debug.Assert(stateIn.Dimension == normal.Dim);
+            int D = normal.Dim;
 
             if (WallVelocities == null) {
                 // Kinetic energy is zero at a no-slip boundary, we can omit it
                 return new StateVector(
                     stateIn.Material,
                     stateIn.Density,
-                    new ilPSP.Vector(),
+                    new Vector(),
                     stateIn.Density * innerEnergy);
             } else {
-                ilPSP.Vector velocity = new ilPSP.Vector(D);
+                Vector velocity = new Vector(D);
                 for (int d = 0; d < D; d++) {
                     velocity[d] = WallVelocities[d](x, time);
                 }

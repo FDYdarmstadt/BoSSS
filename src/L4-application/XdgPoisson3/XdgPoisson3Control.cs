@@ -27,14 +27,14 @@ namespace BoSSS.Application.XdgPoisson3 {
 
     [DataContract]
     [Serializable]
-    public class XdgPoisson3Control : AppControl {
+    public class XdgPoisson3Control : AppControlSolver {
 
         /// <summary>
         /// Ctor.
         /// </summary>
         public XdgPoisson3Control() {
             base.LinearSolver.verbose = true;
-            base.LinearSolver.NoOfMultigridLevels = 10000;
+            base.NoOfMultigridLevels = 10000;
         }
 
         /// <summary>

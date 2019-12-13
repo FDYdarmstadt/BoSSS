@@ -211,7 +211,7 @@ namespace BoSSS.Solution.RheologyCommon {
 
             // viscous operator
             // ==================
-            var viscosity = new ViscosityAtLevelSet(LsTrk, d, physParams.beta_a, physParams.beta_b, dntParams.Penalty1);
+            var viscosity = new ViscosityAtLevelSet(LsTrk, d, physParams.beta_a, physParams.beta_b, dntParams.Penalty1, dntParams.UseWeightedAverages);
             comps.Add(viscosity);
 
         }

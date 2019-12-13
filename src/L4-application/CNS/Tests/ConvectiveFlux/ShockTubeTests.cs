@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
@@ -347,7 +348,7 @@ namespace CNS.Tests.ConvectiveFlux {
                 double[] xNodes = GenericBlas.Linspace(0.0, 1.0, 201);
                 var grid = Grid1D.LineGrid(xNodes, false);
                 grid.EdgeTagNames.Add(1, "supersonicOutlet");
-                grid.DefineEdgeTags(X => 1);
+                grid.DefineEdgeTags((Vector X) => 1);
                 return grid;
             };
 

@@ -110,7 +110,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// <returns></returns>
         public static StateVector FromPrimitiveQuantities(Material material, double density, Vector velocity, double pressure) {
             Debug.Assert(velocity.Dim > 0);
-            double MachScaling = material.EquationOfState.HeatCapacityRatio * material.MachNumber * material.MachNumber;
+            double HeatCapacityRatio = material.EquationOfState.HeatCapacityRatio;
+            double MachScaling = HeatCapacityRatio * material.MachNumber * material.MachNumber;
             StateVector state = new StateVector(
                 material,
                 density,

@@ -233,7 +233,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Linear component - returns this object itself.
         /// </summary>
-        virtual public IEquationComponent[] GetJacobianComponents() {
+        virtual public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             switch (m_ViscosityMode) {
                 case ViscosityOption.ConstantViscosity:
                 case ViscosityOption.ConstantViscosityDimensionless:
@@ -299,18 +299,6 @@ namespace BoSSS.Solution.NSECommon {
         /// look at formula (7) in cited paper
         /// </summary>
         protected double penalty(int jCellIn, int jCellOut) {
-            //double mu;
-            //if (m_ComputePenalty != null) {
-            //    mu = m_ComputePenalty(m_penalty_base, jCellIn, jCellOut, cj);
-            //} else {
-            //    double cj_in = cj[jCellIn];
-            //    mu = m_penalty_base * cj_in;
-            //    if (jCellOut >= 0) {
-            //        double cj_out = cj[jCellOut];
-            //        mu = Math.Max(mu, m_penalty_base * cj_out);
-            //    }
-            //}
-            //return mu;
 
             double penaltySizeFactor_A = 1.0 / cj[jCellIn];
             double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / cj[jCellOut] : 0;
@@ -667,11 +655,11 @@ namespace BoSSS.Solution.NSECommon {
                         Parameters[np] = prm.ParameterVars[np][cell, node];
                     }
                     double viscosity = Viscosity(Parameters) * base.m_alpha;
-                    //f[cell, node, d] *= base.m_alpha;
+                    Debug.Assert(!double.IsNaN(viscosity));
+                    Debug.Assert(!double.IsInfinity(viscosity));
 
                     for(int d = 0; d < prm.GridDat.SpatialDimension; d++) {
                         f[cell, node, d] += viscosity * GradU[m_iComp][cell, node, d];
-                        //f[cell, node, d] *= base.m_alpha;
                     }
                 }
             }
@@ -704,6 +692,12 @@ namespace BoSSS.Solution.NSECommon {
                     }
                     double viscosityIN = Viscosity(ParametersIN);
                     double viscosityOT = Viscosity(ParametersOT);
+                    Debug.Assert(!double.IsNaN(viscosityIN));
+                    Debug.Assert(!double.IsNaN(viscosityOT));
+                    Debug.Assert(!double.IsInfinity(viscosityIN));
+                    Debug.Assert(!double.IsInfinity(viscosityOT));
+
+
 
                     double fluxIn = viscosityIN * uJump;
                     double fluxOut = viscosityOT * uJump;
@@ -750,6 +744,8 @@ namespace BoSSS.Solution.NSECommon {
 
                     for(int np = 0; np < _NOParams; np++) {
                         cpv.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
+                        Debug.Assert(!double.IsNaN(cpv.Parameters_IN[np]));
+                        Debug.Assert(!double.IsInfinity(cpv.Parameters_IN[np]));
                     }
 
                     for(int d = 0; d < D; d++) {
@@ -809,7 +805,10 @@ namespace BoSSS.Solution.NSECommon {
                     }
                     double viscosityIN = Viscosity(ParametersIN);
                     double viscosityOT = Viscosity(ParametersOT);
-
+                    Debug.Assert(!double.IsNaN(viscosityIN));
+                    Debug.Assert(!double.IsNaN(viscosityOT));
+                    Debug.Assert(!double.IsInfinity(viscosityIN));
+                    Debug.Assert(!double.IsInfinity(viscosityOT));
 
                     double flux = 0.0;
                     for(int d = 0; d < efp.GridDat.SpatialDimension; d++) {
@@ -858,6 +857,8 @@ namespace BoSSS.Solution.NSECommon {
 
                     for(int np = 0; np < _NOParams; np++) {
                         cpv.Parameters_IN[np] = efp.ParameterVars_IN[np][l, k];
+                        Debug.Assert(!double.IsNaN(cpv.Parameters_IN[np]));
+                        Debug.Assert(!double.IsInfinity(cpv.Parameters_IN[np]));
                     }
 
                     for(int d = 0; d < D; d++) {
