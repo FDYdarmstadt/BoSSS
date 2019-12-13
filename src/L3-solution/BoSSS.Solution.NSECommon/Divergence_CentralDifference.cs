@@ -231,6 +231,9 @@ namespace BoSSS.Solution.NSECommon {
             this.Component = Component;
             this.Bcmap = Bcmap;
             this.VelFunction = Bcmap.bndFunction[VariableNames.Velocity_d(Component)];
+            int SpatDim = 2;
+            m_SpatialDimension = SpatDim;
+            m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim));
         }
 
         MaterialLaw EoS = null;
@@ -314,7 +317,7 @@ namespace BoSSS.Solution.NSECommon {
                 case IncompressibleBcType.Pressure_Outlet: {
                         switch(Bcmap.PhysMode) {
                             case PhysicsMode.Incompressible:
-                                res = Uin[0] * inp.Normal[Component];
+                                res = Uin[Component] * inp.Normal[Component];
                                 break;
                             case PhysicsMode.LowMach:
                             case PhysicsMode.Multiphase:
@@ -344,7 +347,7 @@ namespace BoSSS.Solution.NSECommon {
             double[] DensityArguments_Out; // Arguments used to calculate the density with the EoS
             switch(Bcmap.PhysMode) {
                 case PhysicsMode.Incompressible:
-                    res = 0.5 * (Uin[0] + Uout[0]) * inp.Normal[Component];
+                    res = 0.5 * (Uin[Component] + Uout[Component]) * inp.Normal[Component];
                     break;
                 case PhysicsMode.LowMach:
                 case PhysicsMode.Multiphase:
@@ -373,7 +376,7 @@ namespace BoSSS.Solution.NSECommon {
             double[] DensityArguments; // Arguments used to calculate the density with the EoS
             switch(Bcmap.PhysMode) {
                 case PhysicsMode.Incompressible:
-                    output[Component] = U[0];
+                    output[Component] = U[Component];
                     break;
                 case PhysicsMode.LowMach:
                 case PhysicsMode.Multiphase:
