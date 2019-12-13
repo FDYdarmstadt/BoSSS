@@ -331,6 +331,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Residual(Res0, Sol0, B);
                 Array.Copy(Res0, rl, L);
 
+                if (this.m_MgOperator.LevelIndex == 0) {
+                    double[] rlcc = rl.CloneAs();
+                    rlcc.Normalize();
+
+                    this.viz.PlotVectors(new[] { X, rlcc }, new[] { "sol", "res" });
+                }
+
 
                 this.IterationCallback?.Invoke(0, Sol0, Res0, this.m_MgOperator);
 

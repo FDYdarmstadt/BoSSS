@@ -403,7 +403,7 @@ namespace BoSSS.Application.Rheology {
                         if (!this.Control.Stokes ) {
                             comps.Add(new LocalLaxFriedrichsConvection(D, BcMap, d, 1.0));
                         } else {
-                            //Console.WriteLine("Rem: skipping convection.");
+                            Console.WriteLine("Using Stokes Equation - no convective term.");
                         }
 
                         
@@ -416,18 +416,19 @@ namespace BoSSS.Application.Rheology {
                             var pressSource = new SrcPressureGradientLin_d(this.Control.SrcPressureGrad[d]);
                             comps.Add(pressSource);
                         }
+                        
 
                         // viscous part:
                         Type GridType = GridData.iGeomCells.RefElements[0].GetType();
-                        double PenaltyBase;
-                        int DegreeVelocity = this.Velocity.Current.Max(DGF => DGF.Basis.Degree);
-                        if ((GridType == typeof(Triangle)) || (GridType == typeof(Tetra))) {
-                            PenaltyBase = (DegreeVelocity + 1.0) * (DegreeVelocity + (double)D) / (double)D;
-                        } else if ((GridType == typeof(Square)) || (GridType == typeof(Cube))) {
-                            PenaltyBase = (DegreeVelocity + 1.0) * (DegreeVelocity + 1.0);
-                        } else {
-                            throw new NotImplementedException("Unknown RefElement");
-                        }
+                        //double PenaltyBase;
+                        //int DegreeVelocity = this.Velocity.Current.Max(DGF => DGF.Basis.Degree);
+                        //if ((GridType == typeof(Triangle)) || (GridType == typeof(Tetra))) {
+                        //    PenaltyBase = (DegreeVelocity + 1.0) * (DegreeVelocity + (double)D) / (double)D;
+                        //} else if ((GridType == typeof(Square)) || (GridType == typeof(Cube))) {
+                        //    PenaltyBase = (DegreeVelocity + 1.0) * (DegreeVelocity + 1.0);
+                        //} else {
+                        //    throw new NotImplementedException("Unknown RefElement");
+                        //}
 
                         if (this.Control.beta < 0.0) {
                             throw new ArithmeticException("Illegal setting in control object: 'beta' is out of range, must be non-negative.");
@@ -458,11 +459,13 @@ namespace BoSSS.Application.Rheology {
                         XOP.EquationComponents["div"].Add(new Divergence_DerivativeSource(d, D));
                         XOP.EquationComponents["div"].Add(new Divergence_DerivativeSource_Flux(d, BcMap));
 
+                        //XOP.EquationComponents["div"].Add(new Idsource(VariableNames.Pressure));
+
                         //Pressure stabilization for LDG
-                        var presStab = new PressureStabilization(this.Control.PresPenalty2, this.Control.Reynolds);
-                        XOP.EquationComponents["div"].Add(presStab);
+                        //var presStab = new PressureStabilization(this.Control.PresPenalty2, this.Control.Reynolds);
+                        //XOP.EquationComponents["div"].Add(presStab);
                     }
-                    
+
                     // Constitutive equations
                     // ===============================================================================
                     
@@ -470,17 +473,17 @@ namespace BoSSS.Application.Rheology {
                     XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Identity(0));
                     XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Identity(1));
                     XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Identity(2));
-
+                                        
                     //Convective part
                     XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Convective(0, BcMap, this.Control.Weissenberg, this.Control.alpha));
                     XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Convective(1, BcMap, this.Control.Weissenberg, this.Control.alpha));
                     XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Convective(2, BcMap, this.Control.Weissenberg, this.Control.alpha));
-
+                    
                     //Objective Part
                     XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Objective(0, BcMap, this.Control.Weissenberg, this.Control.StressPenalty));
                     XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Objective(1, BcMap, this.Control.Weissenberg, this.Control.StressPenalty));
                     XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Objective(2, BcMap, this.Control.Weissenberg, this.Control.StressPenalty));
-                    
+                                        
                     // Viscous Part
                     XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Viscosity(0, BcMap, this.Control.beta, this.Control.Penalty1));
                     XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Viscosity(1, BcMap, this.Control.beta, this.Control.Penalty1));
@@ -492,7 +495,7 @@ namespace BoSSS.Application.Rheology {
                         XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Diffusion(this.StressXY.Basis.Degree, Grid.SpatialDimension, ((GridData)GridData).Cells.cj, VariableNames.StressXY));
                         XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Diffusion(this.StressYY.Basis.Degree, Grid.SpatialDimension, ((GridData)GridData).Cells.cj, VariableNames.StressYY));
                     }
-                    
+
                     // Build spatial operator
                     XOP.Commit();
 
@@ -1053,7 +1056,7 @@ namespace BoSSS.Application.Rheology {
                     //Mbuilder.ComputeMatrix(OpMatrix, OpAffine);
                     //Mbuilder.OperatorCoefficients.UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
 
-                     // Jacobian
+                    // Jacobian
                     var JacParams = JacobiOp.ParameterUpdate;
                     var TmpParams = JacParams.AllocateParameters(CurrentState, Params);
                     var map = new CoordinateMapping(CurrentState);
@@ -1509,6 +1512,24 @@ namespace BoSSS.Application.Rheology {
                 newGrid = null;
                 old2NewGrid = null;
             }
+        }
+    }
+
+    class Idsource : LinearSource {
+        public Idsource(string _var) {
+            m_var = _var;
+        }
+
+        string m_var;
+
+        public override IList<string> ArgumentOrdering {
+            get {
+                return new string[] { m_var };
+            }
+        }
+
+        protected override double Source(double[] x, double[] parameters, double[] U) {
+            return U[0];
         }
     }
 }

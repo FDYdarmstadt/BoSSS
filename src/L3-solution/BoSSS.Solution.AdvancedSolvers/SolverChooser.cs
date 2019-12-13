@@ -1735,7 +1735,7 @@ namespace BoSSS.Solution {
                     ((OrthonormalizationMultigrid)levelSolver).IterationCallback =
                         delegate (int iter, double[] X, double[] Res, MultigridOperator op) {
                             double renorm = Res.MPI_L2Norm();
-                            Console.WriteLine("      OrthoMg: " + renorm);
+                            Console.WriteLine("      OrthoMg " +iter  + " : " + renorm);
                         };
 
 
