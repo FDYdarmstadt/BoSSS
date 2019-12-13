@@ -127,7 +127,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             m_ThisLevelIterations = 0;
         }
 
-        public ISolverSmootherTemplate Clone() {
+        public object Clone() {
             throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
         }
     }

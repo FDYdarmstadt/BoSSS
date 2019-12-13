@@ -30,7 +30,7 @@ namespace BoSSS.Solution.RheologyCommon {
     /// <summary>
     /// Convective part of constitutive equations for singlephase flow.
     /// </summary>
-    public class ConstitutiveEqns_Convective : IVolumeForm, IEdgeForm, IEquationComponentCoefficient {
+    public class ConstitutiveEqns_Convective : IVolumeForm, IEdgeForm, IEquationComponentCoefficient, ISupportsJacobianComponent {
         int Component;
         BoundaryCondMap<IncompressibleBcType> m_BcMap;
         protected double m_Weissenberg; // Weissenberg number
@@ -78,7 +78,7 @@ namespace BoSSS.Solution.RheologyCommon {
 
 
         public TermActivationFlags VolTerms {
-            get { return TermActivationFlags.GradUxV; }
+            get { return TermActivationFlags.GradUxV | TermActivationFlags.UxV; }
         }
 
         public TermActivationFlags BoundaryEdgeTerms {
@@ -91,43 +91,55 @@ namespace BoSSS.Solution.RheologyCommon {
 
         public IList<string> ArgumentOrdering {
             get {
+                string[] R;
+
                 switch (Component) {
                     case 0:
-                        return new string[] { VariableNames.StressXX };
+                    R = new string[] { VariableNames.StressXX };
+                    break;
                     case 1:
-                        return new string[] { VariableNames.StressXY };
+                    R = new string[] { VariableNames.StressXY };
+                    break;
                     case 2:
-                        return new string[] { VariableNames.StressYY };
+                    R = new string[] { VariableNames.StressYY };
+                    break;
                     default:
-                        throw new NotImplementedException();
+                    throw new NotImplementedException();
                 }
+
+                R = R.Cat(VariableNames.VelocityVector(2));
+
+                return R;
             }
         }
 
         public IList<string> ParameterOrdering {
             get {
-                return VariableNames.Velocity0Vector(2);
+                return null;
+                //return VariableNames.Velocity0Vector(2);
             }
         }
 
 
-        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] Tin, double[,] Grad_Tin, double Vin, double[] Grad_Vin) {
-            double[] Normale = inp.Normal;
+        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _Tin, double[,] Grad_Tin, double Vin, double[] Grad_Vin) {
+            Vector Normale = inp.Normal;
             double Tout;
+            double Tin = _Tin[0];
+            
 
             if (m_BcMap.EdgeTag2Type[inp.EdgeTag] == IncompressibleBcType.Wall || m_BcMap.EdgeTag2Type[inp.EdgeTag] == IncompressibleBcType.FreeSlip) {
-                Tout = Tin[0];
+                Tout = Tin;
             } else {
 
                 switch (Component) {
                     case 0:
-                        Tout = Tin[0];// StressFunction[inp.EdgeTag, 0, 0](inp.X, inp.time) * m_Weissenberg; // stress_XX
+                        Tout = Tin;// StressFunction[inp.EdgeTag, 0, 0](inp.X, inp.time) * m_Weissenberg; // stress_XX
                         break;
                     case 1:
-                        Tout = Tin[0];// StressFunction[inp.EdgeTag, 0, 1](inp.X, inp.time); // stress_XY
+                        Tout = Tin;// StressFunction[inp.EdgeTag, 0, 1](inp.X, inp.time); // stress_XY
                         break;
                     case 2:
-                        Tout = Tin[0];//StressFunction[inp.EdgeTag, 1, 1](inp.X, inp.time); // stress_YY
+                        Tout = Tin;//StressFunction[inp.EdgeTag, 1, 1](inp.X, inp.time); // stress_YY
                         break;
                     default:
                         throw new NotImplementedException();
@@ -139,9 +151,11 @@ namespace BoSSS.Solution.RheologyCommon {
             double flxIn = 0;
             double n_u1 = 0;
 
-            for (int d = 0; d < 2; d++) {
-                n_u1 += Normale[d] * 0.5 * (inp.Parameters_IN[d] + inp.Parameters_IN[d]);
-            }
+            //for (int d = 0; d < 2; d++) {
+            //    n_u1 += Normale[d] * 0.5 * (inp.Parameters_IN[d] + inp.Parameters_IN[d]);
+            //}
+            Vector Velocity_IN = new Vector(_Tin, 1, inp.D);
+            n_u1 = Normale * Velocity_IN;
 
             double factor;
             if (n_u1 < 0)
@@ -149,7 +163,7 @@ namespace BoSSS.Solution.RheologyCommon {
             else
                 factor = 1.0 - this.m_alpha;
 
-            res1 += factor * n_u1 * (Tout - Tin[0]);
+            res1 += factor * n_u1 * (Tout - Tin);
             flxIn = m_Weissenberg * res1 * Vin;
 
             return flxIn;
@@ -164,9 +178,12 @@ namespace BoSSS.Solution.RheologyCommon {
             double flxIn = 0;
             double n_u1 = 0;
 
-            for (int d = 0; d < 2; d++) {
-                n_u1 += Normale[d] * 0.5 * (inp.Parameters_IN[d] + inp.Parameters_OUT[d]);
-            }
+            //for (int d = 0; d < 2; d++) {
+            //    n_u1 += Normale[d] * 0.5 * (inp.Parameters_IN[d] + inp.Parameters_OUT[d]);
+            //}
+            Vector Velocity_IN = new Vector(Tin, 1, inp.D);
+            Vector Velocity_OT = new Vector(Tout, 1, inp.D);
+            n_u1 = 0.5 * (Normale * (Velocity_IN + Velocity_OT));
 
             double factor;
             if (n_u1 < 0)
@@ -184,9 +201,10 @@ namespace BoSSS.Solution.RheologyCommon {
             double n_u2 = 0;
 
             Normale.Scale(-1.0);
-            for (int d = 0; d < 2; d++) {
-                n_u2 += Normale[d] * 0.5 * (inp.Parameters_OUT[d] + inp.Parameters_IN[d]);
-            }
+            //for (int d = 0; d < 2; d++) {
+            //    n_u2 += Normale[d] * 0.5 * (inp.Parameters_OUT[d] + inp.Parameters_IN[d]);
+            //}
+            n_u2 = 0.5 * (Normale * (Velocity_IN + Velocity_OT));
 
             double factor2;
             if (n_u2 < 0)
@@ -201,18 +219,45 @@ namespace BoSSS.Solution.RheologyCommon {
         }
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] T, double[,] GradT, double V, double[] GradV) {
-            double res = 0.0;
+            //double res = 0.0;
+            //res += cpv.Parameters[0] * GradT[0, 0] + cpv.Parameters[1] * GradT[0, 1];
+            //return m_Weissenberg * res * V;
 
-            res += cpv.Parameters[0] * GradT[0, 0] + cpv.Parameters[1] * GradT[0, 1];
+            Vector Velocity = new Vector(T, 1, cpv.D);
+            //Velocity.x = 1;
+            //Velocity.y = 3;
 
+            Vector _GradT = GradT.GetRowPt(0);
+            //_GradT.x = 1;
+            //_GradT.y = -2;
+
+            double res = Velocity*_GradT;
             return m_Weissenberg * res * V;
-
+            //return 0.0;
         }
 
+        /// <summary>
+        /// Notifies new Weissenberg number
+        /// </summary>
         public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
             if (cs.UserDefinedValues.Keys.Contains("Weissenbergnumber")) {
                 m_Weissenberg = (double)cs.UserDefinedValues["Weissenbergnumber"];
             }
+        }
+
+        /// <summary>
+        /// Nonlinear Form in trial variable (U, resp. gradient of U) - 
+        /// using <see cref="EdgeFormDifferentiator"/> 
+        /// and <see cref="VolumeFormDifferentiator"/>.
+        /// </summary>
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            if (SpatialDimension != 2)
+                throw new NotImplementedException("Only supporting 2D.");
+
+            return new IEquationComponent[] {
+                new EdgeFormDifferentiator(this, SpatialDimension),
+                new VolumeFormDifferentiator(this, SpatialDimension)
+            };
         }
     }
 }

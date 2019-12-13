@@ -29,7 +29,7 @@ using System.Diagnostics;
 using ilPSP;
 
 namespace BoSSS.Application.Rheology {
-    class ConstitutiveEqns_Convective_old : IVolumeForm, IEdgeForm, IEquationComponentCoefficient {
+    class ConstitutiveEqns_Convective_old : IVolumeForm, IEdgeForm, IEquationComponentCoefficient, ISupportsJacobianComponent {
         int Component;
         BoundaryCondMap<IncompressibleBcType> m_BcMap;
         double m_Weissenberg; // Weissenberg number
@@ -85,27 +85,37 @@ namespace BoSSS.Application.Rheology {
         }
 
         public TermActivationFlags InnerEdgeTerms {
-            get { return TermActivationFlags.UxV | TermActivationFlags.V; }
+            get { return TermActivationFlags.UxV; }
         }
 
         public IList<string> ArgumentOrdering {
             get {
+                string[] R;
+
                 switch (Component) {
                     case 0:
-                        return new string[] { VariableNames.StressXX };
+                    R = new string[] { VariableNames.StressXX };
+                    break;
                     case 1:
-                        return new string[] { VariableNames.StressXY };
+                    R = new string[] { VariableNames.StressXY };
+                    break;
                     case 2:
-                        return new string[] { VariableNames.StressYY };
+                    R = new string[] { VariableNames.StressYY };
+                    break;
                     default:
-                        throw new NotImplementedException();
+                    throw new NotImplementedException();
                 }
+
+                R = R.Cat(VariableNames.VelocityVector(2));
+
+                return R;
             }
         }
 
         public IList<string> ParameterOrdering {
             get {
-                return VariableNames.Velocity0Vector(2);
+                return null;
+                //return VariableNames.Velocity0Vector(2);
             }
         }
 
@@ -139,9 +149,12 @@ namespace BoSSS.Application.Rheology {
             double flxIn = 0;
             double n_u1 = 0;
 
-            for (int d = 0; d < 2; d++) {
-                n_u1 += Normale[d] * 0.5 * (inp.Parameters_IN[d] + inp.Parameters_IN[d]);
-            }
+            //for (int d = 0; d < 2; d++) {
+            //    n_u1 += Normale[d] * 0.5 * (inp.Parameters_IN[d] + inp.Parameters_IN[d]);
+            //}
+            Vector Velocity_IN = new Vector(Tin, 1, inp.D);
+            n_u1 = 0.5 * (Normale * Velocity_IN);
+
 
             double factor;
             if (n_u1 < 0)
@@ -164,9 +177,13 @@ namespace BoSSS.Application.Rheology {
             double flxIn = 0;
             double n_u1 = 0;
 
-            for (int d = 0; d < 2; d++) {
-                n_u1 += Normale[d] * 0.5 * (inp.Parameters_IN[d] + inp.Parameters_OUT[d]);
-            }
+
+            //for (int d = 0; d < 2; d++) {
+            //    n_u1 += Normale[d] * 0.5 * (inp.Parameters_IN[d] + inp.Parameters_OUT[d]);
+            //}
+            Vector Velocity_IN = new Vector(Tin, 1, inp.D);
+            Vector Velocity_OT = new Vector(Tout, 1, inp.D);
+            n_u1 = 0.5 * (Normale * (Velocity_IN + Velocity_OT));
 
             double factor;
             if (n_u1 < 0)
@@ -184,9 +201,11 @@ namespace BoSSS.Application.Rheology {
             double n_u2 = 0;
 
             Normale.Scale(-1.0);
-            for (int d = 0; d < 2; d++) {
-                n_u2 += Normale[d] * 0.5 * (inp.Parameters_OUT[d] + inp.Parameters_IN[d]);
-            }
+            //for (int d = 0; d < 2; d++) {
+            //    n_u2 += Normale[d] * 0.5 * (inp.Parameters_OUT[d] + inp.Parameters_IN[d]);
+            //}
+            n_u2 = 0.5 * (Normale * (Velocity_IN + Velocity_OT));
+
 
             double factor2;
             if (n_u2 < 0)
@@ -203,7 +222,10 @@ namespace BoSSS.Application.Rheology {
         public double VolumeForm(ref CommonParamsVol cpv, double[] T, double[,] GradT, double V, double[] GradV) {
             double res = 0.0;
 
-            res += cpv.Parameters[0] * GradT[0, 0] + cpv.Parameters[1] * GradT[0, 1];
+            Vector Velocity = new Vector(T, 1, cpv.D);
+            Vector _GradT = GradT.GetRowPt(0);
+
+            res += Velocity*_GradT;
 
             return m_Weissenberg * res * V;
 
@@ -214,6 +236,19 @@ namespace BoSSS.Application.Rheology {
                 m_Weissenberg = (double)cs.UserDefinedValues["Weissenbergnumber"];
                 //Console.WriteLine("Weissenbergnumber = {0}", m_Weissenberg);
             }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            if (SpatialDimension != 2)
+                throw new NotImplementedException("Only supporting 2D.");
+
+            return new IEquationComponent[] {
+                new EdgeFormDifferentiator(this, SpatialDimension),
+                new VolumeFormDifferentiator(this, SpatialDimension)
+            };
         }
     }
 }

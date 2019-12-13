@@ -38,6 +38,18 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// <summary>
         /// Creates a sequence of aggregated grids, suitable for a multigrid algorithm
         /// </summary>
+        /// <param name="Grid">original grid</param>
+        /// <param name="MaxDepth">maximum number of refinements</param>
+        /// <returns></returns>
+        public static AggregationGrid[] CreateSequence(IGrid Grid, int MaxDepth = -1) {
+            AggregationGridData[] seq = CreateSequence(Grid.iGridData, MaxDepth);
+            return seq.Select(agd => (AggregationGrid)agd.Grid).ToArray();
+        }
+
+
+        /// <summary>
+        /// Creates a sequence of aggregated grids, suitable for a multigrid algorithm
+        /// </summary>
         /// <param name="GridDat">original grid</param>
         /// <param name="MaxDepth">maximum number of refinements</param>
         /// <returns></returns>
@@ -114,9 +126,19 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// <summary>
         /// creates an initial aggregated grid which is in fact equivalent to <paramref name="g"/>
         /// </summary>
-        public static AggregationGridData ZeroAggregation(IGridData g) {
+        public static AggregationGridData ZeroAggregation(IGridData gd) {
+            var g = gd.Grid;
+            var gc = ZeroAggregation(g);
+            return ((AggregationGridData)gc.iGridData);
+
+        }
+
+        /// <summary>
+        /// creates an initial aggregated grid which is in fact equivalent to <paramref name="g"/>
+        /// </summary>
+        public static AggregationGrid ZeroAggregation(IGrid g) {
             //var Cls = g.Cells;
-            int J = g.iLogicalCells.NoOfLocalUpdatedCells;
+            int J = g.CellPartitioning.LocalLength;
             int D = g.SpatialDimension;
 
             int[][] AggregateCells = new int[J][];
@@ -124,7 +146,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 AggregateCells[j] = new int[] { j };
             }
 
-            AggregationGridData ret = new AggregationGridData(g, AggregateCells);
+            AggregationGrid ret = new AggregationGrid(g, AggregateCells);
 
             return ret;
         }
@@ -179,11 +201,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                     aggCell.Add(jCell);
                     UsedCellMarker[jCell] = true;
 
-
-
                     NeighCandidates.Clear();
-
-
 
                     foreach (int jNeigh in Neighbourship[jCell])
                     {
@@ -206,12 +224,10 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                     }
                     int[] intkabumm = kabumm.ToArray();
                     Array.Sort(intkabumm);
-                    for(int ikabumm=0; ikabumm < intkabumm.Length-1; ikabumm++)
-                    {
+                    for (int ikabumm = 0; ikabumm < intkabumm.Length - 1; ikabumm++) {
                         if (intkabumm[ikabumm] == jCell)
                             continue;
-                        if (intkabumm[ikabumm] == intkabumm[ikabumm + 1])
-                        {
+                        if (intkabumm[ikabumm] == intkabumm[ikabumm + 1]) {
                             NeighCandidates.Add(intkabumm[ikabumm]);
                             break;
                         }
@@ -223,8 +239,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                     {
                         int[] aggCell_Fix = aggCell.ToArray();
 #if DEBUG
-                        foreach (int j in aggCell_Fix)
-                        {
+                        foreach (int j in aggCell_Fix) {
                             Debug.Assert(j >= 0);
                             Debug.Assert(j < Jloc);
                             Debug.Assert(UsedCellMarker[j] == true);

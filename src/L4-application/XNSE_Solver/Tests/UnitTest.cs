@@ -70,6 +70,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             var Tst = new ViscosityJumpTest();
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode);
+            //C.ImmediatePlotPeriod = 1;
+            //C.SuperSampling = 3;
+            
             C.SkipSolveAndEvaluateResidual = C.AdvancedDiscretizationOptions.CellAgglomerationThreshold <= 1e-6;
                 
             GenericTest(Tst, C);

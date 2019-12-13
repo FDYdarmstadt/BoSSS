@@ -17,6 +17,7 @@ limitations under the License.
 using System;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
+using ilPSP;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
@@ -59,18 +60,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// follows FerzigerPeric2001 (p. 315ff). The flow is prescribed to be
         /// normal to the edge.
         /// </summary>
-        /// <param name="time">
-        /// <see cref="BoundaryCondition.GetBoundaryState"/>
-        /// </param>
-        /// <param name="x">
-        /// <see cref="BoundaryCondition.GetBoundaryState"/>
-        /// </param>
-        /// <param name="normal">
-        /// <see cref="BoundaryCondition.GetBoundaryState"/>
-        /// </param>
-        /// <param name="stateIn">
-        /// <see cref="BoundaryCondition.GetBoundaryState"/>
-        /// </param>
         /// <returns>
         /// \f$ 
         /// T^+ = T_t(x) \frac{p_t(x)}{p^-}^{\frac{1.0 - \gamma}{\gamma}}
@@ -83,11 +72,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// (\rho^+, -\rho^+ |\vec{u^+}| \vec{n}, \frac{p}{\kappa - 1} + \frac{rho^+ |\vec{u^+}|^2}{2})^T
         /// \f$ 
         /// </returns>
-        public override StateVector GetBoundaryState(double time, double[] x, double[] normal, StateVector stateIn) {
+        public override StateVector GetBoundaryState(double time, Vector x, Vector normal, StateVector stateIn) {
             double gamma = config.EquationOfState.HeatCapacityRatio;
             double Mach = config.MachNumber;
             ilPSP.Vector inwardNormal = new ilPSP.Vector(stateIn.Dimension);
-            for (int i = 0; i < normal.Length; i++) {
+            for (int i = 0; i < normal.Dim; i++) {
                 inwardNormal[i] = -normal[i];
             }
 
@@ -99,7 +88,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
             double rho = p / T;
 
             double VelocitySquare = 2.0 * T / ((gamma - 1.0) * (Mach* Mach)) * (T0/T - 1.0);
-            ilPSP.Vector velocityOut = Math.Sqrt(VelocitySquare) * inwardNormal;
+            Vector velocityOut = Math.Sqrt(VelocitySquare) * inwardNormal;
 
             return StateVector.FromPrimitiveQuantities(stateIn.Material, rho, velocityOut, p);
         }

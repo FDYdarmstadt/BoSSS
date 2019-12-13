@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Application.IBM_Solver {
     public class HardcodedPrecTest {

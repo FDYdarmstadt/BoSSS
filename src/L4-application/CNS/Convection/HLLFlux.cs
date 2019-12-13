@@ -41,25 +41,6 @@ namespace CNS.Convection {
         /// Evaluates the HLL flux as described in BattenEtAl1997 in the form
         /// of equation 24.
         /// </summary>
-        /// <param name="x">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <param name="time">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <param name="stateIn">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <param name="stateOut">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <param name="normal">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <param name="edgeIndex">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <returns>See BattenEtAl1997, equation 24</returns>
         public override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex) {
             double waveSpeedIn;
             double waveSpeedOut;

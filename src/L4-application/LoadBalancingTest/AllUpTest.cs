@@ -53,7 +53,7 @@ namespace BoSSS.Application.LoadBalancingTest {
             [Values(1, 2)] int DGdegree) {
             LoadBalancingTestMain p = null;
             
-            BoSSS.Solution.Application._Main(
+            BoSSS.Solution.Application<AppControlSolver>._Main(
                 new string[0],
                 true,
                 delegate () {

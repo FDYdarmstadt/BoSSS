@@ -10,68 +10,102 @@ using System.Threading.Tasks;
 namespace BoSSS.Foundation {
 
     /// <summary>
-    /// Differentiation of a volume form, used e.g.to obtain a Jacobian of an operator, see <see cref="SpatialOperator.GetJacobiOperator"/>.
+    /// Base-Functionality for utilities for computation of Spatial Operator Jacobians, (<see cref="SpatialOperator.GetJacobiOperator"/>,
+    /// i.e. approximate differentiation of equation components.
     /// </summary>
-    public class VolumeFormDifferentiator : IVolumeForm {
+    abstract public class FormDifferentiatorCommon : IEquationComponent, IEquationComponentChecking, IEquationComponentCoefficient {
+
 
         /// <summary>
         /// %
         /// </summary>
-        public VolumeFormDifferentiator(IVolumeForm vf, int SpatialDimension) {
-            m_VolForm = vf;
+        protected FormDifferentiatorCommon(IEquationComponent vf, TermActivationFlags __Terms, int SpatialDimension) {
+            m_OrgForm = vf;
             m_eps = Math.Sqrt(BLAS.MachineEps);
+            m_SpatialDimension = SpatialDimension;
 
-            VolTerms = vf.VolTerms;
-            if ((VolTerms & (TermActivationFlags.GradUxV | TermActivationFlags.UxV)) != 0)
-                VolTerms |= TermActivationFlags.V;
-            if ((VolTerms & (TermActivationFlags.GradUxGradV | TermActivationFlags.UxGradV)) != 0)
-                VolTerms |= TermActivationFlags.GradV;
+            Terms = __Terms;
+            if ((Terms & (TermActivationFlags.GradUxV | TermActivationFlags.UxV)) != 0)
+                Terms |= TermActivationFlags.V;
+            if ((Terms & (TermActivationFlags.GradUxGradV | TermActivationFlags.UxGradV)) != 0)
+                Terms |= TermActivationFlags.GradV;
 
-            ParamUreq = (vf.VolTerms & (TermActivationFlags.UxGradV | TermActivationFlags.UxV)) != 0;
-            ParamGradUreq = (vf.VolTerms & (TermActivationFlags.GradUxGradV | TermActivationFlags.GradUxV)) != 0;
-            
+            // Parameters for form derivative
+            // ==============================
+
+            ParamUreq = (Terms & (TermActivationFlags.UxGradV | TermActivationFlags.UxV)) != 0;
+            ParamGradUreq = (Terms & (TermActivationFlags.GradUxGradV | TermActivationFlags.GradUxV)) != 0;
+
             m_ParameterOrdering = new string[0];
 
+            // original parameters
+            OffsetOrgParams = m_ParameterOrdering.Length;
+            if (vf.ParameterOrdering != null && vf.ParameterOrdering.Count > 0) {
+                m_ParameterOrdering = m_ParameterOrdering.Cat(vf.ParameterOrdering);
+            }
+
+            // U in linearization point
+            OffsetUparams = m_ParameterOrdering.Length;
             if (ParamUreq && vf.ArgumentOrdering != null && vf.ArgumentOrdering.Count > 0)
                 m_ParameterOrdering = m_ParameterOrdering.Cat(vf.ArgumentOrdering.Select(fn => fn + "_lin"));
 
+            // derivatives in linearization point
             OffsetGradUparams = m_ParameterOrdering.Length;
             if (ParamGradUreq && vf.ArgumentOrdering != null && vf.ArgumentOrdering.Count > 0) {
                 foreach (string arg in vf.ArgumentOrdering) {
                     m_ParameterOrdering = m_ParameterOrdering.Cat(SpatialDimension.ForLoop(d => arg + "_lin_d[" + d + "]"));
                 }
             }
-
-            OffsetOrgParams = m_ParameterOrdering.Length;
-            if (vf.ParameterOrdering != null && vf.ParameterOrdering.Count > 0) {
-                m_ParameterOrdering = m_ParameterOrdering.Cat(vf.ParameterOrdering);
-            }
-
-        }
-
-        bool ParamUreq;
-
-        bool ParamGradUreq;
-        int OffsetGradUparams;
-
-        int OffsetOrgParams;
-
-        double m_eps;
-
-        IVolumeForm m_VolForm;
-
-        /// <summary>
-        /// %
-        /// </summary>
-        public TermActivationFlags VolTerms {
-            get;
-            private set;
         }
 
         /// <summary>
+        /// required terms for the3 linearization 
+        /// </summary>
+        protected TermActivationFlags Terms;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        protected int m_SpatialDimension;
+
+        /// <summary>
+        /// Differentiation w.r.t. Trial Variable required.
+        /// </summary>
+        protected bool ParamUreq;
+
+        /// <summary>
+        /// Differentiation w.r.t. Trial Variable Gradient required.
+        /// </summary>
+        protected bool ParamGradUreq;
+
+        /// <summary>
+        /// Offset into parameters to access Trial variable (called 'U') value at linearization point 
+        /// </summary>
+        protected int OffsetUparams;
+
+
+        /// <summary>
+        /// Offset into parameters to access Trial variable gradient (called 'U') value at linearization point 
+        /// </summary>
+        protected int OffsetGradUparams;
+
+        /// <summary>
+        /// Offset into parameters to access parameters of original form
+        /// </summary>
+        protected int OffsetOrgParams;
+        
+        /// <summary>
+        /// Relative finite difference length
+        /// </summary>
+        protected double m_eps;
+
+        IEquationComponent m_OrgForm;
+
+       
+        /// <summary>
         /// %
         /// </summary>
-        public IList<string> ArgumentOrdering => m_VolForm.ArgumentOrdering;
+        public IList<string> ArgumentOrdering => m_OrgForm.ArgumentOrdering;
 
         string[] m_ParameterOrdering;
 
@@ -90,69 +124,179 @@ namespace BoSSS.Foundation {
         public bool IgnoreVectorizedImplementation => false;
 
         /// <summary>
+        /// Extract parameters for original form.
+        /// </summary>
+        protected void GetOrgParams(double[] Parameters, out double[] OrgParams) {
+            int NoOfParams = m_OrgForm.ParameterOrdering != null ? m_OrgForm.ParameterOrdering.Count : 0;
+            OrgParams = new double[NoOfParams];
+            OrgParams.SetSubVector(Parameters, OffsetOrgParams, NoOfParams);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        protected double GetTmpTrialVals(double[] Parameters, out double[] Utmp, out double[,] GradUtmp) {
+            int GAMMA = m_OrgForm.ArgumentOrdering.Count;
+            int D = m_SpatialDimension;
+            double eps = m_eps;
+
+            double delta = 0;
+            Utmp = new double[GAMMA];
+            GradUtmp = new double[GAMMA, D];
+            for (int iVar = 0; iVar < GAMMA; iVar++) {
+                if (ParamUreq) {
+                    Utmp[iVar] = Parameters[iVar + OffsetUparams];
+                    delta += Utmp[iVar].Pow2();
+                }
+                if (ParamGradUreq) {
+                    for (int d = 0; d < D; d++) {
+                        GradUtmp[iVar, d] = Parameters[iVar * D + d + OffsetGradUparams];
+                        delta += GradUtmp[iVar, d].Pow2();
+                    }
+                }
+            }
+
+            delta = Math.Max(eps, Math.Sqrt(delta) * eps);
+            Debug.Assert(delta > 0);
+            return delta;
+        }
+
+        /// <summary>
+        /// passes the coefficients to original form
+        /// </summary>
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            if(m_OrgForm is IEquationComponentCoefficient eqc) {
+                eqc.CoefficientUpdate(cs, DomainDGdeg, TestDGdeg);
+            }
+        }
+    }
+
+
+
+    /// <summary>
+    /// Differentiation of a volume form, used e.g.to obtain a Jacobian of an operator, see <see cref="SpatialOperator.GetJacobiOperator"/>.
+    /// </summary>
+    public class VolumeFormDifferentiator : FormDifferentiatorCommon, IVolumeForm {
+
+        IVolumeForm m_VolForm;
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public VolumeFormDifferentiator(IVolumeForm vf, int SpatialDimension) : base(vf, vf.VolTerms, SpatialDimension) {
+            m_VolForm = vf;
+        }
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public TermActivationFlags VolTerms {
+            get {
+                return base.Terms;
+            }
+        }
+
+        /// <summary>
         /// %
         /// </summary>
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double ret = 0.0;
             int GAMMA = m_VolForm.ArgumentOrdering.Count;
+            int D = cpv.D;
+            Debug.Assert(D == m_SpatialDimension, "Spatial Dimension Mismatch.");
 
-
-            double eps = m_eps;
-            double[] Utmp = new double[GAMMA];
-            Utmp.SetSubVector(cpv.Parameters, 0, GAMMA);
-
-            int NoOfParams = m_VolForm.ParameterOrdering != null ? m_VolForm.ParameterOrdering.Count : 0;
-            double[] OrgParams = new double[NoOfParams];
-            OrgParams.SetSubVector(cpv.Parameters, GAMMA, NoOfParams);
+            double delta = GetTmpTrialVals(cpv.Parameters, out var Utmp, out var GradUtmp);
+            
             CommonParamsVol clonedParams = cpv;
             Debug.Assert(object.ReferenceEquals(cpv, clonedParams) == false);
-            clonedParams.Parameters = OrgParams;
+            GetOrgParams(cpv.Parameters, out clonedParams.Parameters);
 
-
-            //double[] dU = new double[GAMMA];
-            double f0 = m_VolForm.VolumeForm(ref clonedParams, Utmp, null, V, GradV);
+            double f0 = m_VolForm.VolumeForm(ref clonedParams, Utmp, GradUtmp, V, GradV);
             ret += f0; // affine contribution - contains V and GradV contribution
 
             for (int iVar = 0; iVar < GAMMA; iVar++) { // loop over trial variables
+
                 if (((m_VolForm.VolTerms & (TermActivationFlags.UxV | TermActivationFlags.UxGradV)) != 0)
                     ) {
                     //&& (U[iVar] != 0.0)) { // perf. opt.
-                    // add perturbation
-                    double bkup = Utmp[iVar];
-                    double delta = Math.Abs(U[iVar]) * eps;
-                    delta = eps;
-                    Debug.Assert(delta > 0);
-                    Utmp[iVar] += delta;
-
-                    // flux eval
-                    double f1 = m_VolForm.VolumeForm(ref clonedParams, Utmp, null, V, GradV);
-                    if (double.IsInfinity(f1))
-                        throw new ArithmeticException();
-                    if (double.IsNaN(f1))
-                        throw new ArithmeticException();
-
-                    // restore un-perturbed state
-                    Utmp[iVar] = bkup;
-
-                    // compute finite difference
-                    double dU_iVar = (f1 - f0) / delta;
-                    if (double.IsInfinity(dU_iVar))
-                        throw new ArithmeticException();
-                    if (double.IsNaN(dU_iVar))
-                        throw new ArithmeticException();
-
-                    // inner product
-                    ret += dU_iVar * U[iVar];
-                    ret -= dU_iVar * Utmp[iVar]; // subtract affine contribution
+                    ret += Diff(ref Utmp[iVar], U[iVar], ref clonedParams, Utmp, GradUtmp, V, GradV, delta, f0, -1, iVar);
                 }
 
-                if (((m_VolForm.VolTerms & (TermActivationFlags.GradUxGradV | TermActivationFlags.GradUxGradV)) != 0)
-                    && (GradU.GetRow(iVar).L2NormPow2() != 0.0)) {
+                if (((m_VolForm.VolTerms & (TermActivationFlags.GradUxGradV | TermActivationFlags.GradUxV)) != 0)
+                    //&& (GradU.GetRow(iVar).L2NormPow2() != 0.0)) {
+                    ) {
 
-                    throw new NotImplementedException("todo");
+                    for (int d = 0; d < D; d++) {
+                        ret += Diff(ref GradUtmp[iVar, d], GradU[iVar, d], ref clonedParams, Utmp, GradUtmp, V, GradV, delta, f0, d, iVar);
+                    }
                 }
             }
 
+            return ret;
+        }
+
+        private double Diff(ref double PertubVar, double Var,
+            ref CommonParamsVol clonedParams, 
+            double[] Utmp, double[,] GradUtmp, double V, double[] GradV, 
+            double delta, double f0,
+            int d, int iVar) {
+            
+            // add perturbation
+            double bkup = PertubVar;
+            PertubVar += delta;
+            Debug.Assert(delta > 0);
+
+            // flux eval
+            double f1 = m_VolForm.VolumeForm(ref clonedParams, Utmp, GradUtmp, V, GradV);
+#if DEBUG
+            if (double.IsInfinity(f1))
+                throw new ArithmeticException();
+            if (double.IsNaN(f1))
+                throw new ArithmeticException();
+#endif            
+
+            // compute finite difference
+            double dU_iVar = (f1 - f0) / delta;
+            if (double.IsInfinity(dU_iVar))
+                throw new ArithmeticException();
+            if (double.IsNaN(dU_iVar))
+                throw new ArithmeticException();
+
+            // restore un-perturbed state
+            PertubVar = bkup;
+
+            // test
+            /*
+            if(V == 1 && GradV.L2Norm() == 0) {
+                double u = Utmp[1];
+                double v = Utmp[2];
+                double Tx = GradUtmp[0, 0];
+                double Ty = GradUtmp[0, 1];
+
+                double soll;
+                if(d < 0 && iVar == 1) {
+                    soll = Tx;
+                } else if(d < 0 && iVar == 2) {
+                    soll = Ty;
+                } else if(d == 0 && iVar == 0) {
+                    soll = u;
+                } else if(d == 1 && iVar == 0) {
+                    soll = v;
+                } else {
+                    soll = 0;
+                }
+
+                Debug.Assert((dU_iVar - soll).Abs() < delta*1000);
+
+            }
+            */
+
+
+
+            // inner product
+            double ret = 0;
+            ret += dU_iVar * Var;
+            ret -= dU_iVar * PertubVar; // subtract affine contribution
             return ret;
         }
     }
@@ -161,251 +305,221 @@ namespace BoSSS.Foundation {
     /// <summary>
     /// Differentiation of a edge form, used e.g.to obtain a Jacobian of an operator, see <see cref="SpatialOperator.GetJacobiOperator"/>.
     /// </summary>
-    public class EdgeFormDifferentiator : IEdgeForm {
+    public class EdgeFormDifferentiator : FormDifferentiatorCommon, IEdgeForm {
+
+        IEdgeForm m_EdgForm;
 
         /// <summary>
         /// ctor
         /// </summary>
-        public EdgeFormDifferentiator(IEdgeForm ef, int SpatialDimension) {
+        public EdgeFormDifferentiator(IEdgeForm ef, int SpatialDimension) : 
+            base(ef, ef.InnerEdgeTerms | ef.BoundaryEdgeTerms, SpatialDimension) //
+        {
             m_EdgForm = ef;
-            m_eps = Math.Sqrt(BLAS.MachineEps);
-
-            InnerEdgeTerms = ef.InnerEdgeTerms;
-            if ((InnerEdgeTerms & (TermActivationFlags.GradUxV | TermActivationFlags.UxV)) != 0)
-                InnerEdgeTerms |= TermActivationFlags.V;
-            if ((InnerEdgeTerms & (TermActivationFlags.GradUxGradV | TermActivationFlags.UxGradV)) != 0)
-                InnerEdgeTerms |= TermActivationFlags.GradV;
-
-            BoundaryEdgeTerms = ef.BoundaryEdgeTerms;
-            if ((BoundaryEdgeTerms & (TermActivationFlags.GradUxV | TermActivationFlags.UxV)) != 0)
-                BoundaryEdgeTerms |= TermActivationFlags.V;
-            if ((BoundaryEdgeTerms & (TermActivationFlags.GradUxGradV | TermActivationFlags.UxGradV)) != 0)
-                BoundaryEdgeTerms |= TermActivationFlags.GradV;
-
-            ParamUreq = ((ef.InnerEdgeTerms | ef.BoundaryEdgeTerms) & (TermActivationFlags.UxGradV | TermActivationFlags.UxV)) != 0;
-            ParamGradUreq = ((ef.InnerEdgeTerms | ef.BoundaryEdgeTerms) & (TermActivationFlags.GradUxGradV | TermActivationFlags.GradUxV)) != 0;
-            
-            m_ParameterOrdering = new string[0];
-
-            if (ParamUreq && ef.ArgumentOrdering != null && ef.ArgumentOrdering.Count > 0)
-                m_ParameterOrdering = m_ParameterOrdering.Cat(ef.ArgumentOrdering.Select(fn => fn + "_lin"));
-
-            OffsetGradUparams = m_ParameterOrdering.Length;
-            if (ParamGradUreq && ef.ArgumentOrdering != null && ef.ArgumentOrdering.Count > 0) {
-                foreach (string arg in ef.ArgumentOrdering) {
-                    m_ParameterOrdering = m_ParameterOrdering.Cat(SpatialDimension.ForLoop(d => arg + "_lin_d[" + d + "]"));
-                }
-            }
-
-            OffsetOrgParams = m_ParameterOrdering.Length;
-            if (ef.ParameterOrdering != null && ef.ParameterOrdering.Count > 0) {
-                m_ParameterOrdering = m_ParameterOrdering.Cat(ef.ParameterOrdering);
-            }
-
         }
-
-        bool ParamUreq;
-
-        bool ParamGradUreq;
-        int OffsetGradUparams;
-
-        int OffsetOrgParams;
-
-        double m_eps;
-
-        IEdgeForm m_EdgForm;
 
         /// <summary>
         /// %
         /// </summary>
         public TermActivationFlags InnerEdgeTerms {
-            get;
-            private set;
+            get {
+                return base.Terms;
+            }
         }
 
         /// <summary>
         /// %
         /// </summary>
         public TermActivationFlags BoundaryEdgeTerms {
-            get;
-            private set;
-        }
-
-        /// <summary>
-        /// %
-        /// </summary>
-        public IList<string> ArgumentOrdering => m_EdgForm.ArgumentOrdering;
-
-        string[] m_ParameterOrdering;
-
-        /// <summary>
-        /// %
-        /// </summary>
-        public IList<string> ParameterOrdering {
             get {
-                return m_ParameterOrdering;
+                return base.Terms;
             }
         }
 
-        /// <summary>
-        /// %
-        /// </summary>
-        public bool IgnoreVectorizedImplementation => false;
+        //static public int SetDir = 0;
+        static public int Dir = 0;
+
 
         public double InnerEdgeForm(ref CommonParams inp, double[] U_IN, double[] U_OT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
             double ret = 0.0;
             int GAMMA = m_EdgForm.ArgumentOrdering.Count;
-
-            double eps = m_eps;
-
-            int NoOfParams = m_EdgForm.ParameterOrdering != null ? m_EdgForm.ParameterOrdering.Count : 0;
-            double[] OrgParams_IN = new double[NoOfParams];
-            double[] OrgParams_OT = new double[NoOfParams];
-            OrgParams_IN.SetSubVector(inp.Parameters_IN, GAMMA, NoOfParams);
-            OrgParams_OT.SetSubVector(inp.Parameters_OUT, GAMMA, NoOfParams);
-
+            int D = inp.D;
+            Debug.Assert(D == m_SpatialDimension, "spatial dimension mismatch");
+            
             CommonParams clonedParams = inp;
             Debug.Assert(object.ReferenceEquals(inp, clonedParams) == false);
-            clonedParams.Parameters_IN = OrgParams_IN;
-            clonedParams.Parameters_OUT = OrgParams_OT;
+            GetOrgParams(inp.Parameters_IN, out clonedParams.Parameters_IN);
+            GetOrgParams(inp.Parameters_OUT, out clonedParams.Parameters_OUT);
+            
+            double deltaIn = GetTmpTrialVals(inp.Parameters_IN, out var U_IN_temp, out var GradU_IN_temp);
+            double deltaOt = GetTmpTrialVals(inp.Parameters_OUT, out var U_OT_temp, out var GradU_OT_temp);
+            double delta = Math.Max(deltaIn, deltaOt);
 
-            double[] U_IN_temp = new double[GAMMA];
-            double[] U_OT_temp = new double[GAMMA];
-            U_IN_temp.SetSubVector(inp.Parameters_IN, 0, GAMMA);
-            U_OT_temp.SetSubVector(inp.Parameters_OUT, 0, GAMMA);
 
-
-            //double[] dU = new double[GAMMA];
-            double f0 = m_EdgForm.InnerEdgeForm(ref clonedParams, U_IN_temp, U_OT_temp, null, null, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
+            //SetDir = 0;
+            
+            double f0 = m_EdgForm.InnerEdgeForm(ref clonedParams, U_IN_temp, U_OT_temp, GradU_IN_temp, GradU_OT_temp, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
+            
             ret += f0; // affine contribution - contains V and GradV contribution
+
             for (int iVar = 0; iVar < GAMMA; iVar++) { // loop over trial variables
                 if (((m_EdgForm.InnerEdgeTerms & (TermActivationFlags.UxV | TermActivationFlags.UxGradV)) != 0)) {
                     //if (U_IN[iVar] != 0.0) {
                     {
-                        // add perturbation
-                        double bkup = U_IN_temp[iVar];
-                        double delta = Math.Abs(U_IN[iVar]) * eps;
-                        delta = eps;
-                        Debug.Assert(delta > 0);
-                        U_IN_temp[iVar] += delta;
+                        //if (U_IN[iVar] != 0.0 && (_vIN != 0 || _vOUT != 0))
+                        //    Console.Write("");
 
-                        // flux eval
-                        double f1 = m_EdgForm.InnerEdgeForm(ref clonedParams, U_IN_temp, U_OT_temp, null, null, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
-                        if (double.IsInfinity(f1))
-                            throw new ArithmeticException();
-                        if (double.IsNaN(f1))
-                            throw new ArithmeticException();
+                        ret += Diff(ref U_IN_temp[iVar], U_IN[iVar], 
+                            ref clonedParams, U_IN_temp, U_OT_temp, GradU_IN_temp, GradU_OT_temp, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT, 
+                            delta, f0);
 
-                        // restore un-perturbed state
-                        U_IN_temp[iVar] = bkup;
-
-                        // compute finite difference
-                        double dU_iVar = (f1 - f0) / delta;
-                        if (double.IsInfinity(dU_iVar))
-                            throw new ArithmeticException();
-                        if (double.IsNaN(dU_iVar))
-                            throw new ArithmeticException();
-
-                        // inner product
-                        ret += dU_iVar * U_IN[iVar];
-                        ret -= dU_iVar * U_IN_temp[iVar]; // subtract affine contribution
+                       
                     }
 
                     //if(U_OT[iVar] != 0.0) {
                     {
-                        // add perturbation
-                        double bkup = U_OT_temp[iVar];
-                        double delta = Math.Abs(U_OT[iVar]) * eps;
-                        delta = eps;
-                        Debug.Assert(delta > 0);
-                        U_OT_temp[iVar] += delta;
+                        //if (U_OT[iVar] != 0.0 && (_vIN != 0 || _vOUT != 0))
+                        //    Console.Write("");
 
-                        // flux eval
-                        double f1 = m_EdgForm.InnerEdgeForm(ref clonedParams, U_IN_temp, U_OT_temp, null, null, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
-                        if (double.IsInfinity(f1))
-                            throw new ArithmeticException();
-                        if (double.IsNaN(f1))
-                            throw new ArithmeticException();
+                        ret += Diff(ref U_OT_temp[iVar], U_OT[iVar], 
+                            ref clonedParams, U_IN_temp, U_OT_temp, GradU_IN_temp, GradU_OT_temp, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT, 
+                            delta, f0);
 
-                        // restore un-perturbed state
-                        U_OT_temp[iVar] = bkup;
+                       
+                    }
+                }
 
-                        // compute finite difference
-                        double dU_iVar = (f1 - f0) / delta;
-                        if (double.IsInfinity(dU_iVar))
-                            throw new ArithmeticException();
-                        if (double.IsNaN(dU_iVar))
-                            throw new ArithmeticException();
+                if (((m_EdgForm.InnerEdgeTerms & (TermActivationFlags.GradUxV | TermActivationFlags.GradUxGradV)) != 0)) {
+                    for (int d = 0; d < D; d++) {
+                        //if (U_IN[iVar] != 0.0) {
+                        {
+                            ret += Diff(ref GradU_IN_temp[iVar, d], _Grad_uIN[iVar, d], 
+                                ref clonedParams, U_IN_temp, U_OT_temp, GradU_IN_temp, GradU_OT_temp, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT, 
+                                delta, f0);
+                        }
 
-                        // inner product
-                        ret += dU_iVar * U_OT[iVar];
-                        ret -= dU_iVar * U_OT_temp[iVar]; // subtract affine contribution
+                        //if(U_OT[iVar] != 0.0) {
+                        {
+                            ret += Diff(ref GradU_OT_temp[iVar, d], _Grad_uOUT[iVar, d], 
+                                ref clonedParams, U_IN_temp, U_OT_temp, GradU_IN_temp, GradU_OT_temp, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT, 
+                                delta, f0);
+                        }
                     }
                 }
 
             }
 
+            //Dir = 0;
             return ret;
         }
 
-        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] U_IN, double[,] _Grad_uA, double _vIN, double[] _Grad_vIN) {
+        private double Diff(
+            ref double PertubVar, double Var,
+            ref CommonParams clonedParams, 
+            double[] U_IN_temp, double[] U_OT_temp, double[,] GradU_IN_temp, double[,] GradU_OT_temp,
+            double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT, double delta, double f0) {
+
+            // add perturbation
+            double bkup = PertubVar;
+            PertubVar += delta;
+
+            // flux eval
+            double f1 = m_EdgForm.InnerEdgeForm(ref clonedParams, U_IN_temp, U_OT_temp, GradU_IN_temp, GradU_OT_temp, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
+#if DEBUG
+            if (double.IsInfinity(f1))
+                throw new ArithmeticException();
+            if (double.IsNaN(f1))
+                throw new ArithmeticException();
+#endif
+
+            // compute finite difference
+            double dU_iVar = (f1 - f0) / delta;
+            if (double.IsInfinity(dU_iVar))
+                throw new ArithmeticException();
+            if (double.IsNaN(dU_iVar))
+                throw new ArithmeticException();
+
+            // restore un-perturbed state
+            PertubVar = bkup;
+
+            // inner product
+            double ret = 0;
+            ret += dU_iVar * Var;
+            ret -= dU_iVar * PertubVar; // subtract affine contribution
+            return ret;
+        }
+
+        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] U_IN, double[,] _Grad_uIn, double _vIN, double[] _Grad_vIN) {
             double ret = 0.0;
             int GAMMA = m_EdgForm.ArgumentOrdering.Count;
-
-            double eps = m_eps;
-
-            int NoOfParams = m_EdgForm.ParameterOrdering != null ? m_EdgForm.ParameterOrdering.Count : 0;
-            double[] OrgParams_IN = new double[NoOfParams];
-            OrgParams_IN.SetSubVector(inp.Parameters_IN, GAMMA, NoOfParams);
+            int D = inp.D;
+            Debug.Assert(D == m_SpatialDimension, "spatial dimension mismatch");
 
             CommonParamsBnd clonedParams = inp;
             Debug.Assert(object.ReferenceEquals(inp, clonedParams) == false);
-            clonedParams.Parameters_IN = OrgParams_IN;
+            GetOrgParams(inp.Parameters_IN, out clonedParams.Parameters_IN);
+            
+            double delta = GetTmpTrialVals(inp.Parameters_IN, out var U_IN_temp, out var GradU_IN_temp);
 
-            double[] U_IN_temp = new double[GAMMA];
-            U_IN_temp.SetSubVector(inp.Parameters_IN, 0, GAMMA);
-
-            //double[] dU = new double[GAMMA];
-            double f0 = m_EdgForm.BoundaryEdgeForm(ref clonedParams, U_IN_temp, null, _vIN, _Grad_vIN);
+            double f0 = m_EdgForm.BoundaryEdgeForm(ref clonedParams, U_IN_temp, GradU_IN_temp, _vIN, _Grad_vIN);
             ret += f0; // affine contribution - contains V and GradV contribution
+
             for (int iVar = 0; iVar < GAMMA; iVar++) { // loop over trial variables
                 if (((m_EdgForm.InnerEdgeTerms & (TermActivationFlags.UxV | TermActivationFlags.UxGradV)) != 0)) {
                     //if (U_IN[iVar] != 0.0) {
                     {
-                        // add perturbation
-                        double bkup = U_IN_temp[iVar];
-                        double delta = Math.Abs(U_IN[iVar]);//, Math.Abs(U_INtm[iVar]) * eps;
-                        delta = eps;
-                        Debug.Assert(delta > 0);
-                        U_IN_temp[iVar] += delta;
+                        ret += DiffBnd(ref U_IN_temp[iVar], U_IN[iVar], 
+                            ref clonedParams, U_IN_temp, GradU_IN_temp, _vIN, _Grad_vIN, delta, f0);
+                    }
+                }
 
-                        // flux eval
-                        double f1 = m_EdgForm.BoundaryEdgeForm(ref clonedParams, U_IN_temp, null, _vIN, _Grad_vIN);
-                        if (double.IsInfinity(f1))
-                            throw new ArithmeticException();
-                        if (double.IsNaN(f1))
-                            throw new ArithmeticException();
-
-                        // restore un-perturbed state
-                        U_IN_temp[iVar] = bkup;
-
-                        // compute finite difference
-                        double dU_iVar = (f1 - f0) / delta;
-                        if (double.IsInfinity(dU_iVar))
-                            throw new ArithmeticException();
-                        if (double.IsNaN(dU_iVar))
-                            throw new ArithmeticException();
-
-                        // inner product
-                        ret += dU_iVar * U_IN[iVar];
-                        ret -= dU_iVar * U_IN_temp[iVar]; // subtract affine contribution
+                if (((m_EdgForm.InnerEdgeTerms & (TermActivationFlags.GradUxV | TermActivationFlags.GradUxGradV)) != 0)) {
+                    for (int d = 0; d < D; d++) {
+                        //if (U_IN[iVar] != 0.0) {
+                        {
+                            ret += DiffBnd(ref GradU_IN_temp[iVar, d], _Grad_uIn[iVar, d], 
+                                ref clonedParams, U_IN_temp, GradU_IN_temp, _vIN, _Grad_vIN, delta, f0);
+                        }
                     }
                 }
             }
 
             return ret;
         }
+
+        private double DiffBnd(ref double PertubVar, double Var,
+            ref CommonParamsBnd clonedParams, double[] U_IN_temp, double[,] GradU_IN_temp, double _vIN, double[] _Grad_vIN, double delta, double f0) {
+
+            // add perturbation
+            double bkup = PertubVar;
+            PertubVar += delta;
+            Debug.Assert(delta > 0);
+
+            // flux eval
+            double f1 = m_EdgForm.BoundaryEdgeForm(ref clonedParams, U_IN_temp, GradU_IN_temp, _vIN, _Grad_vIN);
+#if DEBUG
+            if (double.IsInfinity(f1))
+                throw new ArithmeticException();
+            if (double.IsNaN(f1))
+                throw new ArithmeticException();
+#endif
+
+            // compute finite difference
+            double dU_iVar = (f1 - f0) / delta;
+            if (double.IsInfinity(dU_iVar))
+                throw new ArithmeticException();
+            if (double.IsNaN(dU_iVar))
+                throw new ArithmeticException();
+            
+            // restore un-perturbed state
+            PertubVar = bkup;
+
+            // inner product
+            double ret = 0;
+            ret += dU_iVar * Var;
+            ret -= dU_iVar * PertubVar; // subtract affine contribution
+            return ret;
+
+        }
     }
-
-
 }

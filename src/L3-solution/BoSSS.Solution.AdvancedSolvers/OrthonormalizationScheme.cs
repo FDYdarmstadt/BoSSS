@@ -346,7 +346,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             get;
             set;
         }
-        public ISolverSmootherTemplate Clone() {
+        public object Clone() {
             throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
         }
     }

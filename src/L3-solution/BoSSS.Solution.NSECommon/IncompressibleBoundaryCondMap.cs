@@ -55,6 +55,10 @@ namespace BoSSS.Solution.NSECommon {
                     ScalarFields = new string[] { VariableNames.Pressure, VariableNames.StressXX, VariableNames.StressXY, VariableNames.StressYY };
                     break;
 
+                case PhysicsMode.RANS:
+                    ScalarFields = new string[] { VariableNames.Pressure, "k", "omega" }; // TODO physics mode for each turbulence model?
+                    break;
+
                 default:
                     throw new ArgumentException();
             }
