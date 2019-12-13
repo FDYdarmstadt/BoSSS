@@ -57,10 +57,6 @@ namespace BoSSS.Application.Rheology {
     /// </summary>
     public class Rheology : BoSSS.Solution.Application<RheologyControl> {
         static void Main(string[] args) {
-            RheologyTestProgram.Init();
-            RheologyTestProgram.ConsistencyConstitutiveTestComputeRes(3, 2, 0);
-            Assert.IsTrue(false, "remove me");
-
             Rheology._Main(args, false, () => new Rheology());
         }
 
@@ -1069,15 +1065,18 @@ namespace BoSSS.Application.Rheology {
 
 
                 } else {
-                    
 
+                    Console.WriteLine("Assembly: FDJac (obsolete) ...");
                     // Finite Difference Linearization
                     var FDbuilder = XOP.GetFDJacobianBuilder(domMap, null, //Params,
                         codMap,
                         this.ParameterUpdate);
                     FDbuilder.OperatorCoefficients.UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
                     FDbuilder.ComputeMatrix(OpMatrix, OpAffine);
-                    
+
+                    Console.WriteLine("done.");
+
+
                     // FDJacobian has (Mx +b) as RHS, for unsteady calc. we must subtract Mx for real affine Vector!
                     OpMatrix.SpMV(-1.0, new CoordinateVector(CurrentState), 1.0, OpAffine);
 

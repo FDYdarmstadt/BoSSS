@@ -40,17 +40,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return -1;
         }
 
-        public DGField ProlongateToDg(double[] V, string name) {
+        public DGField[] ProlongateToDg(double[] V, string name) {
             double[] Curr = ProlongateToTop(V);
 
             var gdat = m_op.BaseGridProblemMapping.GridDat;
-            var basis = m_op.BaseGridProblemMapping.BasisS[0];
-            DGField dgCurrentSol;
-            if (basis is XDGBasis)
-                dgCurrentSol = new XDGField((XDGBasis)basis, name);
-            else 
-                dgCurrentSol = new SinglePhaseField(basis, name);
-            m_op.FinestLevel.TransformSolFrom(dgCurrentSol.CoordinateVector, Curr);
+            var basisS = m_op.BaseGridProblemMapping.BasisS;
+            DGField[] dgCurrentSol = new DGField[basisS.Count];
+            for (int i = 0; i < basisS.Count; i++) {
+                var basis = basisS[i];
+                if (basis is XDGBasis)
+                    dgCurrentSol[i] = new XDGField((XDGBasis)basis, name + i);
+                else
+                    dgCurrentSol[i] = new SinglePhaseField(basis, name + i);
+            }
+            CoordinateVector cv = new CoordinateVector(dgCurrentSol);
+            m_op.FinestLevel.TransformSolFrom(cv, Curr);
             return dgCurrentSol;
         }
 
@@ -76,9 +80,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         int counter = 0;
         public void PlotVectors(IEnumerable<double[]> VV, string[] names) {
 
-            DGField[] all = new DGField[names.Length];
+            List<DGField> all = new List<DGField>();
             for (int i = 0; i < VV.Count(); i++) {
-                all[i] = ProlongateToDg(VV.ElementAt(i), names[i]);
+                all.AddRange(ProlongateToDg(VV.ElementAt(i), names[i]));
             }
 
             Tecplot.Tecplot.PlotFields(all, "MGviz-" + counter, counter, 2);

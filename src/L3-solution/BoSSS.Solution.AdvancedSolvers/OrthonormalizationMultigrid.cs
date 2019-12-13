@@ -385,15 +385,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
                     
-                    /*if (this.m_MgOperator.LevelIndex == 0) {
-                        double[] Err = Xex.CloneAs();
-                        Err.AccV(-1.0, X);
+                    if (this.m_MgOperator.LevelIndex == 0) {
                         double[] rlcc = rl.CloneAs();
                         rlcc.Normalize();
-                        Err.Normalize();
 
-                        this.viz.PlotVectors(new[] { X, rlcc, Err}, new[] { "sol", "res", "err" });
-                    }*/
+                        this.viz.PlotVectors(new[] { X, rlcc}, new[] { "sol", "res" });
+                    }
 
                     // post-smoother
                     // -------------

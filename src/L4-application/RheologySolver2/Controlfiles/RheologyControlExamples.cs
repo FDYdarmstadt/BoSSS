@@ -406,7 +406,7 @@ namespace BoSSS.Application.Rheology {
 
             C.LinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.TargetBlockSize = 100000;
+            C.LinearSolver.TargetBlockSize = 10000;
             C.LinearSolver.ConvergenceCriterion = 1E-7;
 
             //C.UnderRelax = 1.0;
@@ -416,13 +416,10 @@ namespace BoSSS.Application.Rheology {
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-
-            //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             C.LinearSolver.NoOfMultigridLevels = 1;
             
             C.ObjectiveParam = 1.0;
-            C.useJacobianForOperatorMatrix = true;
+            C.useJacobianForOperatorMatrix = false;
 
             C.UsePerssonSensor = false;
             C.SensorLimit = 1e-4;
@@ -487,7 +484,10 @@ namespace BoSSS.Application.Rheology {
             // grids used by florian
             //string grid = "99ca969c-5ced-4640-b9aa-db665c60ccc9"; // florian laptop (half)
             //string grid = "1c9cb150-88d3-4ee1-974d-7970eabd3cf8"; // florian laptop (full, level 0)
-            string grid = "db1797a9-6bc4-4194-984a-03b67598fa19"; // florian laptop (full, level 2)
+            //string grid = "db1797a9-6bc4-4194-984a-03b67598fa19"; // florian laptop (full, level 2)
+            string grid = "c88c914b-c387-4894-9697-a78bad31f2da"; // florian terminal03 (full, level 0)
+            //string grid = "061e7cfb-7ffe-4540-bc74-bfffce824fef"; // florian terminal03 (full, level 1)
+            //string grid = "51aadb49-e3d5-4e88-897e-13b6b329995b"; // florian terminal03 (full, level 2)
 
             // half channel mesh3 for cond tests
             //string grid = "962bc97f-0298-4e2f-ac18-06940cb84956"; // anne
