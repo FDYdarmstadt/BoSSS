@@ -43,7 +43,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// </summary>
     [DataContract]
     [Serializable]
-    public abstract class XBase_Control : AppControl {
+    public abstract class XBase_Control : AppControlSolver {
 
         /// <summary>
         /// An explicit expression of the Level-set over time.

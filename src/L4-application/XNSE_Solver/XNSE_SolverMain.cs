@@ -69,12 +69,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         static void Main(string[] args) {
-
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestFixtureSetUp();
-            ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.PolynomialTestForConvectionTest(3, 0, false);
+            BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestFixtureSetUp();
+            DeleteOldPlotFiles();
+            BoSSS.Application.XNSE_Solver.Tests.UnitTest.ViscosityJumpTest(2, 0.1, ViscosityMode.FullySymmetric);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestCapillaryWave();
             ////BoSSS.Application.XNSE_Solver.Tests.ElementalTestProgramm.LineMovementTest(LevelSetEvolution.ScalarConvection, LevelSetHandling.Coupled_Once, XNSE_Control.TimesteppingScheme.ImplicitEuler, 0.5);
-            //Assert.IsFalse(true, "remove me");
+            Assert.IsFalse(true, "remove me");
 
 
             _Main(args, false, delegate () {

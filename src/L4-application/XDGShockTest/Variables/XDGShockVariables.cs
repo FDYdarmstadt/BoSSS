@@ -41,7 +41,7 @@ namespace XDGShockTest {
         public static readonly DerivedVariable<SinglePhaseField> Sensor = new DerivedVariable<SinglePhaseField>(
             "sensor",
             VariableTypes.Other,
-            delegate (SinglePhaseField dgField, Program program) {
+            delegate (SinglePhaseField dgField, XDGShockTestMain program) {
                 dgField.Clear();
 
                 // Should be removed later
@@ -56,7 +56,7 @@ namespace XDGShockTest {
         public static readonly DerivedVariable<SinglePhaseField> ArtificialViscosity = new DerivedVariable<SinglePhaseField>(
             "artificialViscosity",
             VariableTypes.Other,
-            delegate (SinglePhaseField dgField, Program program) {
+            delegate (SinglePhaseField dgField, XDGShockTestMain program) {
                 dgField.Clear();
 
                 dgField.Acc(1.0, program.ArtificialViscosityField);
@@ -70,7 +70,7 @@ namespace XDGShockTest {
         public static readonly DerivedVariable<XDGField> Pressure = new DerivedVariable<XDGField>(
             "p",
             VariableTypes.Pressure,
-            delegate (XDGField dgfield, Program program) {
+            delegate (XDGField dgfield, XDGShockTestMain program) {
 
                 IList<DGField> fields_A = new List<DGField>();
                 IList<DGField> fields_B = new List<DGField>();
@@ -107,7 +107,7 @@ namespace XDGShockTest {
             d => new DerivedVariable<XDGField>(
                 "u" + d,
                 VariableTypes.Velocity,
-                delegate (XDGField dgField, Program program) {
+                delegate (XDGField dgField, XDGShockTestMain program) {
                     dgField.Clear();
 
                     CellMask cellMask_A = program.LevelSetTracker.Regions.GetSpeciesMask(program.LevelSetTracker.GetSpeciesId("A"));

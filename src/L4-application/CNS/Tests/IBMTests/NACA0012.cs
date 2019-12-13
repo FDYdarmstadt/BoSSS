@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.CompressibleFlowCommon;
@@ -22,6 +23,7 @@ using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.Residual;
+using ilPSP;
 using ilPSP.Utils;
 using System;
 
@@ -166,7 +168,7 @@ namespace CNS.Tests.IBMTests {
 
                 grid.EdgeTagNames.Add(1, "supersonicinlet");
                 grid.EdgeTagNames.Add(2, "AdiabaticSlipWall");
-                grid.DefineEdgeTags(x => 1);
+                grid.DefineEdgeTags((Vector X) => 1);
                 grid.Name = "[" + xleft + "," + xRight + "]x[" + yBottom + "," + yTop + "]_Cells:(" + (xComplete.Length - 1) + "x" + (yComplete.Length - 1) + ")";
 
                 return grid;

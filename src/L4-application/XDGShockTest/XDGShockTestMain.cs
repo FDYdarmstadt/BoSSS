@@ -49,9 +49,9 @@ using XDGShock.Variables;
 
 namespace XDGShockTest {
 
-    public class Program : Application<XDGShockControl> {
+    public class XDGShockTestMain : Application<XDGShockControl> {
         static void Main(string[] args) {
-            _Main(args, false, () => new Program());
+            _Main(args, false, () => new XDGShockTestMain());
         }
 
         /// <summary>

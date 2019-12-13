@@ -23,7 +23,7 @@ namespace BoSSS.Solution.RheologyCommon {
     /// <summary>
     /// Identity part of constitutive equations for singlephase flow.
     /// </summary>
-    public class ConstitutiveEqns_Identity : IVolumeForm, IEquationComponent {
+    public class ConstitutiveEqns_Identity : IVolumeForm, IEquationComponent, ISupportsJacobianComponent {
 
         private int component; // equation index (0: xx, 1: xy, 2: yy)
 
@@ -66,5 +66,11 @@ namespace BoSSS.Solution.RheologyCommon {
             return T[0] * V;
         }
 
+         /// <summary>
+        /// Linear component / just the flux itself
+        /// </summary>
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new[] { this };
+        }
     }
 }

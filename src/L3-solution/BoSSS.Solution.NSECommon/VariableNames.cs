@@ -62,7 +62,14 @@ namespace BoSSS.Solution.NSECommon {
         /// mass, momentum and constitutive 
         /// equations for viscoelastic material model.
         /// </summary>
-        Viscoelastic
+        Viscoelastic,
+
+        /// <summary>
+        /// Reynolds-averaged Navier-Stokes (RANS)
+        /// solver.
+        /// Different Turbulence models will be supported in the future.
+        /// </summary>
+        RANS
 
     }
 

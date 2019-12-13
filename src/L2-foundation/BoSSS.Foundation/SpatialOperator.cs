@@ -34,16 +34,7 @@ using System.Diagnostics;
 
 namespace BoSSS.Foundation {
        
-    /// <summary>
-    /// Delegate to trigger the update of parameter fields (e.g. when computing finite difference Jacobian, see e.g. <see cref="SpatialOperator.GetFDJacobianBuilder"/>).
-    /// </summary>
-    /// <param name="DomainVar">
-    /// Input fields, current state of domain variables
-    /// </param>
-    /// <param name="ParameterVar">
-    /// Output fields, updated states of parameter fields
-    /// </param>
-    public delegate void DelParameterUpdate(IEnumerable<DGField> DomainVar, IEnumerable<DGField> ParameterVar);
+    
 
     /// <summary>
     /// Options for the treatment of edges at the boundary of a
@@ -98,6 +89,25 @@ namespace BoSSS.Foundation {
             Array.Copy(A, i0, r, 0, len);
             return r;
         }
+
+
+        IParameterUpdate m_ParameterUpdate;
+
+        /// <summary>
+        /// If set, used to update parameters before evaluation.
+        /// </summary>
+        public IParameterUpdate ParameterUpdate {
+            get {
+                return m_ParameterUpdate;
+            }
+            set {
+                if (IsCommited)
+                    throw new NotSupportedException("unable to change after 'Commit()'");
+                m_ParameterUpdate = value;
+            }
+        }
+
+
 
         /// <summary>
         /// ctor
@@ -1474,6 +1484,11 @@ namespace BoSSS.Foundation {
                 if(!m_IsCommited)
                     throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
 #endif
+                if(__delParameterUpdate == null) {
+                    if(this.ParameterVar.Count > 0) {
+                        throw new ArgumentException("Provided parameter update delegate '__delParameterUpdate' is null, but this operator contains " + this.ParameterVar.Count + " parameters.", "__delParameterUpdate");
+                    }
+                }
 
 
                 var e = new FDJacobianBuilder(new EvaluatorNonLin(
@@ -2201,8 +2216,9 @@ namespace BoSSS.Foundation {
 #if DEBUG
                 CoordinateVector ParamsVec;
                 double[] ParamsVecBkup;
-                if (Eval.Parameters.Count > 0) {
-                    ParamsVec = new CoordinateVector(Eval.Parameters);
+                if (Eval.Parameters.Where(f => f != null).Count() > 0) {
+                    var AllocatedParams = Eval.Parameters.Where(f => f != null).ToArray();
+                    ParamsVec = new CoordinateVector(AllocatedParams);
                     ParamsVecBkup = ParamsVec.ToArray();
                 } else {
                     ParamsVec = null;
@@ -2484,9 +2500,12 @@ namespace BoSSS.Foundation {
         /// An operator which computes the Jacobian matrix of this operator.
         /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
         /// </summary>
-        public (SpatialOperator, DelParameterUpdate) GetJacobiOperator(int SpatialDimension) {
+        public SpatialOperator GetJacobiOperator(int SpatialDimension) {
             if (!this.IsCommited)
                 throw new InvalidOperationException("Invalid prior to calling Commit().");
+
+            // parameters and activation flags
+            // ===============================
 
             var allcomps = new List<IEquationComponent>();
             foreach (var cdo in this.CodomainVar)
@@ -2507,6 +2526,9 @@ namespace BoSSS.Foundation {
             }
 
             var h = new JacobianParamUpdate(this.DomainVar, this.ParameterVar, allcomps, extractTaf, SpatialDimension);
+            
+            // create derivative operator
+            // ==========================
 
             var JacobianOp = new SpatialOperator(
                    this.DomainVar,
@@ -2519,14 +2541,23 @@ namespace BoSSS.Foundation {
 
                     if (!(eq is ISupportsJacobianComponent _eq))
                         throw new NotSupportedException(string.Format("Unable to handle component {0}: To obtain a Jacobian operator, all components must implement the {1} interface.", eq.GetType().Name, typeof(ISupportsJacobianComponent).Name));
+                    bool eq_suppCoeffUpd = eq is IEquationComponentCoefficient;
 
-                    foreach (var eqj in _eq.GetJacobianComponents(SpatialDimension))
+                    foreach (var eqj in _eq.GetJacobianComponents(SpatialDimension)) {
+                        bool eqj_suppCoeffUpd = eqj is IEquationComponentCoefficient;
+                        if (eq_suppCoeffUpd && !eqj_suppCoeffUpd)
+                            throw new NotSupportedException("Form '" + eq.GetType().Name + "' supports '" + typeof(IEquationComponentCoefficient).Name + "', but Jacobian Form '" + eqj.GetType().Name + "' does not!");
+
                         JacobianOp.EquationComponents[CodNmn].Add(eqj);
+                    }
                 }
             }
 
+            // return
+            // =====
+            JacobianOp.ParameterUpdate = h;
             JacobianOp.Commit();
-            return (JacobianOp, h.ParameterUpdate);
+            return JacobianOp;
         }
 
         

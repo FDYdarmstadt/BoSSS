@@ -2524,16 +2524,14 @@ namespace ilPSP.LinSolvers {
                                 int[] RowLenSblk = _RowPartitioning.GetSubblkLen(RowBlockType);
                                 bool ContainsExternal = false;
 
-                                //double[] _arschKakke = new double[RowBlockLength];
                                 if (VecAccu == null || VecAccu.Length < RowBlockLength) {
                                     VecAccu = new double[RowBlockLength];
                                 } else {
                                     for (int i = 0; i < RowBlockLength; i++) {
                                         VecAccu[i] = 0.0;
-                                        //_arschKakke[i] = 0.0;
                                     }
                                 }
-                                fixed (double* pVecAccu = VecAccu) { //, arschKakke = _arschKakke) {
+                                fixed (double* pVecAccu = VecAccu) { 
 
                                     foreach (var kv in BlockRow) { // loop over block columns...
                                         BlockEntry BE = kv.Value;

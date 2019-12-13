@@ -5,10 +5,9 @@ restart
   _______________________
 
 Databases loaded:
-List of 3 instances of IDatabaseInfo {
-  0: { Session Count = 72; Grid Count = 8; Path = \\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_ConvergenceStudy_2 }
-  1: { Session Count = 58; Grid Count = 10; Path = \\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag }
-  2: { Session Count = 45; Grid Count = 6; Path = \\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_unsteady }
+List of 2 instances of IDatabaseInfo {
+  0: { Session Count = 1; Grid Count = 1; Path = D:\Users\kummer\Documents\BoSSS-master\public\src\L4-application\CNS\bin\Release\bosss_db_performance_3 }
+  1: { Session Count = 11; Grid Count = 9; Path = D:\Users\kummer\Documents\BoSSS-master\public\src\L4-application\CNS\bin\Debug\bosss_db_performance_3 }
 }
 
  Console ready for input. Type 'help' for help.
@@ -24,20 +23,23 @@ Project name is set to 'ConfinedCylinder_BodyforcesFix'.
 
 ==============
 // steady drag calculation
-var myDb = OpenOrCreateDatabase(@"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag");
+//var myDb = OpenOrCreateDatabase(@"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag");
 // unsteady calculation
 //var myDb = OpenOrCreateDatabase(@"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_unsteady");
+var myDb = OpenOrCreateDefaultDatabase();
 **************
-Opening existing database '\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag'.
+Opening existing database 'd:\Users\kummer\default_bosss_db'.
 
 ==============
 //var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\kikker\deploy_dir\","hpccluster",ComputeNodes : new[] {"hpccluster"});
-var myBatch = new MiniBatchProcessorClient(@"\\dc1\userspace\kikker\cluster\ConfinedCylinder");
+//var myBatch = new MiniBatchProcessorClient(@"\\dc1\userspace\kikker\cluster\ConfinedCylinder");
+var myBatch = new MiniBatchProcessorClient();
 **************
 ==============
 MiniBatchProcessor.Server.StartIfNotRunning();
 **************
-Mini batch processor is already running.
+Starting mini batch processor in external process...
+Started mini batch processor on local machine, process id is 72676.
 
 ==============
 // ======================
@@ -46,7 +48,7 @@ Mini batch processor is already running.
 **************
 ==============
 int degree = 2;
-int gridNo = 0;
+int gridNo = 2;
 int[] procs = new int[] {4};
 **************
 ==============
@@ -80,48 +82,44 @@ string SessionName = "ConfinedCylinder_drag_p"+degree+"_meshNo"+gridNo+"_Wi="+We
 **************
 ==============
 //GridCommons grid; //     = new GridCommons[numberGrids];
-Gmsh gmshGrid         = new Gmsh(@"c:\Users\kikker\AnnesBoSSSdb\Cylinder_GRIDS\mesh_karman_OriginalBox_MEDIUM_"+gridNo+"_half.msh");
+Gmsh gmshGrid         = new Gmsh(System.IO.Path.Combine(
+    CurrentDocDir,
+    @"Cylinder_GRIDS\mesh_karman_OriginalBox_MEDIUM_"+gridNo+".msh"));
 GridCommons bosssGrid = gmshGrid.GenerateBoSSSGrid();
-bosssGrid.Name        = "confined_cylinder";
-bosssGrid.EdgeTagNames.Add(1, "Velocity_inlet");
-//bosssGrid.EdgeTagNames.Add(2, "Wall_bottom");
-bosssGrid.EdgeTagNames.Add(2, "Freeslip");
-bosssGrid.EdgeTagNames.Add(3, "Wall_top");
-bosssGrid.EdgeTagNames.Add(4, "Pressure_Outlet");
-bosssGrid.EdgeTagNames.Add(5, "Wall_cylinder");
-
-Func<double[], byte> edgeTagFunc = delegate (double[] X) {
-                    double x = X[0];
-                    double y = X[1];
-//                  if (!C.FixedStreamwisePeriodicBC)
-//                  {
-                      if (Math.Abs(x - (-15)) < 1.0e-10)
-                          return 1;
-                      if (Math.Abs(x - (15)) < 1.0e-10)
-                          return 4;
-//                  }
-                    //if (Math.Abs(y - (-2)) < 1.0e-10)
-                    //    return 2;
-                    
-                    if (Math.Abs(y - (0)) < 1.0e-10)
-                        return 2;
-                                        
-                    if (Math.Abs(y - (+2)) < 1.0e-10)
-                        return 3;
-                    //if (-1.0 < y && y < 1.0 && -1.0 < x  && x < 1.0)
-                    //    return 5;
-                    if (0 < y && y < 1.0 && -1.0 < x  && x < 1.0)
-                        return 5;
-                    
-                    throw new ArgumentOutOfRangeException("at x = " + x + "and y = " +y);
-};
-bosssGrid.DefineEdgeTags(edgeTagFunc);            
-//myDb.Controller.SaveGridInfo(bosssGrid);
-myDb.SaveGrid(ref bosssGrid);
-//grid = bosssGrid;                
 **************
 
-438c8559-c572-464a-808f-5d5f4b443bdd
+
+==============
+bosssGrid.Name = "confined_cylinder";
+//bosssGrid.EdgeTagNames.Clear();
+//bosssGrid.EdgeTagNames.Add(1, "Velocity_inlet");
+//bosssGrid.EdgeTagNames.Add(2, "Wall_bottom");
+//bosssGrid.EdgeTagNames.Add(3, "Wall_top");
+//bosssGrid.EdgeTagNames.Add(4, "Pressure_Outlet");
+//bosssGrid.EdgeTagNames.Add(5, "Wall_cylinder");
+
+Func<Vector, string> edgeTagFunc = delegate (Vector X) {
+    double x = X[0];
+    double y = X[1];
+    
+    if (Math.Abs(x - (-15)) < 1.0e-10)
+        return "Velocity_inlet";
+    if (Math.Abs(x - (15)) < 1.0e-10)
+        return "Pressure_Outlet";
+    if (Math.Abs(y - (-2)) < 1.0e-10)
+        return "Wall_bottom";        
+    if (Math.Abs(y - (+2)) < 1.0e-10)
+        return "Wall_top";
+    if (-1.0 < y && y < 1.0 && -1.0 < x  && x < 1.0)
+        return "Wall_cylinder";
+                    
+    throw new ArgumentOutOfRangeException("at x = " + x + "and y = " + y);
+};
+bosssGrid.DefineEdgeTags(edgeTagFunc);            
+myDb.SaveGrid(ref bosssGrid);
+**************
+Grid Edge Tags changed.
+51aadb49-e3d5-4e88-897e-13b6b329995b
 ==============
 // =====================================
 // setup control object for a solver run
@@ -165,13 +163,19 @@ static class InitialValues {
     }
 }          
 **************
+C# evaluator not initialized: use 'restart'.
+
 ==============
 //Set boundary conditions
 var Wall = new Formula("X => 0");
 **************
+C# evaluator not initialized: use 'restart'.
+
 ==============
 //List<RheologyControl> Controls = new List<RheologyControl>();
 **************
+C# evaluator not initialized: use 'restart'.
+
 ==============
 //Controls.Clear();
 
@@ -238,25 +242,8 @@ var Wall = new Formula("X => 0");
     C.StressPenalty = 1.0;
 
     //Create Fields
-    C.FieldOptions.Add("VelocityX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("VelocityY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("Pressure", new FieldOpts() { Degree = degree - 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-
-    C.FieldOptions.Add("StressXX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("StressXY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("StressYY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-
-    C.FieldOptions.Add("ResidualMomentumX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("ResidualMomentumY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("ResidualConti", new FieldOpts() { Degree = degree - 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-
-    C.FieldOptions.Add("ResidualStressXX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("ResidualStressXY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("ResidualStressYY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-
-    C.FieldOptions.Add("PhiDG", new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-    C.FieldOptions.Add("Phi", new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-
+    C.SetDGDegree(degree);
+    
     //Set initial values
     C.InitialValues.Add("VelocityX", GetFormulaObject(InitialValues.VelocityXfunction));
     C.InitialValues.Add("VelocityY", GetFormulaObject(InitialValues.VelocityYfunction));
@@ -286,7 +273,7 @@ var Wall = new Formula("X => 0");
     //Controls.Add(C);
     Console.WriteLine("Created control: " + C.SessionName);
 **************
-Created control: ConfinedCylinder_drag_p2_meshNo0_Wi=0_Re0.0001_BodyforcesHalfCylinder
+C# evaluator not initialized: use 'restart'.
 
 ==============
 **************
@@ -295,9 +282,13 @@ Created control: ConfinedCylinder_drag_p2_meshNo0_Wi=0_Re0.0001_BodyforcesHalfCy
 // Launch Jobs
 // ===========
 **************
+C# evaluator not initialized: use 'restart'.
+
 ==============
 //Controls.Count;
 **************
+C# evaluator not initialized: use 'restart'.
+
 ==============
 foreach (int element in procs){
 var oneJob              = C.CreateJob();
@@ -306,16 +297,26 @@ oneJob.ExecutionTime    = "24:00:00";
 oneJob.Activate(myBatch);
 }
 **************
-Job not submitted yet, or no result session is known - starting submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\kikker\cluster\ConfinedCylinder\RheologySolver2019Oct01_12-08-26
-Source directory: C:\Users\kikker\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
-copied 26 files.
-   writing file: control.obj
-deployment finished.
+C# evaluator not initialized: use 'restart'.
 
 ==============
 WorkflowMgm.AllJobs.Pick(0).Value.
+**************
+C# evaluator not initialized: use 'restart'.
+
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

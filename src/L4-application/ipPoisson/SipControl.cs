@@ -32,13 +32,13 @@ namespace BoSSS.Application.SipPoisson {
     /// </summary>
     [DataContract]
     [Serializable]
-    public class SipControl : AppControl {
+    public class SipControl : AppControlSolver {
 
         /// <summary>
         /// Ctor.
         /// </summary>
         public SipControl() : base() {
-            base.LinearSolver.NoOfMultigridLevels = 1;
+            base.NoOfMultigridLevels = 1;
             base.TimesteppingMode = _TimesteppingMode.Steady;
             base.NoOfTimesteps = 1;
             base.LinearSolver.verbose = true;

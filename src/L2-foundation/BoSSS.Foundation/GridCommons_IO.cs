@@ -109,7 +109,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             get {
                 return m_Database;
             }
-            set {
+            internal set {
                 if (value != null) {
                     m_Database = value;
                 } else {

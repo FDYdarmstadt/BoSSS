@@ -42,13 +42,13 @@ namespace BoSSS.Application.XNSE_Solver {
     /// </summary>
     [DataContract]
     [Serializable]
-    public class XNSE_Control : AppControl {
+    public class XNSE_Control : AppControlSolver {
 
         /// <summary>
         /// Ctor.
         /// </summary>
         public XNSE_Control() {
-            base.LinearSolver.NoOfMultigridLevels = 1;
+            base.NoOfMultigridLevels = 1;
             base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             //shift of Solver Information
             base.LinearSolver.MaxKrylovDim = 100; //Solver_MaxKrylovDim;

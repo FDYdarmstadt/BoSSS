@@ -311,8 +311,11 @@ namespace BoSSS.Foundation.Grid.Classic
                 return false;
             if (!ArrayTools.ListEquals(A.EdgeRefElements, B.EdgeRefElements, (a, b) => object.ReferenceEquals(a, b)))
                 return false;
-            if (!ArrayTools.ListEquals(A.EdgeTagNames, B.EdgeTagNames, (a, b) => (a.Key == b.Key && a.Value.Equals(b.Value))))
+            if (!A.EdgeTagNames.Keys.SetEquals(B.EdgeTagNames.Keys))
                 return false;
+            foreach (var nmn in A.EdgeTagNames.Keys)
+                if (A.EdgeTagNames[nmn] != B.EdgeTagNames[nmn])
+                    return false;
             if (!ArrayTools.ListEquals(A.PeriodicTrafo, B.PeriodicTrafo, (a, b) => a.ApproximateEquals(b)))
                 return false;
 

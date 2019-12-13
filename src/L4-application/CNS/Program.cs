@@ -41,6 +41,7 @@ using CNS.Convection;
 using BoSSS.Foundation.Grid;
 using ilPSP.Utils;
 using BoSSS.Solution.Statistic;
+using BoSSS.Solution.CompressibleFlowCommon.Convection;
 
 namespace CNS {
 
@@ -56,31 +57,11 @@ namespace CNS {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-            //int L = 5;
-            //var A = MultidimensionalArray.Create(L, L); 
-            //var B = MultidimensionalArray.Create(L, L); 
-            //var C = MultidimensionalArray.Create(L, L);
 
-            //for (int l = 0; l < L; l++)
-            //    A[l, l] = l + 1 + l * 2;
-
-            //A.InvertTo(B);
-
-            //C.GEMM(1.0, A, B, 0.0);
-
-            //Console.WriteLine("BLAS-LAPACK ok");
-
-            //return;
 
             //Application.InitMPI(args);
-            //CNS.Tests.ConvectiveFlux.ShockTubeTests.Toro1RusanovTest();
-            //CNS.Tests.ConvectiveFlux.ShockTubeTests.Toro1AllButRusanovTest(ConvectiveFluxTypes.Godunov);
-            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder0th();
-            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder1st();
-            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder2nd();
-            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder3rd();
-            //CNS.Tests.IBMTests.IBMIsentropicVortexTest.IBMVortexLocalTimeSteppingTest();
-            //Debug.Assert(false);
+            //CNS.Tests.MovingIBMTests.PistonTests.MovingMeshIBMPiston1stOrderWithAgglomeration();
+            //Debug.Assert(false, "remove me");
             //csMPI.Raw.mpiFinalize();
             //return;
 
@@ -88,6 +69,18 @@ namespace CNS {
                 args,
                 false,
                 () => new Program());
+
+            //BoSSS.Foundation.Quadrature.NonLin.TempTimers.WriteStat();
+            //Console.WriteLine("   Total boundary edge flux: " + OptimizedHLLCFlux.Total.Elapsed.TotalSeconds);
+            //Console.WriteLine("      allocation:            " + OptimizedHLLCFlux.Alloc.Elapsed.TotalSeconds);
+            //Console.WriteLine("      loops:                 " + OptimizedHLLCFlux.Loops.Elapsed.TotalSeconds);
+            //Console.WriteLine("         state comp:         " + OptimizedHLLCFlux.State.Elapsed.TotalSeconds);
+            //Console.WriteLine("            SupersonicInlet:           " + OptimizedHLLCFlux.SupersonicInlet.Elapsed.TotalSeconds);
+            //Console.WriteLine("               DistanceToInitialShock: " + OptimizedHLLCFlux.DistanceToInitialShock.Elapsed.TotalSeconds);
+            //Console.WriteLine("               SmoothJump:             " + OptimizedHLLCFlux.SmoothJump.Elapsed.TotalSeconds);
+            //Console.WriteLine("            SupersonicOutlet:          " + OptimizedHLLCFlux.SupersonicOutlet.Elapsed.TotalSeconds);
+            //Console.WriteLine("            AdiabaticSlipWall:         " + OptimizedHLLCFlux.AdiabaticSlipWall.Elapsed.TotalSeconds);
+            //Console.WriteLine("      inner edge flux:       " + OptimizedHLLCFlux.Inner.Elapsed.TotalSeconds);
         }
     }
 
@@ -276,7 +269,10 @@ namespace CNS {
                     Console.Write("Starting time step #" + TimestepNo + "...");
                 }
 
-
+                //if (TimestepNo == 2) {
+                //    BoSSS.Foundation.Quadrature.NonLin.TempTimers.Reset();
+                //    OptimizedHLLCFlux.Reset();
+                //}
 
                 // Update shock-capturing variables before performing a time step
                 // as the time step constraints (could) depend on artificial viscosity.
@@ -330,16 +326,16 @@ namespace CNS {
                 //}
 
                 using (new BlockTrace("TimeStepper.Perform", ht)) {
-                    Exception e = null;
-                    try {
+                    //Exception e = null;
+                    //try {
                         //TimeStepper.CurrentState.SaveToTextFile("tsinp-lts.txt");
                         //ilPSP.Environment.GlobalVec =  TimeStepper.CurrentState.ToArray();
                         //double dist = ilPSP.Environment.CompareTo(TimeStepper.CurrentState);
                         dt = TimeStepper.Perform(dt);
-                    } catch (Exception ee) {
-                        e = ee;
-                    }
-                    e.ExceptionBcast();
+                    //} catch (Exception ee) {
+                    //    e = ee;
+                    //}
+                    //e.ExceptionBcast();
 
 
                     if (DatabaseDriver.MyRank == 0 && TimestepNo % printInterval == 0) {

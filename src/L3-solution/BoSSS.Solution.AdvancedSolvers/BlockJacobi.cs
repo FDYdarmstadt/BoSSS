@@ -169,7 +169,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         }
 
-        public ISolverSmootherTemplate Clone() {
+        public object Clone() {
             var clone = new BlockJacobi();
             clone.IterationCallback = this.IterationCallback;
             clone.NoOfIterations = this.NoOfIterations;

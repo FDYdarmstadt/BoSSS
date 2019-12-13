@@ -84,13 +84,13 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
         
     [Serializable]
-    public class XdgTimesteppingTestControl : AppControl {
+    public class XdgTimesteppingTestControl : AppControlSolver {
 
         /// <summary>
         /// ctor
         /// </summary>
         public XdgTimesteppingTestControl() {
-            base.LinearSolver.NoOfMultigridLevels = 1;
+            NoOfMultigridLevels = 1;
             base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
         }
 

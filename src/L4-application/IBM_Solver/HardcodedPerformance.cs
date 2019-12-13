@@ -423,7 +423,6 @@ namespace BoSSS.Application.IBM_Solver {
             //C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
             C.LinearSolver.verbose = true;
             C.NonLinearSolver.verbose = true;
-            C.NonLinearSolver.PrecondSolver.verbose = true;
             //C.NonLinearSolver.ConvergenceCriterion = 1E-10;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
 
