@@ -874,7 +874,8 @@ namespace BoSSS.Solution {
                         },
                         MaxKrylovDim = lc.MaxKrylovDim,
                         MaxIter = lc.MaxSolverIterations,
-                        Tolerance = lc.ConvergenceCriterion
+                        Tolerance = lc.ConvergenceCriterion,
+                        Restarted = false
                     };
                     break;
                 //end of testing area

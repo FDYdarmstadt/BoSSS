@@ -542,6 +542,8 @@ namespace BoSSS.Application.XdgPoisson3 {
                 case 4:
                     C.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
                     break;
+                case 5:
+                    C.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
 
                 default:
                     throw new NotImplementedException("guess again");
