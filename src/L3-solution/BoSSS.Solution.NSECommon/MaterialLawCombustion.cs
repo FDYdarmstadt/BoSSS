@@ -73,8 +73,8 @@ namespace BoSSS.Solution.NSECommon {
                 
                 Debug.Assert(!(double.IsNaN(rho) || double.IsInfinity(rho)));
 
-                if (rhoOne) // JUST FOR DEBUGGING PURPOSES!!!!!!!!!!!!!!!!!!!!!!
-                    rho = 1.0;
+                //if (rhoOne) // JUST FOR DEBUGGING PURPOSES!!!!!!!!!!!!!!!!!!!!!!
+                //    rho = 1.0;
 
                 return rho;
             }

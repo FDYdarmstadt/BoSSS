@@ -120,15 +120,13 @@ namespace BoSSS.Solution.NSECommon {
         /// Density
         /// </returns>
         public override double GetDensity(params double[] phi) {
-            if (IsInitialized) {
-                double rho;
-                if(!rhoOne) {//                
-  //rho = ThermodynamicPressureValue / phi[0];
-                    rho = ThermodynamicPressure.Current.GetMeanValue(0)/phi[0];
-                }
-                else {
-                    rho = 1.0;
-                }
+            if(IsInitialized) {
+                double rho;             
+                rho = ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];    //rho = ThermodynamicPressureValue / phi[0];
+
+                //if(rhoOne) { 
+                //    rho = 1.0;
+                //}
                 return rho;
             } else {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");
