@@ -297,7 +297,7 @@ namespace BoSSS.Solution {
                             throw new Exception("wtf?Spacialdim=1,2,3 expected");
                     }
                 }
-                //CHANGE THIS ASAP: This is not right in case of XDG ... because blocks have truncated size at this code level
+                //This is not right in case of XDG ... because blocks have truncated size at this code level
                 LocalDOF[iLevel] = MultigridSequence[iLevel].CellPartitioning.LocalLength * DOFperCell[iLevel];
             }
 
@@ -321,16 +321,14 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.classic_mumps:
                     templinearSolve = new SparseSolver() {
                         WhichSolver = SparseSolver._whichSolver.MUMPS,
-                        LinConfig = lc,
-                        TestSolution = false
+                        LinConfig = lc
                     };
                     break;
 
                 case LinearSolverCode.classic_pardiso:
                     templinearSolve = new SparseSolver() {
                         WhichSolver = SparseSolver._whichSolver.PARDISO,
-                        LinConfig = lc,
-                        TestSolution = false
+                        LinConfig = lc
                     };
                     break;
 
@@ -868,8 +866,7 @@ namespace BoSSS.Solution {
                         },
                         MaxKrylovDim = lc.MaxKrylovDim,
                         MaxIter = lc.MaxSolverIterations,
-                        Tolerance = lc.ConvergenceCriterion,
-                        Restarted = false
+                        Tolerance = lc.ConvergenceCriterion
                     };
                     break;
                 //end of testing area
@@ -1824,10 +1821,7 @@ namespace BoSSS.Solution {
                         EnableOverlapScaling = false,
                         UsePMGinBlocks = false
                     };
-                    
-
-
-
+  
                     levelSolver = new OrthonormalizationMultigrid() {
                         m_MaxIterations = iLevel == 0 ? _lc.MaxSolverIterations : 1,
                         PreSmoother = smoother1,

@@ -174,6 +174,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             using (new FuncTrace()) {
                 AddSolCore(ref X);
 
+                
+
+
                 // split solution in high and low modes
                 /*
                 var Xlo = X.CloneAs();
