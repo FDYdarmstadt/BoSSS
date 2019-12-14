@@ -172,7 +172,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         
         void AddSol(ref double[] X) {
             using (new FuncTrace()) {
-                __AddSol(ref X);
+                AddSolCore(ref X);
 
                 // split solution in high and low modes
                 /*
@@ -202,7 +202,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
         
 
-        void __AddSol(ref double[] X) {
+        void AddSolCore(ref double[] X) {
             Debug.Assert(SolHistory.Count == MxxHistory.Count);
             Debug.Assert(X.Length == OpMatrix._RowPartitioning.LocalLength);
             int L = X.Length;
