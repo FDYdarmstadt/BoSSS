@@ -165,7 +165,12 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         exp_OrthoS_pMG = 51,
 
-        
+        /// <summary>
+        /// Work-in-progress: experimental stuff for rheology solver
+        /// </summary>
+        exp_Kcycle_schwarz_4Rheology = 52,
+
+
 
         selfmade = 999,
     }

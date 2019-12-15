@@ -583,7 +583,7 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_softpcg_mg:
                     templinearSolve = SpecialMultilevelSchwarz(lc, LocalDOF, MultigridSeqLength, isNonLinPrecond, MultigridOperatorConfig);
                     break;
-
+                    
                 case LinearSolverCode.exp_softpcg_schwarz:
 
                     Console.WriteLine("Additive Schwarz, No of blocks: " + NoOfBlocks.MPISum());
@@ -635,6 +635,10 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_Kcycle_schwarz:
                     templinearSolve = KcycleMultiSchwarz(lc, LocalDOF);
                     //templinearSolve = new DynamicMultigrid();
+                    break;
+
+                case LinearSolverCode.exp_Kcycle_schwarz_4Rheology:
+                    KcycleMultiSchwarz_4Rheology(, LocalDOF);
                     break;
 
                 case LinearSolverCode.exp_gmres_levelpmg:
@@ -1645,7 +1649,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// 
         /// </summary>
-        ISolverSmootherTemplate KcycleMultiSchwarz_working(LinearSolverConfig _lc, int[] _LocalDOF) {
+        ISolverSmootherTemplate KcycleMultiSchwarz_4Rheology(LinearSolverConfig _lc, int[] _LocalDOF) {
 
             // my tests show that the ideal block size may be around 10'000
             int DirectKickIn = _lc.TargetBlockSize;
@@ -1663,7 +1667,8 @@ namespace BoSSS.Solution {
                 useDirect |= (SysSize < DirectKickIn);
                 //useDirect |= iLevel == _lc.NoOfMultigridLevels - 1; // 
                 useDirect |= NoOfBlocks.MPISum() <= 1;
-                
+
+                NoOfBlocks = Math.Max(1, NoOfBlocks); // ensure at least 1 block per MPI core, if direct solver isn't used
                 
                 if (useDirect)
                     Console.WriteLine("   KcycleMultiSchwarz: lv {0}, Direct solver ", iLevel);
@@ -1693,10 +1698,6 @@ namespace BoSSS.Solution {
                         EnableOverlapScaling = true,
                         UsePMGinBlocks = false
                     };
-
-                
-
-                   
                     
 
                     levelSolver = new OrthonormalizationMultigrid() {
