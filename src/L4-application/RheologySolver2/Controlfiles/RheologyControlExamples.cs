@@ -534,8 +534,7 @@ namespace BoSSS.Application.Rheology {
                     return _grid;
                 };
             }
-
-
+            
             // Analytical Sol for Params
             if (C.SetParamsAnalyticalSol == true)
             {

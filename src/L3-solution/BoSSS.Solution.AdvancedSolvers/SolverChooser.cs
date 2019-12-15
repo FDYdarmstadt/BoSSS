@@ -1759,20 +1759,19 @@ namespace BoSSS.Solution {
 
             Console.WriteLine("experimental MG configuration for rheology");
 
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPIsize);
 
             for (int iLevel = 0; iLevel < _lc.NoOfMultigridLevels; iLevel++) {
                 int SysSize = _LocalDOF[iLevel].MPISum();
                 int NoOfBlocks = (int)Math.Ceiling(((double)SysSize) / ((double)DirectKickIn));
 
-
                 bool useDirect = false;
                 //useDirect |= (SysSize < DirectKickIn);
-                //useDirect |= iLevel == _lc.NoOfMultigridLevels - 1; // 
                 useDirect |= NoOfBlocks.MPISum() <= 1;
 
                 if (iLevel == 0) {
                     useDirect = false;
-                    NoOfBlocks = 6;
+                    NoOfBlocks = 8 / MPIsize;
                 } else {
                     break;
                     useDirect = true;

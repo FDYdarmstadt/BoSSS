@@ -174,8 +174,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
             using (new FuncTrace()) {
                 AddSolCore(ref X);
 
-                
+                /*
+                var map = m_MgOperator.Mapping;
+                int NoOfVar = map.NoOfVariables;
 
+                for (int iVar = 0; iVar < NoOfVar; iVar++) {
+                    var subi = new SubBlockSelector(m_MgOperator.Mapping);
+                    subi.VariableSelector(iVar);
+                    var bobi = new BlockMask(subi);
+                    var bi = bobi.LocalMask;
+
+                    var X_iVar = new double[X.Length];
+                    X_iVar.AccV(1.0, X, bi, bi);
+
+                    AddSolCore(ref X_iVar);
+                }
+                */
 
                 // split solution in high and low modes
                 /*
