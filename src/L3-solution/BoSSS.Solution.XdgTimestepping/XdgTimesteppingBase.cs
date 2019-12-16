@@ -49,7 +49,7 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// </param>
     /// <param name="time"></param>
     public delegate void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time);
-    
+        
     /// <summary>
     /// Callback-Template for the mass matrix update.
     /// </summary>

@@ -116,22 +116,24 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             }
 
             // Dirichlet
-            if (scaleActiveBoundary == 0) {
+            //if (scaleActiveBoundary == 0) 
+            {
                 for (int d = 0; d < D; d++) {
-                    Ret -= muA * Grad_uA[component, d] * vA * N[d];
-                    Ret -= muA * Grad_vA[d] * (uA[component] - uAFict) * N[d];
+                    Ret -= muA * Grad_uA[component, d] * vA * N[d] * (1 - scaleActiveBoundary);
+                    Ret -= muA * Grad_vA[d] * (uA[component] - uAFict) * N[d] * (1 - scaleActiveBoundary);
                 }
-                Ret += muA * (uA[component] - uAFict) * vA * _penalty;
+                Ret += muA * (uA[component] - uAFict) * vA * _penalty * (1 - scaleActiveBoundary);
             }
             // Active boundary
-            else {
+            //else 
+            {
                 // normal
                 for (int dN = 0; dN < D; dN++) {
                     for (int dD = 0; dD < D; dD++) {
-                        Ret -= muA * (N[dN] * Grad_uA[dN, dD] * N[dD]) * (vA * N[component]);   // consistency term 
-                        Ret -= muA * (N[component] * Grad_vA[dD] * N[dD]) * uA[dN] * N[dN];     // symmetry term 
+                        //Ret -= muA * (N[dN] * Grad_uA[dN, dD] * N[dD]) * (vA * N[component]) * scaleActiveBoundary;   // consistency term 
+                        Ret -= muA * (N[component] * Grad_vA[dD] * N[dD]) * uA[dN] * N[dN] * scaleActiveBoundary;     // symmetry term 
                     }                                                                           //
-                    Ret += muA * (uA[dN] * N[dN]) * (vA * N[component]) * _penalty;             // penalty term
+                    Ret += muA * (uA[dN] * N[dN]) * (vA * N[component]) * _penalty * scaleActiveBoundary;             // penalty term
                 }
 
                 //tangential    
@@ -155,7 +157,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
                 }
                 for (int d1 = 0; d1 < D; d1++) {
                     for (int d2 = 0; d2 < D; d2++) {
-                        Ret -= (P[d1, d2] * f_xT) * (P[d1, component] * vA);
+                        Ret -= (P[d1, d2] * f_xT * scaleActiveBoundary) * (P[d1, component] * vA);
                     }
                 }
             }

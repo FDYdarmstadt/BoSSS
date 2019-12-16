@@ -425,7 +425,7 @@ namespace BoSSS.Application.FSI_Solver {
                     couplingArray[4] = RadialVector[1];
                     couplingArray[5] = radialLength;
                     couplingArray[6] = p.ActiveStress; // zero for passive particles
-                    couplingArray[7] = -seperateBoundaryRegions;
+                    couplingArray[7] = seperateBoundaryRegions;
                     couplingArray[8] = p.Motion.GetAngle(0);
                 }
             }
@@ -580,6 +580,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Step 6
             // Update level set tracker
             // =======================================================
+
             LsTrk.UpdateTracker(__NearRegionWith: 2);
             setupLevelSet = true;
         }
@@ -769,7 +770,7 @@ namespace BoSSS.Application.FSI_Solver {
                 }
             }
         }
-        bool testAddedDamping = true;
+        bool initAddedDamping = true;
         /// <summary>
         /// runs solver one step?!
         /// </summary>
@@ -788,14 +789,14 @@ namespace BoSSS.Application.FSI_Solver {
                 ResLogger.TimeStep = TimestepInt;
                 dt = GetFixedTimestep();
                 Console.WriteLine("Starting time-step " + TimestepInt + "...");
-                if (testAddedDamping) {
+                if (initAddedDamping) {
                     foreach (Particle p in m_Particles) {
                         if (p.Motion.UseAddedDamping) {
                             p.Motion.CalculateDampingTensor(p, LsTrk, FluidViscosity, FluidDensity, DtMax);
                             p.Motion.ExchangeAddedDampingTensors();
                         }
                     }
-                    testAddedDamping = false;
+                    initAddedDamping = false;
                 }
                 // used later to check if there is exactly one push per timestep
                 int OldPushCount = LsTrk.PushCount;
@@ -1398,101 +1399,6 @@ namespace BoSSS.Application.FSI_Solver {
                 new Tuple<int, BitArray>(refinementLevel, fineCells),
                 new Tuple<int, BitArray>(medioumRefinementLevel, mediumCells),
                 new Tuple<int, BitArray>(coarseRefinementLevel, coarseCells),
-            };
-            return AllCellsWithMaxRefineLevel;
-        }
-
-        private List<Tuple<int, BitArray>> StupidShowOfRefinement() {
-            BitArray CutCells = m_Particles[0].CutBitArray(LsTrk);
-            List<Tuple<int, BitArray>> StupidList = new List<Tuple<int, BitArray>>();
-            int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            BitArray tempCells1 = new BitArray(noOfLocalCells);
-            BitArray tempCells2 = new BitArray(noOfLocalCells);
-            BitArray tempCells3 = new BitArray(noOfLocalCells);
-            BitArray tempCells4 = new BitArray(noOfLocalCells);
-            BitArray tempCells5 = new BitArray(noOfLocalCells);
-            for (int i = 0; i < GridData.iLogicalCells.NoOfLocalUpdatedCells; i++) {
-                GridData grdDat = (GridData)GridData;
-                int currentLevel = grdDat.Cells.GetCell(i).RefinementLevel;
-                int nextLevel = currentLevel;
-                if (CutCells[i] && GridData.GetBoundaryCells().Contains(i)) {
-                    nextLevel += 1;
-                }
-                if (nextLevel == 1)
-                    tempCells1[i] = true;
-                else if (nextLevel == 2)
-                    tempCells2[i] = true;
-                else if (nextLevel == 3)
-                    tempCells3[i] = true;
-                else if (nextLevel == 4)
-                    tempCells4[i] = true;
-                else if (nextLevel == 5)
-                    tempCells5[i] = true;
-            }
-            StupidList.Add(new Tuple<int, BitArray>(1, tempCells1));
-            StupidList.Add(new Tuple<int, BitArray>(2, tempCells2));
-            StupidList.Add(new Tuple<int, BitArray>(3, tempCells3));
-            StupidList.Add(new Tuple<int, BitArray>(4, tempCells4));
-            StupidList.Add(new Tuple<int, BitArray>(5, tempCells5));
-            return StupidList;
-        }
-
-        /// <summary>
-        /// Creates the cellmask which should be refined.
-        /// </summary>
-        private List<Tuple<int, BitArray>> GetRefinemmentPressure() {
-            int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
-            BitArray fineCells = new BitArray(noOfLocalCells);
-            BitArray mediumCells = new BitArray(noOfLocalCells);
-            BitArray coarseCells = new BitArray(noOfLocalCells);
-            h_maxStart = h_maxStart == 0 ? LsTrk.GridDat.Cells.h_maxGlobal : h_maxStart;
-            int currentCoarseRef = 2;
-            int currentMediumRef = 2;
-            int currentFineRef = 2;
-            double meanVorticityTotal = 0;
-            for (int i = 0; i < noOfLocalCells; i++) {
-                meanVorticityTotal += Math.Abs(Pressure.GetMeanValue(i));
-            }
-            meanVorticityTotal /= noOfLocalCells;
-            for (int j = 0; j < noOfLocalCells; j++) {
-                double meanVorticity = Math.Abs(Pressure.GetMeanValue(j));
-                Pressure.GetExtremalValuesInCell(out double min, out double max, j);
-                double pressureDiff = Math.Abs(max - min);
-                double check = pressureDiff / meanVorticity;
-                GridData grdDat = (GridData)GridData;
-                int currentLevel = grdDat.Cells.GetCell(j).RefinementLevel;
-                if (check > 1) {
-                    if (currentFineRef < currentLevel + 1)
-                        currentFineRef = currentLevel + 1;
-                    fineCells[j] = true;
-                }
-                else if (check > 0.66) {
-                    if (currentMediumRef < currentLevel + 1)
-                        currentMediumRef = currentLevel + 1;
-                    mediumCells[j] = true;
-                }
-                else if (check > 0.25) {
-                    if (currentCoarseRef < currentLevel + 1)
-                        currentCoarseRef = currentLevel + 1;
-                    coarseCells[j] = true;
-                }
-            }
-
-            double radiusFineCells = 2 * LsTrk.GridDat.Cells.h_minGlobal;
-
-            for (int p = 0; p < m_Particles.Count; p++) {
-                Particle particle = m_Particles[p];
-                for (int j = 0; j < noOfLocalCells; j++) {
-                    Vector centerPoint = new Vector(CellCenters[j, 0], CellCenters[j, 1]);
-                    if (!coarseCells[j])
-                        coarseCells[j] = particle.Contains(centerPoint, radiusFineCells);
-                }
-            }
-            List<Tuple<int, BitArray>> AllCellsWithMaxRefineLevel = new List<Tuple<int, BitArray>> {
-                new Tuple<int, BitArray>(currentCoarseRef, coarseCells),
-                new Tuple<int, BitArray>(currentMediumRef, mediumCells),
-                new Tuple<int, BitArray>(currentFineRef, fineCells),
             };
             return AllCellsWithMaxRefineLevel;
         }

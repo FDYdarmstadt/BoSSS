@@ -210,7 +210,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// </param>
         /// <param name="NodeSetClone">
         /// The node set.
-        /// simulation).
         /// </param>
         /// <param name="currentPosition">
         /// The current position of the particle.
@@ -219,11 +218,13 @@ namespace BoSSS.Application.FSI_Solver {
             double temp1;
             double temp2;
             temp1 = CalculateStressTensorX(Grad_UARes, pARes, NormalVector, FluidViscosity, k, j);
-            temp1 *= -NormalVector[j, k, 1] * (currentPosition[1] - NodeSetClone[k, 1]).Abs();
+            //temp1 *= -NormalVector[j, k, 1] * (currentPosition[1] - NodeSetClone[k, 1]).Abs();
+            temp1 *= -(NodeSetClone[k, 1] - currentPosition[1]);
             if (double.IsNaN(temp1) || double.IsInfinity(temp1))
                 throw new ArithmeticException("Error trying to calculate the particle torque");
             temp2 = CalculateStressTensorY(Grad_UARes, pARes, NormalVector, FluidViscosity, k, j);
-            temp2 *= NormalVector[j, k, 0] * (currentPosition[0] - NodeSetClone[k, 0]).Abs();
+            //temp2 *= NormalVector[j, k, 0] * (currentPosition[0] - NodeSetClone[k, 0]).Abs();
+            temp2 *= (NodeSetClone[k, 0] - currentPosition[0]);
             if (double.IsNaN(temp2) || double.IsInfinity(temp2))
                 throw new ArithmeticException("Error trying to calculate the particle torque");
             return temp1 + temp2;
@@ -293,11 +294,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// </param>
         private double CalculateStressTensorX(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j) {
             double[] SummandsVelGradient = new double[3];
-            double SummandsPressure;
             SummandsVelGradient[0] = -2 * Grad_UARes[j, k, 0, 0] * NormalVector[j, k, 0];
             SummandsVelGradient[1] = -Grad_UARes[j, k, 0, 1] * NormalVector[j, k, 1];
             SummandsVelGradient[2] = -Grad_UARes[j, k, 1, 0] * NormalVector[j, k, 1];
-            SummandsPressure = pARes[j, k] * NormalVector[j, k, 0];
+            double SummandsPressure = pARes[j, k] * NormalVector[j, k, 0];
             return NeumaierSummation(SummandsVelGradient, SummandsPressure, FluidViscosity);
         }
 

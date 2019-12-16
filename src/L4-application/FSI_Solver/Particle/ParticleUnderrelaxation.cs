@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using ilPSP;
+using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 
@@ -50,6 +51,25 @@ namespace BoSSS.Application.FSI_Solver {
                 returnVariable[d] = 0.1 * m_Variable[d] + (1 - 0.1) * m_VariablePreviousIteration[1][d];
             }
             return returnVariable;
+        }
+
+        internal double[] AitkenUnderrelaxation(ref double Omega, List<double[]> variableWithoutRelaxationPreviousIteration) {
+            double[][] residual = new double[m_Variable.Length][];
+            double[] residualDiff = new double[m_Variable.Length];
+            double residualScalar = 0;
+            double sumVariable = 0;
+            for (int i = 0; i < m_Variable.Length; i++) {
+                residual[i] = new double[] { (m_Variable[i] - m_VariablePreviousIteration[0][i]), (variableWithoutRelaxationPreviousIteration[1][i] - m_VariablePreviousIteration[1][i]) };
+                residualDiff[i] = residual[i][0] - residual[i][1];
+                residualScalar += residual[i][1] * residualDiff[i];
+                sumVariable += m_Variable[i];
+            }
+            Omega = -Omega * residualScalar / residualDiff.L2Norm().Pow2();
+            double[] outVar = m_Variable.CloneAs();
+            for (int i = 0; i < m_Variable.Length; i++) {
+                outVar[i] = Omega * (m_Variable[i] - m_VariablePreviousIteration[0][i]) + m_VariablePreviousIteration[0][i];
+            }
+            return outVar;
         }
 
         /// <summary>

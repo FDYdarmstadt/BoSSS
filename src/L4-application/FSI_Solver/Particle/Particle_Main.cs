@@ -145,9 +145,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Necessary for active particles. Returns 0 for the non active boundary region and a number between 0 and 1 for the active region.
         /// </summary>
-        public double SeperateBoundaryRegions(double[] X) => Math.Cos(Motion.GetAngle(0)) * (X[0] - Motion.GetPosition(0)[0]) + Math.Sin(Motion.GetAngle(0)) * (X[1] - Motion.GetPosition(0)[1]) < 1e-8
-            ? 1// (Math.Cos(Motion.GetAngle(0)) * (X[0] - Motion.GetPosition(0)[0]) + Math.Sin(Motion.GetAngle(0)) * (X[1] - Motion.GetPosition(0)[1])) / Math.Sqrt((X[0] - Motion.GetPosition(0)[0]).Pow2() + (X[1] - Motion.GetPosition(0)[1]).Pow2())
-            : 0;
+        public double SeperateBoundaryRegions(double[] X) => Math.Cos(Motion.GetAngle(0)) * (X[0] - Motion.GetPosition(0)[0]) + Math.Sin(Motion.GetAngle(0)) * (X[1] - Motion.GetPosition(0)[1]) < 0
+                    ? 1//-Math.Pow((Math.Cos(Motion.GetAngle(0)) * (X[0] - Motion.GetPosition(0)[0]) + Math.Sin(Motion.GetAngle(0)) * (X[1] - Motion.GetPosition(0)[1])) / Math.Sqrt((X[0] - Motion.GetPosition(0)[0]).Pow2() + (X[1] - Motion.GetPosition(0)[1]).Pow2()), 3)
+                    : 0;
 
         /// <summary>
         /// Circumference of the current particle.
@@ -168,22 +168,11 @@ namespace BoSSS.Application.FSI_Solver {
             BitArray CellArray = new BitArray(LsTrk.GridDat.Cells.NoOfLocalUpdatedCells);
             MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
             double h_min = LsTrk.GridDat.Cells.h_minGlobal;
-
             for (int i = 0; i < CellArray.Length; i++) {
                 CellArray[i] = Contains(new Vector(CellCenters[i, 0], CellCenters[i, 1]), h_min);
             }
             CellMask CutCells = new CellMask(LsTrk.GridDat, CellArray, MaskType.Logical);
             return CutCells;
-        }
-
-        public BitArray CutBitArray(LevelSetTracker LsTrk) {
-            BitArray CellArray = new BitArray(LsTrk.GridDat.Cells.NoOfLocalUpdatedCells);
-            MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
-            double tolerance = LsTrk.GridDat.Cells.h_minGlobal / 2;
-            for (int i = 0; i < CellArray.Length; i++) {
-                CellArray[i] = Contains(new Vector(CellCenters[i, 0], CellCenters[i, 1]), tolerance);
-            }
-            return CellArray;
         }
 
         /// <summary>
@@ -206,7 +195,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Calculates the support point with an analytic formula (if applicable)
         /// </summary>
-        /// <param name="Vector"></param>
+        /// <param name="supportVector"></param>
         public virtual Vector GetSupportPoint(Vector supportVector, int SubParticleID) => throw new NotImplementedException();
 
         /// <summary>
@@ -221,24 +210,11 @@ namespace BoSSS.Application.FSI_Solver {
         internal void CalculateRadialVector(Vector SurfacePoint, out Vector RadialVector, out double RadialLength) {
             RadialVector = new Vector(SurfacePoint[0] - Motion.GetPosition(0)[0], SurfacePoint[1] - Motion.GetPosition(0)[1]);
             if (RadialVector.L2Norm() == 0)
-                throw new ArithmeticException("The given vector has no length");
-            RadialLength = RadialVector.L2Norm();
+                throw new ArithmeticException("The radial vector has no length");
+            RadialLength = RadialVector.Abs();
             RadialVector.ScaleV(1 / RadialLength);
             Aux.TestArithmeticException(RadialVector, "particle radial vector");
             Aux.TestArithmeticException(RadialLength, "particle radial length");
-        }
-
-        /// <summary>
-        /// Calculates the vector normal to the radial vector.
-        /// </summary>
-        /// <param name="SurfacePoint">
-        /// </param>
-        /// <param name="RadialNormalVector">
-        /// </param>
-        internal void CalculateRadialNormalVector(Vector SurfacePoint, out Vector RadialNormalVector) {
-            RadialNormalVector = new Vector(SurfacePoint[1] - Motion.GetPosition(0)[1], -SurfacePoint[0] + Motion.GetPosition(0)[0]);
-            RadialNormalVector.ScaleV(1 / RadialNormalVector.L2Norm());
-            Aux.TestArithmeticException(RadialNormalVector, "particle vector normal to radial vector");
         }
 
         /// <summary>

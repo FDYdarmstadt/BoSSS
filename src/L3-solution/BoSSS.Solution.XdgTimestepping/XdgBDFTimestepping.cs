@@ -1439,7 +1439,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     oldTs__AgglomerationTreshold: new double[] { 0.0 });
                 for (int i = 0; i < this.m_Stack_u.Length; i++)
                     SplittingAgg.Extrapolate(this.m_Stack_u[i].Mapping);
-
+                
                 // delete new agglomeration; in case of splitting, the agglomeration for the **bulk operator timestep** does not depend on previous time-steps
                 m_CurrentAgglomeration = null;
             }

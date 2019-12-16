@@ -32,7 +32,6 @@ namespace BoSSS.Application.FSI_Solver {
         internal Motion_AllParticles(LevelSetTracker lsTrk) {
             m_LsTrk = lsTrk;
         }
-
         [DataMember]
         private static readonly int m_Dim = 2;
         [DataMember]
@@ -51,20 +50,25 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="underrelax"></param>
         internal void CalculateHydrodynamics(List<Particle> AllParticles, ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, bool underrelax) {
             double[] hydrodynamics = new double[m_Dim * AllParticles.Count() + AllParticles.Count()];
+            bool useConstantUnderrelaxation = true;
             for (int p = 0; p < AllParticles.Count(); p++) {
                 Particle currentParticle = AllParticles[p];
                 CellMask cutCells = currentParticle.CutCells_P(m_LsTrk);
                 int offset = p * (m_Dim + 1);
                 double[] tempForces = currentParticle.Motion.CalculateHydrodynamicForces(hydrodynamicsIntegration, fluidDensity, cutCells);
                 double tempTorque = currentParticle.Motion.CalculateHydrodynamicTorque(hydrodynamicsIntegration, cutCells);
+                if (!currentParticle.Motion.UseConstantUnderrelaxation())
+                    useConstantUnderrelaxation = false;
                 for (int d = 0; d < m_Dim; d++) {
                     hydrodynamics[offset + d] = tempForces[d];
                 }
                 hydrodynamics[offset + m_Dim] = tempTorque;
             }
             double[] relaxatedHydrodynamics = hydrodynamics.CloneAs();
+            double omega = AllParticles[0].Motion.omega;
             if (underrelax)
-                relaxatedHydrodynamics = HydrodynamicsPostprocessing(hydrodynamics);
+                relaxatedHydrodynamics = HydrodynamicsPostprocessing(hydrodynamics, ref omega, useConstantUnderrelaxation);
+            AllParticles[0].Motion.omega = omega;
             for (int p = 0; p < AllParticles.Count(); p++) {
                 Particle currentParticle = AllParticles[p];
                 currentParticle.Motion.UpdateForcesAndTorque(p, relaxatedHydrodynamics);
@@ -75,15 +79,18 @@ namespace BoSSS.Application.FSI_Solver {
         /// Post-processing of the hydrodynamics. If desired the underrelaxation is applied to the forces and torque.
         /// </summary>
         /// <param name="hydrodynamics"></param>
-        private double[] HydrodynamicsPostprocessing(double[] hydrodynamics) {
+        private double[] HydrodynamicsPostprocessing(double[] hydrodynamics, ref double omega, bool useConstantUnderrelaxation) {
             m_ForcesAndTorqueWithoutRelaxation.Insert(0, hydrodynamics.CloneAs());
             ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation(hydrodynamics, m_ForcesAndTorquePreviousIteration);
             double[] relaxatedHydrodynamics;
-            if (m_ForcesAndTorquePreviousIteration.Count >= 4) {
-                relaxatedHydrodynamics = Underrelaxation.JacobianUnderrelaxation(m_ForcesAndTorqueWithoutRelaxation);
+            if (m_ForcesAndTorquePreviousIteration.Count >= 3 && !useConstantUnderrelaxation) {
+                //relaxatedHydrodynamics = Underrelaxation.JacobianUnderrelaxation(m_ForcesAndTorqueWithoutRelaxation);
+                relaxatedHydrodynamics = Underrelaxation.AitkenUnderrelaxation(ref omega, m_ForcesAndTorqueWithoutRelaxation);
+                Console.WriteLine("Aitken! " + omega);
             }
             else {
                 relaxatedHydrodynamics = Underrelaxation.StaticUnderrelaxation();
+                Console.WriteLine("Constant!");
             }
             return relaxatedHydrodynamics;
         }

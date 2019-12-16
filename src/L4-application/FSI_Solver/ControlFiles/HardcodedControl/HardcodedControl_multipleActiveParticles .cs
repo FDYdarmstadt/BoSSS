@@ -140,18 +140,18 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control TwoParticles(int k = 2, int amrLevel = 4) {
+        public static FSI_Control TwoParticles(int k = 2, int amrLevel = 2, double aspectRatio = 0.5) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/home/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
 
             List<string> boundaryValues = new List<string> {
-                "Wall"
+                "Pressure_Dirichlet"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 15, lengthY: 15, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
+            C.SetGrid(lengthX: 10, lengthY: 2, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel: amrLevel);
-            C.hydrodynamicsConvergenceCriterion = 1e-2;
+            C.hydrodynamicsConvergenceCriterion = 1e-4;
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
@@ -161,10 +161,11 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Particle Properties
             // =============================
-            double particleDensity = 1;
+            double particleDensity = 2.5;
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, 1);
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.2, new double[] { 0, 0 }, startAngl: 0, activeStress: 1));
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.2, new double[] { 8, 0 }, startAngl: 180, activeStress: 10));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { -0, 0 }, startAngl: 0, activeStress: 1));
+            //C.Particles.Add(new Particle_Sphere(motion, 0.3, new double[] { -0, 0 }, startAngl: 0, activeStress: 0));
+            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { 2.5, 0 }, startAngl: 180, activeStress: 1));
 
             // misc. solver options
             // =============================  
@@ -191,6 +192,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
             C.maxIterationsFullyCoupled = 1000000;
+            
 
             return C;
         }
