@@ -382,9 +382,9 @@ namespace BoSSS.Application.Rheology {
         /// </summary>
         static public RheologyControl ConfinedCylinder(
             //string path = @"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag", 
-            string path = @"d:\Users\kummer\default_bosss_db",
-            //string path = @"c:\Users\florian\default_bosss_db",
-            int degree = 4) {
+            //string path = @"d:\Users\kummer\default_bosss_db",
+            string path = @"c:\Users\florian\default_bosss_db",
+            int degree = 2) {
             //BoSSS.Application.Rheology.RheologyControlExamples.ConfinedCylinder();
             RheologyControl C = new RheologyControl();
 
@@ -485,11 +485,11 @@ namespace BoSSS.Application.Rheology {
             // Create Grid
 
             // grids used by florian
-            //string grid = "99ca969c-5ced-4640-b9aa-db665c60ccc9"; // florian laptop (half)
             //string grid = "1c9cb150-88d3-4ee1-974d-7970eabd3cf8"; // florian laptop (full, level 0)
+            string grid = "bb3239f2-479d-46e4-9187-ba47dc8cfc63"; // florian laptop (full, level 1)
             //string grid = "db1797a9-6bc4-4194-984a-03b67598fa19"; // florian laptop (full, level 2)
             //string grid = "c88c914b-c387-4894-9697-a78bad31f2da"; // florian terminal03 (full, level 0)
-            string grid = "061e7cfb-7ffe-4540-bc74-bfffce824fef"; // florian terminal03 (full, level 1)
+            //string grid = "061e7cfb-7ffe-4540-bc74-bfffce824fef"; // florian terminal03 (full, level 1)
             //string grid = "51aadb49-e3d5-4e88-897e-13b6b329995b"; // florian terminal03 (full, level 2)
 
             // half channel mesh3 for cond tests
@@ -517,7 +517,7 @@ namespace BoSSS.Application.Rheology {
             //Dennis Zylinder for drag validation
             //string grid = "a67192f5-6b59-4caf-a95a-0a08730c3365";
 
-
+            
             Guid gridGuid;
             if (Guid.TryParse(grid, out gridGuid))
             {
@@ -535,6 +535,39 @@ namespace BoSSS.Application.Rheology {
                 };
             }
             
+            /*
+            C.GridFunc = delegate () {
+
+                int res = 16;
+                double[] xNodes = GenericBlas.Linspace(-15, 15, res * 30 / 4 + 1);
+                xNodes = xNodes.Select(x => Math.Sin(x / 15.0 * (Math.PI / 2)) * 15).ToArray();
+                double[] yNodes = GenericBlas.Linspace(-2, 2, res + 1);
+
+                GridCommons bosssGrid = Grid2D.Cartesian2DGrid(xNodes, yNodes);
+
+                Func<Vector, string> edgeTagFunc = delegate (Vector X) {
+                    double x = X[0];
+                    double y = X[1];
+
+                    if (Math.Abs(x - (-15)) < 1.0e-10)
+                        return "Velocity_inlet";
+                    if (Math.Abs(x - (15)) < 1.0e-10)
+                        return "Pressure_Outlet";
+                    if (Math.Abs(y - (-2)) < 1.0e-10)
+                        return "Wall_bottom";
+                    if (Math.Abs(y - (+2)) < 1.0e-10)
+                        return "Wall_top";
+                    if (-1.0 < y && y < 1.0 && -1.0 < x && x < 1.0)
+                        return "Wall_cylinder";
+
+                    throw new ArgumentOutOfRangeException("at x = " + x + "and y = " + y);
+                };
+                bosssGrid.DefineEdgeTags(edgeTagFunc);
+
+                return bosssGrid;
+            };
+            //*/
+
             // Analytical Sol for Params
             if (C.SetParamsAnalyticalSol == true)
             {
@@ -547,7 +580,7 @@ namespace BoSSS.Application.Rheology {
             //var database = new DatabaseInfo(path);
             //Guid restartID = new Guid("9ae08191-ee15-4803-9e3f-566f119c9de4");
             //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, null);
-
+            /*
             //Set Initial Conditions
             if (C.SetInitialConditions == true)
             {
@@ -563,7 +596,7 @@ namespace BoSSS.Application.Rheology {
                     C.InitialValues_Evaluators.Add("Pressure", X => Pressurefunction(X, 0));
                 }
             }
-            
+            */
             C.InitialValues_Evaluators.Add("Phi", X => -1);
 
             // Set Boundary Conditions

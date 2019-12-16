@@ -487,6 +487,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             // ----------------------------------
             if (nonlinSolver != null) {
                 nonlinSolver.IterationCallback += this.LogResis;
+                if (linearSolver != null && linearSolver is ISolverWithCallback) {
+                    ((ISolverWithCallback)linearSolver).IterationCallback = this.LogResis;
+                }
             } else {
                 if (linearSolver != null && linearSolver is ISolverWithCallback) {
                     ((ISolverWithCallback)linearSolver).IterationCallback = this.LogResis;

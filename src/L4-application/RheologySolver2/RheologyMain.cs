@@ -409,12 +409,13 @@ namespace BoSSS.Application.Rheology {
                         
                         // pressure part:
                         var pres = new PressureGradientLin_d(d, BcMap);
-                        comps.Add(pres);
+                        //comps.Add(pres);
 
                         //if periodic boundary conditions are applied a fixed pressure gradient drives the flow
                         if (this.Control.FixedStreamwisePeriodicBC) {
                             var pressSource = new SrcPressureGradientLin_d(this.Control.SrcPressureGrad[d]);
-                            comps.Add(pressSource);
+                            //comps.Add(pressSource);
+                            Console.WriteLine("!!!Warning!!!: no pressure grad.");
                         }
                         
 
@@ -448,18 +449,19 @@ namespace BoSSS.Application.Rheology {
                         }
 
                         // extra stress divergence part:
-                        comps.Add(new StressDivergence_Cockburn(d, BcMap, this.Control.Reynolds, this.Control.Penalty1, this.Control.Penalty2));
-                       
+                        //comps.Add(new StressDivergence_Cockburn(d, BcMap, this.Control.Reynolds, this.Control.Penalty1, this.Control.Penalty2));
+                        Console.WriteLine("!!!Warning!!!: stress divergence deactivated");
                     }
 
                     
                     // Continuum equation
                     // ===============================================================================
                     for (int d = 0; d < D; d++) {
-                        XOP.EquationComponents["div"].Add(new Divergence_DerivativeSource(d, D));
-                        XOP.EquationComponents["div"].Add(new Divergence_DerivativeSource_Flux(d, BcMap));
+                        //XOP.EquationComponents["div"].Add(new Divergence_DerivativeSource(d, D));
+                        //XOP.EquationComponents["div"].Add(new Divergence_DerivativeSource_Flux(d, BcMap));
 
-                        //XOP.EquationComponents["div"].Add(new Idsource(VariableNames.Pressure));
+                        Console.WriteLine("!!!Warning!!!: Continuity Equation deactivated.");
+                        XOP.EquationComponents["div"].Add(new Idsource(VariableNames.Pressure));
 
                         //Pressure stabilization for LDG
                         //var presStab = new PressureStabilization(this.Control.PresPenalty2, this.Control.Reynolds);
@@ -473,7 +475,9 @@ namespace BoSSS.Application.Rheology {
                     XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Identity(0));
                     XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Identity(1));
                     XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Identity(2));
-                                        
+
+                    Console.WriteLine("!!!Warning!!!: Constitutive Equation deactivated.");
+                      /*                  
                     //Convective part
                     XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Convective(0, BcMap, this.Control.Weissenberg, this.Control.alpha));
                     XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Convective(1, BcMap, this.Control.Weissenberg, this.Control.alpha));
@@ -495,7 +499,7 @@ namespace BoSSS.Application.Rheology {
                         XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Diffusion(this.StressXY.Basis.Degree, Grid.SpatialDimension, ((GridData)GridData).Cells.cj, VariableNames.StressXY));
                         XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Diffusion(this.StressYY.Basis.Degree, Grid.SpatialDimension, ((GridData)GridData).Cells.cj, VariableNames.StressYY));
                     }
-
+                    */
                     // Build spatial operator
                     XOP.Commit();
 
@@ -1131,28 +1135,35 @@ namespace BoSSS.Application.Rheology {
                 int pPrs = this.Pressure.Basis.Degree;
                 int pStr = this.StressXX.Basis.Degree;
                 int D = this.GridData.SpatialDimension;
-
                 // set the MultigridOperator configuration for each level:
                 // it is not necessary to have exactly as many configurations as actual multigrid levels:
                 // the last configuration entry will be used for all higher level
                 MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
                 for (int iLevel = 0; iLevel < configs.Length; iLevel++) {
+                    /*
+                    configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[2];
+                    configs[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig() {
+                            Degree = Math.Max(1, pVel - iLevel),
+                            //mode = this.Control.VelocityBlockPrecondMode,
+                            mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib,
+                            VarIndex = new int[] { 0, 1, 3, 4, 5 }
+                        };
+                    configs[iLevel][1] = new MultigridOperator.ChangeOfBasisConfig() {
+                        Degree = Math.Max(0, pPrs - iLevel),
+                        mode = this.Control.PressureBlockPrecondMode,
+                        VarIndex = new int[] { D }
+                    };
+                    //*/
+                    
                     configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 4];
-
-                    // configurations for momentum+conti
-                    //for (int d = 0; d < D + 1; d++) {
-                    //    configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
-                    //        Degree = Math.Max(1, pVel - iLevel),
-                    //        mode = this.Control.NSEBlockPrecondMode,
-                    //        VarIndex = new int[] { d }
-                    //    };
-                    //}
 
                     // configurations for velocity
                     for (int d = 0; d < D; d++) {
                         configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
                             Degree = Math.Max(1, pVel - iLevel),
-                            mode = this.Control.VelocityBlockPrecondMode,
+                            //mode = this.Control.VelocityBlockPrecondMode,
+                            //mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib,
+                            mode = MultigridOperator.Mode.Eye,
                             VarIndex = new int[] { d }
                         };
                     }
@@ -1171,6 +1182,7 @@ namespace BoSSS.Application.Rheology {
                             VarIndex = new int[] { d }
                         };
                     }
+                    
                 }
 
                 return configs;

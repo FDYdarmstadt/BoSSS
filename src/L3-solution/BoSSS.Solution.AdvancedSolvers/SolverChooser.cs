@@ -638,7 +638,7 @@ namespace BoSSS.Solution {
                     break;
 
                 case LinearSolverCode.exp_Kcycle_schwarz_4Rheology:
-                    KcycleMultiSchwarz_4Rheology(, LocalDOF);
+                    templinearSolve = KcycleMultiSchwarz_4Rheology(lc, LocalDOF);
                     break;
 
                 case LinearSolverCode.exp_gmres_levelpmg:
@@ -1649,7 +1649,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// 
         /// </summary>
-        ISolverSmootherTemplate KcycleMultiSchwarz_4Rheology(LinearSolverConfig _lc, int[] _LocalDOF) {
+        ISolverSmootherTemplate KcycleMultiSchwarz(LinearSolverConfig _lc, int[] _LocalDOF) {
 
             // my tests show that the ideal block size may be around 10'000
             int DirectKickIn = _lc.TargetBlockSize;
@@ -1749,7 +1749,7 @@ namespace BoSSS.Solution {
         }
 
 
-        ISolverSmootherTemplate KcycleMultiSchwarz(LinearSolverConfig _lc, int[] _LocalDOF) {
+        ISolverSmootherTemplate KcycleMultiSchwarz_4Rheology(LinearSolverConfig _lc, int[] _LocalDOF) {
 
             // my tests show that the ideal block size may be around 10'000
             int DirectKickIn = _lc.TargetBlockSize;
