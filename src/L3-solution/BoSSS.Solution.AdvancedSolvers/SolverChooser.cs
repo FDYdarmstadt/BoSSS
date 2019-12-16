@@ -282,7 +282,7 @@ namespace BoSSS.Solution {
 
                 int d = MultigridSequence[iLevel].SpatialDimension;
                 foreach (var variable in MultigridOperatorConfig[counter]) {
-                    int p = variable.Degree;
+                    int p = variable.DegreeS[0];
                     switch (d) {
                         case 1:
                             DOFperCell[iLevel] += p + 1 + p + 1;

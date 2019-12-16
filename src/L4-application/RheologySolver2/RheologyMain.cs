@@ -409,13 +409,13 @@ namespace BoSSS.Application.Rheology {
                         
                         // pressure part:
                         var pres = new PressureGradientLin_d(d, BcMap);
-                        //comps.Add(pres);
+                        comps.Add(pres);
+                        //Console.WriteLine("!!!Warning!!!: no pressure grad.");
 
                         //if periodic boundary conditions are applied a fixed pressure gradient drives the flow
                         if (this.Control.FixedStreamwisePeriodicBC) {
                             var pressSource = new SrcPressureGradientLin_d(this.Control.SrcPressureGrad[d]);
-                            //comps.Add(pressSource);
-                            Console.WriteLine("!!!Warning!!!: no pressure grad.");
+                            comps.Add(pressSource);
                         }
                         
 
@@ -449,19 +449,19 @@ namespace BoSSS.Application.Rheology {
                         }
 
                         // extra stress divergence part:
-                        //comps.Add(new StressDivergence_Cockburn(d, BcMap, this.Control.Reynolds, this.Control.Penalty1, this.Control.Penalty2));
-                        Console.WriteLine("!!!Warning!!!: stress divergence deactivated");
+                        comps.Add(new StressDivergence_Cockburn(d, BcMap, this.Control.Reynolds, this.Control.Penalty1, this.Control.Penalty2));
+                        //Console.WriteLine("!!!Warning!!!: stress divergence deactivated");
                     }
 
                     
                     // Continuum equation
                     // ===============================================================================
                     for (int d = 0; d < D; d++) {
-                        //XOP.EquationComponents["div"].Add(new Divergence_DerivativeSource(d, D));
-                        //XOP.EquationComponents["div"].Add(new Divergence_DerivativeSource_Flux(d, BcMap));
+                        XOP.EquationComponents["div"].Add(new Divergence_DerivativeSource(d, D));
+                        XOP.EquationComponents["div"].Add(new Divergence_DerivativeSource_Flux(d, BcMap));
 
-                        Console.WriteLine("!!!Warning!!!: Continuity Equation deactivated.");
-                        XOP.EquationComponents["div"].Add(new Idsource(VariableNames.Pressure));
+                        //Console.WriteLine("!!!Warning!!!: Continuity Equation deactivated.");
+                        //XOP.EquationComponents["div"].Add(new Idsource(VariableNames.Pressure));
 
                         //Pressure stabilization for LDG
                         //var presStab = new PressureStabilization(this.Control.PresPenalty2, this.Control.Reynolds);
@@ -476,8 +476,8 @@ namespace BoSSS.Application.Rheology {
                     XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Identity(1));
                     XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Identity(2));
 
-                    Console.WriteLine("!!!Warning!!!: Constitutive Equation deactivated.");
-                      /*                  
+                    //Console.WriteLine("!!!Warning!!!: Constitutive Equation deactivated.");
+                                       
                     //Convective part
                     XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Convective(0, BcMap, this.Control.Weissenberg, this.Control.alpha));
                     XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Convective(1, BcMap, this.Control.Weissenberg, this.Control.alpha));
@@ -499,7 +499,7 @@ namespace BoSSS.Application.Rheology {
                         XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Diffusion(this.StressXY.Basis.Degree, Grid.SpatialDimension, ((GridData)GridData).Cells.cj, VariableNames.StressXY));
                         XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Diffusion(this.StressYY.Basis.Degree, Grid.SpatialDimension, ((GridData)GridData).Cells.cj, VariableNames.StressYY));
                     }
-                    */
+                    
                     // Build spatial operator
                     XOP.Commit();
 
@@ -1154,7 +1154,20 @@ namespace BoSSS.Application.Rheology {
                         VarIndex = new int[] { D }
                     };
                     //*/
+
+                    int pVelLv = Math.Max(1, pVel - iLevel);
+                    int pPreLv = Math.Max(1, pPrs - iLevel);
+                    int pStrLv = Math.Max(1, pStr - iLevel);
+
+                    configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[1];
+                    configs[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig() {
+                        mode = MultigridOperator.Mode.LeftInverse_DiagBlock,
+                        VarIndex = new int[] { 0, 1, 2, 3, 4, 5 },
+                        DegreeS = new int[] { pVel, pVel, pPrs, pStr, pStr, pStr }
+                    };
                     
+
+                    /*
                     configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 4];
 
                     // configurations for velocity
@@ -1182,7 +1195,7 @@ namespace BoSSS.Application.Rheology {
                             VarIndex = new int[] { d }
                         };
                     }
-                    
+                    */
                 }
 
                 return configs;
