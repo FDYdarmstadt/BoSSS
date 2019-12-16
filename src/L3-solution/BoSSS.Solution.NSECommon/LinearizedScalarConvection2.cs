@@ -22,6 +22,7 @@ using BoSSS.Solution.Utils;
 using ilPSP.Utils;
 using System.Diagnostics;
 using BoSSS.Foundation;
+using BoSSS.Foundation.Grid.Classic;
 
 namespace BoSSS.Solution.NSECommon {
 
@@ -461,6 +462,13 @@ namespace BoSSS.Solution.NSECommon {
         MaterialLaw EoS;
 
         /// <summary>
+        /// Mapping from edge tags to boundary values.<br/>
+        /// 1st index: edge tag;<br/>
+        /// 2nd index: spatial direction
+        /// </summary>
+        protected Func<double[], double, double>[,] velFunction;
+
+        /// <summary>
         /// Ctor
         /// </summary>
         /// <param name="SpatDim">Spatial dimension (either 2 or 3)</param>
@@ -475,6 +483,12 @@ namespace BoSSS.Solution.NSECommon {
             int idx = 0; // 0 for temperature, 1 for Y0 and so on... TODO
             argumentIndex =  m_SpatialDimension + idx;
 
+            velFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, SpatDim];
+
+            for (int d = 0; d < SpatDim; d++)
+                velFunction.SetColumn(m_bcmap.bndFunction[VariableNames.Velocity_d(d)], d);
+
+
             switch (BcMap.PhysMode) {
                 case PhysicsMode.Multiphase:
                     this.Argument = VariableNames.LevelSet;
@@ -483,7 +497,7 @@ namespace BoSSS.Solution.NSECommon {
                     break;
                 case PhysicsMode.LowMach:
                     this.Argument = VariableNames.Temperature;
-                    m_ParameterOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), VariableNames.Velocity0MeanVector(SpatDim),
+                    m_ParameterOrdering = ArrayTools.Cat(VariableNames.Velocity0Vector(SpatDim), VariableNames.Velocity0MeanVector(SpatDim),
                         VariableNames.Temperature0, VariableNames.Temperature0Mean);
                     m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), VariableNames.Temperature); // VelocityX,VelocityY,(VelocityZ), Temperature as variables. 
 
@@ -686,7 +700,12 @@ namespace BoSSS.Solution.NSECommon {
 
                         // Dirichlet value for scalar
                         // ==========================
-                        double[] Uout = new double[] { m_bcmap.bndFunction[Argument][inp.EdgeTag](inp.X, inp.time) };
+                        double[] Uout = new double[Uin.Length];
+                        for (int i = 0; i < Uin.Length - 1; i++) {
+                            Uout[i] = velFunction[inp.EdgeTag, i](inp.X, inp.time);
+                        }
+                        Uout[m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);
+
 
                         // Calculate BorderEdgeFlux as InnerEdgeFlux
                         // =========================================    
@@ -760,7 +779,12 @@ namespace BoSSS.Solution.NSECommon {
 
                         // Dirichlet value for scalar
                         // ==========================
-                        double[] Uout = new double[] { m_bcmap.bndFunction[Argument][inp.EdgeTag](inp.X, inp.time) };
+                        double[] Uout = new double[Uin.Length];
+                        for (int i = 0; i < Uin.Length - 1; i++) {
+                            Uout[i] = velFunction[inp.EdgeTag, i](inp.X, inp.time);
+                        }
+                        Uout[m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);
+
 
                         // Calculate BorderEdgeFlux as InnerEdgeFlux
                         // =========================================    
@@ -776,17 +800,22 @@ namespace BoSSS.Solution.NSECommon {
                         double r = 0.0;
                         double u1, u2, u3 = 0;
 
-                        u1 = inp.Parameters_IN[0];
-                        u2 = inp.Parameters_IN[1];
+                        //u1 = inp.Parameters_IN[0];
+                        //u2 = inp.Parameters_IN[1];
+                        u1 = Uin[0];
+                        u2 = Uin[1];
 
-                        r += Uin[0] * (u1 * inp.Normal[0] + u2 * inp.Normal[1]);
+
+                        r += Uin[argumentIndex] * (u1 * inp.Normal[0] + u2 * inp.Normal[1]);
                         if (m_SpatialDimension == 3) {
-                            u3 = inp.Parameters_IN[2];
-                            r += Uin[0] * u3 * inp.Normal[2];
+                            //u3 = inp.Parameters_IN[2];
+                            u3 = Uin[2];
+                            r += Uin[argumentIndex] * u3 * inp.Normal[2];
                         }
 
                         if (m_bcmap.PhysMode == PhysicsMode.LowMach) {
-                            double rho = EoS.GetDensity(inp.Parameters_IN[2 * m_SpatialDimension]);
+                            //double rho = EoS.GetDensity(inp.Parameters_IN[2 * m_SpatialDimension]);
+                            double rho = EoS.GetDensity(Uin[argumentIndex]);
                             r *= rho;
                         }
 

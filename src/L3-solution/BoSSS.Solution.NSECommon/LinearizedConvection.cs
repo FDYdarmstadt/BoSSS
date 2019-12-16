@@ -565,7 +565,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// set to 0.0 to turn the Lax-Friedrichs scheme into an central difference scheme.
         /// </summary>
-        protected double LaxFriedrichsSchemeSwitch = 0.0;
+        protected double LaxFriedrichsSchemeSwitch = 1.0;
 
         /// <summary>
         /// Ctor for incompressible flows.
@@ -712,9 +712,10 @@ namespace BoSSS.Solution.NSECommon {
                             // Dirichlet value for velocity
                             // ============================
                             double[] Uout = new double[Uin.Length];
-                            for(int i = 0; i < Uin.Length; i++) {
+                            for(int i = 0; i < Uin.Length -1; i++) {
                                 Uout[i] = velFunction[inp.EdgeTag, i](inp.X, inp.time);
                             }
+
 
                             // Specify Parameters_OUT
                             // ======================
@@ -738,8 +739,11 @@ namespace BoSSS.Solution.NSECommon {
                                     break;
                                 case PhysicsMode.LowMach:
                                 case PhysicsMode.Multiphase: {
+                                        Uout[m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);
+
+
                                         // opt1:
-                                        switch(edgeType) {
+                                        switch (edgeType) {
                                             case IncompressibleBcType.Velocity_Inlet:
                                             case IncompressibleBcType.Wall:
                                                 inp2.Parameters_OUT[2 * m_SpatialDimension] = scalarFunction[inp.EdgeTag](inp.X, inp.time);
@@ -824,7 +828,7 @@ namespace BoSSS.Solution.NSECommon {
 
                                 u3 = inp.Parameters_IN[2] + inp.Parameters_IN[2 + 2 * m_SpatialDimension];
                         } else {
-                            u_d = Uin[0];
+                            u_d = Uin[m_component];
                             u1 = inp.Parameters_IN[0];
                             u2 = inp.Parameters_IN[1];
 
@@ -966,7 +970,7 @@ namespace BoSSS.Solution.NSECommon {
         /// For variable density the result is multiplied by \f$ \rho\f$ .
         /// </summary>
         protected void Flux(ref CommonParamsVol inp, double[] U, double[] output) {
-
+            int idx = argumentIndex;
             output[0] = U[idx] * U[0];
             output[1] = U[idx] * U[1];
             if(m_SpatialDimension == 3) {

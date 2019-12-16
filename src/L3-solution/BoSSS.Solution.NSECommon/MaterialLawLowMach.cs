@@ -22,6 +22,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using BoSSS.Foundation;
 using ilPSP;
+using NUnit.Framework;
 
 namespace BoSSS.Solution.NSECommon {
 
@@ -123,7 +124,9 @@ namespace BoSSS.Solution.NSECommon {
             if(IsInitialized) {
                 double rho;             
                 rho = ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];    //rho = ThermodynamicPressureValue / phi[0];
-
+                Debug.Assert(!double.IsNaN(rho));
+                Debug.Assert(!double.IsInfinity(rho));
+     
                 //if(rhoOne) { 
                 //    rho = 1.0;
                 //}

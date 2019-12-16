@@ -272,7 +272,7 @@ namespace BoSSS.Solution.NSECommon {
 
         double BorderEdgeFlux(ref Foundation.CommonParamsBnd inp, double[] Uin) {
             double res = 0.0;
-
+            
             IncompressibleBcType edgeType = Bcmap.EdgeTag2Type[inp.EdgeTag];
             double[] DensityArgumentsIn;
             switch(edgeType) {
@@ -321,13 +321,13 @@ namespace BoSSS.Solution.NSECommon {
                                 break;
                             case PhysicsMode.LowMach:
                             case PhysicsMode.Multiphase:
-                                DensityArgumentsIn = Uin.GetSubVector(1, 1); // Only TemperatureIn
-                                res = EoS.GetDensity(DensityArgumentsIn) * Uin[0] * inp.Normal[Component];
+                                DensityArgumentsIn = Uin.GetSubVector(m_SpatialDimension, 1); // Only TemperatureIn
+                                res = EoS.GetDensity(DensityArgumentsIn) * Uin[Component] * inp.Normal[Component];
                                 break;
                             case PhysicsMode.Combustion:
                                 // throw new NotImplementedException("Has to be implemented!");
-                                DensityArgumentsIn = Uin.GetSubVector(1, NumberOfSpecies + 2); // TODO! MassFraction3 does not exist as a variable, because it is just calculated at the end of each iteration
-                                res = EoS.GetDensity(DensityArgumentsIn) * Uin[0] * inp.Normal[Component]; //TODO 
+                                DensityArgumentsIn = Uin.GetSubVector(2, NumberOfSpecies + 2); // TODO! MassFraction3 does not exist as a variable, because it is just calculated at the end of each iteration
+                                res = EoS.GetDensity(DensityArgumentsIn) * Uin[Component] * inp.Normal[Component]; //TODO 
                                 break;
                             default:
                                 throw new ApplicationException("PhysicsMode not implemented");
@@ -407,8 +407,8 @@ namespace BoSSS.Solution.NSECommon {
             if(buf == null)
                 buf = new double[D];
             this.Flux(ref cpv, U, buf);
-            for(int d = 0; d < D; d++)
-                acc += buf[d] * GradV[d];
+            //for(int d = 0; d < D; d++)
+                acc += buf[Component] * GradV[Component];
             return -acc;
         }
 
