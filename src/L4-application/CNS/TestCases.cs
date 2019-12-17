@@ -1400,7 +1400,7 @@ namespace CNS {
 
 
 
-        public static CNSControl DMR_Cube(string dbPath = null, int savePeriod = int.MaxValue, int dgDegree = 2, double xMax = 4.0, double yMax = 1.0, int NoCellsX_percore = 40, int NoCellsY_percore = 10, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 0.2, string restart = "False", int cores = int.MaxValue) {
+        public static CNSControl DMR_Cube(string dbPath = null, int savePeriod = int.MaxValue, int dgDegree = 2, double xMax = 4.0, double yMax = 1.0, int numOfCellsX = 800, int numOfCellsY = 200, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 0.2, string restart = "False", int cores = int.MaxValue) {
             CNSControl c = new CNSControl();
 
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_dmr_video";          // Lichtenberg
@@ -1489,7 +1489,7 @@ namespace CNS {
             // Start of the bottom wall, x = 1/6 = 0.166666, (Woodward and Colella 1984)
             // Practical choice: Should be on a cell boundary, because the boundary condition changes from
             // supersonic inflow to adiabatic wall
-            double xWall = 0.2;
+            const double xWall = 0.2;
             double temp = xWall / ((xMax - xMin) / numOfCellsX);
             bool resolutionOk = (temp == Math.Truncate(temp));
             if (!resolutionOk) {
@@ -1606,11 +1606,21 @@ namespace CNS {
                 };
             }
 
+            const double tan60 = 1.732050807568877;
+            const double sin60 = 8.660254037844386e-01;// Math.Sin(Math.PI / 3);
+            const double cos60 = 0.5;
+
+            Debug.Assert((sin60 - Math.Sin(Math.PI / 3).Abs() < BLAS.MachineEps * 100));
+            Debug.Assert((cos60 - Math.Cos(Math.PI / 3).Abs() < BLAS.MachineEps * 100));
+            Debug.Assert((tan60 - Math.Tan(Math.PI / 3).Abs() < BLAS.MachineEps * 100));
+
             double DistanceToInitialShock(double[] X, double t) {
+                //OptimizedHLLCFlux.DistanceToInitialShock.Start();
                 // direction vector
-                Vector p1 = new Vector(xWall, 0.0);
-                Vector p2 = new Vector(xWall + 1 / Math.Tan(Math.PI / 3), 1.0);
-                Vector p = p2 - p1;
+                //Vector p1 = new Vector(xWall, 0.0);
+                //Vector p2 = new Vector(xWall + 1 / tan60, 1.0);
+                //Vector p = p2 - p1;
+                Vector p = new Vector(1 / tan60, 1);
 
                 // normal vector
                 Vector n = new Vector(p.y, -p.x);
@@ -1618,26 +1628,31 @@ namespace CNS {
 
                 // Angle between line and x-axis
                 //double alpha = Math.Atan(Math.Abs((p2.y - p1.y)) / Math.Abs((p2.x - p1.x)));
-                double alpha = Math.PI / 3;
+                //double alpha = Math.PI / 3;
 
                 // distance of a point X to the origin (normal to the line)
-                double nDotX = n.x * (X[0]) + n.y * (X[1]);
+                double nDotX = n * X;
 
                 // shock speed
                 double vs = 10;
 
                 // distance to line
-                double distance = nDotX - (Math.Sin(alpha) * p1.x + vs * t);
+                double distance = nDotX - (sin60 * xWall + vs * t);
 
+                //OptimizedHLLCFlux.DistanceToInitialShock.Stop();
                 return distance;
             }
 
             // Function for smoothing the initial and top boundary conditions
             double SmoothJump(double distance) {
+                //OptimizedHLLCFlux.SmoothJump.Start();
                 // smoothing should be in the range of h/p
                 double maxDistance = 2.0 * cellSize / Math.Max(dgDegree, 1);
 
-                return (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
+                //double retval = (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
+                double retval = (FastTanh((float)(distance / maxDistance)) + 1.0) * 0.5; // ca 20%
+                //OptimizedHLLCFlux.SmoothJump.Stop();
+                return retval;
             }
 
             // Function for a sharp jump (no smoothing of initial and top boundary conditions)
@@ -1649,10 +1664,23 @@ namespace CNS {
             //c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.yComponent, (X, t) => -4.125 - Jump(X[0] - (0.1 + (X[1] + 20.0 * t) / 1.732)) * (-4.125 - 0.0));
             //c.AddBoundaryValue("SupersonicInlet", CNSVariables.Pressure, (X, t) => 116.5 - Jump(X[0] - (0.1 + (X[1] + 20.0 * t) / 1.732)) * (116.5 - 1.0));
 
-            c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density, (X, t) => 8.0 - SmoothJump(DistanceToInitialShock(X, t)) * (8.0 - 1.4));
-            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.xComponent, (X, t) => 8.25 * Math.Sin(Math.PI / 3) - SmoothJump(DistanceToInitialShock(X, t)) * (8.25 * Math.Sin(Math.PI / 3) - 0.0));
-            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.yComponent, (X, t) => -8.25 * Math.Cos(Math.PI / 3) - SmoothJump(DistanceToInitialShock(X, t)) * (-8.25 * Math.Cos(Math.PI / 3) - 0.0));
-            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Pressure, (X, t) => 116.5 - SmoothJump(DistanceToInitialShock(X, t)) * (116.5 - 1.0));
+            double DensityInlet(double[] X, double t) {
+                return 8.0 - SmoothJump(DistanceToInitialShock(X, t)) * (8.0 - 1.4);
+            }
+            double VelocityXInlet(double[] X, double t) {
+                return 8.25 * sin60 - SmoothJump(DistanceToInitialShock(X, t)) * (8.25 * sin60 - 0.0);
+            }
+            double VelocityYInlet(double[] X, double t) {
+                return -8.25 * cos60 - SmoothJump(DistanceToInitialShock(X, t)) * (-8.25 * cos60 - 0.0);
+            }
+            double PressureInlet(double[] X, double t) {
+                return 116.5 - SmoothJump(DistanceToInitialShock(X, t)) * (116.5 - 1.0);
+            }
+
+            c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density, DensityInlet);
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.xComponent, VelocityXInlet);
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.yComponent, VelocityYInlet);
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Pressure, PressureInlet);
 
             // In theory, no outflow boundary condition has to be specified, as all characteristics move downstream
             c.AddBoundaryValue("SupersonicOutlet", CNSVariables.Pressure, (X, t) => 1.0);
@@ -1666,8 +1694,8 @@ namespace CNS {
 
             if (restart == "False") {
                 c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => 8.0 - SmoothJump(DistanceToInitialShock(X, 0)) * (8.0 - 1.4));
-                c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => 8.25 * Math.Sin(Math.PI / 3) - SmoothJump(DistanceToInitialShock(X, 0)) * (8.25 * Math.Sin(Math.PI / 3) - 0.0));
-                c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => -8.25 * Math.Cos(Math.PI / 3) - SmoothJump(DistanceToInitialShock(X, 0)) * (-8.25 * Math.Cos(Math.PI / 3) - 0.0));
+                c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => 8.25 * sin60 - SmoothJump(DistanceToInitialShock(X, 0)) * (8.25 * sin60 - 0.0));
+                c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => -8.25 * cos60 - SmoothJump(DistanceToInitialShock(X, 0)) * (-8.25 * cos60 - 0.0));
                 c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => 116.5 - SmoothJump(DistanceToInitialShock(X, 0)) * (116.5 - 1.0));
             }
 
@@ -1702,8 +1730,7 @@ namespace CNS {
 
             return c;
         }
-        
-        
+
         /// <summary>
         /// Version to be submitted on the TU Darmstadt HHLR Lichtenberg cluster
         /// </summary>
