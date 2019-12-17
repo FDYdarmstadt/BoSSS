@@ -1397,10 +1397,10 @@ namespace CNS {
             int sign = (x > epsilon) ? 1 : (x > -epsilon) ? 0 : -1;
             return sign * (_eTilde - eTilde1) / (_eTilde + eTilde1);
         }
-   
-       
 
-        public static CNSControl DMR_Cube(string dbPath = null, int savePeriod = int.MaxValue, int dgDegree = 2, double xMax = 4.0, double yMax = 1.0, int numOfCellsX = 800, int numOfCellsY = 200, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 0.2, string restart = "False", int cores = int.MaxValue) {
+
+
+        public static CNSControl DMR_Cube(string dbPath = null, int savePeriod = int.MaxValue, int dgDegree = 2, double xMax = 4.0, double yMax = 1.0, int NoCellsX_percore = 40, int NoCellsY_percore = 10, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 0.2, string restart = "False", int cores = int.MaxValue) {
             CNSControl c = new CNSControl();
 
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_dmr_video";          // Lichtenberg
@@ -1415,8 +1415,61 @@ namespace CNS {
             c.WriteLTSLog = false;
             c.WriteLTSConsoleOutput = false;
 
+            //c.TracingNamespaces = "BoSSS.Foundation.Grid.Classic";
+
             double xMin = 0;
             double yMin = 0;
+
+            //Partitioning
+            int[] separation = new int[] { 1, 1 };
+            switch (cores) {
+                case 4:
+                    separation = new int[] { 2, 2 };
+                    break;
+                case 8:
+                    separation = new int[] { 4, 2 };
+                    break;
+                case 16:
+                    separation = new int[] { 4, 4 };
+                    break;
+                case 32:
+                    separation = new int[] { 8, 4 };
+                    break;
+                case 64:
+                    separation = new int[] { 8, 8 };
+                    break;
+                default:
+                    c.GridPartType = GridPartType.none;
+                    break;
+            }
+            c.GridPartType = GridPartType.Predefined;
+            c.GridPartOptions = "hallo";
+            //ilPSP.Environment.StdoutOnlyOnRank0 = false;
+            Func<double[], int> MakeMyPartioning = delegate (double[] X) {
+                double x = X[0];
+                double y = X[1];
+
+                double xspan = (xMax - xMin) / separation[0];
+                double yspan = (yMax - yMin) / separation[1];
+                int rank = int.MaxValue;
+                int icore = 0;
+                for (int i = 0; i < separation[0]; i++) {
+                    for (int j = 0; j < separation[1]; j++) {
+                        bool xtrue = x <= xspan * (i + 1) + xMin;
+                        bool ytrue = y <= yspan * (j + 1) + yMin;
+                        if (xtrue && ytrue) {
+                            rank = icore;
+                            return rank;
+                        }
+                        icore++;
+                    }
+                }
+
+                return rank;
+            };
+            //get total number of cells for each direction of space
+            int numOfCellsX = NoCellsX_percore * separation[0];
+            int numOfCellsY = NoCellsY_percore * separation[1];
 
             // Time stepping
             c.ExplicitScheme = (ExplicitSchemes)explicitScheme;
@@ -1436,7 +1489,7 @@ namespace CNS {
             // Start of the bottom wall, x = 1/6 = 0.166666, (Woodward and Colella 1984)
             // Practical choice: Should be on a cell boundary, because the boundary condition changes from
             // supersonic inflow to adiabatic wall
-            const double xWall = 0.2;
+            double xWall = 0.2;
             double temp = xWall / ((xMax - xMin) / numOfCellsX);
             bool resolutionOk = (temp == Math.Truncate(temp));
             if (!resolutionOk) {
@@ -1508,54 +1561,7 @@ namespace CNS {
             //    c.AddVariable(CNSVariables.LTSClusters, 0);
             //}
 
-            //Partitioning
-            c.GridPartType = GridPartType.Predefined;
-            c.GridPartOptions = "hallo";
-            //ilPSP.Environment.StdoutOnlyOnRank0 = false;
-            Func<double[], int> MakeMyPartioning = delegate (double[] X) {
-                double x = X[0];
-                double y = X[1];
 
-                double[] separation = new double[] { 1, 1 };
-                switch (cores) {
-                    case 4:
-                        separation = new double[] { 2, 2 };
-                        break;
-                    case 8:
-                        separation = new double[] { 4, 2 };
-                        break;
-                    case 16:
-                        separation = new double[] { 4, 4 };
-                        break;
-                    case 32:
-                        separation = new double[] { 8, 4 };
-                        break;
-                    case 64:
-                        separation = new double[] { 8, 8 };
-                        break;
-                    default:
-                        c.GridPartType = GridPartType.none;
-                        break;
-                }
-
-                double xspan = (xMax - xMin) / separation[0];
-                double yspan = (yMax - yMin) / separation[1];
-                int rank = int.MaxValue;
-                int icore = 0;
-                for (int i = 0; i < separation[0]; i++) {
-                    for (int j = 0; j < separation[1]; j++) {
-                        bool xtrue = x <= xspan * (i + 1) + xMin;
-                        bool ytrue = y <= yspan * (j + 1) + yMin;
-                        if (xtrue && ytrue) {
-                            rank = icore;
-                            return rank;
-                        }
-                        icore++;
-                    }
-                }
-
-                return rank;
-            };
 
             // Grid
             if (restart == "True") {
@@ -1600,21 +1606,11 @@ namespace CNS {
                 };
             }
 
-            const double tan60 = 1.732050807568877;
-            const double sin60 = 8.660254037844386e-01;// Math.Sin(Math.PI / 3);
-            const double cos60 = 0.5;
-
-            Debug.Assert((sin60 - Math.Sin(Math.PI / 3).Abs() < BLAS.MachineEps * 100));
-            Debug.Assert((cos60 - Math.Cos(Math.PI / 3).Abs() < BLAS.MachineEps * 100));
-            Debug.Assert((tan60 - Math.Tan(Math.PI / 3).Abs() < BLAS.MachineEps * 100));
-
             double DistanceToInitialShock(double[] X, double t) {
-                //OptimizedHLLCFlux.DistanceToInitialShock.Start();
                 // direction vector
-                //Vector p1 = new Vector(xWall, 0.0);
-                //Vector p2 = new Vector(xWall + 1 / tan60, 1.0);
-                //Vector p = p2 - p1;
-                Vector p = new Vector(1 / tan60, 1);
+                Vector p1 = new Vector(xWall, 0.0);
+                Vector p2 = new Vector(xWall + 1 / Math.Tan(Math.PI / 3), 1.0);
+                Vector p = p2 - p1;
 
                 // normal vector
                 Vector n = new Vector(p.y, -p.x);
@@ -1622,31 +1618,26 @@ namespace CNS {
 
                 // Angle between line and x-axis
                 //double alpha = Math.Atan(Math.Abs((p2.y - p1.y)) / Math.Abs((p2.x - p1.x)));
-                //double alpha = Math.PI / 3;
+                double alpha = Math.PI / 3;
 
                 // distance of a point X to the origin (normal to the line)
-                double nDotX = n*X;
+                double nDotX = n.x * (X[0]) + n.y * (X[1]);
 
                 // shock speed
                 double vs = 10;
 
                 // distance to line
-                double distance = nDotX - (sin60 * xWall + vs * t);
+                double distance = nDotX - (Math.Sin(alpha) * p1.x + vs * t);
 
-                //OptimizedHLLCFlux.DistanceToInitialShock.Stop();
                 return distance;
             }
 
             // Function for smoothing the initial and top boundary conditions
             double SmoothJump(double distance) {
-                //OptimizedHLLCFlux.SmoothJump.Start();
                 // smoothing should be in the range of h/p
                 double maxDistance = 2.0 * cellSize / Math.Max(dgDegree, 1);
 
-                //double retval = (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
-                double retval = (FastTanh((float)(distance / maxDistance)) + 1.0) * 0.5; // ca 20%
-                //OptimizedHLLCFlux.SmoothJump.Stop();
-                return retval;
+                return (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
             }
 
             // Function for a sharp jump (no smoothing of initial and top boundary conditions)
@@ -1658,23 +1649,10 @@ namespace CNS {
             //c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.yComponent, (X, t) => -4.125 - Jump(X[0] - (0.1 + (X[1] + 20.0 * t) / 1.732)) * (-4.125 - 0.0));
             //c.AddBoundaryValue("SupersonicInlet", CNSVariables.Pressure, (X, t) => 116.5 - Jump(X[0] - (0.1 + (X[1] + 20.0 * t) / 1.732)) * (116.5 - 1.0));
 
-            double DensityInlet(double [] X, double t) {
-                return 8.0 - SmoothJump(DistanceToInitialShock(X, t)) * (8.0 - 1.4);
-            }
-            double VelocityXInlet(double [] X, double t) {
-                return 8.25 * sin60 - SmoothJump(DistanceToInitialShock(X, t)) * (8.25 * sin60 - 0.0);
-            }
-            double VelocityYInlet(double [] X, double t) {
-                return -8.25 * cos60 - SmoothJump(DistanceToInitialShock(X, t)) * (-8.25 * cos60 - 0.0);
-            }
-            double PressureInlet(double [] X, double t) {
-                return 116.5 - SmoothJump(DistanceToInitialShock(X, t)) * (116.5 - 1.0);
-            }
-
-            c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density, DensityInlet);
-            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.xComponent, VelocityXInlet);
-            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.yComponent, VelocityYInlet);
-            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Pressure, PressureInlet);
+            c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density, (X, t) => 8.0 - SmoothJump(DistanceToInitialShock(X, t)) * (8.0 - 1.4));
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.xComponent, (X, t) => 8.25 * Math.Sin(Math.PI / 3) - SmoothJump(DistanceToInitialShock(X, t)) * (8.25 * Math.Sin(Math.PI / 3) - 0.0));
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.yComponent, (X, t) => -8.25 * Math.Cos(Math.PI / 3) - SmoothJump(DistanceToInitialShock(X, t)) * (-8.25 * Math.Cos(Math.PI / 3) - 0.0));
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Pressure, (X, t) => 116.5 - SmoothJump(DistanceToInitialShock(X, t)) * (116.5 - 1.0));
 
             // In theory, no outflow boundary condition has to be specified, as all characteristics move downstream
             c.AddBoundaryValue("SupersonicOutlet", CNSVariables.Pressure, (X, t) => 1.0);
@@ -1688,8 +1666,8 @@ namespace CNS {
 
             if (restart == "False") {
                 c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => 8.0 - SmoothJump(DistanceToInitialShock(X, 0)) * (8.0 - 1.4));
-                c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => 8.25 * sin60 - SmoothJump(DistanceToInitialShock(X, 0)) * (8.25 * sin60 - 0.0));
-                c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => -8.25 * cos60 - SmoothJump(DistanceToInitialShock(X, 0)) * (-8.25 * cos60 - 0.0));
+                c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => 8.25 * Math.Sin(Math.PI / 3) - SmoothJump(DistanceToInitialShock(X, 0)) * (8.25 * Math.Sin(Math.PI / 3) - 0.0));
+                c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => -8.25 * Math.Cos(Math.PI / 3) - SmoothJump(DistanceToInitialShock(X, 0)) * (-8.25 * Math.Cos(Math.PI / 3) - 0.0));
                 c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => 116.5 - SmoothJump(DistanceToInitialShock(X, 0)) * (116.5 - 1.0));
             }
 
@@ -1706,13 +1684,13 @@ namespace CNS {
             string tempSessionName;
             if (c.ExplicitScheme == ExplicitSchemes.RungeKutta) {
                 tempSessionName = string.Format("DMR_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_RK{5}_{6}cores",
-                    dgDegree, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitOrder, cores);
+                    dgDegree, NoCellsX_percore, NoCellsY_percore, sensorLimit, CFLFraction, explicitOrder, cores);
             } else if (c.ExplicitScheme == ExplicitSchemes.AdamsBashforth) {
                 tempSessionName = string.Format("DMR_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_AB{5}",
-                    dgDegree, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitOrder);
+                    dgDegree, NoCellsX_percore, NoCellsY_percore, sensorLimit, CFLFraction, explicitOrder);
             } else {
                 tempSessionName = string.Format("DMR_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_ALTS{5}_{6}_re{7}_subs{8}",
-                    dgDegree, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps);
+                    dgDegree, NoCellsX_percore, NoCellsY_percore, sensorLimit, CFLFraction, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps);
             }
             if (c.DynamicLoadBalancing_On) {
                 //string loadBal = String.Format("_Part={0}_Repart{1}_Thresh{2}", c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
@@ -1724,27 +1702,27 @@ namespace CNS {
 
             return c;
         }
-
+        
+        
         /// <summary>
         /// Version to be submitted on the TU Darmstadt HHLR Lichtenberg cluster
         /// </summary>
-        public static CNSControl DoubleMachReflectionHHLR(int savePeriod, int dgDegree, double xMax, double yMax, int numOfCellsX, int numOfCellsY, double sensorLimit, double CFLFraction, int explicitScheme, int explicitOrder, int numberOfSubGrids, int reclusteringInterval, int maxNumOfSubSteps, double endTime, int timeSteps, int cores) {
-            //CNS.TestCases.DoubleMachReflectionHHLR(100, 2, 4, 1, 100, 25, 0.001, 0.1, 1, 1, 3, 1, 0, 0.7, 10, 1);
-
+        public static CNSControl DoubleMachReflectionHHLR(int savePeriod, int dgDegree, double xMax, double yMax, int numOfCellsX, int numOfCellsY, double sensorLimit, double CFLFraction, int explicitScheme, int explicitOrder, int numberOfSubGrids, int reclusteringInterval, int maxNumOfSubSteps, double endTime, int timeSteps) {
 
             // Lichtenberg
             //string dbPath = @"/home/yp19ysog/bosss_db_paper_ibmdmr2";
             //string dbPath = @"/work/scratch/yp19ysog/bosss_db_performance3";
             //string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr_run3_test";
             //string dbPath = @"C:\bosss_db_paper_ibmdmr_scratch_run3_test";
-            //string dbPath = @"/work/scratch/jw52xeqa/DB_Cube";
+            string dbPath = @"/work/scratch/jw52xeqa/DB_Cube_2";
+            //string dbPath = @"/work/scratch/jw52xeqa/DB_trash";
             //string dbPath = @"V:\testDB";
-            string dbPath = @"D:\tmp\test_db";
             string restart = "False";
+            int cores = ilPSP.Environment.MPIEnv.MPI_Size;
 
             CNSControl c = DMR_Cube(dbPath, savePeriod, dgDegree, xMax, yMax, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, endTime, restart, cores);
 
-            c.ProjectName = "dmr_cube_test";
+            c.ProjectName = "dmr_cube_run3";
             c.NoOfTimesteps = timeSteps;
 
             return c;
