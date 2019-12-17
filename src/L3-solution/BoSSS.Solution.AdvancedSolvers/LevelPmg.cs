@@ -103,7 +103,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
            
 
             var DGlowSelect = new SubBlockSelector(op.Mapping);
-            DGlowSelect.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D ? CoarseLowOrder : CoarseLowOrder - 1));
+            DGlowSelect.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D ? CoarseLowOrder : CoarseLowOrder - 1)); // dirty hack for mixed order stokes
             lMask = new BlockMask(DGlowSelect);
             m_lowMaskLen = lMask.LocalDOF;
 
