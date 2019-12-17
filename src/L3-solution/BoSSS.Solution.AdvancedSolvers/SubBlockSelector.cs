@@ -290,18 +290,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Selects Modes according to instruction.
         /// </summary>
-        /// <param name="boolinstruct"></param>
-        /// <returns></returns>
         public SubBlockSelector ModeSelector(Func<int, bool> boolinstruct) {
-            this.m_ModeFilter = delegate (int iCell, int iVar, int iSpec, int iMode) {
-                return boolinstruct(iMode);
+            this.m_ModeFilter = delegate (int iCell, int iVar, int iSpec, int pDeg) {
+                return boolinstruct(pDeg);
             };
             return this;
         }
 
-#endregion
+        /// <summary>
+        /// Selects Modes according to instruction.
+        /// </summary>
+        public SubBlockSelector ModeSelector(Func<int, int, int, int, bool> boolinstruct) {
+            this.m_ModeFilter = boolinstruct;
+            return this;
+        }
 
-#region BasisInstructions
+
+        #endregion
+
+        #region BasisInstructions
 
         private Func<int, bool> GetListInstruction(IEnumerable<int> intList) {
             if(!intList.IsSet())

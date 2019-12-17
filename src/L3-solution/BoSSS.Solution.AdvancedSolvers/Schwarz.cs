@@ -509,7 +509,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         throw new ArgumentException();
                     if (Overlap > 0) {
                         if (Overlap > 1 && Mop.RowPartitioning.MpiSize > 1) {
-                            throw new NotSupportedException("In MPI parallel runs, the maximum supported overlap for the Schwarz preconditioner is 1.");
+                            //throw new NotSupportedException("In MPI parallel runs, the maximum supported overlap for the Schwarz preconditioner is 1.");
+                            Console.WriteLine("In MPI parallel runs, the overlap for the Schwarz preconditioner is reduced to 1 at MPI boundaries.");
                         }
 
                         foreach (List<int> bi in _Blocks) { // loop over blocks...
@@ -518,20 +519,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 marker[jcomp] = true;
 
                             // determine overlap regions
-                            for (int k = 0; k < Overlap; k++) {
+                            for (int k = 0; k < Overlap; k++) { // overlap sweeps
                                 int Jblock = bi.Count;
-                                for (int j = 0; j < Jblock; j++) {
+                                for (int j = 0; j < Jblock; j++) { // loop over parts of block
                                     int jCell = bi[j];
-                                    int[] Neighs = ag.iLogicalCells.CellNeighbours[jCell];
-                                    foreach (int jNeigh in Neighs) {
-                                        if (marker[jNeigh] == false) {
-                                            // neighbor cell is not already a member of the block
-                                            // => add it.
-                                            bi.Add(jNeigh);
-                                            marker[jNeigh] = true;
-                                        }
-                                    }
+                                    if (jCell < JComp) {
 
+
+                                        int[] Neighs = ag.iLogicalCells.CellNeighbours[jCell];
+                                        foreach (int jNeigh in Neighs) {
+                                            if (marker[jNeigh] == false) {
+                                                // neighbor cell is not already a member of the block
+                                                // => add it.
+                                                bi.Add(jNeigh);
+                                                marker[jNeigh] = true;
+                                            }
+                                        }
+                                    } else {
+
+                                    }
                                 }
                             }
 

@@ -99,38 +99,42 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //debugerSW.WriteLine("proc {0} reporting Num of Blocks {1}", ilPSP.Environment.MPIEnv.MPI_Rank, HighOrderBlocks_LUpivots.Length);
 #endif
 
+            int D = this.m_op.GridData.SpatialDimension;
+           
+
             var DGlowSelect = new SubBlockSelector(op.Mapping);
-            DGlowSelect.ModeSelector((int x) => x <= CoarseLowOrder);
+            DGlowSelect.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D ? CoarseLowOrder : CoarseLowOrder - 1));
             lMask = new BlockMask(DGlowSelect);
             m_lowMaskLen = lMask.LocalDOF;
 
-            var DGhighSelect = new SubBlockSelector(op.Mapping);
-            DGhighSelect.ModeSelector((int x) => x > CoarseLowOrder);
-            hMask = new BlockMask(DGhighSelect);
-            m_highMaskLen = hMask.LocalDOF;
+            if (UseHiOrderSmoothing) {
+                var DGhighSelect = new SubBlockSelector(op.Mapping);
+                DGhighSelect.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D ? CoarseLowOrder : CoarseLowOrder - 1));
+                hMask = new BlockMask(DGhighSelect);
+                m_highMaskLen = hMask.LocalDOF;
 
-            BlockMsrMatrix P01HiMatrix=null;
+                BlockMsrMatrix P01HiMatrix = null;
 
-            if(UseDiagonalPmg) {
-                HighOrderBlocks_LU = hMask.GetSubBlocks(op.OperatorMatrix,true, false, false);
-                int NoOfBlocks = HighOrderBlocks_LU.Length;
-                HighOrderBlocks_LUpivots = new int[NoOfBlocks][];
+                if (UseDiagonalPmg) {
+                    HighOrderBlocks_LU = hMask.GetSubBlocks(op.OperatorMatrix, true, false, false);
+                    int NoOfBlocks = HighOrderBlocks_LU.Length;
+                    HighOrderBlocks_LUpivots = new int[NoOfBlocks][];
 
-                for (int jLoc = 0; jLoc < NoOfBlocks; jLoc++) {
-                    int len = HighOrderBlocks_LU[jLoc].NoOfRows;
-                    HighOrderBlocks_LUpivots[jLoc] = new int[len];
-                    HighOrderBlocks_LU[jLoc].FactorizeLU(HighOrderBlocks_LUpivots[jLoc]);
+                    for (int jLoc = 0; jLoc < NoOfBlocks; jLoc++) {
+                        int len = HighOrderBlocks_LU[jLoc].NoOfRows;
+                        HighOrderBlocks_LUpivots[jLoc] = new int[len];
+                        HighOrderBlocks_LU[jLoc].FactorizeLU(HighOrderBlocks_LUpivots[jLoc]);
+                    }
+                } else {
+                    P01HiMatrix = hMask.GetSubBlockMatrix(op.OperatorMatrix, true, false, true);
+
+                    hiSolver = new PARDISOSolver() {
+                        CacheFactorization = true,
+                        UseDoublePrecision = true // keep it true, experiments showed, that this leads to fewer iterations
+                    };
+                    hiSolver.DefineMatrix(P01HiMatrix);
                 }
-            } else {
-                P01HiMatrix = hMask.GetSubBlockMatrix(op.OperatorMatrix,true, false, true);
-
-                hiSolver = new PARDISOSolver() {
-                    CacheFactorization = true,
-                    UseDoublePrecision = true // keep it true, experiments showed, that this leads to fewer iterations
-                };
-                hiSolver.DefineMatrix(P01HiMatrix);
             }
-
 
             var P01SubMatrix = lMask.GetSubBlockMatrix(op.OperatorMatrix);
 
@@ -221,43 +225,45 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // accumulate low-p correction
             lMask.AccVecToFull(Cor_c, Cor_f);
 
-            // solver high-order 
+            if (UseHiOrderSmoothing) {
+                // solver high-order 
                 // compute residual of low-order solution
                 Res_f.SetV(B);
                 Mtx.SpMV(-1.0, Cor_f, 1.0, Res_f);
-            if (UseDiagonalPmg) {
-                var Map = m_op.Mapping;
-                int NoVars = Map.AggBasis.Length;
-                int j0 = Map.FirstBlock;
-                int J = Map.LocalNoOfBlocks;
-                int[] degs = m_op.Degrees;
-                var BS = Map.AggBasis;
+                if (UseDiagonalPmg) {
+                    var Map = m_op.Mapping;
+                    int NoVars = Map.AggBasis.Length;
+                    int j0 = Map.FirstBlock;
+                    int J = Map.LocalNoOfBlocks;
+                    int[] degs = m_op.Degrees;
+                    var BS = Map.AggBasis;
 
-                int Mapi0 = Map.i0;
-                double[] x_hi = null;
-                for (int j = 0; j < J; j++) {
+                    int Mapi0 = Map.i0;
+                    double[] x_hi = null;
+                    for (int j = 0; j < J; j++) {
 
-                    if (HighOrderBlocks_LU[j] != null) {
-                        int NpTotHi = HighOrderBlocks_LU[j].NoOfRows;
-                        x_hi = new double[NpTotHi];
+                        if (HighOrderBlocks_LU[j] != null) {
+                            int NpTotHi = HighOrderBlocks_LU[j].NoOfRows;
+                            x_hi = new double[NpTotHi];
 
-                        double[] b_f=hMask.GetVectorCellwise(Res_f,j);
-                        Debug.Assert(b_f.Length == NpTotHi);
-                        HighOrderBlocks_LU[j].BacksubsLU(HighOrderBlocks_LUpivots[j], x_hi, b_f);
-                        hMask.AccVecCellwiseToFull(x_hi,j, X);
+                            double[] b_f = hMask.GetVectorCellwise(Res_f, j);
+                            Debug.Assert(b_f.Length == NpTotHi);
+                            HighOrderBlocks_LU[j].BacksubsLU(HighOrderBlocks_LUpivots[j], x_hi, b_f);
+                            hMask.AccVecCellwiseToFull(x_hi, j, X);
+                        }
+
                     }
+                } else {
+                    if (m_highMaskLen > 0) {
+                        int Hc = m_highMaskLen;
+                        // project to low-p/coarse
+                        double[] hi_Res_c = hMask.GetSubBlockVec(Res_f);
+                        Debug.Assert(hi_Res_c.Length == m_highMaskLen);
+                        double[] hi_Cor_c = new double[Hc];
+                        hiSolver.Solve(hi_Cor_c, hi_Res_c);
+                        hMask.AccVecToFull(hi_Cor_c, X);
 
-                }
-            } else {
-                if(m_highMaskLen > 0) {
-                    int Hc = m_highMaskLen;
-                    // project to low-p/coarse
-                    double[] hi_Res_c =hMask.GetSubBlockVec(Res_f);
-                    Debug.Assert(hi_Res_c.Length == m_highMaskLen);
-                    double[] hi_Cor_c = new double[Hc];
-                    hiSolver.Solve(hi_Cor_c, hi_Res_c);
-                    hMask.AccVecToFull(hi_Cor_c,X);
-
+                    }
                 }
             }
 

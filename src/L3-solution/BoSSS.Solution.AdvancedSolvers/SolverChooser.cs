@@ -1791,8 +1791,7 @@ namespace BoSSS.Solution {
                     };
                 } else {
 
-                    Console.WriteLine("Rem: PMG deakt.");
-
+                   
                     var smoother1 = new Schwarz() {
                         m_MaxIterations = 1,
                         CoarseSolver = null,
@@ -1802,32 +1801,41 @@ namespace BoSSS.Solution {
                         //m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                         //    Depth = 1
                         //},
-                        Overlap = 1, // overlap seems to help; more overlap seems to help more
-                        EnableOverlapScaling = true,
-                        UsePMGinBlocks = false
-                    };
-
-
-                    var smoother2 = new Schwarz() {
-                        m_MaxIterations = 1,
-                        CoarseSolver = null,
-                        //m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                        //    NoOfPartsPerProcess = NoOfBlocks
-                        //},
-                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy {
-                            NoOfPartsPerProcess = NoOfBlocks * 2
-                        },
-                        Overlap = 0, // overlap seems to help; more overlap seems to help more
+                        Overlap = 2, 
                         EnableOverlapScaling = false,
                         UsePMGinBlocks = false
                     };
-  
+
+                   
+                    var smoother2 = smoother1;
+                    /*
+                    var smoother2 = new Schwarz() {
+                        m_MaxIterations = 1,
+                        CoarseSolver = null,
+                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy {
+                            NoOfPartsPerProcess = NoOfBlocks * 2
+                        },
+                        Overlap = 2,
+                        EnableOverlapScaling = false,
+                        UsePMGinBlocks = false
+                    };
+                    */
+
+                    var CoarseSolver = new LevelPmg() {
+                        UseHiOrderSmoothing = false,
+                        CoarseLowOrder = 1
+                    };
+
+
                     levelSolver = new OrthonormalizationMultigrid() {
                         m_MaxIterations = iLevel == 0 ? _lc.MaxSolverIterations : 1,
                         PreSmoother = smoother1,
                         PostSmoother = smoother2,
-                        Tolerance = iLevel == 0 ? _lc.ConvergenceCriterion : 0.0
+                        Tolerance = iLevel == 0 ? _lc.ConvergenceCriterion : 0.0,
+                        CoarserLevelSolver = CoarseSolver
                     };
+
+                    
 
 
                     ((OrthonormalizationMultigrid)levelSolver).IterationCallback =
