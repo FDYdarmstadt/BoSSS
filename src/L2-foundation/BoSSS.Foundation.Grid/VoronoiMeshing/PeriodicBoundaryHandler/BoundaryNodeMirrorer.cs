@@ -4,12 +4,12 @@ using System.Diagnostics;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 {
-    class BoundaryNodeCloner<T>
-        where T : ILocatable, new()
+    class BoundaryNodeMirrorer<T>
+        where T : ICloneable<T>
     {
-        PeriodicMap map;
+        readonly PeriodicMap map;
 
-        public BoundaryNodeCloner(
+        public BoundaryNodeMirrorer(
             PeriodicMap map)
         {
             this.map = map;
@@ -51,10 +51,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 
         static T CloneAndTransform(T node, Transformation transformation)
         {
-            T transformedClone = new T
-            {
-                Position = transformation.Transform(node.Position)
-            };
+            T transformedClone = node.Clone();
+            transformedClone.Position = transformation.Transform(node.Position);
+            
             return transformedClone;
         }
 

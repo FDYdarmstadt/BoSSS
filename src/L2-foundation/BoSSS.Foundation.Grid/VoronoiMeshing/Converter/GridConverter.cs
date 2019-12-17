@@ -11,11 +11,6 @@ using System.Linq;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
 {
-    public interface IVoronoiNodeCastable
-    {
-        VoronoiNode AsVoronoiNode();
-    }
-
     class GridConverter<T>
         where T : IVoronoiNodeCastable
     {
@@ -32,9 +27,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
         public VoronoiGrid ConvertToVoronoiGrid(
             IMesh<T> mesh)
         {
+            boundaryConverter.Clear();
             (GridCommons grid, int[][] aggregation) = ExtractGridCommonsAndCellAggregation(mesh.Cells, boundaryConverter);
             VoronoiNodes nodes = ExtractVoronoiNodes(mesh);
             VoronoiGrid voronoiGrid = new VoronoiGrid(grid, aggregation, nodes, boundary);
+            var test = grid.iGridData.iGeomEdges.CellIndices;
 
             return voronoiGrid;
         }
@@ -51,7 +48,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
             IEnumerable<MeshCell<T>> cells,
             BoundaryConverter boundaryConverter)
         {
-            List<BoSSS.Foundation.Grid.Classic.Cell> cells_GridCommons = new List<BoSSS.Foundation.Grid.Classic.Cell>();
+            List<BoSSS.Foundation.Grid.Classic.Cell> cellsGridCommons = new List<BoSSS.Foundation.Grid.Classic.Cell>();
             List<int[]> aggregation = new List<int[]>();
 
             foreach (MeshCell<T> cell in cells)
@@ -94,7 +91,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
 
                     Cell Cj = new Cell()
                     {
-                        GlobalID = cells_GridCommons.Count,
+                        GlobalID = cellsGridCommons.Count,
                         Type = CellType.Triangle_3,
                     };
                     Cj.TransformationParams = MultidimensionalArray.Create(3, 2);
@@ -102,8 +99,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
                     Cj.TransformationParams.SetRowPt(1, V1);
                     Cj.TransformationParams.SetRowPt(2, V2);
 
-                    Agg2Pt[iTri] = cells_GridCommons.Count;
-                    cells_GridCommons.Add(Cj);
+                    Agg2Pt[iTri] = cellsGridCommons.Count;
+                    cellsGridCommons.Add(Cj);
 
                     //Save BoundaryInformation
                     if (isBoundaryCell)
@@ -123,7 +120,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
 
             GridCommons grid = new Grid2D(Triangle.Instance)
             {
-                Cells = cells_GridCommons.ToArray()
+                Cells = cellsGridCommons.ToArray()
             };
             boundaryConverter.RegisterEdgesTo(grid);
             return (grid, aggregation.ToArray());

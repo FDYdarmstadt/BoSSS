@@ -12,7 +12,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
 {
     class BoundaryConverter
     {
-        VoronoiBoundary boundary;
+        readonly VoronoiBoundary boundary;
 
         readonly PeriodicBoundaryConverter periodicBoundaryConverter;
 
@@ -99,6 +99,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
             {
                 grid.EdgeTagNames.Add(tagName);
             }
+        }
+
+        public void Clear()
+        {
+            periodicBoundaryConverter.Clear();
         }
     }
 }

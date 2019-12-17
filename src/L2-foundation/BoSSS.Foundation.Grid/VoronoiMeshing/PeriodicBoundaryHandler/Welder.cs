@@ -1,10 +1,7 @@
-﻿using System;
+﻿using BoSSS.Platform.LinAlg;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Diagnostics;
-using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 {
@@ -17,6 +14,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
                 target.Value = TargetFirstEdgeMerge(source.Value, target.Value);
                 MergeNodes(source, target);
             }
+            else
+            {
+                Console.WriteLine("Not merging");
+            }
         }
 
         public static void SourceFirstWeldEdges<T>(LinkedListNode<Edge<T>> source, LinkedListNode<Edge<T>> target)
@@ -25,6 +26,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             {
                 target.Value = SourceFirstEdgeMerge(source.Value, target.Value);
                 MergeNodes(source, target);
+            }
+            else
+            {
+                Console.WriteLine("Not merging");
             }
         }
 

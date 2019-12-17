@@ -5,8 +5,6 @@ using System.Collections.Generic;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 {
-    
-
     class PeriodicCornerBoundaryIdentifier<T>
     {
         struct Crossing

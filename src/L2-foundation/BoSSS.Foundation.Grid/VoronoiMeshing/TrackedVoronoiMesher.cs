@@ -19,7 +19,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         public int J;
     }
 
-    public class TrackableNode : Node
+    public class TrackableNode : Node, ICloneable<TrackableNode>
     {
         public NodeConnection Type { get; set; }
 
@@ -34,13 +34,27 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         }
 
         public TrackableNode()
-            :base()
         {
             Type = new NodeConnection
             {
                 J = -1,
                 Type = Connection.Created
             };
+        }
+
+        TrackableNode(NodeConnection connection)
+        {
+            Type = connection;
+        }
+
+        TrackableNode ICloneable<TrackableNode>.Clone()
+        {
+            NodeConnection mirrored = new NodeConnection
+            {
+                J = Type.J,
+                Type = Connection.Mirror
+            };
+            return new TrackableNode( mirrored);
         }
     }
 

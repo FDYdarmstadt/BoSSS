@@ -5,7 +5,7 @@ using BoSSS.Foundation.Grid.Voronoi.Meshing.Converter;
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
     public class VoronoiMesher<T>
-        where T : ILocatable, IVoronoiNodeCastable, new()
+        where T : ICloneable<T>, IVoronoiNodeCastable, new()
     {
         public class Settings
         {

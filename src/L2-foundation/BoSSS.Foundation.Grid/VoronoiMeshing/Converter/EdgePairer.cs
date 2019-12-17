@@ -53,5 +53,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
                 periodicEdges.Add(faceID, newEdge);
             }
         }
+
+        public void Clear()
+        {
+            periodicEdges.Clear();
+        }
     }
 }

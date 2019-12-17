@@ -5,11 +5,6 @@ using System.Diagnostics;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
-    public interface ILocatable
-    {
-        Vector Position { get; set; }
-    }
-
     static class MeshingAlgorithm
     {
         public class Settings
@@ -33,7 +28,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         }
 
         public static IMesh<T> ComputeMesh<T>(IList<T> nodes, Settings settings)
-            where T : ILocatable, new()
+            where T : ICloneable<T>, new()
         {
             AssertCorrectness(settings, nodes);
             MeshGenerator<T> voronoiMesher = new MeshGenerator<T>(settings);
@@ -46,12 +41,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 {
                     MoveNodesTowardsCellCenter(domain.Cells);
                 }
-                //MatlabPlotter.Plot(domain.Mesh);
                 domain = voronoiMesher.Generate(domain.Nodes, domain.Boundary.FirstCorner);
             }
             stopwatch.Stop();
             Console.WriteLine(stopwatch.ElapsedMilliseconds);
-            
+            //MatlabPlotter.Plot(domain.Mesh);
             return domain;
         }
 

@@ -4,9 +4,9 @@ using System.Collections.Generic;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
-    public class Node : ILocatable, IVoronoiNodeCastable
+    public class Node : ICloneable<Node>, IVoronoiNodeCastable
     {
-        VoronoiNode node;
+        readonly VoronoiNode node;
 
         public Node()
         {
@@ -29,6 +29,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         public VoronoiNode AsVoronoiNode()
         {
             return node;
+        }
+
+        Node ICloneable<Node>.Clone()
+        {
+            return new Node();
         }
     } 
 

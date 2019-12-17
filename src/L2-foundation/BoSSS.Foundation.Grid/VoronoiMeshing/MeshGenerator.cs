@@ -8,13 +8,13 @@ using BoSSS.Foundation.Grid.Voronoi.Meshing.MICHMesher;
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
     class MeshGenerator<T>
-         where T : ILocatable, new()
+         where T : ICloneable<T>, new()
     {
         readonly Cutter<T> cutter;
 
         readonly Vector[] boundingBox;
 
-        BoundaryLine[] boundaryLines;
+        readonly BoundaryLine[] boundaryLines;
 
         readonly PeriodicBoundaryHandler<T> boundaryHandler;
 

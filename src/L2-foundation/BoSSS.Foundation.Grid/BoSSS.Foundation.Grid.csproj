@@ -68,9 +68,12 @@
     <Compile Include="VoronoiMeshing\Converter\BoundaryConverter.cs" />
     <Compile Include="VoronoiMeshing\Converter\BoundaryFace.cs" />
     <Compile Include="VoronoiMeshing\Converter\EdgePairer.cs" />
+    <Compile Include="VoronoiMeshing\ILocatable.cs" />
     <Compile Include="VoronoiMeshing\IMesh.cs" />
     <Compile Include="VoronoiMeshing\MatlabColorPalette.cs" />
     <Compile Include="VoronoiMeshing\MatlabPlotter.cs" />
+    <Compile Include="VoronoiMeshing\ICopyable.cs" />
+    <Compile Include="VoronoiMeshing\Converter\IVoronoiNodeCastable.cs" />
     <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\MeshEdgeDivider.cs" />
     <Compile Include="VoronoiMeshing\Converter\PeriodicBoundaryConverterMap.cs" />
     <Compile Include="VoronoiMeshing\Converter\PeriodicBoundaryConverter.cs" />
@@ -113,7 +116,7 @@
     <Compile Include="VoronoiMeshing\MICHMesher\MICHVertex.cs" />
     <Compile Include="VoronoiMeshing\MICHMesher\MICMesher.cs" />
     <Compile Include="VoronoiMeshing\MICHMesher\VariableCell.cs" />
-    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\BoundaryNodeCloner.cs" />
+    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\BoundaryNodeMirrorer.cs" />
     <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\CellPairCollecter.cs" />
     <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\Welder.cs" />
     <Compile Include="VoronoiMeshing\Transformation.cs" />

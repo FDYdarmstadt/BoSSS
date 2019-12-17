@@ -26,6 +26,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
                     map);
         }
 
+        public void Clear()
+        {
+            edgePairer.Clear();
+        }
+
         static byte[] ExtractEdgeTags(VoronoiBoundary boundary, PeriodicMap map)
         {
             byte[] voronoiEdgeTags = boundary.EdgeTags;
@@ -148,6 +153,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
                 byte edgeTag = pair.Key;
                 byte edgeTagInGrid = grid.AddPeriodicEdgeTrafo(trafo);
                 Debug.Assert(edgeTag == edgeTagInGrid);
+
+                if (!grid.EdgeTagNames.ContainsKey(edgeTagInGrid))
+                {
+                    grid.EdgeTagNames.Add(edgeTagInGrid, $"periodic corner {edgeTagInGrid}");
+                }
             }
         }
 

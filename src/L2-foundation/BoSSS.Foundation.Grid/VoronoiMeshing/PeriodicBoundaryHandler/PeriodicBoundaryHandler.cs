@@ -8,11 +8,11 @@ using System.Diagnostics;
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 {
     class PeriodicBoundaryHandler<T>
-        where T : ILocatable, new()
+        where T : ICloneable<T>
     {
         readonly IDictionary<int, Transformation> periodicTrafoMap;
 
-        readonly BoundaryNodeCloner<T> nodeCloner;
+        readonly BoundaryNodeMirrorer<T> nodeCloner;
 
         readonly BoundaryRecomposer<T> recomposer;
 
@@ -25,7 +25,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             {
                 ContainsPeriodicBoundaries = true;
                 periodicTrafoMap = map.PeriodicBoundaryTransformations;
-                nodeCloner = new BoundaryNodeCloner<T>(map);
+                nodeCloner = new BoundaryNodeMirrorer<T>(map);
                 recomposer = new BoundaryRecomposer<T>(map); 
             }
             else
@@ -73,7 +73,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             IEnumerable<Edge<T>> periodicEdges = PeriodicEdgesOf(mesh);
             recomposer.RecomposePeriodicEdges(mesh, periodicEdges);
 
-            //Debug.Assert(PeriodicEdgeIDsLineUp(mesh));
+            Debug.Assert(PeriodicEdgeIDsLineUp(mesh));
         }
 
         bool PeriodicEdgeIDsLineUp(Domain<T> mesh)

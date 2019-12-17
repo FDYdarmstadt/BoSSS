@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
 {
     class Cutter<T>
-        where T :ILocatable, new()
+        where T : ILocatable, new()
     {
         BoundaryLineEnumerator boundaryLines;
 
