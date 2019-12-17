@@ -509,8 +509,8 @@ namespace BoSSS.Application.XdgPoisson3 {
 
         protected void CustomItCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
             MaxMlevel=Mgop.LevelIndex;
-            currentRes.SaveToTextFileDebug(String.Format("Res_{0}_proc",iterIndex));
-            currentSol.SaveToTextFileDebug(String.Format("Sol_{0}_proc",iterIndex));
+            //currentRes.SaveToTextFileDebug(String.Format("Res_{0}_proc",iterIndex));
+            //currentSol.SaveToTextFileDebug(String.Format("Sol_{0}_proc",iterIndex));
             //Console.WriteLine("Callback executed {0} times",iterIndex);
         }
 
