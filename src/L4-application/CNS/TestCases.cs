@@ -1400,7 +1400,7 @@ namespace CNS {
 
 
 
-        public static CNSControl DMR_Cube(string dbPath = null, int savePeriod = int.MaxValue, int dgDegree = 2, double xMax = 4.0, double yMax = 1.0, int numOfCellsX = 800, int numOfCellsY = 200, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 0.2, string restart = "False", int cores = int.MaxValue) {
+        public static CNSControl DMR_Cube(string dbPath = null, int savePeriod = int.MaxValue, int dgDegree = 2, double xMax = 4.0, double yMax = 1.0, int NoCellsX_percore = 800, int NoCellsY_percore = 200, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 0.2, string restart = "False", int cores = int.MaxValue) {
             CNSControl c = new CNSControl();
 
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_dmr_video";          // Lichtenberg
