@@ -91,9 +91,9 @@ namespace ilPSP.Tracing {
         }
 
         /// <summary>
-        /// Sets the time spend in respective method (see <see cref="TicksSpentInMethod"/>) and all child calls to zero.
+        /// Sets the time spend in respective method (see <see cref="TicksSpentInMethod"/>) and in all child calls to zero. Can be configured to reset call count as well.
         /// </summary>
-        public void ResetRecursive(bool EliminateKilledTimeFromParrent = true) {
+        public void ResetRecursive(bool EliminateKilledTimeFromParrent = true, bool EliminateCallcount = false) {
 
             if (EliminateKilledTimeFromParrent) {
                 long toRemove = this.TicksExclusive;
@@ -104,10 +104,13 @@ namespace ilPSP.Tracing {
                 }
 
             }
-            this.m_TicksSpentInMethod -=this.TicksExclusive;
+            this.m_TicksSpentInMethod -= this.TicksExclusive;
 
             foreach (var c in Calls.Values) {
-                c.ResetRecursive();
+                c.ResetRecursive(EliminateCallcount: EliminateCallcount);
+            }
+            if (EliminateCallcount) {
+                this.CallCount = 0;
             }
         }
 
