@@ -384,7 +384,7 @@ namespace BoSSS.Application.Rheology {
             //string path = @"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag", 
             string path = @"d:\Users\kummer\default_bosss_db",
             //string path = @"c:\Users\florian\default_bosss_db",
-            int degree = 2) {
+            int degree = 4) {
             //BoSSS.Application.Rheology.RheologyControlExamples.ConfinedCylinder();
             RheologyControl C = new RheologyControl();
 
@@ -404,25 +404,20 @@ namespace BoSSS.Application.Rheology {
             C.NonLinearSolver.MinSolverIterations = 1;
             C.NonLinearSolver.ConvergenceCriterion = 1E-7;
 
-            C.LinearSolver.MaxSolverIterations = 50;
+            C.LinearSolver.MaxSolverIterations = 500;
             C.LinearSolver.MinSolverIterations = 1;
             C.LinearSolver.TargetBlockSize = 100000;
             C.LinearSolver.ConvergenceCriterion = 1E-7;
 
             //C.UnderRelax = 1.0;
-            C.dt = 1e6;
-            C.dtMax = C.dt;
-            C.dtMin = C.dt;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-
-            //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz_4Rheology;
             C.LinearSolver.NoOfMultigridLevels = 1;
             
             C.ObjectiveParam = 1.0;
-            C.useJacobianForOperatorMatrix = true;
+            C.useJacobianForOperatorMatrix = false;
 
             C.UsePerssonSensor = false;
             C.SensorLimit = 1e-4;
@@ -467,8 +462,11 @@ namespace BoSSS.Application.Rheology {
 
             //Exact Solution Confined Cylinder
 
-            // Set Initial Conditions / Boundary Conditions            
-            Func<double[], double, double> VelocityXfunction = (X, t) => u0 * (1  - (X[1] *  X[1])/h);
+            // Set Initial Conditions / Boundary Conditions   
+            
+            Func<double[], double, double> VelocityXfunction = delegate (double[] X, double t) {
+                return u0 * (1 - (X[1] * X[1]) / h);
+            };
             Func<double[], double, double> VelocityYfunction = (X, t) => 0.0;
             Func<double[], double, double> Pressurefunction = (X, t) => u0 * 0.5 * C.Reynolds * (35 - X[0]);
             Func<double[], double, double> StressXXfunction = (X, t) =>  2 * C.Weissenberg * (1 - C.beta) * u0 * (-2 / h) * X[1] * u0 * (-2 / h) * X[1];
@@ -485,9 +483,12 @@ namespace BoSSS.Application.Rheology {
             // Create Grid
 
             // grids used by florian
-            //string grid = "99ca969c-5ced-4640-b9aa-db665c60ccc9"; // florian laptop (half)
             //string grid = "1c9cb150-88d3-4ee1-974d-7970eabd3cf8"; // florian laptop (full, level 0)
-            string grid = "db1797a9-6bc4-4194-984a-03b67598fa19"; // florian laptop (full, level 2)
+            //string grid = "bb3239f2-479d-46e4-9187-ba47dc8cfc63"; // florian laptop (full, level 1)
+            //string grid = "db1797a9-6bc4-4194-984a-03b67598fa19"; // florian laptop (full, level 2)
+            string grid = "c88c914b-c387-4894-9697-a78bad31f2da"; // florian terminal03 (full, level 0)
+            //string grid = "061e7cfb-7ffe-4540-bc74-bfffce824fef"; // florian terminal03 (full, level 1)
+            //string grid = "51aadb49-e3d5-4e88-897e-13b6b329995b"; // florian terminal03 (full, level 2)
 
             // half channel mesh3 for cond tests
             //string grid = "962bc97f-0298-4e2f-ac18-06940cb84956"; // anne
@@ -514,7 +515,7 @@ namespace BoSSS.Application.Rheology {
             //Dennis Zylinder for drag validation
             //string grid = "a67192f5-6b59-4caf-a95a-0a08730c3365";
 
-
+            
             Guid gridGuid;
             if (Guid.TryParse(grid, out gridGuid))
             {
@@ -531,7 +532,39 @@ namespace BoSSS.Application.Rheology {
                     return _grid;
                 };
             }
+            
+            /*
+            C.GridFunc = delegate () {
 
+                int res = 16;
+                double[] xNodes = GenericBlas.Linspace(-15, 15, res * 30 / 4 + 1);
+                xNodes = xNodes.Select(x => Math.Sin(x / 15.0 * (Math.PI / 2)) * 15).ToArray();
+                double[] yNodes = GenericBlas.Linspace(-2, 2, res + 1);
+
+                GridCommons bosssGrid = Grid2D.Cartesian2DGrid(xNodes, yNodes);
+
+                Func<Vector, string> edgeTagFunc = delegate (Vector X) {
+                    double x = X[0];
+                    double y = X[1];
+
+                    if (Math.Abs(x - (-15)) < 1.0e-10)
+                        return "Velocity_inlet";
+                    if (Math.Abs(x - (15)) < 1.0e-10)
+                        return "Pressure_Outlet";
+                    if (Math.Abs(y - (-2)) < 1.0e-10)
+                        return "Wall_bottom";
+                    if (Math.Abs(y - (+2)) < 1.0e-10)
+                        return "Wall_top";
+                    if (-1.0 < y && y < 1.0 && -1.0 < x && x < 1.0)
+                        return "Wall_cylinder";
+
+                    throw new ArgumentOutOfRangeException("at x = " + x + "and y = " + y);
+                };
+                bosssGrid.DefineEdgeTags(edgeTagFunc);
+
+                return bosssGrid;
+            };
+            //*/
 
             // Analytical Sol for Params
             if (C.SetParamsAnalyticalSol == true)
@@ -545,11 +578,11 @@ namespace BoSSS.Application.Rheology {
             //var database = new DatabaseInfo(path);
             //Guid restartID = new Guid("9ae08191-ee15-4803-9e3f-566f119c9de4");
             //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, null);
-
+            /*
             //Set Initial Conditions
             if (C.SetInitialConditions == true)
             {
-
+                
                 C.InitialValues_Evaluators.Add("VelocityX", X => VelocityXfunction(X, 0));
                 C.InitialValues_Evaluators.Add("VelocityY", X => VelocityYfunction(X, 0));
                 C.InitialValues_Evaluators.Add("StressXX", X => 0);// StressXXfunction(X, 0));
@@ -561,7 +594,7 @@ namespace BoSSS.Application.Rheology {
                     C.InitialValues_Evaluators.Add("Pressure", X => Pressurefunction(X, 0));
                 }
             }
-
+            */
             C.InitialValues_Evaluators.Add("Phi", X => -1);
 
             // Set Boundary Conditions

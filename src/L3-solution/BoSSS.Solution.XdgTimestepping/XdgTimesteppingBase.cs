@@ -487,6 +487,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             // ----------------------------------
             if (nonlinSolver != null) {
                 nonlinSolver.IterationCallback += this.LogResis;
+                if (linearSolver != null && linearSolver is ISolverWithCallback) {
+                    ((ISolverWithCallback)linearSolver).IterationCallback = this.LogResis;
+                }
             } else {
                 if (linearSolver != null && linearSolver is ISolverWithCallback) {
                     ((ISolverWithCallback)linearSolver).IterationCallback = this.LogResis;
@@ -597,7 +600,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     int p = Fields.ElementAt(d).Basis.Degree;
 
                     configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
-                        Degree = Math.Max(0, p - iLevel),
+                        DegreeS = new[] { Math.Max(0, p - iLevel) },
                         mode = MultigridOperator.Mode.IdMass_DropIndefinite,
                         VarIndex = new int[] { d }
                     };

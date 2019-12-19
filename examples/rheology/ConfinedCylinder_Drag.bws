@@ -4,11 +4,8 @@ restart
   BoSSSpad C# interpreter
   _______________________
 
-Databases loaded:
-List of 2 instances of IDatabaseInfo {
-  0: { Session Count = 1; Grid Count = 1; Path = D:\Users\kummer\Documents\BoSSS-master\public\src\L4-application\CNS\bin\Release\bosss_db_performance_3 }
-  1: { Session Count = 11; Grid Count = 9; Path = D:\Users\kummer\Documents\BoSSS-master\public\src\L4-application\CNS\bin\Debug\bosss_db_performance_3 }
-}
+
+System.IO.IOException occurred with message 'Could not find or access a database located at 'D:\Users\kummer\Documents\BoSSS-master\public\src\L4-application\CNS\bin\Release\bosss_db_performance_3'' while loading the databases. Type 'LastError' for details.
 
  Console ready for input. Type 'help' for help.
 
@@ -39,7 +36,7 @@ var myBatch = new MiniBatchProcessorClient();
 MiniBatchProcessor.Server.StartIfNotRunning();
 **************
 Starting mini batch processor in external process...
-Started mini batch processor on local machine, process id is 72676.
+Started mini batch processor on local machine, process id is 79668.
 
 ==============
 // ======================
@@ -48,7 +45,7 @@ Started mini batch processor on local machine, process id is 72676.
 **************
 ==============
 int degree = 2;
-int gridNo = 2;
+int gridNo = 1;
 int[] procs = new int[] {4};
 **************
 ==============
@@ -91,12 +88,6 @@ GridCommons bosssGrid = gmshGrid.GenerateBoSSSGrid();
 
 ==============
 bosssGrid.Name = "confined_cylinder";
-//bosssGrid.EdgeTagNames.Clear();
-//bosssGrid.EdgeTagNames.Add(1, "Velocity_inlet");
-//bosssGrid.EdgeTagNames.Add(2, "Wall_bottom");
-//bosssGrid.EdgeTagNames.Add(3, "Wall_top");
-//bosssGrid.EdgeTagNames.Add(4, "Pressure_Outlet");
-//bosssGrid.EdgeTagNames.Add(5, "Wall_cylinder");
 
 Func<Vector, string> edgeTagFunc = delegate (Vector X) {
     double x = X[0];
@@ -119,7 +110,7 @@ bosssGrid.DefineEdgeTags(edgeTagFunc);
 myDb.SaveGrid(ref bosssGrid);
 **************
 Grid Edge Tags changed.
-51aadb49-e3d5-4e88-897e-13b6b329995b
+061e7cfb-7ffe-4540-bc74-bfffce824fef
 ==============
 // =====================================
 // setup control object for a solver run
@@ -304,6 +295,10 @@ WorkflowMgm.AllJobs.Pick(0).Value.
 **************
 C# evaluator not initialized: use 'restart'.
 
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============

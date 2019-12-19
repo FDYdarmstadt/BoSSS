@@ -34,10 +34,16 @@ using ilPSP.Tracing;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
+    /// <summary>
+    /// Multigrid methods for linear systems, using pre- and post-smoother (<see cref="PreSmoother"/>, <see cref="PostSmoother"/>) as well as coarse-grid correction (<see cref="CoarserLevelSolver"/>).
+    /// </summary>
+    public class ClassicMultigrid : ISolverSmootherTemplate, ISolverWithCallback, IProgrammableTermination {
 
-    public class ClassicMultigrid : ISolverSmootherTemplate, ISolverWithCallback {
 
-
+        /// <summary>
+        /// Creates a V- or W-cycle (depending on <see cref="ClassicMultigrid.Gamma"/>) of multi-grid methods, 
+        /// with each multi-grid solver being the coarse-level solver for the finer level.
+        /// </summary>
         static public ISolverSmootherTemplate InitMultigridChain(MultigridOperator MgOp,
             Func<int, ISolverSmootherTemplate> PreSmootherFactory,
             Func<int, ISolverSmootherTemplate> PostSmootherFactory,
@@ -56,6 +62,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /// <summary>
+        /// Creates a V- or W-cycle (depending on <see cref="ClassicMultigrid.Gamma"/>) of multi-grid methods, 
+        /// with each multi-grid solver being the coarse-level solver for the finer level.
+        /// </summary>
         static public ISolverSmootherTemplate InitMultigridChain(IEnumerable<AggregationGridData> MultigridSequence,
             Func<int, ISolverSmootherTemplate> PreSmootherFactory,
             Func<int, ISolverSmootherTemplate> PostSmootherFactory,
@@ -190,25 +200,28 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-        public double m_Tolerance = 0.0;
-
 
         /// <summary>
         /// computes the residual on this level.
         /// </summary>
-        public void Residual<V1,V2,V3>(V1 rl, V2 xl, V3 bl) 
+        public double Residual<V1,V2,V3>(V1 rl, V2 xl, V3 bl) 
             where V1 : IList<double>
             where V2 : IList<double>
             where V3 : IList<double>
         {
             OpMatrix.SpMV(-1.0, xl, 0.0, rl);
             rl.AccV(1.0, bl);
+            return rl.MPI_L2Norm();
         }
 
 
         int m_Gamma = 1;
 
-
+        /// <summary>
+        /// Number of coarse-level corrections:
+        /// - 1 leads to a V-cycle
+        /// - 2 or more leads to a W-cycle
+        /// </summary>
         public int Gamma {
             get {
                 return m_Gamma;
@@ -220,10 +233,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        public int m_MaxIterations = 1;
+        /// <summary>
+        /// ~
+        /// </summary>
+        public Func<int, double, double, bool> TerminationCriterion {
+            get;
+            set;
+        }
+
 
         bool m_converged = false;
         int NoOfIterations = 0;
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public ClassicMultigrid() {
+            TerminationCriterion = (iIter, r0, ri) => iIter <= 1;
+        }
 
 
         /// <summary>
@@ -241,44 +268,27 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double[] rl = new double[N];
                 double[] rlp1 = new double[NN];
 
-                for (int iIter = 0; iIter < this.m_MaxIterations; iIter++) {
+                double iter0ResidualNorm = bl.MPI_L2Norm();
+                double iterNorm = iter0ResidualNorm;
+
+                for (int iIter = 0; true; iIter++) {
+                    if (!TerminationCriterion(iIter, iter0ResidualNorm, iterNorm))
+                        return;
 
                     var DGBasis = m_MgOperator.BaseGridProblemMapping.BasisS[0];
                     //XDGField ResB4Jacobi = new XDGField((XDGBasis)DGBasis, "Resi_B4Jacobi");
                     //m_MgOperator.TransformRhsFrom(ResB4Jacobi.CoordinatesAsVector, bl);
 
                     if (PreSmoother != null)
-                            PreSmoother.Solve(xl, bl); // Vorglättung
+                        PreSmoother.Solve(xl, bl); // Vorglättung
                   
-                    Residual(rl, xl, bl); // Residual on this level
-
-
-                    if (this.IterationCallback != null)
-                    {
-                        //var _bl = bl.ToArray();
-                        //this.OpMatrix.SpMV(-1.0, xl, 1.0, _bl);
-                        this.IterationCallback(0, xl.ToArray(), rl, this.m_MgOperator);
-                    }
-
-                    //var ResAftJacobi = new XDGField((XDGBasis)DGBasis, "Resi_afJacobi");
-                    //m_MgOperator.TransformRhsFrom(ResAftJacobi.CoordinatesAsVector, rl);
-
-                    //Tecplot.Tecplot.PlotFields(new DGField[] { ResB4Jacobi, ResAftJacobi }, DGBasis.GridDat, "Resi", "Resi", 0, 4);
-
-                    if (this.m_Tolerance > 0) {
-                        double ResNorm = bl.L2NormPow2().MPISum().Sqrt();
-                        if (ResNorm < this.m_Tolerance) {
-                            m_converged = true;
-                            return;
-                        }
-                    }
-                    this.NoOfIterations++;
+                    iterNorm = Residual(rl, xl, bl); // Residual on this level
+                   
 
                     this.m_MgOperator.CoarserLevel.Restrict(rl, rlp1);
 
                     // Berechnung der Grobgitterkorrektur
                     double[] vlp1 = new double[NN];
-
                     for (int j = 0; j < m_Gamma; j++) {
                         this.CoarserLevelSolver.Solve(vlp1, rlp1);
                     }
@@ -286,25 +296,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // Prolongation der Grobgitterkorrektur
                     this.m_MgOperator.CoarserLevel.Prolongate(1.0, xl, 1.0, vlp1);
 
-                    // check resudual after coarse grid correction
+                    // check residual after coarse grid correction
                     Residual(rl, xl, bl); // Residual on this level
-
-                    
-                    if (this.IterationCallback != null)
-                    {
-                        //var _bl = bl.ToArray();
-                        //this.OpMatrix.SpMV(-1.0, xl, 1.0, _bl);
-                        this.IterationCallback(iIter, xl.ToArray(), rl, this.m_MgOperator);
-                    }
 
                     // Nachglättung
                     if (PostSmoother != null)
                         PostSmoother.Solve(xl, bl);
 
+                    // update residual
+                    this.IterationCallback?.Invoke(iIter + 1, xl.ToArray(), rl, this.m_MgOperator);
+                    iterNorm = Residual(rl, xl, bl); // Residual on this level
+                    this.NoOfIterations++;
                 }
             }
         }
 
+        /// <summary>
+        /// ~
+        /// </summary>
         public int IterationsInNested {
             get {
                 return

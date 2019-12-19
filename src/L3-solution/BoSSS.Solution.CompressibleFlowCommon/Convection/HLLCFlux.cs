@@ -44,24 +44,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <summary>
         /// Evaluates the HLLC flux according to Toro2009
         /// </summary>
-        /// <param name="x">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <param name="time">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <param name="stateIn">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <param name="stateOut">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <param name="normal">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <param name="edgeIndex">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
         /// <returns>see Toro2009, equation 10.71</returns>
         public override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex) {
             double waveSpeedIn;
