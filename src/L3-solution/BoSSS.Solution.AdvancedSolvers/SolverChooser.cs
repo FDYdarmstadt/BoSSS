@@ -1623,11 +1623,13 @@ namespace BoSSS.Solution {
                     
 
                     levelSolver = new OrthonormalizationMultigrid() {
-                        m_MaxIterations = iLevel == 0 ? _lc.MaxSolverIterations : 1,
                         PreSmoother = smoother1,
                         PostSmoother = smoother1,
-                        Tolerance = iLevel == 0 ? _lc.ConvergenceCriterion : 0.0
                     };
+
+                    if(iLevel > 0) {
+                        ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= 1;
+                    }
 
 
                     ((OrthonormalizationMultigrid)levelSolver).IterationCallback =
@@ -1750,14 +1752,14 @@ namespace BoSSS.Solution {
 
 
                     levelSolver = new OrthonormalizationMultigrid() {
-                        m_MaxIterations = iLevel == 0 ? _lc.MaxSolverIterations : 1,
                         PreSmoother = smoother1,
                         PostSmoother = smoother2,
-                        Tolerance = iLevel == 0 ? _lc.ConvergenceCriterion : 0.0,
                         CoarserLevelSolver = CoarseSolver
                     };
 
-                    
+                    if (iLevel > 0) {
+                        ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= 1;
+                    }
 
 
                     ((OrthonormalizationMultigrid)levelSolver).IterationCallback =

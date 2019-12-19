@@ -34,8 +34,36 @@ using ilPSP.Tracing;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
+    /// <summary>
+    /// 
+    /// </summary>
+    public class OrthonormalizationMultigrid : ISolverSmootherTemplate, ISolverWithCallback, IProgrammableTermination {
 
-    public class OrthonormalizationMultigrid : ISolverSmootherTemplate, ISolverWithCallback {
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public OrthonormalizationMultigrid() {
+            TerminationCriterion = DefaultTermination;
+        }
+
+        private bool DefaultTermination(int iter, double R0_l2, double R_l2) {
+            if (iter > 100)
+                return false;
+
+            if (R_l2 < R0_l2 * 10e-8 + 10e-8)
+                return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// ~
+        /// </summary>
+        public Func<int, double, double, bool> TerminationCriterion {
+            get;
+            set;
+        }
+
 
         /// <summary>
         /// The matrix at this level.
@@ -54,7 +82,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             this.m_MgOperator = op;
             var Mtx = op.OperatorMatrix;
             var MgMap = op.Mapping;
-            viz = new MGViz(op);
+            viz = null;// new MGViz(op);
 
             if (!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
                 throw new ArgumentException("Row partitioning mismatch.");
@@ -105,16 +133,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public ISolverSmootherTemplate PreSmoother;
         public ISolverSmootherTemplate PostSmoother;
 
+        /// <summary>
+        /// 
+        /// </summary>
         public Action<int, double[], double[], MultigridOperator> IterationCallback {
             get;
             set;
         }
 
 
-        /// <summary>
-        /// Threshold for convergence detection
-        /// </summary>
-        public double Tolerance = 1E-10;
+        ///// <summary>
+        ///// Threshold for convergence detection
+        ///// </summary>
+        //public double Tolerance = 1E-10;
 
 
 
@@ -174,7 +205,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-        public int m_MaxIterations = 1;
+        //public int m_MaxIterations = 1;
 
 
         List<double[]> SolHistory = new List<double[]>();
@@ -288,24 +319,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
                 double ResNorm =  BLAS.dnrm2(L, outRes, 1).Pow2().MPISum().Sqrt();
-
-                
-                /*
-                if(ResNorm < Tolerance) {
-                    alpha.SaveToStream(Console.Out, m_MgOperator.BaseGridProblemMapping.MPI_Comm);
-
-                    alpha.SaveToTextFile("ConvScheisse.txt", m_MgOperator.BaseGridProblemMapping.MPI_Comm);
-                }
-                */
-
-                /*
-                if (diagnosis) {
-                    for (int i = 0; i < KrylovDim; i++) {
-                        Console.WriteLine("      s " + alpha[KrylovDim - i - 1]);
-                       
-                    }
-                }
-                */
+                             
 
                 return ResNorm;
 
@@ -365,10 +379,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     this.viz.PlotVectors(new[] { X, rlcc }, new[] { "sol", "res" });
                 }
 
-
+                double iter0_resNorm = Res0.MPI_L2Norm();
+                double resNorm = iter0_resNorm;
                 this.IterationCallback?.Invoke(0, Sol0, Res0, this.m_MgOperator);
 
-                for (int iIter = 0; iIter < this.m_MaxIterations; iIter++) {
+                for (int iIter = 1; true; iIter++) {
+                    if(!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
+                        Converged = true;
+                        break;
+                    }
 
                     // pre-smoother
                     // ------------
@@ -384,8 +403,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         // orthonormalization and residual minimization
                         AddSol(ref PreCorr);
-                        double resNorm = MinimizeResidual(X, Sol0, Res0, rl);
-                        if(resNorm < this.Tolerance) {
+                        resNorm = MinimizeResidual(X, Sol0, Res0, rl);
+                        if(!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
                             Converged = true;
                             break;
                         }
@@ -408,8 +427,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         // orthonormalization and residual minimization
                         AddSol(ref vl);
-                        double resNorm = MinimizeResidual(X, Sol0, Res0, rl);
-                        if (resNorm < this.Tolerance) {
+                        resNorm = MinimizeResidual(X, Sol0, Res0, rl);
+                        if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
                             Converged = true;
                             break;
                         }
@@ -425,8 +444,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         // orthonormalization and residual minimization
                         AddSol(ref vl);
-                        double resNorm = MinimizeResidual(X, Sol0, Res0, rl);
-                        if (resNorm < this.Tolerance) {
+                        resNorm = MinimizeResidual(X, Sol0, Res0, rl);
+                        if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
                             Converged = true;
                             break;
                         }
@@ -456,8 +475,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         // orthonormalization and residual minimization
                         AddSol(ref PreCorr);
-                        double resNorm = MinimizeResidual(X, Sol0, Res0, rl, g==1 && iIter == 10);
-                        if (resNorm < this.Tolerance) {
+                        resNorm = MinimizeResidual(X, Sol0, Res0, rl);
+                        if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
                             Converged = true;
                             break;
                         }
@@ -468,7 +487,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     this.ThisLevelIterations++;
 
-                    IterationCallback?.Invoke(iIter + 1, X, rl, this.m_MgOperator);
+                    IterationCallback?.Invoke(iIter, X, rl, this.m_MgOperator);
 
                 }
                                 
@@ -482,32 +501,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        /*
-        void EndStat() {
-            var swz = PreSmoother as Schwarz;
-            var MemSwz = swz.UsedMem;
-            swz.DisposeBlocks();
-            PreSmoother = null;
-
-            int L = this.m_MgOperator.Mapping.LocalLength;
-
-            double Mem = this.MxxHistory.Count * 2.0 * 8.0 * L;
-                    Mem /= 1024;
-                    Mem /= 1024;
-                    
-
-            Console.WriteLine("lv " + m_MgOperator.LevelIndex + ":  Mem used in Precond " + ((double)MemSwz) / (1024 * 1024.0));
-            Console.WriteLine("lv " + m_MgOperator.LevelIndex + ":  Mem used  " + Mem);
-
-            if(CoarserLevelSolver is OrthonormalizationMultigrid) {
-                ((OrthonormalizationMultigrid)CoarserLevelSolver).EndStat();
-            } else {
-                ((SparseSolver)CoarserLevelSolver).Dispose();
-            }
-            CoarserLevelSolver = null;
-
-        }
-        */
+       
 
         /// <summary>
         /// ~
@@ -537,7 +531,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             get;
             private set;
         }
-
+        
         public void ResetStat() {
             this.Converged = false;
             this.ThisLevelIterations = 0;
