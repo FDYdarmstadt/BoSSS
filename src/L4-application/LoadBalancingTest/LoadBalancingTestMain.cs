@@ -222,7 +222,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
                     // configuration for pressure
                     configs[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig() {
-                        Degree = Math.Max(1, pu - iLevel),
+                        DegreeS = new int[] { Math.Max(1, pu - iLevel) },
                         mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
                         VarIndex = new int[] { 0 }
                     };

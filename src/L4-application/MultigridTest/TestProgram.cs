@@ -468,7 +468,7 @@ namespace BoSSS.Application.MultigridTest {
                     MassFact.GetMassMatrix(Xdg_uTest.Mapping, false),
                     new MultigridOperator.ChangeOfBasisConfig[][] {
                         new MultigridOperator.ChangeOfBasisConfig[] {
-                            new MultigridOperator.ChangeOfBasisConfig() { VarIndex = new int[] { 0 }, mode = mumo, Degree = p }
+                            new MultigridOperator.ChangeOfBasisConfig() { VarIndex = new int[] { 0 }, mode = mumo, DegreeS = new int[] { p } }
                         }
                     });
 

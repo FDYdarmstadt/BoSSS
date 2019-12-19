@@ -69,7 +69,7 @@ namespace ilPSP {
         /// </summary>
         public static bool RelErrorSmallerEps(this double a, double b, double mag = 1000) {
             double errRel = a.RelErrorTo(b);
-            return errRel < BLAS.MachineEps*mag;
+            return errRel < BLAS.MachineEps * mag;
         }
 
 
@@ -95,7 +95,7 @@ namespace ilPSP {
         /// Heaviside
         /// </summary>
         public static int Heaviside(this double d) {
-            if (d>0)
+            if (d > 0)
                 return 1;
             else
                 return 0;
@@ -224,7 +224,7 @@ namespace ilPSP {
         /// normalizes some vector 
         /// </summary>
         public static T Normalize<T>(this T vec) where T : IList<double> {
-            double ooN = 1.0/GenericBlas.L2Norm(vec);
+            double ooN = 1.0 / GenericBlas.L2Norm(vec);
             int N = vec.Count;
             for (int i = 0; i < N; i++) vec[i] *= ooN;
             return vec;
@@ -523,9 +523,9 @@ namespace ilPSP {
         }
 
 
-       
 
-        
+
+
 
     }
 }

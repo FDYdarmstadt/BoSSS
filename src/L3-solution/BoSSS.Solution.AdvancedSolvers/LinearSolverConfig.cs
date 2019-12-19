@@ -210,7 +210,7 @@ namespace BoSSS.Solution.Control {
         /// Sets the algorithm to use for linear solving, e.g. MUMPS or GMRES.
         /// </summary>
         [DataMember]
-        public LinearSolverCode SolverCode= LinearSolverCode.classic_mumps;
+        public LinearSolverCode SolverCode= LinearSolverCode.classic_pardiso;
 
         /// <summary>
         /// Sets the number of Multigrid levels. Multigrid approach is used to get a Preconditioner for Krylov solvers, e.g. GMRES.

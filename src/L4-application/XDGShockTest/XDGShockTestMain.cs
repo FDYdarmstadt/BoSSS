@@ -382,7 +382,7 @@ namespace XDGShockTest {
 
                     // configuration for continuity
                     configs[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig() {
-                        Degree = Math.Max(0, p - iLevel),
+                        DegreeS = new int[] { Math.Max(0, p - iLevel) },
                         mode = MultigridOperator.Mode.Eye,
                         VarIndex = new int[] { 0 }
                     };
@@ -391,7 +391,7 @@ namespace XDGShockTest {
                     // configurations for momentum equation
                     for (int d = 0; d < D; d++) {
                         configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
-                            Degree = Math.Max(0, p - iLevel),
+                            DegreeS = new int[] { Math.Max(0, p - iLevel) },
                             mode = MultigridOperator.Mode.Eye,
                             VarIndex = new int[] { d + 1 }
                         };
@@ -399,7 +399,7 @@ namespace XDGShockTest {
 
                     // configuration for energy
                     configs[iLevel][D + 1] = new MultigridOperator.ChangeOfBasisConfig() {
-                        Degree = Math.Max(0, p - iLevel),
+                        DegreeS = new int[] { Math.Max(0, p - iLevel) },
                         mode = MultigridOperator.Mode.Eye,
                         VarIndex = new int[] { D + 1 }
                     };
