@@ -1395,15 +1395,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /// <summary>
+        /// ~
+        /// </summary>
         public Action<int, double[], double[], MultigridOperator> IterationCallback {
             get;
             set;
         }
 
-        public int m_MaxIterations = 1;
 
+        /// <summary>
+        /// The fixed number of iteration on this level
+        /// </summary>
+        public int FixedNoOfIterations = 1;
+              
 
+        /// <summary>
+        /// Coarse-grid correction
+        /// </summary>
         public ISolverSmootherTemplate CoarseSolver;
+
 
         public bool CoarseSolverIsMultiplicative = true;
 
@@ -1457,48 +1468,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #endif
                 }
 
-                /*
-                double[] chackScheiss = new double[Res.Length];
-                {
-                    var MgMap = m_MgOp.Mapping;
-                    int Jup = MgMap.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
-                    var BS = MgMap.AggBasis;
-
-                    for (int j = 0; j < Jup; j++) {
-                        int NoOfSpc = BS[0].GetNoOfSpecies(j);
-                        int p = MgMap.DgDegree[0];
-                        int Np = BS[0].GetLength(j, p) / NoOfSpc;
-
-
-                        for (int iSpc = 0; iSpc < NoOfSpc; iSpc++) {
-
-                            for (int n = 0; n < Np; n++) {
-
-                                double marker = (j + 1) + (iSpc + 1) * 0.1 +  n * 0.001;
-
-                                int irow = MgMap.LocalUniqueIndex(0, j, n + iSpc * Np);
-                                
-                                chackScheiss[irow] = marker;
-
-                            }
-
-                        }
-                    }
-                }
-                chackScheiss.SaveToTextFile("chackScheiss.txt");
-                */
-
                 int LocLength = m_MgOp.Mapping.LocalLength;
 
-                for (int iIter = 0; iIter < m_MaxIterations; iIter++) {
+                for (int iIter = 0; iIter < FixedNoOfIterations; iIter++) {
                     this.NoIter++;
 
                     Res.SetV(B);
                     //Console.WriteLine("norm on swz entry: " + X.L2Norm());
                     this.MtxFull.SpMV(-1.0, X, 1.0, Res);
 
-                    if (IterationCallback != null)
-                        IterationCallback(iIter, X.ToArray(), Res.CloneAs(), this.m_MgOp);
+                    IterationCallback?.Invoke(iIter, X.ToArray(), Res.CloneAs(), this.m_MgOp);
 
                     using (new BlockTrace("coarse_solve_level" + this.m_MgOp.LevelIndex, tr)) {
                         if (CoarseSolver != null) {
@@ -1536,8 +1515,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             double[] bi = new double[L];
                             double[] xi = new double[L];
 
-                            //double[] chackScheiss_iPart = new double[L];
-
+                          
                             // extract block part of residual
                             bi.AccV(1.0, Res, default(int[]), ci);
                             //chackScheiss_iPart.AccV(1.0, chackScheiss, default(int[]), ci);
@@ -1628,7 +1606,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         XExchange.TransceiveStartImReturn();
                         XExchange.TransceiveFinish(1.0);
 
-                        if (iIter < m_MaxIterations - 1)
+                        if (iIter < FixedNoOfIterations - 1)
                             XExchange.Vector_Ext.ClearEntries();
 
                         var SolScale = this.SolutionScaling;
@@ -1741,7 +1719,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public int ThisLevelIterations {
             get {
-                return this.m_MaxIterations;
+                return this.NoIter;
             }
         }
 
@@ -1760,12 +1738,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 this.CoarseSolver.ResetStat();
         }
 
+        /// <summary>
+        /// Forget any factorization stored for blocks.
+        /// </summary>
         public void DisposeBlocks() {
             foreach(var b in this.blockSolvers) {
                 b.Dispose();
             }
         }
 
+        /// <summary>
+        /// ~
+        /// </summary>
         public object Clone() {
             Schwarz Clone = new Schwarz();
             if (this.m_BlockingStrategy is METISBlockingStrategy) {
@@ -1788,7 +1772,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 throw new NotImplementedException();
 
 
-            Clone.m_MaxIterations = this.m_MaxIterations;
+            Clone.FixedNoOfIterations = this.FixedNoOfIterations;
             Clone.m_Overlap = this.m_Overlap;
             Clone.IterationCallback = this.IterationCallback;
             if (this.CoarseSolver != null)
@@ -1814,8 +1798,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 return s;
             }
         }
-
     }
-
-
 }
+

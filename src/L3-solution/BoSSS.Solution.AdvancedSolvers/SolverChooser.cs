@@ -309,6 +309,8 @@ namespace BoSSS.Solution {
             int MultigridSeqLength = MultigridSequence.Length;
             ISolverSmootherTemplate _precond;
 
+           
+
             switch (lc.SolverCode) {
                 case LinearSolverCode.automatic:
                     if (nc != null) {
@@ -391,8 +393,7 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_softgmres:
 
                     templinearSolve = new SoftGMRES() {
-                        MaxKrylovDim = lc.MaxKrylovDim,
-                        m_Tolerance = lc.ConvergenceCriterion,
+                        MaxKrylovDim = lc.MaxKrylovDim
                     };
                     break;
 
@@ -409,8 +410,7 @@ namespace BoSSS.Solution {
 
                     templinearSolve = new SoftGMRES() {
                         MaxKrylovDim = lc.MaxKrylovDim,
-                        m_Tolerance = lc.ConvergenceCriterion,
-                        Precond = _precond,
+                        Precond = _precond
                     };
                     break;
 
@@ -429,7 +429,6 @@ namespace BoSSS.Solution {
 
                     templinearSolve = new SoftGMRES() {
                         MaxKrylovDim = lc.MaxKrylovDim,
-                        m_Tolerance = lc.ConvergenceCriterion,
                         Precond = _precond,
                     };
                     break;
@@ -589,7 +588,7 @@ namespace BoSSS.Solution {
                     Console.WriteLine("Additive Schwarz, No of blocks: " + NoOfBlocks.MPISum());
 
                     _precond = new Schwarz() {
-                        m_MaxIterations = 1,
+                        FixedNoOfIterations = 1,
                         CoarseSolver = null,
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy {
                             NoOfPartsPerProcess = NoOfBlocks
@@ -598,8 +597,6 @@ namespace BoSSS.Solution {
                     };
                     SetLinItCallback(_precond, isNonLinPrecond, IsLinPrecond: true);
                     templinearSolve = new SoftPCG() {
-                        m_MaxIterations = lc.MaxSolverIterations,
-                        m_Tolerance = lc.ConvergenceCriterion,
                         Precond = _precond
                     };
                     break;
@@ -613,7 +610,7 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_softpcg_schwarz_directcoarse:
 
                     _precond = new Schwarz() {
-                        m_MaxIterations = 1,
+                        FixedNoOfIterations = 1,
                         CoarseSolver = new SparseSolver() {
                             WhichSolver = SparseSolver._whichSolver.MUMPS
                         },
@@ -626,9 +623,7 @@ namespace BoSSS.Solution {
 
                     Console.WriteLine("Additive Schwarz w. direct coarse, No of blocks: " + NoOfBlocks.MPISum());
                     templinearSolve = new SoftPCG() {
-                        m_MaxIterations = lc.MaxSolverIterations,
-                        m_Tolerance = lc.ConvergenceCriterion,
-                        Precond = _precond,
+                        Precond = _precond
                     };
                     break;
 
@@ -646,8 +641,6 @@ namespace BoSSS.Solution {
                     //_precond = new SparseSolver() { WhichSolver = SparseSolver._whichSolver.PARDISO };
                     SetLinItCallback(_precond, isNonLinPrecond, IsLinPrecond: true);
                     templinearSolve = new SoftGMRES() {
-                        m_Tolerance = lc.ConvergenceCriterion,
-                        m_MaxIterations = lc.MaxSolverIterations,
                         MaxKrylovDim = lc.MaxKrylovDim,
                         Precond = _precond
                     };
@@ -665,7 +658,7 @@ namespace BoSSS.Solution {
 
                 case LinearSolverCode.exp_gmres_schwarz_pmg:
                     _precond = new Schwarz() {
-                        m_MaxIterations = 1,
+                        FixedNoOfIterations = 1,
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsPerProcess = NoOfBlocks
                         },
@@ -676,107 +669,15 @@ namespace BoSSS.Solution {
 
                     };
                     templinearSolve = new SoftGMRES() {
-                        m_Tolerance = lc.ConvergenceCriterion,
-                        m_MaxIterations = lc.MaxSolverIterations,
                         Precond = _precond
                     };
 
                     break;
 
-                //testing area, please wear a helmet ...
-                case LinearSolverCode.exp_softpcg_jacobi_mg:
-
-                    ISolverSmootherTemplate[] _prechain = new ISolverSmootherTemplate[] {
-                        //new Schwarz() {
-                        //    m_MaxIterations = 1,
-                        //    CoarseSolver = null,
-                        //    //m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                        //    m_BlockingStrategy = new Schwarz.SimpleBlocking() {
-                        //        NoOfPartsPerProcess = 4
-                        //    },
-                        //    Overlap = 0 // overlap does **NOT** seem to help
-                        //},
-                        //new SoftGMRES(){
-                        //    m_MaxIterations=5,
-                        //    MaxKrylovDim=50,
-                        //    Precond=new Schwarz() {
-                        //        m_MaxIterations = 10,
-                        //    CoarseSolver = null,
-                        //    m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                        //        NoOfPartsPerProcess = 2
-                        //    },
-                        //    Overlap = 0 // overlap does **NOT** seem to help
-                        //    }
-                        //},
-                        //new BlockJacobi() {
-                        //    NoOfIterations = 3,
-                        //    omega = 0.5
-                        //},
-                        new SoftPCG() {
-                             m_MaxIterations = 5,
-                             m_MinIterations = 5,
-                        }
-                    };
-
-                    ISolverSmootherTemplate[] _postchain = new ISolverSmootherTemplate[]{
-                       //new Schwarz() {
-                       //     m_MaxIterations = 1,
-                       //     CoarseSolver = null,
-                       //     //m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                       //     m_BlockingStrategy = new Schwarz.SimpleBlocking() {
-                       //         NoOfPartsPerProcess = 4
-                       //     },
-                       //     Overlap = 0 // overlap does **NOT** seem to help
-                       // },
-                        //new SoftGMRES() {
-                        //    m_MaxIterations=5,
-                        //    MaxKrylovDim=50,
-                        //    Precond=new Schwarz() {
-                        //        m_MaxIterations = 10,
-                        //    CoarseSolver = null,
-                        //    m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                        //        NoOfPartsPerProcess = 2
-                        //    },
-                        //    Overlap = 0 // overlap does **NOT** seem to help
-                        //    }
-                        //},
-                        //new BlockJacobi() {
-                        //    NoOfIterations = 3,
-                        //    omega = 0.5
-                        //},
-                        new SoftPCG() {
-                             m_MaxIterations = 5,
-                             m_MinIterations = 5,
-                        }
-                    };
-
-                    ISolverSmootherTemplate toppre = new BlockJacobi() {
-                        NoOfIterations = 3,
-                        omega = 0.5
-                    };
-
-                    ISolverSmootherTemplate toppst = new BlockJacobi() {
-                        NoOfIterations = 3,
-                        omega = 0.5
-                    };
-
-                    _precond = My_MG_Precond(lc, LocalDOF, MultigridSeqLength, isNonLinPrecond, _prechain, _postchain, toppre, toppst);
-
-                    templinearSolve = new SoftPCG() {
-                        m_MaxIterations = lc.MaxSolverIterations,
-                        m_Tolerance = lc.ConvergenceCriterion,
-                        Precond = _precond,
-                    };
-                    //templinearSolve = new SoftGMRES() {
-                    //    MaxKrylovDim = lc.MaxKrylovDim,
-                    //    m_Tolerance = lc.ConvergenceCriterion,
-                    //    Precond = _precond,
-                    //};
-                    break;
 
                 case LinearSolverCode.exp_decomposedMG_OrthoScheme:
 
-                    ISolverSmootherTemplate[] subsmoother = new ISolverSmootherTemplate[]{
+                ISolverSmootherTemplate[] subsmoother = new ISolverSmootherTemplate[]{
                        //new Schwarz() {
                        //     m_MaxIterations = 1,
                        //     CoarseSolver = null,
@@ -803,8 +704,9 @@ namespace BoSSS.Solution {
                         //    omega = 0.5
                         //},
                         new SoftPCG() {
-                             m_MaxIterations = 5,
-                             m_MinIterations = 5,
+                             //m_MaxIterations = 5,
+                             //m_MinIterations = 5,
+                             TerminationCriterion = ((iter, r0_l2, r_l2) => iter <= 5)
                         }
                     };
 
@@ -828,7 +730,7 @@ namespace BoSSS.Solution {
 
                 case LinearSolverCode.exp_softpcg_schwarz_mg:
                     _precond = new Schwarz() {
-                        m_MaxIterations = 1,
+                        FixedNoOfIterations = 1,
                         CoarseSolver = new SparseSolver() {
                             WhichSolver = SparseSolver._whichSolver.MUMPS,
                             LinConfig = lc
@@ -841,8 +743,6 @@ namespace BoSSS.Solution {
 
                     Console.WriteLine("Additive Schwarz w. direct coarse, No of blocks: " + NoOfBlocks.MPISum());
                     templinearSolve = new SoftPCG() {
-                        m_MaxIterations = lc.MaxSolverIterations,
-                        m_Tolerance = lc.ConvergenceCriterion,
                         Precond = _precond,
                     };
                     break;
@@ -857,7 +757,7 @@ namespace BoSSS.Solution {
                             },
 
                             new Schwarz() {
-                                m_MaxIterations = 1,
+                                FixedNoOfIterations = 1,
                                 CoarseSolver = null,
                                 Overlap=1,
                                 m_BlockingStrategy = new Schwarz.METISBlockingStrategy()          {
@@ -893,6 +793,29 @@ namespace BoSSS.Solution {
 #if DEBUG
             Console.WriteLine("linear Solver: {0}", lc.SolverCode.ToString());
 #endif
+
+            if(templinearSolve is IProgrammableTermination pt) {
+
+                 // delegate to stop linear solver convergence
+                bool LinearConvergence(int iter, double r0_l2, double r_l2) {
+                    if (iter <= lc.MinSolverIterations)
+                        return true;
+
+                    if (iter > lc.MaxSolverIterations)
+                        return false;
+
+                    if (r_l2 < lc.ConvergenceCriterion)
+                        return false; // terminate
+
+                    return true; // keep running
+                }
+
+
+                pt.TerminationCriterion = LinearConvergence;
+            }
+
+
+
             return templinearSolve;
         }
 
@@ -1181,7 +1104,8 @@ namespace BoSSS.Solution {
 
                             tempsolve = new SoftGMRES() {
                                 MaxKrylovDim = lc.MaxKrylovDim,
-                                m_Tolerance = lc.ConvergenceCriterion,
+                                //m_Tolerance = lc.ConvergenceCriterion,
+                                TerminationCriterion = ((iter, r0_l2, r_l2) => r_l2 > lc.ConvergenceCriterion && iter < lc.MaxSolverIterations),
                                 Precond = new Schwarz() {
                                     m_BlockingStrategy = new Schwarz.SimpleBlocking() {
                                         NoOfPartsPerProcess = (int)Math.Ceiling(dofsLoc / 6500.0),
@@ -1418,8 +1342,7 @@ namespace BoSSS.Solution {
                     ISolverSmootherTemplate[] newprechain = new ISolverSmootherTemplate[prechain.Length];
 
                     ClassicMultigrid MgLevel = new ClassicMultigrid() {
-                        m_MaxIterations = 1,
-                        m_Tolerance = 0.0 // termination controlled by top level PCG
+                        TerminationCriterion = ((iter, r0_l2, r_l2) => iter <= 1) // termination controlled by top level PCG
                     };
 
                     ((ISolverWithCallback)MgLevel).IterationCallback += MultigridCallback;
@@ -1471,8 +1394,10 @@ namespace BoSSS.Solution {
 
         private ISolverSmootherTemplate SpecialMultilevelSchwarz(LinearSolverConfig _lc, int[] _LocalDOF, int MSLength, bool isNonLinPrecond, MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig) {
             var solver = new SoftPCG() {
-                m_MaxIterations = _lc.MaxSolverIterations,
-                m_Tolerance = _lc.ConvergenceCriterion
+                //m_MaxIterations = _lc.MaxSolverIterations,
+                //m_Tolerance = _lc.ConvergenceCriterion,
+                TerminationCriterion = ((iter, r0_l2, r_l2) => r_l2 > _lc.ConvergenceCriterion && iter < _lc.MaxSolverIterations),
+                                
             };
 
             // my tests show that the ideal block size may be around 10'000
@@ -1498,8 +1423,7 @@ namespace BoSSS.Solution {
                 } else {
 
                     ClassicMultigrid MgLevel = new ClassicMultigrid() {
-                        m_MaxIterations = 1,
-                        m_Tolerance = 0.0 // termination controlled by top level PCG
+                        TerminationCriterion = ((iter, r0_l2, r_l2) => iter <= 1) // termination controlled by top level PCG
                     };
 
                     MultigridChain[iLevel] = MgLevel;
@@ -1508,7 +1432,7 @@ namespace BoSSS.Solution {
                     if (iLevel > 0) {
 
                         Schwarz swz1 = new Schwarz() {
-                            m_MaxIterations = 1,
+                            FixedNoOfIterations = 1,
                             CoarseSolver = null,
                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                                 NoOfPartsPerProcess = NoOfBlocks
@@ -1517,13 +1441,11 @@ namespace BoSSS.Solution {
                         };
                         
                         SoftPCG pcg1 = new SoftPCG() {
-                            m_MinIterations = 5,
-                            m_MaxIterations = 5
+                            TerminationCriterion = ((iter, r0_l2, r_l2) => iter <= 5)
                         };
 
                         SoftPCG pcg2 = new SoftPCG() {
-                            m_MinIterations = 5,
-                            m_MaxIterations = 5
+                            TerminationCriterion = ((iter, r0_l2, r_l2) => iter <= 5)
                         };
 
                         SetLinItCallback(swz1, isNonLinPrecond, IsLinPrecond: true);
@@ -1686,7 +1608,7 @@ namespace BoSSS.Solution {
                     Console.WriteLine("Rem: PMG deakt.");
 
                     var smoother1 = new Schwarz() {
-                        m_MaxIterations = 1,
+                        FixedNoOfIterations = 1,
                         CoarseSolver = null,
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsPerProcess = NoOfBlocks
@@ -1794,7 +1716,7 @@ namespace BoSSS.Solution {
                     Console.WriteLine("Rem: PMG deakt.");
 
                     var smoother1 = new Schwarz() {
-                        m_MaxIterations = 1,
+                        FixedNoOfIterations = 1,
                         CoarseSolver = null,
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsPerProcess = NoOfBlocks
@@ -1809,7 +1731,7 @@ namespace BoSSS.Solution {
 
 
                     var smoother2 = new Schwarz() {
-                        m_MaxIterations = 1,
+                        FixedNoOfIterations = 1,
                         CoarseSolver = null,
                         //m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                         //    NoOfPartsPerProcess = NoOfBlocks
