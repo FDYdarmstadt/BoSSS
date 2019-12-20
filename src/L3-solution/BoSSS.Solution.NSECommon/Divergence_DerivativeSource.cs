@@ -135,6 +135,7 @@ namespace BoSSS.Solution.NSECommon {
 
             FluxInCell = -0.5 * (u_j_In - u_j_Out) * inp.Normal[component];
             FluxOutCell = FluxInCell;
+
         }
 
         /// <summary>
@@ -150,7 +151,7 @@ namespace BoSSS.Solution.NSECommon {
                 case IncompressibleBcType.Pressure_Outlet:
                 {
                     FluxInCell = 0.0;
-                    break;
+                        break;
                 }
                 case IncompressibleBcType.Velocity_Inlet:
                 case IncompressibleBcType.NavierSlip_Linear: {
@@ -158,7 +159,7 @@ namespace BoSSS.Solution.NSECommon {
                     double u_j_Out = this.bndFunction[inp.EdgeTag](inp.X, inp.time);
 
                     FluxInCell = -(u_j_In - u_j_Out) * inp.Normal[component];
-                    break;
+                        break;
                 }
                 case IncompressibleBcType.Wall:
                 case IncompressibleBcType.FreeSlip:
@@ -167,7 +168,7 @@ namespace BoSSS.Solution.NSECommon {
                 {
                     double u_j_In = Uin[0];
                     FluxInCell = -u_j_In * inp.Normal[component];
-                    break;
+                        break;
                 }
                 default:
                 throw new NotImplementedException("Boundary condition not implemented!");

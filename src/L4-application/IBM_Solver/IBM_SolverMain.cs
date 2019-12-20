@@ -1146,14 +1146,14 @@ namespace BoSSS.Application.IBM_Solver {
                     // configurations for velocity
                     for (int d = 0; d < D; d++) {
                         configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
-                            Degree = Math.Max(1, pVel - iLevel),
+                            DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
                             mode = this.Control.VelocityBlockPrecondMode,
                             VarIndex = new int[] { d }
                         };
                     }
                     // configuration for pressure
                     configs[iLevel][D] = new MultigridOperator.ChangeOfBasisConfig() {
-                        Degree = Math.Max(0, pPrs - iLevel),
+                        DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
                         mode = MultigridOperator.Mode.IdMass_DropIndefinite,
                         VarIndex = new int[] { D }
                     };
