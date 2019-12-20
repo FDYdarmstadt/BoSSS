@@ -126,10 +126,10 @@ namespace BoSSS.Solution.NSECommon {
                 rho = ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];    //rho = ThermodynamicPressureValue / phi[0];
                 Debug.Assert(!double.IsNaN(rho));
                 Debug.Assert(!double.IsInfinity(rho));
-     
-                //if(rhoOne) { 
-                //    rho = 1.0;
-                //}
+
+                if(rhoOne) {
+                    rho = 1.0;
+                }
                 return rho;
             } else {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");

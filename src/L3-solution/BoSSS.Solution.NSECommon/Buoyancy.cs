@@ -122,13 +122,14 @@ namespace BoSSS.Solution.NSECommon {
     /// [LowMach] Buoyant force.
     /// </summary>
     //public class Buoyancy : BoSSS.Foundation.IVolumeForm {
-    public class BuoyancyJacobi : LinearSource {
+    public class BuoyancyJacobi : IVolumeForm, ISupportsJacobianComponent {
         Vector GravityDirection;
         int SpatialComponent;
         double Froude;
         MaterialLaw EoS;
         PhysicsMode physicsMode;
         string[] m_ParameterOrdering;
+        string[] m_ArgumentOrdering;
 
         /// <summary>
         /// Ctor.
@@ -153,9 +154,11 @@ namespace BoSSS.Solution.NSECommon {
             switch(physicsMode) {
                 case PhysicsMode.LowMach:
                     this.m_ParameterOrdering = new string[] { VariableNames.Temperature0 };
+                    this.m_ArgumentOrdering = new string[] { VariableNames.Temperature };
                     break;
                 case PhysicsMode.Combustion:
                     this.m_ParameterOrdering = new string[] { VariableNames.Temperature0, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0 };
+                    this.m_ArgumentOrdering = new string[] { VariableNames.Temperature, VariableNames.MassFraction0, VariableNames.MassFraction1, VariableNames.MassFraction2, VariableNames.MassFraction3 };
                     break;
                 default:
                     throw new ApplicationException("wrong physicsmode");
@@ -169,31 +172,40 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="parameters"></param>
         /// <param name="U"></param>
         /// <returns></returns>
-        protected override double Source(double[] x, double[] parameters, double[] U) {
+        protected double Source(double[] x, double[] parameters, double[] U) {
             double src = 0.0;
+            if(U[0] ==0) {
+                Console.WriteLine("dasd");
+            }
+            double rho = EoS.GetDensity(U[0]);
 
-            //double rho = EoS.GetDensity(U[0]);
-            double rho = EoS.GetDensity(parameters);
 
             src = 1.0 / (Froude * Froude) * rho * GravityDirection[SpatialComponent];
 
             return src;
         }
 
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+            return this.Source(cpv.Xglobal, cpv.Parameters, U) * V;
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            var SourceDerivVol = new VolumeFormDifferentiator(this, SpatialDimension);
+            return new IEquationComponent[] { SourceDerivVol };
+        }
+
         /// <summary>
         /// Temperature
         /// </summary>
-        public override IList<string> ArgumentOrdering {
+        public virtual IList<string> ArgumentOrdering {
             get {
-                return new string[] {
-                    //VariableNames.Temperature 
-                };
+                return m_ArgumentOrdering;
             }
         }
         /// <summary>
         /// 
         /// </summary>
-        public override TermActivationFlags VolTerms {
+        public virtual TermActivationFlags VolTerms {
             get {
                 return TermActivationFlags.UxV | TermActivationFlags.V;
             }
@@ -201,7 +213,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// 
         /// </summary>
-        public override IList<string> ParameterOrdering {
+        public virtual  IList<string> ParameterOrdering {
             get {
                 return m_ParameterOrdering;
             }

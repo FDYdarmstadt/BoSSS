@@ -496,7 +496,7 @@ namespace BoSSS.Solution.NSECommon {
                     m_ParameterOrdering = ArrayTools.Cat(VariableNames.Velocity0Vector(SpatDim), VariableNames.Velocity0MeanVector(SpatDim));
                     break;
                 case PhysicsMode.LowMach:
-                    this.Argument = VariableNames.Temperature;
+
                     m_ParameterOrdering = ArrayTools.Cat(VariableNames.Velocity0Vector(SpatDim), VariableNames.Velocity0MeanVector(SpatDim),
                         VariableNames.Temperature0, VariableNames.Temperature0Mean);
                     m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), VariableNames.Temperature); // VelocityX,VelocityY,(VelocityZ), Temperature as variables. 
@@ -531,100 +531,100 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>        
         double InnerEdgeFlux(ref Foundation.CommonParams inp, double[] Uin, double[] Uout) {
             double r = 0.0;
-
-            // Calculate central part
-            // ======================
+            int idx = argumentIndex; // Valid for Temperature only. has to be changed 
+                                     // Calculate central part
+                                     // ======================
 
             // 2 * (rho u_j * scalar) * n_j
             double rhoIn = 0.0;
             double rhoOut = 0.0;
-            switch (m_bcmap.PhysMode) {
+            switch(m_bcmap.PhysMode) {
                 case PhysicsMode.LowMach:
-                    double[] DensityArgumentsIn = Uin.GetSubVector( m_SpatialDimension, 1);
-                    double[] DensityArgumentsOut = Uout.GetSubVector( m_SpatialDimension, 1);
+                    double[] DensityArgumentsIn = Uin.GetSubVector(m_SpatialDimension, 1);
+                    double[] DensityArgumentsOut = Uout.GetSubVector(m_SpatialDimension, 1);
                     rhoIn = EoS.GetDensity(DensityArgumentsIn);
                     rhoOut = EoS.GetDensity(DensityArgumentsOut);
                     break;
-                case PhysicsMode.Combustion: // TODOOOOOOO 
-                    double[] args_IN = new double[NumberOfReactants + 1];
-                    for (int n = 0; n < NumberOfReactants + 1; n++) {
-                        args_IN[n] = inp.Parameters_IN[2 * m_SpatialDimension + n];
+                case PhysicsMode.Combustion: {// TODOOOOOOO 
+                        double[] args_IN = new double[NumberOfReactants + 1];
+                        for(int n = 0; n < NumberOfReactants + 1; n++) {
+                            args_IN[n] = inp.Parameters_IN[2 * m_SpatialDimension + n];
+                        }
+                        double[] args_OUT = new double[NumberOfReactants + 1];
+                        for(int n = 0; n < NumberOfReactants + 1; n++) {
+                            args_OUT[n] = inp.Parameters_OUT[2 * m_SpatialDimension + n];
+                        }
+                        rhoIn = EoS.GetDensity(args_IN);
+                        rhoOut = EoS.GetDensity(args_OUT);
+                        break;
                     }
-                    double[] args_OUT = new double[NumberOfReactants + 1];
-                    for (int n = 0; n < NumberOfReactants + 1; n++) {
-                        args_OUT[n] = inp.Parameters_OUT[2 * m_SpatialDimension + n];
-                    }
-                    rhoIn = EoS.GetDensity(args_IN);
-                    rhoOut = EoS.GetDensity(args_OUT);
-                    break;
                 default:
                     throw new NotImplementedException("PhysicsMode not implemented");
             }
 
-       
-
-            int idx = argumentIndex; // Valid for Temperature only. has to be changed 
-            r += rhoIn * Uin[idx] * (Uin[0] * inp.Normal[0] + Uin[1] * inp.Normal[1]);             
-            r += rhoOut * Uout[idx] * (Uout[0] * inp.Normal[0] + Uout[1] * inp.Normal[1]);              
+            r += rhoIn * Uin[idx] * (Uin[0] * inp.Normal[0] + Uin[1] * inp.Normal[1]);
+            r += rhoOut * Uout[idx] * (Uout[0] * inp.Normal[0] + Uout[1] * inp.Normal[1]);
             if(m_SpatialDimension == 3) {
-                r += rhoIn * Uin[idx] * (Uin[2] * inp.Normal[2] + Uout[2] * inp.Normal[2]);              
+                //r += rhoIn * Uin[idx] * (Uin[2] * inp.Normal[2] + Uout[2] * inp.Normal[2]);
+                r += rhoIn * Uin[idx] * Uin[2] * inp.Normal[2] + rhoOut * Uout[idx] * Uout[2] * inp.Normal[2];
             }
 
             // Calculate dissipative part
             // ==========================
 
-            IList<double> _VelocityMeanIn = new List<double>();
-            IList<double> _VelocityMeanOut = new List<double>();
-            for (int d = 0; d < m_SpatialDimension; d++) {
-                _VelocityMeanIn.Add(inp.Parameters_IN[m_SpatialDimension + d]);
-                _VelocityMeanOut.Add(inp.Parameters_OUT[m_SpatialDimension + d]);
-            }
-            double[] VelocityMeanIn = _VelocityMeanIn.ToArray();
-            double[] VelocityMeanOut = _VelocityMeanOut.ToArray();
+
+            //double[] VelocityMeanIn = new double[m_SpatialDimension];
+            //double[] VelocityMeanOut = new double[m_SpatialDimension];
+            //for(int d = 0; d < m_SpatialDimension; d++) {
+            //    VelocityMeanIn[d] = Uin[d];
+            //    VelocityMeanOut[d] = Uout[d];
+            //}
+            double[] VelocityMeanIn = Uin.GetSubVector(0, m_SpatialDimension); ////////////////////////////TODO CHECK!!!!!!!!!!!!!!!!!!!!
+            double[] VelocityMeanOut = Uout.GetSubVector(0, m_SpatialDimension);
 
             double LambdaIn;
             double LambdaOut;
-            switch (m_bcmap.PhysMode) {
+            switch(m_bcmap.PhysMode) {
                 case PhysicsMode.Multiphase:
                     LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, false);
                     LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, false);
                     break;
                 case PhysicsMode.LowMach:
-                    double TemperatureMeanIn = inp.Parameters_IN[2 * m_SpatialDimension + 1];
-                    double TemperatureMeanOut = inp.Parameters_OUT[2 * m_SpatialDimension + 1];
-
-                    Debug.Assert(TemperatureMeanOut != 0);
+                    double TemperatureMeanIn = Uin[m_SpatialDimension];
+                    double TemperatureMeanOut = Uout[m_SpatialDimension];
 
                     LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, EoS, false, TemperatureMeanIn);
                     LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, EoS, false, TemperatureMeanOut);
 
-
-                    if (double.IsNaN(LambdaIn) || double.IsInfinity(LambdaIn)|| double.IsNaN(LambdaOut) || double.IsInfinity(LambdaOut))
-                        throw new NotFiniteNumberException();             
+                    if(double.IsNaN(LambdaIn) || double.IsInfinity(LambdaIn) || double.IsNaN(LambdaOut) || double.IsInfinity(LambdaOut))
+                        throw new NotFiniteNumberException();
 
 
                     break;
-                case PhysicsMode.Combustion:
-                    double[] ScalarMeanIn = new double[NumberOfReactants + 1];
-                    double[] ScalarMeanOut = new double[NumberOfReactants + 1];
-                    for (int n = 0; n < NumberOfReactants + 1; n++) {
-                        ScalarMeanIn[n] = inp.Parameters_IN[2 * m_SpatialDimension + NumberOfReactants + 1 + n];
-                        ScalarMeanOut[n] = inp.Parameters_OUT[2 * m_SpatialDimension + NumberOfReactants + 1 + n];
+                case PhysicsMode.Combustion: {
+                        //double TemperatureMeanIn = Uin.GetSubVector(m_SpatialDimension, 1);
+                        //double TemperatureMeanOut = Uout.GetSubVector(m_SpatialDimension, 1);
+                        double[] ScalarMeanIn = new double[NumberOfReactants + 1];
+                        double[] ScalarMeanOut = new double[NumberOfReactants + 1];
+                        for(int n = 0; n < NumberOfReactants + 1; n++) {
+                            ScalarMeanIn[n] = inp.Parameters_IN[2 * m_SpatialDimension + NumberOfReactants + 1 + n];
+                            ScalarMeanOut[n] = inp.Parameters_OUT[2 * m_SpatialDimension + NumberOfReactants + 1 + n];
+                        }
+                        LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, EoS, false, ScalarMeanIn);
+                        LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, EoS, false, ScalarMeanOut);
+                        break;
                     }
-                    LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, EoS, false, ScalarMeanIn);
-                    LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, EoS, false, ScalarMeanOut);
-                    break;
                 default:
                     throw new NotImplementedException();
             }
 
             double Lambda = Math.Max(LambdaIn, LambdaOut);
-            r += Lambda * (Uin[idx] - Uout[idx]);
 
+            r += Lambda * (Uin[idx] - Uout[idx]);
             r *= 0.5;
-            if (double.IsNaN(r))
+            if(double.IsNaN(r))
                 throw new NotFiniteNumberException();
-            
+
             return r;
         }
 
@@ -633,10 +633,11 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         double BorderEdgeFlux(ref Foundation.CommonParamsBnd inp, double[] Uin) {
             IncompressibleBcType edgeType = m_bcmap.EdgeTag2Type[inp.EdgeTag];
+          
 
-            switch (edgeType) {
+            switch(edgeType) {
                 case IncompressibleBcType.Wall: {
-
+                   
                         if ((edgeType == IncompressibleBcType.Wall) && (m_bcmap.PhysMode == PhysicsMode.Multiphase))
                             throw new ApplicationException("Use NoSlipNeumann boundary condition for multiphase flows instead of Wall.");
 
@@ -653,69 +654,36 @@ namespace BoSSS.Solution.NSECommon {
                         inp2.time = inp.time;
                         inp2.jCellIn = inp.jCellIn;
                         inp2.jCellOut = int.MinValue;
+                        
 
                         // Boundary values for Parameters
                         // ==============================
                         inp2.Parameters_OUT = new double[inp.Parameters_IN.Length];
 
-                        // Velocity
-                        for (int j = 0; j < m_SpatialDimension; j++) {
-                            // opt1:
-                            inp2.Parameters_OUT[j] = m_bcmap.bndFunction[VariableNames.Velocity_d(j)][inp.EdgeTag](inp.X, inp.time);
-                            // opt2: inner values
-                            //inp2.Parameters_OUT[j] = inp2.Parameters_IN[j];
-                            // Velocity0MeanVectorOut is set to zero, i.e.  LambdaIn is always used.                            
-                            inp2.Parameters_OUT[m_SpatialDimension + j] = 0.0;
-                        }
-
-                        // Skalar (e.g. temperature or MassFraction)
-                        switch (m_bcmap.PhysMode) {
-                            case PhysicsMode.LowMach: {
-                                    // opt1:
-                                    inp2.Parameters_OUT[2 * m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, 0);
-                                    // opt2: inner values
-                                    //inp2.Parameters_OUT[2 * m_SpatialDimension] = inp2.Parameters_IN[2 * m_SpatialDimension];
-                                    // Use inner value for TemperatureMean, i.e. LambdaIn is used.
-                                    inp2.Parameters_OUT[2 * m_SpatialDimension + 1] = inp.Parameters_IN[2 * m_SpatialDimension + 1];
-                                    break;
-                                }
-                            case PhysicsMode.Combustion: {
-                                    // opt1: (using Dirichlet values)
-                                    inp2.Parameters_OUT[2 * m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, 0);
-                                    for (int n = 1; n < NumberOfReactants + 1; n++) {
-                                        //Using inner values
-                                        inp2.Parameters_OUT[2 * m_SpatialDimension + n] = inp.Parameters_IN[2 * m_SpatialDimension + n];
-                                    }
-                                    for (int n = 0; n < NumberOfReactants + 1; n++) {
-                                        // Use inner value for mean scalar input parameters, i.e. LambdaIn is used.
-                                        inp2.Parameters_OUT[2 * m_SpatialDimension + NumberOfReactants + 1 + n] = inp.Parameters_IN[2 * m_SpatialDimension + NumberOfReactants + 1 + n];
-                                    }
-                                    break;
-                                }
-                            case PhysicsMode.Multiphase:
-                                break;
-                            default:
-                                throw new NotImplementedException();
-                        }
+                 
+              
 
                         // Dirichlet value for scalar
                         // ==========================
                         double[] Uout = new double[Uin.Length];
-                        for (int i = 0; i < Uin.Length - 1; i++) {
-                            Uout[i] = velFunction[inp.EdgeTag, i](inp.X, inp.time);
+                        for(int i = 0; i < Uin.Length - 1; i++) {
+                            Uout[i] = m_bcmap.bndFunction[VariableNames.Velocity_d(i)][inp.EdgeTag](inp.X, inp.time);                      
                         }
                         Uout[m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);
 
-
                         // Calculate BorderEdgeFlux as InnerEdgeFlux
-                        // =========================================    
+                        // =========================================                         
+                        Uin[0] = Uout[0]; //TODOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+                        Uin[1] = Uout[1];
+
+                       
+            
                         r = InnerEdgeFlux(ref inp2, Uin, Uout);
                         if (double.IsNaN(r))
                             throw new NotFiniteNumberException();
                         return r;
                     }
                 case IncompressibleBcType.Velocity_Inlet: {
-
                         if ((edgeType == IncompressibleBcType.Wall) && (m_bcmap.PhysMode == PhysicsMode.Multiphase))
                             throw new ApplicationException("Use NoSlipNeumann boundary condition for multiphase flows instead of Wall.");
 
@@ -854,25 +822,37 @@ namespace BoSSS.Solution.NSECommon {
                 double w = U[2];
                 output[2] = w * U[idx];
             }
-            if (m_bcmap.PhysMode == PhysicsMode.LowMach) {
 
-                double[] DensityArguments = U.GetSubVector(m_SpatialDimension, 1);
-                double rho = EoS.GetDensity(DensityArguments);
-                for (int d = 0; d < m_SpatialDimension; d++)
-                    output[d] *= rho;
-            }
 
-            if (m_bcmap.PhysMode == PhysicsMode.Combustion) {
-                double[] args = new double[NumberOfReactants + 1];
-                for (int n = 0; n < NumberOfReactants + 1; n++) {
-                    args[n] = inp.Parameters[2 * m_SpatialDimension + n];
-                }
-                double rho = EoS.GetDensity(args);
-                for (int d = 0; d < m_SpatialDimension; d++)
-                    output[d] *= rho;
+            double rho;
+            switch(m_bcmap.PhysMode) {
+                case PhysicsMode.Incompressible:
+                    break;
+                case PhysicsMode.LowMach:
+                    double[] DensityArguments = U.GetSubVector(m_SpatialDimension, 1);
+
+                     rho = EoS.GetDensity(DensityArguments);
+                    for(int d = 0; d < m_SpatialDimension; d++)
+                        output[d] *= rho;
+                    break;
+                case PhysicsMode.Combustion:
+                    double[] args = new double[NumberOfReactants + 1];
+                    for(int n = 0; n < NumberOfReactants + 1; n++) {
+                        args[n] = inp.Parameters[2 * m_SpatialDimension + n];
+                    }
+                     rho = EoS.GetDensity(args);
+                    for(int d = 0; d < m_SpatialDimension; d++)
+                        output[d] *= rho;
+                    break;
+
+                default:
+                    throw new NotImplementedException("not implemented physics mode");
+
+
+
             }
-            for (int d = 0; d < m_SpatialDimension; d++) {
-                if (double.IsNaN(output[d]))
+            for(int d = 0; d < m_SpatialDimension; d++) {
+                if(double.IsNaN(output[d]))
                     throw new NotFiniteNumberException();
             }
         }

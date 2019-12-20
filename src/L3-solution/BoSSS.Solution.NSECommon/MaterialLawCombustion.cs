@@ -20,6 +20,7 @@ using System.Linq;
 using System.Text;
 using BoSSS.Foundation;
 using System.Diagnostics;
+using ilPSP.Utils;
 
 namespace BoSSS.Solution.NSECommon {
 
@@ -66,16 +67,21 @@ namespace BoSSS.Solution.NSECommon {
                     throw new ArgumentException("Error in density computation. Number of reactants needs to be atleast 3.");
 
                 MassFractionsOverMolarFractions = 0.0;
+                //double nMassFract = 1.0; 
+                //for(int n = 1; n < phi.Length; n++) {
+                //    nMassFract -= phi[n]; // Mass fraction calculated as Yn = 1- sum_i^n-1(Y_i);
+                //}
+
+                //phi = ArrayTools.Cat(phi, nMassFract);
+
                 for (int n = 1; n < phi.Length; n++) {
                     MassFractionsOverMolarFractions += phi[n] / MolarMasses[n - 1];
                 }
-                rho = base.ThermodynamicPressure.Current.GetMeanValue(0) / (phi[0] * MassFractionsOverMolarFractions);
-                
+
+                rho = base.ThermodynamicPressure.Current.GetMeanValue(0) / (phi[0] * MassFractionsOverMolarFractions);                
                 Debug.Assert(!(double.IsNaN(rho) || double.IsInfinity(rho)));
-
-                //if (rhoOne) // JUST FOR DEBUGGING PURPOSES!!!!!!!!!!!!!!!!!!!!!!
-                //    rho = 1.0;
-
+                if(rhoOne)
+                    rho = 1.0;
                 return rho;
             }
             else {
