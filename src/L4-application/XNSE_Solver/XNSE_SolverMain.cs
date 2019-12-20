@@ -255,8 +255,6 @@ namespace BoSSS.Application.XNSE_Solver {
                 scale_A[D] = 0; // no  mass matrix for continuity equation
                 scale_B.SetAll(rho_B); // mass matrix in momentum equation (kinetic energy equation)
                 scale_B[D] = 0; // no  mass matrix for continuity equation
-                //scale_A.GetSubVector(0, D).SetAll(rho_A);
-                //scale_B.GetSubVector(0, D).SetAll(rho_B);
 
                 if (this.Control.solveCoupledHeatEquation) {
                     scale_A[mD + 1] = rho_A * c_A;
@@ -483,6 +481,8 @@ namespace BoSSS.Application.XNSE_Solver {
             //----------------
 
             m_HMForder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
+            if (this.Control.solveKineticEnergyEquation)
+                m_HMForder *= 2;
 
 
             // Create Spatial Operator
@@ -1200,7 +1200,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 // The actual solution of the System
                 // ++++++++++++++++++++++++++++++++++++++++++
 
-                using(new BlockTrace("Solve", tr)) {
+                using (new BlockTrace("Solve", tr)) {
 
                     if(m_BDF_Timestepper != null) {
 

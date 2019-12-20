@@ -55,6 +55,10 @@
       <Project>{8e6d8f23-623f-4204-b4ab-a088c0cd83aa}</Project>
       <Name>ilPSP</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj">
+      <Project>{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}</Project>
+      <Name>BoSSS.Platform</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.XDG\BoSSS.Foundation.XDG.csproj">
       <Project>{9a8cdc1f-64f7-441e-849d-66f2c56600f2}</Project>
       <Name>BoSSS.Foundation.XDG</Name>
@@ -62,6 +66,10 @@
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
       <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
       <Name>BoSSS.Foundation</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj">
+      <Project>{9EE2FCAD-E8A4-4F14-B932-D1A4904D715D}</Project>
+      <Name>BoSSS.Solution.LevelSetTools</Name>
     </ProjectReference>
     <ProjectReference Include="..\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj">
       <Project>{e56b9ce4-14dc-4256-a337-46e5d298b722}</Project>

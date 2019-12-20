@@ -115,6 +115,7 @@ namespace BoSSS.Solution.EnergyCommon {
             if (config.isPressureGradient) {
 
                 comps.Add(new DivergencePressureEnergyInSpeciesBulk(D, BcMap, spcName, spcId));
+                //comps.Add(new ConvectivePressureTerm_LLF(D, BcMap, spcName, spcId, LFFSpc, LsTrk));
                 //comps.Add(new PressureConvectionInBulk(D, energyBcMap, LFFA, LFFB, LsTrk));
                 //comps.Add(new PressureGradientConvection(D, spcId));
             }
@@ -179,6 +180,7 @@ namespace BoSSS.Solution.EnergyCommon {
             if (config.isPressureGradient) {
 
                 comps.Add(new DivergencePressureEnergyAtLevelSet(LsTrk));
+                //comps.Add(new ConvectivePressureTermAtLevelSet_LLF(D, LsTrk, LFFA, LFFB, physParams.Material, BcMap, config.isMovingMesh));
             }
 
             // surface energy

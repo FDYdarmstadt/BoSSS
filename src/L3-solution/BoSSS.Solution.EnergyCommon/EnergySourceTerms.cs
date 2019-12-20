@@ -115,31 +115,83 @@ namespace BoSSS.Solution.EnergyCommon {
         double rhoB;
 
 
-        private double[] GetInterfaceVelocity(double[] VelA, double[] VelB) {
+        private double[] GetInterfaceValue(double[] ValA, double[] ValB) {
 
-            double[] VelI = new double[m_D];
+            double[] ValI = new double[m_D];
             for (int d = 0; d < m_D; d++) {
-                VelI[d] = (rhoA * VelA[d] + rhoB * VelB[d]) / (rhoA + rhoB);
+                ValI[d] = (rhoA * ValA[d] + rhoB * ValB[d]) / (rhoA + rhoB);
             }
 
-            return VelI;
+            return ValI;
+        }
 
+        //protected static double[] SurfaceNormal(double[] param) {
+
+        //    double[] N = new double[param.Length];
+
+        //    for (int d = 0; d < param.Length; d++) {
+        //        N[d] = param[d];
+        //    }
+
+        //    return N.Normalize();
+        //}
+
+        protected static double[,] SurfaceProjection(double[] Nsurf) {
+
+            int D = Nsurf.Length;
+            double[,] P = new double[D, D];
+
+            for (int d = 0; d < D; d++) {
+                for (int dd = 0; dd < D; dd++) {
+                    if (dd == d)
+                        P[d, dd] = (1.0 - Nsurf[d] * Nsurf[dd]);
+                    else
+                        P[d, dd] = (0.0 - Nsurf[d] * Nsurf[dd]);
+                }
+            }
+
+            return P;
+        }
+
+
+        static double[,] VelocityGradient(double[] GradVelX, double[] GradVelY) {
+            Debug.Assert(GradVelX.Length == 2);
+            Debug.Assert(GradVelY.Length == 2);
+
+            int D = GradVelX.Length;
+            double[,] GradVel = new double[D, D];
+
+            GradVel[0, 0] = GradVelX[0];
+            GradVel[0, 1] = GradVelX[1];
+            GradVel[1, 0] = GradVelY[0];
+            GradVel[1, 1] = GradVelY[1];
+
+            return GradVel;
         }
 
 
         public double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             //Debug.Assert(cp.ParamsPos[0] == cp.ParamsNeg[0], "interface velocityX must be continuous across interface");
             //Debug.Assert(cp.ParamsPos[1] == cp.ParamsNeg[1], "interface velocityY must be continuous across interface");
-            Debug.Assert(cp.ParamsPos[m_D] == cp.ParamsNeg[m_D], "curvature must be continuous across interface");
+            Debug.Assert(cp.ParamsPos[3 * m_D] == cp.ParamsNeg[3 * m_D], "curvature must be continuous across interface");
 
-            double curvature = cp.ParamsNeg[m_D];
-            double[] VelI = GetInterfaceVelocity(cp.ParamsNeg.GetSubVector(0, m_D), cp.ParamsPos.GetSubVector(0, m_D));
+            double curvature = cp.ParamsNeg[3 * m_D];
+            double[] VelI = GetInterfaceValue(cp.ParamsNeg.GetSubVector(0, m_D), cp.ParamsPos.GetSubVector(0, m_D));
             double[] Normal = cp.n;
+            double[,] Psurf = SurfaceProjection(Normal);
+            double[] GradVelXI = GetInterfaceValue(cp.ParamsNeg.GetSubVector(m_D, m_D), cp.ParamsPos.GetSubVector(m_D, m_D));
+            double[] GradVelYI = GetInterfaceValue(cp.ParamsNeg.GetSubVector(2 * m_D, m_D), cp.ParamsPos.GetSubVector(2 * m_D, m_D));
+            double[,] GradVelI = VelocityGradient(GradVelXI, GradVelYI);
+
 
             double surfE = 0;
             for (int d = 0; d < m_D; d++) {
-                surfE -= curvature * sigma * (VelI[d] * Normal[d]);
+                surfE -= curvature * (VelI[d] * Normal[d]);
+                //for (int dd = 0; dd < m_D; dd++) {
+                //    surfE -= Psurf[d, dd] * GradVelI[dd, d];
+                //}
             }
+            surfE *= sigma;
 
             double FlxNeg = -0.5 * surfE;
             double FlxPos = +0.5 * surfE;
@@ -159,7 +211,7 @@ namespace BoSSS.Solution.EnergyCommon {
 
         public IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.Curvature);
+                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.VelocityX_GradientVector(), VariableNames.VelocityY_GradientVector(), VariableNames.Curvature);
             }
         }
 

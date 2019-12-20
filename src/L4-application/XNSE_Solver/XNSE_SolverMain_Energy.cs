@@ -107,7 +107,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
         XDGField ProjectedKineticEnergy;
 
-        //XDGField PowerOfGravity;
+
+        //SinglePhaseField EnergyJumpCondition;
 
 #pragma warning restore 649
 
@@ -153,6 +154,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 this.PowerOfStresses = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions[VariableNames.KineticEnergy].Degree)), "PowerOfStresses");
                 base.RegisterField(this.PowerOfStresses);
+
+                //this.EnergyJumpCondition = new SinglePhaseField(new Basis(this.GridData, this.Control.FieldOptions[VariableNames.KineticEnergy].Degree), "EnergyJumpCondition");
+                //base.RegisterField(this.EnergyJumpCondition);
 
             }
 

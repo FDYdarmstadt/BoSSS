@@ -444,8 +444,11 @@ namespace BoSSS.Application.XNSE_Solver {
                     double rhoA = this.Control.ThermalParameters.rho_A;
                     double rhoB = this.Control.ThermalParameters.rho_B;
 
+
                     for (int d = 0; d < D; d++) {
                         evapVelocity[d] = new SinglePhaseField(meanVelocity[d].Basis, "evapVelocity_d" + d);
+
+                        int order = evapVelocity[d].Basis.Degree * meanVelocity[d].Basis.Degree + 2;
 
                         evapVelocity[d].ProjectField(1.0,
                            delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
@@ -541,7 +544,7 @@ namespace BoSSS.Application.XNSE_Solver {
                                        result[j, k] = (rhoA * sNeg + rhoB * sPos) / (rhoA + rhoB);   // density averaged evap velocity 
                                    }
                                }
-                           }, new CellQuadratureScheme(true, LsTrk.Regions.GetCutCellMask()));
+                           }, (new CellQuadratureScheme(false, LsTrk.Regions.GetCutCellMask())).AddFixedOrderRules(LsTrk.GridDat, order));
 
                         meanVelocity[d].Clear();
                         meanVelocity[d].Acc(1.0, evapVelocity[d]);

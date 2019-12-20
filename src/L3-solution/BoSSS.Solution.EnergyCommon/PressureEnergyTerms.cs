@@ -296,4 +296,507 @@ namespace BoSSS.Solution.EnergyCommon {
     }
 
 
+
+
+    public class ConvectivePressureTerm_LLF : LinearFlux, ISpeciesFilter, IEquationComponentCoefficient {
+
+        /// <summary>
+        /// Spatial dimension;
+        /// </summary>
+        protected int m_SpatialDimension;
+
+        IncompressibleMultiphaseBoundaryCondMap m_bcmap;
+        LevelSetTracker lsTrk;
+
+        /// <summary>
+        /// Mapping from edge tags to boundary values.<br/>
+        /// 1st index: edge tag;<br/>
+        /// 2nd index: spatial direction
+        /// </summary>
+        protected Func<double[], double, double>[,] VelFunction;
+
+        protected Func<double[], double, double>[] PressFunction;
+
+
+        public ConvectivePressureTerm_LLF(int SpatDim, IncompressibleMultiphaseBoundaryCondMap _bcmap, string spcName, SpeciesId spcId, double _LFF, LevelSetTracker _lsTrk) {
+
+            this.m_SpatialDimension = SpatDim;
+            this.LaxFriedrichsSchemeSwitch = _LFF;
+
+            this.lsTrk = _lsTrk;
+
+            this.m_bcmap = _bcmap;
+            this.VelFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, SpatDim];
+            for (int d = 0; d < SpatDim; d++)
+                this.VelFunction.SetColumn(m_bcmap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName], d);
+
+            PressFunction = m_bcmap.bndFunction[VariableNames.Pressure + "#" + spcName];
+
+            this.m_spcId = spcId;
+
+        }
+
+
+        SpeciesId m_spcId;
+
+        public SpeciesId validSpeciesId {
+            get { return m_spcId; }
+        }
+
+
+        /// <summary>
+        /// set to 0.0 to turn the Lax-Friedrichs scheme into an central difference scheme.
+        /// </summary>
+        protected double LaxFriedrichsSchemeSwitch = 1.0;
+
+        public override IList<string> ArgumentOrdering {
+            get {
+                return new string[] { };
+            }
+        }
+
+        public override IList<string> ParameterOrdering {
+            get {
+                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_SpatialDimension), VariableNames.Velocity0MeanVector(m_SpatialDimension), VariableNames.Pressure0);
+            }
+        }
+
+        protected override void Flux(ref CommonParamsVol inp, double[] U, double[] output) {
+            for (int d = 0; d < m_SpatialDimension; d++)
+                output[d] = inp.Parameters[2 * m_SpatialDimension] * inp.Parameters[d];
+        }
+
+
+        internal double IEF(ref BoSSS.Foundation.CommonParams inp, double[] Uin, double[] Uout) {
+            return this.InnerEdgeFlux(ref inp, Uin, Uout);
+        }
+
+        protected double InnerEdgeFlux_BaseCall(ref CommonParams inp, double[] Uin, double[] Uout) {
+            double r = 0.0;
+
+            // Calculate central part
+            // ======================
+
+            r += inp.Parameters_IN[2 * m_SpatialDimension] * (inp.Parameters_IN[0] * inp.Normale[0] + inp.Parameters_IN[1] * inp.Normale[1]);
+            r += inp.Parameters_OUT[2 * m_SpatialDimension] * (inp.Parameters_OUT[0] * inp.Normale[0] + inp.Parameters_OUT[1] * inp.Normale[1]);
+            if (m_SpatialDimension == 3) {
+                r += inp.Parameters_IN[2 * m_SpatialDimension] * inp.Parameters_IN[2] * inp.Normale[2] + inp.Parameters_OUT[2 * m_SpatialDimension] * inp.Parameters_OUT[2] * inp.Normale[2];
+            }
+
+            // Calculate dissipative part
+            // ==========================
+
+            double[] VelocityMeanIn = new double[m_SpatialDimension];
+            double[] VelocityMeanOut = new double[m_SpatialDimension];
+            for (int d = 0; d < m_SpatialDimension; d++) {
+                VelocityMeanIn[d] = inp.Parameters_IN[m_SpatialDimension + d];
+                VelocityMeanOut[d] = inp.Parameters_OUT[m_SpatialDimension + d];
+            }
+
+            double LambdaIn;
+            double LambdaOut;
+
+            LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normale, true);
+            LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normale, true);
+
+            double Lambda = Math.Max(LambdaIn, LambdaOut);
+            double uJump = inp.Parameters_IN[2 * m_SpatialDimension] - inp.Parameters_OUT[2 * m_SpatialDimension];
+
+            r += Lambda * uJump * LaxFriedrichsSchemeSwitch;
+
+            r *= 0.5;
+            return r;
+        }
+
+        protected bool basecall = false;
+
+        protected override double InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout) {
+            if (basecall) {
+                return this.InnerEdgeFlux_BaseCall(ref inp, Uin, Uout);
+            } else {
+
+                //double UinBkUp = Uin[0];
+                //double UoutBkUp = Uout[0];
+                double[] InParamsBkup = inp.Parameters_IN;
+                double[] OutParamsBkup = inp.Parameters_OUT;
+
+
+                // subgrid boundary handling
+                // -------------------------
+
+                if (inp.iEdge >= 0 && inp.jCellOut >= 0) {
+
+                    bool CellIn = SubGrdMask[inp.jCellIn];
+                    bool CellOut = SubGrdMask[inp.jCellOut];
+                    Debug.Assert(CellIn || CellOut, "at least one cell must be in the subgrid!");
+
+                    if (CellOut == true && CellIn == false) {
+                        // IN-cell is outside of subgrid: extrapolate from OUT-cell!
+                        Uin[0] = Uout[0];
+                        inp.Parameters_IN = inp.Parameters_OUT.CloneAs();
+
+                    }
+                    if (CellIn == true && CellOut == false) {
+                        // ... and vice-versa
+                        Uout[0] = Uin[0];
+                        inp.Parameters_OUT = inp.Parameters_IN.CloneAs();
+                    }
+                }
+
+                // evaluate flux function
+                // ----------------------
+
+                var flx = this.InnerEdgeFlux_BaseCall(ref inp, Uin, Uout);
+
+                // cleanup mess and return
+                // -----------------------
+
+                //Uout[0] = UoutBkUp;
+                //Uin[0] = UinBkUp;
+                inp.Parameters_IN = InParamsBkup;
+                inp.Parameters_OUT = OutParamsBkup;
+
+                return flx;
+            }
+        }
+
+
+        protected override double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
+
+            IncompressibleBcType edgeType = m_bcmap.EdgeTag2Type[inp.EdgeTag];
+
+            switch (edgeType) {
+                case IncompressibleBcType.Wall:
+                case IncompressibleBcType.Velocity_Inlet: {
+
+                        double r = 0.0;
+
+                        // Setup params
+                        // ============
+                        Foundation.CommonParams inp2;
+                        inp2.GridDat = inp.GridDat;
+                        inp2.Normale = inp.Normale;
+                        inp2.iEdge = inp.iEdge;
+                        inp2.Parameters_IN = inp.Parameters_IN;
+                        inp2.X = inp.X;
+                        inp2.time = inp.time;
+
+                        // Specify Parameters_OUT
+                        // ======================
+                        inp2.Parameters_OUT = new double[inp.Parameters_IN.Length];
+
+                        double Uout = inp.Parameters_IN[2 * m_SpatialDimension];
+
+                        // Outer values for Velocity and VelocityMean
+                        for (int j = 0; j < m_SpatialDimension; j++) {
+
+                            inp2.Parameters_OUT[j] = inp2.Parameters_IN[j]; 
+
+                            // VelocityMeanOut = VelocityMeanIn
+                            inp2.Parameters_OUT[m_SpatialDimension + j] = inp.Parameters_IN[m_SpatialDimension + j];
+                        }
+
+                        // Calculate BorderEdgeFlux as InnerEdgeFlux
+                        // =========================================
+                        this.basecall = true;
+                        r = InnerEdgeFlux(ref inp2, Uin, new double[] { Uout });
+                        this.basecall = false;
+
+                        return r;
+                    }
+                case IncompressibleBcType.Pressure_Outlet: {
+
+                        double r = 0.0;
+                        double u1, u2, u3 = 0, u_d;
+
+                        u_d = this.PressFunction[inp.EdgeTag](inp.X, inp.time);
+                        u1 = inp.Parameters_IN[0];
+                        u2 = inp.Parameters_IN[1];
+                        if (m_SpatialDimension == 3)
+                            u3 = inp.Parameters_IN[2];
+
+                        r += u_d * (u1 * inp.Normale[0] + u2 * inp.Normale[1]);
+                        if (m_SpatialDimension == 3) {
+                            r += u_d * u3 * inp.Normale[2];
+                        }
+
+                        return r;
+                    }
+                default:
+                    throw new NotImplementedException("Boundary condition not implemented!");
+            }
+
+        }
+
+
+        protected System.Collections.BitArray SubGrdMask;
+
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            SubGrdMask = lsTrk.Regions.GetSpeciesSubGrid(m_spcId).VolumeMask.GetBitMaskWithExternal();
+        }
+
+
+        override public TermActivationFlags VolTerms {
+            get {
+                return TermActivationFlags.GradV;
+            }
+        }
+
+        override public TermActivationFlags BoundaryEdgeTerms {
+            get {
+                return TermActivationFlags.V;
+            }
+        }
+
+        override public TermActivationFlags InnerEdgeTerms {
+            get {
+                return TermActivationFlags.V;
+            }
+        }
+
+    }
+
+
+    public class ConvectivePressureTermAtLevelSet_LLF : ILevelSetForm {
+
+        LevelSetTracker m_LsTrk;
+
+        bool movingmesh;
+
+        public ConvectivePressureTermAtLevelSet_LLF(int _D, LevelSetTracker LsTrk, double _LFFA, double _LFFB,
+            bool _MaterialInterface, IncompressibleMultiphaseBoundaryCondMap _bcmap, bool _movingmesh) {
+
+            m_D = _D;
+
+            m_LsTrk = LsTrk;
+
+            MaterialInterface = _MaterialInterface;
+            movingmesh = _movingmesh;
+
+            NegFlux = new ConvectivePressureTerm_LLF(_D, _bcmap, "A", LsTrk.GetSpeciesId("A"), _LFFA, LsTrk);
+            PosFlux = new ConvectivePressureTerm_LLF(_D, _bcmap, "B", LsTrk.GetSpeciesId("B"), _LFFB, LsTrk);
+
+        }
+
+        bool MaterialInterface;
+
+        int m_D;
+
+        // Use Fluxes as in Bulk Convection
+        ConvectivePressureTerm_LLF NegFlux;
+        ConvectivePressureTerm_LLF PosFlux;
+
+
+
+        void TransformU(ref double[] U_Neg, ref double[] U_Pos, out double[] U_NegFict, out double[] U_PosFict) {
+            if (this.MaterialInterface) {
+
+                U_NegFict = U_Pos;
+                U_PosFict = U_Neg;
+
+            } else {
+                throw new NotImplementedException();
+            }
+        }
+
+
+        public double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+            double[] U_NegFict, U_PosFict;
+
+            this.TransformU(ref U_Neg, ref U_Pos, out U_NegFict, out U_PosFict);
+
+            double[] ParamsNeg = cp.ParamsNeg;
+            double[] ParamsPos = cp.ParamsPos;
+            double[] ParamsPosFict, ParamsNegFict;
+            this.TransformU(ref ParamsNeg, ref ParamsPos, out ParamsNegFict, out ParamsPosFict);
+            //Flux for negativ side
+            double FlxNeg;
+            {
+
+                BoSSS.Foundation.CommonParams inp; // = default(BoSSS.Foundation.InParams);
+                inp.Parameters_IN = ParamsNeg;
+                inp.Parameters_OUT = ParamsNegFict;
+                inp.Normale = cp.n;
+                inp.iEdge = int.MinValue;
+                inp.GridDat = this.m_LsTrk.GridDat;
+                inp.X = cp.x;
+                inp.time = cp.time;
+
+                FlxNeg = this.NegFlux.IEF(ref inp, U_Neg, U_NegFict);
+            }
+            // Flux for positive side
+            double FlxPos;
+            {
+
+                BoSSS.Foundation.CommonParams inp; // = default(BoSSS.Foundation.InParams);
+                inp.Parameters_IN = ParamsPosFict;
+                inp.Parameters_OUT = ParamsPos;
+                inp.Normale = cp.n;
+                inp.iEdge = int.MinValue;
+                inp.GridDat = this.m_LsTrk.GridDat;
+                inp.X = cp.x;
+                inp.time = cp.time;
+
+                FlxPos = this.PosFlux.IEF(ref inp, U_PosFict, U_Pos);
+            }
+
+            if (movingmesh)
+                return 0.0;
+            else
+                return FlxNeg * v_Neg - FlxPos * v_Pos;
+        }
+
+        public IList<string> ArgumentOrdering {
+            get {
+                return new string[] {  };
+            }
+        }
+
+        public IList<string> ParameterOrdering {
+            get {
+                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.Velocity0MeanVector(m_D), VariableNames.Pressure0);
+            }
+        }
+
+        public int LevelSetIndex {
+            get { return 0; }
+        }
+
+        public SpeciesId PositiveSpecies {
+            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        }
+
+        public SpeciesId NegativeSpecies {
+            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        }
+
+        public TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.UxV | TermActivationFlags.V;
+            }
+        }
+    }
+
+
+    public class ConvectivePressureTerm_Upwind : LinearFlux, ISpeciesFilter {
+
+        /// <summary>
+        /// Spatial dimension;
+        /// </summary>
+        protected int m_SpatialDimension;
+
+        IncompressibleMultiphaseBoundaryCondMap m_bcmap;
+
+        /// <summary>
+        /// Mapping from edge tags to boundary values.<br/>
+        /// 1st index: edge tag;<br/>
+        /// 2nd index: spatial direction
+        /// </summary>
+        protected Func<double[], double, double>[,] VelFunction;
+
+        protected Func<double[], double, double>[] PressFunction;
+
+
+        public ConvectivePressureTerm_Upwind(int SpatDim, IncompressibleMultiphaseBoundaryCondMap _bcmap, string spcName, SpeciesId spcId) {
+
+            this.m_SpatialDimension = SpatDim;
+
+            this.m_bcmap = _bcmap;
+            this.VelFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, SpatDim];
+            for (int d = 0; d < SpatDim; d++)
+                this.VelFunction.SetColumn(m_bcmap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName], d);
+
+            PressFunction = m_bcmap.bndFunction[VariableNames.Pressure + "#" + spcName];
+
+            this.m_spcId = spcId;
+
+        }
+
+
+        SpeciesId m_spcId;
+
+        public SpeciesId validSpeciesId {
+            get { return m_spcId; }
+        }
+
+        public override IList<string> ArgumentOrdering {
+            get {
+                return new string[] { };
+            }
+        }
+
+        public override IList<string> ParameterOrdering {
+            get {
+                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_SpatialDimension), VariableNames.Pressure0);
+            }
+        }
+
+
+        protected override void Flux(ref CommonParamsVol inp, double[] U, double[] output) {
+
+            for (int d = 0; d < m_SpatialDimension; d++)
+                output[d] = inp.Parameters[m_SpatialDimension] * inp.Parameters[d];
+
+        }
+
+
+        protected override double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
+
+            double c = 0.0;
+            for (int d = 0; d < m_SpatialDimension; d++)
+                c += inp.Parameters_IN[d] * inp.Normale[d];
+
+            IncompressibleBcType edgeType = m_bcmap.EdgeTag2Type[inp.EdgeTag];
+
+            switch (edgeType) {
+                case IncompressibleBcType.Wall:
+                case IncompressibleBcType.Velocity_Inlet: {
+                        return (c * inp.Parameters_IN[m_SpatialDimension]);
+                    }
+                case IncompressibleBcType.Pressure_Outlet:
+                case IncompressibleBcType.Pressure_Dirichlet: {
+                        return (c * this.PressFunction[inp.EdgeTag](inp.X, inp.time));
+                    }
+                default:
+                    throw new NotImplementedException("Boundary condition not implemented!");
+            }
+        }
+
+
+        protected override double InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout) {
+
+            double c = 0.0;
+            for (int d = 0; d < m_SpatialDimension; d++)
+                c += 0.5 * (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * inp.Normale[d];
+
+            if (c > 0)
+                return (c * inp.Parameters_IN[m_SpatialDimension]);
+            else
+                return (c * inp.Parameters_OUT[m_SpatialDimension]);
+
+
+        }
+
+
+        override public TermActivationFlags VolTerms {
+            get {
+                return TermActivationFlags.GradV;
+            }
+        }
+
+        override public TermActivationFlags BoundaryEdgeTerms {
+            get {
+                return TermActivationFlags.V;
+            }
+        }
+
+        override public TermActivationFlags InnerEdgeTerms {
+            get {
+                return TermActivationFlags.V;
+            }
+        }
+
+    }
+
+
 }

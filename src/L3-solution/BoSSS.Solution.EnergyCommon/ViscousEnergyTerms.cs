@@ -383,7 +383,7 @@ namespace BoSSS.Solution.EnergyCommon {
 
 
 
-        static double[,] VelociytGradient(double[] GradVelX, double[] GradVelY) {
+        static double[,] VelocityGradient(double[] GradVelX, double[] GradVelY) {
             Debug.Assert(GradVelX.Length == 2);
             Debug.Assert(GradVelY.Length == 2);
 
@@ -396,7 +396,6 @@ namespace BoSSS.Solution.EnergyCommon {
             GradVel[1, 1] = GradVelY[1];
 
             return GradVel;
-
         }
 
 
@@ -404,8 +403,8 @@ namespace BoSSS.Solution.EnergyCommon {
 
             double[] Vel_A = inp.ParamsNeg.GetSubVector(0, m_D);
             double[] Vel_B = inp.ParamsPos.GetSubVector(0, m_D);
-            double[,] GradVel_A = VelociytGradient(inp.ParamsNeg.GetSubVector(m_D, m_D), inp.ParamsNeg.GetSubVector(2 * m_D, m_D));
-            double[,] GradVel_B = VelociytGradient(inp.ParamsPos.GetSubVector(m_D, m_D), inp.ParamsPos.GetSubVector(2 * m_D, m_D));
+            double[,] GradVel_A = VelocityGradient(inp.ParamsNeg.GetSubVector(m_D, m_D), inp.ParamsNeg.GetSubVector(2 * m_D, m_D));
+            double[,] GradVel_B = VelocityGradient(inp.ParamsPos.GetSubVector(m_D, m_D), inp.ParamsPos.GetSubVector(2 * m_D, m_D));
             //double p_A = inp.ParamsNeg[3 * m_D];
             //double p_B = inp.ParamsPos[3 * m_D];
 
@@ -502,7 +501,7 @@ namespace BoSSS.Solution.EnergyCommon {
         }
 
 
-        static double[,] VelociytGradient(double[] GradVelX, double[] GradVelY) {
+        static double[,] VelocityGradient(double[] GradVelX, double[] GradVelY) {
             Debug.Assert(GradVelX.Length == 2);
             Debug.Assert(GradVelY.Length == 2);
 
@@ -533,7 +532,7 @@ namespace BoSSS.Solution.EnergyCommon {
         public double VolumeForm(ref CommonParamsVol cpv, Double[] U, Double[,] GradU, Double V, Double[] GradV) {
 
             double[] Vel = cpv.Parameters.GetSubVector(0, m_D);
-            double[,] GradVel = VelociytGradient(cpv.Parameters.GetSubVector(m_D, m_D), cpv.Parameters.GetSubVector(2 * m_D, m_D));
+            double[,] GradVel = VelocityGradient(cpv.Parameters.GetSubVector(m_D, m_D), cpv.Parameters.GetSubVector(2 * m_D, m_D));
 
             double[] LapU = new double[2];
             LapU[0] = cpv.Parameters[3 * m_D] + cpv.Parameters[4 * m_D + 1];

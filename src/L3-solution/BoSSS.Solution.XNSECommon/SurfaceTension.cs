@@ -913,6 +913,15 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             double[] Nsurf = SurfaceNormal(cpv.Parameters);
             double[,] Psurf = SurfaceProjection(Nsurf);
 
+            //double[,] Psurf2 = new double[cpv.D, cpv.D];
+            //for (int d1 = 0; d1 < cpv.D; d1++) {
+            //    for (int d2 = 0; d2 < cpv.D; d2++) {
+            //        for (int dd = 0; dd < cpv.D; dd++) {
+            //            Psurf2[d1, d2] += Psurf[d1, dd] * Psurf[dd, d2];
+            //        }
+            //    }
+            //}
+
             for (int d = 0; d < cpv.D; d++)
                 acc += - m_sigma * Psurf[m_comp, d] * GradV[d];
 

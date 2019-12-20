@@ -88,7 +88,11 @@ namespace BoSSS.Application.XNSE_Solver {
 
         VectorField<SinglePhaseField> MomentumBalanceAtInterface;
 
+        VectorField<SinglePhaseField> SurfaceTensionForce;
+
         SinglePhaseField EnergyBalanceAtInterface;
+
+
 
 
 #pragma warning restore 649
@@ -106,14 +110,20 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             if (this.Control.CheckJumpConditions) {
-                Basis basis = new Basis(this.GridData, 0);
 
+                Basis basis = new Basis(this.GridData, this.Control.FieldOptions[VariableNames.VelocityX].Degree + (this.Control.FieldOptions[VariableNames.VelocityX].Degree - 1));
                 this.MassBalanceAtInterface = new SinglePhaseField(basis, "MassBalanceAtInterface");
                 base.RegisterField(this.MassBalanceAtInterface);
 
+                basis = new Basis(this.GridData, this.Control.FieldOptions[VariableNames.Pressure].Degree + (this.Control.FieldOptions[VariableNames.VelocityX].Degree - 1));
                 this.MomentumBalanceAtInterface = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(basis, d + "-MomentumBalanceAtInterface")));
                 base.RegisterField(this.MomentumBalanceAtInterface);
 
+                basis = new Basis(this.GridData, this.Control.FieldOptions[VariableNames.Pressure].Degree + (this.Control.FieldOptions[VariableNames.VelocityX].Degree - 1));
+                this.SurfaceTensionForce = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(basis, d + "-SurfaceTensionForce")));
+                base.RegisterField(this.SurfaceTensionForce);
+
+                basis = new Basis(this.GridData, this.Control.FieldOptions[VariableNames.Pressure].Degree + (this.Control.FieldOptions[VariableNames.VelocityX].Degree - 1) + this.Control.FieldOptions[VariableNames.Pressure].Degree);
                 this.EnergyBalanceAtInterface = new SinglePhaseField(basis, "EnergyBalanceAtInterface");
                 base.RegisterField(this.EnergyBalanceAtInterface);
 
@@ -188,48 +198,53 @@ namespace BoSSS.Application.XNSE_Solver {
 
             if (this.Control.CheckJumpConditions) {
 
-                // mass balance
-                double velJump_Norm = XNSEUtils.VelocityJumpNorm(this.XDGvelocity.Velocity, false, this.m_HMForder);
-
-                Console.WriteLine("velocity jump norm = {0}", velJump_Norm);
-
                 this.MassBalanceAtInterface.Clear();
-                XNSEUtils.ProjectMassBalanceNorm(this.MassBalanceAtInterface, 1.0, this.XDGvelocity.Velocity, this.m_HMForder);
+                for (int d = 0; d < this.Grid.SpatialDimension; d++) {
+                    this.MomentumBalanceAtInterface[d].Clear();
+                    this.SurfaceTensionForce[d].Clear();
+                }
+                this.EnergyBalanceAtInterface.Clear();
 
 
-                // momentum balance
                 CurvatureAlgorithms.CurvatureDriver(
                     SurfaceStressTensor_IsotropicMode.Curvature_Projected,
                     CurvatureAlgorithms.FilterConfiguration.NoFilter,
                     this.Curvature, out VectorField<SinglePhaseField> LevSetGradient, this.LsTrk,
                     this.m_HMForder, this.DGLevSet.Current);
 
-                ConventionalDGField[] meanVelocity = XNSEUtils.GetMeanVelocity(this.XDGvelocity.Velocity, this.LsTrk,
-                    this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B);
+                ConventionalDGField[] meanVelocity = GetMeanVelocityFromXDGField(this.XDGvelocity.Velocity.ToArray());
 
 
-                double[] momBal_Norm = XNSEUtils.MomentumBalanceNormAtInterface(this.Pressure, this.XDGvelocity.Velocity, this.Curvature,
-                    this.Control.PhysicalParameters, this.Control.AdvancedDiscretizationOptions.SurfStressTensor, this.m_HMForder);
+                // mass balance
+                XNSEUtils.ProjectMassBalanceAtInterface(this.MassBalanceAtInterface, 1.0, this.XDGvelocity.Velocity);
 
-                Console.WriteLine("x-momentum balance norm = {0}", momBal_Norm[0]);
-                Console.WriteLine("y-momentum balance norm = {0}", momBal_Norm[1]);
+                //double velJump_Norm = XNSEUtils.VelocityJumpNorm(this.XDGvelocity.Velocity, false, this.m_HMForder);
+                //Console.WriteLine("velocity jump norm = {0}", velJump_Norm);
 
-                for (int d = 0; d < this.Grid.SpatialDimension; d++) {
-                    this.MomentumBalanceAtInterface[d].Clear();
-                    XNSEUtils.ProjectMomentumBalanceNorm(this.MomentumBalanceAtInterface[d], 1.0, this.Pressure, this.XDGvelocity.Velocity, this.Curvature,
-                        this.Control.PhysicalParameters, this.Control.AdvancedDiscretizationOptions.SurfStressTensor, d, this.m_HMForder);
-                }
+
+                // momentum balance
+                XNSEUtils.ProjectMomentumBalanceAtInterface(this.MomentumBalanceAtInterface, 1.0, this.Pressure, this.XDGvelocity.Velocity, this.Curvature,
+                    this.Control.PhysicalParameters);
+
+                //double[] momBal_Norm = XNSEUtils.MomentumBalanceNormAtInterface(this.Pressure, this.XDGvelocity.Velocity, this.Curvature,
+                //    this.Control.PhysicalParameters, this.Control.AdvancedDiscretizationOptions.SurfStressTensor, this.m_HMForder);
+                //Console.WriteLine("x-momentum balance norm = {0}", momBal_Norm[0]);
+                //Console.WriteLine("y-momentum balance norm = {0}", momBal_Norm[1]);
+
+
+                // surface tension force
+                XNSEUtils.ProjectSurfaceTensionForce(this.SurfaceTensionForce, 1.0, meanVelocity, this.Curvature, this.LsTrk, 
+                    this.Control.PhysicalParameters, this.Control.AdvancedDiscretizationOptions.SurfStressTensor);
 
 
                 // energy balance
+                EnergyUtils.ProjectEnergyBalanceAtInterface(this.EnergyBalanceAtInterface, 1.0, this.Pressure, this.XDGvelocity.Velocity, meanVelocity, this.Curvature,
+                    this.Control.PhysicalParameters);
+
                 //double energyBal_Norm = XNSEUtils.EnergyBalanceNormAtInterface(this.Pressure, this.XDGvelocity.Velocity, meanVelocity, this.Curvature,
                 //    this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B, this.Control.PhysicalParameters.Sigma, this.m_HMForder);
-
                 //Console.WriteLine("energy balance norm = {0}", energyBal_Norm);
 
-                //this.EnergyBalanceAtInterface.Clear();
-                //XNSEUtils.ProjectEnergyBalanceNorm(this.EnergyBalanceAtInterface, 1.0, this.Pressure, this.XDGvelocity.Velocity, meanVelocity, this.Curvature,
-                //    this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B, this.Control.PhysicalParameters.Sigma, this.m_HMForder);
 
             }
 
@@ -291,6 +306,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 ConventionalDGField[] meanVelocity = XNSEUtils.GetMeanVelocity(this.XDGvelocity.Velocity, this.LsTrk,
                     this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B);
                 double SurfDivergence = EnergyUtils.GetSurfaceChangerate(this.LsTrk, meanVelocity, this.m_HMForder);
+
+                //EnergyUtils.ProjectEnergyBalanceNorm(this.EnergyJumpCondition, 1.0, this.Pressure, this.XDGvelocity.Velocity, meanVelocity, this.Curvature, muS[0], muS[1], this.Control.PhysicalParameters.Sigma, this.m_HMForder);
 
 
                 // logging
