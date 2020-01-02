@@ -694,7 +694,7 @@ namespace BoSSS.Solution.NSECommon {
                         // Dirichlet value for velocity
                         // ============================
                         double[] Uout = new double[Uin.Length];
-                        for(int i = 0; i < Uin.Length - 1; i++) {
+                        for(int i = 0; i < m_SpatialDimension; i++) {
                             Uout[i] = velFunction[inp.EdgeTag, i](inp.X, inp.time);
                         }
 
@@ -916,7 +916,7 @@ namespace BoSSS.Solution.NSECommon {
         /// For variable density the result is multiplied by \f$ \rho\f$ .
         /// </summary>
         protected void Flux(ref CommonParamsVol inp, double[] U, double[] output) {
-            int idx = argumentIndex;
+            int idx = m_component;
             double rho;
             double[] DensityArguments;
             output[0] = U[idx] * U[0];

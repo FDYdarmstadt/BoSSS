@@ -67,14 +67,14 @@ namespace BoSSS.Solution.NSECommon {
                     throw new ArgumentException("Error in density computation. Number of reactants needs to be atleast 3.");
 
                 MassFractionsOverMolarFractions = 0.0;
-                //double nMassFract = 1.0; 
-                //for(int n = 1; n < phi.Length; n++) {
-                //    nMassFract -= phi[n]; // Mass fraction calculated as Yn = 1- sum_i^n-1(Y_i);
-                //}
+                double lastMassFract = 1.0; // The last mass fraction is calculated here, because the other ones are given as arguments and not as parameters.
+                for(int n = 1; n < phi.Length; n++) {
+                    lastMassFract -= phi[n]; // Mass fraction calculated as Yn = 1- sum_i^n-1(Y_i);
+                }
 
-                //phi = ArrayTools.Cat(phi, nMassFract);
+                phi = ArrayTools.Cat(phi, lastMassFract);
 
-                for (int n = 1; n < phi.Length; n++) {
+                for(int n = 1; n < phi.Length; n++) {
                     MassFractionsOverMolarFractions += phi[n] / MolarMasses[n - 1];
                 }
 

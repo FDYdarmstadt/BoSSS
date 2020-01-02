@@ -146,7 +146,8 @@ namespace BoSSS.Solution.NSECommon {
             double SourceTerm = 0;
             double DiffussionTerm = 0;
 
-
+            double ConvectionTermSwitch = 1.0;
+            double DiffussionTermSwitch = 1.0;
 
 
 
@@ -197,7 +198,7 @@ namespace BoSSS.Solution.NSECommon {
                 SourceTerm = 0;
 
 
-            return -(ConvectionTerm + DiffussionTerm + SourceTerm ) * V;
+            return -(ConvectionTerm* ConvectionTermSwitch + DiffussionTerm * DiffussionTermSwitch + SourceTerm ) * V;
 
 
         }

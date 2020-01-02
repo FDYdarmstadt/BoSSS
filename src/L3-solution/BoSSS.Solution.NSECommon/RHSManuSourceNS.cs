@@ -111,7 +111,8 @@ namespace BoSSS.Solution.NSECommon {
             double PressureGradientTerm;
             double BouyancyTerm;
 
-
+            double convectionSwitch = 1.0;
+            double viscoustermSwitch = 1.0;
 
 
             if(direction == "x") {
@@ -159,7 +160,7 @@ namespace BoSSS.Solution.NSECommon {
                 throw new ArgumentException("Specified direction not supported");
 
 
-            return -( ConvectionTerm + ViscTerm + PressureGradientTerm + BouyancyTerm * -1) * V;
+            return -( ConvectionTerm* convectionSwitch + ViscTerm *viscoustermSwitch+ PressureGradientTerm + BouyancyTerm * -1) * V;
         }
     }
 }

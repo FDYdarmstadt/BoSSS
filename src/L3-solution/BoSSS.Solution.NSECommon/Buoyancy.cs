@@ -121,7 +121,7 @@ namespace BoSSS.Solution.NSECommon {
     /// <summary>
     /// [LowMach] Buoyant force.
     /// </summary>
-    //public class Buoyancy : BoSSS.Foundation.IVolumeForm {
+
     public class BuoyancyJacobi : IVolumeForm, ISupportsJacobianComponent {
         Vector GravityDirection;
         int SpatialComponent;
@@ -153,12 +153,12 @@ namespace BoSSS.Solution.NSECommon {
 
             switch(physicsMode) {
                 case PhysicsMode.LowMach:
-                    this.m_ParameterOrdering = new string[] { VariableNames.Temperature0 };
+                    this.m_ParameterOrdering = null; // new string[] { VariableNames.Temperature0 };
                     this.m_ArgumentOrdering = new string[] { VariableNames.Temperature };
                     break;
                 case PhysicsMode.Combustion:
                     this.m_ParameterOrdering = new string[] { VariableNames.Temperature0, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0 };
-                    this.m_ArgumentOrdering = new string[] { VariableNames.Temperature, VariableNames.MassFraction0, VariableNames.MassFraction1, VariableNames.MassFraction2, VariableNames.MassFraction3 };
+                    this.m_ArgumentOrdering = new string[] { VariableNames.Temperature, VariableNames.MassFraction0, VariableNames.MassFraction1, VariableNames.MassFraction2/*, VariableNames.MassFraction3 */};
                     break;
                 default:
                     throw new ApplicationException("wrong physicsmode");
@@ -174,13 +174,23 @@ namespace BoSSS.Solution.NSECommon {
         /// <returns></returns>
         protected double Source(double[] x, double[] parameters, double[] U) {
             double src = 0.0;
-            if(U[0] ==0) {
-                Console.WriteLine("dasd");
+
+            double rho;
+            switch(physicsMode) {
+                case PhysicsMode.LowMach:
+                     rho = EoS.GetDensity(U[0]);
+                    break;
+                case PhysicsMode.Combustion:
+                     rho = EoS.GetDensity(U);
+                    break;
+                default:
+
+                    throw new NotImplementedException("wrong PhysicsMode");
             }
-            double rho = EoS.GetDensity(U[0]);
+        
 
 
-            src = 1.0 / (Froude * Froude) * rho * GravityDirection[SpatialComponent];
+            src = (1.0 / (Froude * Froude)) * rho * GravityDirection[SpatialComponent];
 
             return src;
         }

@@ -122,6 +122,8 @@ namespace BoSSS.Solution.NSECommon {
         /// </returns>
         public override double GetDensity(params double[] phi) {
             if(IsInitialized) {
+                Debug.Assert(phi[0] > 0);
+
                 double rho;             
                 rho = ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];    //rho = ThermodynamicPressureValue / phi[0];
                 Debug.Assert(!double.IsNaN(rho));
