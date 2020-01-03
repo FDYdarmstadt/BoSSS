@@ -29,6 +29,7 @@ using BoSSS.Platform.Utils.Geom;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.XdgTimestepping;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HardcodedTestExamples {
@@ -217,7 +218,6 @@ namespace BoSSS.Application.FSI_Solver {
             // Initial Values
             // ==============
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-            C.gravity = new double[] { 0, 0 };
             double particleDensity = 1;
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, false, true);
             C.Particles.Add(new Particle_Sphere(motion, 0.4, new double[] { 0.0, 0.0 }));
@@ -321,7 +321,6 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 0.1;
             C.pureDryCollisions = true;
-            C.gravity = new double[] { 0, 0 };
             double particleDensity = 1.0;
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions);
             // Particles
@@ -680,7 +679,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.rho_A = 1.0;
             C.PhysicalParameters.mu_A = 0.1;
             C.CoefficientOfRestitution = 0;
-            C.gravity = new double[] { 0, -9.81 };
+            C.gravity = new Vector( 0, -9.81 );
 
             // Particle Properties
             //C.PhysicalParameters.mu_B = 0.1;
@@ -949,7 +948,6 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.rho_A = 0.1;//pg/(mum^3)
             C.PhysicalParameters.mu_A = 1e-1;//pg(mum*s)
             C.PhysicalParameters.Material = true;
-            C.gravity = new double[] { 0, 0 };
             double particleDensity = 1.0;
             C.hydrodynamicsConvergenceCriterion = 1e-2;
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, false, false, 1);

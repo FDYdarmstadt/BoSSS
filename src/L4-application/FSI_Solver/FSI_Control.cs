@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.XdgTimestepping;
 using ilPSP.Utils;
 using System;
@@ -230,7 +231,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Gravity acting on the particles, zero by default.
         /// </summary>
         [DataMember]
-        public double[] gravity = new double[] { 0, 0 };
+        public Vector gravity = new Vector(0, 0);
 
         [DataMember]
         public double addedDampingCoefficient = -1;

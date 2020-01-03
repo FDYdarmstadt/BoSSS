@@ -41,7 +41,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// The density of the particle.
         /// </param>
         public Motion_Wet(Vector gravity, double density) {
-            gravity = new Vector(0, 0);
+            if (gravity.IsNullOrEmpty())
+                gravity = new Vector(0, 0);
             Gravity = new Vector(gravity);
             Density = density;
             // creating list for motion parameters (to save the history)
@@ -99,7 +100,7 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         private double m_Area;
         [DataMember]
-        private Vector m_Gravity = new Vector(m_Dim);
+        private Vector m_Gravity = new Vector(0 , 0);
         [DataMember]
         private double m_MomentOfInertia;
         [DataMember]

@@ -59,7 +59,6 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.mu_A = 0.01;
             C.PhysicalParameters.IncludeConvection = false;
             double particleDensity = 10000;
-            C.gravity = new double[] { 0, 0 };
 
             // Particle Properties
             // =============================   
@@ -111,7 +110,6 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.IncludeConvection = true;
-            C.gravity = new double[] { 0, 0 };
             double particleDensity = 1;
             // Particle Properties
             // =============================   

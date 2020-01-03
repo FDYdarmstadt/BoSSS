@@ -55,7 +55,6 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.IncludeConvection = false;
             double particleDensity = 100;
-            C.gravity = new double[] { 0, 0 };
             C.pureDryCollisions = true;
 
             // Particle Properties
