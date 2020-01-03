@@ -21,7 +21,6 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
-using BoSSS.Platform.LinAlg;
 using BoSSS.Solution;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Utils;

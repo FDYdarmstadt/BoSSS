@@ -16,16 +16,14 @@ limitations under the License.
 
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.XdgTimestepping;
+using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 
 
 

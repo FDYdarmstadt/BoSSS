@@ -22,6 +22,7 @@ using BoSSS.Foundation;
 using ilPSP.Utils;
 using BoSSS.Platform.LinAlg;
 using FSI_Solver;
+using ilPSP;
 
 namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
@@ -60,19 +61,17 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         /// default-implementation
         /// </summary>
         public double LevelSetForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            Vector N = new Vector(inp.Normal);
-            Vector X = new Vector(inp.X);
-            int dim = N.Dim;
+            int dim = inp.Normal.Dim;
             double _penalty = m_PenaltyFunc(m_penalty, inp.jCellIn);
 
             // Particle parameters
             // =====================
-            FSI_ParameterAtIB coupling = m_GetParticleParams(X);
+            FSI_ParameterAtIB coupling = m_GetParticleParams(inp.X);
             Vector orientation = new Vector(Math.Cos(coupling.Angle()), Math.Sin(coupling.Angle()));
             Vector orientationNormal = new Vector(-Math.Sin(coupling.Angle()), Math.Cos(coupling.Angle()));
-            Vector activeStressVector = orientationNormal * N > 0 ? new Vector(-coupling.ActiveStress() * N[1], coupling.ActiveStress() * N[0]) 
-                                                                  : new Vector(coupling.ActiveStress() * N[1], -coupling.ActiveStress() * N[0]);
-            BoundaryConditionType bcType = orientation * N <= 0 || coupling.ActiveStress() == 0 ? BoundaryConditionType.passive : BoundaryConditionType.active;
+            Vector activeStressVector = orientationNormal * inp.Normal > 0 ? new Vector(-coupling.ActiveStress() * inp.Normal[1], coupling.ActiveStress() * inp.Normal[0]) 
+                                                                  : new Vector(coupling.ActiveStress() * inp.Normal[1], -coupling.ActiveStress() * inp.Normal[0]);
+            BoundaryConditionType bcType = orientation * inp.Normal <= 0 || coupling.ActiveStress() == 0 ? BoundaryConditionType.passive : BoundaryConditionType.active;
 
             Debug.Assert(ArgumentOrdering.Count == dim);
             Debug.Assert(Grad_uA.GetLength(0) == ArgumentOrdering.Count);
@@ -84,8 +83,8 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             // =====================
             double Grad_uA_xN = 0, Grad_vA_xN = 0;
             for (int d = 0; d < dim; d++) {
-                Grad_uA_xN += Grad_uA[component, d] * N[d];
-                Grad_vA_xN += Grad_vA[d] * N[d];
+                Grad_uA_xN += Grad_uA[component, d] * inp.Normal[d];
+                Grad_vA_xN += Grad_vA[d] * inp.Normal[d];
             }
 
             double returnValue = 0.0;
@@ -107,8 +106,8 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             switch (bcType) {
                 case BoundaryConditionType.passive: {
                         for (int d = 0; d < dim; d++) {
-                            returnValue -= muA * Grad_uA[component, d] * vA * N[d];
-                            returnValue -= muA * Grad_vA[d] * (uA[component] - uAFict[component]) * N[d];
+                            returnValue -= muA * Grad_uA[component, d] * vA * inp.Normal[d];
+                            returnValue -= muA * Grad_vA[d] * (uA[component] - uAFict[component]) * inp.Normal[d];
                         }
                         returnValue += muA * (uA[component] - uAFict[component]) * vA * _penalty;
                         break;
@@ -119,22 +118,22 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
                         for (int dN = 0; dN < dim; dN++) {
                             for (int dD = 0; dD < dim; dD++) {
                                 // consistency term
-                                returnValue -= muA * (N[dN] * Grad_uA[dN, dD] * N[dD]) * vA * N[component];
+                                returnValue -= muA * (inp.Normal[dN] * Grad_uA[dN, dD] * inp.Normal[dD]) * vA * inp.Normal[component];
                                 // symmetry term
-                                returnValue -= muA * (Grad_vA[dD] * N[dD]) * (N[dN] * uA[dN] - N[dN] * uAFict[dN]) * N[component];      
+                                returnValue -= muA * (Grad_vA[dD] * inp.Normal[dD]) * (inp.Normal[dN] * uA[dN] - inp.Normal[dN] * uAFict[dN]) * inp.Normal[component];      
                             }
                             // penalty term
-                            returnValue += muA * (N[dN] * uA[dN] - N[dN] * uAFict[dN]) * N[component] * vA * _penalty;                  
+                            returnValue += muA * (inp.Normal[dN] * uA[dN] - inp.Normal[dN] * uAFict[dN]) * inp.Normal[component] * vA * _penalty;                  
                         }
                         // tangential direction, active part
                         double[,] P = new double[dim, dim];
                         for (int d1 = 0; d1 < dim; d1++) {
                             for (int d2 = 0; d2 < dim; d2++) {
                                 if (d1 == d2) {
-                                    P[d1, d2] = 1 - Math.Abs(N[d1] * N[d2]);
+                                    P[d1, d2] = 1 - Math.Abs(inp.Normal[d1] * inp.Normal[d2]);
                                 }
                                 else {
-                                    P[d1, d2] = Math.Abs((N[d1]) * (N[d2]));
+                                    P[d1, d2] = Math.Abs((inp.Normal[d1]) * (inp.Normal[d2]));
                                 }
                             }
                         }

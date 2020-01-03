@@ -20,13 +20,9 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
 using ilPSP;
 using ilPSP.Utils;
-using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using FSI_Solver;
 using BoSSS.Platform.LinAlg;
 
 namespace FSI_Solver {

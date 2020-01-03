@@ -16,16 +16,11 @@ limitations under the License.
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using BoSSS.Foundation.XDG;
-using BoSSS.Solution.NSECommon;
 using ilPSP.Utils;
-using BoSSS.Platform;
-using System.Diagnostics;
 using BoSSS.Foundation;
-using BoSSS.Platform.LinAlg;
 using FSI_Solver;
+using ilPSP;
 
 namespace BoSSS.Solution.NSECommon.Operator.Convection {
     public class FSI_ConvectionAtIB : ILevelSetForm {
@@ -81,10 +76,9 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
 
             // Particle parameters
             // =============================
-            Vector X = new Vector(inp.X);
-            FSI_ParameterAtIB coupling = m_getParticleParams(X);
+            FSI_ParameterAtIB coupling = m_getParticleParams(inp.X);
             Vector orientation = new Vector(Math.Cos(coupling.Angle()), Math.Sin(coupling.Angle()));
-            double scaleActiveBoundary = orientation * new Vector(inp.Normale) > 0 && coupling.ActiveStress() != 0 ? 1 : 0;
+            double scaleActiveBoundary = orientation * new Vector(inp.Normal) > 0 && coupling.ActiveStress() != 0 ? 1 : 0;
 
             // Level-set velocity
             // =============================
