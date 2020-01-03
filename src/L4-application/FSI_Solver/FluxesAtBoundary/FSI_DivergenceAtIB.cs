@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using BoSSS.Foundation.XDG;
 using ilPSP.Utils;
 using BoSSS.Foundation;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Solution.NSECommon.Operator.Continuity {
     /// <summary>
@@ -26,7 +27,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
     /// </summary>
     public class FSI_DivergenceAtIB : ILevelSetForm {
 
-        public FSI_DivergenceAtIB(int _D, LevelSetTracker lsTrk, Func<double[], double, double[]> getParticleParams) {
+        public FSI_DivergenceAtIB(int _D, LevelSetTracker lsTrk, Func<Vector, double[]> getParticleParams) {
             D = _D;
             m_LsTrk = lsTrk;
             m_getParticleParams = getParticleParams;
@@ -39,7 +40,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
         /// <summary>
         /// Describes: 0: velX, 1: velY, 2:rotVel,3:particleradius
         /// </summary>
-        private readonly Func<double[], double, double[]> m_getParticleParams;
+        private readonly Func<Vector, double[]> m_getParticleParams;
 
         /// <summary>
         /// the penalty flux
@@ -49,7 +50,8 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
         }
 
         public double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
-            double[] parameters_P = m_getParticleParams(cp.x, cp.time);
+            Vector X = new Vector(cp.x);
+            double[] parameters_P = m_getParticleParams(X);
             double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
             double wLevSet = parameters_P[2];
             double[] RadialVector = new double[] { parameters_P[3], parameters_P[4] };

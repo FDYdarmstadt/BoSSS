@@ -50,15 +50,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="underrelax"></param>
         internal void CalculateHydrodynamics(List<Particle> AllParticles, ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, bool underrelax) {
             double[] hydrodynamics = new double[m_Dim * AllParticles.Count() + AllParticles.Count()];
-            bool useConstantUnderrelaxation = true;
             for (int p = 0; p < AllParticles.Count(); p++) {
                 Particle currentParticle = AllParticles[p];
                 CellMask cutCells = currentParticle.CutCells_P(m_LsTrk);
                 int offset = p * (m_Dim + 1);
                 double[] tempForces = currentParticle.Motion.CalculateHydrodynamicForces(hydrodynamicsIntegration, fluidDensity, cutCells);
                 double tempTorque = currentParticle.Motion.CalculateHydrodynamicTorque(hydrodynamicsIntegration, cutCells);
-                if (!currentParticle.Motion.UseConstantUnderrelaxation())
-                    useConstantUnderrelaxation = false;
                 for (int d = 0; d < m_Dim; d++) {
                     hydrodynamics[offset + d] = tempForces[d];
                 }
@@ -67,7 +64,7 @@ namespace BoSSS.Application.FSI_Solver {
             double[] relaxatedHydrodynamics = hydrodynamics.CloneAs();
             double omega = AllParticles[0].Motion.omega;
             if (underrelax)
-                relaxatedHydrodynamics = HydrodynamicsPostprocessing(hydrodynamics, ref omega, useConstantUnderrelaxation);
+                relaxatedHydrodynamics = HydrodynamicsPostprocessing(hydrodynamics, ref omega);
             AllParticles[0].Motion.omega = omega;
             for (int p = 0; p < AllParticles.Count(); p++) {
                 Particle currentParticle = AllParticles[p];
@@ -79,18 +76,15 @@ namespace BoSSS.Application.FSI_Solver {
         /// Post-processing of the hydrodynamics. If desired the underrelaxation is applied to the forces and torque.
         /// </summary>
         /// <param name="hydrodynamics"></param>
-        private double[] HydrodynamicsPostprocessing(double[] hydrodynamics, ref double omega, bool useConstantUnderrelaxation) {
+        private double[] HydrodynamicsPostprocessing(double[] hydrodynamics, ref double omega) {
             m_ForcesAndTorqueWithoutRelaxation.Insert(0, hydrodynamics.CloneAs());
             ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation(hydrodynamics, m_ForcesAndTorquePreviousIteration);
             double[] relaxatedHydrodynamics;
-            if (m_ForcesAndTorquePreviousIteration.Count >= 3 && !useConstantUnderrelaxation) {
-                //relaxatedHydrodynamics = Underrelaxation.JacobianUnderrelaxation(m_ForcesAndTorqueWithoutRelaxation);
+            if (m_ForcesAndTorquePreviousIteration.Count >= 3) {
                 relaxatedHydrodynamics = Underrelaxation.AitkenUnderrelaxation(ref omega, m_ForcesAndTorqueWithoutRelaxation);
-                Console.WriteLine("Aitken! " + omega);
             }
             else {
                 relaxatedHydrodynamics = Underrelaxation.StaticUnderrelaxation();
-                Console.WriteLine("Constant!");
             }
             return relaxatedHydrodynamics;
         }

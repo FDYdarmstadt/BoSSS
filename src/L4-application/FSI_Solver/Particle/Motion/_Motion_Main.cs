@@ -329,9 +329,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         public void SaveHydrodynamicsOfPreviousTimestep() {
             Aux.SaveVectorOfLastTimestep(m_HydrodynamicForces);
-            Console.WriteLine("Save " );
             for (int i = 0; i < m_HistoryLength; i++)
-                Console.WriteLine("asd " + i + " value 0 " + m_HydrodynamicForces[i]);
             Aux.SaveValueOfLastTimestep(m_HydrodynamicTorque);
         }
 
@@ -459,11 +457,11 @@ namespace BoSSS.Application.FSI_Solver {
         public void UpdateForcesAndTorque(int particleID, double[] fullListHydrodynamics) {
             double[] tempForces = new double[m_Dim];
             for (int d = 0; d < m_Dim; d++) {
-                if (Math.Abs(fullListHydrodynamics[particleID * 3 + d]) > 1e-10 && d==0)
+                if (Math.Abs(fullListHydrodynamics[particleID * 3 + d]) > 1e-10)
                     tempForces[d] = fullListHydrodynamics[particleID * 3 + d];
             }
             m_HydrodynamicForces[0] = new Vector(tempForces);
-            if (Math.Abs(fullListHydrodynamics[particleID * 3 + m_Dim]) > 1e10)
+            if (Math.Abs(fullListHydrodynamics[particleID * 3 + m_Dim]) > 1e-10)
                 m_HydrodynamicTorque[0] = fullListHydrodynamics[particleID * 3 + m_Dim];
             Aux.TestArithmeticException(m_HydrodynamicForces[0], "hydrodynamic forces");
             Aux.TestArithmeticException(m_HydrodynamicTorque[0], "hydrodynamic torque");
@@ -477,9 +475,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// The timestep ID. Used to distinguish between the first timestep and all other steps.
         /// </param>
         public virtual void PredictForceAndTorque(double activeStress, double circumference, int timestepID, double fluidViscosity, double fluidDensity, double dt) {
-            //m_HydrodynamicForces[0] = 2 * m_HydrodynamicForces[1] - m_HydrodynamicForces[2];
             m_HydrodynamicForces[0] = new Vector(m_HydrodynamicForces[1]);
-            //m_HydrodynamicTorque[0] = 2 * m_HydrodynamicTorque[1] - m_HydrodynamicTorque[2];
             m_HydrodynamicTorque[0] = m_HydrodynamicTorque[1];
             Aux.TestArithmeticException(m_HydrodynamicForces[0], "hydrodynamic forces");
             Aux.TestArithmeticException(m_HydrodynamicTorque[0], "hydrodynamic torque");
@@ -516,7 +512,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         protected virtual Vector CalculateParticlePosition(double dt) {
-            Vector l_TranslationalVelocity = m_Position[1] + (41 * m_TranslationalVelocity[0] + 216 * m_TranslationalVelocity[1] + 27 * m_TranslationalVelocity[2] + 272 * m_TranslationalVelocity[3] + 27 * m_TranslationalVelocity[4] + 216 * m_TranslationalVelocity[5] + 41 * m_TranslationalVelocity[6]) * dt / 840;
             Vector l_Position = m_Position[1] + (m_TranslationalVelocity[0] + 4 * m_TranslationalVelocity[1] + m_TranslationalVelocity[2]) * dt / 6;
             Aux.TestArithmeticException(l_Position, "particle position");
             return l_Position;
@@ -580,10 +575,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="dt">Timestep</param>
         protected virtual Vector CalculateTranslationalVelocity(double dt) {
             Vector l_TranslationalVelocity = m_TranslationalVelocity[1] + (m_TranslationalAcceleration[0] + 4 * m_TranslationalAcceleration[1] + m_TranslationalAcceleration[2]) * dt / 6;
-            //Vector l_TranslationalVelocity = m_TranslationalVelocity[1] + (m_TranslationalAcceleration[0] + m_TranslationalAcceleration[1]) * dt / 2;
-            //Vector l_TranslationalVelocity = m_TranslationalVelocity[1] + (41 * m_TranslationalAcceleration[0] + 216 * m_TranslationalAcceleration[1] + 27 * m_TranslationalAcceleration[2] + 272 * m_TranslationalAcceleration[3] + 27 * m_TranslationalAcceleration[4] + 216 * m_TranslationalAcceleration[5] + 41 * m_TranslationalAcceleration[6]) * dt / 840;
             for (int d = 0; d < l_TranslationalVelocity.Dim; d++) {
-                if (Math.Abs(l_TranslationalVelocity[d]) < 1e-4)
+                if (Math.Abs(l_TranslationalVelocity[d]) < 1e-10)
                     l_TranslationalVelocity[d] = 0;
             }
             Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
@@ -611,10 +604,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="dt">Timestep</param>
         protected virtual double CalculateAngularVelocity(double dt) {
             double l_RotationalVelocity = m_RotationalVelocity[1] + (m_RotationalAcceleration[0] + 4 * m_RotationalAcceleration[1] + m_RotationalAcceleration[2]) * dt / 6;
-            //double l_RotationalVelocity = m_RotationalVelocity[1] + (m_RotationalAcceleration[0] + m_RotationalAcceleration[1] ) * dt / 2;
-            //double l_RotationalVelocity = m_RotationalVelocity[1] + (41 * m_RotationalAcceleration[0] + 216 * m_RotationalAcceleration[1] + 27 * m_RotationalAcceleration[2] + 272 * m_RotationalAcceleration[3] + 27 * m_RotationalAcceleration[4] + 216 * m_RotationalAcceleration[5] + 41 * m_RotationalAcceleration[6]) * dt / 840;
             Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
-            if (Math.Abs(l_RotationalVelocity) > 1e10)
+            if (Math.Abs(l_RotationalVelocity) > 1e-10)
                 return l_RotationalVelocity;
             else
                 return 0;
@@ -749,7 +740,7 @@ namespace BoSSS.Application.FSI_Solver {
                 squaresTrans /= m_HistoryLength - 1;
                 if(d == 0)
                 Console.WriteLine("squareTrans " + squaresTrans);
-                if (squaresTrans < 0.015625 && averageTrans != 0)
+                if (squaresTrans < 0.01563 && averageTrans != 0)
                     useConstantUnderrelaxation = true;
             }
             double averageRot = 0;
@@ -762,7 +753,7 @@ namespace BoSSS.Application.FSI_Solver {
                 squaresRot += (m_RotationalVelocity[i] - averageRot).Pow2() / m_RotationalVelocity[i].Pow2();
             }
             squaresRot /= m_HistoryLength - 1;
-            if (squaresRot < 0.015625 && averageRot != 0)
+            if (squaresRot < 0.01563 && averageRot != 0)
                 useConstantUnderrelaxation = true;
             return useConstantUnderrelaxation;
         }

@@ -143,13 +143,6 @@ namespace BoSSS.Application.FSI_Solver {
         public abstract double LevelSetFunction(double[] X);
 
         /// <summary>
-        /// Necessary for active particles. Returns 0 for the non active boundary region and a number between 0 and 1 for the active region.
-        /// </summary>
-        public double SeperateBoundaryRegions(double[] X) => Math.Cos(Motion.GetAngle(0)) * (X[0] - Motion.GetPosition(0)[0]) + Math.Sin(Motion.GetAngle(0)) * (X[1] - Motion.GetPosition(0)[1]) < 0
-                    ? 1//-Math.Pow((Math.Cos(Motion.GetAngle(0)) * (X[0] - Motion.GetPosition(0)[0]) + Math.Sin(Motion.GetAngle(0)) * (X[1] - Motion.GetPosition(0)[1])) / Math.Sqrt((X[0] - Motion.GetPosition(0)[0]).Pow2() + (X[1] - Motion.GetPosition(0)[1]).Pow2()), 3)
-                    : 0;
-
-        /// <summary>
         /// Circumference of the current particle.
         /// </summary>
         public abstract double Circumference { get; }

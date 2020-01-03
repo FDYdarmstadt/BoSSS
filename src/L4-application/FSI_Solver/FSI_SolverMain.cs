@@ -234,7 +234,7 @@ namespace BoSSS.Application.FSI_Solver {
                         // -----------------------------
                         if (((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.None) {
                             var convectionAtIB = new Solution.NSECommon.Operator.Convection.FSI_ConvectionAtIB(d, spatialDim, LsTrk, boundaryCondMap,
-                                delegate (double[] X) {
+                                delegate (Vector X) {
                                     throw new NotImplementedException("Currently not implemented for fixed motion");
                                 },
                                 UseMovingMesh);
@@ -242,7 +242,7 @@ namespace BoSSS.Application.FSI_Solver {
                         }
                         else {
                             var convectionAtIB = new Solution.NSECommon.Operator.Convection.FSI_ConvectionAtIB(d, spatialDim, LsTrk, boundaryCondMap,
-                                    delegate (double[] X) {
+                                    delegate (Vector X) {
                                         return CreateCouplingAtParticleBoundary(X);
                                     },
                                 UseMovingMesh);
@@ -293,16 +293,14 @@ namespace BoSSS.Application.FSI_Solver {
                     var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk,
                         penalty, this.ComputePenaltyIB,
                         FluidViscosity / FluidDensity,
-                        delegate (double[] X) {
+                        delegate (Vector X) {
                             throw new NotImplementedException("Currently not implemented for fixed motion");
                         });
                     comps.Add(viscousAtIB);
                 }
                 else {
-                    var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk,
-                        penalty, this.ComputePenaltyIB,
-                        FluidViscosity / FluidDensity,
-                        delegate (double[] X) {
+                    var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk, penalty, ComputePenaltyIB, FluidViscosity / FluidDensity,
+                        delegate (Vector X) {
                             return CreateCouplingAtParticleBoundary(X);
                         }
                      );
@@ -330,7 +328,7 @@ namespace BoSSS.Application.FSI_Solver {
                 }
                 else {
                     var divPen = new Solution.NSECommon.Operator.Continuity.FSI_DivergenceAtIB(spatialDim, LsTrk,
-                       delegate (double[] X, double time) {
+                       delegate (Vector X) {
                            return CreateCouplingAtParticleBoundary(X);
                        });
                     IBM_Op.EquationComponents["div"].Add(divPen); // immersed boundary component 
@@ -410,13 +408,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Returns an array with all coupling parameters. 
         /// </summary>
-        private double[] CreateCouplingAtParticleBoundary(double[] X) {
-            double[] couplingArray = new double[X.Length + 7];
-            Vector point = new Vector(X);
+        private double[] CreateCouplingAtParticleBoundary(Vector X) {
+            double[] couplingArray = new double[X.Dim + 6];
             foreach (Particle p in m_Particles) {
-                p.CalculateRadialVector(point, out Vector RadialVector, out double radialLength);
-                double seperateBoundaryRegions = p.ActiveStress != 0 ? p.SeperateBoundaryRegions(X) : 0;
-                bool containsParticle = m_Particles.Count == 1 ? true : p.Contains(point, GridData.iGeomCells.h_min.Min());
+                p.CalculateRadialVector(X, out Vector RadialVector, out double radialLength);
+                bool containsParticle = m_Particles.Count == 1 ? true : p.Contains(X, GridData.iGeomCells.h_min.Min());
                 if (containsParticle) {
                     couplingArray[0] = p.Motion.GetTranslationalVelocity(0)[0];
                     couplingArray[1] = p.Motion.GetTranslationalVelocity(0)[1];
@@ -425,8 +421,7 @@ namespace BoSSS.Application.FSI_Solver {
                     couplingArray[4] = RadialVector[1];
                     couplingArray[5] = radialLength;
                     couplingArray[6] = p.ActiveStress; // zero for passive particles
-                    couplingArray[7] = seperateBoundaryRegions;
-                    couplingArray[8] = p.Motion.GetAngle(0);
+                    couplingArray[7] = p.Motion.GetAngle(0);
                 }
             }
             return couplingArray;
@@ -850,10 +845,10 @@ namespace BoSSS.Application.FSI_Solver {
                                 SinglePhaseField pressureOld = Pressure.CloneAs();
                                 m_BDF_Timestepper.Solve(phystime, dt, false);
                                 ParticleHydrodynamicsIntegration hydrodynamicsIntegration = new ParticleHydrodynamicsIntegration(2, Velocity, Pressure, LsTrk, FluidViscosity);
-                                AllParticleHydrodynamics.CalculateHydrodynamics(m_Particles, hydrodynamicsIntegration, FluidDensity, IsFullyCoupled);
+                                AllParticleHydrodynamics.CalculateHydrodynamics(m_Particles, hydrodynamicsIntegration, FluidDensity, false);
                                 if (iterationCounter != 1) 
                                 {
-                                    double underrelax = 0.01;
+                                    double underrelax = 0.1;
                                     Velocity.Scale(underrelax);
                                     Velocity.Acc((1 - underrelax), velocityOld);
                                     Pressure.Scale(underrelax);
@@ -873,7 +868,6 @@ namespace BoSSS.Application.FSI_Solver {
 
                             // print iteration status
                             // -------------------------------------------------
-                            //Auxillary.PrintResultToConsole(m_Particles, phystime, hydroDynForceTorqueResidual, iterationCounter);
                             Auxillary.PrintResultToConsole(phystime, hydroDynForceTorqueResidual, iterationCounter);
                             LogResidual(phystime, iterationCounter, hydroDynForceTorqueResidual);
                         }

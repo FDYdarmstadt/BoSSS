@@ -24,10 +24,11 @@ using ilPSP.Utils;
 using BoSSS.Platform;
 using System.Diagnostics;
 using BoSSS.Foundation;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Solution.NSECommon.Operator.Convection {
     public class FSI_ConvectionAtIB : ILevelSetForm {
-        public FSI_ConvectionAtIB(int currentDim, int spatialDim, LevelSetTracker LsTrk, IncompressibleBoundaryCondMap _bcmap, Func<double[], double[]> getParticleParams, bool useMovingMesh) {
+        public FSI_ConvectionAtIB(int currentDim, int spatialDim, LevelSetTracker LsTrk, IncompressibleBoundaryCondMap _bcmap, Func<Vector, double[]> getParticleParams, bool useMovingMesh) {
             m_LsTrk = LsTrk;
             m_D = spatialDim;
             m_d = currentDim;
@@ -43,7 +44,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
         /// <summary>
         /// Describes: 0: velX, 1: velY, 2: rotVel, 3: particle radius, 4: scaling paramete for active particles 
         /// </summary>
-        private readonly Func<double[], double[]> m_getParticleParams;
+        private readonly Func<Vector, double[]> m_getParticleParams;
         private readonly bool m_UseMovingMesh;
 
         // Use Fluxes as in Bulk Convection
@@ -93,12 +94,16 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
 
             // Particle parameters
             // =============================
-            double[] parameters_P = m_getParticleParams(inp.X);
+            Vector X = new Vector(inp.X);
+            double[] parameters_P = m_getParticleParams(X);
             double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
             double wLevSet = parameters_P[2];
             double[] RadialVector = new double[] { parameters_P[3], parameters_P[4] };
             double RadialLength = parameters_P[5];
-            double scale = parameters_P[7];
+            double active_stress = parameters_P[6];
+            double Ang_P = parameters_P[7];
+            double[] orientation = new double[] { Math.Cos(Ang_P), Math.Sin(Ang_P) };
+            double scaleActiveBoundary = orientation[0] * inp.Normale[0] + orientation[1] * inp.Normale[1] > 0 && active_stress != 0 ? 1 : 0;
 
             // Level-set velocity
             // =============================
@@ -122,7 +127,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
             // =============================
             double FlxNeg = m_UseMovingMesh == true
                 ? 0 // Moving mesh
-                : (this.NegFlux.InnerEdgeForm(ref inp, U_Neg, uLevSet_temp, null, null, v_Neg, 0, null, null)) * (1 - scale);// Splitting
+                : (this.NegFlux.InnerEdgeForm(ref inp, U_Neg, uLevSet_temp, null, null, v_Neg, 0, null, null)) * (1 - scaleActiveBoundary);// Splitting
             return FlxNeg;
         }
     }

@@ -140,7 +140,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control TwoParticles(int k = 2, int amrLevel = 2, double aspectRatio = 0.5) {
+        public static FSI_Control TwoParticles(int k = 2, int amrLevel = 5, double aspectRatio = 0.5, double angle = -45) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/home/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
@@ -149,9 +149,9 @@ namespace BoSSS.Application.FSI_Solver {
                 "Pressure_Dirichlet"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 10, lengthY: 2, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
+            C.SetGrid(lengthX: 10, lengthY: 10, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel: amrLevel);
-            C.hydrodynamicsConvergenceCriterion = 1e-4;
+            C.hydrodynamicsConvergenceCriterion = 1e-1;
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
@@ -161,16 +161,15 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Particle Properties
             // =============================
-            double particleDensity = 2.5;
+            double particleDensity = 10;
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, 1);
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { -0, 0 }, startAngl: 0, activeStress: 1));
-            //C.Particles.Add(new Particle_Sphere(motion, 0.3, new double[] { -0, 0 }, startAngl: 0, activeStress: 0));
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { 2.5, 0 }, startAngl: 180, activeStress: 1));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { -2.5, 0 }, startAngl: 0, activeStress: 1));
+            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { 2.5, 0 }, startAngl: 180 + angle, activeStress: 1));
 
             // misc. solver options
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            double dt = 1e-3;
+            double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 100000000;
