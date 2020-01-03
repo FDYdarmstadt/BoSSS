@@ -21,6 +21,7 @@ using ilPSP.Utils;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Platform.LinAlg;
+using ilPSP;
 
 namespace BoSSS.Application.FSI_Solver {
     public class ParticleStokesFlow : IBM_Solver.HardcodedTestExamples {
@@ -109,7 +110,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.Material = true;
-            C.gravity = new Platform.LinAlg.Vector( 0, -5 );
+            C.gravity = new Vector( 0, -5 );
             double particleDensity = 1 * DensityFactor;
             // Particle Properties
             // =============================   

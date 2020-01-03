@@ -17,6 +17,7 @@ limitations under the License.
 using System;
 using System.Collections.Generic;
 using BoSSS.Solution.XdgTimestepping;
+using ilPSP;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HC_CollisionRuntime : IBM_Solver.HardcodedTestExamples {
@@ -35,7 +36,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.IncludeConvection = false;
             C.pureDryCollisions = true;
-            C.gravity = new Platform.LinAlg.Vector( 0, -9.81 );
+            C.gravity = new Vector( 0, -9.81 );
 
             // Particle Properties
             // =============================

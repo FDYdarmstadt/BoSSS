@@ -139,7 +139,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
                         }
                         for (int d1 = 0; d1 < dim; d1++) {
                             for (int d2 = 0; d2 < dim; d2++) {
-                                returnValue -= P[d1, d2] * activeStressVector[component] * (P[d1, component] * vA);                     
+                                returnValue -= P[d1, d2] * activeStressVector[component] * (P[d1, component] * vA) * orientation * inp.Normal;                     
                             }
                         }
                         break;
