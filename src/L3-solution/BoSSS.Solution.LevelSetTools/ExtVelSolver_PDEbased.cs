@@ -244,8 +244,8 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                     GradVInGradPhi += Grad_vIn[d] * inp.Parameters_IN[d+2];
                     GradVOutGradPhi += Grad_vOut[d] * inp.Parameters_OUT[d+2];
                     GradUOutGradPhi += Grad_uOut[0, d] * inp.Parameters_OUT[d+2];
-                    nGradPhiIn += inp.Normale[d] * inp.Parameters_IN[d+2];
-                    nGradPhiOut += inp.Normale[d] * inp.Parameters_OUT[d+2];
+                    nGradPhiIn += inp.Normal[d] * inp.Parameters_IN[d+2];
+                    nGradPhiOut += inp.Normal[d] * inp.Parameters_OUT[d+2];
                 }
 
 
@@ -253,8 +253,8 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 double deltaKA = 0;
                 double deltaKB = 0;
                 for (int d = 0; d < D; d++) {
-                    deltaKA += inp.Parameters_IN[d+2] * inp.Normale[d];
-                    deltaKB += inp.Parameters_OUT[d+2] * inp.Normale[d];
+                    deltaKA += inp.Parameters_IN[d+2] * inp.Normal[d];
+                    deltaKB += inp.Parameters_OUT[d+2] * inp.Normal[d];
                 }
                 deltaKA *= deltaKA;
                 deltaKB *= deltaKB;

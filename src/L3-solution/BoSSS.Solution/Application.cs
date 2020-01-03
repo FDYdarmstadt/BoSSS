@@ -172,7 +172,7 @@ namespace BoSSS.Solution {
                 args,
                 GetBoSSSInstallDir(),
                 out m_MustFinalizeMPI);
-            {
+            if(m_MustFinalizeMPI) {
                 int rank, size;
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
                 csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
@@ -1030,8 +1030,8 @@ namespace BoSSS.Solution {
                     }
 
 
-                    if (this.Control == null || this.Control.LinearSolver.NoOfMultigridLevels > 0) {
-                        this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.LinearSolver.NoOfMultigridLevels : 1));
+                    if (this.Control == null || this.Control.NoOfMultigridLevels > 0) {
+                        this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
                     } else {
                         this.MultigridSequence = new AggregationGridData[0];
                     }
@@ -1745,12 +1745,13 @@ namespace BoSSS.Solution {
                     }
                 }
 
+                if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
+                    PlotCurrentState(physTime, i0, this.Control.SuperSampling);
+
                 var ts0 = SaveToDatabase(i0, physTime); // save the initial value
                 if (this.RollingSave > 0)
                     rollingSavesTsi.Add(Tuple.Create(0, ts0));
 
-                if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
-                    PlotCurrentState(physTime, i0, this.Control.SuperSampling);
 
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
@@ -1858,6 +1859,8 @@ namespace BoSSS.Solution {
                         queryLogFile_Txt.Close();
                     }
                 }
+
+                CorrectlyTerminated = true;
             }
         }
 
@@ -1925,8 +1928,8 @@ namespace BoSSS.Solution {
                             this.LsTrk.Invalidate();
                         }
 
-                        if (this.Control == null || this.Control.LinearSolver.NoOfMultigridLevels > 0)
-                            this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.LinearSolver.NoOfMultigridLevels : 1));
+                        if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
+                            this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
                         else
                             this.MultigridSequence = new AggregationGridData[0];
 
@@ -2082,9 +2085,9 @@ namespace BoSSS.Solution {
                             }
                             oldGridData = null;
 
-                            if(this.Control == null || this.Control.LinearSolver.NoOfMultigridLevels > 0)
+                            if(this.Control == null || this.Control.NoOfMultigridLevels > 0)
                                 this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData,
-                                    MaxDepth: (this.Control != null ? this.Control.LinearSolver.NoOfMultigridLevels : 1));
+                                    MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
                             else
                                 this.MultigridSequence = new AggregationGridData[0];
 
@@ -2325,17 +2328,21 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Called before application finishes (internal Bye)
         /// </summary>
-        void ByeInt(bool CorrectlyTerminated) {
+        void ByeInt() {
             // remove the 'NotTerminated' tag from the session info
             // =====================================================
 
             // code extra-cautious, since exceptions in Dispose() are, especially in Mono,
             // sometimes not correctly reported and may cause unexplainable segfaults.
-            var csi = this.CurrentSessionInfo;
+            var app = this;
+            if (app == null)
+                return;
+
+            var csi = app.CurrentSessionInfo;
             IEnumerable<string> tags = csi != null ? csi.Tags : null;
             bool contains_not_terminated = tags != null ? tags.Contains(SessionInfo.NOT_TERMINATED_TAG) : false;
-            if (csi != null && tags != null && CorrectlyTerminated && contains_not_terminated) {
-
+            if (csi != null && tags != null && app.CorrectlyTerminated && contains_not_terminated) {
+                
                 Console.WriteLine("Removing tag: " + SessionInfo.NOT_TERMINATED_TAG);
                 IList<string> sessTags = tags.ToList();
                 sessTags.Remove(SessionInfo.NOT_TERMINATED_TAG);
@@ -2566,12 +2573,14 @@ namespace BoSSS.Solution {
                     }
 
                     // finalize
+                    Console.WriteLine("Parameter study run " + iPstudy + " successful: " + CorrectlyTerminated);
 #if DEBUG
                     {
 #else
                     try {
 #endif
-                        app.ByeInt(CorrectlyTerminated);
+
+                        app.ByeInt();
                         app.Bye();
                         app.ProfilingLog();
 #if DEBUG
@@ -2607,7 +2616,8 @@ namespace BoSSS.Solution {
                 log.Close();
             }
         }
-
+        
+        bool CorrectlyTerminated = false;
 
         static private StreamWriter InitParameterStudyLog(
             ICollection<DGField> ioFields, Application<T> app,
@@ -2806,7 +2816,7 @@ namespace BoSSS.Solution {
         public virtual void Dispose() {
             if (!IsDisposed) {
                 try {
-                    ByeInt(true);
+                    ByeInt();
                     Bye();
                     ProfilingLog();
 

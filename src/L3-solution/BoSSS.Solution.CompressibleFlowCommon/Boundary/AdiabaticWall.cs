@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
+using ilPSP;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
@@ -55,12 +56,12 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// <returns>
         /// \f$ (\rho^-, 0[, 0[, 0]], \rho^- e^-)^T\f$ 
         /// </returns>
-        public override StateVector GetBoundaryState(double time, double[] x, double[] normal, StateVector stateIn) {
+        public override StateVector GetBoundaryState(double time, Vector x, Vector normal, StateVector stateIn) {
             // Momentum is 0 at a no-slip boundary, thus kinetic energy is 0
             return new StateVector(
                 stateIn.Material,
                 stateIn.Density,
-                new Vector(),
+                new ilPSP.Vector(),
                 stateIn.Density * stateIn.SpecificInnerEnergy);
         }
     }

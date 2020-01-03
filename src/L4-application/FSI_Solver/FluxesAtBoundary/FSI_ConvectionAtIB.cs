@@ -75,19 +75,9 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
             }
         }
 
-        public double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+        public double LevelSetForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
 
-            BoSSS.Foundation.CommonParams inp;
-
-            // Input parameters
-            // =============================
-            inp.Parameters_IN = cp.ParamsNeg;
-            inp.Normale = cp.n;
-            inp.iEdge = int.MinValue;
-            inp.GridDat = this.m_LsTrk.GridDat;
-            inp.X = cp.x;
-            inp.time = cp.time;
-            inp.Parameters_OUT = new double[inp.Parameters_IN.Length];
+            CommonParams inp = cp;
 
             // Particle parameters
             // =============================
@@ -107,7 +97,8 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
             }
 
             // Outer values for Velocity and VelocityMean
-            // =============================
+            // =============================            
+            inp.Parameters_OUT = new double[inp.Parameters_IN.Length];
             inp.Parameters_OUT[0] = coupling.VelocityAtPointOnLevelSet()[0];
             inp.Parameters_OUT[1] = coupling.VelocityAtPointOnLevelSet()[1];
             // Velocity0MeanVectorOut is set to zero, i.e. always LambdaIn is used.

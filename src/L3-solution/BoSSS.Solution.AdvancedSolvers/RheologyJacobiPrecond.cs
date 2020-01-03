@@ -140,7 +140,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             m_ThisLevelIterations++;
         }
 
-        public ISolverSmootherTemplate Clone() {
+        public object Clone() {
             throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
         }
 
@@ -199,6 +199,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 return TermActivationFlags.UxV;
             }
         }
+
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             return 0;

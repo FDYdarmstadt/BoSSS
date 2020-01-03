@@ -16,6 +16,7 @@ limitations under the License.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
@@ -66,48 +67,44 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
             int Offset,
             int Lenght,
             MultidimensionalArray Output) {
-
             int NoOfNodes = Uin[0].GetLength(1);
             int D = CompressibleEnvironment.NumberOfDimensions;
-            double sign = normalFlipped ? -1.0 : 1.0;
 
             MultidimensionalArray[] Uout = new MultidimensionalArray[Uin.Length];
             for (int i = 0; i < Uin.Length; i++) {
                 Uout[i] = MultidimensionalArray.Create(Uin[i].GetLength(0), Uin[i].GetLength(1));
             }
 
+            var xdgBoudaryMap = this.boundaryMap as XDGCompressibleBoundaryCondMap;
+            var boundaryMap = this.boundaryMap as CompressibleBoundaryCondMap;
+            if (xdgBoudaryMap == null && boundaryMap == null)
+                throw new NotSupportedException("This type of boundary condition map is not supported.");
+            Vector xLocal = new Vector(D);
+            Vector normalLocal = new Vector(D);
+
             // Loop over edges
             for (int e = 0; e < Lenght; e++) {
-                int edge = e + Offset;
+                byte EdgeTag = EdgeTags[e + EdgeTagsOffset];
+
+                // Sweep until the boundary condition changes
+                int __L = 1;
+                for (; e + __L < Lenght; __L++) {
+                    byte _EdgeTag = EdgeTags[e + __L + EdgeTagsOffset];
+                    if (EdgeTag != _EdgeTag)
+                        break;
+                }
 
                 // Get boundary condition on this edge
                 BoundaryCondition boundaryCondition;
-                if (this.boundaryMap is XDGCompressibleBoundaryCondMap xdgBoudaryMap) {
+                if (xdgBoudaryMap != null)
                     boundaryCondition = xdgBoudaryMap.GetBoundaryConditionForSpecies(EdgeTags[e + EdgeTagsOffset], this.speciesName);
-                } else if (this.boundaryMap is CompressibleBoundaryCondMap boundaryMap) {
+                else
                     boundaryCondition = boundaryMap.GetBoundaryCondition(EdgeTags[e + EdgeTagsOffset]);
-                } else {
-                    throw new NotSupportedException("This type of boundary condition map is not supported.");
-                }
 
-                // Loop over nodes
-                for (int n = 0; n < NoOfNodes; n++) {
-                    double[] xLocal = new double[D];
-                    double[] normalLocal = new double[D];
-                    for (int d = 0; d < D; d++) {
-                        xLocal[d] = x[edge, n, d];
-                        normalLocal[d] = normal[edge, n, d] * sign;
-                    }
-
-                    StateVector stateIn = new StateVector(material, Uin, edge, n, D);
-                    StateVector stateBoundary = boundaryCondition.GetBoundaryState(time, xLocal, normalLocal, stateIn);
-
-                    Uout[0][edge, n] = stateBoundary.Density;
-                    for (int d = 0; d < D; d++) {
-                        Uout[d + 1][edge, n] = stateBoundary.Momentum[d];
-                    }
-                    Uout[D + 1][edge, n] = stateBoundary.Energy;
-                }
+                // Call vectorized state evaluation 
+                int edge = e + Offset;
+                boundaryCondition.GetBoundaryState(Uout, time, x, normal, Uin, edge, __L, normalFlipped, material);
+                e += __L - 1;
             }
 
             InnerEdgeFlux(time, jEdge, x, normal, Uin, Uout, Offset, Lenght, Output);

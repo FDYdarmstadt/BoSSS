@@ -28,7 +28,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// </summary>
         /// <param name="state">The flow state inside a cell</param>
         /// <returns>\f$ \vec{u} (\rho E + p)\f$ </returns>
-        public Vector Flux(StateVector state) {
+        public ilPSP.Vector Flux(StateVector state) {
             return state.Velocity * (state.Energy + state.Pressure);
         }
 

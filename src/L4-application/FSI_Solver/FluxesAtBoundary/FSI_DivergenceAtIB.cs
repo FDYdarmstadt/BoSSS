@@ -43,7 +43,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
         /// </summary>
         private readonly Func<Vector, FSI_ParameterAtIB> m_Coupling;
 
-        public double LevelSetForm(ref CommonParamsLs inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+        public double LevelSetForm(ref CommonParams inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
             Vector N = new Vector(inp.n);
             Vector X = new Vector(inp.x);
             Vector fluidVelocity = new Vector(U_Neg);

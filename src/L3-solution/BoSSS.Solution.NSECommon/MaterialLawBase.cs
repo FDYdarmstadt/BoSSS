@@ -56,6 +56,20 @@ namespace BoSSS.Solution.NSECommon {
         public abstract double GetViscosity(double phi);
 
         /// <summary>
+        /// Returns dynamic viscosity dependent on one or more scalars,
+        /// e.g. k and omega for use in turbulence model.
+        /// </summary>
+        /// <param name="phi">scalars</param>
+        /// <returns>dynamic viscosity</returns>
+        public double GetViscosity(params double[] phi){
+            if (phi.Length == 1) {
+                return this.GetViscosity(phi[0]);
+            } else {
+                throw new NotImplementedException("Viscosity Function not implemented!");
+            }
+        }
+
+        /// <summary>
         /// Returns scalar dependent dynamic viscosity.
         /// Implements <see cref="BoSSS.Foundation.Func"/>.
         /// </summary>
@@ -80,7 +94,7 @@ namespace BoSSS.Solution.NSECommon {
         public abstract double GetMassDeterminedThermodynamicPressure(double InitialMass, SinglePhaseField Temperature);
 
 
-        #region CoupledLaxFriedrichs
+#region CoupledLaxFriedrichs
 
         /// <summary>
         /// Returns lambda, i.e. penalty parameter for coupled Lax-Friedrichs flux.
@@ -99,7 +113,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <returns></returns>
         public abstract double DiffRho_Temp(double phi);
 
-        #endregion
+#endregion
 
         /// <summary>
         /// Paramaters for <see cref="BoSSS.Foundation.IEquationComponent.ParameterOrdering"/>

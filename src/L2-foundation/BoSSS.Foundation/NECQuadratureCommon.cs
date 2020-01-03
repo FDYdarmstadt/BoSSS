@@ -97,15 +97,24 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             if ((DiffOp.DomainVar.Count + DiffOp.ParameterVar.Count) != m_DomainFields.Length) {
                 string extMsg;
                 extMsg = "[DiffOp domain and parameter vars: ";
-                for (int ii = 0; ii < DiffOp.DomainVar.Count; ii++)
-                    extMsg += (DiffOp.DomainVar[ii] + ", ");
+                for (int ii = 0; ii < DiffOp.DomainVar.Count; ii++) {
+                    extMsg += (DiffOp.DomainVar[ii]);
+                    if(ii < DiffOp.DomainVar.Count - 1)
+                        extMsg += ", ";
+                }
                 extMsg += "; ";
-                for (int ii = 0; ii < DiffOp.ParameterVar.Count; ii++)
-                    extMsg += (DiffOp.ParameterVar[ii] + ", ");
+                for (int ii = 0; ii < DiffOp.ParameterVar.Count; ii++) {
+                    extMsg += (DiffOp.ParameterVar[ii]);
+                    if (ii < DiffOp.ParameterVar.Count - 1)
+                        extMsg += ", ";
+                }
                 extMsg += "\n";
                 extMsg += "Domain/Parameter mapping vars: ";
-                for (int ii = 0; ii < m_DomainFields.Length; ii++)
-                    extMsg += (m_DomainFields[ii].Identification + ", ");
+                for (int ii = 0; ii < m_DomainFields.Length; ii++) {
+                    extMsg += (m_DomainFields[ii].Identification);
+                    if (ii < m_DomainFields.Length - 1)
+                        extMsg += ", ";
+                }
                 extMsg += "]";
                 throw new ArgumentException("mismatch between number of domain variables: " + extMsg, "DomainMapping,DiffOp");
             }

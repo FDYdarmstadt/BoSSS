@@ -59,11 +59,11 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         /// <summary>
         /// default-implementation
         /// </summary>
-        public double LevelSetForm(ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            Vector N = new Vector(inp.n);
-            Vector X = new Vector(inp.x);
+        public double LevelSetForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+            Vector N = new Vector(inp.Normal);
+            Vector X = new Vector(inp.X);
             int dim = N.Dim;
-            double _penalty = m_PenaltyFunc(m_penalty, inp.jCell);
+            double _penalty = m_PenaltyFunc(m_penalty, inp.jCellIn);
 
             // Particle parameters
             // =====================
@@ -157,6 +157,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         public IList<string> ArgumentOrdering {
             get { return VariableNames.VelocityVector(this.m_D); }
         }
+
 
         public SpeciesId PositiveSpecies {
             get { return m_LsTrk.GetSpeciesId("B"); }

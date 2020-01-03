@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
+using ilPSP;
 using System;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
@@ -39,12 +40,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// boundary state corresponding to the exact solution of the Ringleb
         /// problem.
         /// </summary>
-        /// <param name="time"></param>
-        /// <param name="x"></param>
-        /// <param name="normal"></param>
-        /// <param name="stateIn"></param>
-        /// <returns></returns>
-        public override StateVector GetBoundaryState(double time, double[] x, double[] normal, StateVector stateIn) {
+        public override StateVector GetBoundaryState(double time, Vector x, Vector normal, StateVector stateIn) {
             RinglebMaterial ringlebMaterial = (RinglebMaterial)config;
             double kappa = ringlebMaterial.EquationOfState.HeatCapacityRatio;
             double pi = ringlebMaterial.RinglebReferencePressure;

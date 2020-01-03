@@ -23,6 +23,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace CNS.Tests.MMS {
+    
     /// <summary>
     /// 
     /// </summary>
@@ -30,6 +31,14 @@ namespace CNS.Tests.MMS {
     class MMS_Test: TestProgram<CNSControl> {
         //[Test]
         public static void TestMMS2D_unsteadyCNS() {
+
+            //var C = CNS.Tests.MMS.MMS_unsteady.Gassner2DStudy_conserved(3, 3);
+            //using(var p = new Program<CNSControl>()) {
+            //    p.Init(C);
+            //    p.RunSolverMode;
+
+            //}
+
             Program<CNSControl> p = null;
             Application<CNSControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.MMS.MMS_unsteady.Gassner2DStudy_conserved(3,3)" },

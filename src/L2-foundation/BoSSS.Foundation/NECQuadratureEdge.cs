@@ -28,6 +28,47 @@ using BoSSS.Foundation.Grid.Classic;
 
 namespace BoSSS.Foundation.Quadrature.NonLin {
 
+    /*
+    public static class TempTimers {
+        static public int bndItems = 0;
+        static public int intItems = 0;
+
+        static public Stopwatch bndWatch = new Stopwatch();
+        static public Stopwatch intWatch = new Stopwatch();
+
+        static public void Reset() {
+            bndItems = 0;
+            intItems = 0;
+            bndWatch.Stop();
+            intWatch.Stop();
+            bndWatch.Reset();
+            intWatch.Reset();
+        }
+
+        static public void WriteStat() {
+            if (intWatch.IsRunning)
+                throw new ApplicationException();
+            if (bndWatch.IsRunning)
+                throw new ApplicationException();
+
+            Console.WriteLine();
+            Console.WriteLine("----------------------------------------------");
+
+            double bndAvg = bndWatch.Elapsed.TotalMilliseconds / bndItems;
+            double intAvg = intWatch.Elapsed.TotalMilliseconds / intItems;
+            double ratio = bndAvg / intAvg;
+            double totRatio = bndWatch.Elapsed.TotalMilliseconds / intWatch.Elapsed.TotalMilliseconds;
+
+            Console.WriteLine("    Average time for interior edge [msec]: " + intAvg);
+            Console.WriteLine("    Average time for boundary edge [msec]: " + bndAvg);
+            Console.WriteLine("    boundary edges are {0:0.##E-00} times {1} expensive.", ratio, ratio <= 1 ? "less" : "more");
+            Console.WriteLine("    boundary edges {0} % of interior edges.", totRatio*100);
+            Console.WriteLine("----------------------------------------------");
+
+        }
+    }
+    */
+
     /// <summary>
     /// edge quadrature of nonlinear equation components
     /// </summary>
@@ -41,9 +82,9 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         public BitArray SubGridCellsMarker;
 
         /// <summary>
-        /// See <see cref="SpatialOperator.SubGridBoundaryModes"/>
+        /// See <see cref="SubGridBoundaryModes"/>
         /// </summary>
-        public SpatialOperator.SubGridBoundaryModes SubGridBoundaryTreatment;
+        public SubGridBoundaryModes SubGridBoundaryTreatment;
 
         public double[] m_outputBndEdge;
 
@@ -923,7 +964,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         int[] IEscl = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1 };
 
                         efp.Normals = NormalsGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
-                        efp.NodesGlobal = NodesGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
+                        efp.Nodes = NodesGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
 
                         var _FluxValuesIN = FluxValuesIN.ExtractSubArrayShallow(I0scl, IEscl);
                         var _FluxValuesOT = FluxValuesOT.ExtractSubArrayShallow(I0scl, IEscl);
@@ -958,7 +999,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         int[] IEscl = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1 };
 
                         efp.Normals = NormalsGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
-                        efp.NodesGlobal = NodesGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
+                        efp.Nodes = NodesGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
 
                         var _FluxValuesIN = (flipNormal ? FluxValuesOT : FluxValuesIN).ExtractSubArrayShallow(I0scl, IEscl);
 
@@ -1012,7 +1053,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         int[] IEscl = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1 };
 
                         efp.Normals = NormalsGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
-                        efp.NodesGlobal = NodesGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
+                        efp.Nodes = NodesGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
 
                         var _GradFluxIN = m_GradientFluxValuesIN[e].ExtractSubArrayShallow(I0vec, IEvec);
                         var _GradFluxOT = m_GradientFluxValuesOT[e].ExtractSubArrayShallow(I0vec, IEvec);
@@ -1046,7 +1087,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         int[] IEscl = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1 };
                         
                         efp.Normals = NormalsGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
-                        efp.NodesGlobal = NodesGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
+                        efp.Nodes = NodesGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
 
                         var _GradFluxIN = (flipNormal ? m_GradientFluxValuesOT[e] : m_GradientFluxValuesIN[e]).ExtractSubArrayShallow(I0vec, IEvec);
 
@@ -1365,6 +1406,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         int __Len = m_InnerEdgesIEs[l] - m_InnerEdgesI0s[l] + 1;
                         int jEdge = m_InnerEdgesI0s[l] + i0;
 
+                        //TempTimers.intItems += __Len;
+                        //TempTimers.intWatch.Start();
+
+
                         CallInner(nonlinFlx, jEdge, IndexOffset, __Len, NoArgs, NoParams,
                             components.MapArguments(m_FieldValuesIN, nonlinFlx, false),
                             components.MapArguments(m_FieldValuesOT, nonlinFlx, false),
@@ -1372,6 +1417,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                             MapAlsoMean ? components.MapArguments(m_MeanFieldValuesOT, nonlinFlx, true) : null,
                             MapAlsoGradient ? components.MapArguments(m_FieldGradientIN, nonlinFlx, true) : null,
                             MapAlsoGradient ? components.MapArguments(m_FieldGradientOT, nonlinFlx, true) : null);
+
+                        //TempTimers.intWatch.Stop();
 
                     }
                     timers[iComp].Stop();
@@ -1403,18 +1450,46 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         Debug.Assert(DomainBnd || SubGrdBnd);
 
                         int jEdge = IndexOffset + i0;
+
                         int __Len = 1;
+                        for(; IndexOffset + __Len < Length; __Len++) {
+                            int _jCell1 = grid.iGeomEdges.CellIndices[IndexOffset + i0 + __Len, 0];
+                            int _jCell2 = grid.iGeomEdges.CellIndices[IndexOffset + i0 + __Len, 1];
+                            bool _DomainBnd = _jCell2 < 0;
+                            bool _SubGrdBnd = (SubGridCellsMarker != null) && (!_DomainBnd) && (SubGridCellsMarker[_jCell1] != SubGridCellsMarker[_jCell2]); 
+                            
+                            if (_DomainBnd != DomainBnd)
+                                break;
+                            if (_SubGrdBnd != SubGrdBnd)
+                                break;
+                        }
+#if DEBUG
+                        for(int jEdgeTest = jEdge; jEdgeTest < jEdge + __Len; jEdgeTest++) {
+                            int _jCell1 = grid.iGeomEdges.CellIndices[jEdgeTest, 0];
+                            int _jCell2 = grid.iGeomEdges.CellIndices[jEdgeTest, 1];
+                            bool _DomainBnd = _jCell2 < 0;
+                            bool _SubGrdBnd = (SubGridCellsMarker != null) && (!_DomainBnd) && (SubGridCellsMarker[_jCell1] != SubGridCellsMarker[_jCell2]);
+                            Debug.Assert(_DomainBnd || _SubGrdBnd);
+                            Debug.Assert(_DomainBnd == DomainBnd);
+                            Debug.Assert(_SubGrdBnd == SubGrdBnd);
+                        }
 
-
+#endif 
                         if(DomainBnd) {
                             // an edge on the domain boundary
                             // ++++++++++++++++++++++++++++++
+
+                            //TempTimers.bndItems += __Len;
+                            //TempTimers.bndWatch.Start();
+
 
                             // Vektorisierung für Rand-Flussfunktionen im Moment ungenutzt
                             CallBorder(nonlinFlx, jEdge, IndexOffset, __Len, jEdge, false, NoArgs, NoParams,
                                 components.MapArguments(m_FieldValuesIN, nonlinFlx, false),
                                 MapAlsoMean ? components.MapArguments(m_MeanFieldValuesIN, nonlinFlx, true) : null,
                                 MapAlsoGradient ? components.MapArguments(m_FieldGradientIN, nonlinFlx, true) : null);
+
+                            //TempTimers.bndWatch.Stop();
 
                         } else {
                             // an internal edge, but on the boundary of the subgrid
@@ -1428,7 +1503,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                             bool Cell1In = SubGridCellsMarker[jCell1];
 
                             switch(SubGridBoundaryTreatment) {
-                                case SpatialOperator.SubGridBoundaryModes.BoundaryEdge:
+                                case SubGridBoundaryModes.BoundaryEdge:
                                 MultidimensionalArray[] FieldVals, FieldValsMean, FieldGrad;
                                 if(Cell1In) {
                                     FieldVals = components.MapArguments(m_FieldValuesIN, nonlinFlx, false);
@@ -1445,8 +1520,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                                     FieldGrad);
                                 break;
 
-                                case SpatialOperator.SubGridBoundaryModes.InnerEdge:
-                                case SpatialOperator.SubGridBoundaryModes.InnerEdgeLTS:
+                                case SubGridBoundaryModes.InnerEdge:
+                                case SubGridBoundaryModes.InnerEdgeLTS:
                                 CallInner(nonlinFlx, jEdge, IndexOffset, __Len, NoArgs, NoParams,
                                     components.MapArguments(m_FieldValuesIN, nonlinFlx, false),
                                     components.MapArguments(m_FieldValuesOT, nonlinFlx, false),
@@ -1456,7 +1531,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                                     MapAlsoGradient ? components.MapArguments(m_FieldGradientOT, nonlinFlx, true) : null);
                                 break;
 
-                                case SpatialOperator.SubGridBoundaryModes.OpenBoundary:
+                                case SubGridBoundaryModes.OpenBoundary:
                                 if(Cell1In) {
                                     FieldVals = components.MapArguments(m_FieldValuesIN, nonlinFlx, false);
                                     FieldValsMean = MapAlsoMean ? components.MapArguments(m_MeanFieldValuesIN, nonlinFlx, true) : null;
@@ -1480,6 +1555,9 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                                 throw new NotImplementedException();
                             }
                         }
+
+
+                        IndexOffset += (__Len - 1);
                     }
                     timers[iComp].Stop();
                 }

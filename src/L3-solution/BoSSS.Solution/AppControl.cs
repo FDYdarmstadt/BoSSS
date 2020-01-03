@@ -36,7 +36,7 @@ using System.Diagnostics;
 namespace BoSSS.Solution.Control {
 
     /// <summary>
-    /// Version 2 of the Application control
+    /// Base-class for all solver control objects
     /// </summary>
     [Serializable]
     [DataContract]
@@ -87,7 +87,7 @@ namespace BoSSS.Solution.Control {
             this.Tags = new List<string>();
             this.m_InitialValues_Evaluators = new Dictionary<string, Func<double[], double>>();
             this.m_InitialValues = new Dictionary<string, IBoundaryAndInitialData>();
-            this.LinearSolver.NoOfMultigridLevels = 0;
+            this.NoOfMultigridLevels = 0;
         }
 
         [Serializable]
@@ -99,6 +99,16 @@ namespace BoSSS.Solution.Control {
             public int GetHashCode(string obj) {
                 return obj.GetHashCode();
             }
+        }
+
+
+        /// <summary>
+        /// Number of aggregation multi-grid levels, <see cref="Application{T}.MultigridLevels"/>.
+        /// </summary>
+        [DataMember]
+        virtual public int NoOfMultigridLevels {
+            get;
+            set;
         }
 
 
@@ -134,9 +144,7 @@ namespace BoSSS.Solution.Control {
         public virtual void SetDGdegree(int p) {
             throw new NotImplementedException();
         }
-
-
-
+               
         /// <summary>
         /// General checking of the control object.
         /// - all control file options satisfy the conditions
@@ -642,12 +650,12 @@ namespace BoSSS.Solution.Control {
 
 
         /// <summary>
-        /// See <see cref="CompMode"/>.
+        /// See <see cref="TimesteppingMode"/>.
         /// </summary>
-        public enum _CompMode {
+        public enum _TimesteppingMode {
 
             /// <summary>
-            /// Instationary/Transient simulation.
+            /// time-dependent/Transient simulation.
             /// </summary>
             Transient,
 
@@ -657,12 +665,25 @@ namespace BoSSS.Solution.Control {
             Steady
         }
 
+        [DataMember]
+        _TimesteppingMode m_TimesteppingMode;
 
         /// <summary>
         /// For solvers which support both, stationary as well as transient simulations, the corresponding switch.
         /// </summary>
-        [DataMember]
-        public _CompMode CompMode;
+        [JsonIgnore]
+        public _TimesteppingMode TimesteppingMode {
+            get {
+                return m_TimesteppingMode;
+            }
+            set {
+                if (value == _TimesteppingMode.Steady) {
+                    dtFixed = double.MaxValue / 1e4;
+                    NoOfTimesteps = 1;
+                }
+                m_TimesteppingMode = value;
+            }
+        }
 
 
         /// <summary>
@@ -734,27 +755,6 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [DataMember]
         public bool Paramstudy_ContinueOnError = true;
-
-        ///// <summary>
-        ///// Number of aggregation multi-grid levels, <see cref="Application{T}.MultigridLevels"/>.
-        ///// </summary>
-        //[DataMember]
-        //public int NoOfMultigridLevels {
-        //    get;
-        //    set;
-        //}
-
-        /// <summary>
-        /// Configuration of 'primary' linear solver, respectively preconditioner used for <see cref="NonLinearSolver"/>.
-        /// </summary>
-        [DataMember]
-        public LinearSolverConfig LinearSolver = new LinearSolverConfig();
-
-        /// <summary>
-        /// Configuration of 'primary' nonlinear solver, if used in application
-        /// </summary>
-        [DataMember]
-        public NonLinearSolverConfig NonLinearSolver = new NonLinearSolverConfig();
 
 
         /// <summary>

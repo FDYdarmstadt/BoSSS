@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Application.IBM_Solver {
     public class HardcodedPrecTest {
@@ -67,30 +68,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.Tags.Add("Prec Test");
 
             // Create Fields
-            C.FieldOptions.Add("VelocityX", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityZ", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = k - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            C.SetDGdegree(k);
 
             #region Creates grid () and sets BC
             //// Create Grid

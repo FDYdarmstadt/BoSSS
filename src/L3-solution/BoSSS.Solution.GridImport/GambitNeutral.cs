@@ -1127,7 +1127,7 @@ namespace BoSSS.Solution.GridImport.Gambit {
             int[,] NodeNumbers2Index = null;
 
             int D = nodal_coordinates_3.coord.GetLength(1);
-            Vector v1 = new Vector(3), v2 = new Vector(3);
+            ilPSP.Vector v1 = new ilPSP.Vector(3), v2 = new ilPSP.Vector(3);
 
             for (int j = 0; j < J; j++) {
                 ElementType et = elements_cells_4.NTYPE_ElementType[j];

@@ -487,6 +487,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             // ----------------------------------
             if (nonlinSolver != null) {
                 nonlinSolver.IterationCallback += this.LogResis;
+                if (linearSolver != null && linearSolver is ISolverWithCallback) {
+                    ((ISolverWithCallback)linearSolver).IterationCallback = this.LogResis;
+                }
             } else {
                 if (linearSolver != null && linearSolver is ISolverWithCallback) {
                     ((ISolverWithCallback)linearSolver).IterationCallback = this.LogResis;
@@ -515,7 +518,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// If true, the residual will we transformed back to the original XDG basis (before agglomeration and block preconditioning)
         /// before the L2-norm is computed.
         /// </summary>
-        public bool m_TransformedResi = false;//false;
+        public bool m_TransformedResi = true;
 
         /// <summary>
         /// Logging of residuals (provisional).
@@ -597,7 +600,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     int p = Fields.ElementAt(d).Basis.Degree;
 
                     configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
-                        Degree = Math.Max(0, p - iLevel),
+                        DegreeS = new[] { Math.Max(0, p - iLevel) },
                         mode = MultigridOperator.Mode.IdMass_DropIndefinite,
                         VarIndex = new int[] { d }
                     };

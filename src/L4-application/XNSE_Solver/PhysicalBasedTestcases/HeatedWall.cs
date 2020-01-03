@@ -366,7 +366,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.dtMax = 1e-1;
             C.dtMin = 1e-1;
             C.Endtime = 10000;
@@ -724,7 +724,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.dtMax = 1e-4;
             C.dtMin = 1e-4;
             C.Endtime = 10000;
@@ -1002,7 +1002,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = steady ? LevelSetHandling.None : LevelSetHandling.LieSplitting;
 
-            C.CompMode = steady ? AppControl._CompMode.Steady : AppControl._CompMode.Transient;
+            C.TimesteppingMode = steady ? AppControl._TimesteppingMode.Steady : AppControl._TimesteppingMode.Transient;
             C.dtMax = 5e-4;
             C.dtMin = 5e-4;
             C.Endtime = 10000;
@@ -1333,7 +1333,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.dtMax = 1e-3;
             C.dtMin = 1e-3; 
             C.Endtime = 5;
@@ -1573,7 +1573,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.dtMax = 1e-5;
             C.dtMin = 1e-5;
             C.Endtime = 0.01;
@@ -1840,7 +1840,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.dtMax = 1e-5;
             C.dtMin = 1e-5;
             C.Endtime = 4.0*t_0;
@@ -2081,7 +2081,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.dtMax = 1e-3;
             C.dtMin = 1e-3;
             C.Endtime = 6;
@@ -2380,7 +2380,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.dtMax = 1e-7;
             C.dtMin = 1e-7;
             C.Endtime = 1e-3;
@@ -2652,7 +2652,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.dtMax = 1e-1;
             C.dtMin = 1e-1;
             C.Endtime = 10000;
@@ -2925,7 +2925,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.dtMax = 5e-1;
             C.dtMin = 5e-1;
             C.Endtime = 10000;

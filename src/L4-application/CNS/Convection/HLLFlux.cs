@@ -34,33 +34,14 @@ namespace CNS.Convection {
         /// <param name="equationComponent"><see cref="EulerFlux"/></param>
         /// <param name="speciesMap"><see cref="EulerFlux"/></param>
         public HLLFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, ISpeciesMap speciesMap)
-            : base(config, boundaryMap, equationComponent, speciesMap) {
+            : base(config, boundaryMap, equationComponent, speciesMap.GetMaterial(double.NaN)) {
         }
 
         /// <summary>
         /// Evaluates the HLL flux as described in BattenEtAl1997 in the form
         /// of equation 24.
         /// </summary>
-        /// <param name="x">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <param name="time">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <param name="stateIn">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <param name="stateOut">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <param name="normal">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <param name="edgeIndex">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
-        /// </param>
-        /// <returns>See BattenEtAl1997, equation 24</returns>
-        protected override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref Vector normal, int edgeIndex) {
+        public override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref ilPSP.Vector normal, int edgeIndex) {
             double waveSpeedIn;
             double waveSpeedOut;
             EstimateWaveSpeeds(stateIn, stateOut, ref normal, out waveSpeedIn, out waveSpeedOut);

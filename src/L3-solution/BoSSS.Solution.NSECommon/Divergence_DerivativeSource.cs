@@ -21,6 +21,7 @@ using System.Text;
 using BoSSS.Foundation;
 using BoSSS.Solution.Utils;
 using System.Diagnostics;
+using ilPSP;
 
 namespace BoSSS.Solution.NSECommon {
 
@@ -57,7 +58,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// bla bla bla.
         /// </summary>
-        public override double _DerivativeSource(double[] x, double[] Parameters, double[,] GradientU) {
+        public override double _DerivativeSource(Vector x, double[] Parameters, double[,] GradientU) {
             return GradientU[0, this.component];
         }
 
@@ -71,7 +72,7 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
-
+       
 
     }
 
@@ -132,8 +133,9 @@ namespace BoSSS.Solution.NSECommon {
             double u_j_In = Uin[0];
             double u_j_Out = Uout[0];
 
-            FluxInCell = -0.5 * (u_j_In - u_j_Out) * inp.Normale[component];
+            FluxInCell = -0.5 * (u_j_In - u_j_Out) * inp.Normal[component];
             FluxOutCell = FluxInCell;
+
         }
 
         /// <summary>
@@ -149,15 +151,15 @@ namespace BoSSS.Solution.NSECommon {
                 case IncompressibleBcType.Pressure_Outlet:
                 {
                     FluxInCell = 0.0;
-                    break;
+                        break;
                 }
                 case IncompressibleBcType.Velocity_Inlet:
                 case IncompressibleBcType.NavierSlip_Linear: {
                     double u_j_In = Uin[0];
                     double u_j_Out = this.bndFunction[inp.EdgeTag](inp.X, inp.time);
 
-                    FluxInCell = -(u_j_In - u_j_Out) * inp.Normale[component];
-                    break;
+                    FluxInCell = -(u_j_In - u_j_Out) * inp.Normal[component];
+                        break;
                 }
                 case IncompressibleBcType.Wall:
                 case IncompressibleBcType.FreeSlip:
@@ -165,8 +167,8 @@ namespace BoSSS.Solution.NSECommon {
                 case IncompressibleBcType.NoSlipNeumann:
                 {
                     double u_j_In = Uin[0];
-                    FluxInCell = -u_j_In * inp.Normale[component];
-                    break;
+                    FluxInCell = -u_j_In * inp.Normal[component];
+                        break;
                 }
                 default:
                 throw new NotImplementedException("Boundary condition not implemented!");

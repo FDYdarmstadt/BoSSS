@@ -17,6 +17,7 @@ limitations under the License.
 using System;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
+using ilPSP;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
@@ -51,24 +52,12 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// the pressure <see cref="pressureFunction"/>) and extrapolate the
         /// other values following FerzigerPeric2001 (p. 315ff)
         /// </summary>
-        /// <param name="time">
-        /// <see cref="BoundaryCondition.GetBoundaryState"/>
-        /// </param>
-        /// <param name="x">
-        /// <see cref="BoundaryCondition.GetBoundaryState"/>
-        /// </param>
-        /// <param name="normal">
-        /// <see cref="BoundaryCondition.GetBoundaryState"/>
-        /// </param>
-        /// <param name="stateIn">
-        /// <see cref="BoundaryCondition.GetBoundaryState"/>
-        /// </param>
         /// <returns>
         /// \f$ 
         /// (\rho^-, u^-, p^*)^T
         /// \f$ 
         /// </returns>
-        public override StateVector GetBoundaryState(double time, double[] x, double[] normal, StateVector stateIn) {
+        public override StateVector GetBoundaryState(double time, Vector x, Vector normal, StateVector stateIn) {
             return StateVector.FromPrimitiveQuantities(
                 stateIn.Material,
                 stateIn.Density,

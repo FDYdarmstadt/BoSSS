@@ -25,12 +25,12 @@ namespace BoSSS.Application.LoadBalancingTest {
     /// <summary>
     /// App which performs basic tests on dynamic load balancing.
     /// </summary>
-    class LoadBalancingTestMain : BoSSS.Solution.Application {
+    class LoadBalancingTestMain : BoSSS.Solution.Application<AppControlSolver> {
 
         static void Main(string[] args) {
             XQuadFactoryHelper.CheckQuadRules = true;
 
-            BoSSS.Solution.Application._Main(
+            BoSSS.Solution.Application<AppControlSolver>._Main(
                 args,
                 true,
                 () => new LoadBalancingTestMain());
@@ -222,7 +222,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
                     // configuration for pressure
                     configs[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig() {
-                        Degree = Math.Max(1, pu - iLevel),
+                        DegreeS = new int[] { Math.Max(1, pu - iLevel) },
                         mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
                         VarIndex = new int[] { 0 }
                     };
