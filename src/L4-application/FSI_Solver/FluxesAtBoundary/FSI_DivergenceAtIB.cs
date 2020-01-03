@@ -20,6 +20,7 @@ using BoSSS.Foundation.XDG;
 using ilPSP.Utils;
 using BoSSS.Foundation;
 using BoSSS.Platform.LinAlg;
+using FSI_Solver;
 
 namespace BoSSS.Solution.NSECommon.Operator.Continuity {
     /// <summary>
@@ -27,10 +28,10 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
     /// </summary>
     public class FSI_DivergenceAtIB : ILevelSetForm {
 
-        public FSI_DivergenceAtIB(int _D, LevelSetTracker lsTrk, Func<Vector, double[]> getParticleParams) {
+        public FSI_DivergenceAtIB(int _D, LevelSetTracker lsTrk, Func<Vector, FSI_ParameterAtIB> coupling) {
             D = _D;
             m_LsTrk = lsTrk;
-            m_getParticleParams = getParticleParams;
+            m_Coupling = coupling;
         }
 
         private readonly LevelSetTracker m_LsTrk;
@@ -40,32 +41,13 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
         /// <summary>
         /// Describes: 0: velX, 1: velY, 2:rotVel,3:particleradius
         /// </summary>
-        private readonly Func<Vector, double[]> m_getParticleParams;
+        private readonly Func<Vector, FSI_ParameterAtIB> m_Coupling;
 
-        /// <summary>
-        /// the penalty flux
-        /// </summary>
-        static double DirichletFlux(double UxN_in, double UxN_out) {
-            return (UxN_in - UxN_out);
-        }
-
-        public double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
-            Vector X = new Vector(cp.x);
-            double[] parameters_P = m_getParticleParams(X);
-            double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
-            double wLevSet = parameters_P[2];
-            double[] RadialVector = new double[] { parameters_P[3], parameters_P[4] };
-            double RadialLength = parameters_P[5];
-
-            double[] _uLevSet = new double[D];
-
-            _uLevSet[0] = uLevSet[0] - (RadialLength * wLevSet * RadialVector[1]);
-            _uLevSet[1] = uLevSet[1] + (RadialLength * wLevSet * RadialVector[0]);
-
-            double uAxN = GenericBlas.InnerProd(U_Neg, cp.n);
-            double uBxN = GenericBlas.InnerProd(_uLevSet, cp.n);
-            double FlxNeg = -DirichletFlux(uAxN, uBxN); 
-            return FlxNeg * v_Neg;
+        public double LevelSetForm(ref CommonParamsLs inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+            Vector N = new Vector(inp.n);
+            Vector X = new Vector(inp.x);
+            Vector fluidVelocity = new Vector(U_Neg);
+            return (m_Coupling(X).VelocityAtPointOnLevelSet() - fluidVelocity) * N * v_Neg;
         }
 
         public IList<string> ArgumentOrdering {

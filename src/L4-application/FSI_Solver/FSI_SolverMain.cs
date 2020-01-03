@@ -408,12 +408,14 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Returns an array with all coupling parameters. 
         /// </summary>
-        private double[] CreateCouplingAtParticleBoundary(Vector X) {
+        private FSI_ParameterAtIB CreateCouplingAtParticleBoundary(Vector X) {
             double[] couplingArray = new double[X.Dim + 6];
+            FSI_ParameterAtIB couplingParameters;
             foreach (Particle p in m_Particles) {
-                p.CalculateRadialVector(X, out Vector RadialVector, out double radialLength);
                 bool containsParticle = m_Particles.Count == 1 ? true : p.Contains(X, GridData.iGeomCells.h_min.Min());
                 if (containsParticle) {
+                    couplingParameters = new FSI_ParameterAtIB(p, X);
+                    p.CalculateRadialVector(X, out Vector RadialVector, out double radialLength);
                     couplingArray[0] = p.Motion.GetTranslationalVelocity(0)[0];
                     couplingArray[1] = p.Motion.GetTranslationalVelocity(0)[1];
                     couplingArray[2] = p.Motion.GetRotationalVelocity(0);
@@ -422,9 +424,10 @@ namespace BoSSS.Application.FSI_Solver {
                     couplingArray[5] = radialLength;
                     couplingArray[6] = p.ActiveStress; // zero for passive particles
                     couplingArray[7] = p.Motion.GetAngle(0);
+                    return couplingParameters;
                 }
             }
-            return couplingArray;
+            return null;
         }
 
         /// <summary>

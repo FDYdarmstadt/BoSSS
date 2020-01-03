@@ -97,6 +97,7 @@
     <Compile Include="ControlFiles\Tests\TestProgram.cs" />
     <Compile Include="FluxesAtBoundary\FSI_ConvectionAtIB.cs" />
     <Compile Include="FluxesAtBoundary\FSI_DivergenceAtIB.cs" />
+    <Compile Include="FluxesAtBoundary\FSI_ParameterAtIB.cs" />
     <Compile Include="FluxesAtBoundary\FSI_PressureAtIB.cs" />
     <Compile Include="FluxesAtBoundary\FSI_ViscosityAtIB.cs" />
     <Compile Include="FSI_Collision.cs" />

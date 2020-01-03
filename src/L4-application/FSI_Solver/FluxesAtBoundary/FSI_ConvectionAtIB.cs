@@ -25,10 +25,11 @@ using BoSSS.Platform;
 using System.Diagnostics;
 using BoSSS.Foundation;
 using BoSSS.Platform.LinAlg;
+using FSI_Solver;
 
 namespace BoSSS.Solution.NSECommon.Operator.Convection {
     public class FSI_ConvectionAtIB : ILevelSetForm {
-        public FSI_ConvectionAtIB(int currentDim, int spatialDim, LevelSetTracker LsTrk, IncompressibleBoundaryCondMap _bcmap, Func<Vector, double[]> getParticleParams, bool useMovingMesh) {
+        public FSI_ConvectionAtIB(int currentDim, int spatialDim, LevelSetTracker LsTrk, IncompressibleBoundaryCondMap _bcmap, Func<Vector, FSI_ParameterAtIB> getParticleParams, bool useMovingMesh) {
             m_LsTrk = LsTrk;
             m_D = spatialDim;
             m_d = currentDim;
@@ -40,11 +41,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
         private readonly LevelSetTracker m_LsTrk;
         private readonly int m_D;
         private readonly int m_d;
-
-        /// <summary>
-        /// Describes: 0: velX, 1: velY, 2: rotVel, 3: particle radius, 4: scaling paramete for active particles 
-        /// </summary>
-        private readonly Func<Vector, double[]> m_getParticleParams;
+        private readonly Func<Vector, FSI_ParameterAtIB> m_getParticleParams;
         private readonly bool m_UseMovingMesh;
 
         // Use Fluxes as in Bulk Convection
@@ -95,30 +92,24 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
             // Particle parameters
             // =============================
             Vector X = new Vector(inp.X);
-            double[] parameters_P = m_getParticleParams(X);
-            double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
-            double wLevSet = parameters_P[2];
-            double[] RadialVector = new double[] { parameters_P[3], parameters_P[4] };
-            double RadialLength = parameters_P[5];
-            double active_stress = parameters_P[6];
-            double Ang_P = parameters_P[7];
-            double[] orientation = new double[] { Math.Cos(Ang_P), Math.Sin(Ang_P) };
-            double scaleActiveBoundary = orientation[0] * inp.Normale[0] + orientation[1] * inp.Normale[1] > 0 && active_stress != 0 ? 1 : 0;
+            FSI_ParameterAtIB coupling = m_getParticleParams(X);
+            Vector orientation = new Vector(Math.Cos(coupling.Angle()), Math.Sin(coupling.Angle()));
+            double scaleActiveBoundary = orientation * new Vector(inp.Normale) > 0 && coupling.ActiveStress() != 0 ? 1 : 0;
 
             // Level-set velocity
             // =============================
             double[] uLevSet_temp = new double[1];
             if (m_d == 0) {
-                uLevSet_temp[0] = (uLevSet[0] - RadialLength * wLevSet * RadialVector[1]);
+                uLevSet_temp[0] = coupling.VelocityAtPointOnLevelSet()[0];
             }
             else {
-                uLevSet_temp[0] = (uLevSet[1] + RadialLength * wLevSet * RadialVector[0]);
+                uLevSet_temp[0] = coupling.VelocityAtPointOnLevelSet()[1];
             }
 
             // Outer values for Velocity and VelocityMean
             // =============================
-            inp.Parameters_OUT[0] = uLevSet[0] - RadialLength * wLevSet * RadialVector[1];
-            inp.Parameters_OUT[1] = uLevSet[1] + RadialLength * wLevSet * RadialVector[0];
+            inp.Parameters_OUT[0] = coupling.VelocityAtPointOnLevelSet()[0];
+            inp.Parameters_OUT[1] = coupling.VelocityAtPointOnLevelSet()[1];
             // Velocity0MeanVectorOut is set to zero, i.e. always LambdaIn is used.
             inp.Parameters_OUT[2] = 0;
             inp.Parameters_OUT[3] = 0;
