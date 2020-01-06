@@ -71,6 +71,7 @@
     <Compile Include="DynamicMultigrid.cs" />
     <Compile Include="LevelPmg.cs" />
     <Compile Include="LinearSolverConfig.cs" />
+    <Compile Include="MGviz.cs" />
     <Compile Include="NLSolverSequence.cs" />
     <Compile Include="NonLinearSolverConfig.cs" />
     <Compile Include="OrthonormalizationMultigrid.cs" />

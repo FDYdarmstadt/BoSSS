@@ -231,6 +231,9 @@ namespace BoSSS.Solution.NSECommon {
             this.Component = Component;
             this.Bcmap = Bcmap;
             this.VelFunction = Bcmap.bndFunction[VariableNames.Velocity_d(Component)];
+            int SpatDim = 2;
+            m_SpatialDimension = SpatDim;
+            m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim));
         }
 
         MaterialLaw EoS = null;
@@ -243,24 +246,24 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="Component"></param>
         /// <param name="Bcmap"></param>
         /// <param name="EoS"></param>
-        public Divergence_CentralDifferenceJacobian(int Component, IncompressibleBoundaryCondMap Bcmap, MaterialLaw EoS, int NumberOfSpecies = -1)
+        public Divergence_CentralDifferenceJacobian(int Component, IncompressibleBoundaryCondMap Bcmap, int SpatDim, MaterialLaw EoS, int NumberOfSpecies = -1)
             : this(Component, Bcmap) {
             this.EoS = EoS;
+            m_SpatialDimension = SpatDim;
             switch(Bcmap.PhysMode) {
                 case PhysicsMode.Incompressible:
                 case PhysicsMode.Multiphase:
                     throw new ApplicationException("Wrong constructor");
                 case PhysicsMode.LowMach:
-                    this.Parameters = new string[] { VariableNames.Temperature };
-                    int SpatDim = 2;
-                    m_SpatialDimension = SpatDim;
+                    this.Parameters = new string[] { VariableNames.Temperature };                
                     m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), Parameters);
                     break;
                 case PhysicsMode.Combustion:
                     if(NumberOfSpecies == -1)
                         throw new ArgumentException("NumberOfSpecies must be specified for combustion flows.");
-                    this.Parameters = ArrayTools.Cat(new string[] { VariableNames.Temperature }, VariableNames.MassFractions(NumberOfSpecies));
+                    this.Parameters = ArrayTools.Cat(new string[] { VariableNames.Temperature }, VariableNames.MassFractions(NumberOfSpecies-1));
                     this.NumberOfSpecies = NumberOfSpecies;
+                    m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), Parameters);
                     break;
                 default:
                     throw new NotImplementedException();
@@ -269,7 +272,7 @@ namespace BoSSS.Solution.NSECommon {
 
         double BorderEdgeFlux(ref Foundation.CommonParamsBnd inp, double[] Uin) {
             double res = 0.0;
-
+            
             IncompressibleBcType edgeType = Bcmap.EdgeTag2Type[inp.EdgeTag];
             double[] DensityArgumentsIn;
             switch(edgeType) {
@@ -282,6 +285,9 @@ namespace BoSSS.Solution.NSECommon {
                         double TemperatureOut = 0.0;
                         double Uout = VelFunction[inp.EdgeTag](inp.X, inp.time);
                         switch(Bcmap.PhysMode) {
+                            case PhysicsMode.Incompressible:
+                                res = Uout * inp.Normal[Component];
+                                break;
                             case PhysicsMode.LowMach:
                             case PhysicsMode.Multiphase: {
                                     // opt1:
@@ -303,9 +309,7 @@ namespace BoSSS.Solution.NSECommon {
                                 }
                                 res = EoS.GetDensity(args) * Uout * inp.Normal[Component];
                                 break;
-                            case PhysicsMode.Incompressible:
-                                res = Uout * inp.Normal[Component];
-                                break;
+                    
                             default:
                                 throw new ApplicationException("PhysicsMode not implemented");
                         }
@@ -314,17 +318,17 @@ namespace BoSSS.Solution.NSECommon {
                 case IncompressibleBcType.Pressure_Outlet: {
                         switch(Bcmap.PhysMode) {
                             case PhysicsMode.Incompressible:
-                                res = Uin[0] * inp.Normal[Component];
+                                res = Uin[Component] * inp.Normal[Component];
                                 break;
                             case PhysicsMode.LowMach:
                             case PhysicsMode.Multiphase:
-                                DensityArgumentsIn = Uin.GetSubVector(1, 1); // Only TemperatureIn
-                                res = EoS.GetDensity(DensityArgumentsIn) * Uin[0] * inp.Normal[Component];
+                                DensityArgumentsIn = Uin.GetSubVector(m_SpatialDimension, 1); // Only TemperatureIn
+                                res = EoS.GetDensity(DensityArgumentsIn) * Uin[Component] * inp.Normal[Component];
                                 break;
                             case PhysicsMode.Combustion:
                                 // throw new NotImplementedException("Has to be implemented!");
-                                DensityArgumentsIn = Uin.GetSubVector(1, NumberOfSpecies + 2); // TODO! MassFraction3 does not exist as a variable, because it is just calculated at the end of each iteration
-                                res = EoS.GetDensity(DensityArgumentsIn) * Uin[0] * inp.Normal[Component]; //TODO 
+                                DensityArgumentsIn = Uin.GetSubVector(m_SpatialDimension, NumberOfSpecies + 2); // TODO! MassFraction3 does not exist as a variable, because it is just calculated at the end of each iteration
+                                res = EoS.GetDensity(DensityArgumentsIn) * Uin[Component] * inp.Normal[Component]; //TODO 
                                 break;
                             default:
                                 throw new ApplicationException("PhysicsMode not implemented");
@@ -342,23 +346,31 @@ namespace BoSSS.Solution.NSECommon {
             double res = 0.0;
             double[] DensityArguments_In; // Arguments used to calculate the density with the EoS
             double[] DensityArguments_Out; // Arguments used to calculate the density with the EoS
+            double densityIn;
+            double densityOut;
             switch(Bcmap.PhysMode) {
                 case PhysicsMode.Incompressible:
-                    res = 0.5 * (Uin[0] + Uout[0]) * inp.Normal[Component];
+                    res = 0.5 * (Uin[Component] + Uout[Component]) * inp.Normal[Component];
                     break;
                 case PhysicsMode.LowMach:
                 case PhysicsMode.Multiphase:
                     DensityArguments_In = Uin.GetSubVector(m_SpatialDimension, 1);
                     DensityArguments_Out = Uout.GetSubVector(m_SpatialDimension, 1);
-                    double densityIn = (EoS.GetDensity(DensityArguments_In));
-                    double densityOut = (EoS.GetDensity(DensityArguments_Out));
+                     densityIn = (EoS.GetDensity(DensityArguments_In));
+                     densityOut = (EoS.GetDensity(DensityArguments_Out));
                     if(double.IsNaN(densityIn) || double.IsInfinity(densityIn) || double.IsNaN(densityOut) || double.IsInfinity(densityOut))
                         throw new NotFiniteNumberException();
 
                     res = 0.5 * (densityIn * Uin[Component] + densityOut * Uout[Component]) * inp.Normal[Component];
                     break;
                 case PhysicsMode.Combustion:
-                    res = 0.5 * (EoS.GetDensity(inp.Parameters_IN) * Uin[0] + EoS.GetDensity(inp.Parameters_OUT) * Uout[0]) * inp.Normal[Component];
+                    DensityArguments_In = Uin.GetSubVector(m_SpatialDimension, NumberOfSpecies + 1); //TODO Y3
+                    DensityArguments_Out = Uout.GetSubVector(m_SpatialDimension, NumberOfSpecies + 1); //TODO Y3
+                     densityIn = (EoS.GetDensity(DensityArguments_In));
+                     densityOut = (EoS.GetDensity(DensityArguments_Out));
+                    if(double.IsNaN(densityIn) || double.IsInfinity(densityIn) || double.IsNaN(densityOut) || double.IsInfinity(densityOut))
+                        throw new NotFiniteNumberException();
+                    res = 0.5 * (densityIn* Uin[Component] + densityOut* Uout[Component]) * inp.Normal[Component];
                     break;
                 default:
                     throw new ApplicationException("PhysicsMode not implemented");
@@ -373,7 +385,7 @@ namespace BoSSS.Solution.NSECommon {
             double[] DensityArguments; // Arguments used to calculate the density with the EoS
             switch(Bcmap.PhysMode) {
                 case PhysicsMode.Incompressible:
-                    output[Component] = U[0];
+                    output[Component] = U[Component];
                     break;
                 case PhysicsMode.LowMach:
                 case PhysicsMode.Multiphase:
@@ -381,8 +393,8 @@ namespace BoSSS.Solution.NSECommon {
                     output[Component] = EoS.GetDensity(DensityArguments) * U[Component];
                     break;
                 case PhysicsMode.Combustion:
-                    DensityArguments = U.GetSubVector(1, NumberOfSpecies + 2); // TODO! MassFraction3 does not exist as a variable, because it is just calculated at the end of each iteration
-                    output[Component] = EoS.GetDensity(DensityArguments) * U[0];
+                    DensityArguments = U.GetSubVector(m_SpatialDimension, NumberOfSpecies ); //MassFraction3 does not exist as a variable, because it is just calculated at the end of each iteration
+                    output[Component] = EoS.GetDensity(DensityArguments) * U[Component];
                     break;
                 default:
                     throw new ApplicationException("PhysicsMode not implemented");
@@ -404,8 +416,8 @@ namespace BoSSS.Solution.NSECommon {
             if(buf == null)
                 buf = new double[D];
             this.Flux(ref cpv, U, buf);
-            for(int d = 0; d < D; d++)
-                acc += buf[d] * GradV[d];
+            //for(int d = 0; d < D; d++)
+                acc += buf[Component] * GradV[Component];
             return -acc;
         }
 

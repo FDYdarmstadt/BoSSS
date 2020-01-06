@@ -61,12 +61,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         /// <summary>
-        /// Aggregation basis on this level.
+        /// Aggregation basis on this level, for each variable.
         /// </summary>
         public AggregationGridBasis[] AggBasis {
             get;
             private set;
         }
+
+        /// <summary>
+        /// Number of variables
+        /// </summary>
+        public int NoOfVariables {
+            get {
+                return AggBasis.Length;
+            }
+        }
+
 
         /// <summary>
         /// aggregation grid on this level

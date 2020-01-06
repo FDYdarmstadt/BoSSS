@@ -16,6 +16,7 @@ limitations under the License.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using ilPSP.Utils;
@@ -59,6 +60,7 @@ namespace ilPSP {
             double errTot = Math.Abs(a - b);
             double denom = Math.Max(Math.Abs(a), Math.Abs(b));
             denom = Math.Max(denom, double.Epsilon * 10);
+            Debug.Assert(denom > 0);
             return errTot / denom;
         }
 

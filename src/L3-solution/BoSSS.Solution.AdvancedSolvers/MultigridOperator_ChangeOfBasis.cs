@@ -44,7 +44,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// <summary>
             /// DG polynomial degree of respective variables on respective multigrid level
             /// </summary>
-            public int Degree;
+            public int[] DegreeS;
 
             ///// <summary>
             ///// if true, all species in one cell 
@@ -120,8 +120,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 VerifyConfig();
                 int[] R = new int[this.BaseGridProblemMapping.BasisS.Count()];
                 foreach (var c in m_Config) {
-                    foreach (var iVar in c.VarIndex) {
-                        R[iVar] = c.Degree;
+                    if (c.DegreeS.Length != c.VarIndex.Length) {
+                        throw new ArgumentException("Length of Degrees must match number of Variables.");
+                    }
+                    for (int i = 0; i < c.VarIndex.Length; i++) {
+                        int iVar = c.VarIndex[i];
+                        int deg = c.DegreeS[i];
+                        R[iVar] = deg;
                     }
                 }
                 return R;
@@ -138,6 +143,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
                     Touch[iVar] = true;
                 }
+
+                if(c.DegreeS.Length != c.VarIndex.Length) {
+                    throw new ArgumentException("Length of Degrees must match number of Variables.");
+                }
             }
 
             for (int iVar = 0; iVar < Touch.Length; iVar++) {
@@ -145,6 +154,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     throw new ArgumentException("No configuration specified for variable #" + iVar + ".");
                 }
             }
+
+           
         }
 
 

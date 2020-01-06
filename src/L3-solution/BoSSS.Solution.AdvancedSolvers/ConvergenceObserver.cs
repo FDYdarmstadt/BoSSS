@@ -69,7 +69,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             config[0] = new MultigridOperator.ChangeOfBasisConfig[muop.BaseGridProblemMapping.BasisS.Count];
             for (int iVar = 0; iVar < config[0].Length; iVar++) {
                 config[0][iVar] = new MultigridOperator.ChangeOfBasisConfig() {
-                    Degree = Degrees[iVar],
+                    DegreeS = new int[] { Degrees[iVar] },
                     mode = MultigridOperator.Mode.IdMass_DropIndefinite,
                     VarIndex = new int[] { iVar }
                 };
