@@ -20,7 +20,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Application.FSI_Solver {
-    public class Motion_Dry_NoTranslation : Motion_Dry {
+    public class Motion_Dry_NoTranslation : MotionDry {
 
         /// <summary>
         /// The dry description of motion without hydrodynamics and translation.

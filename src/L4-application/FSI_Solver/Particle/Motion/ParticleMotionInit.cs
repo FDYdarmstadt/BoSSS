@@ -77,25 +77,25 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Initialize the correct derived motion.cs.
         /// </summary>
-        public Motion_Wet ParticleMotion {
+        public Motion ParticleMotion {
             get {
                 if (m_NoRotation && m_NoTranslation) {
                     if (m_WithForces)
-                        return new Motion_Fixed_withForces(m_Gravity, m_Density);
+                        return new MotionFixedWithForces(m_Gravity, m_Density);
                     else
-                        return new Motion_Fixed(m_Gravity);
+                        return new MotionFixed(m_Gravity);
                 }
                 if (m_IsDry) {
                     return m_NoRotation ? new Motion_Dry_NoRotation(m_Gravity, m_Density)
                         : m_NoTranslation ? new Motion_Dry_NoTranslation(m_Gravity, m_Density)
-                        : new Motion_Dry(m_Gravity, m_Density);
+                        : new MotionDry(m_Gravity, m_Density);
                 }
                 if (m_AddedDampingCoefficient != 0)
-                    return new Motion_AddedDamping(m_Gravity, m_Density, m_AddedDampingCoefficient);
+                    return new MotionAddedDamping(m_Gravity, m_Density, m_AddedDampingCoefficient);
                 else
-                    return m_NoRotation ? new Motion_Wet_NoRotation(m_Gravity, m_Density)
-                        : m_NoTranslation ? new Motion_Wet_NoTranslation(m_Gravity, m_Density)
-                        : new Motion_Wet(m_Gravity, m_Density);
+                    return m_NoRotation ? new MotionWetNoRotation(m_Gravity, m_Density)
+                        : m_NoTranslation ? new MotionWetNoTranslation(m_Gravity, m_Density)
+                        : new Motion(m_Gravity, m_Density);
             }
         }
     }

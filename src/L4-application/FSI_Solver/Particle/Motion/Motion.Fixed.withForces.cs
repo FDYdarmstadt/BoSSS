@@ -20,7 +20,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Application.FSI_Solver {
-    public class Motion_Fixed_withForces : Motion_Wet {
+    public class MotionFixedWithForces : Motion {
 
         /// <summary>
         /// No motion
@@ -31,7 +31,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public Motion_Fixed_withForces(Vector gravity, double density = 0) : base(new Vector(gravity), density) {
+        public MotionFixedWithForces(Vector gravity, double density = 0) : base(new Vector(gravity), density) {
             IncludeRotation = false;
             IncludeTranslation = false;
         }

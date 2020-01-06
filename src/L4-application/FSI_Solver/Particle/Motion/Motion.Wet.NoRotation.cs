@@ -21,7 +21,7 @@ using BoSSS.Platform.LinAlg;
 using System.Collections.Generic;
 
 namespace BoSSS.Application.FSI_Solver {
-    public class Motion_Wet_NoRotation : Motion_Wet {
+    public class MotionWetNoRotation : Motion {
 
         /// <summary>
         /// The dry description of motion including hydrodynamics without rotation.
@@ -35,7 +35,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// /// <param name="underrelaxationParam">
         /// The underrelaxation parameters (convergence limit, prefactor and a bool whether to use addaptive underrelaxation) defined in <see cref="ParticleUnderrelaxationParam"/>.
         /// </param>
-        public Motion_Wet_NoRotation(Vector gravity, double density) : base(new Vector(gravity), density) {
+        public MotionWetNoRotation(Vector gravity, double density) : base(new Vector(gravity), density) {
             IncludeRotation = false;
         }
 

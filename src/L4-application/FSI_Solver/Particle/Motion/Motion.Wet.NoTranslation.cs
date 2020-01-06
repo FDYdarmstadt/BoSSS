@@ -20,7 +20,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Application.FSI_Solver {
-    public class Motion_Wet_NoTranslation : Motion_Wet {
+    public class MotionWetNoTranslation : Motion {
 
         /// <summary>
         /// The dry description of motion including hydrodynamics without translation.
@@ -34,7 +34,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// /// <param name="underrelaxationParam">
         /// The underrelaxation parameters (convergence limit, prefactor and a bool whether to use addaptive underrelaxation) defined in <see cref="ParticleUnderrelaxationParam"/>.
         /// </param>
-        public Motion_Wet_NoTranslation(Vector gravity, double density) : base(new Vector(gravity), density) {
+        public MotionWetNoTranslation(Vector gravity, double density) : base(new Vector(gravity), density) {
             IncludeTranslation = false;
         }
 

@@ -20,10 +20,10 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Application.FSI_Solver {
-    public class Motion_Dry_NoRotation : Motion_Dry {
+    public class MotionFixed : Motion {
 
         /// <summary>
-        /// The dry description of motion without hydrodynamics and rotation.
+        /// No motion
         /// </summary>
         /// <param name="gravity">
         /// The gravity (volume forces) acting on the particle.
@@ -31,8 +31,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public Motion_Dry_NoRotation(Vector gravity, double density) : base(gravity, density) {
+        public MotionFixed(Vector gravity, double density = 0) : base(new Vector(gravity), density) {
             IncludeRotation = false;
+            IncludeTranslation = false;
         }
 
         /// <summary>
@@ -41,23 +42,48 @@ namespace BoSSS.Application.FSI_Solver {
         internal override bool IncludeRotation { get; } = false;
 
         /// <summary>
-        /// Calculate the new particle angle
+        /// Include translation?
+        /// </summary>
+        internal override bool IncludeTranslation { get; } = false;
+
+        /// <summary>
+        /// Calculate the new particle position
         /// </summary>
         /// <param name="dt"></param>
-        protected override double CalculateParticleAngle(double dt) {
-            double l_Angle = GetAngle(1);
-            Aux.TestArithmeticException(l_Angle, "particle angle");
-            return l_Angle;
+        protected override Vector CalculateParticlePosition(double dt, double collisionTimestep) {
+            Vector l_Position = GetPosition(1);
+            Aux.TestArithmeticException(l_Position, "particle position");
+            return l_Position;
         }
 
         /// <summary>
         /// Calculate the new particle angle
         /// </summary>
         /// <param name="dt"></param>
-        protected override double CalculateParticleAngle(double dt, double collisionTimestep) {
+        protected override double CalculateParticleAngle(double dt, double collisionTimestep = 0) {
             double l_Angle = GetAngle(1);
             Aux.TestArithmeticException(l_Angle, "particle angle");
             return l_Angle;
+        }
+
+        /// <summary>
+        /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
+        /// </summary>
+        /// <param name="dt">Timestep</param>
+        protected override Vector CalculateTranslationalVelocity(double dt) {
+            Vector l_TranslationalVelocity = new Vector(m_Dim);
+            Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
+            return l_TranslationalVelocity;
+        }
+
+        /// <summary>
+        /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
+        /// </summary>
+        /// <param name="dt">Timestep</param>
+        protected override Vector CalculateTranslationalVelocity(double dt, double collisionTimestep) {
+            Vector l_TranslationalVelocity = new Vector(m_Dim);
+            Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
+            return l_TranslationalVelocity;
         }
 
         /// <summary>
@@ -83,10 +109,40 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
+        /// Calculates the new translational acceleration.
+        /// </summary>
+        /// <param name="dt"></param>
+        protected override Vector CalculateTranslationalAcceleration(double dt = 0) {
+            return new Vector(m_Dim);
+        }
+
+        /// <summary>
         /// Calculate the new acceleration (translational and rotational)
         /// </summary>
         /// <param name="dt"></param>
         protected override double CalculateRotationalAcceleration(double dt) {
+            return 0;
+        }
+
+        /// <summary>
+        /// Update Forces and Torque acting from fluid onto the particle
+        /// </summary>
+        /// <param name="hydrodynamicsIntegration"></param>
+        /// <param name="fluidDensity"></param>
+        public override Vector CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, CellMask cutCells, double dt) {
+            return new Vector(m_Dim);
+        }
+
+        /// <summary>
+        /// Update Forces and Torque acting from fluid onto the particle
+        /// </summary>
+        /// <param name="U"></param>
+        /// <param name="P"></param>
+        /// <param name="levelSetTracker"></param>
+        /// <param name="fluidViscosity"></param>
+        /// <param name="cutCells"></param>
+        /// <param name="dt"></param>
+        public override double CalculateHydrodynamicTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, CellMask cutCells, double dt) {
             return 0;
         }
     }

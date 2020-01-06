@@ -87,7 +87,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Instantiate object for particle motion.
         /// </summary>
         [DataMember]
-        public Motion_Wet Motion { get; private set; }
+        public Motion Motion { get; private set; }
 
         /// <summary>
         /// Mass of the current particle.

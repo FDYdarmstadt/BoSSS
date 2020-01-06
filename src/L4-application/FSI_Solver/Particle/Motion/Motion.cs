@@ -29,7 +29,7 @@ using System.Linq;
 using System.Runtime.Serialization;
 
 namespace BoSSS.Application.FSI_Solver {
-    public class Motion_Wet {
+    public class Motion {
 
         /// <summary>
         /// The standard description of motion including hydrodynamics.
@@ -40,7 +40,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public Motion_Wet(Vector gravity, double density) {
+        public Motion(Vector gravity, double density) {
             if (gravity.IsNullOrEmpty())
                 gravity = new Vector(0, 0);
             Gravity = new Vector(gravity);

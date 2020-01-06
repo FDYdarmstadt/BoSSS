@@ -150,7 +150,7 @@ namespace BoSSS.Application.FSI_Solver {
             };
             C.SetBoundaries(boundaryValues);
             C.SetGrid(lengthX: 10, lengthY: 10, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel: amrLevel);
+            //C.SetAddaptiveMeshRefinement(amrLevel: amrLevel);
             C.hydrodynamicsConvergenceCriterion = 1e-1;
             // Fluid Properties
             // =============================
@@ -161,10 +161,10 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Particle Properties
             // =============================
-            double particleDensity = 10;
+            double particleDensity = 1;
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, 1);
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { -2.5, 0 }, startAngl: 0, activeStress: 1));
-            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { 2.5, 0 }, startAngl: 180 + angle, activeStress: 1));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { -1.5, 0 }, startAngl: 0, activeStress: 1));
+            //C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { 1.5, 0 }, startAngl: 180 + angle, activeStress: 1));
 
             // misc. solver options
             // =============================  
@@ -176,7 +176,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.NoOfTimesteps = int.MaxValue;
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.LevelSetSmoothing = false;
+            C.LevelSetSmoothing = true;
             C.NonLinearSolver.MaxSolverIterations = 1000;
             C.NonLinearSolver.MinSolverIterations = 1;
             C.LinearSolver.NoOfMultigridLevels = 1;

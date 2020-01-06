@@ -1046,7 +1046,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                 //CellMask domain = this.LsTrk.Regions.GetNearFieldMask(1);
 
-                ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, domain, null, false);
+                ContinuityEnforcer.MakeContinuous(DGLevSet.Current, LevSet, domain, null, false);
                 if (SetFarField)
                 {
                     LevSet.Clear(NegMask);

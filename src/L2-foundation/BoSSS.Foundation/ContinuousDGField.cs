@@ -29,7 +29,7 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
-
+using System.Diagnostics;
 
 namespace BoSSS.Foundation {
 
@@ -239,6 +239,7 @@ namespace BoSSS.Foundation {
 
 
                     // check the conditions at vertices (actual, own, potential)
+                    Debugger.Launch();
                     int[] vertAtCell1 = m_grd.Cells.CellVertices[cell1];
                     int[] vertAtCell2 = m_grd.Cells.CellVertices[cell2];
                     int numVCond = 0;
