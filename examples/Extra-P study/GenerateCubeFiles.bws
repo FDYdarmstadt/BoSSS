@@ -1,0 +1,323 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 2 instances of IDatabaseInfo {
+  0: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+  1: { Session Count = 0; Grid Count = 2; Path = V:\Test4Anne\DB_Rheology }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.IO;
+using System.Windows.Forms;
+**************
+(1,2): warning CS0105: The using directive for `System' appeared previously in this namespace
+(2,1): warning CS0105: The using directive for `System.Collections.Generic' appeared previously in this namespace
+(3,1): warning CS0105: The using directive for `System.Linq' appeared previously in this namespace
+(6,22): error CS0234: The type or namespace name `Forms' does not exist in the namespace `System.Windows'. Are you missing `System.Windows.Forms' assembly reference?
+No. of errors|warnings: 1|3.
+
+==============
+string dbpath     = @"V:\SyncHHLR\DB_Cube_3";
+string targetpath = Directory.GetCurrentDirectory();
+var tmpDB         = OpenOrCreateDatabase(dbpath);
+**************
+Opening existing database 'V:\SyncHHLR\DB_Cube_3'.
+
+==============
+
+
+**************
+T:\Cube-Files
+
+==============
+// This will process all session within the given library and sort them according to their projects
+foreach(KeyValuePair<String,IEnumerable<ISessionInfo>> prj in tmpDB.Projects){
+    if(prj.Key=="test")
+        continue;
+    //create directory for every project
+    string dir = String.Concat(targetpath,@"\",prj.Key);
+    Directory.CreateDirectory(dir);
+
+    foreach(ISessionInfo session in prj.Value){
+        if(session.SuccessfulTermination==false)
+            continue;
+    // !!!Attention!!! this is a specific format, change it to your liking
+    string bindir = String.Concat("calc.",String.Format("cores{0}.cells{1}",session.NumberOfCores(),session.GetGrids().Pick(0).NumberOfCells/session.NumberOfCores()),".r",prj.Key.Substring(prj.Key.Length - 1));
+    //Console.WriteLine(bindir);
+
+    string txt    = String.Format("{0}:cores{1}.cells{2}:project{3}",session.ID,session.NumberOfCores(),session.GetGrids().Pick(0).NumberOfCells/session.NumberOfCores(),session.ProjectName);
+    System.Console.WriteLine(txt);
+    string[] Binpaths = session.FilesInSessionDir("profiling_bin.*").ToArray();
+    int cnt = Binpaths.Length;
+    foreach(string path in Binpaths){
+        string binname = Path.GetFileName(path);
+        File.Copy(path,String.Concat(targetpath,@"\",binname));
+    }
+    try{
+        Process process                   = new Process();
+        process.StartInfo                 = new ProcessStartInfo(@"ilPSP.Cube_new\ilPSP.Cube.exe");
+        process.StartInfo.UseShellExecute = false;
+        process.Start();
+        int id                           = process.Id;
+        Process tempProc                 = Process.GetProcessById(id);
+        tempProc.WaitForExit();
+    } catch (Exception e){
+        Console.WriteLine("error at Session: {0}",session.ID);
+        throw e;
+    }
+    string evalbin = String.Concat(targetpath,@"\","calc.p",cnt,".r1");
+    //Console.WriteLine(evalbin);
+    if(!Directory.Exists(evalbin))
+        throw new Exception("Format calc.p<>.r<> expected");
+
+    Directory.Move(evalbin,String.Concat(dir,@"\",bindir));
+    Console.WriteLine("write evaluated profiling bins to: {0}",String.Concat(targetpath,@"\",bindir));
+    }
+}
+**************
+986b5943-9c8d-49d4-ae6b-54d9ac220776:cores32.cells409600:projectdmr_cube_run1
+write evaluated profiling bins to: T:\Cube-Files\calc.cores32.cells409600.r1
+68a54464-80ea-40d3-b956-08ae76126169:cores64.cells409600:projectdmr_cube_run1
+write evaluated profiling bins to: T:\Cube-Files\calc.cores64.cells409600.r1
+08769846-38bf-4ef0-aa30-5a3de8627afb:cores16.cells409600:projectdmr_cube_run1
+write evaluated profiling bins to: T:\Cube-Files\calc.cores16.cells409600.r1
+c7de0f3f-66c0-48f4-82e0-7e6b9ef51b20:cores8.cells409600:projectdmr_cube_run1
+write evaluated profiling bins to: T:\Cube-Files\calc.cores8.cells409600.r1
+f40ebb2a-110d-48ff-b852-c0b23aed3f87:cores4.cells409600:projectdmr_cube_run1
+write evaluated profiling bins to: T:\Cube-Files\calc.cores4.cells409600.r1
+ad482ff4-3de6-4c01-baae-a78bb5d4cfe1:cores64.cells102400:projectdmr_cube_run1
+write evaluated profiling bins to: T:\Cube-Files\calc.cores64.cells102400.r1
+c3ba7404-5319-41b6-8ae4-9fcd1d395ade:cores32.cells102400:projectdmr_cube_run1
+write evaluated profiling bins to: T:\Cube-Files\calc.cores32.cells102400.r1
+d4c3b418-efcc-46ab-836c-0b228ab19ef8:cores64.cells25600:projectdmr_cube_run1
+write evaluated profiling bins to: T:\Cube-Files\calc.cores64.cells25600.r1
+f1b6d40b-a9af-4245-a937-29a3822305a2:cores64.cells6400:projectdmr_cube_run1
+write evaluated profiling bins to: T:\Cube-Files\calc.cores64.cells6400.r1
+f350188f-1c64-42a8-b40e-ae9617e442d6:cores64.cells1600:projectdmr_cube_run1
+write evaluated profiling bins to: T:\Cube-Files\calc.cores64.cells1600.r1
+2595a481-d1ce-4600-9f91-6a4e8ffbe737:cores32.cells25600:projectdmr_cube_run1
+write evaluated profiling bins to: T:\Cube-Files\calc.cores32.cells25600.r1
+bbbd1f9e-4f2c-4d22-9714-73d8078ae847:cores16.cells102400:projectdmr_cube_run1
+write evaluated profiling bins to: T:\Cube-Files\calc.cores16.cells102400.r1
+87acfd96-56d5-40e1-a053-14da8a259dd0:cores32.cells6400:projectdmr_cube_run1
+write evaluated profiling bins to: T:\Cube-Files\calc.cores32.cells6400.r1
+c00ab05e-07f8-4b0b-a15a-e52570a94fc6:cores32.cells1600:projectdmr_cube_run1
+write evaluated profiling bins to: T:\Cube-Files\calc.cores32.cells1600.r1
+c7808f16-4327-4636-aef4-27bf39d8ca65:cores8.cells102400:projectdmr_cube_run1
+write evaluated profiling bins to: T:\Cube-Files\calc.cores8.cells102400.r1
+7442c4e6-1ac0-4dbf-8b35-ed3a6c19d251:cores4.cells102400:projectdmr_cube_run1
+write evaluated profiling bins to: T:\Cube-Files\calc.cores4.cells102400.r1
+6b54ac31-fe6b-4bd0-8a6b-de7908f0f6bf:cores16.cells25600:projectdmr_cube_run1
+write evaluated profiling bins to: T:\Cube-Files\calc.cores16.cells25600.r1
+47338e9a-e807-4d8b-9aa5-3102b4e578bc:cores16.cells6400:projectdmr_cube_run1
+write evaluated profiling bins to: T:\Cube-Files\calc.cores16.cells6400.r1
+03e5d2e3-6a6e-431b-be22-6c11ee4e9b0e:cores16.cells1600:projectdmr_cube_run1
+write evaluated profiling bins to: T:\Cube-Files\calc.cores16.cells1600.r1
+8579db6c-4f52-4b3b-b419-0caf575da5eb:cores8.cells25600:projectdmr_cube_run1
+write evaluated profiling bins to: T:\Cube-Files\calc.cores8.cells25600.r1
+b1c172a1-87c8-44f9-a772-b1a2eab2bb53:cores4.cells25600:projectdmr_cube_run1
+write evaluated profiling bins to: T:\Cube-Files\calc.cores4.cells25600.r1
+ed7b896c-ac5e-4439-98fb-0783362b7991:cores8.cells6400:projectdmr_cube_run1
+write evaluated profiling bins to: T:\Cube-Files\calc.cores8.cells6400.r1
+358efbcc-a83a-4ab9-90ce-98bbcb06d9a5:cores8.cells1600:projectdmr_cube_run1
+write evaluated profiling bins to: T:\Cube-Files\calc.cores8.cells1600.r1
+989e82a2-d905-467a-bccb-d4ae9b3f6cc7:cores4.cells6400:projectdmr_cube_run1
+write evaluated profiling bins to: T:\Cube-Files\calc.cores4.cells6400.r1
+e91f5359-a7a8-4d6a-ab92-6cfa6c6db2f5:cores4.cells1600:projectdmr_cube_run1
+write evaluated profiling bins to: T:\Cube-Files\calc.cores4.cells1600.r1
+f586ae09-73cf-40a3-bf32-08d53342b3d6:cores32.cells102400:projectdmr_cube_run4
+write evaluated profiling bins to: T:\Cube-Files\calc.cores32.cells102400.r4
+8dcbc454-45d7-4140-b658-ba3339cfc1be:cores64.cells6400:projectdmr_cube_run4
+write evaluated profiling bins to: T:\Cube-Files\calc.cores64.cells6400.r4
+5348bf9d-daa4-4808-8832-71cfd93d4ae3:cores16.cells409600:projectdmr_cube_run4
+write evaluated profiling bins to: T:\Cube-Files\calc.cores16.cells409600.r4
+4f96aa65-f70f-48c4-ac38-e624382ed00a:cores32.cells409600:projectdmr_cube_run4
+write evaluated profiling bins to: T:\Cube-Files\calc.cores32.cells409600.r4
+2a033381-903a-4034-84db-36267cbcd991:cores64.cells409600:projectdmr_cube_run4
+write evaluated profiling bins to: T:\Cube-Files\calc.cores64.cells409600.r4
+ddc5880c-4c71-41ac-a5b5-e2f1d80d34bb:cores8.cells409600:projectdmr_cube_run4
+write evaluated profiling bins to: T:\Cube-Files\calc.cores8.cells409600.r4
+84758ddc-a5db-41be-bc52-da939280e485:cores4.cells409600:projectdmr_cube_run4
+write evaluated profiling bins to: T:\Cube-Files\calc.cores4.cells409600.r4
+21675924-4923-43df-a4b8-06115c310b06:cores64.cells102400:projectdmr_cube_run4
+write evaluated profiling bins to: T:\Cube-Files\calc.cores64.cells102400.r4
+280d5f74-84a3-4475-a090-41fb85ac59fa:cores16.cells102400:projectdmr_cube_run4
+write evaluated profiling bins to: T:\Cube-Files\calc.cores16.cells102400.r4
+ff98ce0a-288d-456f-ba68-bf72430030bd:cores8.cells102400:projectdmr_cube_run4
+write evaluated profiling bins to: T:\Cube-Files\calc.cores8.cells102400.r4
+8ceebc41-e2f8-4aa5-9ead-7e2c5717daa6:cores32.cells1600:projectdmr_cube_run4
+write evaluated profiling bins to: T:\Cube-Files\calc.cores32.cells1600.r4
+b3ef73a6-6c98-4095-964a-4c4e01307c5e:cores64.cells25600:projectdmr_cube_run4
+write evaluated profiling bins to: T:\Cube-Files\calc.cores64.cells25600.r4
+80e5d7af-1164-4f5b-9d4d-88c53909df3d:cores16.cells25600:projectdmr_cube_run4
+write evaluated profiling bins to: T:\Cube-Files\calc.cores16.cells25600.r4
+299d9472-4983-4a1f-8174-e5973f65ce03:cores64.cells1600:projectdmr_cube_run4
+write evaluated profiling bins to: T:\Cube-Files\calc.cores64.cells1600.r4
+7f8a3b31-3d81-4d3c-90cd-2cd0549f1775:cores8.cells1600:projectdmr_cube_run4
+write evaluated profiling bins to: T:\Cube-Files\calc.cores8.cells1600.r4
+d5d3ee91-48c1-4f98-bf8b-e90b93e712bf:cores8.cells25600:projectdmr_cube_run4
+write evaluated profiling bins to: T:\Cube-Files\calc.cores8.cells25600.r4
+859b1ff1-22ae-4c37-a9e2-af48979ebd84:cores32.cells25600:projectdmr_cube_run4
+write evaluated profiling bins to: T:\Cube-Files\calc.cores32.cells25600.r4
+c7f0bff4-4baf-4c1c-9ec5-0e9d1cab2240:cores16.cells6400:projectdmr_cube_run4
+write evaluated profiling bins to: T:\Cube-Files\calc.cores16.cells6400.r4
+d7a70c5a-612e-4289-abd4-177c98107b6f:cores4.cells102400:projectdmr_cube_run4
+write evaluated profiling bins to: T:\Cube-Files\calc.cores4.cells102400.r4
+1d44563b-0c71-4779-81fd-072842ab522c:cores32.cells6400:projectdmr_cube_run4
+write evaluated profiling bins to: T:\Cube-Files\calc.cores32.cells6400.r4
+feae7d92-80e7-4534-a71b-5f462767ef8c:cores16.cells1600:projectdmr_cube_run4
+write evaluated profiling bins to: T:\Cube-Files\calc.cores16.cells1600.r4
+91954f98-b356-4140-9b8a-59a53905f45b:cores8.cells6400:projectdmr_cube_run4
+write evaluated profiling bins to: T:\Cube-Files\calc.cores8.cells6400.r4
+1559f8e7-3dfb-4124-ac9c-ce79a86a3a70:cores4.cells25600:projectdmr_cube_run4
+write evaluated profiling bins to: T:\Cube-Files\calc.cores4.cells25600.r4
+6e0b5dbc-6fcb-4fc3-8011-98c60d1314fc:cores4.cells6400:projectdmr_cube_run4
+write evaluated profiling bins to: T:\Cube-Files\calc.cores4.cells6400.r4
+b5e3ad0f-9905-4369-9cf6-edc7229638d4:cores4.cells1600:projectdmr_cube_run4
+write evaluated profiling bins to: T:\Cube-Files\calc.cores4.cells1600.r4
+6b305293-1b03-420a-b119-e041302227ff:cores16.cells102400:projectdmr_cube_run3
+write evaluated profiling bins to: T:\Cube-Files\calc.cores16.cells102400.r3
+f3079eb1-62a8-468b-b2a9-97de4803d6da:cores32.cells6400:projectdmr_cube_run3
+write evaluated profiling bins to: T:\Cube-Files\calc.cores32.cells6400.r3
+baccda89-4eb1-4058-9f4c-b7c449154ab0:cores64.cells409600:projectdmr_cube_run3
+write evaluated profiling bins to: T:\Cube-Files\calc.cores64.cells409600.r3
+4a4dafaf-deba-4f24-a99d-2e79f662ae52:cores32.cells409600:projectdmr_cube_run3
+write evaluated profiling bins to: T:\Cube-Files\calc.cores32.cells409600.r3
+dc2e8e26-b3ba-458e-b5aa-eed9498cdd8d:cores64.cells102400:projectdmr_cube_run3
+write evaluated profiling bins to: T:\Cube-Files\calc.cores64.cells102400.r3
+5a59a8f6-5d47-4dbb-bc8e-6c0b66ce4b4c:cores64.cells25600:projectdmr_cube_run3
+write evaluated profiling bins to: T:\Cube-Files\calc.cores64.cells25600.r3
+eea46c0c-9e37-4de5-8fa8-36429fd015b4:cores16.cells409600:projectdmr_cube_run3
+write evaluated profiling bins to: T:\Cube-Files\calc.cores16.cells409600.r3
+792ca574-e1c3-4762-a27a-ff6ef69e4b11:cores64.cells6400:projectdmr_cube_run3
+write evaluated profiling bins to: T:\Cube-Files\calc.cores64.cells6400.r3
+11e7e51c-61a1-4739-b964-4f6408d083d5:cores64.cells1600:projectdmr_cube_run3
+write evaluated profiling bins to: T:\Cube-Files\calc.cores64.cells1600.r3
+31435727-ee02-4f19-8631-a198a000c586:cores32.cells102400:projectdmr_cube_run3
+write evaluated profiling bins to: T:\Cube-Files\calc.cores32.cells102400.r3
+e9cdfa5a-0ae3-49ae-83da-4bf94de848ed:cores4.cells409600:projectdmr_cube_run3
+write evaluated profiling bins to: T:\Cube-Files\calc.cores4.cells409600.r3
+82f93d34-e20b-464a-910e-de86512acd22:cores8.cells409600:projectdmr_cube_run3
+write evaluated profiling bins to: T:\Cube-Files\calc.cores8.cells409600.r3
+134814b3-555f-4acf-8160-82691fd694d4:cores32.cells25600:projectdmr_cube_run3
+write evaluated profiling bins to: T:\Cube-Files\calc.cores32.cells25600.r3
+db5e8e92-789b-4d75-a1fd-bcb906bfba8a:cores32.cells1600:projectdmr_cube_run3
+write evaluated profiling bins to: T:\Cube-Files\calc.cores32.cells1600.r3
+3c7d126e-cb72-4faa-9763-82737f635c4f:cores16.cells25600:projectdmr_cube_run3
+write evaluated profiling bins to: T:\Cube-Files\calc.cores16.cells25600.r3
+bf480a38-af11-4ff1-a4bb-f2f273a0516c:cores16.cells1600:projectdmr_cube_run3
+write evaluated profiling bins to: T:\Cube-Files\calc.cores16.cells1600.r3
+45c6aea0-4b8a-4d9b-a162-b0168d6ac362:cores8.cells102400:projectdmr_cube_run3
+write evaluated profiling bins to: T:\Cube-Files\calc.cores8.cells102400.r3
+1e292f3c-0220-4769-981c-9d05c3b59f93:cores4.cells102400:projectdmr_cube_run3
+write evaluated profiling bins to: T:\Cube-Files\calc.cores4.cells102400.r3
+2b674488-0ef0-46f8-97c6-08c42d07348b:cores16.cells6400:projectdmr_cube_run3
+write evaluated profiling bins to: T:\Cube-Files\calc.cores16.cells6400.r3
+dc0f8178-8817-44c4-995d-ae1f7c3dddfd:cores8.cells25600:projectdmr_cube_run3
+write evaluated profiling bins to: T:\Cube-Files\calc.cores8.cells25600.r3
+e03ad300-5602-4c9e-985e-8ea030f2d599:cores4.cells25600:projectdmr_cube_run3
+write evaluated profiling bins to: T:\Cube-Files\calc.cores4.cells25600.r3
+09c41a5b-a455-4aa9-8030-a02b1aa43d0c:cores8.cells6400:projectdmr_cube_run3
+write evaluated profiling bins to: T:\Cube-Files\calc.cores8.cells6400.r3
+b2e08f39-ca13-4e6e-895a-6a3d4883ac7d:cores8.cells1600:projectdmr_cube_run3
+write evaluated profiling bins to: T:\Cube-Files\calc.cores8.cells1600.r3
+bf812afe-d3ff-469c-b917-cec1930ad3c0:cores4.cells6400:projectdmr_cube_run3
+write evaluated profiling bins to: T:\Cube-Files\calc.cores4.cells6400.r3
+ef2b9ddc-a569-4b8c-b918-a83650ef88ff:cores4.cells1600:projectdmr_cube_run3
+write evaluated profiling bins to: T:\Cube-Files\calc.cores4.cells1600.r3
+a2514cb9-5f6e-4b42-8231-03dd236327a9:cores32.cells25600:projectdmr_cube_run2
+write evaluated profiling bins to: T:\Cube-Files\calc.cores32.cells25600.r2
+d1e703fc-2377-4e03-bbaf-acb1f8240aeb:cores64.cells409600:projectdmr_cube_run2
+write evaluated profiling bins to: T:\Cube-Files\calc.cores64.cells409600.r2
+4b32a9e1-b2ed-4175-add5-0b84e97aa886:cores32.cells409600:projectdmr_cube_run2
+write evaluated profiling bins to: T:\Cube-Files\calc.cores32.cells409600.r2
+90edb860-6dfa-47e5-b5d0-9992387f30d6:cores64.cells102400:projectdmr_cube_run2
+write evaluated profiling bins to: T:\Cube-Files\calc.cores64.cells102400.r2
+affc6b7b-d8e3-4112-9b06-f78cf52472c5:cores64.cells25600:projectdmr_cube_run2
+write evaluated profiling bins to: T:\Cube-Files\calc.cores64.cells25600.r2
+a2244aa3-9b6a-4e2a-baaa-77fc59d269e6:cores64.cells6400:projectdmr_cube_run2
+write evaluated profiling bins to: T:\Cube-Files\calc.cores64.cells6400.r2
+175dab6f-8022-43ad-9120-bc0df6311e7a:cores64.cells1600:projectdmr_cube_run2
+write evaluated profiling bins to: T:\Cube-Files\calc.cores64.cells1600.r2
+17ca67a6-08b3-4229-a5f5-b2b5ef4aefa8:cores32.cells102400:projectdmr_cube_run2
+write evaluated profiling bins to: T:\Cube-Files\calc.cores32.cells102400.r2
+1910a7d1-d634-46eb-b0d6-faeba0d460d4:cores16.cells409600:projectdmr_cube_run2
+write evaluated profiling bins to: T:\Cube-Files\calc.cores16.cells409600.r2
+29126414-6cdc-40cb-a7c2-c0ffa18bd501:cores8.cells409600:projectdmr_cube_run2
+write evaluated profiling bins to: T:\Cube-Files\calc.cores8.cells409600.r2
+8be5565b-d120-40be-9d37-f083478965b6:cores4.cells409600:projectdmr_cube_run2
+write evaluated profiling bins to: T:\Cube-Files\calc.cores4.cells409600.r2
+f537ffef-a930-4177-8201-13419427c5b1:cores32.cells6400:projectdmr_cube_run2
+write evaluated profiling bins to: T:\Cube-Files\calc.cores32.cells6400.r2
+c7ef6417-f61a-486d-8ca5-225aa3e7ae9b:cores32.cells1600:projectdmr_cube_run2
+write evaluated profiling bins to: T:\Cube-Files\calc.cores32.cells1600.r2
+d8e76dca-068b-433f-ac34-0ada8a0a822e:cores16.cells102400:projectdmr_cube_run2
+write evaluated profiling bins to: T:\Cube-Files\calc.cores16.cells102400.r2
+a6a93bfb-485c-481d-8fe0-46aa6b321344:cores8.cells102400:projectdmr_cube_run2
+write evaluated profiling bins to: T:\Cube-Files\calc.cores8.cells102400.r2
+e78d8014-42bd-4f0e-8824-81ea3e06e55b:cores4.cells102400:projectdmr_cube_run2
+write evaluated profiling bins to: T:\Cube-Files\calc.cores4.cells102400.r2
+3796012e-dff6-4663-bca8-11a1787749f5:cores16.cells25600:projectdmr_cube_run2
+write evaluated profiling bins to: T:\Cube-Files\calc.cores16.cells25600.r2
+0588e761-518d-4090-bbf9-1d07672f27a5:cores16.cells6400:projectdmr_cube_run2
+write evaluated profiling bins to: T:\Cube-Files\calc.cores16.cells6400.r2
+615b24f1-fee8-495e-a785-84b209cf1dd9:cores8.cells25600:projectdmr_cube_run2
+write evaluated profiling bins to: T:\Cube-Files\calc.cores8.cells25600.r2
+81abd6d5-70ef-4561-90da-45f64a4af9ef:cores4.cells25600:projectdmr_cube_run2
+write evaluated profiling bins to: T:\Cube-Files\calc.cores4.cells25600.r2
+efc8cadc-b05b-4ece-aa60-582ef5425d43:cores16.cells1600:projectdmr_cube_run2
+write evaluated profiling bins to: T:\Cube-Files\calc.cores16.cells1600.r2
+b9af8e0d-fe3a-4851-aa7a-d2cedfaf38db:cores8.cells6400:projectdmr_cube_run2
+write evaluated profiling bins to: T:\Cube-Files\calc.cores8.cells6400.r2
+9e56bb19-7ef1-4b38-a2b3-bf88194286b4:cores8.cells1600:projectdmr_cube_run2
+write evaluated profiling bins to: T:\Cube-Files\calc.cores8.cells1600.r2
+84e34fd5-d09a-4ae6-9010-0192e57ba44a:cores4.cells6400:projectdmr_cube_run2
+write evaluated profiling bins to: T:\Cube-Files\calc.cores4.cells6400.r2
+29e60c04-56e2-4feb-931f-e4146582b227:cores4.cells1600:projectdmr_cube_run2
+write evaluated profiling bins to: T:\Cube-Files\calc.cores4.cells1600.r2
+
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
