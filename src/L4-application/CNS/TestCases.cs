@@ -3619,7 +3619,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl IBMBowShock(string dbPath = null, int savePeriod = 100, int dgDegree = 0, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 1, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 6.0, string restart = "False", double lambdaMax = 15.0) {
+        public static CNSControl IBMBowShock(string dbPath = null, int savePeriod = 100, int dgDegree = 2, double sensorLimit = 1e-4, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 1, int numberOfSubGrids = 2, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 6.0, string restart = "False", double lambdaMax = 15.0, int numOfCellsX = 20, int numOfCellsY = 80) {
             IBMControl c = new IBMControl();
 
             //System.Threading.Thread.Sleep(10000);
@@ -3657,9 +3657,6 @@ namespace CNS {
             double xMax = 0.0;
             double yMin = -4.0;
             double yMax = 4.0;
-
-            int numOfCellsX = 20;
-            int numOfCellsY = 80;
 
             // Shift grid
             double h = Math.Abs(xMax - xMin) / numOfCellsX;
@@ -3757,7 +3754,7 @@ namespace CNS {
 
             // Shock-capturing
             double epsilon0 = 1.0;
-            double kappa = 1.0;
+            double kappa = 0.5;
 
             if (AV) {
                 Variable sensorVariable = CompressibleVariables.Density;
@@ -3828,18 +3825,18 @@ namespace CNS {
             c.CFLFraction = CFLFraction;
             c.NoOfTimesteps = int.MaxValue;
 
-            c.ProjectName = "bowShock";
+            c.ProjectName = "IBMBowShock";
 
             // Session name
             string tempSessionName;
             if (c.ExplicitScheme == ExplicitSchemes.RungeKutta) {
-                tempSessionName = string.Format("BowShock_p{0}_s0={1:0.0E-00}_CFLFrac{2}_RK{3}",
+                tempSessionName = string.Format("IBMBowShock_p{0}_s0={1:0.0E-00}_CFLFrac{2}_RK{3}",
                     dgDegree, sensorLimit, CFLFraction, explicitOrder);
             } else if (c.ExplicitScheme == ExplicitSchemes.AdamsBashforth) {
-                tempSessionName = string.Format("BowShock_p{0}_s0={1:0.0E-00}_CFLFrac{2}_AB{3}",
+                tempSessionName = string.Format("IBMBowShock_p{0}_s0={1:0.0E-00}_CFLFrac{2}_AB{3}",
                     dgDegree, sensorLimit, CFLFraction, explicitOrder);
             } else {
-                tempSessionName = string.Format("BowShock_p{0}_s0={1:0.0E-00}_CFLFrac{2}_ALTS{3}_{4}_re{5}_subs{6}",
+                tempSessionName = string.Format("IBMBowShock_p{0}_s0={1:0.0E-00}_CFLFrac{2}_ALTS{3}_{4}_re{5}_subs{6}",
                     dgDegree, sensorLimit, CFLFraction, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps);
             }
 
