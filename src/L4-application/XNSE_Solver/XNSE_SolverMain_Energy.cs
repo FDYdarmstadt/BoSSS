@@ -84,6 +84,8 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         XDGField DerivedKineticEnergy;
 
+        XDGField DerivedKineticEnergyChangerate;
+
         XDGField GeneratedKineticEnergy;
 
         /// <summary>
@@ -91,7 +93,9 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         XDGField KineticEnergy;
 
-        //XDGField prevKineticEnergy;
+        XDGField KineticEnergyChangerate;
+
+        XDGField prevKineticEnergy;
 
         /// <summary>
         /// Residual of the kinetic energy balance
@@ -105,10 +109,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
         XDGField PowerOfStresses;
 
-        XDGField ProjectedKineticEnergy;
-
-
-        //SinglePhaseField EnergyJumpCondition;
 
 #pragma warning restore 649
 
@@ -119,6 +119,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             int D = this.GridData.SpatialDimension;
 
+            IOListOption register = (this.Control.RegisterUtilitiesToIOFields) ? IOListOption.Always : IOListOption.ControlFileDetermined;
 
             if (this.Control.solveKineticEnergyEquation) {
 
@@ -130,7 +131,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 //this.prevKineticEnergy = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions["KineticEnergy"].Degree)));
 
                 this.GeneratedKineticEnergy = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions[VariableNames.KineticEnergy].Degree)), "GeneratedKineticEnergy");
-                base.RegisterField(this.GeneratedKineticEnergy);
+                base.RegisterField(this.GeneratedKineticEnergy, register);
+
+                this.KineticEnergyChangerate = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions[VariableNames.KineticEnergy].Degree)), "KineticEnergyChangerate");
+                base.RegisterField(this.KineticEnergyChangerate, register);
 
             }
 
@@ -143,20 +147,20 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
                 }
 
-                this.DerivedKineticEnergy = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions[VariableNames.KineticEnergy].Degree)), "DerivedKineticEnergy");
-                base.RegisterField(this.DerivedKineticEnergy);
+                this.prevKineticEnergy = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions[VariableNames.KineticEnergy].Degree)), "previousKineticEnergy");
+                base.RegisterField(this.prevKineticEnergy);
 
-                this.ProjectedKineticEnergy = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions[VariableNames.KineticEnergy].Degree)), "ProjectedKineticEnergy");
-                base.RegisterField(this.ProjectedKineticEnergy);
+                this.DerivedKineticEnergy = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions[VariableNames.KineticEnergy].Degree)), "DerivedKineticEnergy");
+                base.RegisterField(this.DerivedKineticEnergy, register);
+
+                this.DerivedKineticEnergyChangerate = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions[VariableNames.KineticEnergy].Degree)), "DerivedKineticEnergyChangerate");
+                base.RegisterField(this.DerivedKineticEnergyChangerate, register);
 
                 this.KineticDissipation = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions[VariableNames.KineticEnergy].Degree)), "KineticDissipation");
-                base.RegisterField(this.KineticDissipation);
+                base.RegisterField(this.KineticDissipation, register);
 
                 this.PowerOfStresses = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions[VariableNames.KineticEnergy].Degree)), "PowerOfStresses");
-                base.RegisterField(this.PowerOfStresses);
-
-                //this.EnergyJumpCondition = new SinglePhaseField(new Basis(this.GridData, this.Control.FieldOptions[VariableNames.KineticEnergy].Degree), "EnergyJumpCondition");
-                //base.RegisterField(this.EnergyJumpCondition);
+                base.RegisterField(this.PowerOfStresses, register);
 
             }
 

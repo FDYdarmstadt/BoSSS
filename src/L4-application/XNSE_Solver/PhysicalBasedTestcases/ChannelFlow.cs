@@ -139,7 +139,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.GridFunc = delegate () {
                 double[] Xnodes = GenericBlas.Linspace(0, L, 2 * kelem + 1);
                 double[] Ynodes = GenericBlas.Linspace(0, H, kelem + 1);
-                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX:false);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
                 //var grd = Grid2D.UnstructuredTriangleGrid(Xnodes, Ynodes);
 
                 switch (wallBC) {
@@ -282,6 +282,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.ComputeEnergyProperties = true;
             C.solveKineticEnergyEquation = true;
+            C.kinEViscousDiscretization = Solution.EnergyCommon.KineticEnergyViscousSourceTerms.fluxFormulation;
+            C.kinEPressureDiscretization = Solution.EnergyCommon.KineticEnergyPressureSourceTerms.divergence;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
 

@@ -34,6 +34,7 @@ using BoSSS.Solution.LevelSetTools.EllipticExtension;
 using BoSSS.Solution.LevelSetTools.EllipticReInit;
 using BoSSS.Solution.Timestepping;
 using Newtonsoft.Json;
+using BoSSS.Solution.EnergyCommon;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -437,6 +438,19 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool solveKineticEnergyEquation = false;
 
         /// <summary>
+        /// discretization option for the visocus source terms of the kinetic energy equation
+        /// </summary>
+        [DataMember]
+        public KineticEnergyViscousSourceTerms kinEViscousDiscretization;
+
+        /// <summary>
+        /// discretization option for the pressure source terms of the kinetic energy equation
+        /// </summary>
+        [DataMember]
+        public KineticEnergyPressureSourceTerms kinEPressureDiscretization;
+
+
+        /// <summary>
         /// Block-Precondition for the kinetic-Energy-block
         /// </summary>
         public MultigridOperator.Mode KineticEnergyeBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
@@ -459,6 +473,12 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public bool CheckInterfaceProps = false;
 
+        /// <summary>
+        /// Registers all utility (also energy) fields to IOFields
+        /// </summary>
+        [DataMember]
+        public bool RegisterUtilitiesToIOFields = false;
+        
         /// <summary>
         /// average method for interface values
         /// </summary>

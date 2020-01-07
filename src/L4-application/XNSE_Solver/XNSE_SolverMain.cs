@@ -1105,8 +1105,10 @@ namespace BoSSS.Application.XNSE_Solver {
                             this.prevVel[d].Clear();
                             this.prevVel[d].Acc(1.0, this.CurrentVel[d]);
                         }
-                        //this.prevKineticEnergy.Clear();
-                        //this.prevKineticEnergy.Acc(1.0, this.KineticEnergy);
+                        if (this.Control.ComputeEnergyProperties) {
+                            this.prevKineticEnergy.Clear();
+                            this.prevKineticEnergy.Acc(1.0, this.DerivedKineticEnergy);
+                        }
                     }
 
 

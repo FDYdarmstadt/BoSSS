@@ -104,28 +104,30 @@ namespace BoSSS.Application.XNSE_Solver {
 
             int D = this.GridData.SpatialDimension;
 
+            IOListOption register = (this.Control.RegisterUtilitiesToIOFields) ? IOListOption.Always : IOListOption.ControlFileDetermined;
+
             XDGBasis b = new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.Pressure].Degree);
             this.divVelocity = new XDGField(b, "DivergenceVelocity");
-            base.RegisterField(this.divVelocity);
+            base.RegisterField(this.divVelocity, register);
 
 
             if (this.Control.CheckJumpConditions) {
 
                 Basis basis = new Basis(this.GridData, this.Control.FieldOptions[VariableNames.VelocityX].Degree + (this.Control.FieldOptions[VariableNames.VelocityX].Degree - 1));
                 this.MassBalanceAtInterface = new SinglePhaseField(basis, "MassBalanceAtInterface");
-                base.RegisterField(this.MassBalanceAtInterface);
+                base.RegisterField(this.MassBalanceAtInterface, register);
 
                 basis = new Basis(this.GridData, this.Control.FieldOptions[VariableNames.Pressure].Degree + (this.Control.FieldOptions[VariableNames.VelocityX].Degree - 1));
                 this.MomentumBalanceAtInterface = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(basis, d + "-MomentumBalanceAtInterface")));
-                base.RegisterField(this.MomentumBalanceAtInterface);
+                base.RegisterField(this.MomentumBalanceAtInterface, register);
 
                 basis = new Basis(this.GridData, this.Control.FieldOptions[VariableNames.Pressure].Degree + (this.Control.FieldOptions[VariableNames.VelocityX].Degree - 1));
                 this.SurfaceTensionForce = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(basis, d + "-SurfaceTensionForce")));
-                base.RegisterField(this.SurfaceTensionForce);
+                base.RegisterField(this.SurfaceTensionForce, register);
 
                 basis = new Basis(this.GridData, this.Control.FieldOptions[VariableNames.Pressure].Degree + (this.Control.FieldOptions[VariableNames.VelocityX].Degree - 1) + this.Control.FieldOptions[VariableNames.Pressure].Degree);
                 this.EnergyBalanceAtInterface = new SinglePhaseField(basis, "EnergyBalanceAtInterface");
-                base.RegisterField(this.EnergyBalanceAtInterface);
+                base.RegisterField(this.EnergyBalanceAtInterface, register);
 
             }
 
@@ -149,6 +151,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="TimestepNo"></param>
         private void Preprocessing(int TimestepInt, double phystime, double dt, TimestepNumber TimestepNo) {
 
+
             if (this.Control.CheckInterfaceProps) {
                 double CL_length = this.GetContactLineLength();
                 Console.WriteLine("contact line length = {0}", CL_length);
@@ -156,6 +159,12 @@ namespace BoSSS.Application.XNSE_Solver {
                 double[] props = this.ComputeSphericalPorperties();
                 Console.WriteLine("volume = {0}", props[0]);
                 Console.WriteLine("surface = {0}", props[1]);
+            }
+
+
+            if (this.Control.solveKineticEnergyEquation) {
+                double[] rhoS = new double[] { this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B };
+                EnergyUtils.ProjectKineticEnergy(this.KineticEnergy, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), rhoS, this.m_HMForder);
             }
 
         }
@@ -396,17 +405,20 @@ namespace BoSSS.Application.XNSE_Solver {
                 //double[] rhoS = new double[] { this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B };
                 //EnergyUtils.ProjectKineticEnergy(this.DerivedKineticEnergy, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), rhoS, this.m_HMForder);
 
-                ProjectedKineticEnergy.Acc(1.0, this.PowerOfStresses);
-                ProjectedKineticEnergy.Acc(1.0, this.KineticDissipation);
 
                 // compute generated kinetic energy
                 GeneratedKineticEnergy.Clear();
                 GeneratedKineticEnergy.Acc(1.0, this.DerivedKineticEnergy);
                 GeneratedKineticEnergy.Acc(-1.0, this.KineticEnergy);
-                //GeneratedKineticEnergy.Acc(-1.0, this.ProjectedKineticEnergy);
 
-                //GeneratedKineticEnergy.Acc(1.0, this.PowerOfStresses);
-                //GeneratedKineticEnergy.Acc(1.0, this.KineticDissipation);
+                // compute change rates
+                KineticEnergyChangerate.Clear();
+                KineticEnergyChangerate.Acc(1.0, this.KineticEnergy);
+                KineticEnergyChangerate.Acc(-1.0, this.prevKineticEnergy);
+
+                DerivedKineticEnergyChangerate.Clear();
+                DerivedKineticEnergyChangerate.Acc(1.0, this.DerivedKineticEnergy);
+                DerivedKineticEnergyChangerate.Acc(-1.0, this.prevKineticEnergy);
 
             }
 

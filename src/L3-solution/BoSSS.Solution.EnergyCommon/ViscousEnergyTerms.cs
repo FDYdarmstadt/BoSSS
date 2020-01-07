@@ -369,11 +369,13 @@ namespace BoSSS.Solution.EnergyCommon {
 
         LevelSetTracker m_LsTrk;
 
-        public StressDivergenceAtLevelSet(LevelSetTracker lstrk, double _muA, double _muB) {
+        public StressDivergenceAtLevelSet(LevelSetTracker lstrk, double _muA, double _muB, bool transposed = false) {
             this.m_LsTrk = lstrk;
             this.muA = _muA;
             this.muB = _muB;
             this.m_D = lstrk.GridDat.SpatialDimension;
+
+            transposedTerm = transposed;
         }
 
         double muA;
@@ -381,6 +383,7 @@ namespace BoSSS.Solution.EnergyCommon {
 
         int m_D;
 
+        bool transposedTerm;
 
 
         static double[,] VelocityGradient(double[] GradVelX, double[] GradVelY) {
@@ -414,7 +417,8 @@ namespace BoSSS.Solution.EnergyCommon {
                 //ret += 0.5 * (p_A * Vel_A[d] + p_B * Vel_B[d]) * inp.n[d];  // pressure
                 for (int dd = 0; dd < m_D; dd++) {
                     ret -= 0.5 * (muA * GradVel_A[d, dd] * Vel_A[dd] + muB * GradVel_B[d, dd] * Vel_B[dd]) * inp.n[d];  // gradU
-                    //ret -= 0.5 * (muA * GradVel_A[dd, d] * Vel_A[dd] + muB * GradVel_B[dd, d] * Vel_B[dd]) * inp.n[d];  // gradU transposed
+                    if(transposedTerm)
+                        ret -= 0.5 * (muA * GradVel_A[dd, d] * Vel_A[dd] + muB * GradVel_B[dd, d] * Vel_B[dd]) * inp.n[d];  // gradU transposed
                 }
             }
 

@@ -38,7 +38,7 @@ namespace BoSSS.Solution.EnergyCommon {
         //========================
         #region energy
 
-        public static void AddSpeciesKineticEnergyEquation(XSpatialOperatorMk2 XOp, INSE_Configuration config, int D, string spcName, SpeciesId spcId,
+        public static void AddSpeciesKineticEnergyEquation(XSpatialOperatorMk2 XOp, IEnergy_Configuration config, int D, string spcName, SpeciesId spcId,
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk) {
 
             // check input
@@ -51,6 +51,9 @@ namespace BoSSS.Solution.EnergyCommon {
 
             PhysicalParameters physParams = config.getPhysParams;
             DoNotTouchParameters dntParams = config.getDntParams;
+
+            bool laplaceKinE = (config.getKinEviscousDiscretization == KineticEnergyViscousSourceTerms.laplaceKinE);
+            bool divergenceP = (config.getKinEpressureDiscretization == KineticEnergyPressureSourceTerms.divergence);
 
             // set species arguments
             double rhoSpc, LFFSpc, muSpc;
@@ -81,7 +84,8 @@ namespace BoSSS.Solution.EnergyCommon {
 
                 // Laplace of kinetic energy
                 // =========================
-                {
+                if (laplaceKinE){
+
                     var kELap = new KineticEnergyLaplaceInSpeciesBulk(
                         dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
                         BcMap, spcName, spcId, D, physParams.mu_A, physParams.mu_B);
@@ -98,14 +102,17 @@ namespace BoSSS.Solution.EnergyCommon {
                 // Divergence of stress tensor
                 // ===========================
                 {
-                    comps.Add(new StressDivergenceInSpeciesBulk(D, BcMap, spcName, spcId, muSpc, transposed: false));
-                    //comps.Add(new StressDivergence_Local(D, muSpc, spcId, transposed: true));
+                    if(config.getKinEviscousDiscretization == KineticEnergyViscousSourceTerms.fluxFormulation)
+                        comps.Add(new StressDivergenceInSpeciesBulk(D, BcMap, spcName, spcId, muSpc, transposed: !laplaceKinE));
+
+                    if (config.getKinEviscousDiscretization == KineticEnergyViscousSourceTerms.local)
+                        comps.Add(new StressDivergence_Local(D, muSpc, spcId, transposed: !laplaceKinE));
                 }
 
                 // Dissipation
                 // ===========
                 {
-                    comps.Add(new Dissipation(D, muSpc, spcId, _withPressure: true));
+                    comps.Add(new Dissipation(D, muSpc, spcId, _withPressure: divergenceP));
                 }
 
             }
@@ -114,22 +121,25 @@ namespace BoSSS.Solution.EnergyCommon {
             // =============
             if (config.isPressureGradient) {
 
-                comps.Add(new DivergencePressureEnergyInSpeciesBulk(D, BcMap, spcName, spcId));
-                //comps.Add(new ConvectivePressureTerm_LLF(D, BcMap, spcName, spcId, LFFSpc, LsTrk));
-                //comps.Add(new PressureConvectionInBulk(D, energyBcMap, LFFA, LFFB, LsTrk));
-                //comps.Add(new PressureGradientConvection(D, spcId));
+                if (divergenceP) {
+                    comps.Add(new DivergencePressureEnergyInSpeciesBulk(D, BcMap, spcName, spcId));
+                    //comps.Add(new ConvectivePressureTerm_LLF(D, BcMap, spcName, spcId, LFFSpc, LsTrk));
+                } else {
+                    comps.Add(new PressureGradientConvection(D, spcId));
+                }
+
             }
 
             // gravity (volume forces)
             // =======================
             {
-                //comps.Add(new PowerofGravity(D, spcId, rhoSpc));
+                comps.Add(new PowerofGravity(D, spcId, rhoSpc));
             }
 
 
         }
 
-        public static void AddInterfaceKineticEnergyEquation(XSpatialOperatorMk2 XOp, IXNSE_Configuration config, int D,
+        public static void AddInterfaceKineticEnergyEquation(XSpatialOperatorMk2 XOp, IEnergy_Configuration config, int D,
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, int degU) {
 
             // check input
@@ -142,6 +152,9 @@ namespace BoSSS.Solution.EnergyCommon {
 
             PhysicalParameters physParams = config.getPhysParams;
             DoNotTouchParameters dntParams = config.getDntParams;
+
+            bool laplaceKinE = (config.getKinEviscousDiscretization == KineticEnergyViscousSourceTerms.laplaceKinE);
+            bool divergenceP = (config.getKinEpressureDiscretization == KineticEnergyPressureSourceTerms.divergence);
 
             // set species arguments
             double rhoA = physParams.rho_A;
@@ -169,9 +182,11 @@ namespace BoSSS.Solution.EnergyCommon {
             // =============
             if (config.isViscous && (!(muA == 0.0) && !(muB == 0.0))) {
 
-                comps.Add(new KineticEnergyLaplaceAtInterface(LsTrk, muA, muB, penalty * 1.0));
+                if(laplaceKinE)
+                    comps.Add(new KineticEnergyLaplaceAtInterface(LsTrk, muA, muB, penalty * 1.0));
 
-                comps.Add(new StressDivergenceAtLevelSet(LsTrk, muA, muB));
+                if(config.getKinEviscousDiscretization == KineticEnergyViscousSourceTerms.fluxFormulation)
+                    comps.Add(new StressDivergenceAtLevelSet(LsTrk, muA, muB, transposed: !laplaceKinE));
             }
 
 
@@ -179,8 +194,10 @@ namespace BoSSS.Solution.EnergyCommon {
             // =============
             if (config.isPressureGradient) {
 
-                comps.Add(new DivergencePressureEnergyAtLevelSet(LsTrk));
-                //comps.Add(new ConvectivePressureTermAtLevelSet_LLF(D, LsTrk, LFFA, LFFB, physParams.Material, BcMap, config.isMovingMesh));
+                if (divergenceP) {
+                    comps.Add(new DivergencePressureEnergyAtLevelSet(LsTrk));
+                    //comps.Add(new ConvectivePressureTermAtLevelSet_LLF(D, LsTrk, LFFA, LFFB, physParams.Material, BcMap, config.isMovingMesh));
+                }
             }
 
             // surface energy
@@ -191,7 +208,49 @@ namespace BoSSS.Solution.EnergyCommon {
 
         }
 
-        #endregion
+        #endregion       
+
+    }
+
+    public interface IEnergy_Configuration : IXNSE_Configuration {
+
+        KineticEnergyViscousSourceTerms getKinEviscousDiscretization { get; }
+
+        KineticEnergyPressureSourceTerms getKinEpressureDiscretization { get; }
+
+    }
+
+
+    public enum KineticEnergyViscousSourceTerms {
+
+        /// <summary>
+        /// all source terms are evaluated locally
+        /// </summary>
+        local,
+
+        /// <summary>
+        /// source terms in divergence form are discretized over the flux formulation
+        /// </summary>
+        fluxFormulation,
+
+        /// <summary>
+        /// the transposed stress divergncee term is rewritten with respect to the kinetic energy
+        /// </summary>
+        laplaceKinE
+
+    }
+
+    public enum KineticEnergyPressureSourceTerms {
+
+        /// <summary>
+        /// all source terms are evaluated locally
+        /// </summary>
+        divergence,
+
+        /// <summary>
+        /// source terms in divergence form are discretized over the flux formulation
+        /// </summary>
+        convectiveGradP
 
     }
 

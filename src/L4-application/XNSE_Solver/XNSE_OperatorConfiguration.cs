@@ -25,11 +25,12 @@ using ilPSP.Utils;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XheatCommon;
 using BoSSS.Solution.XNSECommon;
+using BoSSS.Solution.EnergyCommon;
 
 
 namespace BoSSS.Application.XNSE_Solver {
 
-    public class XNSE_OperatorConfiguration : IXNSE_Configuration {
+    public class XNSE_OperatorConfiguration : IEnergy_Configuration {
 
         public XNSE_OperatorConfiguration() {}
 
@@ -75,6 +76,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 default:
                     throw new NotImplementedException();
             }
+
+
+            kinEviscous = control.kinEViscousDiscretization;
+            kinEpressure = control.kinEPressureDiscretization;
+
         }
 
 
@@ -158,6 +164,17 @@ namespace BoSSS.Application.XNSE_Solver {
         public MassMatrixShapeandDependence mmsd;
 
 
+        /// <summary>
+        /// option for the discretization of the viscous kinetic energy source terms
+        /// </summary>
+        public KineticEnergyViscousSourceTerms kinEviscous;
+
+        /// <summary>
+        /// option for the discretization of the pressure kinetic energy source terms
+        /// </summary>
+        public KineticEnergyPressureSourceTerms kinEpressure;
+
+
         // getter for interface
         // ====================
 
@@ -210,6 +227,16 @@ namespace BoSSS.Application.XNSE_Solver {
         public virtual bool isPInterfaceSet {
             get { return false; }
         }
+
+
+        public virtual KineticEnergyViscousSourceTerms getKinEviscousDiscretization {
+            get { return kinEviscous; }
+        }
+
+        public virtual KineticEnergyPressureSourceTerms getKinEpressureDiscretization {
+            get { return kinEpressure; }
+        }
+
     }
 
 
