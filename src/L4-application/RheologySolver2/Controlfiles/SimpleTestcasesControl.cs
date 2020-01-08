@@ -61,6 +61,7 @@ namespace BoSSS.Application.Rheology
 
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver.TargetBlockSize = 100;
             C.NonLinearSolver.verbose = true;
             C.LinearSolver.verbose = true;
 

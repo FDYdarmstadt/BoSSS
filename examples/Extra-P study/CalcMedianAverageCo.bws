@@ -1,0 +1,278 @@
+restart
+**************
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 2 instances of IDatabaseInfo {
+  0: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+  1: { Session Count = 0; Grid Count = 2; Path = V:\Test4Anne\DB_Rheology }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+var DB = OpenOrCreateDatabase(@"V:\SyncHHLR\DB_Cube_3");
+**************
+Opening existing database 'V:\SyncHHLR\DB_Cube_3'.
+
+==============
+using ilPSP.Tracing;
+**************
+(1,2): warning CS0105: The using directive for `ilPSP.Tracing' appeared previously in this namespace
+No. of errors|warnings: 0|1.
+
+==============
+DB.Sessions.Pick(0).KeysAndQueries["Grid:NoOfCells"]
+**************
+26214400
+==============
+static class AddCols {
+
+    static public double _getTimeAverage(ISessionInfo SI, string method, bool exclusive){
+                    double sumoftime  = 0.0;
+                    //double sumofcount = 0.0;
+                    var mcr           = SI.GetProfiling();
+
+                    for (int j = 0; j < mcr.Count(); j++) {
+                    try{
+                        //value = mcr[j].FindChild(method);
+                        //if (value == null) {
+                        //    value = mcr[j];
+                        //}
+                        if (exclusive) {
+                            mcr[j].FindChildren(method).ForEach(s => sumoftime+=s.TimeExclusive.TotalSeconds);
+                        } else {
+                            mcr[j].FindChildren(method).ForEach(s => sumoftime+=s.TimeSpentInMethod.TotalSeconds);
+                        }
+                        //mcr[j].FindChildren(method).ForEach(s => sumofcount+=s.CallCount);
+                    } catch(Exception e){
+                        //Console.WriteLine("count: "+mcr.Count());
+                        //Console.WriteLine(e);
+                        Console.WriteLine(SI.Name);
+                        Console.WriteLine(SI.ID);
+                        Console.WriteLine(e.Message);
+                    }
+                        
+                    }
+                    
+        return sumoftime/mcr.Count();
+        
+    }
+    static public double _getTimeMedian(ISessionInfo SI, string method, bool exclusive){
+                    var mcr          = SI.GetProfiling();
+                    bool even        = (mcr.Count() % 2 == 0);
+                    double[] times   = new double[mcr.Count()];
+                    double median = double.MaxValue;
+                    
+                    for (int j = 0; j < mcr.Count(); j++) {
+                    try{
+                        //value = mcr[j].FindChild(method);
+                        //if (value == null) {
+                        //    value = mcr[j];
+                        //}
+                        times[j]=0.0;
+                        if (exclusive) {
+                            mcr[j].FindChildren(method).ForEach(s => times[j]+=s.TimeExclusive.TotalSeconds);
+                        } else {
+                            mcr[j].FindChildren(method).ForEach(s => times[j]+=s.TimeSpentInMethod.TotalSeconds);   
+                        }
+                        //value.FindChildren(method).OrderByDescending(s => s.TimeSpentInMethod.TotalSeconds).Pick(occurence-1).TimeSpentInMethod.TotalSeconds;   
+                    } catch(Exception e){
+                        //Console.WriteLine("count: "+mcr.Count());
+                        //Console.WriteLine(e);
+                        Console.WriteLine(SI.Name);
+                        Console.WriteLine(SI.ID);
+                        Console.WriteLine(e.Message);
+                    }
+                    }
+                    times.OrderBy(t => t);
+                if(even){
+                    median = (times[mcr.Count()/2-1]+times[mcr.Count()/2])/2;
+                    //Console.WriteLine(mcr.Count()/2);
+                } else {
+                    median = times[Convert.ToInt32(mcr.Count()/2)];     
+                    //Console.WriteLine(Convert.ToInt32(mcr.Count()/2)-1);  
+                }
+        return median;
+        
+    }
+    //Average
+    static public object MomentumFluxAverage(ISessionInfo SI) {
+        return (double)_getTimeAverage(SI,"Flux-Eval:OptimizedHLLCMomentumFlux:BoSSS.Solution.CompressibleFlowCommon.Convection.OptimizedHLLCMomentumFlux",false);
+    }
+    //Median
+    static public object MomentumFluxMedian(ISessionInfo SI){
+        return (double)_getTimeMedian(SI,"Flux-Eval:OptimizedHLLCMomentumFlux:BoSSS.Solution.CompressibleFlowCommon.Convection.OptimizedHLLCMomentumFlux",false);
+    }
+    static public object NoOfCores(ISessionInfo SI){
+        return (int)SI.GetProfiling().Count();
+    }
+    static public object CellsPerCore(ISessionInfo SI){
+        return (int)(Convert.ToInt32(SI.KeysAndQueries["Grid:NoOfCells"])/SI.GetProfiling().Count());
+    }
+    static public object Ratio(ISessionInfo SI){
+        string method = "Flux-Eval:OptimizedHLLCMomentumFlux:BoSSS.Solution.CompressibleFlowCommon.Convection.OptimizedHLLCMomentumFlux";
+        return (_getTimeMedian(SI,method,false)-_getTimeAverage(SI,method,false))/_getTimeAverage(SI,method,false);
+    }
+}
+**************
+==============
+var newcols = new List<Tuple<string, Func<ISessionInfo, object>>>();
+newcols.Add(new Tuple<string, Func<ISessionInfo, object>>("MomentumFluxAverage",AddCols.MomentumFluxAverage));
+newcols.Add(new Tuple<string, Func<ISessionInfo, object>>("MomentumFluxMedian",AddCols.MomentumFluxMedian));
+newcols.Add(new Tuple<string, Func<ISessionInfo, object>>("NoOfCores",AddCols.NoOfCores));
+newcols.Add(new Tuple<string, Func<ISessionInfo, object>>("CellsPerCore",AddCols.CellsPerCore));
+newcols.Add(new Tuple<string, Func<ISessionInfo, object>>("Ratio",AddCols.Ratio));
+var colarray = newcols.ToArray();
+**************
+==============
+var Tab = DB.Sessions.GetSessionTable(colarray);
+**************
+==============
+Tab.GetColumnNames();
+**************
+List of 98 instances of String {
+  0: SessionName
+  1: DGdegree:rho
+  2: DGdegree:m0
+  3: DGdegree:m1
+  4: DGdegree:rhoE
+  5: DGdegree:mpiRank
+  6: DGdegree:sensor
+  7: DGdegree:artificialViscosity
+  8: Bndtype:SupersonicInlet
+  9: Bndtype:SupersonicOutlet
+  10: Bndtype:AdiabaticSlipWall
+  11: DensityDegree
+  12: MomentumDegree
+  13: EnergyDegree
+  14: VariableToDegreeMap[0].Key.Name
+  15: VariableToDegreeMap[0].Key.Type
+  16: VariableToDegreeMap[0].Value
+  17: VariableToDegreeMap[1].Key.Name
+  18: VariableToDegreeMap[1].Key.Type
+  19: VariableToDegreeMap[1].Value
+  20: VariableToDegreeMap[2].Key.Name
+  21: VariableToDegreeMap[2].Key.Type
+  22: VariableToDegreeMap[2].Value
+  23: VariableToDegreeMap[3].Key.Name
+  24: VariableToDegreeMap[3].Key.Type
+  25: VariableToDegreeMap[3].Value
+  26: VariableToDegreeMap[4].Key.Name
+  27: VariableToDegreeMap[4].Key.Type
+  28: VariableToDegreeMap[4].Value
+  29: VariableToDegreeMap[5].Key.Name
+  30: VariableToDegreeMap[5].Key.Type
+  31: VariableToDegreeMap[5].Value
+  32: VariableToDegreeMap[6].Key.Name
+  33: VariableToDegreeMap[6].Key.Type
+  34: VariableToDegreeMap[6].Value
+  35: GeneratedFromCode
+  36: ControlFileText_Index
+  37: NoOfMultigridLevels
+  38: dtFixed
+  39: TimesteppingMode
+  40: CFLFraction
+  41: DomainType
+  42: ActiveOperators
+  43: ConvectiveFluxType
+  44: DiffusiveFluxType
+  45: ExplicitScheme
+  46: ExplicitOrder
+  47: NumberOfSubGrids
+  48: ReclusteringInterval
+  49: forceReclustering
+  50: FluxCorrection
+  51: SIPGPenaltyScaling
+  52: ResidualLoggerType
+  53: ResidualInterval
+  54: FixedPointDamping
+  55: maxNumOfSubSteps
+  56: WriteLTSLog
+  57: WriteLTSConsoleOutput
+  58: EquationOfState.HeatCapacityRatio
+  59: MachNumber
+  60: ReynoldsNumber
+  61: PrandtlNumber
+  62: FroudeNumber
+  63: ViscosityRatio
+  64: PrintInterval
+  65: GridPartType
+  66: GridPartOptions
+  67: ProjectName
+  68: NoOfTimesteps
+  69: Endtime
+  70: saveperiod
+  71: rollingSaves
+  72: dtMin
+  73: dtMax
+  74: ImmediatePlotPeriod
+  75: SuperSampling
+  76: savetodb
+  77: logFileDirectory
+  78: Paramstudy_ContinueOnError
+  79: DynamicLoadBalancing_RedistributeAtStartup
+  80: DynamicLoadBalancing_Period
+  81: DynamicLoadBalancing_ImbalanceThreshold
+  82: DynamicLoadBalancing_On
+  83: AdaptiveMeshRefinement
+  84: AMR_startUpSweeps
+  85: CutCellQuadratureType
+  86: ContinueOnIoError
+  87: Grid:NoOfCells
+  88: Grid:hMax
+  89: Grid:hMin
+  90: UsedNoOfMultigridLevels
+  91: Session
+  92: RegularTerminated
+  93: MomentumFluxAverage
+  94: MomentumFluxMedian
+  95: NoOfCores
+  96: CellsPerCore
+  97: Ratio
+}
+==============
+var tmp                        = Tab.ExtractColumns("MomentumFluxAverage","MomentumFluxMedian","Ratio","NoOfCores", "CellsPerCore");
+System.Data.DataView dv        = tmp.DefaultView;
+dv.Sort                        = "NoOfCores,CellsPerCore";
+System.Data.DataTable sortedDT = dv.ToTable();
+sortedDT.Print();
+**************
+    MomentumFluxAverage MomentumFluxMedian Ratio                NoOfCores CellsPerCore 
+0:  1.001073525         1.01458155         0.0134935393481712   4         1600         
+1:  3.938831125         3.9305238          -0.0021090838211551  4         6400         
+2:  13.813872125        13.8430018         0.00210872626707481  4         25600        
+3:  53.89847995         53.87158005        -0.00049908457576091 4         102400       
+4:  217.500416275       220.83217805       0.0153184156244898   4         409600       
+5:  1.00378115          1.00197485         -0.00179949583631843 8         1600         
+6:  3.8413865625        3.7916049          -0.012959295215424   8         6400         
+7:  14.3897630375       14.3156863         -0.00514787750895932 8         25600        
+8:  13.789115825        13.7054919         -0.00606448782222755 8         25600        
+9:  53.612353475        53.20251075        -0.00764455761471289 8         102400       
+10: 216.83310195        217.20629495       0.00172110714020968  8         409600       
+11: 1.02651125          1.06034915         0.0329639835900483   16        1600         
+12: 3.958961775         4.07594025         0.0295477657144091   16        6400         
+13: 15.113304175        15.4929536         0.0251202133301869   16        25600        
+14: 56.92178091875      57.2578926         0.00590479910896956  16        102400       
+15: 216.3396882         212.6414878        -0.0170944149488704  16        409600       
+16: 0.96856354375       1.0433763          0.0772409376057524   32        1600         
+17: 3.801520984375      3.94966845         0.0389705768385641   32        6400         
+18: 14.513621815625     15.0190863         0.0348269019818908   32        25600        
+19: 54.333222828125     54.4388487         0.00194403840554665  32        102400       
+20: 0.9446914921875     0.9628787          0.0192520076267294   64        1600         
+21: 3.727519378125      3.7098573          -0.00473829277150096 64        6400         
+22: 14.013631828125     13.5446594         -0.0334654452091272  64        25600        
+23: 56.2878863515625    53.0420239         -0.0576653817002392  64        102400       
+24: 220.132072139062    220.8785662        0.00339111903905541  64        409600       
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

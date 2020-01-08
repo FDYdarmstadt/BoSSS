@@ -335,8 +335,7 @@ namespace BoSSS.Solution.NSECommon {
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double Acc = 0;
             double Diffusivity;
-            double rho = 0.0;
-            rho = EoS.GetDensity(cpv.Parameters);
+            double rho = EoS.GetDensity(cpv.Parameters);
             switch (Mode) {
                 case DiffusionMode.Temperature:
                     Diffusivity = ((MaterialLawLowMach)EoS).GetHeatConductivity(cpv.Parameters[0]);

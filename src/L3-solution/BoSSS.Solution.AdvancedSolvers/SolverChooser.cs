@@ -556,16 +556,14 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.classic_mumps:
                     templinearSolve = new SparseSolver() {
                         WhichSolver = SparseSolver._whichSolver.MUMPS,
-                        LinConfig = lc,
-                        TestSolution = false
+                        LinConfig = lc
                     };
                     break;
 
                 case LinearSolverCode.classic_pardiso:
                     templinearSolve = new SparseSolver() {
                         WhichSolver = SparseSolver._whichSolver.PARDISO,
-                        LinConfig = lc,
-                        TestSolution = false
+                        LinConfig = lc
                     };
                     break;
 
@@ -628,8 +626,7 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_softgmres:
 
                     templinearSolve = new SoftGMRES() {
-                        MaxKrylovDim = lc.MaxKrylovDim,
-                        m_Tolerance = lc.ConvergenceCriterion,
+                        MaxKrylovDim = lc.MaxKrylovDim
                     };
                     break;
 
@@ -835,6 +832,10 @@ namespace BoSSS.Solution {
                     templinearSolve = KcycleMultiSchwarz(lc, LocalDOF);
                     break;
 
+                case LinearSolverCode.exp_Kcycle_schwarz_4Rheology:
+                    templinearSolve = KcycleMultiSchwarz_4Rheology(lc, LocalDOF);
+                    break;
+
                 case LinearSolverCode.exp_gmres_levelpmg:
                     templinearSolve = new SoftGMRES() {
                         m_Tolerance = lc.ConvergenceCriterion,
@@ -915,7 +916,29 @@ namespace BoSSS.Solution {
 #if DEBUG
             Console.WriteLine("linear Solver: {0}", lc.SolverCode.ToString());
 #endif
-            Check_linsolver();
+
+            if(templinearSolve is IProgrammableTermination pt) {
+
+                 // delegate to stop linear solver convergence
+                bool LinearConvergence(int iter, double r0_l2, double r_l2) {
+                    if (iter <= lc.MinSolverIterations)
+                        return true;
+
+                    if (iter > lc.MaxSolverIterations)
+                        return false;
+
+                    if (r_l2 < lc.ConvergenceCriterion)
+                        return false; // terminate
+
+                    return true; // keep running
+                }
+
+
+                pt.TerminationCriterion = LinearConvergence;
+            }
+
+
+
             return templinearSolve;
         }
 
@@ -1155,7 +1178,8 @@ namespace BoSSS.Solution {
 
                             tempsolve = new SoftGMRES() {
                                 MaxKrylovDim = lc.MaxKrylovDim,
-                                m_Tolerance = lc.ConvergenceCriterion,
+                                //m_Tolerance = lc.ConvergenceCriterion,
+                                TerminationCriterion = ((iter, r0_l2, r_l2) => r_l2 > lc.ConvergenceCriterion && iter < lc.MaxSolverIterations),
                                 Precond = new Schwarz() {
                                     m_BlockingStrategy = new Schwarz.SimpleBlocking() {
                                         NoOfPartsPerProcess = (int)Math.Ceiling(dofsLoc / 6500.0),
@@ -1433,8 +1457,7 @@ namespace BoSSS.Solution {
                     ISolverSmootherTemplate[] newprechain = new ISolverSmootherTemplate[prechain.Length];
 
                     ClassicMultigrid MgLevel = new ClassicMultigrid() {
-                        m_MaxIterations = 1,
-                        m_Tolerance = 0.0 // termination controlled by top level PCG
+                        TerminationCriterion = ((iter, r0_l2, r_l2) => iter <= 1) // termination controlled by top level PCG
                     };
 
                     ((ISolverWithCallback)MgLevel).IterationCallback += MultigridCallback;
@@ -1510,8 +1533,7 @@ namespace BoSSS.Solution {
                 } else {
 
                     ClassicMultigrid MgLevel = new ClassicMultigrid() {
-                        m_MaxIterations = 1,
-                        m_Tolerance = 0.0 // termination controlled by top level PCG
+                        TerminationCriterion = ((iter, r0_l2, r_l2) => iter <= 1) // termination controlled by top level PCG
                     };
 
                     MultigridChain[iLevel] = MgLevel;
@@ -1520,7 +1542,7 @@ namespace BoSSS.Solution {
                     if (iLevel > 0) {
 
                         Schwarz swz1 = new Schwarz() {
-                            m_MaxIterations = 1,
+                            FixedNoOfIterations = 1,
                             CoarseSolver = null,
                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                                 NoOfPartsPerProcess = NoOfBlocks
@@ -1529,13 +1551,11 @@ namespace BoSSS.Solution {
                         };
                         
                         SoftPCG pcg1 = new SoftPCG() {
-                            m_MinIterations = 5,
-                            m_MaxIterations = 5
+                            TerminationCriterion = ((iter, r0_l2, r_l2) => iter <= 5)
                         };
 
                         SoftPCG pcg2 = new SoftPCG() {
-                            m_MinIterations = 5,
-                            m_MaxIterations = 5
+                            TerminationCriterion = ((iter, r0_l2, r_l2) => iter <= 5)
                         };
 
                         SetLinItCallback(swz1, IsLinPrecond: true);
@@ -1673,16 +1693,11 @@ namespace BoSSS.Solution {
 
                 
                 bool useDirect = false;
-                //useDirect |= (SysSize < DirectKickIn);
+                useDirect |= (SysSize < DirectKickIn);
                 //useDirect |= iLevel == _lc.NoOfMultigridLevels - 1; // 
                 useDirect |= NoOfBlocks.MPISum() <= 1;
-                
-                //if (iLevel == 0) {
-                //    useDirect = false;
-                //    NoOfBlocks = 3;
-                //} else {
-                //    useDirect = true;
-                //}
+
+                NoOfBlocks = Math.Max(1, NoOfBlocks); // ensure at least 1 block per MPI core, if direct solver isn't used
                 
                 if (useDirect)
                     Console.WriteLine("   KcycleMultiSchwarz: lv {0}, Direct solver ", iLevel);
@@ -1698,7 +1713,7 @@ namespace BoSSS.Solution {
                 } else {
 
                     var smoother1 = new Schwarz() {
-                        m_MaxIterations = 1,
+                        FixedNoOfIterations = 1,
                         CoarseSolver = null,
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsPerProcess = NoOfBlocks
@@ -1710,43 +1725,22 @@ namespace BoSSS.Solution {
                         EnableOverlapScaling = true,
                         UsePMGinBlocks = false
                     };
-
-                    /*
-                    var smoother2 = new Schwarz() {
-                        m_MaxIterations = 1,
-                        CoarseSolver = null,
-                        //m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                        //    NoOfPartsPerProcess = NoOfBlocks
-                        //},
-                        m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-                            Depth = 2
-                        },
-                        Overlap = 0, // overlap seems to help; more overlap seems to help more
-                        EnableOverlapScaling = true,
-                        UsePMGinBlocks = true
-                    };
-                    */
-
-                    //var smoother2 = new BlockJacobi() {
-                    //    NoOfIterations = 2,
-                    //    m_Tolerance = 0
-                    //};
-
-                   
                     
 
                     levelSolver = new OrthonormalizationMultigrid() {
-                        m_MaxIterations = iLevel == 0 ? _lc.MaxSolverIterations : 1,
                         PreSmoother = smoother1,
                         PostSmoother = smoother1,
-                        Tolerance = iLevel == 0 ? _lc.ConvergenceCriterion : 0.0
                     };
+
+                    if(iLevel > 0) {
+                        ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= 1;
+                    }
 
 
                     ((OrthonormalizationMultigrid)levelSolver).IterationCallback =
                         delegate (int iter, double[] X, double[] Res, MultigridOperator op) {
                             double renorm = Res.MPI_L2Norm();
-                            Console.WriteLine("      OrthoMg: " + renorm);
+                            Console.WriteLine("      OrthoMg " +iter  + " : " + renorm);
                         };
 
 
@@ -1778,7 +1772,128 @@ namespace BoSSS.Solution {
             SolverChain.Add(S);
             */
 
+
             return SolverChain[0];
         }
+
+
+        ISolverSmootherTemplate KcycleMultiSchwarz_4Rheology(LinearSolverConfig _lc, int[] _LocalDOF) {
+
+            // my tests show that the ideal block size may be around 10'000
+            int DirectKickIn = _lc.TargetBlockSize;
+
+            //MultigridOperator Current = op;
+            var SolverChain = new List<ISolverSmootherTemplate>();
+
+
+            Console.WriteLine("experimental MG configuration for rheology");
+
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPIsize);
+
+            for (int iLevel = 0; iLevel < _lc.NoOfMultigridLevels; iLevel++) {
+                int SysSize = _LocalDOF[iLevel].MPISum();
+                int NoOfBlocks = (int)Math.Ceiling(((double)SysSize) / ((double)DirectKickIn));
+
+                bool useDirect = false;
+                //useDirect |= (SysSize < DirectKickIn);
+                useDirect |= NoOfBlocks.MPISum() <= 1;
+
+                if (iLevel == 0) {
+                    useDirect = false;
+                    NoOfBlocks = 8 / MPIsize;
+                } else {
+                    break;
+                    useDirect = true;
+                }
+
+                if (useDirect)
+                    Console.WriteLine("   KcycleMultiSchwarz: lv {0}, Direct solver ", iLevel);
+                else
+                    Console.WriteLine("   KcycleMultiSchwarz: lv {0}, no of blocks {1} : ", iLevel, NoOfBlocks);
+
+                ISolverSmootherTemplate levelSolver;
+                if (useDirect) {
+                    levelSolver = new SparseSolver() {
+                        WhichSolver = SparseSolver._whichSolver.PARDISO,
+                        TestSolution = false
+                    };
+                } else {
+
+                   
+                    var smoother1 = new Schwarz() {
+                        FixedNoOfIterations = 1,
+                        CoarseSolver = null,
+                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                            NoOfPartsPerProcess = NoOfBlocks
+                        },
+                        //m_BlockingStrategy = new Schwarz.MultigridBlocks() {
+                        //    Depth = 1
+                        //},
+                        Overlap = 2, 
+                        EnableOverlapScaling = false,
+                        UsePMGinBlocks = false
+                    };
+
+                   
+                    var smoother2 = smoother1;
+                    /*
+                    var smoother2 = new Schwarz() {
+                        FixedNoOfIterations = 1,
+                        CoarseSolver = null,
+                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy {
+                            NoOfPartsPerProcess = NoOfBlocks * 2
+                        },
+                        Overlap = 2,
+                        EnableOverlapScaling = false,
+                        UsePMGinBlocks = false
+                    };
+                    */
+
+                    var CoarseSolver = new LevelPmg() {
+                        UseHiOrderSmoothing = false,
+                        CoarseLowOrder = 1
+                    };
+
+
+                    levelSolver = new OrthonormalizationMultigrid() {
+                        PreSmoother = smoother1,
+                        PostSmoother = smoother2,
+                        CoarserLevelSolver = CoarseSolver
+                    };
+
+                    if (iLevel > 0) {
+                        ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= 1;
+                    }
+
+
+                    ((OrthonormalizationMultigrid)levelSolver).IterationCallback =
+                        delegate (int iter, double[] X, double[] Res, MultigridOperator op) {
+                            double renorm = Res.MPI_L2Norm();
+                            Console.WriteLine("      OrthoMg " + iter + " : " + renorm);
+                        };
+
+
+                }
+                SolverChain.Add(levelSolver);
+
+                if (iLevel > 0) {
+
+                    ((OrthonormalizationMultigrid)(SolverChain[iLevel - 1])).CoarserLevelSolver = levelSolver;
+
+                }
+
+                if (useDirect) {
+                    Console.WriteLine("Kswz: using {0} levels, lowest level DOF is {1}, target size is {2}.", iLevel + 1, SysSize, DirectKickIn);
+                    break;
+                }
+
+                //Current = Current.CoarserLevel;
+            }
+
+
+
+            return SolverChain[0];
+        }
+
     }
 }

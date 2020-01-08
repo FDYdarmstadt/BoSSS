@@ -16,6 +16,7 @@ limitations under the License.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using ilPSP.Utils;
@@ -58,7 +59,8 @@ namespace ilPSP {
         public static double RelErrorTo(this double a, double b) {
             double errTot = Math.Abs(a - b);
             double denom = Math.Max(Math.Abs(a), Math.Abs(b));
-            denom = Math.Max(denom, double.MinValue * 10);
+            denom = Math.Max(denom, double.Epsilon * 10);
+            Debug.Assert(denom > 0);
             return errTot / denom;
         }
 
@@ -67,7 +69,7 @@ namespace ilPSP {
         /// </summary>
         public static bool RelErrorSmallerEps(this double a, double b, double mag = 1000) {
             double errRel = a.RelErrorTo(b);
-            return errRel < BLAS.MachineEps*mag;
+            return errRel < BLAS.MachineEps * mag;
         }
 
 
@@ -93,7 +95,7 @@ namespace ilPSP {
         /// Heaviside
         /// </summary>
         public static int Heaviside(this double d) {
-            if (d>0)
+            if (d > 0)
                 return 1;
             else
                 return 0;
@@ -222,7 +224,7 @@ namespace ilPSP {
         /// normalizes some vector 
         /// </summary>
         public static T Normalize<T>(this T vec) where T : IList<double> {
-            double ooN = 1.0/GenericBlas.L2Norm(vec);
+            double ooN = 1.0 / GenericBlas.L2Norm(vec);
             int N = vec.Count;
             for (int i = 0; i < N; i++) vec[i] *= ooN;
             return vec;
@@ -521,9 +523,9 @@ namespace ilPSP {
         }
 
 
-       
 
-        
+
+
 
     }
 }

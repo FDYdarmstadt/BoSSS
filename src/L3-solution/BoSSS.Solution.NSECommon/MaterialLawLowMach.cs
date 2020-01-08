@@ -22,6 +22,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using BoSSS.Foundation;
 using ilPSP;
+using NUnit.Framework;
 
 namespace BoSSS.Solution.NSECommon {
 
@@ -120,13 +121,15 @@ namespace BoSSS.Solution.NSECommon {
         /// Density
         /// </returns>
         public override double GetDensity(params double[] phi) {
-            if (IsInitialized) {
-                double rho;
-                if(!rhoOne) {//                
-  //rho = ThermodynamicPressureValue / phi[0];
-                    rho = ThermodynamicPressure.Current.GetMeanValue(0)/phi[0];
-                }
-                else {
+            if(IsInitialized) {
+                Debug.Assert(phi[0] > 0);
+
+                double rho;             
+                rho = ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];    //rho = ThermodynamicPressureValue / phi[0];
+                Debug.Assert(!double.IsNaN(rho));
+                Debug.Assert(!double.IsInfinity(rho));
+
+                if(rhoOne) {
                     rho = 1.0;
                 }
                 return rho;
