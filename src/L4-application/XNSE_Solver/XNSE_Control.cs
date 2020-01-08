@@ -449,6 +449,11 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public KineticEnergyPressureSourceTerms kinEPressureDiscretization;
 
+        /// <summary>
+        /// switch for the pressure term in the Dissipation term
+        /// </summary>
+        [DataMember]
+        public bool withDissipativePressure;
 
         /// <summary>
         /// Block-Precondition for the kinetic-Energy-block

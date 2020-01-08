@@ -112,7 +112,7 @@ namespace BoSSS.Solution.EnergyCommon {
                 // Dissipation
                 // ===========
                 {
-                    comps.Add(new Dissipation(D, muSpc, spcId, _withPressure: divergenceP));
+                    comps.Add(new Dissipation(D, muSpc, spcId, _withPressure: config.withPressureDissipation));
                 }
 
             }
@@ -218,6 +218,8 @@ namespace BoSSS.Solution.EnergyCommon {
 
         KineticEnergyPressureSourceTerms getKinEpressureDiscretization { get; }
 
+        bool withPressureDissipation { get; }
+
     }
 
 
@@ -243,12 +245,12 @@ namespace BoSSS.Solution.EnergyCommon {
     public enum KineticEnergyPressureSourceTerms {
 
         /// <summary>
-        /// all source terms are evaluated locally
+        /// the divergence of the convective pressure term is discretized in flux formulation
         /// </summary>
         divergence,
 
         /// <summary>
-        /// source terms in divergence form are discretized over the flux formulation
+        /// only the convective pressure gradient is discretized locally
         /// </summary>
         convectiveGradP
 

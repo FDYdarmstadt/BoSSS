@@ -80,6 +80,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             kinEviscous = control.kinEViscousDiscretization;
             kinEpressure = control.kinEPressureDiscretization;
+            withDissP = control.withDissipativePressure;
 
         }
 
@@ -174,6 +175,11 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public KineticEnergyPressureSourceTerms kinEpressure;
 
+        /// <summary>
+        /// adds a locally discretized dissipation term regarding pressure
+        /// </summary>
+        public bool withDissP;
+
 
         // getter for interface
         // ====================
@@ -235,6 +241,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public virtual KineticEnergyPressureSourceTerms getKinEpressureDiscretization {
             get { return kinEpressure; }
+        }
+
+        public virtual bool withPressureDissipation {
+            get { return withDissP; }
         }
 
     }
