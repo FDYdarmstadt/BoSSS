@@ -138,6 +138,7 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         exp_softpcg_schwarz_directcoarse = 44,
 
+        exp_softpcg_jacobi_mg=45,
 
         /// <summary>
         /// Conjugate gradient with Schwarz and multigrid.

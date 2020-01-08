@@ -257,7 +257,7 @@ namespace BoSSS.Solution {
 
                 int d = MgSeq[iLevel].SpatialDimension;
                 foreach (var variable in MgOpConfig[counter]) {
-                    int p = variable.Degree;
+                    int p = variable.DegreeS[0];
                     switch (d) {
                         case 1:
                             DOFperCell[iLevel] += p + 1 + p + 1;
@@ -346,7 +346,7 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_softpcg_schwarz:
 
                     precond[0] = new Schwarz() {
-                        m_MaxIterations = 1,
+                        FixedNoOfIterations = 1,
                         CoarseSolver = null,
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy {
                             NoOfPartsPerProcess = NoOfBlocks
@@ -358,7 +358,6 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_softpcg_schwarz_directcoarse:
 
                     precond[0] = new Schwarz() {
-                        m_MaxIterations = 1,
                         CoarseSolver = new SparseSolver() {
                             WhichSolver = SparseSolver._whichSolver.MUMPS
                         },
@@ -375,7 +374,6 @@ namespace BoSSS.Solution {
 
                 case LinearSolverCode.exp_gmres_schwarz_pmg:
                     precond[0] = new Schwarz() {
-                        m_MaxIterations = 1,
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsPerProcess = NoOfBlocks
                         },
@@ -391,15 +389,13 @@ namespace BoSSS.Solution {
 
                     ISolverSmootherTemplate[] _prechain = new ISolverSmootherTemplate[] {
                         new SoftPCG() {
-                             m_MaxIterations = 5,
-                             m_MinIterations = 5,
+                             NoOfIterations = 5,
                         }
                     };
 
                     ISolverSmootherTemplate[] _postchain = new ISolverSmootherTemplate[]{
                         new SoftPCG() {
-                             m_MaxIterations = 5,
-                             m_MinIterations = 5,
+                             NoOfIterations = 5,
                         }
                     };
 
@@ -418,7 +414,7 @@ namespace BoSSS.Solution {
 
                 case LinearSolverCode.exp_softpcg_schwarz_mg:
                     precond[0] = new Schwarz() {
-                        m_MaxIterations = 1,
+                        FixedNoOfIterations = 1,
                         CoarseSolver = new SparseSolver() {
                             WhichSolver = SparseSolver._whichSolver.MUMPS,
                             LinConfig = lc
@@ -430,6 +426,9 @@ namespace BoSSS.Solution {
                     };
                     break;
 
+                case LinearSolverCode.exp_softpcg_mg:
+                    precond[0] = SpecialMultilevelSchwarz(lc, LocalDOF, MultigridSeqLength, MultigridOperatorConfig);
+                    break;
                 case LinearSolverCode.exp_OrthoS_pMG:
                     precond = new ISolverSmootherTemplate[]{
                             new LevelPmg() {
@@ -438,7 +437,7 @@ namespace BoSSS.Solution {
                             },
 
                             new Schwarz() {
-                                m_MaxIterations = 1,
+                                FixedNoOfIterations = 1,
                                 CoarseSolver = null,
                                 Overlap=1,
                                 m_BlockingStrategy = new Schwarz.METISBlockingStrategy()          {
@@ -634,7 +633,7 @@ namespace BoSSS.Solution {
 
                     templinearSolve = new SoftGMRES() {
                         MaxKrylovDim = lc.MaxKrylovDim,
-                        m_Tolerance = lc.ConvergenceCriterion,
+                        //m_Tolerance = lc.ConvergenceCriterion,
                         Precond = precond[0],
                     };
                     break;
@@ -645,7 +644,7 @@ namespace BoSSS.Solution {
 
                     templinearSolve = new SoftGMRES() {
                         MaxKrylovDim = lc.MaxKrylovDim,
-                        m_Tolerance = lc.ConvergenceCriterion,
+                        //m_Tolerance = lc.ConvergenceCriterion,
                         Precond = precond[0],
                     };
                     break;
@@ -798,17 +797,18 @@ namespace BoSSS.Solution {
 
                 case LinearSolverCode.exp_softpcg_mg:
                     templinearSolve = new SoftPCG() {
-                        m_MaxIterations = lc.MaxSolverIterations,
-                        m_Tolerance = lc.ConvergenceCriterion
+                        //m_MaxIterations = _lc.MaxSolverIterations,
+                        //m_Tolerance = _lc.ConvergenceCriterion,
+                        TerminationCriterion = ((iter, r0_l2, r_l2) => r_l2 > lc.ConvergenceCriterion && iter < lc.MaxSolverIterations),
+                        Precond = precond[0]
                     };
-                    ((SoftPCG)templinearSolve).Precond = precond[0];
                     break;
 
                 case LinearSolverCode.exp_softpcg_schwarz:
 
                     templinearSolve = new SoftPCG() {
-                        m_MaxIterations = lc.MaxSolverIterations,
-                        m_Tolerance = lc.ConvergenceCriterion,
+                        //m_MaxIterations = lc.MaxSolverIterations,
+                        //m_Tolerance = lc.ConvergenceCriterion,
                         Precond = precond[0]
                     };
                     break;
@@ -822,8 +822,8 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_softpcg_schwarz_directcoarse:
 
                     templinearSolve = new SoftPCG() {
-                        m_MaxIterations = lc.MaxSolverIterations,
-                        m_Tolerance = lc.ConvergenceCriterion,
+                        //m_MaxIterations = lc.MaxSolverIterations,
+                        //m_Tolerance = lc.ConvergenceCriterion,
                         Precond = precond[0],
                     };
                     break;
@@ -838,8 +838,8 @@ namespace BoSSS.Solution {
 
                 case LinearSolverCode.exp_gmres_levelpmg:
                     templinearSolve = new SoftGMRES() {
-                        m_Tolerance = lc.ConvergenceCriterion,
-                        m_MaxIterations = lc.MaxSolverIterations,
+                        //m_Tolerance = lc.ConvergenceCriterion,
+                        //m_MaxIterations = lc.MaxSolverIterations,
                         MaxKrylovDim = lc.MaxKrylovDim,
                         Precond = precond[0]
                     };
@@ -847,8 +847,8 @@ namespace BoSSS.Solution {
 
                 case LinearSolverCode.exp_gmres_schwarz_pmg:
                     templinearSolve = new SoftGMRES() {
-                        m_Tolerance = lc.ConvergenceCriterion,
-                        m_MaxIterations = lc.MaxSolverIterations,
+                        //m_Tolerance = lc.ConvergenceCriterion,
+                        //m_MaxIterations = lc.MaxSolverIterations,
                         Precond = precond[0]
                     };
 
@@ -857,8 +857,8 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_softpcg_jacobi_mg:
 
                     templinearSolve = new SoftPCG() {
-                        m_MaxIterations = lc.MaxSolverIterations,
-                        m_Tolerance = lc.ConvergenceCriterion,
+                        //m_MaxIterations = lc.MaxSolverIterations,
+                        //m_Tolerance = lc.ConvergenceCriterion,
                         Precond = precond[0],
                     };
                     break;
@@ -867,8 +867,9 @@ namespace BoSSS.Solution {
 
                     ISolverSmootherTemplate[] subsmoother = new ISolverSmootherTemplate[]{
                         new SoftPCG() {
-                             m_MaxIterations = 5,
-                             m_MinIterations = 5,
+                             NoOfIterations=5
+                             //m_MaxIterations = 5,
+                             //m_MinIterations = 5,
                         }
                     };
 
@@ -886,8 +887,8 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_softpcg_schwarz_mg:
           
                     templinearSolve = new SoftPCG() {
-                        m_MaxIterations = lc.MaxSolverIterations,
-                        m_Tolerance = lc.ConvergenceCriterion,
+                        //m_MaxIterations = lc.MaxSolverIterations,
+                        //m_Tolerance = lc.ConvergenceCriterion,
                         Precond = precond[0],
                     };
                     break;
@@ -1040,7 +1041,7 @@ namespace BoSSS.Solution {
 
         /// <summary>
         /// For developers, who want full control over solvers: In <see cref="selfmade_linsolver"/> you can insert your own config of linear solver.
-        /// Set the solver to <c>null</c> to enable solver generation from <see cref="LinearSolverConfig"/> again.
+        /// Clear() will clear the selfmade stuff and enables solver creation from linear and nonlinear config again.
         /// </summary>
         public ISolverSmootherTemplate Selfmade_linsolver {
             set {
@@ -1054,7 +1055,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// For developers, who want full control over solvers: In <see cref="selfmade_nonlinsolver"/> you can insert your own config of nonlinear solver,
         /// which will overwrite the output of <see cref="GenerateNonLinear"/> with the overgiven solver.
-        /// Set the solver to <c>null</c> to enable solver generation from <see cref="NonLinearSolverConfig"/> again.
+        /// Clear() will clear the selfmade stuff and enables solver creation from linear and nonlinear config again.
         /// Note: The overgiven solver has to be completely defined (precond!=null and linsolve!=null) 
         /// </summary>
         public NonlinearSolver Selfmade_nonlinsolver {
@@ -1067,8 +1068,8 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// For developers, who want full control over solvers: In <see cref="Selfmade_precond"/> you can insert your own config of linear solver.
-        /// Set the solver to <c>null</c> to enable solver generation from <see cref="NonLinearSolverConfig.Precond_solver"/> again.
+        /// For developers, who want full control over solvers: In <see cref="Selfmade_precond"/> you can insert your own preconditioner.
+        /// Clear() will clear the selfmade stuff and enables solver creation from linear and nonlinear config again.
         /// </summary>
         public ISolverSmootherTemplate Selfmade_precond {
             set {
@@ -1283,10 +1284,9 @@ namespace BoSSS.Solution {
         /// clears overgiven selfmade solvers
         /// </summary>
         public void Clear() {
-            //this.m_lc = null;
-            //this.m_nc = null;
             this.m_linsolver = null;
             this.m_nonlinsolver = null;
+            this.m_precond = null;
         }
 
         private void Check_NonLinearSolver(NonlinearSolver NLSolver)

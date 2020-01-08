@@ -637,7 +637,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.LinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.NewtonGMRES;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_schwarz_directcoarse_overlap;
             C.LinearSolver.ConvergenceCriterion = 1E-6;
             C.LinearSolver.NoOfMultigridLevels = 2;
@@ -981,7 +981,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.LinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.NewtonGMRES;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_schwarz_MG_directcoarse_overlap;
             C.LinearSolver.ConvergenceCriterion = 1E-6;
             C.NonLinearSolver.ConvergenceCriterion = 1E-6;
@@ -1163,7 +1163,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.LinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.NewtonGMRES;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.LinearSolver.SolverCode = LinearSolverCode.automatic;
             C.LinearSolver.ConvergenceCriterion = 1E-6;
             C.NonLinearSolver.ConvergenceCriterion = 1E-6;
@@ -1321,7 +1321,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.NewtonGMRES;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.LinearSolver.SolverCode = LinearSolverCode.automatic;
             C.LinearSolver.ConvergenceCriterion = 1E-5;
             C.NonLinearSolver.ConvergenceCriterion = 1E-5;
