@@ -412,6 +412,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public void Init(MultigridOperator op) {
             using (new FuncTrace()) {
+                if (UsePMGinBlocks) {
+                    Console.WriteLine("Schwarz: pmg is used as blocksolve");
+                }
+
                 if (m_MgOp != null) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // someone is trying to re-use this solver: see if the settings permit that

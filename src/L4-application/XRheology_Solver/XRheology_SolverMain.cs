@@ -601,7 +601,7 @@ namespace BoSSS.Application.XRheology_Solver {
                     // solver 
                     this.Control.NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.NonLinearSolver.MinSolverIterations; //m_BDF_Timestepper.config_NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.Solver_MinIterations;
 
-                    if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.NewtonGMRES) {
+                    if (m_BDF_Timestepper.XdgSolverFactory.IsNewtonGmresType) {
                         m_BDF_Timestepper.XdgSolverFactory.Selfmade_precond =
                                             new Schwarz() {
                                                 m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {

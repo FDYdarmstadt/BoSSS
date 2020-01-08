@@ -982,7 +982,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.NewtonGMRES;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_schwarz_Kcycle_directcoarse_overlap;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_schwarz_MG_directcoarse_overlap;
             C.LinearSolver.ConvergenceCriterion = 1E-6;
             C.NonLinearSolver.ConvergenceCriterion = 1E-6;
             C.LinearSolver.NoOfMultigridLevels = 3;
