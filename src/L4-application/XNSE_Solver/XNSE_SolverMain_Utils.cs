@@ -92,7 +92,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         SinglePhaseField EnergyBalanceAtInterface;
 
-
+        SinglePhaseField InterfaceDivergence;
 
 
 #pragma warning restore 649
@@ -125,9 +125,13 @@ namespace BoSSS.Application.XNSE_Solver {
                 this.SurfaceTensionForce = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(basis, d + "-SurfaceTensionForce")));
                 base.RegisterField(this.SurfaceTensionForce, register);
 
-                basis = new Basis(this.GridData, this.Control.FieldOptions[VariableNames.Pressure].Degree + (this.Control.FieldOptions[VariableNames.VelocityX].Degree - 1) + this.Control.FieldOptions[VariableNames.Pressure].Degree);
+                basis = new Basis(this.GridData, this.Control.FieldOptions[VariableNames.Pressure].Degree + this.Control.FieldOptions[VariableNames.VelocityX].Degree + (this.Control.FieldOptions[VariableNames.VelocityX].Degree - 1));
                 this.EnergyBalanceAtInterface = new SinglePhaseField(basis, "EnergyBalanceAtInterface");
                 base.RegisterField(this.EnergyBalanceAtInterface, register);
+
+                basis = new Basis(this.GridData, this.Control.FieldOptions[VariableNames.VelocityX].Degree);
+                this.InterfaceDivergence = new SinglePhaseField(basis, "InterfaceDivergence");
+                base.RegisterField(this.InterfaceDivergence, register);
 
             }
 
@@ -213,6 +217,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     this.SurfaceTensionForce[d].Clear();
                 }
                 this.EnergyBalanceAtInterface.Clear();
+                this.InterfaceDivergence.Clear();
 
 
                 CurvatureAlgorithms.CurvatureDriver(
@@ -253,6 +258,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 //double energyBal_Norm = XNSEUtils.EnergyBalanceNormAtInterface(this.Pressure, this.XDGvelocity.Velocity, meanVelocity, this.Curvature,
                 //    this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B, this.Control.PhysicalParameters.Sigma, this.m_HMForder);
                 //Console.WriteLine("energy balance norm = {0}", energyBal_Norm);
+
+
+                // interface divergence
+                EnergyUtils.ProjectInterfaceDivergence(this.InterfaceDivergence, 1.0, meanVelocity, this.LsTrk, this.Control.PhysicalParameters);
+
 
 
             }
@@ -415,10 +425,12 @@ namespace BoSSS.Application.XNSE_Solver {
                 KineticEnergyChangerate.Clear();
                 KineticEnergyChangerate.Acc(1.0, this.KineticEnergy);
                 KineticEnergyChangerate.Acc(-1.0, this.prevKineticEnergy);
+                KineticEnergyChangerate.Scale(1.0 / dt);
 
                 DerivedKineticEnergyChangerate.Clear();
                 DerivedKineticEnergyChangerate.Acc(1.0, this.DerivedKineticEnergy);
                 DerivedKineticEnergyChangerate.Acc(-1.0, this.prevKineticEnergy);
+                DerivedKineticEnergyChangerate.Scale(1.0 / dt);
 
             }
 

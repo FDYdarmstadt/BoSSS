@@ -713,6 +713,100 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
 
+        #endregion
+
+
+        #region interface terms
+
+        static ScalarFunctionEx GetFunc_InterfaceDivergence(LevelSetTracker LsTrk, VectorField<SinglePhaseField> gradUIx, VectorField<SinglePhaseField> gradUIy, PhysicalParameters physParam) {
+
+            int D = LsTrk.GridDat.SpatialDimension;
+
+            return delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                int K = result.GetLength(1); // No nof Nodes
+                int _D = D; // local var may be a bit faster
+
+                MultidimensionalArray gradUIxRes = MultidimensionalArray.Create(Len, K, D);
+                MultidimensionalArray gradUIyRes = MultidimensionalArray.Create(Len, K, D);
+
+                int JE = LsTrk.GridDat.Cells.Count;
+                BitArray sbArray = new BitArray(JE);
+                for (int j = j0; j < j0 + Len; j++) {
+                    sbArray[j] = true;
+                }
+                CellMask sbmask = new CellMask(LsTrk.GridDat, sbArray);
+                SubGrid sbgrd = new SubGrid(sbmask);
+
+                ClosestPointFinder cp = new ClosestPointFinder(LsTrk, 0, sbgrd, NS.ToEnumerable());
+
+                for (int dd = 0; dd < D; dd++) {
+                    gradUIxRes.ExtractSubArrayShallow(-1, -1, dd).Set(cp.EvaluateAtCp(gradUIx[dd]));
+                    gradUIyRes.ExtractSubArrayShallow(-1, -1, dd).Set(cp.EvaluateAtCp(gradUIy[dd]));
+                }
+
+                MultidimensionalArray gradUIRes = MultidimensionalArray.Create(Len, K, D, D);
+                gradUIRes.ExtractSubArrayShallow(-1, -1, 0, 0).Set(gradUIxRes.ExtractSubArrayShallow(-1, -1, 0));
+                gradUIRes.ExtractSubArrayShallow(-1, -1, 0, 1).Set(gradUIxRes.ExtractSubArrayShallow(-1, -1, 1));
+                gradUIRes.ExtractSubArrayShallow(-1, -1, 1, 0).Set(gradUIyRes.ExtractSubArrayShallow(-1, -1, 0));
+                gradUIRes.ExtractSubArrayShallow(-1, -1, 1, 1).Set(gradUIyRes.ExtractSubArrayShallow(-1, -1, 1));
+
+
+                var Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(NS, j0, Len);
+
+                double sigma = physParam.Sigma;
+
+                for (int j = 0; j < Len; j++) {
+                    for (int k = 0; k < K; k++) {
+
+                        double divI = 0;
+                        for (int d = 0; d < _D; d++) {
+                            for (int dd = 0; dd < _D; dd++) {
+                                // surface divergence
+                                if (dd == d) {
+                                    divI += sigma * (1.0 - Normals[j, k, d] * Normals[j, k, dd]) * gradUIRes[j, k, d, dd];
+                                } else {
+                                    divI += sigma * (0.0 - Normals[j, k, d] * Normals[j, k, dd]) * gradUIRes[j, k, d, dd];
+                                }
+                            }
+                        }
+                        result[j, k] = divI;
+                    }
+                }
+
+            };
+
+        }
+
+        public static void ProjectInterfaceDivergence(this SinglePhaseField divI, double alpha, ConventionalDGField[] uI, LevelSetTracker LsTrk, PhysicalParameters physParam, CellQuadratureScheme quadScheme = null) {
+
+            int D = LsTrk.GridDat.SpatialDimension;
+
+            VectorField<SinglePhaseField> GuIx = new VectorField<SinglePhaseField>(D, uI[0].Basis, SinglePhaseField.Factory);
+            VectorField<SinglePhaseField> GuIy = new VectorField<SinglePhaseField>(D, uI[1].Basis, SinglePhaseField.Factory);
+            for (int dd = 0; dd < D; dd++) {
+                GuIx[dd].DerivativeByFlux(1.0, uI[0], dd, optionalSubGrid: LsTrk.Regions.GetCutCellSubGrid());
+                GuIy[dd].DerivativeByFlux(1.0, uI[1], dd, optionalSubGrid: LsTrk.Regions.GetCutCellSubGrid());
+            }
+            GuIx.ForEach(F => F.CheckForNanOrInf(true, true, true));
+            GuIy.ForEach(F => F.CheckForNanOrInf(true, true, true));
+
+
+
+            ScalarFunctionEx ErrFunc = GetFunc_InterfaceDivergence(LsTrk, GuIx, GuIy, physParam);
+
+            int order = ((uI[0].Basis.Degree - 1) + divI.Basis.Degree + 2);
+            if (quadScheme == null)
+                quadScheme = (new CellQuadratureScheme(false, LsTrk.Regions.GetCutCellMask())).AddFixedOrderRules(LsTrk.GridDat, order);
+
+            divI.ProjectField(alpha, ErrFunc,
+                quadScheme);
+
+        }
+
+        #endregion
+
+
+        #region 
 
         static ScalarFunctionEx GetEnergyBalanceFunc(XDGField P, VectorField<XDGField> U, ConventionalDGField[] Umean, SinglePhaseField C, double muA, double muB, double sigma, bool squared) {
 
@@ -740,7 +834,7 @@ namespace BoSSS.Solution.XNSECommon {
                 pA.Evaluate(i0, Len, nds, pA_res);
                 pB.Evaluate(i0, Len, nds, pB_res);
 
-                for(int i = 0; i < D; i++) {
+                for (int i = 0; i < D; i++) {
                     UA[i].Evaluate(i0, Len, nds, UA_res.ExtractSubArrayShallow(-1, -1, i));
                     UB[i].Evaluate(i0, Len, nds, UB_res.ExtractSubArrayShallow(-1, -1, i));
                     Umean[i].Evaluate(i0, Len, nds, U_res.ExtractSubArrayShallow(-1, -1, i));
@@ -754,17 +848,17 @@ namespace BoSSS.Solution.XNSECommon {
 
                 var Normals = P.Basis.Tracker.DataHistories[0].Current.GetLevelSetNormals(nds, i0, Len);
 
-                for(int j = 0; j < Len; j++) {
-                    for(int k = 0; k < K; k++) {
+                for (int j = 0; j < Len; j++) {
+                    for (int k = 0; k < K; k++) {
 
                         double acc = 0.0;
 
-                        for(int d = 0; d < D; d++) {
+                        for (int d = 0; d < D; d++) {
 
                             // enrgy jump at interface
                             acc -= (pB_res[j, k] * UB_res[j, k, d] - pA_res[j, k] * UA_res[j, k, d]) * Normals[j, k, d];
 
-                            for(int dd = 0; dd < D; dd++) {
+                            for (int dd = 0; dd < D; dd++) {
                                 acc += (muB * GradUB_res[j, k, d, dd] * UB_res[j, k, dd] - muA * GradUA_res[j, k, d, dd] * UA_res[j, k, dd]) * Normals[j, k, d];
                                 acc += (muB * GradUB_res[j, k, dd, d] * UB_res[j, k, dd] - muA * GradUA_res[j, k, dd, d] * UA_res[j, k, dd]) * Normals[j, k, d];     // Transposed Term
                             }
@@ -782,7 +876,7 @@ namespace BoSSS.Solution.XNSECommon {
                             acc -= sigma * Curv_res[j, k] * U_res[j, k, d] * Normals[j, k, d];
                         }
 
-                        if(squared) {
+                        if (squared) {
                             result[j, k] = acc.Pow2();
                         } else {
                             result[j, k] = acc;
@@ -811,7 +905,7 @@ namespace BoSSS.Solution.XNSECommon {
                     energyBalFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
                 },
                 delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    for(int i = 0; i < Length; i++)
+                    for (int i = 0; i < Length; i++)
                         energyBal_Norm += ResultsOfIntegration[i, 0];
                 }
             ).Execute();
@@ -837,7 +931,7 @@ namespace BoSSS.Solution.XNSECommon {
                     ErrFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
                 },
                 delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    for(int i = 0; i < Length; i++) {
+                    for (int i = 0; i < Length; i++) {
                         err.SetMeanValue(i0 + i, ResultsOfIntegration[i, 0].Sqrt());
                     }
                 }
@@ -856,20 +950,20 @@ namespace BoSSS.Solution.XNSECommon {
                 int K = result.GetLength(1); // No nof Nodes
                 MultidimensionalArray GradU_Res = MultidimensionalArray.Create(Len, K, D, D);
 
-                for(int i = 0; i < D; i++) {
+                for (int i = 0; i < D; i++) {
                     uI.ElementAt(i).EvaluateGradient(i0, Len, nds, GradU_Res.ExtractSubArrayShallow(-1, -1, i, -1));
                 }
 
                 var Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(nds, i0, Len);
 
-                for(int j = 0; j < Len; j++) {
-                    for(int k = 0; k < K; k++) {
+                for (int j = 0; j < Len; j++) {
+                    for (int k = 0; k < K; k++) {
 
                         MultidimensionalArray Nsurf = Normals.ExtractSubArrayShallow(j, k, -1);
                         double[,] Psurf = new double[D, D];
-                        for(int d1 = 0; d1 < D; d1++) {
-                            for(int d2 = 0; d2 < D; d2++) {
-                                if(d2 == d1)
+                        for (int d1 = 0; d1 < D; d1++) {
+                            for (int d2 = 0; d2 < D; d2++) {
+                                if (d2 == d1)
                                     Psurf[d1, d2] = (1 - Nsurf[d1] * Nsurf[d2]);
                                 else
                                     Psurf[d1, d2] = (0 - Nsurf[d1] * Nsurf[d2]);
@@ -878,13 +972,13 @@ namespace BoSSS.Solution.XNSECommon {
 
                         double acc = 0.0;
 
-                        for(int d1 = 0; d1 < D; d1++) {
-                            for(int dd = 0; dd < D; dd++) {
+                        for (int d1 = 0; d1 < D; d1++) {
+                            for (int dd = 0; dd < D; dd++) {
                                 acc += Psurf[d1, dd] * GradU_Res[j, k, dd, d1];
                             }
                         }
 
-                        if(squared) {
+                        if (squared) {
                             result[j, k] = acc.Pow2();
                         } else {
                             result[j, k] = acc;
@@ -911,7 +1005,7 @@ namespace BoSSS.Solution.XNSECommon {
                     surfChangerateFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
                 },
                 delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    for(int i = 0; i < Length; i++)
+                    for (int i = 0; i < Length; i++)
                         SurfChangerate += ResultsOfIntegration[i, 0];
                 }
             ).Execute();
@@ -929,7 +1023,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             ConventionalDGField pA = null, pB = null;
             bool UsePressure = Pressure != null;
-            if(UsePressure) {
+            if (UsePressure) {
                 pA = Pressure.GetSpeciesShadowField("A");
                 pB = Pressure.GetSpeciesShadowField("B");
             }
@@ -945,14 +1039,14 @@ namespace BoSSS.Solution.XNSECommon {
                 MultidimensionalArray pA_res = MultidimensionalArray.Create(Len, K);
                 MultidimensionalArray pB_res = MultidimensionalArray.Create(Len, K);
 
-                for(int i = 0; i < D; i++) {
+                for (int i = 0; i < D; i++) {
                     UA[i].Evaluate(j0, Len, Ns, UA_res.ExtractSubArrayShallow(-1, -1, i));
                     UB[i].Evaluate(j0, Len, Ns, UB_res.ExtractSubArrayShallow(-1, -1, i));
 
                     UA[i].EvaluateGradient(j0, Len, Ns, GradUA_res.ExtractSubArrayShallow(-1, -1, i, -1));
                     UB[i].EvaluateGradient(j0, Len, Ns, GradUB_res.ExtractSubArrayShallow(-1, -1, i, -1));
                 }
-                if(UsePressure) {
+                if (UsePressure) {
                     pA.Evaluate(j0, Len, Ns, pA_res);
                     pB.Evaluate(j0, Len, Ns, pB_res);
                 } else {
@@ -962,25 +1056,25 @@ namespace BoSSS.Solution.XNSECommon {
 
                 var Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(Ns, j0, Len);
 
-                for(int j = 0; j < Len; j++) {
-                    for(int k = 0; k < K; k++) {
+                for (int j = 0; j < Len; j++) {
+                    for (int k = 0; k < K; k++) {
 
                         double acc = 0.0;
 
-                        for(int d = 0; d < D; d++) {
+                        for (int d = 0; d < D; d++) {
                             // pressure
-                            if(UsePressure) {
+                            if (UsePressure) {
                                 acc += (pB_res[j, k] * UB_res[j, k, d] - pA_res[j, k] * UA_res[j, k, d]) * Normals[j, k, d];
                             }
 
                             // Nabla U + (Nabla U) ^T
-                            for(int dd = 0; dd < D; dd++) {
+                            for (int dd = 0; dd < D; dd++) {
                                 acc -= (muB * GradUB_res[j, k, d, dd] * UB_res[j, k, dd] - muA * GradUA_res[j, k, d, dd] * UA_res[j, k, dd]) * Normals[j, k, d];
                                 acc -= (muB * GradUB_res[j, k, dd, d] * UB_res[j, k, dd] - muA * GradUA_res[j, k, dd, d] * UA_res[j, k, dd]) * Normals[j, k, d];     // Transposed Term
                             }
 
                         }
-                        if(squared) {
+                        if (squared) {
                             result[j, k] = acc.Pow2();
                         } else {
                             result[j, k] = acc;
@@ -1009,12 +1103,12 @@ namespace BoSSS.Solution.XNSECommon {
                     EnergyJumpFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
                 },
                 delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    for(int i = 0; i < Length; i++)
+                    for (int i = 0; i < Length; i++)
                         EnergyJump += ResultsOfIntegration[i, 0];
                 }
             ).Execute();
 
-            if(Norm) {
+            if (Norm) {
                 EnergyJump.Sqrt();
             }
 
@@ -1038,13 +1132,13 @@ namespace BoSSS.Solution.XNSECommon {
                     SurfaceChangerate(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
                 },
                 delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    for(int i = 0; i < Length; i++)
+                    for (int i = 0; i < Length; i++)
                         Changerate_Surface += ResultsOfIntegration[i, 0];
                 }
             ).Execute();
 
             double Changerate_Esurf;
-            if(Norm) {
+            if (Norm) {
                 Changerate_Esurf = sigma * Changerate_Surface.Sqrt();
             } else {
                 Changerate_Esurf = sigma * Changerate_Surface;
@@ -1066,20 +1160,20 @@ namespace BoSSS.Solution.XNSECommon {
                 int K = result.GetLength(1); // No nof Nodes
                 MultidimensionalArray U_res = MultidimensionalArray.Create(Length, K, D);
 
-                for(int i = 0; i < D; i++) {
+                for (int i = 0; i < D; i++) {
                     uI.ElementAt(i).Evaluate(i0, Length, nds, U_res.ExtractSubArrayShallow(-1, -1, i));
                 }
 
                 var Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(nds, i0, Length);
 
-                for(int j = 0; j < Length; j++) {
-                    for(int k = 0; k < K; k++) {
+                for (int j = 0; j < Length; j++) {
+                    for (int k = 0; k < K; k++) {
 
                         double acc = result[j, k];
 
-                        for(int d = 0; d < D; d++) {
+                        for (int d = 0; d < D; d++) {
                             // U * N
-                            if(!ExtVel) {
+                            if (!ExtVel) {
                                 acc *= U_res[j, k, d] * Normals[j, k, d];
                             } else {
                                 acc *= U_res[j, k, d];
@@ -1087,7 +1181,7 @@ namespace BoSSS.Solution.XNSECommon {
 
                         }
 
-                        if(squared) {
+                        if (squared) {
                             result[j, k] = (sigma * acc).Pow2();
                         } else {
                             result[j, k] = sigma * acc;
@@ -1117,18 +1211,19 @@ namespace BoSSS.Solution.XNSECommon {
 
                 },
                 delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    for(int i = 0; i < Length; i++)
+                    for (int i = 0; i < Length; i++)
                         EnergyCurv += ResultsOfIntegration[i, 0];
                 }
             ).Execute();
 
-            if(Norm) {
+            if (Norm) {
                 EnergyCurv.Sqrt();
             }
 
             return EnergyCurv;
 
         }
+
 
         #endregion
 
