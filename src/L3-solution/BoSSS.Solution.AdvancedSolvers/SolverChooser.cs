@@ -313,6 +313,7 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_direct_lapack:
                 case LinearSolverCode.exp_Kcycle_schwarz:
                 case LinearSolverCode.exp_decomposedMG_OrthoScheme:
+                    precond = null;
                     break;
                 case LinearSolverCode.automatic:
                     precond[0] = AutomaticPrecond(lc);
