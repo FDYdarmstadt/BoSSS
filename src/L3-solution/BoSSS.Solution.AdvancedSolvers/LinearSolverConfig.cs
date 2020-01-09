@@ -259,7 +259,17 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         /// <returns></returns>
         public object Clone() {
-            return new LinearSolverConfig();
+            var clone = new LinearSolverConfig() {
+                verbose = this.verbose,
+                MaxKrylovDim = this.MaxKrylovDim,
+                MaxSolverIterations = this.MaxSolverIterations,
+                MinSolverIterations = this.MinSolverIterations,
+                NoOfMultigridLevels = this.NoOfMultigridLevels,
+                Parallelism = this.Parallelism,
+                SolverCode = this.SolverCode,
+                TargetBlockSize = this.TargetBlockSize
+        };
+            return clone;
         }
 
         /// <summary>

@@ -105,7 +105,17 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         /// <returns></returns>
         public object Clone() {
-            return new NonLinearSolverConfig();
+            var clone = new NonLinearSolverConfig() {
+                constantNewtonIterations = this.constantNewtonIterations,
+                ConvergenceCriterion = this.ConvergenceCriterion,
+                MaxSolverIterations = this.MaxSolverIterations,
+                MinSolverIterations = this.MinSolverIterations,
+                SolverCode = this.SolverCode,
+                UnderRelax = this.UnderRelax,
+                UsePresRefPoint = this.UsePresRefPoint,
+                verbose = this.verbose
+        };
+            return clone;
         }
 
         /// <summary>

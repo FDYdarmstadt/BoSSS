@@ -459,34 +459,29 @@ namespace BoSSS.Solution {
                     throw new NotImplementedException("Preconditioner not available");
             }
 
-
-            //special stdout stuff for Schwarz Preconds
-            if(precond[0] is Schwarz)
-                Console.WriteLine("Additive Schwarz w. direct coarse, No of blocks: " + NoOfBlocks.MPISum());
-            SetLinItCallback(precond[0], true);
-
-            Debug.Assert(precond != null);
-
-            if (precond.Length > 1) {
-                foreach(var pre in precond) {
-                    SetLinItCallback(pre,true);
+            if (precond != null) {
+                //special stdout stuff for Schwarz Preconds
+                if (precond[0] is Schwarz)
+                    Console.WriteLine("Additive Schwarz w. direct coarse, No of blocks: " + NoOfBlocks.MPISum());
+                if (precond.Length > 1) {
+                    foreach (var pre in precond) {
+                        SetLinItCallback(pre, true);
+                    }
+                } else {
+                    SetLinItCallback(precond[0], true);
                 }
-            } else {
-                SetLinItCallback(precond[0], true);
-            }
-
-
 #if DEBUG
-            
-            if (precond.Length>1) {
-                foreach (var pre in precond) {
-                    Console.WriteLine("preconditioner: {0}", pre.GetType());
+                if (precond.Length > 1) {
+                    foreach (var pre in precond) {
+                        Console.WriteLine("preconditioner: {0}", pre.GetType());
+                    }
+                } else {
+                    Console.WriteLine("preconditioner: {0}", precond[0].GetType());
                 }
-            } else {
-                Console.WriteLine("preconditioner: {0}", precond[0].GetType());
-            }
 #endif
-            Check_precond();
+                Check_precond();
+            }
+
             return precond;
         }
 
@@ -947,6 +942,7 @@ namespace BoSSS.Solution {
         private Action<int, double[], double[], MultigridOperator> DefaultItCallback;
 
         private void SetLinItCallback(ISolverSmootherTemplate solverwithoutcallback, bool IsLinPrecond) {
+
             ISolverWithCallback _solverwithcallback = (ISolverWithCallback)solverwithoutcallback;
 
             string _type = null;
@@ -958,7 +954,7 @@ namespace BoSSS.Solution {
                 _type = "LinSolver";
                 _caseselect = 2;
             }
-           
+            
             DefaultItCallback = GenerateDefaultCallback<ISolverWithCallback>(_type, _solverwithcallback, _caseselect);
             if (m_lc.verbose) {
                 _solverwithcallback.IterationCallback += DefaultItCallback;
