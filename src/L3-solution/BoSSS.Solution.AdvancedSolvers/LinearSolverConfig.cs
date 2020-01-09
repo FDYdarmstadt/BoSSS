@@ -259,7 +259,7 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         /// <returns></returns>
         public object Clone() {
-            return new NonLinearSolverConfig();
+            return new LinearSolverConfig();
         }
 
         /// <summary>
