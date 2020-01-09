@@ -71,7 +71,11 @@ namespace BoSSS.Solution {
             ISolverSmootherTemplate precondsolver = null;
 
             linsolver = GenerateLinear_body(m_lc, ts_MGS, ts_MultigridOperatorConfig);
-            precondsolver = GeneratePrecond(m_lc, ts_MGS, ts_MultigridOperatorConfig)[0];//only interesting for GMRES-Newton, look into _body for more info
+            
+            var pretmp = GeneratePrecond(m_lc, ts_MGS, ts_MultigridOperatorConfig);//only interesting for GMRES-Newton, look into _body for more info
+            if (pretmp != null) {
+                precondsolver = pretmp[0];
+            }
             Debug.Assert(linsolver != null);
 
             nonlinSolver = GenerateNonLin_body(ts_AssembleMatrixCallback, ts_MultigridBasis, m_nc, m_lc, linsolver, precondsolver, ts_MultigridOperatorConfig, ts_SessionPath);
