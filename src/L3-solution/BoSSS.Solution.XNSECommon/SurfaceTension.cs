@@ -1342,6 +1342,170 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
 
     /// <summary>
+    /// additional dynamic part - surface velocity divergence (according to the Boussinesq-Scriven model) - for the surface stress tensor
+    /// </summary>
+    public class BoussinesqScriven_SurfaceVelocityDivergence : SurfaceFluxBase {
+
+
+        double m_lamI;
+
+        public BoussinesqScriven_SurfaceVelocityDivergence(int d, double lamI, double penalty, IncompressibleBcType[] edgeTag2Type) {
+            m_comp = d;
+            m_lamI = lamI;
+            m_penalty = penalty;
+            m_edgeTag2Type = edgeTag2Type;
+        }
+
+
+        protected override void Flux(ref CommonParamsVol inp, double[,] GradU, double[] flux) {
+
+            int D = inp.D;
+
+            double[] Nsurf = SurfaceNormal(inp.Parameters);
+            double[,] Psurf = SurfaceProjection(Nsurf);
+
+            double surfDiv = 0.0;
+            for (int d1 = 0; d1 < D; d1++) {
+                for (int dd = 0; dd < D; dd++) {
+                    surfDiv += Psurf[d1, dd] * GradU[dd, d1];
+                }
+            }
+
+            for (int d = 0; d < D; d++) {
+                flux[d] = -m_lamI * surfDiv * Psurf[m_comp, d];
+            }
+
+        }
+
+
+        public override double InnerEdgeForm(ref CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB,
+           double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
+
+            double acc = 0.0;
+
+            int D = inp.D;
+
+            double[] Nsurf_IN = SurfaceNormal(inp.Parameters_IN);
+            double[] Nsurf_OUT = SurfaceNormal(inp.Parameters_OUT);
+
+            double[,] Psurf_IN = SurfaceProjection(Nsurf_IN);
+            double[,] Psurf_OUT = SurfaceProjection(Nsurf_OUT);
+
+            double[] tauL_IN = Tangent(Nsurf_IN, inp.Normale);
+            double[] tauL_OUT = Tangent(Nsurf_OUT, inp.Normale);
+
+            double[] tauL_Aver = tauL_IN.CloneAs();
+            tauL_Aver.ScaleV(0.5);
+            tauL_Aver.AccV(0.5, tauL_OUT);
+            tauL_Aver.Normalize();
+
+
+            double divUsurf_IN = 0.0;
+            double divUsurf_OUT = 0.0;
+            for (int d1 = 0; d1 < inp.D; d1++) {
+                for (int dd = 0; dd < inp.D; dd++) {
+                    divUsurf_IN += Psurf_IN[d1, dd] * _Grad_uA[dd, d1];
+                    divUsurf_OUT += Psurf_OUT[d1, dd] * _Grad_uB[dd, d1];
+                }
+            }
+
+
+            // consistency term
+            //acc += (m_lamI - m_muI) * 0.5 * (divUsurf_IN + divUsurf_OUT) * tauL_Aver[m_comp] * (_vA - _vB);
+            acc += m_lamI * 0.5 * (divUsurf_IN * tauL_IN[m_comp] + divUsurf_OUT * tauL_OUT[m_comp]) * (_vA - _vB);
+
+            // symmtery term
+            //for (int d = 0; d < D; d++) {
+            //    for (int dd = 0; dd < D; dd++) {
+            //        //acc += (m_lamI - m_muI) * 0.5 * (Psurf_IN[m_comp,dd] * _Grad_vA[dd] + Psurf_OUT[m_comp,dd] * _Grad_vB[dd]) * tauL_Aver[d] * (_uA[d] - _uB[d]);
+            //        acc += m_lamI * 0.5 * (Psurf_IN[m_comp, dd] * _Grad_vA[dd] * tauL_IN[d] + Psurf_OUT[m_comp, dd] * _Grad_vB[dd] * tauL_OUT[d]) * (_uA[d] - _uB[d]);
+            //    }
+            //}
+            // penalty
+            //double pnlty = this.penalty(inp.jCellIn, inp.jCellOut);
+            //acc -= m_lamI * (_uA[m_comp] - _uB[m_comp]) * (_vA - _vB) * pnlty;
+
+            return -acc;
+
+        }
+
+
+        public override double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+
+            double Flx_InCell = 0;
+
+            IncompressibleBcType edgType = m_edgeTag2Type[inp.EdgeTag];
+
+            switch (edgType) {
+                case IncompressibleBcType.NavierSlip_Linear: {
+
+                        double acc = 0.0;
+
+                        int D = inp.D;
+
+                        double[] Nedge_IN = inp.Parameters_IN;
+                        double[] Nsurf_IN = SurfaceNormal(inp.Parameters_IN);
+                        double[,] Psurf_IN = SurfaceProjection(Nsurf_IN);
+                        double[] tauL_IN = Tangent(Nsurf_IN, inp.Normale);
+
+                        double divUsurf_IN = 0.0;
+                        for (int d1 = 0; d1 < inp.D; d1++) {
+                            for (int dd = 0; dd < inp.D; dd++) {
+                                divUsurf_IN += Psurf_IN[d1, dd] * _Grad_uA[dd, d1];
+                            }
+                        }
+
+                        // consistency term
+                        for (int d = 0; d < D; d++) {
+                            acc += m_lamI * Nedge_IN[d] * (divUsurf_IN * tauL_IN[d]) * (_vA * Nedge_IN[m_comp]);
+                        }
+
+                        // symmtery term
+                        //for (int d1 = 0; d1 < D; d1++) {
+                        //    for (int d2 = 0; d2 < D; d2++) {
+                        //        for (int dd = 0; dd < D; dd++) {
+                        //            acc += m_lamI * Nedge_IN[d1] * (Psurf_IN[m_comp, dd] * _Grad_vA[dd] * tauL_IN[d1]) * (_uA[d2] * Nedge_IN[d2]);
+                        //        }
+                        //    }
+                        //}
+
+                        // penalty
+                        //double pnlty = this.penalty(inp.jCellIn, -1);
+                        //for (int d = 0; d < D; d++) {
+                        //    acc -= m_lamI * (_uA[d] * Nedge_IN[d]) * (_vA * Nedge_IN[m_comp]) * pnlty;
+                        //}
+
+
+                        Flx_InCell = -acc;
+
+                        break;
+                    }
+                default:
+                    break;
+            }
+
+            return Flx_InCell * _vA;
+        }
+
+
+        public virtual TermActivationFlags InnerEdgeTerms {
+            get {
+                return TermActivationFlags.GradUxV;
+            }
+        }
+
+        public virtual TermActivationFlags BoundaryEdgeTerms {
+            get {
+                return TermActivationFlags.GradUxV;
+            }
+        }
+
+
+    }
+
+
+
+    /// <summary>
     /// additional dynamic part - surface rate of deformation (according to the Boussinesq-Scriven model) - for the surface stress tensor
     /// </summary>
     public class BoussinesqScriven_SurfaceDeformationRate_GradU : SurfaceFluxBase {
@@ -1352,11 +1516,13 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         /// </summary>
         double m_muI;
 
+        bool semiImplicit;
 
-        public BoussinesqScriven_SurfaceDeformationRate_GradU(int d, double mu_I, double penalty) {
+        public BoussinesqScriven_SurfaceDeformationRate_GradU(int d, double mu_I, double penalty, bool semiImplicitOnly = false) {
             m_comp = d;
             m_penalty = penalty;
             m_muI = mu_I;
+            semiImplicit = semiImplicitOnly;
         }
 
 
@@ -1370,6 +1536,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             double[,] GradUsurf = Multiply(Psurf, GradU);
 
             for(int d = 0; d < D; d++) {
+
+                if (semiImplicit) {
+                    flux[d] += -m_muI * GradUsurf[m_comp, d];
+                    continue;
+                }
+
                 for(int dd = 0; dd < D; dd++) {
                     flux[d] += -m_muI * GradUsurf[m_comp, dd] * Psurf[dd, d];
                 }
@@ -1557,165 +1729,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
     }
 
-
-    /// <summary>
-    /// additional dynamic part - surface velocity divergence (according to the Boussinesq-Scriven model) - for the surface stress tensor
-    /// </summary>
-    public class BoussinesqScriven_SurfaceVelocityDivergence : SurfaceFluxBase {
-
-
-        /// <summary>
-        /// surface shear viscosity
-        /// </summary>
-        double m_muI;
-
-        /// <summary>
-        /// surface dilatational viscosity
-        /// </summary>
-        double m_lamI;
-
-
-        public BoussinesqScriven_SurfaceVelocityDivergence(int d, double mu_I, double lam_I, double penalty, IncompressibleBcType[] edgeTag2Type) {
-            m_comp = d;
-            m_muI = mu_I;
-            m_lamI = lam_I;
-            m_penalty = penalty;
-            m_edgeTag2Type = edgeTag2Type;
-        }
-
-
-        protected override void Flux(ref CommonParamsVol inp, double[,] GradU, double[] flux) {
-
-            int D = inp.D;
-
-            double[] Nsurf = SurfaceNormal(inp.Parameters);
-            double[,] Psurf = SurfaceProjection(Nsurf);
-
-            double divUsurf = 0.0;
-            for (int d1 = 0; d1 < D; d1++) {
-                for (int dd = 0; dd < D; dd++) {
-                    divUsurf += Psurf[d1, dd] * GradU[dd, d1];
-                }
-            }
-
-            for (int d = 0; d < D; d++) {
-                flux[d] = -(m_lamI - m_muI) * divUsurf * Psurf[m_comp, d];
-            }
-
-        }
-
-
-        public override double InnerEdgeForm(ref CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB,
-           double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
-
-            double acc = 0.0;
-
-            int D = inp.D;
-
-            double[] Nsurf_IN = SurfaceNormal(inp.Parameters_IN);
-            double[] Nsurf_OUT = SurfaceNormal(inp.Parameters_OUT);
-
-            double[,] Psurf_IN = SurfaceProjection(Nsurf_IN);
-            double[,] Psurf_OUT = SurfaceProjection(Nsurf_OUT);
-
-            double[] tauL_IN = Tangent(Nsurf_IN, inp.Normale);
-            double[] tauL_OUT = Tangent(Nsurf_OUT, inp.Normale);
-
-            double[] tauL_Aver = tauL_IN.CloneAs();
-            tauL_Aver.ScaleV(0.5);
-            tauL_Aver.AccV(0.5, tauL_OUT);
-            tauL_Aver.Normalize();
-
-
-            double divUsurf_IN = 0.0;
-            double divUsurf_OUT = 0.0;
-            for (int d1 = 0; d1 < inp.D; d1++) {
-                for (int dd = 0; dd < inp.D; dd++) {
-                    divUsurf_IN += Psurf_IN[d1, dd] * _Grad_uA[dd, d1];
-                    divUsurf_OUT += Psurf_OUT[d1, dd] * _Grad_uB[dd, d1];
-                }
-            }
-
-
-            // consistency term
-            //acc += (m_lamI - m_muI) * 0.5 * (divUsurf_IN + divUsurf_OUT) * tauL_Aver[m_comp] * (_vA - _vB);
-            acc += (m_lamI - m_muI) * 0.5 * (divUsurf_IN * tauL_IN[m_comp] + divUsurf_OUT * tauL_OUT[m_comp]) * (_vA - _vB);
-
-            // symmtery term
-            for (int d = 0; d < D; d++) {
-                for (int dd = 0; dd < D; dd++) {
-                    //acc += (m_lamI - m_muI) * 0.5 * (Psurf_IN[m_comp,dd] * _Grad_vA[dd] + Psurf_OUT[m_comp,dd] * _Grad_vB[dd]) * tauL_Aver[d] * (_uA[d] - _uB[d]);
-                    acc += (m_lamI - m_muI) * 0.5 * (Psurf_IN[m_comp,dd] * _Grad_vA[dd] * tauL_IN[d] + Psurf_OUT[m_comp,dd] * _Grad_vB[dd] * tauL_OUT[d]) * (_uA[d] - _uB[d]);
-                }
-            }
-            // penalty
-            double pnlty = this.penalty(inp.jCellIn, inp.jCellOut);
-            acc -= (m_lamI - m_muI) * (_uA[m_comp] - _uB[m_comp]) * (_vA - _vB) * pnlty;
-
-            return -acc;
-
-        }
-
-
-        public override double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
-
-            double Flx_InCell = 0;
-
-            IncompressibleBcType edgType = m_edgeTag2Type[inp.EdgeTag];
-
-            switch (edgType) {
-                case IncompressibleBcType.NavierSlip_Linear: {
-
-                        double acc = 0.0;
-
-                        int D = inp.D;
-
-                        double[] Nedge_IN = inp.Parameters_IN;
-                        double[] Nsurf_IN = SurfaceNormal(inp.Parameters_IN);
-                        double[,] Psurf_IN = SurfaceProjection(Nsurf_IN);
-                        double[] tauL_IN = Tangent(Nsurf_IN, inp.Normale);
-
-                        double divUsurf_IN = 0.0;
-                        for (int d1 = 0; d1 < inp.D; d1++) {
-                            for (int dd = 0; dd < inp.D; dd++) {
-                                divUsurf_IN += Psurf_IN[d1, dd] * _Grad_uA[dd, d1];
-                            }
-                        }
-
-                        // consistency term
-                        for (int d = 0; d < D; d++) {
-                            acc += (m_lamI - m_muI) * Nedge_IN[d] * (divUsurf_IN * tauL_IN[d]) * (_vA * Nedge_IN[m_comp]);
-                        }
-
-                        // symmtery term
-                        for (int d1 = 0; d1 < D; d1++) {
-                            for (int d2 = 0; d2 < D; d2++) {
-                                for (int dd = 0; dd < D; dd++) {
-                                    acc += (m_lamI - m_muI) * Nedge_IN[d1] * (Psurf_IN[m_comp, dd] * _Grad_vA[dd] * tauL_IN[d1]) * (_uA[d2] * Nedge_IN[d2]);
-                                }
-                            }
-                        }
-
-                        // penalty
-                        double pnlty = this.penalty(inp.jCellIn, -1);
-                        for (int d = 0; d < D; d++) {
-                            acc -= (m_lamI - m_muI) * (_uA[d] * Nedge_IN[d]) * (_vA * Nedge_IN[m_comp]) * pnlty;
-                        }
-
-
-                        Flx_InCell = -acc;
-
-                        break;
-                    }
-                default:
-                    break;
-            }
-
-            return Flx_InCell * _vA;
-        }
-
-
-    }
 
 
     public class LevelSetStabilization : ILevelSetForm {

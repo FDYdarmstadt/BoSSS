@@ -372,9 +372,19 @@ namespace BoSSS.Solution.XNSECommon {
 
                     double muI = physParams.mu_I;
                     double lamI = physParams.lambda_I;
+                    double lamI_t = (physParams.lambdaI_tilde < 0) ? (lamI - muI) : physParams.lambdaI_tilde;
 
                     double penalty_base = (degU + 1) * (degU + D) / D;
                     double penalty = penalty_base * dntParams.PenaltySafety;
+
+                    // surface dilatational viscosity
+                    if (dntParams.SurfStressTensor == SurfaceSressTensor.SurfaceDivergence ||
+                        dntParams.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
+
+                        var surfDiv = new BoussinesqScriven_SurfaceVelocityDivergence(d, lamI_t * 0.5, penalty, BcMap.EdgeTag2Type);
+                        XOp.SurfaceElementOperator.EquationComponents[CodName].Add(surfDiv);
+
+                    }
 
                     // surface shear viscosity 
                     if (dntParams.SurfStressTensor == SurfaceSressTensor.SurfaceRateOfDeformation ||
@@ -390,14 +400,7 @@ namespace BoSSS.Solution.XNSECommon {
                         }
 
                     }
-                    // surface dilatational viscosity
-                    if (dntParams.SurfStressTensor == SurfaceSressTensor.SurfaceVelocityDivergence ||
-                        dntParams.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
 
-                        var surfVelocDiv = new BoussinesqScriven_SurfaceVelocityDivergence(d, muI * 0.5, lamI * 0.5, penalty, BcMap.EdgeTag2Type);
-                        XOp.SurfaceElementOperator.EquationComponents[CodName].Add(surfVelocDiv);
-
-                    }
                 }
 
 

@@ -1033,7 +1033,7 @@ namespace BoSSS.Solution.XNSECommon {
                             // isotropic part
                             surfF += sigma * curvRes[j, k] * Normals[j, k, dir];
 
-                            if (sst == SurfaceSressTensor.SurfaceVelocityDivergence || sst == SurfaceSressTensor.FullBoussinesqScriven) {
+                            if (sst == SurfaceSressTensor.SurfaceDivergence || sst == SurfaceSressTensor.FullBoussinesqScriven) {
                                 double divIuI = 0.0;
                                 for (int d1 = 0; d1 < D; d1++) {
                                     for (int d2 = 0; d2 < D; d2++) {
@@ -1070,7 +1070,7 @@ namespace BoSSS.Solution.XNSECommon {
                                 // isotropic part
                                 surfF += sigma * curvRes[j, k] * Normals[j, k, d] * Vdir[d];
 
-                                if (sst == SurfaceSressTensor.SurfaceVelocityDivergence || sst == SurfaceSressTensor.FullBoussinesqScriven) {
+                                if (sst == SurfaceSressTensor.SurfaceDivergence || sst == SurfaceSressTensor.FullBoussinesqScriven) {
                                     double divIuI = 0.0;
                                     for (int d1 = 0; d1 < D; d1++) {
                                         for (int d2 = 0; d2 < D; d2++) {
