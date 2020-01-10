@@ -1349,8 +1349,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         double m_lamI;
 
-        public BoussinesqScriven_SurfaceVelocityDivergence(int d, double lamI, double penalty, IncompressibleBcType[] edgeTag2Type) {
+        public BoussinesqScriven_SurfaceVelocityDivergence(int d, int D, double lamI, double penalty, IncompressibleBcType[] edgeTag2Type) {
             m_comp = d;
+            m_D = D;
             m_lamI = lamI;
             m_penalty = penalty;
             m_edgeTag2Type = edgeTag2Type;
@@ -1518,8 +1519,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         bool semiImplicit;
 
-        public BoussinesqScriven_SurfaceDeformationRate_GradU(int d, double mu_I, double penalty, bool semiImplicitOnly = false) {
+        public BoussinesqScriven_SurfaceDeformationRate_GradU(int d, int D, double mu_I, double penalty, bool semiImplicitOnly = false) {
             m_comp = d;
+            m_D = D;
             m_penalty = penalty;
             m_muI = mu_I;
             semiImplicit = semiImplicitOnly;
@@ -1647,8 +1649,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         double m_muI;
 
 
-        public BoussinesqScriven_SurfaceDeformationRate_GradUTranspose(int d, double mu_I, double penalty) {
+        public BoussinesqScriven_SurfaceDeformationRate_GradUTranspose(int d, int D, double mu_I, double penalty) {
             m_comp = d;
+            m_D = D;
             m_muI = mu_I;
             m_penalty = penalty;
         }
