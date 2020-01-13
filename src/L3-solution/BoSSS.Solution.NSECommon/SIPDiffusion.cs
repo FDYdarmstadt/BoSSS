@@ -87,7 +87,7 @@ namespace BoSSS.Solution.NSECommon {
                     this.m_ParameterOrdering = new string[] { VariableNames.Temperature0};
                     break;
                 case PhysicsMode.Combustion:
-                    this.m_ParameterOrdering = new string[] { VariableNames.Temperature0, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0 };
+                    this.m_ParameterOrdering = new string[] { VariableNames.Temperature0, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0/*, VariableNames.MassFraction3_0*/ };
                     break;
                 default:
                     throw new ApplicationException("Wrong physicsMode");

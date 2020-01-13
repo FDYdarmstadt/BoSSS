@@ -157,8 +157,8 @@ namespace BoSSS.Solution.NSECommon {
                     this.m_ArgumentOrdering = new string[] { VariableNames.Temperature };
                     break;
                 case PhysicsMode.Combustion:
-                    this.m_ParameterOrdering = new string[] { VariableNames.Temperature0, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0 };
-                    this.m_ArgumentOrdering = new string[] { VariableNames.Temperature, VariableNames.MassFraction0, VariableNames.MassFraction1, VariableNames.MassFraction2/*, VariableNames.MassFraction3 */};
+                    this.m_ParameterOrdering = null;
+                    this.m_ArgumentOrdering = new string[] { VariableNames.Temperature, VariableNames.MassFraction0, VariableNames.MassFraction1, VariableNames.MassFraction2};
                     break;
                 default:
                     throw new ApplicationException("wrong physicsmode");
@@ -178,7 +178,7 @@ namespace BoSSS.Solution.NSECommon {
             double rho;
             switch(physicsMode) {
                 case PhysicsMode.LowMach:
-                     rho = EoS.GetDensity(U[0]);
+                     rho = EoS.GetDensity(U);
                     break;
                 case PhysicsMode.Combustion:
                      rho = EoS.GetDensity(U);
@@ -187,9 +187,6 @@ namespace BoSSS.Solution.NSECommon {
 
                     throw new NotImplementedException("wrong PhysicsMode");
             }
-        
-
-
             src = (1.0 / (Froude * Froude)) * rho * GravityDirection[SpatialComponent];
 
             return src;
