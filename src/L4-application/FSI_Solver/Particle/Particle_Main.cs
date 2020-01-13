@@ -162,6 +162,7 @@ namespace BoSSS.Application.FSI_Solver {
                 CellArray[i] = Contains(new Vector(CellCenters[i, 0], CellCenters[i, 1]), h_min);
             }
             CellMask CutCells = new CellMask(LsTrk.GridDat, CellArray, MaskType.Logical);
+            CutCells = CutCells.Intersect(LsTrk.Regions.GetCutCellMask());
             return CutCells;
         }
 

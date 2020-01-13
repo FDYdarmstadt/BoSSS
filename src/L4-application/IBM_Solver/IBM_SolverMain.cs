@@ -478,9 +478,9 @@ namespace BoSSS.Application.IBM_Solver {
 
             // this method assumes that the parameter velocity is reference-equal to the current state 
             for (int d = 0; d < D; d++)
-                if (!object.ReferenceEquals(CurrentState.ElementAt(d), ParameterVar.ElementAt(d)))
+                if (!object.ReferenceEquals(CurrentState.ElementAt(d), ParameterVar.ElementAt(d)) && this.U0MeanRequired)
                     throw new ApplicationException("internal error");
-            
+
             if (this.U0MeanRequired) {
                 VectorField<SinglePhaseField> U0mean = new VectorField<SinglePhaseField>(ParameterVar.Skip(D).Take(D).Select(f => (SinglePhaseField)f).ToArray());
                 foreach (var um in U0mean)
@@ -502,17 +502,18 @@ namespace BoSSS.Application.IBM_Solver {
             // compute operator
             //Debug.Assert(OpMatrix.InfNorm() == 0.0);
             //Debug.Assert(OpAffine.L2Norm() == 0.0);
-
             // Create Parameters fields
             DGField[] Params;
             {
                 var U0 = new VectorField<SinglePhaseField>(CurrentState.Take(D).Select(F => (SinglePhaseField)F).ToArray());
                 SinglePhaseField[] U0_U0mean;
-                if (this.U0MeanRequired) {
+                if (this.U0MeanRequired) 
+                    {
                     Basis U0meanBasis = new Basis(GridData, 0);
                     VectorField<SinglePhaseField> U0mean = new VectorField<SinglePhaseField>(D, U0meanBasis, "U0mean_", SinglePhaseField.Factory);
                     U0_U0mean = ArrayTools.Cat<SinglePhaseField>(U0, U0mean);
-                } else {
+                }
+                else {
                     U0_U0mean = new SinglePhaseField[2 * D];
                 }
                 Params = ArrayTools.Cat<DGField>(U0_U0mean);

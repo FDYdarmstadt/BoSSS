@@ -140,10 +140,10 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control TwoParticles(int k = 2, int amrLevel = 5, double aspectRatio = 0.5, double angle = -45) {
+        public static FSI_Control TwoParticles(int k = 2, int amrLevel = 2, double aspectRatio = 0.5, double angle = -45) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/home/ij83requ/default_bosss_db", 1);
-            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
+            //C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
 
             List<string> boundaryValues = new List<string> {
                 "Pressure_Dirichlet"
@@ -163,7 +163,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             double particleDensity = 10;
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, 1);
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { -2.5, 0 }, startAngl: 0, activeStress: 1));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { 0, 0 }, startAngl: 0, activeStress: 1));
             //C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { 2.5, 0 }, startAngl: 180 + angle, activeStress: 1));
 
             // misc. solver options
