@@ -239,7 +239,6 @@ namespace BoSSS.Foundation {
 
 
                     // check the conditions at vertices (actual, own, potential)
-                    Debugger.Launch();
                     int[] vertAtCell1 = m_grd.Cells.CellVertices[cell1];
                     int[] vertAtCell2 = m_grd.Cells.CellVertices[cell2];
                     int numVCond = 0;

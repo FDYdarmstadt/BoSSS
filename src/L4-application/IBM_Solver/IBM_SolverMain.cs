@@ -147,7 +147,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         virtual protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
             get {
-                double rho = this.Control.PhysicalParameters.rho_A;
+                double rho = 0;// this.Control.PhysicalParameters.rho_A;
 
                 int D = this.GridData.SpatialDimension;
 

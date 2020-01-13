@@ -291,15 +291,13 @@ namespace BoSSS.Application.FSI_Solver {
                 if (((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.None) {
 
                     var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk,
-                        penalty, this.ComputePenaltyIB,
-                        FluidViscosity / FluidDensity,
-                        delegate (Vector X) {
+                        penalty, this.ComputePenaltyIB, FluidViscosity, delegate (Vector X) {
                             throw new NotImplementedException("Currently not implemented for fixed motion");
                         });
                     comps.Add(viscousAtIB);
                 }
                 else {
-                    var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk, penalty, ComputePenaltyIB, FluidViscosity / FluidDensity,
+                    var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk, penalty, ComputePenaltyIB, FluidViscosity,
                         delegate (Vector X) {
                             return CreateCouplingAtParticleBoundary(X);
                         }

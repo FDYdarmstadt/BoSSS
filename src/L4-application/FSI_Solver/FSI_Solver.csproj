@@ -129,7 +129,7 @@
     <Compile Include="Particle\Shapes\Particle_Ellipsoid.cs" />
     <Compile Include="FSI_Control.cs" />
     <Compile Include="FSI_SolverMain.cs" />
-    <Compile Include="Particle\Particle_Main.cs" />
+    <Compile Include="Particle\Particle.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="FSI_Auxillary.cs" />
   </ItemGroup>
