@@ -14,13 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid;
 using ilPSP;
+using System.Collections.Generic;
 
 namespace BoSSS.Application.FSI_Solver {
-    public class Motion_Dry_NoRotation : Motion_Dry {
+    public class MotionWetNoRotation : Motion {
 
         /// <summary>
-        /// The dry description of motion without hydrodynamics and rotation.
+        /// The dry description of motion including hydrodynamics without rotation.
         /// </summary>
         /// <param name="gravity">
         /// The gravity (volume forces) acting on the particle.
@@ -28,12 +30,15 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public Motion_Dry_NoRotation(Vector gravity, double density) : base(gravity, density) {
+        /// /// <param name="underrelaxationParam">
+        /// The underrelaxation parameters (convergence limit, prefactor and a bool whether to use addaptive underrelaxation) defined in <see cref="ParticleUnderrelaxationParam"/>.
+        /// </param>
+        public MotionWetNoRotation(Vector gravity, double density) : base(new Vector(gravity), density) {
             IncludeRotation = false;
         }
 
         /// <summary>
-        /// Include rotation?
+        /// Include translation?
         /// </summary>
         internal override bool IncludeRotation { get; } = false;
 
@@ -48,9 +53,10 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calculate the new particle angle
+        /// Calculate the new particle angle after a collision
         /// </summary>
         /// <param name="dt"></param>
+        /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
         protected override double CalculateParticleAngle(double dt, double collisionTimestep) {
             double l_Angle = GetAngle(1);
             Aux.TestArithmeticException(l_Angle, "particle angle");
@@ -80,10 +86,29 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calculate the new acceleration (translational and rotational)
+        /// Update Forces and Torque acting from fluid onto the particle
         /// </summary>
+        /// <param name="hydrodynamicsIntegration"></param>
+        /// <param name="fluidDensity"></param>
+        public override Vector CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, CellMask cutCells, double dt) {
+            Vector tempForces = new Vector(hydrodynamicsIntegration.Forces(out List<double[]>[] stressToPrintOut, cutCells));
+            currentStress = TransformStressToPrint(stressToPrintOut);
+            Aux.TestArithmeticException(tempForces, "temporal forces during calculation of hydrodynamics");
+            tempForces = Force_MPISum(tempForces);
+            tempForces = CalculateGravity(fluidDensity, tempForces);
+            return tempForces;
+        }
+
+        /// <summary>
+        /// Update Forces and Torque acting from fluid onto the particle
+        /// </summary>
+        /// <param name="U"></param>
+        /// <param name="P"></param>
+        /// <param name="levelSetTracker"></param>
+        /// <param name="fluidViscosity"></param>
+        /// <param name="cutCells"></param>
         /// <param name="dt"></param>
-        protected override double CalculateRotationalAcceleration(double dt) {
+        public override double CalculateHydrodynamicTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, CellMask cutCells, double dt) {
             return 0;
         }
     }

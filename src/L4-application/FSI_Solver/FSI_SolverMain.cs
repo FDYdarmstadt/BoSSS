@@ -289,15 +289,13 @@ namespace BoSSS.Application.FSI_Solver {
                 if (((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.None) {
 
                     var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk,
-                        penalty, this.ComputePenaltyIB,
-                        FluidViscosity / FluidDensity,
-                        delegate (Vector X) {
+                        penalty, this.ComputePenaltyIB, FluidViscosity, delegate (Vector X) {
                             throw new NotImplementedException("Currently not implemented for fixed motion");
                         });
                     comps.Add(viscousAtIB);
                 }
                 else {
-                    var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk, penalty, ComputePenaltyIB, FluidViscosity / FluidDensity,
+                    var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk, penalty, ComputePenaltyIB, FluidViscosity,
                         delegate (Vector X) {
                             return CreateCouplingAtParticleBoundary(X);
                         }
@@ -1377,13 +1375,22 @@ namespace BoSSS.Application.FSI_Solver {
                 Particle particle = m_Particles[p];
                 for (int j = 0; j < noOfLocalCells; j++) {
                     Vector centerPoint = new Vector(CellCenters[j, 0], CellCenters[j, 1]);
-                    if (!coarseCells[j] && LsTrk.Regions.IsSpeciesPresentInCell(LsTrk.GetSpeciesId("A"), j)) {
+                    //if (!coarseCells[j] && LsTrk.Regions.IsSpeciesPresentInCell(LsTrk.GetSpeciesId("A"), j)) {
+                    //    coarseCells[j] = particle.Contains(centerPoint, radiusCoarseCells);
+                    //}
+                    //if (!mediumCells[j] && LsTrk.Regions.IsSpeciesPresentInCell(LsTrk.GetSpeciesId("A"), j)) {
+                    //    mediumCells[j] = particle.Contains(centerPoint, radiusMediumCells);
+                    //}
+                    //if (!fineCells[j] && LsTrk.Regions.IsSpeciesPresentInCell(LsTrk.GetSpeciesId("A"), j)){
+                    //    fineCells[j] = particle.Contains(centerPoint, radiusFineCells);
+                    //}
+                    if (!coarseCells[j]) {
                         coarseCells[j] = particle.Contains(centerPoint, radiusCoarseCells);
                     }
-                    if (!mediumCells[j] && LsTrk.Regions.IsSpeciesPresentInCell(LsTrk.GetSpeciesId("A"), j)) {
+                    if (!mediumCells[j]) {
                         mediumCells[j] = particle.Contains(centerPoint, radiusMediumCells);
                     }
-                    if (!fineCells[j] && LsTrk.Regions.IsSpeciesPresentInCell(LsTrk.GetSpeciesId("A"), j)){
+                    if (!fineCells[j]) {
                         fineCells[j] = particle.Contains(centerPoint, radiusFineCells);
                     }
                 }

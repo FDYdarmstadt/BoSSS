@@ -146,7 +146,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         virtual protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
             get {
-                double rho = this.Control.PhysicalParameters.rho_A;
+                double rho = 0;// this.Control.PhysicalParameters.rho_A;
 
                 int D = this.GridData.SpatialDimension;
 
@@ -1068,7 +1068,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                 //CellMask domain = this.LsTrk.Regions.GetNearFieldMask(1);
 
-                ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, domain, null, false);
+                ContinuityEnforcer.MakeContinuous(DGLevSet.Current, LevSet, domain, null, false);
                 if (SetFarField)
                 {
                     LevSet.Clear(NegMask);

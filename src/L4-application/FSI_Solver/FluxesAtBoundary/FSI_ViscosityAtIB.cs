@@ -123,23 +123,23 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
                                 returnValue -= muA * (Grad_vA[dD] * inp.Normal[dD]) * (inp.Normal[dN] * uA[dN] - inp.Normal[dN] * uAFict[dN]) * inp.Normal[component];      
                             }
                             // penalty term
-                            returnValue += muA * (inp.Normal[dN] * uA[dN] - inp.Normal[dN] * uAFict[dN]) * inp.Normal[component] * vA * _penalty;                  
+                            returnValue += muA * N[dN] * (uA[dN] - uAFict[dN]) * N[component] * vA * _penalty;                  
                         }
                         // tangential direction, active part
                         double[,] P = new double[dim, dim];
                         for (int d1 = 0; d1 < dim; d1++) {
                             for (int d2 = 0; d2 < dim; d2++) {
                                 if (d1 == d2) {
-                                    P[d1, d2] = 1 - Math.Abs(inp.Normal[d1] * inp.Normal[d2]);
+                                    P[d1, d2] = 1 - N[d1] * N[d2];
                                 }
                                 else {
-                                    P[d1, d2] = Math.Abs((inp.Normal[d1]) * (inp.Normal[d2]));
+                                    P[d1, d2] = N[d1] * N[d2];
                                 }
                             }
                         }
                         for (int d1 = 0; d1 < dim; d1++) {
                             for (int d2 = 0; d2 < dim; d2++) {
-                                returnValue -= P[d1, d2] * activeStressVector[component] * (P[d1, component] * vA) * orientation * inp.Normal;                     
+                                returnValue -= P[d1, d2] * activeStressVector[d2] * (P[d1, component] * vA); 
                             }
                         }
                         break;

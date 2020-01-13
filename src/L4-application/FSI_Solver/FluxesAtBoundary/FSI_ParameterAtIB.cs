@@ -41,6 +41,14 @@ namespace FSI_Solver {
         }
 
         /// <summary>
+        /// Veloctiy of the point X
+        /// </summary>
+        public Vector TranslationalVelocity() {
+            return new Vector(m_CurrentParticle.Motion.GetTranslationalVelocity(0)[0],
+                              m_CurrentParticle.Motion.GetTranslationalVelocity(0)[1]);
+        }
+
+        /// <summary>
         /// Current particle angle
         /// </summary>
         public double Angle() {
