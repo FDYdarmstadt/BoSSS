@@ -469,13 +469,12 @@ namespace BoSSS.Solution.XdgTimestepping {
             nonlinSolver = null;
             linearSolver = null;
 
-            //m_linearconfig.NoOfMultigridLevels= this.MultigridSequence.Length;
-            bool IsLinear = false;
             if (Config_SpatialOperatorType != SpatialOperatorType.Nonlinear)
-                IsLinear = true;
+                m_nonlinconfig.SolverCode = BoSSS.Solution.Control.NonLinearSolverCode.Picard;
+            Debug.Assert(XdgSolverFactory.GetNonLinearConfig.SolverCode == BoSSS.Solution.Control.NonLinearSolverCode.Picard);
 
+            XdgSolverFactory.GenerateNonLin(out nonlinSolver,out linearSolver, this.AssembleMatrixCallback, this.MultigridBasis, Config_MultigridOperator, SessionPath, MultigridSequence);
             
-            XdgSolverFactory.GenerateNonLin(out nonlinSolver,out linearSolver, this.AssembleMatrixCallback, this.MultigridBasis, LevelSetConvergenceReached, IsLinear, Config_MultigridOperator, SessionPath, MultigridSequence);
             string ls_strg = String.Format("{0}", m_linearconfig.SolverCode);
             string nls_strg = String.Format("{0}", m_nonlinconfig.SolverCode);
 

@@ -27,35 +27,31 @@ namespace BoSSS.Solution.Control {
     public enum NonLinearSolverCode {
 
         /// <summary>
-        /// NewtonKrylov GMRES (<see cref="BoSSS.Solution.AdvancedSolvers.NonLinearSolver"/>) with linear solver (<see cref="LinearSolverConfig.Code"/>) used as preconditioner for matrix-free GMRES 
-        /// </summary>
-        NewtonGMRES = 0,
-
-        /// <summary>
         /// The bald guy from the Enterprise.
         /// Picard fixpoint solver (<see cref="BoSSS.Solution.AdvancedSolvers.FixpointIterator"/>) with linear solver (<see cref="LinearSolverCode"/>) for the linearized equation system
         /// </summary>
         Picard = 1,
 
         /// <summary>
-        /// Newtons method (<see cref="BoSSS.Solution.Advance"/>) with linear solver (<see cref="LinearSolverCode"/>) used to approximate the inverse of the jacobian with the inverse operator matrix. 
+        /// Newtons method (<see cref="BoSSS.Solution.AdvancedSolvers.Newton"/>) with linear solver (<see cref="LinearSolverCode"/>) used to approximate the inverse of the jacobian with the inverse operator matrix. 
         /// </summary>
         Newton = 2,
-
-        PicardGMRES = 3,
 
         /// <summary>
         /// Mixed sequence of nonlinear solvers. Useful for example if one wishes to start a simulation with Picard and then change to Newton.
         /// </summary>
         NLSolverSequence = 4, 
 
+        /// <summary>
+        /// Overgiven solver to Solver Chooser object. Weisse bescheid ...
+        /// </summary>
         selfmade = 999,
     }
 
     /// <summary>
     /// User-Options for nonlinear solver configuration; 
     /// </summary>
-    public class NonLinearSolverConfig {
+    public class NonLinearSolverConfig : ICloneable, IEquatable<NonLinearSolverConfig>{
 
         /// <summary>
         /// This will print out more information about iterations.
@@ -103,6 +99,39 @@ namespace BoSSS.Solution.Control {
         /// When pressure ref point can not be used (Option: false), a mean pressure field is calculated and substracted from the current pressure field.
         /// </summary>
         public bool UsePresRefPoint = true;
-    }
 
+        /// <summary>
+        /// Clones the NonLinearConfig
+        /// </summary>
+        /// <returns></returns>
+        public object Clone() {
+            var clone = new NonLinearSolverConfig() {
+                constantNewtonIterations = this.constantNewtonIterations,
+                ConvergenceCriterion = this.ConvergenceCriterion,
+                MaxSolverIterations = this.MaxSolverIterations,
+                MinSolverIterations = this.MinSolverIterations,
+                SolverCode = this.SolverCode,
+                UnderRelax = this.UnderRelax,
+                UsePresRefPoint = this.UsePresRefPoint,
+                verbose = this.verbose
+        };
+            return clone;
+        }
+
+        /// <summary>
+        /// Compares value not reference!
+        /// </summary>
+        /// <param name="compareto"></param>
+        /// <returns></returns>
+        public bool Equals(NonLinearSolverConfig compareto) {
+            return this.constantNewtonIterations == compareto.constantNewtonIterations &&
+                this.ConvergenceCriterion == compareto.ConvergenceCriterion &&
+                this.MaxSolverIterations == compareto.MaxSolverIterations &&
+                this.MinSolverIterations == compareto.MinSolverIterations &&
+                this.SolverCode == compareto.SolverCode &&
+                this.UnderRelax == compareto.UnderRelax &&
+                this.UsePresRefPoint == compareto.UsePresRefPoint &&
+                this.verbose == compareto.verbose;
+        }
+    }
 }
