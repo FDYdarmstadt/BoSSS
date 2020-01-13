@@ -1,4 +1,28 @@
-﻿using System;
+﻿/* See LICENSE below for information on rights to use, modify and distribute
+   this code. */
+
+/* 
+ * hilbert.c - Computes Hilbert space-filling curve coordinates, without
+ * recursion, from integer index, and vice versa, and other Hilbert-related
+ * calculations.  Also known as Pi-order or Peano scan.
+ * 
+ * Author:      Doug Moore
+ *              Dept. of Computational and Applied Math
+ *              Rice University
+ *              http://www.caam.rice.edu/~dougm
+ * Date:        Sun Feb 20 2000
+ * Copyright (c) 1998-2000, Rice University
+ *
+ * Acknowledgement:
+ * This implementation is based on the work of A. R. Butz ("Alternative
+ * Algorithm for Hilbert's Space-Filling Curve", IEEE Trans. Comp., April,
+ * 1971, pp 424-426) and its interpretation by Spencer W. Thomas, University
+ * of Michigan (http://www-personal.umich.edu/~spencer/Home.html) in his widely
+ * available C software.  While the implementation here differs considerably
+ * from his, the first two interfaces and the style of some comments are very
+ * much derived from his work. */
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,15 +31,6 @@ using System.Threading.Tasks;
 namespace ilPSP.HilbertCurve {
 
     public static class HilbertCurve {
-
-
-
-
-        // suchen/ersetzen
-        // bitmask_t ---> ulong
-        // unsigned ---> int
-        // halfmask_t ---> uint
-        // int must be used for shift operation
 
         static ulong bitTranspose(int nDims, int nBits, ulong inCoords) {
             int nDims1 = nDims - 1;

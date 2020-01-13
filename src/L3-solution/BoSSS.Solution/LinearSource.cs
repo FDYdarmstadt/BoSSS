@@ -36,7 +36,7 @@ namespace BoSSS.Solution.Utils {
     /// an algebraic formula. All function matrices and offsets (aka. intercept) are constructed from the user-defined
     /// functions by this class.
     /// </summary>
-    public abstract class LinearSource : IVolumeForm {
+    public abstract class LinearSource : IVolumeForm, ISupportsJacobianComponent {
 
         /// <summary>
         /// not in use, returning null
@@ -53,7 +53,6 @@ namespace BoSSS.Solution.Utils {
         abstract public IList<string> ArgumentOrdering {
             get;
         }
-
 
         /// <summary>
         /// override this method to implement the linear source
@@ -92,6 +91,13 @@ namespace BoSSS.Solution.Utils {
         /// </summary>
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             return this.Source(cpv.Xglobal, cpv.Parameters, U) * V;
+        }
+
+        /// <summary>
+        /// Linear component - returns this object itself.
+        /// </summary>
+        virtual public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
         }
     }
 }

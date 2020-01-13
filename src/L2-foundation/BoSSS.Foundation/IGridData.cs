@@ -67,9 +67,14 @@ namespace BoSSS.Foundation.Grid {
             get;
         }
 
-
+        /// <summary>
+        /// %
+        /// </summary>
         IGeometricalCellsData iGeomCells { get; }
 
+        /// <summary>
+        /// %
+        /// </summary>
         ILogicalCellData iLogicalCells { get; }
 
         /// <summary>

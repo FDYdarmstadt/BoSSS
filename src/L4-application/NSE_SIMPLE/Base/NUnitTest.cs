@@ -46,29 +46,28 @@ namespace NSE_SIMPLE {
         /// </summary>
         [Test]
         public static void IncompressibleSteadyPoiseuilleFlowTest() {
-            NSE_SIMPLEMain p = null;
-            Application<SIMPLEControl>._Main(new string[] { "-c cs:NSE_SIMPLE.Incompressible.ControlExamples.PoiseuilleFlow()" }, false, delegate () {
-                p = new NSE_SIMPLEMain();
-                return p;
-            });
+            var C = NSE_SIMPLE.Incompressible.ControlExamples.PoiseuilleFlow();
+            using (NSE_SIMPLEMain p = new NSE_SIMPLEMain()) {
+                p.Init(C);
+                p.RunSolverMode();
 
-            double err_u = (double)p.QueryHandler.QueryResults["SolL2err_u"];
-            double err_v = (double)p.QueryHandler.QueryResults["SolL2err_v"];
-            double err_p = (double)p.QueryHandler.QueryResults["SolL2err_p"];
-            double thres_u = 5.1e-6;
-            double thres_v = 2.8e-6;
-            double thres_p = 1.6e-5;
+                double err_u = (double)p.QueryHandler.QueryResults["SolL2err_u"];
+                double err_v = (double)p.QueryHandler.QueryResults["SolL2err_v"];
+                double err_p = (double)p.QueryHandler.QueryResults["SolL2err_p"];
+                double thres_u = 5.1e-6;
+                double thres_v = 2.8e-6;
+                double thres_p = 1.6e-5;
 
+                Console.WriteLine("Number of SIMPLE iterations: " + p.SIMPLEStatus.SIMPLEStepNo + ". Expected number of iterations is less than 133.");
+                Assert.IsTrue(p.SIMPLEStatus.SIMPLEStepNo < 133);
 
-            Console.WriteLine("Number of SIMPLE iterations: " + p.SIMPLEStatus.SIMPLEStepNo + ". Expected number of iterations is less than 133.");
-            Assert.IsTrue(p.SIMPLEStatus.SIMPLEStepNo < 133);
-
-            Console.WriteLine("L2 Error of solution u: " + err_u + " (threshold is " + thres_u + ")");
-            Assert.IsTrue(err_u < thres_u);
-            Console.WriteLine("L2 Error of solution v: " + err_v + " (threshold is " + thres_v + ")");
-            Assert.IsTrue(err_v < thres_v);
-            Console.WriteLine("L2 Error of solution p: " + err_p + " (threshold is " + thres_p + ")");
-            Assert.IsTrue(err_p < thres_p);
+                Console.WriteLine("L2 Error of solution u: " + err_u + " (threshold is " + thres_u + ")");
+                Console.WriteLine("L2 Error of solution v: " + err_v + " (threshold is " + thres_v + ")");
+                Console.WriteLine("L2 Error of solution p: " + err_p + " (threshold is " + thres_p + ")");
+                Assert.Less(err_u, thres_u);
+                Assert.Less(err_v, thres_v);
+                Assert.Less(err_p, thres_p);
+            }
         }
 
         /// <summary>
@@ -76,64 +75,65 @@ namespace NSE_SIMPLE {
         /// </summary>
         [Test]
         public static void IncompressibleUnsteadyTaylorVortexTest() {
-            NSE_SIMPLEMain p = null;
-            Application<SIMPLEControl>._Main(new string[] { "-c cs:NSE_SIMPLE.Incompressible.ControlExamples.UnsteadyTaylorVortex()" }, false, delegate () {
-                p = new NSE_SIMPLEMain();
-                return p;
-            });
+            var C = NSE_SIMPLE.Incompressible.ControlExamples.UnsteadyTaylorVortex();
+            using (NSE_SIMPLEMain p = new NSE_SIMPLEMain()) {
+                p.Init(C);
+                p.RunSolverMode();
 
-            double err_u = (double)p.QueryHandler.QueryResults["SolL2err_u"];
-            double err_v = (double)p.QueryHandler.QueryResults["SolL2err_v"];
-            double err_p = (double)p.QueryHandler.QueryResults["SolL2err_p"];
-            double thres_vel = 8.2e-3;
-            double thres_p = 1.5e-2;
+                double err_u = (double)p.QueryHandler.QueryResults["SolL2err_u"];
+                double err_v = (double)p.QueryHandler.QueryResults["SolL2err_v"];
+                double err_p = (double)p.QueryHandler.QueryResults["SolL2err_p"];
+                double thres_vel = 8.2e-3;
+                double thres_p = 1.5e-2;
 
-            if (p.SIMPLEStatus.CntMaxNoSIMPLEsteps > 0) {
-                Console.WriteLine("WARNING: For this NUnitTest all time steps are expected to converge!");
+                if (p.SIMPLEStatus.CntMaxNoSIMPLEsteps > 0) {
+                    Console.WriteLine("WARNING: For this NUnitTest all time steps are expected to converge!");
+                }
+                Assert.IsTrue(p.SIMPLEStatus.CntMaxNoSIMPLEsteps == 0);
+
+                Console.WriteLine("L2 Error of solution u: " + err_u + " (threshold is " + thres_vel + ")");
+                Console.WriteLine("L2 Error of solution v: " + err_v + " (threshold is " + thres_vel + ")");
+                Console.WriteLine("L2 Error of solution p: " + err_p + " (threshold is " + thres_p + ")");
+                Assert.Less(err_u, thres_vel);
+                Assert.Less(err_v, thres_vel);
+                Assert.Less(err_p, thres_p);
             }
-            Assert.IsTrue(p.SIMPLEStatus.CntMaxNoSIMPLEsteps == 0);
-
-            Console.WriteLine("L2 Error of solution u: " + err_u + " (threshold is " + thres_vel + ")");
-            Assert.IsTrue(err_u < thres_vel);
-            Console.WriteLine("L2 Error of solution v: " + err_v + " (threshold is " + thres_vel + ")");
-            Assert.IsTrue(err_v < thres_vel);
-            Console.WriteLine("L2 Error of solution p: " + err_p + " (threshold is " + thres_p + ")");
-            Assert.IsTrue(err_p < thres_p);
         }
-        
+
         /// <summary>
         /// Tests the unsteady smooth interface solver.
         /// </summary>
         [Test]
         public static void MultiphaseUnsteadyWaveTest() {
-            NSE_SIMPLEMain p = null;
-            Application<SIMPLEControl>._Main(new string[] { "-c cs:NSE_SIMPLE.Multiphase.ControlExamples.UnsteadyMultiphaseWave()" }, false, delegate () {
-                p = new NSE_SIMPLEMain();
-                return p;
-            });
 
-            double err_u = (double)p.QueryHandler.QueryResults["SolL2err_u"];
-            double err_p = (double)p.QueryHandler.QueryResults["SolL2err_p"];
-            double err_phi = (double)p.QueryHandler.QueryResults["SolL2err_phi"];
-            double err_rho = (double)p.QueryHandler.QueryResults["SolL2err_Rho"];
-            double thres_u = 6.1e-6;
-            double thres_p = 4.6e-3;
-            double thres_phi = 2.0e-3;
-            double thres_rho = 2.0;
+            var C = NSE_SIMPLE.Multiphase.ControlExamples.UnsteadyMultiphaseWave();
+            using (NSE_SIMPLEMain p = new NSE_SIMPLEMain()) {
+                p.Init(C);
+                p.RunSolverMode();
 
-            if (p.SIMPLEStatus.CntMaxNoSIMPLEsteps > 0) {
-                Console.WriteLine("WARNING: For this NUnitTest all time steps are expected to converge!");
+                double err_u = (double)p.QueryHandler.QueryResults["SolL2err_u"];
+                double err_p = (double)p.QueryHandler.QueryResults["SolL2err_p"];
+                double err_phi = (double)p.QueryHandler.QueryResults["SolL2err_phi"];
+                double err_rho = (double)p.QueryHandler.QueryResults["SolL2err_Rho"];
+                double thres_u = 6.1e-6;
+                double thres_p = 4.6e-3;
+                double thres_phi = 2.0e-3;
+                double thres_rho = 2.0;
+
+                if (p.SIMPLEStatus.CntMaxNoSIMPLEsteps > 0) {
+                    Console.WriteLine("WARNING: For this NUnitTest all time steps are expected to converge!");
+                }
+                Assert.IsTrue(p.SIMPLEStatus.CntMaxNoSIMPLEsteps == 0);
+
+                Console.WriteLine("L2 Error of solution u: " + err_u + " (threshold is " + thres_u + ")");
+                Console.WriteLine("L2 Error of solution p: " + err_p + " (threshold is " + thres_p + ")");
+                Console.WriteLine("L2 Error of solution phi: " + err_phi + " (threshold is " + thres_phi + ")");
+                Console.WriteLine("L2 Error of solution rho: " + err_rho + " (threshold is " + thres_rho + ")");
+                Assert.Less(err_u, thres_u, "L2 Error in velocity to high.");
+                Assert.Less(err_p, thres_p, "L2 Error in pressure to high.");
+                Assert.Less(err_phi, thres_phi, "L2 Error in level set to high.");
+                Assert.Less(err_rho, thres_rho, "L2 Error in density to high.");
             }
-            Assert.IsTrue(p.SIMPLEStatus.CntMaxNoSIMPLEsteps == 0);
-
-            Console.WriteLine("L2 Error of solution u: " + err_u + " (threshold is " + thres_u + ")");
-            Assert.IsTrue(err_u < thres_u);
-            Console.WriteLine("L2 Error of solution p: " + err_p + " (threshold is " + thres_p + ")");
-            Assert.IsTrue(err_p < thres_p);
-            Console.WriteLine("L2 Error of solution phi: " + err_phi + " (threshold is " + thres_phi + ")");
-            Assert.IsTrue(err_phi < thres_phi);
-            Console.WriteLine("L2 Error of solution rho: " + err_rho + " (threshold is " + thres_rho + ")");
-            Assert.IsTrue(err_rho < thres_rho);
         }
 
         /// <summary>
@@ -141,33 +141,34 @@ namespace NSE_SIMPLE {
         /// </summary>
         [Test]
         public static void LowMachSteadyCouetteWithTemperatureGradientTest() {
-            NSE_SIMPLEMain p = null;
-            Application<SIMPLEControl>._Main(new string[] { "-c cs:NSE_SIMPLE.LowMach.ControlExamples.SteadyCouetteFlowWithTemperatureGradient()" }, false, delegate () {
-                p = new NSE_SIMPLEMain();
-                return p;
-            });
+            var C = NSE_SIMPLE.LowMach.ControlExamples.SteadyCouetteFlowWithTemperatureGradient();
+            using (NSE_SIMPLEMain p = new NSE_SIMPLEMain()) {
+                p.Init(C);
+                p.RunSolverMode();
 
-            double err_u = (double)p.QueryHandler.QueryResults["SolL2err_u"];
-            double err_v = (double)p.QueryHandler.QueryResults["SolL2err_v"];
-            double err_p = (double)p.QueryHandler.QueryResults["SolL2err_p"];
-            double err_T = (double)p.QueryHandler.QueryResults["SolL2err_T"];
-            double thres_u = 3.7e-5;
-            double thres_v = 2.3e-5;
-            double thres_p = 5.1e-4;
-            double thres_T = 2.0e-5;
 
-            Console.WriteLine("Number of SIMPLE iterations: " + p.SIMPLEStatus.SIMPLEStepNo + ". Expected number of iterations is less than 430.");
-            Console.WriteLine("L2 Error of solution u: " + err_u + " (threshold is " + thres_u + ")");
-            Console.WriteLine("L2 Error of solution v: " + err_v + " (threshold is " + thres_v + ")");
-            Console.WriteLine("L2 Error of solution p: " + err_p + " (threshold is " + thres_p + ")");
-            Console.WriteLine("L2 Error of solution T: " + err_T + " (threshold is " + thres_T + ")");
+                double err_u = (double)p.QueryHandler.QueryResults["SolL2err_u"];
+                double err_v = (double)p.QueryHandler.QueryResults["SolL2err_v"];
+                double err_p = (double)p.QueryHandler.QueryResults["SolL2err_p"];
+                double err_T = (double)p.QueryHandler.QueryResults["SolL2err_T"];
+                double thres_u = 3.7e-5;
+                double thres_v = 2.3e-5;
+                double thres_p = 5.1e-4;
+                double thres_T = 2.0e-5;
 
-            Assert.IsTrue(p.SIMPLEStatus.SIMPLEStepNo < 430);
+                Console.WriteLine("Number of SIMPLE iterations: " + p.SIMPLEStatus.SIMPLEStepNo + ". Expected number of iterations is less than 430.");
+                Console.WriteLine("L2 Error of solution u: " + err_u + " (threshold is " + thres_u + ")");
+                Console.WriteLine("L2 Error of solution v: " + err_v + " (threshold is " + thres_v + ")");
+                Console.WriteLine("L2 Error of solution p: " + err_p + " (threshold is " + thres_p + ")");
+                Console.WriteLine("L2 Error of solution T: " + err_T + " (threshold is " + thres_T + ")");
 
-            Assert.IsTrue(err_u < thres_u);
-            Assert.IsTrue(err_v < thres_v);
-            Assert.IsTrue(err_p < thres_p);
-            Assert.IsTrue(err_T < thres_T);
+                Assert.IsTrue(p.SIMPLEStatus.SIMPLEStepNo < 430);
+
+                Assert.Less(err_u, thres_u);
+                Assert.Less(err_v, thres_v);
+                Assert.Less(err_p, thres_p);
+                Assert.Less(err_T, thres_T);
+            }
         }
     }
 }

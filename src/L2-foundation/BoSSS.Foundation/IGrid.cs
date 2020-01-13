@@ -37,12 +37,17 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
+        /// Releases the object cached in <see cref="iGridData"/>; this is necessary if 
+        /// the grid object was changed somehow.
+        /// </summary>
+        void InvalidateGridData();
+
+        /// <summary>
         /// Driver method for grid redistribution; this includes 
         /// - computing a new partition 
         /// - application of the partition to this grid, i.e. invocation off <see cref="RedistributeGrid(int[])"/>
         /// </summary>
         void Redistribute(IDatabaseDriver iom, GridPartType method, string PartOptions);
-
 
         /// <summary>
         /// redistributes this grid, i.e. sends cells to different processors
@@ -74,6 +79,9 @@ namespace BoSSS.Foundation.Grid {
             get;
         }
 
+        /// <summary>
+        /// %
+        /// </summary>
         IGridSerializationHandler GridSerializationHandler {
             get;
         }

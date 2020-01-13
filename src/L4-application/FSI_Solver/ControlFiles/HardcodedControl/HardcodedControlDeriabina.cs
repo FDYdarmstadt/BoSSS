@@ -16,11 +16,11 @@
 
 using System;
 using BoSSS.Foundation.Grid;
-using ilPSP.Utils;
+using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.XdgTimestepping;
 using System.Collections.Generic;
-using BoSSS.Platform.LinAlg;
+using ilPSP.Utils;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HardcodedControlDeriabina : IBM_Solver.HardcodedTestExamples {
@@ -68,7 +68,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LevelSetSmoothing = false;
             C.NonLinearSolver.MaxSolverIterations = 1000;
             C.NonLinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
             C.LSunderrelax = 1.0;

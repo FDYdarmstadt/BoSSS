@@ -34,7 +34,6 @@ namespace BoSSS.Solution.XNSECommon {
     public class PressureStabilizationInBulk : PressureStabilization, ISpeciesFilter {
 
         double PressureStabilizationFactor;
-        double Reynolds;
         string m_spcName;
         SpeciesId m_spcId;
         //MultidimensionalArray h_max_Edge;
@@ -42,32 +41,17 @@ namespace BoSSS.Solution.XNSECommon {
         /// <summary>
         /// Ctor.
         /// </summary>
-        public PressureStabilizationInBulk(double PressureStabilizationFactor, double Reynolds, string spcName, SpeciesId spcId): base(PressureStabilizationFactor, Reynolds) {
+        public PressureStabilizationInBulk(double PressureStabilizationFactor, double ReynoldsA, double ReynoldsB, string spcName, SpeciesId spcId): base(PressureStabilizationFactor, 0.0) {
             this.PressureStabilizationFactor = PressureStabilizationFactor;
-            this.Reynolds = Reynolds;
             this.m_spcName = spcName;
             this.m_spcId = spcId;
+
+            switch (spcName) {
+                case "A": base.Reynolds = ReynoldsA; break;
+                case "B": base.Reynolds = ReynoldsB; break;
+                default: throw new ArgumentException("Unknown species.");
+            }
         }
-
-        //public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
-        //    h_max_Edge = cs.EdgeLengthScales;
-        //}
-
-        //public override IList<string> ArgumentOrdering {
-        //    get {
-        //        return new string[] { VariableNames.Pressure };
-        //    }
-        //}
-
-        //MultidimensionalArray h_max_Edge;
-
-        //protected override void InnerEdgeFlux(ref BoSSS.Foundation.CommonParams inp, double[] Uin, double[] Uout, out double FluxInCell, out double FluxOutCell) {
-        //    base.InnerEdgeFlux(ref inp, Uin, Uout, out FluxInCell, out FluxOutCell);
-        //}
-
-        //protected void BorderEdgeFlux(ref BoSSS.Foundation.CommonParamsBnd inp, double[] Uin, out double FluxInCell) {
-        //    base.BorderEdgeFlux_(ref inp, Uin, out FluxInCell);
-        //}
 
         public SpeciesId validSpeciesId {
             get { return m_spcId; }

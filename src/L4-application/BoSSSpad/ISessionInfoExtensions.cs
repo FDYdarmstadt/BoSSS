@@ -1615,6 +1615,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="methods"> Array of methods to be evaluated. If methods == null, the 10 most expensive methods will be taken. </param>
         /// <param name="exclusive"> Boolean that defines if exclusive or inclusive times will be calculated. Methods will still be chosen by exclusive times. </param>
         /// <param name="solver"> String that indicates the solver. Up to now only implemented for IBM_Solver and CNS. </param>
+        /// <param name="weakScaling"></param>
         public static void EvaluatePerformanceAndPlot(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true, string solver = "IBM_Solver", bool weakScaling = false)
         {
             Plot2Ddata[] data = sessions.EvaluatePerformance(methods,exclusive,weakScaling);
@@ -1669,6 +1670,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="sessions"> List of sessions of the same problem but different MPIs </param>
         /// <param name="methods"> Array of methods to be evaluated. If methods == null, the 10 most expensive methods will be taken. </param>
         /// <param name="exclusive"> Boolean that defines if exclusive or inclusive times will be calculated. Methods will still be chosen by exclusive times. </param>
+        /// <param name="weakScaling"></param>
         /// <returns>
         /// Returns an array of DataSets, where the first half contains the convergence data for every method and the second half the speedup data.
         /// </returns>

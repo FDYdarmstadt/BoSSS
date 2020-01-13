@@ -118,7 +118,7 @@ namespace BoSSS.Foundation.XDG {
         /// Restriction of the computations to a an optional subgrid
         /// </param>
         /// <param name="bndMode"></param>
-        public void ComputeNormalByFlux(VectorField<SinglePhaseField> Output, SubGrid optionalSubGrid = null, SpatialOperator.SubGridBoundaryModes bndMode = SpatialOperator.SubGridBoundaryModes.OpenBoundary) {
+        public void ComputeNormalByFlux(VectorField<SinglePhaseField> Output, SubGrid optionalSubGrid = null, SubGridBoundaryModes bndMode = SubGridBoundaryModes.OpenBoundary) {
             if (this.m_Basis.Degree < 1)
                 throw new ArgumentException("For correct computation of these level set quantities, the level set has to be at least of degree 1!");
             SinglePhaseField absval = new SinglePhaseField(Output[0].Basis);
@@ -147,7 +147,7 @@ namespace BoSSS.Foundation.XDG {
         /// </param>
         public void ComputeTotalCurvatureByFlux(SinglePhaseField Output,
             SubGrid optionalSubGrid = null,
-            SpatialOperator.SubGridBoundaryModes bndMode = SpatialOperator.SubGridBoundaryModes.OpenBoundary) {
+            SubGridBoundaryModes bndMode = SubGridBoundaryModes.OpenBoundary) {
 
             if (this.m_Basis.Degree <= 1)
                 throw new ArgumentException("For correct computation of these level set quantities, the level set has to be at least of degree 2!");
@@ -183,7 +183,7 @@ namespace BoSSS.Foundation.XDG {
             VectorField<SinglePhaseField> Output,
             int componentOfNormalVec,
             SubGrid optionalSubGrid = null,
-            SpatialOperator.SubGridBoundaryModes bndMode = SpatialOperator.SubGridBoundaryModes.OpenBoundary) {
+            SubGridBoundaryModes bndMode = SubGridBoundaryModes.OpenBoundary) {
 
             if (this.m_Basis.Degree <= 1)
                 throw new ArgumentException("For correct computation of these level set quantities, the level set has to be at least of degree 2!");
@@ -274,10 +274,10 @@ namespace BoSSS.Foundation.XDG {
                 //var NSC = m_context.NSC;
 
                 SubGrid sgrd = null;
-                SpatialOperator.SubGridBoundaryModes bndMode = SpatialOperator.SubGridBoundaryModes.InnerEdge;
+                SubGridBoundaryModes bndMode = SubGridBoundaryModes.InnerEdge;
                 if (UseCenDiffUpTo >= 1 && quadScheme != null && quadScheme.Domain != null) {
                     sgrd = new SubGrid(quadScheme.Domain);
-                    bndMode = SpatialOperator.SubGridBoundaryModes.OpenBoundary;
+                    bndMode = SubGridBoundaryModes.OpenBoundary;
                 }
 
                 // compute 1st order derivatives by central differences, if desired

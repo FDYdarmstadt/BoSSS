@@ -628,7 +628,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             this.FluxTrafo.Start();
             {
                 MultidimensionalArray invJac; // inverse Jacobi matrix -- transformation of gradients between reference and physical space
-                MultidimensionalArray JacDet; // integral transformation metric betewwn reference and physical cell
+                MultidimensionalArray JacDet; // integral transformation metric between reference and physical cell
 
                 if(Affine) {
                     invJac = JacobiRequired ? this.m_GridDat.iGeomCells.InverseTransformation.ExtractSubArrayShallow(new int[] { i0, 0, 0 }, new int[] { i0 + Length - 1, D - 1, D - 1 }) : null;

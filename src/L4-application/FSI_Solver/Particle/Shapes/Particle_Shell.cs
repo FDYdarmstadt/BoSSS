@@ -18,8 +18,6 @@ using System;
 using System.Runtime.Serialization;
 using ilPSP;
 using System.Linq;
-using ilPSP.Utils;
-using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Application.FSI_Solver {
     [DataContract]

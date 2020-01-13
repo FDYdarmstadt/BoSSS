@@ -16,16 +16,11 @@ limitations under the License.
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using BoSSS.Foundation.XDG;
-using BoSSS.Solution.NSECommon;
 using ilPSP.Utils;
-using BoSSS.Platform;
-using System.Diagnostics;
 using BoSSS.Foundation;
-using BoSSS.Platform.LinAlg;
 using FSI_Solver;
+using ilPSP;
 
 namespace BoSSS.Solution.NSECommon.Operator.Convection {
     public class FSI_ConvectionAtIB : ILevelSetForm {
@@ -75,26 +70,15 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
             }
         }
 
-        public double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+        public double LevelSetForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
 
-            BoSSS.Foundation.CommonParams inp;
-
-            // Input parameters
-            // =============================
-            inp.Parameters_IN = cp.ParamsNeg;
-            inp.Normale = cp.n;
-            inp.iEdge = int.MinValue;
-            inp.GridDat = this.m_LsTrk.GridDat;
-            inp.X = cp.x;
-            inp.time = cp.time;
-            inp.Parameters_OUT = new double[inp.Parameters_IN.Length];
+            CommonParams inp = cp;
 
             // Particle parameters
             // =============================
-            Vector X = new Vector(inp.X);
-            FSI_ParameterAtIB coupling = m_getParticleParams(X);
+            FSI_ParameterAtIB coupling = m_getParticleParams(inp.X);
             Vector orientation = new Vector(Math.Cos(coupling.Angle()), Math.Sin(coupling.Angle()));
-            double scaleActiveBoundary = orientation * new Vector(inp.Normale) > 0 && coupling.ActiveStress() != 0 ? 1 : 0;
+            double scaleActiveBoundary = orientation * new Vector(inp.Normal) > 0 && coupling.ActiveStress() != 0 ? 1 : 0;
 
             // Level-set velocity
             // =============================
@@ -107,7 +91,8 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
             }
 
             // Outer values for Velocity and VelocityMean
-            // =============================
+            // =============================            
+            inp.Parameters_OUT = new double[inp.Parameters_IN.Length];
             inp.Parameters_OUT[0] = coupling.VelocityAtPointOnLevelSet()[0];
             inp.Parameters_OUT[1] = coupling.VelocityAtPointOnLevelSet()[1];
             // Velocity0MeanVectorOut is set to zero, i.e. always LambdaIn is used.

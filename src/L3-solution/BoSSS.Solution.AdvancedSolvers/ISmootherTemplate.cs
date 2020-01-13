@@ -26,7 +26,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// The basic interface for a linear solver. 
     /// </summary>
-    public interface ISolverSmootherTemplate {
+    public interface ISolverSmootherTemplate : ICloneable {
 
 
         /// <summary>
@@ -77,8 +77,29 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         void ResetStat();
 
-        ISolverSmootherTemplate Clone();
+
+      
     }
+
+    /// <summary>
+    /// For certain solvers, a programmable termination criterion seems handy.
+    /// On the other hand, preconditioners most of the time run on a fixed number of iterations.
+    /// </summary>
+    public interface IProgrammableTermination : ISolverSmootherTemplate {
+        
+        /// <summary>
+        /// User-Programmable termination criterion: 
+        /// - 1st argument: iteration index
+        /// - 2nd argument: l2-Norm of residual of initial solution 
+        /// - 3rd argument: l2-Norm of residual of solution in current iteration
+        /// - return value: true to continue, false to terminate
+        /// </summary>
+        Func<int, double, double, bool> TerminationCriterion {
+            get;
+            set;
+        }
+    }
+
 
     /// <summary>
     /// Interface for solvers which provide a call-back during the solver-iterations.

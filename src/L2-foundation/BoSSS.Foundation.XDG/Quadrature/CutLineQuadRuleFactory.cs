@@ -236,7 +236,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         continue;
                     }
 
-                    List<double[]> nodes = new List<double[]>();
+                    List<Vector> nodes = new List<Vector>();
                     List<double> weights = new List<double>();
                     int[] noOfNodesPerEdge = new int[referenceLineSegments.Length];
 
@@ -289,7 +289,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                             for (int m = 0; m < baseRule.NoOfNodes; m++) {
                                 // Base rule _always_ is a line rule, thus Nodes[*, _0_]
-                                double[] point = subSegments[k].GetPointOnSegment(baseRule.Nodes[m, 0]);
+                                var point = subSegments[k].GetPointOnSegment(baseRule.Nodes[m, 0]);
 
                                 weights.Add(weightFactor * baseRule.Weights[m]);
                                 nodes.Add(point);

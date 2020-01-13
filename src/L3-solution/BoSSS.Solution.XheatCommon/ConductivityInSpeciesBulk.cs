@@ -155,6 +155,7 @@ namespace BoSSS.Solution.XheatCommon {
             }
         }
 
+
         public TermActivationFlags VolTerms {
             get {
                 return TermActivationFlags.UxGradV;
@@ -188,7 +189,7 @@ namespace BoSSS.Solution.XheatCommon {
             double Acc = 0.0;
 
             for (int d = 0; d < m_D; d++) {
-                Acc += 0.5 * (_uIN[d] + _uOUT[d]) * inp.Normale[d];
+                Acc += 0.5 * (_uIN[d] + _uOUT[d]) * inp.Normal[d];
             }
 
             return Acc * (_vIN - _vOUT);
@@ -204,7 +205,7 @@ namespace BoSSS.Solution.XheatCommon {
                 case ThermalBcType.ConstantTemperature: {
 
                         for (int d = 0; d < m_D; d++) {
-                            Acc += (_uA[d]) * _vA * inp.Normale[d];
+                            Acc += (_uA[d]) * _vA * inp.Normal[d];
                         }
 
                         break;
@@ -222,7 +223,7 @@ namespace BoSSS.Solution.XheatCommon {
                         for (int d = 0; d < inp.D; d++) {
                             double g_D = this.fluxFunction[d][inp.EdgeTag](inp.X, inp.time);
 
-                            Acc += (g_D) * (_vA) * inp.Normale[d];
+                            Acc += (g_D) * (_vA) * inp.Normal[d];
                         }
 
                         break;
@@ -312,7 +313,7 @@ namespace BoSSS.Solution.XheatCommon {
             double Acc = 0.0;
 
             for (int d = 0; d < m_D; d++) {
-                Acc += (_uIN[d] - _uOUT[d]) * inp.Normale[d];
+                Acc += (_uIN[d] - _uOUT[d]) * inp.Normal[d];
             }
 
             return -Acc * (_vIN - _vOUT);
@@ -334,7 +335,7 @@ namespace BoSSS.Solution.XheatCommon {
                 case ThermalBcType.ZeroGradient: {
 
                         for (int d = 0; d < m_D; d++) {
-                            Acc += (_uA[d] - 0.0) * inp.Normale[d];
+                            Acc += (_uA[d] - 0.0) * inp.Normal[d];
                         }
 
                         break;
@@ -343,7 +344,7 @@ namespace BoSSS.Solution.XheatCommon {
 
                         for (int d = 0; d < m_D; d++) {
                             double gD = fluxFunction[d][inp.EdgeTag](inp.X, inp.time);
-                            Acc += (_uA[d] - gD) * inp.Normale[d];
+                            Acc += (_uA[d] - gD) * inp.Normal[d];
                         }
 
                         break;
@@ -479,7 +480,7 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
         protected override double InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout) {
-            return 0.5 * k * (Uin[0] + Uout[0]) * inp.Normale[m_d];
+            return 0.5 * k * (Uin[0] + Uout[0]) * inp.Normal[m_d];
         }
 
         protected override double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
@@ -490,12 +491,12 @@ namespace BoSSS.Solution.XheatCommon {
 
                     double T_D = tempFunction[inp.EdgeTag](inp.X, inp.time);
 
-                    return k * T_D * inp.Normale[m_d];
+                    return k * T_D * inp.Normal[m_d];
 
                 case ThermalBcType.ZeroGradient:
                 case ThermalBcType.ConstantHeatFlux:
 
-                    return k * Uin[0] * inp.Normale[m_d];
+                    return k * Uin[0] * inp.Normal[m_d];
                 default:
                     throw new NotImplementedException();
             }
@@ -577,7 +578,7 @@ namespace BoSSS.Solution.XheatCommon {
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT,
             double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
 
-            return (_uIN[0] - _uOUT[0]) * (_vIN - _vOUT) * inp.Normale[m_d];
+            return (_uIN[0] - _uOUT[0]) * (_vIN - _vOUT) * inp.Normal[m_d];
         }
 
 
@@ -591,7 +592,7 @@ namespace BoSSS.Solution.XheatCommon {
 
                         double T_D = tempFunction[inp.EdgeTag](inp.X, inp.time);
 
-                        return 2.0 * (_uA[0] - T_D) * (_vA) * inp.Normale[m_d];
+                        return 2.0 * (_uA[0] - T_D) * (_vA) * inp.Normal[m_d];
                     }
                 case ThermalBcType.ZeroGradient:
                 case ThermalBcType.ConstantHeatFlux: {

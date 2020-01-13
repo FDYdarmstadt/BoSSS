@@ -17,10 +17,8 @@ limitations under the License.
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
-using BoSSS.Platform.LinAlg;
 using FSI_Solver;
 using ilPSP;
-using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;

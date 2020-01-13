@@ -25,7 +25,7 @@ using System.Runtime.InteropServices;
 namespace BoSSS.Application.IBM_Solver {
 
     /// <summary>
-    /// Fluid properties (e.g. density & viscosity).
+    /// Fluid properties (e.g. density and viscosity).
     /// </summary>
     [DataContract]
     [Serializable]

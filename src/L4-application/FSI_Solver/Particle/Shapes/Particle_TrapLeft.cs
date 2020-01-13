@@ -16,7 +16,6 @@ limitations under the License.
 
 using System;
 using System.Runtime.Serialization;
-using BoSSS.Platform.LinAlg;
 using ilPSP;
 using ilPSP.Utils;
 

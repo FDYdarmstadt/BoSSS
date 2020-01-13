@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 using System;
-using System.Linq;
 using System.Runtime.Serialization;
 using BoSSS.Foundation.XDG;
 using ilPSP;
@@ -23,8 +22,6 @@ using ilPSP.Utils;
 using BoSSS.Foundation.Grid;
 using System.Collections;
 using FSI_Solver;
-using System.Collections.Generic;
-using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Application.FSI_Solver {
 

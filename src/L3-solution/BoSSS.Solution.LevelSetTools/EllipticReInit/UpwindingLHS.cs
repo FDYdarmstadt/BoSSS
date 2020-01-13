@@ -74,8 +74,8 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
             double AbsMeanGradUOut = 0;
 
             for (int d = 0; d < inp.D; d++) {
-                DirectionIn += inp.Parameters_IN[d+1] * inp.Normale[d] * Math.Sign(inp.Parameters_IN[0]);
-                DirectionOut += inp.Parameters_OUT[d+1] * inp.Normale[d] * Math.Sign(inp.Parameters_OUT[0]);
+                DirectionIn += inp.Parameters_IN[d+1] * inp.Normal[d] * Math.Sign(inp.Parameters_IN[0]);
+                DirectionOut += inp.Parameters_OUT[d+1] * inp.Normal[d] * Math.Sign(inp.Parameters_OUT[0]);
                 AbsMeanGradUIn += inp.Parameters_IN[d + 1]* inp.Parameters_IN[d + 1];
                 AbsMeanGradUOut += inp.Parameters_OUT[d + 1]* inp.Parameters_OUT[d + 1];
             }
@@ -99,8 +99,8 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
             if (CellInCut && CellOutCut) {
                 //central differences
                 for (int d = 0; d < inp.D; d++) {
-                    Acc += 0.5 * (Grad_vIn[d] + Grad_vOut[d]) * inp.Normale[d] * (uIn[0] - uOut[0]);
-                    Acc += 0.5 * (Grad_uIn[0, d] + Grad_uOut[0, d]) * inp.Normale[d] * (vIn - vOut);
+                    Acc += 0.5 * (Grad_vIn[d] + Grad_vOut[d]) * inp.Normal[d] * (uIn[0] - uOut[0]);
+                    Acc += 0.5 * (Grad_uIn[0, d] + Grad_uOut[0, d]) * inp.Normal[d] * (vIn - vOut);
                 }
                 Acc -= (uIn[0] - uOut[0]) * (vIn - vOut) * penaltyfactor * pnlty;
                 return Acc;
@@ -122,8 +122,8 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
 
             if (DirectionSelector > 0) {
                 for (int d = 0; d < inp.D; d++) {
-                    Acc += Grad_vOut[d] * inp.Normale[d] * (uIn[0] - uOut[0]);
-                    Acc += 0.5 * (Grad_uIn[0, d] + Grad_uOut[0, d]) * inp.Normale[d] * (-vOut);
+                    Acc += Grad_vOut[d] * inp.Normal[d] * (uIn[0] - uOut[0]);
+                    Acc += 0.5 * (Grad_uIn[0, d] + Grad_uOut[0, d]) * inp.Normal[d] * (-vOut);
                 }
 
                 Acc -= (uIn[0] - uOut[0]) * (-vOut) * penaltyfactor * pnlty;
@@ -132,8 +132,8 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
             {
 
                 for (int d = 0; d < inp.D; d++) {
-                    Acc += Grad_vIn[d] * inp.Normale[d] * (uIn[0] - uOut[0]);
-                    Acc += 0.5 * (Grad_uIn[0, d] + Grad_uOut[0, d]) * inp.Normale[d] * (vIn);
+                    Acc += Grad_vIn[d] * inp.Normal[d] * (uIn[0] - uOut[0]);
+                    Acc += 0.5 * (Grad_uIn[0, d] + Grad_uOut[0, d]) * inp.Normal[d] * (vIn);
                 }
                 Acc -= (uIn[0] - uOut[0]) * (vIn) * penaltyfactor * pnlty;
             }

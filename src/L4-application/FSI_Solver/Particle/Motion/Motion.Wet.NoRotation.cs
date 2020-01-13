@@ -14,10 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.XDG;
-using BoSSS.Platform.LinAlg;
+using ilPSP;
 using System.Collections.Generic;
 
 namespace BoSSS.Application.FSI_Solver {

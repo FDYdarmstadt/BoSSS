@@ -27,6 +27,7 @@ using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.ShockCapturing;
+using ilPSP;
 using ilPSP.Utils;
 using NUnit.Framework;
 using System;
@@ -313,7 +314,7 @@ namespace CNS.Tests.IBMTests {
                     double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
                     var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
                     grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
-                    grid.DefineEdgeTags(X => 1);
+                    grid.DefineEdgeTags((Vector X) => 1);
                     return grid;
                 };
             }

@@ -14,16 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
 using System.Collections.Generic;
-using BoSSS.Platform;
-using BoSSS.Solution.Control;
-using BoSSS.Foundation.Grid;
-using System.Diagnostics;
-using BoSSS.Solution.AdvancedSolvers;
-using ilPSP.Utils;
-using BoSSS.Foundation.Grid.Classic;
-using ilPSP;
 using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {

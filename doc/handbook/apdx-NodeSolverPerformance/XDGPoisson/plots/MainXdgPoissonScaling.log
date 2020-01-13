@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (MiKTeX 2.9.7140 64-bit) (preloaded format=pdflatex 2019.7.26)  26 SEP 2019 17:39
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (MiKTeX 2.9.7140 64-bit) (preloaded format=pdflatex 2019.7.26)  22 NOV 2019 18:53
 entering extended mode
 **./MainXdgPoissonScaling.tex
 (MainXdgPoissonScaling.tex
@@ -112,7 +112,7 @@ Package: amsfonts 2013/01/14 v3.01 Basic AMSFonts support
 LaTeX Font Info:    Overwriting math alphabet `\mathfrak' in version `bold'
 (Font)                  U/euf/m/n --> U/euf/b/n on input line 106.
 ))
-No file MainXdgPoissonScaling.aux.
+(MainXdgPoissonScaling.aux)
 \openout1 = `MainXdgPoissonScaling.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 5.
@@ -127,6 +127,7 @@ LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 5.
 LaTeX Font Info:    ... okay on input line 5.
 LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 5.
 LaTeX Font Info:    ... okay on input line 5.
+
 ("C:\Program Files\MiKTeX 2.9\tex/context/base/mkii\supp-pdf.mkii"
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count100
@@ -212,8 +213,8 @@ Overfull \hbox (52.47437pt too wide) in paragraph at lines 252--10
 [1{C:/Users/weber/AppData/Local/MiKTeX/2.9/pdftex/config/pdftex.map} <./XdgPois
 sonScaling.pdf>] (MainXdgPoissonScaling.aux) ) 
 Here is how much of TeX's memory you used:
- 2318 strings out of 492895
- 30704 string characters out of 3133479
+ 2320 strings out of 492895
+ 30847 string characters out of 3133479
  98244 words of memory out of 3000000
  6220 multiletter control sequences out of 15000+200000
  5339 words of font info for 22 fonts, out of 3000000 for 9000

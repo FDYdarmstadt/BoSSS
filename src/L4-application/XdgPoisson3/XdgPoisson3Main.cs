@@ -501,7 +501,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 int p = this.u.Basis.Degree;
                 return new MultigridOperator.ChangeOfBasisConfig[][] {
                     new MultigridOperator.ChangeOfBasisConfig[] {
-                        new MultigridOperator.ChangeOfBasisConfig() { VarIndex = new int[] { 0 }, mode = this.Control.PrePreCond, Degree = p }
+                        new MultigridOperator.ChangeOfBasisConfig() { VarIndex = new int[] { 0 }, mode = this.Control.PrePreCond, DegreeS = new int[] { p } }
                     }
                 };
             }
@@ -509,8 +509,8 @@ namespace BoSSS.Application.XdgPoisson3 {
 
         protected void CustomItCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
             MaxMlevel=Mgop.LevelIndex;
-            currentRes.SaveToTextFileDebug(String.Format("Res_{0}_proc",iterIndex));
-            currentSol.SaveToTextFileDebug(String.Format("Sol_{0}_proc",iterIndex));
+            //currentRes.SaveToTextFileDebug(String.Format("Res_{0}_proc",iterIndex));
+            //currentSol.SaveToTextFileDebug(String.Format("Sol_{0}_proc",iterIndex));
             //Console.WriteLine("Callback executed {0} times",iterIndex);
         }
 
@@ -680,7 +680,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 this.Op_mass.GetMassMatrix(new UnsetteledCoordinateMapping(this.u.Basis), false),
                 new MultigridOperator.ChangeOfBasisConfig[][] {
                     new MultigridOperator.ChangeOfBasisConfig[] {
-                        new MultigridOperator.ChangeOfBasisConfig() { VarIndex = new int[] { 0 }, mode = MultigridOperator.Mode.Eye, Degree = u.Basis.Degree }
+                        new MultigridOperator.ChangeOfBasisConfig() { VarIndex = new int[] { 0 }, mode = MultigridOperator.Mode.Eye, DegreeS = new int[] {u.Basis.Degree } }
                     }
                 });
 

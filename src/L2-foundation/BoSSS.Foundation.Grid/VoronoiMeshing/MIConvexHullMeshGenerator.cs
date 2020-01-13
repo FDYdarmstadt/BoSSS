@@ -73,7 +73,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         public MICHVertex(Vector position, T node)
         {
-            Position = position;
+            Position = position.ToArray();
             Node = node;
             ID = ID_Counter;
             ++ID_Counter;

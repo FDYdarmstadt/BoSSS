@@ -109,7 +109,7 @@ namespace CNS.IBM {
 
         public TimesteppingStrategies TimesteppingStrategy = TimesteppingStrategies.LieSplitting;
 
-        public Func<double[], double, Vector> LevelSetVelocity;
+        public Func<double[], double, ilPSP.Vector> LevelSetVelocity;
 
         public bool ContinuousLevelSet = false;
 

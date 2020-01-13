@@ -17,10 +17,9 @@ limitations under the License.
 using System;
 using System.Collections.Generic;
 using BoSSS.Foundation.XDG;
-using ilPSP.Utils;
 using BoSSS.Foundation;
-using BoSSS.Platform.LinAlg;
 using FSI_Solver;
+using ilPSP;
 
 namespace BoSSS.Solution.NSECommon.Operator.Continuity {
     /// <summary>
@@ -43,11 +42,9 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
         /// </summary>
         private readonly Func<Vector, FSI_ParameterAtIB> m_Coupling;
 
-        public double LevelSetForm(ref CommonParamsLs inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
-            Vector N = new Vector(inp.n);
-            Vector X = new Vector(inp.x);
+        public double LevelSetForm(ref CommonParams inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
             Vector fluidVelocity = new Vector(U_Neg);
-            return (m_Coupling(X).VelocityAtPointOnLevelSet() - fluidVelocity) * N * v_Neg;
+            return (m_Coupling(inp.X).VelocityAtPointOnLevelSet() - fluidVelocity) * inp.Normal * v_Neg;
         }
 
         public IList<string> ArgumentOrdering {

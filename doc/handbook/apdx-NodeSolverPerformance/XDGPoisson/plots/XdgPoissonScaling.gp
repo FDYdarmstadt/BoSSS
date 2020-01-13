@@ -78,7 +78,7 @@ unset y2label
 unset title 
 set key off
 set xtics format "$10^{%L}$" 
-set xtics offset -100, 0-0.4 font "sans, 18" 
+set xtics offset 0, 0-0.4 font "sans, 18" 
 set xtics font "sans, 16" 
 set x2tics format " " 
 set ytics format "$10^{%L}$" 
