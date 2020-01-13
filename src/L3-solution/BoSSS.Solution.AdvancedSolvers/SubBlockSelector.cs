@@ -57,10 +57,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         //internal get
         private MultigridMapping m_map;
         //internal set
-        private Func<int, bool> m_CellSelInstruction = null;
-        private Func<int, int, bool> m_VariableSelInstruction = null;
-        private Func<int, int, int, bool> m_SpeciesSelInstruction = null;
-        private Func<int, int, int, int, bool> m_ModeSelInstruction = null;
+        private Func<int, bool> m_CellFilter = null;
+        private Func<int, int, bool> m_VariableFilter = null;
+        private Func<int, int, int, bool> m_SpeciesFilter = null;
+        private Func<int, int, int, int, bool> m_ModeFilter = null;
 
         #region CellSelector
         /// <summary>
@@ -69,7 +69,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <returns></returns>
         public SubBlockSelector CellSelector() {
             int NoOfCells = m_map.LocalNoOfBlocks;
-            this.m_CellSelInstruction = GetAllInstruction(NoOfCells);
+            this.m_CellFilter = GetAllInstruction(NoOfCells);
             return this;
         }
 
@@ -101,11 +101,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Debug.Assert(idxfound.MPISum() == 1);
 
                 if (m_map.i0 > CellIdx || m_map.iE < CellIdx) {
-                    this.m_CellSelInstruction = GetDoNothingInstruction();
+                    this.m_CellFilter = GetDoNothingInstruction();
                     return this;
                 }
             }
-            this.m_CellSelInstruction = GetIntInstruction(CellIdx);
+            this.m_CellFilter = GetIntInstruction(CellIdx);
             return this;
         }
 
@@ -147,60 +147,94 @@ namespace BoSSS.Solution.AdvancedSolvers {
             } else {
                 tmpList = ListOfCellIdx;
             }
-            this.m_CellSelInstruction = GetListInstruction(tmpList);
+            this.m_CellFilter = GetListInstruction(tmpList);
             return this;
         }
 
         /// <summary>
-        /// TBD ...
+        /// Selects all cells in a cell mask.
         /// </summary>
-        /// <param name="CM"></param>
-        /// <returns></returns>
         public SubBlockSelector CellSelector(CellMask CM) {
-            throw new NotImplementedException();
-            this.m_CellSelInstruction = delegate (int iCell) {
-
-                return false;
-            };
+            if (CM == null) {
+                m_CellFilter = jCell => true;
+            } else {
+                var BitMask = CM.GetBitMask();
+                this.m_CellFilter = (int jCell) => BitMask[jCell];
+            }
             return this;
         }
         #endregion
 
         #region VariableSelector
+        
         /// <summary>
         /// Selects all Variable blocks
         /// </summary>
         /// <returns></returns>
         public SubBlockSelector VariableSelector() {
-            this.m_VariableSelInstruction = delegate (int iCell, int iVar) {
+            this.m_VariableFilter = delegate (int iCell, int iVar) {
+#if DEBUG
                 int NoOfVar = m_AggBS.Length;
-                return GetAllInstruction(NoOfVar)(iVar);
+                Debug.Assert(iVar >= 0);
+                Debug.Assert(iVar < NoOfVar);
+#endif
+                return true;
             };
             return this;
         }
 
-        public SubBlockSelector VariableSelector(List<int> ListOfVariables) {
+        /// <summary>
+        /// 
+        /// </summary>
+        public SubBlockSelector VariableSelector(params int[] SetOfVariables) {
+            return VariableSelector((ICollection<int>)SetOfVariables);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public SubBlockSelector VariableSelector(int iVariable) {
+            if (iVariable < 0)
+                throw new ArgumentOutOfRangeException("Variable index cannot be negative.");
+            if (iVariable >= m_map.NoOfVariables)
+                throw new ArgumentOutOfRangeException("Variable index is larger than number of variables..");
+
+            return VariableSelector(new int[] { iVariable });
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public SubBlockSelector VariableSelector(IEnumerable<int> SetOfVariables) {
+            int[] Variables = SetOfVariables.ToArray();
+            if (!Variables.IsSet())
+                throw new ArgumentOutOfRangeException("Input is not a set - some variable index is listed twice.");
+            if (Variables.Min() < 0)
+                throw new ArgumentOutOfRangeException("Variable index cannot be negative.");
+            if (Variables.Max() >= m_map.NoOfVariables)
+                throw new ArgumentOutOfRangeException("Some variable index is larger than number of variables..");
+
             int NoOfVar = m_AggBS.Length;
-            int maxValue = ListOfVariables.ToArray().Max();
-            int minValue = ListOfVariables.ToArray().Min();
-            if ((maxValue >= NoOfVar) || (minValue < 0))
-                throw new ArgumentOutOfRangeException();
 
-            this.m_VariableSelInstruction = delegate (int iCell, int iVar) {
+            var VarSelector = GetListInstruction(Variables);
 
-                return GetListInstruction(ListOfVariables)(iVar);
+            this.m_VariableFilter = delegate (int iCell, int iVar) {
+                // Kommentar an Jens: deine orginale Impl. war nicht ideal: bei jedem Aufruf wird 'GetInstruction neu aufgerufen'
+                //return GetListInstruction(ListOfVariables)(iVar); // nach ausserhalb verschoben
+                return VarSelector(iVar);
             };
             return this;
         }
-        #endregion
+#endregion
 
-        #region SpeciesSelector
+#region SpeciesSelector
         /// <summary>
         /// Selects all species blocks
         /// </summary>
         /// <returns></returns>
         public SubBlockSelector SpeciesSelector() {
-            this.m_SpeciesSelInstruction = delegate (int iCell, int iVar, int iSpec) {
+            this.m_SpeciesFilter = delegate (int iCell, int iVar, int iSpec) {
                 int NoOfSpec = m_AggBS[iVar].GetNoOfSpecies(iCell);
                 return GetAllInstruction(NoOfSpec)(iSpec);
             };
@@ -214,7 +248,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <returns></returns>
         public SubBlockSelector SpeciesSelector(int Species) {
             // ist position von species in matrix consistent? Species A ist immer an erster Stelle, etc.?
-            this.m_SpeciesSelInstruction = delegate (int iCell, int iVar, int iSpec) {
+            // Florian: NEIN
+            // Diese Methode ist eher sinnlos - Selektion sollte mittels SpeciesId gemacht weren
+            this.m_SpeciesFilter = delegate (int iCell, int iVar, int iSpec) {
                 return GetIntInstruction(Species)(iSpec);
             };
             return this;
@@ -225,25 +261,28 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         /// <param name="Species"></param>
         /// <returns></returns>
-        public SubBlockSelector SpeciesSelector(char Species) {
+        public SubBlockSelector SpeciesSelector(string Species) {
             int intSpecies = -1;
             throw new NotImplementedException("to do. Use other Selector instead");
             // how can be decided, which is species A or B?
             // Translate char to intSpecies and ...
             return SpeciesSelector(intSpecies); ;
         }
-        #endregion
+#endregion
 
-        #region ModeSelector
+#region ModeSelector
 
         /// <summary>
         /// Selects all Modes
         /// </summary>
         /// <returns></returns>
         public SubBlockSelector ModeSelector() {
-            this.m_ModeSelInstruction = delegate (int iCell, int iVar, int iSpec, int iMode) {
-                int maxDG = m_DG[iVar];
-                return GetAllInstruction(maxDG + 1)(iMode);
+            this.m_ModeFilter = delegate (int iCell, int iVar, int iSpec, int iMode) {
+#if DEBUG
+                int maxDG = m_DGdegree[iVar];
+                Debug.Assert(iMode <= maxDG);
+#endif
+                return true;
             };
             return this;
         }
@@ -251,32 +290,40 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Selects Modes according to instruction.
         /// </summary>
-        /// <param name="boolinstruct"></param>
-        /// <returns></returns>
         public SubBlockSelector ModeSelector(Func<int, bool> boolinstruct) {
-            this.m_ModeSelInstruction = delegate (int iCell, int iVar, int iSpec, int iMode) {
-                return boolinstruct(iMode);
+            this.m_ModeFilter = delegate (int iCell, int iVar, int iSpec, int pDeg) {
+                return boolinstruct(pDeg);
             };
             return this;
         }
 
+        /// <summary>
+        /// Selects Modes according to instruction.
+        /// </summary>
+        public SubBlockSelector ModeSelector(Func<int, int, int, int, bool> boolinstruct) {
+            this.m_ModeFilter = boolinstruct;
+            return this;
+        }
+
+
         #endregion
 
         #region BasisInstructions
-        private Func<int, bool> GetListInstruction(List<int> intList) {
-            //test for dublicates
-            int[] tmp = intList.ToArray();
-            if (tmp.GroupBy(x => x).Any(g => g.Count() > 1))
-                throw new ArgumentException("List contains dublicates!");
+
+        private Func<int, bool> GetListInstruction(IEnumerable<int> intList) {
+            if(!intList.IsSet())
+                throw new ArgumentException("List contains duplicates!");
+            bool[] Selector = new bool[intList.Max() + 1];
+            foreach(int i in intList) {
+                Selector[i] = true;
+            }
 
             return delegate (int Index) {
-                bool selectit = false;
-                foreach (int cell in intList) {
-                    selectit = (cell == Index);
-                    if (selectit)
-                        break;
+                if(Index >= Selector.Length) {
+                    return false;
+                } else {
+                    return Selector[Index];
                 }
-                return selectit;
             };
         }
 
@@ -286,13 +333,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
             };
         }
 
+        
         private Func<int, bool> GetAllInstruction(int MaxIdx) {
             //delegate, which always return true is also possible
-            List<int> tmp = new List<int>();
-            for (int iLoc = 0; iLoc < MaxIdx; iLoc++) {
-                tmp.Add(iLoc);
-            }
-            return GetListInstruction(tmp);
+            //List<int> tmp = new List<int>();
+            //for (int iLoc = 0; iLoc < MaxIdx; iLoc++) {
+            //    tmp.Add(iLoc);
+            //}
+            //return GetListInstruction(tmp);
+            return delegate (int i) {
+                return i < MaxIdx;
+            };
         }
 
         private Func<int, bool> GetDoNothingInstruction() {
@@ -304,33 +355,43 @@ namespace BoSSS.Solution.AdvancedSolvers {
         #endregion
 
         #region Getta
-        public Func<int, int, int, int, bool> GetAllInstructions {
+
+        /// <summary>
+        /// returns a delegate \f$ (j, \gamma, \mathfrak{s}, k ) \mapsto \{ \textrm{true},\textrm{false} \} \f$,
+        /// which determines whether a specific cell-variable-species-mode tuple is in a mapping or not.
+        /// Delegate arguments are:
+        /// - 1st argument: cell index \f$ j \f$
+        /// - 2nd argument: variable index \f$ \gamma \f$
+        /// - 3rd argument: species index \f$ \mathfrak{s} \f$
+        /// - 4th argument: DG polynomial degree \f$ k \f$
+        /// </summary>
+        public Func<int, int, int, int, bool> CombinedFilter {
             get {
                 return delegate (int iCell, int iVar, int iSpec, int iMod) {
                     bool result = false;
-                    result &= m_CellSelInstruction(iCell);
-                    result &= m_VariableSelInstruction(iCell, iVar);
-                    result &= m_SpeciesSelInstruction(iCell, iVar, iSpec);
-                    result &= m_ModeSelInstruction(iCell, iVar, iSpec, iMod);
+                    result &= m_CellFilter(iCell);
+                    result &= m_VariableFilter(iCell, iVar);
+                    result &= m_SpeciesFilter(iCell, iVar, iSpec);
+                    result &= m_ModeFilter(iCell, iVar, iSpec, iMod);
                     return result;
                 };
             }
         }
 
-        public Func<int, bool> GetCellInstruction {
-            get { return m_CellSelInstruction; }
+        public Func<int, bool> CellFilter {
+            get { return m_CellFilter; }
         }
 
-        public Func<int, int, bool> GetVarInstruction {
-            get { return m_VariableSelInstruction; }
+        public Func<int, int, bool> VariableFilter {
+            get { return m_VariableFilter; }
         }
 
-        public Func<int, int, int, bool> GetSpecInstruction {
-            get { return m_SpeciesSelInstruction; }
+        public Func<int, int, int, bool> SpeciesFilter {
+            get { return m_SpeciesFilter; }
         }
 
-        public Func<int, int, int, int, bool> GetModeInstruction {
-            get { return m_ModeSelInstruction; }
+        public Func<int, int, int, int, bool> ModeFilter {
+            get { return m_ModeFilter; }
         }
 
 
@@ -353,17 +414,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        private int[] m_DG {
+        private int[] m_DGdegree {
             get {
-                if (m_map != null) {
-                    return m_map.DgDegree;
-                } else {
-                    throw new Exception("No Mapping set.");
-                }
+                return m_map.DgDegree;
             }
         }
 
-        #endregion
+#endregion
     }
 
     /// <summary>
@@ -422,14 +479,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// Generates Block Mask from Sub block selection. Sub matrix can be generated of the mutligrid operator overgiven to Sub block selection. It also contains methods to translate Vectors from full matrix to sub matrix and vice versa.
+        /// Generates Block Mask from Sub block selection. 
+        /// Sub matrix can be generated of the multigrid operator overgiven to Sub block selection. 
+        /// It also contains methods to translate Vectors from full matrix to sub matrix and vice versa.
         /// </summary>
         /// <param name="SBS"></param>
         public BlockMask(SubBlockSelector SBS) {
             m_map = SBS.GetMapping;
             m_sbs = SBS;
             m_AggBS = m_map.AggBasis;
-            m_DG = m_map.DgDegree;
+            m_DGdegree = m_map.DgDegree;
             m_Ni0 = Ni0Gen();
             m_NoOfCells = m_map.LocalNoOfBlocks;
             m_NoOfVariables = m_AggBS.Length;
@@ -449,7 +508,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         private SubBlockSelector m_sbs;
         private MultigridMapping m_map;
         private AggregationGridBasis[] m_AggBS;
-        private int[] m_DG;
+        private int[] m_DGdegree;
         private int m_NoOfCells;
         private int m_NoOfVariables;
         private int[][] m_NoOfSpecies;
@@ -461,6 +520,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         private int m_MaskLen;
         private Ni0[] m_Ni0;
 
+
+        public List<int> LocalMask {
+            get {
+                return m_LocalMask;
+            }
+        }
+
+
         private bool TestForQuadraticMatrix() {
             throw new NotSupportedException("Supports only quadratic matrices");
         }
@@ -469,9 +536,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int NoOfCells = m_NoOfCells;
             int NoOfVariables = m_NoOfVariables;
             int[][] NoOfSpecies = m_NoOfSpecies;
-            int[] NoOfDG = m_DG.CloneAs();
-            for (int iDG = 0; iDG < NoOfDG.Length; iDG++) {
-                NoOfDG[iDG] += 1;
+            int[] DGdegreeP1 = m_DGdegree.CloneAs();
+            for (int iDG = 0; iDG < DGdegreeP1.Length; iDG++) {
+                DGdegreeP1[iDG] += 1;
             }
 
             List<extNi0> ListNi0 = new List<extNi0>();
@@ -483,25 +550,40 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int Ni0Length = 0;
             int MaskLen = 0;
             var tmpCell = new List<extNi0[][][]>();
+
+            // local caching of filter functions 
+            // ensures that functions are not re-allocated during the loops
+            var CellInstruction = m_sbs.CellFilter;
+            var VarInstruction = m_sbs.VariableFilter;
+            var SpecInstruction = m_sbs.SpeciesFilter;
+            var ModeInstruction = m_sbs.ModeFilter;
+            
+            // loop over cells...
             for (int jLoc = 0; jLoc < NoOfCells; jLoc++) {
-                if (!m_sbs.GetCellInstruction(jLoc))
+                if (!m_sbs.CellFilter(jLoc))
                     continue;
                 var tmpVar = new List<extNi0[][]>();
+
+                // loop over variables...
                 for (int iVar = 0; iVar < NoOfVariables; iVar++) {
-                    if (!m_sbs.GetVarInstruction(jLoc, iVar))
+                    if (!VarInstruction(jLoc, iVar))
                         continue;
                     var tmpSpc = new List<extNi0[]>();
+
+                    // loop over species...
                     for (int iSpc = 0; iSpc < NoOfSpecies[jLoc][iVar]; iSpc++) {
-                        if (!m_sbs.GetSpecInstruction(jLoc, iVar, iSpc))
+                        if (!SpecInstruction(jLoc, iVar, iSpc))
                             continue;
                         int GlobalOffset = m_map.GlobalUniqueIndex(iVar, jLoc, iSpc, 0);
                         int LocalOffset = m_map.LocalUniqueIndex(iVar, jLoc, iSpc, 0);
                         var tmpMod = new List<extNi0>();
-                        for (int iMode = 0; iMode < NoOfDG[iVar]; iMode++) {
-                            if (m_sbs.GetModeInstruction(jLoc, iVar, iSpc, iMode)) {
-                                int GlobalModeOffset = m_Ni0[iMode].i0 + GlobalOffset;
-                                int LocalModeOffset = m_Ni0[iMode].i0 + LocalOffset;
-                                int ModeLength = m_Ni0[iMode].N;
+
+                        // loop over polynomial degrees...
+                        for (int degree = 0; degree < DGdegreeP1[iVar]; degree++) {
+                            if (ModeInstruction(jLoc, iVar, iSpc, degree)) {
+                                int GlobalModeOffset = m_Ni0[degree].i0 + GlobalOffset;
+                                int LocalModeOffset = m_Ni0[degree].i0 + LocalOffset;
+                                int ModeLength = m_Ni0[degree].N;
                                 var newNi0 = new extNi0(LocalModeOffset, GlobalModeOffset, SubOffset, ModeLength);
                                 SubOffset += ModeLength;
                                 // Fill int lists
@@ -514,7 +596,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 tmpMod.Add(newNi0);
                                 Ni0Length++;
                                 ListNi0.Add(newNi0);
-                                Debug.Assert(m_map.LocalUniqueIndex(iVar, jLoc, iSpc, GetNp(iMode) - 1) == LocalModeOffset + ModeLength - 1);
+                                Debug.Assert(m_map.LocalUniqueIndex(iVar, jLoc, iSpc, GetNp(degree) - 1) == LocalModeOffset + ModeLength - 1);
                             }
                         }
                         tmpSpc.Add(tmpMod.ToArray());
@@ -654,7 +736,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         /// <returns></returns>
         private Ni0[] Ni0Gen() {
-            int maxDG = m_DG.Max();
+            int maxDG = m_DGdegree.Max();
             var ModeOffsetNLengt = new List<Ni0>();
             for (int p = 0; p < maxDG + 1; p++) {
                 int aux = p == 0 ? 0 : GetNp(p - 1);

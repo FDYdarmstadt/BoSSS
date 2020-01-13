@@ -26,6 +26,7 @@ using System.Diagnostics;
 using BoSSS.Foundation;
 using ilPSP;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Solution.NSECommon {
 
@@ -302,10 +303,21 @@ namespace BoSSS.Solution.NSECommon {
         /// interior penalty method, K. Shahbazi, J. of Comp. Phys. 205 (2004) 401-407,
         /// look at formula (7) in cited paper
         /// </summary>
-        protected double penalty(int jCellIn, int jCellOut) {
+        protected double penalty(IGridData g, int jCellIn, int jCellOut, int iEdge) {
+            /*
+            double eAr = g.iGeomEdges.GetEdgeArea(iEdge);
+            double cVA = g.iGeomCells.GetCellVolume(jCellIn);
+            double penaltySizeFactor_A = eAr / cVA;
 
+            double penaltySizeFactor_B = 0;
+            if(jCellOut >= 0) {
+                double cVB = g.iGeomCells.GetCellVolume(jCellOut);
+                penaltySizeFactor_B = eAr / cVB;
+            }
+            */
             double penaltySizeFactor_A = 1.0 / cj[jCellIn];
             double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / cj[jCellOut] : 0;
+
             double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
 
             Debug.Assert(!double.IsNaN(penaltySizeFactor_A));
@@ -469,7 +481,7 @@ namespace BoSSS.Solution.NSECommon {
         public override double InnerEdgeForm(ref Foundation.CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
             double Acc = 0.0;
 
-            double pnlty = this.penalty(inp.jCellIn, inp.jCellOut);//, inp.GridDat.Cells.cj);
+            double pnlty = this.penalty(inp.GridDat, inp.jCellIn, inp.jCellOut, inp.iEdge);//, inp.GridDat.Cells.cj);
             double muA = this.Viscosity(inp.Parameters_IN);
             double muB = this.Viscosity(inp.Parameters_OUT);
 
@@ -508,7 +520,7 @@ namespace BoSSS.Solution.NSECommon {
 
         public override double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             double Acc = 0.0;
-            double pnlty = 2 * this.penalty(inp.jCellIn, -1);//, inp.GridDat.Cells.cj);
+            double pnlty = 2 * this.penalty(inp.GridDat, inp.jCellIn, -1, inp.iEdge);//, inp.GridDat.Cells.cj);
             double muA = this.Viscosity(inp.Parameters_IN);
             IncompressibleBcType edgType = base.EdgeTag2Type[inp.EdgeTag];
 
@@ -797,7 +809,7 @@ namespace BoSSS.Solution.NSECommon {
 
                 int jCellIn = efp.GridDat.iGeomEdges.CellIndices[iEdge, 0];
                 int jCellOut = efp.GridDat.iGeomEdges.CellIndices[iEdge, 1];
-                double pnlty = penalty(jCellIn, jCellOut);
+                double pnlty = penalty(efp.GridDat, jCellIn, jCellOut, iEdge);
 
                 int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
                 double[] ParametersIN = new double[_NOParams];
@@ -952,7 +964,7 @@ namespace BoSSS.Solution.NSECommon {
         public override double InnerEdgeForm(ref Foundation.CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
             double Acc = 0.0;
 
-            double pnlty = this.penalty(inp.jCellIn, inp.jCellOut);//, inp.GridDat.Cells.cj);
+            double pnlty = this.penalty(inp.GridDat, inp.jCellIn, inp.jCellOut, inp.iEdge);//, inp.GridDat.Cells.cj);
             double muA = this.Viscosity(inp.Parameters_IN);
             double muB = this.Viscosity(inp.Parameters_OUT);
 
@@ -1005,7 +1017,7 @@ namespace BoSSS.Solution.NSECommon {
         public override double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             double Acc = 0.0;
 
-            double pnlty = 2 * this.penalty(inp.jCellIn, -1);//, inp.GridDat.Cells.cj);
+            double pnlty = 2 * this.penalty(inp.GridDat, inp.jCellIn, -1, inp.iEdge);//, inp.GridDat.Cells.cj);
             double muA = this.Viscosity(inp.Parameters_IN);
             IncompressibleBcType edgType = base.EdgeTag2Type[inp.EdgeTag];
 
@@ -1253,7 +1265,7 @@ namespace BoSSS.Solution.NSECommon {
 
                 int jCellIn = efp.GridDat.iGeomEdges.CellIndices[iEdge, 0];
                 int jCellOut = efp.GridDat.iGeomEdges.CellIndices[iEdge, 1];
-                double pnlty = penalty(jCellIn, jCellOut);
+                double pnlty = penalty(efp.GridDat, jCellIn, jCellOut, iEdge);
 
                 int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
                 double[] ParametersIN = new double[_NOParams];
@@ -1388,7 +1400,7 @@ namespace BoSSS.Solution.NSECommon {
         public override double InnerEdgeForm(ref Foundation.CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
             double Acc = 0.0;
 
-            double pnlty = this.penalty(inp.jCellIn, inp.jCellOut);//, inp.GridDat.Cells.cj);
+            double pnlty = this.penalty(inp.GridDat, inp.jCellIn, inp.jCellOut, inp.iEdge);//, inp.GridDat.Cells.cj);
             double muA = this.Viscosity(inp.Parameters_IN);
             double muB = this.Viscosity(inp.Parameters_OUT);
 
@@ -1441,7 +1453,7 @@ namespace BoSSS.Solution.NSECommon {
 
         public override double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             double Acc = 0.0;
-            double pnlty = 2 * this.penalty(inp.jCellIn, -1);//, inp.GridDat.Cells.cj);
+            double pnlty = 2 * this.penalty(inp.GridDat, inp.jCellIn, -1, inp.iEdge);//, inp.GridDat.Cells.cj);
             double muA = this.Viscosity(inp.Parameters_IN);
             IncompressibleBcType edgType = base.EdgeTag2Type[inp.EdgeTag];
 
@@ -1642,7 +1654,7 @@ namespace BoSSS.Solution.NSECommon {
 
                 int jCellIn = efp.GridDat.iGeomEdges.CellIndices[iEdge, 0];
                 int jCellOut = efp.GridDat.iGeomEdges.CellIndices[iEdge, 1];
-                double pnlty = penalty(jCellIn, jCellOut);
+                double pnlty = penalty(efp.GridDat, jCellIn, jCellOut, iEdge);
 
                 int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
                 double[] ParametersIN = new double[_NOParams];

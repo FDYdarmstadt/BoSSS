@@ -73,7 +73,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         public int maxKrylovDim = 30;
 
         /// <summary>
-        /// Convergence criterium for nonlinear iteration
+        /// Convergence criterion for nonlinear iteration
         /// </summary>
         public double ConvCrit = 1e-6;
 
@@ -197,9 +197,22 @@ namespace BoSSS.Solution.AdvancedSolvers
                             solver.Init(CurrentLin);
                             step.ClearEntries();
                             var check = f0.CloneAs();
-                           
                             f0.ScaleV(-1.0);
                             solver.ResetStat();
+
+                            if(solver is IProgrammableTermination pt) {
+                                // iterative solver with programmable termination is used - 
+                                
+                                double f0_L2 = f0.MPI_L2Norm();
+                                double thresh = f0_L2 * 0.001;
+                                Console.WriteLine($"Inexact Newton: setting convergence threshold to {thresh:0.##E-00}");
+                                pt.TerminationCriterion = (iter, R0_l2, R_l2) => {
+                                    return (R_l2 > thresh) && (iter < 50);
+                                };
+ 
+
+                            }
+
                             
                             solver.Solve(step, f0);
                             /*

@@ -208,8 +208,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     crL2 = CurrentRes.L2NormPow2().MPISum().Sqrt();
 
                     // diagnostic output
-                    if (this.IterationCallback != null)
-                        this.IterationCallback(iIter + 1, CurrentSol.CloneAs(), CurrentRes.CloneAs(), this.m_mgop);
+                    this.IterationCallback?.Invoke(iIter + 1, CurrentSol.CloneAs(), CurrentRes.CloneAs(), this.m_mgop);
 
                     //{
                     //    var gdat = m_mgop.BaseGridProblemMapping.GridDat;

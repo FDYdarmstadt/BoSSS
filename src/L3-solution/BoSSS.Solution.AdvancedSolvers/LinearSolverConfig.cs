@@ -138,10 +138,6 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         exp_softpcg_schwarz_directcoarse = 44,
 
-        /// <summary>
-        /// Conjugate gradient with Block Jacobi and multigrid.
-        /// </summary>
-        exp_softpcg_jacobi_mg = 45,
 
         /// <summary>
         /// Conjugate gradient with Schwarz and multigrid.
@@ -165,7 +161,12 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         exp_OrthoS_pMG = 51,
 
-        
+        /// <summary>
+        /// Work-in-progress: experimental stuff for rheology solver
+        /// </summary>
+        exp_Kcycle_schwarz_4Rheology = 52,
+
+
 
         selfmade = 999,
     }

@@ -224,16 +224,9 @@ namespace BoSSS.Solution.RheologyCommon {
             //return m_Weissenberg * res * V;
 
             Vector Velocity = new Vector(T, 1, cpv.D);
-            //Velocity.x = 1;
-            //Velocity.y = 3;
-
             Vector _GradT = GradT.GetRowPt(0);
-            //_GradT.x = 1;
-            //_GradT.y = -2;
-
             double res = Velocity*_GradT;
             return m_Weissenberg * res * V;
-            //return 0.0;
         }
 
         /// <summary>

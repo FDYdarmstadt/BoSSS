@@ -18,7 +18,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// it always tries to use the coarsest (thus cheapest) solver possible,
     /// which can give a significant reduction of the residual
     /// </summary>
-    public class DynamicMultigrid  : ISolverSmootherTemplate, ISolverWithCallback {
+    public class DynamicMultigrid  : ISolverSmootherTemplate, ISolverWithCallback, IProgrammableTermination {
 
         MultigridOperator m_mgop;
 
@@ -110,7 +110,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
 
                         PrecondS[i] = new Schwarz() {
-                            m_MaxIterations = 1,
+                            FixedNoOfIterations = 1,
                             CoarseSolver = null,
                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                                 NoOfPartsPerProcess = NoOfBlocks
@@ -271,7 +271,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 List<double[]> MxxHistory = new List<double[]>();
 
 
-
+                /*
                 for (int iIter = 0; iIter < MaxIter; iIter++) {
 
 
@@ -504,21 +504,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //ortho_Mxx.SaveToTextFile("C:\\temp\\ortho_Mxx.txt");
 
                 */
+
+                throw new NotImplementedException("Work in progress - todo");
             }
         }
 
        
-        
-
-
-
         /// <summary>
-        /// Maximum number of iterations.
+        /// Number of solution vectors in the internal Krylov-Space
         /// </summary>
-        public int MaxIter = 100;
-
-        public double Tolerance = 1E-10;
-
         public int MaxKrylovDim = 80;
        
 
@@ -562,6 +556,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// %
         /// </summary>
         public Action<int, double[], double[], MultigridOperator> IterationCallback {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// ~
+        /// </summary>
+        public Func<int, double, double, bool> TerminationCriterion {
             get;
             set;
         }
