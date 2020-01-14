@@ -40,7 +40,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             double particleDensity = 1;
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, true, false, false, 1);
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.2 * aspectRatio, new double[] { 0, -2 }, startAngl: 0, activeStress: 0, startTransVelocity: new double[] { 0, 1 }));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.2 * aspectRatio, new double[] { 0, 0 }, startAngl: 0, activeStress: 0, startTransVelocity: new double[] { 0, 1 }));
 
             // misc. solver options
             // =============================  

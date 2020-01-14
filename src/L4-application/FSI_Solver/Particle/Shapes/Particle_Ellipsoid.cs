@@ -194,6 +194,18 @@ namespace BoSSS.Application.FSI_Solver {
         override public double[] GetLengthScales() {
             return new double[] { m_Length, m_Thickness };
         }
+
+        public override object Clone() {
+            Particle clonedParticle = new Particle_Ellipsoid(MotionInitializer,
+                                                             m_Length,
+                                                             m_Thickness,
+                                                             Motion.GetPosition(),
+                                                             Motion.GetAngle(),
+                                                             ActiveStress,
+                                                             Motion.GetTranslationalVelocity(),
+                                                             Motion.GetRotationalVelocity());
+            return clonedParticle;
+        }
     }
 }
 

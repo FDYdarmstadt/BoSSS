@@ -822,7 +822,7 @@ namespace BoSSS.Application.FSI_Solver {
                             else
                                 mirroredWallClosestPoint = new Vector(particlePosition[0], boundaryCoordinates[1][1 - d2]);
                             Vector ghostPosition = mirroredWallClosestPoint + positionDistanceVector;
-                            ghostParticle.Motion.CopyNewPosition(ghostPosition, currentParticle.Motion.GetAngle());
+                            ghostParticle.Motion.SetGhostPosition(ghostPosition);
                             m_Particles.Add(ghostParticle);
                         }
                     }

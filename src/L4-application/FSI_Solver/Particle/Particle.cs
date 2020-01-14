@@ -70,6 +70,7 @@ namespace BoSSS.Application.FSI_Solver {
             Motion.InitializeParticlePositionAndAngle(startPos, startAngl);
             Motion.InitializeParticleVelocity(startTransVelocity, startRotVelocity);
             particleDensity = Motion.Density;
+            MotionInitializer = motionInit;
         }
 
         public void SetGhost(int MasterID) {
@@ -96,6 +97,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         [DataMember]
         public Motion Motion { get; private set; }
+
+        public ParticleMotionInit MotionInitializer { get; private set; }
 
         /// <summary>
         /// Mass of the current particle.
@@ -231,7 +234,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// clone, not implemented
         /// </summary>
-        public virtual object Clone() => throw new NotImplementedException("Currently cloning of a particle is not available");
+        public virtual object Clone() => throw new NotImplementedException("Currently cloning of this type of particle is not available");
     }
 }
 
