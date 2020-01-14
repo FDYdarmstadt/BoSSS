@@ -1743,7 +1743,7 @@ namespace BoSSS.Foundation.XDG {
                         }
                     }
 
-                    throw exception;
+                   // throw exception;
                 }
             }
         }

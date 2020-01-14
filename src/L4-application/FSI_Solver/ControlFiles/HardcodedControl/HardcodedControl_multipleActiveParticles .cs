@@ -140,7 +140,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control TwoParticles(int k = 2, int amrLevel = 6, double aspectRatio = 0.5, double angle = -10) {
+        public static FSI_Control TwoParticles(int k = 3, int amrLevel = 4, double aspectRatio = 0.5, double angle = -10) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/home/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);

@@ -482,6 +482,8 @@ namespace BoSSS.Application.FSI_Solver {
             return forces_PResidual;
         }
 
+        bool particlesOutsideOfDomain = true;
+
         /// <summary>
         /// Particle to Level-Set-Field 
         /// </summary>
@@ -495,6 +497,28 @@ namespace BoSSS.Application.FSI_Solver {
             // =======================================================
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             cellColor = cellColor == null ? InitializeColoring() : UpdateColoring();
+
+            foreach(Particle p in m_Particles) {
+                bool NothingHere = false;
+                if(p.CutCells_P(LsTrk).IsNullOrEmpty()) {
+                    NothingHere = true;
+                }
+                bool[] NothingAnywere = NothingHere.MPIGatherO(0);
+                NothingAnywere = NothingAnywere.MPIBroadcast(0);
+                for (int m = 0; m < NothingAnywere.Length; m++) {
+                    if (!NothingAnywere[m])
+                        particlesOutsideOfDomain = false;
+                }
+            }
+
+            if (particlesOutsideOfDomain)
+                Console.WriteLine("particle Outside of domain!");
+
+            if (particlesOutsideOfDomain || cellColor == null) {
+                cellColor = InitializeColoring();
+            }
+            else
+                cellColor = UpdateColoring();
 
             // Step 2
             // Delete the old level set

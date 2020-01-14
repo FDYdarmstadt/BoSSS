@@ -79,9 +79,11 @@ namespace BoSSS.Application.FSI_Solver {
             if (m_ForcesAndTorquePreviousIteration.Count >= 3) {
                 relaxatedHydrodynamics = Underrelaxation.AitkenUnderrelaxation(ref omega, m_ForcesAndTorqueWithoutRelaxation);
             }
-            else {
+            else if (m_ForcesAndTorquePreviousIteration.Count >= 1) {
                 relaxatedHydrodynamics = Underrelaxation.StaticUnderrelaxation();
             }
+            else
+                relaxatedHydrodynamics = hydrodynamics.CloneAs();
             return relaxatedHydrodynamics;
         }
 

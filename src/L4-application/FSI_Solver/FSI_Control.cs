@@ -119,7 +119,7 @@ namespace BoSSS.Application.FSI_Solver {
                     grd.EdgeTagNames.Add(iB, m_BoundaryValues[i]);
                 }
 
-                if (m_BoundaryValues.Count() == 0)
+                if (m_BoundaryValues.Count() == 0 && periodicX == false && periodicY == false)
                     throw new Exception("Please specify boundaries before creating the grid");
 
                 if (m_BoundaryValues.Count() == 1) {

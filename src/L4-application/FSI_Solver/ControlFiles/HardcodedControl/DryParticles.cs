@@ -1,5 +1,4 @@
-﻿///* =======================================================================
-//Copyright 2019 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
+﻿//Copyright 2019 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
 
 //Licensed under the Apache License, Version 2.0 (the "License");
 //you may not use this file except in compliance with the License.
@@ -14,138 +13,65 @@
 //limitations under the License.
 //*/
 
-//using System;
-//using System.Collections.Generic;
-//using BoSSS.Platform;
-//using BoSSS.Solution.Control;
-//using BoSSS.Foundation.Grid;
-//using System.Diagnostics;
-//using BoSSS.Solution.AdvancedSolvers;
-//using ilPSP.Utils;
-//using BoSSS.Foundation.Grid.Classic;
-//using ilPSP;
-//using BoSSS.Solution.XdgTimestepping;
+using System.Collections.Generic;
+using BoSSS.Solution.Control;
+using BoSSS.Solution.XdgTimestepping;
 
-//namespace BoSSS.Application.FSI_Solver
-//{
-//    public class DryParticles : IBM_Solver.HardcodedTestExamples
-//    {
-//        /// <summary>
-//        /// Testing of particle/wall interactions using a single particle
-//        /// </summary>
-//        public static FSI_Control HundredDryActiveParticles(string _DbPath = null)
-//        {
-//            FSI_Control C = new FSI_Control();
+namespace BoSSS.Application.FSI_Solver {
+    public class DryParticles : IBM_Solver.HardcodedTestExamples {
+        public static FSI_Control periodicTest(int k = 2, int amrLevel = 1, double aspectRatio = 2, double angle = -10) {
+            FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
+            //C.SetSaveOptions(@"/home/ij83requ/default_bosss_db", 1);
+            //C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
 
-//            // basic database options
-//            // ======================
+            List<string> boundaryValues = new List<string> {
+                "Pressure_Dirichlet"
+            };
+            C.SetBoundaries(boundaryValues);
+            C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 4, periodicX: false, periodicY: true);
+            //C.SetAddaptiveMeshRefinement(amrLevel: amrLevel);
 
-//            C.DbPath = _DbPath;
-//            C.savetodb = _DbPath != null;
-//            C.saveperiod = 1;
-//            C.ProjectName = "ParticleCollisionTest";
-//            C.ProjectDescription = "Gravity";
-//            C.SessionName = C.ProjectName;
-//            C.Tags.Add("with immersed boundary method");
-//            C.pureDryCollisions = true;
+            // Fluid Properties
+            // =============================
+            C.CoefficientOfRestitution = 1;
+            C.pureDryCollisions = true;
 
-//            // DG degrees
-//            // ==========
+            // Particle Properties
+            // =============================
+            double particleDensity = 1;
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, true, false, false, 1);
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.2, 0.2 * aspectRatio, new double[] { 0, -2 }, startAngl: 0, activeStress: 0, startTransVelocity: new double[] { 0, 1 }));
 
-//            C.SetDGdegree(2);
+            // misc. solver options
+            // =============================  
+            C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
+            double dt = 1e-2;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 100000000;
+            C.NoOfTimesteps = int.MaxValue;
+            C.AdvancedDiscretizationOptions.PenaltySafety = 4;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            C.LevelSetSmoothing = false;
+            C.NonLinearSolver.MaxSolverIterations = 1000;
+            C.NonLinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.LinearSolver.MaxSolverIterations = 1000;
+            C.LinearSolver.MinSolverIterations = 1;
+            C.LSunderrelax = 1.0;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
 
-//            // grid and boundary conditions
-//            // ============================
-
-//            double[] Xnodes = GenericBlas.Linspace(-6, 6, 120);
-//            double[] Ynodes = GenericBlas.Linspace(-6, 6, 120);
-//            double h = Math.Min((Xnodes[1] - Xnodes[0]), (Ynodes[1] - Ynodes[0]));
-
-//            C.GridFunc = delegate {
-//                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
-//                grd.EdgeTagNames.Add(1, "Wall");
-//                grd.DefineEdgeTags(delegate (double[] X) {
-//                    byte et = 1;
-//                    return et;
-//                });
-
-//                return grd;
-//            };
-
-//            C.AddBoundaryValue("Wall");
-
-//            // Boundary values for level-set
-//            //C.BoundaryFunc = new Func<double, double>[] { (t) => 0.1 * 2 * Math.PI * -Math.Sin(Math.PI * 2 * 1 * t), (t) =>  0};
-//            //C.BoundaryFunc = new Func<double, double>[] { (t) => 0, (t) => 0 };
-
-//            // Initial Values
-//            // ==============
-
-//            // Coupling Properties
-//            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            // Coupling Properties
+            // =============================
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.LSunderrelax = 1;
+            C.maxIterationsFullyCoupled = 1000000;
 
 
-//            // Fluid Properties
-//            C.PhysicalParameters.rho_A = 1;
-//            C.PhysicalParameters.mu_A = 0.1;
-//            C.gravity = new double[] { 0, -0.001 };
-
-//            // Particles
-//            // =========
-//            for (int i = 0; i < 5; i++)
-//            {
-//                for (int j = 0; j < 5; j++)
-//                {
-//                    double StartAngle = 10 * i - 10 * i * j + 8;
-//                    C.Particles.Add(new Particle_Ellipsoid(0.5, 0.4, new double[] { -4 + 2 * i + Math.Pow(-1, j) * 0.5, -4 + 2 * j }, StartAngle)
-//                    {
-//                        particleDensity = 100.0,
-//                        MotionInit = new ParticleMotion(C.gravity, C.pureDryCollisions)
-//                });
-//                }
-//            }
-
-//            C.collisionModel = FSI_Control.CollisionModel.MomentumConservation;
+            return C;
+        }
+    }
 
 
-//            // Physical Parameters
-//            // ===================
-
-//            C.PhysicalParameters.IncludeConvection = true;
-
-
-//            // misc. solver options
-//            // ====================
-
-//            C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-//            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-//            C.LevelSetSmoothing = false;
-//            C.LinearSolver.MaxSolverIterations = 10;
-//            C.NonLinearSolver.MaxSolverIterations = 10;
-//            C.LinearSolver.NoOfMultigridLevels = 1;
-//            C.AdaptiveMeshRefinement = false;
-//            C.RefinementLevel = 1;
-
-//            // Timestepping
-//            // ============
-
-//            //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
-//            C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
-
-//            double dt = 1e-1;
-//            C.dtMax = dt;
-//            C.dtMin = dt;
-
-//            C.Endtime = 100000000.0;
-//            C.NoOfTimesteps = 225000000;
-
-//            // haben fertig...
-//            // ===============
-
-//            return C;
-
-//        }
-//    }
-
-
-//}
+}
