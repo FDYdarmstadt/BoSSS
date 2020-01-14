@@ -317,6 +317,7 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_direct_lapack:
                 case LinearSolverCode.exp_Kcycle_schwarz:
                 case LinearSolverCode.exp_decomposedMG_OrthoScheme:
+                case LinearSolverCode.exp_Kcycle_schwarz_4Rheology:
                     precond = null;
                     break;
                 case LinearSolverCode.automatic:
@@ -458,6 +459,8 @@ namespace BoSSS.Solution {
                     Console.WriteLine("Selfmade Preconditioner is used!");
                     precond[0] = m_precond;
                     break;
+
+
 
 
                 default:
