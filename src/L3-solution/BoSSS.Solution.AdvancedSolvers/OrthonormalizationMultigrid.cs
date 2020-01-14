@@ -82,7 +82,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             this.m_MgOperator = op;
             var Mtx = op.OperatorMatrix;
             var MgMap = op.Mapping;
-            viz = new MGViz(op);
+            //viz = new MGViz(op);
 
             if (!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
                 throw new ArgumentException("Row partitioning mismatch.");
@@ -376,7 +376,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if (this.m_MgOperator.LevelIndex == 0 && viz != null) {
                     double[] rlcc = rl.CloneAs();
                     rlcc.Normalize();
-                    this.viz.PlotVectors(new[] { X, rlcc }, new[] { "sol", "res" });
+
+                    this.viz.PlotVectors(new double[][] { _xl.ToArray(), new double[_xl.Count], rl.ToArray(), rlcc },
+                            new[] { "Solution", "LastCorrection", "Residual", "NormalizedResidual" });
                 }
 
                 double iter0_resNorm = Res0.MPI_L2Norm();
@@ -394,9 +396,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     {
 
-                        //residual is already computed by 'MinimizeResidual' form previous iter; 
-                        //Residual(rl, X, B); // Residual on this level; 
-
+                        // Test: residual is already computed by 'MinimizeResidual' form previous iter; 
+#if DEBUG
+                        {
+                            double[] rTest = new double[rl.Length];
+                            Residual(rTest, X, B); // Residual on this level; 
+                            Debug.Assert(GenericBlas.L2Dist(rTest, rl) <= rl.L2Norm() * 10e-5, "Residual vector is not up-to-date.");
+                        } 
+#endif
                         // compute correction
                         double[] PreCorr = new double[L];
                         PreSmoother.Solve(PreCorr, rl); // Vorglättung
@@ -410,11 +417,28 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                     }
 
+                    if (this.m_MgOperator.LevelIndex == 0 && viz != null) {
+                        double[] rlcc = rl.CloneAs();
+                        rlcc.Normalize();
+
+                        this.viz.PlotVectors(new double[][] { _xl.ToArray(), this.SolHistory.Last(), rl.ToArray(), rlcc },
+                                new[] { "Solution", "LastCorrection", "Residual", "NormalizedResidual" });
+                    }
+
 
                     // coarse grid correction
                     // ----------------------
-                    if(this.CoarserLevelSolver != null && CoarseOnLovwerLevel) {
-                        //Residual(rl, X, B); // Residual on this level / already computed by 'MinimizeResidual' above
+                    // Test: Residual on this level / already computed by 'MinimizeResidual' above
+#if DEBUG
+                    {
+                        double[] rTest = new double[rl.Length];
+                        Residual(rTest, X, B); // Residual on this level; 
+                        Debug.Assert(GenericBlas.L2Dist(rTest, rl) <= rl.L2Norm() * 10e-5, "Residual vector is not up-to-date.");
+                    } 
+#endif
+                    bool usedCoarse = false;
+                    if (this.CoarserLevelSolver != null && CoarseOnLovwerLevel) {
+
                         this.m_MgOperator.CoarserLevel.Restrict(rl, rlc);
 
                         // Berechnung der Grobgitterkorrektur
@@ -433,11 +457,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             break;
                         }
 
-                        //if (m_MgOperator.LevelIndex == 0)
-                        //    this.viz.PlotVectors(new double[][] { _xl.ToArray(), this.SolHistory.Last(), rl.ToArray() }, new[] { "Solution", "LastCorrection", "Residual" });
+                        usedCoarse = true;
                     } else {
-                        //Residual(rl, X, B); // Residual on this level / already computed by 'MinimizeResidual' above
-
                         // Berechnung der Grobgitterkorrektur
                         double[] vl = new double[L];
                         this.CoarserLevelSolver.Solve(vl, rl);
@@ -450,25 +471,30 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             break;
                         }
 
-                        //if (m_MgOperator.LevelIndex == 0)
-                        //    this.viz.PlotVectors(new double[][] { _xl.ToArray(), this.SolHistory.Last(), rl.ToArray() }, new[] { "Solution", "LastCorrection", "Residual" });
-
+                        usedCoarse = true;
                     }
 
 
-                    if (this.m_MgOperator.LevelIndex == 0 && viz != null) {
+                    if (this.m_MgOperator.LevelIndex == 0 && viz != null && usedCoarse) {
                         double[] rlcc = rl.CloneAs();
                         rlcc.Normalize();
 
-                        this.viz.PlotVectors(new[] { X, rlcc }, new[] { "sol", "res" });
+                        this.viz.PlotVectors(new double[][] { _xl.ToArray(), this.SolHistory.Last(), rl.ToArray(), rlcc },
+                                new[] { "Solution", "LastCorrection", "Residual", "NormalizedResidual" });
                     }
 
                     // post-smoother
                     // -------------
 
                     for (int g = 0; g < 2; g++) {
-                        // Residual(rl, X, B); // Residual on this level / already computed by 'MinimizeResidual' above
-
+                        // Test: Residual on this level / already computed by 'MinimizeResidual' above
+#if DEBUG
+                        {
+                            double[] rTest = new double[rl.Length];
+                            Residual(rTest, X, B); // Residual on this level; 
+                            Debug.Assert(GenericBlas.L2Dist(rTest, rl) <= rl.L2Norm() * 10e-5, "Residual vector is not up-to-date.");
+                        } 
+#endif
                         // compute correction
                         double[] PreCorr = new double[L];
                         PostSmoother.Solve(PreCorr, rl); // Vorglättung

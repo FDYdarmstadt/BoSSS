@@ -427,17 +427,8 @@ namespace BoSSS.Application.Rheology {
                         
 
                         // viscous part:
-                        Type GridType = GridData.iGeomCells.RefElements[0].GetType();
-                        //double PenaltyBase;
-                        //int DegreeVelocity = this.Velocity.Current.Max(DGF => DGF.Basis.Degree);
-                        //if ((GridType == typeof(Triangle)) || (GridType == typeof(Tetra))) {
-                        //    PenaltyBase = (DegreeVelocity + 1.0) * (DegreeVelocity + (double)D) / (double)D;
-                        //} else if ((GridType == typeof(Square)) || (GridType == typeof(Cube))) {
-                        //    PenaltyBase = (DegreeVelocity + 1.0) * (DegreeVelocity + 1.0);
-                        //} else {
-                        //    throw new NotImplementedException("Unknown RefElement");
-                        //}
-
+                        //Type GridType = GridData.iGeomCells.RefElements[0].GetType();
+                        
                         if (this.Control.beta < 0.0) {
                             throw new ArithmeticException("Illegal setting in control object: 'beta' is out of range, must be non-negative.");
                         }
@@ -748,6 +739,9 @@ namespace BoSSS.Application.Rheology {
 
                             for (int j = 0; j < 3; j++) {
 
+                                
+
+
                                 if (Control.UsePerssonSensor == true) {
                                     perssonsensor.Update(StressXX);
                                 } else {
@@ -804,6 +798,11 @@ namespace BoSSS.Application.Rheology {
                             Console.WriteLine();
                             Console.WriteLine("Raise Weissenberg number to " + currentWeissenberg);
                             Console.WriteLine();
+
+                            if (currentWeissenberg >= 0.1999999) {
+                                Console.WriteLine("switching to iterative solver...");
+                                m_BDF_Timestepper.XdgSolverFactory.GetLinearConfig.SolverCode = Solution.Control.LinearSolverCode.exp_Kcycle_schwarz_4Rheology;
+                            }
                         }
 
                     }

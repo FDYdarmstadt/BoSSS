@@ -174,8 +174,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             Control.NonLinearSolverConfig nonlinconfig,
             Control.LinearSolverConfig linearconfig) {
             XdgSolverFactory = new SolverFactory(nonlinconfig, linearconfig);
-            m_nonlinconfig = nonlinconfig;
-            m_linearconfig = linearconfig;
         }
 
         /// <summary>
@@ -447,9 +445,17 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         public SolverFactory XdgSolverFactory;
 
-        private Control.NonLinearSolverConfig m_nonlinconfig;
+        private Control.NonLinearSolverConfig m_nonlinconfig {
+            get {
+                return XdgSolverFactory.GetNonLinearConfig;
+            }
+        }
 
-        private Control.LinearSolverConfig m_linearconfig;
+        private Control.LinearSolverConfig m_linearconfig {
+            get {
+                return XdgSolverFactory.GetLinearConfig;
+            }
+        }
 
         //public delegate void DelGetSolver(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linearSolver);
 
@@ -472,7 +478,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (Config_SpatialOperatorType != SpatialOperatorType.Nonlinear)
                 m_nonlinconfig.SolverCode = BoSSS.Solution.Control.NonLinearSolverCode.Picard;
 
-            XdgSolverFactory.GenerateNonLin(out nonlinSolver,out linearSolver, this.AssembleMatrixCallback, this.MultigridBasis, Config_MultigridOperator, SessionPath, MultigridSequence);
+            XdgSolverFactory.GenerateNonLin(out nonlinSolver, out linearSolver, this.AssembleMatrixCallback, this.MultigridBasis, Config_MultigridOperator, SessionPath, MultigridSequence);
             
             string ls_strg = String.Format("{0}", m_linearconfig.SolverCode);
             string nls_strg = String.Format("{0}", m_nonlinconfig.SolverCode);

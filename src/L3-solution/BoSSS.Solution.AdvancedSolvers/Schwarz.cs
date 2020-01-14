@@ -486,7 +486,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         throw new ArithmeticException("Empty Schwarz-Block found");
                 }
                 int NoOfSchwzBlocks = _Blocks.Count();
-     
+
                 // test cell blocks
                 // ================
 #if DEBUG
@@ -504,9 +504,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 #endif
 
+                
+
+
                 // extend blocks according to desired overlap
                 // ==========================================
                 {
+                    // for visualization:
+                    double[] blockIndex = new double[ag.iLogicalCells.NoOfLocalUpdatedCells];
+                    for (int idx_bi = 0; idx_bi < _Blocks.Count(); idx_bi++) {
+                        var bi = _Blocks.ElementAt(idx_bi);
+                        foreach (int j in bi) {
+                            blockIndex[j] = idx_bi;
+                        };
+                    }
+
+
                     BitArray marker = new BitArray(JComp + JGhost);
 
                     if (Overlap < 0)
@@ -550,6 +563,38 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
                     BlockCells = _Blocks.Select(list => list.ToArray()).ToArray();
+
+
+                    double[][] ExtendedBlocks = new double[BlockCells.Length][];
+                    string[] Names = new string[BlockCells.Length];
+                    for(int iBlock = 0; iBlock < ExtendedBlocks.Length; iBlock++) {
+                        ExtendedBlocks[iBlock] = new double[blockIndex.Length];
+                        foreach (int j in BlockCells[iBlock]) {
+                            ExtendedBlocks[iBlock][j] = 1.0;
+                            
+                        }
+                        Names[iBlock] = "block" + iBlock;
+                    }
+
+                    if (op.LevelIndex == 0) {
+
+                        var gdata = op.BaseGridProblemMapping.GridDat;
+                        
+
+                        double[][] datas = ArrayTools.Cat<double[]>(blockIndex, ExtendedBlocks);
+                        string[] names = ArrayTools.Cat<string>("indices", Names);
+                        DGField[] vizData = new DGField[datas.Length];
+
+                        for(int i = 0; i < vizData.Length; i++) {
+                            vizData[i] = new SinglePhaseField(new Basis(gdata, 0), names[i]);
+
+                            for(int j = 0; j < datas[i].Length; j++)
+                                vizData[i].SetMeanValue(j, datas[i][j]);
+                        }
+
+                        Tecplot.Tecplot.PlotFields(vizData, "blox", 0.0, 0);
+                    }
+
                 }
 
 
