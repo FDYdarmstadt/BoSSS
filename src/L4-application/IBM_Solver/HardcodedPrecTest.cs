@@ -167,7 +167,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;                    
 
             // Solver configuration
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.NewtonGMRES;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton; // Newton GMRES will be executed if a GMRES linsolver is chosen
             C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
      
 
@@ -515,9 +515,9 @@ namespace BoSSS.Application.IBM_Solver {
             ISolverSmootherTemplate Prec;
 
             if (name_newton == 1)
-                C.NonLinearSolver.SolverCode = NonLinearSolverCode.NewtonGMRES;
+                C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton; // Newton GMRES will be executed if a GMRES linsolver is chosen
             else
-                C.NonLinearSolver.SolverCode = NonLinearSolverCode.PicardGMRES;
+                C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard; // Picard GMRES will be executed if a GMRES linsolver is chosen
 
 
             switch (precNo)

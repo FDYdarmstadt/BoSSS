@@ -90,7 +90,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set;
         }
 
-        int NoOfIterations = 0;
+        public int NoOfIterations = 0;
 
         /// <summary>
         /// implementation of the CG algorithm
