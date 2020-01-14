@@ -498,6 +498,10 @@ namespace BoSSS.Application.FSI_Solver {
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             cellColor = cellColor == null ? InitializeColoring() : UpdateColoring();
 
+            for (int p = 0; p < m_Particles.Count(); p++) {
+                CreateGhostParticleAtPeriodicBoundary(p);
+            }
+
             foreach(Particle p in m_Particles) {
                 bool NothingHere = false;
                 if(p.CutCells_P(LsTrk).IsNullOrEmpty()) {
@@ -788,6 +792,44 @@ namespace BoSSS.Application.FSI_Solver {
                 }
             }
         }
+
+        private void CreateGhostParticleAtPeriodicBoundary(int currentID) {
+            Particle currentParticle = m_Particles[currentID];
+            int spatialDim = 2;
+            bool[] isPeriodic = ((FSI_Control)Control).BoundaryIsPeriodic;
+            double[][] boundaryCoordinates = ((FSI_Control)Control).BoundaryPositionPerDimension;
+            Vector particlePosition = currentParticle.Motion.GetPosition();
+            double particleMaxLength = currentParticle.GetLengthScales().Max();
+            for (int d1 = 0; d1 < spatialDim; d1++) {
+                if (!isPeriodic[d1])
+                    continue;
+                for (int d2 = 0; d2 < spatialDim; d2++) {
+                    double distance = particlePosition[d1] - boundaryCoordinates[d1][d2];
+                    if(Math.Abs(distance) < particleMaxLength) {
+                        if (d1 == 0)
+                            currentParticle.ClosestPointOnOtherObjectToThis = new Vector(boundaryCoordinates[d1][d2], particlePosition[1]);
+                        else
+                            currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], boundaryCoordinates[d1][d2]);
+                        FSI_Collision periodicCollision = new FSI_Collision(LsTrk, 0, 0, 0);
+                        periodicCollision.CalculateMinimumDistance(currentParticle, out _, out Vector _, out Vector _, out bool Overlapping);
+                        if (Overlapping) {
+                            Particle ghostParticle = currentParticle.CloneAs();
+                            ghostParticle.SetGhost(MasterID: currentID);
+                            Vector positionDistanceVector = particlePosition - currentParticle.ClosestPointOnOtherObjectToThis;
+                            Vector mirroredWallClosestPoint;
+                            if (d1 == 0)
+                                mirroredWallClosestPoint = new Vector(boundaryCoordinates[0][1 - d2], particlePosition[1]);
+                            else
+                                mirroredWallClosestPoint = new Vector(particlePosition[0], boundaryCoordinates[1][1 - d2]);
+                            Vector ghostPosition = mirroredWallClosestPoint + positionDistanceVector;
+                            ghostParticle.Motion.CopyNewPosition(ghostPosition, currentParticle.Motion.GetAngle());
+                            m_Particles.Add(ghostParticle);
+                        }
+                    }
+                }
+            }
+        }
+
         bool initAddedDamping = true;
         /// <summary>
         /// runs solver one step?!
@@ -1040,11 +1082,6 @@ namespace BoSSS.Application.FSI_Solver {
                 if (particle.Motion.IsGhost)
                     continue;
                 particle.Motion.UpdateParticlePositionAndAngle(dt);
-                if (particle.Motion.GetHasGhost()) {
-                    Particle ghost = m_Particles[particle.Motion.GetGhostID()];
-                    ghost.Motion.CopyNewPosition(particle.Motion.GetPosition(), particle.Motion.GetAngle());
-                    ghost.Motion.UpdateParticlePositionAndAngle(dt);
-                }
             }
         }
 

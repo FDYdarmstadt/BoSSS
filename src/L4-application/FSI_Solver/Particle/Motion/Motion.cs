@@ -475,9 +475,9 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        protected virtual void CopyNewPosition(Vector position, double angle) { }
+        internal virtual void CopyNewPosition(Vector position, double angle) { }
 
-        protected virtual void CopyNewVelocity(Vector translational, double rotational) { }
+        internal virtual void CopyNewVelocity(Vector translational, double rotational) { }
 
         public void UpdateForcesAndTorque(int particleID, double[] fullListHydrodynamics) {
             double[] tempForces = new double[m_Dim];

@@ -99,8 +99,15 @@ namespace BoSSS.Application.FSI_Solver {
 
         readonly List<string> m_BoundaryValues = new List<string>();
         public double FluidDomainVolume;
-
+        public double[][] BoundaryPositionPerDimension;
+        public bool[] BoundaryIsPeriodic;
         public void SetGrid(double lengthX, double lengthY, double cellsPerUnitLength, bool periodicX = false, bool periodicY = false) {
+            BoundaryPositionPerDimension = new double[2][];
+            BoundaryIsPeriodic = new bool[2];
+            BoundaryPositionPerDimension[0] = new double[] { -lengthX / 2, lengthX / 2 };
+            BoundaryPositionPerDimension[1] = new double[] { -lengthY / 2, lengthY / 2 };
+            BoundaryIsPeriodic[0] = periodicX;
+            BoundaryIsPeriodic[1] = periodicY;
             GridFunc = delegate {
                 FluidDomainVolume = lengthX * lengthY;
                 int q = new int(); // #Cells in x-dircetion + 1
@@ -114,7 +121,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 Grid2D grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: periodicX, periodicY: periodicY);
 
-                for(int i = 0; i < m_BoundaryValues.Count(); i++) {
+                for (int i = 0; i < m_BoundaryValues.Count(); i++) {
                     byte iB = (byte)(i + 1);
                     grd.EdgeTagNames.Add(iB, m_BoundaryValues[i]);
                 }
@@ -168,6 +175,7 @@ namespace BoSSS.Application.FSI_Solver {
                 return grd;
             };
         }
+
 
         public void SetTimesteps(double dt, int noOfTimesteps) {
             dtMax = dt;

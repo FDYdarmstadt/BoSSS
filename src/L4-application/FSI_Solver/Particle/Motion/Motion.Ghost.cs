@@ -34,7 +34,6 @@ namespace BoSSS.Application.FSI_Solver {
             this.MasterID = MasterID;
         }
 
-
         /// <summary>
         /// I'm a ghost! Hui Buh!
         /// </summary>
@@ -65,30 +64,12 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calculate the new particle position
-        /// </summary>
-        /// <param name="dt"></param>
-        protected override Vector CalculateParticlePosition(double dt = 0) {
-            Aux.TestArithmeticException(Position, "particle position");
-            return Position;
-        }
-
-        /// <summary>
         /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
         protected override Vector CalculateTranslationalVelocity(double dt = 0) {
             Aux.TestArithmeticException(TranslationalVelocity, "particle translational velocity");
             return TranslationalVelocity;
-        }
-
-        /// <summary>
-        /// Calculate the new particle angle
-        /// </summary>
-        /// <param name="dt"></param>
-        protected override double CalculateParticleAngle(double dt = 0) {
-            Aux.TestArithmeticException(Angle, "particle angle");
-            return Angle;
         }
 
         /// <summary>

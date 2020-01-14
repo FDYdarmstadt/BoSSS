@@ -72,6 +72,17 @@ namespace BoSSS.Application.FSI_Solver {
             particleDensity = Motion.Density;
         }
 
+        public void SetGhost(int MasterID) {
+            HiddenMotion = Motion;
+            Motion = new MotionGhost(new Vector(0, 0), 0, MasterID);
+        }
+
+        public void SetMaster(int ghostID) {
+            Motion = HiddenMotion;
+        }
+
+        private Motion HiddenMotion;
+
         [NonSerialized]
         protected readonly FSI_Auxillary Aux;
         [DataMember]
