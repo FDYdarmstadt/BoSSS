@@ -85,13 +85,13 @@ namespace BoSSS.Solution.EnergyCommon {
         /// <summary>
         /// default-implementation
         /// </summary>
-        public double LevelSetForm(ref CommonParamsLs inp,
+        public double LevelSetForm(ref CommonParams inp,
         //public override double EdgeForm(ref Linear2ndDerivativeCouplingFlux.CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-            double[] N = inp.n;
-            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCell];
+            double[] N = inp.Normal;
+            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCellIn];
 
             int D = N.Length;
             //Debug.Assert(this.ArgumentOrdering.Count == D);
@@ -108,8 +108,8 @@ namespace BoSSS.Solution.EnergyCommon {
                 Grad_vB_xN += Grad_vB[d] * N[d];
             }
 
-            double PosCellLengthScale = PosLengthScaleS[inp.jCell];
-            double NegCellLengthScale = NegLengthScaleS[inp.jCell];
+            double PosCellLengthScale = PosLengthScaleS[inp.jCellIn];
+            double NegCellLengthScale = NegLengthScaleS[inp.jCellIn];
 
             double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
             Debug.Assert(!(double.IsInfinity(hCutCellMin) || double.IsNaN(hCutCellMin)));
@@ -289,9 +289,9 @@ namespace BoSSS.Solution.EnergyCommon {
                             //acc -= Press_IN * Vel_IN[d] * inp.Normale[d];
                             for (int dd = 0; dd < m_D; dd++) {
                                 double VelD = VelFunction[inp.EdgeTag, dd](inp.X, inp.time);
-                                acc += mu * (GradVel_IN[d, dd] * VelD) * inp.Normale[d];
+                                acc += mu * (GradVel_IN[d, dd] * VelD) * inp.Normal[d];
                                 if (transposedTerm) {
-                                    acc += mu * (GradVel_IN[dd, d] * VelD) * inp.Normale[d];  // transposed term
+                                    acc += mu * (GradVel_IN[dd, d] * VelD) * inp.Normal[d];  // transposed term
                                 }
                             }
                         }
@@ -302,9 +302,9 @@ namespace BoSSS.Solution.EnergyCommon {
                         for (int d = 0; d < m_D; d++) {
                             //acc -= Press_IN * Vel_IN[d] * inp.Normale[d];
                             for (int dd = 0; dd < m_D; dd++) {
-                                acc += mu * (GradVel_IN[d, dd] * Vel_IN[dd]) * inp.Normale[d];
+                                acc += mu * (GradVel_IN[d, dd] * Vel_IN[dd]) * inp.Normal[d];
                                 if (transposedTerm) {
-                                    acc += mu * (GradVel_IN[dd, d] * Vel_IN[dd]) * inp.Normale[d];  // transposed term
+                                    acc += mu * (GradVel_IN[dd, d] * Vel_IN[dd]) * inp.Normal[d];  // transposed term
                                 }
                             }
                         }
@@ -333,9 +333,9 @@ namespace BoSSS.Solution.EnergyCommon {
             for (int d = 0; d < m_D; d++) {
                 //acc -= 0.5 * (Press_IN * Vel_IN[d] + Press_OUT * Vel_OUT[d]) * inp.Normale[d];
                 for (int dd = 0; dd < m_D; dd++) {
-                    acc += 0.5 * mu * (GradVel_IN[d, dd] * Vel_IN[dd] + GradVel_OUT[d, dd] * Vel_OUT[dd]) * inp.Normale[d];
+                    acc += 0.5 * mu * (GradVel_IN[d, dd] * Vel_IN[dd] + GradVel_OUT[d, dd] * Vel_OUT[dd]) * inp.Normal[d];
                     if (transposedTerm) {
-                        acc += 0.5 * mu * (GradVel_IN[dd, d] * Vel_IN[dd] + GradVel_OUT[dd, d] * Vel_OUT[dd]) * inp.Normale[d];  // transposed term
+                        acc += 0.5 * mu * (GradVel_IN[dd, d] * Vel_IN[dd] + GradVel_OUT[dd, d] * Vel_OUT[dd]) * inp.Normal[d];  // transposed term
                     }
                 }
             }
@@ -402,12 +402,12 @@ namespace BoSSS.Solution.EnergyCommon {
         }
 
 
-        public double LevelSetForm(ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public double LevelSetForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-            double[] Vel_A = inp.ParamsNeg.GetSubVector(0, m_D);
-            double[] Vel_B = inp.ParamsPos.GetSubVector(0, m_D);
-            double[,] GradVel_A = VelocityGradient(inp.ParamsNeg.GetSubVector(m_D, m_D), inp.ParamsNeg.GetSubVector(2 * m_D, m_D));
-            double[,] GradVel_B = VelocityGradient(inp.ParamsPos.GetSubVector(m_D, m_D), inp.ParamsPos.GetSubVector(2 * m_D, m_D));
+            double[] Vel_A = inp.Parameters_IN.GetSubVector(0, m_D);
+            double[] Vel_B = inp.Parameters_OUT.GetSubVector(0, m_D);
+            double[,] GradVel_A = VelocityGradient(inp.Parameters_IN.GetSubVector(m_D, m_D), inp.Parameters_IN.GetSubVector(2 * m_D, m_D));
+            double[,] GradVel_B = VelocityGradient(inp.Parameters_OUT.GetSubVector(m_D, m_D), inp.Parameters_OUT.GetSubVector(2 * m_D, m_D));
             //double p_A = inp.ParamsNeg[3 * m_D];
             //double p_B = inp.ParamsPos[3 * m_D];
 
@@ -416,9 +416,9 @@ namespace BoSSS.Solution.EnergyCommon {
             for (int d = 0; d < m_D; d++) {
                 //ret += 0.5 * (p_A * Vel_A[d] + p_B * Vel_B[d]) * inp.n[d];  // pressure
                 for (int dd = 0; dd < m_D; dd++) {
-                    ret -= 0.5 * (muA * GradVel_A[d, dd] * Vel_A[dd] + muB * GradVel_B[d, dd] * Vel_B[dd]) * inp.n[d];  // gradU
+                    ret -= 0.5 * (muA * GradVel_A[d, dd] * Vel_A[dd] + muB * GradVel_B[d, dd] * Vel_B[dd]) * inp.Normal[d];  // gradU
                     if(transposedTerm)
-                        ret -= 0.5 * (muA * GradVel_A[dd, d] * Vel_A[dd] + muB * GradVel_B[dd, d] * Vel_B[dd]) * inp.n[d];  // gradU transposed
+                        ret -= 0.5 * (muA * GradVel_A[dd, d] * Vel_A[dd] + muB * GradVel_B[dd, d] * Vel_B[dd]) * inp.Normal[d];  // gradU transposed
                 }
             }
 

@@ -140,7 +140,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             if (this.Control.ComputeEnergyProperties) {
 
-                if (this.Control.CompMode == AppControl._CompMode.Transient) {
+                if (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) {
                     prevVel = new XDGField[D];
                     for (int d = 0; d < D; d++) {
                         prevVel[d] = new XDGField(this.XDGvelocity.Velocity[d].Basis);

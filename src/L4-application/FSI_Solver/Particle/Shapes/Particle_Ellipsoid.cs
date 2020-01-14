@@ -1,5 +1,5 @@
 ﻿/* =======================================================================
-Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
+Copyright 2019 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,14 +16,9 @@ limitations under the License.
 
 using System;
 using System.Runtime.Serialization;
-using BoSSS.Foundation.XDG;
 using ilPSP;
-using BoSSS.Foundation.Grid;
-using BoSSS.Foundation;
 using System.Linq;
-using System.Collections.Generic;
 using ilPSP.Utils;
-using System.Collections;
 
 namespace BoSSS.Application.FSI_Solver {
     [DataContract]
@@ -35,141 +30,177 @@ namespace BoSSS.Application.FSI_Solver {
         private Particle_Ellipsoid() : base() {
 
         }
-        public Particle_Ellipsoid(double[] startPos = null, double startAngl = 0) : base(2, startPos, startAngl) {
-            
-        }
 
         /// <summary>
-        /// Length of an elliptic particle.
+        /// Constructor for an ellipsoid.
         /// </summary>
+        /// <param name="motionInit">
+        /// Initializes the motion parameters of the particle (which model to use, whether it is a dry simulation etc.)
+        /// </param>
+        /// <param name="length">
+        /// The length of the horizontal halfaxis.
+        /// </param>
+        /// <param name="thickness">
+        /// The length of the vertical halfaxis.
+        /// </param>
+        /// <param name="startPos">
+        /// The initial position.
+        /// </param>
+        /// <param name="startAngl">
+        /// The inital anlge.
+        /// </param>
+        /// <param name="activeStress">
+        /// The active stress excerted on the fluid by the particle. Zero for passive particles.
+        /// </param>
+        /// <param name="startTransVelocity">
+        /// The inital translational velocity.
+        /// </param>
+        /// <param name="startRotVelocity">
+        /// The inital rotational velocity.
+        /// </param>
+        public Particle_Ellipsoid(ParticleMotionInit motionInit, double length = 4, double thickness = 1, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+            m_Length = length;
+            m_Thickness = thickness;
+            Aux.TestArithmeticException(length, "Particle length");
+            Aux.TestArithmeticException(thickness, "Particle thickness");
+
+            Motion.GetParticleLengthscale(GetLengthScales().Max());
+            Motion.GetParticleMinimalLengthscale(GetLengthScales().Min());
+            Motion.GetParticleArea(Area);
+            Motion.GetParticleMomentOfInertia(MomentOfInertia);
+        }
+
         [DataMember]
-        public double length_P;
+        private readonly double m_Length;
+        [DataMember]
+        private readonly double m_Thickness;
 
         /// <summary>
-        /// Thickness of an elliptic particle.
+        /// Circumference of an elliptic particle. Approximated with Ramanujan.
         /// </summary>
-        [DataMember]
-        public double thickness_P;
+        public override double Circumference => Math.PI * ((m_Length + m_Thickness) + (3 * (m_Length - m_Thickness).Pow2()) / (10 * (m_Length + m_Thickness) + Math.Sqrt(m_Length.Pow2() + 14 * m_Length * m_Thickness + m_Thickness.Pow2())));
 
-        public override double Area_P {
-            get {
-                double a = length_P * thickness_P * Math.PI;
-                if (a <= 0.0 || double.IsNaN(a) || double.IsInfinity(a))
-                    throw new ArithmeticException("Ellipsoid volume/area is " + a);
-                return a;
-            }
-        }
+        /// <summary>
+        /// Moment of inertia of an elliptic particle.
+        /// </summary>
+        override public double MomentOfInertia => (1 / 4.0) * (Mass_P * (m_Length * m_Length + m_Thickness * m_Thickness));
 
-        protected override double Circumference_P {
-            get {
-                return Math.PI * ((length_P + thickness_P) + (3 * (length_P - thickness_P).Pow2()) / (10 * (length_P + thickness_P) + Math.Sqrt(length_P.Pow2() + 14 * length_P * thickness_P + thickness_P.Pow2())));
-            }
-        }
+        /// <summary>
+        /// Area occupied by the particle.
+        /// </summary>
+        public override double Area => m_Length * m_Thickness * Math.PI;
 
-        override public double MomentOfInertia_P {
-            get {
-                return (1 / 4.0) * (Mass_P * (length_P * length_P + thickness_P * thickness_P));
-            }
-        }
-
-        public override double Phi_P(double[] X) {
-            double alpha = -(angle[0]);
-            var r = -((((X[0] - position[0][0]) * Math.Cos(alpha) - (X[1] - position[0][1]) * Math.Sin(alpha)).Pow2()) / length_P.Pow2()) 
-                    -(((X[0] - position[0][0]) * Math.Sin(alpha) + (X[1] - position[0][1]) * Math.Cos(alpha)).Pow2() / thickness_P.Pow2()) 
-                    + 1.0;
+        /// <summary>
+        /// Level set function of the particle.
+        /// </summary>
+        /// <param name="X">
+        /// The current point.
+        /// </param>
+        public override double LevelSetFunction(double[] X) {
+            double angle = -Motion.GetAngle(0);
+            double[] position = Motion.GetPosition(0);
+            double r = -(((X[0] - position[0]) * Math.Cos(angle) - (X[1] - position[1]) * Math.Sin(angle)) / m_Length).Pow2()
+                       - (((X[0] - position[0]) * Math.Sin(angle) + (X[1] - position[1]) * Math.Cos(angle)) / m_Thickness).Pow2()
+                       + 1.0;
             if (double.IsNaN(r) || double.IsInfinity(r))
                 throw new ArithmeticException();
             return r;
         }
-        
-        public override bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false)
-        {
-            // only for rectangular cells
-            if (h_max == 0)
-                h_max = h_min;
+
+        /// <summary>
+        /// Returns true if a point is withing the particle.
+        /// </summary>
+        /// <param name="point">
+        /// The point to be tested.
+        /// </param>
+        /// <param name="minTolerance">
+        /// Minimum tolerance length.
+        /// </param>
+        /// <param name="maxTolerance">
+        /// Maximal tolerance length. Equal to h_min if not specified.
+        /// </param>
+        /// <param name="WithoutTolerance">
+        /// No tolerance.
+        /// </param>
+        public override bool Contains(double[] point, double minTolerance, double maxTolerance = 0, bool WithoutTolerance = false) {
+            double angle = Motion.GetAngle(0);
+            double[] position = Motion.GetPosition(0);
+            if (maxTolerance == 0)
+                maxTolerance = minTolerance;
             double radiusTolerance = 1;
-            double a = !WithoutTolerance ? length_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : length_P;
-            double b = !WithoutTolerance ? thickness_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : thickness_P;
-            double Ellipse = ((point[0] - position[0][0]) * Math.Cos(angle[0]) + (point[1] - position[0][1]) * Math.Sin(angle[0])).Pow2() / a.Pow2() + (-(point[0] - position[0][0]) * Math.Sin(angle[0]) + (point[1] - position[0][1]) * Math.Cos(angle[0])).Pow2() / b.Pow2();
-            if (Ellipse < radiusTolerance)
-            {
-                return true;
-            }
-            else
-                return false;
+            double a = !WithoutTolerance ? m_Length + Math.Sqrt(maxTolerance.Pow2() + minTolerance.Pow2()) : m_Length;
+            double b = !WithoutTolerance ? m_Thickness + Math.Sqrt(maxTolerance.Pow2() + minTolerance.Pow2()) : m_Thickness;
+            double Ellipse = ((point[0] - position[0]) * Math.Cos(angle) + (point[1] - position[1]) * Math.Sin(angle)).Pow2() / a.Pow2() + (-(point[0] - position[0]) * Math.Sin(angle) + (point[1] - position[1]) * Math.Cos(angle)).Pow2() / b.Pow2();
+            return Ellipse < radiusTolerance;
         }
 
-        override public MultidimensionalArray GetSurfacePoints(double hMin)
-        {
-            if (spatialDim != 2)
-                throw new NotImplementedException("Only two dimensions are supported at the moment");
-
-            int NoOfSurfacePoints = Convert.ToInt32(5 * Circumference_P / hMin);
-            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSubParticles(), NoOfSurfacePoints, spatialDim);
-            double[] InfinitisemalAngle = GenericBlas.Linspace(0, Math.PI * 2, NoOfSurfacePoints + 1);
-            if (Math.Abs(10 * Circumference_P / hMin + 1) >= int.MaxValue)
-                throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");
-            for (int j = 0; j < NoOfSurfacePoints; j++)
-            {
-                double temp0 = Math.Cos(InfinitisemalAngle[j]) * length_P;
-                double temp1 = Math.Sin(InfinitisemalAngle[j]) * thickness_P;
-                SurfacePoints[0, j, 0] = (temp0 * Math.Cos(angle[0]) - temp1 * Math.Sin(angle[0])) + position[0][0];
-                SurfacePoints[0, j, 1] = (temp0 * Math.Sin(angle[0]) + temp1 * Math.Cos(angle[0])) + position[0][1];
-
+        /// <summary>
+        /// Returns an array with points on the surface of the particle.
+        /// </summary>
+        /// <param name="hMin">
+        /// Minimal cell length. Used to specify the number of surface points.
+        /// </param>
+        override public MultidimensionalArray GetSurfacePoints(double dAngle, double searchAngle, int subParticleID) {
+            if (SpatialDim != 2)
+                throw new NotImplementedException("Only two dimensions are supported.");
+            double angle = Motion.GetAngle(0);
+            int noOfCurrentPointWithNeighbours = 3;
+            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(noOfCurrentPointWithNeighbours, SpatialDim);
+            for (int j = 0; j < noOfCurrentPointWithNeighbours; j++) {
+                double verticalAxis = m_Length * Math.Cos(searchAngle + dAngle * (j - 1));
+                double horizontalAxis = m_Thickness * Math.Sin(searchAngle + dAngle * (j - 1));
+                SurfacePoints[j, 0] = (verticalAxis * Math.Cos(angle) - horizontalAxis * Math.Sin(angle));// + position[0];
+                SurfacePoints[j, 1] = (verticalAxis * Math.Sin(angle) + horizontalAxis * Math.Cos(angle));// + position[1];
             }
             return SurfacePoints;
         }
 
-        override public void GetSupportPoint(int SpatialDim, double[] Vector, out double[] SupportPoint)
-        {
-            SupportPoint = new double[SpatialDim];
-            if (double.IsNaN(Vector[0]) || double.IsNaN(Vector[1]))
-                throw new ArithmeticException("Error trying to calculate VectorVectorVector Value:  " + Vector[0] + " VectorVectorVector " + Vector[1]);
-            double[,] B = new double[2, 2];
-            B[0, 0] = length_P * Math.Cos(angle[0]);
-            if (double.IsNaN(B[0, 0]))
-                throw new ArithmeticException("Error trying to calculate Angle Value:  " + B[0, 0] + " length_P " + length_P + " Math.Cos(Angle): " + Math.Cos(angle[0]) + " Angle " + angle[0]);
-            B[0, 1] = -thickness_P * Math.Sin(angle[0]);
-            B[1, 0] = length_P * Math.Sin(angle[0]);
-            B[1, 1] = thickness_P * Math.Cos(angle[0]);
-            if (double.IsNaN(angle[0]))
-                throw new ArithmeticException("Error trying to calculate Angle Value:  " + angle + " Angle " + angle);
-            double[,] BT = B.CloneAs();
-            BT[0, 1] = B[1, 0];
-            BT[1, 0] = B[0, 1];
-            double[] temp = new double[2];
-            for (int i = 0; i < 2; i++)
-            {
-                for (int j = 0; j < 2; j++)
-                {
-                    temp[i] += BT[i, j] * Vector[j];
-                    if (double.IsNaN(temp[0]) || double.IsNaN(temp[1]))
-                        throw new ArithmeticException("Error trying to calculate temp Value:  " + temp[i] + "VectorVectorVector Value: " + Vector[j] + " BT[i, j] " + BT[i, j] + " afuduiof" + i + j);
+        /// <summary>
+        /// Returns the support point of the particle in the direction specified by a vector.
+        /// </summary>
+        /// <param name="vector">
+        /// A vector. 
+        /// </param>
+        override public double[] GetSupportPoint(double[] vector, int SubParticleID) {
+            Aux.TestArithmeticException(vector, "vector in calc of support point");
+            if (vector.L2Norm() == 0)
+                throw new ArithmeticException("The given vector has no length");
+
+            double[] SupportPoint = new double[SpatialDim];
+            double angle = Motion.GetAngle(0);
+            double[] position = Motion.GetPosition(0);
+
+            double[,] rotMatrix = new double[2, 2];
+            rotMatrix[0, 0] = m_Length * Math.Cos(angle);
+            rotMatrix[0, 1] = -m_Thickness * Math.Sin(angle);
+            rotMatrix[1, 0] = m_Length * Math.Sin(angle);
+            rotMatrix[1, 1] = m_Thickness * Math.Cos(angle);
+            double[,] transposeRotMatrix = rotMatrix.CloneAs();
+            transposeRotMatrix[0, 1] = rotMatrix[1, 0];
+            transposeRotMatrix[1, 0] = rotMatrix[0, 1];
+
+            double[] rotVector = new double[2];
+            for (int i = 0; i < 2; i++) {
+                for (int j = 0; j < 2; j++) {
+                    rotVector[i] += transposeRotMatrix[i, j] * vector[j];
                 }
             }
-            double BetragTemp = Math.Sqrt(temp[0].Pow2() + temp[1].Pow2());
-            if (double.IsNaN(temp[0]) || double.IsNaN(temp[1]))
-                throw new ArithmeticException("Error trying to calculate temp Value:  " + temp[0] + " temp " + temp[1] + "VectorVectorVector Value: " + Vector[0] + " VectorVectorVector " + Vector[1]);
-            for (int i = 0; i < 2; i++)
-            {
-                if(BetragTemp != 0)
-                    temp[i] = temp[i] / BetragTemp;
-            }
-            for (int i = 0; i < 2; i++)
-            {
-                for (int j = 0; j < 2; j++)
-                {
-                    SupportPoint[i] += B[i, j] * temp[j];
-                    if (double.IsNaN(SupportPoint[i]) || double.IsInfinity(SupportPoint[i]))
-                        throw new ArithmeticException("Error trying to calculate SupportPoint Value:  " + SupportPoint[i] + "temp Value: " + temp[j] + " B[i, j] " + B[i, j] + "BetragTemp" + BetragTemp + "ij" +i +j);
+            rotVector.ScaleV(1 / rotVector.L2Norm());
+
+            for (int i = 0; i < 2; i++) {
+                for (int j = 0; j < 2; j++) {
+                    SupportPoint[i] += rotMatrix[i, j] * rotVector[j];
                 }
-                SupportPoint[i] += position[0][i];
+                SupportPoint[i] += position[i];
             }
+            return SupportPoint;
         }
 
-        override public double[] GetLengthScales()
-        {
-            return new double[] { length_P, thickness_P };
+        /// <summary>
+        /// Returns the legnthscales of a particle.
+        /// </summary>
+        override public double[] GetLengthScales() {
+            return new double[] { m_Length, m_Thickness };
         }
     }
 }

@@ -28,7 +28,7 @@ namespace BoSSS.Solution.NSECommon {
     /// <summary>
     /// Reaction species source in mass transport equation
     /// </summary>
-    public class ReactionSpeciesSourceLinearized : BoSSS.Solution.Utils.LinearSource {
+    public class ReactionSpeciesSourceLinearized : BoSSS.Solution.Utils.LinearSource, IEquationComponentCoefficient {
         string[] m_ArgumentOrdering;
 
         double[] StoichiometricCoefficients;
@@ -40,6 +40,8 @@ namespace BoSSS.Solution.NSECommon {
         double[] MolarMasses;
         double rho;
         MaterialLaw EoS;
+        double m_Da;
+
 
         /// <summary>
         /// Ctor.
@@ -49,7 +51,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="OneOverMolarMass0MolarMass1"> 1/(M_infty^(a + b -1) * MolarMassFuel^a * MolarMassOxidizer^b). M_infty is the reference for the molar mass steming from non-dimensionalisation of the governing equations.</param>  
         /// <param name="MolarMasses">Array of molar masses. 0 Fuel. 1 Oxidizer, 2 to ns products.</param>   
         /// <param name="EoS">MaterialLawCombustion</param>  
-        /// <param name="NumerOfReactants">The number of reactants (i.e. ns)</param> 
+        /// <param name="NumberOfReactants">The number of reactants (i.e. ns)</param> 
         /// <param name="SpeciesIndex">Index of the species being balanced. (I.e. 0 for fuel, 1 for oxidizer, 2 for CO2, 3 for water)</param> 
         public ReactionSpeciesSourceLinearized(double[] ReactionRateConstants, double[] StoichiometricCoefficients, double OneOverMolarMass0MolarMass1, double[] MolarMasses, MaterialLaw EoS, int NumberOfReactants, int SpeciesIndex) {
             MassFractionNames = new string[] { VariableNames.MassFraction0, VariableNames.MassFraction1, VariableNames.MassFraction2, VariableNames.MassFraction3 };
@@ -57,10 +59,11 @@ namespace BoSSS.Solution.NSECommon {
             this.StoichiometricCoefficients = StoichiometricCoefficients;
             this.ReactionRateConstants = ReactionRateConstants;
             this.SpeciesIndex = SpeciesIndex;
-            this.NumberOfReactants = NumberOfReactants ;
+            this.NumberOfReactants = NumberOfReactants;
             this.OneOverMolarMass0MolarMass1 = OneOverMolarMass0MolarMass1;
             this.MolarMasses = MolarMasses;
             this.EoS = EoS;
+            this.m_Da = ReactionRateConstants[0];
         }
 
 
@@ -68,7 +71,7 @@ namespace BoSSS.Solution.NSECommon {
         /// The current argument, if there is one (i.e. when MassFraction0 or MassFraction1 are being balanced)
         /// </summary>
         public override IList<string> ArgumentOrdering {
-            get {return m_ArgumentOrdering; }
+            get { return m_ArgumentOrdering; }
         }
 
         /// <summary>
@@ -77,39 +80,46 @@ namespace BoSSS.Solution.NSECommon {
         public override IList<string> ParameterOrdering {
             get { return new string[] { VariableNames.Temperature0, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0 }; }
         }
-
-
+        /// <summary>
+        /// Da number used within the homotopie algorithm
+        /// </summary>
+        /// <param name="cs"></param>
+        /// <param name="DomainDGdeg"></param>
+        /// <param name="TestDGdeg"></param>
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            if(cs.UserDefinedValues.Keys.Contains("Damkoehler"))
+                m_Da = (double)cs.UserDefinedValues["Damkoehler"];
+        }
 
         protected override double Source(double[] x, double[] parameters, double[] U) {
 
             double ReactionRate = 0.0;
-            double ExponentialPart = ReactionRateConstants[0] * Math.Exp(-ReactionRateConstants[1] / parameters[0]);
+            double ExponentialPart = m_Da * Math.Exp(-ReactionRateConstants[1] / parameters[0]); // Da*exp(-Ta/T)
             rho = EoS.GetDensity(parameters);
             // 0. MassFraction (fuel) balance species source
-            if (SpeciesIndex == 0) {
+            if(SpeciesIndex == 0) {
                 // M_alpha/(M_1^a * M_2^b) * Da*exp(-Ta/T)*(rho*Y_f)_(k+1)*(rho*Y_f)_(k)^(a-1)*((rho*Y_o)_(k)^b
-        
+
                 ReactionRate = ExponentialPart * OneOverMolarMass0MolarMass1 * rho * U[0] * Math.Pow(rho * parameters[1], ReactionRateConstants[2] - 1) * Math.Pow(rho * parameters[2], ReactionRateConstants[3]);
                 Debug.Assert(!double.IsNaN(ReactionRate));
                 Debug.Assert(!double.IsInfinity(ReactionRate));
             }
             // 1. MassFraction (oxididizer) balance species source
-            else if (SpeciesIndex == 1) {
+            else if(SpeciesIndex == 1) {
                 // M_alpha/(M_1^a * M_2^b) * Da*exp(-Ta/T)*(rho*Y_f)_(k)^(a)*(rho*Y_o)_(k+1)*(rho*Y_o)_(k)^(b-1)
                 ReactionRate = ExponentialPart * OneOverMolarMass0MolarMass1 * Math.Pow(rho * parameters[1], ReactionRateConstants[2]) * rho * U[0] * Math.Pow(rho * parameters[2], ReactionRateConstants[3] - 1);
                 Debug.Assert(!double.IsNaN(ReactionRate));
                 Debug.Assert(!double.IsInfinity(ReactionRate));
             }
             // product balance species source
-            else if (SpeciesIndex > 1 && SpeciesIndex < NumberOfReactants) {
+            else if(SpeciesIndex > 1 && SpeciesIndex < NumberOfReactants) {
                 // M_alpha/(M_1^a * M_2^b) * Da*exp(-Ta/T)*(rho*Y_f)_(k)^a*(rho*Y_o)_(k)^b
                 ReactionRate = ExponentialPart * OneOverMolarMass0MolarMass1 * Math.Pow(rho * parameters[1], ReactionRateConstants[2]) * Math.Pow(rho * parameters[2], ReactionRateConstants[3]);
                 Debug.Assert(!double.IsNaN(ReactionRate));
                 Debug.Assert(!double.IsInfinity(ReactionRate));
-            }
-            else
+            } else
                 throw new System.ArgumentException("Species index cannot be negative or greater than the number of reactants");
-            return - MolarMasses[SpeciesIndex] * StoichiometricCoefficients[SpeciesIndex] * ReactionRate;
+            return -MolarMasses[SpeciesIndex] * StoichiometricCoefficients[SpeciesIndex] * ReactionRate;
         }
     }
 }

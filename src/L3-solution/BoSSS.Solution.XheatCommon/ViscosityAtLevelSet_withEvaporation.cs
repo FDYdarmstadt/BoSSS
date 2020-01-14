@@ -56,11 +56,11 @@ namespace BoSSS.Solution.XheatCommon {
         /// <summary>
         /// default-implementation
         /// </summary>
-        public override double LevelSetForm(ref CommonParamsLs inp,
+        public override double LevelSetForm(ref CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            double[] N = inp.n;
-            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCell];
+            double[] N = inp.Normal;
+            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCellIn];
 
 
             double Grad_uA_xN = 0, Grad_uB_xN = 0, Grad_vA_xN = 0, Grad_vB_xN = 0;
@@ -70,8 +70,8 @@ namespace BoSSS.Solution.XheatCommon {
             }
             double Ret = 0.0;
 
-            double PosCellLengthScale = PosLengthScaleS[inp.jCell];
-            double NegCellLengthScale = NegLengthScaleS[inp.jCell];
+            double PosCellLengthScale = PosLengthScaleS[inp.jCellOut];
+            double NegCellLengthScale = NegLengthScaleS[inp.jCellIn];
 
             double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
             if (hCutCellMin <= 1.0e-10 * hCellMin)
@@ -79,7 +79,7 @@ namespace BoSSS.Solution.XheatCommon {
                 hCutCellMin = hCellMin;
 
 
-            double M = ComputeEvaporationMass(inp.ParamsNeg, inp.ParamsPos, N, inp.jCell);
+            double M = ComputeEvaporationMass(inp.Parameters_IN, inp.Parameters_OUT, N, inp.jCellIn);
             if (M == 0.0)
                 return 0.0;
 

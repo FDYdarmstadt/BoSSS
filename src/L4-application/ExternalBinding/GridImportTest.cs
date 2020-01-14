@@ -1,28 +1,19 @@
-﻿using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Foundation.Grid.RefElements;
-using ilPSP;
-using ilPSP.Utils;
+﻿using BoSSS.Foundation.Grid;
+using MPI.Wrappers;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BoSSS.Application.ExternalBinding {
-    public class GridImportTest {
-
-        public static void Main() {
-
-            Common_.BoSSSInitialize();
-
-            int nCells = 9;
 
 
-
-            int[][] faces = new int[][] {
+    /// <summary>
+    /// Basic Testing for external language binding.
+    /// </summary>
+    [TestFixture]
+    static public class GridImportTest {
+        internal static int[][] faces = new int[][] {
             new int[] {1, 5, 21, 17},
             new int[] {4, 20, 21, 5},
             new int[] {2, 6, 22, 18},
@@ -67,7 +58,7 @@ namespace BoSSS.Application.ExternalBinding {
             new int[] {26, 27, 31, 30}
         };
 
-            int[] neighbour = new int[] {
+        internal static int[] neighbour = new int[] {
             1,
             3,
             2,
@@ -82,7 +73,7 @@ namespace BoSSS.Application.ExternalBinding {
             8
         };
 
-            int[] owner = new int[] {
+        internal static int[] owner = new int[] {
             0,
             0,
             1,
@@ -127,7 +118,7 @@ namespace BoSSS.Application.ExternalBinding {
             8
         };
 
-            double[,] points = new double[,] {
+        internal static double[,] points = new double[,] {
              {0,0,0},
              {0.03333333333,0,0},
              {0.06666666667,0,0},
@@ -161,20 +152,49 @@ namespace BoSSS.Application.ExternalBinding {
              {0.06666666667,0.1,0.01},
              {0.1,0.1,0.01}
             };
+
+        public static void Main() {
             
-            Grid_.FOAMmesh_to_BoSSS(nCells, faces, neighbour, owner, points);
+            int nPoints = points.GetLength(0);
+            int nFaces = owner.Length;
+            int nInternalFaces = neighbour.Length;
 
 
-            Common_.BoSSSFinalize();
+            Init();
+            ConvertFOAMGrid();
+            Cleanup();
+
         }
 
+        /// <summary>
+        /// test for <see cref="OpenFOAMGrid"/>
+        /// </summary>
+        [Test]
+        public static void ConvertFOAMGrid() {
+            int nCells = 9;
+            var g = new OpenFOAMGrid(nCells, faces, neighbour, owner, points);
 
+            Assert.AreEqual(g.GridData.iLogicalCells.Count, nCells, "Mismatch in expected number of cells.");
+        }
         
+        static Initializer MyInit;
 
-        // ---------------------------------
-        // test data from OpenFOAM tutorials
-        //
+        /// <summary>
+        /// MPI Init
+        /// </summary>
+        [TestFixtureSetUp]
+        public static void Init() {
+            MyInit = new Initializer();
+            MyInit.BoSSSInitialize();
+        }
 
-        
+        /// <summary>
+        /// MPI shutdown
+        /// </summary>
+        [TestFixtureTearDown]
+        public static void Cleanup() {
+            MyInit.BoSSSFinalize();
+        }
+
     }
 }

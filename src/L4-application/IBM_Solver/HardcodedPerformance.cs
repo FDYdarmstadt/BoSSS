@@ -45,7 +45,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <param name="load_Grid"></param>
         /// <param name="_GridGuid"></param>
         /// <returns></returns>
-        static public IBM_Control SphereFlow_BWS(string _DbPath = null, int k = 2, int cells_x = 64, int cells_yz = 16, bool only_channel = false, bool pardiso = true, int no_p = 1, int no_it = 1, bool restart = false, bool load_Grid = false, string _GridGuid = null)
+        static public IBM_Control SphereFlow_BWS(string _DbPath = null, int k = 3, int cells_x = 128, int cells_yz = 32, bool only_channel = false, bool pardiso = true, int no_p = 1, int no_it = 1, bool restart = false, bool load_Grid = false, string _GridGuid = null)
         {
             IBM_Control C = new IBM_Control();
             C.OperatorMatrixAnalysis = false;
@@ -399,7 +399,7 @@ namespace BoSSS.Application.IBM_Solver {
             // Physical values
             C.particleRadius = 0.1;
             C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.mu_A = 0.002 / 1;
+            C.PhysicalParameters.mu_A = 0.0001 / 1;
 
             // Boundary conditions
             C.AddBoundaryValue("Velocity_inlet", "VelocityX", (X, t) => 100 - 400 * (X[2] * X[2]) - 400 * (X[1] * X[1]));
@@ -418,12 +418,11 @@ namespace BoSSS.Application.IBM_Solver {
             C.LinearSolver.MaxKrylovDim = 30;
             C.LinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.NewtonGMRES;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             //C.LinearSolver.SolverCode = LinearSolverCode.exp_schwarz_Kcycle_directcoarse;
             //C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
             C.LinearSolver.verbose = true;
             C.NonLinearSolver.verbose = true;
-            C.NonLinearSolver.PrecondSolver.verbose = true;
             //C.NonLinearSolver.ConvergenceCriterion = 1E-10;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
 

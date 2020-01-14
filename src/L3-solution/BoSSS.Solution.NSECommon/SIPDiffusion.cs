@@ -16,6 +16,7 @@ limitations under the License.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using BoSSS.Foundation;
@@ -44,7 +45,7 @@ namespace BoSSS.Solution.NSECommon {
     /// <summary>
     /// SIP discretization of diffusion operators for scalar transport equations (i.e. species mass transport and temperature). Analog to swipViscosity_Term1.
     /// </summary>
-    public class SIPDiffusion : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient    {
+    public class SIPDiffusion : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient, ISupportsJacobianComponent    {
  
         double m_Reynolds;
         double m_Schmidt;
@@ -121,15 +122,66 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         /// <param name="inp"></param>
         /// <returns></returns>
-        private double GetPenalty(int jCellIn, int jCellOut) {
-            double cj_in = cj[jCellIn];
-            double mu = PenaltyBase * cj_in;
-            if (jCellOut >= 0) {
-                double cj_out = cj[jCellOut];
-                mu = Math.Max(mu, PenaltyBase * cj_out);
-            }
-            return mu;
+        //private double GetPenalty(int jCellIn, int jCellOut) {
+        //    double cj_in = cj[jCellIn];
+        //    double mu = PenaltyBase * cj_in;
+        //    if (jCellOut >= 0) {
+        //        double cj_out = cj[jCellOut];
+        //        mu = Math.Max(mu, PenaltyBase * cj_out);
+        //    }
+        //    return mu;
+        //}
+
+        protected double GetPenalty(int jCellIn, int jCellOut) {
+
+            double penaltySizeFactor_A = 1.0 / cj[jCellIn];
+            double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / cj[jCellOut] : 0;
+            double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
+
+            Debug.Assert(!double.IsNaN(penaltySizeFactor_A));
+            Debug.Assert(!double.IsNaN(penaltySizeFactor_B));
+            Debug.Assert(!double.IsInfinity(penaltySizeFactor_A));
+            Debug.Assert(!double.IsInfinity(penaltySizeFactor_B));
+            Debug.Assert(!double.IsInfinity(m_penalty));
+            Debug.Assert(!double.IsInfinity(m_penalty));
+
+            return penaltySizeFactor * m_penalty * PenaltyBase;
         }
+
+        /// <summary>
+        /// spatial dimension
+        /// </summary>
+        protected int m_D;
+
+        /// <summary>
+        /// penalty adapted for spatial dimension and DG-degree
+        /// </summary>
+        double m_penalty;
+
+        /// <summary>
+        /// Update of penalty length scales.
+        /// </summary>
+        /// <param name="cs"></param>
+        /// <param name="DomainDGdeg"></param>
+        /// <param name="TestDGdeg"></param>
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            m_D = cs.GrdDat.SpatialDimension;
+            double _D = m_D;
+            double _p = DomainDGdeg.Max();
+
+            double penalty_deg_tri = (_p + 1) * (_p + _D) / _D; // formula for triangles/tetras
+            double penalty_deg_sqr = (_p + 1.0) * (_p + 1.0); // formula for squares/cubes
+
+            m_penalty = Math.Max(penalty_deg_tri, penalty_deg_sqr); // the conservative choice
+
+            cj = cs.CellLengthScales;
+                        
+            // Set the Reynolds number to a user defined value contained in the CoefficientSet cs
+            // Useful in case that the Reynolds number changes during a simulation...
+            if(cs.UserDefinedValues.Keys.Contains("Reynolds"))
+                m_Reynolds = (double)cs.UserDefinedValues["Reynolds"];
+        }
+
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
             double Acc = 0.0;
@@ -143,12 +195,16 @@ namespace BoSSS.Solution.NSECommon {
                 case DiffusionMode.Temperature:
                     DiffusivityA = ((MaterialLawLowMach)EoS).GetHeatConductivity(inp.Parameters_IN[0]);
                     DiffusivityB = ((MaterialLawLowMach)EoS).GetHeatConductivity(inp.Parameters_OUT[0]);
+                    Debug.Assert(!double.IsNaN(DiffusivityA));
+                    Debug.Assert(!double.IsInfinity(DiffusivityA));
+                    Debug.Assert(!double.IsNaN(DiffusivityB));
+                    Debug.Assert(!double.IsInfinity(DiffusivityB));
 
                     for (int d = 0; d < inp.D; d++) {
                         // consistency term
-                        Acc += 0.5 * (DiffusivityA * _Grad_uA[0, d] + DiffusivityB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];
+                        Acc += 0.5 * (DiffusivityA * _Grad_uA[0, d] + DiffusivityB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normal[d];
                         // symmetry term                
-                        Acc += 0.5 * (DiffusivityA * _Grad_vA[d] + DiffusivityB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];
+                        Acc += 0.5 * (DiffusivityA * _Grad_vA[d] + DiffusivityB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normal[d];
                     }
                     // penalty term          
                     DiffusivityMax = (Math.Abs(DiffusivityA) > Math.Abs(DiffusivityB)) ? DiffusivityA : DiffusivityB;
@@ -161,12 +217,16 @@ namespace BoSSS.Solution.NSECommon {
                     rhoB = EoS.GetDensity(inp.Parameters_OUT);
                     DiffusivityA = ((MaterialLawLowMach)EoS).GetDiffusivity(inp.Parameters_IN[0]);
                     DiffusivityB = ((MaterialLawLowMach)EoS).GetDiffusivity(inp.Parameters_OUT[0]);
+                    Debug.Assert(!double.IsNaN(DiffusivityA));
+                    Debug.Assert(!double.IsInfinity(DiffusivityA));
+                    Debug.Assert(!double.IsNaN(DiffusivityB));
+                    Debug.Assert(!double.IsInfinity(DiffusivityB));
 
                     for (int d = 0; d < inp.D; d++) {
                         // consistency term
-                        Acc += 0.5 * (DiffusivityA * rhoA * _Grad_uA[0, d] + rhoB * DiffusivityB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];
+                        Acc += 0.5 * (DiffusivityA * rhoA * _Grad_uA[0, d] + rhoB * DiffusivityB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normal[d];
                         // symmetry term                
-                        Acc += 0.5 * (DiffusivityA * rhoA * _Grad_vA[d] + DiffusivityB * rhoB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];
+                        Acc += 0.5 * (DiffusivityA * rhoA * _Grad_vA[d] + DiffusivityB * rhoB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normal[d];
                     }
                     // penalty term       
                     DiffusivityMax = (Math.Abs(DiffusivityA) > Math.Abs(DiffusivityB)) ? DiffusivityA : DiffusivityB;
@@ -189,9 +249,13 @@ namespace BoSSS.Solution.NSECommon {
             switch (Mode) {
                 case DiffusionMode.Temperature:
                     DiffusivityA = ((MaterialLawLowMach)EoS).GetHeatConductivity(inp.Parameters_IN[0]);
+                    Debug.Assert(!double.IsNaN(DiffusivityA));
+                    Debug.Assert(!double.IsInfinity(DiffusivityA));
                     break;
                 case DiffusionMode.MassFraction:
                     DiffusivityA = ((MaterialLawLowMach)EoS).GetDiffusivity(inp.Parameters_IN[0]);
+                    Debug.Assert(!double.IsNaN(DiffusivityA));
+                    Debug.Assert(!double.IsInfinity(DiffusivityA));
                     break;
                 default:
                     throw new NotImplementedException();
@@ -207,8 +271,8 @@ namespace BoSSS.Solution.NSECommon {
                                 // =====================
                                 u_D = ArgumentFunction[inp.EdgeTag](inp.X, 0);
                                 for (int d = 0; d < inp.D; d++) {
-                                    Acc += (DiffusivityA * _Grad_uA[0, d]) * (_vA) * inp.Normale[d];
-                                    Acc += (DiffusivityA * _Grad_vA[d]) * (_uA[0] - u_D) * inp.Normale[d];
+                                    Acc += (DiffusivityA * _Grad_uA[0, d]) * (_vA) * inp.Normal[d];
+                                    Acc += (DiffusivityA * _Grad_vA[d]) * (_uA[0] - u_D) * inp.Normal[d];
                                 }
 
                                 Acc -= DiffusivityA * (_uA[0] - u_D) * (_vA - 0) * pnlty;
@@ -231,8 +295,8 @@ namespace BoSSS.Solution.NSECommon {
                             case DiffusionMode.Temperature:
                                 u_D = ArgumentFunction[inp.EdgeTag](inp.X, inp.time);
                                 for (int d = 0; d < inp.D; d++) {
-                                    Acc += (DiffusivityA * _Grad_uA[0, d]) * (_vA) * inp.Normale[d];
-                                    Acc += (DiffusivityA * _Grad_vA[d]) * (_uA[0] - u_D) * inp.Normale[d];
+                                    Acc += (DiffusivityA * _Grad_uA[0, d]) * (_vA) * inp.Normal[d];
+                                    Acc += (DiffusivityA * _Grad_vA[d]) * (_uA[0] - u_D) * inp.Normal[d];
                                 }
 
                                 Acc -= DiffusivityA * (_uA[0] - u_D) * (_vA - 0) * pnlty;
@@ -242,8 +306,8 @@ namespace BoSSS.Solution.NSECommon {
                                 rhoA = EoS.GetDensity(inp.Parameters_IN);
                                 u_D = ArgumentFunction[inp.EdgeTag](inp.X, inp.time);
                                 for (int d = 0; d < inp.D; d++) {
-                                    Acc += (DiffusivityA * rhoA * _Grad_uA[0, d]) * (_vA) * inp.Normale[d];
-                                    Acc += (DiffusivityA * rhoA * _Grad_vA[d]) * (_uA[0] - u_D) * inp.Normale[d];
+                                    Acc += (DiffusivityA * rhoA * _Grad_uA[0, d]) * (_vA) * inp.Normal[d];
+                                    Acc += (DiffusivityA * rhoA * _Grad_vA[d]) * (_uA[0] - u_D) * inp.Normal[d];
                                 }
 
                                 Acc -= DiffusivityA * rhoA * (_uA[0] - u_D) * (_vA - 0) * pnlty;
@@ -271,12 +335,14 @@ namespace BoSSS.Solution.NSECommon {
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double Acc = 0;
             double Diffusivity;
-            double rho = 0.0;
-            rho = EoS.GetDensity(cpv.Parameters);
+            double rho = EoS.GetDensity(cpv.Parameters);
             switch (Mode) {
                 case DiffusionMode.Temperature:
                     Diffusivity = ((MaterialLawLowMach)EoS).GetHeatConductivity(cpv.Parameters[0]);
-                    for (int d = 0; d < cpv.D; d++)
+                    Debug.Assert(!double.IsNaN(Diffusivity));
+                    Debug.Assert(!double.IsInfinity(Diffusivity));
+
+                    for(int d = 0; d < cpv.D; d++)
                         Acc -= Diffusivity * GradU[0, d] * GradV[d];
                     break;
                 case DiffusionMode.MassFraction:
@@ -292,12 +358,13 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         /// <summary>
-        /// 
+        /// Linear component - returns this object itself.
         /// </summary>
-        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
-            if (cs.UserDefinedValues.Keys.Contains("Reynolds"))
-                m_Reynolds = (double)cs.UserDefinedValues["Reynolds"];
+        virtual public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
         }
+
+  
 
         /// <summary>
         /// Arguments
@@ -312,5 +379,6 @@ namespace BoSSS.Solution.NSECommon {
         public IList<string> ParameterOrdering {
             get { return m_ParameterOrdering; }
         }
+
     }
 }

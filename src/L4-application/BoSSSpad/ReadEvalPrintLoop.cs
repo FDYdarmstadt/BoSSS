@@ -121,6 +121,7 @@ namespace BoSSS.Application.BoSSSpad {
             eval.ReferenceAssembly(typeof(XNSE_Solver.XNSE_SolverMain).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Application.SipPoisson.SipPoissonMain).Assembly);
             eval.ReferenceAssembly(typeof(Rheology.Rheology).Assembly);
+            //eval.ReferenceAssembly(typeof(XRheology_Solver.XRheology_SolverMain).Assembly);
             eval.ReferenceAssembly(typeof(FSI_Solver.FSI_SolverMain).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Foundation.SpecFEM.SpecFemField).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main).Assembly);
@@ -130,7 +131,7 @@ namespace BoSSS.Application.BoSSSpad {
             //eval.ReferenceAssembly(typeof(FSI_Solver.FSI_SolverMain).Assembly);
             //eval.ReferenceAssembly(typeof(FuelCell.FuelCellMain).Assembly);
             // Helical shit
-            // eval.ReferenceAssembly(typeof(StokesHelical.HelicalMain).Assembly);
+             //eval.ReferenceAssembly(typeof(StokesHelical.HelicalMain).Assembly);
             // eval.ReferenceAssembly(typeof(PosissonScalar3CylinderCoords.PoissonScalar3CCMain).Assembly);
             // eval.ReferenceAssembly(typeof(PoissonScalar2CylinderCoords.PoissonScalar2CCMain).Assembly);
 
@@ -249,8 +250,29 @@ namespace BoSSS.Application.BoSSSpad {
             CommandLineReader reader = GetCommandLineReader();
 
             while (eval != null) {
-                Console.WriteLine();
+		Console.WriteLine();
                 string line = reader.ReadCommand("> ", "").Trim();
+
+                if (line == null || exitCommands.Contains(line)) {
+                    break;
+                }
+
+                EvalPrint(line, out var dummy2);
+            }
+        }
+
+        /// <summary>
+        /// Executes simpler variant of the REPL (Read-Eval-Print-Loop) until terminated.
+        /// </summary>
+        public static void REPL_Simple() {
+            EvalPrint("restart", out var dummy1);
+
+            CommandLineReader reader = GetCommandLineReader();
+
+            while (eval != null) {
+		Console.WriteLine();
+                Console.Write("> ");
+                string line = Console.ReadLine ();
 
                 if (line == null || exitCommands.Contains(line)) {
                     break;

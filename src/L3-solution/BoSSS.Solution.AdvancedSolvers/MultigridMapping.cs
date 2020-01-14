@@ -32,6 +32,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.Aggregation;
 using ilPSP.Tracing;
 using BoSSS.Foundation.XDG;
+using BoSSS.Foundation.Comm;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -60,12 +61,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         /// <summary>
-        /// Aggregation basis on this level.
+        /// Aggregation basis on this level, for each variable.
         /// </summary>
         public AggregationGridBasis[] AggBasis {
             get;
             private set;
         }
+
+        /// <summary>
+        /// Number of variables
+        /// </summary>
+        public int NoOfVariables {
+            get {
+                return AggBasis.Length;
+            }
+        }
+
 
         /// <summary>
         /// aggregation grid on this level
@@ -81,26 +92,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public int LocalLength {
             get {
+                int Jup = this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
                 if (this.m_i0 != null) {
-                    return this.m_i0[this.m_i0.Length - 1];
+                    return this.m_i0[Jup];
                 } else {
-                    return this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells * this.MaximalLength;
+                    return Jup * this.MaximalLength;
                 }
             }
         }
         
-        Partitioning m_Partitioning;
 
         /// <summary>
         /// Partitioning of the vector among MPI processes.
         /// </summary>
         public Partitioning Partitioning {
-            get {
-                if(m_Partitioning == null) {
-                    m_Partitioning = new Partitioning(LocalLength);
-                }
-                return m_Partitioning;
-            }
+            get;
+            private set;
         }
 
         /// <summary>
@@ -198,22 +205,52 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // offsets
                 // =======
                 if (this.MinimalLength != this.MaximalLength) {
-                    int JAGG = this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
-                    this.m_i0 = new int[JAGG + 1];
+                    int JAGGloc = this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+                    int JAGGtot = this.AggGrid.iLogicalCells.Count;
+                    int[] __i0Tmp = new int[JAGGtot];
 
                     HashSet<int> BlockLen = new HashSet<int>();
 
-                    for (int jag = 0; jag < JAGG; jag++) {
+                    int LL = 0;
+                    for (int jag = 0; jag < JAGGloc; jag++) {
                         int S = 0;
                         for (int i = 0; i < m_DgDegree.Length; i++) {
                             S += this.AggBasis[i].GetLength(jag, m_DgDegree[i]);
                         }
 
-                        this.m_i0[jag + 1] = this.m_i0[jag] + S;
+                        if (jag < JAGGloc - 1)
+                            __i0Tmp[jag + 1] = __i0Tmp[jag] + S;
+                        else
+                            LL = __i0Tmp[jag] + S;
+
+                        BlockLen.Add(S);
+                    }
+                    Partitioning = new Partitioning(LL);
+                    int i0Part = Partitioning.i0;
+                    m_i0 = new int[JAGGtot + 1];
+                    for (int jag = 0; jag < JAGGloc; jag++) {
+                        m_i0[jag] = __i0Tmp[jag]; // store local i0 index
+                        __i0Tmp[jag] += i0Part; // convert to global index
+                    }
+                    m_i0[JAGGloc] = LL;
+                    __i0Tmp.MPIExchange(this.AggGrid);
+                    
+                    // compute global cell i0's in the external range
+                    m_i0_ExtGlob = new int[JAGGtot - JAGGloc];
+                    Array.Copy(__i0Tmp, JAGGloc, m_i0_ExtGlob, 0, JAGGtot - JAGGloc);
+                    
+                    // compute local cell i0's in the external range (very confusing)
+                    for (int jag = JAGGloc; jag < JAGGtot; jag++) {
+                        int S = 0;
+                        for (int i = 0; i < m_DgDegree.Length; i++) {
+                            S += this.AggBasis[i].GetLength(jag, m_DgDegree[i]);
+                        }
+                        m_i0[jag + 1] = this.m_i0[jag] + S;
 
                         BlockLen.Add(S);
                     }
 
+                    // build look-up for block types
                     m_Len2SublockType = new Dictionary<int, int>();
                     m_Subblk_i0 = new int[BlockLen.Count][];
                     m_SubblkLen = new int[BlockLen.Count][];
@@ -225,10 +262,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         type++;
                     }
 
+#if DEBUG
+                    for (int jag = JAGGloc; jag < JAGGtot; jag++) {
+                        Debug.Assert(Partitioning.IsInLocalRange(m_i0_ExtGlob[jag - JAGGloc]) == false);
+                    }
+#endif
+
+
+
+
                 } else {
                     m_Subblk_i0 = new int[][] { new int[] { 0 } };
                     m_SubblkLen = new int[][] { new int[] { this.MaximalLength } };
+
+                    Partitioning = new Partitioning(this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells * this.MaximalLength);
                 }
+
+
+                Debug.Assert(Partitioning != null);
+                Debug.Assert(Partitioning.LocalLength == this.LocalLength);
+                
             }
         }
 
@@ -239,9 +292,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         /// <summary>
         /// For each aggregation cell, the vector index of the first DG coordinate in this cell.
-        /// index: aggregation cell index.
+        /// - index: aggregation cell index.
         /// </summary>
         int[] m_i0;
+
+        /// <summary>
+        /// For each external aggregation cell, the global vector index of the first DG coordinate in this cell.
+        /// - index: external aggregation cell index, minus local number of aggregation cells
+        /// </summary>
+        int[] m_i0_ExtGlob;
         
         /// <summary>
         /// Number of degrees-of-freedom in cell <paramref name="jCell"/> , for the <paramref name="iVar"/>-th variable.
@@ -345,21 +404,45 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Debug.Assert(n >= 0 && n < this.AggBasis[ifld].GetLength(jCell, this.m_DgDegree[ifld]));
 
             int S;
-            if(this.m_i0 != null){
+            if(this.m_i0 != null) {
+
                 S = this.m_i0[jCell];
             } else {
                 Debug.Assert(this.MaximalLength == this.MinimalLength);
                 S = jCell * this.MaximalLength;
             }
-            for(int iF = 0; iF < ifld; iF++)
+            //if (ilPSP.Environment.MPIEnv.MPI_Rank == 1) {
+                //Console.WriteLine("proc:{0}, iVar:{1}, iCell:{2}, {3}", ilPSP.Environment.MPIEnv.MPI_Rank, ifld, jCell, S);
+            //}
+
+            
+            for (int iF = 0; iF < ifld; iF++)
                 S += this.AggBasis[iF].GetLength(jCell, this.m_DgDegree[iF]);
             S += n;
             return S;
         }
 
+        public int LocalUniqueIndex(int ifld, int jCell, int jSpec ,int n) {
+            int Np_tot = this.AggBasis[ifld].GetLength(jCell, this.m_DgDegree[ifld]);
+            int NoOfSpec = AggBasis[ifld].GetNoOfSpecies(jCell);
+            int Np_Spec = Np_tot / NoOfSpec;
+            int n_agg=jSpec*Np_Spec + n;
+
+            return LocalUniqueIndex(ifld, jCell, n_agg);
+        }
+
+        public int GlobalUniqueIndex(int ifld, int jCell, int jSpec, int n) {
+            int Np_tot = this.AggBasis[ifld].GetLength(jCell, this.m_DgDegree[ifld]);
+            int NoOfSpec = AggBasis[ifld].GetNoOfSpecies(jCell);
+            int Np_Spec = Np_tot / NoOfSpec;
+            int n_agg = jSpec * Np_Spec + n;
+
+            return GlobalUniqueIndex(ifld, jCell, n_agg);
+        }
+
         public int GlobalUniqueIndex(int ifld, int jCell, int n) {
             Debug.Assert(ifld >= 0 && ifld < this.m_DgDegree.Length);
-            Debug.Assert(jCell >= 0 && jCell < (this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells + this.AggGrid.iLogicalCells.NoOfExternalCells));
+            Debug.Assert(jCell >= 0 && jCell < (this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells + this.AggGrid.iLogicalCells.NoOfExternalCells));        
             Debug.Assert(n >= 0 && n < this.AggBasis[ifld].GetLength(jCell, this.m_DgDegree[ifld]));
 
             int Jup = this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
@@ -374,8 +457,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     S += n;
                     return S;
                 } else {
-                    // tipp MPI-Exchange von 'this.i0'
-                    throw new NotImplementedException("todo");
+                    return m_i0_ExtGlob[jCell - AggGrid.iLogicalCells.NoOfLocalUpdatedCells];
                 }
 
             }
@@ -866,7 +948,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
                 // Play it safe in case of potentially empty blocks
-                Debug.Assert(this.m_i0.Length - 1 == this.LocalNoOfBlocks);
+                Debug.Assert(this.m_i0.Length - 1 == this.LocalNoOfBlocks + this.AggGrid.iLogicalCells.NoOfExternalCells);
                 while (m_i0[iBlockLoc] == m_i0[iBlockLoc + 1] && iBlockLoc < this.m_i0.Length - 2) {
                     iBlockLoc++;
                 }
@@ -895,27 +977,27 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public int GetI0Offest(int proc) {
-            return m_Partitioning.GetI0Offest(proc);
+            return Partitioning.GetI0Offest(proc);
         }
 
         public IPartitioning GetImmutablePartition() {
-            return this.m_Partitioning;
+            return this.Partitioning;
         }
 
         public int FindProcess(int index) {
-            return this.m_Partitioning.FindProcess(index);
+            return this.Partitioning.FindProcess(index);
         }
 
         public int FindProcess(long index) {
-            return this.m_Partitioning.FindProcess(index);
+            return this.Partitioning.FindProcess(index);
         }
 
         public bool IsInLocalRange(int i) {
-            return this.m_Partitioning.IsInLocalRange(i);
+            return this.Partitioning.IsInLocalRange(i);
         }
 
         public int GetLocalLength(int proc) {
-            return this.m_Partitioning.GetLocalLength(proc);
+            return this.Partitioning.GetLocalLength(proc);
         }
     }
 }

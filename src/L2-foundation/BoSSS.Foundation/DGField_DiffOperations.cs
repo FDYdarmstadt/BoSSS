@@ -101,8 +101,8 @@ namespace BoSSS.Foundation {
         /// </remarks>
         virtual public void LaplacianByFlux(double alpha, DGField f, DGField tmp = null,
             SubGrid optionalSubGrid = null,
-            SpatialOperator.SubGridBoundaryModes bndMode_1stDeriv = SpatialOperator.SubGridBoundaryModes.OpenBoundary,
-            SpatialOperator.SubGridBoundaryModes bndMode_2ndDeriv = SpatialOperator.SubGridBoundaryModes.OpenBoundary) {
+            SubGridBoundaryModes bndMode_1stDeriv = SubGridBoundaryModes.OpenBoundary,
+            SubGridBoundaryModes bndMode_2ndDeriv = SubGridBoundaryModes.OpenBoundary) {
             using (new FuncTrace()) {
                 if (tmp == null)
                     tmp = (DGField)f.Clone();
@@ -147,7 +147,7 @@ namespace BoSSS.Foundation {
         /// This method is based on <see cref="DerivativeByFlux"/>;
         /// </remarks>
         public void DivergenceByFlux<T>(double alpha, VectorField<T> vec,
-            SubGrid optionalSubGrid = null, SpatialOperator.SubGridBoundaryModes bndMode = SpatialOperator.SubGridBoundaryModes.OpenBoundary) where T : DGField {
+            SubGrid optionalSubGrid = null, SubGridBoundaryModes bndMode = SubGridBoundaryModes.OpenBoundary) where T : DGField {
             using (new FuncTrace()) {
                 if (vec.Dim != GridDat.SpatialDimension)
                     throw new ArgumentException("wrong number of components in vector field.", "vec");
@@ -235,7 +235,7 @@ namespace BoSSS.Foundation {
         /// <param name="bndMode"></param>
         public void Curl2DByFlux<T>(double alpha, VectorField<T> vec,
             SubGrid optionalSubGrid = null,
-            SpatialOperator.SubGridBoundaryModes bndMode = SpatialOperator.SubGridBoundaryModes.OpenBoundary)
+            SubGridBoundaryModes bndMode = SubGridBoundaryModes.OpenBoundary)
             where T : DGField {
             //diff(v(x, y), x)-(diff(u(x, y), y))
             using (new FuncTrace()) {
@@ -420,7 +420,7 @@ namespace BoSSS.Foundation {
                 get {
                     return null;
                 }
-            }
+            } 
         }
 
         /// <summary>
@@ -458,7 +458,7 @@ namespace BoSSS.Foundation {
         /// should be slower, but produce more sane results, especially for
         /// fields of low polynomial degree (0 or 1);
         /// </remarks>
-        virtual public void DerivativeByFlux(double alpha, DGField f, int d, SubGrid optionalSubGrid = null, SpatialOperator.SubGridBoundaryModes bndMode = SpatialOperator.SubGridBoundaryModes.OpenBoundary) {
+        virtual public void DerivativeByFlux(double alpha, DGField f, int d, SubGrid optionalSubGrid = null, SubGridBoundaryModes bndMode = SubGridBoundaryModes.OpenBoundary) {
             int D = this.Basis.GridDat.SpatialDimension;
             if (d < 0 || d >= D)
                 throw new ArgumentException("spatial dimension out of range.", "d");

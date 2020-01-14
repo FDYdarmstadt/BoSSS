@@ -28,14 +28,20 @@ using ilPSP.Connectors.Matlab;
 using ilPSP.Tracing;
 using System.IO;
 using System.Diagnostics;
+using BoSSS.Foundation.XDG;
 
-namespace BoSSS.Solution.AdvancedSolvers {
+namespace BoSSS.Solution.AdvancedSolvers
+{
     /// <summary>
     /// Implementation based on presudocode from Kelley, C. 
     /// Solving Nonlinear Equations with Newton’s Method. Fundamentals of Algorithms. 
     /// Society for Industrial and Applied Mathematics, 2003. https://doi.org/10.1137/1.9780898718898.
     /// </summary>
-    public class Newton : NonlinearSolver {
+    public class Newton : NonlinearSolver
+    {
+        /// <summary>
+        /// ctor
+        /// </summary>
         public Newton(OperatorEvalOrLin __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq, MultigridOperator.ChangeOfBasisConfig[][] __MultigridOperatorConfig) :
             base(__AssembleMatrix, __AggBasisSeq, __MultigridOperatorConfig) //
         {
@@ -56,6 +62,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public int restart_limit = 1000;
 
+        /// <summary>
+        /// Number of iterations, where jacobi is not updated. Also known as constant newton method. Default 1, means regular newton.
+        /// </summary>
+        public int constant_newton_it = 1;
 
         /// <summary>
         /// Maximum dimension of the krylov subspace. Equals m in GMRES(m)
@@ -63,7 +73,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public int maxKrylovDim = 30;
 
         /// <summary>
-        /// Convergence criterium for nonlinear iteration
+        /// Convergence criterion for nonlinear iteration
         /// </summary>
         public double ConvCrit = 1e-6;
 
@@ -88,6 +98,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public ISolverSmootherTemplate linsolver;
 
+        public bool UsePresRefPoint;
+
         //bool solveVelocity = true;
 
         //double VelocitySolver_ConvergenceCriterion = 1e-5;
@@ -111,7 +123,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //double gamma = 0.9;
 
                 // Eval_F0 
-                
+
                 using (new BlockTrace("Slv Init", tr)) {
                     base.Init(SolutionVec, RHS, out x, out f0);
                 };
@@ -127,7 +139,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 EvaluateOperator(1, SolutionVec.Mapping.ToArray(), f0);
 
                 Console.WriteLine("Residual base.init:   " + f0.L2NormPow2().MPISum().Sqrt());
-               //base.EvalResidual(x, ref f0);
+                //base.EvalResidual(x, ref f0);
 
                 // fnorm
                 double fnorm = f0.L2NormPow2().MPISum().Sqrt();
@@ -136,11 +148,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double[] step = new double[x.Length];
                 double[] stepOld = new double[x.Length];
                 //BlockMsrMatrix CurrentJac;
-
+                bool secondCriteriumConverged = false;
                 OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
-
+                double fnorminit = fnorm;
                 using (new BlockTrace("Slv Iter", tr)) {
-                    while ((fnorm > ConvCrit && itc < MaxIter) || itc < MinIter) {
+                    while (
+                        (fnorm > ConvCrit * fnorminit*0 + ConvCrit && 
+                        /*secondCriteriumConverged == false &&*/ itc < MaxIter)   
+                        || itc < MinIter) {
+                        //Console.WriteLine("The convergence criterion is {0}", ConvCrit * fnorminit + ConvCrit);
                         rat = fnorm / fNormo;
                         //if (Math.Abs(fNormo - fnorm) < 1e-12)
                         //    break;
@@ -155,8 +171,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             //base.EvalResidual(x, ref f0); 
                             f0.ScaleV(-1.0);
                             step = Krylov(SolutionVec, x, f0, out errstep);
-                        }
-                        else if (ApproxJac == ApproxInvJacobianOptions.DirectSolver) {
+                        } else if (ApproxJac == ApproxInvJacobianOptions.DirectSolver) {
                             /*
                             double[] _step = step.ToArray();
                             double[] _f0 = f0.ToArray();
@@ -177,11 +192,30 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             var solver = linsolver;
                             //var mgo = new MultigridOperator(m_AggBasisSeq, SolutionVec.Mapping, CurrentJac, null, m_MultigridOperatorConfig);
+                            //if (Precond != null) {
+                            //    Precond.Init(CurrentLin);
+                            //}
+
                             solver.Init(CurrentLin);
                             step.ClearEntries();
                             var check = f0.CloneAs();
                             f0.ScaleV(-1.0);
                             solver.ResetStat();
+
+                            if(solver is IProgrammableTermination pt) {
+                                // iterative solver with programmable termination is used - 
+                                
+                                double f0_L2 = f0.MPI_L2Norm();
+                                double thresh = f0_L2 * 0.001;
+                                Console.WriteLine($"Inexact Newton: setting convergence threshold to {thresh:0.##E-00}");
+                                pt.TerminationCriterion = (iter, R0_l2, R_l2) => {
+                                    return (R_l2 > thresh) && (iter < 50);
+                                };
+ 
+
+                            }
+
+                            
                             solver.Solve(step, f0);
                             /*
                             double check_norm; 
@@ -200,12 +234,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             //if (solver.Converged == false)
                             //    Debugger.Launch();
-                            
-                        }
-                        else {
+
+                        } else {
                             throw new NotImplementedException("Your approximation option for the jacobian seems not to be existent.");
                         }
-
 
                         // Start line search
                         xOld = x;
@@ -216,14 +248,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         xt = x.CloneAs();
                         xt.AccV(lambda, step);
                         this.CurrentLin.TransformSolFrom(SolutionVec, xt);
-
                         EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
-
+                        
                         double nft = ft.L2NormPow2().MPISum().Sqrt();
                         double nf0 = f0.L2NormPow2().MPISum().Sqrt();
                         double ff0 = nf0 * nf0;
                         double ffc = nft * nft;
                         double ffm = nft * nft;
+
+                    //    Console.WriteLine("    Residuum 0:" + nf0);
 
                         // Control of the the step size
                         while (nft >= (1 - alpha * lambda) * nf0 && iarm < maxStep) {
@@ -241,7 +274,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             lamc = lambda;
 
                             this.CurrentLin.TransformSolFrom(SolutionVec, xt);
-
                             EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
 
                             nft = ft.L2NormPow2().MPISum().Sqrt();
@@ -249,7 +281,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             ffc = nft * nft;
                             iarm++;
 #if DEBUG
-                            Console.WriteLine("Step size:  " + lambda + "with Residuum:  " + nft);
+                            Console.WriteLine("    Residuum:  " + nft + " lambda = " + lambda);
 #endif 
                         }
                         // transform solution back to 'original domain'
@@ -257,8 +289,29 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         // (and for Level-Set-Updates ...)
                         this.CurrentLin.TransformSolFrom(SolutionVec, xt);
 
+                        if (UsePresRefPoint == false) {
+
+                            if (this.m_SolutionVec.Mapping.Fields[2] is XDGField  Xpres) {
+                                DGField presSpA = Xpres.GetSpeciesShadowField("A");
+                                DGField presSpB = Xpres.GetSpeciesShadowField("B");
+                                var meanpres = presSpB.GetMeanValueTotal(null);
+                                presSpA.AccConstant(-1.0 * meanpres);
+                                presSpB.AccConstant(-1.0 * meanpres);
+                            } else {
+                                DGField pres = this.m_SolutionVec.Mapping.Fields[2];
+                                var meanpres = pres.GetMeanValueTotal(null);
+                                pres.AccConstant(-1.0 * meanpres);
+                            }
+                        }
+
+
                         // update linearization
-                        base.Update(SolutionVec.Mapping.Fields, ref xt);
+                        if (itc  % constant_newton_it == 0) {
+                            base.Update(SolutionVec.Mapping.Fields, ref xt);
+                            if(constant_newton_it !=1) { 
+                            Console.WriteLine("Jacobian is updated: it {0}", itc);
+                            }
+                        }
 
                         // residual evaluation & callback
                         base.EvalResidual(xt, ref ft);
@@ -271,7 +324,35 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         f0 = ft.CloneAs();
 
                         OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
+
+                        #region second criterium
+                        /// Just testing. According to "Pawlowski et al. - 2006 - Globalization Techniques for Newton–Krylov Methods"
+                        /// this criterium is useful to "ensure that even finer phisical details of the flow and are resolved"
+                        /*
+                        double[] WMat_s = new double[x.Length];
+                        double psi_r = 1e-3;
+                        double psi_a = 1e-8;
+                        double[] truestep = step;
+                        truestep.ScaleV(lambda);
+                        for(int i = 0; i < WMat_s.Length; i++) {
+                            WMat_s[i] = 1 / (psi_r * x[i] + psi_a) * truestep[i];
+                        }
+                        WMat_s.CheckForNanOrInfV();
+
+                        double secondCriterium = WMat_s.L2Norm()/x.Length;
                     
+                        if(secondCriterium < 1) {
+                            secondCriteriumConverged = true;
+                        }
+                        //Console.WriteLine("Norm Of the second criterium {0}", secondCriterium);
+                        //if((fnorm < ConvCrit * fnorminit * 0 + ConvCrit))
+                        //    Console.WriteLine("Criterium 1 fulfilled");
+                        //if((secondCriteriumConverged == true))
+                        //    Console.WriteLine("Criterium 2 fulfilled");
+                        //if(itc > MaxIter)
+                        //    Console.WriteLine("Criterium 3 fulfilled");
+                    */
+                        #endregion
 
                     }
                 }
@@ -314,7 +395,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     x = xinit.CloneAs();
                     r.AccV(-1, dirder(SolutionVec, currentX, x, f0));
                 }
-               // Precond = null;
+                // Precond = null;
                 if (Precond != null) {
                     var temp2 = r.CloneAs();
                     r.ClearEntries();
@@ -349,7 +430,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // Call directional derivative
                     //V[k].SetV(f0);
 
-                    if (Precond != null) {                   
+                    if (Precond != null) {
                         var temp3 = V[k].CloneAs();
                         V[k].ClearEntries();
                         //this.OpMtxRaw.InvertBlocks(false,false).SpMV(1, temp3, 0, V[k]);
@@ -435,7 +516,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 k--;
 
-           
+
 
                 // update approximation and exit
                 //y = H(1:i,1:i) \ g(1:i);    
@@ -527,7 +608,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //CurrentLin.TransformRhsInto(OpAffineRaw, fx);
                 if (linearization == false) {
                     EvaluateOperator(1.0, SolutionVec.Mapping.Fields, fx);
-                } 
+                }
                 //else {
                 //    this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, SolutionVec.Mapping.Fields.ToArray(), true);
                 //    OpMtxRaw.SpMV(1.0, new CoordinateVector(SolutionVec.Mapping.Fields.ToArray()), 1.0, OpAffineRaw);
@@ -577,11 +658,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (b == 0.0) {
                 c = 1.0;
                 s = 0.0;
-            } else if (Math.Abs(b) > Math.Abs(a)) {
+            }
+            else if (Math.Abs(b) > Math.Abs(a)) {
                 temp = a / b;
                 s = 1.0 / Math.Sqrt(1.0 + temp * temp);
                 c = temp * s;
-            } else {
+            }
+            else {
                 temp = b / a;
                 c = 1.0 / Math.Sqrt(1.0 + temp * temp);
                 s = temp * c;
@@ -627,7 +710,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-       
+
 
         /// <summary>
         /// Computes a forward difference jacobian and returns the dense jacobian
@@ -732,10 +815,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     degree_StressXY = SolutionVec.Mapping.Fields[4].Basis.Degree;
                     degree_StressYY = SolutionVec.Mapping.Fields[5].Basis.Degree;
                 }
-            } else if (dimension == 3) {
+            }
+            else if (dimension == 3) {
                 degree_VelocityZ = SolutionVec.Mapping.Fields[2].Basis.Degree;
                 degree_Pressure = SolutionVec.Mapping.Fields[3].Basis.Degree;
-            } else throw new ArgumentException();
+            }
+            else throw new ArgumentException();
 
 
             int factor = 1;

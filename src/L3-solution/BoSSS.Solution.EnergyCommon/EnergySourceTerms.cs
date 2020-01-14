@@ -170,17 +170,17 @@ namespace BoSSS.Solution.EnergyCommon {
         }
 
 
-        public double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public double LevelSetForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             //Debug.Assert(cp.ParamsPos[0] == cp.ParamsNeg[0], "interface velocityX must be continuous across interface");
             //Debug.Assert(cp.ParamsPos[1] == cp.ParamsNeg[1], "interface velocityY must be continuous across interface");
-            Debug.Assert(cp.ParamsPos[3 * m_D] == cp.ParamsNeg[3 * m_D], "curvature must be continuous across interface");
+            Debug.Assert(cp.Parameters_OUT[3 * m_D] == cp.Parameters_IN[3 * m_D], "curvature must be continuous across interface");
 
-            double curvature = cp.ParamsNeg[3 * m_D];
-            double[] VelI = GetInterfaceValue(cp.ParamsNeg.GetSubVector(0, m_D), cp.ParamsPos.GetSubVector(0, m_D));
-            double[] Normal = cp.n;
+            double curvature = cp.Parameters_IN[3 * m_D];
+            double[] VelI = GetInterfaceValue(cp.Parameters_IN.GetSubVector(0, m_D), cp.Parameters_OUT.GetSubVector(0, m_D));
+            double[] Normal = cp.Normal;
             double[,] Psurf = SurfaceProjection(Normal);
-            double[] GradVelXI = GetInterfaceValue(cp.ParamsNeg.GetSubVector(m_D, m_D), cp.ParamsPos.GetSubVector(m_D, m_D));
-            double[] GradVelYI = GetInterfaceValue(cp.ParamsNeg.GetSubVector(2 * m_D, m_D), cp.ParamsPos.GetSubVector(2 * m_D, m_D));
+            double[] GradVelXI = GetInterfaceValue(cp.Parameters_IN.GetSubVector(m_D, m_D), cp.Parameters_OUT.GetSubVector(m_D, m_D));
+            double[] GradVelYI = GetInterfaceValue(cp.Parameters_IN.GetSubVector(2 * m_D, m_D), cp.Parameters_OUT.GetSubVector(2 * m_D, m_D));
             double[,] GradVelI = VelocityGradient(GradVelXI, GradVelYI);
 
 

@@ -167,6 +167,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
     //            r += rhoIn * Uin[0] * inp.Parameters_IN[2] * inp.Normale[2] + rhoOut * Uout[0] * inp.Parameters_OUT[2] * inp.Normale[2];
     //        }
 
+
     //        // Calculate dissipative part
     //        // ==========================
 
@@ -182,6 +183,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
 
     //        LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normale, true);
     //        LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normale, true);
+
 
     //        double Lambda = Math.Max(LambdaIn, LambdaOut);
     //        double uJump = Uin[0] - Uout[0];
@@ -212,6 +214,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
     //                    inp2.Parameters_IN = inp.Parameters_IN;
     //                    inp2.X = inp.X;
     //                    inp2.time = inp.time;
+
 
     //                    // Specify Parameters_OUT
     //                    // ======================
@@ -253,6 +256,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
     //                    if(m_SpatialDimension == 3) {
     //                        r += u_d * u3 * inp.Normale[2];
     //                    }
+
 
     //                    return r;
     //                }
@@ -559,10 +563,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
     //    protected Func<double[], double, double>[][] kinFunction;
 
 
+
     //    public swipViscosity(double _penaltyBase, int D, EnergyBoundaryCondMap bcmap) {
 
     //        this.m_penalty_base = _penaltyBase;
     //        this.m_D = D;
+
 
     //        kinFunction = D.ForLoop(d => bcmap.bndFunction["KineticEnergy"]);
     //        EdgeTag2Type = bcmap.EdgeTag2Type;
@@ -764,12 +770,14 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
     //        double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / cj[jCellOut] : 0;
     //        double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
 
+
     //        Debug.Assert(!double.IsNaN(penaltySizeFactor_A));
     //        Debug.Assert(!double.IsNaN(penaltySizeFactor_B));
     //        Debug.Assert(!double.IsInfinity(penaltySizeFactor_A));
     //        Debug.Assert(!double.IsInfinity(penaltySizeFactor_B));
     //        Debug.Assert(!double.IsInfinity(m_penalty));
     //        Debug.Assert(!double.IsInfinity(m_penalty));
+
 
     //        return penaltySizeFactor * m_penalty * m_penalty_base;
     //    }
@@ -834,6 +842,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
     //            case "B": currentmu = muB; complementmu = muA; SetBndfunction("B"); break;
     //            default: throw new ArgumentException("Unknown species.");
     //        }
+
 
     //        double muFactor = Math.Max(currentmu, complementmu) / currentmu;
     //        base.m_penalty_base = this.m_penalty * muFactor;
@@ -983,6 +992,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
     //    double muA;
     //    double muB;
 
+
     //    double mu;
 
     //    public void SetParameter(String speciesName, SpeciesId SpcId) {
@@ -1050,6 +1060,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
 
     //        IncompressibleBcType edgType = bcmap.EdgeTag2Type[inp.EdgeTag];
 
+
     //        switch(edgType) {
     //            case IncompressibleBcType.Wall: {
     //                    for(int d = 0; d < m_D; d++) {
@@ -1093,6 +1104,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
 
     //    protected override double InnerEdgeFlux(ref CommonParams inp, Double[] Uin, Double[] Uout) {
 
+
     //        double[] Vel_IN = inp.Parameters_IN.GetSubVector(0, m_D);
     //        double[] Vel_OUT = inp.Parameters_OUT.GetSubVector(0, m_D);
     //        double[,] GradVel_IN = VelociytGradient(inp.Parameters_IN.GetSubVector(m_D, m_D), inp.Parameters_IN.GetSubVector(2 * m_D, m_D));
@@ -1112,6 +1124,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
 
     //        return -acc;
     //    }
+
 
 
     //    override public TermActivationFlags VolTerms {
@@ -1179,6 +1192,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
     //        //double p_A = inp.ParamsNeg[3 * m_D];
     //        //double p_B = inp.ParamsPos[3 * m_D];
 
+
     //        double ret = 0.0;
 
     //        for(int d = 0; d < m_D; d++) {
@@ -1188,6 +1202,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
     //                //ret -= 0.5 * (muA * GradVel_A[dd, d] * Vel_A[dd] + muB * GradVel_B[dd, d] * Vel_B[dd]) * inp.n[d];  // gradU transposed
     //            }
     //        }
+
 
     //        ret *= (vA - vB);
 
@@ -1223,8 +1238,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
     //        }
     //    }
 
-
     //}
+
 
 
     //public class SurfaceEnergy : ILevelSetForm {
@@ -1278,6 +1293,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
     //        }
     //    }
 
+
     //    public int LevelSetIndex {
     //        get { return 0; }
     //    }
@@ -1327,6 +1343,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
 
 
     //    protected override void Flux(ref CommonParamsVol inp, Double[] U, Double[] output) {
+
 
     //        double[] Vel = inp.Parameters.GetSubVector(0, m_D);
     //        double Press = inp.Parameters[m_D];

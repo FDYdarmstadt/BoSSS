@@ -54,7 +54,6 @@ namespace BoSSS.Application.IBM_Solver {
         /// Application entry point.
         /// </summary>
         static void Main(string[] args) {
-         
             BoSSS.Solution.Application<IBM_Control>._Main(args, false, delegate () {
                 var p = new IBM_SolverMain();
                 return p;
@@ -121,7 +120,7 @@ namespace BoSSS.Application.IBM_Solver {
             true, true,
             IOListOption.ControlFileDetermined)]
         public VectorField<SinglePhaseField> ResidualMomentum;
-        
+
 
 
 #pragma warning restore 649
@@ -172,7 +171,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// Links edge tags (<see cref="IGeometricalEdgeData.EdgeTags"/>) and
         /// boundary conditions in the control object (<see cref="BoSSS.Solution.Control.AppControl.BoundaryValues"/>).
         /// </summary>
-        protected IncompressibleBoundaryCondMap BcMap;
+        protected IncompressibleBoundaryCondMap boundaryCondMap;
 
         CoordinateVector m_CurrentSolution;
 
@@ -207,21 +206,25 @@ namespace BoSSS.Application.IBM_Solver {
                 return m_CurrentResidual;
             }
         }
+       
+        /// <summary>
+        /// equal to <see cref="PhysicalParameters.IncludeConvection"/>
+        /// </summary>
+        protected bool U0MeanRequired {
+            get {
+                return Control.PhysicalParameters.IncludeConvection;
+            }
+        }
 
         /// <summary>
-        /// output of <see cref="AssembleMatrix"/>;
+        /// the spatial operator of the incompressible Navier-Stokes equation
         /// </summary>
-        protected MsrMatrix SaddlePointMatrix;
-
-        /// <summary>
-        /// output of <see cref="AssembleMatrix"/>;
-        /// </summary>
-        protected double[] SaddlePointRHS;
-
-        protected bool U0MeanRequired = false;
-
-
         protected XSpatialOperatorMk2 IBM_Op;
+
+        /// <summary>
+        /// the Jacobian of <see cref="IBM_Op"/>
+        /// </summary>
+        protected XSpatialOperatorMk2 IBM_Op_Jacobian;
 
         public string SessionPath;
 
@@ -238,10 +241,12 @@ namespace BoSSS.Application.IBM_Solver {
             }
         }
 
+        /// <summary>
+        /// Ye good old time-steppa
+        /// </summary>
         protected XdgBDFTimestepping m_BDF_Timestepper;
 
-        //SinglePhaseField[] MGColoring;
-
+       
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
 
             //// Write out Multigrid Levels
@@ -262,7 +267,7 @@ namespace BoSSS.Application.IBM_Solver {
                 string[] DomNameSelected = new string[0];
 
                 int D = this.GridData.SpatialDimension;
-                BcMap = new IncompressibleBoundaryCondMap(this.GridData, this.Control.BoundaryValues, PhysicsMode.Incompressible);
+                boundaryCondMap = new IncompressibleBoundaryCondMap(this.GridData, this.Control.BoundaryValues, PhysicsMode.Incompressible);
 
                 int degU = this.Velocity[0].Basis.Degree;
                 var IBM_Op_config = new NSEOperatorConfiguration {
@@ -277,9 +282,8 @@ namespace BoSSS.Application.IBM_Solver {
 
                 // full operator:
                 var CodName = ((new string[] { "momX", "momY", "momZ" }).GetSubVector(0, D)).Cat("div");
-                var Params = ArrayTools.Cat(
-                     VariableNames.Velocity0Vector(D),
-                     VariableNames.Velocity0MeanVector(D));
+                var Params = ArrayTools.Cat(VariableNames.Velocity0Vector(D),
+                                            VariableNames.Velocity0MeanVector(D));
                 var DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure);
 
                 // selected part:
@@ -295,7 +299,8 @@ namespace BoSSS.Application.IBM_Solver {
 
                 IBM_Op = new XSpatialOperatorMk2(DomNameSelected, Params, CodNameSelected,
                     (A, B, C) => this.HMForder, null);
-                
+
+
                 // Momentum equation
                 // =================
 
@@ -304,37 +309,36 @@ namespace BoSSS.Application.IBM_Solver {
                     for (int d = 0; d < D; d++) {
 
                         var comps = IBM_Op.EquationComponents[CodName[d]];
-
-                        //var ConvBulk = new Solution.XNSECommon.Operator.Convection.ConvectionInBulk_LLF(D, BcMap, d, this.Control.PhysicalParameters.rho_A, 1, IBM_Op_config.dntParams.LFFA, IBM_Op_config.dntParams.LFFB, LsTrk);
-                        var ConvBulk = new Solution.NSECommon.LinearizedConvection(D, BcMap, d);
-                        //IBM_Op.OnIntegratingBulk += ConvBulk.SetParameter;
+                       
+                        var ConvBulk = new Solution.NSECommon.LinearizedConvection(D, boundaryCondMap, d);
+                        //var ConvBulkUp = new UpwindConvection(D, boundaryCondMap, d, Control.PhysicalParameters.rho_A);
                         comps.Add(ConvBulk); // bulk component
 
-                        var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(d, D, LsTrk, this.Control.AdvancedDiscretizationOptions.LFFA, BcMap,
+                        var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(
+                            d, D, LsTrk, this.Control.AdvancedDiscretizationOptions.LFFA, boundaryCondMap,
                             delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; }, this.Control.PhysicalParameters.rho_A, false);
-
+                        //var ConvIB = new ConvectionAtIB(LsTrk, d, D, Control.PhysicalParameters.rho_A, false);
+                        
                         comps.Add(ConvIB); // immersed boundary component
-                    }
-                    this.U0MeanRequired = true;
-                }
 
+                    }
+                }
+                
                 // pressure part:
                 if (IBM_Op_config.PressureGradient) {
                     for (int d = 0; d < D; d++) {
                         var comps = IBM_Op.EquationComponents[CodName[d]];
-                        var pres = new PressureGradientLin_d(d, BcMap);
-                        //var pres = new Solution.XNSECommon.Operator.Pressure.PressureInBulk(d, BcMap, 1, 1);
-                        //IBM_Op.OnIntegratingBulk += pres.SetParameter;
+                        var pres = new PressureGradientLin_d(d, boundaryCondMap);
                         comps.Add(pres); // bulk component
 
                         var presLs = new BoSSS.Solution.NSECommon.Operator.Pressure.PressureFormAtIB(d, D, LsTrk);
                         comps.Add(presLs); // immersed boundary component
 
-
                         // if periodic boundary conditions are applied a fixed pressure gradient drives the flow
                         if (this.Control.FixedStreamwisePeriodicBC) {
                             var presSource = new SrcPressureGradientLin_d(this.Control.SrcPressureGrad[d]);
                             comps.Add(presSource);
+                            // Jacobian operator: not required; reason: Source-Term with no dependence on domain variables
                         }
 
                     }
@@ -353,12 +357,10 @@ namespace BoSSS.Application.IBM_Solver {
 
 
                         //var Visc = new Solution.XNSECommon.Operator.Viscosity.ViscosityInBulk_GradUTerm(penalty, 1.0, BcMap, d, D, this.Control.PhysicalParameters.mu_A, 1, ViscosityImplementation.H);
-                        var Visc = new swipViscosity_Term1(penalty_bulk, d, D, BcMap,
+                        var Visc = new swipViscosity_Term1(penalty_bulk, d, D, boundaryCondMap,
                             ViscosityOption.ConstantViscosity,
                             this.Control.PhysicalParameters.mu_A ,// / this.Control.PhysicalParameters.rho_A
                             double.NaN, null);
-                        //delegate (double p, int i, int j, double[] cell) { return ComputePenalty(p, i, j, cell); });
-                        // IBM_Op.OnIntegratingBulk += Visc.SetParameter;
                         comps.Add(Visc); // bulk component GradUTerm 
                         var ViscLs = new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, LsTrk,
                             penalty, this.ComputePenaltyIB,
@@ -373,14 +375,12 @@ namespace BoSSS.Application.IBM_Solver {
                 if (IBM_Op_config.continuity) {
                     for (int d = 0; d < D; d++) {
 
-                        //var src = new Solution.XNSECommon.Operator.Continuity.DivergenceInBulk_Volume(d, D, 1, 0, 1, false);
                         var src = new Divergence_DerivativeSource(d, D);
-                        //IBM_Op.OnIntegratingBulk += src.SetParameter;
-                        var flx = new Divergence_DerivativeSource_Flux(d, BcMap);
-                        //IBM_Op.OnIntegratingBulk += flx.SetParameter;
+                        var flx = new Divergence_DerivativeSource_Flux(d, boundaryCondMap);
                         IBM_Op.EquationComponents["div"].Add(src);
                         IBM_Op.EquationComponents["div"].Add(flx);
 
+                       
                         //var presStab = new PressureStabilization(1, this.GridData.Edges.h_max_Edge, 1 / this.Control.PhysicalParameters.mu_A);
                         //IBM_Op.EquationComponents["div"].Add(presStab);
                     }
@@ -388,11 +388,14 @@ namespace BoSSS.Application.IBM_Solver {
                     var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 1,
                         delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; });
                     IBM_Op.EquationComponents["div"].Add(divPen); // immersed boundary component 
-
-
+                   
                     //IBM_Op.EquationComponents["div"].Add(new PressureStabilization(1, 1.0 / this.Control.PhysicalParameters.mu_A));
                 }
+                
                 IBM_Op.Commit();
+
+
+                //IBM_Op_Jacobian = IBM_Op.GetJacobiOperator();
             }
 
             // ==========================
@@ -467,104 +470,124 @@ namespace BoSSS.Application.IBM_Solver {
 
         int DelComputeOperatorMatrix_CallCounter = 0;
 
+
+        void ParameterUpdate(IEnumerable<DGField> CurrentState, IEnumerable<DGField> ParameterVar) {
+            int D = this.LsTrk.GridDat.SpatialDimension;
+
+            if (Control.PhysicalParameters.IncludeConvection) {
+
+                var U0_CurrentState = new VectorField<SinglePhaseField>(CurrentState.Take(D).Select(F => (SinglePhaseField)F).ToArray());
+
+                // this method assumes that the parameter velocity is reference-equal to the current state 
+                for (int d = 0; d < D; d++)
+                    if (!object.ReferenceEquals(CurrentState.ElementAt(d), ParameterVar.ElementAt(d)))
+                        throw new ApplicationException("internal error");
+
+                if (this.U0MeanRequired) {
+                    VectorField<SinglePhaseField> U0mean = new VectorField<SinglePhaseField>(ParameterVar.Skip(D).Take(D).Select(f => (SinglePhaseField)f).ToArray());
+                    foreach (var um in U0mean)
+                        Debug.Assert(um.Basis.Degree == 0);
+
+                    ComputeAverageU(U0_CurrentState, U0mean);
+                } else {
+                    //U0_U0mean = new SinglePhaseField[2 * D];
+                }
+            }
+        }
+
+        /// <summary>
+        /// Used by <see cref="m_BDF_Timestepper"/> to compute operator matrices (linearizations) and/or to evaluate residuals of current solution.
+        /// </summary>
         protected virtual void DelComputeOperatorMatrix(BlockMsrMatrix OpMatrix, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
             DelComputeOperatorMatrix_CallCounter++;
+            int D = this.LsTrk.GridDat.SpatialDimension;
 
             // compute operator
             //Debug.Assert(OpMatrix.InfNorm() == 0.0);
             //Debug.Assert(OpAffine.L2Norm() == 0.0);
 
-            // parameters...
-            int D = this.LsTrk.GridDat.SpatialDimension;
-            var U0 = new VectorField<SinglePhaseField>(CurrentState.Take(D).Select(F => (SinglePhaseField)F).ToArray());
-            SinglePhaseField[] U0_U0mean;
-            if (this.U0MeanRequired) {
-                Basis U0meanBasis = new Basis(GridData, 0);
-                VectorField<SinglePhaseField> U0mean = new VectorField<SinglePhaseField>(D, U0meanBasis, "U0mean_", SinglePhaseField.Factory);
-                U0mean.Clear();
-
-                if (this.Control.PhysicalParameters.IncludeConvection)
-                    ComputeAverageU(U0, U0mean);
-
-                U0_U0mean = ArrayTools.Cat<SinglePhaseField>(U0, U0mean);
-            } else {
-                U0_U0mean = new SinglePhaseField[2 * D];
+            // Create Parameters fields
+            DGField[] Params;
+            {
+                var U0 = new VectorField<SinglePhaseField>(CurrentState.Take(D).Select(F => (SinglePhaseField)F).ToArray());
+                SinglePhaseField[] U0_U0mean;
+                if (this.U0MeanRequired) {
+                    Basis U0meanBasis = new Basis(GridData, 0);
+                    VectorField<SinglePhaseField> U0mean = new VectorField<SinglePhaseField>(D, U0meanBasis, "U0mean_", SinglePhaseField.Factory);
+                    U0_U0mean = ArrayTools.Cat<SinglePhaseField>(U0, U0mean);
+                } else {
+                    U0_U0mean = new SinglePhaseField[2 * D];
+                }
+                Params = ArrayTools.Cat<DGField>(U0_U0mean);
             }
-            var Params = ArrayTools.Cat<SinglePhaseField>(
-                U0_U0mean);
 
             m_LenScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
 
             // create matrix and affine vector:
             if (OpMatrix != null) {
-                //IBM_Op.ComputeMatrixEx(LsTrk,
-                //    Mapping, Params, Mapping,
-                //    OpMatrix, OpAffine, false, phystime, true,
-                //    AgglomeratedCellLengthScales,
-                //    FluidSpecies);
 
+
+                // using ad-hoc linearization:
+                // - - - - - - - - - - - - - - 
+                ParameterUpdate(CurrentState, Params);
                 var mtxBuilder = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, FluidSpecies);
                 mtxBuilder.time = phystime;
                 mtxBuilder.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
-
                 mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
 
+                // using finite difference Jacobi:
+                // - - - - - - - - - - - - - - - -
+                //var mtxBuilder2 = IBM_Op.GetFDJacobianBuilder(LsTrk, CurrentState, Params, Mapping,
+                //    ParameterUpdate,
+                //    FluidSpecies);
+                //mtxBuilder2.time = phystime;
+                //mtxBuilder2.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+                //mtxBuilder2.ComputeMatrix(OpMatrix, OpAffine);
+
+                // using the other kind of Jacobi:
+                // - - - - - - - - - - - - - - - -
+                //var mtxBuilder3 = IBM_Op_Jacobian.GetMatrixBuilder(LsTrk, Mapping, CurrentState, Mapping, FluidSpecies);
+                //mtxBuilder3.time = phystime;
+                //mtxBuilder3.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+                //mtxBuilder3.ComputeMatrix(OpMatrix, OpAffine);
+
+#if DEBUG
+                if (DelComputeOperatorMatrix_CallCounter == 1) {
+                    int[] Uidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D.ForLoop(i => i));
+                    int[] Pidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D);
+                    CoordinateMapping Umap = this.Velocity.Mapping;
+                    CoordinateMapping Pmap = this.Pressure.Mapping;
+                    
+                    var pGrad = new BlockMsrMatrix(Umap, Pmap);
+                    var divVel = new BlockMsrMatrix(Pmap, Umap);
+                    OpMatrix.AccSubMatrixTo(1.0, pGrad, Uidx, default(int[]), Pidx, default(int[]));
+                    OpMatrix.AccSubMatrixTo(1.0, divVel, Pidx, default(int[]), Uidx, default(int[]));
+
+                    var pGradT = pGrad.Transpose();
+                    var Err = divVel.CloneAs();
+                    Err.Acc(+1.0, pGradT);
+                    double ErrInfAbs = Err.InfNorm();
+                    double denom = Math.Max(pGradT.InfNorm(), Math.Max(pGrad.InfNorm(), divVel.InfNorm()));
+                    double ErrInfRel = ErrInfAbs / denom;
+                    if (ErrInfRel >= 1e-8)
+                        throw new ArithmeticException("Stokes discretization error: | div + grad^t |oo is high; absolute: " + ErrInfAbs + ", relative: " + ErrInfRel + " (denominator: " + denom + ")");
+                    //Console.WriteLine("Stokes discretization error: | div - grad ^ t |oo is high; absolute: " + ErrInfAbs + ", relative: " + ErrInfRel + " (denom: " + denom + ")");
+                }
+#endif
+
             } else {
+                ParameterUpdate(CurrentState, Params);
                 var eval = IBM_Op.GetEvaluatorEx(LsTrk, CurrentState, Params, Mapping, FluidSpecies);
                 eval.time = phystime;
                 eval.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
 
                 eval.Evaluate(1.0, 1.0, OpAffine);
 
-#if DEBUG
-                // remark: remove this piece in a few months from now on (09may18) if no problems occur
-                {
-                    var check = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, FluidSpecies);
-                    check.time = phystime;
-                    check.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
-
-                    BlockMsrMatrix checkOpMatrix = new BlockMsrMatrix(Mapping, Mapping);
-                    double[] checkAffine = new double[OpAffine.Length];
-                    check.ComputeMatrix(checkOpMatrix, checkAffine);
-
-                    double[] checkResult = checkAffine.CloneAs();
-                    var currentVec = new CoordinateVector(CurrentState);
-                    checkOpMatrix.SpMV(1.0, new CoordinateVector(CurrentState), 1.0, checkResult);
-
-                    double L2_dist = GenericBlas.L2DistPow2(checkResult, OpAffine).MPISum().Sqrt();
-                    double RefNorm = (new double[] { checkResult.L2NormPow2(), OpAffine.L2NormPow2(), currentVec.L2NormPow2() }).MPISum().Max().Sqrt();
-
-                    Assert.LessOrEqual(L2_dist, RefNorm * 1.0e-6);
-                    Debug.Assert(L2_dist < RefNorm * 1.0e-6);
-                }
-#endif
             }
 
             m_LenScales = null;
 
-#if DEBUG
-            if (DelComputeOperatorMatrix_CallCounter == 1 && OpMatrix != null) {
-                int[] Uidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D.ForLoop(i => i));
-                int[] Pidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D);
-                CoordinateMapping Umap = this.Velocity.Mapping;
-                CoordinateMapping Pmap = this.Pressure.Mapping;
 
-                var pGrad = new BlockMsrMatrix(Umap, Pmap);
-                var divVel = new BlockMsrMatrix(Pmap, Umap);
-                OpMatrix.AccSubMatrixTo(1.0, pGrad, Uidx, default(int[]), Pidx, default(int[]));
-                OpMatrix.AccSubMatrixTo(1.0, divVel, Pidx, default(int[]), Uidx, default(int[]));
-
-                var pGradT = pGrad.Transpose();
-                var Err = divVel.CloneAs();
-                Err.Acc(+1.0, pGradT);
-                double ErrInfAbs = Err.InfNorm();
-                double denom = Math.Max(pGradT.InfNorm(), Math.Max(pGrad.InfNorm(), divVel.InfNorm()));
-                double ErrInfRel = ErrInfAbs / denom;
-                if (ErrInfRel >= 1e-8)
-                    throw new ArithmeticException("Stokes discretization error: | div + grad^t |oo is high; absolute: " + ErrInfAbs + ", relative: " + ErrInfRel + " (denominator: " + denom + ")");
-                //Console.WriteLine("Stokes discretization error: | div - grad ^ t |oo is high; absolute: " + ErrInfAbs + ", relative: " + ErrInfRel + " (denom: " + denom + ")");
-            }
-#endif
             if (OpMatrix != null)
                 OpMatrix.CheckForNanOrInfM();
             OpAffine.CheckForNanOrInfV();
@@ -572,7 +595,7 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             // Set Pressure Reference Point
-            if (!this.BcMap.DirichletPressureBoundary) {
+            if (!this.boundaryCondMap.DirichletPressureBoundary) {
                 if (OpMatrix != null) {
 
                     IBMSolverUtils.SetPressureReferencePoint(
@@ -589,11 +612,7 @@ namespace BoSSS.Application.IBM_Solver {
                         OpAffine);
                 }
             }
-
-
         }
-
-
 
         public virtual double DelUpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
 
@@ -648,7 +667,8 @@ namespace BoSSS.Application.IBM_Solver {
 
                 Console.WriteLine("In-stationary solve, time-step #{0}, dt = {1} ...", TimestepNo, dt);
 
-                m_BDF_Timestepper.Solve(phystime, dt);
+                m_BDF_Timestepper.Solve(phystime, dt); 
+                
 
                 // Residual();
                 this.ResLogger.NextTimestep(false);
@@ -796,6 +816,8 @@ namespace BoSSS.Application.IBM_Solver {
                 int D = this.LsTrk.GridDat.SpatialDimension;
                 double minvol = Math.Pow(this.LsTrk.GridDat.Cells.h_minGlobal, D);
 
+                U0mean.Clear();
+
                 int QuadDegree = this.HMForder;
 
                 //var qh = new XQuadSchemeHelper(LsTrk, momentFittingVariant, this.FluidSpecies);
@@ -910,12 +932,9 @@ namespace BoSSS.Application.IBM_Solver {
                     mpiRank.SetMeanValue(j, DatabaseDriver.MyRank);
                 }
 
-                ilPSP.Environment.StdoutOnlyOnRank0 = false;
                 Console.WriteLine("Total number of cells:    {0}", Grid.NumberOfCells);
                 Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count());
                 Console.WriteLine("Total number of cut cells:     {0}", LsTrk.Regions.GetCutCellMask().NoOfItemsLocally);
-
-                ilPSP.Environment.StdoutOnlyOnRank0 = true;
             }
 
             // Using defauls CellCostEstimateFactories          
@@ -1130,14 +1149,14 @@ namespace BoSSS.Application.IBM_Solver {
                     // configurations for velocity
                     for (int d = 0; d < D; d++) {
                         configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
-                            Degree = Math.Max(1, pVel - iLevel),
+                            DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
                             mode = this.Control.VelocityBlockPrecondMode,
                             VarIndex = new int[] { d }
                         };
                     }
                     // configuration for pressure
                     configs[iLevel][D] = new MultigridOperator.ChangeOfBasisConfig() {
-                        Degree = Math.Max(0, pPrs - iLevel),
+                        DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
                         mode = MultigridOperator.Mode.IdMass_DropIndefinite,
                         VarIndex = new int[] { D }
                     };

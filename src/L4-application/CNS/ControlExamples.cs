@@ -70,19 +70,20 @@ namespace CNS {
         /// <param name="dgDegree"></param>
         /// <param name="advectionVelocity"></param>
         /// <returns></returns>
-        public static CNSControl IsentropicVortex(string dbPath, int noOfCellsPerDirection, int dgDegree, double advectionVelocity) {
+        public static CNSControl IsentropicVortex(string dbPath = null, int noOfCellsPerDirection = 20, int dgDegree = 2, double advectionVelocity = 0.1) {
             CNSControl c = new CNSControl();
 
             c.dtMin = 0.0;
             c.dtMax = 5.0e-1;
-            c.CFLFraction = 0.9;
+            //c.CFLFraction = 0.9;
+            c.dtFixed = 1e-2;
             c.Endtime = 2.0;
             c.NoOfTimesteps = int.MaxValue;
 
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
             c.saveperiod = 1000;
-            c.PrintInterval = 10;
+            c.PrintInterval = 1;
             c.ProjectDescription = String.Format(
                 "Isentropic vortex in a periodic domain with {0}x{0} cells using polynomials of order {1}",
                 noOfCellsPerDirection,
@@ -96,7 +97,7 @@ namespace CNS {
             c.MachNumber = 0.2;
 
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
-            c.ExplicitOrder = 4;
+            c.ExplicitOrder = 1;
 
             c.AddVariable(CompressibleVariables.Density, dgDegree);
             c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
@@ -228,7 +229,7 @@ namespace CNS {
                 Grid2D grid = Grid2D.Cartesian2DGrid(nodes, nodes);
                 //grid.EdgeTagNames.Add(1, "supersonicInlet");
                 grid.EdgeTagNames.Add(1, "subsonicOutlet");
-                grid.DefineEdgeTags(x => 1);
+                grid.DefineEdgeTags((Vector X) => 1);
                 return grid;
             };
 
@@ -358,9 +359,11 @@ namespace CNS {
                     _grid.EdgeTagNames.Add(3, "subsonicoutlet");
                     _grid.EdgeTagNames.Add(4, "adiabaticWall");
 
-                    _grid.DefineEdgeTags(delegate (double[] X) {
+                    Func<Vector, string> etf = delegate (Vector X) {
                         throw new NotImplementedException();
-                    });
+                    };
+
+                    _grid.DefineEdgeTags(etf);
 
                     return _grid;
                 };
@@ -439,7 +442,7 @@ namespace CNS {
                 double[] nodes = GenericBlas.Linspace(-10.0, 10.0, noOfCellsPerDirection + 1);
                 var grid = Grid2D.Cartesian2DGrid(nodes, nodes, periodicX: true, periodicY: false);
                 grid.EdgeTagNames.Add(1, "adiabaticSlipWall");
-                grid.DefineEdgeTags(X => 1);
+                grid.DefineEdgeTags((Vector X) => 1);
                 return grid;
             };
 
@@ -550,7 +553,7 @@ namespace CNS {
                 GridCommons grid = Grid2D.Cartesian2DGrid(xNodes, yNodes);
                 grid.EdgeTagNames.Add(1, "supersonicInlet");
                 grid.EdgeTagNames.Add(2, "adiabaticSlipWall");
-                Func<double[], byte> func = delegate (double[] x) {
+                Func<Vector, byte> func = delegate (Vector x) {
                     if (Math.Abs(x[1]) < 1e-14) {
                         return 2;
                     } else {
@@ -701,7 +704,7 @@ namespace CNS {
 
                 grid.EdgeTagNames.Add(1, "supersonicInlet");
                 grid.EdgeTagNames.Add(2, "adiabaticWall");
-                Func<double[], byte> func = delegate (double[] x) {
+                Func<Vector, byte> func = delegate (Vector x) {
                     return 1;
                 };
                 grid.DefineEdgeTags(func);
@@ -792,7 +795,7 @@ namespace CNS {
 
                 grid.EdgeTagNames.Add(1, "supersonicInlet");
                 grid.EdgeTagNames.Add(2, "adiabaticSlipWall");
-                Func<double[], byte> func = delegate (double[] x) {
+                Func<Vector, byte> func = delegate (Vector x) {
                     if (Math.Abs(x[1]) < 1e-14 || Math.Abs(x[2]) < 1e-14) {
                         return 2;
                     } else {
@@ -928,7 +931,7 @@ namespace CNS {
                 double[] nodesY = GenericBlas.Linspace(-BoxSizeY / 2.0, BoxSizeY / 2.0, nodesInY + 1);
                 var grid = Grid2D.Cartesian2DGrid(nodesX, nodesY, periodicX: true, periodicY: false);
                 grid.EdgeTagNames.Add(1, "supersonicInlet");
-                grid.DefineEdgeTags(X => 1);
+                grid.DefineEdgeTags((Vector X) => 1);
                 return grid;
             };
             c.GridPartType = GridPartType.ParMETIS;
@@ -1069,7 +1072,7 @@ namespace CNS {
                 if (true1D) {
                     var grid = Grid1D.LineGrid(xNodes, periodic: false);
                     grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
-                    grid.DefineEdgeTags(delegate (double[] _X) {
+                    grid.DefineEdgeTags(delegate (Vector _X) {
                         return 1;
                     });
                     return grid;
@@ -1077,7 +1080,7 @@ namespace CNS {
                     double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
                     var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
                     grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
-                    grid.DefineEdgeTags(delegate (double[] _X) {
+                    grid.DefineEdgeTags(delegate (Vector _X) {
                         return 1;
                     });
                     return grid;
@@ -1398,7 +1401,7 @@ namespace CNS {
                 double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
                 var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
                 grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
-                grid.DefineEdgeTags(X => 1);
+                grid.DefineEdgeTags((Vector X) => 1);
                 return grid;
             };
 
@@ -2633,7 +2636,7 @@ namespace CNS {
                 double[] nodes = GenericBlas.Linspace(-10.0, 10.0, noOfCellsPerDirection + 1);
                 var grid = Grid2D.Cartesian2DGrid(nodes, nodes, periodicX: true, periodicY: false);
                 grid.EdgeTagNames.Add(1, "adiabaticSlipWall");
-                grid.DefineEdgeTags(X => 1);
+                grid.DefineEdgeTags((Vector X) => 1);
                 return grid;
             };
 
@@ -2825,7 +2828,7 @@ namespace CNS {
                 var grid = Grid2D.Cartesian2DGrid(nodes, nodes, periodicX: false, periodicY: false);
 
                 grid.EdgeTagNames.Add(1, "SupersonicOutlet");
-                grid.DefineEdgeTags(X => 1);
+                grid.DefineEdgeTags((Vector X) => 1);
 
                 return grid;
             };
@@ -2927,7 +2930,7 @@ namespace CNS {
                 var grid = Grid1D.LineGrid(nodes);
 
                 grid.EdgeTagNames.Add(1, "SupersonicOutlet");
-                grid.DefineEdgeTags(X => 1);
+                grid.DefineEdgeTags((Vector X) => 1);
 
                 return grid;
             };
@@ -2992,7 +2995,7 @@ namespace CNS {
                 var grid = Grid3D.Cartesian3DGrid(nodes, nodes, nodes);
 
                 grid.EdgeTagNames.Add(1, "SupersonicOutlet");
-                grid.DefineEdgeTags(X => 1);
+                grid.DefineEdgeTags((Vector X) => 1);
 
                 return grid;
             };

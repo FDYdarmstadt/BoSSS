@@ -122,7 +122,7 @@ namespace BoSSS.Solution.NSECommon {
         /// modifies a residual (i.e. an operator evaluation)
         /// in order to fix the pressure at some reference point
         /// </summary>
-        /// <param name="currentState">current state of velocity & pressure</param>
+        /// <param name="currentState">current state of velocity and pressure</param>
         /// <param name="iVar">the index of the pressure variable in the mapping <paramref name="map"/>.</param>
         /// <param name="LsTrk"></param>
         /// <param name="Residual"></param>
@@ -744,14 +744,13 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         /// <summary>
-        /// Calculates the drag (x-component) and lift (y-component) forces acting on a wall of a boundary fitted grid
+        /// Calculates the drag (x-component) and lift (y-component) forces acting on a cylinder wall of a boundary fitted grid. The definition of the wall is HARDCODED!
         /// </summary>
-        static public double[] GetForces_BoundaryFitted(VectorField<SinglePhaseField> GradU, VectorField<SinglePhaseField> GradV, SinglePhaseField StressXX, 
+        static public double[] GetForces_BoundaryFitted(VectorField<SinglePhaseField> GradU, VectorField<SinglePhaseField> GradV, SinglePhaseField StressXX,
             SinglePhaseField StressXY, SinglePhaseField StressYY, SinglePhaseField P, LevelSetTracker LsTrk, double muA, double beta) {
             int D = LsTrk.GridDat.SpatialDimension;
 
-            if (D > 2)
-            {
+            if (D > 2) {
                 throw new ArgumentException("Method GetForces_BoundaryFitted only implemented for 2D (viscoelastic)!");
             }
             // var UA = U.Select(u => u.GetSpeciesShadowField("A")).ToArray();
@@ -782,11 +781,10 @@ namespace BoSSS.Solution.NSECommon {
             pA = P;
 
 
-            
+
 
             double[] forces = new double[D];
-            for (int d = 0; d < D; d++)
-            {
+            for (int d = 0; d < D; d++) {
                 ScalarFunctionEx ErrFunc = delegate (int j0, int Len, NodeSet Ns, MultidimensionalArray result) {
                     int K = result.GetLength(1); // No nof Nodes
                     MultidimensionalArray Grad_URes = MultidimensionalArray.Create(Len, K, D);
@@ -801,13 +799,12 @@ namespace BoSSS.Solution.NSECommon {
                     //var Normals = LsTrk.GridDat.Edges.NormalsForAffine;
 
 
-                    for (int i = 0; i < D; i++)
-                    {
-                            _GradU[i].EvaluateEdge(j0, Len, Ns, Grad_URes.ExtractSubArrayShallow(-1, -1, i),
-                                Grad_URes.ExtractSubArrayShallow(-1, -1, i), ResultIndexOffset: 0, ResultPreScale: 1);
+                    for (int i = 0; i < D; i++) {
+                        _GradU[i].EvaluateEdge(j0, Len, Ns, Grad_URes.ExtractSubArrayShallow(-1, -1, i),
+                            Grad_URes.ExtractSubArrayShallow(-1, -1, i), ResultIndexOffset: 0, ResultPreScale: 1);
 
-                            _GradV[i].EvaluateEdge(j0, Len, Ns, Grad_VRes.ExtractSubArrayShallow(-1, -1, i),
-                                Grad_VRes.ExtractSubArrayShallow(-1, -1, i), ResultIndexOffset: 0, ResultPreScale: 1);
+                        _GradV[i].EvaluateEdge(j0, Len, Ns, Grad_VRes.ExtractSubArrayShallow(-1, -1, i),
+                            Grad_VRes.ExtractSubArrayShallow(-1, -1, i), ResultIndexOffset: 0, ResultPreScale: 1);
 
                         //UA[i].EvaluateGradient(j0, Len, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
                     }
@@ -831,9 +828,9 @@ namespace BoSSS.Solution.NSECommon {
                             switch (d) {
                                 case 0:
                                     acc += pARes[j, k] * Normals[j, k, 0];
-                                    acc -= (2 * muA * beta) * Grad_URes[j, k, 0] * Normals[j, k, 0];
-                                    acc -= (muA * beta) * Grad_URes[j, k, 1] * Normals[j, k, 1];
-                                    acc -= (muA * beta) * Grad_VRes[j, k, 0] * Normals[j, k, 1];
+                                    acc -= (2 * (muA) * beta) * Grad_URes[j, k, 0] * Normals[j, k, 0];
+                                    acc -= ((muA) * beta) * Grad_URes[j, k, 1] * Normals[j, k, 1];
+                                    acc -= ((muA) * beta) * Grad_VRes[j, k, 0] * Normals[j, k, 1];
                                     acc -= (muA) * StressXXRes[j, k] * Normals[j, k, 0];
                                     acc -= (muA) * StressXYRes[j, k] * Normals[j, k, 1];
 
@@ -841,9 +838,9 @@ namespace BoSSS.Solution.NSECommon {
 
                                 case 1:
                                     acc += pARes[j, k] * Normals[j, k, 1];
-                                    acc -= (2 * muA * beta) * Grad_VRes[j, k, 1] * Normals[j, k, 1];
-                                    acc -= (muA * beta) * Grad_VRes[j, k, 0] * Normals[j, k, 0];
-                                    acc -= (muA * beta) * Grad_URes[j, k, 1] * Normals[j, k, 0];
+                                    acc -= (2 * (muA) * beta) * Grad_VRes[j, k, 1] * Normals[j, k, 1];
+                                    acc -= ((muA) * beta) * Grad_VRes[j, k, 0] * Normals[j, k, 0];
+                                    acc -= ((muA) * beta) * Grad_URes[j, k, 1] * Normals[j, k, 0];
                                     acc -= (muA) * StressXYRes[j, k] * Normals[j, k, 0];
                                     acc -= (muA) * StressYYRes[j, k] * Normals[j, k, 1];
                                     break;

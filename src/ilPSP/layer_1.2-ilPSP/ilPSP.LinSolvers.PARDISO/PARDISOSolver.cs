@@ -24,7 +24,7 @@ using System.IO;
 using ilPSP.Utils;
 
 namespace ilPSP.LinSolvers.PARDISO {
-    
+
     
     /// <summary>
     /// a direct solver using the PARDISO library from the Intel MKL
@@ -44,9 +44,6 @@ namespace ilPSP.LinSolvers.PARDISO {
         public PARDISOSolver() {
         }
 
-        //public static Stopwatch Inner = new Stopwatch();
-        //public static Stopwatch InitAndSolve = new Stopwatch();
-        //public static Stopwatch SingleCalls = new Stopwatch();
         public static Stopwatch Phase_11 = new Stopwatch();
         public static Stopwatch Phase_22 = new Stopwatch();
         public static Stopwatch Phase_33 = new Stopwatch();
@@ -59,7 +56,7 @@ namespace ilPSP.LinSolvers.PARDISO {
             get {
                 System.Environment.SetEnvironmentVariable("PARDISOLICMESSAGE", "1");
                 if (m_wrapper == null) {
-                    if ((this.Version == PARDISO.Version.v4 || this.Version == PARDISO.Version.v5) && this.LicenseCode != null && this.LicenseCode.Length > 0) {
+                    if ((this.Version == PARDISO.Version.v5) && this.LicenseCode != null && this.LicenseCode.Length > 0) {
                         string appDir = AppDomain.CurrentDomain.BaseDirectory;
 
                         StreamWriter licfile = new StreamWriter(Path.Combine(appDir, "pardiso.lic"));
@@ -67,7 +64,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                         licfile.Close();
 
                     }
-                    if (this.Version == PARDISO.Version.v4 || this.Version == PARDISO.Version.v5)
+                    if (this.Version == PARDISO.Version.v5)
                         System.Environment.SetEnvironmentVariable("PARDISOLICMESSAGE", "1");
                     m_wrapper = new MetaWrapper(this.Version);
                 }
@@ -107,10 +104,11 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// Communicator on which the solver is defined.
         /// </summary>
         public MPI_Comm MpiComm {
-            get {
-                return m_OrgMatrix.MPI_Comm;
-            }
+            get;
+            private set;
         }
+
+       
         
         /// <summary>
         /// converts <paramref name="M"/> into suitable structures for PARDISO;
@@ -121,6 +119,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                 throw new ApplicationException("matrix is already defined. 'DefineMatrix'-method can be invoked only once in the lifetime of this object.");
             m_MpiRank = M.RowPartitioning.MpiRank;
             m_OrgMatrix = M;
+            MpiComm = M.MPI_Comm;
             MPICollectiveWatchDog.Watch(this.MpiComm);
         }
 
@@ -554,8 +553,7 @@ namespace ilPSP.LinSolvers.PARDISO {
         bool PARDISOInitAndSolve(IMutableMatrixEx Mtx, double[] _x, double[] _b) {
             using (var tr = new FuncTrace()) {
                 //InitAndSolve.Start();
-
-
+                              
                 if (m_PardisoMatrix == null)
                     m_PardisoMatrix = new Matrix(Mtx, this.UseDoublePrecision);
 
@@ -656,7 +654,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                         //If this is true: MKL determines the number of OMP threads automatically, based on proc information
                                         //System.Environment.SetEnvironmentVariable("MKL_DYNAMIC", "false");
 
-                                    } else if ((this.Version == PARDISO.Version.v4) || (this.Version == PARDISO.Version.v5)) {
+                                    } else if (this.Version == PARDISO.Version.v5) {
                                         // Get Value for IPARM(3) from the Environment Variable
                                         int NumOfProcs = Convert.ToInt32(System.Environment.GetEnvironmentVariable("OMP_NUM_THREADS"));
                                         iparm[2] = NumOfProcs;
@@ -703,7 +701,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                     }
                                     if (error != 0) {
                                         PARDISODispose();
-                                        Console.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
+                                        Console.Error.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
                                         return false;
                                     }
                                     //Console.Write("\nReordering completed ... ");
@@ -727,7 +725,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                     if (error != 0) {
                                         // some error occured: release mem, dispose objects...
                                         PARDISODispose();
-                                        Console.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
+                                        Console.Error.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
                                         //InitAndSolve.Stop();
                                         return false;
                                     }
@@ -752,7 +750,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                 if (error != 0) {
                                     // some error occurred: release mem, dispose objects...
                                     PARDISODispose();
-                                    Console.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
+                                    Console.Error.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
                                     //InitAndSolve.Stop();
                                     return false;
                                 }
@@ -860,6 +858,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                 Array.Clear(m_PardInt.m_pt, 0, m_PardInt.m_pt.Length);
             }
 
+            m_PardisoMatrix.Dispose();
             m_PardisoMatrix = null;
             m_PardInt.m_PardisoInitialized = false;
         }
@@ -895,6 +894,8 @@ namespace ilPSP.LinSolvers.PARDISO {
         public void Dispose() {
             if (m_PardInt.m_PardisoInitialized)
                 PARDISODispose();
+            m_OrgMatrix = null;
+            
         }
 
         #endregion

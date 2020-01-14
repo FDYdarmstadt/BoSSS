@@ -725,7 +725,7 @@ namespace BoSSS.Foundation {
         /// the local coordinate index for the given parameters.
         /// </returns>
         public int LocalUniqueCoordinateIndex(int find, int j, int n) {
-            Debug.Assert(!(find < 0 || find > this.m_BasisS.Length),
+            Debug.Assert(!(find < 0 || find >= this.m_BasisS.Length),
                 "Field is not in this mapping");
             Debug.Assert(!(j < 0 || j >= m_Context.iLogicalCells.Count),
                 "j must be greater or equal 0 and less than number of locally updated cells");

@@ -16,6 +16,9 @@ limitations under the License.
 
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
+using ilPSP;
+using System;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
@@ -38,23 +41,32 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// any boundary values since all characteristics travel out of the
         /// domain and must thus be calculated
         /// </summary>
-        /// <param name="time">
-        /// <see cref="BoundaryCondition.GetBoundaryState"/>
-        /// </param>
-        /// <param name="x">
-        /// <see cref="BoundaryCondition.GetBoundaryState"/>
-        /// </param>
-        /// <param name="normal">
-        /// <see cref="BoundaryCondition.GetBoundaryState"/>
-        /// </param>
-        /// <param name="stateIn">
-        /// <see cref="BoundaryCondition.GetBoundaryState"/>
-        /// </param>
         /// <returns>
         /// \f$ (\rho^-, m_0^-[, m_1^-[, m_2^-]], (\rho E)^-)^T\f$ 
         /// </returns>
-        public override StateVector GetBoundaryState(double time, double[] x, double[] normal, StateVector stateIn) {
+        public override StateVector GetBoundaryState(double time, Vector x, Vector normal, StateVector stateIn) {
             return stateIn;
         }
+        
+        /// <summary>
+        /// Vectorized implementation
+        /// </summary>
+        public override void GetBoundaryState(MultidimensionalArray[] StateOut, double time, MultidimensionalArray X, MultidimensionalArray Normals, MultidimensionalArray[] StateIn, int Offset, int NoOfEdges, bool normalFlipped, Material material) {
+            //Convection.OptimizedHLLCFlux.SupersonicOutlet.Start();
+            if(StateOut.Length != StateIn.Length) {
+                throw new ArgumentException();
+            }
+            int L = StateOut.Length;
+            int K = StateIn[0].GetLength(1);
+            int[] I0 = new int[] { Offset, 0 };
+            int[] IE = new int[] { Offset + NoOfEdges - 1, K - 1 };
+
+            for(int l = 0; l < L; l++) {
+                StateOut[l].ExtractSubArrayShallow(I0, IE)
+                    .Set(StateIn[l].ExtractSubArrayShallow(I0, IE));
+            }
+            //Convection.OptimizedHLLCFlux.SupersonicOutlet.Stop();
+        }
+        
     }
 }

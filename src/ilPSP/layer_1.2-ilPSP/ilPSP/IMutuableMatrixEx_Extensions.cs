@@ -547,7 +547,7 @@ namespace ilPSP.LinSolvers {
                     var entries = M.GetAllEntries();
                     var c = new Helper();
                     c.entries = entries;
-                    sms.Transmitt(0, c);
+                    sms.Transmit(0, c);
 
 
                     MsrMatrix.MatrixEntry[][] dummy; int dummy_;
@@ -559,6 +559,60 @@ namespace ilPSP.LinSolvers {
                 sms.Dispose();
             }
         }
+
+        /// <summary>
+        /// Writes locally stored Matrix to individual outputfiles. Outputfiles are named with MPI rank. For Debugging purposes ...
+        /// </summary>
+        /// <param name="M"></param>
+        /// <param name="path"></param>
+        static public void SaveToTextFileSparseDebug(this IMutableMatrixEx M, string path) {
+            using (new FuncTrace()) {
+                int rank, size;
+
+                csMPI.Raw.Comm_Rank(M.MPI_Comm, out rank);
+                csMPI.Raw.Comm_Size(M.MPI_Comm, out size);
+
+                var entries = M.GetAllEntries();
+
+                int NoOfNonZeros = M.GetTotalNoOfNonZerosPerProcess();
+
+                    // open file
+                    StreamWriter stw = new StreamWriter(String.Concat(path,"_",rank));
+
+                    // serialize matrix data
+                    stw.WriteLine(M.RowPartitioning.LocalLength); // number of rows
+                    stw.WriteLine(M.NoOfCols);           // number of columns
+                    stw.WriteLine(NoOfNonZeros);                 // number of non-zero entries in Matrix (over all MPI-processors)
+
+                    for (int i = 0; i < entries.Length; i++) {
+                        MsrMatrix.MatrixEntry[] row = entries[i];
+
+                        int NonZPRow = 0;
+                        foreach (MsrMatrix.MatrixEntry e in row) {
+                            if (e.ColIndex >= 0 && e.Value != 0.0) NonZPRow++;
+                        }
+                        stw.Write(NonZPRow);
+                        stw.Write(" ");
+
+                        foreach (MsrMatrix.MatrixEntry e in row) {
+                            if (e.ColIndex >= 0 && e.Value != 0.0) {
+                                stw.Write(e.ColIndex);
+                                stw.Write(" ");
+                                stw.Write(e.Value.ToString("E16", NumberFormatInfo.InvariantInfo));
+                                stw.Write(" ");
+                            }
+                        }
+
+                        stw.WriteLine();
+                    }
+
+                    // finalize
+                    stw.Flush();
+                    stw.Close();
+
+            }
+        }
+
 
         /// <summary>
         /// Adds <paramref name="factor"/> to all diagonal entries of <paramref name="M"/>.
@@ -679,7 +733,7 @@ namespace ilPSP.LinSolvers {
             }
 
             if (Rank > 0)
-                sms.Transmitt(0, data);
+                sms.Transmit(0, data);
 
             int rcvProc = 0;
             if (Rank == 0) {

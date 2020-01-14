@@ -521,15 +521,29 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// </summary>
         /// <param name="myDB"></param>
         /// <returns></returns>
-        public static XdgPoisson3Control TestOrTreat(int solver=1, int blocksize=10000, string myDB = null) {
+        public static XdgPoisson3Control TestOrTreat(int solver = 3, int blocksize = 10000, string myDB = null)
+        {
             XdgPoisson3Control C = new XdgPoisson3Control();
 
-            switch (solver) {
+            switch (solver)
+            {
+                case 0:
+                    C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+                    break;
                 case 1:
-                    C.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_mg;
+                    C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
                     break;
                 case 2:
-                    C.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_schwarz_directcoarse;
+                    C.LinearSolver.SolverCode = LinearSolverCode.exp_softgmres_schwarz_directcoarse_overlap;
+                    break;
+                case 3:
+                    C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
+                    break;
+                case 4:
+                    C.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
+                    break;
+                case 5:
+                    C.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
                     break;
                 default:
                     throw new NotImplementedException("guess again");
@@ -538,7 +552,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.savetodb = false;
             //C.DbPath = @"E:\\XdgPerformance";
 
-            int Res = 8;
+            int Res = 2;
 
             C.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
@@ -554,29 +568,26 @@ namespace BoSSS.Application.XdgPoisson3 {
                 return grid;
             };
 
-            //these are parameters for batchprocessing. They are here for testing ...
-            //C.PerformanceModeON = true;
-            //C.SuppressExceptionPrompt = true;
-
+            C.GridPartType = GridPartType.directHilbert;
             C.LinearSolver.TargetBlockSize = blocksize;
             C.SetDGdegree(2);
 
-            //C.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_mg;
-            //C.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_schwarz_directcoarse;
-            //C.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_jacobi_mg;
-
-            C.LinearSolver.NoOfMultigridLevels = 10;
+            C.LinearSolver.NoOfMultigridLevels = 4;
             C.LinearSolver.ConvergenceCriterion = 1e-6;
-            C.ExcactSolSupported = false;
+            C.LinearSolver.MaxSolverIterations = 10;
+            C.LinearSolver.MaxKrylovDim = 50;
+            //C.LinearSolver.TargetBlockSize = 79;
+           C.ExcactSolSupported = false;
             double radius = 0.7;
-            C.InitialValues_Evaluators.Add("Phi", X=>X[0].Pow2() + X[1].Pow2() + X[2].Pow2() - radius.Pow2());
+            C.InitialValues_Evaluators.Add("Phi", X => X[0].Pow2() + X[1].Pow2() + X[2].Pow2() - radius.Pow2());
             C.MU_A = -1;
             C.MU_B = -1000;
             C.InitialValues_Evaluators.Add("rhs#A", X => 1.0);
             C.InitialValues_Evaluators.Add("rhs#B", X => 1.0);
             C.InitialValues_Evaluators.Add("u#A", X => 0);
             C.InitialValues_Evaluators.Add("u#B", X => 0);
-            C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.SetDefaultDiriBndCnd = true;
             //C.xLaplaceBCs.g_Diri = ((CommonParamsBnd inp) => 0.0);
             //C.xLaplaceBCs.IsDirichlet = (inp => true);

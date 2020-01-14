@@ -1,0 +1,122 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 2 instances of IDatabaseInfo {
+  0: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+  1: { Session Count = 0; Grid Count = 2; Path = V:\Test4Anne\DB_Rheology }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.IO;
+using System.Windows.Forms;
+**************
+(1,2): warning CS0105: The using directive for `System' appeared previously in this namespace
+(2,1): warning CS0105: The using directive for `System.Collections.Generic' appeared previously in this namespace
+(3,1): warning CS0105: The using directive for `System.Linq' appeared previously in this namespace
+(6,22): error CS0234: The type or namespace name `Forms' does not exist in the namespace `System.Windows'. Are you missing `System.Windows.Forms' assembly reference?
+No. of errors|warnings: 1|3.
+
+==============
+string path;
+using (StreamReader reader = new StreamReader("tmp.txt"))
+    {
+    path = reader.ReadLine();
+    }
+path=Path.GetFullPath(path.TrimEnd(new char[]{' '}));
+Console.WriteLine(path);
+//var tmpDB = OpenOrCreateDatabase(@"D:\Performance_CNS_Koop_Informatik\DMR_cores_n_DOF_study_1");
+var tmpDB = OpenOrCreateDatabase(path);
+**************
+V:\SyncHHLR\DB_Cube_2
+Opening existing database 'V:\SyncHHLR\DB_Cube_2'.
+
+==============
+LastError;
+**************
+==============
+using (StreamWriter sw = new StreamWriter("sessioninfo.txt"))
+{
+foreach(KeyValuePair<String,IEnumerable<ISessionInfo>> prj in tmpDB.Projects){
+    foreach(ISessionInfo session in prj.Value){
+        if(session.SuccessfulTermination==false)
+            continue;
+    string txt = String.Format("{0}:cores{1}.cells{2}:project{3}",session.ID,session.NumberOfCores(),session.GetGrids().Pick(0).NumberOfCells/session.NumberOfCores(),session.ProjectName);
+    sw.WriteLine(txt);
+    System.Console.WriteLine(txt);
+    }
+    }
+}
+**************
+a9ce1230-ae81-4976-94ec-ae964edcfd08:cores32.cells409600:projectdmr_cube_run1
+d529f905-db81-403f-be85-5664487fd162:cores64.cells25600:projectdmr_cube_run1
+286ab8ae-4133-4575-94a7-74619c9d69e1:cores64.cells409600:projectdmr_cube_run1
+b2d079cf-be6d-4056-858a-ebd8063fad38:cores16.cells409600:projectdmr_cube_run1
+9a14f4f3-e63e-4c26-906f-be265083b7ea:cores8.cells409600:projectdmr_cube_run1
+7867f8d4-ede7-4979-aa22-9fb0fd42e420:cores4.cells409600:projectdmr_cube_run1
+923084bb-45cf-4bae-9c41-d4fa7f17a3cf:cores64.cells102400:projectdmr_cube_run1
+8f7f05a3-3ff2-4fea-bb4c-50d293231c68:cores32.cells102400:projectdmr_cube_run1
+e8c8103c-9b10-4edc-bd46-c61fb26e77af:cores16.cells102400:projectdmr_cube_run1
+9cc85be0-d320-4557-9bcd-de1e9299de8b:cores8.cells102400:projectdmr_cube_run1
+b81e3fef-4eb2-4b14-a57c-8dc758025b86:cores32.cells25600:projectdmr_cube_run1
+086bf3c0-1fb7-4a2c-bbd2-9c92c395d64d:cores4.cells102400:projectdmr_cube_run1
+b541cb88-5534-4e83-abc1-e5704f0b3adf:cores16.cells25600:projectdmr_cube_run1
+f09f90fa-b104-42cc-b1e2-3d3cd03599d2:cores8.cells25600:projectdmr_cube_run1
+d63c9e01-ce3d-4a8d-85e3-d4c4ee2d78e5:cores4.cells25600:projectdmr_cube_run1
+ab232fbc-b397-40fa-aa80-70586daba3ec:cores64.cells6400:projectdmr_cube_run1
+6211a619-6632-4c8b-a4ae-f0525862ddc7:cores32.cells6400:projectdmr_cube_run1
+0c2ecaa7-03ef-4656-88c2-bbba785225b7:cores64.cells1600:projectdmr_cube_run1
+82dbd45b-65f6-4bc6-b69c-80c110dc96c5:cores16.cells6400:projectdmr_cube_run1
+9d68ed15-bb35-4925-beef-bdf52c69f82c:cores32.cells1600:projectdmr_cube_run1
+45d2c64c-9aab-4a3a-b55c-4ed044934080:cores8.cells6400:projectdmr_cube_run1
+7ef3957d-aff7-4883-b341-a1528c97fce2:cores16.cells1600:projectdmr_cube_run1
+034def2f-6eca-45ed-a1bd-39351ddf8213:cores4.cells6400:projectdmr_cube_run1
+f8630986-3950-46ed-b300-5b129c57fc28:cores8.cells1600:projectdmr_cube_run1
+72223b2a-7a60-4690-b377-dd3d0055b32a:cores4.cells1600:projectdmr_cube_run1
+
+==============
+using (StreamWriter sw = new StreamWriter("projectinfo.txt"))
+{
+    foreach(var project in tmpDB.Projects){
+    string txt = String.Format("{0}",project.Key);
+    sw.WriteLine(txt);
+    System.Console.WriteLine(txt);
+    }
+}
+**************
+dmr_cube_run1
+
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

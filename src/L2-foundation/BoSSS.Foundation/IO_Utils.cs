@@ -41,26 +41,40 @@ namespace BoSSS.Foundation.IO {
         public static string GetBoSSSInstallDir(ILog logger = null) {
             logger = logger ?? NullLog.Instance;
 
+            void Print(string s) {
+                logger.Info(s);
+            }
+
             string si1 = System.Environment.GetEnvironmentVariable(
                 "BOSSS_INSTALL", EnvironmentVariableTarget.User);
             if (si1 != null && si1.Length > 0)
-                logger.Info("found USER variable 'BOSSS_INSTALL': '" + si1 + "'.");
+                Print("found USER variable 'BOSSS_INSTALL': '" + si1 + "'.");
             else
-                logger.Info("unable to find a USER variable 'BOSSS_INSTALL'.");
+                Print("unable to find a USER variable 'BOSSS_INSTALL'.");
 
             string si2 = System.Environment.GetEnvironmentVariable("BOSSS_INSTALL", EnvironmentVariableTarget.Machine);
             if (si2 != null && si2.Length > 0)
-                logger.Info("found MACHINE variable 'BOSSS_INSTALL': '" + si1 + "'.");
+                Print("found MACHINE variable 'BOSSS_INSTALL': '" + si2 + "'.");
             else
-                logger.Info("unable to find a MACHINE variable 'BOSSS_INSTALL'.");
+                Print("unable to find a MACHINE variable 'BOSSS_INSTALL'.");
+
+            string si3 = System.Environment.GetEnvironmentVariable ("BOSSS_INSTALL");
+            if (si3 != null && si3.Length > 0)
+                Print ("found variable 'BOSSS_INSTALL': '" + si3 + "'.");
+            else
+                Print("unable to find a variable 'BOSSS_INSTALL'.");
+
 
             string si = null;
             if (si1 != null && si1.Length > 0) {
                 si = si1;
-                logger.Info("Picking USER setting.");
+                Print("Picking USER setting.");
             } else if (si2 != null && si2.Length > 0) {
                 si = si2;
-                logger.Info("Picking MACHINE setting.");
+                Print("Picking MACHINE setting.");
+            } else if (si3 != null && si3.Length > 0) {
+                si = si3;
+                Print("Picking general setting.");
             }
 
             if (si != null && si.Length > 0) {

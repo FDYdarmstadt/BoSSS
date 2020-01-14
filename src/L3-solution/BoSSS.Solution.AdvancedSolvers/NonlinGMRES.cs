@@ -30,7 +30,7 @@ using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
-
+    /*
    
     public class NonlinGMRES : NonlinearSolver {
 
@@ -74,133 +74,133 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // diagnostic output
             OnIterationCallback(0, SolHistory.Last().CloneAs(), ResHistory.Last().CloneAs(), this.CurrentLin);
             throw new NotImplementedException("todo: missing trafo of solution history under linearization update");
-    /*
-            // let's iterate ...
-            for(int iIter = 0; iIter < MaxIter; iIter++) {
-                Debug.Assert(SolHistory.Count == ResHistory.Count);
-                Debug.Assert(SolHistory.Count >= 1);
+    
+            //// let's iterate ...
+            //for(int iIter = 0; iIter < MaxIter; iIter++) {
+            //    Debug.Assert(SolHistory.Count == ResHistory.Count);
+            //    Debug.Assert(SolHistory.Count >= 1);
 
-                // (approximately) solve the linearized equation:
-                Precond_solver.Init(this.CurrentLin);
-                Sol1.SetV(SolHistory.Last(), 1.0);
-                Precond_solver.Solve(Sol1, this.LinearizationRHS);
-                SolHistory.Add(Sol1.CloneAs());
-                Sol1.ClearEntries();
+            //    // (approximately) solve the linearized equation:
+            //    Precond_solver.Init(this.CurrentLin);
+            //    Sol1.SetV(SolHistory.Last(), 1.0);
+            //    Precond_solver.Solve(Sol1, this.LinearizationRHS);
+            //    SolHistory.Add(Sol1.CloneAs());
+            //    Sol1.ClearEntries();
 
-                // update linearization of nonlinear equation
-                this.CurrentLin.TransformSolFrom(VelocityAndPressure, SolHistory.Last());
-                this.Update(VelocityAndPressure.Mapping.Fields);
-                throw new NotImplementedException("todo: missing trafo of solution history under linearization update");
+            //    // update linearization of nonlinear equation
+            //    this.CurrentLin.TransformSolFrom(VelocityAndPressure, SolHistory.Last());
+            //    this.Update(VelocityAndPressure.Mapping.Fields);
+            //    throw new NotImplementedException("todo: missing trafo of solution history under linearization update");
                 
                 
-                // compute the new residual
-                this.EvalResidual(SolHistory.Last(), ref Res1);
-                ResHistory.Add(Res1.CloneAs());
-                Res1.ClearEntries();
+            //    // compute the new residual
+            //    this.EvalResidual(SolHistory.Last(), ref Res1);
+            //    ResHistory.Add(Res1.CloneAs());
+            //    Res1.ClearEntries();
 
-                // compute the new inner products
-                Debug.Assert(SolHistory.Count == ResHistory.Count);
-                int m = ResHistory.Count - 1;
-                for(int iInnerIter = 0; iInnerIter <= m; iInnerIter++) {
-                    if(m != iInnerIter) {
-                        InnerProds[iInnerIter, m] = GenericBlas.InnerProd(ResHistory[iInnerIter], ResHistory[m]).MPISum();
-                        InnerProds[m, iInnerIter] = InnerProds[iInnerIter, m];
-                    } else {
-                        InnerProds[m, m] = GenericBlas.L2NormPow2(ResHistory[m]).MPISum();
-                    }
-                }
+            //    // compute the new inner products
+            //    Debug.Assert(SolHistory.Count == ResHistory.Count);
+            //    int m = ResHistory.Count - 1;
+            //    for(int iInnerIter = 0; iInnerIter <= m; iInnerIter++) {
+            //        if(m != iInnerIter) {
+            //            InnerProds[iInnerIter, m] = GenericBlas.InnerProd(ResHistory[iInnerIter], ResHistory[m]).MPISum();
+            //            InnerProds[m, iInnerIter] = InnerProds[iInnerIter, m];
+            //        } else {
+            //            InnerProds[m, m] = GenericBlas.L2NormPow2(ResHistory[m]).MPISum();
+            //        }
+            //    }
                 
 
-                // compute 'accelerated solution'
-                {
-                    // try to find an accelerated solution
-                    // +++++++++++++++++++++++++++++++++++
+            //    // compute 'accelerated solution'
+            //    {
+            //        // try to find an accelerated solution
+            //        // +++++++++++++++++++++++++++++++++++
 
-                    double[] alpha = Minimi(InnerProds.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { m, m }));
-                    //alpha.ClearEntries();
-                    Debug.Assert(alpha.Length == m);
+            //        double[] alpha = Minimi(InnerProds.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { m, m }));
+            //        //alpha.ClearEntries();
+            //        Debug.Assert(alpha.Length == m);
 
-                    double[] SolM = SolHistory.Last();
-                    double[] ResM = ResHistory.Last();
-                    double Norm_ResM = GenericBlas.L2NormPow2(ResM).MPISum().Sqrt();
+            //        double[] SolM = SolHistory.Last();
+            //        double[] ResM = ResHistory.Last();
+            //        double Norm_ResM = GenericBlas.L2NormPow2(ResM).MPISum().Sqrt();
                     
 
-                    double[] SolA = Sol1; // re-use the mem.
-                    double[] ResA = Res1;
-                    Debug.Assert(object.ReferenceEquals(SolA, SolM) == false);
-                    Debug.Assert(object.ReferenceEquals(ResA, ResM) == false);
-                    Debug.Assert(SolA.L2Norm() == 0.0);
-                    SolA.AccV(1.0, SolM);
+            //        double[] SolA = Sol1; // re-use the mem.
+            //        double[] ResA = Res1;
+            //        Debug.Assert(object.ReferenceEquals(SolA, SolM) == false);
+            //        Debug.Assert(object.ReferenceEquals(ResA, ResM) == false);
+            //        Debug.Assert(SolA.L2Norm() == 0.0);
+            //        SolA.AccV(1.0, SolM);
 
                     
-                    for(int i = 0; i < m; i++) {
-                        SolA.AccV(alpha[i], SolHistory[i]);
-                        SolA.AccV(-alpha[i], SolM);
-                    }
+            //        for(int i = 0; i < m; i++) {
+            //            SolA.AccV(alpha[i], SolHistory[i]);
+            //            SolA.AccV(-alpha[i], SolM);
+            //        }
 
-                    //this.Update(SolA);
-                    this.EvalResidual(SolA, ref ResA);
+            //        //this.Update(SolA);
+            //        this.EvalResidual(SolA, ref ResA);
 
-                    SolHistory.Last().SetV(SolA, 1.0);
-                    ResHistory.Last().SetV(ResA, 1.0);
+            //        SolHistory.Last().SetV(SolA, 1.0);
+            //        ResHistory.Last().SetV(ResA, 1.0);
 
-                    for(int iInnerIter = 0; iInnerIter <= m; iInnerIter++) {
-                        if(m != iInnerIter) {
-                            InnerProds[iInnerIter, m] = GenericBlas.InnerProd(ResHistory[iInnerIter], ResHistory[m]).MPISum();
-                            InnerProds[m, iInnerIter] = InnerProds[iInnerIter, m];
-                        } else {
-                            InnerProds[m, m] = GenericBlas.L2NormPow2(ResHistory[m]).MPISum();
-                        }
-                    }
-
-
-
-                    //double Norm_ResA = GenericBlas.L2NormPow2(ResA).MPISum().Sqrt();
-                    //Console.WriteLine("                 {0}", Norm_ResM/Norm_ResA);
-
-                    double minNorm_Res = double.MaxValue;
-                    for(int i = 0; i <= m; i++) {
-                        minNorm_Res = Math.Min(minNorm_Res, InnerProds[i, i].Sqrt());
-                    }
+            //        for(int iInnerIter = 0; iInnerIter <= m; iInnerIter++) {
+            //            if(m != iInnerIter) {
+            //                InnerProds[iInnerIter, m] = GenericBlas.InnerProd(ResHistory[iInnerIter], ResHistory[m]).MPISum();
+            //                InnerProds[m, iInnerIter] = InnerProds[iInnerIter, m];
+            //            } else {
+            //                InnerProds[m, m] = GenericBlas.L2NormPow2(ResHistory[m]).MPISum();
+            //            }
+            //        }
 
 
-                    //if(Norm_ResA < this.gamma_A * minNorm_Res  // first condition for accepting accelerated solution
-                    //    &&
-                    //    (Norm_ResA < this.delta_B * minNorm_Res
-                    //        || MinDistCond(SolA, SolM, SolHistory.Take(m).ToArray(), this.epsilon_B))) //
-                    if(SolHistory.Count > this.MaxKrylovDim) {
-                    //if(true) {
-                        // also the second criterion is fulfilled
 
-                        // accept accelerated solution and Restart;
-                        SolHistory.Clear();
-                        SolHistory.Add(SolA.CloneAs());
-                        ResHistory.Clear();
-                        ResHistory.Add(ResA.CloneAs());
+            //        //double Norm_ResA = GenericBlas.L2NormPow2(ResA).MPISum().Sqrt();
+            //        //Console.WriteLine("                 {0}", Norm_ResM/Norm_ResA);
 
-                        Console.WriteLine("restart.", m);
-
-                    } 
-                    //else {
-                    //    // we do not accept the accelerated solution, but we go on...
-
-                    //    this.Update(SolA);
-
-                    //    //Console.WriteLine("Inner GMRES iteration {0}: Accelertated solution NOT accepted.", m);
-
-                    //}
+            //        double minNorm_Res = double.MaxValue;
+            //        for(int i = 0; i <= m; i++) {
+            //            minNorm_Res = Math.Min(minNorm_Res, InnerProds[i, i].Sqrt());
+            //        }
 
 
-                }
+            //        //if(Norm_ResA < this.gamma_A * minNorm_Res  // first condition for accepting accelerated solution
+            //        //    &&
+            //        //    (Norm_ResA < this.delta_B * minNorm_Res
+            //        //        || MinDistCond(SolA, SolM, SolHistory.Take(m).ToArray(), this.epsilon_B))) //
+            //        if(SolHistory.Count > this.MaxKrylovDim) {
+            //        //if(true) {
+            //            // also the second criterion is fulfilled
+
+            //            // accept accelerated solution and Restart;
+            //            SolHistory.Clear();
+            //            SolHistory.Add(SolA.CloneAs());
+            //            ResHistory.Clear();
+            //            ResHistory.Add(ResA.CloneAs());
+
+            //            Console.WriteLine("restart.", m);
+
+            //        } 
+            //        //else {
+            //        //    // we do not accept the accelerated solution, but we go on...
+
+            //        //    this.Update(SolA);
+
+            //        //    //Console.WriteLine("Inner GMRES iteration {0}: Accelertated solution NOT accepted.", m);
+
+            //        //}
+
+
+            //    }
 
                 
 
-                OnIterationCallback(iIter + 1, SolHistory.Last().CloneAs(), ResHistory.Last().CloneAs(), this.CurrentLin);
+            //    OnIterationCallback(iIter + 1, SolHistory.Last().CloneAs(), ResHistory.Last().CloneAs(), this.CurrentLin);
                 
-            }
+            //}
 
-            this.CurrentLin.TransformSolFrom(VelocityAndPressure, SolHistory.Last());
-            */
+            //this.CurrentLin.TransformSolFrom(VelocityAndPressure, SolHistory.Last());
+            
         }
 
         static bool MinDistCond(double[] SolA, double[] SolM, double[][] PrevSol, double epsilon_B) {
@@ -260,5 +260,5 @@ namespace BoSSS.Solution.AdvancedSolvers {
             throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
         }
     }
-
+*/
 }

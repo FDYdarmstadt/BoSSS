@@ -344,22 +344,22 @@ namespace ilPSP.LinSolvers.monkey.CUDA
     /// </summary>
     public class cu : DynLibLoader
     {
-	
-		//[MethodImpl(MethodImplOptions.NoInlining)]
-		//static void PoorManDebug() {
+
+        //[MethodImpl(MethodImplOptions.NoInlining)]
+        //static void PoorManDebug() {
         //    string _name ;
         //    {
         //        StackFrame fr = new StackFrame(2, true);
         //        StackTrace st = new StackTrace(fr);
-		//
-        //        _MethodBase m = fr.GetMethod();
+        //
+        //        System.Reflection.MethodBase m = fr.GetMethod();
         //        _name = m.DeclaringType.FullName + "." + m.Name;
         //    }
-		//	
-		//	Console.WriteLine(_name);
-		//}
-		
-		
+        //	
+        //	Console.WriteLine(_name);
+        //}
+
+
 
         public cu() : base(
               new string[] { "nvcuda.dll", "libcuda.so" },
@@ -397,15 +397,15 @@ namespace ilPSP.LinSolvers.monkey.CUDA
 		[MethodImpl(MethodImplOptions.NoInlining)]
         private static void testResult(CUresult r)
         {
-			//Console.WriteLine("thr = '" + Thread.CurrentThread.Priority + "'");
+            //Console.WriteLine("thr = '" + Thread.CurrentThread.Priority + "'");
             //{
             //    StackFrame fr = new StackFrame(1, true);
-			
-            //    _MethodBase m = fr.GetMethod();
+
+            //    System.Reflection.MethodBase m = fr.GetMethod();
             //    string _name = m.DeclaringType.FullName + "." + m.Name;
             //    Console.WriteLine(_name);
             //}
-			if (r != CUresult.CUDA_SUCCESS)
+            if (r != CUresult.CUDA_SUCCESS)
                 throw new ApplicationException("CUDA error: " + r.ToString());
         }
 

@@ -94,10 +94,10 @@ namespace BoSSS.Solution.EnergyCommon {
 
             // 2 * {u_i * u_j} * n_j,
             // resp. 2 * {rho * u_i * u_j} * n_j for variable density
-            r += rhoIn * Uin[0] * (inp.Parameters_IN[0] * inp.Normale[0] + inp.Parameters_IN[1] * inp.Normale[1]);
-            r += rhoOut * Uout[0] * (inp.Parameters_OUT[0] * inp.Normale[0] + inp.Parameters_OUT[1] * inp.Normale[1]);
+            r += rhoIn * Uin[0] * (inp.Parameters_IN[0] * inp.Normal[0] + inp.Parameters_IN[1] * inp.Normal[1]);
+            r += rhoOut * Uout[0] * (inp.Parameters_OUT[0] * inp.Normal[0] + inp.Parameters_OUT[1] * inp.Normal[1]);
             if (m_SpatialDimension == 3) {
-                r += rhoIn * Uin[0] * inp.Parameters_IN[2] * inp.Normale[2] + rhoOut * Uout[0] * inp.Parameters_OUT[2] * inp.Normale[2];
+                r += rhoIn * Uin[0] * inp.Parameters_IN[2] * inp.Normal[2] + rhoOut * Uout[0] * inp.Parameters_OUT[2] * inp.Normal[2];
             }
 
             // Calculate dissipative part
@@ -113,8 +113,8 @@ namespace BoSSS.Solution.EnergyCommon {
             double LambdaIn;
             double LambdaOut;
 
-            LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normale, true);
-            LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normale, true);
+            LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, true);
+            LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, true);
 
             double Lambda = Math.Max(LambdaIn, LambdaOut);
             double uJump = Uin[0] - Uout[0];
@@ -138,9 +138,9 @@ namespace BoSSS.Solution.EnergyCommon {
 
                         // Setup params
                         // ============
-                        Foundation.CommonParams inp2;
+                        CommonParams inp2 = new CommonParams(); ;
                         inp2.GridDat = inp.GridDat;
-                        inp2.Normale = inp.Normale;
+                        inp2.Normal = inp.Normal;
                         inp2.iEdge = inp.iEdge;
                         inp2.Parameters_IN = inp.Parameters_IN;
                         inp2.X = inp.X;
@@ -188,9 +188,9 @@ namespace BoSSS.Solution.EnergyCommon {
                         if (m_SpatialDimension == 3)
                             u3 = inp.Parameters_IN[2];
 
-                        r += u_d * (u1 * inp.Normale[0] + u2 * inp.Normale[1]);
+                        r += u_d * (u1 * inp.Normal[0] + u2 * inp.Normal[1]);
                         if (m_SpatialDimension == 3) {
-                            r += u_d * u3 * inp.Normale[2];
+                            r += u_d * u3 * inp.Normal[2];
                         }
 
                         return r;
@@ -381,26 +381,26 @@ namespace BoSSS.Solution.EnergyCommon {
         }
 
 
-        public double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+        public double LevelSetForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
             double[] U_NegFict, U_PosFict;
 
             this.TransformU(ref U_Neg, ref U_Pos, out U_NegFict, out U_PosFict);
 
-            double[] ParamsNeg = cp.ParamsNeg;
-            double[] ParamsPos = cp.ParamsPos;
+            double[] ParamsNeg = cp.Parameters_IN;
+            double[] ParamsPos = cp.Parameters_OUT;
             double[] ParamsPosFict, ParamsNegFict;
             this.TransformU(ref ParamsNeg, ref ParamsPos, out ParamsNegFict, out ParamsPosFict);
             //Flux for negativ side
             double FlxNeg;
             {
 
-                BoSSS.Foundation.CommonParams inp; // = default(BoSSS.Foundation.InParams);
+                CommonParams inp = new CommonParams(); // = default(BoSSS.Foundation.InParams);
                 inp.Parameters_IN = ParamsNeg;
                 inp.Parameters_OUT = ParamsNegFict;
-                inp.Normale = cp.n;
+                inp.Normal = cp.Normal;
                 inp.iEdge = int.MinValue;
                 inp.GridDat = this.m_LsTrk.GridDat;
-                inp.X = cp.x;
+                inp.X = cp.X;
                 inp.time = cp.time;
 
                 FlxNeg = this.NegFlux.IEF(ref inp, U_Neg, U_NegFict);
@@ -409,13 +409,13 @@ namespace BoSSS.Solution.EnergyCommon {
             double FlxPos;
             {
 
-                BoSSS.Foundation.CommonParams inp; // = default(BoSSS.Foundation.InParams);
+                BoSSS.Foundation.CommonParams inp = new CommonParams(); ; // = default(BoSSS.Foundation.InParams);
                 inp.Parameters_IN = ParamsPosFict;
                 inp.Parameters_OUT = ParamsPos;
-                inp.Normale = cp.n;
+                inp.Normal = cp.Normal;
                 inp.iEdge = int.MinValue;
                 inp.GridDat = this.m_LsTrk.GridDat;
-                inp.X = cp.x;
+                inp.X = cp.X;
                 inp.time = cp.time;
 
                 FlxPos = this.PosFlux.IEF(ref inp, U_PosFict, U_Pos);
@@ -526,7 +526,7 @@ namespace BoSSS.Solution.EnergyCommon {
 
             double c = 0.0;
             for (int d = 0; d < m_SpatialDimension; d++)
-                c += inp.Parameters_IN[d] * inp.Normale[d];
+                c += inp.Parameters_IN[d] * inp.Normal[d];
 
             IncompressibleBcType edgeType = m_bcmap.EdgeTag2Type[inp.EdgeTag];
 
@@ -554,7 +554,7 @@ namespace BoSSS.Solution.EnergyCommon {
 
             double c = 0.0;
             for (int d = 0; d < m_SpatialDimension; d++)
-                c += 0.5 * (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * inp.Normale[d];
+                c += 0.5 * (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * inp.Normal[d];
 
             if (c > 0)
                 return (c * rho * Uin[0]);

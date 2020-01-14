@@ -18,6 +18,7 @@ using System;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
 using System.Diagnostics;
+using ilPSP;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
@@ -77,11 +78,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// <returns>
         /// \f$ (\rho^*, \vec{u}^*, p^-)^T\f$ 
         /// </returns>
-        public override StateVector GetBoundaryState(double time, double[] x, double[] normal, StateVector stateIn) {
+        public override StateVector GetBoundaryState(double time, Vector x, Vector normal, StateVector stateIn) {
             double rhoOut = densityFunction(x, time);
 
-            Debug.Assert(x.Length == stateIn.Dimension);
-            int D = x.Length;
+            int D = x.Dim;
+            Debug.Assert(x.Dim == stateIn.Dimension);
 
             Vector uOut = new Vector(stateIn.Dimension);
             for (int i = 0; i < D; i++) {

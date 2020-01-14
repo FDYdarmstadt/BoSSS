@@ -36,10 +36,23 @@
     <Prefer32Bit>false</Prefer32Bit>
     <DocumentationFile>bin\Release\BoSSS.Solution.AdvancedSolvers.xml</DocumentationFile>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'TEST|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\TEST\</OutputPath>
+    <DefineConstants>TRACE;TEST</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Prefer32Bit>false</Prefer32Bit>
+    <DocumentationFile>bin\TEST\BoSSS.Solution.AdvancedSolvers.xml</DocumentationFile>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -51,11 +64,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AggregationGridBasis.cs" />
+    <Compile Include="AppControlSolver.cs" />
     <Compile Include="BlockJacobi.cs" />
     <Compile Include="ClassicMultigrid.cs" />
     <Compile Include="ConvergenceObserver.cs" />
     <Compile Include="DynamicMultigrid.cs" />
     <Compile Include="LevelPmg.cs" />
+    <Compile Include="LinearSolverConfig.cs" />
+    <Compile Include="MGviz.cs" />
+    <Compile Include="NLSolverSequence.cs" />
+    <Compile Include="NonLinearSolverConfig.cs" />
     <Compile Include="OrthonormalizationMultigrid.cs" />
     <Compile Include="SolverChooser.cs" />
     <Compile Include="SparseSolver.cs" />
@@ -82,6 +100,7 @@
     <Compile Include="SoftGMRES.cs" />
     <Compile Include="SoftPCG.cs" />
     <Compile Include="SolverSquence.cs" />
+    <Compile Include="SubBlockSelector.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="XdgAggregationBasis.cs" />
   </ItemGroup>

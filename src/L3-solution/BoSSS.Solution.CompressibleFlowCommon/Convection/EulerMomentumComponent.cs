@@ -33,7 +33,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <summary>
         /// The <see cref="MomentumComponent"/>'s basis vector
         /// </summary>
-        public readonly Vector ComponentVector;
+        public readonly ilPSP.Vector ComponentVector;
 
 
         double heatCapacityRatio;
@@ -58,7 +58,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// </param>
         public EulerMomentumComponent(int momentumComponent, double heatCapacityRatio, double MachNumber, int Dim) {
             this.MomentumComponent = momentumComponent;
-            ComponentVector = Vector.StdBasis(momentumComponent, Dim);
+            ComponentVector = ilPSP.Vector.StdBasis(momentumComponent, Dim);
             this.heatCapacityRatio = heatCapacityRatio;
             this.MachNumber = MachNumber;
         }
@@ -71,7 +71,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <returns>
         /// \f$ \rho (\vec{u} \cdot \vec{e_i}) \vec{u} + p \vec{e_i}\f$ 
         /// </returns>
-        public Vector Flux(StateVector state) {
+        public ilPSP.Vector Flux(StateVector state) {
             return state.Momentum[MomentumComponent] * state.Velocity
                 + 1 / (heatCapacityRatio * MachNumber * MachNumber) * state.Pressure * ComponentVector;
         }

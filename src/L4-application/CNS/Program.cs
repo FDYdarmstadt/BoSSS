@@ -40,6 +40,8 @@ using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using CNS.Convection;
 using BoSSS.Foundation.Grid;
 using ilPSP.Utils;
+using BoSSS.Solution.Statistic;
+using BoSSS.Solution.CompressibleFlowCommon.Convection;
 
 namespace CNS {
 
@@ -55,20 +57,30 @@ namespace CNS {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
+
+
             //Application.InitMPI(args);
-            //CNS.Tests.ConvectiveFlux.ShockTubeTests.Toro1RusanovTest();
-            //CNS.Tests.ConvectiveFlux.ShockTubeTests.Toro1AllButRusanovTest(ConvectiveFluxTypes.Godunov);
-            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder0th();
-            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder1st();
-            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder2nd();
-            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder3rd();
-            //CNS.Tests.IBMTests.IBMIsentropicVortexTest.IBMVortexLocalTimeSteppingTest();
-            //Debug.Assert(false);
+            //CNS.Tests.MovingIBMTests.PistonTests.MovingMeshIBMPiston1stOrderWithAgglomeration();
+            //Debug.Assert(false, "remove me");
+            //csMPI.Raw.mpiFinalize();
+            //return;
 
             Application<CNSControl>._Main(
                 args,
                 false,
                 () => new Program());
+
+            //BoSSS.Foundation.Quadrature.NonLin.TempTimers.WriteStat();
+            //Console.WriteLine("   Total boundary edge flux: " + OptimizedHLLCFlux.Total.Elapsed.TotalSeconds);
+            //Console.WriteLine("      allocation:            " + OptimizedHLLCFlux.Alloc.Elapsed.TotalSeconds);
+            //Console.WriteLine("      loops:                 " + OptimizedHLLCFlux.Loops.Elapsed.TotalSeconds);
+            //Console.WriteLine("         state comp:         " + OptimizedHLLCFlux.State.Elapsed.TotalSeconds);
+            //Console.WriteLine("            SupersonicInlet:           " + OptimizedHLLCFlux.SupersonicInlet.Elapsed.TotalSeconds);
+            //Console.WriteLine("               DistanceToInitialShock: " + OptimizedHLLCFlux.DistanceToInitialShock.Elapsed.TotalSeconds);
+            //Console.WriteLine("               SmoothJump:             " + OptimizedHLLCFlux.SmoothJump.Elapsed.TotalSeconds);
+            //Console.WriteLine("            SupersonicOutlet:          " + OptimizedHLLCFlux.SupersonicOutlet.Elapsed.TotalSeconds);
+            //Console.WriteLine("            AdiabaticSlipWall:         " + OptimizedHLLCFlux.AdiabaticSlipWall.Elapsed.TotalSeconds);
+            //Console.WriteLine("      inner edge flux:       " + OptimizedHLLCFlux.Inner.Elapsed.TotalSeconds);
         }
     }
 
@@ -247,6 +259,7 @@ namespace CNS {
         /// <see cref="Application{T}.RunSolverOneStep"/>
         /// </returns>
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
+
             using (var ht = new FuncTrace()) {
                 int printInterval = Control.PrintInterval;
                 if (DatabaseDriver.MyRank == 0 && TimestepNo % printInterval == 0) {
@@ -255,6 +268,11 @@ namespace CNS {
 #endif
                     Console.Write("Starting time step #" + TimestepNo + "...");
                 }
+
+                //if (TimestepNo == 2) {
+                //    BoSSS.Foundation.Quadrature.NonLin.TempTimers.Reset();
+                //    OptimizedHLLCFlux.Reset();
+                //}
 
                 // Update shock-capturing variables before performing a time step
                 // as the time step constraints (could) depend on artificial viscosity.
@@ -269,17 +287,55 @@ namespace CNS {
                 // the time stepper
                 TimeStepper.UpdateTimeInfo(new TimeInformation(TimestepNo, phystime, dt));
 
+                //#region Evaluate operator for testing
+                //// Evaluate the operator
+                //CoordinateMapping mapping = new CoordinateMapping(WorkingSet.ConservativeVariables);
+                //double[] OpAffine = new double[mapping.LocalLength];
+                //SpatialOperator spatialOperator = FullOperator.ToSpatialOperator(WorkingSet);
+                //IEvaluatorNonLin_ ev = spatialOperator.GetEvaluatorEx(WorkingSet.ConservativeVariables, null, mapping);
+                //ev.Evaluate(1.0, 0.0, OpAffine, null);
+                //#endregion
+
+                //// Sample points
+                //int noOfPoints = 1000;
+                //double[] nodes = GenericBlas.Linspace(0.0, 1.0, noOfPoints);
+                //MultidimensionalArray points = MultidimensionalArray.Create(noOfPoints, 2);
+                //for (int i = 0; i < noOfPoints; i++) {
+                //    points[i, 0] = nodes[i];
+                //    points[i, 1] = 0.5;
+                //}
+
+                // FieldEvaluation
+                //MultidimensionalArray results = MultidimensionalArray.Create(noOfPoints, Resi.Length);
+                //for (int i = 0; i < Residuals.Length; i++) {
+                //    FieldEvaluation fieldEvaluator = new FieldEvaluation((GridData)this.GridData);
+                //    fieldEvaluator.Evaluate(1.0, Residuals, points, 0.0, results);
+                //}
+
+                //// StreamWriter
+                //using (System.IO.StreamWriter sw = new System.IO.StreamWriter(String.Format("Residuals{0}.txt", timestepNo))) {
+                //    //Console.WriteLine("x \t y \t result");
+                //    sw.WriteLine("x \t y \t rho \t xMom \t yMom \t rhoE");
+                //    string resultLine;
+                //    for (int i = 0; i < noOfPoints; i++) {
+                //        resultLine = points[i, 0] + "\t" + points[i, 1] + "\t" + results[i, 0] + "\t" + results[i, 1] + "\t" + results[i, 2] + "\t" + results[i, 3] + "\t";
+                //        //Console.WriteLine(resultLine);
+                //        sw.WriteLine(resultLine);
+                //    }
+                //    sw.Flush();
+                //}
+
                 using (new BlockTrace("TimeStepper.Perform", ht)) {
-                    Exception e = null;
-                    try {
+                    //Exception e = null;
+                    //try {
                         //TimeStepper.CurrentState.SaveToTextFile("tsinp-lts.txt");
                         //ilPSP.Environment.GlobalVec =  TimeStepper.CurrentState.ToArray();
                         //double dist = ilPSP.Environment.CompareTo(TimeStepper.CurrentState);
                         dt = TimeStepper.Perform(dt);
-                    } catch (Exception ee) {
-                        e = ee;
-                    }
-                    e.ExceptionBcast();
+                    //} catch (Exception ee) {
+                    //    e = ee;
+                    //}
+                    //e.ExceptionBcast();
 
 
                     if (DatabaseDriver.MyRank == 0 && TimestepNo % printInterval == 0) {
@@ -299,7 +355,8 @@ namespace CNS {
                 if (Control.WriteLTSLog && TimeStepper is AdamsBashforthLTS) {
                     this.WriteLTSLog(dt);
                 }
-
+                //if (TimestepNo == 10)
+                //    ilPSP.Tracing.Tracer.Current.ResetRecursive();
                 return dt;
             }
         }

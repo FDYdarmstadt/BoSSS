@@ -94,15 +94,12 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             public MultidimensionalArray[] Injectors;
 
             /// <summary>
-            /// Defines which entries of <see cref=InjectorsBase""/> contain valid values.
+            /// Defines which entries of <see cref="InjectorsBase"/> contain valid values.
             /// - index: correlates with 1st index of <see cref="InjectorsBase"/>
             /// </summary>
             bool[] InjectorsBaseReady;
 
             int MaxSupportedDegree = -1;
-
-
-            
 
             public void Init(int ReqDegree) {
                 if (ReqDegree < 0)

@@ -32,6 +32,7 @@ using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.LevelSetTools.TestCases;
+using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
@@ -133,7 +134,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===============
             #region grid
 
-            double L = 2;
+            double L = 4;// 2;
             double H = 1;
 
             C.GridFunc = delegate () {
@@ -168,7 +169,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte et = 0;
-                    if(Math.Abs(X[1]) <= 1.0e-8)
+                    if(Math.Abs(X[1] + H) <= 1.0e-8)
                         et = 1;
                     if(Math.Abs(X[1] - H) <= 1.0e-8)
                         et = 2;
@@ -190,8 +191,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ==============
             #region init
 
+
             Func<double[], double> PhiFunc = (X => -1.0); // X[1] - (H / 2.1)); // + (H/20)*Math.Cos(8 * Math.PI * X[0] / L));
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+
 
             double[] center = new double[] { H / 2.0, H / 2.0 };
             double radius = 0.15;
@@ -232,10 +235,25 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.InitialValues_Evaluators.Add("Pressure#A", X => (2.0 - X[0]) + Pjump);
             //C.InitialValues_Evaluators.Add("Pressure#B", X => 2.0 - X[0]);
 
-
             //var database = new DatabaseInfo(_DbPath);
             //Guid restartID = new Guid("cf6bd7bf-a19f-409e-b8c2-0b89388daad6");
             //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, 10);
+
+            #endregion
+
+            // exact solution
+            // ==============
+            #region exact
+
+            //C.Phi = ((X, t) => PhiFunc(X));
+
+            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
+            C.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { (X, t) => 1 - X[1] * X[1], (X, t) => 0 });
+            C.ExactSolutionVelocity.Add("B", new Func<double[], double, double>[] { (X, t) => 1 - X[1] * X[1], (X, t) => 0 });
+
+            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
+            C.ExactSolutionPressure.Add("A", (X, t) => 8 - 2 * X[0]);
+            C.ExactSolutionPressure.Add("B", (X, t) => 8 - 2 * X[0]);
 
             #endregion
 
@@ -269,6 +287,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U) * Math.Sin(2.0 * Math.PI * (t / T)));
             //C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", X => U);
             //C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", X => U);
+
             //C.AddBoundaryValue("velocity_inlet_left", "KineticEnergy#A", X => 1.0 * ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U).Pow2() / 2.0);
             ////C.AddBoundaryValue("velocity_inlet_left", "KineticEnergy#B", X => U.Pow2() / 2); 
             ////C.AddBoundaryValue("pressure_outlet_left");
@@ -281,6 +300,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // misc. solver options
             // ====================
             #region solver
+
 
             C.ComputeEnergyProperties = true;
             C.solveKineticEnergyEquation = true;
@@ -308,6 +328,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.SkipSolveAndEvaluateResidual = true;
 
 
             C.AdaptiveMeshRefinement = false;
@@ -324,7 +345,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
-            C.CompMode = AppControl._CompMode.Transient;
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             double dt = 1e-3;
             C.dtMax = dt;
             C.dtMin = dt;
@@ -592,7 +614,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
-            C.CompMode = AppControl._CompMode.Steady;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
 
             double dt = 1e-1;
             C.dtMax = dt;
@@ -896,7 +918,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.Timestepper_LevelSetHandling = lsHandl;
             C.Timestepper_Scheme = tsScheme;
 
@@ -1179,7 +1201,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.Timestepper_LevelSetHandling = lsHandl;
             C.Timestepper_Scheme = tsScheme;
 

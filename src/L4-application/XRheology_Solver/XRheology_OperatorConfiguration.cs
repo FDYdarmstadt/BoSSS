@@ -36,6 +36,7 @@ namespace BoSSS.Application.XRheology_Solver {
             Continuity = true;
             Viscous = true;
             PressureGradient = true;
+            OldroydB = true;
             Transport = control.PhysicalParameters.IncludeConvection;
             CodBlocks = new bool[] { true, true, true };
             DomBlocks = new bool[] { true, true, true };
@@ -225,5 +226,10 @@ namespace BoSSS.Application.XRheology_Solver {
         public bool isMatInt {
             get { return MatInt; }
         }
+
+        /// <summary>
+        /// true if the interface pressure is prescribed i.e. for evaporation
+        /// </summary>
+        public bool isPInterfaceSet { get; }
     }
 }

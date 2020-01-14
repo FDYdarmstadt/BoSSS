@@ -72,11 +72,11 @@ namespace BoSSS.Application.XNSE_Solver {
         //===========
 
         static void Main(string[] args) {
-
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestFixtureSetUp();
-            ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.PolynomialTestForConvectionTest(3, 0, false);
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestCapillaryWave();
-            ////BoSSS.Application.XNSE_Solver.Tests.ElementalTestProgramm.LineMovementTest(LevelSetEvolution.ScalarConvection, LevelSetHandling.Coupled_Once, XNSE_Control.TimesteppingScheme.ImplicitEuler, 0.5);
+            //DeleteOldPlotFiles();
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ViscosityJumpTest(2, 0.1, ViscosityMode.FullySymmetric);
+            ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestCapillaryWave();
+            //////BoSSS.Application.XNSE_Solver.Tests.ElementalTestProgramm.LineMovementTest(LevelSetEvolution.ScalarConvection, LevelSetHandling.Coupled_Once, XNSE_Control.TimesteppingScheme.ImplicitEuler, 0.5);
             //Assert.IsFalse(true, "remove me");
 
 
@@ -126,14 +126,9 @@ namespace BoSSS.Application.XNSE_Solver {
                 IOListOption.ControlFileDetermined)]
             public VectorField<TX> ResidualMomentum;
         }
-
+                
         /// <summary>
-        /// Velocity and related variables for the non-extended case, <see cref="XNSE_Control.UseXDG4Velocity"/> == false.
-        /// </summary>
-        //VelocityRelatedVars<SinglePhaseField> DGvelocity;
-
-        /// <summary>
-        /// Velocity and related variables for the extended case, <see cref="XNSE_Control.UseXDG4Velocity"/> == false.
+        /// Velocity and related variables for the extended case.
         /// </summary>
         VelocityRelatedVars<XDGField> XDGvelocity;
 
@@ -398,14 +393,14 @@ namespace BoSSS.Application.XNSE_Solver {
                     // configurations for velocity
                     for (int d = 0; d < D; d++) {
                         configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
-                            Degree = Math.Max(1, pVel - iLevel),
+                            DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
                             mode = this.Control.VelocityBlockPrecondMode,
                             VarIndex = new int[] { d }
                         };
                     }
                     // configuration for pressure
                     configs[iLevel][D] = new MultigridOperator.ChangeOfBasisConfig() {
-                        Degree = Math.Max(0, pPrs - iLevel),
+                        DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
                         mode = this.Control.PressureBlockPrecondMode,
                         VarIndex = new int[] { D }
                     };
@@ -414,7 +409,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         int pKinE = this.KineticEnergy.Basis.Degree;
                         // configuration for kinetic energy
                         configs[iLevel][D + 1] = new MultigridOperator.ChangeOfBasisConfig() {
-                            Degree = Math.Max(1, pKinE - iLevel),
+                            DegreeS = new int[] { Math.Max(1, pKinE - iLevel) },
                             mode = this.Control.KineticEnergyeBlockPrecondMode,
                             VarIndex = new int[] { D + 1 }
                         };
@@ -425,7 +420,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         int pTemp = this.Temperature.Basis.Degree;
                         // configuration for Temperature
                         configs[iLevel][mD + 1] = new MultigridOperator.ChangeOfBasisConfig() {
-                            Degree = Math.Max(1, pTemp - iLevel),
+                            DegreeS = new int[] { Math.Max(1, pTemp - iLevel) },
                             mode = this.Control.TemperatureBlockPrecondMode,
                             VarIndex = new int[] { mD + 1 }
                         };
@@ -435,7 +430,7 @@ namespace BoSSS.Application.XNSE_Solver {
                             int pFlux = this.HeatFlux[0].Basis.Degree;
                             for (int d = 0; d < D; d++) {
                                 configs[iLevel][mD + 1 + d] = new MultigridOperator.ChangeOfBasisConfig() {
-                                    Degree = Math.Max(1, pFlux - iLevel),
+                                    DegreeS = new int[] { Math.Max(1, pFlux - iLevel) },
                                     mode = MultigridOperator.Mode.Eye,
                                     VarIndex = new int[] { mD + 1 + d }
                                 };
@@ -465,9 +460,9 @@ namespace BoSSS.Application.XNSE_Solver {
                 return;
 
 
-            if (Control.CompMode == AppControl._CompMode.Steady) {
+            if (Control.TimesteppingMode == AppControl._TimesteppingMode.Steady) {
                 if (Control.Timestepper_LevelSetHandling != LevelSetHandling.None)
-                    throw new ApplicationException(string.Format("Illegal control file: for a steady computation ({0}), the level set handling must be {1}.", AppControl._CompMode.Steady, LevelSetHandling.None));
+                    throw new ApplicationException(string.Format("Illegal control file: for a steady computation ({0}), the level set handling must be {1}.", AppControl._TimesteppingMode.Steady, LevelSetHandling.None));
             }
 
             int degU = this.CurrentVel[0].Basis.Degree;
@@ -890,7 +885,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     LsTrk,
                     true,
                     DelComputeOperatorMatrix, null, DelUpdateLevelSet,
-                    (this.Control.CompMode == AppControl._CompMode.Transient) ? bdfOrder : 1,
+                    (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? bdfOrder : 1,
                     this.Control.Timestepper_LevelSetHandling,
                     this.XOpConfig.mmsd,
                     (this.Control.PhysicalParameters.IncludeConvection) ? SpatialOperatorType.Nonlinear : SpatialOperatorType.LinearTimeDependent,
@@ -904,7 +899,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     );
                 m_BDF_Timestepper.m_ResLogger = base.ResLogger;
                 m_BDF_Timestepper.m_ResidualNames = this.CurrentResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
-                m_BDF_Timestepper.Timestepper_Init = (this.Control.CompMode == AppControl._CompMode.Transient) ? this.Control.Timestepper_BDFinit : TimeStepperInit.SingleInit;
+                m_BDF_Timestepper.Timestepper_Init = (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? this.Control.Timestepper_BDFinit : TimeStepperInit.SingleInit;
                 m_BDF_Timestepper.incrementTimesteps = this.Control.incrementTimesteps;
                 m_BDF_Timestepper.PushLevelSet = this.PushLevelSetAndRelatedStuff;
                 m_BDF_Timestepper.IterUnderrelax = this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? this.Control.LSunderrelax : 1.0;
@@ -917,7 +912,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 // solver 
                 this.Control.NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.NonLinearSolver.MinSolverIterations; //m_BDF_Timestepper.config_NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.Solver_MinIterations;
 
-                if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.NewtonGMRES) {
+                if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
                     m_BDF_Timestepper.XdgSolverFactory.Selfmade_precond =
                                         new Schwarz() {
                                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
@@ -1077,7 +1072,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 // =====================================================
 
 
-                if(base.Control.CompMode == AppControl._CompMode.Steady) {
+                if(base.Control.TimesteppingMode == AppControl._TimesteppingMode.Steady) {
                     dt = 1.0e100;
                     Console.WriteLine("Steady-state solve ...", TimestepNo, dt);
 
@@ -1090,7 +1085,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 // =====================================================
                 // setup transient 
                 // =====================================================
-                } else if(base.Control.CompMode == AppControl._CompMode.Transient) {
+                } else if(base.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) {
 
                     // push stacks
                     // -----------
@@ -1100,7 +1095,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     // backup old velocity/kinetic energy for energy checks
                     // -----------------------------------------------------
-                    if(this.Control.ComputeEnergyProperties && this.Control.CompMode == AppControl._CompMode.Transient) {
+                    if(this.Control.ComputeEnergyProperties && this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) {
                         for(int d = 0; d < D; d++) {
                             this.prevVel[d].Clear();
                             this.prevVel[d].Acc(1.0, this.CurrentVel[d]);
@@ -1175,7 +1170,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     Console.WriteLine("Instationary solve, timestep #{0}, dt = {1} ...", TimestepNo, dt);
 
                 } else {
-                    throw new NotImplementedException("Option " + base.Control.CompMode + " not supported yet.");
+                    throw new NotImplementedException("Option " + base.Control.TimesteppingMode + " not supported yet.");
                 }
 
                 // =======================================================================
@@ -1884,6 +1879,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         #endregion
+
 
     }
 }

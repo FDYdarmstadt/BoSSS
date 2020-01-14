@@ -302,7 +302,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             //double dt = 1e-1;
             C.dtMax = dt;
             C.dtMin = dt;

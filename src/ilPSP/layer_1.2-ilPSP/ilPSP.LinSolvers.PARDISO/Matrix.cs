@@ -225,7 +225,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                         int[] ja_loc = new int[len_loc];
                         double[] a_loc_D = null;
                         float[] a_loc_S = null;
-                        using (new BlockTrace("local mATRIX ASSEMBLY", tr))
+                        using (new BlockTrace("local matrix assembly", tr))
                         {
                             if (UseDoublePrecision)
                             {
@@ -337,7 +337,6 @@ namespace ilPSP.LinSolvers.PARDISO {
                                 double* pa_D = (double*)aPtr;
 
 
-                                Console.WriteLine("in unsafe");
                                 int* displs = stackalloc int[size];
                                 int* recvcounts = stackalloc int[size];
                                 for (int i = 0; i < size; i++)
@@ -423,6 +422,15 @@ namespace ilPSP.LinSolvers.PARDISO {
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Release of internal memory
+        /// </summary>
+        public void Dispose() {
+            if(aPtr != IntPtr.Zero)
+                Marshal.FreeHGlobal(aPtr);
+            aPtr = IntPtr.Zero;
         }
 
         /// <summary>

@@ -21,6 +21,7 @@ using System.Runtime.InteropServices;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using System.Linq;
+using MPI.Wrappers.Utils;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 
@@ -33,11 +34,14 @@ namespace BoSSS.Solution.Tecplot {
 
         private readonly string path = null;
 
+        UnsafeTECIO m_TECIO;
+
         /// <summary>
         /// see <see cref="PlotDriver.PlotDriver"/>.
         /// </summary>
         public Tecplot(IGridData context, uint superSampling)
             : base(context, true, false, superSampling, null) {
+            m_TECIO = new UnsafeTECIO();
         }
 
         /// <summary>
@@ -45,6 +49,7 @@ namespace BoSSS.Solution.Tecplot {
         /// </summary>
         public Tecplot(IGridData context, bool showJumps, bool ghostZone, uint superSampling, CellMask mask = null)
             : base(context, showJumps, ghostZone, superSampling, mask) {
+            m_TECIO = new UnsafeTECIO();
         }
 
         /// <summary>
@@ -53,6 +58,7 @@ namespace BoSSS.Solution.Tecplot {
         public Tecplot(IGridData context, uint superSampling, string path)
             : this(context, superSampling) {
             this.path = path;
+            m_TECIO = new UnsafeTECIO();
         }
 
         /// <summary>
@@ -136,7 +142,7 @@ namespace BoSSS.Solution.Tecplot {
             ptrFName = Marshal.StringToHGlobalAnsi(filenameWithPath);
             ptrVariables = Marshal.StringToHGlobalAnsi(Variables);
 
-            int errorWhileOpening = tecini110(ptrTitle, ptrVariables, ptrFName, ptrScratchDir, ref Debug, ref VIsDouble);
+            int errorWhileOpening = m_TECIO.TECINI110(ptrTitle, ptrVariables, ptrFName, ptrScratchDir, ref Debug, ref VIsDouble);
             if (errorWhileOpening == -1)
             {
                 throw new Exception("Tecplot could not create file. Do you have writing permission?");
@@ -151,13 +157,15 @@ namespace BoSSS.Solution.Tecplot {
         /// Closes the currently open output file 
         /// </summary>
         override protected void CloseFile() {
-            tecend110();
+            m_TECIO.TECEND110();
         }
 
         /// <summary>
         /// Tecplot Zone
         /// </summary>
         public class TecplotZone : ZoneDriver {
+
+            UnsafeTECIO m_TECPLOT = new UnsafeTECIO();
 
             /// <summary>
             /// The different finite-element zone types supported by Tecplot. The
@@ -214,7 +222,7 @@ namespace BoSSS.Solution.Tecplot {
             /// Plots all fields in <paramref name="fieldsToPlot"/> into a Tecplot file, see
             /// <see cref="PlotDriver.ZoneDriver.PlotZone"/>.
             /// </summary>
-            public override void PlotZone(string ZoneName, double time, IEnumerable<Tuple<string, ScalarFunctionEx>> fieldsToPlot) {
+            public unsafe override void PlotZone(string ZoneName, double time, IEnumerable<Tuple<string, ScalarFunctionEx>> fieldsToPlot) {
                 List<ScalarFunctionEx> fields = new List<ScalarFunctionEx>(
                     fieldsToPlot.Select(x => x.Item2));
 
@@ -245,7 +253,7 @@ namespace BoSSS.Solution.Tecplot {
 
                             int VIsDouble = 1;
                             int n = globalCoordinates.Length;
-                            tecdat110(ref n, globalCoordinates, ref VIsDouble);
+                            m_TECPLOT.TECDAT110(ref n, globalCoordinates, ref VIsDouble);
                         }
                     } else {
                         // each-cell-on-its-own -- mode
@@ -260,7 +268,7 @@ namespace BoSSS.Solution.Tecplot {
 
                                 int VIsDouble = 1;
                                 int n = globalCoordinates.Length;
-                                tecdat110(ref n, globalCoordinates, ref VIsDouble);
+                                m_TECPLOT.TECDAT110(ref n, globalCoordinates, ref VIsDouble);
                             }
                         }
                     }
@@ -273,9 +281,9 @@ namespace BoSSS.Solution.Tecplot {
                         SampleField(field, showJumps);
 
                         if (!showJumps) {
-                            tecdat110(ref totalVertices, smoothedResult, ref VIsDouble);
+                            m_TECPLOT.TECDAT110(ref totalVertices, smoothedResult, ref VIsDouble);
                         } else {
-                            tecdat110(ref totalVertices, notSmoothedResult, ref VIsDouble);
+                            m_TECPLOT.TECDAT110(ref totalVertices, notSmoothedResult, ref VIsDouble);
                         }
                     }
 
@@ -284,25 +292,41 @@ namespace BoSSS.Solution.Tecplot {
 
                     int[] permutationTable = zoneTypeToPermutationTableMap[zoneType];
 
-                    if (!showJumps) {
+                    if (!showJumps)
+                    {
                         int[,] permutedConnectivity = new int[totalCells, connectivity.GetLength(1)];
 
-                        for (int i = 0; i < totalCells; i++) {
-                            for (int j = 0; j < permutationTable.Length; j++) {
+                        for (int i = 0; i < totalCells; i++)
+                        {
+                            for (int j = 0; j < permutationTable.Length; j++)
+                            {
                                 permutedConnectivity[i, j] = 1 + connectivity[i, permutationTable[j]];
                             }
                         }
-                        tecnod110(permutedConnectivity);
-                    } else {
+                        // hand over a pointer to the head of the multidimensional array
+                        fixed (int* permutedConnectivity_start = &permutedConnectivity[0, 0])
+                        {
+                            m_TECPLOT.TECNOD110(permutedConnectivity_start);
+                        }
+                    }
+                    else
+                    {
                         int[,,] permutedConnectivity = new int[NoOfCells, subdivisionsPerCell, permutationTable.Length];
-                        for (int j = 0; j < NoOfCells; j++) {
-                            for (int jj = 0; jj < subdivisionsPerCell; jj++) {
-                                for (int i = 0; i < permutationTable.Length; i++) {
+                        for (int j = 0; j < NoOfCells; j++)
+                        {
+                            for (int jj = 0; jj < subdivisionsPerCell; jj++)
+                            {
+                                for (int i = 0; i < permutationTable.Length; i++)
+                                {
                                     permutedConnectivity[j, jj, i] = 1 + j * verticesPerCell + subdivisionTreeLeaves[jj].GlobalVerticeInd[permutationTable[i]];
                                 }
                             }
                         }
-                        tecnod110(permutedConnectivity);
+                        // hand over a pointer to the head of the multidimensional array
+                        fixed (int* permutedConnectivity_start = &permutedConnectivity[0, 0, 0])
+                        {
+                            m_TECPLOT.TECNOD110(permutedConnectivity_start);
+                        }
                     }
 
                 }
@@ -334,7 +358,7 @@ namespace BoSSS.Solution.Tecplot {
                 int IsBlock = 1;
                 int StrandID = 0, ParentZone = 0, ShrConn = 0;
 
-                teczne110(ptrZoneTitle,
+                m_TECPLOT.TECZNE110(ptrZoneTitle,
                     ref zoneTypeIndex,
                     ref numberOfPoints,
                     ref numberOfElements,
@@ -398,6 +422,44 @@ namespace BoSSS.Solution.Tecplot {
             tecplot.PlotFields(filename, title, time, _FieldsToPlot);
         }
         */
+        
+    }
+
+
+    /// <summary>
+    /// subset of TECIO
+    /// </summary>
+    public sealed class UnsafeTECIO : DynLibLoader
+    {
+
+        // workaround for .NET bug:
+        // https://connect.microsoft.com/VisualStudio/feedback/details/635365/runtimehelpers-initializearray-fails-on-64b-framework
+        static PlatformID[] Helper()
+        {
+            PlatformID[] p = new PlatformID[2];
+            p[0] = PlatformID.Win32NT;
+            p[1] = PlatformID.Unix;
+            return p;
+        }
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public UnsafeTECIO() :
+            base(new string[] { "tecio.dll", "libBoSSSnative_seq.so" },
+                  new string[2][][],
+                  new GetNameMangling[] { DynLibLoader.Identity, DynLibLoader.BoSSS_Prefix },
+                  Helper(), //new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix },
+                  new int[] { -1, -1 })
+        { }
+
+#pragma warning disable 649
+        _TECINI110 tecini110;
+        _TECZNE110 teczne110;
+        _TECDAT110 tecdat110;
+        _TECEND110 tecend110;
+        _TECNOD110 tecnod110;
+#pragma warning restore       649
 
         /// <summary>
         /// Initializes the process of writing a binary data file. This must be
@@ -430,14 +492,18 @@ namespace BoSSS.Solution.Tecplot {
         /// or double precision.
         /// </param>
         /// <returns>0 if successful, -1 if unsuccessful.</returns>
-        [DllImport("tecio")]
-        private static unsafe extern int tecini110(
+        public unsafe delegate int _TECINI110(
             IntPtr Title,
             IntPtr Variables,
             IntPtr FName,
             IntPtr ScratchDir,
             ref int Debug,
             ref int VIsDouble);
+
+        public unsafe _TECINI110 TECINI110
+        {
+            get { return tecini110; }
+        }
 
         /// <summary>
         /// Writes header information about the next zone to be added to the
@@ -545,8 +611,7 @@ namespace BoSSS.Solution.Tecplot {
         /// between cell-based and face-based finite-element zones.
         /// </param>
         /// <returns>0 if successful, -1 if unsuccessful.</returns>
-        [DllImport("tecio")]
-        private static unsafe extern int teczne110(
+        public unsafe delegate int _TECZNE110(
             IntPtr ZoneTitle,
             ref int ZoneType,
             ref int IMxOrNumPts,
@@ -565,6 +630,11 @@ namespace BoSSS.Solution.Tecplot {
             int[] ValueLocation,
             int[] ShareVarFromZone,
             ref int ShareConnectivityFromZone);
+
+        public unsafe _TECZNE110 TECZNE110
+        {
+            get { return teczne110; }
+        }
 
         /// <summary>
         /// Writes an array of data to the data file. Data should not be passed
@@ -586,16 +656,24 @@ namespace BoSSS.Solution.Tecplot {
         /// single (0) or double (1) precision.
         /// </param>
         /// <returns>0 if successful, -1 if unsuccessful.</returns>
-        [DllImport("tecio")]
-        private static unsafe extern int tecdat110(ref int N, double[] Data, ref int IsDouble);
+        public unsafe delegate int _TECDAT110(ref int N, double[] Data, ref int IsDouble);
+
+        public unsafe _TECDAT110 TECDAT110
+        {
+            get { return tecdat110; }
+        }
 
         /// <summary>
         /// Must be called to close out the current data file. There must be
         /// one call to TECEND110 for each TECINI111.
         /// </summary>
         /// <returns>0 if successful, -1 if unsuccessful.</returns>
-        [DllImport("tecio")]
-        private static unsafe extern int tecend110();
+        public unsafe delegate int _TECEND110();
+
+        public unsafe _TECEND110 TECEND110
+        {
+            get { return tecend110; }
+        }
 
         /// <summary>
         /// Writes an array of node data to the binary data file. This is the
@@ -606,29 +684,14 @@ namespace BoSSS.Solution.Tecplot {
         /// <see cref="TecplotZone.PlotZone"/>
         /// </param>
         /// <returns>0 if successful, -1 if unsuccessful.</returns>
-        [DllImport("tecio")]
-        private static unsafe extern int tecnod110(int[,,] nodelist);
+        
+        public unsafe delegate int _TECNOD110(int* nodelist);
 
-        /// <summary>
-        /// Writes an array of node data to the binary data file. This is the
-        /// connectivity list for cell-based finite-element zones (line
-        /// segment, triangle, quadrilateral, brick, and tetrahedral zones)
-        /// </summary>
-        /// <param name="nodelist">
-        /// Array of integers listing the nodes for each element. This is the
-        /// connectivity list, dimensioned (T, M) (T moving fastest), where M
-        /// is the number of elements in the zone and T is set according to the
-        /// following list:
-        /// 2=Line Segment
-        /// 3=Triangle
-        /// 4=Tetrahedral
-        /// 4=Quadrilateral
-        /// 8=Brick
-        /// </param>
-        /// <returns>0 if successful, -1 if unsuccessful.</returns>
-        [DllImport("tecio")]
-        private static unsafe extern int tecnod110(int[,] nodelist);
-
+        public unsafe _TECNOD110 TECNOD110
+        {
+            get { return tecnod110; }
+        }
+    }
 
     }
-}
+

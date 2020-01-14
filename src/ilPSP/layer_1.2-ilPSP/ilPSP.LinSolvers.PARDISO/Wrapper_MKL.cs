@@ -57,24 +57,48 @@ namespace ilPSP.LinSolvers.PARDISO {
     /// wrapper for loading the PARDISO solver from the Intel MKL libraries
     /// </summary>
     /// <remarks>
-    /// <b>IMPORTANT: Licencing issues:</b><br/>
-    /// PARDISO does not ship with free licence, neither source nor 
-    /// binaries compiled from it can be shiped with this software;<br/>
-    /// PARDISO is ether distributed with the INTEL MKL library, or it may be downloaded
-    /// from http://www.pardiso-project.org/;
+    /// Licensing: despite being closed software, PARDISO form Intel MKL can be redistributed.
     /// </remarks>
     public class Wrapper_MKL : DynLibLoader {
 
         /// <summary>
+        /// Read from Environment which type of parallel library should be used.
+        /// Returns a list of libraries in specific order to search for.
+        /// </summary>
+        static string[] SelectLibrary(string si)
+        {
+            string[] liborder;
+            switch (si)
+            {
+                case "OMP":
+                case "OMP,MPI":
+                case "MPI,OMP":
+                case "OMP,SEQ":
+                case "OMP,MPI,SEQ":
+                case "OMP,SEQ,MPI":
+                case "MPI,OMP,SEQ":
+                    liborder = new string[] { "PARDISO.dll", "libBoSSSnative_omp.so", "libBoSSSnative_seq.so" };
+                    break;
+
+                default:
+                    liborder = new string[] { "PARDISO.dll", "libBoSSSnative_seq.so", "libBoSSSnative_omp.so" };
+                    break;
+            }
+            return liborder;
+
+        }
+
+
+        /// <summary>
         /// ctor
         /// </summary>
-        public Wrapper_MKL()
-            : base(
-                new string[] { "PARDISO.dll" },
-                new string[1][][],
-                new GetNameMangling[] { SmallLetters_TrailingUnderscore},
-                new PlatformID[] { PlatformID.Win32NT },
-                new int[] { -1 }) { }
+        public Wrapper_MKL(string si = "SEQ")
+            : base(                
+                SelectLibrary(si),
+                new string[3][][],
+                new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix, DynLibLoader.BoSSS_Prefix },
+                new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix },
+                new int[] { -1, -1, -1 }) { Console.WriteLine("searching for library variants of PARDISO in following order: {0}", si); }
 
         /// <summary>
         /// PARDISO interface, see PARDISO documentation

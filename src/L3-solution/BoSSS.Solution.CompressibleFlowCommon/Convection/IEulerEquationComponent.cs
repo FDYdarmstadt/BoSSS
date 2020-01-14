@@ -52,6 +52,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// The term <i>flux</i> must not be mistaken for the <i>numerical</i>
         /// flux. This is implemented in <see cref="EulerFlux"/>.
         /// </remarks>
-        Vector Flux(StateVector state);
+        ilPSP.Vector Flux(StateVector state);
     }
 }

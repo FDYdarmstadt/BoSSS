@@ -243,6 +243,20 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// Finds those row of <paramref name="mda"/>, where the L2-distance between the row and <paramref name="Row"/> is minimal. 
+        /// </summary>
+        /// <returns>
+        /// the row index of the minimum-distance row.
+        /// </returns>
+        static public int MindistRow(this IMatrix mda, Vector Row) {
+            double Dmax;
+            int iDmax;
+            MindistRow(mda, Row, out Dmax, out iDmax);
+            return iDmax;
+        }
+
+
+        /// <summary>
         /// Finds those row <paramref name="iDmax"/> of <paramref name="mda"/>, where the L2-distance between the row and <paramref name="Row"/> is minimal. 
         /// </summary>
         /// <param name="mda">some matrix</param>
@@ -276,13 +290,61 @@ namespace ilPSP {
 
             Dmax = Math.Sqrt(Dmax);
         }
-
-
+        
         /// <summary>
         /// Finds those row of <paramref name="mda"/>, where the L2-distance between the row and <paramref name="Row"/> is 
         /// below <paramref name="tol"/>; returns a negative number otherwise.
         /// </summary>
         static public int FindRow(this IMatrix mda, double[] Row, double tol) {
+            double Dmax;
+            int iDmax;
+            MindistRow(mda, Row, out Dmax, out iDmax);
+            if(Dmax < tol)
+                return iDmax;
+            else
+                return -1;
+        }
+
+        /// <summary>
+        /// Finds those row <paramref name="iDmax"/> of <paramref name="mda"/>, where the L2-distance between the row and <paramref name="Row"/> is minimal. 
+        /// </summary>
+        /// <param name="mda">some matrix</param>
+        /// <param name="Row">some row</param>
+        /// <param name="Dmax">minimum L2 distance over all rows</param>
+        /// <param name="iDmax">index of minimum L2-distance row</param>
+        /// <returns></returns>
+        static public void MindistRow(this IMatrix mda, Vector Row, out double Dmax, out int iDmax) {
+            if(Row.Dim != mda.NoOfCols)
+                throw new ArgumentException();
+
+
+            int N = mda.NoOfCols;
+            int M = mda.NoOfRows;
+
+            Dmax = double.MaxValue;
+            iDmax = int.MinValue;
+
+            for(int i = 0; i < M; i++) {
+                double dist = 0.0;
+                for(int j = 0; j < N; j++) {
+                    double a = Row[j] - mda[i, j];
+                    dist += a * a;
+                }
+
+                if(Dmax > dist) {
+                    Dmax = dist;
+                    iDmax = i;
+                }
+            }
+
+            Dmax = Math.Sqrt(Dmax);
+        }
+        
+        /// <summary>
+        /// Finds those row of <paramref name="mda"/>, where the L2-distance between the row and <paramref name="Row"/> is 
+        /// below <paramref name="tol"/>; returns a negative number otherwise.
+        /// </summary>
+        static public int FindRow(this IMatrix mda, Vector Row, double tol) {
             double Dmax;
             int iDmax;
             MindistRow(mda, Row, out Dmax, out iDmax);
@@ -353,6 +415,11 @@ namespace ilPSP {
         }
 
         static unsafe void CopyToUnsafeBuffer<T>(T M, double* buffer, bool BufferInFortranOrder) where T : IMatrix {
+#if DEBUG
+            if(M.GetType().IsValueType)
+                throw new NotSupportedException("CopyTo value type -- probably not the expected result! (Using vector struct in CopyTo(...) - operation?)");
+#endif
+
             int I = M.NoOfRows, J = M.NoOfCols;
 
             if (BufferInFortranOrder) {
@@ -2189,17 +2256,29 @@ namespace ilPSP {
         public static MultidimensionalArray GetSolutionSpace<T>(this T Mtx) where T : IMatrix {
             int I = Mtx.NoOfRows;
 
-            (var RRE, var cols, int rank) = ReducedRowEchelonForm(Mtx);
-            
+            (var RRE, var pivots, var cols, int rank) = ReducedRowEchelonForm(Mtx);
+
+            Console.WriteLine("The rank of the matrix coming from the Reduced Row Echelon Form: rank={0}", rank);
+
+            if (cols.Length != Mtx.NoOfCols - rank)
+                throw new ArithmeticException("Error in reduced row echelon form.");
 
             var S = MultidimensionalArray.Create(Mtx.NoOfCols, cols.Length);
-            int jj = 0;
-            foreach (int j in cols) {
-                for(int i = 0; i < rank; i++) {
+            int j = 0;
+            foreach (int qj in cols) {
+                /*for(int i = 0; i < rank; i++) {
                     S[i, jj] = -RRE[i, j];
                 }
-                S[rank + jj, jj] = 1.0;
-                jj++;
+                S[rank + jj, jj] = 1.0;*/
+                S[qj, j] = 1.0;
+
+                for (int i = 0; i < rank; i++) {
+                    Debug.Assert(S[pivots[i], j] == 0);
+                    S[pivots[i], j] = -RRE[i, qj];
+                }
+
+
+                j++;
             }
 
 #if DEBUG
@@ -2221,19 +2300,20 @@ namespace ilPSP {
         /// <returns>
         /// A tuple, containing
         /// - the reduced row echelon form of <paramref name="Mtx"/>
+        /// - the indices of the pivots
         /// - the indices of non-identity rows
         /// - the rank of <paramref name="Mtx"/>
         /// </returns>
-        public static (MultidimensionalArray,int[],int) ReducedRowEchelonForm<T>(this T Mtx) where T : IMatrix {
+        public static (MultidimensionalArray,int[], int[],int) ReducedRowEchelonForm<T>(this T Mtx) where T : IMatrix {
             var M = MultidimensionalArray.Create(Mtx.NoOfRows, Mtx.NoOfCols);
             M.Acc(1.0, Mtx);
             Mtx = default(T);
-            double tol = BLAS.MachineEps;
-
             int I = M.NoOfRows;
             int J = M.NoOfCols;
+            double tol = BLAS.MachineEps * Math.Max(I, J) * M.InfNorm(); 
 
             var cols = new List<int>();
+            var pivots = new List<int>();
             int i = 0; // row counter
             int rank = 0;
             for(int j = 0; j < J; j++) {
@@ -2258,10 +2338,12 @@ namespace ilPSP {
 
                     cols.Add(j);
                 } else {
-                    
+                    // found a pivot 
+                    pivots.Add(j);
+                    rank++;
 
                     // Swap current row and pivot row
-                    for(int jj = j; jj < J; jj++) {
+                    for (int jj = j; jj < J; jj++) {
                         double a = M[i, jj];
                         M[i, jj] = M[i_pivot, jj];
                         M[i_pivot, jj] = a;
@@ -2286,17 +2368,22 @@ namespace ilPSP {
                     }
 
                     i++;
-                    rank++;
-                    if (i >= I)
+                    
+                    if (i >= I) {
                         // finished
+                        j++;
+                        for(; j < J; j++) {
+                            cols.Add(j);
+                        }
+
                         break;
+                    }
                 }
-
-
             }
-            
 
-            return (M, cols.ToArray(), rank);
+            Debug.Assert(rank == pivots.Count);
+            Debug.Assert(cols.Count == M.NoOfCols - rank);
+            return (M, pivots.ToArray(), cols.ToArray(), rank);
         }
 
 

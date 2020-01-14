@@ -44,7 +44,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     ///     pages = {461--469}
     /// }
     /// </summary>
-    public class FlexGMRES : ISolverSmootherTemplate, ISolverWithCallback {
+    public class FlexGMRES : ISolverSmootherTemplate, ISolverWithCallback, IProgrammableTermination {
 
         MultigridOperator m_mgop;
 
@@ -69,10 +69,31 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public ISolverSmootherTemplate[] PrecondS;
 
+        /// <summary>
+        /// ~
+        /// </summary>
+        public Func<int, double, double, bool> TerminationCriterion {
+            get;
+            set;
+        }
 
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public FlexGMRES() {
+            TerminationCriterion = (iIter, r0, ri) => iIter <= 1;
+        }
+
+
+          
+        /// <summary>
+        /// Number of solution vectors in the internal Krylov-Space
+        /// </summary>
         public int MaxKrylovDim = 50;
 
-
+        /// <summary>
+        /// ~
+        /// </summary>
         public void Solve<U, V>(U X, V B)
             where U : IList<double>
             where V : IList<double> //
@@ -95,6 +116,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int iPrecond = 0; // counter which iterates through preconditioners
 
             int iIter = 0;
+            double iter0_l2Residual = 0;
+            double iter_l2Residual = 0;
             while(true) {
 
                 // init for Arnoldi
@@ -102,13 +125,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 R0.SetV(B);
                 this.m_mgop.OperatorMatrix.SpMV(-1.0, X0, 1.0, R0);
+                iter0_l2Residual = R0.MPI_L2Norm();
+                if (iIter == 0) {
+                    iter_l2Residual = iter0_l2Residual;
+                }
 
-                if(this.IterationCallback != null)
-                    this.IterationCallback(iIter, X0.CloneAs(), R0.CloneAs(), this.m_mgop);
+                // callback
+                this.IterationCallback?.Invoke(iIter, X0.CloneAs(), R0.CloneAs(), this.m_mgop);
 
                 // termination condition
-                if(iIter > MaxIter)
+                if (!TerminationCriterion(iIter, iter0_l2Residual, iter_l2Residual)) {
                     break;
+                }
+                                    
                 
                 double beta = R0.L2NormPow2().MPISum().Sqrt();
                 Vau.Add(R0.CloneAs());
@@ -190,10 +219,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        /// <summary>
-        /// Maximum number of FlexGMRES iterations.
-        /// </summary>
-        public int MaxIter = 100;
+        
 
         bool m_Converged = false;
         int m_ThisLevelIterations = 0;
@@ -225,7 +251,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set;
         }
 
-        public ISolverSmootherTemplate Clone() {
+        public object Clone() {
             throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
         }
     }

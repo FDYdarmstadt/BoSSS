@@ -23,6 +23,10 @@ using System.Diagnostics;
 using ilPSP.Tracing;
 
 namespace BoSSS.Solution.AdvancedSolvers {
+
+    /// <summary>
+    /// A generic restriction by one mesh level, at which the <see cref="CoarserLevelSolver"/> is used
+    /// </summary>
     public class GenericRestriction : ISolverSmootherTemplate {
 
         MultigridOperator m_OpThisLevel;
@@ -39,6 +43,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public ISolverSmootherTemplate CoarserLevelSolver;
 
+        /// <summary>
+        /// Restriction of <paramref name="X"/> and <paramref name="B"/> to lower level, execution of <see cref="CoarserLevelSolver"/> and prolongation of coarse solution.
+        /// </summary>
         public void Solve<U, V>(U X, V B)
             where U : IList<double>
             where V : IList<double> {
@@ -79,7 +86,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public void ResetStat() {
             CoarserLevelSolver.ResetStat();
         }
-        public ISolverSmootherTemplate Clone() {
+
+        public object Clone() {
             throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
         }
 

@@ -163,7 +163,7 @@ class LinearTransportFlux : LinearFlux \{       \newline
     /// The \code{InnerEdgeFlux} implementation is the same as in the last tutorials, with a slightly different signature.
 \btab protected override double InnerEdgeFlux(ref CommonParams inp,       \newline 
 \btab \btab double[] Uin, double[] Uout) \{       \newline 
-\btab \btab \btab return numericalFlux(Uin[0], Uout[0], inp.Normale[0], u(inp.X));       \newline 
+\btab \btab \btab return numericalFlux(Uin[0], Uout[0], inp.Normal[0], u(inp.X));       \newline 
 \btab \}       \newline 
  \newline 
     /// We are working on periodic grids only, so the \code{BorderEdgeFlux} is irrelevant.
@@ -317,27 +317,32 @@ connector.Execute(PrintOutput: false);
 \BoSSSexe
 \BoSSScmd{
 /// Now, the eigenvalues are plotted in the complex plane.
-Gnuplot gp2 = new Gnuplot(baseLineFormat: format);       \newline 
-gp2.SetMultiplot(2, fluxes.Count / 2);       \newline 
-gp2.SetXRange(-15, 1);       \newline 
-gp2.SetYRange(-15.0, 15.0);       \newline 
-gp2.SetXLabel("Real");       \newline 
-gp2.SetYLabel("Imaginary");
+Plot2Ddata[,] specMulPlot = new Plot2Ddata[2,2];
  }
 \BoSSSexe
 \BoSSScmd{
 for (int i = 0; i < fluxes.Count; i++) \{       \newline 
-\btab string key = fluxes.ElementAt(i).Key;       \newline 
-\btab gp2.SetSubPlot(i / 2, i \% 2, title: key);       \newline 
-\btab gp2.PlotXY(       \newline 
+\btab string key   = fluxes.ElementAt(i).Key;\newline 
+\btab var specPlot = new Plot2Ddata();\newline 
+\btab specMulPlot[i / 2, i \% 2] = specPlot;\newline 
+\btab specPlot.Title     = key;  \newline 
+\btab specPlot.XrangeMin = -15;\newline 
+\btab specPlot.XrangeMax = +1;\newline 
+\btab specPlot.YrangeMin = -15;\newline 
+\btab specPlot.YrangeMax = +15;\newline 
+\btab specPlot.Xlabel    = "Real";\newline 
+\btab specPlot.Ylabel    = "Imaginary";\newline 
+ \newline 
+\btab var p = specPlot.AddDataGroup(\newline 
 \btab \btab eigenvalues.ExtractSubArrayShallow(i, -1, 0).To1DArray(),       \newline 
 \btab \btab eigenvalues.ExtractSubArrayShallow(i, -1, 1).To1DArray());       \newline 
-\btab gp2.WriteDeferredPlotCommands();       \newline 
+\btab p.Format.Style     = Styles.Points;\newline 
+\btab p.Format.PointSize = 2;\newline 
 \}
  }
 \BoSSSexe
 \BoSSScmd{
-gp2.PlotNow();
+specMulPlot.PlotNow();
  }
 \BoSSSexe
 \BoSSScmd{

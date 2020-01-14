@@ -1333,7 +1333,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
 
 #if DEBUG
-                if (Config_MassMatrixShapeandDependence != MassMatrixShapeandDependence.IsIdentity) {
+                if (Config_MassMatrixShapeandDependence != MassMatrixShapeandDependence.IsIdentity
+                    && this.ComputeMassMatrix == null) {
                     // compare "private" and "official" mass matrix stack
                     // (private may be removed soon)
 
@@ -1772,7 +1773,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         },
                         (i, mg) => {
                             mg.Gamma = 1;
-                            mg.m_MaxIterations = 1;
+                            mg.TerminationCriterion = ((iter, r0_l2, r_l2) => iter <= 1);
                         },
                         () => new SparseSolver() { WhichSolver = SparseSolver._whichSolver.MUMPS }) },
                 Tolerance = 1.0e-10

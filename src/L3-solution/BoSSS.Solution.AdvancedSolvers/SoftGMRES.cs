@@ -34,10 +34,27 @@ namespace BoSSS.Solution.AdvancedSolvers
     /// <summary>
     /// Standard preconditioned GMRES.
     /// </summary>
-    public class SoftGMRES : ISolverSmootherTemplate, ISolverWithCallback
+    public class SoftGMRES : ISolverSmootherTemplate, ISolverWithCallback, IProgrammableTermination
     {
 
+        /// <summary>
+        /// ~
+        /// </summary>
+        public Func<int, double, double, bool> TerminationCriterion {
+            get;
+            set;
+        }
 
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public SoftGMRES() {
+            TerminationCriterion = (iIter, r0, ri) => iIter <= 100 && ri > 1e-7;
+        }
+
+        /// <summary>
+        /// ~
+        /// </summary>
         public void Init(MultigridOperator op)
         {
 
@@ -65,12 +82,14 @@ namespace BoSSS.Solution.AdvancedSolvers
 
         public string m_SessionPath;
 
-        public double m_Tolerance = 1.0e-10;
-        public int m_MaxIterations = 10000;
+        //public double m_Tolerance = 1.0e-10;
+        //public int m_MaxIterations = 10000;
 
         private int NoOfIterations = 0;
 
-
+        /// <summary>
+        /// ~
+        /// </summary>
         public Action<int, double[], double[], MultigridOperator> IterationCallback {
             get;
             set;
@@ -129,7 +148,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                 }
 
 
-                double bnrm2 = B.L2NormPow2().MPISum().Sqrt();
+                double bnrm2 = B.MPI_L2Norm();
                 if (bnrm2 == 0.0) {
                     bnrm2 = 1.0;
                 }
@@ -143,9 +162,8 @@ namespace BoSSS.Solution.AdvancedSolvers
                 //r = M \ ( b-A*x );, where M is the precond
                 z.SetV(B);
                 Matrix.SpMV(-1.0, X, 1.0, z);
-                if (IterationCallback != null) {
-                    IterationCallback(0, X.CloneAs(), z.CloneAs(), this.m_mgop);
-                }
+                IterationCallback?.Invoke(0, X.CloneAs(), z.CloneAs(), this.m_mgop);
+
                 if (this.Precond != null) {
                     r.Clear();
                     this.Precond.Solve(r, z);
@@ -154,10 +172,13 @@ namespace BoSSS.Solution.AdvancedSolvers
                 }
 
                 // Inserted for real residual
-                double error2 = z.L2NormPow2().MPISum().Sqrt();
+                double error2 = z.MPI_L2Norm();
+                double iter0_error2 = error2;
 
                 double error = (r.L2NormPow2().MPISum().Sqrt()) / bnrm2;
-                if (error < this.m_Tolerance) {
+                if (!TerminationCriterion(0, error2, error2)) {
+
+
                     if (!object.ReferenceEquals(_X, X))
                         _X.SetV(X);
                     B.SetV(z);
@@ -182,12 +203,13 @@ namespace BoSSS.Solution.AdvancedSolvers
                 double[] s = new double[Nloc], w = new double[Nloc], y;
                 double temp;
                 int iter;
-                for (iter = 1; iter <= m_MaxIterations; iter++) { // GMRES iterations
-                                                                  // r = M \ ( b-A*x );
+                int totIterCounter = 0;
+                for (iter = 1; true; iter++) { // GMRES iterations
+                                               // r = M \ ( b-A*x );
                     z.SetV(B);
                     Matrix.SpMV(-1.0, X, 1.0, z);
 
-                    error2 = z.L2NormPow2().MPISum().Sqrt();
+                    error2 = z.MPI_L2Norm();
 
                     if (this.Precond != null) {
                         r.Clear();
@@ -197,7 +219,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                     }
 
                     // V(:,1) = r / norm( r );
-                    double norm_r = r.L2NormPow2().MPISum().Sqrt();
+                    double norm_r = r.MPI_L2Norm();
                     V[0].SetV(r, alpha: (1.0 / norm_r));
 
                     //s = norm( r )*e1;
@@ -254,8 +276,10 @@ namespace BoSSS.Solution.AdvancedSolvers
                         s[i - 1] = temp;
                         error = Math.Abs(s[i + 1 - 1]) / bnrm2;
 
+                        error2 = Math.Abs(s[i + 1 - 1]);
 
-                        if (error <= m_Tolerance) {
+                        //if (error <= m_Tolerance) {
+                        if (!TerminationCriterion(totIterCounter, iter0_error2, error2)) { 
                             // update approximation and exit
                             //y = H(1:i,1:i) \ s(1:i);    
                             y = new double[i];
@@ -269,12 +293,14 @@ namespace BoSSS.Solution.AdvancedSolvers
                             this.m_Converged = true;
                             break;
                         }
+
+                        totIterCounter++;
                     }
                     #endregion
                     //Debugger.Launch();
 
 
-                    if (error <= this.m_Tolerance) {
+                    if (!TerminationCriterion(totIterCounter, iter0_error2, error2)) {
                         this.m_Converged = true;
                         break;
                     }
@@ -292,11 +318,9 @@ namespace BoSSS.Solution.AdvancedSolvers
                     // compute residual: r = M \ ( b-A*x )     
                     z.SetV(B);
                     Matrix.SpMV(-1.0, X, 1.0, z);
-                    if (IterationCallback != null) {
-                        error2 = z.L2NormPow2().MPISum().Sqrt();
-                        IterationCallback(iter, X.CloneAs(), z.CloneAs(), this.m_mgop);
-                        //IterationCallback(this.NoOfIterations, X.CloneAs(), z.CloneAs(), this.m_mgop);
-                    }
+                    error2 = z.MPI_L2Norm();
+                    IterationCallback?.Invoke(iter, X.CloneAs(), z.CloneAs(), this.m_mgop);
+
                     if (this.Precond != null) {
                         r.Clear();
                         this.Precond.Solve(r, z);
@@ -305,7 +329,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                     }
 
 
-                    norm_r = r.L2NormPow2().MPISum().Sqrt();
+                    norm_r = r.MPI_L2Norm();
                     s[i + 1 - 1] = norm_r;
                     error = s[i + 1 - 1] / bnrm2;        // % check convergence
                                                          //  if (error2 <= m_Tolerance) Check for error not error2
@@ -325,7 +349,9 @@ namespace BoSSS.Solution.AdvancedSolvers
             }
         }
 
-
+        /// <summary>
+        /// ~
+        /// </summary>
         public int IterationsInNested {
             get {
                 if (this.Precond != null)
@@ -335,12 +361,18 @@ namespace BoSSS.Solution.AdvancedSolvers
             }
         }
 
+        /// <summary>
+        /// ~
+        /// </summary>
         public int ThisLevelIterations {
             get {
                 return this.NoOfIterations;
             }
         }
 
+        /// <summary>
+        /// ~
+        /// </summary>
         public bool Converged {
             get {
                 return m_Converged;
@@ -354,14 +386,15 @@ namespace BoSSS.Solution.AdvancedSolvers
             if (this.Precond != null)
                 this.Precond.ResetStat();
         }
-        public ISolverSmootherTemplate Clone() {
+
+
+        public object Clone() {
             SoftGMRES Clone = new SoftGMRES();
             Clone.IterationCallback = this.IterationCallback;
             Clone.MaxKrylovDim = this.MaxKrylovDim;
-            Clone.m_MaxIterations = this.m_MaxIterations;
-                if (this.Precond != null)
-                    Clone.Precond = this.Precond.Clone();
-            Clone.m_Tolerance = this.m_Tolerance;
+            Clone.TerminationCriterion = this.TerminationCriterion;
+            if (this.Precond != null)
+                Clone.Precond = this.Precond.CloneAs();
             return Clone;
         }
 

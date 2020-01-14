@@ -190,12 +190,13 @@ namespace BoSSS.Application.Rheology
         {
             using (var solver = new Rheology())
             {
-                C.ImmediatePlotPeriod = 1;
-                C.SuperSampling = 3;
-                Solution.Application.DeleteOldPlotFiles();
+                //C.ImmediatePlotPeriod = 1;
+                //C.SuperSampling = 3;
+                //Solution.Application.DeleteOldPlotFiles();
 
                 solver.Init(C);
                 solver.RunSolverMode();
+                solver.CheckJacobian();
 
                 // matrix analysis
                 // ===============

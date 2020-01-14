@@ -69,28 +69,11 @@
     <Reference Include="System.Runtime.Serialization" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ConstitutiveEqns\ConstitutiveEqns_Diffusion.cs" />
-    <Compile Include="ConstitutiveEqns\OLD\ConstitutiveEqns_Objective_withGrad.cs" />
-    <Compile Include="ConstitutiveEqns\OLD\ConstitutiveEqns_Objective_allparam.cs" />
-    <Compile Include="ConstitutiveEqns\OLD\ConstitutiveEqns_Convective_FluxDiff.cs" />
-    <Compile Include="ConstitutiveEqns\ConstitutiveEqns_CellWiseForm.cs" />
-    <Compile Include="ConstitutiveEqns\ConstitutiveEqns_Objective_Tparam.cs" />
-    <Compile Include="ArtificialViscosity.cs" />
-    <Compile Include="SpatialOperatorAnalysis.cs" />
-    <Compile Include="PerssonSensor.cs" />
-    <Compile Include="Z_old\StressDivergence_Burman.cs" />
-    <Compile Include="StressDivergence_Cockburn.cs" />
     <Compile Include="Tests\RheologyChannelTest.cs" />
     <Compile Include="Tests\RheologyConsistencyTest.cs" />
     <Compile Include="Tests\RheologyLocalDGTest.cs" />
     <Compile Include="Controlfiles\SimpleTestcasesControl.cs" />
-    <Compile Include="ConstitutiveEqns\OLD\ConstitutiveEqns_Convective.cs" />
-    <Compile Include="ConstitutiveEqns\ConstitutiveEqns_Identity.cs" />
-    <Compile Include="ConstitutiveEqns\ConstitutiveEqns_Objective.cs" />
-    <Compile Include="ConstitutiveEqns\ConstitutiveEqns_Viscosity.cs" />
     <Compile Include="Controlfiles\RheologyControlExamples.cs" />
-    <Compile Include="Z_old\Sources.cs" />
-    <Compile Include="Z_old\StressDivergence_CentralDifference.cs" />
     <Compile Include="RheologyControl.cs" />
     <Compile Include="RheologyMain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -165,6 +148,10 @@
       <Project>{E56B9CE4-14DC-4256-A337-46E5D298B722}</Project>
       <Name>BoSSS.Solution.NSECommon</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.RheologyCommon\BoSSS.Solution.RheologyCommon.csproj">
+      <Project>{02864872-ff49-4bd2-96fc-9769ac268b5a}</Project>
+      <Name>BoSSS.Solution.RheologyCommon</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj">
       <Project>{D0546422-EC92-4964-82E9-8EE819A2F786}</Project>
       <Name>BoSSS.Solution.Tecplot</Name>
@@ -172,6 +159,10 @@
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XdgTimestepping\BoSSS.Solution.XdgTimestepping.csproj">
       <Project>{d8a961c8-75a9-4ecd-8627-c598697e7318}</Project>
       <Name>BoSSS.Solution.XdgTimestepping</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj">
+      <Project>{0D8F577E-316D-4362-816B-9F610C5EB4A5}</Project>
+      <Name>BoSSS.Solution.XNSECommon</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj">
       <Project>{DF7F5ABD-E606-41CD-BEEF-31A95D136DEA}</Project>

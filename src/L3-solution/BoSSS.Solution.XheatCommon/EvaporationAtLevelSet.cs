@@ -157,7 +157,7 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
 
-        public abstract double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB);
+        public abstract double LevelSetForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB);
 
 
         protected LevelSetTracker m_LsTrk;
@@ -191,6 +191,7 @@ namespace BoSSS.Solution.XheatCommon {
                 return ArrayTools.Cat(VariableNames.HeatFlux0Vector(m_D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure);
             }
         }
+
 
         public int LevelSetIndex {
             get { return 0; }

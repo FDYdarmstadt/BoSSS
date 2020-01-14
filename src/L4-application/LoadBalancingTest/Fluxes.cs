@@ -29,11 +29,11 @@ namespace BoSSS.Application.LoadBalancingTest {
         }
 
         protected override double BorderEdgeFlux(ref Foundation.CommonParamsBnd inp, double[] Uin) {
-            return -alpha * Uin[0] * inp.Normale[0];
+            return -alpha * Uin[0] * inp.Normal[0];
         }
 
         protected override double InnerEdgeFlux(ref Foundation.CommonParams inp, double[] Uin, double[] Uout) {
-            return -alpha * 0.5 * (Uin[0] + Uout[0]) * inp.Normale[0];
+            return -alpha * 0.5 * (Uin[0] + Uout[0]) * inp.Normal[0];
         }
 
         protected override void Flux(ref Foundation.CommonParamsVol inp, double[] U, double[] output) {
@@ -84,9 +84,10 @@ namespace BoSSS.Application.LoadBalancingTest {
             }
         }
 
-        public double LevelSetForm(ref CommonParamsLs inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            double FlxNeg = -U_Neg[0] * inp.n[0] * alpha_A;
-            double FlxPos = -U_Pos[0] * inp.n[0] * alpha_B;
+
+        public double LevelSetForm(ref CommonParams inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+            double FlxNeg = -U_Neg[0] * inp.Normal[0] * alpha_A;
+            double FlxPos = -U_Pos[0] * inp.Normal[0] * alpha_B;
             return (FlxNeg * vA - FlxPos * vB);
         }
 

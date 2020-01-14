@@ -59,7 +59,7 @@ namespace BoSSS.Application.SipPoisson {
             {
                 var grd = Grid2D.CurvedSquareGrid(GenericBlas.Linspace(1, 2, 3), GenericBlas.Linspace(0, 1, 11), CellType.Square_9, true);
                 grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
-                grd.DefineEdgeTags(X => 1);
+                grd.DefineEdgeTags((Vector X) => 1);
                 return grd;
             };
 
@@ -99,6 +99,7 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         public static SipControl TestCartesian1(int xRes = 32, double xStretch = 1.0, int yRes = 16, double yStretch = 1.01, int pDG = 2)
         {
+            //BoSSS.Application.SipPoisson.SipHardcodedControl.TestCartesian1()
             var RR = new SipControl();
             RR.ProjectName = "ipPoison/cartesian";
             RR.savetodb = false;
@@ -145,14 +146,14 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Test on a Cartesian grid, with an exact polynomial solution.
         /// </summary>
-        public static SipControl TestCartesian3D(int PowRes = 5, int DGdegree = 1, string blapath = null, int xRes = 2, double xStretch = 1.0, int yRes = 2, double yStretch = 1.0, int zRes = 2, double zStretch = 1.0) {
+        public static SipControl TestCartesian3D(int PowRes = 2, int DGdegree = 5, string blapath = null, int xRes = 2, double xStretch = 1.0, int yRes = 2, double yStretch = 1.0, int zRes = 2, double zStretch = 1.0) {
             xRes = (int)Math.Pow(xRes, PowRes);
             yRes = (int)Math.Pow(yRes, PowRes);
             zRes = (int)Math.Pow(zRes, PowRes);
             var R = new SipControl();
             R.ProjectName = "ipPoison/cartesian";
             R.savetodb = false;
-            R.WriteMeSomeAnalyse = @"D:\Analysis\CCpoisson\Study0_vary_Mlevel_n_blocks\";
+            //R.WriteMeSomeAnalyse = @"D:\Analysis\CCpoisson\Study0_vary_Mlevel_n_blocks\";
 
             R.FieldOptions.Add("T", new FieldOpts() { Degree = DGdegree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             R.FieldOptions.Add("Tex", new FieldOpts() { Degree = DGdegree });
@@ -161,8 +162,8 @@ namespace BoSSS.Application.SipPoisson {
             R.ExactSolution_provided = true;
 
             R.GridFunc = delegate () {
-                double[] xNodes = CreateNodes(xRes, xStretch, 0, 10);
-                //double[] xNodes = CreateNodes(xRes, xStretch, -1, +1);
+                //double[] xNodes = CreateNodes(xRes, xStretch, 0, 10);
+                double[] xNodes = CreateNodes(xRes, xStretch, -1, +1);
                 double[] yNodes = CreateNodes(yRes, yStretch, -1, +1);
                 //double[] zNodes = CreateNodes(zRes, zStretch, -1, +1);
 
@@ -184,11 +185,14 @@ namespace BoSSS.Application.SipPoisson {
 
 
             //R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_jacobi_mg;
-            R.LinearSolver.SolverCode = LinearSolverCode.exp_decomposedMG_OrthoScheme;
-            //R.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            //R.LinearSolver.SolverCode = LinearSolverCode.exp_decomposedMG_OrthoScheme;
+            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            //R.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
+            //R.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
             R.LinearSolver.NoOfMultigridLevels = 10;
             R.LinearSolver.TargetBlockSize = 40;
-            //R.LinearSolver.MaxSolverIterations = 1;
+            R.LinearSolver.ConvergenceCriterion = 1e-8;
+            R.LinearSolver.MaxSolverIterations = 10;
             //R.LinearSolver.MaxSolverIterations = 10;
 
             R.AddBoundaryValue(BoundaryType.Dirichlet.ToString());
@@ -217,6 +221,9 @@ namespace BoSSS.Application.SipPoisson {
         /// Name of solver to use.
         /// </param>
         public static SipControl TestCartesian2(int Res, int Dim, LinearSolverCode solver_name = LinearSolverCode.exp_Kcycle_schwarz, int deg = 5) {
+            //BoSSS.Application.SipPoisson.SipHardcodedControl.TestCartesian2(8,3,deg:2)
+
+
             if (Dim != 2 && Dim != 3)
                 throw new ArgumentOutOfRangeException();
 
@@ -235,6 +242,8 @@ namespace BoSSS.Application.SipPoisson {
             // exp_gmres_levelpmg
 
 #if DEBUG
+            // For testing in DEBUG mode, this setting enforces the use 
+            // of many multigrid-levels. In 2D, the examples are so small that 
             R.LinearSolver.TargetBlockSize = 100;
 #endif
 

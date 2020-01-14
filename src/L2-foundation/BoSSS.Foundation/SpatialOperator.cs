@@ -33,17 +33,42 @@ using BoSSS.Foundation.Grid.Classic;
 using System.Diagnostics;
 
 namespace BoSSS.Foundation {
+       
+    
 
     /// <summary>
-    /// Delegate to trigger the update of parameter fields (e.g. when computing finite difference Jacobian, see e.g. <see cref="SpatialOperator.GetFDJacobianBuilder"/>).
+    /// Options for the treatment of edges at the boundary of a
+    /// <see cref="SubGrid"/>.
     /// </summary>
-    /// <param name="DomainVar">
-    /// Input fields, current state of domain variables
-    /// </param>
-    /// <param name="ParameterVar">
-    /// Output fields, updated states of parameter fields
-    /// </param>
-    public delegate void DelParameterUpdate(IEnumerable<DGField> DomainVar, IEnumerable<DGField> ParameterVar);
+    public enum SubGridBoundaryModes {
+
+        /// <summary>
+        /// Treats the edge as a real boundary edge (i.e., will use the
+        /// boundary conditions defined by the flux function)
+        /// </summary>
+        BoundaryEdge = 0,
+
+        /// <summary>
+        /// Treats the edge as a standard inner edge (i.e., the inner edge
+        /// flux will be evaluated as for any other inenr edge)
+        /// </summary>
+        InnerEdge,
+
+        /// <summary>
+        /// Treats the edge as an <i>open boundary</i> of the domain (i.e.,
+        /// the inner edge flux will be used, but using the same values for
+        /// the variables at both sides of the edge).
+        /// </summary>
+        OpenBoundary,
+
+        /// <summary>
+        /// Treats the edge as a standard inner edge (i.e., the inner edge
+        /// flux will be evaluated as for any other inenr edge), but saves 
+        /// also the fluxes across these edges (needed for LocalTimeStepping)
+        /// </summary>
+        InnerEdgeLTS,
+    }
+
 
     /// <summary>
     /// This class represents a spatial operator which maps
@@ -52,39 +77,7 @@ namespace BoSSS.Foundation {
     /// </summary>
     public class SpatialOperator {
 
-        /// <summary>
-        /// Options for the treatment of edges at the boundary of a
-        /// <see cref="SubGrid"/>.
-        /// </summary>
-        public enum SubGridBoundaryModes {
-
-            /// <summary>
-            /// Treats the edge as a real boundary edge (i.e., will use the
-            /// boundary conditions defined by the flux function)
-            /// </summary>
-            BoundaryEdge = 0,
-
-            /// <summary>
-            /// Treats the edge as a standard inner edge (i.e., the inner edge
-            /// flux will be evaluated as for any other inenr edge)
-            /// </summary>
-            InnerEdge,
-
-            /// <summary>
-            /// Treats the edge as an <i>open boundary</i> of the domain (i.e.,
-            /// the inner edge flux will be used, but using the same values for
-            /// the variables at both sides of the edge).
-            /// </summary>
-            OpenBoundary,
-
-            /// <summary>
-            /// Treats the edge as a standard inner edge (i.e., the inner edge
-            /// flux will be evaluated as for any other inenr edge), but saves 
-            /// also the fluxes across these edges (needed for LocalTimeStepping)
-            /// </summary>
-            InnerEdgeLTS,
-        }
-
+ 
 
         /// <summary>
         /// Function Mapping from Domain Variable Degrees, Parameter Degrees and CoDomain Variable Degrees to the Quadrature Order
@@ -96,6 +89,25 @@ namespace BoSSS.Foundation {
             Array.Copy(A, i0, r, 0, len);
             return r;
         }
+
+
+        IParameterUpdate m_ParameterUpdate;
+
+        /// <summary>
+        /// If set, used to update parameters before evaluation.
+        /// </summary>
+        public IParameterUpdate ParameterUpdate {
+            get {
+                return m_ParameterUpdate;
+            }
+            set {
+                if (IsCommited)
+                    throw new NotSupportedException("unable to change after 'Commit()'");
+                m_ParameterUpdate = value;
+            }
+        }
+
+
 
         /// <summary>
         /// ctor
@@ -741,7 +753,7 @@ namespace BoSSS.Foundation {
         /// </param>
         /// <param name="edgeQrCtx">optional quadrature instruction for edges</param>
         /// <param name="volQrCtx">optional quadrature instruction for volumes/cells</param>
-        public virtual IEvaluatorNonLin GetEvaluatorEx(
+        public virtual IEvaluatorNonLin_ GetEvaluatorEx(
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
             EdgeQuadratureScheme edgeQrCtx = null,
             CellQuadratureScheme volQrCtx = null) //
@@ -767,7 +779,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Creator of a <see cref="EvaluatorLinear"/> object.
         /// </summary>
-        public virtual IEvaluatorLinear GetMatrixBuilder(
+        public virtual IEvaluatorLinear_ GetMatrixBuilder(
             UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
             EdgeQuadratureScheme edgeQrCtx = null,
             CellQuadratureScheme volQrCtx = null) //
@@ -791,7 +803,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Container for the evaluation of nonlinear fluxes/sources
         /// </summary>
-        abstract public class EvaluatorBase : IEvaluator {
+        abstract public class EvaluatorBase : IEvaluator_ {
 
             SpatialOperator m_Owner;
 
@@ -1083,7 +1095,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// evaluation of operators
         /// </summary>
-        protected class EvaluatorNonLin : EvaluatorBase, IEvaluatorNonLin {
+        protected class EvaluatorNonLin : EvaluatorBase, IEvaluatorNonLin_ {
 
             /// <summary>
             /// Returns domain fields and parameters.
@@ -1290,7 +1302,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// matrix assembly for linear or linearized operators
         /// </summary>
-        protected class EvaluatorLinear : EvaluatorBase, IEvaluatorLinear {
+        protected class EvaluatorLinear : EvaluatorBase, IEvaluatorLinear_ {
 
             /// <summary>
             /// Not for direct user interaction
@@ -1458,7 +1470,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// constructs a <see cref="FDJacobianBuilder"/> object to linearize nonlinear operators
         /// </summary>
-        public virtual IEvaluatorLinear GetFDJacobianBuilder(
+        public virtual IEvaluatorLinear_ GetFDJacobianBuilder(
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
             DelParameterUpdate __delParameterUpdate,
             EdgeQuadratureScheme edgeQrCtx = null,
@@ -1472,6 +1484,11 @@ namespace BoSSS.Foundation {
                 if(!m_IsCommited)
                     throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
 #endif
+                if(__delParameterUpdate == null) {
+                    if(this.ParameterVar.Count > 0) {
+                        throw new ArgumentException("Provided parameter update delegate '__delParameterUpdate' is null, but this operator contains " + this.ParameterVar.Count + " parameters.", "__delParameterUpdate");
+                    }
+                }
 
 
                 var e = new FDJacobianBuilder(new EvaluatorNonLin(
@@ -1489,7 +1506,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Computes the (approximate) Jacobian matrix of the spatial operator by finite differences.
         /// </summary>
-        public class FDJacobianBuilder : IEvaluatorLinear {
+        public class FDJacobianBuilder : IEvaluatorLinear_ {
 
             /// <summary>
             /// Not for direct user interaction
@@ -1504,9 +1521,19 @@ namespace BoSSS.Foundation {
 
                 Eval = __Eval;
                 Eval.MPITtransceive = true;
-                DelParamUpdate = __delParameterUpdate;
+                if (__delParameterUpdate != null)
+                    DelParamUpdate = __delParameterUpdate;
+                else
+                    DelParamUpdate = EmptyParamUpdate;
 
-                BuildGridColoring();
+                BuildOptimizedGridColoring();
+                //BuildOneByOneColoring();
+
+                //Console.WriteLine("FDJac: no of color lists: " + ColorLists.Length);
+            }
+
+            void EmptyParamUpdate(IEnumerable<DGField> F, IEnumerable<DGField> P) {
+                // do nothing
             }
 
             /// <summary>
@@ -1586,7 +1613,11 @@ namespace BoSSS.Foundation {
             /// </summary>
             public SpatialOperator Owner {
                 get {
-                    return Eval.Owner;
+                    if (Eval is IEvaluator_) {
+                        return ((IEvaluator_)Eval).Owner;
+                    } else {
+                        throw new NotSupportedException();
+                    }
                 }
             }
 
@@ -1602,13 +1633,24 @@ namespace BoSSS.Foundation {
             /// 
             /// </summary>
             virtual public CoefficientSet OperatorCoefficients {
-                get { return Eval.OperatorCoefficients; }
-                set { OperatorCoefficients = value; }
+                get {
+                    if (Eval is IEvaluator_) {
+                        return ((IEvaluator_)Eval).OperatorCoefficients;
+                    } else {
+                        throw new NotSupportedException();
+                    }
+                }
+                set {
+                    if (Eval is IEvaluator_) {
+                        ((IEvaluator_)Eval).OperatorCoefficients = value;
+                    } else {
+                        throw new NotSupportedException();
+                    }
+                }
             }
 
             IEvaluatorNonLin Eval;
-
-
+            
             DelParameterUpdate DelParamUpdate;
 
             /// <summary>
@@ -1634,8 +1676,10 @@ namespace BoSSS.Foundation {
             /// </summary>
             int[][][] ExternalColorListsNeighbors;
 
-
-            void BuildGridColoring() {
+            /// <summary>
+            /// coloring which exploits presumed locality of the DG operator
+            /// </summary>
+            void BuildOptimizedGridColoring() {
                 var gDat = Eval.GridData;
 
 
@@ -1657,19 +1701,7 @@ namespace BoSSS.Foundation {
                     }
                 }
 #endif
-                /*
-                this.ColorLists = new int[J][];
-                this.ExternalColorLists = new int[J][];
-                this.ExternalColorListsNeighbors = new int[J][][];
-                for(int j = 0; j < J; j++) {
-                    this.ColorLists[j] = new int[] { j };
-                    this.ExternalColorLists[j] = new int[0];
-                    this.ExternalColorListsNeighbors[j] = new int[0][];
-                }
-
-                return;
-                */
-
+             
 
                 int[] LocalMarker = new int[JE]; //    marker for blocked in the current pass 
                 int[] ExchangedMarker = new int[JE]; //  accumulation buffer for MPI exchange
@@ -1954,6 +1986,177 @@ namespace BoSSS.Foundation {
 
             }
 
+            /// <summary>
+            /// coloring with one cell at a pass
+            /// </summary>
+            void BuildOneByOneColoring() {
+                var gDat = Eval.GridData;
+
+                int[][] Neighs = gDat.iLogicalCells.CellNeighbours;
+                int J = gDat.iLogicalCells.NoOfLocalUpdatedCells;
+                int JE = gDat.iLogicalCells.Count;
+                long[] GlidxExt = gDat.iParallel.GlobalIndicesExternalCells;
+                var Gl2LocExt = gDat.iParallel.Global2LocalIdx;
+                var CellPart = gDat.CellPartitioning;
+                int Jglob = CellPart.TotalLength;
+
+
+                //int[] LocalMarker = new int[JE]; //    marker for blocked in the current pass 
+                //int[] ExchangedMarker = new int[JE]; //  accumulation buffer for MPI exchange
+                //BitArray Colored = new BitArray(JE); // all cells which are already colored (in previous passes)
+                //BitArray ColoredPass = new BitArray(JE); // all cells which are colored in current pass
+                //int[] LocalColorCause = new int[JE];
+
+                List<int> CellList = new List<int>();
+                List<int[]> ColorListsTmp = new List<int[]>();
+                List<int[]> ExternalColorListsTmp = new List<int[]>();
+                List<int[][]> ExternalColorListsNeighborsTmp = new List<int[][]>();
+
+                for(int jClGlob = 0; jClGlob < Jglob; jClGlob++) {
+
+                    // find next color list
+                    // ====================
+
+                    int jLoc = -1234;
+                    if(CellPart.IsInLocalRange(jClGlob)) {
+                        jLoc = CellPart.TransformIndexToLocal(jClGlob);
+                        ColorListsTmp.Add(new int[] { jLoc });
+                    }
+
+
+                    // communicate external lists
+                    // ==========================
+
+                    if (gDat.MpiSize > 1) {
+
+                        //Debugger.Launch();
+
+                        var ExchData = new Dictionary<int, List<Tuple<int, int>>>();
+
+                        if(jLoc >= 0) {
+                            int[] Neighs_j = Neighs[jLoc];
+                            foreach (int jN in Neighs_j) {
+                                if(jN >= J) {
+                                    
+                                    int Gl_jN = (int) GlidxExt[jN - J];
+                                    int iProc = CellPart.FindProcess(Gl_jN);
+                                    int Gl_j = jClGlob;
+
+                                    if(!ExchData.TryGetValue(iProc, out var ExchData_iProc)) {
+                                        ExchData_iProc = new List<Tuple<int, int>>();
+                                        ExchData.Add(iProc, ExchData_iProc);
+                                    }
+
+                                    ExchData_iProc.Add(new Tuple<int, int>(Gl_j, Gl_jN));
+                                }
+                            }
+                        }
+
+                        var RcvData = SerialisationMessenger.ExchangeData(ExchData);
+
+                        var ExtColor = new Dictionary<int, List<int>>();
+
+                        foreach (var kv in RcvData) {
+                            int iProc = kv.Key;
+                            var list = kv.Value;
+
+                            foreach(var t in list) {
+                                int Gl_j = t.Item1;
+                                int Gl_jN = t.Item2;
+                                Debug.Assert(CellPart.FindProcess(Gl_j) == iProc);
+                                Debug.Assert(CellPart.IsInLocalRange(Gl_jN));
+
+                                int Loc_jN = Gl_jN - CellPart.i0;
+                                Debug.Assert(Loc_jN >= 0 && Loc_jN < J);
+                                int Loc_j = Gl2LocExt[Gl_j];
+                                Debug.Assert(Loc_j >= J && Loc_j < JE);
+
+                                List<int> Neighs_Loc_jN;
+                                if(!ExtColor.TryGetValue(Loc_j, out Neighs_Loc_jN)) {
+                                    Neighs_Loc_jN = new List<int>();
+                                    ExtColor.Add(Loc_j, Neighs_Loc_jN);
+                                }
+
+                                Neighs_Loc_jN.Add(Loc_jN);
+                            }
+                        }
+
+
+                        int[] T2 = new int[ExtColor.Count];
+                        int[][] T3 = new int[ExtColor.Count][];
+                        int cnt = 0;
+                        foreach(var kv in ExtColor) {
+                            T2[cnt] = kv.Key;
+                            T3[cnt] = kv.Value.ToArray();
+                            cnt++;
+                        }
+
+                        ExternalColorListsTmp.Add(T2);
+                        ExternalColorListsNeighborsTmp.Add(T3);
+
+                    } else {
+                        ExternalColorListsTmp.Add(new int[0]);
+                        ExternalColorListsNeighborsTmp.Add(new int[0][]);
+                    }
+
+                }
+
+                // store
+                // =====
+                this.ColorLists = ColorListsTmp.ToArray();
+                this.ExternalColorLists = ExternalColorListsTmp.ToArray();
+                this.ExternalColorListsNeighbors = ExternalColorListsNeighborsTmp.ToArray();
+
+                // checks
+                // ======
+#if DEBUG
+                {
+                    int[] TouchLoc = new int[JE];
+
+                    foreach(int[] _CellList in this.ColorLists) {
+
+                        int[] NeighTouchLoc = new int[JE];
+
+                        foreach(int j in _CellList) {
+                            Debug.Assert(j < JE);
+                            Debug.Assert(TouchLoc[j] == 0);
+                            TouchLoc[j]++;
+
+                            Debug.Assert(NeighTouchLoc[j] == 0);
+                            NeighTouchLoc[j]++;
+
+                            foreach(int jn in Neighs[j]) {
+                                Debug.Assert(NeighTouchLoc[jn] == 0);
+                                NeighTouchLoc[jn]++;
+                            }
+
+                        }
+
+                        int[] NeighTouchGlob = NeighTouchLoc.CloneAs();
+                        NeighTouchGlob.MPIExchange(gDat);
+                        for(int j = J; j < JE; j++) {
+                            NeighTouchGlob[j] += NeighTouchLoc[j];
+                        }
+
+                        for(int j = 0; j < JE; j++) {
+                            Debug.Assert(NeighTouchGlob[j] <= 1);
+                        }
+                    }
+
+                    int[] TouchGlob = TouchLoc.CloneAs();
+                    TouchGlob.MPIExchange(gDat);
+                    for(int j = J; j < JE; j++) {
+                        TouchGlob[j] += TouchLoc[j];
+                    }
+                    
+                    for(int j = 0; j < JE; j++) {
+                        Debug.Assert(TouchGlob[j] == 1);
+                    }
+
+                }
+#endif
+            }
+
 
             /// <summary>
             /// computes a approximate linearization of the operator in the form 
@@ -2010,6 +2213,18 @@ namespace BoSSS.Foundation {
 
                 double[] F0 = new double[Lout];
                 DelParamUpdate(domFields, Eval.Parameters.ToArray());
+#if DEBUG
+                CoordinateVector ParamsVec;
+                double[] ParamsVecBkup;
+                if (Eval.Parameters.Where(f => f != null).Count() > 0) {
+                    var AllocatedParams = Eval.Parameters.Where(f => f != null).ToArray();
+                    ParamsVec = new CoordinateVector(AllocatedParams);
+                    ParamsVecBkup = ParamsVec.ToArray();
+                } else {
+                    ParamsVec = null;
+                    ParamsVecBkup = null;
+                }
+#endif
                 Eval.Evaluate(1.0, 0.0, F0);
                 AffineOffset.AccV(1.0, F0);
                 NoOfEvals++;
@@ -2068,7 +2283,7 @@ namespace BoSSS.Foundation {
                         foreach (int j in CellList) {
                             int iFld = FieldCounter[j];
                             int nFld = CoordCounter[j];
-                            if (iFld > NoOfDomFields)
+                            if (iFld >= NoOfDomFields)
                                 continue; // finished with cell 'j'
 
                             AnyLoc = -1;
@@ -2119,7 +2334,7 @@ namespace BoSSS.Foundation {
 
                                 int iFldCol = FieldCounter[jCol];
                                 int nFldCol = CoordCounter[jCol];
-                                if (iFldCol > NoOfDomFields)
+                                if (iFldCol >= NoOfDomFields)
                                     continue; // finished with cell
 
                                 int iCol = domMap.LocalUniqueCoordinateIndex(iFldCol, jCol, nFldCol);
@@ -2158,7 +2373,7 @@ namespace BoSSS.Foundation {
                             // ------------------
                             foreach (int j in __CellList) {
                                 int iFld = FieldCounter[j];
-                                if (iFld > NoOfDomFields)
+                                if (iFld >= NoOfDomFields)
                                     continue; // finished with cell 'j'
 
                                 int Nj = domMap.BasisS[iFld].GetLength(j);
@@ -2231,6 +2446,17 @@ namespace BoSSS.Foundation {
                 // ====================================
                 U0.SetV(U0backup);
                 DelParamUpdate(domFields, Eval.Parameters.ToArray());
+#if DEBUG
+                if (Eval.Parameters.Count > 0) {
+                    double deltaParamsVec = ParamsVecBkup.L2DistPow2(ParamsVecBkup).MPISum().Sqrt();
+                    double abs = Math.Max(Math.Sqrt(BLAS.MachineEps), Math.Max(ParamsVecBkup.MPI_L2Norm(), ParamsVec.MPI_L2Norm()));
+                    double relDelta = deltaParamsVec / abs;
+                    if (deltaParamsVec > Math.Sqrt(BLAS.MachineEps))
+                        throw new ApplicationException("FDJacobian detected side-effect in DelParamUpdate(...) -- provides different result before and after finite difference approximation.");
+                }
+
+#endif
+
                 //Console.WriteLine("Total number of evaluations: " + NoOfEvals);
 
                 // correct the affine offset
@@ -2268,5 +2494,75 @@ namespace BoSSS.Foundation {
                 Eval.ActivateSubgridBoundary(sgrd, subGridBoundaryTreatment);
             }
         }
+
+
+        /// <summary>
+        /// An operator which computes the Jacobian matrix of this operator.
+        /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
+        /// </summary>
+        public SpatialOperator GetJacobiOperator(int SpatialDimension) {
+            if (!this.IsCommited)
+                throw new InvalidOperationException("Invalid prior to calling Commit().");
+
+            // parameters and activation flags
+            // ===============================
+
+            var allcomps = new List<IEquationComponent>();
+            foreach (var cdo in this.CodomainVar)
+                allcomps.AddRange(this.EquationComponents[cdo]);
+
+            TermActivationFlags extractTaf(IEquationComponent c) {
+                TermActivationFlags ret = default(TermActivationFlags);
+                if (c is IVolumeForm vf) {
+                    ret = ret | vf.VolTerms;
+                }
+
+                if (c is IEdgeForm ef) {
+                    ret = ret | ef.BoundaryEdgeTerms;
+                    ret = ret | ef.InnerEdgeTerms;
+                }
+
+                return ret;
+            }
+
+            var h = new JacobianParamUpdate(this.DomainVar, this.ParameterVar, allcomps, extractTaf, SpatialDimension);
+            
+            // create derivative operator
+            // ==========================
+
+            var JacobianOp = new SpatialOperator(
+                   this.DomainVar,
+                   h.JacobianParameterVars,
+                   this.CodomainVar,
+                   this.QuadOrderFunction);
+
+            foreach (string CodNmn in this.CodomainVar) {
+                foreach (var eq in this.EquationComponents[CodNmn]) {
+
+                    if (!(eq is ISupportsJacobianComponent _eq))
+                        throw new NotSupportedException(string.Format("Unable to handle component {0}: To obtain a Jacobian operator, all components must implement the {1} interface.", eq.GetType().Name, typeof(ISupportsJacobianComponent).Name));
+                    bool eq_suppCoeffUpd = eq is IEquationComponentCoefficient;
+
+                    foreach (var eqj in _eq.GetJacobianComponents(SpatialDimension)) {
+                        bool eqj_suppCoeffUpd = eqj is IEquationComponentCoefficient;
+                        if (eq_suppCoeffUpd && !eqj_suppCoeffUpd)
+                            throw new NotSupportedException("Form '" + eq.GetType().Name + "' supports '" + typeof(IEquationComponentCoefficient).Name + "', but Jacobian Form '" + eqj.GetType().Name + "' does not!");
+
+                        JacobianOp.EquationComponents[CodNmn].Add(eqj);
+                    }
+                }
+            }
+
+            // return
+            // =====
+            JacobianOp.ParameterUpdate = h;
+            JacobianOp.Commit();
+            return JacobianOp;
+        }
+
+        
+
+
+
     }
 }

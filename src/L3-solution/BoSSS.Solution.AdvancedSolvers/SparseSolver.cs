@@ -174,37 +174,38 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             switch (WhichSolver) {
                 case _whichSolver.PARDISO:
-                solver = new PARDISOSolver();
-                ((PARDISOSolver)solver).CacheFactorization = true;
-                ((PARDISOSolver)solver).UseDoublePrecision = true;
-                break;
+                    if (LinConfig != null) { SingletonPARDISO.SetParallelism(LinConfig.Parallelism); }
+                    solver = new PARDISOSolver();
+                    ((PARDISOSolver)solver).CacheFactorization = true;
+                    ((PARDISOSolver)solver).UseDoublePrecision = true;
+                    break;
 
                 case _whichSolver.MUMPS:
-                solver = new MUMPSSolver();
-                break;
+                    if (LinConfig != null) { SingletonMumps.SetParallelism(LinConfig.Parallelism); }
+                    solver = new MUMPSSolver();
+                    break;
 
                 case _whichSolver.Matlab:
-                solver = new MatlabSolverWrapper();
-                break;
+                    solver = new MatlabSolverWrapper();
+                    break;
 
                 case _whichSolver.Lapack:
-                solver = new DenseSolverWrapper();
-                break;
+                    solver = new DenseSolverWrapper();
+                    break;
 
                 case _whichSolver.CG:
-                solver = new CG();
+                    solver = new CG();
                     ((CG)solver).DevType = ilPSP.LinSolvers.monkey.DeviceType.Cuda;
                     ((CG)solver).MaxIterations = Switcher<int>(((CG)solver).MaxIterations,LinConfig.MaxSolverIterations);
                     ((CG)solver).Tolerance = Switcher<double>(((CG)solver).Tolerance, LinConfig.ConvergenceCriterion);
-                break;
+                    break;
 
                 case _whichSolver.PCG:
-                solver = new PCG();
-
-                break;
+                    solver = new PCG();
+                    break;
 
                 default:
-                throw new NotImplementedException();
+                    throw new NotImplementedException();
 
             }
 
@@ -271,8 +272,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             stw.WriteLine("Dumping text versions of Matrix, Solution and RHS.");
                             ErrMsg = stw.ToString();
                         }
-                        Console.WriteLine(ErrMsg);
-
+                        Console.Error.WriteLine(ErrMsg);
                     }
                 }
 
@@ -323,11 +323,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             m_ThisLevelIterations = 0;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <typeparam name="T">generic datatype</typeparam>
-        /// <returns></returns>
         private static T Switcher<T>(T origin,T setter) {
             T thisreturn;
             if (setter != null) {
@@ -343,8 +338,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set;
         }
 
-        public ISolverSmootherTemplate Clone() {
+        public object Clone() {
             throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
+        }
+
+        /// <summary>
+        /// Release internal memory
+        /// </summary>
+        public void Dispose() {
+            this.m_Mtx = null;
         }
 
     }

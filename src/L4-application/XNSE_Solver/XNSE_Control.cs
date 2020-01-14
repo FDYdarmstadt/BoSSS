@@ -44,7 +44,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// </summary>
     [DataContract]
     [Serializable]
-    public class XNSE_Control : AppControl {
+    public class XNSE_Control : AppControlSolver {
 
         /// <summary>
         /// Ctor.

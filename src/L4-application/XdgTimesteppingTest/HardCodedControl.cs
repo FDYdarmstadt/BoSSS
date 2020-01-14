@@ -73,7 +73,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                     GenericBlas.Linspace(-7, 7, 7 * GridResolutionFactor + 1)
                     );
                 grd.EdgeTagNames.Add(1, "Inflow");
-                grd.DefineEdgeTags(X => (byte)1);
+                grd.DefineEdgeTags((Vector X) => (byte)1);
                 return grd;
             };
 
@@ -190,7 +190,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             double Nx = Math.Cos(angle);
             double Ny = Math.Sin(angle);
 
-            R.BurgersDirection = new Platform.LinAlg.Vector(Nx, Ny);
+            R.BurgersDirection = new ilPSP.Vector(Nx, Ny);
 
             const double S = 0.5 * (2 + 1);
             R.S = ((double[] X, double t) => S);
@@ -272,7 +272,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                     GenericBlas.Linspace(-7, 7, 7 * GridResolutionFactor + 1),
                     GenericBlas.Linspace(-7, 7, 7 * GridResolutionFactor + 1));
                 grd.EdgeTagNames.Add(1, "Inflow");
-                grd.DefineEdgeTags(X => (byte)1);
+                grd.DefineEdgeTags((Vector X) => (byte)1);
                 return grd;
             };
 
@@ -893,7 +893,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             double Nx = Math.Cos(angle);
             double Ny = Math.Sin(angle);
 
-            R.BurgersDirection = new Platform.LinAlg.Vector(Nx, Ny);
+            R.BurgersDirection = new ilPSP.Vector(Nx, Ny);
 
             const double S = 0.5 * (2 + 1);
             R.S = ((double[] X, double t) => S);

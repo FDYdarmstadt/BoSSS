@@ -69,7 +69,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
         /*
         // Flux over interface
         public override void DerivativVar_LevelSetFlux(out double FlxNeg, out double FlxPos, 
-            ref CommonParamsLs  cp,
+            ref CommonParams  cp,
             double[] U_Neg, double[] U_Pos, double[,] GradU_Neg, double[,] GradU_Pos) {
 
             double[] U_NegFict, U_PosFict;
@@ -141,7 +141,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
         /*
         public override void PrimalVar_LevelSetFlux(out double FlxNeg, out double FlxPos,
-            ref CommonParamsLs cp, 
+            ref CommonParams cp, 
             double[] U_Neg, double[] U_Pos) {
             FlxNeg = 0;
             FlxPos = 0;
@@ -152,19 +152,19 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
         }
 
         public override void Nu(out double NuNeg, out double NuPos,
-            ref CommonParamsLs cp) {
+            ref CommonParams cp) {
             NuPos = 1.0;
             NuNeg = 1.0;
         }
         */
 
-        public double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+        public double LevelSetForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
             double[] U_NegFict, U_PosFict;
 
             this.TransformU(ref U_Neg, ref U_Pos, out U_NegFict, out U_PosFict);
 
-            double[] ParamsNeg = cp.ParamsNeg;
-            double[] ParamsPos = cp.ParamsPos;
+            double[] ParamsNeg = cp.Parameters_IN;
+            double[] ParamsPos = cp.Parameters_OUT;
             double[] ParamsPosFict, ParamsNegFict;
             this.TransformU(ref ParamsNeg, ref ParamsPos, out ParamsNegFict, out ParamsPosFict);
             //Flux for negativ side
@@ -176,17 +176,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
                 //flx *= U_Neg[0];
                 //FlxNeg = flx;
 
-                BoSSS.Foundation.CommonParams inp; // = default(BoSSS.Foundation.InParams);
-                inp.Parameters_IN = ParamsNeg;
-                inp.Parameters_OUT = ParamsNegFict;
-                inp.Normale = cp.n;
-                inp.iEdge = int.MinValue;
-                inp.GridDat = this.m_LsTrk.GridDat;
-                inp.X = cp.x;
-                inp.time = cp.time;
-                //inp.jCellIn = cp.jCell;
-                //inp.jCellOut = cp.jCell;
-
+                BoSSS.Foundation.CommonParams inp = cp;
+                inp.Parameters_OUT = ParamsNegFict; 
 
                 FlxNeg = this.NegFlux.IEF(ref inp, U_Neg, U_NegFict);
             }
@@ -199,17 +190,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
                 //flx *= U_Pos[0];
                 //FlxPos = flx;
 
-                BoSSS.Foundation.CommonParams inp; // = default(BoSSS.Foundation.InParams);
-                inp.Parameters_IN = ParamsPosFict;
-                inp.Parameters_OUT = ParamsPos;
-                inp.Normale = cp.n;
-                inp.iEdge = int.MinValue;
-                inp.GridDat = this.m_LsTrk.GridDat;
-                inp.X = cp.x;
-                inp.time = cp.time;
-                //inp.jCellIn = cp.jCell;
-                //inp.jCellOut = cp.jCell;
-
+                BoSSS.Foundation.CommonParams inp = cp;
+                inp.Parameters_IN = ParamsPosFict; 
 
                 FlxPos = this.PosFlux.IEF(ref inp, U_PosFict, U_Pos);
             }
@@ -479,6 +461,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
     //    //    U_PosFict = U_Neg; 
     //    //}
 
+
     //    public Double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
 
     //        double UinBkUp = U_Neg[0];
@@ -494,6 +477,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
     //        double[] Uint = new double[] { 0.0, 0.0 };
 
+
     //        // Calculate central part
     //        // ======================
 
@@ -505,6 +489,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
     //        //    flx += rhoA * U_Neg[0] * cp.ParamsNeg[2] * cp.n[2] + rhoB * U_Pos[0] * cp.ParamsPos[2] * cp.n[2];
     //        //}
 
+
     //        // Calculate dissipative part
     //        // ==========================
 
@@ -514,6 +499,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
     //            VelocityMeanIn[d] = cp.ParamsNeg[m_D + d] - Uint[d];
     //            VelocityMeanOut[d] = cp.ParamsPos[m_D + d] - Uint[d];
     //        }
+
 
     //        double LambdaIn;
     //        double LambdaOut;
@@ -533,6 +519,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
     //        flx *= 0.5;
 
     //        //flx *= rho_in;
+
 
     //        // cleanup mess and return
     //        // -----------------------
@@ -556,6 +543,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
     //            return new string[] { VariableNames.Velocity_d(m_d) };
     //        }
     //    }
+
 
     //    public IList<string> ParameterOrdering {
     //        get {
@@ -691,6 +679,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
     //        double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
     //        double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
+
     //        //Debug.Assert(cp.ParamsPos[D + 1] == cp.ParamsNeg[D + 1], "curvature must be continuous across interface");
     //        //Debug.Assert(cp.ParamsPos[D + 2] == cp.ParamsNeg[D + 2], "disjoining pressure must be continuous across interface");
 
@@ -731,6 +720,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
     //        uAxN += UnCentral * (0.0 - (-M * (1 / rhoA) * cp.n[m_d]));
     //        uBxN += UnCentral * (0.0 - (-M * (1 / rhoB) * cp.n[m_d]));
+
 
 
     //        // ====================================================================
@@ -787,6 +777,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
     //    public int LevelSetIndex {
     //        get { return 0; }
     //    }
+
 
     //    public SpeciesId PositiveSpecies {
     //        get { return this.m_lsTrk.GetSpeciesId("B"); }

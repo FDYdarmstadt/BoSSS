@@ -934,15 +934,77 @@ namespace ilPSP {
                 throw new ArgumentOutOfRangeException("Array length smaller than 0 makes no sense.");
             }
 
-            if (this.m_Storage != null && this.m_Storage.Length == absLen)
+            if (this.m_Storage != null && this.m_Storage.Length == absLen) {
                 Array.Clear(this.m_Storage, 0, absLen);
-            else
+            } else {
                 m_Storage = new double[absLen];
+                /*
+                long _AllocatedBytes = absLen * sizeof(double);
+                if(_AllocatedBytes > 1024*512) {
+                    AllocatedBytes += _AllocatedBytes;
+                    m_AllocStack = GetStack();
+                    AllocatedBytes += _AllocatedBytes;
+                    HugeOnes.Add(new WeakReference<MultidimensionalArray>(this));
+                }
+                */
+            }
             m_ShallowCopy = false;
             CreateCycles();
 
             m_Offset = 0;
         }
+
+        /*
+         * some quick-and-dirty method to track allocations of this array 
+         *
+
+        string[] m_AllocStack;
+
+        string[] GetStack() {
+            string[] RET = new string[10];
+
+            for(int iSkip = 0; iSkip < RET.Length; iSkip++) {
+                StackFrame fr = new StackFrame(iSkip + 2, true);
+
+                System.Reflection.MethodBase m = fr.GetMethod();
+                string _name = m != null ? m.DeclaringType.FullName + "." + m.Name : "null";
+                //callingType = m.DeclaringType;
+                RET[iSkip] = _name;
+            }
+
+            return RET;
+        }
+
+        public static long AllocatedBytes = 0;
+
+        public static List<WeakReference<MultidimensionalArray>> HugeOnes = new List<WeakReference<MultidimensionalArray>>();
+
+        public static void ListHugeOnes() {
+            GC.Collect();
+            long leftMem = 0;
+
+            using (var ot = new StreamWriter("MemScheisse.txt")) {
+                foreach (var m in HugeOnes) {
+
+                    if (m.TryGetTarget(out var mda)) {
+                        int mem = mda.Length * sizeof(double);
+                        leftMem += mem;
+                        ot.Write(mem);
+                        foreach (var s in mda.m_AllocStack) {
+                            ot.Write("\t");
+                            ot.Write(s);
+                            ot.Write("--->");
+                        }
+                        ot.WriteLine();
+                    }
+                }
+                ot.Flush();
+                ot.Dispose();
+            }
+            Console.WriteLine("    MldimArry: " + (((double)leftMem)/ (1024.0 * 1024.0)) + "MB");
+        }
+
+    */
 
         /// <summary>
         /// Uses <see cref="SetCycle"/> and <see cref="GetLength"/> to set up
@@ -1220,6 +1282,10 @@ namespace ilPSP {
         /// <param name="x">destination</param>
         /// <param name="SubArrayIdx"></param>
         public void CopyTo<T>(T x, params int[] SubArrayIdx) where T : IList<double> {
+#if DEBUG
+            if(x.GetType().IsValueType)
+                throw new NotSupportedException("CopyTo value type -- probably not the expected result! (Using vector struct in CopyTo(...) - operation?)");
+#endif
             var sub = this.ExtractSubArrayShallow(SubArrayIdx);
 
             if (sub.Dimension != 1)
@@ -1240,6 +1306,11 @@ namespace ilPSP {
         /// <param name="Iend">end indices (including)</param>
         /// <param name="xOffset">offset into <paramref name="x"/>, where the first element will be inserted</param>
         public void CopyTo<T>(T x, int[] Istart, int[] Iend, int xOffset = 0) where T : IList<double> {
+#if DEBUG
+            if(x.GetType().IsValueType)
+                throw new NotSupportedException("CopyTo value type -- probalby not the expected result! (Using vector struct in CopyTo(...) - operation?)");
+#endif
+
             var sub = this.ExtractSubArrayShallow(Istart, Iend);
 
             if (sub.Dimension != 1)
@@ -1251,7 +1322,7 @@ namespace ilPSP {
             for (int i = 0; i < L; i++)
                 x[i + xOffset] = sub[i];
         }
-
+        
         /// <summary>
         /// Copies to a one-dimensional array/list
         /// </summary>
@@ -1266,6 +1337,11 @@ namespace ilPSP {
         /// </remarks>
         public void CopyTo<T>(T array, bool RowWise, int arrayoffset)
             where T : IList<double> {
+#if DEBUG
+            if(array.GetType().IsValueType)
+                throw new NotSupportedException("CopyTo value type -- probably not the expected result! (Using vector struct in CopyTo(...) - operation?)");
+#endif
+
             if (Dimension != 2)
                 throw new NotSupportedException("array is not 2D and cannot be represented like a matrix");
 

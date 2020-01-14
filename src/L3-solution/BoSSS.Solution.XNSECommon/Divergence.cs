@@ -138,7 +138,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             }
         }
 
-        public override double _DerivativeSource(double[] x, double[] Parameters, double[,] GradientU) {
+        public override double _DerivativeSource(ilPSP.Vector x, double[] Parameters, double[,] GradientU) {
             return base._DerivativeSource(x, Parameters, GradientU) * scale;
         }
 
@@ -198,14 +198,14 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             }
         }
 
-        public double LevelSetForm(ref Foundation.XDG.CommonParamsLs cp,
+        public double LevelSetForm(ref CommonParams cp,
             double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-            double uAxN = GenericBlas.InnerProd(U_Neg, cp.n);
-            double uBxN = GenericBlas.InnerProd(U_Pos, cp.n);
+            double uAxN = GenericBlas.InnerProd(U_Neg, cp.Normal);
+            double uBxN = GenericBlas.InnerProd(U_Pos, cp.Normal);
 
-            double s = 0;//cp.ParamsNeg[0];
+            //double s = 0;//cp.ParamsNeg[0];
                          //if (!MaterialInterface) {
                          //    Debug.Assert(cp.ParamsNeg[0] == cp.ParamsPos[0], "The interface velocity must be continuous across the level set!");
                          //    throw new NotImplementedException();
@@ -357,6 +357,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         public IList<string> ParameterOrdering {
             get { return null; }
         }
+
 
         public int LevelSetIndex {
             get { return 0; }

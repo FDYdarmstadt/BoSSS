@@ -56,6 +56,28 @@ namespace ilPSP.Utils {
             SaveToTextFile<T>(list, filename, csMPI.Raw._COMM.WORLD, ToString);
         }
 
+
+
+
+        /// <summary>
+        /// For parallel debugging
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="list"></param>
+        /// <param name="filename"></param>
+        public static void SaveToTextFileDebug<T>(this IEnumerable<T> list, string filename) {
+            int Rank;
+            MPI_Comm comm = csMPI.Raw._COMM.WORLD;
+            csMPI.Raw.Comm_Rank(comm, out Rank);
+            string fullfilename = String.Concat(filename,"_", Rank);
+            using (var sw = new StreamWriter(fullfilename)) {
+                foreach(T element in list) {
+                    sw.WriteLine(element);
+                }
+            }
+
+        }
+
         /// <summary>
         /// saves a vector (distributed over various MPI processes) into one text file
         /// </summary>
@@ -143,7 +165,7 @@ namespace ilPSP.Utils {
                 if (send == null)
                     send = list.ToArray();
 
-                sms.Transmitt(0, send);
+                sms.Transmit(0, send);
 
 
                 T[] dummy;

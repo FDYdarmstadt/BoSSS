@@ -599,7 +599,27 @@ namespace ilPSP {
             }
             return R;
         }
-        
+
+        /// <summary>
+        /// Checks if an enumeration is a set - i.e. each element is contained exactly once.
+        /// </summary>
+        public static bool IsSet<T>(this IEnumerable<T> collection) 
+            where T : IEquatable<T> //
+        {
+            T[] all = collection.ToArray();
+            int l = all.Length;
+            for(int i = 0; i < l; i++) {
+                T oi = all[i];
+                for(int j = i + 1; j < l; j++) {
+                    T oj = all[j];
+                    if (oi.Equals(oj))
+                        return false;
+                }
+            }
+
+            return true;
+        }
+                
         /// <summary>
         /// Wraps each entity into an <see cref="SmartEnumerable{T}.Entry"/>
         /// and returns the result as an enumerable. See

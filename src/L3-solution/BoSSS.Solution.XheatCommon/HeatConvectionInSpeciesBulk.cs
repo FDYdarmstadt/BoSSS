@@ -228,7 +228,7 @@ namespace BoSSS.Solution.XheatCommon {
 
             double c = 0.0;
             for (int d = 0; d < m_SpatialDimension; d++)
-                c += inp.Parameters_IN[d] * inp.Normale[d];
+                c += inp.Parameters_IN[d] * inp.Normal[d];
 
             ThermalBcType edgeType = m_bcmap.EdgeTag2Type[inp.EdgeTag];
 
@@ -250,7 +250,7 @@ namespace BoSSS.Solution.XheatCommon {
 
             double c = 0.0;
             for (int d = 0; d < m_SpatialDimension; d++)
-                c += 0.5 * (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * inp.Normale[d];
+                c += 0.5 * (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * inp.Normal[d];
 
             if (c > 0)
                 return (c * cap * Uin[0]);

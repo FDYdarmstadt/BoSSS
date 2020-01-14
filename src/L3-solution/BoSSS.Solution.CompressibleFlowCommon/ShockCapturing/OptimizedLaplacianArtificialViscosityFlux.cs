@@ -23,6 +23,7 @@ using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using BoSSS.Solution.NSECommon;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
@@ -107,6 +108,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 return new string[] { "artificialViscosity" };
             }
         }
+
         #endregion
 
         #region IEdgeComponent Members
@@ -124,7 +126,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
         /// <summary>
         /// Non-optimized version of the inner edge flux,
-        /// <seealso cref="BoSSS.Solution.NSECommon.SIPLaplace"/>
+        /// <seealso cref="SIPLaplace"/>, sign has been changed
         /// </summary>
         double IEdgeForm.InnerEdgeForm(ref CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
             double Acc = 0.0;
@@ -134,8 +136,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             double nuB = inp.Parameters_OUT[0];
 
             for (int d = 0; d < inp.D; d++) {
-                Acc -= 0.5 * (nuA * _Grad_uA[0, d] + nuB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
-                Acc -= 0.5 * (nuA * _Grad_vA[d] + nuB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
+                Acc -= 0.5 * (nuA * _Grad_uA[0, d] + nuB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normal[d];  // consistency term
+                Acc -= 0.5 * (nuA * _Grad_vA[d] + nuB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normal[d];  // symmetry term
             }
 
             double nuMax = (Math.Abs(nuA) > Math.Abs(nuB)) ? nuA : nuB;
@@ -310,8 +312,14 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             }
         }
 
+        /// <summary>
+        /// See <see cref="ipLaplace"/>, sign has been changed
+        /// </summary>
         double IVolumeForm.VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
-            throw new NotImplementedException();
+            double acc = 0;
+            for (int d = 0; d < cpv.D; d++)
+                acc += GradU[0, d] * GradV[d] * cpv.Parameters[0];
+            return acc;
         }
         #endregion
 

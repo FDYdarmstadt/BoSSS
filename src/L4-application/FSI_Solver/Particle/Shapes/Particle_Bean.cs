@@ -16,83 +16,120 @@ limitations under the License.
 
 using System;
 using System.Runtime.Serialization;
-using BoSSS.Foundation.XDG;
 using ilPSP;
-using BoSSS.Foundation.Grid;
 
-namespace BoSSS.Application.FSI_Solver
-{
+namespace BoSSS.Application.FSI_Solver {
     [DataContract]
     [Serializable]
-    public class Particle_Bean : Particle
-    {
+    public class Particle_Bean : Particle {
         /// <summary>
         /// Empty constructor used during de-serialization
         /// </summary>
-        private Particle_Bean() : base()
-        {
+        private Particle_Bean() : base() {
 
-        }
-        public Particle_Bean(double[] startPos = null, double startAngl = 0) : base(2, startPos, startAngl) {
-
-            
         }
 
         /// <summary>
-        /// Radius of the particle. Not necessary for particles defined by their length and thickness
+        /// Constructor for a bean.
         /// </summary>
+        /// <param name="motionInit">
+        /// Initializes the motion parameters of the particle (which model to use, whether it is a dry simulation etc.)
+        /// </param>
+        /// <param name="radius">
+        /// The main lengthscale of the bean. 
+        /// </param>
+        /// <param name="startPos">
+        /// The initial position.
+        /// </param>
+        /// <param name="startAngl">
+        /// The inital anlge.
+        /// </param>
+        /// <param name="activeStress">
+        /// The active stress excerted on the fluid by the particle. Zero for passive particles.
+        /// </param>
+        /// <param name="startTransVelocity">
+        /// The inital translational velocity.
+        /// </param>
+        /// <param name="startRotVelocity">
+        /// The inital rotational velocity.
+        /// </param>
+        public Particle_Bean(ParticleMotionInit motionInit, double radius, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+            m_Radius = radius;
+            Aux.TestArithmeticException(radius, "Particle radius");
+
+            Motion.GetParticleLengthscale(radius);
+            Motion.GetParticleMinimalLengthscale(radius);
+            Motion.GetParticleArea(Area);
+            Motion.GetParticleMomentOfInertia(MomentOfInertia);
+        }
+
         [DataMember]
-        public double radius_P;
+        private readonly double m_Radius;
 
-        protected override double Circumference_P
-        {
-            get
-            {
-                return 2 * Math.PI * radius_P;
-            }
-        }
-        public override double Area_P
-        {
-            get
-            {
-                // not correct area
-                return Math.PI * radius_P * radius_P;
-            }
-        }
-        override public double MomentOfInertia_P
-        {
-            get
-            {
-                // not correct moment of inertia
-                return (1 / 2.0) * (Mass_P * radius_P * radius_P);
-            }
-        }
+        /// <summary>
+        /// Circumference. Approximated with sphere.
+        /// </summary>
+        public override double Circumference => 2 * Math.PI * m_Radius;
 
-        public override double Phi_P(double[] X) {
-            double alpha = -(angle[0]);
-            double a = 3.0 * radius_P.Pow2();
-            double b = 1.0 * radius_P.Pow2();
-            return -((((X[0] - position[0][0]) * Math.Cos(alpha) - (X[1] - position[0][1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - position[0][0]) * Math.Sin(alpha) + (X[1] - position[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - position[0][0]) * Math.Cos(alpha) - (X[1] - position[0][1]) * Math.Sin(alpha)).Pow(3) - b * ((X[0] - position[0][0]) * Math.Sin(alpha) + (X[1] - position[0][1]) * Math.Cos(alpha)).Pow2());
+        /// <summary>
+        /// Area occupied by the particle.
+        /// </summary>
+        public override double Area => Math.PI * m_Radius * m_Radius;
+
+        /// <summary>
+        /// Moment of inertia. Approximated with sphere.
+        /// </summary>
+        override public double MomentOfInertia => (1 / 2.0) * (Mass_P * m_Radius * m_Radius);
+
+        /// <summary>
+        /// Level set function of the particle.
+        /// </summary>
+        /// <param name="X">
+        /// The current point.
+        /// </param>
+        public override double LevelSetFunction(double[] X) {
+            double alpha = -Motion.GetAngle(0);
+            double[] position = Motion.GetPosition(0);
+            double a = 3.0 * m_Radius.Pow2();
+            double b = 1.0 * m_Radius.Pow2();
+            return -((((X[0] - position[0]) * Math.Cos(alpha) - (X[1] - position[1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - position[0]) * Math.Sin(alpha) + (X[1] - position[1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - position[0]) * Math.Cos(alpha) - (X[1] - position[1]) * Math.Sin(alpha)).Pow(3) - b * ((X[0] - position[0]) * Math.Sin(alpha) + (X[1] - position[1]) * Math.Cos(alpha)).Pow2());
         }
 
-        public override bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false)
-        {
+        /// <summary>
+        /// Returns true if a point is withing the particle.
+        /// </summary>
+        /// <param name="point">
+        /// The point to be tested.
+        /// </param>
+        /// <param name="minTolerance">
+        /// Minimum tolerance length.
+        /// </param>
+        /// <param name="maxTolerance">
+        /// Maximal tolerance length. Equal to h_min if not specified.
+        /// </param>
+        /// <param name="WithoutTolerance">
+        /// No tolerance.
+        /// </param>
+        public override bool Contains(double[] point, double minTolerance, double maxTolerance = 0, bool WithoutTolerance = false) {
+            double alpha = Motion.GetAngle(0);
+            double[] position = Motion.GetPosition(0);
             // only for rectangular cells
-            if (h_max == 0)
-                h_max = h_min;
-            double radiusTolerance = !WithoutTolerance ? 1.0 + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
+            if (maxTolerance == 0)
+                maxTolerance = minTolerance;
+            double radiusTolerance = !WithoutTolerance ? 1.0 + Math.Sqrt(maxTolerance.Pow2() + minTolerance.Pow2()) : 1;
             double a = 4.0 * radiusTolerance.Pow2();
             double b = 1.0 * radiusTolerance.Pow2();
-            if (-((((point[0] - position[0][0]) * Math.Cos(angle[0]) - (point[1] - position[0][1]) * Math.Sin(angle[0])).Pow(2) + ((point[0] - position[0][0]) * Math.Sin(angle[0]) + (point[1] - position[0][1]) * Math.Cos(angle[0])).Pow(2)).Pow2() - a * ((point[0] - position[0][0]) * Math.Cos(angle[0]) - (point[1] - position[0][1]) * Math.Sin(angle[0])).Pow(3) - b * ((point[0] - position[0][0]) * Math.Sin(angle[0]) + (point[1] - position[0][1]) * Math.Cos(angle[0])).Pow2()) > 0)
-            {
+            if (-((((point[0] - position[0]) * Math.Cos(alpha) - (point[1] - position[1]) * Math.Sin(alpha)).Pow(2) + ((point[0] - position[0]) * Math.Sin(alpha) + (point[1] - position[1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((point[0] - position[0]) * Math.Cos(alpha) - (point[1] - position[1]) * Math.Sin(alpha)).Pow(3) - b * ((point[0] - position[0]) * Math.Sin(alpha) + (point[1] - position[1]) * Math.Cos(alpha)).Pow2()) > 0) {
                 return true;
             }
             return false;
         }
 
-        override public double[] GetLengthScales()
-        {
-            return new double[] { radius_P, radius_P };
+        /// <summary>
+        /// Returns the legnthscales of a particle.
+        /// </summary>
+        override public double[] GetLengthScales() {
+            return new double[] { m_Radius, m_Radius };
         }
     }
 }

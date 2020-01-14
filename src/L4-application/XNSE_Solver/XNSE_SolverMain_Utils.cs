@@ -284,7 +284,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 // compute changerates (kinetic, surface)
                 double CR_KinEnergy = 0.0;
                 double CR_SurfEnergy = 0.0;
-                if (this.Control.CompMode == AppControl._CompMode.Transient) {
+                if (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) {
                     double prevKinEnergy = EnergyUtils.GetKineticEnergy(this.LsTrk, this.prevVel, rhoS, this.m_HMForder, 0);
                     CR_KinEnergy = (currentKinEnergy - prevKinEnergy) / dt;
 

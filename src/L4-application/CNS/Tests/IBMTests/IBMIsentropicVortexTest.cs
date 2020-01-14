@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.CompressibleFlowCommon;
@@ -22,6 +23,7 @@ using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.Tests.IsentropicVortex;
+using ilPSP;
 using ilPSP.Utils;
 using NUnit.Framework;
 using System;
@@ -299,7 +301,7 @@ namespace CNS.Tests.IBMTests {
                     GenericBlas.Linspace(-10.0, 10.0, noOfCellsPerDirection + 1),
                     GenericBlas.Linspace(-10.0, 10.0, noOfCellsPerDirection + 1));
                 grid.EdgeTagNames.Add(1, "supersonicInlet");
-                grid.DefineEdgeTags(X => 1);
+                grid.DefineEdgeTags((Vector X) => 1);
                 return grid;
             };
 
@@ -364,7 +366,7 @@ namespace CNS.Tests.IBMTests {
                     GenericBlas.Linspace(-5.0, 5.0, 21),
                     GenericBlas.Linspace(-0.5, 0.5, 3));
                 grid.EdgeTagNames.Add(1, "supersonicInlet");
-                grid.DefineEdgeTags(X => 1);
+                grid.DefineEdgeTags((Vector X) => 1);
                 return grid;
             };
 

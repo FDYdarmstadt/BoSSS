@@ -30,7 +30,8 @@ namespace BoSSS.Solution.NSECommon {
     /// Current manufactured solutions used is T = cos(x*y), Y0 = 0.3 cos(x*y), Y1 = 0.6 cos(x*y), Y2 = 0.1 cos(x*y), u = -cos(x), v = -cos(y), p = sin(x*y).
     /// See also ControlManuSol() control function.
     /// </summary>
-    public class RHSManuSourceTransportEq : BoSSS.Solution.Utils.LinearSource {
+    //public class RHSManuSourceTransportEq : BoSSS.Solution.Utils.LinearSource {
+    public class RHSManuSourceTransportEq : IVolumeForm, ISupportsJacobianComponent {
 
         double HeatReleaseFactor;
         double ReynoldsNumber;
@@ -51,9 +52,7 @@ namespace BoSSS.Solution.NSECommon {
         double[] MolarMasses;
         double OneOverMolarMass0MolarMass1;
         PhysicsMode physicsMode;
-        double phystime;
-        bool unsteady;
-        SinglePhaseField ThermodynamicPressure;
+        bool chemReactionOK;
         /// <summary>
         /// Ctor.
         /// <param name="HeatReleaseFactor">Heat release computed from the sum of the product of the stoichiometric coefficient, partial heat capacity and molar mass of species alpha for all species. I.e.: sum(alpha = 1.. ns)[v_\alpha cp_alpha M_alpha]. Must be computed locally for non-constant partial heat capacities in later iterations of the code.</param>
@@ -71,7 +70,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="unsteady"></param>
         /// <param name="SpeciesIndex">(optional). Necessary for "MassFraction" EqType. Species index: 0 for fuel, 1 for oxidizer, 2 for CO2 and 3 for H2O.</param>
         /// </summary>
-        public RHSManuSourceTransportEq(double HeatReleaseFactor, double Reynolds, double Prandtl, double Schmidt, double[] StoichiometricCoefficients, double[] ReactionRateConstants, double[] MolarMasses, double OneOverMolarMass0MolarMass1, MaterialLaw EoS, String EqType, PhysicsMode physicsMode,double phystime, bool unsteady, SinglePhaseField ThermodynamicPressure, int SpeciesIndex = -1) {
+        public RHSManuSourceTransportEq(double HeatReleaseFactor, double Reynolds, double Prandtl, double Schmidt, double[] StoichiometricCoefficients, double[] ReactionRateConstants, double[] MolarMasses, double OneOverMolarMass0MolarMass1, MaterialLaw EoS, String EqType, PhysicsMode physicsMode, int SpeciesIndex = -1, bool chemReactionOK = true) {
             this.HeatReleaseFactor = HeatReleaseFactor;
             this.ReynoldsNumber = Reynolds;
             this.PrandtlNumber = Prandtl;
@@ -79,22 +78,21 @@ namespace BoSSS.Solution.NSECommon {
             this.Eos = EoS;
             this.EqType = EqType;
             this.physicsMode = physicsMode;
-            this.phystime = phystime;
-            this.unsteady = unsteady;
+            this.chemReactionOK = chemReactionOK;
 
-            if (EqType == "MassFraction") {
+            if(EqType == "MassFraction") {
                 this.SpeciesIndex = SpeciesIndex;
                 this.StoichiometricCoeff = StoichiometricCoefficients[SpeciesIndex];
             }
 
-            this.PreExpFactor = ReactionRateConstants[0];
+            this.PreExpFactor = ReactionRateConstants[0]; // Damköhler number 
             this.ActivationTemperature = ReactionRateConstants[1];
             this.MassFraction0Exponent = ReactionRateConstants[2];
             this.MassFraction1Exponent = ReactionRateConstants[3];
 
             this.MolarMasses = MolarMasses;
             this.OneOverMolarMass0MolarMass1 = OneOverMolarMass0MolarMass1;
-            this.ThermodynamicPressure = ThermodynamicPressure;
+
 
         }
 
@@ -102,24 +100,38 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// None
         /// </summary>
-        public override IList<string> ArgumentOrdering {
+        public IList<string> ArgumentOrdering {
             get { return new string[0]; }
         }
 
         /// <summary>
-        /// Temperature, MassFraction0, MassFraction1, MassFraction2, MassFraction3 at linearization point.
+        /// None
         /// </summary>
-        public override IList<string> ParameterOrdering {
-            get { return new string[] { /*VariableNames.Temperature0, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0*/ }; }
+        public IList<string> ParameterOrdering {
+            get { return null; }
+        }
+        /// <summary>
+        /// Linear component - returns this object itself.
+        /// </summary>
+        virtual public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
         }
 
 
-        //Manufactured solution for T = cos(x*y), Y0 = 0.3 cos(x*y), Y1 = 0.6 cos(x*y), Y2 = 0.1 cos(x*y), u = -cos(x), v = -cos(y), p = sin(x*y).
-        protected override double Source(double[] x, double[] parameters, double[] U) {
+        /// <summary>
+        /// None
+        /// </summary>
+        public TermActivationFlags VolTerms {
+            get {
+                return TermActivationFlags.AllOn;
+            }
+        }
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
 
+            ////Manufactured solution for T = cos(x*y), Y0 = 0.3 cos(x*y), Y1 = 0.6 cos(x*y), Y2 = 0.1 cos(x*y), u = -cos(x), v = -cos(y), p = sin(x*y).
+            double[] x = cpv.Xglobal;
             double x_ = x[0];
             double y_ = x[1];
-            double t_ = phystime;
             double p0 = 1.0;
 
             double M1 = MolarMasses[0]; double M2 = MolarMasses[1]; double M3 = MolarMasses[2]; double M4 = MolarMasses[3];
@@ -129,133 +141,85 @@ namespace BoSSS.Solution.NSECommon {
             double[] Coefficients = new double[] { alpha1, alpha2, alpha3 };
 
 
-            double ConvectionTerm;
-            double ReactionRate;
-            double SourceTerm;
-            double DiffussionTerm;
-            double unsteadyTerm = 0.0;
+            double ConvectionTerm = 0;
+            double ReactionRate = 0;
+            double SourceTerm = 0;
+            double DiffussionTerm = 0;
+
+            double ConvectionTermSwitch = 1.0;
+            double DiffussionTermSwitch = 1.0;
 
 
-            if (unsteady) {
 
-                switch (physicsMode) {
-                    case PhysicsMode.LowMach:
-                        ConvectionTerm = p0 * t_ * Math.Sin(x_ * t_) + p0 * t_ * Math.Sin(y_ * t_);
-                        ReactionRate = 0;
-                        unsteadyTerm = 0.0; // 0.0 is the correct MS... ((p0/T)*T)' = (p0)' = 0.0
-                        break;
-                    case PhysicsMode.Combustion:
-                        throw new NotImplementedException("TODO");
-                    default:
-                        throw new NotImplementedException("wrong switch");
-                }
-                switch (EqType) {
-                    case "Temperature":
-                        DiffussionTerm = 1.0 / (ReynoldsNumber * PrandtlNumber) * (y_ * y_ * t_ * t_ * Math.Cos(x_ * y_ * t_) + x_ * x_ * t_ * t_ * Math.Cos(x_ * y_ * t_));
-
-                        SourceTerm = 0.0;//TODO
-
-                        return -(unsteadyTerm + ConvectionTerm + DiffussionTerm + SourceTerm);
-
-                    case "MassFraction":
-                        if (SpeciesIndex == -1)
-                            throw new ArgumentException("Species index needs to be specified");
-                        ConvectionTerm *= Coefficients[SpeciesIndex];
-
-                        double alpha;
-                        switch (SpeciesIndex) {
-                            case 0:
-                                alpha = alpha1;
-                                break;
-                            case 1:
-                                alpha = alpha2;
-                                break;
-                            case 2:
-                                alpha = alpha3;
-                                break;
-                            default:
-                                throw new NotImplementedException("wrong index");
-
-                        }
-                        switch (physicsMode) {
-                            case PhysicsMode.LowMach:
-                                DiffussionTerm = 0.0;//TODO
-                                break;
-                            case PhysicsMode.Combustion:
-                                DiffussionTerm = 0.0;//TODO
-                                break;
-                            default:
-                                throw new NotImplementedException("wrong switch");
-                        }
-
-
-                        SourceTerm = -MolarMasses[SpeciesIndex] * StoichiometricCoeff * ReactionRate;
-                        return -(ConvectionTerm + -DiffussionTerm + SourceTerm); // TODO CHECK SIGNS
-
-                    default:
-                        throw new NotImplementedException();
-                }
-
+            switch(physicsMode) {
+                case PhysicsMode.LowMach:
+                    ConvectionTerm = p0 * Math.Sin(x_) + p0 * Math.Sin(y_); // This is the MS if the discretized convective term of the energy equation is div(rho*u*T)
+                    ReactionRate = 0;
+                    break;
+                case PhysicsMode.Combustion:
+                    ConvectionTerm = p0 * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4, -0.2e1) * Math.Cos(x_) * (-alpha1 * y_ * Math.Sin(x_ * y_) / M1 - alpha2 * y_ * Math.Sin(x_ * y_) / M2 - alpha3 * y_ * Math.Sin(x_ * y_) / M3 + (alpha1 * y_ * Math.Sin(x_ * y_) + alpha2 * y_ * Math.Sin(x_ * y_) + alpha3 * y_ * Math.Sin(x_ * y_)) / M4) + p0 / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * Math.Sin(x_) + p0 * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4, -0.2e1) * Math.Cos(y_) * (-alpha1 * x_ * Math.Sin(x_ * y_) / M1 - alpha2 * x_ * Math.Sin(x_ * y_) / M2 - alpha3 * x_ * Math.Sin(x_ * y_) / M3 + (alpha1 * x_ * Math.Sin(x_ * y_) + alpha2 * x_ * Math.Sin(x_ * y_) + alpha3 * x_ * Math.Sin(x_ * y_)) / M4) + p0 / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * Math.Sin(y_);
+                    ReactionRate = PreExpFactor * OneOverMolarMass0MolarMass1 * Math.Exp(-0.1e1 / Math.Cos(x_ * y_)) * Math.Pow(p0, 0.3e1) * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4, -0.3e1) * alpha1 * alpha2 * alpha2;
+                    break;
+                default:
+                    throw new NotImplementedException("wrong switch");
             }
-            else {
-                switch (physicsMode) {
-                    case PhysicsMode.LowMach:
-                        ConvectionTerm = p0 * Math.Sin(x_) + p0 * Math.Sin(y_);
-                        ReactionRate = 0;
-                        break;
-                    case PhysicsMode.Combustion:
-                        ConvectionTerm = p0 * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4, -0.2e1) * Math.Cos(x_) * (-alpha1 * y_ * Math.Sin(x_ * y_) / M1 - alpha2 * y_ * Math.Sin(x_ * y_) / M2 - alpha3 * y_ * Math.Sin(x_ * y_) / M3 + (alpha1 * y_ * Math.Sin(x_ * y_) + alpha2 * y_ * Math.Sin(x_ * y_) + alpha3 * y_ * Math.Sin(x_ * y_)) / M4) + p0 / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * Math.Sin(x_) + p0 * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4, -0.2e1) * Math.Cos(y_) * (-alpha1 * x_ * Math.Sin(x_ * y_) / M1 - alpha2 * x_ * Math.Sin(x_ * y_) / M2 - alpha3 * x_ * Math.Sin(x_ * y_) / M3 + (alpha1 * x_ * Math.Sin(x_ * y_) + alpha2 * x_ * Math.Sin(x_ * y_) + alpha3 * x_ * Math.Sin(x_ * y_)) / M4) + p0 / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * Math.Sin(y_);
-                        ReactionRate = PreExpFactor * OneOverMolarMass0MolarMass1 * Math.Exp(-0.1e1 / Math.Cos(x_ * y_)) * Math.Pow(p0, 0.3e1) * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4, -0.3e1) * alpha1 * alpha2 * alpha2;
-                        break;
-                    default:
-                        throw new NotImplementedException("wrong switch");
-                }
-                switch (EqType) {
-                    case "Temperature":
-                        DiffussionTerm = 1.0 / (ReynoldsNumber * PrandtlNumber) * Math.Cos(x_ * y_) * (Math.Pow(x_, 2) + Math.Pow(y_, 2)); // OK
-                        SourceTerm = HeatReleaseFactor * Math.Cos(x_ * y_) * ReactionRate;
-                        return -(ConvectionTerm + DiffussionTerm + SourceTerm);
 
-                    case "MassFraction":
-                        if (SpeciesIndex == -1)
-                            throw new ArgumentException("Species index needs to be specified");
-                        ConvectionTerm *= Coefficients[SpeciesIndex];
+            switch(EqType) {
+                case "Temperature":
+                    DiffussionTerm = 1.0 / (ReynoldsNumber * PrandtlNumber) * Math.Cos(x_ * y_) * (Math.Pow(x_, 2) + Math.Pow(y_, 2)); // OK for lowmach AND combustion
+                    SourceTerm = HeatReleaseFactor * Math.Cos(x_ * y_) * ReactionRate;
+                    break; 
+                case "MassFraction":
+                    if(SpeciesIndex == -1)
+                        throw new ArgumentException("Species index needs to be specified");
+                    ConvectionTerm *= Coefficients[SpeciesIndex];
 
-                        double alpha;
-                        switch (SpeciesIndex) {
-                            case 0:
-                                alpha = alpha1;
-                                break;
-                            case 1:
-                                alpha = alpha2;
-                                break;
-                            case 2:
-                                alpha = alpha3;
-                                break;
-                            default:
-                                throw new NotImplementedException("wrong index");
+                    double alpha;
+                    switch(SpeciesIndex) {
+                        case 0:
+                            alpha = alpha1;
+                            break;
+                        case 1:
+                            alpha = alpha2;
+                            break;
+                        case 2:
+                            alpha = alpha3;
+                            break;
+                        default:
+                            throw new NotImplementedException("wrong index");
+                    }
+                    // The diffusive term corresponds to div(Diffusivity*rho*gradY0)! not to div(grad(rho*Y0))
+                    DiffussionTerm = p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * alpha * y_ * y_ * Math.Pow(Math.Sin(x_ * y_), 0.2e1) - p0 / Math.Cos(x_ * y_) * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4, -0.2e1) * alpha * y_ * Math.Sin(x_ * y_) * (-alpha1 * y_ * Math.Sin(x_ * y_) / M1 - alpha2 * y_ * Math.Sin(x_ * y_) / M2 - alpha3 * y_ * Math.Sin(x_ * y_) / M3 + (alpha1 * y_ * Math.Sin(x_ * y_) + alpha2 * y_ * Math.Sin(x_ * y_) + alpha3 * y_ * Math.Sin(x_ * y_)) / M4) + p0 / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * alpha * y_ * y_ + p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * alpha * x_ * x_ * Math.Pow(Math.Sin(x_ * y_), 0.2e1) - p0 / Math.Cos(x_ * y_) * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4, -0.2e1) * alpha * x_ * Math.Sin(x_ * y_) * (-alpha1 * x_ * Math.Sin(x_ * y_) / M1 - alpha2 * x_ * Math.Sin(x_ * y_) / M2 - alpha3 * x_ * Math.Sin(x_ * y_) / M3 + (alpha1 * x_ * Math.Sin(x_ * y_) + alpha2 * x_ * Math.Sin(x_ * y_) + alpha3 * x_ * Math.Sin(x_ * y_)) / M4) + p0 / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * alpha * x_ * x_;
 
-                        }
-                        switch (physicsMode) {
-                            case PhysicsMode.LowMach:
-                                DiffussionTerm = -p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) * alpha * y_ * y_ * Math.Pow(Math.Sin(x_ * y_), 0.2e1) - p0 * alpha * y_ * y_ - p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) * alpha * x_ * x_ * Math.Pow(Math.Sin(x_ * y_), 0.2e1) - p0 * alpha * x_ * x_;
-                                break;
-                            case PhysicsMode.Combustion:
-                                DiffussionTerm = 1.0 / (ReynoldsNumber * SchmidtNumber) * (-p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * alpha * y_ * y_ * Math.Pow(Math.Sin(x_ * y_), 0.2e1) + p0 / Math.Cos(x_ * y_) * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4, -0.2e1) * alpha * y_ * Math.Sin(x_ * y_) * (-alpha1 * y_ * Math.Sin(x_ * y_) / M1 - alpha2 * y_ * Math.Sin(x_ * y_) / M2 - alpha3 * y_ * Math.Sin(x_ * y_) / M3 + (alpha1 * y_ * Math.Sin(x_ * y_) + alpha2 * y_ * Math.Sin(x_ * y_) + alpha3 * y_ * Math.Sin(x_ * y_)) / M4) - p0 / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * alpha * y_ * y_ - p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * alpha * x_ * x_ * Math.Pow(Math.Sin(x_ * y_), 0.2e1) + p0 / Math.Cos(x_ * y_) * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4, -0.2e1) * alpha * x_ * Math.Sin(x_ * y_) * (-alpha1 * x_ * Math.Sin(x_ * y_) / M1 - alpha2 * x_ * Math.Sin(x_ * y_) / M2 - alpha3 * x_ * Math.Sin(x_ * y_) / M3 + (alpha1 * x_ * Math.Sin(x_ * y_) + alpha2 * x_ * Math.Sin(x_ * y_) + alpha3 * x_ * Math.Sin(x_ * y_)) / M4) - p0 / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * alpha * x_ * x_);
-                                break;
-                            default:
-                                throw new NotImplementedException("wrong switch");
-                        }
-
-
-                        SourceTerm = -MolarMasses[SpeciesIndex] * StoichiometricCoeff * ReactionRate;
-                        return -(ConvectionTerm + -DiffussionTerm + SourceTerm); // TODO CHECK SIGNS
-
-                    default:
-                        throw new NotImplementedException();
-                }
-
+                    SourceTerm = -MolarMasses[SpeciesIndex] * StoichiometricCoeff * ReactionRate;
+                    break;
             }
+            if(!chemReactionOK)
+                SourceTerm = 0;
+
+
+            return -(ConvectionTerm* ConvectionTermSwitch + DiffussionTerm * DiffussionTermSwitch + SourceTerm ) * V;
+
+
         }
+
+
+
+
+
     }
+
+
 }
+
+
+//DiffussionTerm = 0*-0.2e1 * p0 * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4, -0.3e1) * alpha * Math.Pow(-alpha1 * y_ * Math.Sin(x_ * y_) / M1 - alpha2 * y_ * Math.Sin(x_ * y_) / M2 - alpha3 * y_ * Math.Sin(x_ * y_) / M3 + (alpha1 * y_ * Math.Sin(x_ * y_) + alpha2 * y_ * Math.Sin(x_ * y_) + alpha3 * y_ * Math.Sin(x_ * y_)) / M4, 0.2e1) + p0 * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4, -0.2e1) * alpha * (-alpha1 * y_ * y_ * Math.Cos(x_ * y_) / M1 - alpha2 * y_ * y_ * Math.Cos(x_ * y_) / M2 - alpha3 * y_ * y_ * Math.Cos(x_ * y_) / M3 + (alpha1 * y_ * y_ * Math.Cos(x_ * y_) + alpha2 * y_ * y_ * Math.Cos(x_ * y_) + alpha3 * y_ * y_ * Math.Cos(x_ * y_)) / M4) - 0.2e1 * p0 * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4, -0.3e1) * alpha * Math.Pow(-alpha1 * x_ * Math.Sin(x_ * y_) / M1 - alpha2 * x_ * Math.Sin(x_ * y_) / M2 - alpha3 * x_ * Math.Sin(x_ * y_) / M3 + (alpha1 * x_ * Math.Sin(x_ * y_) + alpha2 * x_ * Math.Sin(x_ * y_) + alpha3 * x_ * Math.Sin(x_ * y_)) / M4, 0.2e1) + p0 * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4, -0.2e1) * alpha * (-alpha1 * x_ * x_ * Math.Cos(x_ * y_) / M1 - alpha2 * x_ * x_ * Math.Cos(x_ * y_) / M2 - alpha3 * x_ * x_ * Math.Cos(x_ * y_) / M3 + (alpha1 * x_ * x_ * Math.Cos(x_ * y_) + alpha2 * x_ * x_ * Math.Cos(x_ * y_) + alpha3 * x_ * x_ * Math.Cos(x_ * y_)) / M4);
+
+
+
+///////////////////////////////////////////
+///this could be also the right ManSol. 
+///Because the ManSol is not divergence free, the identity  rho*cp*D(T)_DT = partiald(rho*cp*T)/partiald(t) + div(rho*cp*T*u) not always holds. The extra term accounts for the "extra mass" added by the man sol
+//ConvectionTerm = p0 / Math.Cos(x_ * y_) * Math.Cos(x_) * y_ * Math.Sin(x_ * y_) + p0 / Math.Cos(x_ * y_) * Math.Cos(y_) * x_ * Math.Sin(x_ * y_);
+//ConvectionTerm += Math.Cos(x_ * y_) * (-p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) * Math.Cos(x_) * y_ * Math.Sin(x_ * y_) + p0 / Math.Cos(x_ * y_) * Math.Sin(x_)) + Math.Cos(x_ * y_) * (-p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) * Math.Cos(y_) * x_ * Math.Sin(x_ * y_) + p0 / Math.Cos(x_ * y_) * Math.Sin(y_));
+////////////////////////////////////////////

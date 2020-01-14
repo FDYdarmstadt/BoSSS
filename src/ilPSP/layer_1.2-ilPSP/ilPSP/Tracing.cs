@@ -51,18 +51,6 @@ namespace ilPSP.Tracing {
             }
         }
 
-        /// <summary>
-        /// Setting <see cref="NamespacesToLog"/>;
-        /// </summary>
-        public static void SetTracingNamespaces(string TracingNamespaces) {
-            if (TracingNamespaces == null) {
-                Tracer.NamespacesToLog = new string[0];
-            } else {
-                Tracer.NamespacesToLog = TracingNamespaces.Split(
-                    new char[] { ',', ' ', '\n', '\t', '\r' },
-                    StringSplitOptions.RemoveEmptyEntries);
-            }
-        }
 
         /// <summary>
         /// Explicit switch for turning cone instrumentation on/off; this is useful when to much overhead is caused by instrumentation.
@@ -96,7 +84,13 @@ namespace ilPSP.Tracing {
 
         static private MethodCallRecord _Root;
 
-        private static MethodCallRecord Current;
+        /// <summary>
+        /// The record corresponding to the current function.
+        /// </summary>
+        public static MethodCallRecord Current {
+            get;
+            private set;
+        }
 
         internal static void Push_MethodCallRecord(string _name) {
             Debug.Assert(InstrumentationSwitch == true);
@@ -245,7 +239,7 @@ namespace ilPSP.Tracing {
             {
                 StackFrame fr = new StackFrame(1, true);
 
-                _MethodBase m = fr.GetMethod();
+                System.Reflection.MethodBase m = fr.GetMethod();
                 _name = m.DeclaringType.FullName + "." + m.Name;
                 callingType = m.DeclaringType;
             }
@@ -277,7 +271,7 @@ namespace ilPSP.Tracing {
             {
                 StackFrame fr = new StackFrame(1, true);
 
-                _MethodBase m = fr.GetMethod();
+                System.Reflection.MethodBase m = fr.GetMethod();
                 callingType = m.DeclaringType;
             }
             Tracer.Push_MethodCallRecord(UserName);

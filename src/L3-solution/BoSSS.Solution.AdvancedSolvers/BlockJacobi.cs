@@ -30,11 +30,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// Block-Jacobi smoother, maybe only useful in combination with the multi-grid solver (<see cref="ClassicMultigrid"/>).
     /// </summary>
-    public class BlockJacobi : ISolverSmootherTemplate, ISolverWithCallback{
+    public class BlockJacobi : ISolverSmootherTemplate, ISolverWithCallback {
 
         MultigridOperator m_MultigridOp;
 
-
+        /// <summary>
+        /// ~
+        /// </summary>
         public void Init(MultigridOperator op) {
             BlockMsrMatrix M = op.OperatorMatrix;
             var MgMap = op.Mapping;
@@ -87,6 +89,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #endif
         }
 
+        /// <summary>
+        /// ~
+        /// </summary>
         public Action<int, double[], double[], MultigridOperator> IterationCallback {
             get;
             set;
@@ -102,11 +107,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public double omega = 1.0; // jacobi - under-relax
 
-        public int NoOfIterations = 4;
+        /// <summary>
+        /// ~
+        /// </summary>
+        bool TerminationCriterion(int iter, double r0_l2, double r_l2) {
+            return (iter <= NoOfIterations);
+        }
 
-        public double m_Tolerance = 0.0;
+        /// <summary>
+        /// Fixed number of block-Jacobi 
+        /// </summary>
+        public int NoOfIterations = 1;
 
-
+      
         /// <summary>
         /// Jacobi iteration
         /// </summary>
@@ -116,16 +129,29 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int L = xl.Count;
             double[] ql = new double[L];
 
-            for(int iIter = 0; iIter < NoOfIterations; iIter++) {
+            double iter0_ResNorm = 0;
+
+            for (int iIter = 0; true; iIter++) {
                 ql.SetV(bl);
                 Mtx.SpMV(-1.0, xl, 1.0, ql);
-                if(this.m_Tolerance > 0) {
-                    double ResNorm = ql.L2NormPow2().MPISum().Sqrt();
-                    if(ResNorm < this.m_Tolerance) {
-                        m_Converged = true;
-                        return;
+                double ResNorm = ql.L2NormPow2().MPISum().Sqrt();
+
+                if (iIter == 0) {
+                    iter0_ResNorm = ResNorm;
+
+                    if (this.IterationCallback != null) {
+                        double[] _xl = xl.ToArray();
+                        double[] _bl = bl.ToArray();
+                        Mtx.SpMV(-1.0, _xl, 1.0, _bl);
+                        this.IterationCallback(iIter + 1, _xl, _bl, this.m_MultigridOp);
                     }
                 }
+
+                if (!TerminationCriterion(iIter, iter0_ResNorm, ResNorm)) {
+                    m_Converged = true;
+                    return;
+                }
+
                 Diag.SpMV(1.0, xl, 1.0, ql);
 
 
@@ -136,14 +162,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //    xl[i] = omega * ((ql[i] + diag[i] * xl[i]) / diag[i]) 
                 //        + (1.0 - omega) * xl[i];
                 //}
-                
 
 
-                if(this.IterationCallback != null) {
+
+                if (this.IterationCallback != null) {
                     double[] _xl = xl.ToArray();
                     double[] _bl = bl.ToArray();
                     Mtx.SpMV(-1.0, _xl, 1.0, _bl);
-                    this.IterationCallback(iIter, _xl, _bl, this.m_MultigridOp);
+                    this.IterationCallback(iIter + 1, _xl, _bl, this.m_MultigridOp);
                 }
             }
         }
@@ -169,11 +195,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         }
 
-        public ISolverSmootherTemplate Clone() {
+        public object Clone() {
             var clone = new BlockJacobi();
             clone.IterationCallback = this.IterationCallback;
             clone.NoOfIterations = this.NoOfIterations;
-            clone.m_Tolerance = this.m_Tolerance;
             clone.omega = this.omega;
             return clone;
         }

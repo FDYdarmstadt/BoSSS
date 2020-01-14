@@ -32,7 +32,7 @@ namespace BoSSS.Solution.NSECommon {
     public class PressureStabilization : BoSSS.Solution.Utils.LinearDualValueFlux, IEquationComponentCoefficient {
 
         double PressureStabilizationFactor;
-        double Reynolds;
+        protected double Reynolds;
 
         /// <summary>
         /// Ctor.

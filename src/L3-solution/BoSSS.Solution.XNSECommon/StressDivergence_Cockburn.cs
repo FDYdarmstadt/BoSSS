@@ -25,14 +25,12 @@ using ilPSP.Utils;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 
-namespace BoSSS.Solution.RheologyCommon
-{
+namespace BoSSS.Solution.RheologyCommon {
     /// <summary>
     /// Central difference scheme for divergence operator of the extra stress tensor.
     /// </summary>
 
-    public class StressDivergence_Cockburn : LinearFlux
-    {
+    public class StressDivergence_Cockburn : LinearFlux {
 
         int Component;           // spatial dimension of momentum equation
         BoundaryCondMap<IncompressibleBcType> m_BcMap;
@@ -57,12 +55,11 @@ namespace BoSSS.Solution.RheologyCommon
         /// </summary>
         public override IList<string> ArgumentOrdering {
             get {
-                switch (Component)
-                {
+                switch (Component) {
                     case 0:
-                        return new string[] { VariableNames.StressXX, VariableNames.StressXY, VariableNames.VelocityX };
+                        return new string[] { VariableNames.StressXX, VariableNames.StressXY, VariableNames.VelocityX, VariableNames.StressYY };
                     case 1:
-                        return new string[] { VariableNames.StressXY, VariableNames.StressYY, VariableNames.VelocityY };
+                        return new string[] { VariableNames.StressXY, VariableNames.StressYY, VariableNames.VelocityY, VariableNames.StressXX };
                     default:
                         throw new NotImplementedException();
                 }
@@ -72,8 +69,7 @@ namespace BoSSS.Solution.RheologyCommon
         /// <summary>
         /// Calculating the stress divergence term in the momentum equations following the local DG ansatz by Cockburn (2002)
         /// </summary>
-        public StressDivergence_Cockburn(int Component, BoundaryCondMap<IncompressibleBcType> _BcMap, double Reynolds, double[] Penalty1, double Penalty2)
-        {
+        public StressDivergence_Cockburn(int Component, BoundaryCondMap<IncompressibleBcType> _BcMap, double Reynolds, double[] Penalty1, double Penalty2) {
             this.Component = Component;
             this.m_BcMap = _BcMap;
             this.InverseReynolds = -1 / (Reynolds);
@@ -95,8 +91,7 @@ namespace BoSSS.Solution.RheologyCommon
         /// <summary>
         /// Stress divergence volume term
         /// </summary>
-        protected override void Flux(ref CommonParamsVol inp, double[] T, double[] output)
-        {
+        protected override void Flux(ref CommonParamsVol inp, double[] T, double[] output) {
             int D = output.Length;
             Array.Clear(output, 0, D);
 
@@ -108,8 +103,7 @@ namespace BoSSS.Solution.RheologyCommon
         /// <summary>
         /// Stress divergence inner edge term
         /// </summary>
-        protected override double InnerEdgeFlux(ref CommonParams inp, double[] Tin, double[] Tout)
-        {
+        protected override double InnerEdgeFlux(ref CommonParams inp, double[] Tin, double[] Tout) {
 
             double res = 0;
 
@@ -124,22 +118,8 @@ namespace BoSSS.Solution.RheologyCommon
 
 
 
-            res += 0.5 * (Tin[0] + Tout[0]) * inp.Normale[0] + 0.5 * (Tin[1] + Tout[1]) * inp.Normale[1]; // central difference for stress divergence
-
-            switch (Component)
-            {
-                case 0:
-                    res += -pen2 / h2 * (Tin[2] - Tout[2]);
-                    break;
-                case 1:
-                    res += -pen2 / h2 * (Tin[2] - Tout[2]);
-                    break;
-                default:
-                    throw new NotImplementedException();
-
-
-            }
-
+            res += 0.5 * (Tin[0] + Tout[0]) * inp.Normal[0] + 0.5 * (Tin[1] + Tout[1]) * inp.Normal[1]; // central difference for stress divergence
+            res += -pen2 / h2 * (Tin[2] - Tout[2]);
 
             return InverseReynolds * res;
         }
@@ -147,8 +127,7 @@ namespace BoSSS.Solution.RheologyCommon
         /// <summary>
         /// Stress divergence border edge term
         /// </summary>
-        protected override double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Tin)
-        {
+        protected override double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Tin) {
             double res = 0;
 
             int jIn = inp.jCellIn;
@@ -157,15 +136,14 @@ namespace BoSSS.Solution.RheologyCommon
 
             IncompressibleBcType edgType = m_BcMap.EdgeTag2Type[inp.EdgeTag];
 
-            switch (edgType)
-            {
+            switch (edgType) {
                 case IncompressibleBcType.Outflow:
                 case IncompressibleBcType.Pressure_Outlet:
 
 
                     // Atmospheric outlet/pressure outflow: hom. Neumann
-                    res += Tin[0] * inp.Normale[0];
-                    res += Tin[1] * inp.Normale[1];
+                    res += Tin[0] * inp.Normal[0];
+                    res += Tin[1] * inp.Normal[1];
                     break;
 
                 case IncompressibleBcType.Velocity_Inlet:
@@ -174,18 +152,17 @@ namespace BoSSS.Solution.RheologyCommon
                     double VelocityX = VelFunction[inp.EdgeTag, 0](inp.X, inp.time);
                     double VelocityY = VelFunction[inp.EdgeTag, 1](inp.X, inp.time);
 
-                    switch (Component)
-                    {
+                    switch (Component) {
                         case 0:
-                            res += Tin[0] * inp.Normale[0];
-                            res += Tin[1] * inp.Normale[1];
+                            res += Tin[0] * inp.Normal[0];
+                            res += Tin[1] * inp.Normal[1];
                             //alpha penalty for boundary (no beta penalty)
                             res += -pen2 / h * (Tin[2] - VelocityX);
 
                             break;
                         case 1:
-                            res += Tin[0] * inp.Normale[0];
-                            res += Tin[1] * inp.Normale[1];
+                            res += Tin[0] * inp.Normal[0];
+                            res += Tin[1] * inp.Normal[1];
                             //alpha penalty for boundary (no beta penalty)
                             res += -pen2 / h * (Tin[2] - VelocityY);
 
@@ -194,6 +171,38 @@ namespace BoSSS.Solution.RheologyCommon
                             throw new NotImplementedException();
                     }
                     break;
+                case IncompressibleBcType.FreeSlip:
+
+                    //Free slip wall for symmetry line of symmetric channel
+
+                    //double VelocityX2 = VelFunction[inp.EdgeTag, 0](inp.X, inp.time);
+                    //double VelocityY2 = VelFunction[inp.EdgeTag, 1](inp.X, inp.time);
+
+                    switch (Component) {
+                        case 0:
+                            res += inp.Normal[0] * Tin[0] * inp.Normal[0] * inp.Normal[0];
+                            res += inp.Normal[0] * Tin[1] * inp.Normal[1] * inp.Normal[0];
+                            res += inp.Normal[0] * Tin[1] * inp.Normal[0] * inp.Normal[1];
+                            res += inp.Normal[0] * Tin[3] * inp.Normal[1] * inp.Normal[1];
+                            //res += -pen2 / h * (Tin[2] - VelocityX2) * inp.Normale[0] - pen2 / h * (Tin[2] - VelocityX2) * inp.Normale[1];
+                            //res += 0;
+
+                            break;
+                        case 1:
+                            res += inp.Normal[1] * Tin[3] * inp.Normal[0] * inp.Normal[0];
+                            res += inp.Normal[1] * Tin[0] * inp.Normal[1] * inp.Normal[0];
+                            res += inp.Normal[1] * Tin[0] * inp.Normal[0] * inp.Normal[1];
+                            res += inp.Normal[1] * Tin[1] * inp.Normal[1] * inp.Normal[1];
+                            //res += -pen2 / h * (Tin[2] - VelocityY2) * inp.Normale[0] - pen2 / h * (Tin[2] - VelocityY2) * inp.Normale[1];
+                            //res += Tin[1] * inp.Normale[1];
+                            //res += 0;
+
+                            break;
+                        default:
+                            throw new NotImplementedException();
+                    }
+                    break;
+
 
                 default:
                     throw new NotImplementedException("unsupported/unknown b.c. - missing implementation;");

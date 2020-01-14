@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,14 +32,14 @@ namespace BoSSS.Application.SipPoisson {
     /// </summary>
     [DataContract]
     [Serializable]
-    public class SipControl : AppControl {
+    public class SipControl : AppControlSolver {
 
         /// <summary>
         /// Ctor.
         /// </summary>
         public SipControl() : base() {
-            base.LinearSolver.NoOfMultigridLevels = 1;
-            base.CompMode = _CompMode.Steady;
+            base.NoOfMultigridLevels = 1;
+            base.TimesteppingMode = _TimesteppingMode.Steady;
             base.NoOfTimesteps = 1;
             base.LinearSolver.verbose = true;
         }

@@ -79,6 +79,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
         }
 
+        /*
         /// <summary>
         /// sets values for <see cref="Cell.CellFaceTags"/> by using a
         /// <paramref name="EdgeTagFunc"/>-function; also adds entries with empty names
@@ -87,15 +88,14 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// the dictionary
         /// </summary>
         /// <param name="EdgeTagFunc"></param>
-        public void DefineEdgeTags(Func<double[], byte> EdgeTagFunc)
-        {
+        public void DefineEdgeTags(Func<double[], byte> EdgeTagFunc) {
             int D = SpatialDimension;
             double[] x = new double[D];
             MultidimensionalArray GlobalVerticesOut = MultidimensionalArray.CreateWrapper(x, 1, D);
-            for (int iEdge = 0; iEdge < m_GridData.iGeomEdges.Count; ++iEdge)
-            {
-                if (m_GridData.iGeomEdges.IsEdgeBoundaryEdge(iEdge))
-                {
+
+            int NoOfEdges = m_GridData.iGeomEdges.Count;
+            for (int iEdge = 0; iEdge < m_GridData.iGeomEdges.Count; ++iEdge) {
+                if (m_GridData.iGeomEdges.IsEdgeBoundaryEdge(iEdge)) {
                     int jCell = m_GridData.iGeomEdges.CellIndices[iEdge, 0];
                     int iFace = m_GridData.iGeomEdges.FaceIndices[iEdge, 0];
                     var KRef = m_GridData.iGeomCells.GetRefElement(jCell);
@@ -109,6 +109,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 }
             }
         }
+        //*/
 
         /// <summary>
         /// Structure to store one Aggregation cell
@@ -184,6 +185,20 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             }
         }
 
+        /// <summary>
+        /// For a sequence of aggregation grids, returns the root.
+        /// </summary>
+        public IGrid RootGrid {
+            get {
+                if(ParentGrid is AggregationGrid ag) {
+                    return ag.RootGrid;
+                } else {
+                    return ParentGrid;
+                }
+            }
+        }
+
+               
         [DataMember]
         IGrid m_ParentGrid;
 
@@ -210,6 +225,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         }
 
         public IReadOnlyCollection<Guid> AllDataVectorIDs => throw new NotImplementedException();
+
 
         public IDictionary<byte, string> EdgeTagNames {
             get {
@@ -383,6 +399,17 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 }
                 return m_GridData;
             }
+        }
+
+        /// <summary>
+        /// Releases the object cached in <see cref="iGridData"/>; this is necessary if 
+        /// the grid object was changed somehow.
+        /// </summary>
+        public void InvalidateGridData() {
+            if (m_GridData == null)
+                return; // nothing to do
+            m_GridData.Invalidate();
+            m_GridData = null;
         }
 
         /// <summary>

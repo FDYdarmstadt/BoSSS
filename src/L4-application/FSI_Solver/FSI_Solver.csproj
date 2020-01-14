@@ -51,6 +51,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Prefer32Bit>false</Prefer32Bit>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>BoSSS.Application.FSI_Solver.FSI_SolverMain</StartupObject>
@@ -79,43 +80,56 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="active_particles\ActiveViscosityAtIB.cs" />
-    <Compile Include="active_particles\ActiveConvectionAtIB.cs" />
-    <Compile Include="active_particles\ActiveDivergenceAtIB.cs" />
-    <Compile Include="active_particles\ActivePressureAtIB.cs" />
-    <Compile Include="active_particles\HardcodedControl\HardcodedControlDeriabina.cs" />
-    <Compile Include="active_particles\HardcodedControl\FourCellsTest.cs" />
-    <Compile Include="active_particles\HardcodedControl\DryParticles.cs" />
-    <Compile Include="active_particles\HardcodedControl\HardcodedControl_tiltedChannel.cs" />
-    <Compile Include="active_particles\HardcodedControl\HardcodedControl_straightChannel.cs" />
-    <Compile Include="active_particles\HardcodedControl\HowToCrashThisSolver.cs" />
-    <Compile Include="active_particles\HardcodedControl\ParticleStokesFlow.cs" />
+    <Compile Include="ControlFiles\HardcodedControl\HardcodedControl.cs" />
+    <Compile Include="ControlFiles\HardcodedControl\HardcodedControlDeriabina.cs" />
+    <Compile Include="ControlFiles\HardcodedControl\FourCellsTest.cs" />
+    <Compile Include="ControlFiles\HardcodedControl\DryParticles.cs" />
+    <Compile Include="ControlFiles\HardcodedControl\HardcodedControlDeussen.cs" />
+    <Compile Include="ControlFiles\HardcodedControl\HC_2ParticleInteraction.cs" />
+    <Compile Include="ControlFiles\HardcodedControl\HC_CollisionRuntime.cs" />
+    <Compile Include="ControlFiles\HardcodedControl\HardcodedControl_multipleActiveParticles .cs" />
+    <Compile Include="ControlFiles\HardcodedControl\HardcodedControl_tiltedChannel.cs" />
+    <Compile Include="ControlFiles\HardcodedControl\HardcodedControl_straightChannel.cs" />
+    <Compile Include="ControlFiles\HardcodedControl\IBMPaperReproduce.cs" />
+    <Compile Include="ControlFiles\HardcodedControl\ParticleStokesFlow.cs" />
+    <Compile Include="ControlFiles\Tests\HardcodedTestExamples.cs" />
+    <Compile Include="ControlFiles\Tests\TestProgram.cs" />
+    <Compile Include="FluxesAtBoundary\FSI_ConvectionAtIB.cs" />
+    <Compile Include="FluxesAtBoundary\FSI_DivergenceAtIB.cs" />
+    <Compile Include="FluxesAtBoundary\FSI_PressureAtIB.cs" />
+    <Compile Include="FluxesAtBoundary\FSI_ViscosityAtIB.cs" />
     <Compile Include="FSI_Collision.cs" />
     <Compile Include="FSI_TimestepInfo.cs" />
     <Compile Include="FSI_LevelSetUpdate.cs" />
-    <Compile Include="Particle\ParticleAcceleration.cs" />
+    <Compile Include="FSI_Tutorial.cs" />
+    <Compile Include="Particle\Motion\Motion_Wet_NoTranslation.cs" />
+    <Compile Include="Particle\Motion\Motion_Wet_NoRotation.cs" />
+    <Compile Include="Particle\Motion\Motion_AddedDamping.cs" />
+    <Compile Include="Particle\Motion\Motion_Dry_NoTranslation.cs" />
+    <Compile Include="Particle\Motion\Motion_Dry_NoRotation.cs" />
+    <Compile Include="Particle\Motion\Motion_Dry.cs" />
+    <Compile Include="Particle\Motion\Motion_Fixed.cs" />
+    <Compile Include="Particle\Motion\ParticleMotionInit.cs" />
     <Compile Include="Particle\ParticleAddedDamping.cs" />
     <Compile Include="Particle\ParticleForceIntegration.cs" />
+    <Compile Include="Particle\Motion\_Motion_Main.cs" />
     <Compile Include="Particle\ParticleUnderrelaxation.cs" />
-    <Compile Include="Particle\Shapes\Falle_Rechts.cs" />
-    <Compile Include="Particle\Shapes\Falle_Links.cs" />
+    <Compile Include="Particle\ParticleUnderrelaxationParam.cs" />
+    <Compile Include="Particle\Shapes\Particle_Shell.cs" />
+    <Compile Include="Particle\Shapes\Particle_Rectangle.cs" />
+    <Compile Include="Particle\Shapes\Particle_TrapRight.cs" />
+    <Compile Include="Particle\Shapes\Particle_TrapLeft.cs" />
     <Compile Include="Particle\Shapes\Particle_Pentagone.cs" />
     <Compile Include="Particle\Shapes\Particle_Bean.cs" />
     <Compile Include="Particle\Shapes\Particle_superEllipsoid.cs" />
     <Compile Include="Particle\Shapes\Particle_Sphere.cs" />
     <Compile Include="Particle\Shapes\Particle_Hippopede.cs" />
-    <Compile Include="Particle\Shapes\Particle_Squircle.cs" />
     <Compile Include="Particle\Shapes\Particle_Ellipsoid.cs" />
-    <Compile Include="active_particles\HardcodedControlDeussen.cs" />
-    <Compile Include="IBMPaperReproduce.cs" />
-    <Compile Include="HardcodedControl.cs" />
     <Compile Include="FSI_Control.cs" />
     <Compile Include="FSI_SolverMain.cs" />
-    <Compile Include="Particle\Particle.cs" />
+    <Compile Include="Particle\Particle_Main.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="FSI_Auxillary.cs" />
-    <Compile Include="Tests\HardcodedTestExamples.cs" />
-    <Compile Include="Tests\TestProgram.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
@@ -197,6 +211,7 @@
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

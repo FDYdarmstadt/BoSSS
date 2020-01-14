@@ -14,7 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using System;
 using System.Runtime.InteropServices;
+using ilPSP.Utils;
+using MPI.Wrappers.Utils;
 
 namespace ilPSP.Kraypis {
 
@@ -24,7 +27,14 @@ namespace ilPSP.Kraypis {
     /// <remarks>
     /// METIS can downloaded from http://glaros.dtc.umn.edu/gkhome/metis/metis/overview
     /// </remarks>
-    public class METIS {
+    static public class METIS {
+
+        static UnsafeMETIS m_METIS; 
+
+        static METIS()
+        {
+            m_METIS = new UnsafeMETIS();
+        }
 
         /// <summary>
         /// Length of the METIS options array
@@ -65,24 +75,106 @@ namespace ilPSP.Kraypis {
             METIS_ERROR = -4    /*!< Some other errors */
         }
 
+        static public METIS.ReturnCodes PARTGRAPHKWAY(ref int nvtxs, ref int ncon, int[] xadj,
+                                                int[] adjncy, int[] vwgt, int[] vsize,
+                                                int[] adjwgt, ref int nparts, double[] tpwgts,
+                                                double[] ubvec, int[] options, ref int objval, int[] part)
+        {
+            return (METIS.ReturnCodes) m_METIS.PartGraphKway(ref nvtxs, ref ncon, xadj,
+                                                adjncy, vwgt, vsize,
+                                                adjwgt, ref nparts, tpwgts,
+                                                ubvec, options, ref objval, part);
+        }
+
+        static public METIS.ReturnCodes PARTGRAPHRECURSIVE(ref int nvtxs, ref int ncon, int[] xadj,
+                                                int[] adjncy, int[] vwgt, int[] vsize,
+                                                int[] adjwgt, ref int nparts, double[] tpwgts,
+                                                double[] ubvec, int[] options, ref int objval, int[] part)
+        {
+            return (METIS.ReturnCodes) m_METIS.PartGraphRecursive(ref nvtxs, ref ncon, xadj,
+                                                adjncy, vwgt, vsize,
+                                                adjwgt, ref nparts, tpwgts,
+                                                ubvec, options, ref objval, part);
+        }
+
+
+        static public METIS.ReturnCodes SETDEFAULTOPTIONS(int[] options) {
+            //return m_METIS.SetDefaultOptions(options);
+            options.SetAll(-1);
+            return METIS.ReturnCodes.METIS_OK;
+        }
+
+
+    }
+
+    public sealed class UnsafeMETIS : DynLibLoader
+    {
+        // workaround for .NET bug:
+        // https://connect.microsoft.com/VisualStudio/feedback/details/635365/runtimehelpers-initializearray-fails-on-64b-framework
+        static PlatformID[] Helper()
+        {
+            PlatformID[] p = new PlatformID[2];
+            p[0] = PlatformID.Win32NT;
+            p[1] = PlatformID.Unix;
+            return p;
+        }
+
         /// <summary>
-        /// see METIS manual;
+        /// ctor
         /// </summary>
-        [DllImport("metis", EntryPoint = "METIS_PartGraphKway")]
-        public static extern int PartGraphKway(ref int nvtxs, ref int ncon,
-                                                int[] xadj, int[] adjncy,
-                                                int[] vwgt, int[] vsize, int[] adjwgt,
-                                                ref int nparts, double[] tpwgts, double[] ubvec,
-                                                int[] options, ref int objval, int[] part);
+        public UnsafeMETIS() :
+            base(new string[] { "metis.dll", "libBoSSSnative_seq.so" },
+                  new string[2][][],
+                  new GetNameMangling[] { DynLibLoader.Identity, DynLibLoader.BoSSS_Prefix },
+                  Helper(), //new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix },
+                  new int[] { -1, -1 })
+        { }
+
+#pragma warning disable 649
+        _PartGraphKway METIS_PartGraphKway;
+        _PartGraphRecursive METIS_PartGraphRecursive;
+        //_SetDefaultOptions METIS_SetDefaultOptions;
+#pragma warning restore 649
 
         /// <summary>
         /// see METIS manual;
         /// </summary>
-        [DllImport("metis", EntryPoint = "METIS_PartGraphRecursive")]
-        public static extern int PartGraphRecursive(ref int nvtxs, ref int ncon,
-                                                     int[] xadj, int[] adjncy,
-                                                     int[] vwgt, int[] vsize, int[] adjwgt,
-                                                     ref int nparts, double[] tpwgts, double[] ubvec,
-                                                     int[] options, ref int objval, int[] part);
+        public unsafe delegate int _PartGraphKway(ref int nvtxs, ref int ncon, int[] xadj,
+                                                int[] adjncy, int[] vwgt, int[] vsize,
+                                                int[] adjwgt, ref int nparts, double[] tpwgts,
+                                                double[] ubvec, int[] options, ref int objval, int[] part);
+
+        public unsafe _PartGraphKway PartGraphKway
+        {
+            get { return METIS_PartGraphKway; }
+        }
+
+        
+
+        /// <summary>
+        /// see METIS manual;
+        /// </summary>
+        public unsafe delegate int _PartGraphRecursive(ref int nvtxs, ref int ncon, int[] xadj,
+                                                int[] adjncy, int[] vwgt, int[] vsize,
+                                                int[] adjwgt, ref int nparts, double[] tpwgts,
+                                                double[] ubvec, int[] options, ref int objval, int[] part);
+
+        public unsafe _PartGraphRecursive PartGraphRecursive
+        {
+            get { return METIS_PartGraphRecursive; }
+        }
+
+        
+        // <summary>
+        // see METIS manual;
+        // </summary>
+        //public unsafe delegate int _SetDefaultOptions(int[] options);
+        /*
+        public unsafe _SetDefaultOptions SetDefaultOptions
+        {
+            get { return METIS_SetDefaultOptions; }
+        }
+        */
     }
+    
 }
