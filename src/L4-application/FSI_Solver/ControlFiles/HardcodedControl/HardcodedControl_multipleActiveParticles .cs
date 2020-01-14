@@ -143,13 +143,13 @@ namespace BoSSS.Application.FSI_Solver {
         public static FSI_Control TwoParticles(int k = 2, int amrLevel = 6, double aspectRatio = 0.5, double angle = -10) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/home/ij83requ/default_bosss_db", 1);
-            //C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
+            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
 
             List<string> boundaryValues = new List<string> {
                 "Wall"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 20, lengthY: 20, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
+            C.SetGrid(lengthX: 10, lengthY: 10, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel: amrLevel);
             C.hydrodynamicsConvergenceCriterion = 1e-1;
             // Fluid Properties
@@ -163,13 +163,13 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             double particleDensity = 1;
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, 1);
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { -1.5, 0 }, startAngl: 0, activeStress: 1));
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { 1.5, 0 }, startAngl: 180 + angle, activeStress: 1));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { -1.5, 0 }, startAngl: 0, activeStress: 10));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { 1.5, 0 }, startAngl: 180 + angle, activeStress: 10));
 
             // misc. solver options
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            double dt = 1e-3;
+            double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 100000000;

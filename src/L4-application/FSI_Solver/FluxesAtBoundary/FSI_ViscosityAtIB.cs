@@ -123,17 +123,17 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
                                 returnValue -= muA * (Grad_vA[dD] * inp.Normal[dD]) * (inp.Normal[dN] * uA[dN] - inp.Normal[dN] * uAFict[dN]) * inp.Normal[component];      
                             }
                             // penalty term
-                            returnValue += muA * N[dN] * (uA[dN] - uAFict[dN]) * N[component] * vA * _penalty;                  
+                            returnValue += muA * inp.Normal[dN] * (uA[dN] - uAFict[dN]) * inp.Normal[component] * vA * _penalty;                  
                         }
                         // tangential direction, active part
                         double[,] P = new double[dim, dim];
                         for (int d1 = 0; d1 < dim; d1++) {
                             for (int d2 = 0; d2 < dim; d2++) {
                                 if (d1 == d2) {
-                                    P[d1, d2] = 1 - N[d1] * N[d2];
+                                    P[d1, d2] = 1 - inp.Normal[d1] * inp.Normal[d2];
                                 }
                                 else {
-                                    P[d1, d2] = N[d1] * N[d2];
+                                    P[d1, d2] = inp.Normal[d1] * inp.Normal[d2];
                                 }
                             }
                         }
