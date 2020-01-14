@@ -472,9 +472,9 @@ namespace BoSSS.Application.Rheology {
                             XOP.EquationComponents["div"].Add(new Divergence_DerivativeSource_Flux(d, BcMap));
 
                             //Pressure stabilization for LDG
-                            //var presStab = new PressureStabilization(this.Control.PresPenalty2, this.Control.Reynolds);
-                            //Console.WriteLine("PresPenalty2 = " + this.Control.PresPenalty2);
-                            //XOP.EquationComponents["div"].Add(presStab);
+                            var presStab = new PressureStabilization(this.Control.PresPenalty2, this.Control.Reynolds);
+                            Console.WriteLine("PresPenalty2 = " + this.Control.PresPenalty2);
+                            XOP.EquationComponents["div"].Add(presStab);
                         }
                     } else {
                         for (int d = 0; d < D; d++) {
@@ -494,6 +494,8 @@ namespace BoSSS.Application.Rheology {
                     
 
                     if (ConstitutiveEqs) {
+                        Console.WriteLine($"configuring Weissenberg number: {this.Control.Weissenberg:#.##e+00}");
+
                         //Convective part
                         XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Convective(0, BcMap, this.Control.Weissenberg, this.Control.alpha));
                         XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Convective(1, BcMap, this.Control.Weissenberg, this.Control.alpha));
@@ -1164,7 +1166,7 @@ namespace BoSSS.Application.Rheology {
                     int pPreLv = Math.Max(1, pPrs - iLevel);
                     int pStrLv = Math.Max(1, pStr - iLevel);
                     
-                    /*
+                    
                     configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[2];
                     configs[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig() {
                             DegreeS = new int[] { pVelLv, pVelLv, pStrLv, pStrLv, pStrLv },
@@ -1190,7 +1192,7 @@ namespace BoSSS.Application.Rheology {
                     };
                     //*/
 
-                    
+                    /*
                     configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 4];
                     
                     // configurations for velocity
@@ -1209,6 +1211,7 @@ namespace BoSSS.Application.Rheology {
                         VarIndex = new int[] { D }
                     };
 
+                    
                     // configurations for stresses
                     for (int d = 3; d < 6; d++) {
                         configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {

@@ -253,20 +253,29 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 }
             }
 
-            if(maxTestBasis != null) {
-                foreach(var b in base.m_CodomainBasisS) {
-                    if(!b.IsSubBasis(maxTestBasis))
+            for (int i = 0; i < Gamma; i++) {
+                var b = base.m_CodomainBasisS[i];
+
+                if (this.m_EdgeForm_V[i].m_AllComponentsOfMyType.Length > 0) {
+                    if (maxTestBasis == null)
+                        throw new NotSupportedException();
+                    if (!b.IsSubBasis(maxTestBasis))
                         throw new NotSupportedException();
                 }
 
-            }
+               
 
-            if(maxTestGradientBasis != null) {
-                foreach(var b in base.m_CodomainBasisS) {
-                    if(!b.IsSubBasis(maxTestGradientBasis))
+                if (this.m_EdgeForm_GradV[i].m_AllComponentsOfMyType.Length > 0) {
+                    if (maxTestGradientBasis == null)
                         throw new NotSupportedException();
-                }
+                    if (!b.IsSubBasis(maxTestGradientBasis))
+                        throw new NotSupportedException();
+                    //foreach (var b in base.m_CodomainBasisS) {
+                    //    if (!b.IsSubBasis(maxTestGradientBasis))
+                    //        throw new NotSupportedException();
+                    //}
 
+                }
             }
         }
 
