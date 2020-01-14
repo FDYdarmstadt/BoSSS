@@ -105,6 +105,7 @@
     <Compile Include="FSI_LevelSetUpdate.cs" />
     <Compile Include="Particle\Motion\Motion.AllParticles.cs" />
     <Compile Include="Particle\Motion\Motion.Fixed.withForces.cs" />
+    <Compile Include="Particle\Motion\Motion.Ghost.cs" />
     <Compile Include="Particle\Motion\Motion.Wet.NoTranslation.cs" />
     <Compile Include="Particle\Motion\Motion.Wet.NoRotation.cs" />
     <Compile Include="Particle\Motion\Motion.AddedDamping.cs" />

@@ -103,6 +103,22 @@ namespace BoSSS.Application.FSI_Solver {
         private double m_MomentOfInertia;
         [DataMember]
         private double m_LengthScaleMax;
+        [DataMember]
+        private bool HasGhost = false;
+        [DataMember]
+        private int GhostID;
+
+        /// <summary>
+        /// Ghost particles are used to mirror a particle at a periodic boundary.
+        /// </summary>
+        internal void SetGhost(int ghostID) {
+            HasGhost = true;
+            GhostID = ghostID;
+        }
+
+        internal bool GetHasGhost() => HasGhost;
+
+        internal int GetGhostID() => GhostID;
 
         /// <summary>
         /// Gravity (volume force) acting on the particle.
@@ -169,6 +185,12 @@ namespace BoSSS.Application.FSI_Solver {
             }
             private set => m_LengthScaleMax = value;
         }
+
+        /// <summary>
+        /// Include rotation?
+        /// </summary>
+        [DataMember]
+        internal virtual bool IsGhost { get; } = false;
 
         /// <summary>
         /// Include rotation?
@@ -452,6 +474,10 @@ namespace BoSSS.Application.FSI_Solver {
                 m_RotationalVelocity[0] = CalculateAngularVelocity(dt, m_CollisionTimestep);
             }
         }
+
+        protected virtual void CopyNewPosition(Vector position, double angle) { }
+
+        protected virtual void CopyNewVelocity(Vector translational, double rotational) { }
 
         public void UpdateForcesAndTorque(int particleID, double[] fullListHydrodynamics) {
             double[] tempForces = new double[m_Dim];

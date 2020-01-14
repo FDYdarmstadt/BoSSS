@@ -1014,10 +1014,17 @@ namespace BoSSS.Application.FSI_Solver {
         /// </param>
         internal void CalculateParticleVelocity(List<Particle> Particles, double dt, int IterationCounter) {
             foreach (Particle p in Particles) {
+                if (p.Motion.IsGhost)
+                    continue;
                 if (IterationCounter == 0) {
                     p.Motion.SaveVelocityOfPreviousTimestep();
                 }
                 p.Motion.UpdateParticleVelocity(dt);
+                if (p.Motion.GetHasGhost()) {
+                    Particle ghost = Particles[p.Motion.GetGhostID()];
+                    ghost.Motion.CopyNewVelocity(p.Motion.GetTranslationalVelocity(), p.Motion.GetRotationalVelocity());
+                    ghost.Motion.UpdateParticleVelocity(dt);
+                }
             }
         }
 
@@ -1030,7 +1037,14 @@ namespace BoSSS.Application.FSI_Solver {
         private void CalculateParticlePosition(double dt) {
             for (int p = 0; p < m_Particles.Count; p++) {
                 Particle particle = m_Particles[p];
+                if (particle.Motion.IsGhost)
+                    continue;
                 particle.Motion.UpdateParticlePositionAndAngle(dt);
+                if (particle.Motion.GetHasGhost()) {
+                    Particle ghost = m_Particles[particle.Motion.GetGhostID()];
+                    ghost.Motion.CopyNewPosition(particle.Motion.GetPosition(), particle.Motion.GetAngle());
+                    ghost.Motion.UpdateParticlePositionAndAngle(dt);
+                }
             }
         }
 
