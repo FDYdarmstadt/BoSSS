@@ -158,7 +158,8 @@ namespace BoSSS.Solution.XNSECommon {
                 //grd.LocatePoint(new double[] { 5, 0 }, out GlobalID, out GlobalIndex, out IsInside, out onthisProc, LsTrk.Regions.GetCutCellSubGrid().VolumeMask.Complement());
 
                 //trying this:
-                grd.LocatePoint(new double[D], out GlobalID, out GlobalIndex, out IsInside, out onthisProc, LsTrk.Regions.GetCutCellSubGrid().VolumeMask.Complement());
+                double[] pt = (D == 2) ? new double[] { -100, -100 } : new double[] { -5.0, -5.0, -5.0 };
+                grd.LocatePoint(pt, out GlobalID, out GlobalIndex, out IsInside, out onthisProc, LsTrk.Regions.GetCutCellSubGrid().VolumeMask.Complement());
 
 
                 int iRowGl = -111;
@@ -1086,7 +1087,8 @@ namespace BoSSS.Solution.XNSECommon {
                                 }
 
                                 if (sst == SurfaceSressTensor.SurfaceRateOfDeformation || sst == SurfaceSressTensor.FullBoussinesqScriven) {
-                                    throw new NotImplementedException("ToDo");
+                                    //throw new NotImplementedException("ToDo");
+                                    Console.WriteLine("WARNING: projection of surface tension force without surface rate of deformation terms");
                                 }
                             }
 

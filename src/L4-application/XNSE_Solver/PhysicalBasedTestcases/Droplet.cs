@@ -53,6 +53,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
+            bool steadyInterface = true;
 
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
             //_DbPath = @"D:\local\local_test_db";
@@ -161,8 +162,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             if(D == 2) {
                 C.GridFunc = delegate () {
-                    double[] Xnodes = GenericBlas.Linspace(0, xSize, kelem + 0);
-                    double[] Ynodes = GenericBlas.Linspace(0, ySize, kelem + 0);
+                    double[] Xnodes = GenericBlas.Linspace(-xSize/2.0, xSize/2.0, kelem + 0);
+                    double[] Ynodes = GenericBlas.Linspace(-ySize/2.0, ySize/2.0, kelem + 0);
                     var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
                     //var grd = Grid2D.UnstructuredTriangleGrid(Xnodes, Ynodes);
 
@@ -173,13 +174,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
                     grd.DefineEdgeTags(delegate (double[] X) {
                         byte et = 0;
-                        if(Math.Abs(X[1]) <= 1.0e-8)
+                        if(Math.Abs(X[1] + ySize/2.0) <= 1.0e-8)
                             et = 1;
-                        if(Math.Abs(X[1] - ySize) <= 1.0e-8)
+                        if(Math.Abs(X[1] - ySize/2.0) <= 1.0e-8)
                             et = 2;
-                        if(Math.Abs(X[0]) <= 1.0e-8)
+                        if(Math.Abs(X[0] + xSize/2.0) <= 1.0e-8)
                             et = 3;
-                        if(Math.Abs(X[0] - xSize) <= 1.0e-8)
+                        if(Math.Abs(X[0] - xSize/2.0) <= 1.0e-8)
                             et = 4;
 
                         return et;
@@ -234,8 +235,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             double r = 0.2;
 
-            Func<double[], double> PhiFunc = (X => ((X[0] - 0.5).Pow2() + (X[1] - 0.5).Pow2()).Sqrt() - r);         // signed distance
-            //Func<double[], double> PhiFunc = (X => ((X[0] - 0.5).Pow2() + (X[1] - 0.5).Pow2()) - r.Pow2());         // quadratic
+            Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() + (X[1] - 0.0).Pow2()).Sqrt() - r);         // signed distance
+            //Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() + (X[1] - 0.0).Pow2()) - r.Pow2());         // quadratic
 
             if(D == 3) {
                 PhiFunc = (X => ((X[0] - 0.5).Pow2() + (X[1] - 0.5).Pow2() + (X[2] - 0.5).Pow2()) - r.Pow2());
@@ -313,7 +314,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region solver
 
             C.ComputeEnergyProperties = true;
-            //C.solveKineticEnergyEquation = true;
+            C.solveKineticEnergyEquation = true;
 
             C.CheckJumpConditions = true;
             C.CheckInterfaceProps = true;
@@ -348,10 +349,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             //C.Option_LevelSetEvolution = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
-            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+            C.Option_LevelSetEvolution = (steadyInterface) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
 
 
-            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
+            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.FullBoussinesqScriven;
             //C.PhysicalParameters.mu_I = 1.0 * sigma;
             //C.PhysicalParameters.lambda_I = 1.0 * sigma;
 
@@ -417,7 +418,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
 
             //C.LSunderrelax = 0.05;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+            C.Timestepper_LevelSetHandling = (steadyInterface) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
 
             C.TimesteppingMode = compMode;
             //C.CompMode = AppControl._CompMode.Transient; 

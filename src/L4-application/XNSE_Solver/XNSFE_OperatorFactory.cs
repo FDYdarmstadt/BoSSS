@@ -304,65 +304,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
 
-            // advanced settings for the navier slip boundary condition
-            // ========================================================
-
-            CellMask SlipArea;
-            switch (this.dntParams.GNBC_Localization) {
-                case NavierSlip_Localization.Bulk: {
-                        SlipArea = this.LsTrk.GridDat.BoundaryCells.VolumeMask;
-                        break;
-                    }
-                case NavierSlip_Localization.ContactLine: {
-                        SlipArea = null;
-                        break;
-                    }
-                case NavierSlip_Localization.Nearband: {
-                        SlipArea = this.LsTrk.GridDat.BoundaryCells.VolumeMask.Intersect(this.LsTrk.Regions.GetNearFieldMask(this.LsTrk.NearRegionWidth));
-                        break;
-                    }
-                case NavierSlip_Localization.Prescribed: {
-                        throw new NotImplementedException();
-                    }
-                default:
-                    throw new ArgumentException();
-            }
-
-
-            MultidimensionalArray SlipLengths;
-            SlipLengths = this.LsTrk.GridDat.Cells.h_min.CloneAs();
-            SlipLengths.Clear();
-            //SlipLengths.AccConstant(-1.0);
-            if (SlipArea != null) {
-                foreach (Chunk cnk in SlipArea) {
-                    for (int i = cnk.i0; i < cnk.JE; i++) {
-                        switch (this.dntParams.GNBC_SlipLength) {
-                            case NavierSlip_SlipLength.hmin_DG: {
-                                    int degU = ColMapping.BasisS.ToArray()[0].Degree;
-                                    SlipLengths[i] = this.LsTrk.GridDat.Cells.h_min[i] / (degU + 1);
-                                    break;
-                                }
-                            case NavierSlip_SlipLength.hmin_Grid: {
-                                    SlipLengths[i] = SlipLengths[i] = this.LsTrk.GridDat.Cells.h_min[i];
-                                    break;
-                                }
-                            case NavierSlip_SlipLength.Prescribed_SlipLength: {
-                                    SlipLengths[i] = this.physParams.sliplength;
-                                    break;
-                                }
-                            case NavierSlip_SlipLength.Prescribed_Beta: {
-                                    SlipLengths[i] = -1.0;
-                                    break;
-                                }
-                        }
-                    }
-                }
-
-            }
-
-
             // parameter assembly
             // ==================
+            #region param assembly
 
             LevelSet Phi = (LevelSet)(this.LsTrk.LevelSets[0]);
             SpeciesId[] SpcToCompute = AgglomeratedCellLengthScales.Keys.ToArray();
@@ -519,6 +463,9 @@ namespace BoSSS.Application.XNSE_Solver {
                 HeatFluxParam = ExtParams;
             }
 
+            #endregion
+
+
             // concatenate everything
             var Params = ArrayTools.Cat<DGField>(
                 U0_U0mean,
@@ -554,6 +501,104 @@ namespace BoSSS.Application.XNSE_Solver {
             }
 
 
+
+            // advanced settings for the navier slip boundary condition
+            // ========================================================
+
+
+            CellMask SlipArea;
+            switch (this.dntParams.GNBC_Localization) {
+                case NavierSlip_Localization.Bulk: {
+                        SlipArea = this.LsTrk.GridDat.BoundaryCells.VolumeMask;
+                        break;
+                    }
+                case NavierSlip_Localization.ContactLine: {
+                        SlipArea = null;
+                        break;
+                    }
+                case NavierSlip_Localization.Nearband: {
+                        SlipArea = this.LsTrk.GridDat.BoundaryCells.VolumeMask.Intersect(this.LsTrk.Regions.GetNearFieldMask(this.LsTrk.NearRegionWidth));
+                        break;
+                    }
+                case NavierSlip_Localization.Prescribed: {
+                        throw new NotImplementedException();
+                    }
+                default:
+                    throw new ArgumentException();
+            }
+
+
+            MultidimensionalArray SlipLengths;
+            SlipLengths = this.LsTrk.GridDat.Cells.h_min.CloneAs();
+            SlipLengths.Clear();
+            //SlipLengths.AccConstant(-1.0);
+            if (SlipArea != null) {
+                foreach (Chunk cnk in SlipArea) {
+                    for (int i = cnk.i0; i < cnk.JE; i++) {
+                        switch (this.dntParams.GNBC_SlipLength) {
+                            case NavierSlip_SlipLength.hmin_DG: {
+                                    int degU = ColMapping.BasisS.ToArray()[0].Degree;
+                                    SlipLengths[i] = this.LsTrk.GridDat.Cells.h_min[i] / (degU + 1);
+                                    break;
+                                }
+                            case NavierSlip_SlipLength.hmin_Grid: {
+                                    SlipLengths[i] = SlipLengths[i] = this.LsTrk.GridDat.Cells.h_min[i];
+                                    break;
+                                }
+                            case NavierSlip_SlipLength.Prescribed_SlipLength: {
+                                    SlipLengths[i] = this.physParams.sliplength;
+                                    break;
+                                }
+                            case NavierSlip_SlipLength.Prescribed_Beta: {
+                                    SlipLengths[i] = -1.0;
+                                    break;
+                                }
+                        }
+                    }
+                }
+
+            }
+
+
+            // interface coefficients 
+            // ======================
+
+            MultidimensionalArray lambdaI, muI;
+            lambdaI = SlipLengths.CloneAs();
+            lambdaI.Clear();
+            muI = SlipLengths.CloneAs();
+            muI.Clear();
+
+            foreach (Chunk cnk in this.LsTrk.Regions.GetCutCellMask()) {
+                for (int i = cnk.i0; i < cnk.JE; i++) {
+
+                    double lI = 0.0;
+                    double mI = 0.0;
+
+                    // do the magic!!!
+                    if (this.LsTrk.GridDat.Cells.CellCenter[i, 0] > 0 && this.LsTrk.GridDat.Cells.CellCenter[i, 1] > 0) {
+
+                    }
+                    if (this.LsTrk.GridDat.Cells.CellCenter[i, 0] > 0 && this.LsTrk.GridDat.Cells.CellCenter[i, 1] < 0) {
+                        //lI = config.physParams.Sigma;
+                        mI = config.physParams.Sigma;
+                    }
+                    if (this.LsTrk.GridDat.Cells.CellCenter[i, 0] < 0 && this.LsTrk.GridDat.Cells.CellCenter[i, 1] < 0) {
+                        //lI = -config.physParams.Sigma;
+                        mI = -config.physParams.Sigma;
+                    }
+                    if (this.LsTrk.GridDat.Cells.CellCenter[i, 0] < 0 && this.LsTrk.GridDat.Cells.CellCenter[i, 1] > 0) {
+                        //lI = 10 * config.physParams.Sigma;
+                        mI = 10 * config.physParams.Sigma;
+                    }
+
+                    lambdaI[i] = lI;
+                    muI[i] = mI;
+                }
+            }
+
+
+
             // assemble the matrix & affine vector
             // ===================================
 
@@ -580,6 +625,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 if (this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
                     foreach (var kv in InterfaceLengths) {
                         mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("InterfaceLengths", kv.Value);
+                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("lambda_interface", lambdaI);
+                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("mu_interface", muI);
                     }
                 }
 
@@ -605,6 +652,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 if (this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
                     foreach (var kv in InterfaceLengths) {
                         eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("InterfaceLengths", kv.Value);
+                        eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("lambda_interface", lambdaI);
+                        eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("mu_interface", muI);
                     }
                 }
 
