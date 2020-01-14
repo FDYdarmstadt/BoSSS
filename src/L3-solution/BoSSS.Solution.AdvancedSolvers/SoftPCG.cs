@@ -34,6 +34,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// </summary>
     public class SoftPCG : ISolverSmootherTemplate, ISolverWithCallback {
 
+        /*
         static public ISolverSmootherTemplate InitMultigridChain(MultigridOperator MgOp,
             Action<int, SoftPCG> ParamsSeter,
             Func<ISolverSmootherTemplate> CoarsestSolverFactory) {
@@ -51,23 +52,45 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 return MgTop;
             }
         }
-
+        */
         
-        public double m_Tolerance = 1.0e-10;
-        public int m_MaxIterations = 10000;
-        public int m_MinIterations = 5;
+        //public double m_Tolerance = 1.0e-10;
+        //public int m_MaxIterations = 10000;
+        //public int m_MinIterations = 5;
 
+        /// <summary>
+        /// ~
+        /// </summary>
+        public Func<int, double, double, bool> TerminationCriterion {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public SoftPCG() {
+            TerminationCriterion = (iIter, r0, ri) => iIter <= 1;
+        }
+
+
+        /// <summary>
+        /// ~
+        /// </summary>
         public Action<int, double[], double[], MultigridOperator> IterationCallback {
             get;
             set;
         }
 
+        /// <summary>
+        /// ~
+        /// </summary>
         public ISolverSmootherTemplate Precond {
             get;
             set;
         }
 
-        int NoOfIterations = 0;
+        public int NoOfIterations = 0;
 
         /// <summary>
         /// implementation of the CG algorithm
@@ -105,9 +128,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // ==============
                 GenericBlas.dswap(L, x, 1, P, 1);
                 m_Matrix.SpMV(-1.0, P, 1.0, R);
-                if (IterationCallback != null) {
-                    IterationCallback(NoOfIterations, P.CloneAs(), R.CloneAs(), this.m_MgOp);
-                }
+                IterationCallback?.Invoke(NoOfIterations, P.CloneAs(), R.CloneAs(), this.m_MgOp);
+
                 GenericBlas.dswap(L, x, 1, P, 1);
                 if (Precond != null) {
                     Precond.Solve(Z, R);
@@ -121,13 +143,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double ResNorm;
 
                 ResNorm = Math.Sqrt(alpha);
+                double ResNorm0 = ResNorm;
+                if (TerminationCriterion(0, ResNorm0, ResNorm)) {
+                    this.m_Converged = true;
+                    return;
+                }
 
                 // iterate
                 // =======
-                NoOfIterations++; // one iteration has allready been performed (P0, R0)
-                for (int n = 1; n < this.m_MaxIterations; n++) {
+                NoOfIterations++; // one iteration has already been performed (P0, R0)
+                for (int n = 1; true; n++) {
 
-                    if (ResNorm <= m_Tolerance && NoOfIterations >= m_MinIterations) {
+                    if (TerminationCriterion(n,ResNorm0, ResNorm)) {
                         this.m_Converged = true;
                         break;
                     }
@@ -186,10 +213,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         MultigridOperator m_MgOp;
-        ilPSP.LinSolvers.monkey.CPU.RefMatrix m_Matrix; // im Moment schneller, ca 5X
-        //BlockMsrMatrix m_Matrix;
+        BlockMsrMatrix m_Matrix;
 
 
+        /// <summary>
+        /// ~
+        /// </summary>
         public void Init(MultigridOperator op) {
             using (new FuncTrace()) {
                 var M = op.OperatorMatrix;
@@ -201,8 +230,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if (!M.ColPartition.EqualsPartition(MgMap.Partitioning))
                     throw new ArgumentException("Column partitioning mismatch.");
 
-                //this.m_Matrix = M;
-                this.m_Matrix = new ilPSP.LinSolvers.monkey.CPU.RefMatrix(M.ToMsrMatrix());
+                this.m_Matrix = M;
                 /*
                 int n = m_Matrix.RowPartitioning.LocalLength;
                 if(n > 50000) {
@@ -280,9 +308,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             var clone = new SoftPCG();
             clone.IterationCallback = this.IterationCallback;
             clone.NoOfIterations = this.NoOfIterations;
-            clone.m_Tolerance = this.m_Tolerance;
-            clone.m_MaxIterations = this.m_MaxIterations;
-            clone.m_MinIterations = this.m_MinIterations;
+            clone.TerminationCriterion = this.TerminationCriterion;
             clone.Precond = null;
         return clone;
     }

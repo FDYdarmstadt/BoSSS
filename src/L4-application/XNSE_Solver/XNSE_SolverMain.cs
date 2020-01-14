@@ -590,7 +590,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     // solver 
                     this.Control.NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.NonLinearSolver.MinSolverIterations; //m_BDF_Timestepper.config_NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.Solver_MinIterations;
 
-                    if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.NewtonGMRES) {
+                    if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
                         m_BDF_Timestepper.XdgSolverFactory.Selfmade_precond =
                                             new Schwarz() {
                                                 m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
@@ -1730,14 +1730,14 @@ namespace BoSSS.Application.XNSE_Solver {
                     // configurations for velocity
                     for (int d = 0; d < D; d++) {
                         configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
-                            Degree = Math.Max(1, pVel - iLevel),
+                            DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
                             mode = this.Control.VelocityBlockPrecondMode,
                             VarIndex = new int[] { d }
                         };
                     }
                     // configuration for pressure
                     configs[iLevel][D] = new MultigridOperator.ChangeOfBasisConfig() {
-                        Degree = Math.Max(0, pPrs - iLevel),
+                        DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
                         mode = this.Control.PressureBlockPrecondMode,
                         VarIndex = new int[] { D }
                     };
@@ -3958,7 +3958,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     // configuration for Temperature
                     configs[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig() {
-                        Degree = Math.Max(0, pEnergy - iLevel),
+                        DegreeS = new int[] { Math.Max(0, pEnergy - iLevel) },
                         mode = MultigridOperator.Mode.Eye,
                         VarIndex = new int[] { 0 }
                     };
@@ -4420,7 +4420,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     // configuration for Temperature
                     configs[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig() {
-                        Degree = Math.Max(0, pTemp - iLevel),
+                        DegreeS = new int[] { Math.Max(0, pTemp - iLevel) },
                         mode = this.Control.TemperatureBlockPrecondMode,
                         VarIndex = new int[] { 0 }
                     };
@@ -4431,7 +4431,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         int pFlux = this.HeatFlux[0].Basis.Degree;
                         for (int d = 0; d < D; d++) {
                             configs[iLevel][d + 1] = new MultigridOperator.ChangeOfBasisConfig() {
-                                Degree = Math.Max(0, pFlux - iLevel),
+                                DegreeS = new int[] { Math.Max(0, pFlux - iLevel) },
                                 mode = MultigridOperator.Mode.Eye,
                                 VarIndex = new int[] { d + 1 }
                             };

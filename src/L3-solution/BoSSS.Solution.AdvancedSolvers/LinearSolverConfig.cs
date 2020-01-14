@@ -72,12 +72,12 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// Schwarz method with Multigridblocking on the coarsest level and coarse solve
         /// </summary>
-        exp_schwarz_Kcycle_directcoarse = 12,
+        exp_schwarz_MG_directcoarse = 12,
 
         /// <summary>
         /// Schwarz method with Multigridblocking on the coarsest level and coarse solve with an overlap of 1
         /// </summary>
-        exp_schwarz_Kcycle_directcoarse_overlap = 13,
+        exp_schwarz_MG_directcoarse_overlap = 13,
 
         //GMRES (iterative Solver)
 
@@ -138,10 +138,7 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         exp_softpcg_schwarz_directcoarse = 44,
 
-        /// <summary>
-        /// Conjugate gradient with Block Jacobi and multigrid.
-        /// </summary>
-        exp_softpcg_jacobi_mg = 45,
+        exp_softpcg_jacobi_mg=45,
 
         /// <summary>
         /// Conjugate gradient with Schwarz and multigrid.
@@ -165,13 +162,22 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         exp_OrthoS_pMG = 51,
 
-        
+        /// <summary>
+        /// Work-in-progress: experimental stuff for rheology solver
+        /// </summary>
+        exp_Kcycle_schwarz_4Rheology = 52,
+
+
 
         selfmade = 999,
     }
 
+    /// <summary>
+    /// The linear solver config
+    /// </summary>
     [Serializable]
-    public class LinearSolverConfig {
+    public class LinearSolverConfig : ICloneable, IEquatable<LinearSolverConfig>
+    {
 
 
         /// <summary>
@@ -209,7 +215,7 @@ namespace BoSSS.Solution.Control {
         /// Sets the algorithm to use for linear solving, e.g. MUMPS or GMRES.
         /// </summary>
         [DataMember]
-        public LinearSolverCode SolverCode= LinearSolverCode.classic_mumps;
+        public LinearSolverCode SolverCode= LinearSolverCode.classic_pardiso;
 
         /// <summary>
         /// Sets the number of Multigrid levels. Multigrid approach is used to get a Preconditioner for Krylov solvers, e.g. GMRES.
@@ -247,5 +253,39 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [DataMember]
         public string Parallelism = "SEQ";
+
+        /// <summary>
+        /// Clones the NonLinearConfig
+        /// </summary>
+        /// <returns></returns>
+        public object Clone() {
+            var clone = new LinearSolverConfig() {
+                verbose = this.verbose,
+                MaxKrylovDim = this.MaxKrylovDim,
+                MaxSolverIterations = this.MaxSolverIterations,
+                MinSolverIterations = this.MinSolverIterations,
+                NoOfMultigridLevels = this.NoOfMultigridLevels,
+                Parallelism = this.Parallelism,
+                SolverCode = this.SolverCode,
+                TargetBlockSize = this.TargetBlockSize
+        };
+            return clone;
+        }
+
+        /// <summary>
+        /// Compares value not ref!
+        /// </summary>
+        /// <param name="compareto"></param>
+        /// <returns></returns>
+        public bool Equals(LinearSolverConfig compareto) {
+            return this.verbose == compareto.verbose &&
+                this.MaxKrylovDim == compareto.MaxKrylovDim &&
+                this.MaxSolverIterations == compareto.MaxSolverIterations &&
+                this.MinSolverIterations == compareto.MinSolverIterations &&
+                this.NoOfMultigridLevels == compareto.NoOfMultigridLevels &&
+                this.Parallelism == compareto.Parallelism &&
+                this.SolverCode == compareto.SolverCode &&
+                this.TargetBlockSize == compareto.TargetBlockSize;
+        }
     }
 }

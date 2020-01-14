@@ -315,8 +315,6 @@ namespace BoSSS.Foundation.Grid {
                 return null;
         }
 
-        private static void SetEdgeTag(GridCommons baseGrid, IGridData GrdDatTmp, ref bool GridChanged, int iEdge, int jCell, int iFace, byte et) {
-            
-        }
+  
     }
 }
