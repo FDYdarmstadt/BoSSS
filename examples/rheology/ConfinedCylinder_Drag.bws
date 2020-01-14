@@ -5,8 +5,6 @@ restart
   _______________________
 
 
-System.IO.IOException occurred with message 'Could not find or access a database located at 'D:\Users\kummer\Documents\BoSSS-master\public\src\L4-application\CNS\bin\Release\bosss_db_performance_3'' while loading the databases. Type 'LastError' for details.
-
  Console ready for input. Type 'help' for help.
 
 ==============
@@ -25,7 +23,7 @@ Project name is set to 'ConfinedCylinder_BodyforcesFix'.
 //var myDb = OpenOrCreateDatabase(@"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_unsteady");
 var myDb = OpenOrCreateDefaultDatabase();
 **************
-Opening existing database 'd:\Users\kummer\default_bosss_db'.
+Opening existing database 'C:\Users\florian\default_bosss_db'.
 
 ==============
 //var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\kikker\deploy_dir\","hpccluster",ComputeNodes : new[] {"hpccluster"});
@@ -36,7 +34,11 @@ var myBatch = new MiniBatchProcessorClient();
 MiniBatchProcessor.Server.StartIfNotRunning();
 **************
 Starting mini batch processor in external process...
+<<<<<<< HEAD
+Started mini batch processor on local machine, process id is 6412.
+=======
 Started mini batch processor on local machine, process id is 79668.
+>>>>>>> experimental/master
 
 ==============
 // ======================
@@ -109,8 +111,7 @@ Func<Vector, string> edgeTagFunc = delegate (Vector X) {
 bosssGrid.DefineEdgeTags(edgeTagFunc);            
 myDb.SaveGrid(ref bosssGrid);
 **************
-Grid Edge Tags changed.
-061e7cfb-7ffe-4540-bc74-bfffce824fef
+
 ==============
 // =====================================
 // setup control object for a solver run
@@ -297,82 +298,4 @@ C# evaluator not initialized: use 'restart'.
 
 ==============
 **************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
+
