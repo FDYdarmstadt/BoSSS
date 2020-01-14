@@ -471,7 +471,6 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             if (Config_SpatialOperatorType != SpatialOperatorType.Nonlinear)
                 m_nonlinconfig.SolverCode = BoSSS.Solution.Control.NonLinearSolverCode.Picard;
-            Debug.Assert(XdgSolverFactory.GetNonLinearConfig.SolverCode == BoSSS.Solution.Control.NonLinearSolverCode.Picard);
 
             XdgSolverFactory.GenerateNonLin(out nonlinSolver,out linearSolver, this.AssembleMatrixCallback, this.MultigridBasis, Config_MultigridOperator, SessionPath, MultigridSequence);
             
