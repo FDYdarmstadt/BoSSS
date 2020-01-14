@@ -260,9 +260,6 @@ namespace BoSSS.Application.XNSE_Solver {
                 //Console.WriteLine("energy balance norm = {0}", energyBal_Norm);
 
 
-                // interface divergence
-                EnergyUtils.ProjectInterfaceDivergence(this.InterfaceDivergence, 1.0, meanVelocity, this.LsTrk, this.Control.PhysicalParameters);
-
 
 
             }
@@ -327,6 +324,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 double SurfDivergence = EnergyUtils.GetSurfaceChangerate(this.LsTrk, meanVelocity, this.m_HMForder);
 
                 //EnergyUtils.ProjectEnergyBalanceNorm(this.EnergyJumpCondition, 1.0, this.Pressure, this.XDGvelocity.Velocity, meanVelocity, this.Curvature, muS[0], muS[1], this.Control.PhysicalParameters.Sigma, this.m_HMForder);
+
+                // interface divergence
+                EnergyUtils.ProjectInterfaceDivergence(this.InterfaceDivergence, 1.0, meanVelocity, this.LsTrk, this.Control.PhysicalParameters);
+
 
 
                 // logging
@@ -431,6 +432,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 DerivedKineticEnergyChangerate.Acc(1.0, this.DerivedKineticEnergy);
                 DerivedKineticEnergyChangerate.Acc(-1.0, this.prevKineticEnergy);
                 DerivedKineticEnergyChangerate.Scale(1.0 / dt);
+
 
             }
 

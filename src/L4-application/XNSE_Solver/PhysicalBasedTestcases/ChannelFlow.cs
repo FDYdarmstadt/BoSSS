@@ -212,9 +212,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.InitialValues_Evaluators.Add("KineticEnergy#A", X => 1.0 * ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U).Pow2() / 2.0);
             //C.InitialValues_Evaluators.Add("KineticEnergy#B", X => 1.0 * ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U).Pow2() / 2.0);
 
-            //double Pjump = sigma / radius;
-            //C.InitialValues_Evaluators.Add("Pressure#A", X => (2.0 - X[0]) + Pjump);
-            //C.InitialValues_Evaluators.Add("Pressure#B", X => 2.0 - X[0]);
+            double Pjump = sigma / radius;
+            C.InitialValues_Evaluators.Add("Pressure#A", X => Pjump);
+            C.InitialValues_Evaluators.Add("Pressure#B", X => 0.0);
 
             //C.InitialValues_Evaluators.Add("GravityX#A", X => 5.0);
             //C.InitialValues_Evaluators.Add("GravityX#B", X => 5.0);
@@ -266,7 +266,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             double T = 10;
 
             C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", (X,t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U) * Math.Sin(2.0*Math.PI*(t/T)));
-            //C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", X => (-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U);
+            //C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U) * Math.Sin(2.0 * Math.PI * (t / T)));
             //C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", X => U);
             //C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", X => U);
             //C.AddBoundaryValue("velocity_inlet_left", "KineticEnergy#A", X => 1.0 * ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U).Pow2() / 2.0);
@@ -284,6 +284,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.ComputeEnergyProperties = true;
             C.solveKineticEnergyEquation = true;
+            C.CheckJumpConditions = true;
             C.kinEViscousDiscretization = Solution.EnergyCommon.KineticEnergyViscousSourceTerms.laplaceKinE;
             C.kinEPressureDiscretization = Solution.EnergyCommon.KineticEnergyPressureSourceTerms.divergence;
             C.withDissipativePressure = true;
@@ -300,7 +301,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
-            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None; // ConstrainedDG;
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None;
 
             //C.Phi = (X,t) => ((X[0] - (center[0]+U*t)).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius;
 
@@ -324,7 +325,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
             C.CompMode = AppControl._CompMode.Transient;
-            double dt = 1e-1;
+            double dt = 1e-3;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;

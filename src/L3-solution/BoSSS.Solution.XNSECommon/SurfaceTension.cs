@@ -1489,13 +1489,13 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         }
 
 
-        public virtual TermActivationFlags InnerEdgeTerms {
+        public override TermActivationFlags InnerEdgeTerms {
             get {
                 return TermActivationFlags.GradUxV;
             }
         }
 
-        public virtual TermActivationFlags BoundaryEdgeTerms {
+        public override TermActivationFlags BoundaryEdgeTerms {
             get {
                 return TermActivationFlags.GradUxV;
             }

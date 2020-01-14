@@ -381,7 +381,7 @@ namespace BoSSS.Solution.XNSECommon {
                     if (dntParams.SurfStressTensor == SurfaceSressTensor.SurfaceDivergence ||
                         dntParams.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
 
-                        var surfDiv = new BoussinesqScriven_SurfaceVelocityDivergence(d, lamI_t * 0.5, penalty, BcMap.EdgeTag2Type);
+                        var surfDiv = new BoussinesqScriven_SurfaceVelocityDivergence(d, D, lamI_t * 0.5, penalty, BcMap.EdgeTag2Type);
                         XOp.SurfaceElementOperator.EquationComponents[CodName].Add(surfDiv);
 
                     }
@@ -391,11 +391,11 @@ namespace BoSSS.Solution.XNSECommon {
                         dntParams.SurfStressTensor == SurfaceSressTensor.SemiImplicit ||
                         dntParams.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
 
-                        var surfDeformRate = new BoussinesqScriven_SurfaceDeformationRate_GradU(d, muI * 0.5, penalty);
+                        var surfDeformRate = new BoussinesqScriven_SurfaceDeformationRate_GradU(d, D, muI * 0.5, penalty);
                         XOp.SurfaceElementOperator.EquationComponents[CodName].Add(surfDeformRate);
 
                         if (dntParams.SurfStressTensor != SurfaceSressTensor.SemiImplicit) {
-                            var surfDeformRateT = new BoussinesqScriven_SurfaceDeformationRate_GradUTranspose(d, muI * 0.5, penalty);
+                            var surfDeformRateT = new BoussinesqScriven_SurfaceDeformationRate_GradUTranspose(d, D, muI * 0.5, penalty);
                             XOp.SurfaceElementOperator.EquationComponents[CodName].Add(surfDeformRateT);
                         }
 

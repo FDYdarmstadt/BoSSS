@@ -313,7 +313,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region solver
 
             C.ComputeEnergyProperties = true;
-            C.solveKineticEnergyEquation = true;
+            //C.solveKineticEnergyEquation = true;
 
             C.CheckJumpConditions = true;
             C.CheckInterfaceProps = true;
@@ -329,6 +329,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.BaseRefinementLevel = 1;
 
 
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 10;
@@ -343,8 +346,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.PARDISO };
 
-            C.Option_LevelSetEvolution = (compMode == AppControl._CompMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
-            //C.Option_LevelSetEvolution = LevelSetEvolution.None;
+            //C.Option_LevelSetEvolution = (compMode == AppControl._CompMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
+            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
 
 
             C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
@@ -409,9 +412,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF3;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
-            C.Timestepper_LevelSetHandling = (compMode == AppControl._CompMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
+            //C.Timestepper_LevelSetHandling = (compMode == AppControl._CompMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
             //C.LSunderrelax = 0.05;
-            //C.Timestepper_LevelSetHandling = LevelSetHandling.None;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
             C.CompMode = compMode;
             //C.CompMode = AppControl._CompMode.Transient; 
