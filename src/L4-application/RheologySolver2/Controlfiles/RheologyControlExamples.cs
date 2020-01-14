@@ -382,9 +382,9 @@ namespace BoSSS.Application.Rheology {
         /// </summary>
         static public RheologyControl ConfinedCylinder(
             //string path = @"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag", 
-            string path = @"d:\Users\kummer\default_bosss_db",
-            //string path = @"c:\Users\florian\default_bosss_db",
-            int degree = 4) {
+            //string path = @"d:\Users\kummer\default_bosss_db",
+            string path = @"c:\Users\florian\default_bosss_db",
+            int degree = 2) {
             //BoSSS.Application.Rheology.RheologyControlExamples.ConfinedCylinder();
             RheologyControl C = new RheologyControl();
 
@@ -413,7 +413,7 @@ namespace BoSSS.Application.Rheology {
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz_4Rheology;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.LinearSolver.NoOfMultigridLevels = 1;
             
             C.ObjectiveParam = 1.0;
@@ -445,8 +445,8 @@ namespace BoSSS.Application.Rheology {
             C.FixedStreamwisePeriodicBC = false;
             C.beta = 0.59;
             C.Reynolds = 1;
-            C.Weissenberg = 0.0; //aim Weissenberg number!
-            C.RaiseWeissenberg = false;
+            C.Weissenberg = 0.5; //aim Weissenberg number!
+            C.RaiseWeissenberg = true;
             C.WeissenbergIncrement = 0.1;
 
             //Penalties
@@ -484,9 +484,9 @@ namespace BoSSS.Application.Rheology {
 
             // grids used by florian
             //string grid = "1c9cb150-88d3-4ee1-974d-7970eabd3cf8"; // florian laptop (full, level 0)
-            //string grid = "bb3239f2-479d-46e4-9187-ba47dc8cfc63"; // florian laptop (full, level 1)
+            string grid = "bb3239f2-479d-46e4-9187-ba47dc8cfc63"; // florian laptop (full, level 1)
             //string grid = "db1797a9-6bc4-4194-984a-03b67598fa19"; // florian laptop (full, level 2)
-            string grid = "c88c914b-c387-4894-9697-a78bad31f2da"; // florian terminal03 (full, level 0)
+            //string grid = "c88c914b-c387-4894-9697-a78bad31f2da"; // florian terminal03 (full, level 0)
             //string grid = "061e7cfb-7ffe-4540-bc74-bfffce824fef"; // florian terminal03 (full, level 1)
             //string grid = "51aadb49-e3d5-4e88-897e-13b6b329995b"; // florian terminal03 (full, level 2)
 
