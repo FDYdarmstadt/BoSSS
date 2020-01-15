@@ -42,7 +42,8 @@ namespace BoSSS.Application.Matrix_MPItest {
                 out MpiInit);
 
             if (System.Environment.MachineName.ToLowerInvariant().EndsWith("rennmaschin")
-                //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
+                || System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
+                || System.Environment.MachineName.ToLowerInvariant().Contains("terminal03")
                 ) {
                 // This is Florians Laptop;
                 // he is to poor to afford MATLAB, so he uses OCTAVE
