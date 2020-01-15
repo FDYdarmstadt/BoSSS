@@ -75,7 +75,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public override IList<string> ParameterOrdering {
             get {
-                return new string[] { VariableNames.Temperature0, VariableNames.Rho };
+                return new string[] { VariableNames.Temperature0/*, VariableNames.Rho */};
                 //, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0}; 
             }
         }
@@ -98,8 +98,26 @@ namespace BoSSS.Solution.NSECommon {
         /// 
         /// </summary>
         [NonSerialized]
-        public double ThermodynamicPressureValue = 1.0;
+        public double ThermodynamicPressureValue;
         
+
+
+        /// <summary>
+        /// Hack to initalize ThermodynamicPressure. 
+        /// </summary>
+        /// <param name="ThermodynamicPressure">
+        /// Hack for introducing the value of p0 as a double. has to be changed
+        /// </param>
+        public void Initialize(ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure, ref double ThermodynamicPressureValue) {
+            if (!IsInitialized) {
+                this.ThermodynamicPressure = ThermodynamicPressure;
+                this.ThermodynamicPressureValue = ThermodynamicPressureValue;
+            } else {
+                throw new ApplicationException("Initialize() can be called only once.");
+            }
+        }
+
+
         /// <summary>
         /// Hack to initalize ThermodynamicPressure - called by NSE_SIMPLE.VariableSet.Initialize()
         /// </summary>
@@ -124,14 +142,14 @@ namespace BoSSS.Solution.NSECommon {
             if(IsInitialized) {
                 Debug.Assert(phi[0] > 0);
 
-                double rho;             
-                rho = ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];    //rho = ThermodynamicPressureValue / phi[0];
+                double rho;
+                rho = ThermodynamicPressureValue / phi[0];
                 Debug.Assert(!double.IsNaN(rho));
                 Debug.Assert(!double.IsInfinity(rho));
 
-                if(rhoOne) {
+                if(rhoOne) 
                     rho = 1.0;
-                }
+                
                 return rho;
             } else {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");
