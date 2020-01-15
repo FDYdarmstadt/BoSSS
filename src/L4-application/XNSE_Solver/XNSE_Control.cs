@@ -33,6 +33,8 @@ using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.LevelSetTools.EllipticExtension;
 using BoSSS.Solution.LevelSetTools.EllipticReInit;
 using BoSSS.Solution.Timestepping;
+using Newtonsoft.Json;
+using BoSSS.Solution.EnergyCommon;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -48,8 +50,8 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Ctor.
         /// </summary>
         public XNSE_Control() {
-            base.NoOfMultigridLevels = 1;
-            base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            base.LinearSolver.NoOfMultigridLevels = 1;
+            //base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             //shift of Solver Information
             base.LinearSolver.MaxKrylovDim = 100; //Solver_MaxKrylovDim;
             base.LinearSolver.MaxSolverIterations = 2000; //Solver_MaxIterations
@@ -243,9 +245,14 @@ namespace BoSSS.Application.XNSE_Solver {
             CapillaryHeight,
 
             /// <summary>
-            /// Evaporative mass flux and speed of displacement 
+            /// Evaporative mass flux and speed of displacement (Line interface)
             /// </summary>
-            Evaporation
+            EvaporationL,
+
+            /// <summary>
+            /// Evaporative mass flux and speed of displacement (circle interface)
+            /// </summary>
+            EvaporationC
         }
 
         /// <summary>
@@ -349,6 +356,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// array of additional parameter values for some testcases
         /// </summary>
+        [DataMember]
         public double[] AdditionalParameters;
 
         ///// <summary>
@@ -420,14 +428,43 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// If true, kinetic and surface energy will be evaluated in every cycle.
         /// </summary>
-        [DataMember]
-        public bool ComputeEnergy = false;
+        //[DataMember]
+        //public bool ComputeEnergy = false;
 
         /// <summary>
-        /// If true, energy balance at the interface will be evaluated in every cycle.
+        /// if true, kinetic energy equation will be solved 
         /// </summary>
         [DataMember]
-        public bool ComputeInterfaceEnergy = false;
+        public bool solveKineticEnergyEquation = false;
+
+        /// <summary>
+        /// discretization option for the visocus source terms of the kinetic energy equation
+        /// </summary>
+        [DataMember]
+        public KineticEnergyViscousSourceTerms kinEViscousDiscretization;
+
+        /// <summary>
+        /// discretization option for the pressure source terms of the kinetic energy equation
+        /// </summary>
+        [DataMember]
+        public KineticEnergyPressureSourceTerms kinEPressureDiscretization;
+
+        /// <summary>
+        /// switch for the pressure term in the Dissipation term
+        /// </summary>
+        [DataMember]
+        public bool withDissipativePressure;
+
+        /// <summary>
+        /// Block-Precondition for the kinetic-Energy-block
+        /// </summary>
+        public MultigridOperator.Mode KineticEnergyeBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
+
+        /// <summary>
+        /// If true, various energy properties will be evaluated in every cycle.
+        /// </summary>
+        [DataMember]
+        public bool ComputeEnergyProperties = false;
 
         /// <summary>
         /// if true, the jump condition for mass, momentum and energy will be checked
@@ -441,6 +478,12 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public bool CheckInterfaceProps = false;
 
+        /// <summary>
+        /// Registers all utility (also energy) fields to IOFields
+        /// </summary>
+        [DataMember]
+        public bool RegisterUtilitiesToIOFields = false;
+        
         /// <summary>
         /// average method for interface values
         /// </summary>
@@ -507,16 +550,27 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// switch for the computation of the coupled heat solver
         /// </summary>
+        [DataMember]
         public bool solveCoupledHeatEquation = false;
+
+        /// <summary>
+        /// switch for advanced parameter Update for nonlinear solver
+        /// </summary>
+        [DataMember]
+        public bool useSolutionParamUpdate = false;
 
         /// <summary>
         /// only available if no heat equation is solved
         /// </summary>
-        public Func<double, double> prescribedMassflux;
+        public Func<double[], double, double> prescribedMassflux_Evaluator;
+
+        [DataMember]
+        public IBoundaryAndInitialData prescribedMassflux;
 
         /// <summary>
         /// implementations for the conductivity part (laplace operator) of the heat equation 
         /// </summary>
+        [DataMember]
         public ConductivityInSpeciesBulk.ConductivityMode conductMode = ConductivityInSpeciesBulk.ConductivityMode.SIP;
 
         /// <summary>

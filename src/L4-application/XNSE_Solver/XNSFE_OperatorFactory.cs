@@ -33,6 +33,7 @@ using BoSSS.Foundation.XDG;
 
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XNSECommon;
+using BoSSS.Solution.EnergyCommon;
 using BoSSS.Solution.XheatCommon;
 using System.Collections;
 
@@ -60,8 +61,10 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="_LsTrk"></param>
         /// <param name="_HMFdegree"></param>
         /// <param name="BcMap"></param>
+        /// <param name="thermBcMap"></param>
         /// <param name="degU"></param>
-        public XNSFE_OperatorFactory(XNSFE_OperatorConfiguration _config, LevelSetTracker _LsTrk, int _HMFdegree, IncompressibleMultiphaseBoundaryCondMap BcMap, int degU) {
+        public XNSFE_OperatorFactory(XNSFE_OperatorConfiguration _config, LevelSetTracker _LsTrk, int _HMFdegree, 
+            IncompressibleMultiphaseBoundaryCondMap BcMap, ThermalMultiphaseBoundaryCondMap thermBcMap, int degU) {
 
             this.config = _config;
             this.LsTrk = _LsTrk;
@@ -77,9 +80,6 @@ namespace BoSSS.Application.XNSE_Solver {
             // test input
             // ==========
             {
-                if (config.getDomBlocks.GetLength(0) != 2 || config.getCodBlocks.GetLength(0) != 2)
-                    throw new ArgumentException();
-
                 if ((config.getPhysParams.mu_A <= 0) && (config.getPhysParams.mu_B <= 0)) {
                     config.isViscous = false;
                 } else {
@@ -92,9 +92,11 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 if (_LsTrk.SpeciesNames.Count != 2)
                     throw new ArgumentException();
+
                 if (!(_LsTrk.SpeciesNames.Contains("A") && _LsTrk.SpeciesNames.Contains("B")))
                     throw new ArgumentException();
             }
+
 
             // full operator:
             // ==============
@@ -104,13 +106,42 @@ namespace BoSSS.Application.XNSE_Solver {
                 VariableNames.Velocity0MeanVector(D),
                 VariableNames.NormalVector(D),
                 VariableNames.Curvature,
-                VariableNames.SurfaceForceVector(D),
-                VariableNames.Temperature0,
-                VariableNames.HeatFlux0Vector(D),
-                VariableNames.DisjoiningPressure
+                VariableNames.SurfaceForceVector(D)
                 );
             DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure);
 
+            if (config.solveEnergy) {
+                CodName = ArrayTools.Cat(CodName, EquationNames.KineticEnergyEquation);
+                Params = ArrayTools.Cat(Params,
+                    VariableNames.VelocityX_GradientVector(),
+                    VariableNames.VelocityY_GradientVector(),
+                    new string[] { "VelocityXGradX_GradientX", "VelocityXGradX_GradientY" },
+                    new string[] { "VelocityXGradY_GradientX", "VelocityXGradY_GradientY" },
+                    new string[] { "VelocityYGradX_GradientX", "VelocityYGradX_GradientY" },
+                    new string[] { "VelocityYGradY_GradientX", "VelocityYGradY_GradientY" },
+                    VariableNames.Pressure0,
+                    VariableNames.PressureGradient(D),
+                    VariableNames.GravityVector(D)
+                    );
+                DomName = ArrayTools.Cat(DomName, VariableNames.KineticEnergy);
+            }
+
+            if (config.solveHeat) {
+                Params = ArrayTools.Cat(Params,
+                    VariableNames.Temperature0,
+                    VariableNames.HeatFlux0Vector(D),
+                    VariableNames.DisjoiningPressure
+                    );
+                if (config.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+                    CodName = ArrayTools.Cat(CodName, EquationNames.HeatEquation);
+                    DomName = ArrayTools.Cat(DomName, VariableNames.Temperature);
+                } else {
+                    CodName = ArrayTools.Cat(CodName, EquationNames.HeatEquation, EquationNames.AuxHeatFlux(D));
+                    DomName = ArrayTools.Cat(DomName, VariableNames.Temperature, VariableNames.HeatFluxVector(D));
+                }
+            }
+
+            storedParams = new DGField[Params.Length];
 
             // selected part:
             if (config.getCodBlocks[0])
@@ -122,6 +153,29 @@ namespace BoSSS.Application.XNSE_Solver {
                 DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(0, D));
             if (config.getDomBlocks[1])
                 DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(D, 1));
+
+            int nBlocks = 2;
+            if (config.solveEnergy) {
+                nBlocks = 3;
+                if (config.getCodBlocks[2])
+                    CodNameSelected = ArrayTools.Cat(CodNameSelected, CodName.GetSubVector(D + 1, 1));
+                if (config.getDomBlocks[2])
+                    DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(D + 1, 1));
+            }
+
+            if (config.solveHeat) {
+                if (config.getCodBlocks[nBlocks])
+                    CodNameSelected = ArrayTools.Cat(CodNameSelected, CodName.GetSubVector(nBlocks + (D - 1) + 1, 1));
+                if (config.getDomBlocks[nBlocks])
+                    DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(nBlocks + (D - 1) + 1, 1));
+
+                if (config.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+                    if (config.getCodBlocks[nBlocks + 1])
+                        CodNameSelected = ArrayTools.Cat(CodNameSelected, CodName.GetSubVector(nBlocks + (D - 1) + 2, D));
+                    if (config.getDomBlocks[nBlocks + 1])
+                        DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(nBlocks + (D - 1) + 2, D));
+                }
+            }
 
 
             // create Operator
@@ -149,13 +203,42 @@ namespace BoSSS.Application.XNSE_Solver {
                 Solution.XNSECommon.XOperatorComponentsFactory.AddInterfaceContinuityEq(m_XOp, config, D, LsTrk);       // continuity equation
 
 
+            // add kinetic energy equation components
+            // ======================================
+            if (config.solveEnergy) {
+
+                // species bulk components
+                for (int spc = 0; spc < LsTrk.TotalNoOfSpecies; spc++) {
+                    Solution.EnergyCommon.XOperatorComponentsFactory.AddSpeciesKineticEnergyEquation(m_XOp, config, D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap, LsTrk);
+                }
+
+                // interface components
+                Solution.EnergyCommon.XOperatorComponentsFactory.AddInterfaceKineticEnergyEquation(m_XOp, config, D, BcMap, LsTrk, degU);
+                CurvatureRequired = true;
+            }
+
+
+            // add Heat equation components
+            // ============================
+            if (config.solveHeat) {
+
+                // species bulk components
+                for (int spc = 0; spc < LsTrk.TotalNoOfSpecies; spc++) {
+                    Solution.XheatCommon.XOperatorComponentsFactory.AddSpeciesHeatEq(m_XOp, config,
+                         D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], thermBcMap, LsTrk);
+                }
+
+                // interface components
+                Solution.XheatCommon.XOperatorComponentsFactory.AddInterfaceHeatEq(m_XOp, config, D, thermBcMap, LsTrk);
+            }
+
+
             // add Evaporation interface components
             // ====================================
 
             if (config.isEvaporation) {
 
                 XOperatorComponentsFactory.AddInterfaceNSE_withEvaporation(m_XOp, config, D, LsTrk);
-
                 if (config.isContinuity)
                     XOperatorComponentsFactory.AddInterfaceContinuityEq_withEvaporation(m_XOp, config, D, LsTrk);
 
@@ -178,12 +261,27 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// 
         /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="OpMatrix"></param>
+        /// <param name="OpAffine"></param>
+        /// <param name="RowMapping"></param>
+        /// <param name="ColMapping"></param>
+        /// <param name="CurrentState"></param>
+        /// <param name="AgglomeratedCellLengthScales"></param>
+        /// <param name="time"></param>
+        /// <param name="CutCellQuadOrder"></param>
+        /// <param name="SurfaceForce"></param>
+        /// <param name="LevelSetGradient"></param>
+        /// <param name="ExternalyProvidedCurvature"></param>
+        /// <param name="updateSolutionParams"></param>
+        /// <param name="ExtParams"></param>
         public void AssembleMatrix<T>(BlockMsrMatrix OpMatrix, double[] OpAffine,
             UnsetteledCoordinateMapping RowMapping, UnsetteledCoordinateMapping ColMapping,
             IEnumerable<T> CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time,
             int CutCellQuadOrder, VectorField<SinglePhaseField> SurfaceForce,
             VectorField<SinglePhaseField> LevelSetGradient, SinglePhaseField ExternalyProvidedCurvature,
-            IEnumerable<T> CoupledCurrentState = null, IEnumerable<T> CoupledParams = null) where T : DGField {
+            bool[] updateSolutionParams = null, DGField[] ExtParams = null) where T : DGField {
+            //IEnumerable<T> CoupledCurrentState = null, IEnumerable<T> CoupledParams = null) where T : DGField {
 
             // checks:
             if (ColMapping.BasisS.Count != this.m_XOp.DomainVar.Count)
@@ -192,7 +290,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 throw new ArgumentException();
 
             int D = this.LsTrk.GridDat.SpatialDimension;
-            if (CurrentState != null && CurrentState.Count() != (D + 1))
+            if (CurrentState != null && !config.solveEnergy && !config.solveHeat && CurrentState.Count() != (D + 1))
                 throw new ArgumentException();
 
             if (OpMatrix == null && CurrentState == null)
@@ -206,8 +304,207 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
 
+            // parameter assembly
+            // ==================
+            #region param assembly
+
+            LevelSet Phi = (LevelSet)(this.LsTrk.LevelSets[0]);
+            SpeciesId[] SpcToCompute = AgglomeratedCellLengthScales.Keys.ToArray();
+
+
+            // linearization velocity:
+            DGField[] U0_U0mean;
+            if (this.U0meanrequired) {
+                XDGBasis U0meanBasis = new XDGBasis(this.LsTrk, 0);
+                VectorField<XDGField> U0mean = new VectorField<XDGField>(D, U0meanBasis, "U0mean_", XDGField.Factory);
+                U0mean.Clear();
+                if (this.physParams.IncludeConvection)
+                    ComputeAverageU(U0, U0mean, CutCellQuadOrder, LsTrk.GetXDGSpaceMetrics(SpcToCompute, CutCellQuadOrder, 1).XQuadSchemeHelper);
+
+                U0_U0mean = ArrayTools.Cat<DGField>(U0, U0mean);
+            } else {
+                U0_U0mean = new DGField[2 * D];
+            }
+
+            // linearization velocity:
+            //if (this.U0meanrequired) {
+            //    VectorField<XDGField> U0mean = new VectorField<XDGField>(U0_U0mean.Skip(D).Take(D).Select(f => ((XDGField)f)).ToArray());
+
+            //    U0mean.Clear();
+            //    if (this.physParams.IncludeConvection)
+            //        ComputeAverageU(U0, U0mean, CutCellQuadOrder, LsTrk.GetXDGSpaceMetrics(SpcToCompute, CutCellQuadOrder, 1).XQuadSchemeHelper);
+            //}
+
+
+            // normals:
+            SinglePhaseField[] Normals; // Normal vectors: length not normalized - will be normalized at each quad node within the flux functions.
+            if (this.NormalsRequired) {
+                if (LevelSetGradient == null) {
+                    LevelSetGradient = new VectorField<SinglePhaseField>(D, Phi.Basis, SinglePhaseField.Factory);
+                    LevelSetGradient.Gradient(1.0, Phi);
+                }
+                Normals = LevelSetGradient.ToArray();
+            } else {
+                Normals = new SinglePhaseField[D];
+            }
+
+            // curvature:
+            SinglePhaseField Curvature;
+            if (this.CurvatureRequired) {
+                Curvature = ExternalyProvidedCurvature;
+            } else {
+                Curvature = null;
+            }
+
+
+            // velocity gradient vectors
+            var VelMap = new CoordinateMapping(U0);
+            DGField[] VelParam = VelMap.Fields.ToArray();
+
+            VectorField<DGField> GradVelX = new VectorField<DGField>(D, VelParam[0].Basis, "VelocityXGradient", XDGField.Factory);
+            for (int d = 0; d < D; d++) {
+                foreach (var Spc in this.LsTrk.SpeciesIdS) {
+                    DGField f_Spc = ((VelParam[0] as XDGField).GetSpeciesShadowField(Spc));
+                    SubGrid sf = this.LsTrk.Regions.GetSpeciesSubGrid(Spc);
+                    (GradVelX[d] as XDGField).GetSpeciesShadowField(Spc).DerivativeByFlux(1.0, f_Spc, d, optionalSubGrid: sf);
+                }
+            }
+            GradVelX.ForEach(F => F.CheckForNanOrInf(true, true, true));
+
+            VectorField<DGField> GradVelY = new VectorField<DGField>(D, VelParam[0].Basis, "VelocityYGradient", XDGField.Factory);
+            for (int d = 0; d < D; d++) {
+                foreach (var Spc in this.LsTrk.SpeciesIdS) {
+                    DGField f_Spc = ((VelParam[1] as XDGField).GetSpeciesShadowField(Spc));
+                    SubGrid sf = this.LsTrk.Regions.GetSpeciesSubGrid(Spc);
+                    (GradVelY[d] as XDGField).GetSpeciesShadowField(Spc).DerivativeByFlux(1.0, f_Spc, d, optionalSubGrid: sf);
+                }
+            }
+            GradVelY.ForEach(F => F.CheckForNanOrInf(true, true, true));
+
+
+            VectorField<DGField> GradVelXGradX = new VectorField<DGField>(D, VelParam[0].Basis, "VelocityXGradX_Gradient", XDGField.Factory);
+            for (int d = 0; d < D; d++) {
+                foreach (var Spc in this.LsTrk.SpeciesIdS) {
+                    DGField f_Spc = ((GradVelX[0] as XDGField).GetSpeciesShadowField(Spc));
+                    SubGrid sf = this.LsTrk.Regions.GetSpeciesSubGrid(Spc);
+                    (GradVelXGradX[d] as XDGField).GetSpeciesShadowField(Spc).DerivativeByFlux(1.0, f_Spc, d, optionalSubGrid: sf);
+                }
+            }
+            GradVelXGradX.ForEach(F => F.CheckForNanOrInf(true, true, true));
+
+            VectorField<DGField> GradVelXGradY = new VectorField<DGField>(D, VelParam[0].Basis, "VelocityXGradY_Gradient", XDGField.Factory);
+            for (int d = 0; d < D; d++) {
+                foreach (var Spc in this.LsTrk.SpeciesIdS) {
+                    DGField f_Spc = ((GradVelX[1] as XDGField).GetSpeciesShadowField(Spc));
+                    SubGrid sf = this.LsTrk.Regions.GetSpeciesSubGrid(Spc);
+                    (GradVelXGradY[d] as XDGField).GetSpeciesShadowField(Spc).DerivativeByFlux(1.0, f_Spc, d, optionalSubGrid: sf);
+                }
+            }
+            GradVelXGradY.ForEach(F => F.CheckForNanOrInf(true, true, true));
+
+            VectorField<DGField> GradVelYGradX = new VectorField<DGField>(D, VelParam[0].Basis, "VelocityYGradX_Gradient", XDGField.Factory);
+            for (int d = 0; d < D; d++) {
+                foreach (var Spc in this.LsTrk.SpeciesIdS) {
+                    DGField f_Spc = ((GradVelY[0] as XDGField).GetSpeciesShadowField(Spc));
+                    SubGrid sf = this.LsTrk.Regions.GetSpeciesSubGrid(Spc);
+                    (GradVelYGradX[d] as XDGField).GetSpeciesShadowField(Spc).DerivativeByFlux(1.0, f_Spc, d, optionalSubGrid: sf);
+                }
+            }
+            GradVelYGradX.ForEach(F => F.CheckForNanOrInf(true, true, true));
+
+            VectorField<DGField> GradVelYGradY = new VectorField<DGField>(D, VelParam[0].Basis, "VelocityYGradY_Gradient", XDGField.Factory);
+            for (int d = 0; d < D; d++) {
+                foreach (var Spc in this.LsTrk.SpeciesIdS) {
+                    DGField f_Spc = ((GradVelY[1] as XDGField).GetSpeciesShadowField(Spc));
+                    SubGrid sf = this.LsTrk.Regions.GetSpeciesSubGrid(Spc);
+                    (GradVelYGradY[d] as XDGField).GetSpeciesShadowField(Spc).DerivativeByFlux(1.0, f_Spc, d, optionalSubGrid: sf);
+                }
+            }
+            GradVelYGradY.ForEach(F => F.CheckForNanOrInf(true, true, true));
+
+
+
+            // pressure and gradient
+            var PressMap = new CoordinateMapping(CurrentState.ToArray()[D]);
+            DGField[] PressParam = PressMap.Fields.ToArray();
+
+            VectorField<DGField> PressGrad = new VectorField<DGField>(D, PressParam[0].Basis, "PressureGrad", XDGField.Factory);
+            for (int d = 0; d < D; d++) {
+                foreach (var Spc in this.LsTrk.SpeciesIdS) {
+                    DGField f_Spc = ((PressParam[0] as XDGField).GetSpeciesShadowField(Spc));
+                    SubGrid sf = this.LsTrk.Regions.GetSpeciesSubGrid(Spc);
+                    (PressGrad[d] as XDGField).GetSpeciesShadowField(Spc).DerivativeByFlux(1.0, f_Spc, d, optionalSubGrid: sf);
+                }
+            }
+            PressGrad.ForEach(F => F.CheckForNanOrInf(true, true, true));
+
+            // gravity
+            var GravMap = new CoordinateMapping(ExtParams);
+            DGField[] GravParam = GravMap.Fields.ToArray();
+
+
+            // heat flux for evaporation
+            DGField[] HeatFluxParam = new DGField[D];
+            if (config.solveHeat) {
+                if (config.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP && updateSolutionParams[D+1]) {
+                    HeatFluxParam = new VectorField<XDGField>(D, CurrentState.ToArray()[D + 1].Basis, "HeatFlux0_", XDGField.Factory).ToArray();
+                    Dictionary<string, double> kSpc = new Dictionary<string, double>();
+                    kSpc.Add("A", -thermParams.k_A);
+                    kSpc.Add("B", -thermParams.k_B);
+                    XNSEUtils.ComputeGradientForParam(CurrentState.ToArray()[D + 1], HeatFluxParam, this.LsTrk, kSpc, this.LsTrk.Regions.GetCutCellSubGrid());
+                } else if (config.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP && updateSolutionParams[D+2]) {
+                    var HeatFluxMap = new CoordinateMapping(CurrentState.ToArray().GetSubVector(D + 2, D));
+                    HeatFluxParam = HeatFluxMap.Fields.ToArray();
+                } else {
+                    HeatFluxParam = storedParams.GetSubVector(2 * D + 4, D);
+                }
+            }
+            if (ExtParams != null) {
+                HeatFluxParam = ExtParams;
+            }
+
+            #endregion
+
+
+            // concatenate everything
+            var Params = ArrayTools.Cat<DGField>(
+                U0_U0mean,
+                Normals,
+                Curvature,
+                ((SurfaceForce != null) ? SurfaceForce.ToArray() : new SinglePhaseField[D]));
+
+            if (config.solveEnergy) {
+                Params = ArrayTools.Cat<DGField>(Params.ToArray<DGField>(),
+                    GradVelX,
+                    GradVelY,
+                    GradVelXGradX,
+                    GradVelXGradY,
+                    GradVelYGradX,
+                    GradVelYGradY,
+                    PressParam,
+                    PressGrad,
+                    GravMap);
+            }
+
+            if (config.solveHeat) {
+                Params = ArrayTools.Cat<DGField>(Params.ToArray<DGField>(),
+                    CurrentState.ToArray<DGField>().GetSubVector(D + 1, 1),
+                    HeatFluxParam,
+                    new SinglePhaseField[1]);
+            }
+
+
+            // store old params
+            for (int p = 0; p < Params.Length; p++) {
+                if (Params[p] != null)
+                    storedParams[p] = Params[p].CloneAs();
+            }
+
+
+
             // advanced settings for the navier slip boundary condition
             // ========================================================
+
 
             CellMask SlipArea;
             switch (this.dntParams.GNBC_Localization) {
@@ -263,87 +560,41 @@ namespace BoSSS.Application.XNSE_Solver {
             }
 
 
-            // parameter assembly
-            // ==================
+            // interface coefficients 
+            // ======================
 
-            LevelSet Phi = (LevelSet)(this.LsTrk.LevelSets[0]);
-            SpeciesId[] SpcToCompute = AgglomeratedCellLengthScales.Keys.ToArray();
+            MultidimensionalArray lambdaI, muI;
+            lambdaI = SlipLengths.CloneAs();
+            lambdaI.Clear();
+            muI = SlipLengths.CloneAs();
+            muI.Clear();
 
-            // normals:
-            SinglePhaseField[] Normals; // Normal vectors: length not normalized - will be normalized at each quad node within the flux functions.
-            if (this.NormalsRequired) {
-                if (LevelSetGradient == null) {
-                    LevelSetGradient = new VectorField<SinglePhaseField>(D, Phi.Basis, SinglePhaseField.Factory);
-                    LevelSetGradient.Gradient(1.0, Phi);
+            foreach (Chunk cnk in this.LsTrk.Regions.GetCutCellMask()) {
+                for (int i = cnk.i0; i < cnk.JE; i++) {
+
+                    double lI = 0.0;
+                    double mI = 0.0;
+
+                    // do the magic!!!
+                    if (this.LsTrk.GridDat.Cells.CellCenter[i, 0] > 0 && this.LsTrk.GridDat.Cells.CellCenter[i, 1] > 0) {
+
+                    }
+                    if (this.LsTrk.GridDat.Cells.CellCenter[i, 0] > 0 && this.LsTrk.GridDat.Cells.CellCenter[i, 1] < 0) {
+                        //lI = config.physParams.Sigma;
+                        mI = config.physParams.Sigma;
+                    }
+                    if (this.LsTrk.GridDat.Cells.CellCenter[i, 0] < 0 && this.LsTrk.GridDat.Cells.CellCenter[i, 1] < 0) {
+                        //lI = -config.physParams.Sigma;
+                        mI = -config.physParams.Sigma;
+                    }
+                    if (this.LsTrk.GridDat.Cells.CellCenter[i, 0] < 0 && this.LsTrk.GridDat.Cells.CellCenter[i, 1] > 0) {
+                        //lI = 10 * config.physParams.Sigma;
+                        mI = 10 * config.physParams.Sigma;
+                    }
+
+                    lambdaI[i] = lI;
+                    muI[i] = mI;
                 }
-                Normals = LevelSetGradient.ToArray();
-            } else {
-                Normals = new SinglePhaseField[D];
-            }
-
-            // curvature:
-            SinglePhaseField Curvature;
-            if (this.CurvatureRequired) {
-                Curvature = ExternalyProvidedCurvature;
-            } else {
-                Curvature = null;
-            }
-
-            // linearization velocity:
-            DGField[] U0_U0mean;
-            if (this.U0meanrequired) {
-                XDGBasis U0meanBasis = new XDGBasis(this.LsTrk, 0);
-                VectorField<XDGField> U0mean = new VectorField<XDGField>(D, U0meanBasis, "U0mean_", XDGField.Factory);
-
-                U0_U0mean = ArrayTools.Cat<DGField>(U0, U0mean);
-            } else {
-                U0_U0mean = new DGField[2 * D];
-            }
-
-
-            // heat flux for evaporation
-            DGField[] HeatFluxParam = new DGField[D];
-            if (CoupledCurrentState != null) {
-                if (CoupledCurrentState.ToArray().Length == 3) {
-                    var HeatFluxMap = new CoordinateMapping(CoupledCurrentState.ToArray().GetSubVector(1, D));
-                    HeatFluxParam = HeatFluxMap.Fields.ToArray();
-                } else if (CoupledCurrentState.ToArray().Length == 1) {
-                    HeatFluxParam = new VectorField<XDGField>(D, CoupledCurrentState.ToArray()[0].Basis, "HeatFlux0_", XDGField.Factory).ToArray();
-                    Dictionary<string, double> kSpc = new Dictionary<string, double>();
-                    kSpc.Add("A", -thermParams.k_A);
-                    kSpc.Add("B", -thermParams.k_B);
-                    XNSEUtils.ComputeGradientForParam(CoupledCurrentState.ToArray()[0], HeatFluxParam, this.LsTrk, kSpc);
-                } else {
-                    throw new ArgumentException("wrong length of coupled current state");
-                }
-            }
-
-            // Temperature gradient for evaporation
-            //VectorField<DGField> GradTemp = new VectorField<DGField>(D, new XDGBasis(LsTrk, 0), XDGField.Factory);
-            //if (CoupledCurrentState != null) {
-            //    DGField Temp = CoupledCurrentState.ToArray()[0];
-            //    GradTemp = new VectorField<DGField>(D, Temp.Basis, "GradTemp", XDGField.Factory);
-            //    XNSEUtils.ComputeGradientForParam(Temp, GradTemp, this.LsTrk);
-            //}
-
-            // concatenate everything
-            var Params = ArrayTools.Cat<DGField>(
-                U0_U0mean,
-                Normals,
-                Curvature,
-                ((SurfaceForce != null) ? SurfaceForce.ToArray() : new SinglePhaseField[D]),
-                ((CoupledCurrentState != null) ? CoupledCurrentState.ToArray<DGField>() : new SinglePhaseField[1]),
-                ((CoupledCurrentState != null) ? HeatFluxParam : new SinglePhaseField[D]),
-                ((CoupledCurrentState != null) ? CoupledParams.ToArray<DGField>() : new SinglePhaseField[1]));
-
-
-            // linearization velocity:
-            if (this.U0meanrequired) {
-                VectorField<XDGField> U0mean = new VectorField<XDGField>(U0_U0mean.Skip(D).Take(D).Select(f => ((XDGField)f)).ToArray());
-
-                U0mean.Clear();
-                if (this.physParams.IncludeConvection)
-                    ComputeAverageU(U0, U0mean, CutCellQuadOrder, LsTrk.GetXDGSpaceMetrics(SpcToCompute, CutCellQuadOrder, 1).XQuadSchemeHelper);
             }
 
 
@@ -366,13 +617,16 @@ namespace BoSSS.Application.XNSE_Solver {
                     mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
                     mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
                     if (config.prescribedMassflux != null) {
-                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("prescribedMassflux", config.prescribedMassflux(time));
+                        double[] dummyX = new double[] { 0.0, 0.0 };
+                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("prescribedMassflux", config.prescribedMassflux(dummyX, time));
                     }
                 }
 
                 if (this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
                     foreach (var kv in InterfaceLengths) {
                         mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("InterfaceLengths", kv.Value);
+                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("lambda_interface", lambdaI);
+                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("mu_interface", muI);
                     }
                 }
 
@@ -390,13 +644,16 @@ namespace BoSSS.Application.XNSE_Solver {
                     eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
                     eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
                     if (config.prescribedMassflux != null) {
-                        eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("prescribedMassflux", config.prescribedMassflux(time));
+                        double[] dummyX = new double[] { 0.0, 0.0 };
+                        eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("prescribedMassflux", config.prescribedMassflux(dummyX, time));
                     }
                 }
 
                 if (this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
                     foreach (var kv in InterfaceLengths) {
                         eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("InterfaceLengths", kv.Value);
+                        eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("lambda_interface", lambdaI);
+                        eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("mu_interface", muI);
                     }
                 }
 
@@ -407,6 +664,10 @@ namespace BoSSS.Application.XNSE_Solver {
             }
 
         }
+
+
+        DGField[] storedParams;
+
 
 
         private void ComputeAverageU<T>(IEnumerable<T> U0, VectorField<XDGField> U0mean, int order, XQuadSchemeHelper qh) where T : DGField {
