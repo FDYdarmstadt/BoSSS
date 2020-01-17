@@ -81,7 +81,7 @@ namespace BoSSS.Solution.NSECommon {
             this.cj = PenaltyLengthScales;
             switch (BcMap.PhysMode) {
                 case PhysicsMode.LowMach:
-                    this.m_ParameterOrdering = new string[] { VariableNames.Temperature0};
+                    this.m_ParameterOrdering = new string[] { VariableNames.Temperature0 };
                     break;
                 case PhysicsMode.Combustion:
                     this.m_ParameterOrdering = new string[] { VariableNames.Temperature0, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0 };
@@ -292,7 +292,7 @@ namespace BoSSS.Solution.NSECommon {
                             break;
                         case DiffusionMode.MassFraction:
                             double rhoA = 0.0;
-                            rhoA = EoS.GetDensity(inp.Parameters_IN);
+                            rhoA = Coefficient(inp.Parameters_IN);
                             u_D = ArgumentFunction[inp.EdgeTag](inp.X, inp.time);
                             for (int d = 0; d < inp.D; d++) {
                                 Acc += (DiffusivityA * rhoA * _Grad_uA[0, d]) * (_vA) * inp.Normal[d];
