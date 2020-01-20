@@ -86,5 +86,10 @@ namespace BoSSS.Application.FSI_Solver {
         protected override double CalculateRotationalAcceleration(double dt) {
             return 0;
         }
+
+        public override object Clone() {
+            Motion clonedMotion = new Motion_Dry_NoRotation(Gravity, Density);
+            return clonedMotion;
+        }
     }
 }

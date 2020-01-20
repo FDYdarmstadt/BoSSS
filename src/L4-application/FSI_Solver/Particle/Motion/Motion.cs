@@ -27,7 +27,7 @@ using System.Linq;
 using System.Runtime.Serialization;
 
 namespace BoSSS.Application.FSI_Solver {
-    public class Motion {
+    public class Motion : ICloneable {
 
         /// <summary>
         /// The standard description of motion including hydrodynamics.
@@ -116,9 +116,13 @@ namespace BoSSS.Application.FSI_Solver {
             GhostID = ghostID;
         }
 
+        internal virtual int GetMasterID() => 0;
+
         internal bool GetHasGhost() => HasGhost;
 
         internal int GetGhostID() => GhostID;
+
+        internal int GetHistoryLength() => m_HistoryLength;
 
         /// <summary>
         /// Gravity (volume force) acting on the particle.
@@ -387,6 +391,19 @@ namespace BoSSS.Application.FSI_Solver {
                 m_RotationalVelocity[i] = initalRotation;
                 Aux.TestArithmeticException(m_TranslationalVelocity[i], "initial particle translational velocity");
                 Aux.TestArithmeticException(m_RotationalVelocity[i], "initial particle rotational velocity");
+            }
+        }
+
+        public void TransferPhysicalData(Motion motionDataToTransfer) {
+            for(int h = 0; h < m_HistoryLength; h++) {
+                m_Position[h] = new Vector(motionDataToTransfer.GetPosition(h));
+                m_TranslationalVelocity[h] = new Vector(motionDataToTransfer.GetTranslationalVelocity(h));
+                m_TranslationalAcceleration[h] = new Vector(motionDataToTransfer.GetTranslationalAcceleration(h));
+                m_HydrodynamicForces[h] = new Vector(motionDataToTransfer.GetHydrodynamicForces(h));
+                m_Angle[h] = motionDataToTransfer.GetAngle(h);
+                m_RotationalVelocity[h] = motionDataToTransfer.GetRotationalVelocity(h);
+                m_RotationalAcceleration[h] = motionDataToTransfer.GetRotationalAcceleration(h);
+                m_HydrodynamicTorque[h] = motionDataToTransfer.GetHydrodynamicTorque(h);
             }
         }
 
@@ -1013,6 +1030,11 @@ namespace BoSSS.Application.FSI_Solver {
             m_Position[1].Set(dataReceive[14 + offset], dataReceive[15 + offset]);
             m_RotationalAcceleration[1] = dataReceive[16 + offset];
             m_TranslationalAcceleration[1].Set(dataReceive[17 + offset], dataReceive[18 + offset]);
+        }
+
+        public virtual object Clone() {
+            Motion clonedMotion = new Motion(Gravity, Density);
+            return clonedMotion;
         }
     }
 }

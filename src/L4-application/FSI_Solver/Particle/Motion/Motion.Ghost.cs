@@ -51,7 +51,7 @@ namespace BoSSS.Application.FSI_Solver {
         private double RotationalVelocity;
 
 
-        public int GetMasterID() => MasterID;
+        internal override int GetMasterID() => MasterID;
 
         internal override void CopyNewPosition(Vector position, double angle) {
             Position = new Vector(position);
@@ -73,6 +73,14 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
+        /// Calculates the new translational acceleration.
+        /// </summary>
+        /// <param name="dt"></param>
+        protected override Vector CalculateTranslationalAcceleration(double dt) {
+            return new Vector(m_Dim);
+        }
+
+        /// <summary>
         /// Calculate the new angular velocity of the particle using explicit Euler scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
@@ -80,6 +88,21 @@ namespace BoSSS.Application.FSI_Solver {
         protected override double CalculateAngularVelocity(double dt = 0) {
             Aux.TestArithmeticException(RotationalVelocity, "particle rotational velocity");
             return RotationalVelocity;
+        }
+
+        /// <summary>
+        /// Calculate the new acceleration (translational and rotational)
+        /// </summary>
+        /// <param name="dt"></param>
+        protected override double CalculateRotationalAcceleration(double dt) {
+            double l_Acceleration = 0;
+            Aux.TestArithmeticException(l_Acceleration, "particle rotational acceleration");
+            return l_Acceleration;
+        }
+
+        public override object Clone() {
+            Motion clonedMotion = new MotionGhost(Gravity, Density, MasterID);
+            return clonedMotion;
         }
     }
 }

@@ -66,5 +66,10 @@ namespace BoSSS.Application.FSI_Solver {
             Aux.TestArithmeticException(l_Angle, "particle angle");
             return l_Angle;
         }
+
+        public override object Clone() {
+            Motion clonedMotion = new MotionFixedWithForces(Gravity, Density);
+            return clonedMotion;
+        }
     }
 }

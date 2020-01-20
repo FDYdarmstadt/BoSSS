@@ -95,5 +95,10 @@ namespace BoSSS.Application.FSI_Solver {
         public override Vector CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, CellMask cutCells, double dt) {
             return new Vector(m_Dim); ;
         }
+
+        public override object Clone() {
+            Motion clonedMotion = new MotionWetNoTranslation(Gravity, Density);
+            return clonedMotion;
+        }
     }
 }

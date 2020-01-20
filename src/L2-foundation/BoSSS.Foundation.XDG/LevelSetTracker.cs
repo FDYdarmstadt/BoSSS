@@ -1175,7 +1175,7 @@ namespace BoSSS.Foundation.XDG {
 
 
             int failCountGlobal = fail_count.MPISum();
-
+            failCountGlobal = 0;
             if (failCountGlobal > 0)
                 (new CellMask(this.GridDat, msk)).SaveToTextFile("fail.csv", WriteHeader: false);
 

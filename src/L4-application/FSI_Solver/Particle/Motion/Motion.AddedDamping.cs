@@ -236,5 +236,10 @@ namespace BoSSS.Application.FSI_Solver {
         private void TorqueAddedDamping(ref double torque, double dt) {
             torque += m_AddedDampingCoefficient * dt * (AddedDampingTensor[2, 0] * GetTranslationalAcceleration(0)[0] + AddedDampingTensor[2, 1] * GetTranslationalAcceleration(0)[1] + AddedDampingTensor[2, 2] * GetRotationalAcceleration(0));
         }
+
+        public override object Clone() {
+            Motion clonedMotion = new MotionAddedDamping(Gravity, Density, m_AddedDampingCoefficient);
+            return clonedMotion;
+        }
     }
 }

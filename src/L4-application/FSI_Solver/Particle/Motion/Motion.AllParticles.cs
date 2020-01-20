@@ -52,7 +52,7 @@ namespace BoSSS.Application.FSI_Solver {
                     continue;
                 CellMask cutCells = currentParticle.CutCells_P(m_LsTrk);
                 if (currentParticle.Motion.GetHasGhost()) {
-                    CellMask ghostCells = AllParticles[currentParticle.Motion.GetGhostID()].CutCells_P(m_LsTrk);
+                    CellMask ghostCells = AllParticles[currentParticle.Motion.GetGhostID() - 1].CutCells_P(m_LsTrk);
                     cutCells = cutCells.Union(ghostCells); 
                 }
                 int offset = p * (m_Dim + 1);

@@ -143,5 +143,10 @@ namespace BoSSS.Application.FSI_Solver {
         public override double CalculateHydrodynamicTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, CellMask cutCells, double dt) {
             return 0;
         }
+
+        public override object Clone() {
+            Motion clonedMotion = new MotionFixed(Gravity, Density);
+            return clonedMotion;
+        }
     }
 }

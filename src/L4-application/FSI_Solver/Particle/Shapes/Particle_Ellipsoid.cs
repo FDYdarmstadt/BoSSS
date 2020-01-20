@@ -200,7 +200,7 @@ namespace BoSSS.Application.FSI_Solver {
                                                              m_Length,
                                                              m_Thickness,
                                                              Motion.GetPosition(),
-                                                             Motion.GetAngle(),
+                                                             Motion.GetAngle() * 360 / (2 * Math.PI),
                                                              ActiveStress,
                                                              Motion.GetTranslationalVelocity(),
                                                              Motion.GetRotationalVelocity());

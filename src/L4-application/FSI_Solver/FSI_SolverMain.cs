@@ -57,6 +57,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         protected override void SetInitial() {
             m_Particles = ((FSI_Control)this.Control).Particles;
+            for (int p = 0; p < m_Particles.Count(); p++) {
+                m_Particles[p].SetID(p + 1);
+            }
             UpdateLevelSetParticles(phystime: 0.0);
             base.SetInitial();
         }
@@ -482,8 +485,6 @@ namespace BoSSS.Application.FSI_Solver {
             return forces_PResidual;
         }
 
-        bool particlesOutsideOfDomain = true;
-
         /// <summary>
         /// Particle to Level-Set-Field 
         /// </summary>
@@ -498,31 +499,9 @@ namespace BoSSS.Application.FSI_Solver {
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             cellColor = cellColor == null ? InitializeColoring() : UpdateColoring();
 
-            for (int p = 0; p < m_Particles.Count(); p++) {
-                CreateGhostParticleAtPeriodicBoundary(p);
-            }
-
-            foreach(Particle p in m_Particles) {
-                bool NothingHere = false;
-                if(p.CutCells_P(LsTrk).IsNullOrEmpty()) {
-                    NothingHere = true;
-                }
-                bool[] NothingAnywere = NothingHere.MPIGatherO(0);
-                NothingAnywere = NothingAnywere.MPIBroadcast(0);
-                for (int m = 0; m < NothingAnywere.Length; m++) {
-                    if (!NothingAnywere[m])
-                        particlesOutsideOfDomain = false;
-                }
-            }
-
-            if (particlesOutsideOfDomain)
-                Console.WriteLine("particle Outside of domain!");
-
-            if (particlesOutsideOfDomain || cellColor == null) {
-                cellColor = InitializeColoring();
-            }
-            else
-                cellColor = UpdateColoring();
+            ExterminateExcessGhosts();
+            CreateGhostsAtPeriodicBoundary();
+            GhostToMaster();
 
             // Step 2
             // Delete the old level set
@@ -793,43 +772,211 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        private void CreateGhostParticleAtPeriodicBoundary(int currentID) {
-            Particle currentParticle = m_Particles[currentID];
+        private void CreateGhostsAtPeriodicBoundary() {
             int spatialDim = 2;
             bool[] isPeriodic = ((FSI_Control)Control).BoundaryIsPeriodic;
             double[][] boundaryCoordinates = ((FSI_Control)Control).BoundaryPositionPerDimension;
-            Vector particlePosition = currentParticle.Motion.GetPosition();
-            double particleMaxLength = currentParticle.GetLengthScales().Max();
-            for (int d1 = 0; d1 < spatialDim; d1++) {
-                if (!isPeriodic[d1])
+            Vector[] ghostPositions = new Vector[3];
+            for (int p = 0; p < m_Particles.Count(); p++) {
+                Particle currentParticle = m_Particles[p];
+                List<Particle> ghostParticles = new List<Particle>();
+                int[] ghostHierachy = currentParticle.MasterGhostIDs.CloneAs();
+                if (!currentParticle.IsMaster)
                     continue;
-                for (int d2 = 0; d2 < spatialDim; d2++) {
-                    double distance = particlePosition[d1] - boundaryCoordinates[d1][d2];
-                    if(Math.Abs(distance) < particleMaxLength) {
-                        if (d1 == 0)
-                            currentParticle.ClosestPointOnOtherObjectToThis = new Vector(boundaryCoordinates[d1][d2], particlePosition[1]);
-                        else
-                            currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], boundaryCoordinates[d1][d2]);
-                        FSI_Collision periodicCollision = new FSI_Collision(LsTrk, 0, 0, 0);
-                        periodicCollision.CalculateMinimumDistance(currentParticle, out _, out Vector _, out Vector _, out bool Overlapping);
-                        if (Overlapping) {
-                            Particle ghostParticle = currentParticle.CloneAs();
-                            ghostParticle.SetGhost(MasterID: currentID);
-                            Vector positionDistanceVector = particlePosition - currentParticle.ClosestPointOnOtherObjectToThis;
-                            Vector mirroredWallClosestPoint;
+                Vector particlePosition = currentParticle.Motion.GetPosition();
+                int idOffset = 0;
+                for (int d1 = 0; d1 < spatialDim; d1++) { // which direction?
+                    if (!isPeriodic[d1])
+                        continue;
+                    for(int wallID = 0; wallID < spatialDim; wallID++) { // which wall?
+                        if (PeriodicOverlap(currentParticle, d1, wallID)) {
+
+                            ghostHierachy[0] = currentParticle.ID;
+                            Vector originNeighbouringDomain;
                             if (d1 == 0)
-                                mirroredWallClosestPoint = new Vector(boundaryCoordinates[0][1 - d2], particlePosition[1]);
+                                originNeighbouringDomain = new Vector(2 * boundaryCoordinates[0][1 - wallID], 0);
                             else
-                                mirroredWallClosestPoint = new Vector(particlePosition[0], boundaryCoordinates[1][1 - d2]);
-                            Vector ghostPosition = mirroredWallClosestPoint + positionDistanceVector;
-                            ghostParticle.Motion.SetGhostPosition(ghostPosition);
-                            m_Particles.Add(ghostParticle);
+                                originNeighbouringDomain = new Vector(0, 2 * boundaryCoordinates[1][1 - wallID]);
+                            Particle ghostParticle;
+                            int ghostID = m_Particles.Count() + idOffset + 1;
+                            if (ghostHierachy[d1 + 1] == 0) {
+                                ghostPositions[d1] = originNeighbouringDomain + particlePosition;
+                                ghostHierachy[d1 + 1] = ghostID;
+                                ghostParticle = currentParticle.CloneAs();
+                                ghostParticle.SetGhost(MasterID: ghostHierachy[0]);
+                                ghostParticle.Motion.SetGhostPosition(ghostPositions[d1]);
+                                ghostParticle.SetID(ghostID);
+                                ghostParticles.Add(ghostParticle.CloneAs());
+                            }
+                            else{
+                                ghostParticle = m_Particles[ghostHierachy[1] - 1];
+                            }
+                            if (d1 == 0) {
+                                idOffset = 1;
+                                if (ghostHierachy[3] != 0)
+                                    continue;
+                                // test for periodic boundaries in y - direction for the newly created ghost
+                                for (int wallID2 = 0; wallID2 < spatialDim; wallID2++) {
+                                    if (PeriodicOverlap(ghostParticle, 1, wallID2)) {
+                                        originNeighbouringDomain = new Vector(0, 2 * boundaryCoordinates[1][1 - wallID2]);
+                                        ghostPositions[2] = originNeighbouringDomain + ghostPositions[0];
+                                        idOffset += 1;
+                                        ghostID = m_Particles.Count() + d1 + idOffset;
+                                        ghostHierachy[3] = ghostID;
+                                        ghostParticle = currentParticle.CloneAs();
+                                        ghostParticle.SetGhost(MasterID: ghostHierachy[0]);
+                                        ghostParticle.Motion.SetGhostPosition(ghostPositions[2]);
+                                        ghostParticle.SetID(ghostID);
+                                        ghostParticles.Add(ghostParticle.CloneAs());
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if(ghostParticles.Count >= 1) {
+                    currentParticle.SetGhostHierachy(ghostHierachy);
+                    for (int p2 = 0; p2 < ghostParticles.Count(); p2++) {
+                        ghostParticles[p2].SetGhostHierachy(ghostHierachy);
+                    }
+                    m_Particles.AddRange(ghostParticles);
+                }
+            }
+        }
+
+        private bool PeriodicOverlap(Particle currentParticle, int d1, int d2) {
+            Vector particlePosition = currentParticle.Motion.GetPosition();
+            double[][] boundaryCoordinates = ((FSI_Control)Control).BoundaryPositionPerDimension;
+            double distance = particlePosition[d1] - boundaryCoordinates[d1][d2];
+            double particleMaxLength = currentParticle.GetLengthScales().Max();
+            if (Math.Abs(distance) < particleMaxLength) {
+                if (d1 == 0)
+                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(boundaryCoordinates[d1][d2], particlePosition[1]);
+                else
+                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], boundaryCoordinates[d1][d2]);
+                FSI_Collision periodicCollision = new FSI_Collision(LsTrk, 0, 0, 0);
+                periodicCollision.CalculateMinimumDistance(currentParticle, out _, out Vector _, out Vector _, out bool Overlapping);
+                return Overlapping;
+            }
+            return false;
+        }
+
+        private void GhostToMaster() {
+            for (int p = 0; p < m_Particles.Count(); p++) {
+                Particle currentParticle = m_Particles[p];
+                if (!currentParticle.IsMaster)
+                    continue;
+                if (!IsInsideOfDomain(currentParticle)) {
+                    int oldMasterID = currentParticle.ID;
+                    int[] ghostHierachy = currentParticle.MasterGhostIDs;
+                    for(int g = 1; g < ghostHierachy.Length; g++) {
+                        if (ghostHierachy[g] <= 0)
+                            continue;
+                        Particle currentGhost = m_Particles[ghostHierachy[g] - 1];
+                        if (IsInsideOfDomain(currentGhost)) {
+                            int newMasterID = ghostHierachy[g];
+                            int[] newGhostHierachy = ghostHierachy.CloneAs();
+                            newGhostHierachy[0] = newMasterID;
+                            newGhostHierachy[g] = oldMasterID;
+                            Motion ghostMotion = new MotionGhost(new Vector(0, 0), 0, 0);
+                            ghostMotion.TransferPhysicalData(currentParticle.Motion);
+                            currentGhost.SetMaster(currentParticle.Motion);
+                            currentParticle.SetGhost(newMasterID);
+                            for(int i = 0; i < ghostHierachy.Length; i++) {
+                                m_Particles[ghostHierachy[i] - 1].MasterGhostIDs = newGhostHierachy.CloneAs();
+                            }
+                            return;
                         }
                     }
                 }
             }
         }
 
+        private void ExterminateExcessGhosts() {
+            int spatialDim = 2;
+            for (int p = 0; p < m_Particles.Count(); p++) {
+                for (int d = 0; d < spatialDim; d++) {
+                    for (int wallID = 0; wallID < spatialDim; wallID++) {
+                        Particle currentParticle = m_Particles[p];
+                        Vector particlePosition = currentParticle.Motion.GetPosition();
+                        double[][] boundaryCoordinates = ((FSI_Control)Control).BoundaryPositionPerDimension;
+                        double distance = particlePosition[d] - boundaryCoordinates[d][wallID];
+                        double particleMaxLength = currentParticle.GetLengthScales().Min();
+                        if (Math.Abs(distance) > particleMaxLength && !IsInsideOfDomain(currentParticle)) {
+                            if (!AnyOverlap(currentParticle)) {
+                                int[] ghostHierachy = currentParticle.MasterGhostIDs.CloneAs();
+                                for (int g = 0; g < ghostHierachy.Length; g++) {
+                                    if(ghostHierachy[g] == p + 1) {
+                                        ghostHierachy[g] = 0;
+                                    }
+                                }
+                                for (int g = 0; g < ghostHierachy.Length; g++) {
+                                    if(ghostHierachy[g] > 0)
+                                        m_Particles[ghostHierachy[g] - 1].MasterGhostIDs = ghostHierachy.CloneAs();
+                                }
+                                m_Particles.RemoveAt(p);
+                                if (p >= m_Particles.Count())// already the last particle, no further action needed!
+                                    return;
+                                Particle lastParticle = m_Particles.Last();
+                                ghostHierachy = lastParticle.MasterGhostIDs.CloneAs();
+                                for (int g = 0; g < ghostHierachy.Length; g++) {
+                                    if (ghostHierachy[g] == m_Particles.Count() + 1) {
+                                        ghostHierachy[g] = p + 1;
+                                    }
+                                }
+                                m_Particles.Insert(p, lastParticle);
+                                m_Particles.RemoveAt(m_Particles.Count() - 1);
+                                for (int g = 0; g < ghostHierachy.Length; g++) {
+                                    if (ghostHierachy[g] > 0)
+                                        m_Particles[ghostHierachy[g] - 1].MasterGhostIDs = ghostHierachy.CloneAs();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private bool AnyOverlap(Particle currentParticle) {
+            int spatialDim = 2;
+            for (int d = 0; d < spatialDim; d++) {
+                for (int wallID = 0; wallID < spatialDim; wallID++) {
+                    Vector particlePosition = currentParticle.Motion.GetPosition();
+                    double[][] boundaryCoordinates = ((FSI_Control)Control).BoundaryPositionPerDimension;
+                    if (d == 0)
+                        currentParticle.ClosestPointOnOtherObjectToThis = new Vector(boundaryCoordinates[d][wallID], particlePosition[1]);
+                    else
+                        currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], boundaryCoordinates[d][wallID]);
+                    FSI_Collision periodicCollision = new FSI_Collision(LsTrk, 0, 0, 0);
+                    periodicCollision.CalculateMinimumDistance(currentParticle, out _, out Vector _, out Vector _, out bool Overlapping);
+                    if (Overlapping)
+                        return true;
+                }
+            }
+            return false;
+        }
+
+        private bool IsInsideOfDomain(Particle currentParticle) {
+            int spatialDim = 2;
+            bool[] isPeriodic = ((FSI_Control)Control).BoundaryIsPeriodic;
+            double[][] boundaryCoordinates = ((FSI_Control)Control).BoundaryPositionPerDimension;
+            Vector position = currentParticle.Motion.GetPosition();
+            for (int d = 0; d < spatialDim; d++) {
+                if (!isPeriodic[d])
+                    continue;
+                for (int wallID = 0; wallID < spatialDim; wallID++) {
+                    Vector wallNormal = new Vector(Math.Sign(boundaryCoordinates[d][wallID]) * (1 - d), Math.Sign(boundaryCoordinates[d][wallID]) * d);
+                    Vector wallToPoint = d == 0
+                        ? new Vector(position[0] - boundaryCoordinates[0][wallID], position[1])
+                        : new Vector(position[0], position[1] - boundaryCoordinates[1][wallID]);
+                    if (wallNormal * wallToPoint > 0)
+                        return false;
+                }
+            }
+            return true;
+        }
+        
         bool initAddedDamping = true;
         /// <summary>
         /// runs solver one step?!
@@ -1063,7 +1210,7 @@ namespace BoSSS.Application.FSI_Solver {
                 }
                 p.Motion.UpdateParticleVelocity(dt);
                 if (p.Motion.GetHasGhost()) {
-                    Particle ghost = Particles[p.Motion.GetGhostID()];
+                    Particle ghost = Particles[p.Motion.GetGhostID()-1];
                     ghost.Motion.CopyNewVelocity(p.Motion.GetTranslationalVelocity(), p.Motion.GetRotationalVelocity());
                     ghost.Motion.UpdateParticleVelocity(dt);
                 }
@@ -1079,8 +1226,6 @@ namespace BoSSS.Application.FSI_Solver {
         private void CalculateParticlePosition(double dt) {
             for (int p = 0; p < m_Particles.Count; p++) {
                 Particle particle = m_Particles[p];
-                if (particle.Motion.IsGhost)
-                    continue;
                 particle.Motion.UpdateParticlePositionAndAngle(dt);
             }
         }
