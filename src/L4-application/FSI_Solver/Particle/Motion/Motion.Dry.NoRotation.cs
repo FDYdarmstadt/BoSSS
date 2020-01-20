@@ -89,6 +89,8 @@ namespace BoSSS.Application.FSI_Solver {
 
         public override object Clone() {
             Motion clonedMotion = new Motion_Dry_NoRotation(Gravity, Density);
+            clonedMotion.GetParticleArea(ParticleArea);
+            clonedMotion.GetParticleMomentOfInertia(MomentOfInertia);
             return clonedMotion;
         }
     }

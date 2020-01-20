@@ -57,9 +57,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         protected override void SetInitial() {
             m_Particles = ((FSI_Control)this.Control).Particles;
-            for (int p = 0; p < m_Particles.Count(); p++) {
-                m_Particles[p].SetID(p + 1);
-            }
             UpdateLevelSetParticles(phystime: 0.0);
             base.SetInitial();
         }
@@ -790,8 +787,7 @@ namespace BoSSS.Application.FSI_Solver {
                         continue;
                     for(int wallID = 0; wallID < spatialDim; wallID++) { // which wall?
                         if (PeriodicOverlap(currentParticle, d1, wallID)) {
-
-                            ghostHierachy[0] = currentParticle.ID;
+                            ghostHierachy[0] = p + 1;
                             Vector originNeighbouringDomain;
                             if (d1 == 0)
                                 originNeighbouringDomain = new Vector(2 * boundaryCoordinates[0][1 - wallID], 0);
@@ -803,9 +799,8 @@ namespace BoSSS.Application.FSI_Solver {
                                 ghostPositions[d1] = originNeighbouringDomain + particlePosition;
                                 ghostHierachy[d1 + 1] = ghostID;
                                 ghostParticle = currentParticle.CloneAs();
-                                ghostParticle.SetGhost(MasterID: ghostHierachy[0]);
+                                ghostParticle.SetGhost();
                                 ghostParticle.Motion.SetGhostPosition(ghostPositions[d1]);
-                                ghostParticle.SetID(ghostID);
                                 ghostParticles.Add(ghostParticle.CloneAs());
                             }
                             else{
@@ -824,9 +819,8 @@ namespace BoSSS.Application.FSI_Solver {
                                         ghostID = m_Particles.Count() + d1 + idOffset;
                                         ghostHierachy[3] = ghostID;
                                         ghostParticle = currentParticle.CloneAs();
-                                        ghostParticle.SetGhost(MasterID: ghostHierachy[0]);
+                                        ghostParticle.SetGhost();
                                         ghostParticle.Motion.SetGhostPosition(ghostPositions[2]);
-                                        ghostParticle.SetID(ghostID);
                                         ghostParticles.Add(ghostParticle.CloneAs());
                                         break;
                                     }
@@ -868,7 +862,7 @@ namespace BoSSS.Application.FSI_Solver {
                 if (!currentParticle.IsMaster)
                     continue;
                 if (!IsInsideOfDomain(currentParticle)) {
-                    int oldMasterID = currentParticle.ID;
+                    int oldMasterID = p + 1;
                     int[] ghostHierachy = currentParticle.MasterGhostIDs;
                     for(int g = 1; g < ghostHierachy.Length; g++) {
                         if (ghostHierachy[g] <= 0)
@@ -879,10 +873,8 @@ namespace BoSSS.Application.FSI_Solver {
                             int[] newGhostHierachy = ghostHierachy.CloneAs();
                             newGhostHierachy[0] = newMasterID;
                             newGhostHierachy[g] = oldMasterID;
-                            Motion ghostMotion = new MotionGhost(new Vector(0, 0), 0, 0);
-                            ghostMotion.TransferPhysicalData(currentParticle.Motion);
-                            currentGhost.SetMaster(currentParticle.Motion);
-                            currentParticle.SetGhost(newMasterID);
+                            currentGhost.SetMaster(currentParticle.Motion.CloneAs());
+                            currentParticle.SetGhost();
                             for(int i = 0; i < ghostHierachy.Length; i++) {
                                 m_Particles[ghostHierachy[i] - 1].MasterGhostIDs = newGhostHierachy.CloneAs();
                             }

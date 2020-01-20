@@ -73,12 +73,6 @@ namespace BoSSS.Application.FSI_Solver {
             MotionInitializer = motionInit;
         }
 
-        public void SetID(int newID) {
-            ID = newID;
-        }
-
-        public int ID { get; private set; }
-
         /// <summary>
         /// rank in ghost hierachy; 0 = master, 1 = ghost mirrored in x-direction, 2 = ghost mirrored in y - direction, 3 = sub ghost of 1 mirrored in y - direction
         /// </summary>
@@ -89,20 +83,18 @@ namespace BoSSS.Application.FSI_Solver {
         public void SetMaster(Motion newMotionType) {
             newMotionType.TransferPhysicalData(Motion);
             Motion = newMotionType;
+            IsMaster = true;
         }
 
-        public void SetGhost(int MasterID) {
+        public void SetGhost() {
             HiddenMotion = Motion;
-            Motion = new MotionGhost(new Vector(0, 0), 0, MasterID);
+            Motion = new MotionGhost(new Vector(0, 0), 0);
             Motion.TransferPhysicalData(HiddenMotion);
-            //Motion.InitializeParticlePositionAndAngle(HiddenMotion.GetPosition(), HiddenMotion.GetAngle() * 360 / (2 * Math.PI));
-            //Motion.InitializeParticleVelocity(HiddenMotion.GetTranslationalVelocity(), HiddenMotion.GetRotationalVelocity());
+            IsMaster = false;
         }
 
         public void SetGhostHierachy(int[] hierachy) {
             MasterGhostIDs = hierachy.CloneAs();
-            if (MasterGhostIDs[0] != this.ID)
-                IsMaster = false;
         }
 
         [DataMember]

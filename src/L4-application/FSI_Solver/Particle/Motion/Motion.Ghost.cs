@@ -30,17 +30,13 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public MotionGhost(Vector gravity, double density, int MasterID) : base(gravity, density) {
-            this.MasterID = MasterID;
-        }
+        public MotionGhost(Vector gravity, double density) : base(gravity, density) { }
 
         /// <summary>
         /// I'm a ghost! Hui Buh!
         /// </summary>
         internal override bool IsGhost { get; } = true;
 
-        [DataMember]
-        readonly private int MasterID;
         [DataMember]
         private Vector Position;
         [DataMember]
@@ -49,10 +45,7 @@ namespace BoSSS.Application.FSI_Solver {
         private double Angle;
         [DataMember]
         private double RotationalVelocity;
-
-
-        internal override int GetMasterID() => MasterID;
-
+        
         internal override void CopyNewPosition(Vector position, double angle) {
             Position = new Vector(position);
             Angle = angle;
@@ -101,7 +94,9 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         public override object Clone() {
-            Motion clonedMotion = new MotionGhost(Gravity, Density, MasterID);
+            Motion clonedMotion = new MotionGhost(Gravity, Density);
+            clonedMotion.GetParticleArea(ParticleArea);
+            clonedMotion.GetParticleMomentOfInertia(MomentOfInertia);
             return clonedMotion;
         }
     }

@@ -1034,6 +1034,8 @@ namespace BoSSS.Application.FSI_Solver {
 
         public virtual object Clone() {
             Motion clonedMotion = new Motion(Gravity, Density);
+            clonedMotion.GetParticleArea(ParticleArea);
+            clonedMotion.GetParticleMomentOfInertia(MomentOfInertia);
             return clonedMotion;
         }
     }
