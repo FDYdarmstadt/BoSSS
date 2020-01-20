@@ -72,9 +72,10 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="BcMap">Boundary condition map</param>
         /// <param name="Argument">The argument of the flux. Must be compatible with the DiffusionMode.</param>
         /// <param name="PenaltyLengthScales"></param>
-        public SIPDiffusion(Func<double[],double> Coefficient, double PenaltyBase, MultidimensionalArray PenaltyLengthScales, IncompressibleBoundaryCondMap BcMap, string Argument) {
+        public SIPDiffusion(Func<double[],double> Coefficient, double PenaltyBase, MultidimensionalArray PenaltyLengthScales, DiffusionMode Mode, IncompressibleBoundaryCondMap BcMap, string Argument) {
             this.Coefficient = Coefficient;
             this.PenaltyBase = PenaltyBase;
+            this.Mode = Mode;
             this.BcMap = BcMap;
             this.ArgumentFunction = BcMap.bndFunction[Argument];
             this.Argument = Argument;
@@ -104,9 +105,10 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="BcMap">Boundary condition map</param>
         /// <param name="Argument">The argument of the flux. Must be compatible with the DiffusionMode.</param>
         /// <param name="PenaltyLengthScales"></param>
-        public SIPDiffusion(double ConstantCoefficient, double PenaltyBase, MultidimensionalArray PenaltyLengthScales, IncompressibleBoundaryCondMap BcMap, string Argument) {
+        public SIPDiffusion(double ConstantCoefficient, double PenaltyBase, MultidimensionalArray PenaltyLengthScales, DiffusionMode Mode, IncompressibleBoundaryCondMap BcMap, string Argument) {
             this.Coefficient = (x => ConstantCoefficient); //TODO does this work when inp.params is null?
             this.PenaltyBase = PenaltyBase;
+            this.Mode = Mode;
             this.BcMap = BcMap;
             this.ArgumentFunction = BcMap.bndFunction[Argument];
             this.Argument = Argument;
