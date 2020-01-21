@@ -18,12 +18,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using BoSSS.Foundation;
-using BoSSS.Solution.Utils;
 using ilPSP;
 
-namespace BoSSS.Solution.NSECommon {
+namespace BoSSS.Solution.NSECommon
+{
 
     /// <summary>
     /// SIP discretization of diffusion operators for scalar transport equations (i.e. species mass transport and temperature). Analogous to swipViscosity_Term1.
@@ -170,6 +169,9 @@ namespace BoSSS.Solution.NSECommon {
             return -Acc;
         }
 
+        /// <summary>
+        ///   The BoundaryEdgeForm for Dirichlet b.c. with value u_D
+        /// </summary>
         protected double BoundaryEdgeFormDirichlet(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA, double u_D) {
             double Acc = 0.0;
 
@@ -189,11 +191,17 @@ namespace BoSSS.Solution.NSECommon {
             Acc -= DiffusivityA * (_uA[0] - u_D) * (_vA - 0) * pnlty;
             return -Acc;
         }
-
+ 
+        /// <summary>
+        ///   The BoundaryEdgeForm for Neumann conditions
+        /// </summary>
         protected double BoundaryEdgeFormNeumann() {
             return 0.0;
         }
 
+        /// <summary>
+        ///   BoundaryEdgeForm, depending on your physical problem you need to override this with BoundaryEdgeFormDirichlet or BoundaryEdgeFormNeumann.
+        /// </summary>
         public abstract double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA);
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
@@ -219,16 +227,12 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Arguments
         /// </summary>
-        public IList<string> ArgumentOrdering {
-            get { return new string[] { Argument }; }
-        }
+        public IList<string> ArgumentOrdering { get; }
 
         /// <summary>
         /// Parameters at linearization point to calculate material properties.
         /// </summary>
-        public IList<string> ParameterOrdering {
-            get { return m_ParameterOrdering; }
-        }
+        public IList<string> ParameterOrdering { get; }
 
     }
 }
