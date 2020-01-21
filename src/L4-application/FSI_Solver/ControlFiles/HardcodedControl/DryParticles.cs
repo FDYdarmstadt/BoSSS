@@ -49,7 +49,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 100000000;
-            C.NoOfTimesteps = int.MaxValue;
+            C.NoOfTimesteps = 300;
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;

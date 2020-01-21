@@ -494,12 +494,11 @@ namespace BoSSS.Application.FSI_Solver {
             // Define an array with the respective cell colors
             // =======================================================
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            cellColor = cellColor == null ? InitializeColoring() : UpdateColoring();
-
             ExterminateExcessGhosts();
             CreateGhostsAtPeriodicBoundary();
             GhostToMaster();
-
+            cellColor = cellColor == null ? InitializeColoring() : UpdateColoring();
+            
             // Step 2
             // Delete the old level set
             // =======================================================
@@ -512,6 +511,12 @@ namespace BoSSS.Application.FSI_Solver {
             CellMask coloredCellMask = null;
 
             globalParticleColor = levelSetUpdate.DetermineGlobalParticleColor(GridData, cellColor, m_Particles);
+            for (int i = 0; i < globalParticleColor.Length; i++) {
+                if (globalParticleColor[i] == 0) {
+                    int masterID = m_Particles[i].MasterGhostIDs[0] - 1;
+                    globalParticleColor[i] = globalParticleColor[masterID];
+                }
+            }
             int[] _globalParticleColor = globalParticleColor.CloneAs();
             for (int p = 0; p < _globalParticleColor.Length; p++) {
                 // Search for current colour on current process
@@ -622,7 +627,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Step 2
             // Color neighbour cells
             // =======================================================
-            int neighbourSearchDepth = 2;
+            int neighbourSearchDepth = 1;
             for (int k = 0; k < neighbourSearchDepth; k++) {
                 for (int j = 0; j < noOfLocalCells; j++) {
                     GridData.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaEdges, out int[] CellNeighbors, out _);
@@ -839,22 +844,6 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        private bool PeriodicOverlap(Particle currentParticle, int d1, int d2) {
-            Vector particlePosition = currentParticle.Motion.GetPosition();
-            double[][] boundaryCoordinates = ((FSI_Control)Control).BoundaryPositionPerDimension;
-            double distance = particlePosition[d1] - boundaryCoordinates[d1][d2];
-            double particleMaxLength = currentParticle.GetLengthScales().Max();
-            if (Math.Abs(distance) < particleMaxLength) {
-                if (d1 == 0)
-                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(boundaryCoordinates[d1][d2], particlePosition[1]);
-                else
-                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], boundaryCoordinates[d1][d2]);
-                FSI_Collision periodicCollision = new FSI_Collision(LsTrk, 0, 0, 0);
-                periodicCollision.CalculateMinimumDistance(currentParticle, out _, out Vector _, out Vector _, out bool Overlapping);
-                return Overlapping;
-            }
-            return false;
-        }
 
         private void GhostToMaster() {
             for (int p = 0; p < m_Particles.Count(); p++) {
@@ -928,6 +917,23 @@ namespace BoSSS.Application.FSI_Solver {
                     }
                 }
             }
+        }
+
+        private bool PeriodicOverlap(Particle currentParticle, int d1, int d2) {
+            Vector particlePosition = currentParticle.Motion.GetPosition();
+            double[][] boundaryCoordinates = ((FSI_Control)Control).BoundaryPositionPerDimension;
+            double distance = particlePosition[d1] - boundaryCoordinates[d1][d2];
+            double particleMaxLength = currentParticle.GetLengthScales().Max();
+            if (Math.Abs(distance) < particleMaxLength) {
+                if (d1 == 0)
+                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(boundaryCoordinates[d1][d2], particlePosition[1]);
+                else
+                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], boundaryCoordinates[d1][d2]);
+                FSI_Collision periodicCollision = new FSI_Collision(LsTrk, 0, 0, 0);
+                periodicCollision.CalculateMinimumDistance(currentParticle, out _, out Vector _, out Vector _, out bool Overlapping);
+                return Overlapping;
+            }
+            return false;
         }
 
         private bool AnyOverlap(Particle currentParticle) {
