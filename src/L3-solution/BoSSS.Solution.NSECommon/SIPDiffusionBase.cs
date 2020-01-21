@@ -34,9 +34,9 @@ namespace BoSSS.Solution.NSECommon
         /// </summary>
         protected abstract double Diffusivity(params double[] Parameters);
 
-        double PenaltyBase;
-        IncompressibleBoundaryCondMap BcMap;
-        Func<double[], double, double>[] ArgumentFunction;
+        protected double PenaltyBase;
+        protected IncompressibleBoundaryCondMap BcMap;
+        protected Func<double[], double, double>[] ArgumentFunction;
 
         /// <summary>
         /// Ctor.
