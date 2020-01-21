@@ -27,20 +27,21 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using ilPSP.Utils;
+using System.Collections;
 
 namespace BoSSS.Solution.XheatCommon {
 
 
-    public class ConductivityAtLevelSet : BoSSS.Foundation.XDG.ILevelSetForm, ILevelSetEquationComponentCoefficient {
+    public class ConductivityAtLevelSet : ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
         LevelSetTracker m_LsTrk;
 
-        public ConductivityAtLevelSet(LevelSetTracker lstrk, double _kA, double _kB, double _penalty, bool _DiriCond, double _Tsat) {
+        public ConductivityAtLevelSet(LevelSetTracker lstrk, double _kA, double _kB, double _penalty, double _Tsat) {
             this.kA = _kA;
             this.kB = _kB;
             this.penalty = _penalty;
 
-            this.DirichletCond = _DiriCond;
+            //this.DirichletCond = _DiriCond;
             this.Tsat = _Tsat;
 
             m_LsTrk = lstrk;
@@ -52,7 +53,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         double penalty;
 
-        bool DirichletCond;
+        //bool DirichletCond;
         double Tsat;
 
 
@@ -63,6 +64,8 @@ namespace BoSSS.Solution.XheatCommon {
         //public override double EdgeForm(ref Linear2ndDerivativeCouplingFlux.CommonParams inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+
+            Debug.Assert(inp.jCellIn == inp.jCellOut);
 
             double[] N = inp.Normal;
             double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCellIn];
@@ -94,11 +97,15 @@ namespace BoSSS.Solution.XheatCommon {
 
             double Ret = 0.0;
 
-            if (DirichletCond) {
+            if (!evapMicroRegion[inp.jCellIn]) {
                 Ret -= (kA * Grad_uA_xN) * (vA - 0);                           // consistency term
                 Ret -= (kB * Grad_uB_xN) * (0 - vB);                           // consistency term
                 Ret -= (kA * Grad_vA_xN) * (uA[0] - Tsat);                     // symmetry term
                 Ret -= (kB * Grad_vB_xN) * (Tsat - uB[0]);                     // symmetry term
+
+                //Ret -= 0.5 * (kA * Grad_uA_xN + kB * Grad_uB_xN) * (vA - vB);
+                //Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (uA[0] - Tsat);
+                //Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (Tsat - uB[0]);
 
                 Ret += (2.0 * penalty / hCutCellMin) * (uA[0] - Tsat) * (vA - 0) * kA; // penalty term
                 Ret += (2.0 * penalty / hCutCellMin) * (Tsat - uB[0]) * (0 - vB) * kB; // penalty term
@@ -119,11 +126,16 @@ namespace BoSSS.Solution.XheatCommon {
         MultidimensionalArray NegLengthScaleS;
 
         public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+
             NegLengthScaleS = csA.CellLengthScales;
             PosLengthScaleS = csB.CellLengthScales;
+
+            if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
+                evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
+
         }
 
-
+        BitArray evapMicroRegion;
 
         public int LevelSetIndex {
             get { return 0; }
@@ -155,16 +167,53 @@ namespace BoSSS.Solution.XheatCommon {
 
     }
 
+
+    public class HeatFluxAtLevelSet : EvaporationAtLevelSet {
+
+        public HeatFluxAtLevelSet(int _D, LevelSetTracker _LsTrk, ThermalParameters thermParams, double _sigma) 
+            : base(_D, _LsTrk, thermParams, _sigma) {
+
+        }
+
+
+        public override double LevelSetForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, 
+            double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+
+            Debug.Assert(cp.jCellIn == cp.jCellOut);
+
+            if (!evapMicroRegion[cp.jCellIn]) {
+
+                return 0.0;
+
+            } else {
+
+                double q = ComputeHeatFlux(cp.Parameters_IN, cp.Parameters_OUT, cp.Normal, cp.jCellIn);
+
+                double FlxNeg = -0.5 * q;
+                double FlxPos = +0.5 * q;
+
+                double Ret = FlxNeg * vA - FlxPos * vB;
+
+                return Ret;
+
+            }
+
+
+        }
+
+    }
+
+
     /// <summary>
     /// 
     /// </summary>
-    public class HeatFluxDivergencetAtLevelSet : BoSSS.Foundation.XDG.ILevelSetForm {
+    public class HeatFluxDivergencetAtLevelSet : ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
         int m_D;
 
         LevelSetTracker m_LsTrk;
 
-        public HeatFluxDivergencetAtLevelSet(LevelSetTracker lstrk, bool _DiriCond) {
+        public HeatFluxDivergencetAtLevelSet(LevelSetTracker lstrk) {
 
             this.m_D = lstrk.GridDat.SpatialDimension;
             m_LsTrk = lstrk;
@@ -172,11 +221,11 @@ namespace BoSSS.Solution.XheatCommon {
             //this.kAsqrt = Math.Sqrt(_kA);
             //this.kBsqrt = Math.Sqrt(_kB);
 
-            this.DirichletCond = _DiriCond;
+           // this.DirichletCond = _DiriCond;
         }
 
 
-        bool DirichletCond;
+        //bool DirichletCond;
 
         /// <summary>
         /// 
@@ -193,8 +242,8 @@ namespace BoSSS.Solution.XheatCommon {
             // transform from species A to B: we call this the "B-fictitious" value
             double uBxN_fict = uAxN;
 
-            double FlxNeg = (DirichletCond) ? uAxN : Flux(uAxN, uAxN_fict); // flux on A-side
-            double FlxPos = (DirichletCond) ? uBxN : Flux(uBxN_fict, uBxN);  // flux on B-side
+            double FlxNeg = (!evapMicroRegion[cp.jCellIn]) ? uAxN : Flux(uAxN, uAxN_fict); // flux on A-side
+            double FlxPos = (!evapMicroRegion[cp.jCellOut]) ? uBxN : Flux(uBxN_fict, uBxN);  // flux on B-side
 
 
             return FlxNeg * vA - FlxPos * vB;
@@ -205,6 +254,15 @@ namespace BoSSS.Solution.XheatCommon {
             return 0.5 * (UxN_in + UxN_out);
         }
 
+
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+
+            if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
+                evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
+
+        }
+
+        BitArray evapMicroRegion;
 
         public int LevelSetIndex {
             get { return 0; }
@@ -269,11 +327,11 @@ namespace BoSSS.Solution.XheatCommon {
             // transform from species A to B: we call this the "B-fictitious" value
             double uBxN_fict = uAxN;
 
-            double FlxNeg = (DirichletCond) ? 0.0 : Flux(uAxN, uAxN_fict); // flux on A-side
+            double FlxNeg = (DirichletCond) ? 0.0 : -Flux(uAxN, uAxN_fict); // flux on A-side
             double FlxPos = (DirichletCond) ? 0.0 : Flux(uBxN_fict, uBxN);  // flux on B-side
 
 
-            return -(FlxNeg * vA - FlxPos * vB);
+            return (FlxNeg * vA - FlxPos * vB);
 
         }
 
@@ -316,13 +374,105 @@ namespace BoSSS.Solution.XheatCommon {
     }
 
 
-    public class TemperatureGradientAtLevelSet : BoSSS.Foundation.XDG.ILevelSetForm {
+    public class TemperatureGradientAtLevelSet : ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
         int m_d;
 
         LevelSetTracker m_LsTrk;
 
-        public TemperatureGradientAtLevelSet(int _d, LevelSetTracker lstrk, double _kA, double _kB, bool _DiriCond, double _Tsat) {
+        public TemperatureGradientAtLevelSet(int _d, LevelSetTracker lstrk, double _kA, double _kB, double _Tsat) {
+
+            this.m_d = _d;
+            m_LsTrk = lstrk;
+
+            this.kA = _kA;
+            this.kB = _kB;
+
+            //this.DirichletCond = _DiriCond;
+            this.Tsat = _Tsat;
+        }
+
+        double kA;
+        double kB;
+
+        //bool DirichletCond;
+        double Tsat;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public double LevelSetForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
+            double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+
+            Debug.Assert(inp.jCellIn == inp.jCellOut);
+
+            double FlxNeg = 0.0;
+            double FlxPos = 0.0;
+            if (!evapMicroRegion[inp.jCellIn]) {
+                double Avg = Tsat;
+                FlxNeg += kA * Avg; // + 0.5 * uB[0] * (kA - kB);
+                FlxPos += kB * Avg; // + 0.5 * uA[0] * (kA - kB);
+            } else {
+                double Avg = 0.5 * (uB[0] + uA[0]);
+                FlxNeg += kA * Avg; // + 0.5 * uB[0] * (kA - kB);
+                FlxPos += kB * Avg; // + 0.5 * uA[0] * (kA - kB);
+            }
+
+            return (FlxNeg * vA - FlxPos * vB) * inp.Normal[m_d];
+
+            //double Acc = (DirichletCond) ? Tsat : 0.5 * (uB[0] + uA[0]);
+            //return Acc * (kA * vA - kB * vB) * inp.n[m_d];
+        }
+
+
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+
+            if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
+                evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
+
+        }
+
+        BitArray evapMicroRegion;
+
+
+        public int LevelSetIndex {
+            get { return 0; }
+        }
+
+        public IList<string> ArgumentOrdering {
+            get { return new string[] { VariableNames.Temperature }; }
+        }
+
+        public SpeciesId PositiveSpecies {
+            get { return m_LsTrk.GetSpeciesId("B"); }
+        }
+
+        public SpeciesId NegativeSpecies {
+            get { return m_LsTrk.GetSpeciesId("A"); }
+        }
+
+        public TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.UxV | TermActivationFlags.V;
+            }
+        }
+
+        public IList<string> ParameterOrdering {
+            get {
+                return null;
+            }
+        }
+
+    }
+
+
+    public class TemperatureStabilizationFormAtLevelSet : BoSSS.Foundation.XDG.ILevelSetForm {
+
+        int m_d;
+
+        LevelSetTracker m_LsTrk;
+
+        public TemperatureStabilizationFormAtLevelSet(int _d, LevelSetTracker lstrk, double _kA, double _kB, bool _DiriCond, double _Tsat) {
 
             this.m_d = _d;
             m_LsTrk = lstrk;
@@ -346,71 +496,6 @@ namespace BoSSS.Solution.XheatCommon {
         public double LevelSetForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-
-            double Acc = (DirichletCond) ? Tsat : 0.5 * (uB[0] + uA[0]);
-
-            return -Acc * (kB * vB - kA * vA) * inp.Normal[m_d];
-        }
-
-
-        public int LevelSetIndex {
-            get { return 0; }
-        }
-
-        public IList<string> ArgumentOrdering {
-            get { return new string[] { VariableNames.Temperature }; }
-        }
-
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
-        }
-
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
-        }
-
-        public TermActivationFlags LevelSetTerms {
-            get {
-                if(DirichletCond)
-                    return TermActivationFlags.V;
-                else
-                    return TermActivationFlags.UxV | TermActivationFlags.V;
-            }
-        }
-
-        public IList<string> ParameterOrdering {
-            get {
-                return null;
-            }
-        }
-
-    }
-
-
-    public class TemperatureStabilizationFormAtLevelSet : BoSSS.Foundation.XDG.ILevelSetForm {
-
-        int m_d;
-
-        LevelSetTracker m_LsTrk;
-
-        public TemperatureStabilizationFormAtLevelSet(int _d, LevelSetTracker lstrk, bool _DiriCond, double _Tsat) {
-
-            this.m_d = _d;
-            m_LsTrk = lstrk;
-
-            this.DirichletCond = _DiriCond;
-            this.Tsat = _Tsat;
-        }
-
-        bool DirichletCond;
-        double Tsat;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public double LevelSetForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
-            double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-
             //return (uA[0] - uB[0]) * inp.n[m_d] * (vA - vB);
 
             double Acc = 0.0;
@@ -419,10 +504,11 @@ namespace BoSSS.Solution.XheatCommon {
                 Acc += 2.0 * (uA[0] - Tsat) * inp.Normal[m_d] * (vA - 0.0);
                 Acc += 2.0 * (Tsat - uB[0]) * inp.Normal[m_d] * (0.0 - vB);
             } else {
-                Acc += (uA[0] - uB[0]) * inp.Normal[m_d] * (vA - vB);
+                Acc += (kA * uA[0] - kB * uB[0]) * inp.Normal[m_d] * (vA - vB);
+                //Acc += (uA[0] - uB[0]) * inp.Normal[m_d] * (vA - vB);
             }
 
-            return Acc;
+            return -Acc;
         }
 
 

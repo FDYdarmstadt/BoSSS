@@ -201,9 +201,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergy = false;
+            C.ComputeEnergyProperties = false;
 
-            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ContinuousDG;
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
@@ -627,12 +627,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergy = false;
+            C.ComputeEnergyProperties = false;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 20;
 
-            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ContinuousDG;
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;

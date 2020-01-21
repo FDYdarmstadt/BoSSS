@@ -820,6 +820,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 // +++++++++++++++++++++++++++++++++++++++++++++++++++
 
                                 Debug.Assert(PtMeas_nodes.Count == 2);
+                                //if (PtMeas_nodes.Count != 2)
+                                //    Console.WriteLine("Point measure nodes != 2");
 
                                 CellBoundaryQuadRule subdividedRule = new CellBoundaryQuadRule() {
                                     OrderOfPrecision = order,
