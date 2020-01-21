@@ -227,12 +227,12 @@ namespace BoSSS.Solution.NSECommon
         /// <summary>
         /// Arguments
         /// </summary>
-        public IList<string> ArgumentOrdering { get; }
+        public abstract IList<string> ArgumentOrdering { get; }
 
         /// <summary>
         /// Parameters at linearization point to calculate material properties.
         /// </summary>
-        public IList<string> ParameterOrdering { get; }
+        public abstract IList<string> ParameterOrdering { get; }
 
     }
 }
