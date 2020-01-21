@@ -511,7 +511,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // ==========================================
                 {
                     /*
-                    // for visualization:
+                    // hack for visualization of blocks, pt. 1/2
                     double[] blockIndex = new double[ag.iLogicalCells.NoOfLocalUpdatedCells];
                     for (int idx_bi = 0; idx_bi < _Blocks.Count(); idx_bi++) {
                         var bi = _Blocks.ElementAt(idx_bi);
@@ -519,7 +519,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             blockIndex[j] = idx_bi;
                         };
                     }
-                    */
+                    //*/
 
                     BitArray marker = new BitArray(JComp + JGhost);
 
@@ -567,6 +567,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                     /*
+                    // hack for visualization of blocks, pt. 2/2
                     double[][] ExtendedBlocks = new double[BlockCells.Length][];
                     string[] Names = new string[BlockCells.Length];
                     for(int iBlock = 0; iBlock < ExtendedBlocks.Length; iBlock++) {
@@ -596,7 +597,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         Tecplot.Tecplot.PlotFields(vizData, "blox", 0.0, 0);
                     }
-                    */
+                    //*/
                 }
 
 

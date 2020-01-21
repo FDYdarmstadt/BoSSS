@@ -492,7 +492,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (nonlinSolver != null) {
                 nonlinSolver.IterationCallback += this.LogResis;
                 if (linearSolver != null && linearSolver is ISolverWithCallback) {
-                    ((ISolverWithCallback)linearSolver).IterationCallback = this.LogResis;
+                    ((ISolverWithCallback)linearSolver).IterationCallback = this.MiniLogResi; // this.LogResis;
                 }
             } else {
                 if (linearSolver != null && linearSolver is ISolverWithCallback) {
@@ -501,6 +501,12 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
 
             return String.Format("nonlinear Solver: {0}, linear Solver: {1}", nls_strg, ls_strg);
+        }
+
+
+        void MiniLogResi(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
+            double resiNorm = currentRes.MPI_L2Norm();
+            Console.WriteLine("    " + resiNorm);
         }
 
 
@@ -550,6 +556,31 @@ namespace BoSSS.Solution.XdgTimestepping {
                     for (int i = 0; i < NF; i++) {
                         double L2Res = R.Mapping.Fields[i].L2Norm();
                         m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
+
+                        /*
+                        if (iterIndex >= 49) {
+                            var Ri = R.Mapping.Fields[i];
+                            var C = Ri.Coordinates;
+                            Console.Write($"per deg: {Ri.Identification} : ");
+                            double accacc = 0;
+                            for (int p = 0; p <= Ri.Basis.Degree; p++) {
+                                int n0 = Ri.Basis.GetPolynomialIndicesForDegree(0, p).Min();
+                                int n1 = Ri.Basis.GetPolynomialIndicesForDegree(0, p).Max();
+                                Console.Write($"({n0}-{n1}) ");
+
+
+                                double acc = 0;
+                                for(int n = n0; n <= n1; n++) {
+                                    acc += C.GetColumn(n).L2NormPow2();
+                                }
+                                accacc += acc;
+
+                                double Norm = acc.Sqrt();
+                                Console.Write($"p{p}: {Norm}  ");
+                            }
+                            Console.WriteLine("  " + accacc.Sqrt());
+                        }
+                        */
                     }
                 } else {
 

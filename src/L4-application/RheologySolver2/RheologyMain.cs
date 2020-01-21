@@ -463,9 +463,9 @@ namespace BoSSS.Application.Rheology {
                             XOP.EquationComponents["div"].Add(new Divergence_DerivativeSource_Flux(d, BcMap));
 
                             //Pressure stabilization for LDG
-                            var presStab = new PressureStabilization(this.Control.PresPenalty2, this.Control.Reynolds);
-                            Console.WriteLine("PresPenalty2 = " + this.Control.PresPenalty2);
-                            XOP.EquationComponents["div"].Add(presStab);
+                            //var presStab = new PressureStabilization(this.Control.PresPenalty2, this.Control.Reynolds);
+                            //Console.WriteLine("PresPenalty2 = " + this.Control.PresPenalty2);
+                            //XOP.EquationComponents["div"].Add(presStab);
                         }
                     } else {
                         for (int d = 0; d < D; d++) {
@@ -772,7 +772,7 @@ namespace BoSSS.Application.Rheology {
 
                             //this.ResLogger.NextTimestep(false);
 
-                            // this evaluation must later out of this loop. now here for comparing resluts with  
+                            // this evaluation must later out of this loop. now here for comparing results with  
                             PlotCurrentState(phystime, new TimestepNumber(TimestepNo.MajorNumber, i));
                             SaveToDatabase(new TimestepNumber(TimestepNo.MajorNumber, i), phystime);
 
@@ -797,12 +797,7 @@ namespace BoSSS.Application.Rheology {
                             currentWeissenberg = currentWeissenberg + Control.WeissenbergIncrement;
                             Console.WriteLine();
                             Console.WriteLine("Raise Weissenberg number to " + currentWeissenberg);
-                            Console.WriteLine();
-
-                            if (currentWeissenberg >= 0.1999999) {
-                                Console.WriteLine("switching to iterative solver...");
-                                m_BDF_Timestepper.XdgSolverFactory.GetLinearConfig.SolverCode = Solution.Control.LinearSolverCode.exp_Kcycle_schwarz_4Rheology;
-                            }
+                            Console.WriteLine();                            
                         }
 
                     }
@@ -1015,6 +1010,7 @@ namespace BoSSS.Application.Rheology {
             Assert.Less(InfNorm_ErrAff / DenomA, 0.01, "Mismatch in Affine Vector between finite difference Jacobi and direct Jacobi");
         }
 
+        static int counter = 1;
 
         /// <summary>
         /// Computation of operator matrix to be used by DelComputeOperatorMatrix, the SpatialOperatorAnalysis and some unit tests(<see cref="m_BDF_Timestepper"/>).
@@ -1110,6 +1106,14 @@ namespace BoSSS.Application.Rheology {
 
                 }
 
+                //int[] Idx = domMap.GetSubvectorIndices(((GridData)(this.GridData)).BoundaryCells.Complement(), false, new[] { 0, 1, 2, 3, 4, 5 });
+                //Idx.SaveToTextFile("InnerIdx.txt");
+
+                //OpMatrix.SaveToTextFileSparse("OpMatrix-" + counter + ".txt");
+                //OpAffine.SaveToTextFile("RHS-" + counter + ".txt");
+                //counter++;
+
+
                 // Set Pressure Reference Point
                 //======================================================
                 if (!this.BcMap.DirichletPressureBoundary) {
@@ -1165,7 +1169,7 @@ namespace BoSSS.Application.Rheology {
                     int pPreLv = Math.Max(1, pPrs - iLevel);
                     int pStrLv = Math.Max(1, pStr - iLevel);
                     
-                    
+                    /*
                     configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[2];
                     configs[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig() {
                             DegreeS = new int[] { pVelLv, pVelLv, pStrLv, pStrLv, pStrLv },
@@ -1182,7 +1186,7 @@ namespace BoSSS.Application.Rheology {
 
                     
                     
-                    /*
+                    
                     configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[1];
                     configs[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig() {
                         mode = MultigridOperator.Mode.LeftInverse_DiagBlock,
@@ -1561,6 +1565,14 @@ namespace BoSSS.Application.Rheology {
                 newGrid = null;
                 old2NewGrid = null;
             }
+        }
+        
+        /// <summary>
+        /// Appends the <see cref="currentWeissenberg"/> number to the timestep
+        /// </summary>
+        protected override TimestepInfo GetCurrentTimestepInfo(TimestepNumber timestepno, double t) {
+            var tsi = new RheologyTimestepInfo(t, CurrentSessionInfo, timestepno, IOFields, currentWeissenberg);
+            return tsi;
         }
     }
 

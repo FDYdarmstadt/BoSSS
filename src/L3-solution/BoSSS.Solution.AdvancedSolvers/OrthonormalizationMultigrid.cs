@@ -82,7 +82,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             this.m_MgOperator = op;
             var Mtx = op.OperatorMatrix;
             var MgMap = op.Mapping;
-            //viz = new MGViz(op);
+            //if(op.LevelIndex == 0)
+            //    viz = new MGViz(op);
 
             if (!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
                 throw new ArgumentException("Row partitioning mismatch.");
