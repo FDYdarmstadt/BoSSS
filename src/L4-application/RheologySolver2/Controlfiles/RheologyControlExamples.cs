@@ -578,26 +578,29 @@ namespace BoSSS.Application.Rheology {
 
             //restart
             //var database = new DatabaseInfo(path);
-            //Guid restartID = new Guid("9ae08191-ee15-4803-9e3f-566f119c9de4");
-            //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, null);
-            /*
-            //Set Initial Conditions
-            if (C.SetInitialConditions == true)
-            {
-                
-                C.InitialValues_Evaluators.Add("VelocityX", X => VelocityXfunction(X, 0));
-                C.InitialValues_Evaluators.Add("VelocityY", X => VelocityYfunction(X, 0));
-                C.InitialValues_Evaluators.Add("StressXX", X => 0);// StressXXfunction(X, 0));
-                C.InitialValues_Evaluators.Add("StressXY", X => StressXYfunction(X, 0));
-                C.InitialValues_Evaluators.Add("StressYY", X => StressYYfunction(X, 0));
+            Guid restartID = new Guid("45c813f2-8be5-43ab-9e41-7abbca99cc99");
+            C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(1, 4));
 
-                if (C.SetInitialPressure == true || C.SkipSolveAndEvaluateResidual == true)
+            if (C.RestartInfo == null) {
+                /*
+                //Set Initial Conditions
+                if (C.SetInitialConditions == true)
                 {
-                    C.InitialValues_Evaluators.Add("Pressure", X => Pressurefunction(X, 0));
+
+                    C.InitialValues_Evaluators.Add("VelocityX", X => VelocityXfunction(X, 0));
+                    C.InitialValues_Evaluators.Add("VelocityY", X => VelocityYfunction(X, 0));
+                    C.InitialValues_Evaluators.Add("StressXX", X => 0);// StressXXfunction(X, 0));
+                    C.InitialValues_Evaluators.Add("StressXY", X => StressXYfunction(X, 0));
+                    C.InitialValues_Evaluators.Add("StressYY", X => StressYYfunction(X, 0));
+
+                    if (C.SetInitialPressure == true || C.SkipSolveAndEvaluateResidual == true)
+                    {
+                        C.InitialValues_Evaluators.Add("Pressure", X => Pressurefunction(X, 0));
+                    }
                 }
+                */
+                C.InitialValues_Evaluators.Add("Phi", X => -1);
             }
-            */
-            C.InitialValues_Evaluators.Add("Phi", X => -1);
 
             // Set Boundary Conditions
             //C.AddBoundaryValue("Wall_bottom", "VelocityX", X => 0);
@@ -608,7 +611,7 @@ namespace BoSSS.Application.Rheology {
             //C.AddBoundaryValue("Wall_cylinder", "VelocityY", X => 0);
             //C.AddBoundaryValue("Freeslip");
 
-
+            
             if (!C.FixedStreamwisePeriodicBC)
             {
                 C.AddBoundaryValue("Velocity_inlet", "VelocityX", VelocityXfunction);

@@ -226,9 +226,16 @@ namespace BoSSS.Application.Rheology {
         IncompressibleBoundaryCondMap BcMap;
         
         /// <summary>
-        /// current Weissenberg number
+        /// Current Weissenberg number,
+        /// if the solver is used in Weissenberg-increment mode
+        /// (<see cref="RheologyControl.RaiseWeissenberg"/>, <see cref="RheologyControl.WeissenbergIncrement"/>)
         /// </summary>
         public double currentWeissenberg;
+
+        /// <summary>
+        /// restart value for the Weissenberg-increment mode
+        /// </summary>
+        private double restartWeissenberg = 0.0;
 
 
         bool ChangeMesh = true;
@@ -716,7 +723,8 @@ namespace BoSSS.Application.Rheology {
 
                 if (Control.RaiseWeissenberg == true) {
 
-                    currentWeissenberg = 0.0;
+                    currentWeissenberg = restartWeissenberg;
+                    restartWeissenberg = 0.0; // make sure the restart value is used only once
 
                     if (Control.Weissenberg != 0.0) {
 
@@ -892,6 +900,7 @@ namespace BoSSS.Application.Rheology {
 
                 this.ResLogger.NextTimestep(false);
 
+                startWeissenberg = 0.0;
                 return dt;
 
 
@@ -1571,8 +1580,23 @@ namespace BoSSS.Application.Rheology {
         /// Appends the <see cref="currentWeissenberg"/> number to the timestep
         /// </summary>
         protected override TimestepInfo GetCurrentTimestepInfo(TimestepNumber timestepno, double t) {
-            var tsi = new RheologyTimestepInfo(t, CurrentSessionInfo, timestepno, IOFields, currentWeissenberg);
-            return tsi;
+            var Rtsi = new RheologyTimestepInfo(t, CurrentSessionInfo, timestepno, IOFields, currentWeissenberg);
+            return Rtsi;
+        }
+
+        protected override void OnRestartTimestepInfo(TimestepInfo tsi) {
+            if (this.Control.RaiseWeissenberg) {
+
+                var Rtsi = tsi as RheologyTimestepInfo;
+                if (Rtsi != null) {
+                    Console.Write("Restoring Weissenberg number form database...  ");
+                    Console.Write($" Weissenberg = {Rtsi.currentWeissenbergNumber}");
+                    this.restartWeissenberg = Rtsi.currentWeissenbergNumber;
+                    Console.WriteLine();
+                } else {
+                    Console.WriteLine($"No Weissenberg number contained in time-step; starting with pre-set.");
+                }
+            }
         }
     }
 
