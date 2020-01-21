@@ -1,21 +1,14 @@
 restart
 **************
+
   BoSSSpad C# interpreter
   _______________________
 
 Databases loaded:
-List of 11 instances of IDatabaseInfo {
-  0: { Session Count = 0; Grid Count = 34; Path = C:\BoSSS_DB }
-  1: { Session Count = 144; Grid Count = 6; Path = C:\tmp\fk_temp_db }
-  2: { Session Count = 0; Grid Count = 6; Path = P:\Performance_DB }
-  3: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
-  4: { Session Count = 112; Grid Count = 6; Path = E:\Performance_oldLibs_DB }
-  5: { Session Count = 0; Grid Count = 4; Path = E:\db_2delete }
-  6: { Session Count = 193; Grid Count = 12; Path = E:\XdgPerformance }
-  7: { Session Count = 112; Grid Count = 136; Path = E:\bosss_db_performance }
-  8: { Session Count = 19; Grid Count = 3; Path = F:\test_db }
-  9: { Session Count = 144; Grid Count = 139; Path = Z:\weber\Performance_Kram\bosss_db_performance }
-  10: { Session Count = 200; Grid Count = 6; Path = E:\Performance_newLibs_DB }
+List of 3 instances of IDatabaseInfo {
+  0: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+  1: { Session Count = 45; Grid Count = 132; Path = G:\DB_Cube }
+  2: { Session Count = 4; Grid Count = 1; Path = G:\Performance_DB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -346,7 +339,7 @@ List of 3 instances of Int32 {
 ==============
 int rows    = 3;
 int columns = 1;
-LinearSolverConfig.Code[] ignore_solvers = {LinearSolverConfig.Code.classic_pardiso, LinearSolverConfig.Code.classic_cg, LinearSolverConfig.Code.exp_softpcg_schwarz, LinearSolverConfig.Code.exp_direct_lapack};
+LinearSolverCode[] ignore_solvers = {LinearSolverCode.classic_pardiso, LinearSolverCode.classic_cg, LinearSolverCode.exp_softpcg_schwarz, LinearSolverCode.exp_direct_lapack};
 
 Plot2Ddata[,] multiplots = new Plot2Ddata[rows,columns];
 int pDegree = 0;
@@ -378,9 +371,9 @@ for(int iCol = 0; iCol < columns; iCol++) {
                 return;
            }
  
-           LinearSolverConfig.Code solver_name = (LinearSolverConfig.Code) Convert.ToInt32(Row["LinearSolver.SolverCode"]);
+           LinearSolverCode solver_name = (LinearSolverCode) Convert.ToInt32(Row["LinearSolver.SolverCode"]);
            //ignore the solvers specified in ingore_solvers
-           foreach(LinearSolverConfig.Code sc in ignore_solvers){
+           foreach(LinearSolverCode sc in ignore_solvers){
                if(solver_name==sc){
                    System.Console.WriteLine("skipped");
                    Nmn = null;
@@ -392,17 +385,17 @@ for(int iCol = 0; iCol < columns; iCol++) {
            //process the other solvers
            Fmt = new PlotFormat();
            switch(solver_name) {
-           case LinearSolverConfig.Code.classic_pardiso: 
+           case LinearSolverCode.classic_pardiso: 
                Nmn           = "Pardiso"; 
                Fmt.PointType = PointTypes.OpenCircle;
                Fmt.DashType  = DashTypes.Dotted;
                break;
-           case LinearSolverConfig.Code.classic_mumps: 
+           case LinearSolverCode.classic_mumps: 
                Nmn           = "Mumps"; 
                Fmt.PointType = PointTypes.OpenUpperTriangle;
                Fmt.DashType  = DashTypes.Dotted;
                break;
-           case LinearSolverConfig.Code.classic_cg: 
+           case LinearSolverCode.classic_cg: 
                Nmn           = "CG"; 
                Fmt.PointType = PointTypes.Asterisk;
                break;
@@ -410,19 +403,19 @@ for(int iCol = 0; iCol < columns; iCol++) {
 //               Fmt.PointType = PointTypes.OpenBox;
 //               Nmn           = "Pardiso w Blk PC"; 
 //               break;
-           case LinearSolverConfig.Code.exp_softpcg_schwarz: 
+           case LinearSolverCode.exp_softpcg_schwarz: 
                Nmn           = "Add Swz"; 
                Fmt.PointType = PointTypes.LowerTriangle;
                break;
-           case LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse: 
+           case LinearSolverCode.exp_softpcg_schwarz_directcoarse: 
                Nmn           = "Add Swz w Coarse";
                Fmt.PointType = PointTypes.UpperTriangle;
                break;
-           case LinearSolverConfig.Code.exp_softpcg_mg:
+           case LinearSolverCode.exp_softpcg_mg:
                Nmn           = "Mult Gr w Blk Jac";
                Fmt.PointType = PointTypes.Box;
                break;
-           case LinearSolverConfig.Code.exp_direct_lapack: 
+           case LinearSolverCode.exp_direct_lapack: 
                Nmn           = "LAPACK"; 
                Fmt.PointType = PointTypes.Plus;
                break;
@@ -559,8 +552,8 @@ name is: exp_softpcg_schwarz_directcoarse
 name is: classic_mumps
 name is: classic_mumps
 name is: classic_mumps
-Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
-set key inside top left Left reverse 
+Using gnuplot: G:\BoSSS-BIN\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"inside top left Left reverse 
 System.Drawing.Bitmap
 ==============
 LastError
@@ -572,8 +565,8 @@ LastError
 ==============
 var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
 **************
-Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
-set key inside top left Left reverse 
+Using gnuplot: G:\BoSSS-BIN\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"inside top left Left reverse 
 
 ==============
 //CL.SaveTo(Path.Combine(CurrentDocDir, "XdgPoissonScaling.tex"));
@@ -581,21 +574,23 @@ set key inside top left Left reverse
 ==============
 CL.PlotNow();
 **************
-System.ComponentModel.Win32Exception occurred: Das System kann die angegebene Datei nicht finden. Type 'LastError' for details.
+System.ComponentModel.Win32Exception occurred: The system cannot find the file specified. Type 'LastError' for details.
 
 ==============
 LastError
 **************
-System.ComponentModel.Win32Exception (0x80004005): Das System kann die angegebene Datei nicht finden
-   bei System.Diagnostics.Process.StartWithShellExecuteEx(ProcessStartInfo startInfo)
-   bei BoSSS.Application.BoSSSpad.GnuplotExtensions.CairolatexContainer.Preview(Boolean trimPage, Int32 dpi) in C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\GnuplotExtensions.cs:Zeile 325.
-   bei <InteractiveExpressionClass>.Host(Object& $retval)
-   bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
-   bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 322.
+System.ComponentModel.Win32Exception (0x80004005): The system cannot find the file specified
+   at System.Diagnostics.Process.StartWithShellExecuteEx(ProcessStartInfo startInfo)
+   at BoSSS.Application.BoSSSpad.GnuplotExtensions.CairolatexContainer.Preview(Boolean trimPage, Int32 dpi) in G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\GnuplotExtensions.cs:line 325
+   at <InteractiveExpressionClass>.Host(Object& $retval)
+   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in G:\BoSSS-HHLR\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:line 345
 ==============
 CL.WriteMinimalCompileableExample(
    Path.Combine(CurrentDocDir, "plots", "MainXdgPoissonScaling.tex"),
    "XdgPoissonScaling.tex");
+**************
+==============
 **************
 ==============
 **************

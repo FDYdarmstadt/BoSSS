@@ -33,51 +33,67 @@ namespace BoSSS.Solution.XheatCommon {
 
     public abstract class EvaporationAtLevelSet : ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
-        protected double hVapA;   // for the identification of the liquid phase
-        protected double Rint;
-        protected double Tsat;
-        protected double rho;     // density of liquid phase 
-        protected double sigma;
-        protected double pc;
+        protected double m_hVap;
 
-        protected double kA;
-        protected double kB;
+        // for micro regions
+        protected double m_sigma;
+        protected double m_pc;
+        protected double m_fc;
+        protected double m_Rc;
+        protected double m_Tsat;
 
-        protected int D;
+        //protected double rho;     // density of liquid phase 
+        protected double m_rhoA;
+        protected double m_rhoB;
+
+        protected int m_D;
+
+
+        public EvaporationAtLevelSet(int _D, LevelSetTracker _LsTrk,  ThermalParameters thermParams, double _sigma) {
+
+            this.m_D = _D;
+            this.m_LsTrk = _LsTrk;
+
+            this.m_hVap = thermParams.hVap;
+
+            this.m_rhoA = thermParams.rho_A;
+            this.m_rhoB = thermParams.rho_B;
+
+            this.m_pc = thermParams.pc;
+            this.m_fc = thermParams.fc;
+            this.m_Rc = thermParams.Rc;
+            this.m_Tsat = thermParams.T_sat;
+
+            this.m_sigma = _sigma;
+                
+        }
+
 
         private double ComputeHeatFlux_Macro(double[] HeatFlux_A, double[] HeatFlux_B, double[] n) {
 
-            //double hVap = 0.0;
             double qEvap = 0.0;
-            if (hVapA > 0) {
-                //hVap = hVapA;
-                for (int d = 0; d < D; d++)
-                    qEvap -= (HeatFlux_A[d] - HeatFlux_B[d]) * n[d];
-            } else {
-                //hVap = -hVapA;
-                for (int d = 0; d < D; d++)
-                    qEvap -= (HeatFlux_B[d] - HeatFlux_A[d]) * n[d];
-            }
+            for (int d = 0; d < m_D; d++)
+                qEvap += (HeatFlux_B[d] - HeatFlux_A[d]) * n[d];
 
             return qEvap;
         }
 
         private double ComputeHeatFlux_Micro(double T_A, double T_B, double curv, double p_disp) {
 
-            double pc0 = (pc < 0.0) ? sigma * curv + p_disp : pc;      // augmented capillary pressure (without nonlinear evaporative masss part)
+            double pc = m_sigma * curv + p_disp;      // augmented capillary pressure (without nonlinear evaporative masss part)
 
+            double Rint = 0.0;
             double TintMin = 0.0;
-            double hVap = 0.0;
             double qEvap = 0.0;
-            if (hVapA > 0) {
-                hVap = hVapA;
-                TintMin = Tsat * (1 + (pc0 / (hVap * rho)));
-                if (T_A > TintMin)
-                    qEvap = -(T_A - TintMin) / Rint;
+            if (m_rhoA > m_rhoB) {
+                Rint = ((2.0 - m_fc) / (2 * m_fc)) * m_Tsat * Math.Sqrt(2 * Math.PI * m_Rc * m_Tsat) / (m_rhoB * m_hVap.Pow2());
+                TintMin = m_Tsat * (1 + (pc / (m_hVap * m_rhoA)));
+                //if (T_A > TintMin)
+                    qEvap = (T_A - TintMin) / Rint;
             } else {
-                hVap = -hVapA;
-                TintMin = Tsat * (1 + (pc0 / (hVap * rho)));
-                if (T_B > TintMin)
+                Rint = ((2.0 - m_fc) / (2 * m_fc)) * m_Tsat * Math.Sqrt(2 * Math.PI * m_Rc * m_Tsat) / (m_rhoA * m_hVap.Pow2());
+                TintMin = m_Tsat * (1 + (pc / (m_hVap * m_rhoB)));
+                //if (T_B > TintMin)
                     qEvap = (T_B - TintMin) / Rint;
             }
 
@@ -86,35 +102,66 @@ namespace BoSSS.Solution.XheatCommon {
 
         protected double ComputeHeatFlux(double[] paramsNeg, double[] paramsPos, double[] N, int jCell) {
 
-            if (hVapA == 0.0)
+            if (m_hVap == 0.0)
                 return 0.0;
 
             if (MEvapIsPrescribd)
-                return (hVapA > 0) ? prescrbMEvap * hVapA : -prescrbMEvap * hVapA;
+                return prescrbMEvap * m_hVap;
 
             double qEvap = 0.0;
             if (evapMicroRegion[jCell]) {
-                Debug.Assert(paramsPos[D + 1] == paramsNeg[D + 1], "curvature must be continuous across interface");
-                Debug.Assert(paramsPos[D + 2] == paramsNeg[D + 2], "disjoining pressure must be continuous across interface");
+                Debug.Assert(paramsPos[m_D + 1] == paramsNeg[m_D + 1], "curvature must be continuous across interface");
+                Debug.Assert(paramsPos[m_D + 2] == paramsNeg[m_D + 2], "disjoining pressure must be continuous across interface");
 
-                qEvap = ComputeHeatFlux_Micro(paramsNeg[D], paramsPos[D], paramsNeg[D + 1], paramsNeg[D + 2]);
+                qEvap = ComputeHeatFlux_Micro(paramsNeg[m_D], paramsPos[m_D], paramsNeg[m_D + 1], paramsNeg[m_D + 2]);
             } else {
-                qEvap = ComputeHeatFlux_Macro(paramsNeg.GetSubVector(0, D), paramsPos.GetSubVector(0, D), N);
+                qEvap = ComputeHeatFlux_Macro(paramsNeg.GetSubVector(0, m_D), paramsPos.GetSubVector(0, m_D), N);
             }
-
-            //if(qEvap > -9.9 || qEvap < -10.1)
-            //Console.WriteLine("qEvap = {0}", qEvap); 
 
             return qEvap;
 
         }
 
+        protected double ComputeEvaporationMass(double[] paramsNeg, double[] paramsPos, double[] N, int jCell) {
 
-        public abstract double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB);
+            double qEvap = ComputeHeatFlux(paramsNeg, paramsPos, N, jCell);
+
+            if (qEvap == 0.0)
+                return 0.0;
+
+            double M = qEvap / m_hVap;
+
+            return M;
+        }
+
+
+
+        protected double ComputeInterfaceNormalVelocity(double[] paramsNeg, double[] paramsPos, double[] N, int jCell) {
+
+            double qEvap = ComputeHeatFlux(paramsNeg, paramsPos, N, jCell);
+
+            double M = qEvap / m_hVap;
+
+            double sNeg = 0.0;
+            for (int d = 0; d < m_D; d++)
+                sNeg += (paramsNeg[d] + (M / m_rhoA)) * N[d];
+
+            double sPos = 0.0;
+            for (int d = 0; d < m_D; d++)
+                sPos += (paramsPos[d] + (M / m_rhoB)) * N[d];
+
+            double s = (m_rhoA * sNeg + m_rhoB * sPos) / (m_rhoA + m_rhoB);     // density averaged, corresponding to the mean evo velocity 
+
+            return s;
+
+        }
+
+
+        public abstract double LevelSetForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB);
 
 
         protected LevelSetTracker m_LsTrk;
-        BitArray evapMicroRegion;
+        protected BitArray evapMicroRegion;
 
         bool MEvapIsPrescribd = false;
         double prescrbMEvap;
@@ -141,9 +188,10 @@ namespace BoSSS.Solution.XheatCommon {
 
         public virtual IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat(VariableNames.HeatFlux0Vector(D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure);
+                return ArrayTools.Cat(VariableNames.HeatFlux0Vector(m_D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure);
             }
         }
+
 
         public int LevelSetIndex {
             get { return 0; }
@@ -163,104 +211,5 @@ namespace BoSSS.Solution.XheatCommon {
 
 
     }
-
-
-    public class HeatFluxAtLevelSet : EvaporationAtLevelSet {
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="_d">spatial direction</param>
-        /// <param name="_D">spatial dimension</param>
-        /// <param name="LsTrk"></param>
-        /// <param name="_sigma">surface-tension constant</param>
-        public HeatFluxAtLevelSet(LevelSetTracker LsTrk, double _rho, ThermalParameters thermParams, double _Rint, double _sigma) {
-            m_LsTrk = LsTrk;
-
-            this.rho = _rho;
-
-            this.kA = thermParams.k_A;
-            this.kB = thermParams.k_B;
-            this.hVapA = thermParams.hVap_A;
-            this.Rint = _Rint;
-
-            this.Tsat = thermParams.T_sat;
-            this.sigma = _sigma;
-            this.pc = thermParams.pc;
-
-            this.D = LsTrk.GridDat.SpatialDimension;
-        }
-
-
-        public override double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-
-            double qEvap = ComputeHeatFlux(cp.ParamsNeg, cp.ParamsPos, cp.n, cp.jCell);
-            //Console.WriteLine("qEvap - HeatFluxAtLevelSet: {0}", qEvap);
-            if (qEvap == 0.0)
-                return 0.0;
-
-
-            double FlxNeg = -0.5 * qEvap;
-            double FlxPos = +0.5 * qEvap;
-
-            Debug.Assert(!(double.IsNaN(FlxNeg) || double.IsInfinity(FlxNeg)));
-            Debug.Assert(!(double.IsNaN(FlxPos) || double.IsInfinity(FlxPos)));
-
-            return FlxNeg * vA - FlxPos * vB;
-        }
-
-
-    }
-
-
-    public class HeatFluxEvaporationAtLevelSet : EvaporationAtLevelSet {
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="_d">spatial direction</param>
-        /// <param name="_D">spatial dimension</param>
-        /// <param name="LsTrk"></param>
-        /// <param name="_sigma">surface-tension constant</param>
-        public HeatFluxEvaporationAtLevelSet(LevelSetTracker LsTrk, double _rho, ThermalParameters thermParams, double _Rint, double _sigma) {
-            m_LsTrk = LsTrk;
-
-            this.rho = _rho;
-
-            this.kA = thermParams.k_A;
-            this.kB = thermParams.k_B;
-            this.hVapA = thermParams.hVap_A;
-            this.Rint = _Rint;
-
-            this.Tsat = thermParams.T_sat;
-            this.sigma = _sigma;
-            this.pc = thermParams.pc;
-
-            this.D = LsTrk.GridDat.SpatialDimension;
-        }
-
-
-        public override double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-
-            double qEvap = ComputeHeatFlux(cp.ParamsNeg, cp.ParamsPos, cp.n, cp.jCell);
-            //Console.WriteLine("qEvap - HeatFluxAtLevelSet: {0}", qEvap);
-            if (qEvap == 0.0)
-                return 0.0;
-
-
-            double FlxNeg = qEvap;
-            double FlxPos = qEvap;
-
-            Debug.Assert(!(double.IsNaN(FlxNeg) || double.IsInfinity(FlxNeg)));
-            Debug.Assert(!(double.IsNaN(FlxPos) || double.IsInfinity(FlxPos)));
-
-            return FlxNeg * vA - FlxPos * vB;
-        }
-
-
-    }
-
 
 }

@@ -62,7 +62,14 @@ namespace BoSSS.Solution.NSECommon {
         /// mass, momentum and constitutive 
         /// equations for viscoelastic material model.
         /// </summary>
-        Viscoelastic
+        Viscoelastic,
+
+        /// <summary>
+        /// Reynolds-averaged Navier-Stokes (RANS)
+        /// solver.
+        /// Different Turbulence models will be supported in the future.
+        /// </summary>
+        RANS
 
     }
 
@@ -124,9 +131,9 @@ namespace BoSSS.Solution.NSECommon {
         public const string ContinuityEquation = "ContiEq";
 
         /// <summary>
-        /// energy equation
+        /// kinetic energy equation
         /// </summary>
-        public const string EnergyEquation = "EnergyEq";
+        public const string KineticEnergyEquation = "KinEnergyEq";
 
         /// <summary>
         /// heat equation
@@ -412,7 +419,7 @@ namespace BoSSS.Solution.NSECommon {
         /// gradient in y-direction of velocity component in y-direction
         /// </summary>
         public static string VelocityY_GradientY = "VelocityY_GradientY";
- 
+
 
         ///// <summary>
         ///// variable name for a single component of the veolcityY gradient
@@ -440,9 +447,62 @@ namespace BoSSS.Solution.NSECommon {
 
 
         /// <summary>
+        /// variable name for kinetic energy
+        /// </summary>
+        public const string KineticEnergy = "KineticEnergy";
+
+
+        /// <summary>
         /// variable name for Pressure
         /// </summary>
         public const string Pressure = "Pressure";
+
+
+        /// <summary>
+        /// variable name for Pressure parameter
+        /// </summary>
+        public const string Pressure0 = "Pressure0";
+
+
+        /// <summary>
+        /// x - component of the pressure gradient
+        /// </summary>
+        public const string PressureGradX = "PressureGradX";
+
+        /// <summary>
+        /// y - component of the pressure gradient
+        /// </summary>
+        public const string PressureGradY = "PressureGradY";
+
+        /// <summary>
+        /// z - component of the pressure gradient
+        /// </summary>
+        public const string PressureGradZ = "PressureGradZ";
+
+        /// <summary>
+        /// variable name for the pressure gradient
+        /// </summary>
+        static public string[] PressureGradient(int D) {
+            switch (D) {
+                case 1: return new string[] { PressureGradX };
+                case 2: return new string[] { PressureGradX, PressureGradY };
+                case 3: return new string[] { PressureGradX, PressureGradY, PressureGradZ };
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
+        /// <summary>
+        /// Components of the pressure gradient
+        /// </summary>
+        static public string PressureGradientComponent(int i) {
+            switch (i) {
+                case 0: return PressureGradX;
+                case 1: return PressureGradY;
+                case 2: return PressureGradZ;
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
 
         /// <summary>
         /// variable name for Pressure Correction (e.g. in SIMPLE)
@@ -476,33 +536,33 @@ namespace BoSSS.Solution.NSECommon {
         public const string Temperature0Mean = "Temperature0Mean";
 
         /// <summary>
-        /// x - component of the Tenperature gradient
+        /// x - component of the Temperature gradient
         /// </summary>
         public const string TemperatureGradient0 = "TemperatureGradient[0]";
 
         /// <summary>
-        /// y - component of the Tenperature gradient
+        /// y - component of the Temperature gradient
         /// </summary>
         public const string TemperatureGradient1 = "TemperatureGradient[1]";
 
         /// <summary>
-        /// z - component of the Tenperature gradient
+        /// z - component of the Temperature gradient
         /// </summary>
         public const string TemperatureGradient2 = "TemperatureGradient[2]";
 
-        /// <summary>
-        /// x - component of the Tenperature gradient (linearization point)
-        /// </summary>
+        ///// <summary>
+        ///// x - component of the Temperature gradient (linearization point)
+        ///// </summary>
         //public const string Temperature0Gradient0 = "Temperature0Gradient[0]";
 
-        /// <summary>
-        /// y - component of the Tenperature gradient (linearization point)
-        /// </summary>
+        ///// <summary>
+        ///// y - component of the Temperature gradient (linearization point)
+        ///// </summary>
         //public const string Temperature0Gradient1 = "Temperature0Gradient[1]";
 
-        /// <summary>
-        /// z - component of the Tenperature gradient (linearization point)
-        /// </summary>
+        ///// <summary>
+        ///// z - component of the Temperature gradient (linearization point)
+        ///// </summary>
         //public const string Temperature0Gradient2 = "Temperature0Gradient[2]";
 
         /// <summary>
@@ -518,7 +578,7 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         /// <summary>
-        /// Components of the Temeprature gradient
+        /// Components of the Temperature gradient
         /// </summary>
         static public string TemperatureGradientComponent(int i) {
             switch (i) {

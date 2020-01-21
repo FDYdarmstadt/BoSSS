@@ -52,18 +52,18 @@ namespace CNS.Convection {
         /// </param>
         public override void BuildFluxes(Operator op) {
             op.DensityComponents.Add(new GodunovFlux(
-                control, boundaryMap, new EulerDensityComponent(), speciesMap));
+                control, boundaryMap, new EulerDensityComponent(), speciesMap.GetMaterial(double.NaN)));
 
             for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                 op.MomentumComponents[d].Add(new GodunovFlux(
                     control,
                     boundaryMap,
                     new EulerMomentumComponent(d, control.EquationOfState.HeatCapacityRatio, control.MachNumber, CompressibleEnvironment.NumberOfDimensions),
-                    speciesMap));
+                    speciesMap.GetMaterial(double.NaN)));
             }
 
             op.EnergyComponents.Add(new GodunovFlux(
-                control, boundaryMap, new EulerEnergyComponent(), speciesMap));
+                control, boundaryMap, new EulerEnergyComponent(), speciesMap.GetMaterial(double.NaN)));
         }
     }
 }

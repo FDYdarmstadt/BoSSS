@@ -53,10 +53,9 @@
     <Compile Include="ConvectionInBulk_LLF.cs" />
     <Compile Include="ConvectionInBulk_Localized.cs" />
     <Compile Include="CutCellBoundingBoxes.cs" />
-    <Compile Include="EnergyOperatorComponents.cs" />
-    <Compile Include="EnergyUtils.cs" />
     <Compile Include="IncompressibleMultiphaseBoundaryCondMap.cs" />
     <Compile Include="ConvectionInSpeciesBulk_LLF.cs" />
+    <Compile Include="PressureStabilizationAtLevelSet.cs" />
     <Compile Include="PressureStabilizationInBulk.cs" />
     <Compile Include="StressDivergenceInBulk.cs" />
     <Compile Include="StressDivergence_Cockburn.cs" />
@@ -71,8 +70,6 @@
     <Compile Include="CurvatureAlgortihms.cs" />
     <Compile Include="Divergence.cs" />
     <Compile Include="DoNotTouchParameters.cs" />
-    <Compile Include="OperatorConfiguration.cs" />
-    <Compile Include="OperatorFactory.cs" />
     <Compile Include="PhysicalParameters.cs" />
     <Compile Include="PressureFormAtLevelSet.cs" />
     <Compile Include="PressureInBulk.cs" />

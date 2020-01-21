@@ -41,65 +41,29 @@ namespace BoSSS.Solution.XheatCommon {
         /// <param name="_d">spatial direction</param>
         /// <param name="_D">spatial dimension</param>
         /// <param name="LsTrk"></param>
-        public MassFluxAtInterface(int _d, int _D, LevelSetTracker LsTrk, double _rhoA, double _rhoB, ThermalParameters thermParams, double _Rint, double _sigma) {
-            //double _kA, double _kB, double _hVapA, double _Rint, double _Tsat, double _sigma, double _pc) {
-            m_LsTrk = LsTrk;
-            if(_d >= _D)
-                throw new ArgumentOutOfRangeException();
-            this.D = _D;
+        public MassFluxAtInterface(int _d, int _D, LevelSetTracker LsTrk, ThermalParameters thermParams, double _sigma) 
+            : base(_D, LsTrk, thermParams, _sigma) {
+
             this.m_d = _d;
+            if (m_d >= m_D)
+                throw new ArgumentOutOfRangeException();
 
-            this.rhoA = _rhoA;
-            this.rhoB = _rhoB;
-
-            this.kA = thermParams.k_A;
-            this.kB = thermParams.k_B;
-            this.hVapA = thermParams.hVap_A;
-            this.Rint = _Rint;
-
-            this.Tsat = thermParams.T_sat;
-            this.sigma = _sigma;
-            this.pc = thermParams.pc;
-
-            //this.prescrbM = _prescrbM;
         }
 
         int m_d;
 
-        double rhoA;
-        double rhoB;
 
+        public override double LevelSetForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
+            double[] Normal = cp.Normal;
 
-        private double ComputeEvaporationMass(double[] paramsNeg, double[] paramsPos, double[] N, int jCell) {
-
-            double qEvap = ComputeHeatFlux(paramsNeg, paramsPos, N, jCell);
-
-            if (qEvap == 0.0)
-                return 0.0;
-
-            double hVap = (hVapA > 0) ? hVapA : -hVapA;
-            double M = qEvap / hVap;
-
-            //if (M > -0.099 || M < -0.101)
-            //    Console.WriteLine("mEvap - MassFluxAtInterface: {0}", M);
-
-            return M;
-
-        }
-
-
-        public override double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-
-            double[] Normal = cp.n;
-
-            double M = ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.n, cp.jCell);
+            double M = ComputeEvaporationMass(cp.Parameters_IN, cp.Parameters_OUT, cp.Normal, cp.jCellIn);
             if (M == 0.0)
                 return 0.0;
 
-            double massFlux = M.Pow2() * ((1 / rhoA) - (1 / rhoB)) * Normal[m_d];
+            double massFlux = M.Pow2() * ((1 / m_rhoA) - (1 / m_rhoB)) * Normal[m_d];
                
-            double p_disp = cp.ParamsNeg[1];
+            double p_disp = cp.Parameters_IN[1];
             // augmented capillary pressure
             //double acp_jump = 0.0;
             //if(!double.IsNaN(p_disp))
@@ -122,11 +86,11 @@ namespace BoSSS.Solution.XheatCommon {
 
 
 
-        public override IList<string> ParameterOrdering {
-            get {
-                return ArrayTools.Cat(VariableNames.HeatFlux0Vector(D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure);
-            }
-        }
+        //public override IList<string> ParameterOrdering {
+        //    get {
+        //        return ArrayTools.Cat(VariableNames.HeatFlux0Vector(m_D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure);
+        //    }
+        //}
 
 
     }

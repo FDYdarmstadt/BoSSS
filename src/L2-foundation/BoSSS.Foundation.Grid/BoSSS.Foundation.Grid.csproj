@@ -64,6 +64,7 @@
     <Compile Include="Grid2D.cs" />
     <Compile Include="Grid3D.cs" />
     <Compile Include="GridRefinementController.cs" />
+    <Compile Include="OpenFOAMGrid.cs" />
     <Compile Include="VoronoiMeshing\Boundary.cs" />
     <Compile Include="VoronoiMeshing\Converter\BoundaryConverter.cs" />
     <Compile Include="VoronoiMeshing\Converter\BoundaryFace.cs" />
@@ -196,5 +197,4 @@
       <Name>BoSSS.Foundation</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
 </Project>

@@ -118,6 +118,7 @@ namespace ilPSP.Connectors.Matlab {
         /// </summary>
         static BatchmodeConnector() {
             Flav = Flavor.Matlab;
+            //Flav = Flavor.Octave;
             MatlabExecuteable = null;  //"D:\\cygwin64\\bin\\bash.exe";
         }
 
@@ -208,7 +209,7 @@ namespace ilPSP.Connectors.Matlab {
                             if (MatlabExecuteable == null) {
                                 MatlabExecuteable = get_program_path("octave-cli.exe");
                                 if (MatlabExecuteable == null)
-                                    throw new ApplicationException("Unable to find 'octave-cli.exe' in your PATH environment; please provide path to 'matlab.exe'.");
+                                    throw new ApplicationException("Unable to find 'octave-cli.exe' in your PATH environment; please provide path to 'octave-cli.exe'.");
                             }
 
                             psi.FileName = MatlabExecuteable;
@@ -249,9 +250,22 @@ namespace ilPSP.Connectors.Matlab {
 
 
                     case PlatformID.Unix:
-                    case PlatformID.MacOSX: {
-                            throw new NotImplementedException("will implement on request");
+                        // if (this.m_Flav != Flavor.Octave){
+                        //     throw new NotImplementedException("Use Octave instead");
+                        // }
+                        if (MatlabExecuteable == null) {
+                            MatlabExecuteable = get_program_path("octave-cli");
+                            if (MatlabExecuteable == null)
+                                throw new ApplicationException("Unable to find 'octave-cli' in your PATH environment");
                         }
+
+                        psi.FileName = MatlabExecuteable;
+                        psi.Arguments = " --no-gui " + CMDFILE + ".m > " + LOGFILE;
+                        //psi.UseShellExecute = false;
+                        break;
+                    case PlatformID.MacOSX: {
+                        throw new NotImplementedException("will implement on request");
+                    }
 
                     default:
                         throw new NotSupportedException("unable to use MATLAB on " + CurrentSys.ToString());
@@ -530,7 +544,7 @@ namespace ilPSP.Connectors.Matlab {
             ilPSP.MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
             if (Executed == true) {
                 throw new InvalidOperationException(
-                    "No commands can be added after Execute has been called.");
+                                                    "No commands can be added after Execute has been called.");
             }
 
             if (Rank == 0) {

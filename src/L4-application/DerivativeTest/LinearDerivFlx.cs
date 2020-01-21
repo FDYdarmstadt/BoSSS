@@ -35,15 +35,15 @@ namespace BoSSS.Application.DerivativeTest {
 
         protected override double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
             //return Uin[0]*inp.Normale[d];
-            return inp.Parameters_IN[0] * inp.Normale[d];
+            return inp.Parameters_IN[0] * inp.Normal[d];
         }
 
         protected override double InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout) {
-            return 0.5*(Uin[0] + Uout[0])*inp.Normale[d];
+            return 0.5*(Uin[0] + Uout[0])*inp.Normal[d];
         }
 
         protected override void Flux(ref CommonParamsVol inp, double[] U, double[] output) {
-            Debug.Assert(output.Length == inp.Xglobal.Length);
+            Debug.Assert(output.Length == inp.Xglobal.Dim);
             Array.Clear(output, 0, output.Length);
             output[d] = U[0];
         }
@@ -88,6 +88,7 @@ namespace BoSSS.Application.DerivativeTest {
                 return m_ArgumentOrdering;
             }
         }
+
 
         /// <summary>
         /// diffusion coefficient, set to 1.0 per default;
@@ -167,8 +168,8 @@ namespace BoSSS.Application.DerivativeTest {
             double muB = this.Nu(inp.X, inp.Parameters_OUT);
 
             for(int d = 0; d < inp.D; d++) {
-                Acc += 0.5 * (muA * _Grad_uA[0, d] + muB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
-                Acc += 0.5 * (muA * _Grad_vA[d] + muB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
+                Acc += 0.5 * (muA * _Grad_uA[0, d] + muB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normal[d];  // consistency term
+                Acc += 0.5 * (muA * _Grad_vA[d] + muB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normal[d];  // symmetry term
             }
             Acc *= this.m_alpha;
 
@@ -193,7 +194,7 @@ namespace BoSSS.Application.DerivativeTest {
                 double g_D = _uA[0];
 
                 for(int d = 0; d < inp.D; d++) {
-                    double nd = inp.Normale[d];
+                    double nd = inp.Normal[d];
                     Acc += (muA * _Grad_uA[0, d]) * (_vA) * nd;
                     Acc += (muA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;
                 }

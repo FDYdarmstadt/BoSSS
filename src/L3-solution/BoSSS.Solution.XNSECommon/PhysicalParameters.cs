@@ -82,6 +82,13 @@ namespace BoSSS.Solution.XNSECommon {
         public double lambda_I = 0.0;
 
         /// <summary>
+        /// coefficient for the surface divergence term in the Boussinesq-Scriven surface model
+        /// if negative the value will be computed by (surface dilatational viscosity(lambda_I) - surface shear viscosity(mu_I))
+        /// </summary>
+        [DataMember]
+        public double lambdaI_tilde = -1.0;
+
+        /// <summary>
         /// dissipation coefficient for the effective wall force (fluid A)
         /// </summary>
         [DataMember]
@@ -165,6 +172,8 @@ namespace BoSSS.Solution.XNSECommon {
             cl.mu_B = this.mu_B;
             cl.reynolds_A = this.reynolds_A;
             cl.reynolds_B = this.reynolds_B;
+            cl.Weissenberg_a = this.Weissenberg_a;
+            cl.Weissenberg_b = this.Weissenberg_b;
             cl.Sigma = this.Sigma;
             cl.mu_I = this.mu_I;
             cl.lambda_I = this.lambda_I;

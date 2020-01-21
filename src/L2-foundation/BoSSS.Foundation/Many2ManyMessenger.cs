@@ -648,6 +648,10 @@ namespace BoSSS.Foundation.Comm {
             /// <param name="array"></param>
             /// <param name="arrayIndex">offset into <paramref name="array"/></param>
             public void CopyTo(ItemType[] array, int arrayIndex) {
+#if DEBUG
+            if(array.GetType().IsValueType)
+                throw new NotSupportedException("CopyTo value type -- probably not the expected result! (Using vector struct in CopyTo(...) - operation?)");
+#endif
                 CheckReady();
                 int cnt = m_MySize;
                 if ((array.Length - arrayIndex) < cnt)
@@ -672,6 +676,10 @@ namespace BoSSS.Foundation.Comm {
             /// <param name="len">number of items to copy</param>
             /// <param name="srcOffset">offset into this array</param>
             internal void CopyTo(ItemType[] array, int arrayIndex, int len, int srcOffset) {
+#if DEBUG
+            if(array.GetType().IsValueType)
+                throw new NotSupportedException("CopyTo value type -- probably not the expected result! (Using vector struct in CopyTo(...) - operation?)");
+#endif
                 CheckReady();
                 if ((array.Length - arrayIndex) < len)
                     throw new ArgumentException("target array to short");
@@ -783,11 +791,15 @@ namespace BoSSS.Foundation.Comm {
             }
 
             /// <summary>
-            /// opys the content of the unmanged buffer into a managed list
+            /// opys the content of the unmanaged buffer into a managed list
             /// </summary>
             /// <param name="array"></param>
             /// <param name="arrayIndex"></param>
             public void CopyToList(IList<ItemType> array, int arrayIndex) {
+#if DEBUG
+            if(array.GetType().IsValueType)
+                throw new NotSupportedException("CopyTo value type -- probably not the expected result! (Using vector struct in CopyTo(...) - operation?)");
+#endif
                 CheckReady();
                 int cnt = m_MySize;
                 //Console.WriteLine("P" + m_Owner.m_Master.MyRank + ", al: " + array.Length + " mysize: " + m_MySize + " rcvtrm: " + m_ReceiveOrTransmit);

@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
@@ -22,6 +23,7 @@ using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.IBM;
+using ilPSP;
 using ilPSP.Utils;
 using NUnit.Framework;
 using System;
@@ -276,9 +278,9 @@ namespace CNS.Tests.MovingIBMTests {
                 double[] xNodes = GenericBlas.Linspace(0.0, 2.0, 4);
                 double[] yNodes = GenericBlas.Linspace(-1.0, 1.0, 4);
                 var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: true);
-                grid.EdgeTagNames.Add(1, "adiabaticSlipWall");
-                grid.EdgeTagNames.Add(2, "supersonicInlet");
-                grid.DefineEdgeTags(X => 2);
+                grid.DefineEdgeTags((Vector X) => "supersonicInlet");
+                grid.AddEdgeTag("adiabaticSlipWall");
+                grid.AddEdgeTag("supersonicInlet");
                 return grid;
             };
 

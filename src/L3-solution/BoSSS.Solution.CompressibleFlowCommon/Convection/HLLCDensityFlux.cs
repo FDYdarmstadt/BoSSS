@@ -55,7 +55,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <see cref="HLLCFlux.GetModifiedVariableValue"/>
         /// </param>
         /// <returns>See Toro2009, equation 10.73</returns>
-        protected override double GetModifiedVariableValue(StateVector state, double cellWaveSpeed, double cellNormalVelocity, double intermediateWaveSpeed, ref Vector normal) {
+        protected override double GetModifiedVariableValue(StateVector state, double cellWaveSpeed, double cellNormalVelocity, double intermediateWaveSpeed, ref ilPSP.Vector normal) {
             return state.Density
                 * (cellWaveSpeed - cellNormalVelocity)
                 / (cellWaveSpeed - intermediateWaveSpeed);

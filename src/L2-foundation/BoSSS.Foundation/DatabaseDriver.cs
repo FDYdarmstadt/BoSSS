@@ -236,8 +236,7 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// Loads the grid info object for the given
         /// <paramref name="gridId"/> from the given
-        /// <param name="database"></param>
-        /// <returns></returns>
+        /// </summary>
         public IGridInfo LoadGridInfo(Guid gridId, IDatabaseInfo database)
         {
             return gridDatabaseDriver.LoadGridInfo(gridId, database);

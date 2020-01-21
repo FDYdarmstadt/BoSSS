@@ -50,7 +50,6 @@ using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XheatCommon;
 using BoSSS.Solution.XNSECommon;
-using BoSSS.Solution.XNSECommon.Operator.Energy;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Foundation.Grid.Aggregation;
@@ -60,6 +59,7 @@ using System.Collections;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 using BoSSS.Application.XNSE_Solver;
 using BoSSS.Solution.RheologyCommon;
+using BoSSS.Solution.Statistic;
 
 namespace BoSSS.Application.XRheology_Solver {
 
@@ -92,7 +92,6 @@ namespace BoSSS.Application.XRheology_Solver {
         /// <summary>
         /// Pressure
         /// </summary>
-        //[InstantiateFromControlFile(VariableNames.Pressure, null, IOListOption.ControlFileDetermined)]
         XDGField Pressure;
 
         /// <summary>
@@ -159,20 +158,22 @@ namespace BoSSS.Application.XRheology_Solver {
         //            true, true,
         //            IOListOption.ControlFileDetermined)]
         //public VectorField<XDGField> Gravity;
+        //XDGField GravityX;
+        //XDGField GravityY;
 
-        //// Gravity source constitutive
+        // Gravity source constitutive
         //[InstantiateFromControlFile("GravityXX", "StressXX", IOListOption.ControlFileDetermined)]
-        //public SinglePhaseField GravityXX;
+        //XDGField GravityXX;
 
         //[InstantiateFromControlFile("GravityXY", "StressXY", IOListOption.ControlFileDetermined)]
-        //public SinglePhaseField GravityXY;
+        //XDGField GravityXY;
 
         //[InstantiateFromControlFile("GravityYY", "StressYY", IOListOption.ControlFileDetermined)]
-        //public SinglePhaseField GravityYY;
+        //XDGField GravityYY;
 
-        ////Gravity source for divergence of u
+        //Gravity source for divergence of u
         //[InstantiateFromControlFile("GravityDiv", VariableNames.Pressure, IOListOption.ControlFileDetermined)]
-        //public SinglePhaseField GravityDiv;
+        //public XDGField GravityDiv;
 
 
         /// <summary>
@@ -237,6 +238,11 @@ namespace BoSSS.Application.XRheology_Solver {
                 this.XDGvelocity = new VelocityRelatedVars<XDGField>();
                 InitFromAttributes.CreateFieldsAuto(this.XDGvelocity, this.GridData, base.Control.FieldOptions, base.Control.CutCellQuadratureType, base.IOFields, base.m_RegisteredFields);
 
+                //this.GravityX = new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.StressXX].Degree), "GravityX");
+                //base.RegisterField(this.GravityX);
+                //this.GravityY = new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.StressXX].Degree), "GravityY");
+                //base.RegisterField(this.GravityY);
+
                 // ALL STRESS RELATED FIELDS
                 this.StressXX = new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.StressXX].Degree), VariableNames.StressXX);
                 base.RegisterField(this.StressXX);
@@ -259,6 +265,13 @@ namespace BoSSS.Application.XRheology_Solver {
                 this.StressYYP = new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.StressYY].Degree), VariableNames.StressYYP);
                 base.RegisterField(this.StressYYP);
 
+                //this.GravityXX = new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.StressXX].Degree), "GravityXX");
+                //base.RegisterField(this.GravityXX);
+                //this.GravityXY = new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.StressXY].Degree), "GravityXY");
+                //base.RegisterField(this.GravityXY);
+                //this.GravityYY = new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.StressYY].Degree), "GravityYY");
+                //base.RegisterField(this.GravityYY);
+
 
                 //PERSSON SENSOR FIELD
                 if (Control.UsePerssonSensor == true) {
@@ -279,43 +292,6 @@ namespace BoSSS.Application.XRheology_Solver {
                 XDGBasis b = new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.Pressure].Degree);
                 this.divVelocity = new XDGField(b, "DivergenceVelocity");
                 base.RegisterField(this.divVelocity);
-
-                if (this.Control.CheckJumpConditions) {
-                    Basis basis = new Basis(this.GridData, 0);
-
-                    //Basis basis = new Basis(this.GridData, this.Control.FieldOptions[VariableNames.VelocityX].Degree);
-                    this.MassBalanceAtInterface = new SinglePhaseField(basis, "MassBalanceAtInterface");
-                    base.RegisterField(this.MassBalanceAtInterface);
-
-                    //basis = new Basis(this.GridData, this.Control.FieldOptions[VariableNames.Pressure].Degree + this.Control.FieldOptions["Phi"].Degree);
-                    this.MomentumBalanceAtInterface = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(basis, d + "-MomentumBalanceAtInterface")));
-                    base.RegisterField(this.MomentumBalanceAtInterface);
-
-                    //basis = new Basis(this.GridData, this.Control.FieldOptions[VariableNames.Pressure].Degree + this.Control.FieldOptions[VariableNames.VelocityX].Degree + this.Control.FieldOptions["Phi"].Degree);
-                    this.EnergyBalanceAtInterface = new SinglePhaseField(basis, "EnergyBalanceAtInterface");
-                    base.RegisterField(this.EnergyBalanceAtInterface);
-
-                }
-
-                if (this.Control.ComputeEnergy) {
-
-                    this.DerivedKineticEnergy = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions["KineticEnergy"].Degree)), "DerivedKineticEnergy");
-                    base.RegisterField(this.DerivedKineticEnergy);
-
-                    this.GeneratedKineticEnergy = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions["KineticEnergy"].Degree)), "KineticEnergyProduction");
-                    base.RegisterField(this.GeneratedKineticEnergy);
-
-                    this.KineticEnergy = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions["KineticEnergy"].Degree)), "KineticEnergy");
-                    base.RegisterField(this.KineticEnergy);
-                    this.ResidualKineticEnergy = new XDGField(this.KineticEnergy.Basis, "ResidualKineticEnergy");
-                    base.RegisterField(this.ResidualKineticEnergy);
-
-                    this.prevKineticEnergy = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions["KineticEnergy"].Degree)));
-
-                    this.KineticDissipation = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions["KineticEnergy"].Degree)), "KineticDissipation");
-                    base.RegisterField(this.KineticDissipation);
-
-                }
 
             }
         }
@@ -402,7 +378,7 @@ namespace BoSSS.Application.XRheology_Solver {
         /// <summary>
         /// current Weissenberg number
         /// </summary>
-        public double currentWeissenberg;
+        public double[] currentWeissenberg = new double[] { 0.0, 0.0 };
         bool ChangeMesh = true;
 
         // Persson sensor and artificial viscosity
@@ -489,9 +465,9 @@ namespace BoSSS.Application.XRheology_Solver {
                 return;
 
 
-            if (Control.CompMode == AppControl._CompMode.Steady) {
+            if (Control.TimesteppingMode == AppControl._TimesteppingMode.Steady) {
                 if (Control.Timestepper_LevelSetHandling != LevelSetHandling.None)
-                    throw new ApplicationException(string.Format("Illegal control file: for a steady computation ({0}), the level set handling must be {1}.", AppControl._CompMode.Steady, LevelSetHandling.None));
+                    throw new ApplicationException(string.Format("Illegal control file: for a steady computation ({0}), the level set handling must be {1}.", AppControl._TimesteppingMode.Steady, LevelSetHandling.None));
             }
 
             int degU = this.CurrentVel[0].Basis.Degree;
@@ -505,7 +481,7 @@ namespace BoSSS.Application.XRheology_Solver {
             //Quadrature Order
             //----------------
 
-            m_HMForder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
+            m_HMForder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 4 : 3);
 
 
             // Create Spatial Operator
@@ -560,7 +536,7 @@ namespace BoSSS.Application.XRheology_Solver {
                         LsTrk,
                         true,
                         DelComputeOperatorMatrix, null, DelUpdateLevelSet,
-                        (this.Control.CompMode == AppControl._CompMode.Transient) ? bdfOrder : 1,
+                        (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? bdfOrder : 1,
                         this.Control.Timestepper_LevelSetHandling,
                         this.XOpConfig.mmsd,
                         (this.Control.PhysicalParameters.IncludeConvection) ? SpatialOperatorType.Nonlinear : SpatialOperatorType.LinearTimeDependent,
@@ -575,7 +551,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
                     m_BDF_Timestepper.m_ResLogger = base.ResLogger;
                     m_BDF_Timestepper.m_ResidualNames = this.CurrentResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
-                    m_BDF_Timestepper.Timestepper_Init = (this.Control.CompMode == AppControl._CompMode.Transient) ? this.Control.Timestepper_BDFinit : TimeStepperInit.SingleInit;
+                    m_BDF_Timestepper.Timestepper_Init = (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? this.Control.Timestepper_BDFinit : TimeStepperInit.SingleInit;
                     m_BDF_Timestepper.incrementTimesteps = this.Control.incrementTimesteps;
                     m_BDF_Timestepper.PushLevelSet = this.PushLevelSetAndRelatedStuff;
                     m_BDF_Timestepper.IterUnderrelax = this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? this.Control.LSunderrelax : 1.0;
@@ -587,7 +563,7 @@ namespace BoSSS.Application.XRheology_Solver {
                     // solver 
                     this.Control.NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.NonLinearSolver.MinSolverIterations; //m_BDF_Timestepper.config_NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.Solver_MinIterations;
 
-                    if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.NewtonGMRES) {
+                    if (m_BDF_Timestepper.XdgSolverFactory.IsNewtonGmresType) {
                         m_BDF_Timestepper.XdgSolverFactory.Selfmade_precond =
                                             new Schwarz() {
                                                 m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
@@ -637,8 +613,8 @@ namespace BoSSS.Application.XRheology_Solver {
 
 
                 m_BDF_Timestepper.DataRestoreAfterBalancing(L,
-                    ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure),
-                    ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity),
+                    ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure, this.StressXX, this.StressXY, this.StressYY),
+                    ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity, this.ResidualStressXX, ResidualStressXY, this.ResidualStressYY),
                     this.LsTrk, this.MultigridSequence);
 
                 //PlotCurrentState(hack_Phystime, new TimestepNumber(hack_TimestepIndex, 13), 2);
@@ -726,7 +702,6 @@ namespace BoSSS.Application.XRheology_Solver {
                 CurrentState, AgglomeratedCellLengthScales, phystime,
                 this.m_HMForder, SurfaceForce, filtLevSetGradient, Curvature, currentWeissenberg);
 
-
             if (filtLevSetGradient != null) {
                 if (this.Control.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource == CurvatureAlgorithms.LevelSetSource.fromC0) {
                     this.LevSetGradient.Clear();
@@ -772,14 +747,40 @@ namespace BoSSS.Application.XRheology_Solver {
             // multiply by -1 to make it RHS
             OpAffine.ScaleV(-1.0);
 
+            //foreach (string spc in LsTrk.SpeciesNames) {
+            //    GravityX.GetSpeciesShadowField(spc).ProjectField(Control.GravityX[spc].Convert_Xt2X(phystime));
+            //    int[] MomEqIdx1 = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 0);
+            //    OpAffine.AccV(-1.0, this.XDGvelocity.Gravity.CoordinateVector, MomEqIdx1, default(int[]));
 
-            // ============================
-            // Generate MassMatrix
-            // ============================
+            //    GravityY.GetSpeciesShadowField(spc).ProjectField(Control.GravityY[spc].Convert_Xt2X(phystime));
+            //    int[] MomEqIdx2 = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 1);
+            //    OpAffine.AccV(-1.0, this.XDGvelocity.Gravity.CoordinateVector, MomEqIdx2, default(int[]));
 
-            // mass matrix factory
-            MassFact = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), m_HMForder, 1).MassMatrixFactory;// new MassMatrixFactory(maxB, CurrentAgg);
+                //GravityXX.GetSpeciesShadowField(spc).ProjectField(Control.GravityXX[spc].Convert_Xt2X(phystime));
+                //int[] ConstEqIdx1 = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 3);
+                //OpAffine.AccV(-1.0, this.GravityXX.CoordinateVector, ConstEqIdx1, default(int[]));
+
+                //GravityXY.GetSpeciesShadowField(spc).ProjectField(Control.GravityXY[spc].Convert_Xt2X(phystime));
+                //int[] ConstEqIdx2 = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 3);
+                //OpAffine.AccV(-1.0, this.GravityXY.CoordinateVector, ConstEqIdx2, default(int[]));
+
+                //GravityYY.GetSpeciesShadowField(spc).ProjectField(Control.GravityYY[spc].Convert_Xt2X(phystime));
+                //int[] ConstEqIdx3 = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 3);
+                //OpAffine.AccV(-1.0, this.GravityXX.CoordinateVector, ConstEqIdx3, default(int[]));
+            //}
+
+                // ============================
+                // Generate MassMatrix
+                // ============================
+
+                // mass matrix factory
+                MassFact = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), m_HMForder, 1).MassMatrixFactory;// new MassMatrixFactory(maxB, CurrentAgg);
             var WholeMassMatrix = MassFact.GetMassMatrix(Mapping, MassScale); // mass matrix scaled with density rho
+
+            // For ResidualTest from Markus only
+            //======================================
+            //BlockMsrMatrix inverseMassMatrix = MassFact.GetMassMatrix(CurrentResidual.Mapping, true);
+            //inverseMassMatrix.SpMV(1.0, OpAffine, 0.0, CurrentResidual);
 
 
             // ============================
@@ -794,19 +795,21 @@ namespace BoSSS.Application.XRheology_Solver {
             // Set Pressure Reference Point
             // ============================
 
-            if (OpMtx != null) {
-                if (!this.BcMap.DirichletPressureBoundary) {
-                    XNSEUtils.SetPressureReferencePoint(
-                        Mapping,
-                        this.GridData.SpatialDimension,
-                        this.LsTrk, OpMtx, OpAffine);
-                }
-            } else {
-                if (!this.BcMap.DirichletPressureBoundary) {
-                    XNSEUtils.SetPressureReferencePointResidual(
-                        new CoordinateVector(CurrentState),
-                        this.GridData.SpatialDimension,
-                        this.LsTrk, OpAffine);
+            if (Control.NonLinearSolver.UsePresRefPoint == true) {
+                if (OpMtx != null) {
+                    if (!this.BcMap.DirichletPressureBoundary) {
+                        XNSEUtils.SetPressureReferencePoint(
+                            Mapping,
+                            this.GridData.SpatialDimension,
+                            this.LsTrk, OpMtx, OpAffine);
+                    }
+                } else {
+                    if (!this.BcMap.DirichletPressureBoundary) {
+                        XNSEUtils.SetPressureReferencePointResidual(
+                            new CoordinateVector(CurrentState),
+                            this.GridData.SpatialDimension,
+                            this.LsTrk, OpAffine);
+                    }
                 }
             }
 
@@ -974,20 +977,10 @@ namespace BoSSS.Application.XRheology_Solver {
 
 
         /// <summary>
-        /// Depending on settings <see cref="AppControl.CompMode"/>, computes either one timestep or a steady-state solution.
+        /// Depending on settings <see cref="AppControl.TimesteppingMode"/>, computes either one timestep or a steady-state solution.
         /// </summary>
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
             using (var tr = new FuncTrace()) {
-
-                if (this.Control.OperatorMatrixAnalysis == true) {
-                    var agg = LsTrk.GetAgglomerator(LsTrk.SpeciesIdS.ToArray(), m_HMForder, this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold).CellLengthScales;
-                    OpAnalysisBase myAnalysis = new OpAnalysisBase(DelComputeOperatorMatrix, CurrentSolution.Mapping, CurrentSolution.Mapping.Fields.ToArray(), agg, phystime);
-                    //myAnalysis.VarGroup = new int[] { 0};
-                    //myAnalysis.Analyse();
-                    double[] condest = myAnalysis.CondNum();
-                    Console.WriteLine("Condition number full system, full matrix: " + condest[0] + "full system inner matrix (excl. BC): " + condest[1]);
-
-                }
 
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
                 int D = this.GridData.SpatialDimension;
@@ -1016,6 +1009,9 @@ namespace BoSSS.Application.XRheology_Solver {
                             Vel_d.ProjectField(Control.ExactSolutionVelocity[spc][d].Convert_Xt2X(phystime + dt));
                         }
                         Pressure.GetSpeciesShadowField(spc).ProjectField(Control.ExactSolutionPressure[spc].Convert_Xt2X(phystime + dt));
+                        StressXX.GetSpeciesShadowField(spc).ProjectField(Control.ExactSolutionStressXX[spc].Convert_Xt2X(phystime + dt));
+                        StressXY.GetSpeciesShadowField(spc).ProjectField(Control.ExactSolutionStressXY[spc].Convert_Xt2X(phystime + dt));
+                        StressYY.GetSpeciesShadowField(spc).ProjectField(Control.ExactSolutionStressYY[spc].Convert_Xt2X(phystime + dt));
                     }
                 }
 
@@ -1025,7 +1021,7 @@ namespace BoSSS.Application.XRheology_Solver {
                 // =====================================================
 
 
-                if (base.Control.CompMode == AppControl._CompMode.Steady) {
+                if (base.Control.TimesteppingMode == AppControl._TimesteppingMode.Steady) {
                     dt = 1.0e100;
                     Console.WriteLine("Steady-state solve ...", TimestepNo, dt);
 
@@ -1038,7 +1034,7 @@ namespace BoSSS.Application.XRheology_Solver {
                     // =====================================================
                     // setup transient 
                     // =====================================================
-                } else if (base.Control.CompMode == AppControl._CompMode.Transient) {
+                } else if (base.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) {
 
                     // push stacks
                     // -----------
@@ -1048,7 +1044,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
                     // backup old velocity for energy checks
                     // -------------------------------------
-                    if (this.Control.ComputeEnergy && this.Control.CompMode == AppControl._CompMode.Transient) {
+                    if (this.Control.ComputeEnergy && this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) {
                         for (int d = 0; d < D; d++) {
                             this.prevVel[d].Clear();
                             this.prevVel[d].Acc(1.0, this.CurrentVel[d]);
@@ -1107,7 +1103,7 @@ namespace BoSSS.Application.XRheology_Solver {
                     Console.WriteLine("Instationary solve, timestep #{0}, dt = {1} ...", TimestepNo, dt);
 
                 } else {
-                    throw new NotImplementedException("Option " + base.Control.CompMode + " not supported yet.");
+                    throw new NotImplementedException("Option " + base.Control.TimesteppingMode + " not supported yet.");
                 }
 
                 // =======================================================================
@@ -1139,24 +1135,21 @@ namespace BoSSS.Application.XRheology_Solver {
                     if (m_BDF_Timestepper != null) {
                         if (Control.RaiseWeissenberg == true) {
 
-                            currentWeissenberg = 0.0;
+                           // currentWeissenberg = new double[] { 0.0, 0.0 };
 
-                            if (Control.PhysicalParameters.Weissenberg_a != 0.0) {
+                            if (Control.PhysicalParameters.Weissenberg_a != 0.0 || Control.PhysicalParameters.Weissenberg_b != 0.0) {
 
                                 if (Control.WeissenbergIncrement != 0.0) {
-                                    NoIncrementTimestep = (int)(Control.PhysicalParameters.Weissenberg_a / Control.WeissenbergIncrement);
+                                    NoIncrementTimestep = 1;
+                                    if(Control.PhysicalParameters.Weissenberg_a > Control.PhysicalParameters.Weissenberg_b)
+                                        NoIncrementTimestep = (int)(Control.PhysicalParameters.Weissenberg_a / Control.WeissenbergIncrement);
+                                    else if(Control.PhysicalParameters.Weissenberg_b > Control.PhysicalParameters.Weissenberg_a)
+                                        NoIncrementTimestep = (int)(Control.PhysicalParameters.Weissenberg_b / Control.WeissenbergIncrement);
+                                    else if (Control.PhysicalParameters.Weissenberg_b == Control.PhysicalParameters.Weissenberg_a)
+                                        NoIncrementTimestep = (int)(Control.PhysicalParameters.Weissenberg_a / Control.WeissenbergIncrement);
                                 } else {
                                     throw new ArgumentException("Raise Weissenberg is turned on, but WeissenbergIncrement is zero!");
                                 }
-
-                            } else if (Control.PhysicalParameters.Weissenberg_b != 0.0) {
-
-                                if (Control.WeissenbergIncrement != 0.0) {
-                                    NoIncrementTimestep = (int)(Control.PhysicalParameters.Weissenberg_b / Control.WeissenbergIncrement);
-                                } else {
-                                    throw new ArgumentException("Raise Weissenberg is turned on, but WeissenbergIncrement is zero!");
-                                }
-
                             } else {
                                 throw new ArgumentException("Raise Weissenberg is turned on, but aim Weissenberg is 0.0 (Newtonian)!");
                             }
@@ -1192,23 +1185,30 @@ namespace BoSSS.Application.XRheology_Solver {
 
                                     //this.ResLogger.NextTimestep(false);
 
-                                    // this evaluation must later out of this loop. now here for comparing resluts with  
+                                    // this evaluation must later out of this loop. now here for comparing results with  
                                     PlotCurrentState(phystime, new TimestepNumber(TimestepNo.MajorNumber, i));
                                     SaveToDatabase(new TimestepNumber(TimestepNo.MajorNumber, i), phystime);
 
                                 }
 
-                                ChangeMesh = Control.AdaptiveMeshRefinement;
-                                while (ChangeMesh == true) {
-                                    this.MpiRedistributeAndMeshAdapt(TimestepNo.MajorNumber, phystime);
-                                    perssonsensor.Update(StressXX);
-                                    PlotCurrentState(phystime, TimestepNo);
+                                //ChangeMesh = Control.AdaptiveMeshRefinement;
+                                //while (ChangeMesh == true) {
+                                //    this.MpiRedistributeAndMeshAdapt(TimestepNo.MajorNumber, phystime);
+                                //    perssonsensor.Update(StressXX);
+                                //    PlotCurrentState(phystime, TimestepNo);
+                                //}
+
+                                if (currentWeissenberg[0] < Control.PhysicalParameters.Weissenberg_a) {
+                                    currentWeissenberg[0] = currentWeissenberg[0] + Control.WeissenbergIncrement;
+                                    Console.WriteLine();
+                                    Console.WriteLine("Raise Weissenberg number A to " + currentWeissenberg[0]);
+                                    Console.WriteLine();
                                 }
 
-                                if (currentWeissenberg < Control.PhysicalParameters.Weissenberg_a || currentWeissenberg < Control.PhysicalParameters.Weissenberg_b) {
-                                    currentWeissenberg = currentWeissenberg + Control.WeissenbergIncrement;
+                                if (currentWeissenberg[1] < Control.PhysicalParameters.Weissenberg_b) {
+                                    currentWeissenberg[1] = currentWeissenberg[1] + Control.WeissenbergIncrement;
                                     Console.WriteLine();
-                                    Console.WriteLine("Raise Weissenberg number to " + currentWeissenberg);
+                                    Console.WriteLine("Raise Weissenberg number B to " + currentWeissenberg[1]);
                                     Console.WriteLine();
                                 }
 
@@ -1216,11 +1216,9 @@ namespace BoSSS.Application.XRheology_Solver {
                         } else {
                             //current Weissenberg is set to the HIGHER value... DIRTY HACK AT THE MOMENT!
 
-                            if (Control.PhysicalParameters.Weissenberg_b < Control.PhysicalParameters.Weissenberg_a) {
-                                currentWeissenberg = Control.PhysicalParameters.Weissenberg_a;
-                            } else {
-                                currentWeissenberg = Control.PhysicalParameters.Weissenberg_b;
-                            }
+                                currentWeissenberg[0] = Control.PhysicalParameters.Weissenberg_a;
+                                currentWeissenberg[1] = Control.PhysicalParameters.Weissenberg_b;
+
 
                             if (Control.UseArtificialDiffusion == true) {
                                 artificialMaxViscosity = 1.0;
@@ -1248,33 +1246,142 @@ namespace BoSSS.Application.XRheology_Solver {
                                 }
                             } else {
 
+                                if (this.Control.OperatorMatrixAnalysis == true) {
+
+                                    BlockMsrMatrix SaddlePointMatrix = new BlockMsrMatrix(this.CurrentSolution.Mapping);
+                                    double[] AffineDummy = new double[this.CurrentSolution.Mapping.LocalLength];
+
+                                    var agg = LsTrk.GetAgglomerator(LsTrk.SpeciesIdS.ToArray(), m_HMForder, this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold);
+
+                                    DelComputeOperatorMatrix(SaddlePointMatrix, AffineDummy, this.CurrentSolution.Mapping,
+                                    this.CurrentSolution.Mapping.Fields.ToArray(), agg.CellLengthScales, 0.0);
+
+                                    AggregationGridBasis[][] MgBasis = AggregationGridBasis.CreateSequence(this.MultigridSequence, this.CurrentSolution.Mapping.BasisS);
+                                    //todo: AsyncCallback update
+                                    MgBasis.UpdateXdgAggregationBasis(agg);
+                                    MultigridOperator mgOp = new MultigridOperator(MgBasis, CurrentSolution.Mapping,
+                                        SaddlePointMatrix, this.MassFact.GetMassMatrix(CurrentSolution.Mapping, false),
+                                        this.MultigridOperatorConfig);
+
+                                    MsrMatrix FullMatrix = mgOp.OperatorMatrix.ToMsrMatrix();
+
+                                    MsrMatrix DiffMatrix;
+                                    {
+                                        int[] VelVarIdx = new int[] { 3, 4, 5 };
+
+                                        int[] USubMatrixIdx_Row = mgOp.Mapping.GetSubvectorIndices(VelVarIdx);
+                                        int[] USubMatrixIdx_Col = mgOp.Mapping.GetSubvectorIndices(VelVarIdx);
+                                        int L = USubMatrixIdx_Row.Length;
+
+                                        DiffMatrix = new MsrMatrix(L, L, 1, 1);
+                                        FullMatrix.WriteSubMatrixTo(DiffMatrix, USubMatrixIdx_Row, default(int[]), USubMatrixIdx_Col, default(int[]));
+                                    }
+
+                                    MultidimensionalArray ret = MultidimensionalArray.Create(1, 2);
+                                    Console.WriteLine("Calling MATLAB/Octave...");
+                                    using (BatchmodeConnector bmc = new BatchmodeConnector()) {
+                                        bmc.PutSparseMatrix(FullMatrix, "FullMatrix");
+                                        bmc.PutSparseMatrix(DiffMatrix, "DiffMatrix");
+                                        bmc.Cmd("DiffMatrix = 0.5*(DiffMatrix + DiffMatrix');");
+                                        bmc.Cmd("condNoDiffMatrix = condest(DiffMatrix);");
+                                        bmc.Cmd("condNoFullMatrix = condest(FullMatrix);");
+                                        //bmc.Cmd("eigiMaxi = eigs(DiffMatrix,1,'lm')");
+                                        //bmc.Cmd("eigiMini = eigs(DiffMatrix,1,'sm')");
+                                        //bmc.Cmd("lasterr");
+                                        //bmc.Cmd("[V,r]=chol(DiffMatrix);");
+                                        bmc.Cmd("ret = [condNoFullMatrix, condNoDiffMatrix]");
+                                        bmc.GetMatrix(ret, "ret");
+
+                                        bmc.Execute(false);
+                                    }
+
+                                    double condNoFullMatrix = ret[0, 0];
+                                    double condNoDiffMatrix = ret[0, 1];
+                                    //double eigiMaxi = ret[0, 2];
+                                    //double eigiMini = ret[0, 3];
+                                    //posDef = ret[0, 4] == 0;
+
+                                    //Console.WriteLine("Eigenvalue range of diffusion matrix: {0} to {1}", eigiMini, eigiMaxi);
+
+                                    Console.WriteLine("Condition number diffusion operator: {0:0.####E-00}", condNoDiffMatrix);
+                                    Console.WriteLine("Condition number full operator: {0:0.####E-00}", condNoFullMatrix);
+                                    base.QueryHandler.ValueQuery("condFull", condNoFullMatrix, true);
+                                    base.QueryHandler.ValueQuery("condDiff", condNoDiffMatrix, true);
+
+                                    //OpAnalysisBase myAnalysis = new OpAnalysisBase(DelComputeOperatorMatrix, CurrentSolution.Mapping, CurrentSolution.Mapping.Fields.ToArray(), agg.CellLengthScales, phystime);
+                                    //myAnalysis.VarGroup = new int[] { 3, 4, 5};
+                                    ////myAnalysis.Analyse();
+                                    //double[] condest = myAnalysis.CondNum();
+                                    //Console.WriteLine("Condition number full system, full matrix: " + condest[0] + "full system inner matrix (excl. BC): " + condest[1]);
+
+                                }
+
+
                                 m_BDF_Timestepper.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
+
+                                //===============================================================================
+
+                                #region Write residuals to text file
+                                if (Control.InterfaceTest == true) {
+                                    // Sample points
+
+                                    int noOfPoints = 1000;
+
+                                    double[] nodes = GenericBlas.Linspace(-2, 2, noOfPoints);
+
+                                    MultidimensionalArray points = MultidimensionalArray.Create(noOfPoints, 2);
+
+                                    for (int i = 0; i < noOfPoints; i++) {
+
+                                        points[i, 0] = nodes[i];
+
+                                        points[i, 1] = 0.5;
+
+                                    }
+
+
+
+                                    // FieldEvaluation
+                                    MultidimensionalArray results = MultidimensionalArray.Create(noOfPoints, CurrentResidual.Mapping.Count);
+
+                                    for (int i = 0; i < CurrentResidual.Length; i++) {
+
+                                        FieldEvaluation fieldEvaluator = new FieldEvaluation((GridData)this.GridData);
+
+                                        fieldEvaluator.Evaluate(1.0, CurrentResidual.Mapping, points, 0.0, results);
+
+                                    }
+
+
+
+                                    // StreamWriter
+
+                                    using (System.IO.StreamWriter sw = new System.IO.StreamWriter(String.Format("Residuals{0}.txt", dt))) {
+
+                                        //Console.WriteLine("x \t y \t result");
+
+                                        sw.WriteLine("x \t y \t momX \t momY \t conti \t constXX \t constXY \t constYY");
+
+                                        string resultLine;
+
+                                        for (int i = 0; i < noOfPoints; i++) {
+
+                                            resultLine = points[i, 0] + "\t" + points[i, 1] + "\t" + results[i, 0] + "\t" + results[i, 1] + "\t" + results[i, 2] + "\t" + results[i, 3] + "\t" + results[i, 4] + "\t" + results[i, 5] + "\t";
+
+                                            //Console.WriteLine(resultLine);
+
+                                            sw.WriteLine(resultLine);
+
+                                        }
+
+                                        sw.Flush();
+
+                                    }
+                                }
+                                #endregion
+                                //=============================================================================================
                             }
                         }
-                    }
-
-
-                    if (this.Control.ComputeEnergy && m_BDF_energyTimestepper != null) {
-
-                        this.prevKineticEnergy.Clear();
-                        this.prevKineticEnergy.Acc(1.0, this.KineticEnergy);
-
-                        // solve kinetic energy balance
-                        m_BDF_energyTimestepper.Solve(phystime, dt);
-
-                        // derive kinetic Energy from flow solution
-                        double[] rhoS = new double[] { this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B };
-                        EnergyUtils.ProjectKineticEnergy(this.DerivedKineticEnergy, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), rhoS, this.m_HMForder);
-
-                        // compute generated kinetic energy
-                        GeneratedKineticEnergy.Clear();
-                        GeneratedKineticEnergy.Acc(1.0, this.KineticEnergy);
-                        GeneratedKineticEnergy.Acc(-1.0, this.DerivedKineticEnergy);
-
-                        // changerate of kinetic energy from discretization 
-                        double[] muS = new double[] { this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B };
-                        EnergyUtils.ProjectKineticDissipation(this.KineticDissipation, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
-
                     }
 
 
@@ -1599,21 +1706,21 @@ namespace BoSSS.Application.XRheology_Solver {
                     // configurations for velocity
                     for (int d = 0; d < D; d++) {
                         configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
-                            Degree = Math.Max(1, pVel - iLevel),
+                            DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
                             mode = this.Control.VelocityBlockPrecondMode,
                             VarIndex = new int[] { d }
                         };
                     }
                     // configuration for pressure
                     configs[iLevel][D] = new MultigridOperator.ChangeOfBasisConfig() {
-                        Degree = Math.Max(0, pPrs - iLevel),
+                        DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
                         mode = this.Control.PressureBlockPrecondMode,
                         VarIndex = new int[] { D }
                     };
                     //configurations for stresses
                     for (int d = 3; d < 6; d++) {
                         configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
-                            Degree = Math.Max(1, pStr - iLevel),
+                            DegreeS = new int[] { Math.Max(1, pStr - iLevel) },
                             mode = this.Control.StressBlockPrecondMode,
                             VarIndex = new int[] { d }
                         };
@@ -1628,8 +1735,6 @@ namespace BoSSS.Application.XRheology_Solver {
 
         protected override void Bye() {
             base.Bye();
-            if (EnergyLogger != null)
-                EnergyLogger.Close();
         }
 
 
@@ -2042,183 +2147,6 @@ namespace BoSSS.Application.XRheology_Solver {
         /// <param name="dt"></param>
         /// <param name="TimestepNo"></param>
         private void Postprocessing(int TimestepInt, double phystime, double dt, TimestepNumber TimestepNo) {
-
-
-            // ======================================
-            // Check jump conditions at the interface 
-            // ======================================
-
-            #region check jump conditions
-
-            if (this.Control.CheckJumpConditions) {
-
-                // mass balance
-                double velJump_Norm = XNSEUtils.VelocityJumpNorm(this.XDGvelocity.Velocity, false, this.m_HMForder);
-
-                Console.WriteLine("velocity jump norm = {0}", velJump_Norm);
-
-                this.MassBalanceAtInterface.Clear();
-                XNSEUtils.ProjectMassBalanceNorm(this.MassBalanceAtInterface, 1.0, this.XDGvelocity.Velocity, this.m_HMForder);
-
-
-                // momentum balance
-                CurvatureAlgorithms.CurvatureDriver(
-                    SurfaceStressTensor_IsotropicMode.Curvature_Projected,
-                    CurvatureAlgorithms.FilterConfiguration.NoFilter,
-                    this.Curvature, out VectorField<SinglePhaseField> LevSetGradient, this.LsTrk,
-                    this.m_HMForder, this.DGLevSet.Current);
-
-                ConventionalDGField[] meanVelocity = XNSEUtils.GetMeanVelocity(this.XDGvelocity.Velocity, this.LsTrk,
-                    this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B);
-
-
-                double[] momBal_Norm = XNSEUtils.MomentumBalanceNormAtInterface(this.Pressure, this.XDGvelocity.Velocity, this.Curvature,
-                    this.Control.PhysicalParameters, this.Control.AdvancedDiscretizationOptions.SurfStressTensor, this.m_HMForder);
-
-                Console.WriteLine("x-momentum balance norm = {0}", momBal_Norm[0]);
-                Console.WriteLine("y-momentum balance norm = {0}", momBal_Norm[1]);
-
-                for (int d = 0; d < this.Grid.SpatialDimension; d++) {
-                    this.MomentumBalanceAtInterface[d].Clear();
-                    XNSEUtils.ProjectMomentumBalanceNorm(this.MomentumBalanceAtInterface[d], 1.0, this.Pressure, this.XDGvelocity.Velocity, this.Curvature,
-                        this.Control.PhysicalParameters, this.Control.AdvancedDiscretizationOptions.SurfStressTensor, d, this.m_HMForder);
-                }
-
-
-                // energy balance
-                //double energyBal_Norm = XNSEUtils.EnergyBalanceNormAtInterface(this.Pressure, this.XDGvelocity.Velocity, meanVelocity, this.Curvature,
-                //    this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B, this.Control.PhysicalParameters.Sigma, this.m_HMForder);
-
-                //Console.WriteLine("energy balance norm = {0}", energyBal_Norm);
-
-                //this.EnergyBalanceAtInterface.Clear();
-                //XNSEUtils.ProjectEnergyBalanceNorm(this.EnergyBalanceAtInterface, 1.0, this.Pressure, this.XDGvelocity.Velocity, meanVelocity, this.Curvature,
-                //    this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B, this.Control.PhysicalParameters.Sigma, this.m_HMForder);
-
-            }
-
-            #endregion
-
-
-            // ====================================================
-            // Compute integral energy of the system
-            // ====================================================
-
-            #region integral energy computation 
-
-            if (this.Control.ComputeEnergy) {
-
-                // compute current energies
-                double[] rhoS = new double[] { this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B };
-                double currentKinEnergy = EnergyUtils.GetKineticEnergy(this.LsTrk, this.XDGvelocity.Velocity.ToArray(), rhoS, this.m_HMForder);
-                double currentSurfEnergy = EnergyUtils.GetSurfaceEnergy(this.LsTrk, this.Control.PhysicalParameters.Sigma, this.m_HMForder);
-
-                // compute changerates (kinetic, surface)
-                double CR_KinEnergy = 0.0;
-                double CR_SurfEnergy = 0.0;
-                if (this.Control.CompMode == AppControl._CompMode.Transient) {
-                    double prevKinEnergy = EnergyUtils.GetKineticEnergy(this.LsTrk, this.prevVel, rhoS, this.m_HMForder, 0);
-                    CR_KinEnergy = (currentKinEnergy - prevKinEnergy) / dt;
-
-                    double prevSurfEnergy = EnergyUtils.GetSurfaceEnergy(this.LsTrk, this.Control.PhysicalParameters.Sigma, this.m_HMForder, 0);
-                    CR_SurfEnergy = (currentSurfEnergy - prevSurfEnergy) / dt;
-
-                    Console.WriteLine("current kinetic energy = {0}; actual changerate = {1}", currentKinEnergy, CR_KinEnergy);
-                    Console.WriteLine("current surface energy = {0}; actual changerate = {1}", currentSurfEnergy, CR_SurfEnergy);
-                }
-
-                // changerate of kinetic energy from discretization
-                double[] muS = new double[] { this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B };
-                double kineticDissipationBulk = EnergyUtils.GetKineticDissipation(this.LsTrk, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
-                EnergyUtils.ProjectKineticDissipation(this.KineticDissipation, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
-
-                // changerate of surface energy form discretization
-                ConventionalDGField[] meanVelocity = XNSEUtils.GetMeanVelocity(this.XDGvelocity.Velocity, this.LsTrk,
-                    this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B);
-                double SurfDivergence = EnergyUtils.GetSurfaceChangerate(this.LsTrk, meanVelocity, this.m_HMForder);
-
-
-                // logging
-                this.EnergyLogger.TimeStep = TimestepInt;
-                this.EnergyLogger.CustomValue(phystime + dt, "PhysicalTime");
-                this.EnergyLogger.CustomValue(currentKinEnergy, "KineticEnergy");
-                this.EnergyLogger.CustomValue(currentSurfEnergy, "SurfaceEnergy");
-                this.EnergyLogger.CustomValue(CR_KinEnergy, "ChangerateKineticEnergy");
-                this.EnergyLogger.CustomValue(CR_SurfEnergy, "ChangerateSurfaceEnergy");
-                this.EnergyLogger.CustomValue(SurfDivergence, "SurfaceDivergence");
-                this.EnergyLogger.CustomValue(kineticDissipationBulk, "KineticDissipationBulk");
-
-
-                // surface viscosity parts
-                if (this.Control.AdvancedDiscretizationOptions.SurfStressTensor != SurfaceSressTensor.Isotropic) {
-
-                    double shearViscEnergyCR = 0.0;
-                    double dilViscEnergyCR = 0.0;
-
-                    // surface shear viscosity energy
-                    if (this.Control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.SurfaceRateOfDeformation
-                        || this.Control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
-
-                        shearViscEnergyCR = EnergyUtils.GetInterfaceShearViscosityEnergyCR(this.LsTrk, meanVelocity, this.Control.PhysicalParameters.mu_I, this.m_HMForder);
-                    }
-
-                    // surface dilatational viscosity energy
-                    if (this.Control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.SurfaceRateOfDeformation
-                        || this.Control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
-
-                        dilViscEnergyCR = EnergyUtils.GetInterfaceDilatationalViscosityEnergyCR(this.LsTrk, meanVelocity, this.Control.PhysicalParameters.lambda_I, this.m_HMForder);
-                    }
-
-
-                    this.EnergyLogger.CustomValue(shearViscEnergyCR, "ShearViscosityDR");
-                    this.EnergyLogger.CustomValue(dilViscEnergyCR, "DilatationalViscosityDR");
-
-                    Console.WriteLine("current kinetic energy dissipation from discretization = {0}", kineticDissipationBulk + shearViscEnergyCR + dilViscEnergyCR);
-
-                } else {
-
-                    Console.WriteLine("current kinetic energy dissipation from discretization = {0}", kineticDissipationBulk);
-                }
-
-
-                // logging
-                // =======
-
-                this.EnergyLogger.NextTimestep(true);
-
-
-                //double[] RhoS = new double[] { this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B };
-                //double newKinEnergy = XNSEUtils.GetKineticEnergy(this.LsTrk, this.CurrentVel, RhoS, this.m_HMForder);
-                //double oldKinEnergy;
-                //if (base.Control.CompMode == AppControl._CompMode.Transient) {
-                //    DGField[] prevVel;
-                //    if (this.XDGvelocity != null)
-                //        prevVel = this.XDGvelocity.Velocity.ToArray();//<DGField>();
-                //    else
-                //        prevVel = this.DGvelocity.Velocity.ToArray();
-                //    oldKinEnergy = XNSEUtils.GetKineticEnergy(this.LsTrk, prevVel, RhoS, this.m_HMForder);
-                //} else if (base.Control.CompMode == AppControl._CompMode.Steady) {
-                //    oldKinEnergy = newKinEnergy;
-                //} else {
-                //    throw new NotSupportedException();
-                //}
-                //double surfEnergy = XNSEUtils.GetSurfaceEnergy(this.LsTrk, this.Control.PhysicalParameters.Sigma.Abs(), this.m_HMForder);
-
-
-                //// Logging and Console Output
-                //// ===========================
-
-                //this.EnergyLogger.TimeStep = TimestepInt;
-                //this.EnergyLogger.CustomValue(phystime + dt, "PhysicalTime");
-                //this.EnergyLogger.CustomValue(oldKinEnergy, "OldKineticEnergy");
-                //this.EnergyLogger.CustomValue(newKinEnergy, "NewKineticEnergy");
-                //this.EnergyLogger.CustomValue(surfEnergy, "SurfaceEnergy");
-
-                //this.EnergyLogger.NextTimestep(true);
-
-            }
-
-            #endregion
 
 
             // ====================================
@@ -3006,466 +2934,6 @@ namespace BoSSS.Application.XRheology_Solver {
 
         #endregion
 
-
-        // =========================================================
-        // related stuff for property tracking (e.g. kinetic energy)
-        // =========================================================
-        #region tracking
-
-        ResidualLogger m_EnergyLogger;
-
-        /// <summary>
-        /// Logger for kinetic and surface energy.
-        /// </summary>
-        ResidualLogger EnergyLogger {
-            get {
-                if (!this.Control.ComputeEnergy)
-                    return null;
-
-                if (m_EnergyLogger == null) {
-                    m_EnergyLogger = new ResidualLogger(base.MPIRank, base.DatabaseDriver, base.CurrentSessionInfo.ID);
-                    m_EnergyLogger.WriteResidualsToConsole = false;
-                    m_EnergyLogger.WriteResidualsToTextFile = true;
-                    m_EnergyLogger.TextFileFileName = "Energy";
-                }
-
-                return m_EnergyLogger;
-            }
-        }
-
-
-        SinglePhaseField MassBalanceAtInterface;
-
-        VectorField<SinglePhaseField> MomentumBalanceAtInterface;
-
-        SinglePhaseField EnergyBalanceAtInterface;
-
-        /// <summary>
-        /// kinetic energy derived via \f$ \rho \frac{vec{u} \cdot \vec{u}}{ 2 } \f$
-        /// </summary>
-        XDGField DerivedKineticEnergy;
-
-        XDGField GeneratedKineticEnergy;
-
-        /// <summary>
-        /// kinetic energy computed via <see cref="KineticEnergyBalanceOperator"/>
-        /// </summary>
-        XDGField KineticEnergy;
-
-        XDGField prevKineticEnergy;
-
-        /// <summary>
-        /// Residual of the kinetic energy balance
-        /// </summary>
-        XDGField ResidualKineticEnergy;
-
-        /// <summary>
-        /// source term for the kinetic energy
-        /// </summary>
-        XDGField KineticDissipation;
-
-        /// <summary>
-        /// spatial Operator for the kinetic energy balance
-        /// </summary>
-        XSpatialOperatorMk2 KineticEnergyBalanceOperator;
-
-        IDictionary<SpeciesId, IEnumerable<double>> MassScaleForEnergy {
-            get {
-                double rho_A = this.Control.PhysicalParameters.rho_A,
-                    rho_B = this.Control.PhysicalParameters.rho_B;
-
-                double[] _rho_A = new double[1];
-                _rho_A[0] = rho_A;
-                double[] _rho_B = new double[1];
-                _rho_B[0] = rho_B;
-
-                Dictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>>();
-                R.Add(this.LsTrk.GetSpeciesId("A"), _rho_A);
-                R.Add(this.LsTrk.GetSpeciesId("B"), _rho_B);
-
-                return R;
-            }
-        }
-
-        MultigridOperator.ChangeOfBasisConfig[][] MultigridEnergyOperatorConfig {
-            get {
-                int pEnergy = this.KineticEnergy.Basis.Degree;
-
-                // set the MultigridOperator configuration for each level:
-                // it is not necessary to have exactly as many configurations as actual multigrid levels:
-                // the last configuration enty will be used for all higher level
-                MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[1][];
-                for (int iLevel = 0; iLevel < configs.Length; iLevel++) {
-                    configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[1];
-
-                    // configuration for Temperature
-                    configs[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig() {
-                        Degree = Math.Max(0, pEnergy - iLevel),
-                        mode = MultigridOperator.Mode.Eye,
-                        VarIndex = new int[] { 0 }
-                    };
-                }
-
-                return configs;
-            }
-        }
-
-
-        EnergyMultiphaseBoundaryCondMap m_energyBcMap;
-
-        /// <summary>
-        /// Boundary conditions.
-        /// </summary>
-        EnergyMultiphaseBoundaryCondMap energyBcMap {
-            get {
-                if (m_energyBcMap == null) {
-                    m_energyBcMap = new EnergyMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
-                }
-                return m_energyBcMap;
-            }
-        }
-
-        CoordinateVector m_CurrentEnergySolution;
-
-        /// <summary>
-        /// Current temperature;
-        /// </summary>
-        internal CoordinateVector CurrentEnergySolution {
-            get {
-                if (m_CurrentEnergySolution == null) {
-                    m_CurrentEnergySolution = new CoordinateVector(this.KineticEnergy);
-                }
-                return m_CurrentEnergySolution;
-            }
-        }
-
-        CoordinateVector m_CurrentEnergyResidual;
-
-        /// <summary>
-        /// Current residual for coupled heat equation.
-        /// </summary>
-        internal CoordinateVector CurrentEnergyResidual {
-            get {
-                if (m_CurrentEnergyResidual == null) {
-                    m_CurrentEnergyResidual = new CoordinateVector(this.ResidualKineticEnergy);
-                }
-                return m_CurrentEnergyResidual;
-            }
-        }
-
-
-        /// <summary>
-        /// Implicit timestepping using Backward-Differentiation-Formulas (BDF),
-        /// specialized for XDG applications.
-        /// </summary>
-        XdgBDFTimestepping m_BDF_energyTimestepper;
-
-
-        public void generateKinEnergyOperator() {
-
-            int degK = this.KineticEnergy.Basis.Degree;
-
-            int D = this.GridData.SpatialDimension;
-
-            string[] CodName = new string[] { "kinBalance" };
-            string[] Params = ArrayTools.Cat(
-                 VariableNames.VelocityVector(D),
-                 (new string[] { "VelocityX_Mean", "VelocityY_Mean", "VelocityZ_Mean" }).GetSubVector(0, D),
-                 VariableNames.VelocityX_GradientVector(),
-                 VariableNames.VelocityY_GradientVector(),
-                 VariableNames.Pressure,
-                 (new string[] { "PressureGradX", "PressureGradY", "PressureGradZ" }).GetSubVector(0, D),
-                 (new string[] { "GravityX", "GravityY", "GravityZ" }).GetSubVector(0, D),
-                 (new string[] { "NX", "NY", "NZ" }).GetSubVector(0, D),
-                 "Curvature");
-            string[] DomName = new string[] { "KineticEnergy" };
-
-            double rhoA = this.Control.PhysicalParameters.rho_A;
-            double rhoB = this.Control.PhysicalParameters.rho_B;
-            double muA = this.Control.PhysicalParameters.mu_A;
-            double muB = this.Control.PhysicalParameters.mu_B;
-            double sigma = this.Control.PhysicalParameters.Sigma;
-
-            double LFFA = this.Control.AdvancedDiscretizationOptions.LFFA;
-            double LFFB = this.Control.AdvancedDiscretizationOptions.LFFB;
-
-
-            var dntParams = this.Control.AdvancedDiscretizationOptions;
-
-            // create operator
-            // ===============
-            KineticEnergyBalanceOperator = new XSpatialOperatorMk2(DomName, Params, CodName, (A, B, C) => degK * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2), null);
-
-
-            // build the operator
-            // ==================
-            {
-
-                // convective part
-                // ================
-                {
-                    if (this.Control.PhysicalParameters.IncludeConvection) {
-
-                        var comps = KineticEnergyBalanceOperator.EquationComponents[CodName[0]];
-
-                        // kinetic energy
-                        var convK = new BoSSS.Solution.XNSECommon.Operator.Energy.KineticEnergyConvectionInBulk(D, energyBcMap, rhoA, rhoB, LFFA, LFFB, LsTrk);
-                        comps.Add(convK); // Bulk component
-
-
-                        bool movingmesh;
-                        switch (this.Control.Timestepper_LevelSetHandling) {
-                            case LevelSetHandling.Coupled_Once:
-                                movingmesh = true;
-                                break;
-                            case LevelSetHandling.LieSplitting:
-                            case LevelSetHandling.StrangSplitting:
-                            case LevelSetHandling.None:
-                                movingmesh = false;
-                                break;
-                            case LevelSetHandling.Coupled_Iterative:
-                            default:
-                                throw new NotImplementedException();
-                        }
-
-                        //comps.Add(new BoSSS.Solution.XNSECommon.Operator.Energy.KineticEnergyConvectionAtLevelSet(D, LsTrk, rhoA, rhoB, LFFA, LFFB, this.Control.PhysicalParameters.Material, energyBcMap, movingmesh));       // LevelSet component
-                    }
-                }
-
-                // Laplace of kinetic energy
-                // =========================
-                {
-                    var comps = KineticEnergyBalanceOperator.EquationComponents[CodName[0]];
-
-                    double penalty = dntParams.PenaltySafety;
-
-                    var Visc = new BoSSS.Solution.XNSECommon.Operator.Energy.KineticEnergyLaplace(
-                        dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                        energyBcMap, D, muA, muB);
-
-                    comps.Add(Visc);
-
-                    if (dntParams.UseGhostPenalties) {
-                        var ViscPenalty = new BoSSS.Solution.XNSECommon.Operator.Energy.KineticEnergyLaplace(penalty * 1.0, 0.0, energyBcMap, D, muA, muB);
-                        KineticEnergyBalanceOperator.GhostEdgesOperator.EquationComponents[CodName[0]].Add(ViscPenalty);
-                    }
-
-                    // Level-Set operator:
-                    //comps.Add(new BoSSS.Solution.XNSECommon.Operator.Energy.KineticEnergylaplceAtLevelSet(LsTrk, muA, muB, penalty * 1.0));
-                }
-
-                // Divergence of stress tensor
-                // ===========================
-                {
-                    var comps = KineticEnergyBalanceOperator.EquationComponents[CodName[0]];
-                    comps.Add(new BoSSS.Solution.XNSECommon.Operator.Energy.StressDivergence(D, energyBcMap, muA, muB));
-
-                    // Level-Set operator:
-                    //comps.Add(new BoSSS.Solution.XNSECommon.Operator.Energy.StressDivergenceAtLevelSet(LsTrk, muA, muB));
-                }
-
-                // surface energy (surface tension)
-                // ================================
-                {
-                    //var comps = KineticEnergyBalanceOperator.EquationComponents[CodName[0]];
-                    //comps.Add(new BoSSS.Solution.XNSECommon.Operator.Energy.SurfaceEnergy(D, LsTrk, sigma));
-                }
-
-                // pressure term
-                // =============
-                {
-                    var comps = KineticEnergyBalanceOperator.EquationComponents[CodName[0]];
-                    comps.Add(new BoSSS.Solution.XNSECommon.Operator.Energy.DivergencePressureEnergy(D, energyBcMap));
-                    //comps.Add(new BoSSS.Solution.XNSECommon.Operator.Energy.PressureConvectionInBulk(D, energyBcMap, LFFA, LFFB, LsTrk));
-                    //comps.Add(new BoSSS.Solution.XNSECommon.Operator.Energy.PressureGradientConvection(D));
-
-                    // Level-Set operator:
-                    //comps.Add(new BoSSS.Solution.XNSECommon.Operator.Energy.DivergencePressureEnergyAtLevelSet(LsTrk));
-                }
-
-                // dissipation
-                // ===========
-                {
-                    var comps = KineticEnergyBalanceOperator.EquationComponents[CodName[0]];
-                    comps.Add(new BoSSS.Solution.XNSECommon.Operator.Energy.Dissipation(D, muA, muB));
-                }
-
-                // gravity (volume forces)
-                // =======================
-                {
-                    var comps = KineticEnergyBalanceOperator.EquationComponents[CodName[0]];
-                    comps.Add(new BoSSS.Solution.XNSECommon.Operator.Energy.PowerofGravity(D, rhoA, rhoB));
-                }
-
-
-                // finalize
-                // ========
-
-                KineticEnergyBalanceOperator.Commit();
-
-            }
-
-        }
-
-
-        void DelComputeEnergyOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
-
-            int D = this.GridData.SpatialDimension;
-
-            SpeciesId[] SpcToCompute = AgglomeratedCellLengthScales.Keys.ToArray();
-
-            // parameter assembly
-            // ==================    
-
-            // velocity
-            var VelMap = new CoordinateMapping(this.XDGvelocity.Velocity.ToArray());
-            DGField[] VelParam = VelMap.Fields.ToArray();
-
-            // velocity mean
-            VectorField<XDGField> VelMeanParam = new VectorField<XDGField>(D, new XDGBasis(LsTrk, 0), "VelMean_", XDGField.Factory);
-            XheatUtils.ComputeAverageU(VelParam, VelMeanParam, m_HMForder, LsTrk.GetXDGSpaceMetrics(SpcToCompute, m_HMForder, 1).XQuadSchemeHelper, this.LsTrk);
-
-            // velocity gradient vectors
-            VectorField<DGField> GradVelX = new VectorField<DGField>(D, VelParam[0].Basis, "VelocityXGradient", XDGField.Factory);
-            for (int d = 0; d < D; d++) {
-                foreach (var Spc in this.LsTrk.SpeciesIdS) {
-                    DGField f_Spc = ((VelParam[0] as XDGField).GetSpeciesShadowField(Spc));
-                    (GradVelX[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(1.0, f_Spc, d);
-                }
-            }
-            GradVelX.ForEach(F => F.CheckForNanOrInf(true, true, true));
-
-            VectorField<DGField> GradVelY = new VectorField<DGField>(D, VelParam[0].Basis, "VelocityYGradient", XDGField.Factory);
-            for (int d = 0; d < D; d++) {
-                foreach (var Spc in this.LsTrk.SpeciesIdS) {
-                    DGField f_Spc = ((VelParam[1] as XDGField).GetSpeciesShadowField(Spc));
-                    (GradVelY[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(1.0, f_Spc, d);
-                }
-            }
-            GradVelY.ForEach(F => F.CheckForNanOrInf(true, true, true));
-
-            // pressure and gradient
-            var PressMap = new CoordinateMapping(this.Pressure);
-            DGField[] PressParam = PressMap.Fields.ToArray();
-
-            VectorField<DGField> PressGrad = new VectorField<DGField>(D, PressParam[0].Basis, "PressureGrad", XDGField.Factory);
-            for (int d = 0; d < D; d++) {
-                foreach (var Spc in this.LsTrk.SpeciesIdS) {
-                    DGField f_Spc = ((PressParam[0] as XDGField).GetSpeciesShadowField(Spc));
-                    (PressGrad[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(1.0, f_Spc, d);
-                }
-            }
-            PressGrad.ForEach(F => F.CheckForNanOrInf(true, true, true));
-
-            // gravity
-            var GravMap = new CoordinateMapping(this.XDGvelocity.Gravity.ToArray());
-            DGField[] GravParam = GravMap.Fields.ToArray();
-
-            // normals:
-            SinglePhaseField[] Normals; // Normal vectors: length not normalized - will be normalized at each quad node within the flux functions.
-            var LevelSetGradient = new VectorField<SinglePhaseField>(D, LevSet.Basis, SinglePhaseField.Factory);
-            LevelSetGradient.Gradient(1.0, LevSet);
-            Normals = LevelSetGradient.ToArray();
-
-            // Curvature
-            CurvatureAlgorithms.CurvatureDriver(
-                SurfaceStressTensor_IsotropicMode.Curvature_Projected,
-                CurvatureAlgorithms.FilterConfiguration.Default,
-                this.Curvature, out VectorField<SinglePhaseField> LevSetGradient, this.LsTrk,
-                this.m_HMForder, this.DGLevSet.Current);
-
-
-            // concatenate everything
-            var Params = ArrayTools.Cat<DGField>(
-                VelParam,
-                VelMeanParam,
-                GradVelX,
-                GradVelY,
-                PressParam,
-                PressGrad,
-                GravMap,
-                Normals,
-                this.Curvature);
-
-
-
-            // assemble the matrix & affine vector
-            // ===================================
-
-
-            // compute matrix
-            if (OpMtx != null) {
-
-                var mtxBuilder = KineticEnergyBalanceOperator.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, SpcToCompute);
-
-                mtxBuilder.time = phystime;
-
-                foreach (var kv in AgglomeratedCellLengthScales) {
-                    mtxBuilder.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
-                }
-
-                mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
-
-            } else {
-                XSpatialOperatorMk2.XEvaluatorNonlin eval = KineticEnergyBalanceOperator.GetEvaluatorEx(LsTrk,
-                    CurrentState.ToArray(), Params, Mapping,
-                    SpcToCompute);
-
-                foreach (var kv in AgglomeratedCellLengthScales) {
-                    eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
-                }
-
-                eval.time = phystime;
-
-                eval.Evaluate(1.0, 1.0, OpAffine);
-
-            }
-
-
-            //OpAffine.ScaleV(-1.0);
-
-            //// mass matrix factory
-            //MassFact = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), m_HMForder, 1).MassMatrixFactory;// new MassMatrixFactory(maxB, CurrentAgg);
-            //var WholeMassMatrix = MassFact.GetMassMatrix(Mapping, MassScale); // mass matrix scaled with density rho
-
-            //// add power of gravity forces
-            //var WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(this.XDGvelocity.Gravity.ToArray<DGField>()));
-            //var WholeVelocity = new CoordinateVector(ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray<DGField>()));
-            //WholeMassMatrix.SpMV(1.0, WholeVelocity, 1.0, OpAffine);
-
-            //// transform from RHS to Affine
-            //OpAffine.ScaleV(-1.0);
-
-        }
-
-        /// <summary>
-        /// dummy delegate for coupled operators
-        /// </summary>
-        /// <param name="CurrentState"></param>
-        /// <param name="Phystime"></param>
-        /// <param name="dt"></param>
-        /// <param name="underrelax"></param>
-        /// <param name="incremental"></param>
-        /// <returns></returns>
-        double DelUpdateLevelSet_EnergyOperator(DGField[] CurrentState, double Phystime, double dt, double underrelax, bool incremental) {
-            // do nothing
-            return 0.0;
-        }
-
-
-        /// <summary>
-        /// The residual logger for this application.
-        /// </summary>
-        public ResidualLogger EnergyResLogger {
-            get {
-                return m_EnergyResLogger;
-            }
-        }
-
-        ResidualLogger m_EnergyResLogger;
-
-
-        #endregion
 
     }
 }

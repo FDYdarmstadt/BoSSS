@@ -289,7 +289,7 @@ namespace CNS.IBM {
             CommonParams InParams = new CommonParams() {
                 GridDat = cpv.GridDat,
                 iEdge = Math.Abs(cpv.GridDat.iLogicalCells.Cells2Edges[cpv.jCell][0]) - 1, // TO BE CHANGED
-                Normale = normal,
+                Normal = normal,
                 Parameters_IN = cpv.Parameters,
                 Parameters_OUT = cpv.Parameters,
                 time = cpv.time,
@@ -491,7 +491,7 @@ namespace CNS.IBM {
                 e0 = Math.Abs(prm.GridDat.iLogicalCells.Cells2Edges[prm.j0][0]) - 1, // THIS IS AN EVIL HACK; NEEDS TO BE CHANGED
                 GridDat = prm.GridDat,
                 Len = prm.Len,
-                NodesGlobal = prm.Xglobal,
+                Nodes = prm.Xglobal,
                 Normals = normals,
                 ParameterVars_IN = prm.ParameterVars,
                 ParameterVars_OUT = prm.ParameterVars,

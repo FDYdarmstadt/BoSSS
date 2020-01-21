@@ -258,7 +258,7 @@ namespace BoSSS.Foundation {
                              SubGrid sgrd = null,
                              EdgeQuadratureScheme qInsEdge = null,
                              CellQuadratureScheme qInsVol = null,
-                             SpatialOperator.SubGridBoundaryModes bndMode = SubGridBoundaryModes.OpenBoundary,
+                             SubGridBoundaryModes bndMode = SubGridBoundaryModes.OpenBoundary,
                              double time = double.NaN) //
         {
             using(new FuncTrace()) {
@@ -315,7 +315,7 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// Another wrapper for
-        /// <see cref="Evaluate(SpatialOperator,double,double,CoordinateMapping,IList{DGField},CoordinateMapping,SubGrid,EdgeQuadratureScheme,CellQuadratureScheme,SpatialOperator.SubGridBoundaryModes)"/>
+        /// <see cref="Evaluate(SpatialOperator,double,double,CoordinateMapping,IList{DGField},CoordinateMapping,SubGrid,EdgeQuadratureScheme,CellQuadratureScheme,SubGridBoundaryModes)"/>
         /// </summary>
         /// <param name="DomainFields">
         /// the domain variables; the number of elements

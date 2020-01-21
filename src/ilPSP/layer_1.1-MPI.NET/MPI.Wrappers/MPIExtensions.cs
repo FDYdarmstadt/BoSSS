@@ -325,6 +325,49 @@ namespace MPI.Wrappers {
         }
 
         /// <summary>
+        /// equal to <see cref="MPIOr(int,MPI_Comm)"/>, acting on the
+        /// WORLD-communicator
+        /// </summary>
+        static public bool MPIOr(this bool i) {
+            return MPIOr(i, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// returns the logical or of <paramref name="b"/> on all MPI-processes in the
+        /// <paramref name="comm"/>--communicator.
+        /// </summary>
+        static public bool MPIOr(this bool b, MPI_Comm comm) {
+            int loc = b ? 0: 1;
+            unsafe {
+                int glob = 0;
+                csMPI.Raw.Allreduce(((IntPtr)(&loc)), ((IntPtr)(&glob)), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.SUM, comm);
+                return glob > 0;
+            }
+        }
+
+        /// <summary>
+        /// equal to <see cref="MPIAnd(int,MPI_Comm)"/>, acting on the
+        /// WORLD-communicator
+        /// </summary>
+        static public bool MPIAnd(this bool i) {
+            return MPIAnd(i, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// returns the logical and of <paramref name="b"/> on all MPI-processes in the
+        /// <paramref name="comm"/>--communicator.
+        /// </summary>
+        static public bool MPIAnd(this bool b, MPI_Comm comm) {
+            int loc = b ? 0: 1;
+            unsafe {
+                int glob = 0;
+                csMPI.Raw.Allreduce(((IntPtr)(&loc)), ((IntPtr)(&glob)), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.PROD, comm);
+                return glob > 0;
+            }
+        }
+
+
+        /// <summary>
         /// equal to <see cref="MPIMax(double[],MPI_Comm)"/>, acting on the
         /// WORLD-communicator
         /// </summary>

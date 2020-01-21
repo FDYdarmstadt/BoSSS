@@ -158,7 +158,7 @@ namespace BoSSS.Application.SipPoisson{
                 MultidimensionalArray nodes = GetNodes();
                 grid = BoSSS.Foundation.Grid.Voronoi.VoronoiGrid2D.Polygonal(nodes, DomainBndyPolygon, 0, 20);
                 grid.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
-                grid.DefineEdgeTags(X => (byte)1);
+                grid.DefineEdgeTags((Vector X) => (byte)1);
                 return grid;
             }
 
@@ -211,7 +211,7 @@ namespace BoSSS.Application.SipPoisson{
                 AggregationGrid grid;
                 grid = BoSSS.Foundation.Grid.Voronoi.VoronoiGrid2D.Polygonal(DomainBndyPolygon, noOfLlyodsIter, res);
                 grid.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
-                grid.DefineEdgeTags(X => (byte)1);
+                grid.DefineEdgeTags((Vector X) => (byte)1);
 #if LOGGING
                 Console.WriteLine("Done.");
 #endif
@@ -246,7 +246,7 @@ namespace BoSSS.Application.SipPoisson{
                 AggregationGrid grid;
                 grid = BoSSS.Foundation.Grid.Voronoi.VoronoiGrid2D.Polygonal(DomainBndyPolygon, noOfLlyodsIter, res);
                 grid.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
-                grid.DefineEdgeTags(X => (byte)1);
+                grid.DefineEdgeTags((Vector X) => (byte)1);
                 return grid;
             }
 

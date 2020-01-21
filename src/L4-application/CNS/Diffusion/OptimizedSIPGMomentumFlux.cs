@@ -136,6 +136,7 @@ namespace CNS.Diffusion {
                 return null;
             }
         }
+
         #endregion
 
         #region IEdgeComponent Members
@@ -280,7 +281,7 @@ namespace CNS.Diffusion {
                     double[] X = new double[dimension];
                     double[] Normale = new double[dimension];
                     for (int i = 0; i < dimension; i++) {
-                        X[i] = efp.NodesGlobal[cell, node, i];
+                        X[i] = efp.Nodes[cell, node, i];
                         Normale[i] = efp.Normals[cell, node, i];
                     }
 
@@ -491,7 +492,7 @@ namespace CNS.Diffusion {
                     double[] X = new double[dimension];
                     double[] Normale = new double[dimension];
                     for (int i = 0; i < dimension; i++) {
-                        X[i] = efp.NodesGlobal[cell, node, i];
+                        X[i] = efp.Nodes[cell, node, i];
                         Normale[i] = efp.Normals[cell, node, i];
                     }
 

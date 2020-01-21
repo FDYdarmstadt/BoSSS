@@ -68,7 +68,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
         /// <summary>
         /// creates a new grid object; no data of this object is set;
-        /// A new Guid (<see cref="GridGuid"/>) is created;
+        /// A new Guid (<see cref="ID"/>) is created;
         /// </summary>
         public GridCommons(RefElement[] RefElm, RefElement[] EdgeRefElm) {
             using (new FuncTrace() ) { 
@@ -146,6 +146,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         private GridCommons() {
         }
 
+        /*
         /// <summary>
         /// sets values for <see cref="Cell.CellFaceTags"/> by using a
         /// <paramref name="EdgeTagFunc"/>-function; also adds entries with empty names
@@ -171,7 +172,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             double[] x = new double[D];
             MultidimensionalArray GlobalVerticesOut = MultidimensionalArray.CreateWrapper(x, 1, D);
 
-            int NoOfEdges = GrdDatTmp.Edges.Count;
+            int NoOfEdges = m_GridData.iGeomEdges.Count;
             for (int iEdge = 0; iEdge < NoOfEdges; iEdge++) {
                 if (GrdDatTmp.Edges.IsEdgeBoundaryEdge(iEdge)) {
                     int jCell = GrdDatTmp.Edges.CellIndices[iEdge, 0];
@@ -202,6 +203,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 }
             }
         }
+        */
 
         /// <summary>
         /// This is a mapping from each used <em>EdgeTag</em> to a string that
@@ -1089,6 +1091,8 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
         }
 
+        
+
         /// <summary>
         /// 
         /// </summary>
@@ -1110,7 +1114,12 @@ namespace BoSSS.Foundation.Grid.Classic {
         [JsonIgnore]
         GridData m_GridData;
 
-        void InvalidateGridData () {
+
+        /// <summary>
+        /// Releases the object cached in <see cref="iGridData"/>; this is necessary if 
+        /// the grid object was changed somehow.
+        /// </summary>
+        public void InvalidateGridData () {
             if(m_GridData == null)
                 return; // nothing to do
             m_GridData.Invalidate();

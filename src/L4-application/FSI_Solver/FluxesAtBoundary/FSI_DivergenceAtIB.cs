@@ -48,8 +48,8 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
             return (UxN_in - UxN_out);
         }
 
-        public double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
-            double[] parameters_P = m_getParticleParams(cp.x, cp.time);
+        public double LevelSetForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+            double[] parameters_P = m_getParticleParams(cp.X, cp.time);
             double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
             double wLevSet = parameters_P[2];
             double[] RadialNormalVector = new double[] { parameters_P[3], parameters_P[4] };
@@ -60,8 +60,8 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
             _uLevSet[0] = uLevSet[0] + RadialLength * wLevSet * RadialNormalVector[0];
             _uLevSet[1] = uLevSet[1] + RadialLength * wLevSet * RadialNormalVector[1];
 
-            double uAxN = GenericBlas.InnerProd(U_Neg, cp.n);
-            double uBxN = GenericBlas.InnerProd(_uLevSet, cp.n);
+            double uAxN = GenericBlas.InnerProd(U_Neg, cp.Normal);
+            double uBxN = GenericBlas.InnerProd(_uLevSet, cp.Normal);
             double FlxNeg = -DirichletFlux(uAxN, uBxN); 
             return FlxNeg * v_Neg;
         }

@@ -84,13 +84,13 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
         
     [Serializable]
-    public class XdgTimesteppingTestControl : AppControl {
+    public class XdgTimesteppingTestControl : AppControlSolver {
 
         /// <summary>
         /// ctor
         /// </summary>
         public XdgTimesteppingTestControl() {
-            base.LinearSolver.NoOfMultigridLevels = 1;
+            NoOfMultigridLevels = 1;
             base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
         }
 
@@ -163,7 +163,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// <summary>
         /// In the case of Burgers equation, the Pseudo-1D - direction.
         /// </summary>
-        public Vector BurgersDirection;
+        public ilPSP.Vector BurgersDirection;
 
         
         /// <summary>

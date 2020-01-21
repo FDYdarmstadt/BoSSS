@@ -174,8 +174,8 @@ namespace BoSSS.Solution.XheatCommon {
 
 
             for(int d = 0; d < inp.D; d++) {
-                Acc += 0.5 * (kA * _Grad_uA[0, d] + kB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
-                Acc += 0.5 * (kA * _Grad_vA[d] + kB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
+                Acc += 0.5 * (kA * _Grad_uA[0, d] + kB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normal[d];  // consistency term
+                Acc += 0.5 * (kA * _Grad_vA[d] + kB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normal[d];  // symmetry term
             }
             Acc *= this.m_alpha;
 
@@ -200,7 +200,7 @@ namespace BoSSS.Solution.XheatCommon {
                         double g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag);
 
                         for(int d = 0; d < inp.D; d++) {
-                            double nd = inp.Normale[d];
+                            double nd = inp.Normal[d];
                             Acc += (kA * _Grad_uA[0, d]) * (_vA) * nd;
                             Acc += (kA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;
                         }
@@ -212,7 +212,7 @@ namespace BoSSS.Solution.XheatCommon {
                 case ThermalBcType.ZeroGradient: {
 
                         for(int d = 0; d < inp.D; d++) {
-                            double nd = inp.Normale[d];
+                            double nd = inp.Normal[d];
                             //Acc += (muA * _Grad_uA[0, d]) * (_vA) * nd;
                             //Acc += (muA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;
                         }
@@ -226,7 +226,7 @@ namespace BoSSS.Solution.XheatCommon {
                         for(int d = 0; d < inp.D; d++) {
                             double g_D = this.g_Flux(inp.X, inp.time, d, inp.EdgeTag);
 
-                            Acc += g_D * (_vA) * inp.Normale[d];
+                            Acc += g_D * (_vA) * inp.Normal[d];
                             //Acc += (kA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;
                         }
                         Acc *= this.m_alpha;

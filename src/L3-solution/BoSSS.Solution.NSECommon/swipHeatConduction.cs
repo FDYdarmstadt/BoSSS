@@ -101,9 +101,9 @@ namespace BoSSS.Solution.NSECommon {
 
             for (int d = 0; d < inp.D; d++) {
                 // consistency term
-                Acc += 0.5 * (lambdaA * _Grad_uA[0, d] + lambdaB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];
+                Acc += 0.5 * (lambdaA * _Grad_uA[0, d] + lambdaB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normal[d];
                 // symmetry term                
-                Acc += 0.5 * (lambdaA * _Grad_vA[d] + lambdaB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];
+                Acc += 0.5 * (lambdaA * _Grad_vA[d] + lambdaB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normal[d];
             }
 
             // penalty term            
@@ -130,7 +130,7 @@ namespace BoSSS.Solution.NSECommon {
 
                         double T_D = TemperatureFunction[inp.EdgeTag](inp.X, 0);
                         for (int d = 0; d < inp.D; d++) {
-                            double nd = inp.Normale[d];
+                            double nd = inp.Normal[d];
                             Acc += (lambdaA * _Grad_uA[0, d]) * (_vA) * nd;
                             Acc += (lambdaA * _Grad_vA[d]) * (_uA[0] - T_D) * nd;
                         }
@@ -181,5 +181,6 @@ namespace BoSSS.Solution.NSECommon {
                 return new string[] { VariableNames.Temperature0 };
             }
         }
+
     }
 }

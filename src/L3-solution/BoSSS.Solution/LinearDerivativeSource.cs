@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using BoSSS.Foundation;
+using ilPSP;
 
 namespace BoSSS.Solution.Utils {
 
@@ -29,7 +30,7 @@ namespace BoSSS.Solution.Utils {
     /// the function matrices and offsets (aka. intercept) are constructed from the user-defined
     /// functions by this class.
     /// </summary>
-    abstract public class LinearDerivativeSource : IVolumeForm {
+    abstract public class LinearDerivativeSource : IVolumeForm, ISupportsJacobianComponent {
 
         
         /// <summary>
@@ -83,7 +84,7 @@ namespace BoSSS.Solution.Utils {
         /// <returns>
         /// source value
         /// </returns>
-        abstract public double _DerivativeSource(double[] x, double[] Parameters, double[,] GradientU);
+        abstract public double _DerivativeSource(Vector x, double[] Parameters, double[,] GradientU);
         
 
         /// <summary>
@@ -99,7 +100,7 @@ namespace BoSSS.Solution.Utils {
                 return null; 
             } 
         }
-
+        
         /// <summary>
         /// this kind of source depends on trial function gradient and test function value.
         /// </summary>
@@ -108,5 +109,13 @@ namespace BoSSS.Solution.Utils {
                 return TermActivationFlags.GradUxV;
             }
         }
+
+        /// <summary>
+        /// Linear component - returns this object itself.
+        /// </summary>
+        virtual public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
+        }
+
     }
 }

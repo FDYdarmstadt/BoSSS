@@ -29,28 +29,48 @@ namespace BoSSS.Solution.NSECommon {
     /// Implementation of the time derivative as a linearized source term in the low-Mach combustion solver.
     /// Based on the implicit Euler scheme.
     /// </summary>
-    public class TimeDerivativeLinearSource : BoSSS.Solution.Utils.LinearSource {
+    public class MassMatrixComponent : BoSSS.Solution.Utils.LinearSource {
         string[] m_ArgumentOrdering;
-        //string[] m_ParameterOrdering;
+        IList<string> m_ParameterOrdering;
         MaterialLawLowMach EoS;
         bool m_energy;
+        bool m_conti;
         double rho;
         double dt;
 
         /// <summary>
-        /// Ctor.
+        /// Ctor for variable density flows
         /// </summary> 
         /// <param name="EoS">The material law</param>
-        /// <param name="conti">Set conti: true for the continuity equation</param>
+        /// <param name="energy">Set conti: true for the energy equation</param>
         /// <param name="ArgumentOrdering"></param>
         /// <param name="TimeStepSize"></param>
-        public TimeDerivativeLinearSource(MaterialLawLowMach EoS, double TimeStepSize, String[] ArgumentOrdering, bool energy = false) {
+        public MassMatrixComponent(MaterialLawLowMach EoS, double TimeStepSize, String[] ArgumentOrdering, bool energy = false, bool conti = false) {
             m_ArgumentOrdering = ArgumentOrdering;//.Cat(VariableNames.Rho);
             this.EoS = EoS;
             dt = TimeStepSize;
             m_energy = energy;
+            m_conti = conti;
+            m_ParameterOrdering = EoS.ParameterOrdering;
 
         }
+        /// <summary>
+        /// ctor for cte density flows
+        /// </summary>
+        /// <param name="EoS"></param>
+        /// <param name="TimeStepSize"></param>
+        /// <param name="ArgumentOrdering"></param>
+        /// <param name="energy"></param>
+        /// <param name="conti"></param>
+        public MassMatrixComponent( double TimeStepSize, String[] ArgumentOrdering, bool energy = false, bool conti = false) {
+            m_ArgumentOrdering = ArgumentOrdering;
+            this.EoS = null;
+            dt = TimeStepSize;
+            m_energy = energy;
+            m_conti = conti;
+            m_ParameterOrdering = null;
+        }
+
 
 
         /// <summary>
@@ -64,7 +84,9 @@ namespace BoSSS.Solution.NSECommon {
         /// Paramaters used to compute the density
         /// </summary>
         public override IList<string> ParameterOrdering {
-            get { return EoS.ParameterOrdering; }
+            get {
+                return m_ParameterOrdering;
+            }
         }
 
 
@@ -76,18 +98,25 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="U"></param>
         /// <returns></returns>
         protected override double Source(double[] x, double[] parameters, double[] U) {
-            Debug.Assert(ParameterOrdering[1] == VariableNames.Rho);
-            //rho = EoS.GetDensity(U[0]);
-            rho = parameters[1];
             double mult = 1.0;
+            rho = 1.0;
 
-            if (m_energy == true) {
-                double gamma = EoS.GetHeatCapacityRatio(parameters[0]);
-                Debug.Assert(gamma > 0);
-                //mult = 1 / gamma;
-                mult = 1;
+            if(EoS!= null) { 
+            rho = EoS.GetDensity(parameters);
+                double T = parameters[0];
+
+                if(m_energy == true) {
+                    double gamma = EoS.GetHeatCapacityRatio(parameters[0]);
+                    Debug.Assert(gamma > 0);
+                    mult = 1; // 1/gamma;
+                }
+                if(m_conti == true)
+                    mult = -1 / T;
             }
-            return mult * rho * U[0];  
+
+            return mult * rho * U[0];
+
+
         }
     }
 }

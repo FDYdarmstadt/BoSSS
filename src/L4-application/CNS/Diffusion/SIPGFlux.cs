@@ -227,7 +227,7 @@ namespace CNS.Diffusion {
         /// <returns>Flux across the boundary edge</returns>
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             stateIn = new StateVector(_uA, speciesMap.GetMaterial(double.NaN));
-            stateOut = boundaryMap.GetBoundaryState(inp.EdgeTag, 0.0, inp.X, inp.Normale, stateIn);
+            stateOut = boundaryMap.GetBoundaryState(inp.EdgeTag, 0.0, inp.X, inp.Normal, stateIn);
 
             bool adiabaticWall = edgeTagBool[inp.EdgeTag];
             double[] _uBC = stateOut.ToArray();
@@ -242,13 +242,13 @@ namespace CNS.Diffusion {
 
                     for (int j = 0; j < dimension + 2; j++) {
                         // _Grad_vB=0 per definition of the Ansatz functions
-                        ret -= (GTensorOut[k, l, j] * _Grad_vA[k]) * (_uA[j] - _uBC[j]) * inp.Normale[l];
+                        ret -= (GTensorOut[k, l, j] * _Grad_vA[k]) * (_uA[j] - _uBC[j]) * inp.Normal[l];
                         // Term 2
                         // Grad_uB = grad_uA, implicit boundary condition for viscous stress tensor!
-                        ret -= (GTensorOut[k, l, j] * _Grad_uA[j, l]) * (_vA - 0) * inp.Normale[k];
+                        ret -= (GTensorOut[k, l, j] * _Grad_uA[j, l]) * (_vA - 0) * inp.Normal[k];
                         //ret -= (G_Out[k, l][j] * grad_uB[j]) * (_vA - 0) * inp.Normale[k];
                         //Penalty-Term
-                        ret += (GTensorOut[k, l, j]) * (_uA[j] - _uBC[j]) * inp.Normale[l] * Penalty * (_vA - 0) * inp.Normale[k];
+                        ret += (GTensorOut[k, l, j]) * (_uA[j] - _uBC[j]) * inp.Normal[l] * Penalty * (_vA - 0) * inp.Normal[k];
                     }
                 }
             }
@@ -308,11 +308,11 @@ namespace CNS.Diffusion {
 
                     for (int j = 0; j < dimension + 2; j++) {
                         // Term 1
-                        ret -= 0.5 * (GTensorIn[k, l, j] * _Grad_vA[k] + GTensorOut[k, l, j] * _Grad_vB[k]) * (_uA[j] - _uB[j]) * inp.Normale[l];
+                        ret -= 0.5 * (GTensorIn[k, l, j] * _Grad_vA[k] + GTensorOut[k, l, j] * _Grad_vB[k]) * (_uA[j] - _uB[j]) * inp.Normal[l];
                         // Term 2
-                        ret -= 0.5 * (GTensorIn[k, l, j] * _Grad_uA[j, l] + GTensorOut[k, l, j] * _Grad_uB[j, l]) * (_vA - _vB) * inp.Normale[k];
+                        ret -= 0.5 * (GTensorIn[k, l, j] * _Grad_uA[j, l] + GTensorOut[k, l, j] * _Grad_uB[j, l]) * (_vA - _vB) * inp.Normal[k];
                         // Term 3: Penalty
-                        ret += 0.5 * (GTensorIn[k, l, j] + GTensorOut[k, l, j]) * (_uA[j] - _uB[j]) * inp.Normale[l] * Penalty * (_vA - _vB) * inp.Normale[k];
+                        ret += 0.5 * (GTensorIn[k, l, j] + GTensorOut[k, l, j]) * (_uA[j] - _uB[j]) * inp.Normal[l] * Penalty * (_vA - _vB) * inp.Normal[k];
                     }
                 }
             }

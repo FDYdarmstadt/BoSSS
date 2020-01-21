@@ -61,12 +61,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         /// <summary>
-        /// Aggregation basis on this level.
+        /// Aggregation basis on this level, for each variable.
         /// </summary>
         public AggregationGridBasis[] AggBasis {
             get;
             private set;
         }
+
+        /// <summary>
+        /// Number of variables
+        /// </summary>
+        public int NoOfVariables {
+            get {
+                return AggBasis.Length;
+            }
+        }
+
 
         /// <summary>
         /// aggregation grid on this level
@@ -91,7 +101,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
         
-        
+
         /// <summary>
         /// Partitioning of the vector among MPI processes.
         /// </summary>
@@ -271,6 +281,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 Debug.Assert(Partitioning != null);
                 Debug.Assert(Partitioning.LocalLength == this.LocalLength);
+                
             }
         }
 
@@ -394,21 +405,44 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             int S;
             if(this.m_i0 != null) {
-                
+
                 S = this.m_i0[jCell];
             } else {
                 Debug.Assert(this.MaximalLength == this.MinimalLength);
                 S = jCell * this.MaximalLength;
             }
-            for(int iF = 0; iF < ifld; iF++)
+            //if (ilPSP.Environment.MPIEnv.MPI_Rank == 1) {
+                //Console.WriteLine("proc:{0}, iVar:{1}, iCell:{2}, {3}", ilPSP.Environment.MPIEnv.MPI_Rank, ifld, jCell, S);
+            //}
+
+            
+            for (int iF = 0; iF < ifld; iF++)
                 S += this.AggBasis[iF].GetLength(jCell, this.m_DgDegree[iF]);
             S += n;
             return S;
         }
 
+        public int LocalUniqueIndex(int ifld, int jCell, int jSpec ,int n) {
+            int Np_tot = this.AggBasis[ifld].GetLength(jCell, this.m_DgDegree[ifld]);
+            int NoOfSpec = AggBasis[ifld].GetNoOfSpecies(jCell);
+            int Np_Spec = Np_tot / NoOfSpec;
+            int n_agg=jSpec*Np_Spec + n;
+
+            return LocalUniqueIndex(ifld, jCell, n_agg);
+        }
+
+        public int GlobalUniqueIndex(int ifld, int jCell, int jSpec, int n) {
+            int Np_tot = this.AggBasis[ifld].GetLength(jCell, this.m_DgDegree[ifld]);
+            int NoOfSpec = AggBasis[ifld].GetNoOfSpecies(jCell);
+            int Np_Spec = Np_tot / NoOfSpec;
+            int n_agg = jSpec * Np_Spec + n;
+
+            return GlobalUniqueIndex(ifld, jCell, n_agg);
+        }
+
         public int GlobalUniqueIndex(int ifld, int jCell, int n) {
             Debug.Assert(ifld >= 0 && ifld < this.m_DgDegree.Length);
-            Debug.Assert(jCell >= 0 && jCell < (this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells + this.AggGrid.iLogicalCells.NoOfExternalCells));
+            Debug.Assert(jCell >= 0 && jCell < (this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells + this.AggGrid.iLogicalCells.NoOfExternalCells));        
             Debug.Assert(n >= 0 && n < this.AggBasis[ifld].GetLength(jCell, this.m_DgDegree[ifld]));
 
             int Jup = this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;

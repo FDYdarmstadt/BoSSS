@@ -32,8 +32,8 @@ namespace CNS.Convection {
             return 0.0;
         }
 
-        public Vector Flux(StateVector state) {
-            return new Vector();
+        public ilPSP.Vector Flux(StateVector state) {
+            return new ilPSP.Vector();
         }
 
         #endregion

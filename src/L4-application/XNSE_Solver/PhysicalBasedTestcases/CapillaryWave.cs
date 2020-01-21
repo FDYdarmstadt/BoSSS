@@ -55,12 +55,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
+            //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+
             // basic database options
             // ======================
             #region db
 
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CWp3_spatialConv";
-            _DbPath = @"D:\local\local_Testcase_databases\Testcase_CapillaryWave";
+            //_DbPath = @"D:\local\local_Testcase_databases\Testcase_CapillaryWave";
 
             C.DbPath = _DbPath;
             C.savetodb = C.DbPath != null;
@@ -68,7 +70,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Tags.Add("Popinet");
             C.Tags.Add("Testcase1");
 
-            C.LogValues = XNSE_Control.LoggingValues.Wavelike;
+            //C.LogValues = XNSE_Control.LoggingValues.Wavelike;
 
             #endregion
 
@@ -95,11 +97,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = 4,
+                Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("Curvature", new FieldOpts() {
-                Degree = 4,
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("KineticEnergy", new FieldOpts() {
+                Degree = 2 * p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
 
@@ -158,7 +164,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.GridFunc = delegate () {
                 double[] Xnodes = GenericBlas.Linspace(0, L, xkelem + 1);
-                double[] Ynodes = GenericBlas.Linspace(-3.0 * L / 2.0, 3.0 * L / 2.0, (3 * xkelem) + 1);
+                double[] Ynodes = GenericBlas.Linspace(-1.0 * L / 2.0, 1.0 * L / 2.0, (1 * xkelem) + 0);
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true);
 
                 grd.EdgeTagNames.Add(1, "wall_lower");
@@ -167,14 +173,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte et = 0;
-                    if (Math.Abs(X[1] + (3.0 * L / 2.0)) <= 1.0e-8)
+                    if (Math.Abs(X[1] + (1.0 * L / 2.0)) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[1] - (3.0 * L / 2.0)) <= 1.0e-8)
+                    if (Math.Abs(X[1] - (1.0 * L / 2.0)) <= 1.0e-8)
                         et = 2;
-                    if (Math.Abs(X[0]) <= 1.0e-8)
-                        et = 3;
-                    if (Math.Abs(X[0] - L) <= 1.0e-8)
-                        et = 4;
+                    //if (Math.Abs(X[0]) <= 1.0e-8)
+                    //    et = 3;
+                    //if (Math.Abs(X[0] - L) <= 1.0e-8)
+                    //    et = 4;
 
                     return et;
                 });
@@ -190,8 +196,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region BC
 
-            C.AddBoundaryValue("wall_lower", "VelocityX#A", X => 0.0);
-            C.AddBoundaryValue("wall_upper", "VelocityX#B", X => 0.0);
+            C.AddBoundaryValue("wall_lower");
+            C.AddBoundaryValue("wall_upper");
 
             #endregion
 
@@ -202,8 +208,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.InitialValues_Evaluators.Add("Phi", (X => X[1] - PeriodicFunc(X[0])));
 
-            C.InitialValues_Evaluators.Add("VelocityX#A", X => 0.0);
-            C.InitialValues_Evaluators.Add("VelocityX#B", X => 0.0);
+            //C.InitialValues_Evaluators.Add("VelocityX#A", X => 0.0);
+            //C.InitialValues_Evaluators.Add("VelocityX#B", X => 0.0);
 
 
             //var database = new DatabaseInfo(_DbPath);
@@ -215,16 +221,18 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // additional parameters
             // =====================
 
-            double[] param = new double[3];
-            param[0] = lambda;  // wavelength
-            param[1] = A0;      // initial disturbance
-            param[2] = 0.0;      // y-gravity
-            C.AdditionalParameters = param;
+            //double[] param = new double[3];
+            //param[0] = lambda;  // wavelength
+            //param[1] = A0;      // initial disturbance
+            //param[2] = 0.0;      // y-gravity
+            //C.AdditionalParameters = param;
 
             // misc. solver options
             // ====================
             #region solver
 
+            //C.solveKineticEnergyEquation = true;
+            //C.ComputeEnergyProperties = true;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
@@ -240,8 +248,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
+
+            //C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
+
             C.Option_LevelSetEvolution = LevelSetEvolution.Fourier;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Fourier;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             //C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
             //C.AdvancedDiscretizationOptions.surfTensionMode = Solution.XNSECommon.SurfaceTensionMode.Curvature_Projected;
@@ -266,21 +277,22 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF3;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             //C.dt_increment = 20;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
             double rho = rho_l;         // Testcase1
-            double dt = Math.Sqrt(rho * Math.Pow((1 / (double)xkelem), 3) / (Math.PI * sigma));             // !!!
+            //double dt = Math.Sqrt(rho * Math.Pow((1 / (double)xkelem), 3) / (Math.PI * sigma));             // !!!
+            double dt = 1e-5;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            double omega0 = Math.Sqrt(sigma * Math.Pow((2 * Math.PI / lambda), 3) / (2.0 * rho));
-            C.NoOfTimesteps = (int)Math.Ceiling((25 / omega0) / dt);                                        // !!!
-            //C.NoOfTimesteps = (int)Math.Ceiling(t_end / dt);                                     // !!!
+            //double omega0 = Math.Sqrt(sigma * Math.Pow((2 * Math.PI / lambda), 3) / (2.0 * rho));
+            //C.NoOfTimesteps = (int)Math.Ceiling((25 / omega0) / dt);                                        // !!!
+            C.NoOfTimesteps = 100;                                     // !!!
 
             C.saveperiod = 1;
 
@@ -564,7 +576,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
 
             C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
@@ -815,7 +827,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
 
             C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;

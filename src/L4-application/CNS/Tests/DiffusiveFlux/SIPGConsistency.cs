@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution;
@@ -22,6 +23,7 @@ using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using CNS.Diffusion;
 using CNS.EquationSystem;
+using ilPSP;
 using ilPSP.Utils;
 using NUnit.Framework;
 using System;
@@ -196,7 +198,7 @@ namespace CNS.Tests.DiffusiveFlux {
                     periodicX: false,
                     periodicY: false);
                 grid.EdgeTagNames.Add(1, "supersonicinlet");
-                grid.DefineEdgeTags(x => 1);
+                grid.DefineEdgeTags((Vector X) => 1);
 
                 return grid;
             };

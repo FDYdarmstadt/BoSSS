@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Application.IBM_Solver {
     public class HardcodedPrecTest {
@@ -67,30 +68,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.Tags.Add("Prec Test");
 
             // Create Fields
-            C.FieldOptions.Add("VelocityX", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityZ", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = k - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            C.SetDGdegree(k);
 
             #region Creates grid () and sets BC
             //// Create Grid
@@ -189,7 +167,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;                    
 
             // Solver configuration
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.NewtonGMRES;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton; // Newton GMRES will be executed if a GMRES linsolver is chosen
             C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
      
 
@@ -537,9 +515,9 @@ namespace BoSSS.Application.IBM_Solver {
             ISolverSmootherTemplate Prec;
 
             if (name_newton == 1)
-                C.NonLinearSolver.SolverCode = NonLinearSolverCode.NewtonGMRES;
+                C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton; // Newton GMRES will be executed if a GMRES linsolver is chosen
             else
-                C.NonLinearSolver.SolverCode = NonLinearSolverCode.PicardGMRES;
+                C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard; // Picard GMRES will be executed if a GMRES linsolver is chosen
 
 
             switch (precNo)

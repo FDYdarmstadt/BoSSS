@@ -172,7 +172,7 @@ namespace BoSSS.Solution {
                 args,
                 GetBoSSSInstallDir(),
                 out m_MustFinalizeMPI);
-            {
+            if(m_MustFinalizeMPI) {
                 int rank, size;
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
                 csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
@@ -1030,8 +1030,8 @@ namespace BoSSS.Solution {
                     }
 
 
-                    if (this.Control == null || this.Control.LinearSolver.NoOfMultigridLevels > 0) {
-                        this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.LinearSolver.NoOfMultigridLevels : 1));
+                    if (this.Control == null || this.Control.NoOfMultigridLevels > 0) {
+                        this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
                     } else {
                         this.MultigridSequence = new AggregationGridData[0];
                     }
@@ -1608,6 +1608,10 @@ namespace BoSSS.Solution {
             }
         }
 
+        protected virtual void ResetInitial() {
+            // intended to be used user-specific but not necessary
+        }
+
         /// <summary>
         /// number of time-steps to be performed; <see cref="RunSolverMode"/>
         /// terminates if the number of time-steps exceeds this number; At startup, initialized equal to  <see cref="AppControl.NoOfTimesteps"/>.
@@ -1717,9 +1721,9 @@ namespace BoSSS.Solution {
         /// </list>
         /// </remarks>
         public virtual void RunSolverMode() {
-            
+
             SetUpEnvironment(); // remark: tracer is not avail before setup
-            
+
             using (var tr = new FuncTrace()) {
 
                 var rollingSavesTsi = new List<Tuple<int, ITimestepInfo>>();
@@ -1745,12 +1749,13 @@ namespace BoSSS.Solution {
                     }
                 }
 
+                if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
+                    PlotCurrentState(physTime, i0, this.Control.SuperSampling);
+
                 var ts0 = SaveToDatabase(i0, physTime); // save the initial value
                 if (this.RollingSave > 0)
                     rollingSavesTsi.Add(Tuple.Create(0, ts0));
 
-                if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
-                    PlotCurrentState(physTime, i0, this.Control.SuperSampling);
 
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
@@ -1769,94 +1774,100 @@ namespace BoSSS.Solution {
                 for (int s = 0; s < this.Control.AMR_startUpSweeps; s++) {
                     this.MpiRedistributeAndMeshAdapt(i, physTime);
 
-                    if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
-                        PlotCurrentState(physTime, new TimestepNumber(i, s + 1), this.Control.SuperSampling);
-                }
 
-                for (i = i0.MajorNumber + 1; (i <= i0.MajorNumber + (long)NoOfTimesteps) && EndTime - physTime > 1.0E-10 && !TerminationKey; i++) {
-                    tr.Info("performing timestep " + i + ", physical time = " + physTime);
-                    this.MpiRedistributeAndMeshAdapt(i, physTime);
-                    this.QueryResultTable.UpdateKey("Timestep", ((int)i));
-                    double dt = RunSolverOneStep(i, physTime, -1);
-                    tr.Info("simulated time: " + dt + " timeunits.");
-                    tr.LogMemoryStat();
-                    physTime += dt;
-
-                    ITimestepInfo tsi = null;
-                    if (i % SavePeriod == 0) {
-                        tsi = SaveToDatabase(i, physTime);
-                        this.ProfilingLog();
+                    if (this.Control != null && this.Control.AdaptiveMeshRefinement) {
+                        ResetInitial();
+                        if (this.Control.ImmediatePlotPeriod > 0)
+                            PlotCurrentState(physTime, i0, this.Control.SuperSampling);
                     }
-                    if (this.RollingSave > 0) {
-                        if (tsi == null) {
+
+                    for (i = i0.MajorNumber + 1; (i <= i0.MajorNumber + (long)NoOfTimesteps) && EndTime - physTime > 1.0E-10 && !TerminationKey; i++) {
+                        tr.Info("performing timestep " + i + ", physical time = " + physTime);
+                        this.MpiRedistributeAndMeshAdapt(i, physTime);
+                        this.QueryResultTable.UpdateKey("Timestep", ((int)i));
+                        double dt = RunSolverOneStep(i, physTime, -1);
+                        tr.Info("simulated time: " + dt + " timeunits.");
+                        tr.LogMemoryStat();
+                        physTime += dt;
+
+                        ITimestepInfo tsi = null;
+                        if (i % SavePeriod == 0) {
                             tsi = SaveToDatabase(i, physTime);
+                            this.ProfilingLog();
                         }
-                        rollingSavesTsi.Add(Tuple.Create(i, tsi));
+                        if (this.RollingSave > 0) {
+                            if (tsi == null) {
+                                tsi = SaveToDatabase(i, physTime);
+                            }
+                            rollingSavesTsi.Add(Tuple.Create(i, tsi));
 
-                        while (rollingSavesTsi.Count > this.RollingSave) { // delete overdue rolling timesteps...
-                            var top_i_tsi = rollingSavesTsi[0];
+                            while (rollingSavesTsi.Count > this.RollingSave) { // delete overdue rolling timesteps...
+                                var top_i_tsi = rollingSavesTsi[0];
 
-                            rollingSavesTsi.RemoveAt(0);
+                                rollingSavesTsi.RemoveAt(0);
 
-                            if ((top_i_tsi.Item1 != 0) && (top_i_tsi.Item1 % SavePeriod != 0)) { // ...only if they should not be saved anyway
-                                if (DatabaseDriver.FsDriver != null &&
-                                    !this.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
-                                    if (MPIRank == 0) {
-                                        this.CurrentSessionInfo.RemoveTimestep(top_i_tsi.Item2.ID);
-                                        ((DatabaseController)this.m_Database.Controller).DeleteTimestep(top_i_tsi.Item2, false);
+                                if ((top_i_tsi.Item1 != 0) && (top_i_tsi.Item1 % SavePeriod != 0)) { // ...only if they should not be saved anyway
+                                    if (DatabaseDriver.FsDriver != null &&
+                                        !this.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
+                                        if (MPIRank == 0) {
+                                            this.CurrentSessionInfo.RemoveTimestep(top_i_tsi.Item2.ID);
+                                            ((DatabaseController)this.m_Database.Controller).DeleteTimestep(top_i_tsi.Item2, false);
+                                        }
                                     }
                                 }
                             }
                         }
+
+                        if (this.Control != null && this.Control.ImmediatePlotPeriod > 0 && i % this.Control.ImmediatePlotPeriod == 0)
+                            PlotCurrentState(physTime, i, this.Control.SuperSampling);
+                    }
+                    i--;
+
+                    if (i % SavePeriod != 0) {
+                        SaveToDatabase(i, physTime);
                     }
 
-                    if (this.Control != null && this.Control.ImmediatePlotPeriod > 0 && i % this.Control.ImmediatePlotPeriod == 0)
-                        PlotCurrentState(physTime, i, this.Control.SuperSampling);
-                }
-                i--;
 
-                if (i % SavePeriod != 0) {
-                    SaveToDatabase(i, physTime);
-                }
+                    // Evaluate queries and write log file (either to session directory
+                    // or current directory)
+                    m_queryHandler.EvaluateQueries(this.m_RegisteredFields.Union(m_IOFields), physTime);
+                    foreach (var kv in m_queryHandler.QueryResults) {
+                        QueryResultTable.LogValue(kv.Key, kv.Value);
+                        if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey(kv.Key))
+                            this.CurrentSessionInfo.KeysAndQueries.Add(kv.Key, kv.Value);
+                    }
 
-               
-                // Evaluate queries and write log file (either to session directory
-                // or current directory)
-                m_queryHandler.EvaluateQueries(this.m_RegisteredFields.Union(m_IOFields), physTime);
-                foreach (var kv in m_queryHandler.QueryResults) {
-                    QueryResultTable.LogValue(kv.Key, kv.Value);
-                    if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey(kv.Key))
-                        this.CurrentSessionInfo.KeysAndQueries.Add(kv.Key, kv.Value);
-                }
+                    if (MPIRank == 0 && m_queryHandler.QueryResults.Count > 0) {
+                        TextWriter queryLogFile_Txt;
 
-                if (MPIRank == 0 && m_queryHandler.QueryResults.Count > 0) {
-                    TextWriter queryLogFile_Txt;
+                        if (Control != null && Control.savetodb) {
+                            queryLogFile_Txt = DatabaseDriver.FsDriver.GetNewLog("queryResults", this.CurrentSessionInfo.ID);
+                        } else {
+                            try {
+                                queryLogFile_Txt = new StreamWriter("queryResults.txt");
+                            } catch (Exception e) {
+                                // in a parameter study, 
+                                //     - when running in different processes
+                                //     - but simultaneously
+                                //     - without database
+                                //  two or more processes may try to access queryResults.txt 
+                                //  => Exception
+                                // this is such a rare case, that I don't implement a smarter solution
+                                // (in the parameter study case, the query results will be in the ParameterStudy file anyway
 
-                    if (Control != null && Control.savetodb) {
-                        queryLogFile_Txt = DatabaseDriver.FsDriver.GetNewLog("queryResults", this.CurrentSessionInfo.ID);
-                    } else {
-                        try {
-                            queryLogFile_Txt = new StreamWriter("queryResults.txt");
-                        } catch (Exception e) {
-                            // in a parameter study, 
-                            //     - when running in different processes
-                            //     - but simultaneously
-                            //     - without database
-                            //  two or more processes may try to access queryResults.txt 
-                            //  => Exception
-                            // this is such a rare case, that I don't implement a smarter solution
-                            // (in the parameter study case, the query results will be in the ParameterStudy file anyway
+                                Console.WriteLine("WARNING: not writing queryResults.txt file due to exception: {0} \n '{1}'",
+                                    e.GetType().Name, e.Message);
+                                queryLogFile_Txt = null;
+                            }
+                        }
 
-                            Console.WriteLine("WARNING: not writing queryResults.txt file due to exception: {0} \n '{1}'",
-                                e.GetType().Name, e.Message);
-                            queryLogFile_Txt = null;
+                        if (queryLogFile_Txt != null) {
+                            QueryHandler.LogQueryResults(m_queryHandler.QueryResults, queryLogFile_Txt);
+                            queryLogFile_Txt.Close();
                         }
                     }
 
-                    if (queryLogFile_Txt != null) {
-                        QueryHandler.LogQueryResults(m_queryHandler.QueryResults, queryLogFile_Txt);
-                        queryLogFile_Txt.Close();
-                    }
+                    CorrectlyTerminated = true;
                 }
             }
         }
@@ -1925,8 +1936,8 @@ namespace BoSSS.Solution {
                             this.LsTrk.Invalidate();
                         }
 
-                        if (this.Control == null || this.Control.LinearSolver.NoOfMultigridLevels > 0)
-                            this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.LinearSolver.NoOfMultigridLevels : 1));
+                        if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
+                            this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
                         else
                             this.MultigridSequence = new AggregationGridData[0];
 
@@ -2082,9 +2093,9 @@ namespace BoSSS.Solution {
                             }
                             oldGridData = null;
 
-                            if(this.Control == null || this.Control.LinearSolver.NoOfMultigridLevels > 0)
+                            if(this.Control == null || this.Control.NoOfMultigridLevels > 0)
                                 this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData,
-                                    MaxDepth: (this.Control != null ? this.Control.LinearSolver.NoOfMultigridLevels : 1));
+                                    MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
                             else
                                 this.MultigridSequence = new AggregationGridData[0];
 
@@ -2325,17 +2336,21 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Called before application finishes (internal Bye)
         /// </summary>
-        void ByeInt(bool CorrectlyTerminated) {
+        void ByeInt() {
             // remove the 'NotTerminated' tag from the session info
             // =====================================================
 
             // code extra-cautious, since exceptions in Dispose() are, especially in Mono,
             // sometimes not correctly reported and may cause unexplainable segfaults.
-            var csi = this.CurrentSessionInfo;
+            var app = this;
+            if (app == null)
+                return;
+
+            var csi = app.CurrentSessionInfo;
             IEnumerable<string> tags = csi != null ? csi.Tags : null;
             bool contains_not_terminated = tags != null ? tags.Contains(SessionInfo.NOT_TERMINATED_TAG) : false;
-            if (csi != null && tags != null && CorrectlyTerminated && contains_not_terminated) {
-
+            if (csi != null && tags != null && app.CorrectlyTerminated && contains_not_terminated) {
+                
                 Console.WriteLine("Removing tag: " + SessionInfo.NOT_TERMINATED_TAG);
                 IList<string> sessTags = tags.ToList();
                 sessTags.Remove(SessionInfo.NOT_TERMINATED_TAG);
@@ -2566,12 +2581,14 @@ namespace BoSSS.Solution {
                     }
 
                     // finalize
+                    Console.WriteLine("Parameter study run " + iPstudy + " successful: " + CorrectlyTerminated);
 #if DEBUG
                     {
 #else
                     try {
 #endif
-                        app.ByeInt(CorrectlyTerminated);
+
+                        app.ByeInt();
                         app.Bye();
                         app.ProfilingLog();
 #if DEBUG
@@ -2607,7 +2624,8 @@ namespace BoSSS.Solution {
                 log.Close();
             }
         }
-
+        
+        bool CorrectlyTerminated = false;
 
         static private StreamWriter InitParameterStudyLog(
             ICollection<DGField> ioFields, Application<T> app,
@@ -2806,7 +2824,7 @@ namespace BoSSS.Solution {
         public virtual void Dispose() {
             if (!IsDisposed) {
                 try {
-                    ByeInt(true);
+                    ByeInt();
                     Bye();
                     ProfilingLog();
 

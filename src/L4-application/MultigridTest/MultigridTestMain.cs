@@ -51,7 +51,7 @@ namespace BoSSS.Application.MultigridTest {
             TestProgram.Init();
 
             //BoSSS.Application.MultigridTest.TestProgram.XDG_MatrixPolynomialRestAndPrlgTest(1, 0.0d, 1);
-
+            BoSSS.Application.MultigridTest.TestProgram.XDG_ProlongationTest(3, 0.0d, 1, MultigridOperator.Mode.IdMass);
             //TestProgram.XDG_ProlongationTest(0, 0.3, 1, MultigridOperator.Mode.IdMass);
             //BoSSS.Application.MultigridTest.TestProgram.XDG_MatrixPolynomialRestAndPrlgTest(0, 0.0d, 0);
             //BoSSS.Application.MultigridTest.TestProgram.XDG_MatrixPolynomialRestAndPrlgTest(2, 0.0d, 0);

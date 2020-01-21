@@ -465,12 +465,21 @@ namespace ilPSP.Utils {
         /// <summary>
         /// Overwrites a part of a vector.
         /// </summary>
-        public static void SetSubVector<T,V,W>(this V inp, W sub, int i0, int Length)
+        public static void SetSubVector<T,V,W>(this V dest, W sub, int i0, int Length)
             where V : IList<T>
             where W : IList<T> //
         {
             for (int i = 0; i < Length; i++) {
-                inp[i0 + i] = sub[i];
+                dest[i0 + i] = sub[i];
+            }
+        }
+
+        /// <summary>
+        /// Overwrites a part of a vector.
+        /// </summary>
+        public static void SetSubVector<T>(this T[] dest, T[] sub, int i0, int Length) {
+            for (int i = 0; i < Length; i++) {
+                dest[i0 + i] = sub[i];
             }
         }
 
@@ -1303,5 +1312,19 @@ namespace ilPSP.Utils {
         public static void Clear<T>(this T[] A) {
             Array.Clear(A, 0, A.Length);
         }
+
+        /// <summary>
+        /// Adds an object to a list, only if it is not already in this list,
+        /// i.e. adding an element to a set.
+        /// </summary>
+        public static void SetAdd(this System.Collections.IList l, object o) {
+            foreach(var r in l) {
+                if(r.Equals(o)) {
+                    return;
+                }
+            }
+            l.Add(o);
+        }
+
     }
 }

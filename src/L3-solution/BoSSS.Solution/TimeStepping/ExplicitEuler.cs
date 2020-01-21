@@ -113,11 +113,11 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="sgrd"></param>
         /// <remarks>
         /// This constructor sets
-        /// <see cref="SpatialOperator.SubGridBoundaryModes"/> to default value
+        /// <see cref="SubGridBoundaryModes"/> to default value
         /// BoundaryEdge 
         /// </remarks>
         public ExplicitEuler(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid sgrd = null)
-            : this(spatialOp, Fieldsmap, Parameters, SpatialOperator.SubGridBoundaryModes.BoundaryEdge, timeStepConstraints, sgrd) {
+            : this(spatialOp, Fieldsmap, Parameters, SubGridBoundaryModes.BoundaryEdge, timeStepConstraints, sgrd) {
         }
 
         /// <summary>
@@ -133,14 +133,14 @@ namespace BoSSS.Solution.Timestepping {
         /// </param>
         /// <param name="sgrdBnd">
         /// Options for the treatment of edges at the boundary of a SubGrid,
-        /// <see cref="SpatialOperator.SubGridBoundaryModes"/></param>
+        /// <see cref="SubGridBoundaryModes"/></param>
         /// <param name="timeStepConstraints">
         /// optional list of time step constraints <see cref="TimeStepConstraint"/>
         /// </param>
         /// <param name="sgrd">
         /// optional restriction to computational domain
         /// </param>
-        public ExplicitEuler(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, SpatialOperator.SubGridBoundaryModes sgrdBnd, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid sgrd = null) {
+        public ExplicitEuler(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, SubGridBoundaryModes sgrdBnd, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid sgrd = null) {
             using (new ilPSP.Tracing.FuncTrace()) {
 
                 // verify input

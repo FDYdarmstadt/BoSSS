@@ -179,12 +179,12 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean;
             C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
-            C.ComputeEnergy = true;
+            C.ComputeEnergyProperties = true;
 
             // Timestepping
             // ============
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             double dt = 0.5;
             C.dtMax = dt;
             C.dtMin = dt;
@@ -385,12 +385,12 @@ namespace BoSSS.Application.XNSE_Solver {
                 C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 2;
             }
 
-            C.ComputeEnergy = true;
+            C.ComputeEnergyProperties = true;
 
             // Timestepping
             // ============
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 100;
@@ -958,7 +958,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             //C.LevelSetSmoothing = false;
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             //C.LevelSetOptions.CutCellVelocityProjectiontype = Solution.LevelSetTools.Advection.NonconservativeAdvection.CutCellVelocityProjectiontype.L2_plain;
             C.dtMax = dt;
             C.dtMin = dt;
@@ -1141,7 +1141,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // Timestepping
             // ============
 
-            C.CompMode = AppControl._CompMode.Steady;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
 
             // haben fertig...
             // ===============
@@ -1294,7 +1294,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region solver
 
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
-            C.ComputeEnergy = false;
+            C.ComputeEnergyProperties = false;
 
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
@@ -1313,7 +1313,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region time
 
             C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             //C.TimeStepper = XNSE_Control._Timestepper.BDF2;
             double dt = 0.1;
             C.dtMax = dt;
@@ -1542,7 +1542,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             double dt = 0.1;
             C.dtMax = dt;
             C.dtMin = dt;
@@ -1961,7 +1961,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.PressureBlockPrecondMode = MultigridOperator.Mode.IdMass;
             C.LinearSolver.NoOfMultigridLevels = 1;
 
-            C.ComputeEnergy = false;
+            C.ComputeEnergyProperties = false;
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
@@ -1974,7 +1974,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============
             #region time
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             double dt = 1e-3;
             C.dtMax = dt;
             C.dtMin = dt;
@@ -2169,7 +2169,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============
             #region time
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             double dt = 1e-4;
             C.dtMax = dt;
             C.dtMin = dt;
@@ -2402,12 +2402,12 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.ComputeEnergy = false;
+            C.ComputeEnergyProperties = false;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.3;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
 
-            C.LSContiProjectionMethod = ContinuityProjectionOption.ContinuousDG;
+            C.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 100;
@@ -2437,7 +2437,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Iterative;
             C.LSunderrelax = 0.7;
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
@@ -2708,7 +2708,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.dt_increment = 4;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
  
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
 
             double dt = 1e-2;
             C.dtMax = dt;
@@ -2947,7 +2947,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
 
-            C.ComputeEnergy = false;
+            C.ComputeEnergyProperties = false;
 
             #endregion
 
@@ -2955,7 +2955,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============
             #region time
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             double dt = 0.001;
             C.dtMax = dt;
             C.dtMin = dt;
@@ -3114,7 +3114,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
 
-            C.ComputeEnergy = false;
+            C.ComputeEnergyProperties = false;
 
             #endregion
 
@@ -3122,7 +3122,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============
             #region time
 
-            C.CompMode = AppControl._CompMode.Steady;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             double dt = 0.1;
             C.dtMax = dt;
             C.dtMin = dt;
@@ -3279,7 +3279,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
 
-            C.ComputeEnergy = false;
+            C.ComputeEnergyProperties = false;
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
@@ -3291,7 +3291,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============
             #region time
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.dtFixed = 0.01;
             C.Endtime = 1000;
             C.NoOfTimesteps = 1;
@@ -3533,7 +3533,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             double dt = 1e-3; // (1.0 / (double)kelem) / 16.0;
             C.dtMax = dt;
             C.dtMin = dt;
@@ -3801,7 +3801,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.ComputeInterfaceEnergy = true;
+            C.ComputeEnergyProperties = true;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
@@ -3839,7 +3839,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
 
             double dt = 5e-5;
             C.dtMax = dt;
@@ -4070,7 +4070,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.dt_increment = 20;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             //C.TimeStepper = XNSE_Control._Timestepper.BDF2;
             double dt = 1e-4; 
             C.dtMax = dt;
@@ -4231,7 +4231,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
-            C.ComputeEnergy = false;
+            C.ComputeEnergyProperties = false;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
@@ -4250,7 +4250,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============
             #region time
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             double dt = 1e-2; 
             C.dtMax = dt;
             C.dtMin = dt;
@@ -4485,7 +4485,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============
             #region time
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             double dt = 1e-5;
             C.dtMax = dt;
             C.dtMin = dt;
@@ -4693,7 +4693,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============
             #region time
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             double dt = 1e-3;
             C.dtMax = dt;
             C.dtMin = dt;
@@ -4876,7 +4876,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #endregion
 
 
-            C.CompMode = AppControl._CompMode.Steady;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
 
 
             return C;
@@ -4969,9 +4969,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.InitialValues_Evaluators.Add("Phi", (X => X[1] - X[0] + 0.2));
 
-            C.ComputeEnergy = false;
+            C.ComputeEnergyProperties = false;
 
-            C.CompMode = AppControl._CompMode.Steady;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
@@ -4990,7 +4990,7 @@ namespace BoSSS.Application.XNSE_Solver {
             if(D == 3)
                 C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
 
-            AppControl._CompMode compMode = AppControl._CompMode.Steady;
+            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Steady;
 
             // basic database options
             // ======================
@@ -5197,7 +5197,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.ComputeEnergy = false;
+            C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
@@ -5211,7 +5211,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
 
-            C.Option_LevelSetEvolution = (compMode == AppControl._CompMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
+            C.Option_LevelSetEvolution = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
@@ -5225,9 +5225,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-            C.Timestepper_LevelSetHandling = (compMode == AppControl._CompMode.Steady) ? LevelSetHandling.None : LevelSetHandling.LieSplitting;
+            C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.LieSplitting;
 
-            C.CompMode = compMode;
+            C.TimesteppingMode = compMode;
             double dt = 3e-3;
             C.dtMax = dt;
             C.dtMin = dt;
@@ -5248,7 +5248,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             XNSE_Control C = new XNSE_Control();
 
-            AppControl._CompMode compMode = AppControl._CompMode.Steady;
+            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Steady;
 
             // basic database options
             // ======================
@@ -5393,7 +5393,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.ComputeEnergy = false;
+            C.ComputeEnergyProperties = false;
 
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
 
@@ -5410,7 +5410,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
-            C.CompMode = compMode;
+            C.TimesteppingMode = compMode;
             double dt = 1.0;
             C.dtMax = dt;
             C.dtMin = dt;
