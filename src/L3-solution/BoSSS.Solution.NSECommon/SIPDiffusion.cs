@@ -52,7 +52,6 @@ namespace BoSSS.Solution.NSECommon {
     /// </summary>
     public class SIPDiffusion : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient, ISupportsJacobianComponent    {
  
-        Func<double[],double> Coefficient;
         DiffusionMode Mode;
 
         string Argument;
@@ -72,6 +71,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="BcMap">Boundary condition map</param>
         /// <param name="Argument">The argument of the flux. Must be compatible with the DiffusionMode.</param>
         /// <param name="PenaltyLengthScales"></param>
+        [Obsolete]
         public SIPDiffusion(Func<double[],double> Coefficient, double PenaltyBase, MultidimensionalArray PenaltyLengthScales, DiffusionMode Mode, IncompressibleBoundaryCondMap BcMap, string Argument) {
             this.Coefficient = Coefficient;
             this.PenaltyBase = PenaltyBase;
