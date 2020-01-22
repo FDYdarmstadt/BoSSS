@@ -15,7 +15,9 @@ limitations under the License.
 */
 
 using BoSSS.Application.FSI_Solver;
+using BoSSS.Foundation.Comm;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using ilPSP;
 using MPI.Wrappers;
@@ -27,11 +29,13 @@ using System.Linq;
 namespace FSI_Solver {
     internal class FSI_LevelSetUpdate {
 
-        internal FSI_LevelSetUpdate(LevelSetTracker levelSetTracker) {
+        internal FSI_LevelSetUpdate(LevelSetTracker levelSetTracker, IGridData gridData) {
             m_LevelSetTracker = levelSetTracker;
+            this.gridData = gridData;
         }
 
         private readonly LevelSetTracker m_LevelSetTracker;
+        private readonly IGridData gridData;
 
         /// <summary>
         /// compiles a cell mask from all cells with a specific color
@@ -206,6 +210,78 @@ namespace FSI_Solver {
                 ColoredCellsSorted.Insert(ListIndex, new int[] { CellID, CellColor[CellID] });
             }
             return ColoredCellsSorted;
+        }
+
+        internal void ColorNeighborCells(int[] coloredCells, int[] coloredCellsExchange) {
+            int neighbourSearchDepth = 1;
+            int noOfLocalCells = gridData.iLogicalCells.NoOfLocalUpdatedCells;
+            for (int k = 0; k < neighbourSearchDepth; k++) {
+                for (int j = 0; j < noOfLocalCells; j++) {
+                    gridData.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaEdges, out int[] CellNeighbors, out _);
+                    for (int i = 0; i < CellNeighbors.Length; i++) {
+                        if (coloredCellsExchange[CellNeighbors[i]] != 0 && coloredCellsExchange[j] == 0) {
+                            coloredCells[j] = coloredCellsExchange[CellNeighbors[i]];
+                        }
+                    }
+                }
+                coloredCellsExchange = coloredCells.CloneAs();
+                coloredCellsExchange.MPIExchange(gridData);
+            }
+        }
+
+        internal void RecolorCellsOfNeighborParticles(int[] coloredCells, int[] coloredCellsExchange, int MPISize) {
+            int[,] colorToRecolorWith = FindCellsToRecolor(coloredCells, coloredCellsExchange, MPISize);
+            int maxColor = coloredCells.Max().MPIMax();
+            int J = gridData.iLogicalCells.NoOfLocalUpdatedCells;
+            for (int i = maxColor; i > 0; i--) {
+                if (colorToRecolorWith[i, 0] != 0) {
+                    for (int j = 0; j < J; j++) {
+                        if (coloredCells[j] == colorToRecolorWith[i, 0]) {
+                            coloredCells[j] = colorToRecolorWith[i, 1];
+                        }
+                    }
+                }
+            }
+        }
+
+        private int[,] FindCellsToRecolor(int[] coloredCells, int[] coloredCellsExchange, int MPISize) {
+            int maxColor = coloredCells.Max().MPIMax();
+            int noOfLocalCells = gridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int[,] colorToRecolorWith = new int[maxColor + 1, 2];
+            for (int j = 0; j < noOfLocalCells; j++) {
+                if (coloredCells[j] != 0) {
+                    gridData.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaEdges, out int[] CellNeighbors, out _);
+                    for (int i = 0; i < CellNeighbors.Length; i++) {
+                        if (coloredCellsExchange[CellNeighbors[i]] != coloredCells[j] && coloredCellsExchange[CellNeighbors[i]] > 0) {
+                            if (coloredCellsExchange[CellNeighbors[i]] < coloredCells[j] || colorToRecolorWith[coloredCells[j], 1] > coloredCellsExchange[CellNeighbors[i]]) {
+                                colorToRecolorWith[coloredCells[j], 0] = coloredCells[j];
+                                colorToRecolorWith[coloredCells[j], 1] = coloredCellsExchange[CellNeighbors[i]];
+                            }
+                            if (coloredCellsExchange[CellNeighbors[i]] > coloredCells[j]) {
+                                if (colorToRecolorWith[coloredCellsExchange[CellNeighbors[i]], 0] == 0 || colorToRecolorWith[coloredCellsExchange[CellNeighbors[i]], 1] > coloredCells[j]) {
+                                    colorToRecolorWith[coloredCellsExchange[CellNeighbors[i]], 0] = coloredCellsExchange[CellNeighbors[i]];
+                                    colorToRecolorWith[coloredCellsExchange[CellNeighbors[i]], 1] = coloredCells[j];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Communicate
+            // -----------------------------
+            int[][,] GlobalColorToRecolorWith = colorToRecolorWith.MPIGatherO(0);
+            GlobalColorToRecolorWith = GlobalColorToRecolorWith.MPIBroadcast(0);
+            for (int m = 0; m < MPISize; m++) {
+                for (int i = 0; i < maxColor + 1; i++) {
+                    if (GlobalColorToRecolorWith[0][i, 1] == 0 || GlobalColorToRecolorWith[0][i, 1] > GlobalColorToRecolorWith[m][i, 1] && GlobalColorToRecolorWith[m][i, 1] != 0) {
+                        GlobalColorToRecolorWith[0][i, 0] = GlobalColorToRecolorWith[m][i, 0];
+                        GlobalColorToRecolorWith[0][i, 1] = GlobalColorToRecolorWith[m][i, 1];
+                    }
+                }
+            }
+            colorToRecolorWith = GlobalColorToRecolorWith[0];
+            return colorToRecolorWith;
         }
     }
 }

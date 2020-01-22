@@ -73,13 +73,8 @@ namespace FSI_Solver {
             // Step 1
             // Some var definintion
             // =======================================================
-            FSI_LevelSetUpdate LevelSetUpdate = new FSI_LevelSetUpdate(m_LevelSetTracker);
             int ParticleOffset = particles.Length;
-            double distanceThreshold = m_hMin / 10;
-            //int J = gridData.iLogicalCells.NoOfLocalUpdatedCells;
-            //int[][] ColoredCellsSorted = LevelSetUpdate.ColoredCellsFindAndSort(cellColor).ToArray();
-            //CellMask ParticleCutCells = LevelSetUpdate.CellsOneColor(gridData, ColoredCellsSorted, m_CurrentColor, J);
-            
+            double distanceThreshold = m_hMin / 5;
 
             // Step 2
             // Loop over time until the particles hit.
@@ -436,7 +431,6 @@ namespace FSI_Solver {
                 // Calculate the support point of the two particles, 
                 // which are the closest points if the algorithm is finished.
                 // -------------------------------------------------------
-                Console.WriteLine("negativeSupportVector " + negativeSupportVector[0] + " " + negativeSupportVector[1]);
                 CalculateSupportPoint(Particle0, SubParticleID0, negativeSupportVector, out closestPoints[0]);
                 // Particle-Particle collision
                 if (Particle1 != null) {

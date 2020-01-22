@@ -140,7 +140,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control TwoParticles(int k = 3, int amrLevel = 4, double aspectRatio = 0.5, double angle = -0) {
+        public static FSI_Control TwoParticles(int k = 2, int amrLevel = 2, double aspectRatio = 0.5, double angle = -0) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/home/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
@@ -149,7 +149,7 @@ namespace BoSSS.Application.FSI_Solver {
                 "Wall"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 10, lengthY: 10, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
+            C.SetGrid(lengthX: 4, lengthY: 4, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel: amrLevel);
             C.hydrodynamicsConvergenceCriterion = 1e-1;
             // Fluid Properties
@@ -192,6 +192,67 @@ namespace BoSSS.Application.FSI_Solver {
             C.LSunderrelax = 1;
             C.maxIterationsFullyCoupled = 1000000;
             
+
+            return C;
+        }
+
+        public static FSI_Control PackedParticles(int k = 2, double aspectRatio = 0.5, double angle = -0) {
+            FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
+            //C.SetSaveOptions(@"/home/ij83requ/default_bosss_db", 1);
+            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
+
+            List<string> boundaryValues = new List<string> {
+                "Wall"
+            };
+            //C.SetBoundaries(boundaryValues);
+            C.SetGrid(lengthX: 3, lengthY: 3, cellsPerUnitLength: 22, periodicX: true, periodicY: true);
+            C.hydrodynamicsConvergenceCriterion = 1e-1;
+            // Fluid Properties
+            // =============================
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.IncludeConvection = false;
+            C.CoefficientOfRestitution = 1;
+
+            // Particle Properties
+            // =============================
+            double particleDensity = 1;
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, 1);
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { -0.75, 0.333 }, startAngl: 0, activeStress: 10));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { 0.75, 0.333 }, startAngl: 180, activeStress: 10));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { -0.75, -0.333 }, startAngl: 0, activeStress: 10));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { 0.75, -0.333 }, startAngl: 180, activeStress: 10));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { -0.75, 1 }, startAngl: 180, activeStress: 10));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { -0.75, -1 }, startAngl: 180, activeStress: 10));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { 0.75, -1 }, startAngl: 0, activeStress: 10));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { 0.75, 1 }, startAngl: 0, activeStress: 10));
+
+            // misc. solver options
+            // =============================  
+            C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
+            double dt = 1e-2;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 100000000;
+            C.NoOfTimesteps = int.MaxValue;
+            C.AdvancedDiscretizationOptions.PenaltySafety = 4;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            C.LevelSetSmoothing = false;
+            C.NonLinearSolver.MaxSolverIterations = 1000;
+            C.NonLinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.LinearSolver.MaxSolverIterations = 1000;
+            C.LinearSolver.MinSolverIterations = 1;
+            C.LSunderrelax = 1.0;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+
+            // Coupling Properties
+            // =============================
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.LSunderrelax = 1;
+            C.maxIterationsFullyCoupled = 1000000;
+
 
             return C;
         }

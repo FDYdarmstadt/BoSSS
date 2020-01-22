@@ -591,89 +591,26 @@ namespace BoSSS.Application.FSI_Solver {
 
         public static FSI_Control Test_StickyTrap(int k = 2)
         {
-            FSI_Control C = new FSI_Control();
-
-
-            const double BaseSize = 1.0;
-
-
-            // basic database options
-            // ======================
-
-            //C.DbPath = @"\\dc1\userspace\deriabina\bosss_db";
-            C.savetodb = false;
-            C.saveperiod = 1;
-            C.ProjectName = "ParticleCollisionTest";
-            C.ProjectDescription = "Gravity";
-            C.SessionName = C.ProjectName;
-            C.Tags.Add("with immersed boundary method");
-            C.AdaptiveMeshRefinement = false;
-            C.RefinementLevel = 2;
-            C.SessionName = "fjkfjksdfhjk";
-
-            C.pureDryCollisions = true;
-            C.SetDGdegree(k);
+            FSI_Control C = new FSI_Control(degree: k, projectName: "ParticleCollisionTest");
+            C.pureDryCollisions = false;
 
             // grid and boundary conditions
-            // ============================
-
-            C.GridFunc = delegate
-            {
-
-                int q, r;
-
-                q = 40;
-                r = 40;
-
-                double[] Xnodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, q + 1);
-                double[] Ynodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, r + 1);
-
-                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
-
-                grd.EdgeTagNames.Add(1, "Wall_left");
-                grd.EdgeTagNames.Add(2, "Wall_right");
-                grd.EdgeTagNames.Add(3, "Pressure_Outlet_lower");
-                grd.EdgeTagNames.Add(4, "Pressure_Outlet_upper");
-
-
-                grd.DefineEdgeTags(delegate (double[] X)
-                {
-                    byte et = 0;
-                    if (Math.Abs(X[0] - (-1.5 * BaseSize)) <= 1.0e-8)
-                        et = 1;
-                    if (Math.Abs(X[0] + (-1.5 * BaseSize)) <= 1.0e-8)
-                        et = 2;
-
-                    if (Math.Abs(X[1] - (-1.5 * BaseSize)) <= 1.0e-8)
-                        et = 3;
-                    if (Math.Abs(X[1] + (-1.5 * BaseSize)) <= 1.0e-8)
-                        et = 4;
-
-
-                    return et;
-                });
-
-                Console.WriteLine("Cells:" + grd.NumberOfCells);
-
-                return grd;
+            // ============================ 
+            List<string> boundaryValues = new List<string> {
+            "Wall_left",
+            "Wall_right",
+            "Pressure_Outlet_lower",
+            "Pressure_Outlet_upper"
             };
-
-            C.GridPartType = GridPartType.Hilbert;
-
-            C.AddBoundaryValue("Wall_left");
-            C.AddBoundaryValue("Wall_right");
-            C.AddBoundaryValue("Pressure_Outlet_lower");
-            C.AddBoundaryValue("Pressure_Outlet_upper");
-
-            // Boundary values for level-set
-            //C.BoundaryFunc = new Func<double, double>[] { (t) => 0.1 * 2 * Math.PI * -Math.Sin(Math.PI * 2 * 1 * t), (t) =>  0};
-            //C.BoundaryFunc = new Func<double, double>[] { (t) => 0, (t) => 0 };
-
+            C.SetBoundaries(boundaryValues);
+            C.SetGrid(lengthX: 3, lengthY: 3, cellsPerUnitLength: 10, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(amrLevel: 3);
             // Initial Values
             // ==============
 
             // Coupling Properties
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.hydrodynamicsConvergenceCriterion = 1e-1;
 
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1.0;
