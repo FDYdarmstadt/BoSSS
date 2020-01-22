@@ -126,27 +126,13 @@ namespace BoSSS.Application.IBM_Solver {
 #pragma warning restore 649
         #endregion
 
-        IDictionary<SpeciesId, IEnumerable<double>> Rho {
-            get {
-                double rho = this.Control.PhysicalParameters.rho_A;
-
-                int D = this.GridData.SpatialDimension;
-
-                double[] _rho = new double[D];
-                _rho.SetAll(rho);
-
-                Dictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>>();
-                R.Add(this.LsTrk.GetSpeciesId("A"), _rho);
-                return R;
-            }
-        }
 
         /// <summary>
         /// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
         /// </summary>
         virtual protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
             get {
-                double rho = 0;// this.Control.PhysicalParameters.rho_A;
+                double rho = this.Control.PhysicalParameters.rho_A;
 
                 int D = this.GridData.SpatialDimension;
 
@@ -155,8 +141,9 @@ namespace BoSSS.Application.IBM_Solver {
                 //No MassMatrix for the pressure
                 _rho[D] = 0;
 
-                Dictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>>();
-                R.Add(this.LsTrk.GetSpeciesId("A"), _rho);
+                Dictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>> {
+                    { this.LsTrk.GetSpeciesId("A"), _rho }
+                };
 
                 return R;
             }
@@ -441,13 +428,13 @@ namespace BoSSS.Application.IBM_Solver {
                         this.FluidSpecies, this.HMForder,
                         this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
                         false, this.Control.NonLinearSolver, this.Control.LinearSolver
-                        );
+                        ) {
+                        m_ResLogger = base.ResLogger,
+                        m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification), this.ResidualContinuity.Identification),
 
-                    m_BDF_Timestepper.m_ResLogger = base.ResLogger;
-                    m_BDF_Timestepper.m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification), this.ResidualContinuity.Identification);
-            
-                    m_BDF_Timestepper.SessionPath = SessionPath;
-                    m_BDF_Timestepper.Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit;
+                        SessionPath = SessionPath,
+                        Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit
+                    };
                 }
 
             } else {
@@ -966,8 +953,7 @@ namespace BoSSS.Application.IBM_Solver {
             Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count().MPISum());
             base.SetInitial();
 
-            double LevsetMin, LevsetMax;
-            this.LevSet.GetExtremalValues(out LevsetMin, out LevsetMax);
+            this.LevSet.GetExtremalValues(out double LevsetMin, out double LevsetMax);
             if (LevsetMax == 0.0 && LevsetMin == 0.0) {
                 // User probably does not want to use Levelset, but forgot to set it.
                 LevSet.AccConstant(-1.0);
@@ -1355,7 +1341,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Attention: SENSITIVE TO LEVEL INDICATOR
         /// </summary>
-        bool debug = true;
+        readonly bool debug = true;
 
         /// <summary>
         /// Very primitive refinement indicator, works on a LevelSet criterion.

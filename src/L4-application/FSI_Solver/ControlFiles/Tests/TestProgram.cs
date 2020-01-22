@@ -57,10 +57,10 @@ namespace BoSSS.Application.FSI_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double p0_area = p.GetParticles()[0].Area;
+                double p0_area = p.Particles[0].Area;
                 double p0_area_soll = Math.PI;
-                double p0_Mass = p.GetParticles()[0].Motion.Mass_P;
-                double p1_area = p.GetParticles()[1].Area;
+                double p0_Mass = p.Particles[0].Motion.Mass_P;
+                double p1_area = p.Particles[1].Area;
 
 
                 double diff_Area1 = Math.Abs(p0_area - p0_area_soll);
@@ -113,7 +113,7 @@ namespace BoSSS.Application.FSI_Solver {
                 else
                     Dest_Should = new Vector(-0.0505473360771058, 0.751747291863557); 
 
-                Vector Dest_Is = new Vector((double[])p.GetParticles()[0].Motion.GetPosition(0));
+                Vector Dest_Is = new Vector((double[])p.Particles[0].Motion.GetPosition(0));
 
                 double dist = (Dest_Should - Dest_Is).L2Norm();
 
@@ -136,7 +136,7 @@ namespace BoSSS.Application.FSI_Solver {
                 Vector Dest_Should;
                 Dest_Should = new Vector(0.0, 0.865886176125762);
 
-                Vector Dest_Is = new Vector((double[])p.GetParticles()[0].Motion.GetPosition(0));
+                Vector Dest_Is = new Vector((double[])p.Particles[0].Motion.GetPosition(0));
 
                 double dist = (Dest_Should - Dest_Is).L2Norm();
 
@@ -160,8 +160,8 @@ namespace BoSSS.Application.FSI_Solver {
                 Dest_Should = new Vector(0.0, 0.0767999999999999);
                 double VelY_Should = 0;
 
-                Vector Dest_Is = new Vector((double[])p.GetParticles()[0].Motion.GetPosition(0));
-                double VelY_Is = p.GetParticles()[0].Motion.GetTranslationalVelocity(0)[0];
+                Vector Dest_Is = new Vector((double[])p.Particles[0].Motion.GetPosition(0));
+                double VelY_Is = p.Particles[0].Motion.GetTranslationalVelocity(0)[0];
 
                 double dist = (Dest_Should - Dest_Is).L2Norm();
                 double Vel_Div = Math.Abs(VelY_Should - VelY_Is);
@@ -204,7 +204,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 double ForcesSoll = 5.53747893542498;
 
-                double Forces = p.GetParticles()[0].Motion.GetHydrodynamicForces(0)[0];
+                double Forces = p.Particles[0].Motion.GetHydrodynamicForces(0)[0];
 
                 double DiffForces = Math.Abs(ForcesSoll - Forces);
 
@@ -215,11 +215,9 @@ namespace BoSSS.Application.FSI_Solver {
         [Test]
         public static void PeriodicTest() {
             using (FSI_SolverMain p = new FSI_SolverMain()) {
-
                 var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.TestPeriodicBoundaries();
                 p.Init(ctrl);
                 p.RunSolverMode();
-
                 Vector[] expectedPosition = new Vector[4];
                 expectedPosition[0] = new Vector(0.8, -0.8);
                 expectedPosition[1] = new Vector(-1.2, -0.8);
@@ -228,7 +226,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 double distanceL2 = 0;
                 for (int i = 0; i < 4; i++) {
-                    distanceL2 += (expectedPosition[i] - p.GetParticles()[i].Motion.GetPosition(0)).L2Norm();
+                    distanceL2 += (expectedPosition[i] - p.Particles[i].Motion.GetPosition(0)).L2Norm();
                 }
                 Assert.Less(distanceL2, 0.1, "Particle to far from expected position.");
             }

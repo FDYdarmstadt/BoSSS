@@ -27,17 +27,6 @@ using System.Runtime.Serialization;
 namespace BoSSS.Application.FSI_Solver {
     public class ParticleHydrodynamicsIntegration {
 
-        public ParticleHydrodynamicsIntegration(int spatialDim, VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker levelSetTracker, CellMask cutCells, double fluidViscosity) {
-            m_SpatialDim = spatialDim;
-            m_RequiredOrder = U[0].Basis.Degree * 3 + 2;
-            m_U = U.ToArray();
-            m_P = P;
-            m_LevelSetTracker = levelSetTracker;
-            m_GridData = m_LevelSetTracker.GridDat;
-            m_CutCells = cutCells;
-            m_FluidViscosity = fluidViscosity;
-        }
-
         public ParticleHydrodynamicsIntegration(int spatialDim, VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker levelSetTracker, double fluidViscosity) {
             m_SpatialDim = spatialDim;
             m_RequiredOrder = U[0].Basis.Degree * 3 + 2;
@@ -60,8 +49,6 @@ namespace BoSSS.Application.FSI_Solver {
         private readonly LevelSetTracker m_LevelSetTracker;
         [DataMember]
         private readonly GridData m_GridData;
-        [DataMember]
-        private readonly CellMask m_CutCells;
         [DataMember]
         private readonly double m_FluidViscosity;
 

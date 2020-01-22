@@ -19,15 +19,8 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class DryParticles : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control periodicTest(int k = 2, int amrLevel = 1, double aspectRatio = 2, double angle = -10) {
+        public static FSI_Control PeriodicTest(int k = 2, double aspectRatio = 2) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
-            //C.SetSaveOptions(@"/home/ij83requ/default_bosss_db", 1);
-            //C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
-
-            List<string> boundaryValues = new List<string> {
-                "Pressure_Dirichlet"
-            };
-            //C.SetBoundaries(boundaryValues);
             C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 16, periodicX: true, periodicY: true);
             //C.SetAddaptiveMeshRefinement(amrLevel: amrLevel);
 

@@ -29,22 +29,18 @@ namespace FSI_Solver {
     class FSI_Collision {
         private readonly double m_dt;
         private readonly double m_hMin;
-        private readonly int m_CurrentColor;
         private readonly double m_CoefficientOfRestitution;
         private readonly LevelSetTracker m_LevelSetTracker;
-
         private double AccDynamicTimestep = 0;
-
         private double[][] SaveTimeStepArray;
         private double[][] Distance;
         private Vector[][] DistanceVector;
         private Vector[][] ClosestPoints;
 
-        public FSI_Collision(LevelSetTracker levelSetTracker, int currentColor, double CoefficientOfRestitution, double dt) {
+        public FSI_Collision(LevelSetTracker levelSetTracker, double CoefficientOfRestitution, double dt) {
             m_CoefficientOfRestitution = CoefficientOfRestitution;
             m_dt = dt;
             m_hMin = levelSetTracker.GridDat.Cells.h_minGlobal;
-            m_CurrentColor = currentColor;
             m_LevelSetTracker = levelSetTracker;
         }
 
@@ -69,7 +65,7 @@ namespace FSI_Solver {
         /// <param name="particles">
         /// List of all particles
         /// </param>
-        public void CalculateCollision(Particle[] particles, IGridData gridData, int[] cellColor, LevelSetTracker LsTrk) {
+        public void CalculateCollision(Particle[] particles, IGridData gridData) {
             // Step 1
             // Some var definintion
             // =======================================================

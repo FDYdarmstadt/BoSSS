@@ -591,8 +591,9 @@ namespace BoSSS.Application.FSI_Solver {
 
         public static FSI_Control Test_StickyTrap(int k = 2)
         {
-            FSI_Control C = new FSI_Control(degree: k, projectName: "ParticleCollisionTest");
-            C.pureDryCollisions = false;
+            FSI_Control C = new FSI_Control(degree: k, projectName: "ParticleCollisionTest") {
+                pureDryCollisions = false
+            };
 
             // grid and boundary conditions
             // ============================ 
@@ -945,15 +946,9 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control TestPeriodicBoundaries(int k = 2, int amrLevel = 1, double aspectRatio = 2, double angle = -10) {
+        public static FSI_Control TestPeriodicBoundaries(int k = 2, double aspectRatio = 2) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
-
-            List<string> boundaryValues = new List<string> {
-                "Pressure_Dirichlet"
-            };
-            //C.SetBoundaries(boundaryValues);
             C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 16, periodicX: true, periodicY: true);
-            //C.SetAddaptiveMeshRefinement(amrLevel: amrLevel);
 
             // Fluid Properties
             // =============================

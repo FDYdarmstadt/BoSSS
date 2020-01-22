@@ -196,15 +196,10 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control PackedParticles(int k = 2, double aspectRatio = 0.5, double angle = -0) {
+        public static FSI_Control PackedParticles(int k = 2, double aspectRatio = 0.5) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/home/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
-
-            List<string> boundaryValues = new List<string> {
-                "Wall"
-            };
-            //C.SetBoundaries(boundaryValues);
             C.SetGrid(lengthX: 3, lengthY: 3, cellsPerUnitLength: 22, periodicX: true, periodicY: true);
             C.hydrodynamicsConvergenceCriterion = 1e-1;
             // Fluid Properties
@@ -257,7 +252,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control FixedParticle(int k = 2, int amrLevel = 7, double aspectRatio = 0.2, double angle = -45) {
+        public static FSI_Control FixedParticle(int k = 2, int amrLevel = 7, double aspectRatio = 0.2) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/home/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
