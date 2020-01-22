@@ -82,7 +82,6 @@
   <ItemGroup>
     <Compile Include="ControlFiles\HardcodedControl\HardcodedControl.cs" />
     <Compile Include="ControlFiles\HardcodedControl\HardcodedControlDeriabina.cs" />
-    <Compile Include="ControlFiles\HardcodedControl\FourCellsTest.cs" />
     <Compile Include="ControlFiles\HardcodedControl\DryParticles.cs" />
     <Compile Include="ControlFiles\HardcodedControl\HardcodedControlDeussen.cs" />
     <Compile Include="ControlFiles\HardcodedControl\HC_Dry.cs" />

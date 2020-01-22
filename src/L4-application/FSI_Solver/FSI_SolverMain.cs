@@ -524,7 +524,6 @@ namespace BoSSS.Application.FSI_Solver {
             // =======================================================
             CellMask allParticleMask = null;
             CellMask coloredCellMask = null;
-
             globalParticleColor = levelSetUpdate.DetermineGlobalParticleColor(GridData, cellColor, m_Particles);
             for (int i = 0; i < globalParticleColor.Length; i++) {
                 if (globalParticleColor[i] == 0) {
@@ -565,7 +564,6 @@ namespace BoSSS.Application.FSI_Solver {
                             _globalParticleColor[particlesOfCurrentColor[pC]] = 0;
                         }
                         return levelSetFunctionOneColor;
-
                     }
                     SetLevelSet(levelSetFunction, coloredCellMask, phystime);
                 }
@@ -588,7 +586,6 @@ namespace BoSSS.Application.FSI_Solver {
             // Step 6
             // Update level set tracker
             // =======================================================
-
             LsTrk.UpdateTracker(__NearRegionWith: 2);
         }
 
@@ -616,14 +613,14 @@ namespace BoSSS.Application.FSI_Solver {
         private int[] InitializeColoring() {
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             int JE = GridData.iLogicalCells.NoOfExternalCells + J;
+            MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
             int[] coloredCells = new int[J];
             int[] cellsExchange = new int[JE];
             for (int p = 0; p < m_Particles.Count; p++) {
                 Particle currentParticle = m_Particles[p];
                 double h_min = GridData.iGeomCells.h_min.Min() / 2;
                 for (int j = 0; j < J; j++) {
-                    Vector center = new Vector(GridData.iLogicalCells.GetCenter(j));
-                    if (currentParticle.Contains(center, h_min)) {
+                    if (currentParticle.Contains(new Vector(CellCenters[j, 0], CellCenters[j, 1]), h_min)) {
                         ParticleColor.SetMeanValue(j, p + 1);
                         coloredCells[j] = p + 1;
                         cellsExchange[j] = coloredCells[j];

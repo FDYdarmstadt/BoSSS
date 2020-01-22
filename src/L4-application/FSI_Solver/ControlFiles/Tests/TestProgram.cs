@@ -146,7 +146,6 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-
         [Test]
         public static void StickyTrap()
         {
@@ -210,6 +209,28 @@ namespace BoSSS.Application.FSI_Solver {
                 double DiffForces = Math.Abs(ForcesSoll - Forces);
 
                 Assert.LessOrEqual(DiffForces, 1e-3);
+            }
+        }
+
+        [Test]
+        public static void PeriodicTest() {
+            using (FSI_SolverMain p = new FSI_SolverMain()) {
+
+                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.TestPeriodicBoundaries();
+                p.Init(ctrl);
+                p.RunSolverMode();
+
+                Vector[] expectedPosition = new Vector[4];
+                expectedPosition[0] = new Vector(0.8, -0.8);
+                expectedPosition[1] = new Vector(-1.2, -0.8);
+                expectedPosition[2] = new Vector(-1.2, 1.2);
+                expectedPosition[3] = new Vector(0.8, 1.2);
+
+                double distanceL2 = 0;
+                for (int i = 0; i < 4; i++) {
+                    distanceL2 += (expectedPosition[i] - p.GetParticles()[i].Motion.GetPosition(0)).L2Norm();
+                }
+                Assert.Less(distanceL2, 0.1, "Particle to far from expected position.");
             }
         }
     }
