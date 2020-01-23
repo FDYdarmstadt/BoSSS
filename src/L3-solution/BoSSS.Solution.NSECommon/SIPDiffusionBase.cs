@@ -27,7 +27,7 @@ namespace BoSSS.Solution.NSECommon
     /// <summary>
     /// SIP discretization of diffusion operators for scalar transport equations (i.e. species mass transport and temperature). Analogous to swipViscosity_Term1.
     /// </summary>
-    public abstract class SIPDiffusionBase : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient {
+    public abstract class SIPDiffusionBase : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient{
  
         /// <summary>
         /// The Function in \nabla \dot (Diffusivity \nabla u), e.g. heat conductivity or diffusion coefficient
@@ -188,8 +188,8 @@ namespace BoSSS.Solution.NSECommon
                 Acc += (DiffusivityA * _Grad_vA[d]) * (_uA[0] - u_D) * inp.Normal[d];
             }
 
-            Acc -= DiffusivityA * (_uA[0] - u_D) * (_vA - 0) * pnlty;
-            return -Acc;
+            Acc += DiffusivityA * (_uA[0] - u_D) * (_vA - 0) * pnlty;
+            return Acc;
         }
  
         /// <summary>
