@@ -25,10 +25,8 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Tecplot;
 using ilPSP.Utils;
 using ilPSP.Tracing;
-using BoSSS.Platform;
 using ilPSP.LinSolvers;
 using BoSSS.Solution.Utils;
-using BoSSS.Foundation.SpecFEM;
 using MPI.Wrappers;
 using BoSSS.Foundation.IO;
 using System.Diagnostics;
@@ -37,10 +35,7 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Solution.AdvancedSolvers;
 using ilPSP;
 using BoSSS.Solution.XdgTimestepping;
-using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Grid.Classic;
-using NUnit.Framework;
-using BoSSS.Solution.XNSECommon;
 
 namespace BoSSS.Application.IBM_Solver {
 

@@ -192,7 +192,7 @@ namespace BoSSS.Application.FSI_Solver {
         public int maxIterationsFullyCoupled = 100000;
 
         /// <summary>
-        /// Set true if translation of the particle should be induced by hydrodynamical forces.
+        /// Set true if the lower wall should be plastic, i.e. the coefficient of restitution is 0.
         /// </summary>
         [DataMember]
         public bool LowerWallFullyPlastic = false;
@@ -227,7 +227,6 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         public double LSunderrelax = 1.0;
 
-
         /// <summary>
         /// coefficient of restitution
         /// </summary>
@@ -240,14 +239,17 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         public Vector gravity = new Vector(0, 0);
 
+        /// <summary>
+        /// used for added damping model. By default added damping is not applied to the particles. The value should be set between 0.5-1.5.
+        /// </summary>
         [DataMember]
         public double addedDampingCoefficient = -1;
 
         /// <summary>
-        /// See <see cref="LevelSetHandling"/>
+        /// See <see cref="LevelSetHandling"/>, Lie-Splitting with iterative coupling by default.
         /// </summary>
         [DataMember]
-        public LevelSetHandling Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+        public LevelSetHandling Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
 
         /// <summary>
         /// Function describing the boundary values at the level-set (VelocityX, VelocityY)

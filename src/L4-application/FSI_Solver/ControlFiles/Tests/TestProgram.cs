@@ -102,7 +102,7 @@ namespace BoSSS.Application.FSI_Solver {
         public static void SingleDryParticleAgainstWall([Values(false, true)]  bool MeshRefine) { 
             using (FSI_SolverMain p = new FSI_SolverMain()) {
 
-                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.Test_SingleDryParticleAgainstWall(MeshRefine:MeshRefine);
+                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.Test_SingleDryParticleAgainstWall(MeshRefine);
                 p.Init(ctrl);
                 p.RunSolverMode();
 
@@ -112,29 +112,6 @@ namespace BoSSS.Application.FSI_Solver {
                     Dest_Should = new Vector(0.0867851149899939, -0.709888525146848); 
                 else
                     Dest_Should = new Vector(-0.0505473360771058, 0.751747291863557); 
-
-                Vector Dest_Is = new Vector((double[])p.Particles[0].Motion.GetPosition(0));
-
-                double dist = (Dest_Should - Dest_Is).L2Norm();
-
-                Console.WriteLine("Particle reached position " + Dest_Is + ", expected at " + Dest_Should + ", distance is " + dist);
-
-                Assert.Less(dist, 0.1, "Particle to far from expected position");
-            }
-        }
-
-        [Test]
-        public static void DryParticleBounce()
-        {
-            using (FSI_SolverMain p = new FSI_SolverMain())
-            {
-
-                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.Test_DryParticleBounce();
-                p.Init(ctrl);
-                p.RunSolverMode();
-
-                Vector Dest_Should;
-                Dest_Should = new Vector(0.0, 0.865886176125762);
 
                 Vector Dest_Is = new Vector((double[])p.Particles[0].Motion.GetPosition(0));
 
