@@ -48,10 +48,11 @@ namespace BoSSS.Solution.NSECommon
         /// <param name="BcMap">Boundary condition map</param>
         /// <param name="Argument">The argument of the flux. Must be compatible with the DiffusionMode.</param>
         /// <param name="PenaltyLengthScales"></param>
-        protected SIPDiffusionBase(double PenaltyBase, MultidimensionalArray PenaltyLengthScales, IncompressibleBoundaryCondMap BcMap) {
+        protected SIPDiffusionBase(double PenaltyBase, MultidimensionalArray PenaltyLengthScales, IncompressibleBoundaryCondMap BcMap, double prefactor, bool ParametersOK) {
             this.PenaltyBase = PenaltyBase;
             this.BcMap = BcMap;
             this.cj = PenaltyLengthScales;
+            this.prmsOK = ParametersOK;
         }
 
         public TermActivationFlags BoundaryEdgeTerms {
@@ -68,9 +69,20 @@ namespace BoSSS.Solution.NSECommon
 
         public TermActivationFlags VolTerms {
             get {
-                return TermActivationFlags.GradUxGradV;
+                return TermActivationFlags.GradUxGradV | TermActivationFlags.UxGradV; // should be changed. The term UxGradV is not allways needed
             }
         }
+
+
+        /// <summary>
+        /// really really ugly hack for defining if the <see cref="Diffusivity(double[])"/> method should take arguments or variables as argument
+        /// </summary>
+        bool prmsOK;
+
+        /// <summary>
+        /// Factor multiplying the forms. For example useful if working with non-dimensional equations.
+        /// </summary>
+        protected double prefactor;
 
         protected MultidimensionalArray cj;
 
@@ -148,8 +160,10 @@ namespace BoSSS.Solution.NSECommon
             double DiffusivityA;
             double DiffusivityB;
             double DiffusivityMax;
-            DiffusivityA = Diffusivity(inp.Parameters_IN);
-            DiffusivityB = Diffusivity(inp.Parameters_OUT);
+            double[] difusivityArguments_IN = prmsOK ? inp.Parameters_IN : _uA;
+            double[] difusivityArguments_OUT = prmsOK ? inp.Parameters_OUT : _uB;
+            DiffusivityA = Diffusivity(difusivityArguments_IN);
+            DiffusivityB = Diffusivity(difusivityArguments_OUT);
 
             foreach (var Diffusivity in new double[]{DiffusivityA, DiffusivityB})
             {
@@ -166,6 +180,8 @@ namespace BoSSS.Solution.NSECommon
             // penalty term          
             DiffusivityMax = (Math.Abs(DiffusivityA) > Math.Abs(DiffusivityB)) ? DiffusivityA : DiffusivityB;
             Acc -= (_uA[0] - _uB[0]) * (_vA - _vB) * pnlty * DiffusivityMax;
+            Acc *= prefactor;
+
             return -Acc;
         }
 
@@ -175,8 +191,10 @@ namespace BoSSS.Solution.NSECommon
         protected double BoundaryEdgeFormDirichlet(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA, double u_D) {
             double Acc = 0.0;
 
-            double pnlty = 2 * GetPenalty(inp.jCellIn, -1);//, inp.GridDat.Cells.cj);
-            double DiffusivityA = Diffusivity(inp.Parameters_IN);
+            double pnlty = 2 * GetPenalty(inp.jCellIn, -1);
+            double[] difusivityArguments_IN = prmsOK ? inp.Parameters_IN : _uA;
+
+            double DiffusivityA = Diffusivity(difusivityArguments_IN);
             Debug.Assert(!double.IsNaN(DiffusivityA));
             Debug.Assert(!double.IsInfinity(DiffusivityA));
             IncompressibleBcType edgType = BcMap.EdgeTag2Type[inp.EdgeTag];
@@ -206,12 +224,14 @@ namespace BoSSS.Solution.NSECommon
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double Acc = 0;
-            double DiffusivityValue = Diffusivity(cpv.Parameters);
+            double[] difusivityArguments = prmsOK ? cpv.Parameters : U;
+            double DiffusivityValue = Diffusivity(difusivityArguments);
             Debug.Assert(!double.IsNaN(DiffusivityValue));
             Debug.Assert(!double.IsInfinity(DiffusivityValue));
 
             for(int d = 0; d < cpv.D; d++)
                 Acc -= DiffusivityValue * GradU[0, d] * GradV[d];
+            Acc *= prefactor;
             return -Acc;
         }
   
