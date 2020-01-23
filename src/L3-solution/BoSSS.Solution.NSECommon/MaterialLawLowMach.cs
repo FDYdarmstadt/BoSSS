@@ -75,8 +75,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public override IList<string> ParameterOrdering {
             get {
-                return new string[] { VariableNames.Temperature0/*, VariableNames.Rho */};
-                //, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0}; 
+                return new string[] { VariableNames.Temperature0/*, VariableNames.Rho */};            
             }
         }
 
@@ -98,7 +97,7 @@ namespace BoSSS.Solution.NSECommon {
         /// 
         /// </summary>
         [NonSerialized]
-        public double ThermodynamicPressureValue;
+        public double ThermodynamicPressureValue = -1;
         
 
 
@@ -143,7 +142,11 @@ namespace BoSSS.Solution.NSECommon {
                 Debug.Assert(phi[0] > 0);
 
                 double rho;
-                rho = ThermodynamicPressureValue / phi[0];
+                if(ThermodynamicPressureValue != -1) { // this is a really ugly hack to allow the SIMPLE project to use the p0 DG field. A better solution has to be found
+                    rho = ThermodynamicPressureValue / phi[0];
+                } else {
+                    rho = ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
+                }
                 Debug.Assert(!double.IsNaN(rho));
                 Debug.Assert(!double.IsInfinity(rho));
 
