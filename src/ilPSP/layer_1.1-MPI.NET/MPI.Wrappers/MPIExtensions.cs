@@ -110,7 +110,7 @@ namespace MPI.Wrappers {
         }
 
         /// <summary>
-        /// Gathers objects <paramref name="o"/> from each rank on rank <paramref name="root"/>.
+        /// Gathers (serializeable) objects <paramref name="o"/> from each rank on rank <paramref name="root"/>.
         /// </summary>
         /// <param name="o"></param>
         /// <param name="root">
@@ -125,7 +125,7 @@ namespace MPI.Wrappers {
         }
 
         /// <summary>
-        /// Gathers objects <paramref name="o"/> from each rank on rank <paramref name="root"/>.
+        /// Gathers (serializeable) objects <paramref name="o"/> from each rank on rank <paramref name="root"/>.
         /// </summary>
         /// <param name="o"></param>
         /// <param name="root">
@@ -195,6 +195,72 @@ namespace MPI.Wrappers {
         }
 
 
+        /// <summary>
+        /// Gathers (serializeable) objects <paramref name="o"/> from each rank on all processors.
+        /// </summary>
+        /// <param name="o"></param>
+        /// <param name="comm"></param>
+        /// <returns>
+        /// an array of all objects on all ranks
+        /// </returns>
+        static public T[] MPIAllGatherO<T>(this T o) {
+            return o.MPIAllGatherO(csMPI.Raw._COMM.WORLD);
+        }
+        /// <summary>
+        /// Gathers (serializeable) objects <paramref name="o"/> from each rank on all processors.
+        /// </summary>
+        /// <param name="o"></param>
+        /// <param name="comm"></param>
+        /// <returns>
+        /// an array of all objects on all ranks
+        /// </returns>
+        static public T[] MPIAllGatherO<T>(this T o, MPI_Comm comm) {
+
+            csMPI.Raw.Comm_Rank(comm, out int MyRank);
+            csMPI.Raw.Comm_Size(comm, out int MpiSize);
+
+            IFormatter _Formatter = new BinaryFormatter();
+
+            // -----------------------------------------------------
+            // 1st phase: serialize object and gather object size 
+            // -----------------------------------------------------
+
+            byte[] buffer = null;
+            int Size;
+
+            using (var ms = new MemoryStream()) {
+                _Formatter.Serialize(ms, o);
+                Size = (int)ms.Position;
+                buffer = ms.GetBuffer();
+            }
+            if (Size <= 0)
+                throw new IOException("Error serializing object for MPI broadcast - size is 0");
+            Array.Resize(ref buffer, Size);
+
+
+
+            int[] Sizes = Size.MPIAllGather(comm);
+
+            // -----------------------------------------------------
+            // 2nd phase: gather data 
+            // -----------------------------------------------------
+            byte[] rcvBuffer = buffer.MPIGatherv(Sizes);
+
+            // -----------------------------------------------------
+            // 3rd phase: de-serialize
+            // -----------------------------------------------------
+            T[] ret = new T[MpiSize];
+            using (var ms = new MemoryStream(rcvBuffer)) {
+                for (int r = 0; r < MpiSize; r++) {
+                    if (r == MyRank) {
+                        ret[r] = o;
+                    } else {
+                        ret[r] = (T)_Formatter.Deserialize(ms);
+                    }
+                }
+            }
+            return ret;
+        }
 
         /// <summary>
         /// if <paramref name="e"/> is unequal to null on any of the calling
@@ -505,26 +571,21 @@ namespace MPI.Wrappers {
         /// <param name="i"></param>
         /// <param name="comm"></param>
         /// <returns></returns>
-        static public bool[] MPIEquals(this double[] i, MPI_Comm comm)
-        {
+        static public bool[] MPIEquals(this double[] i, MPI_Comm comm) {
             ulong[] conv_loc = new ulong[i.Length];
-            for(int iDbl = 0; iDbl < i.Length; iDbl++)
-            {
+            for (int iDbl = 0; iDbl < i.Length; iDbl++) {
                 conv_loc[iDbl] = (ulong)i[iDbl];
             }
-                
+
             ulong[] R = new ulong[i.Length];
             bool[] check = new bool[i.Length];
-            unsafe
-            {
-                    fixed (ulong* loc = conv_loc, glob = R)
-                    {
-                        csMPI.Raw.Allreduce(((IntPtr)(loc)), ((IntPtr)(glob)), i.Length, csMPI.Raw._DATATYPE.UNSIGNED_LONG_LONG, csMPI.Raw._OP.BXOR, comm);
-                    }
+            unsafe {
+                fixed (ulong* loc = conv_loc, glob = R) {
+                    csMPI.Raw.Allreduce(((IntPtr)(loc)), ((IntPtr)(glob)), i.Length, csMPI.Raw._DATATYPE.UNSIGNED_LONG_LONG, csMPI.Raw._OP.BXOR, comm);
+                }
             }
-            for(int k=0; k<i.Length;k++)
-            {
-                check[k] = R[k] == 0? true : false;
+            for (int k = 0; k < i.Length; k++) {
+                check[k] = R[k] == 0 ? true : false;
             }
             return check;
         }
@@ -611,7 +672,29 @@ namespace MPI.Wrappers {
             }
             return R;
         }
+        /*
+        /// <summary>
+        /// equal to <see cref="MPIMin(int[],MPI_Comm)"/>, acting on the
+        /// WORLD-communicator
+        /// </summary>
+        static public int[] MPIMin(this int[] i) {
+            return MPIMin(i, csMPI.Raw._COMM.WORLD);
+        }
 
+        /// <summary>
+        /// returns the minimum of each entry of <paramref name="i"/> on all MPI-processes in the
+        /// <paramref name="comm"/>--communicator.
+        /// </summary>
+        static public int[] MPIAnd(this int[] i, MPI_Comm comm) {
+            int[] R = new int[i.Length];
+            unsafe {
+                fixed (int* loc = i, glob = R) {
+                    csMPI.Raw.Allreduce(((IntPtr)(loc)), ((IntPtr)(glob)), i.Length, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.A, comm);
+                }
+            }
+            return R;
+        }
+        */
 
         /// <summary>
         /// Equal to <see cref="MPISum(int[],MPI_Comm)"/>, acting on the
@@ -786,7 +869,7 @@ namespace MPI.Wrappers {
         /// Gathers single numbers form each MPI rank in an array
         /// </summary>
         static public int[] MPIAllGather(this int i, MPI_Comm comm) {
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
+            csMPI.Raw.Comm_Size(comm, out int size);
 
             int[] result = new int[size];
             unsafe {
@@ -817,8 +900,8 @@ namespace MPI.Wrappers {
         /// Gathers single numbers form each MPI rank in an array at the <paramref name="root"/> rank
         /// </summary>
         static public int[] MPIGather(this int i, int root, MPI_Comm comm) {
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
+            csMPI.Raw.Comm_Size(comm, out int size);
+            csMPI.Raw.Comm_Rank(comm, out int rank);
 
             int[] result;
             if (rank == root)
@@ -845,6 +928,108 @@ namespace MPI.Wrappers {
         }
 
 
+        /// <summary>
+        /// Gathers boolean arrays form each MPI rank in an array
+        /// </summary>
+        static public bool[] MPIAllGather(this bool[] i) {
+            return i.MPIAllGather(csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// Gathers boolean arrays form each MPI rank in an array
+        /// </summary>
+        static public bool[] MPIAllGather(this bool[] i, MPI_Comm comm) {
+            csMPI.Raw.Comm_Size(comm, out int size);
+            csMPI.Raw.Comm_Rank(comm, out int rank);
+
+            int L = i.Length;
+            bool[] result = new bool[L * size];
+
+
+            unsafe {
+                fixed (void* sendbuf = i, recvbuf = result) {
+                    
+                    csMPI.Raw.Allgather(
+                        (IntPtr)sendbuf,
+                        1,
+                        csMPI.Raw._DATATYPE.INT,
+                        (IntPtr)recvbuf,
+                        1,
+                        csMPI.Raw._DATATYPE.INT,
+                        comm);
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Gathers integer arrays form each MPI rank in an array
+        /// </summary>
+        static public int[] MPIAllGather(this int[] i) {
+            return i.MPIAllGather(csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// Gathers integer arrays form each MPI rank in an array
+        /// </summary>
+        static public int[] MPIAllGather(this int[] i, MPI_Comm comm) {
+            csMPI.Raw.Comm_Size(comm, out int size);
+            csMPI.Raw.Comm_Rank(comm, out int rank);
+
+            int L = i.Length;
+            int[] result = new int[L * size];
+
+
+            unsafe {
+                fixed (void* sendbuf = i, recvbuf = result) {
+                    
+                    csMPI.Raw.Allgather(
+                        (IntPtr)sendbuf,
+                        1,
+                        csMPI.Raw._DATATYPE.INT,
+                        (IntPtr)recvbuf,
+                        1,
+                        csMPI.Raw._DATATYPE.INT,
+                        comm);
+                }
+            }
+            return result;
+        }
+
+
+        /// <summary>
+        /// Gathers double arrays form each MPI rank in an array
+        /// </summary>
+        static public double[] MPIAllGather(this double[] i) {
+            return i.MPIAllGather(csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// Gathers double arrays form each MPI rank in an array
+        /// </summary>
+        static public double[] MPIAllGather(this double[] i, MPI_Comm comm) {
+            csMPI.Raw.Comm_Size(comm, out int size);
+            csMPI.Raw.Comm_Rank(comm, out int rank);
+
+            int L = i.Length;
+            double[] result = new double[L * size];
+
+
+            unsafe {
+                fixed (void* sendbuf = i, recvbuf = result) {
+
+                    csMPI.Raw.Allgather(
+                        (IntPtr)sendbuf,
+                        1,
+                        csMPI.Raw._DATATYPE.DOUBLE,
+                        (IntPtr)recvbuf,
+                        1,
+                        csMPI.Raw._DATATYPE.DOUBLE,
+                        comm);
+                }
+            }
+            return result;
+        }
 
         /// <summary>
         /// Gathers single numbers form each MPI rank in an array
@@ -878,7 +1063,7 @@ namespace MPI.Wrappers {
         }
 
         /// <summary>
-        /// Gathers all int[] send Arrays on all MPI-processes, at which every jth block of data is from the jth process.
+        /// Gathers all int[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
         /// </summary>
         static public int[] MPIAllGatherv(this int[] send, int[] recvcounts) {
             return send.Int_MPIAllGatherv(recvcounts, csMPI.Raw._COMM.WORLD);
@@ -888,7 +1073,7 @@ namespace MPI.Wrappers {
         /// Gathers all send Arrays on all MPI-processes, at which every jth block of data is from the jth process.
         /// </summary>
         static private int[] Int_MPIAllGatherv(this int[] send, int[] m_recvcounts, MPI_Comm comm) {
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
+            csMPI.Raw.Comm_Size(comm, out int size);
             int rcs = m_recvcounts.Sum();
             if (rcs == 0)
                 return new int[0];
@@ -927,11 +1112,12 @@ namespace MPI.Wrappers {
         static public ulong[] MPIAllGatherv(this ulong[] send, int[] recvcounts) {
             return send.Long_MPIAllGatherv(recvcounts, csMPI.Raw._COMM.WORLD);
         }
+
         /// <summary>
         /// Gathers all send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
         /// </summary>
         static private ulong[] Long_MPIAllGatherv(this ulong[] send, int[] m_recvcounts, MPI_Comm comm) {
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
+            csMPI.Raw.Comm_Size(comm, out int size);
             int rcs = m_recvcounts.Sum();
             if (rcs == 0)
                 return new ulong[0];

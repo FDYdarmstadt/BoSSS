@@ -63,7 +63,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         public int restart_limit = 1000;
 
         /// <summary>
-        /// Number of iterations, where jacobi is not updated. Also known as constant newton method. Default 1, means regular newton.
+        /// Number of iterations, where Jacobi is not updated. Also known as constant newton method. Default 1, means regular newton.
         /// </summary>
         public int constant_newton_it = 1;
 
@@ -209,7 +209,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                                 double thresh = f0_L2 * 0.001;
                                 Console.WriteLine($"Inexact Newton: setting convergence threshold to {thresh:0.##E-00}");
                                 pt.TerminationCriterion = (iter, R0_l2, R_l2) => {
-                                    return (R_l2 > thresh) && (iter < 50);
+                                    return (R_l2 > thresh) && (iter < 1000);
                                 };
  
 
