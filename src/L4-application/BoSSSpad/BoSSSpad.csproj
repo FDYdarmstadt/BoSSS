@@ -60,6 +60,10 @@
     <Reference Include="FastColoredTextBox">
       <HintPath>..\..\..\libs\FCTB.2.16.11.0\lib\FastColoredTextBox.dll</HintPath>
     </Reference>
+    <Reference Include="MathNet.Numerics, Version=2.6.0.29, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\libs\MathNet.Numerics-2.6.0.29\MathNet.Numerics.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Hpc.Azure.FileStaging.Client, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\libs\Microsoft HPC Pack 2012 SDK\Bin\Microsoft.Hpc.Azure.FileStaging.Client.dll</HintPath>
@@ -177,6 +181,10 @@
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
       <Project>{efe8c307-09bc-4f58-b991-6ef8fd6d5eff}</Project>
       <Name>BoSSS.Solution.AdvancedSolvers</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XheatCommon\BoSSS.Solution.XheatCommon.csproj">
+      <Project>{556af24d-182b-4b77-a727-7e18b6488f78}</Project>
+      <Name>BoSSS.Solution.XheatCommon</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Utils\btail\btail.csproj">
       <Project>{dfafe1d1-0235-4125-9364-e8de47546cc6}</Project>

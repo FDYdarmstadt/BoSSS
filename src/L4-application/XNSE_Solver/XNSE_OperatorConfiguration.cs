@@ -20,14 +20,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using ilPSP.Utils;
+
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XheatCommon;
 using BoSSS.Solution.XNSECommon;
+using BoSSS.Solution.EnergyCommon;
 
 
 namespace BoSSS.Application.XNSE_Solver {
 
-    public class XNSE_OperatorConfiguration : IXNSE_Configuration {
+    public class XNSE_OperatorConfiguration : IEnergy_Configuration {
 
         public XNSE_OperatorConfiguration() {}
 
@@ -73,6 +76,12 @@ namespace BoSSS.Application.XNSE_Solver {
                 default:
                     throw new NotImplementedException();
             }
+
+
+            kinEviscous = control.kinEViscousDiscretization;
+            kinEpressure = control.kinEPressureDiscretization;
+            withDissP = control.withDissipativePressure;
+
         }
 
 
@@ -156,6 +165,22 @@ namespace BoSSS.Application.XNSE_Solver {
         public MassMatrixShapeandDependence mmsd;
 
 
+        /// <summary>
+        /// option for the discretization of the viscous kinetic energy source terms
+        /// </summary>
+        public KineticEnergyViscousSourceTerms kinEviscous;
+
+        /// <summary>
+        /// option for the discretization of the pressure kinetic energy source terms
+        /// </summary>
+        public KineticEnergyPressureSourceTerms kinEpressure;
+
+        /// <summary>
+        /// adds a locally discretized dissipation term regarding pressure
+        /// </summary>
+        public bool withDissP;
+
+
         // getter for interface
         // ====================
 
@@ -208,6 +233,20 @@ namespace BoSSS.Application.XNSE_Solver {
         public virtual bool isPInterfaceSet {
             get { return false; }
         }
+
+
+        public virtual KineticEnergyViscousSourceTerms getKinEviscousDiscretization {
+            get { return kinEviscous; }
+        }
+
+        public virtual KineticEnergyPressureSourceTerms getKinEpressureDiscretization {
+            get { return kinEpressure; }
+        }
+
+        public virtual bool withPressureDissipation {
+            get { return withDissP; }
+        }
+
     }
 
 
@@ -219,16 +258,43 @@ namespace BoSSS.Application.XNSE_Solver {
 
             thermParams = control.ThermalParameters;
 
-            Heat = control.solveCoupledHeatEquation;
-            Evaporation = (control.ThermalParameters.hVap_A != 0.0 && control.ThermalParameters.hVap_B != 0.0);
-            prescribedMassflux = control.prescribedMassflux;
+            solveEnergy = control.solveKineticEnergyEquation;
+
+            solveHeat = control.solveCoupledHeatEquation;
+            Evaporation = (control.ThermalParameters.hVap > 0.0);
+            if(control.prescribedMassflux_Evaluator != null)
+                prescribedMassflux = control.prescribedMassflux_Evaluator;
+            if (control.prescribedMassflux != null)
+                prescribedMassflux = control.prescribedMassflux.Evaluate;
             MatInt = !Evaporation;
 
-            this.conductMode = control.conductMode;
+            int nBlocks = 2;
+            if (solveEnergy) {
+                CodBlocks = new bool[3];
+                DomBlocks = new bool[3];
+                nBlocks = 3;
+            }
+
+            if (solveHeat) {
+                this.conductMode = control.conductMode;
+                CodBlocks = (this.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) ? new bool[nBlocks + 1] : new bool[nBlocks + 2];
+                DomBlocks = (this.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) ? new bool[nBlocks + 1] : new bool[nBlocks + 2];
+            }
+
+            CodBlocks.SetAll(true);
+            DomBlocks.SetAll(true);
+
         }
 
 
         public ThermalParameters thermParams;
+
+
+        /// <summary>
+        /// include kinetic energy equation
+        /// </summary>
+        public bool solveEnergy;
+
 
         /// <summary>
         /// true if the heat equation is solved via the auxiliary heat flux formulation
@@ -238,12 +304,17 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// include heat equation
         /// </summary>
-        public bool Heat;
+        public bool solveHeat;
 
         /// <summary>
         /// include transport operator
         /// </summary>
         public bool HeatTransport;
+
+        /// <summary>
+        /// ujse upwind discreitzation
+        /// </summary>
+        public bool HeatUpwinding = false;
 
         /// <summary>
         /// include evaporation
@@ -253,7 +324,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// 
         /// </summary>
-        public Func<double, double> prescribedMassflux;
+        public Func<double[], double, double> prescribedMassflux;
 
         public ThermalParameters getThermParams {
             get { return thermParams; }
@@ -262,18 +333,21 @@ namespace BoSSS.Application.XNSE_Solver {
         public ConductivityInSpeciesBulk.ConductivityMode getConductMode {
             get { return conductMode; }
         }
-
-
+        
         public bool isHeatTransport {
             get { return HeatTransport; }
+        }
+
+        public bool useUpwind {
+            get { return HeatUpwinding;  }
         }
 
         public bool isEvaporation {
             get { return Evaporation; }
         }
 
-        public override bool isPInterfaceSet {
-            get { return Evaporation; }
-        }
+        //public override bool isPInterfaceSet {
+        //    get { return Evaporation; }
+        //}
     }
 }

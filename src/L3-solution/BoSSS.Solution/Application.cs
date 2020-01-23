@@ -1622,6 +1622,10 @@ namespace BoSSS.Solution {
             }
         }
 
+        protected virtual void ResetInitial() {
+            // intended to be used user-specific but not necessary
+        }
+
         /// <summary>
         /// number of time-steps to be performed; <see cref="RunSolverMode"/>
         /// terminates if the number of time-steps exceeds this number; At startup, initialized equal to  <see cref="AppControl.NoOfTimesteps"/>.
@@ -1731,9 +1735,9 @@ namespace BoSSS.Solution {
         /// </list>
         /// </remarks>
         public virtual void RunSolverMode() {
-            
+
             SetUpEnvironment(); // remark: tracer is not avail before setup
-            
+
             using (var tr = new FuncTrace()) {
 
                 var rollingSavesTsi = new List<Tuple<int, ITimestepInfo>>();
@@ -1784,97 +1788,101 @@ namespace BoSSS.Solution {
                 for (int s = 0; s < this.Control.AMR_startUpSweeps; s++) {
                     this.MpiRedistributeAndMeshAdapt(i, physTime);
 
-                    if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
-                        PlotCurrentState(physTime, new TimestepNumber(i, s + 1), this.Control.SuperSampling);
-                }
 
-                for (i = i0.MajorNumber + 1; (i <= i0.MajorNumber + (long)NoOfTimesteps) && EndTime - physTime > 1.0E-10 && !TerminationKey; i++) {
-                    tr.Info("performing timestep " + i + ", physical time = " + physTime);
-                    this.MpiRedistributeAndMeshAdapt(i, physTime);
-                    this.QueryResultTable.UpdateKey("Timestep", ((int)i));
-                    double dt = RunSolverOneStep(i, physTime, -1);
-                    tr.Info("simulated time: " + dt + " timeunits.");
-                    tr.LogMemoryStat();
-                    physTime += dt;
-
-                    ITimestepInfo tsi = null;
-                    if (i % SavePeriod == 0) {
-                        tsi = SaveToDatabase(i, physTime);
-                        this.ProfilingLog();
+                    if (this.Control != null && this.Control.AdaptiveMeshRefinement) {
+                        ResetInitial();
+                        if (this.Control.ImmediatePlotPeriod > 0)
+                            PlotCurrentState(physTime, i0, this.Control.SuperSampling);
                     }
-                    if (this.RollingSave > 0) {
-                        if (tsi == null) {
+
+                    for (i = i0.MajorNumber + 1; (i <= i0.MajorNumber + (long)NoOfTimesteps) && EndTime - physTime > 1.0E-10 && !TerminationKey; i++) {
+                        tr.Info("performing timestep " + i + ", physical time = " + physTime);
+                        this.MpiRedistributeAndMeshAdapt(i, physTime);
+                        this.QueryResultTable.UpdateKey("Timestep", ((int)i));
+                        double dt = RunSolverOneStep(i, physTime, -1);
+                        tr.Info("simulated time: " + dt + " timeunits.");
+                        tr.LogMemoryStat();
+                        physTime += dt;
+
+                        ITimestepInfo tsi = null;
+                        if (i % SavePeriod == 0) {
                             tsi = SaveToDatabase(i, physTime);
+                            this.ProfilingLog();
                         }
-                        rollingSavesTsi.Add(Tuple.Create(i, tsi));
+                        if (this.RollingSave > 0) {
+                            if (tsi == null) {
+                                tsi = SaveToDatabase(i, physTime);
+                            }
+                            rollingSavesTsi.Add(Tuple.Create(i, tsi));
 
-                        while (rollingSavesTsi.Count > this.RollingSave) { // delete overdue rolling timesteps...
-                            var top_i_tsi = rollingSavesTsi[0];
+                            while (rollingSavesTsi.Count > this.RollingSave) { // delete overdue rolling timesteps...
+                                var top_i_tsi = rollingSavesTsi[0];
 
-                            rollingSavesTsi.RemoveAt(0);
+                                rollingSavesTsi.RemoveAt(0);
 
-                            if ((top_i_tsi.Item1 != 0) && (top_i_tsi.Item1 % SavePeriod != 0)) { // ...only if they should not be saved anyway
-                                if (DatabaseDriver.FsDriver != null &&
-                                    !this.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
-                                    if (MPIRank == 0) {
-                                        this.CurrentSessionInfo.RemoveTimestep(top_i_tsi.Item2.ID);
-                                        ((DatabaseController)this.m_Database.Controller).DeleteTimestep(top_i_tsi.Item2, false);
+                                if ((top_i_tsi.Item1 != 0) && (top_i_tsi.Item1 % SavePeriod != 0)) { // ...only if they should not be saved anyway
+                                    if (DatabaseDriver.FsDriver != null &&
+                                        !this.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
+                                        if (MPIRank == 0) {
+                                            this.CurrentSessionInfo.RemoveTimestep(top_i_tsi.Item2.ID);
+                                            ((DatabaseController)this.m_Database.Controller).DeleteTimestep(top_i_tsi.Item2, false);
+                                        }
                                     }
                                 }
                             }
                         }
+
+                        if (this.Control != null && this.Control.ImmediatePlotPeriod > 0 && i % this.Control.ImmediatePlotPeriod == 0)
+                            PlotCurrentState(physTime, i, this.Control.SuperSampling);
+                    }
+                    i--;
+
+                    if (i % SavePeriod != 0) {
+                        SaveToDatabase(i, physTime);
                     }
 
-                    if (this.Control != null && this.Control.ImmediatePlotPeriod > 0 && i % this.Control.ImmediatePlotPeriod == 0)
-                        PlotCurrentState(physTime, i, this.Control.SuperSampling);
-                }
-                i--;
 
-                if (i % SavePeriod != 0) {
-                    SaveToDatabase(i, physTime);
-                }
+                    // Evaluate queries and write log file (either to session directory
+                    // or current directory)
+                    m_queryHandler.EvaluateQueries(this.m_RegisteredFields.Union(m_IOFields), physTime);
+                    foreach (var kv in m_queryHandler.QueryResults) {
+                        QueryResultTable.LogValue(kv.Key, kv.Value);
+                        if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey(kv.Key))
+                            this.CurrentSessionInfo.KeysAndQueries.Add(kv.Key, kv.Value);
+                    }
 
-               
-                // Evaluate queries and write log file (either to session directory
-                // or current directory)
-                m_queryHandler.EvaluateQueries(this.m_RegisteredFields.Union(m_IOFields), physTime);
-                foreach (var kv in m_queryHandler.QueryResults) {
-                    QueryResultTable.LogValue(kv.Key, kv.Value);
-                    if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey(kv.Key))
-                        this.CurrentSessionInfo.KeysAndQueries.Add(kv.Key, kv.Value);
-                }
+                    if (MPIRank == 0 && m_queryHandler.QueryResults.Count > 0) {
+                        TextWriter queryLogFile_Txt;
 
-                if (MPIRank == 0 && m_queryHandler.QueryResults.Count > 0) {
-                    TextWriter queryLogFile_Txt;
+                        if (Control != null && Control.savetodb) {
+                            queryLogFile_Txt = DatabaseDriver.FsDriver.GetNewLog("queryResults", this.CurrentSessionInfo.ID);
+                        } else {
+                            try {
+                                queryLogFile_Txt = new StreamWriter("queryResults.txt");
+                            } catch (Exception e) {
+                                // in a parameter study, 
+                                //     - when running in different processes
+                                //     - but simultaneously
+                                //     - without database
+                                //  two or more processes may try to access queryResults.txt 
+                                //  => Exception
+                                // this is such a rare case, that I don't implement a smarter solution
+                                // (in the parameter study case, the query results will be in the ParameterStudy file anyway
 
-                    if (Control != null && Control.savetodb) {
-                        queryLogFile_Txt = DatabaseDriver.FsDriver.GetNewLog("queryResults", this.CurrentSessionInfo.ID);
-                    } else {
-                        try {
-                            queryLogFile_Txt = new StreamWriter("queryResults.txt");
-                        } catch (Exception e) {
-                            // in a parameter study, 
-                            //     - when running in different processes
-                            //     - but simultaneously
-                            //     - without database
-                            //  two or more processes may try to access queryResults.txt 
-                            //  => Exception
-                            // this is such a rare case, that I don't implement a smarter solution
-                            // (in the parameter study case, the query results will be in the ParameterStudy file anyway
+                                Console.WriteLine("WARNING: not writing queryResults.txt file due to exception: {0} \n '{1}'",
+                                    e.GetType().Name, e.Message);
+                                queryLogFile_Txt = null;
+                            }
+                        }
 
-                            Console.WriteLine("WARNING: not writing queryResults.txt file due to exception: {0} \n '{1}'",
-                                e.GetType().Name, e.Message);
-                            queryLogFile_Txt = null;
+                        if (queryLogFile_Txt != null) {
+                            QueryHandler.LogQueryResults(m_queryHandler.QueryResults, queryLogFile_Txt);
+                            queryLogFile_Txt.Close();
                         }
                     }
 
-                    if (queryLogFile_Txt != null) {
-                        QueryHandler.LogQueryResults(m_queryHandler.QueryResults, queryLogFile_Txt);
-                        queryLogFile_Txt.Close();
-                    }
+                    CorrectlyTerminated = true;
                 }
-
-                CorrectlyTerminated = true;
             }
         }
 

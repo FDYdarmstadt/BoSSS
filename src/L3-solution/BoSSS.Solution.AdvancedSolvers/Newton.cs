@@ -158,6 +158,8 @@ namespace BoSSS.Solution.AdvancedSolvers
                         || itc < MinIter) {
                         //Console.WriteLine("The convergence criterion is {0}", ConvCrit * fnorminit + ConvCrit);
                         rat = fnorm / fNormo;
+                        //if (Math.Abs(fNormo - fnorm) < 1e-12)
+                        //    break;
                         fNormo = fnorm;
                         itc++;
 
