@@ -109,9 +109,9 @@ namespace BoSSS.Application.FSI_Solver {
 
                 Vector Dest_Should;
                 if (MeshRefine)
-                    Dest_Should = new Vector(0.0867851149899939, -0.709888525146848); 
+                    Dest_Should = new Vector(0.0144722215136374, -0.783548288682611); 
                 else
-                    Dest_Should = new Vector(-0.0505473360771058, 0.751747291863557); 
+                    Dest_Should = new Vector(0.841055215524838, 0.158898360953243); 
 
                 Vector Dest_Is = new Vector((double[])p.Particles[0].Motion.GetPosition(0));
 
@@ -124,17 +124,15 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         [Test]
-        public static void StickyTrap()
-        {
-            using (FSI_SolverMain p = new FSI_SolverMain())
-            {
+        public static void StickyTrap() {
+            using (FSI_SolverMain p = new FSI_SolverMain()) {
 
                 var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.Test_StickyTrap();
                 p.Init(ctrl);
                 p.RunSolverMode();
 
                 Vector Dest_Should;
-                Dest_Should = new Vector(0.0, 0.0767999999999999);
+                Dest_Should = new Vector(0.0, 0.07631);
                 double VelY_Should = 0;
 
                 Vector Dest_Is = new Vector((double[])p.Particles[0].Motion.GetPosition(0));
@@ -150,25 +148,7 @@ namespace BoSSS.Application.FSI_Solver {
                 Assert.Less(Vel_Div, 0.05, "Particle is moving.");
             }
         }
-
-        //[Test]
-        //public static void Test_ActiveForce()
-        //{
-        //    using (FSI_SolverMain p = new FSI_SolverMain())
-        //    {
-        //        var ctrl = HardcodedTestExamples.Test_ActiveForce();
-        //        p.Init(ctrl);
-        //        p.RunSolverMode();
-
-        //        double ForcesSoll = 30753.7101679592;
-
-        //        double Forces = p.GetParticles()[0].Motion.GetHydrodynamicForces(0)[0];
-
-        //        double DiffForces = Math.Abs(ForcesSoll - Forces); 
-
-        //        Assert.LessOrEqual(DiffForces, 20);
-        //    }
-        //}
+        
 
         [Test]
         public static void Test_HydrodynamicForces()
@@ -179,7 +159,7 @@ namespace BoSSS.Application.FSI_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double ForcesSoll = 5.53747893542498;
+                double ForcesSoll = 5.61097771967084;
 
                 double Forces = p.Particles[0].Motion.GetHydrodynamicForces(0)[0];
 

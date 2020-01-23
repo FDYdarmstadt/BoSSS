@@ -70,7 +70,7 @@ namespace FSI_Solver {
             // Some var definintion
             // =======================================================
             int ParticleOffset = particles.Length;
-            double distanceThreshold = m_hMin / 5;
+            double distanceThreshold = m_hMin / 2;
 
             // Step 2
             // Loop over time until the particles hit.
@@ -154,6 +154,7 @@ namespace FSI_Solver {
                                 SaveTimeStep = -m_dt * 0.25; // reset time to find a particle state before they overlap.
                                 minimalDistance = double.MaxValue;
                             }
+                            Console.WriteLine("Distance " + minimalDistance);
                         }
                     }
 
@@ -195,6 +196,7 @@ namespace FSI_Solver {
                     // -------------------------------------------------------
                     for (int p1 = p0 + 1; p1 < particles.Length; p1++) {
                         if (Distance[p0][p1] < distanceThreshold && SaveTimeStepArray[p0][p1] > 0) {
+                            Console.WriteLine("CLLSN!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                             List<Particle> collidedParticles = new List<Particle> { particles[p0], particles[p1] };
                             Vector currentDistanceVector = new Vector(DistanceVector[p0][p1]);
                             Vector normalVector = new Vector(currentDistanceVector) / currentDistanceVector.Abs();

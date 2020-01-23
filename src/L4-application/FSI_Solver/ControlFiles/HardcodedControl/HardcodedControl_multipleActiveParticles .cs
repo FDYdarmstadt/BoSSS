@@ -145,12 +145,12 @@ namespace BoSSS.Application.FSI_Solver {
             //C.SetSaveOptions(@"/home/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
 
-            List<string> boundaryValues = new List<string> {
-                "Wall"
-            };
-            C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 4, lengthY: 4, cellsPerUnitLength: 2, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel: amrLevel);
+            //List<string> boundaryValues = new List<string> {
+            //    "Wall"
+            //};
+            //C.SetBoundaries(boundaryValues);
+            C.SetGrid(lengthX: 4, lengthY: 4, cellsPerUnitLength: 4, periodicX: true, periodicY: true);
+            //C.SetAddaptiveMeshRefinement(amrLevel: amrLevel);
             C.hydrodynamicsConvergenceCriterion = 1e-1;
             // Fluid Properties
             // =============================
@@ -161,10 +161,10 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Particle Properties
             // =============================
-            double particleDensity = 1;
+            double particleDensity = 10;
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, 1);
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { -1.5, 0 }, startAngl: 0, activeStress: 10));
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { 1.5, 0 }, startAngl: 180 + angle, activeStress: 10));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { -1, 0 }, startAngl: 0, activeStress: 10));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { 1, 0 }, startAngl: 180 + angle, activeStress: 10));
 
             // misc. solver options
             // =============================  

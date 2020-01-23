@@ -102,7 +102,7 @@ namespace BoSSS.Application.FSI_Solver {
                 "Wall_lower"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 4, lengthY: 6, cellsPerUnitLength: 3, periodicX: false, periodicY: false);
+            C.SetGrid(lengthX: 4, lengthY: 6, cellsPerUnitLength: 15, periodicX: false, periodicY: false);
             C.AddBoundaryValue("Velocity_Inlet_left", "VelocityY", X => 0.02);
             C.AddBoundaryValue("Velocity_Inlet_right", "VelocityY", X => -0.02);
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
@@ -148,7 +148,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Testing of particle/wall interactions using a single particle
         /// </summary>
-        public static FSI_Control Test_SingleDryParticleAgainstWall(bool meshRefine) {
+        public static FSI_Control Test_SingleDryParticleAgainstWall(bool meshRefine = true) {
             FSI_Control C = new FSI_Control(1, "DryParticleWallCollision");
             C.SessionName = C.ProjectName;
             C.Tags.Add("with immersed boundary method");
@@ -160,7 +160,7 @@ namespace BoSSS.Application.FSI_Solver {
                 "Wall"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 1, lengthY: 1, cellsPerUnitLength: 14, periodicX: false, periodicY: false);
+            C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 14, periodicX: false, periodicY: false);
 
             // Initial Values
             // ==============
@@ -211,8 +211,7 @@ namespace BoSSS.Application.FSI_Solver {
             //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
 
-            double h = 1 / 14;
-            double dt = (h / V) * (meshRefine ? 0.5 * 0.5 * 0.5 * 0.2 : 0.1);
+            double dt = (1 /(14 * V)) * (meshRefine ? 0.5 * 0.5 * 0.5 * 0.2 : 0.1);
             C.dtMax = dt;
             C.dtMin = dt;
 
@@ -229,7 +228,7 @@ namespace BoSSS.Application.FSI_Solver {
         public static FSI_Control Test_StickyTrap(int k = 2)
         {
             FSI_Control C = new FSI_Control(degree: k, projectName: "ParticleCollisionTest") {
-                pureDryCollisions = false
+                pureDryCollisions = true
             };
 
             // grid and boundary conditions
@@ -242,13 +241,12 @@ namespace BoSSS.Application.FSI_Solver {
             };
             C.SetBoundaries(boundaryValues);
             C.SetGrid(lengthX: 3, lengthY: 3, cellsPerUnitLength: 10, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel: 3);
+            //C.SetAddaptiveMeshRefinement(amrLevel: 2);
             // Initial Values
             // ==============
 
             // Coupling Properties
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
-            C.hydrodynamicsConvergenceCriterion = 1e-1;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1.0;
