@@ -72,7 +72,11 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="Mode">Equation type. Can be Temperature or MassFraction</param>
         /// <param name="Argument">The argument of the flux. Must be compatible with the DiffusionMode.</param>
         /// <param name="PenaltyLengthScales"></param>
-        public SIPDiffusion(double Reynolds, double Schmidt, MaterialLaw EoS, double PenaltyBase, MultidimensionalArray PenaltyLengthScales, IncompressibleBoundaryCondMap BcMap, DiffusionMode Mode, string Argument) {
+        <<<<<<< HEAD
+            =======
+            [Obsolete("Implement your own class using SIPDiffusionBase instead!")]
+            >>>>>>> SIPDiffusionRefactoring
+            public SIPDiffusion(double Reynolds, double Schmidt, MaterialLaw EoS, double PenaltyBase, MultidimensionalArray PenaltyLengthScales, IncompressibleBoundaryCondMap BcMap, DiffusionMode Mode, string Argument) {
             this.m_Reynolds = Reynolds;
             this.m_Schmidt = Schmidt;
             this.EoS = EoS;
@@ -264,66 +268,66 @@ namespace BoSSS.Solution.NSECommon {
 
             switch (edgType) {
                 case IncompressibleBcType.Wall: {
-                        double u_D;
-                        switch (Mode) {
-                            case DiffusionMode.Temperature:
-                                // inhom. Dirichlet b.c.
-                                // =====================
-                                u_D = ArgumentFunction[inp.EdgeTag](inp.X, 0);
-                                for (int d = 0; d < inp.D; d++) {
-                                    Acc += (DiffusivityA * _Grad_uA[0, d]) * (_vA) * inp.Normal[d];
-                                    Acc += (DiffusivityA * _Grad_vA[d]) * (_uA[0] - u_D) * inp.Normal[d];
-                                }
+                    double u_D;
+                    switch (Mode) {
+                        case DiffusionMode.Temperature:
+                            // inhom. Dirichlet b.c.
+                            // =====================
+                            u_D = ArgumentFunction[inp.EdgeTag](inp.X, 0);
+                            for (int d = 0; d < inp.D; d++) {
+                                Acc += (DiffusivityA * _Grad_uA[0, d]) * (_vA) * inp.Normal[d];
+                                Acc += (DiffusivityA * _Grad_vA[d]) * (_uA[0] - u_D) * inp.Normal[d];
+                            }
 
-                                Acc -= DiffusivityA * (_uA[0] - u_D) * (_vA - 0) * pnlty;
-                                break;
-                            case DiffusionMode.MassFraction:
-                                //Neumann boundary condition
-                                Acc = 0.0;
-                                break;
-                            default:
-                                throw new NotImplementedException();
-                        }
-                        break;
+                            Acc -= DiffusivityA * (_uA[0] - u_D) * (_vA - 0) * pnlty;
+                            break;
+                        case DiffusionMode.MassFraction:
+                            //Neumann boundary condition
+                            Acc = 0.0;
+                            break;
+                        default:
+                            throw new NotImplementedException();
                     }
+                    break;
+                }
                 case IncompressibleBcType.Velocity_Inlet: {
-                        // inhom. Dirichlet b.c.
-                        // =====================
+                    // inhom. Dirichlet b.c.
+                    // =====================
 
-                        double u_D;
-                        switch (Mode) {
-                            case DiffusionMode.Temperature:
-                                u_D = ArgumentFunction[inp.EdgeTag](inp.X, inp.time);
-                                for (int d = 0; d < inp.D; d++) {
-                                    Acc += (DiffusivityA * _Grad_uA[0, d]) * (_vA) * inp.Normal[d];
-                                    Acc += (DiffusivityA * _Grad_vA[d]) * (_uA[0] - u_D) * inp.Normal[d];
-                                }
+                    double u_D;
+                    switch (Mode) {
+                        case DiffusionMode.Temperature:
+                            u_D = ArgumentFunction[inp.EdgeTag](inp.X, inp.time);
+                            for (int d = 0; d < inp.D; d++) {
+                                Acc += (DiffusivityA * _Grad_uA[0, d]) * (_vA) * inp.Normal[d];
+                                Acc += (DiffusivityA * _Grad_vA[d]) * (_uA[0] - u_D) * inp.Normal[d];
+                            }
 
-                                Acc -= DiffusivityA * (_uA[0] - u_D) * (_vA - 0) * pnlty;
-                                break;
-                            case DiffusionMode.MassFraction:
-                                double rhoA = 0.0;
-                                rhoA = EoS.GetDensity(inp.Parameters_IN);
-                                u_D = ArgumentFunction[inp.EdgeTag](inp.X, inp.time);
-                                for (int d = 0; d < inp.D; d++) {
-                                    Acc += (DiffusivityA * rhoA * _Grad_uA[0, d]) * (_vA) * inp.Normal[d];
-                                    Acc += (DiffusivityA * rhoA * _Grad_vA[d]) * (_uA[0] - u_D) * inp.Normal[d];
-                                }
+                            Acc -= DiffusivityA * (_uA[0] - u_D) * (_vA - 0) * pnlty;
+                            break;
+                        case DiffusionMode.MassFraction:
+                            double rhoA = 0.0;
+                            rhoA = EoS.GetDensity(inp.Parameters_IN);
+                            u_D = ArgumentFunction[inp.EdgeTag](inp.X, inp.time);
+                            for (int d = 0; d < inp.D; d++) {
+                                Acc += (DiffusivityA * rhoA * _Grad_uA[0, d]) * (_vA) * inp.Normal[d];
+                                Acc += (DiffusivityA * rhoA * _Grad_vA[d]) * (_uA[0] - u_D) * inp.Normal[d];
+                            }
 
-                                Acc -= DiffusivityA * rhoA * (_uA[0] - u_D) * (_vA - 0) * pnlty;
-                                break;
-                            default:
-                                throw new NotImplementedException();
-                        }
-                        break;
+                            Acc -= DiffusivityA * rhoA * (_uA[0] - u_D) * (_vA - 0) * pnlty;
+                            break;
+                        default:
+                            throw new NotImplementedException();
                     }
+                    break;
+                }
                 case IncompressibleBcType.Outflow:
                 case IncompressibleBcType.Pressure_Outlet:
                 case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.NoSlipNeumann: {
-                        Acc = 0.0;
-                        break;
-                    }
+                    Acc = 0.0;
+                    break;
+                }
                 default:
                     throw new NotSupportedException();
             }

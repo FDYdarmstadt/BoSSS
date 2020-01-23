@@ -71,6 +71,7 @@
     <Compile Include="RHSManuSourceNS.cs" />
     <Compile Include="RHSManuSourceTransportEq.cs" />
     <Compile Include="SIPDiffusion.cs" />
+    <Compile Include="SIPDiffusionBase.cs" />
     <Compile Include="SIPPressureCorrection.cs" />
     <Compile Include="LinearizedScalarConvection.cs" />
     <Compile Include="MaterialLawBase.cs" />
