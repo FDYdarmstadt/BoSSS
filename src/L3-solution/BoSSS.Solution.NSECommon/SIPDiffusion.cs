@@ -72,11 +72,8 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="Mode">Equation type. Can be Temperature or MassFraction</param>
         /// <param name="Argument">The argument of the flux. Must be compatible with the DiffusionMode.</param>
         /// <param name="PenaltyLengthScales"></param>
-        <<<<<<< HEAD
-            =======
-            [Obsolete("Implement your own class using SIPDiffusionBase instead!")]
-            >>>>>>> SIPDiffusionRefactoring
-            public SIPDiffusion(double Reynolds, double Schmidt, MaterialLaw EoS, double PenaltyBase, MultidimensionalArray PenaltyLengthScales, IncompressibleBoundaryCondMap BcMap, DiffusionMode Mode, string Argument) {
+        [Obsolete("Implement your own class using SIPDiffusionBase instead!")]
+        public SIPDiffusion(double Reynolds, double Schmidt, MaterialLaw EoS, double PenaltyBase, MultidimensionalArray PenaltyLengthScales, IncompressibleBoundaryCondMap BcMap, DiffusionMode Mode, string Argument) {
             this.m_Reynolds = Reynolds;
             this.m_Schmidt = Schmidt;
             this.EoS = EoS;
