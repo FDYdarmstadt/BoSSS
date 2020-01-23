@@ -207,7 +207,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                                 double thresh = f0_L2 * 0.001;
                                 Console.WriteLine($"Inexact Newton: setting convergence threshold to {thresh:0.##E-00}");
                                 pt.TerminationCriterion = (iter, R0_l2, R_l2) => {
-                                    return (R_l2 > thresh) && (iter < 100);
+                                    return (R_l2 > thresh) && (iter < 1000);
                                 };
  
 

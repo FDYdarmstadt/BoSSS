@@ -706,9 +706,9 @@ namespace BoSSS.Application.Rheology {
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
                 int D = this.GridData.SpatialDimension;
 
-                if (TimestepNo[0] > 1) {
-                    this.Control.RaiseWeissenberg = false;
-                }
+                //if (TimestepNo[0] > 1) {
+                //    this.Control.RaiseWeissenberg = false;
+                //}
 
                 base.ResLogger.TimeStep = TimestepInt;
 
@@ -725,6 +725,8 @@ namespace BoSSS.Application.Rheology {
 
                     currentWeissenberg = restartWeissenberg;
                     restartWeissenberg = 0.0; // make sure the restart value is used only once
+                    Console.WriteLine("current Weissenberg at " + currentWeissenberg);
+
 
                     if (Control.Weissenberg != 0.0) {
 
@@ -900,7 +902,6 @@ namespace BoSSS.Application.Rheology {
 
                 this.ResLogger.NextTimestep(false);
 
-                startWeissenberg = 0.0;
                 return dt;
 
 
@@ -1584,6 +1585,9 @@ namespace BoSSS.Application.Rheology {
             return Rtsi;
         }
 
+        /// <summary>
+        /// sets Weissenberg number from timestep-info 
+        /// </summary>
         protected override void OnRestartTimestepInfo(TimestepInfo tsi) {
             if (this.Control.RaiseWeissenberg) {
 

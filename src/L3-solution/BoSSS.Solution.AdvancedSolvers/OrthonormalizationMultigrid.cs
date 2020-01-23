@@ -271,17 +271,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
             double[] Mxx = new double[L];
             OpMatrix.SpMV(1.0, X, 0.0, Mxx);
 
-            for (int i = 0; i < KrylovDim; i++) {
-                Debug.Assert(!object.ReferenceEquals(Mxx, MxxHistory[i]));
-                double beta = BLAS.ddot(L, Mxx, 1, MxxHistory[i], 1).MPISum();
-                BLAS.daxpy(L, -beta, SolHistory[i], 1, X, 1);
-                BLAS.daxpy(L, -beta, MxxHistory[i], 1, Mxx, 1);
+            //double NormInitial = Mxx.MPI_L2Norm();
+
+            for (int jj = 0; jj < 2; jj++) { //re-orthognalisation
+                for (int i = 0; i < KrylovDim; i++) {
+                    Debug.Assert(!object.ReferenceEquals(Mxx, MxxHistory[i]));
+                    double beta = BLAS.ddot(L, Mxx, 1, MxxHistory[i], 1).MPISum();
+                    BLAS.daxpy(L, -beta, SolHistory[i], 1, X, 1);
+                    BLAS.daxpy(L, -beta, MxxHistory[i], 1, Mxx, 1);
+                }
+
+                //double NormAfter = Mxx.MPI_L2Norm();
+                //Console.WriteLine("   orthonormalization norm reduction: " + (NormAfter/NormInitial));
+
+                double gamma = 1.0 / Mxx.L2NormPow2().MPISum().Sqrt();
+                //double gamma = 1.0 / BLAS.dnrm2(L, Mxx, 1).Pow2().MPISum().Sqrt();
+                BLAS.dscal(L, gamma, Mxx, 1);
+                BLAS.dscal(L, gamma, X, 1);
             }
 
-            double gamma = 1.0 / Mxx.L2NormPow2().MPISum().Sqrt();
-            //double gamma = 1.0 / BLAS.dnrm2(L, Mxx, 1).Pow2().MPISum().Sqrt();
-            BLAS.dscal(L, gamma, Mxx, 1);
-            BLAS.dscal(L, gamma, X, 1);
 
             SolHistory.Add(X);
             MxxHistory.Add(Mxx);
@@ -320,7 +328,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
                 double ResNorm =  BLAS.dnrm2(L, outRes, 1).Pow2().MPISum().Sqrt();
-                             
+
+                //Console.WriteLine("OrthonormalizationMultigrid: minimizing ofer " + KrylovDim + " vectors");
+
 
                 return ResNorm;
 

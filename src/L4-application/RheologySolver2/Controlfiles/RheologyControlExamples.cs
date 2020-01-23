@@ -398,7 +398,7 @@ namespace BoSSS.Application.Rheology {
 
             //Solver Options
             C.NoOfTimesteps = 1;
-            C.savetodb = true;
+            C.savetodb = false;
             C.DbPath = path;
             C.ProjectName = "Cylinder";
 
@@ -576,10 +576,15 @@ namespace BoSSS.Application.Rheology {
                 C.PresFunction = X => Pressurefunction(X, 0);
             }
 
-            //restart
-            //var database = new DatabaseInfo(path);
-            Guid restartID = new Guid("45c813f2-8be5-43ab-9e41-7abbca99cc99");
-            C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(1, 4));
+            // restart (florian, terminal03)
+            //Guid restartID = new Guid("45c813f2-8be5-43ab-9e41-7abbca99cc99"); 
+            //C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(1, 4)); // Weissenberg 0.4
+            //C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(1, 5)); // Weissenberg 0.5
+
+            // another restart session (florian, terminal03)
+            Guid restartID = new Guid("ba559446-5032-4a55-8456-6ce4c02651b5");
+            C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(2, 2)); // Weissenberg 0.7
+
 
             if (C.RestartInfo == null) {
                 /*
