@@ -1330,6 +1330,7 @@ namespace BoSSS.Foundation.XDG {
         public void UpdateTracker(int __NearRegionWith = -1, bool incremental = false, params int[] __LevSetAllowedMovement) {
             using (var tr = new FuncTrace()) {
                 ilPSP.MPICollectiveWatchDog.Watch();
+               
 
                 if (this.NearRegionWidth <= 0 && incremental == true) {
                     throw new NotSupportedException("Incremental update requires a near-region width of at least 1.");
@@ -1669,6 +1670,7 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
 
+
                 // set the sign
                 // ============
                 {
@@ -1779,14 +1781,30 @@ namespace BoSSS.Foundation.XDG {
         /// Calls the <see cref="IObserver{LevelSetRegions}.OnNext(LevelSetRegions)"/> for all observers.
         /// </summary>
         private void ObserverUpdate() {
-
+            int rnk = ilPSP.Environment.MPIEnv.MPI_Rank;
+            int sz = this.GridDat.MpiSize;
 
             // Remove obsolete observers from list...
             // ======================================
-            for (int i = 0; i < m_Observers.Count; i++) {
-                if (!m_Observers[i].IsAlive) {
+
+            int NoObservers = m_Observers.Count;
+            int[] checkNoObservers = (new[] { NoObservers, -NoObservers }).MPIMax();
+            if (NoObservers != checkNoObservers[0] || NoObservers != -checkNoObservers[1])
+                throw new ApplicationException("MPI parallelization bug: number of observers of LevelSetTracker is not equal among MPI processors.");
+
+            int[] AliveObservers = new int[NoObservers];
+            for (int i = 0; i < NoObservers; i++) {
+                AliveObservers[i] = m_Observers[i].IsAlive ? 0xff : 0;
+            }
+
+            // if observer was killed on any rank, we must also kill it locally!
+            int[] GlobalAliveObservers = AliveObservers.MPIMin();
+
+            for (int i = 0; i < NoObservers; i++) {
+                if (GlobalAliveObservers[i] <= 0) {
                     m_Observers.RemoveAt(i);
                     i--;
+                    NoObservers--;
                 }
             }
 
@@ -1800,13 +1818,15 @@ namespace BoSSS.Foundation.XDG {
 
 
             // call the update method of all active fields
+            int iii = 0;
             foreach (var reference in m_Observers) {
                 IObserver<LevelSetRegions> observer = reference.Target;
                 if (observer != null) {
+                    //Console.WriteLine($"  rnk {rnk}: observer {iii} is {observer.GetType().Name}");
+                    iii++;
                     reference.Target.OnNext(Regions);
                 }
             }
-
         }
 
         /// <summary>
@@ -2000,6 +2020,7 @@ namespace BoSSS.Foundation.XDG {
         /// be affected by the subscription.
         /// </remarks>
         public IDisposable Subscribe(IObserver<LevelSetRegions> observer) {
+            MPICollectiveWatchDog.Watch();
             BoSSS.Platform.WeakReference<IObserver<LevelSetRegions>> reference =
                 new BoSSS.Platform.WeakReference<IObserver<LevelSetRegions>>(observer);
             m_Observers.Add(reference);

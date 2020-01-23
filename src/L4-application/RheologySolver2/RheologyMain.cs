@@ -226,9 +226,16 @@ namespace BoSSS.Application.Rheology {
         IncompressibleBoundaryCondMap BcMap;
         
         /// <summary>
-        /// current Weissenberg number
+        /// Current Weissenberg number,
+        /// if the solver is used in Weissenberg-increment mode
+        /// (<see cref="RheologyControl.RaiseWeissenberg"/>, <see cref="RheologyControl.WeissenbergIncrement"/>)
         /// </summary>
         public double currentWeissenberg;
+
+        /// <summary>
+        /// restart value for the Weissenberg-increment mode
+        /// </summary>
+        private double restartWeissenberg = 0.0;
 
 
         bool ChangeMesh = true;
@@ -427,17 +434,8 @@ namespace BoSSS.Application.Rheology {
                         
 
                         // viscous part:
-                        Type GridType = GridData.iGeomCells.RefElements[0].GetType();
-                        //double PenaltyBase;
-                        //int DegreeVelocity = this.Velocity.Current.Max(DGF => DGF.Basis.Degree);
-                        //if ((GridType == typeof(Triangle)) || (GridType == typeof(Tetra))) {
-                        //    PenaltyBase = (DegreeVelocity + 1.0) * (DegreeVelocity + (double)D) / (double)D;
-                        //} else if ((GridType == typeof(Square)) || (GridType == typeof(Cube))) {
-                        //    PenaltyBase = (DegreeVelocity + 1.0) * (DegreeVelocity + 1.0);
-                        //} else {
-                        //    throw new NotImplementedException("Unknown RefElement");
-                        //}
-
+                        //Type GridType = GridData.iGeomCells.RefElements[0].GetType();
+                        
                         if (this.Control.beta < 0.0) {
                             throw new ArithmeticException("Illegal setting in control object: 'beta' is out of range, must be non-negative.");
                         }
@@ -472,9 +470,9 @@ namespace BoSSS.Application.Rheology {
                             XOP.EquationComponents["div"].Add(new Divergence_DerivativeSource_Flux(d, BcMap));
 
                             //Pressure stabilization for LDG
-                            var presStab = new PressureStabilization(this.Control.PresPenalty2, this.Control.Reynolds);
-                            Console.WriteLine("PresPenalty2 = " + this.Control.PresPenalty2);
-                            XOP.EquationComponents["div"].Add(presStab);
+                            //var presStab = new PressureStabilization(this.Control.PresPenalty2, this.Control.Reynolds);
+                            //Console.WriteLine("PresPenalty2 = " + this.Control.PresPenalty2);
+                            //XOP.EquationComponents["div"].Add(presStab);
                         }
                     } else {
                         for (int d = 0; d < D; d++) {
@@ -708,9 +706,9 @@ namespace BoSSS.Application.Rheology {
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
                 int D = this.GridData.SpatialDimension;
 
-                if (TimestepNo[0] > 1) {
-                    this.Control.RaiseWeissenberg = false;
-                }
+                //if (TimestepNo[0] > 1) {
+                //    this.Control.RaiseWeissenberg = false;
+                //}
 
                 base.ResLogger.TimeStep = TimestepInt;
 
@@ -725,7 +723,10 @@ namespace BoSSS.Application.Rheology {
 
                 if (Control.RaiseWeissenberg == true) {
 
-                    currentWeissenberg = 0.0;
+                    currentWeissenberg = restartWeissenberg;
+                    restartWeissenberg = 0.0; // make sure the restart value is used only once
+                    Console.WriteLine("current Weissenberg at " + currentWeissenberg);
+
 
                     if (Control.Weissenberg != 0.0) {
 
@@ -747,6 +748,9 @@ namespace BoSSS.Application.Rheology {
                             artificialMaxViscosity = 1.0;
 
                             for (int j = 0; j < 3; j++) {
+
+                                
+
 
                                 if (Control.UsePerssonSensor == true) {
                                     perssonsensor.Update(StressXX);
@@ -778,7 +782,7 @@ namespace BoSSS.Application.Rheology {
 
                             //this.ResLogger.NextTimestep(false);
 
-                            // this evaluation must later out of this loop. now here for comparing resluts with  
+                            // this evaluation must later out of this loop. now here for comparing results with  
                             PlotCurrentState(phystime, new TimestepNumber(TimestepNo.MajorNumber, i));
                             SaveToDatabase(new TimestepNumber(TimestepNo.MajorNumber, i), phystime);
 
@@ -803,7 +807,7 @@ namespace BoSSS.Application.Rheology {
                             currentWeissenberg = currentWeissenberg + Control.WeissenbergIncrement;
                             Console.WriteLine();
                             Console.WriteLine("Raise Weissenberg number to " + currentWeissenberg);
-                            Console.WriteLine();
+                            Console.WriteLine();                            
                         }
 
                     }
@@ -1016,6 +1020,7 @@ namespace BoSSS.Application.Rheology {
             Assert.Less(InfNorm_ErrAff / DenomA, 0.01, "Mismatch in Affine Vector between finite difference Jacobi and direct Jacobi");
         }
 
+        static int counter = 1;
 
         /// <summary>
         /// Computation of operator matrix to be used by DelComputeOperatorMatrix, the SpatialOperatorAnalysis and some unit tests(<see cref="m_BDF_Timestepper"/>).
@@ -1111,6 +1116,14 @@ namespace BoSSS.Application.Rheology {
 
                 }
 
+                //int[] Idx = domMap.GetSubvectorIndices(((GridData)(this.GridData)).BoundaryCells.Complement(), false, new[] { 0, 1, 2, 3, 4, 5 });
+                //Idx.SaveToTextFile("InnerIdx.txt");
+
+                //OpMatrix.SaveToTextFileSparse("OpMatrix-" + counter + ".txt");
+                //OpAffine.SaveToTextFile("RHS-" + counter + ".txt");
+                //counter++;
+
+
                 // Set Pressure Reference Point
                 //======================================================
                 if (!this.BcMap.DirichletPressureBoundary) {
@@ -1166,7 +1179,7 @@ namespace BoSSS.Application.Rheology {
                     int pPreLv = Math.Max(1, pPrs - iLevel);
                     int pStrLv = Math.Max(1, pStr - iLevel);
                     
-                    
+                    /*
                     configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[2];
                     configs[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig() {
                             DegreeS = new int[] { pVelLv, pVelLv, pStrLv, pStrLv, pStrLv },
@@ -1183,7 +1196,7 @@ namespace BoSSS.Application.Rheology {
 
                     
                     
-                    /*
+                    
                     configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[1];
                     configs[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig() {
                         mode = MultigridOperator.Mode.LeftInverse_DiagBlock,
@@ -1561,6 +1574,32 @@ namespace BoSSS.Application.Rheology {
 
                 newGrid = null;
                 old2NewGrid = null;
+            }
+        }
+        
+        /// <summary>
+        /// Appends the <see cref="currentWeissenberg"/> number to the timestep
+        /// </summary>
+        protected override TimestepInfo GetCurrentTimestepInfo(TimestepNumber timestepno, double t) {
+            var Rtsi = new RheologyTimestepInfo(t, CurrentSessionInfo, timestepno, IOFields, currentWeissenberg);
+            return Rtsi;
+        }
+
+        /// <summary>
+        /// sets Weissenberg number from timestep-info 
+        /// </summary>
+        protected override void OnRestartTimestepInfo(TimestepInfo tsi) {
+            if (this.Control.RaiseWeissenberg) {
+
+                var Rtsi = tsi as RheologyTimestepInfo;
+                if (Rtsi != null) {
+                    Console.Write("Restoring Weissenberg number form database...  ");
+                    Console.Write($" Weissenberg = {Rtsi.currentWeissenbergNumber}");
+                    this.restartWeissenberg = Rtsi.currentWeissenbergNumber;
+                    Console.WriteLine();
+                } else {
+                    Console.WriteLine($"No Weissenberg number contained in time-step; starting with pre-set.");
+                }
             }
         }
     }

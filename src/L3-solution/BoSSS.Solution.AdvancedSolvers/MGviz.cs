@@ -69,16 +69,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return Curr;
         }
 
-        int counter = 0;
-        public void PlotVectors(IEnumerable<double[]> VV, string[] names) {
+        static int counter = 0;
+        public void PlotVectors(IEnumerable<double[]> VV, string[] names, string filename = null) {
 
             List<DGField> all = new List<DGField>();
             for (int i = 0; i < VV.Count(); i++) {
                 all.AddRange(ProlongateToDg(VV.ElementAt(i), names[i]));
             }
 
-            Tecplot.Tecplot.PlotFields(all, "MGviz-" + counter, counter, 2);
-            counter++;
+
+            if(filename == null) {
+                filename = "MGviz-" + counter;
+                counter++;
+            }
+
+            Tecplot.Tecplot.PlotFields(all, filename, counter, 2);
+            
         }
     }
 }

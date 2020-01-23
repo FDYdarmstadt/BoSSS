@@ -238,7 +238,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 LinearizationRHS.ClearEntries();
             CurrentLin.TransformRhsInto(OpAffineRaw, this.LinearizationRHS);
             this.LinearizationRHS.ScaleV(-1.0);
+
+            //this.CurrentLin.OperatorMatrix.SaveToTextFileSparse("PcMatrix-" + counter + ".txt");
+            //counter++;
         }
+
+        //static int counter = 1;
+
 
         protected UnsetteledCoordinateMapping ProblemMapping {
             get;
