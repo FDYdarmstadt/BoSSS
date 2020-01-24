@@ -175,6 +175,7 @@ namespace BoSSS.Solution.NSECommon {
                         double viscosity = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
                         Debug.Assert(!double.IsNaN(viscosity));
                         Debug.Assert(!double.IsInfinity(viscosity));
+                        Debug.Assert(viscosity > 0);
                         return viscosity;
                     }
                 case MaterialParamsMode.PowerLaw: {

@@ -48,12 +48,33 @@ namespace BoSSS.Solution.NSECommon
         /// <param name="BcMap">Boundary condition map</param>
         /// <param name="Argument">The argument of the flux. Must be compatible with the DiffusionMode.</param>
         /// <param name="PenaltyLengthScales"></param>
-        protected SIPDiffusionBase(double PenaltyBase, MultidimensionalArray PenaltyLengthScales, IncompressibleBoundaryCondMap BcMap, double prefactor, bool ParametersOK) {
+        protected SIPDiffusionBase(double PenaltyBase, MultidimensionalArray PenaltyLengthScales, IncompressibleBoundaryCondMap BcMap, bool ParametersOK) {
             this.PenaltyBase = PenaltyBase;
             this.BcMap = BcMap;
             this.cj = PenaltyLengthScales;
             this.prmsOK = ParametersOK;
+            this.i = 0;
         }
+
+
+        /// <summary>
+        /// Ctor for Species transport equations
+        /// </summary>
+        /// <param name="Coefficient">Coefficient Function in \nabla \dot (Coefficient \nabla u)</param>
+        /// <param name="PenaltyBase">C.f. Calculation of SIP penalty base, cf. Chapter 3 in 
+        /// K. Hillewaert, “Development of the discontinuous Galerkin method for high-resolution, large scale CFD and acoustics in industrial geometries”,
+        /// Université catholique de Louvain, 2013.</param>
+        /// <param name="BcMap">Boundary condition map</param>
+        /// <param name="Argument">The argument of the flux. Must be compatible with the DiffusionMode.</param>
+        /// <param name="PenaltyLengthScales"></param>
+        protected SIPDiffusionBase(double PenaltyBase, MultidimensionalArray PenaltyLengthScales, IncompressibleBoundaryCondMap BcMap, bool ParametersOK, int speciesIndex) {
+            this.PenaltyBase = PenaltyBase;
+            this.BcMap = BcMap;
+            this.cj = PenaltyLengthScales;
+            this.prmsOK = ParametersOK;
+            this.i = speciesIndex;
+        }
+
 
         public TermActivationFlags BoundaryEdgeTerms {
             get {
@@ -80,9 +101,9 @@ namespace BoSSS.Solution.NSECommon
         bool prmsOK;
 
         /// <summary>
-        /// Factor multiplying the forms. For example useful if working with non-dimensional equations.
+        /// Index that indicates which element of the argumentOrdering is being used for calculating the forms. Default is 0
         /// </summary>
-        protected double prefactor;
+        protected int i;
 
         protected MultidimensionalArray cj;
 
@@ -173,14 +194,14 @@ namespace BoSSS.Solution.NSECommon
 
             for (int d = 0; d < inp.D; d++) {
                 // consistency term
-                Acc += 0.5 * (DiffusivityA * _Grad_uA[0, d] + DiffusivityB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normal[d];
+                Acc += 0.5 * (DiffusivityA * _Grad_uA[i, d] + DiffusivityB * _Grad_uB[i, d]) * (_vA - _vB) * inp.Normal[d];
                 // symmetry term                
-                Acc += 0.5 * (DiffusivityA * _Grad_vA[d] + DiffusivityB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normal[d];
+                Acc += 0.5 * (DiffusivityA * _Grad_vA[d] + DiffusivityB * _Grad_vB[d]) * (_uA[i] - _uB[i]) * inp.Normal[d];
             }
             // penalty term          
             DiffusivityMax = (Math.Abs(DiffusivityA) > Math.Abs(DiffusivityB)) ? DiffusivityA : DiffusivityB;
-            Acc -= (_uA[0] - _uB[0]) * (_vA - _vB) * pnlty * DiffusivityMax;
-            Acc *= prefactor;
+
+            Acc -= (_uA[i] - _uB[i]) * (_vA - _vB) * pnlty * DiffusivityMax;
 
             return -Acc;
         }
@@ -202,11 +223,11 @@ namespace BoSSS.Solution.NSECommon
             // inhom. Dirichlet b.c.
             // =====================
             for (int d = 0; d < m_D; d++) {
-                Acc += (DiffusivityA * _Grad_uA[0, d]) * (_vA) * inp.Normal[d];
-                Acc += (DiffusivityA * _Grad_vA[d]) * (_uA[0] - u_D) * inp.Normal[d];
+                Acc += (DiffusivityA * _Grad_uA[i, d]) * (_vA) * inp.Normal[d];
+                Acc += (DiffusivityA * _Grad_vA[d]) * (_uA[i] - u_D) * inp.Normal[d];
             }
 
-            Acc -= DiffusivityA * (_uA[0] - u_D) * (_vA - 0) * pnlty;
+            Acc -= DiffusivityA * (_uA[i] - u_D) * (_vA - 0) * pnlty;
             return -Acc;
         }
  
@@ -230,8 +251,7 @@ namespace BoSSS.Solution.NSECommon
             Debug.Assert(!double.IsInfinity(DiffusivityValue));
 
             for(int d = 0; d < cpv.D; d++)
-                Acc -= DiffusivityValue * GradU[0, d] * GradV[d];
-            Acc *= prefactor;
+                Acc -= DiffusivityValue * GradU[i, d] * GradV[d];
             return -Acc;
         }
   

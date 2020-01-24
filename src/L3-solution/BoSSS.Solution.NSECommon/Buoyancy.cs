@@ -178,13 +178,10 @@ namespace BoSSS.Solution.NSECommon {
             double rho;
             switch(physicsMode) {
                 case PhysicsMode.LowMach:
-                     rho = EoS.GetDensity(U);
-                    break;
                 case PhysicsMode.Combustion:
-                     rho = EoS.GetDensity(U);
+                    rho = EoS.GetDensity(U);
                     break;
                 default:
-
                     throw new NotImplementedException("wrong PhysicsMode");
             }
             src = (1.0 / (Froude * Froude)) * rho * GravityDirection[SpatialComponent];
@@ -199,6 +196,8 @@ namespace BoSSS.Solution.NSECommon {
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             var SourceDerivVol = new VolumeFormDifferentiator(this, SpatialDimension);
             return new IEquationComponent[] { SourceDerivVol };
+
+            //return new IEquationComponent[] { this};
         }
 
         /// <summary>
@@ -214,7 +213,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public virtual TermActivationFlags VolTerms {
             get {
-                return TermActivationFlags.UxV | TermActivationFlags.V;
+                return TermActivationFlags.AllOn;//TermActivationFlags.UxV | TermActivationFlags.V;
             }
         }
         /// <summary>
