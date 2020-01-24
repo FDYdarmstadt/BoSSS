@@ -74,6 +74,8 @@ namespace BoSSS.Application.FSI_Solver {
             AllParticles[0].Motion.omega = omega;
             for (int p = 0; p < AllParticles.Count(); p++) {
                 Particle currentParticle = AllParticles[p];
+                if (currentParticle.IsCollided)
+                    continue;
                 currentParticle.Motion.UpdateForcesAndTorque(p, relaxatedHydrodynamics);
             }
         }

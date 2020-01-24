@@ -553,19 +553,34 @@ namespace BoSSS.Application.FSI_Solver {
                     // any color in one cellmask
                     // -----------------------------
                     allParticleMask = allParticleMask == null ? coloredCellMask : allParticleMask.Union(coloredCellMask);
-
-                    // Particle level set
-                    // -----------------------------
                     double levelSetFunction(double[] X, double t) {
-                        double levelSetFunctionOneColor = -1;
+                        // Generating the correct sign
+                        double levelSetFunctionOneColor = Math.Pow(-1, particlesOfCurrentColor.Length - 1);
+                        // Multiplication over all particle-level-sets within the current color
                         for (int pC = 0; pC < particlesOfCurrentColor.Length; pC++) {
                             Particle currentParticle = m_Particles[particlesOfCurrentColor[pC]];
-                            if(levelSetFunctionOneColor < currentParticle.LevelSetFunction(X))
-                                levelSetFunctionOneColor = currentParticle.LevelSetFunction(X);
+                            double tempLevelSetFunction = currentParticle.LevelSetFunction(X);
+                            // prevent extreme values
+                            if (tempLevelSetFunction > 1)
+                                tempLevelSetFunction = 1;
+                            levelSetFunctionOneColor *= tempLevelSetFunction;
+                            // Delete the particle within the current color from the particle color array
                             _globalParticleColor[particlesOfCurrentColor[pC]] = 0;
                         }
                         return levelSetFunctionOneColor;
                     }
+                    // Particle level set
+                    // -----------------------------
+                    //double levelSetFunction(double[] X, double t) {
+                    //    double levelSetFunctionOneColor = -1;
+                    //    for (int pC = 0; pC < particlesOfCurrentColor.Length; pC++) {
+                    //        Particle currentParticle = m_Particles[particlesOfCurrentColor[pC]];
+                    //        if(levelSetFunctionOneColor < currentParticle.LevelSetFunction(X))
+                    //            levelSetFunctionOneColor = currentParticle.LevelSetFunction(X);
+                    //        _globalParticleColor[particlesOfCurrentColor[pC]] = 0;
+                    //    }
+                    //    return levelSetFunctionOneColor;
+                    //}
                     SetLevelSet(levelSetFunction, coloredCellMask, phystime);
                 }
             }
@@ -885,7 +900,7 @@ namespace BoSSS.Application.FSI_Solver {
                     // -------------------------------------------------
                     CalculateHydrodynamicForces();
                     CalculateParticleVelocity(m_Particles, dt, 0);
-                    CalculateCollision(m_Particles, dt);
+                    CalculateCollision(m_Particles, dt, phystime);
                     CalculateParticlePosition(dt);
                     UpdateLevelSetParticles(phystime);
 
@@ -917,19 +932,19 @@ namespace BoSSS.Application.FSI_Solver {
                                 InitializeParticlePerIteration(m_Particles, TimestepInt);
                             }
                             else {
-                                VectorField<SinglePhaseField> velocityOld = Velocity.CloneAs();
-                                SinglePhaseField pressureOld = Pressure.CloneAs();
+                                //VectorField<SinglePhaseField> velocityOld = Velocity.CloneAs();
+                                //SinglePhaseField pressureOld = Pressure.CloneAs();
                                 m_BDF_Timestepper.Solve(phystime, dt, false);
                                 ParticleHydrodynamicsIntegration hydrodynamicsIntegration = new ParticleHydrodynamicsIntegration(2, Velocity, Pressure, LsTrk, FluidViscosity);
                                 AllParticleHydrodynamics.CalculateHydrodynamics(m_Particles, hydrodynamicsIntegration, FluidDensity, false);
-                                if (iterationCounter != 1) 
-                                {
-                                    double underrelax = 0.1;
-                                    Velocity.Scale(underrelax);
-                                    Velocity.Acc((1 - underrelax), velocityOld);
-                                    Pressure.Scale(underrelax);
-                                    Pressure.Acc((1 - underrelax), pressureOld);
-                                }
+                                //if (iterationCounter != 1) 
+                                //{
+                                //    double underrelax = 0.1;
+                                //    Velocity.Scale(underrelax);
+                                //    Velocity.Acc((1 - underrelax), velocityOld);
+                                //    Pressure.Scale(underrelax);
+                                //    Pressure.Acc((1 - underrelax), pressureOld);
+                                //}
                             }
                             if (TimestepInt != 1 || iterationCounter != 0)
                                 CalculateParticleVelocity(m_Particles, dt, iterationCounter);
@@ -953,9 +968,10 @@ namespace BoSSS.Application.FSI_Solver {
                                 m_Particles[p].Motion.LogStress(phystime);
                             }
                         }
+
                         // collision
                         // -------------------------------------------------
-                        CalculateCollision(m_Particles, dt);
+                        CalculateCollision(m_Particles, dt, phystime);
 
                         // particle position
                         // -------------------------------------------------
@@ -1298,7 +1314,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="dt">
         /// Timestep
         /// </param>
-        private void CalculateCollision(List<Particle> Particles, double dt) {
+        private void CalculateCollision(List<Particle> Particles, double dt, double phystime) {
             if (((FSI_Control)Control).collisionModel == FSI_Control.CollisionModel.NoCollisionModel)
                 return;
             if (((FSI_Control)Control).collisionModel == FSI_Control.CollisionModel.RepulsiveForce)
@@ -1342,6 +1358,13 @@ namespace BoSSS.Application.FSI_Solver {
             foreach (Particle p in m_Particles) {
                 Collision_MPICommunication(p, MPISize);
             }
+            bool anyCollision = false; 
+            foreach (Particle p in Particles) {
+                if (p.IsCollided)
+                    anyCollision = true;
+            }
+            if (!((FSI_Control)Control).pureDryCollisions && anyCollision)
+                m_BDF_Timestepper.Solve(phystime, dt, false);
         }
 
         /// <summary>

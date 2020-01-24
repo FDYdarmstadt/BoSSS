@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using BoSSS.Platform.LinAlg;
+using System.Diagnostics;
 
 namespace FSI_Solver {
     class FSI_Collision {
@@ -70,7 +71,7 @@ namespace FSI_Solver {
             // Some var definintion
             // =======================================================
             int ParticleOffset = particles.Length;
-            double distanceThreshold = m_hMin / 2;
+            double distanceThreshold = m_hMin;
 
             // Step 2
             // Loop over time until the particles hit.
@@ -320,6 +321,8 @@ namespace FSI_Solver {
             Distance = double.MaxValue;
             DistanceVector = new Vector(spatialDim);
             ClosestPoints = new Vector[2];
+            ClosestPoints[0] = new Vector(spatialDim);
+            ClosestPoints[1] = new Vector(spatialDim);
             Overlapping = false;
             int NoOfSubParticles1 = Particles[1] == null ? 1 : Particles[1].NoOfSubParticles;
 ;
@@ -416,6 +419,8 @@ namespace FSI_Solver {
             List<Vector> Simplex = new List<Vector> { new Vector(supportVector) };
 
             closestPoints = new Vector[2];
+            closestPoints[0] = new Vector(spatialDim);
+            closestPoints[1] = new Vector(spatialDim);
             Overlapping = false;
             int maxNoOfIterations = 10000;
 
@@ -481,6 +486,7 @@ namespace FSI_Solver {
             // Return min distance and distance vector.
             // =======================================================
             DistanceVec = new Vector(supportVector);
+            Console.WriteLine("closestPoint00 " + closestPoints[0][0] + " 01 " + closestPoints[0][1]);
         }
 
         /// <summary>

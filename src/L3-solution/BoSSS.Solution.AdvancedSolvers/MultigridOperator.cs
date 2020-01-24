@@ -26,6 +26,7 @@ using BoSSS.Platform;
 using BoSSS.Platform.Utils;
 using BoSSS.Foundation;
 using ilPSP.Tracing;
+using MPI.Wrappers;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -374,7 +375,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (basisES.Count() <= 0) {
                 throw new ArgumentException("At least one multigrid level is required.");
             }
-
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             this.BaseGridProblemMapping = _pm;
             if (cobc.Count() < 1)
                 throw new ArgumentException();
