@@ -944,7 +944,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Collision post-processing. Sums up the results of the multiple binary collisions of one timestep
         /// </summary>
         public void PostProcessCollisionTranslation() {
-            Console.WriteLine("CLLSNm_CollisionTranslationalVelocity" + m_CollisionTranslationalVelocity[0][0]);
+            Console.WriteLine("CLLSNm_CollisionTranslationalVelocity " + m_CollisionTranslationalVelocity[0][0]);
             if (m_CollisionTranslationalVelocity.Count >= 1) {
                 Vector normal = new Vector(m_Dim);
                 Vector tangential = new Vector(m_Dim);

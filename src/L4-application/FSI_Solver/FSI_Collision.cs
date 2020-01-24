@@ -164,7 +164,7 @@ namespace FSI_Solver {
                     // -------------------------------------------------------
                     if (SaveTimeStep >= 0)
                         AccDynamicTimestep += SaveTimeStep;
-                    if (AccDynamicTimestep >= m_dt) {
+                    if (AccDynamicTimestep >= 2 * m_dt) {
                         break;
                     }
                 }

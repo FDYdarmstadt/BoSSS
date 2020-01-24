@@ -1213,14 +1213,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Debug.Assert(n >= 0 && n < this.DGBasis.GetLength(j));
             Debug.Assert(n < N);
             Debug.Assert(this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells == this.DGBasis.GridDat.iLogicalCells.Count);
-            if (this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells != this.DGBasis.GridDat.iLogicalCells.Count)
-                throw new Exception("this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells != this.DGBasis.GridDat.iLogicalCells.Count " + this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells + " != " + this.DGBasis.GridDat.iLogicalCells.Count);
-            if (n > N)
-                throw new Exception("n " + n + " N " + N);
-            if (n < 0 || n > this.DGBasis.GetLength(j))
-                throw new Exception("n " + n + " this.DGBasis.GetLength(j) " + this.DGBasis.GetLength(j));
-            if (j < 0 || j > this.DGBasis.GridDat.iLogicalCells.Count)
-                throw new Exception("j " + j + " this.DGBasis.GridDat.iLogicalCells.Count " + this.DGBasis.GridDat.iLogicalCells.Count);
             return n;
         }
 

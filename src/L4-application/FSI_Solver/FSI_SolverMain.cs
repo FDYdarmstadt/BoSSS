@@ -1358,13 +1358,13 @@ namespace BoSSS.Application.FSI_Solver {
             foreach (Particle p in m_Particles) {
                 Collision_MPICommunication(p, MPISize);
             }
-            bool anyCollision = false; 
-            foreach (Particle p in Particles) {
-                if (p.IsCollided)
-                    anyCollision = true;
-            }
-            if (!((FSI_Control)Control).pureDryCollisions && anyCollision)
-                m_BDF_Timestepper.Solve(phystime, dt, false);
+            //bool anyCollision = false; 
+            //foreach (Particle p in Particles) {
+            //    if (p.IsCollided)
+            //        anyCollision = true;
+            //}
+            //if (!((FSI_Control)Control).pureDryCollisions && anyCollision)
+            //    m_BDF_Timestepper.Solve(phystime, dt, false);
         }
 
         /// <summary>
