@@ -58,18 +58,18 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// An empty collection.
         /// </summary>
-        public IEnumerable<ISessionInfo> Sessions {
+        public IList<ISessionInfo> Sessions {
             get {
-                yield break;
+                return new ISessionInfo[0];
             }
         }
 
         /// <summary>
         /// An empty collection.
         /// </summary>
-        public IEnumerable<IGridInfo> Grids {
+        public IList<IGridInfo> Grids {
             get {
-                yield break;
+                return new IGridInfo[0];
             }
         }
 

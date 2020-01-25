@@ -63,6 +63,7 @@ namespace BoSSS.Application.XNSE_Solver {
         [Test]
         static public void ParallelRisingDroplet() {
             var C = RisingBubble();
+            C.TracingNamespaces = "*";
 
             using (var solver = new XNSE_SolverMain()) {
                 solver.Init(C);

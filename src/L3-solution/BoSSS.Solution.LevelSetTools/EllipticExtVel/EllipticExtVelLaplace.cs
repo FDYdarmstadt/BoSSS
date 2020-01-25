@@ -59,8 +59,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
 
 #region Observer for Level-Set Tracker
         protected BitArray CutCellMask;
-        public void OnNext(LevelSetTracker.LevelSetRegions value)
-        {
+        public void OnNext(LevelSetTracker.LevelSetRegions value) {
             CutCellMask = LSTrck.Regions.GetCutCellMask().GetBitMaskWithExternal();
         }
 
