@@ -305,15 +305,15 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         protected double penalty(IGridData g, int jCellIn, int jCellOut, int iEdge) {
             /*
-            double eAr = g.iGeomEdges.GetEdgeArea(iEdge);
-            double cVA = g.iGeomCells.GetCellVolume(jCellIn);
-            double penaltySizeFactor_A = eAr / cVA;
+              double eAr = g.iGeomEdges.GetEdgeArea(iEdge);
+              double cVA = g.iGeomCells.GetCellVolume(jCellIn);
+              double penaltySizeFactor_A = eAr / cVA;
 
-            double penaltySizeFactor_B = 0;
-            if(jCellOut >= 0) {
-                double cVB = g.iGeomCells.GetCellVolume(jCellOut);
-                penaltySizeFactor_B = eAr / cVB;
-            }
+              double penaltySizeFactor_B = 0;
+              if(jCellOut >= 0) {
+              double cVB = g.iGeomCells.GetCellVolume(jCellOut);
+              penaltySizeFactor_B = eAr / cVB;
+              }
             */
             double penaltySizeFactor_A = 1.0 / cj[jCellIn];
             double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / cj[jCellOut] : 0;

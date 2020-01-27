@@ -342,8 +342,14 @@ namespace BoSSS.Solution {
             } catch(Exception e) {
                 Console.Error.WriteLine(e.StackTrace);
                 Console.Error.WriteLine();
-                Console.Error.WriteLine(e.GetType().Name);
+                Console.Error.WriteLine();
+                Console.Error.WriteLine("========================================");
+                Console.Error.WriteLine("========================================");
+                Console.Error.WriteLine(e.GetType().Name + ":");
                 Console.Error.WriteLine(e.Message);
+                Console.Error.WriteLine("========================================");
+                Console.Error.WriteLine("========================================");
+                Console.Error.WriteLine();
                 Console.Error.Flush();
                 System.Environment.Exit(-1);
             }
@@ -1458,9 +1464,23 @@ namespace BoSSS.Solution {
 
                 time = tsi_toLoad.PhysicalTime;
 
+                if(tsi_toLoad is BoSSS.Foundation.IO.TimestepProxy tp) {
+                    var tsiI = tp.GetInternal() as TimestepInfo;
+                    if(tsiI != null) {
+                        OnRestartTimestepInfo(tsiI);
+                    }
+                }
+                
                 DatabaseDriver.LoadFieldData(tsi_toLoad, ((GridData)(this.GridData)), this.IOFields);
                 return tsi_toLoad.TimeStepNumber;
             }
+        }
+
+        /// <summary>
+        /// called on a restart, after the <see cref="TimestepInfo"/> is loaded from database.
+        /// </summary>
+        protected virtual void OnRestartTimestepInfo(TimestepInfo tsi) {
+
         }
 
         /// <summary>

@@ -1854,7 +1854,7 @@ namespace BoSSS.Solution {
                     */
 
                     var CoarseSolver = new LevelPmg() {
-                        UseHiOrderSmoothing = false,
+                        UseHiOrderSmoothing = true,
                         CoarseLowOrder = 1
                     };
 
