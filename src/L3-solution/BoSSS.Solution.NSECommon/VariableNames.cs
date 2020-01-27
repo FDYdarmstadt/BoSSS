@@ -131,9 +131,9 @@ namespace BoSSS.Solution.NSECommon {
         public const string ContinuityEquation = "ContiEq";
 
         /// <summary>
-        /// energy equation
+        /// kinetic energy equation
         /// </summary>
-        public const string EnergyEquation = "EnergyEq";
+        public const string KineticEnergyEquation = "KinEnergyEq";
 
         /// <summary>
         /// heat equation
@@ -419,7 +419,7 @@ namespace BoSSS.Solution.NSECommon {
         /// gradient in y-direction of velocity component in y-direction
         /// </summary>
         public static string VelocityY_GradientY = "VelocityY_GradientY";
- 
+
 
         ///// <summary>
         ///// variable name for a single component of the veolcityY gradient
@@ -447,9 +447,62 @@ namespace BoSSS.Solution.NSECommon {
 
 
         /// <summary>
+        /// variable name for kinetic energy
+        /// </summary>
+        public const string KineticEnergy = "KineticEnergy";
+
+
+        /// <summary>
         /// variable name for Pressure
         /// </summary>
         public const string Pressure = "Pressure";
+
+
+        /// <summary>
+        /// variable name for Pressure parameter
+        /// </summary>
+        public const string Pressure0 = "Pressure0";
+
+
+        /// <summary>
+        /// x - component of the pressure gradient
+        /// </summary>
+        public const string PressureGradX = "PressureGradX";
+
+        /// <summary>
+        /// y - component of the pressure gradient
+        /// </summary>
+        public const string PressureGradY = "PressureGradY";
+
+        /// <summary>
+        /// z - component of the pressure gradient
+        /// </summary>
+        public const string PressureGradZ = "PressureGradZ";
+
+        /// <summary>
+        /// variable name for the pressure gradient
+        /// </summary>
+        static public string[] PressureGradient(int D) {
+            switch (D) {
+                case 1: return new string[] { PressureGradX };
+                case 2: return new string[] { PressureGradX, PressureGradY };
+                case 3: return new string[] { PressureGradX, PressureGradY, PressureGradZ };
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
+        /// <summary>
+        /// Components of the pressure gradient
+        /// </summary>
+        static public string PressureGradientComponent(int i) {
+            switch (i) {
+                case 0: return PressureGradX;
+                case 1: return PressureGradY;
+                case 2: return PressureGradZ;
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
 
         /// <summary>
         /// variable name for Pressure Correction (e.g. in SIMPLE)

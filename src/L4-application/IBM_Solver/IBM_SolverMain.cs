@@ -474,21 +474,24 @@ namespace BoSSS.Application.IBM_Solver {
         void ParameterUpdate(IEnumerable<DGField> CurrentState, IEnumerable<DGField> ParameterVar) {
             int D = this.LsTrk.GridDat.SpatialDimension;
 
-            var U0_CurrentState = new VectorField<SinglePhaseField>(CurrentState.Take(D).Select(F => (SinglePhaseField)F).ToArray());
+            if (Control.PhysicalParameters.IncludeConvection) {
 
-            // this method assumes that the parameter velocity is reference-equal to the current state 
-            for (int d = 0; d < D; d++)
-                if (!object.ReferenceEquals(CurrentState.ElementAt(d), ParameterVar.ElementAt(d)))
-                    throw new ApplicationException("internal error");
-            
-            if (this.U0MeanRequired) {
-                VectorField<SinglePhaseField> U0mean = new VectorField<SinglePhaseField>(ParameterVar.Skip(D).Take(D).Select(f => (SinglePhaseField)f).ToArray());
-                foreach (var um in U0mean)
-                    Debug.Assert(um.Basis.Degree == 0);
+                var U0_CurrentState = new VectorField<SinglePhaseField>(CurrentState.Take(D).Select(F => (SinglePhaseField)F).ToArray());
 
-                ComputeAverageU(U0_CurrentState, U0mean);
-            } else {
-                //U0_U0mean = new SinglePhaseField[2 * D];
+                // this method assumes that the parameter velocity is reference-equal to the current state 
+                for (int d = 0; d < D; d++)
+                    if (!object.ReferenceEquals(CurrentState.ElementAt(d), ParameterVar.ElementAt(d)))
+                        throw new ApplicationException("internal error");
+
+                if (this.U0MeanRequired) {
+                    VectorField<SinglePhaseField> U0mean = new VectorField<SinglePhaseField>(ParameterVar.Skip(D).Take(D).Select(f => (SinglePhaseField)f).ToArray());
+                    foreach (var um in U0mean)
+                        Debug.Assert(um.Basis.Degree == 0);
+
+                    ComputeAverageU(U0_CurrentState, U0mean);
+                } else {
+                    //U0_U0mean = new SinglePhaseField[2 * D];
+                }
             }
         }
 
@@ -1063,7 +1066,7 @@ namespace BoSSS.Application.IBM_Solver {
                     ContBasis: this.LevSet.Basis,
                     DGBasis: this.DGLevSet.Current.Basis,
                     gridData: GridData,
-                    Option: Solution.LevelSetTools.ContinuityProjectionOption.ContinuousDG);
+                    Option: Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG);
 
                 //CellMask domain = this.LsTrk.Regions.GetNearFieldMask(1);
 

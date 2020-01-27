@@ -50,7 +50,6 @@ using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XheatCommon;
 using BoSSS.Solution.XNSECommon;
-using BoSSS.Solution.XNSECommon.Operator.Energy;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Foundation.Grid.Aggregation;
@@ -63,18 +62,25 @@ namespace BoSSS.Application.XNSE_Solver {
 
     /// <summary>
     /// Solver for Incompressible Multiphase flows
+    /// Optional: coupled heat equation with evaporation
+    /// Optional: kinetic energy equation 
     /// </summary>
-    public class XNSE_SolverMain : BoSSS.Solution.Application<XNSE_Control> {
+    public partial class XNSE_SolverMain : BoSSS.Solution.Application<XNSE_Control> {
 
-
+        //===========
+        // Main file
+        //===========
 
         static void Main(string[] args) {
-            BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestFixtureSetUp();
-            DeleteOldPlotFiles();
-            BoSSS.Application.XNSE_Solver.Tests.UnitTest.ViscosityJumpTest(2, 0.1, ViscosityMode.FullySymmetric);
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestCapillaryWave();
-            ////BoSSS.Application.XNSE_Solver.Tests.ElementalTestProgramm.LineMovementTest(LevelSetEvolution.ScalarConvection, LevelSetHandling.Coupled_Once, XNSE_Control.TimesteppingScheme.ImplicitEuler, 0.5);
-            Assert.IsFalse(true, "remove me");
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestFixtureSetUp();
+            //DeleteOldPlotFiles();
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(3, 0.0, ViscosityMode.Standard, 1.0471975511966);
+            ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.MovingDropletTest(3, 0.1, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine, 0.71711, ViscosityMode.FullySymmetric, true, false);
+            ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.PolynomialTestForConvectionTest(3, 0.0, false);
+            ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.ViscosityJumpTest(2, 0.1, ViscosityMode.FullySymmetric);
+            ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestCapillaryWave();
+            //////BoSSS.Application.XNSE_Solver.Tests.ElementalTestProgramm.LineMovementTest(LevelSetEvolution.ScalarConvection, LevelSetHandling.Coupled_Once, XNSE_Control.TimesteppingScheme.ImplicitEuler, 0.5);
+            //Assert.IsFalse(true, "remove me");
 
 
             _Main(args, false, delegate () {
@@ -83,81 +89,12 @@ namespace BoSSS.Application.XNSE_Solver {
             });
         }
 
-        // Instantiate Fields from Control File
+        //=====================================
+        // Field declaration and instantiation
+        //=====================================
+        #region fields
 
-        #region instantiation
 #pragma warning disable 649
-        /// <summary>
-        /// Pressure
-        /// </summary>
-        //[InstantiateFromControlFile(VariableNames.Pressure, null, IOListOption.ControlFileDetermined)]
-        XDGField Pressure;
-
-        /// <summary>
-        /// Artificial force term at the fluid interface, usually only to support manufactured solutions.
-        /// </summary>
-        [InstantiateFromControlFile(
-            new string[] { VariableNames.SurfaceForceX, VariableNames.SurfaceForceY, VariableNames.SurfaceForceZ },
-            new string[] { VariableNames.VelocityX, VariableNames.VelocityY, VariableNames.VelocityZ },
-            true, true,
-            IOListOption.ControlFileDetermined)]
-        VectorField<SinglePhaseField> SurfaceForce;
-
-        /// <summary>
-        /// the DG representation of the level set.
-        /// This one is used for level-set evolution in time; it is in general discontinuous.
-        /// </summary>
-        //[InstantiateFromControlFile("PhiDG", "Phi", IOListOption.ControlFileDetermined)]
-        ScalarFieldHistory<SinglePhaseField> DGLevSet;
-
-        /// <summary>
-        /// The continuous level set field which defines the XDG space; 
-        /// it is obtained from the projection of the discontinuous <see cref="DGLevSet"/> onto the 
-        /// continuous element space.
-        /// </summary>
-        //[InstantiateFromControlFile("Phi", "Phi", IOListOption.ControlFileDetermined)]
-        LevelSet LevSet;
-
-        /// <summary>
-        /// Guess what?
-        /// </summary>
-        VectorField<SinglePhaseField> DGLevSetGradient;
-
-        VectorField<SinglePhaseField> LevSetGradient;
-
-        /// <summary>
-        /// Curvature; DG-polynomial degree should be 2 times the polynomial degree of <see cref="LevSet"/>.
-        /// </summary>
-        [InstantiateFromControlFile(VariableNames.Curvature, VariableNames.Curvature, IOListOption.ControlFileDetermined)]
-        SinglePhaseField Curvature;
-
-        /// <summary>
-        /// Residual of the continuity equation
-        /// </summary>
-        //[InstantiateFromControlFile("ResidualConti", VariableNames.Pressure, IOListOption.ControlFileDetermined)]
-        XDGField ResidualContinuity;
-
-        /// <summary>
-        /// Divergence of velocity ->
-        /// Conservation of mass for incompressibility
-        /// </summary>
-        XDGField divVelocity;
-
-        /// <summary>
-        /// If requested, performs the projection of the level-set on a continuous field
-        /// </summary>
-        ContinuityProjection ContinuityEnforcer;
-
-        /// <summary>
-        /// Lauritz' Fast Marching Solver
-        /// !!! Caution !!! Only works in Single-Core
-        /// </summary>
-        FastMarchReinit FastMarchReinitSolver;
-
-        /// <summary>
-        /// PDE based elliptic reInitialization by Thomas
-        /// </summary>
-        EllipticReInit ReInitPDE;
 
         /// <summary>
         /// Bundling of variables which are either DG or XDG (see <see cref="XNSE_Control.UseXDG4Velocity"/>);
@@ -200,144 +137,87 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         /// <summary>
-        /// The velocity for the level-set evolution; 
-        /// since the velocity representation (<see cref="XDGvelocity"/>) is in the XDG space, int cannot be used directly for the level-set evolution.
+        /// Pressure
         /// </summary>
-        [InstantiateFromControlFile(
-            new string[] { "Extension" + VariableNames.VelocityX, "Extension" + VariableNames.VelocityY, "Extension" + VariableNames.VelocityZ },
-            new string[] { VariableNames.VelocityX, VariableNames.VelocityY, VariableNames.VelocityZ },
-            true, true,
-            IOListOption.ControlFileDetermined)]
-        VectorFieldHistory<SinglePhaseField> ExtensionVelocity;
+        //[InstantiateFromControlFile(VariableNames.Pressure, null, IOListOption.ControlFileDetermined)]
+        XDGField Pressure;
+
+        /// <summary>
+        /// Residual of the continuity equation
+        /// </summary>
+        //[InstantiateFromControlFile("ResidualConti", VariableNames.Pressure, IOListOption.ControlFileDetermined)]
+        XDGField ResidualContinuity;
 
 
         /// <summary>
-        /// Motion Algorithm for a Extension Velocity based on the density averaged velocity directly at the interface;
+        /// Artificial force term at the fluid interface, usually only to support manufactured solutions.
         /// </summary>
-        ExtensionVelocityBDFMover ExtVelMover;
+        [InstantiateFromControlFile(
+            new string[] { VariableNames.SurfaceForceX, VariableNames.SurfaceForceY, VariableNames.SurfaceForceZ },
+            new string[] { VariableNames.VelocityX, VariableNames.VelocityY, VariableNames.VelocityZ },
+            true, true,
+            IOListOption.ControlFileDetermined)]
+        VectorField<SinglePhaseField> SurfaceForce;
 
 #pragma warning restore 649
+
 
         protected override void CreateFields() {
             using (new FuncTrace()) {
                 base.CreateFields();
-                int D = this.GridData.SpatialDimension;
 
 
-                this.DGLevSet = new ScalarFieldHistory<SinglePhaseField>(
-                       new SinglePhaseField(new Basis(this.GridData, this.Control.FieldOptions["Phi"].Degree), "PhiDG"));
+                this.CreateLevelSetFields();
 
-                if (this.Control.FieldOptions["PhiDG"].Degree >= 0 && this.Control.FieldOptions["PhiDG"].Degree != this.DGLevSet.Current.Basis.Degree) {
-                    throw new ApplicationException("Specification of polynomial degree for 'PhiDG' is not supported, since it is induced by polynomial degree of 'Phi'.");
-                }
-
-                // ==============================
-                // Initialize ContinuityProjection
-                // if needed, if not , Option: None
-                // ==============================
-                this.LevSet = ContinuityProjection.CreateField(
-                    DGLevelSet: this.DGLevSet.Current,
-                    gridData: (GridData)GridData,
-                    Option: Control.LSContiProjectionMethod
-                    );
-
-                this.LsTrk = new LevelSetTracker((GridData) this.GridData, base.Control.CutCellQuadratureType, base.Control.LS_TrackerWidth, new string[] { "A", "B" }, this.LevSet);
-                base.RegisterField(this.LevSet);
-                this.LevSetGradient = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(this.LevSet.Basis, "dPhi_dx[" + d + "]")));
-                base.RegisterField(this.LevSetGradient);
-
-                base.RegisterField(this.DGLevSet.Current);
-                this.DGLevSetGradient = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(this.DGLevSet.Current.Basis, "dPhiDG_dx[" + d + "]")));
-                base.RegisterField(this.DGLevSetGradient);
 
                 this.Pressure = new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.Pressure].Degree), VariableNames.Pressure);
                 base.RegisterField(this.Pressure);
                 this.ResidualContinuity = new XDGField(this.Pressure.Basis, "ResidualConti");
                 base.RegisterField(this.ResidualContinuity);
 
-
                 this.XDGvelocity = new VelocityRelatedVars<XDGField>();
                 InitFromAttributes.CreateFieldsAuto(this.XDGvelocity, this.GridData, base.Control.FieldOptions, base.Control.CutCellQuadratureType, base.IOFields, base.m_RegisteredFields);
 
+                this.CreateUtilityFields();
 
-                if (this.Control.solveCoupledHeatEquation) {
-                    this.Temperature = new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.Temperature].Degree), VariableNames.Temperature);
-                    base.RegisterField(this.Temperature);
-                    this.ResidualHeat = new XDGField(this.Temperature.Basis, "ResidualHeat");
-                    base.RegisterField(this.ResidualHeat);
+                this.CreateEnergyFields();
 
-                    if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
-                        this.HeatFlux = new VectorField<XDGField>(D.ForLoop(d => new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.HeatFluxVectorComponent(d)].Degree), VariableNames.HeatFluxVectorComponent(d))));
-                        base.RegisterField(this.HeatFlux);
-                        this.ResidualAuxHeatFlux = new VectorField<XDGField>(D.ForLoop(d => new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.HeatFluxVectorComponent(d)].Degree), VariableNames.ResidualAuxHeatFluxVectorComponent(d))));
-                        base.RegisterField(this.ResidualAuxHeatFlux);
-                    }
-
-                    this.EvapFlowRate = new SinglePhaseField(new Basis(this.LsTrk.GridDat, this.Control.FieldOptions[VariableNames.Temperature].Degree - 1), "EvapFlowRate");
-                    base.RegisterField(this.EvapFlowRate);
-
-                    this.DisjoiningPressure = new SinglePhaseField(new Basis(this.GridData, this.Control.FieldOptions[VariableNames.Pressure].Degree), "DisjoiningPressure");
-                    if(this.Control.DisjoiningPressureFunc != null) {
-                        DisjoiningPressure.ProjectField(this.Control.DisjoiningPressureFunc);
-                    }
-                    base.RegisterField(this.DisjoiningPressure);
-                }
-
-
-                XDGBasis b = new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.Pressure].Degree);
-                this.divVelocity = new XDGField(b, "DivergenceVelocity");
-                base.RegisterField(this.divVelocity);
-
-                if (this.Control.ComputeEnergy && this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) {
-                    prevVel = new XDGField[D];
-                    for (int d = 0; d < D; d++) {
-                        prevVel[d] = new XDGField(this.XDGvelocity.Velocity[d].Basis);
-                    }
-                }
-
-                if (this.Control.CheckJumpConditions) {
-                    Basis basis = new Basis(this.GridData, 0);
-
-                    //Basis basis = new Basis(this.GridData, this.Control.FieldOptions[VariableNames.VelocityX].Degree);
-                    this.MassBalanceAtInterface = new SinglePhaseField(basis, "MassBalanceAtInterface");
-                    base.RegisterField(this.MassBalanceAtInterface);
-
-                    //basis = new Basis(this.GridData, this.Control.FieldOptions[VariableNames.Pressure].Degree + this.Control.FieldOptions["Phi"].Degree);
-                    this.MomentumBalanceAtInterface = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(basis, d + "-MomentumBalanceAtInterface")));
-                    base.RegisterField(this.MomentumBalanceAtInterface);
-
-                    //basis = new Basis(this.GridData, this.Control.FieldOptions[VariableNames.Pressure].Degree + this.Control.FieldOptions[VariableNames.VelocityX].Degree + this.Control.FieldOptions["Phi"].Degree);
-                    this.EnergyBalanceAtInterface = new SinglePhaseField(basis, "EnergyBalanceAtInterface");
-                    base.RegisterField(this.EnergyBalanceAtInterface);
-
-                }
-
-                if(this.Control.ComputeEnergy) {
-
-                    this.DerivedKineticEnergy = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions["KineticEnergy"].Degree)), "DerivedKineticEnergy");
-                    base.RegisterField(this.DerivedKineticEnergy);
-
-                    this.GeneratedKineticEnergy = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions["KineticEnergy"].Degree)), "KineticEnergyProduction");
-                    base.RegisterField(this.GeneratedKineticEnergy);
-
-                    this.KineticEnergy = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions["KineticEnergy"].Degree)), "KineticEnergy");
-                    base.RegisterField(this.KineticEnergy);
-                    this.ResidualKineticEnergy = new XDGField(this.KineticEnergy.Basis, "ResidualKineticEnergy");
-                    base.RegisterField(this.ResidualKineticEnergy);
-
-                    this.prevKineticEnergy = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions["KineticEnergy"].Degree)));
-
-                    this.KineticDissipation = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions["KineticEnergy"].Degree)), "KineticDissipation");
-                    base.RegisterField(this.KineticDissipation);
-
-                }
+                if (this.Control.solveCoupledHeatEquation) 
+                    this.CreateHeatFields();
 
             }
         }
 
-        #endregion
-        
 
+        #endregion
+
+
+
+        //==========================================
+        // operator related members
+        // (create and update operator/mass matrix)
+        //==========================================
+        #region operator
+
+
+        /// <summary>
+        /// the spatial operator (momentum and continuity equation)
+        /// Optional: kinetic energy / heat equation
+        /// </summary>
+        XNSFE_OperatorFactory XNSFE_Operator;
+
+        /// <summary>
+        /// OperatorConfiguration for the <see cref="XNSFE_Operator"/>
+        /// </summary>
+        XNSFE_OperatorConfiguration XOpConfig;
+
+
+
+        /// <summary>
+        /// output of <see cref="AssembleMatrix"/>;
+        /// </summary>
+        MassMatrixFactory MassFact;
+        
         /// <summary>
         /// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
         /// </summary>
@@ -346,24 +226,53 @@ namespace BoSSS.Application.XNSE_Solver {
                 double rho_A = this.Control.PhysicalParameters.rho_A,
                     rho_B = this.Control.PhysicalParameters.rho_B;
 
+                double c_A = this.Control.ThermalParameters.c_A,
+                    c_B = this.Control.ThermalParameters.c_B;
+
                 int D = this.GridData.SpatialDimension;
 
-                double[] _rho_A = new double[D + 1];
-                _rho_A.SetAll(rho_A); // mass matrix in momentum equation
-                _rho_A[D] = 0; // no  mass matrix for continuity equation
-                double[] _rho_B = new double[D + 1];
-                _rho_B.SetAll(rho_B); // mass matrix in momentum equation
-                _rho_B[D] = 0; // no  mass matrix for continuity equation
+
+                double[] scale_A = new double[D + 1];
+                double[] scale_B = new double[D + 1];
+                int mD = D + 1;
+                if (this.Control.solveKineticEnergyEquation) {
+                    scale_A = new double[D + 2];
+                    scale_B = new double[D + 2];
+                    mD = D + 2;
+                }
+                if (this.Control.solveCoupledHeatEquation) {
+                    scale_A = new double[mD + 1];
+                    scale_B = new double[mD + 1];
+                    if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+                        scale_A = new double[mD + 1 + D];
+                        scale_B = new double[mD + 1 + D];
+                    }
+                }
+
+                scale_A.SetAll(rho_A); // mass matrix in momentum equation (kinetic energy equation)
+                scale_A[D] = 0; // no  mass matrix for continuity equation
+                scale_B.SetAll(rho_B); // mass matrix in momentum equation (kinetic energy equation)
+                scale_B[D] = 0; // no  mass matrix for continuity equation
+
+                if (this.Control.solveCoupledHeatEquation) {
+                    scale_A[mD + 1] = rho_A * c_A;
+                    scale_B[mD + 1] = rho_B * c_B;
+                    if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+                        scale_A.GetSubVector(mD + 1, D).SetAll(0.0);
+                        scale_B.GetSubVector(mD + 1, D).SetAll(0.0);
+                    }
+                }
 
                 Dictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>>();
-                R.Add(this.LsTrk.GetSpeciesId("A"), _rho_A);
-                R.Add(this.LsTrk.GetSpeciesId("B"), _rho_B);
+                R.Add(this.LsTrk.GetSpeciesId("A"), scale_A);
+                R.Add(this.LsTrk.GetSpeciesId("B"), scale_B);
+
 
                 return R;
             }
         }
 
-        IncompressibleMultiphaseBoundaryCondMap m_BcMap;
+
 
         /// <summary>
         /// Boundary conditions.
@@ -377,28 +286,8 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
-        /// <summary>
-        /// the spatial operator (momentum and continuity equation)
-        /// </summary>
-        XNSFE_OperatorFactory XNSFE_Operator;
+        IncompressibleMultiphaseBoundaryCondMap m_BcMap;
 
-        /// <summary>
-        /// OperatorConfiguration for the <see cref="XNSFE_Operator"/>
-        /// </summary>
-        XNSFE_OperatorConfiguration XOpConfig;
-
-        /// <summary>
-        /// Current Velocity
-        /// </summary>
-        XDGField[] CurrentVel {
-            get {
-                return this.XDGvelocity.Velocity.ToArray();
-            }
-        }
-
-        XDGField[] prevVel;
-
-        CoordinateVector m_CurrentSolution;
 
         /// <summary>
         /// Current velocity and pressure;
@@ -407,6 +296,15 @@ namespace BoSSS.Application.XNSE_Solver {
             get {
                 if (m_CurrentSolution == null) {
                     m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(this.CurrentVel, this.Pressure));
+                    if (this.Control.solveKineticEnergyEquation) {
+                        m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(m_CurrentSolution.Mapping.Fields.ToArray(), this.KineticEnergy));
+                    }
+                    if (this.Control.solveCoupledHeatEquation) {
+                        //m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(this.CurrentVel, this.Pressure, this.Temperature));
+                        m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(m_CurrentSolution.Mapping.Fields.ToArray(), this.Temperature));
+                        if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
+                            m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(m_CurrentSolution.Mapping.Fields.ToArray(), this.HeatFlux));
+                    }
                 } else {
                     for (int d = 0; d < base.GridData.SpatialDimension; d++) {
                         Debug.Assert(object.ReferenceEquals(m_CurrentSolution.Mapping.Fields[d], this.CurrentVel[d]));
@@ -417,7 +315,7 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
-        CoordinateVector m_CurrentResidual;
+        CoordinateVector m_CurrentSolution;
 
         /// <summary>
         /// Current residual for momentum and continuity equation.
@@ -426,44 +324,130 @@ namespace BoSSS.Application.XNSE_Solver {
             get {
                 if (m_CurrentResidual == null) {
                     m_CurrentResidual = new CoordinateVector(ArrayTools.Cat<DGField>(XDGvelocity.ResidualMomentum, ResidualContinuity));
+                    if (this.Control.solveKineticEnergyEquation) {
+                        m_CurrentResidual = new CoordinateVector(ArrayTools.Cat(m_CurrentResidual.Mapping.Fields.ToArray(), this.ResidualKineticEnergy));
+                    }
+                    if (this.Control.solveCoupledHeatEquation) {
+                        //m_CurrentResidual = new CoordinateVector(ArrayTools.Cat<DGField>(XDGvelocity.ResidualMomentum, ResidualContinuity, ResidualHeat));
+                        m_CurrentResidual = new CoordinateVector(ArrayTools.Cat(m_CurrentResidual.Mapping.Fields.ToArray(), this.ResidualHeat));
+                        if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
+                            m_CurrentResidual = new CoordinateVector(ArrayTools.Cat(m_CurrentResidual.Mapping.Fields.ToArray(), this.ResidualAuxHeatFlux));
+                    }
                 }
                 return m_CurrentResidual;
             }
         }
 
+        CoordinateVector m_CurrentResidual;
+
 
         /// <summary>
-        /// shortcut to mass matrix factory from level set tracker 
+        /// Current Velocity
         /// </summary>
-        MassMatrixFactory MassFact {
+        XDGField[] CurrentVel {
             get {
-                // cached in lstrk, so no caching here required
-                return this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), m_HMForder, 1).MassMatrixFactory;
+                return this.XDGvelocity.Velocity.ToArray();
             }
         }
+
 
         /// <summary>
         /// HMF order/degree which is used globally in this solver.
         /// </summary>
         int m_HMForder;
 
+
+
         /// <summary>
-        /// Implicit timestepping using Backward-Differentiation-Formulas (BDF),
-        /// specialized for XDG applications.
+        /// configuration options for <see cref="MultigridOperator"/>.
         /// </summary>
-        XdgBDFTimestepping m_BDF_Timestepper;
+        MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig {
+            get {
+                int pVel = this.CurrentVel[0].Basis.Degree;
+                int pPrs = this.Pressure.Basis.Degree;
+                int D = this.GridData.SpatialDimension;
 
-        
-        ///// <summary>
-        ///// Explicit or implicit timestepping using Runge-Kutta formulas,
-        ///// specialized for XDG applications.
-        ///// </summary>
-        //XdgRKTimestepping m_RK_Timestepper;
+                // set the MultigridOperator configuration for each level:
+                // it is not necessary to have exactly as many configurations as actual multigrid levels:
+                // the last configuration enty will be used for all higher level
+                MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
+                for (int iLevel = 0; iLevel < configs.Length; iLevel++) {
 
-        RungeKuttaScheme rksch = null;
+                    configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 1];
+                    int mD = D + 1;
+                    if (this.Control.solveKineticEnergyEquation) {
+                        configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 2];
+                        mD = D + 2;
+                    }
+                    if (this.Control.solveCoupledHeatEquation) {
+                        configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[mD + 1];
+                        if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
+                            configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[mD + 1 + D];
+                    }
 
-        int bdfOrder = -1000;
+                    //if (this.Control.solveCoupledHeatEquation) {
+                    //    configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 2];
+                    //    if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
+                    //        configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 2 + D];
+                    //} else {
+                    //    configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 1];
+                    //}
 
+                    // configurations for velocity
+                    for (int d = 0; d < D; d++) {
+                        configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
+                            DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
+                            mode = this.Control.VelocityBlockPrecondMode,
+                            VarIndex = new int[] { d }
+                        };
+                    }
+                    // configuration for pressure
+                    configs[iLevel][D] = new MultigridOperator.ChangeOfBasisConfig() {
+                        DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
+                        mode = this.Control.PressureBlockPrecondMode,
+                        VarIndex = new int[] { D }
+                    };
+                    
+                    if (this.Control.solveKineticEnergyEquation) {
+                        int pKinE = this.KineticEnergy.Basis.Degree;
+                        // configuration for kinetic energy
+                        configs[iLevel][D + 1] = new MultigridOperator.ChangeOfBasisConfig() {
+                            DegreeS = new int[] { Math.Max(1, pKinE - iLevel) },
+                            mode = this.Control.KineticEnergyeBlockPrecondMode,
+                            VarIndex = new int[] { D + 1 }
+                        };
+                    }
+
+                    if (this.Control.solveCoupledHeatEquation) {
+
+                        int pTemp = this.Temperature.Basis.Degree;
+                        // configuration for Temperature
+                        configs[iLevel][mD + 1] = new MultigridOperator.ChangeOfBasisConfig() {
+                            DegreeS = new int[] { Math.Max(1, pTemp - iLevel) },
+                            mode = this.Control.TemperatureBlockPrecondMode,
+                            VarIndex = new int[] { mD + 1 }
+                        };
+
+                        // configuration for auxiliary heat flux
+                        if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+                            int pFlux = this.HeatFlux[0].Basis.Degree;
+                            for (int d = 0; d < D; d++) {
+                                configs[iLevel][mD + 1 + d] = new MultigridOperator.ChangeOfBasisConfig() {
+                                    DegreeS = new int[] { Math.Max(1, pFlux - iLevel) },
+                                    mode = MultigridOperator.Mode.Eye,
+                                    VarIndex = new int[] { mD + 1 + d }
+                                };
+                            }
+                        }
+
+                    }
+
+                }
+
+
+                return configs;
+            }
+        }
 
 
         /// <summary>
@@ -488,13 +472,15 @@ namespace BoSSS.Application.XNSE_Solver {
 
             #endregion
 
-            #region Config and Generate XOperator
 
+            #region Config and Generate XOperator
 
             //Quadrature Order
             //----------------
 
             m_HMForder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
+            if (this.Control.solveKineticEnergyEquation)
+                m_HMForder *= 2;
 
 
             // Create Spatial Operator
@@ -502,195 +488,17 @@ namespace BoSSS.Application.XNSE_Solver {
 
             XOpConfig = new XNSFE_OperatorConfiguration(this.Control);
 
-            XNSFE_Operator = new XNSFE_OperatorFactory(XOpConfig, this.LsTrk, this.m_HMForder, this.BcMap, degU);
-
-
-            // kinetic energy balance Operator
-            // ===============================
-
-            if(this.Control.ComputeEnergy) {
-                this.generateKinEnergyOperator();
-            }
-
-
-            // coupled heat Operator
-            // =====================
-
-            if (this.Control.solveCoupledHeatEquation) {
-                this.generateCoupledOperator();
-            }
+            XNSFE_Operator = new XNSFE_OperatorFactory(XOpConfig, this.LsTrk, this.m_HMForder, this.BcMap, this.thermBcMap, degU);
+            updateSolutionParams = new bool[CurrentResidual.Mapping.Fields.Count];
 
             #endregion
+
 
             #region Create Timestepper
             // =======================
             if (L == null) {
 
-                switch (this.Control.Timestepper_Scheme) {
-                    case XNSE_Control.TimesteppingScheme.RK_ImplicitEuler: {
-                        rksch = RungeKuttaScheme.ImplicitEuler;
-                        break;
-                    }
-                    case XNSE_Control.TimesteppingScheme.RK_CrankNicolson: {
-                        rksch = RungeKuttaScheme.CrankNicolson;
-                        break;
-                    }
-                    case XNSE_Control.TimesteppingScheme.CrankNicolson: {
-                        //do not instantiate rksch, use bdf instead
-                        bdfOrder = -1;
-                        break;
-                    }
-                    case XNSE_Control.TimesteppingScheme.ImplicitEuler: {
-                        //do not instantiate rksch, use bdf instead
-                        bdfOrder = 1;
-                        break;
-                    }
-                    default: {
-                        if (this.Control.Timestepper_Scheme.ToString().StartsWith("BDF")) {
-                            //do not instantiate rksch, use bdf instead
-                            bdfOrder = Convert.ToInt32(this.Control.Timestepper_Scheme.ToString().Substring(3));
-                            break;
-                        } else
-                            throw new NotImplementedException();
-                    }
-
-                }
-
-
-                if (rksch == null) {
-                    m_BDF_Timestepper = new XdgBDFTimestepping(
-                        this.CurrentSolution.Mapping.Fields,
-                        this.CurrentResidual.Mapping.Fields,
-                        LsTrk,
-                        true,
-                        DelComputeOperatorMatrix, null, DelUpdateLevelSet,
-                        (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? bdfOrder : 1,
-                        this.Control.Timestepper_LevelSetHandling,
-                        this.XOpConfig.mmsd,
-                        (this.Control.PhysicalParameters.IncludeConvection) ? SpatialOperatorType.Nonlinear : SpatialOperatorType.LinearTimeDependent,
-                        MassScale,
-                        this.MultigridOperatorConfig, base.MultigridSequence,
-                        this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder,
-                        this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
-                        true,
-                        this.Control.NonLinearSolver,
-                        this.Control.LinearSolver
-                        );
-                    m_BDF_Timestepper.m_ResLogger = base.ResLogger;
-                    m_BDF_Timestepper.m_ResidualNames = this.CurrentResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
-                    m_BDF_Timestepper.Timestepper_Init = (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? this.Control.Timestepper_BDFinit : TimeStepperInit.SingleInit;
-                    m_BDF_Timestepper.incrementTimesteps = this.Control.incrementTimesteps;
-                    m_BDF_Timestepper.PushLevelSet = this.PushLevelSetAndRelatedStuff;
-                    m_BDF_Timestepper.IterUnderrelax = this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? this.Control.LSunderrelax : 1.0;
-
-                    m_BDF_Timestepper.Config_LevelSetConvergenceCriterion = this.Control.LevelSet_ConvergenceCriterion;
-                    //m_BDF_Timestepper.CustomIterationCallback += this.PlotOnIterationCallback;
-
-
-                    // solver 
-                    this.Control.NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.NonLinearSolver.MinSolverIterations; //m_BDF_Timestepper.config_NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.Solver_MinIterations;
-
-                    if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.NewtonGMRES) {
-                        m_BDF_Timestepper.XdgSolverFactory.Selfmade_precond =
-                                            new Schwarz() {
-                                                m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                                                    NoOfPartsPerProcess = this.CurrentSolution.Count / 10000,
-                                                },
-                                                Overlap = 1,
-                                                CoarseSolver = new SparseSolver() { WhichSolver = SparseSolver._whichSolver.MUMPS }
-                                            };
-                    } else {
-                        //m_BDF_Timestepper.Config_linearSolver = new DirectSolver() { WhichSolver = this.Control.LinearSolver };
-                    }
-
-
-                    //Console.WriteLine("noofpartsperprocess = {0}", this.CurrentSolution.Count / 10000);
-
-                    if(this.Control.ComputeEnergy) {
-                        m_BDF_energyTimestepper = new XdgBDFTimestepping(
-                        this.CurrentEnergySolution.Mapping.Fields,
-                        this.CurrentEnergyResidual.Mapping.Fields,
-                        LsTrk,
-                        false,
-                        DelComputeEnergyOperatorMatrix, null, DelUpdateLevelSet_EnergyOperator,
-                        (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? bdfOrder : 1,
-                        this.Control.Timestepper_LevelSetHandling,
-                        MassMatrixShapeandDependence.IsTimeDependent,   // only for Lie-Splitting and coupled_Once
-                        SpatialOperatorType.LinearTimeDependent,
-                        MassScaleForEnergy,
-                        this.MultigridEnergyOperatorConfig, base.MultigridSequence,
-                        this.LsTrk.SpeciesIdS.ToArray(), this.KineticEnergy.Basis.Degree * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2),
-                        this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
-                        true,
-                        this.Control.NonLinearSolver,
-                        this.Control.LinearSolver
-                        );
-                        m_BDF_energyTimestepper.m_ResLogger = this.EnergyResLogger;
-                        m_BDF_energyTimestepper.m_ResidualNames = this.CurrentEnergyResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
-                        //m_BDF_coupledTimestepper.Config_SolverConvergenceCriterion = this.Control.Solver_ConvergenceCriterion;
-                        m_BDF_energyTimestepper.Config_LevelSetConvergenceCriterion = this.Control.LevelSet_ConvergenceCriterion;
-                        //m_BDF_coupledTimestepper.Config_MaxIterations = this.Control.Solver_MaxIterations;
-                        this.Control.NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.NonLinearSolver.MinSolverIterations;
-                        //m_BDF_energyTimestepper.Config_MinIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.Solver_MinIterations;
-                        m_BDF_energyTimestepper.Timestepper_Init = TimeStepperInit.SingleInit;
-                        m_BDF_energyTimestepper.PushLevelSet = delegate () { };    // dummy push
-                        m_BDF_energyTimestepper.coupledOperator = true;
-                    }
-
-                    if (this.Control.solveCoupledHeatEquation) {
-                        m_BDF_coupledTimestepper = new XdgBDFTimestepping(
-                        this.CurrentCoupledSolution.Mapping.Fields,
-                        this.CurrentCoupledResidual.Mapping.Fields,
-                        LsTrk,
-                        false,
-                        DelComputeCoupledOperatorMatrix, null, DelUpdateLevelSet_CoupledOperator,
-                        (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? bdfOrder : 1,
-                        this.Control.Timestepper_LevelSetHandling,
-                        MassMatrixShapeandDependence.IsTimeDependent,   // only for Lie-Splitting and coupled_Once
-                        SpatialOperatorType.LinearTimeDependent,
-                        HeatScale,
-                        this.MultigridCoupledOperatorConfig, base.MultigridSequence,
-                        this.LsTrk.SpeciesIdS.ToArray(), m_HMForder,
-                        this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
-                        true,
-                        this.Control.NonLinearSolver,
-                        this.Control.LinearSolver
-                        );
-                        m_BDF_coupledTimestepper.m_ResLogger = this.CouplededResLogger;
-                        m_BDF_coupledTimestepper.m_ResidualNames = this.CurrentCoupledResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
-                        //m_BDF_coupledTimestepper.Config_SolverConvergenceCriterion = this.Control.Solver_ConvergenceCriterion;
-                        m_BDF_coupledTimestepper.Config_LevelSetConvergenceCriterion = this.Control.LevelSet_ConvergenceCriterion;
-                        //m_BDF_coupledTimestepper.Config_MaxIterations = this.Control.Solver_MaxIterations;
-
-                        this.Control.NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.NonLinearSolver.MinSolverIterations;
-                        //m_BDF_coupledTimestepper.Config_MinIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.Solver_MinIterations;
-
-                        m_BDF_coupledTimestepper.Timestepper_Init = TimeStepperInit.SingleInit;
-                        m_BDF_coupledTimestepper.PushLevelSet = delegate () { };    // dummy push
-                        m_BDF_coupledTimestepper.coupledOperator = true;
-
-                    }
-
-                } else {
-
-                    throw new NotSupportedException();
-
-                    //m_RK_Timestepper = new XdgRKTimestepping(
-                    //    this.CurrentSolution.Mapping.Fields.ToArray(),
-                    //    this.CurrentResidual.Mapping.Fields.ToArray(),
-                    //    LsTrk,
-                    //    DelComputeOperatorMatrix, DelUpdateLevelSet, DelUpdateCutCellMetrics,
-                    //    rksch,
-                    //    this.Control.Timestepper_LevelSetHandling,
-                    //    mmsd,
-                    //    (this.Control.PhysicalParameters.IncludeConvection) ? SpatialOperatorType.Nonlinear : SpatialOperatorType.LinearTimeDependent,
-                    //    MassScale,
-                    //    this.MultigridOperatorConfig, base.MultigridSequence,
-                    //    this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold, 
-                    //    true);
-                    //m_RK_Timestepper.m_ResLogger = base.ResLogger;
-                    //m_RK_Timestepper.m_ResidualNames = this.CurrentResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
-                }
+                this.CreateTimestepper();
 
             } else {
 
@@ -699,37 +507,35 @@ namespace BoSSS.Application.XNSE_Solver {
                 Debug.Assert(object.ReferenceEquals(this.MultigridSequence[0].ParentGrid, this.GridData));
 
 
-                m_BDF_Timestepper.DataRestoreAfterBalancing(L, 
-                    ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure), 
-                    ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity), 
-                    this.LsTrk, this.MultigridSequence);
+                DGField[] flds = ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure);
+                DGField[] resi = ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity);
+
+                if (this.Control.solveKineticEnergyEquation) {
+                    flds = ArrayTools.Cat<DGField>(flds, this.KineticEnergy);
+                    resi = ArrayTools.Cat<DGField>(resi, this.ResidualKineticEnergy);
+                }
 
                 if (this.Control.solveCoupledHeatEquation) {
-                    if (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP)
-                        m_BDF_coupledTimestepper.DataRestoreAfterBalancing(L,
-                          this.Temperature.ToEnumerable(),
-                          this.ResidualHeat.ToEnumerable(),
-                          this.LsTrk, this.MultigridSequence);
-                    else
-                        m_BDF_coupledTimestepper.DataRestoreAfterBalancing(L,
-                          ArrayTools.Cat<DGField>(this.Temperature.ToEnumerable(), this.HeatFlux.ToArray()),
-                          ArrayTools.Cat<DGField>(this.ResidualHeat.ToEnumerable(), this.ResidualAuxHeatFlux.ToArray()),
-                          this.LsTrk, this.MultigridSequence);
+                    flds = ArrayTools.Cat<DGField>(flds, this.Temperature);
+                    resi = ArrayTools.Cat<DGField>(resi, this.ResidualHeat);
+                    if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+                        flds = ArrayTools.Cat<DGField>(flds, this.HeatFlux);
+                        resi = ArrayTools.Cat<DGField>(resi, this.ResidualAuxHeatFlux);
+                    }
                 }
 
-                if (this.Control.AdaptiveMeshRefinement && hack_TimestepIndex == 0) {
-                    base.SetInitial();
-                    this.InitLevelSet();
-                }
+                m_BDF_Timestepper.DataRestoreAfterBalancing(L, flds, resi, this.LsTrk, this.MultigridSequence);
+
+
                 //PlotCurrentState(hack_Phystime, new TimestepNumber(hack_TimestepIndex, 13), 2);
 
                 ContinuityEnforcer = new ContinuityProjection(
-                    ContBasis: this.LevSet.Basis, 
-                    DGBasis: this.DGLevSet.Current.Basis, 
-                    gridData: GridData, 
+                    ContBasis: this.LevSet.Basis,
+                    DGBasis: this.DGLevSet.Current.Basis,
+                    gridData: GridData,
                     Option: Control.LSContiProjectionMethod);
 
-                if(this.Control.Option_LevelSetEvolution == LevelSetEvolution.ExtensionVelocity) {
+                if (this.Control.Option_LevelSetEvolution == LevelSetEvolution.ExtensionVelocity) {
                     ReInitPDE = new EllipticReInit(this.LsTrk, this.Control.ReInitControl, DGLevSet.Current);
                     FastMarchReinitSolver = new FastMarchReinit(DGLevSet.Current.Basis);
                     ExtVelMover = new ExtensionVelocityBDFMover(LsTrk, DGLevSet.Current, DGLevSetGradient, new VectorField<DGField>(XDGvelocity.Velocity.ToArray()),
@@ -740,7 +546,6 @@ namespace BoSSS.Application.XNSE_Solver {
             #endregion
 
         }
-
 
 
         void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
@@ -761,7 +566,7 @@ namespace BoSSS.Application.XNSE_Solver {
                             this.Control.AdvancedDiscretizationOptions.FilterConfiguration,
                             out filtLevSetGradient, this.LsTrk,
                             this.DGLevSet.Current);
-                        if(this.Control.AdvancedDiscretizationOptions.CurvatureNeeded || XOpConfig.isEvaporation) {
+                        if ((this.Control.solveKineticEnergyEquation && !this.LsTrk.Regions.GetCutCellMask().IsEmpty) || XOpConfig.isEvaporation) {
                             VectorField<SinglePhaseField> filtLevSetGradient_dummy;
                             CurvatureAlgorithms.CurvatureDriver(
                                 SurfaceStressTensor_IsotropicMode.Curvature_Projected,
@@ -795,6 +600,60 @@ namespace BoSSS.Application.XNSE_Solver {
                 default: throw new NotImplementedException("Unknown SurfaceTensionMode");
             }
 
+            if (filtLevSetGradient != null) {
+                if (this.Control.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource == CurvatureAlgorithms.LevelSetSource.fromC0) {
+                    //this.LevSetGradient.Clear();
+                    //this.LevSetGradient.Acc(1.0, filtLevSetGradient);
+                    this.LevSetGradient = filtLevSetGradient;
+                } else {
+                    //this.DGLevSetGradient.Clear();
+                    //this.DGLevSetGradient.Acc(1.0, filtLevSetGradient);
+                    this.DGLevSetGradient = filtLevSetGradient;
+                }
+            }
+
+            // =================================================
+            // Construct evaporative mass flux (extension field) 
+            // =================================================
+
+            // heat flux for evaporation
+            //DGField[] HeatFluxParam = new DGField[D];
+            //if (XOpConfig.solveHeat) {
+            //    if (XOpConfig.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+            //        HeatFluxParam = new VectorField<XDGField>(D, CurrentState.ToArray()[D + 1].Basis, "HeatFlux0_", XDGField.Factory).ToArray();
+            //        Dictionary<string, double> kSpc = new Dictionary<string, double>();
+            //        kSpc.Add("A", -this.Control.ThermalParameters.k_A);
+            //        kSpc.Add("B", -this.Control.ThermalParameters.k_B);
+            //        XNSEUtils.ComputeGradientForParam(CurrentState.ToArray()[D + 1], HeatFluxParam, this.LsTrk, kSpc, this.LsTrk.Regions.GetNearFieldSubgrid(1));
+            //    } else {
+            //        var HeatFluxMap = new CoordinateMapping(CurrentState.ToArray().GetSubVector(D + 2, D));
+            //        HeatFluxParam = HeatFluxMap.Fields.ToArray();
+            //    }
+            //}
+            //ConventionalDGField[] HeatFluxAParam = new VectorField<ConventionalDGField>(D.ForLoop(d => (HeatFluxParam[d] as XDGField).GetSpeciesShadowField("A"))).ToArray();
+            //ConventionalDGField[] HeatFluxBParam = new VectorField<ConventionalDGField>(D.ForLoop(d => (HeatFluxParam[d] as XDGField).GetSpeciesShadowField("B"))).ToArray();
+
+            //SinglePhaseField[] HeatFluxAExt = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(new Basis(this.GridData, HeatFluxParam[d].Basis.Degree), "HeatFluxExt" + d))).ToArray();
+            //SinglePhaseField[] HeatFluxBExt = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(new Basis(this.GridData, HeatFluxParam[d].Basis.Degree), "HeatFluxExt" + d))).ToArray();
+            //double[][] ExtVelMin = new double[HeatFluxAExt.Length][];
+            //double[][] ExtVelMax = new double[HeatFluxAExt.Length][];
+            //int J = this.LsTrk.GridDat.Cells.NoOfLocalUpdatedCells;
+            //for (int i = 0; i < HeatFluxAExt.Length; i++) {
+            //    ExtVelMin[i] = new double[J];
+            //    ExtVelMax[i] = new double[J];
+            //}
+            //NarrowMarchingBand.ConstructExtVel_PDE(this.LsTrk, this.LsTrk.Regions.GetCutCellSubGrid(), HeatFluxAExt, HeatFluxAParam, this.LevSet, this.LevSetGradient, ExtVelMin, ExtVelMax, m_HMForder);
+            //NarrowMarchingBand.ConstructExtVel_PDE(this.LsTrk, this.LsTrk.Regions.GetCutCellSubGrid(), HeatFluxBExt, HeatFluxBParam, this.LevSet, this.LevSetGradient, ExtVelMin, ExtVelMax, m_HMForder);
+
+            //DGField[] HeatFluxExtParam = new VectorField<XDGField>(D, CurrentState.ToArray()[D + 1].Basis, "HeatFluxExt_", XDGField.Factory).ToArray();
+            //for (int d = 0; d < D; d++) {
+            //    (HeatFluxExtParam[d] as XDGField).GetSpeciesShadowField("A").Acc(1.0, HeatFluxAExt[d]);
+            //    (HeatFluxExtParam[d] as XDGField).GetSpeciesShadowField("B").Acc(1.0, HeatFluxBExt[d]);
+            //}
+
+            //Tecplot.PlotFields(HeatFluxParam, "HeatFluxParam" + hack_TimestepIndex, hack_Phystime, 2);
+            //Tecplot.PlotFields(HeatFluxExtParam, "HeatFluxExtParam" + hack_TimestepIndex, hack_Phystime, 2);
+
             // ============================
             // matrix assembly
             // ============================
@@ -803,23 +662,12 @@ namespace BoSSS.Application.XNSE_Solver {
             var domMap = Mapping;
 
             this.XNSFE_Operator.AssembleMatrix(
-                OpMtx, OpAffine, codMap, domMap,
-                CurrentState, AgglomeratedCellLengthScales, phystime,
-                this.m_HMForder, SurfaceForce, filtLevSetGradient, Curvature,
-                (this.Control.solveCoupledHeatEquation ? this.Temperature.ToEnumerable() : null),
-                (this.Control.solveCoupledHeatEquation ? this.DisjoiningPressure.ToEnumerable() : null));
-
-
-            if(filtLevSetGradient != null) {
-                if (this.Control.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource == CurvatureAlgorithms.LevelSetSource.fromC0) {
-                    this.LevSetGradient.Clear();
-                    this.LevSetGradient.Acc(1.0, filtLevSetGradient);
-                } else {
-                    this.DGLevSetGradient.Clear();
-                    this.DGLevSetGradient.Acc(1.0, filtLevSetGradient);
-                }
-            }
-                       
+               OpMtx, OpAffine, codMap, domMap,
+               CurrentState, AgglomeratedCellLengthScales, phystime,
+               this.m_HMForder, SurfaceForce, filtLevSetGradient, Curvature,
+               updateSolutionParams, this.XDGvelocity.Gravity.ToArray()); //, HeatFluxExtParam);
+                                      //(this.Control.solveCoupledHeatEquation ? this.Temperature.ToEnumerable() : null),
+                                      //(this.Control.solveCoupledHeatEquation ? this.DisjoiningPressure.ToEnumerable() : null));                     
 
 
             // ====================================
@@ -859,7 +707,9 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============================
             // Generate MassMatrix
             // ============================
-          
+
+            // mass matrix factory
+            MassFact = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), m_HMForder, 1).MassMatrixFactory;// new MassMatrixFactory(maxB, CurrentAgg);
             var WholeMassMatrix = MassFact.GetMassMatrix(Mapping, MassScale); // mass matrix scaled with density rho
 
 
@@ -868,6 +718,15 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============================
             // Dimension: [ rho * G ] = mass / time^2 / len^2 == [ d/dt rho U ]
             var WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(this.XDGvelocity.Gravity.ToArray<DGField>(), new XDGField(this.Pressure.Basis)));
+            if (this.Control.solveKineticEnergyEquation) {
+                WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(WholeGravity.Mapping.Fields, new XDGField(this.KineticEnergy.Basis)));
+            }
+            if (this.Control.solveCoupledHeatEquation) {
+                WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(WholeGravity.Mapping.Fields, new XDGField(this.Temperature.Basis)));
+                if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
+                    WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(WholeGravity.Mapping.Fields,
+                        new XDGField(this.Temperature.Basis), new VectorField<XDGField>(D, this.HeatFlux[0].Basis, XDGField.Factory)));
+            }
             WholeMassMatrix.SpMV(1.0, WholeGravity, 1.0, OpAffine);
 
 
@@ -896,165 +755,294 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
-        int hack_TimestepIndex;
-        double hack_Phystime;
+        
+        bool[] updateSolutionParams;
 
+        bool lockUpdate;
 
+        bool m_TransformedResi = true;
 
-        /// <summary>
-        /// 
-        /// </summary>
-        protected override ITimestepInfo SaveToDatabase(TimestepNumber timestepno, double t) {
-            var tsi = base.SaveToDatabase(timestepno, t);
+        protected void SolutionParamsUpdate(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
 
-            if(tsi != null && m_BDF_Timestepper != null) {
-                int S = m_BDF_Timestepper.GetNumberOfStages;
+            int NF = this.CurrentResidual.Mapping.Fields.Count;
+            int D = this.GridData.SpatialDimension;
 
-                SinglePhaseField LsBkUp = new SinglePhaseField(this.LevSet.Basis);
-                LsBkUp.Acc(1.0, this.LevSet);
+            int len = (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) ? 1 : 1 + D;
+            for (int l = 0; l < len; l++)
+                updateSolutionParams[D + 1 + l] = false;
 
-                ICollection<DGField>[] restartFields = m_BDF_Timestepper.GetRestartInfos();
+            double[] L2Res = new double[NF];
 
-                if(S > 1 && this.Control.saveperiod >= S && restartFields != null) {
+            if (m_TransformedResi) {
+                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // transform current solution and residual back to the DG domain
+                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                    // save additional timesteps/information for restart
-                    // +++++++++++++++++++++++++++++++++++++++++++++++++
+                var R = m_BDF_Timestepper.Residuals;
+                R.Clear();
 
-                    for(int ti = 1; ti < S; ti++) {
+                Mgop.TransformRhsFrom(R, currentRes);
+                this.LsTrk.GetAgglomerator(this.LsTrk.SpeciesIdS.ToArray(), m_HMForder, this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
+                    AgglomerateNewborn: false, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true).Extrapolate(R.Mapping);
 
-                        //SinglePhaseField LsBkUp = new SinglePhaseField(this.LevSet.Basis);
-                        //LsBkUp.Acc(1.0, this.LevSet);
-
-                        ICollection<DGField> restartIOFields = new List<DGField>();
-                        foreach(DGField f in this.IOFields) {
-
-                            int rfidx = restartFields[ti - 1].IndexWhere(rf => rf.Identification == f.Identification);
-                            if(rfidx > -1) {
-                                DGField rf = restartFields[ti - 1].ElementAt(rfidx);
-                                if(f.Identification == "Phi") {
-                                    this.LevSet.Clear();
-                                    this.LevSet.Acc(1.0, rf);
-                                    restartIOFields.Add(this.LevSet);
-                                } else {
-                                    restartIOFields.Add(rf);
-                                }
-                            } else {
-                                DGField rf = f.CloneAs();
-                                rf.Clear();
-                                restartIOFields.Add(rf);
-                            }
-                        }
-
-                        //this.LevSet.Clear();
-                        //this.LevSet.Acc(1.0, LsBkUp);
-
-                        ITimestepInfo rtsi;
-                        TimestepNumber tsn = new TimestepNumber(timestepno.MajorNumber - ti);
-
-                        //Console.WriteLine("saving to Database ...");
-
-                        //Exception e = null;
-                        try {
-                            rtsi = new TimestepInfo(
-                                t - ti * this.Control.GetFixedTimestep(),
-                                this.CurrentSessionInfo,
-                                tsn,
-                                restartIOFields);
-                        } catch(Exception ee) {
-                            Console.Error.WriteLine(ee.GetType().Name + " on rank " + this.MPIRank + " saving time-step " + tsn + ": " + ee.Message);
-                            Console.Error.WriteLine(ee.StackTrace);
-                            //tsi = null;
-                            //e = ee;
-
-                            if(ContinueOnIOError) {
-                                Console.WriteLine("Ignoring IO error: " + DateTime.Now);
-                            } else {
-                                throw ee;
-                            }
-
-                            tsi = null;
-                        }
-                        // e.ExceptionBcast();
-                        csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-                    }
-
+                for (int i = 0; i < NF; i++) {
+                    L2Res[i] = R.Mapping.Fields[i].L2Norm();
                 }
 
-                this.LevSet.Clear();
-                this.LevSet.Acc(1.0, LsBkUp);
-            }
+            } else {
+                // +++++++++++++++++++++++
+                // un-transformed residual
+                // +++++++++++++++++++++++
 
-#if DEBUG
-            //Debug/Test code for XDG database interaction
+                var VarIdx = NF.ForLoop(i => Mgop.Mapping.GetSubvectorIndices(i));
 
-            if(tsi != null) {
-                // checking some neccessary reference-equalities BEFORE serialisation
-                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-                LevelSet.LevelSetInitializer lsi_1 = (LevelSet.LevelSetInitializer)(tsi.FieldInitializers.Single(fi => fi.Identification == this.LevSet.Identification));
-                XDGField.FieldInitializer pri = (XDGField.FieldInitializer)(tsi.FieldInitializers.Single(fi => fi.Identification == this.Pressure.Identification));
-
-                LevelSetTracker.LevelSetTrackerInitializer trki = ((XDGBasis.XDGBasisInitializer)(pri.BasisInfo)).TrackerInitializer;
-
-                LevelSet.LevelSetInitializer lsi_2 = trki.LevelSets[0];
-
-                Debug.Assert(object.ReferenceEquals(lsi_1, lsi_2));
-
-                foreach(XDGField.FieldInitializer fi in tsi.FieldInitializers.Where(fii => fii is XDGField.XDGFieldInitializer)) {
-                    LevelSetTracker.LevelSetTrackerInitializer trki_alt = ((XDGBasis.XDGBasisInitializer)(fi.BasisInfo)).TrackerInitializer;
-                    Debug.Assert(object.ReferenceEquals(trki, trki_alt));
+                for (int i = 0; i < VarIdx.Length; i++) {
+                    double L2 = 0.0;
+                    foreach (int idx in VarIdx[i])
+                        L2 += currentRes[idx - Mgop.Mapping.i0].Pow2();
+                    L2Res[i] = L2.MPISum().Sqrt();
                 }
             }
 
+            double NSE_L2Res = 0.0;
+            for (int i = 0; i <= D; i++)
+                NSE_L2Res += L2Res[i].Pow2();
+            NSE_L2Res.Sqrt();
 
-            if(tsi != null) {
-                // checking some neccessary equalities AFTER serialisation
-                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                
+            //Console.WriteLine("NSE L2 residual = {0}", NSE_L2Res);
+            if (!lockUpdate && (NSE_L2Res < this.Control.NonLinearSolver.ConvergenceCriterion || iterIndex == 0)) {
+                Console.WriteLine("update solution param");
+                for (int l = 0; l < len; l++)
+                    updateSolutionParams[D + 1 + l] = true;
 
-                var tsi_alt = this.DatabaseDriver.LoadTimestepInfo(tsi.ID, base.CurrentSessionInfo, base.GetDatabase());
-
-                Debug.Assert(!object.ReferenceEquals(tsi, tsi_alt));
-
-
-                LevelSet.LevelSetInitializer lsi_1 = (LevelSet.LevelSetInitializer)(tsi_alt.FieldInitializers.Single(fi => fi.Identification == "Phi"));
-                XDGField.FieldInitializer pri = (XDGField.FieldInitializer)(tsi_alt.FieldInitializers.Single(fi => fi.Identification == this.Pressure.Identification));
-
-                LevelSetTracker.LevelSetTrackerInitializer trki = ((XDGBasis.XDGBasisInitializer)(pri.BasisInfo)).TrackerInitializer;
-
-                LevelSet.LevelSetInitializer lsi_2 = trki.LevelSets[0];
-
-                Debug.Assert(lsi_1.Equals(lsi_2));
-
-                foreach(XDGField.FieldInitializer fi in tsi_alt.FieldInitializers.Where(fii => fii is XDGField.XDGFieldInitializer)) {
-                    LevelSetTracker.LevelSetTrackerInitializer trki_alt = ((XDGBasis.XDGBasisInitializer)(fi.BasisInfo)).TrackerInitializer;
-                    Debug.Assert(trki.Equals(trki_alt));
-                }
-
-
-                var Fields = this.DatabaseDriver.LoadFields(tsi_alt, this.GridData);
-                LevelSet Rphi_1 = (LevelSet)(Fields.Single(f => f.Identification.Equals(this.LevSet.Identification)));
-
-                XDGField Rpressure = (XDGField)(Fields.Single(f => f.Identification.Equals(this.Pressure.Identification)));
-
-                LevelSetTracker Rtracker = Rpressure.Basis.Tracker;
-                Debug.Assert(!object.ReferenceEquals(this.LsTrk, Rtracker));
-                Debug.Assert(object.ReferenceEquals(Rtracker.LevelSets[0], Rphi_1));
-
-                foreach(XDGField xf in Fields.Where(fii => fii is XDGField)) {
-                    Debug.Assert(object.ReferenceEquals(xf.Basis.Tracker, Rtracker));
-                }
+                lockUpdate = (iterIndex > 0);
             }
 
-#endif
 
-            return tsi;
         }
 
 
+        #endregion
+
+
+
+        //=============================
+        // timestepper related members
+        //=============================
+        #region timestepper
+
 
         /// <summary>
-        /// Depending on settings <see cref="AppControl.TimesteppingMode"/>, computes either one timestep or a steady-state solution.
+        /// Implicit timestepping using Backward-Differentiation-Formulas (BDF),
+        /// specialized for XDG applications.
+        /// </summary>
+        XdgBDFTimestepping m_BDF_Timestepper;
+
+
+        ///// <summary>
+        ///// Explicit or implicit timestepping using Runge-Kutta formulas,
+        ///// specialized for XDG applications.
+        ///// </summary>
+        //XdgRKTimestepping m_RK_Timestepper;
+
+        RungeKuttaScheme rksch = null;
+
+        int bdfOrder = -1000;
+
+
+        private void CreateTimestepper() {
+
+            switch (this.Control.Timestepper_Scheme) {
+                case XNSE_Control.TimesteppingScheme.RK_ImplicitEuler: {
+                        rksch = RungeKuttaScheme.ImplicitEuler;
+                        break;
+                    }
+                case XNSE_Control.TimesteppingScheme.RK_CrankNicolson: {
+                        rksch = RungeKuttaScheme.CrankNicolson;
+                        break;
+                    }
+                case XNSE_Control.TimesteppingScheme.CrankNicolson: {
+                        //do not instantiate rksch, use bdf instead
+                        bdfOrder = -1;
+                        break;
+                    }
+                case XNSE_Control.TimesteppingScheme.ImplicitEuler: {
+                        //do not instantiate rksch, use bdf instead
+                        bdfOrder = 1;
+                        break;
+                    }
+                default: {
+                        if (this.Control.Timestepper_Scheme.ToString().StartsWith("BDF")) {
+                            //do not instantiate rksch, use bdf instead
+                            bdfOrder = Convert.ToInt32(this.Control.Timestepper_Scheme.ToString().Substring(3));
+                            break;
+                        } else
+                            throw new NotImplementedException();
+                    }
+
+            }
+
+
+            if (rksch == null) {
+                m_BDF_Timestepper = new XdgBDFTimestepping(
+                    this.CurrentSolution.Mapping.Fields,
+                    this.CurrentResidual.Mapping.Fields,
+                    LsTrk,
+                    true,
+                    DelComputeOperatorMatrix, null, DelUpdateLevelSet,
+                    (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? bdfOrder : 1,
+                    this.Control.Timestepper_LevelSetHandling,
+                    this.XOpConfig.mmsd,
+                    (this.Control.PhysicalParameters.IncludeConvection) ? SpatialOperatorType.Nonlinear : SpatialOperatorType.LinearTimeDependent,
+                    MassScale,
+                    this.MultigridOperatorConfig, base.MultigridSequence,
+                    this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder,
+                    this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
+                    true,
+                    this.Control.NonLinearSolver,
+                    this.Control.LinearSolver
+                    );
+                m_BDF_Timestepper.m_ResLogger = base.ResLogger;
+                m_BDF_Timestepper.m_ResidualNames = this.CurrentResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
+                m_BDF_Timestepper.Timestepper_Init = (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? this.Control.Timestepper_BDFinit : TimeStepperInit.SingleInit;
+                m_BDF_Timestepper.incrementTimesteps = this.Control.incrementTimesteps;
+                m_BDF_Timestepper.PushLevelSet = this.PushLevelSetAndRelatedStuff;
+                m_BDF_Timestepper.IterUnderrelax = this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? this.Control.LSunderrelax : 1.0;
+
+                m_BDF_Timestepper.Config_LevelSetConvergenceCriterion = this.Control.LevelSet_ConvergenceCriterion;
+                //m_BDF_Timestepper.CustomIterationCallback += this.PlotOnIterationCallback;
+                if (this.Control.useSolutionParamUpdate)
+                    m_BDF_Timestepper.CustomIterationCallback += this.SolutionParamsUpdate;
+
+                // solver 
+                this.Control.NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.NonLinearSolver.MinSolverIterations; //m_BDF_Timestepper.config_NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.Solver_MinIterations;
+
+                if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
+                    m_BDF_Timestepper.XdgSolverFactory.Selfmade_precond =
+                                        new Schwarz() {
+                                            m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                                                NoOfPartsPerProcess = this.CurrentSolution.Count / 10000,
+                                            },
+                                            Overlap = 1,
+                                            CoarseSolver = new SparseSolver() { WhichSolver = SparseSolver._whichSolver.MUMPS }
+                                        };
+                } else {
+                    //m_BDF_Timestepper.Config_linearSolver = new DirectSolver() { WhichSolver = this.Control.LinearSolver };
+                }
+
+                //Console.WriteLine("noofpartsperprocess = {0}", this.CurrentSolution.Count / 10000);   
+
+            } else {
+
+                throw new NotSupportedException();
+
+                //m_RK_Timestepper = new XdgRKTimestepping(
+                //    this.CurrentSolution.Mapping.Fields.ToArray(),
+                //    this.CurrentResidual.Mapping.Fields.ToArray(),
+                //    LsTrk,
+                //    DelComputeOperatorMatrix, DelUpdateLevelSet, DelUpdateCutCellMetrics,
+                //    rksch,
+                //    this.Control.Timestepper_LevelSetHandling,
+                //    mmsd,
+                //    (this.Control.PhysicalParameters.IncludeConvection) ? SpatialOperatorType.Nonlinear : SpatialOperatorType.LinearTimeDependent,
+                //    MassScale,
+                //    this.MultigridOperatorConfig, base.MultigridSequence,
+                //    this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold, 
+                //    true);
+                //m_RK_Timestepper.m_ResLogger = base.ResLogger;
+                //m_RK_Timestepper.m_ResidualNames = this.CurrentResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
+            }
+
+        }
+
+
+        /// <summary>
+        /// delegate for the initialization of previous timesteps from an analytic solution
+        /// </summary>
+        /// <param name="TimestepIndex"></param>
+        /// <param name="Time"></param>
+        /// <param name="St"></param>
+        private void BDFDelayedInitSetIntial(int TimestepIndex, double Time, DGField[] St) {
+            using (new FuncTrace()) {
+                Console.WriteLine("Timestep index {0}, time {1} ", TimestepIndex, Time);
+
+                // level-set
+                // ---------
+                this.DGLevSet.Current.ProjectField(X => this.Control.Phi(X, Time));
+                this.LevSet.ProjectField(X => this.Control.Phi(X, Time));
+
+                this.LsTrk.UpdateTracker(incremental: true);
+
+                // solution
+                // --------
+                int D = this.LsTrk.GridDat.SpatialDimension;
+
+                for (int d = 0; d < D; d++) {
+                    XDGField _u = (XDGField)St[d];
+                    _u.Clear();
+                    _u.GetSpeciesShadowField("A").ProjectField(X => this.Control.ExactSolutionVelocity["A"][d](X, Time));
+                    _u.GetSpeciesShadowField("B").ProjectField((X => this.Control.ExactSolutionVelocity["B"][d](X, Time)));
+                }
+                XDGField _p = (XDGField)St[D];
+                _p.Clear();
+                _p.GetSpeciesShadowField("A").ProjectField(X => this.Control.ExactSolutionPressure["A"](X, Time));
+                _p.GetSpeciesShadowField("B").ProjectField((X => this.Control.ExactSolutionPressure["B"](X, Time)));
+            }
+        }
+
+
+        /// <summary>
+        /// delegate for the initialization of previous timesteps from restart session
+        /// </summary>
+        /// <param name="TimestepIndex"></param>
+        /// <param name="time"></param>
+        /// <param name="St"></param>
+        private void BDFDelayedInitLoadRestart(int TimestepIndex, double time, DGField[] St) {
+
+            Console.WriteLine("Timestep index {0}, time {1} ", TimestepIndex, time);
+
+            ITimestepInfo tsi_toLoad;
+            if (TimestepIndex < 0) {
+                throw new ArgumentOutOfRangeException("Not enough Timesteps to restart with desired Timestepper");
+            } else {
+                ISessionInfo reloadSession = GetDatabase().Controller.GetSessionInfo(this.CurrentSessionInfo.RestartedFrom);
+                tsi_toLoad = reloadSession.Timesteps.Single(t => t.TimeStepNumber.Equals(new TimestepNumber(TimestepIndex)));
+            }
+            DatabaseDriver.LoadFieldData(tsi_toLoad, this.GridData, this.IOFields);
+
+            // level-set
+            // ---------
+            this.DGLevSet.Current.Clear();
+            this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
+
+            //this.LsTrk.UpdateTracker(incremental: true);
+
+            // solution
+            // --------
+            int D = this.LsTrk.GridDat.SpatialDimension;
+
+            for (int d = 0; d < D; d++) {
+                St[d] = this.XDGvelocity.Velocity[d].CloneAs();
+            }
+            St[D] = this.Pressure.CloneAs();
+        }
+
+
+        #endregion
+
+
+
+        //===================================================
+        // application related members
+        // (RunSolverOneStep, SetInitial, LoadRestart, etc.)
+        //===================================================
+        #region application
+
+        int hack_TimestepIndex;
+        double hack_Phystime;
+
+        /// <summary>
+        /// Depending on settings <see cref="AppControl.CompMode"/>, computes either one timestep or a steady-state solution.
         /// </summary>
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
             using(var tr = new FuncTrace()) {
@@ -1110,12 +1098,16 @@ namespace BoSSS.Application.XNSE_Solver {
                     PushLevelSetAndRelatedStuff();
 
 
-                    // backup old velocity for energy checks
-                    // -------------------------------------
-                    if(this.Control.ComputeEnergy && this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) {
+                    // backup old velocity/kinetic energy for energy checks
+                    // -----------------------------------------------------
+                    if(this.Control.ComputeEnergyProperties && this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) {
                         for(int d = 0; d < D; d++) {
                             this.prevVel[d].Clear();
                             this.prevVel[d].Acc(1.0, this.CurrentVel[d]);
+                        }
+                        if (this.Control.ComputeEnergyProperties) {
+                            this.prevKineticEnergy.Clear();
+                            this.prevKineticEnergy.Acc(1.0, this.DerivedKineticEnergy);
                         }
                     }
 
@@ -1144,16 +1136,28 @@ namespace BoSSS.Application.XNSE_Solver {
                             double underrelax = Math.Round(dt_LevSetCFL / dt, 1);
                             m_BDF_Timestepper.IterUnderrelax = underrelax;
                             Console.WriteLine("Exceeding Level-Set CFL: Setting underrelaxation factor to {0}", underrelax);
+                            if (this.Control.solveKineticEnergyEquation && (dt / (dt_LevSetCFL / 4.0)) > 1.0) {
+                                Console.WriteLine("Exceeding Level-Set CFL for kinetic energy equation: dt = {0}, dt_sigma = {1}, frac = {2}", dt, dt_LevSetCFL/4.0, (dt / (dt_LevSetCFL / 4.0)));
+                            }
                         } else {
                             m_BDF_Timestepper.IterUnderrelax = 1.0;
                         }
                     }
 
+                    if (this.Control.solveKineticEnergyEquation) { 
+                        double kinE_Deg2 = this.KineticEnergy.Basis.Degree;
+                        kinE_Deg2 = kinE_Deg2 * kinE_Deg2;
+                        double dt_kinECFL = base.GridData.ComputeCFLTime(this.KineticEnergy.ToEnumerable(), dt * kinE_Deg2);
+                        dt_kinECFL = dt_kinECFL / kinE_Deg2;
+                        if (dt / dt_kinECFL > 1.0) {
+                            Console.WriteLine("Exceeding CFL-condition for kinetic energy equation: dt = {0}, dt_sigma = {1}, frac = {2}", dt, dt_kinECFL, dt / dt_kinECFL);
+                        }
+                    }
 
                     //dt = Math.Min(dt, dt_LevSetCFL);
 
                     // Capillary Timestep restriction
-                    if(this.Control.PhysicalParameters.Sigma != 0.0) {
+                    if (this.Control.PhysicalParameters.Sigma != 0.0) {
                         MultidimensionalArray h_mins = ((GridData)this.GridData).Cells.h_min;
                         double h = h_mins.Min();
                         double LevSet_Deg = this.LevSet.Basis.Degree + 1;
@@ -1198,15 +1202,14 @@ namespace BoSSS.Application.XNSE_Solver {
                 // The actual solution of the System
                 // ++++++++++++++++++++++++++++++++++++++++++
 
-                using(new BlockTrace("Solve", tr)) {
+                using (new BlockTrace("Solve", tr)) {
 
                     if(m_BDF_Timestepper != null) {
-                        m_BDF_Timestepper.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
 
-                        //if(this.Control.solveCoupledHeatEquation && m_BDF_coupledTimestepper != null) {
-                        //    m_BDF_coupledTimestepper.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-                        //    //ComputeHeatflux();
-                        //}
+                        updateSolutionParams.SetAll(true);
+                        lockUpdate = false;
+
+                        m_BDF_Timestepper.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
                         
                     } else {
                         //m_RK_Timestepper.Solve(phystime, dt);
@@ -1215,28 +1218,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
 
-                if(this.Control.ComputeEnergy && m_BDF_energyTimestepper != null) {
-
-                    this.prevKineticEnergy.Clear();
-                    this.prevKineticEnergy.Acc(1.0, this.KineticEnergy);
-
-                    // solve kinetic energy balance
-                    m_BDF_energyTimestepper.Solve(phystime, dt);
-
-                    // derive kinetic Energy from flow solution
-                    double[] rhoS = new double[] { this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B };
-                    EnergyUtils.ProjectKineticEnergy(this.DerivedKineticEnergy, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), rhoS, this.m_HMForder);
-
-                    // compute generated kinetic energy
-                    GeneratedKineticEnergy.Clear();
-                    GeneratedKineticEnergy.Acc(1.0, this.KineticEnergy);
-                    GeneratedKineticEnergy.Acc(-1.0, this.DerivedKineticEnergy);
-
-                    // changerate of kinetic energy from discretization 
-                    double[] muS = new double[] { this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B };
-                    EnergyUtils.ProjectKineticDissipation(this.KineticDissipation, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
-
-                }
+                if (this.Control.solveCoupledHeatEquation && (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP))
+                    this.ComputeHeatFlux();
 
 
                 Postprocessing(TimestepInt, phystime, dt, TimestepNo);
@@ -1263,241 +1246,6 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
-        UnsetteledCoordinateMapping SaddlePointProblemMapping {
-            get {
-                return this.CurrentSolution.Mapping;
-            }
-        }   
-       
-        int RepairZeroRows(MsrMatrix Mtx) {
-            int NoOfZeroRows = 0;
-            for (int iRow = Mtx.RowPartitioning.i0; iRow < Mtx.RowPartitioning.iE; iRow++) {
-                if (Mtx.GetNoOfNonZerosPerRow(iRow) == 0) {
-                    Mtx[iRow, iRow] = +1.0;
-                    NoOfZeroRows++;
-                }
-            }
-            return NoOfZeroRows;
-        }
-
-        /// <summary>
-        /// Computes condition number, etc. of the current system matrix.
-        /// </summary>
-        /// <param name="CheckAssertions"></param>
-        /// <param name="AnalysisLevel">
-        /// - equal 0: check that pressure gradient and velocity divergence are transpose
-        /// - equal 1: in addition, positive definiteness test.
-        /// - equal 2: in addition, check condition number and eigenvalues using MATLAB
-        /// </param>
-        public void SpatialOperatorMatrixAnalysis(bool CheckAssertions, int AnalysisLevel) {
-            using (new FuncTrace()) {
-                int D = this.Grid.SpatialDimension;
-
-                if (AnalysisLevel < 0 || AnalysisLevel > 2)
-                    throw new ArgumentException();
-
-                // ========================================================
-                // compute agglomeration & operator (saddle-point) matrix
-                // ========================================================
-
-                //var CurrentAgglomeration = new MultiphaseCellAgglomerator(
-                //        this.DelUpdateCutCellMetrics(),
-                //        this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
-                //        AgglomerateNewborn: false, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true);
-                var CurrentAgglomeration = this.LsTrk.GetAgglomerator(
-                    this.LsTrk.SpeciesIdS.ToArray(), m_HMForder, 
-                    this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold, 
-                    AgglomerateNewborn: false, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true);
-
-                BlockMsrMatrix SaddlePointMatrix = new BlockMsrMatrix(this.SaddlePointProblemMapping);
-                double[] AffineDummy = new double[this.SaddlePointProblemMapping.LocalLength];
-
-                
-
-                DelComputeOperatorMatrix(SaddlePointMatrix, AffineDummy, this.SaddlePointProblemMapping,
-                    this.CurrentSolution.Mapping.Fields.ToArray(), CurrentAgglomeration.CellLengthScales, 0.0);
-
-                // =============================
-                // AnalysisLevel 0
-                // =============================
-                {
-                    var SaddlePointMatrixT = SaddlePointMatrix.Transpose();
-
-                    CoordinateVector TestVec = new CoordinateVector(this.CurrentSolution.Mapping.Fields.Select(f => f.CloneAs()).ToArray());
-
-                    double testsumPos = 0.0;
-                    double testsumNeg = 0.0;
-                    for (int rnd_seed = 0; rnd_seed < 20; rnd_seed++) {
-
-                        // fill the pressure components of the test vector
-                        TestVec.Clear();
-                        Random rnd = new Random(rnd_seed);
-                        XDGField Pressack = TestVec.Mapping.Fields[D] as XDGField;
-                        int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
-                        for (int j = 0; j < J; j++) {
-                            int N = Pressack.Basis.GetLength(j);
-
-                            for (int n = 0; n < N; n++)
-                                Pressack.Coordinates[j, n] = rnd.NextDouble();
-                        }
-
-                        //Pressack.Clear(H.Complement());
-                        //Pressack.GetSpeciesShadowField("A").Clear();
-
-                        // Gradient times P:
-                        double[] R1 = new double[TestVec.Count];
-                        SaddlePointMatrix.SpMV(1.0, TestVec, 0.0, R1);       // R1 = Grad * P
-                                                                     //Console.WriteLine("L2 of 'Grad * P': " + R1.L2Norm());
-
-                        // transpose of Divergence times P: 
-                        double[] R2 = new double[TestVec.Count];
-                        SaddlePointMatrixT.SpMV(1.0, TestVec, 0.0, R2);      // R2 = divT * P
-                                                                     //Console.WriteLine("L2 of 'divT * P': " + R2.L2Norm());
-
-
-                        TestVec.Clear();
-                        TestVec.Acc(1.0, R1);
-                        TestVec.Acc(1.0, R2);
-
-
-                        // analyze!
-                        testsumNeg += GenericBlas.L2Dist(R1, R2);
-
-                        R2.ScaleV(-1.0);
-                        testsumPos += GenericBlas.L2Dist(R1, R2);
-
-                    }
-
-                    Console.WriteLine("Pressure/Divergence Symmetry error in all tests (+): " + testsumPos);
-                    Console.WriteLine("Pressure/Divergence Symmetry error in all tests (-): " + testsumNeg);
-
-                    if(CheckAssertions)
-                        Assert.LessOrEqual(Math.Abs(testsumNeg), testsumPos*1.0e-13);
-                }
-
-
-                // =============================
-                // AnalysisLevel 1 and 2
-                // =============================
-
-                if (AnalysisLevel > 0) {
-                    AggregationGridBasis[][] MgBasis = AggregationGridBasis.CreateSequence(this.MultigridSequence, this.CurrentSolution.Mapping.BasisS);
-                    //todo: AsyncCallback update
-                    MgBasis.UpdateXdgAggregationBasis(CurrentAgglomeration);
-                    MultigridOperator mgOp = new MultigridOperator(MgBasis, this.SaddlePointProblemMapping,
-                        SaddlePointMatrix, this.MassFact.GetMassMatrix(this.SaddlePointProblemMapping, false),
-                        this.MultigridOperatorConfig);
-
-                    // extract
-                    ////////////
-
-                    MsrMatrix FullMatrix = mgOp.OperatorMatrix.ToMsrMatrix();
-
-                    MsrMatrix DiffMatrix;
-                    {
-                        int[] VelVarIdx = D.ForLoop(d => d);
-
-                        int[] USubMatrixIdx_Row = mgOp.Mapping.GetSubvectorIndices(VelVarIdx);
-                        int[] USubMatrixIdx_Col = mgOp.Mapping.GetSubvectorIndices(VelVarIdx);
-                        int L = USubMatrixIdx_Row.Length;
-
-                        DiffMatrix = new MsrMatrix(L, L, 1, 1);
-                        FullMatrix.WriteSubMatrixTo(DiffMatrix, USubMatrixIdx_Row, default(int[]), USubMatrixIdx_Col, default(int[]));
-                    }
-
-                    int Zeros_FullMatrix = RepairZeroRows(FullMatrix);
-                    int Zeros_DiffMatrix = RepairZeroRows(DiffMatrix);
-
-                    Console.WriteLine("Indefinite Basis elements in Diffusion matrix:\t" + Zeros_DiffMatrix);
-                    Console.WriteLine("Indefinite Basis elements in Saddle-point matrix:\t" + Zeros_FullMatrix);
-
-                    base.QueryHandler.ValueQuery("NoOfIndef_DiffMtx", Zeros_DiffMatrix, false);
-                    base.QueryHandler.ValueQuery("NoOfIndef_FullMtx", Zeros_FullMatrix, false);
-
-                    // operator analysis
-                    //////////////////////
-
-                    bool posDef;
-                    if (AnalysisLevel > 1) {
-                        // +++++++++++++++++++++++++++++++
-                        // check condition number, etc
-                        // +++++++++++++++++++++++++++++++
-
-                        MultidimensionalArray ret = MultidimensionalArray.Create(1, 5);
-                        Console.WriteLine("Calling MATLAB/Octave...");
-                        using (BatchmodeConnector bmc = new BatchmodeConnector()) {
-                            bmc.PutSparseMatrix(FullMatrix, "FullMatrix");
-                            bmc.PutSparseMatrix(DiffMatrix, "DiffMatrix");
-                            bmc.Cmd("DiffMatrix = 0.5*(DiffMatrix + DiffMatrix');");
-                            bmc.Cmd("condNoDiffMatrix = condest(DiffMatrix);");
-                            bmc.Cmd("condNoFullMatrix = condest(FullMatrix);");
-                            bmc.Cmd("eigiMaxi = eigs(DiffMatrix,1,'lm')");
-                            bmc.Cmd("eigiMini = eigs(DiffMatrix,1,'sm')");
-                            bmc.Cmd("lasterr");
-                            bmc.Cmd("[V,r]=chol(DiffMatrix);");
-                            bmc.Cmd("ret = [condNoDiffMatrix, condNoFullMatrix, eigiMaxi, eigiMini, r]");
-                            bmc.GetMatrix(ret, "ret");
-
-                            bmc.Execute(false);
-                        }
-
-                        double condNoDiffMatrix = ret[0, 0];
-                        double condNoFullMatrix = ret[0, 1];
-                        double eigiMaxi = ret[0, 2];
-                        double eigiMini = ret[0, 3];
-                        posDef = ret[0, 4] == 0;
-
-                        Console.WriteLine("Eigenvalue range of diffusion matrix: {0} to {1}", eigiMini, eigiMaxi);
-
-                        Console.WriteLine("Condition number diffusion operator: {0:0.####E-00}", condNoDiffMatrix);
-                        Console.WriteLine("Condition number full operator: {0:0.####E-00}", condNoFullMatrix);
-
-                    } else {
-                        // +++++++++++++++++++++++++++++++++++++++
-                        // test only for positive definiteness
-                        // +++++++++++++++++++++++++++++++++++++++
-
-                        var DiffMatrixFull = DiffMatrix.ToFullMatrixOnProc0();
-
-                        posDef = true;
-                        try {
-                            DiffMatrixFull.Cholesky();
-                        } catch (ArithmeticException) {
-                            posDef = false;
-                        }
-                    }
-
-                    double DiffSymm = DiffMatrix.SymmetryDeviation();
-                    Console.WriteLine("Symmetry deviation of diffusion matrix: " + DiffSymm);
-
-                    if (posDef)
-                        Console.WriteLine("Good news: Diffusion operator matrix seems to be positive definite.");
-                    else
-                        Console.WriteLine("WARNING: Diffusion operator matrix is not positive definite.");
-
-                    if (CheckAssertions) {
-                        if (Control.AdvancedDiscretizationOptions.ViscosityMode == ViscosityMode.FullySymmetric && Control.PhysicalParameters.IncludeConvection == false) {
-                            double compVal = DiffMatrix.InfNorm() * 1e-13;
-                            Assert.LessOrEqual(DiffSymm, compVal, "Diffusion matrix seems to be non-symmetric.");
-                            Assert.IsTrue(posDef, "Positive definiteness test failed.");
-                        }
-                    }
-                }
-            }
-        }
-
-
-        protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1) {
-            Tecplot.PlotFields(base.m_RegisteredFields, "XNSE_Solver" + timestepNo, physTime, superSampling);
-            //Tecplot.PlotFields(new DGField[] { this.LevSet }, "grid" + timestepNo, physTime, 0);
-        }
-
-
-        protected void PlotOnIterationCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
-            PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, iterIndex }), 2);
-        }
-
-
         protected override void SetInitial() {
             base.SetInitial();
 
@@ -1519,38 +1267,33 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
-        /// <summary>
-        /// delegate for the initialization of previous timesteps from an analytic solution
-        /// </summary>
-        /// <param name="TimestepIndex"></param>
-        /// <param name="Time"></param>
-        /// <param name="St"></param>
-        private void BDFDelayedInitSetIntial(int TimestepIndex, double Time, DGField[] St) {
-            using(new FuncTrace()) {
-                Console.WriteLine("Timestep index {0}, time {1} ", TimestepIndex, Time);
 
-                // level-set
-                // ---------
-                this.DGLevSet.Current.ProjectField(X => this.Control.Phi(X, Time));
-                this.LevSet.ProjectField(X => this.Control.Phi(X, Time));
+        protected override void ResetInitial() {
+            base.SetInitial();
+            this.InitLevelSet();
 
-                this.LsTrk.UpdateTracker(incremental: true);
-
-                // solution
-                // --------
-                int D = this.LsTrk.GridDat.SpatialDimension;
-
-                for (int d = 0; d < D; d++) {
-                    XDGField _u = (XDGField)St[d];
-                    _u.Clear();
-                    _u.GetSpeciesShadowField("A").ProjectField(X => this.Control.ExactSolutionVelocity["A"][d](X, Time));
-                    _u.GetSpeciesShadowField("B").ProjectField((X => this.Control.ExactSolutionVelocity["B"][d](X, Time)));
-                }
-                XDGField _p = (XDGField)St[D];
-                _p.Clear();
-                _p.GetSpeciesShadowField("A").ProjectField(X => this.Control.ExactSolutionPressure["A"](X, Time));
-                _p.GetSpeciesShadowField("B").ProjectField((X => this.Control.ExactSolutionPressure["B"](X, Time)));
+            if (this.Control.solveCoupledHeatEquation) {
+                if (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP)
+                    m_BDF_Timestepper.ResetDataAfterBalancing(ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure, this.Temperature));
+                else
+                    m_BDF_Timestepper.ResetDataAfterBalancing(ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure, this.Temperature, this.HeatFlux));
+            } else {
+                m_BDF_Timestepper.ResetDataAfterBalancing(ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure));
             }
+
+            m_BDF_Timestepper.DelayedTimestepperInit(0.0, 0, this.Control.GetFixedTimestep(),
+                // delegate for the initialization of previous timesteps from an analytic solution
+                BDFDelayedInitSetIntial);
+
+            //if (this.Control.solveCoupledHeatEquation) {
+            //    if (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP)
+            //        m_BDF_coupledTimestepper.ResetDataAfterBalancing(this.Temperature.ToEnumerable());
+            //    else
+            //        m_BDF_coupledTimestepper.ResetDataAfterBalancing(ArrayTools.Cat<DGField>(this.Temperature.ToEnumerable(), this.HeatFlux.ToArray()));
+
+            //    m_BDF_coupledTimestepper.SingleInit();
+            //}
+
         }
 
 
@@ -1619,42 +1362,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
-        /// <summary>
-        /// delegate for the initialization of previous timesteps from restart session
-        /// </summary>
-        /// <param name="TimestepIndex"></param>
-        /// <param name="time"></param>
-        /// <param name="St"></param>
-        private void BDFDelayedInitLoadRestart(int TimestepIndex, double time, DGField[] St) {
-
-            Console.WriteLine("Timestep index {0}, time {1} ", TimestepIndex, time);
-
-            ITimestepInfo tsi_toLoad;
-            if(TimestepIndex < 0) {
-                throw new ArgumentOutOfRangeException("Not enough Timesteps to restart with desired Timestepper");
-            } else {
-                ISessionInfo reloadSession = GetDatabase().Controller.GetSessionInfo(this.CurrentSessionInfo.RestartedFrom);
-                tsi_toLoad = reloadSession.Timesteps.Single(t => t.TimeStepNumber.Equals(new TimestepNumber(TimestepIndex)));
-            }
-            DatabaseDriver.LoadFieldData(tsi_toLoad, this.GridData, this.IOFields);
-
-            // level-set
-            // ---------
-            this.DGLevSet.Current.Clear();
-            this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
-
-            //this.LsTrk.UpdateTracker(incremental: true);
-
-            // solution
-            // --------
-            int D = this.LsTrk.GridDat.SpatialDimension;
-
-                for (int d = 0; d < D; d++) {
-                    St[d] = this.XDGvelocity.Velocity[d].CloneAs();
-                }
-                St[D] = this.Pressure.CloneAs();
-        }
-
 
         public override void PostRestart(double time, TimestepNumber timestep) {
             base.PostRestart(time, timestep);
@@ -1711,54 +1418,19 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
-        /// <summary>
-        /// configuration options for <see cref="MultigridOperator"/>.
-        /// </summary>
-        MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig {
-            get {
-                int pVel = this.CurrentVel[0].Basis.Degree;
-                int pPrs = this.Pressure.Basis.Degree;
-                int D = this.GridData.SpatialDimension;
-
-                // set the MultigridOperator configuration for each level:
-                // it is not necessary to have exactly as many configurations as actual multigrid levels:
-                // the last configuration enty will be used for all higher level
-                MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
-                for (int iLevel = 0; iLevel < configs.Length; iLevel++) {
-                    configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 1];
-
-                    // configurations for velocity
-                    for (int d = 0; d < D; d++) {
-                        configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
-                            DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
-                            mode = this.Control.VelocityBlockPrecondMode,
-                            VarIndex = new int[] { d }
-                        };
-                    }
-                    // configuration for pressure
-                    configs[iLevel][D] = new MultigridOperator.ChangeOfBasisConfig() {
-                        DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
-                        mode = this.Control.PressureBlockPrecondMode,
-                        VarIndex = new int[] { D }
-                    };
-                }
-
-
-                return configs;
-            }
-        }
-
-
         protected override void Bye() {
             base.Bye();
             if (EnergyLogger != null)
                 EnergyLogger.Close();
         }
 
+        #endregion
 
-        // =========================
+
+
+        //==========================
         // adaptive mesh refinement
-        // ========================
+        //==========================
         #region AMR
 
         CellMask NScm;
@@ -2033,2690 +1705,186 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
-
         public override void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
             m_BDF_Timestepper.DataBackupBeforeBalancing(L);
-            if(this.Control.solveCoupledHeatEquation)
-                m_BDF_coupledTimestepper.DataBackupBeforeBalancing(L);
+            //if(this.Control.solveCoupledHeatEquation)
+            //    m_BDF_coupledTimestepper.DataBackupBeforeBalancing(L);
         }
-
-
 
 
         #endregion
 
 
-        // =========
-        // level-set
-        // =========
-        #region level-set
 
-        /// <summary>
-        /// Information of the current Fourier Level-Set
-        /// DFT_coeff
-        /// </summary>
-        FourierLevSetBase Fourier_LevSet;
+        //===========================
+        // I/O (saving and plotting)
+        //===========================
+        #region IO
 
-        FourierLevSetTimestepper Fourier_Timestepper;
-
-        /// <summary>
-        /// init routine for the specialized Fourier level-set
-        /// </summary>
-        private void InitFourier() {
-            if(this.Control.FourierLevSetControl == null)
-                throw new ArgumentNullException("LevelSetEvolution needs and instance of FourierLevSetControl!");
-
-            Fourier_LevSet = FourierLevelSetFactory.Build(this.Control.FourierLevSetControl);
-            if(this.Control.EnforceLevelSetConservation) {
-                throw new NotSupportedException("mass conservation correction currently not supported");
-            }
-            Fourier_LevSet.ProjectToDGLevelSet(this.DGLevSet.Current, this.LsTrk);
-
-            if(base.MPIRank == 0 && this.CurrentSessionInfo.ID != Guid.Empty) {
-                // restart information for Fourier LS
-                Log_FourierLS = base.DatabaseDriver.FsDriver.GetNewLog("Log_FourierLS", this.CurrentSessionInfo.ID);
-                Guid vecSamplP_id = this.DatabaseDriver.SaveVector<double>(Fourier_LevSet.getRestartInfo());
-                Log_FourierLS.WriteLine(vecSamplP_id);
-                Log_FourierLS.Flush();
-
-                //if(this.Control.FourierLevSetControl.WriteFLSdata)
-                //    Fourier_LevSet.setUpLogFiles(base.DatabaseDriver, this.CurrentSessionInfo, TimestepNo, PhysTime);
-
-            }
-            //create specialized fourier timestepper
-            Fourier_Timestepper = FourierLevelSetFactory.Build_Timestepper(this.Control.FourierLevSetControl, Fourier_LevSet.GetFLSproperty(),
-                                                            Fourier_LevSet.ComputeChangerate, Fourier_LevSet.EvolveFourierLS);
-        }
-
-
-        /// <summary>
-        /// setUp for the Level set initialization (Level-set algorithm, continuity, conservation)
-        /// </summary>
-        private void InitLevelSet() {
-            using(new FuncTrace()) {
-
-                // check level-set
-                if(this.LevSet.L2Norm() == 0) {
-                    throw new NotSupportedException("Level set is not initialized - norm is 0.0 - ALL cells will be cut, no gradient can be defined!");
-                }
-
-                // tracker needs to be updated to get access to the cut-cell mask
-                this.LsTrk.UpdateTracker();
-
-                // ==============================
-                // level-set initialization
-                // ==============================
-
-                //PlotCurrentState(0.0, new TimestepNumber(new int[] { 0, 0 }), 3);
-
-                #region Initialize Level Set Evolution Algorithm
-                switch(this.Control.Option_LevelSetEvolution) {
-                    case LevelSetEvolution.Fourier:
-                        InitFourier();
-                        break;
-                    case LevelSetEvolution.None:
-                        if(this.Control.AdvancedDiscretizationOptions.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.Curvature_Fourier) {
-                            Fourier_LevSet = FourierLevelSetFactory.Build(this.Control.FourierLevSetControl);
-                            Fourier_LevSet.ProjectToDGLevelSet(this.DGLevSet.Current, this.LsTrk);
-                        } else {
-                            goto default;
-                        }
-                        break;
-                    case LevelSetEvolution.ExtensionVelocity: {
-                            // Create ExtensionVelocity Motion Algorithm
-                            this.DGLevSet.Current.Clear();
-                            this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
-                            DGLevSetGradient.Gradient(1.0, DGLevSet.Current);
-                            //VectorField<SinglePhaseField> VectorExtVel = ExtensionVelocity.Current;
-                            base.RegisterField(ExtensionVelocity.Current);
-
-                            //ReInitPDE = new EllipticReInit(this.LsTrk, this.Control.ReInitControl, DGLevSet.Current);
-                            FastMarchReinitSolver = new FastMarchReinit(DGLevSet.Current.Basis);
-
-                            // full initial reinitialization
-                            //ReInitPDE.ReInitialize(Restriction: LsTrk.Regions.GetNearFieldSubgrid(1));
-
-                            CellMask Accepted = LsTrk.Regions.GetNearFieldMask(1);
-                            CellMask ActiveField = Accepted.Complement();
-                            CellMask NegativeField = LsTrk.Regions.GetSpeciesMask("A");
-                            FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
-
-                            //ReInitPDE.ReInitialize();
-
-                            // setup extension velocity mover
-                            switch(this.Control.Timestepper_Scheme) {
-                                case XNSE_Control.TimesteppingScheme.RK_CrankNicolson:
-                                case XNSE_Control.TimesteppingScheme.CrankNicolson: {
-                                        //do not instantiate rksch, use bdf instead
-                                        bdfOrder = -1;
-                                        break;
-                                    }
-                                case XNSE_Control.TimesteppingScheme.RK_ImplicitEuler:
-                                case XNSE_Control.TimesteppingScheme.ImplicitEuler: {
-                                        //do not instantiate rksch, use bdf instead
-                                        bdfOrder = 1;
-                                        break;
-                                    }
-                                default: {
-                                        if(this.Control.Timestepper_Scheme.ToString().StartsWith("BDF")) {
-                                            //do not instantiate rksch, use bdf instead
-                                            bdfOrder = Convert.ToInt32(this.Control.Timestepper_Scheme.ToString().Substring(3));
-                                            break;
-                                        } else
-                                            throw new NotImplementedException();
-                                    }
-                            }
-
-                            ExtVelMover = new ExtensionVelocityBDFMover(LsTrk, DGLevSet.Current, DGLevSetGradient, new VectorField<DGField>(XDGvelocity.Velocity.ToArray()),
-                                Control.EllipticExtVelAlgoControl, BcMap, bdfOrder, ExtensionVelocity.Current, new double[2] { Control.PhysicalParameters.rho_A, Control.PhysicalParameters.rho_B });
-
-
-                            break;
-                        }
-                    case LevelSetEvolution.FastMarching:
-                    case LevelSetEvolution.Prescribed:
-                    case LevelSetEvolution.ScalarConvection:
-                    default:
-                        // evolution algorithms need a signed-distance level-set:
-                        // do some reinit at startup
-                        //BoSSS.Solution.LevelSetTools.Advection.NarrowMarchingBand.CutCellReinit(this.LsTrk, this.DGLevSet.Current);
-                        // apply only the minimal necessary change
-                        this.DGLevSet.Current.Clear();
-                        this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
-
-                        //FastMarchReinitSolver = new FastMarchReinit(DGLevSet.Current.Basis);
-
-                        break;
-                }
-                //PlotCurrentState(0.0, new TimestepNumber(new int[] { 0, 1 }), 3);
-                #endregion
-
-                // =========================================
-                // Enforcing the continuity of the level-set
-                // =========================================
-
-                ContinuityEnforcer = new ContinuityProjection(
-                    ContBasis: this.LevSet.Basis,
-                    DGBasis: this.DGLevSet.Current.Basis,
-                    gridData: GridData,
-                    Option: Control.LSContiProjectionMethod
-                    );
-
-                //var CC = this.LsTrk.Regions.GetCutCellMask4LevSet(0);
-                var Near1 = this.LsTrk.Regions.GetNearMask4LevSet(0, 1);
-                var Near = this.LsTrk.Regions.GetNearMask4LevSet(0, this.Control.LS_TrackerWidth);
-                var PosFF = this.LsTrk.Regions.GetLevelSetWing(0, +1).VolumeMask;
-
-                if(this.Control.Option_LevelSetEvolution != LevelSetEvolution.ExtensionVelocity)
-                    ContinuityEnforcer.SetFarField(this.DGLevSet.Current, Near1, PosFF);
-
-                ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, Near, PosFF);
-
-                //PlotCurrentState(0.0, new TimestepNumber(new int[] { 0, 2 }), 3);
-
-                this.LsTrk.UpdateTracker();
-
-            }
-
-        }
 
         /// <summary>
         /// 
         /// </summary>
-        public void PushLevelSetAndRelatedStuff() {
+        protected override ITimestepInfo SaveToDatabase(TimestepNumber timestepno, double t) {
+            var tsi = base.SaveToDatabase(timestepno, t);
 
-            if(this.Control.Option_LevelSetEvolution == LevelSetEvolution.Fourier) {
-                Fourier_Timestepper.updateFourierLevSet();
-            }
-
-            this.ExtensionVelocity.IncreaseHistoryLength(1);
-            this.ExtensionVelocity.Push();
-
-            this.DGLevSet.IncreaseHistoryLength(1);
-            this.DGLevSet.Push();
-        }
-
-
-        /// <summary>
-        /// Computes the new level set field at time <paramref name="Phystime"/> + <paramref name="dt"/>.
-        /// This is a 'driver function' which provides a universal interface to the various level set evolution algorithms.
-        /// It also acts as a callback to the time stepper (see <see cref="m_BDF_Timestepper"/> resp. <see cref="m_RK_Timestepper"/>),
-        /// i.e. it matches the signature of 
-        /// <see cref="BoSSS.Solution.XdgTimestepping.DelUpdateLevelset"/>.
-        /// </summary>
-        /// <param name="Phystime"></param>
-        /// <param name="dt"></param>
-        /// <param name="CurrentState">
-        /// The current solution (velocity and pressure), since the complete solution is provided by the time stepper,
-        /// only the velocity components(supposed to be at the beginning) are used.
-        /// </param>
-        /// <param name="underrelax">
-        /// </param>
-        double DelUpdateLevelSet(DGField[] CurrentState, double Phystime, double dt, double underrelax, bool incremental) {
-            using (new FuncTrace()) {
-
-                //dt *= underrelax;
-                int D = base.Grid.SpatialDimension;
-                int iTimestep = hack_TimestepIndex;
-                DGField[] EvoVelocity = CurrentState.GetSubVector(0, D);
-
-
-                // ========================================================
-                // Backup old level-set, in order to compute the residual
-                // ========================================================
+            if (tsi != null && m_BDF_Timestepper != null) {
+                int S = m_BDF_Timestepper.GetNumberOfStages;
 
                 SinglePhaseField LsBkUp = new SinglePhaseField(this.LevSet.Basis);
                 LsBkUp.Acc(1.0, this.LevSet);
-                CellMask oldCC = LsTrk.Regions.GetCutCellMask();
 
-                // ====================================================
-                // set evolution velocity, but only on the CUT-cells
-                // ====================================================
+                ICollection<DGField>[] restartFields = m_BDF_Timestepper.GetRestartInfos();
 
-                #region Calculate density averaged Velocity for each cell
+                if (S > 1 && this.Control.saveperiod >= S && restartFields != null) {
 
-                ConventionalDGField[] meanVelocity = GetMeanVelocityFromXDGField(EvoVelocity);
+                    // save additional timesteps/information for restart
+                    // +++++++++++++++++++++++++++++++++++++++++++++++++
 
-                #endregion
+                    for (int ti = 1; ti < S; ti++) {
 
+                        //SinglePhaseField LsBkUp = new SinglePhaseField(this.LevSet.Basis);
+                        //LsBkUp.Acc(1.0, this.LevSet);
 
-                // =============================================
-                // compute interface velocity due to evaporation
-                // =============================================
+                        ICollection<DGField> restartIOFields = new List<DGField>();
+                        foreach (DGField f in this.IOFields) {
 
-                #region Compute evaporative velocity
-
-                //SinglePhaseField LevSetSrc = new SinglePhaseField(meanVelocity[0].Basis, "LevelSetSource");
-
-                if(this.Control.solveCoupledHeatEquation &&
-                    this.Control.ThermalParameters.hVap_A != 0.0 && this.Control.ThermalParameters.hVap_B != 0.0) {
-
-                    SinglePhaseField[] evapVelocity = new SinglePhaseField[D];
-                    BitArray EvapMicroRegion = new BitArray(this.LsTrk.GridDat.Cells.Count);  //this.LsTrk.GridDat.GetBoundaryCells().GetBitMask();
-
-
-                    double kA = this.Control.ThermalParameters.k_A;
-                    double kB = this.Control.ThermalParameters.k_B;
-
-                    for(int d = 0; d < D; d++) {
-                        evapVelocity[d] = new SinglePhaseField(meanVelocity[0].Basis, "evapVelocity_d" + d);
-
-                        evapVelocity[d].ProjectField(1.0,
-                           delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-                               int K = result.GetLength(1); // No nof Nodes
-
-                               MultidimensionalArray GradTempA_Res = MultidimensionalArray.Create(Len, K, D);
-                               MultidimensionalArray GradTempB_Res = MultidimensionalArray.Create(Len, K, D);
-
-                               this.Temperature.GetSpeciesShadowField("A").EvaluateGradient(j0, Len, NS, GradTempA_Res);
-                               this.Temperature.GetSpeciesShadowField("B").EvaluateGradient(j0, Len, NS, GradTempB_Res);
-
-                               MultidimensionalArray HeatFluxA_Res = MultidimensionalArray.Create(Len, K, D);
-                               MultidimensionalArray HeatFluxB_Res = MultidimensionalArray.Create(Len, K, D);
-                               if (XOpConfig.getConductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
-                                   for (int dd = 0; dd < D; dd++) {
-                                       this.HeatFlux[dd].GetSpeciesShadowField("A").Evaluate(j0, Len, NS, HeatFluxA_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
-                                       this.HeatFlux[dd].GetSpeciesShadowField("B").Evaluate(j0, Len, NS, HeatFluxB_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
-                                   }
-                               }
-
-                               MultidimensionalArray TempA_Res = MultidimensionalArray.Create(Len, K);
-                               MultidimensionalArray TempB_Res = MultidimensionalArray.Create(Len, K);
-                               MultidimensionalArray Curv_Res = MultidimensionalArray.Create(Len, K);
-                               MultidimensionalArray Pdisp_Res = MultidimensionalArray.Create(Len, K);
-
-                               this.Temperature.GetSpeciesShadowField("A").Evaluate(j0, Len, NS, TempA_Res);
-                               this.Temperature.GetSpeciesShadowField("B").Evaluate(j0, Len, NS, TempB_Res);
-                               this.Curvature.Evaluate(j0, Len, NS, Curv_Res);
-                               this.DisjoiningPressure.Evaluate(j0, Len, NS, Pdisp_Res);
-
-                               var Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(NS, j0, Len);
-
-                               for(int j = 0; j < Len; j++) {
-                                   for(int k = 0; k < K; k++) {
-
-                                       double hVap = 0.0;
-                                       double rho_l = 0.0;
-                                       double rho_v = 0.0;
-                                       double qEvap = 0.0;
-                                       if(EvapMicroRegion[j]) {
-                                           // micro region
-                                           double Tsat = this.Control.ThermalParameters.T_sat;
-                                           double pc = this.Control.ThermalParameters.pc;
-                                           double pc0 = (pc < 0.0) ? this.Control.PhysicalParameters.Sigma * Curv_Res[j, k] + Pdisp_Res[j, k] : pc;
-                                           double f = this.Control.ThermalParameters.fc;
-                                           double R = this.Control.ThermalParameters.Rc;
-                                           if(this.Control.ThermalParameters.hVap_A > 0) {
-                                               hVap = this.Control.ThermalParameters.hVap_A;
-                                               rho_l = this.Control.PhysicalParameters.rho_A;
-                                               rho_v = this.Control.PhysicalParameters.rho_B;
-                                               double TintMin = Tsat * (1 + (pc0 / (hVap * rho_l)));
-                                               double Rint = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (rho_v * hVap.Pow2());
-                                               if(TempA_Res[j, k] > TintMin)
-                                                   qEvap = -(TempA_Res[j, k] - TintMin) / Rint;
-                                           } else {
-                                               hVap = -this.Control.ThermalParameters.hVap_A;
-                                               rho_l = this.Control.PhysicalParameters.rho_B;
-                                               rho_v = this.Control.PhysicalParameters.rho_A;
-                                               double TintMin = Tsat * (1 + (pc0 / (hVap * rho_l)));
-                                               double Rint = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (rho_v * hVap.Pow2());
-                                               if(TempB_Res[j, k] > TintMin)
-                                                   qEvap = (TempB_Res[j, k] - TintMin) / Rint;
-                                           }
-
-                                       } else {
-                                           //macro region
-                                           if(this.Control.ThermalParameters.hVap_A > 0) {
-                                               hVap = this.Control.ThermalParameters.hVap_A;
-                                               rho_l = this.Control.PhysicalParameters.rho_A;
-                                               rho_v = this.Control.PhysicalParameters.rho_B;
-                                               for (int dd = 0; dd < D; dd++) {
-                                                   if (XOpConfig.getConductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
-                                                       qEvap -= (HeatFluxA_Res[j, k, dd] - HeatFluxB_Res[j, k, dd]) * Normals[j, k, dd];
-                                                   else
-                                                       qEvap += (kA * GradTempA_Res[j, k, dd] - kB * GradTempB_Res[j, k, dd]) * Normals[j, k, dd];
-                                               }
-                                           } else {
-                                               hVap = -this.Control.ThermalParameters.hVap_A;
-                                               rho_l = this.Control.PhysicalParameters.rho_B;
-                                               rho_v = this.Control.PhysicalParameters.rho_A;
-                                               for (int dd = 0; dd < D; dd++) {
-                                                   if (XOpConfig.getConductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
-                                                       qEvap -= (HeatFluxB_Res[j, k, dd] - HeatFluxA_Res[j, k, dd]) * Normals[j, k, dd];
-                                                   else
-                                                       qEvap += (kB * GradTempB_Res[j, k, dd] - kA * GradTempA_Res[j, k, dd]) * Normals[j, k, dd];
-                                               }
-                                           }
-                                       }
-
-                                       //if (qEvap > -9.99 || qEvap < -10.01)
-                                       //    Console.WriteLine("qEvap - DelUpdateLevelSet = {0}", qEvap);
-
-                                       double mEvap = (this.Control.prescribedMassflux != null) ? this.Control.prescribedMassflux(hack_Phystime) : qEvap / hVap; // mass flux
-                                       //result[j, k] = mEvap * ((1 / rho_v) - (1 / rho_l)) * Normals[j, k, d];   //
-                                       result[j, k] = mEvap * (1 / rho_v) * Normals[j, k, d];   //
-                                       //result[j, k] = - Normals[j, k, d];   //
-                                   }
-                               }
-                           }, new CellQuadratureScheme(true, LsTrk.Regions.GetCutCellMask()));
-
-                    }
-
-                    //SinglePhaseField[] Mevap = new SinglePhaseField[D];
-                    //for(int d = 0; d < D; d++) {
-                    //    Mevap[d] = new SinglePhaseField(meanVelocity[0].Basis, "Mevap_d" + d);
-                    //    double rho_v = 0.0;
-                    //    if(this.Control.ThermalParameters.hVap_A > 0) {
-                    //        rho_v = this.Control.PhysicalParameters.rho_B;
-                    //    } else {
-                    //        rho_v = this.Control.PhysicalParameters.rho_A;
-                    //    }
-                    //    Mevap[d].Acc(rho_v, evapVelocity[d]);
-                    //}
-
-
-                    // evaporation for micro region 
-                    #region micro evaporation
-
-                    //double f = this.Control.ThermalParameters.fc;
-                    //double Tsat = this.Control.ThermalParameters.T_sat;
-                    //double R = this.Control.ThermalParameters.Rc;
-
-                    //double rho_l = 0.0;
-                    //double h_Vap = 0.0;
-                    //double R_int = 0.0;
-                    //double dir = 0.0;   // direction of volume flow
-                    //DGField Temp_Vap = new SinglePhaseField(meanVelocity[0].Basis);
-                    //if(this.Control.ThermalParameters.hVap_A > 0 && this.Control.ThermalParameters.hVap_B < 0) {
-                    //    rho_l = this.Control.PhysicalParameters.rho_A;
-                    //    h_Vap = this.Control.ThermalParameters.hVap_A;
-                    //    Temp_Vap = Temperature.GetSpeciesShadowField("A");
-                    //    R_int = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (this.Control.PhysicalParameters.rho_B * h_Vap.Pow2());
-                    //    dir = 1.0;
-                    //} else if(this.Control.ThermalParameters.hVap_A < 0 && this.Control.ThermalParameters.hVap_B > 0) {
-                    //    rho_l = this.Control.PhysicalParameters.rho_B;
-                    //    h_Vap = this.Control.ThermalParameters.hVap_B;
-                    //    Temp_Vap = Temperature.GetSpeciesShadowField("B");
-                    //    R_int = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (this.Control.PhysicalParameters.rho_A * h_Vap.Pow2());
-                    //    dir = -1.0;
-                    //}
-                    //double p_c = this.Control.ThermalParameters.pc;
-
-                    //LevSetSrc.ProjectField(1.0,
-                    //delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-                    //    int K = result.GetLength(1); // No nof Nodes
-
-                    //    //BitArray sbba = new BitArray(this.Grid.NoOfUpdateCells);
-                    //    //for(int j = j0; j < j0 + Len; j++)
-                    //    //    sbba[j] = true;
-                    //    //SubGrid sbgrd = new SubGrid(new CellMask(this.GridData, sbba));
-                    //    //var cp = new BoSSS.Solution.LevelSetTools.ClosestPointFinder(this.LsTrk, 0, sbgrd, new NodeSet[] { NS });
-
-                    //    //MultidimensionalArray CurvIntRes = cp.EvaluateAtCp(this.Curvature);
-                    //    //MultidimensionalArray pDisIntRes = cp.EvaluateAtCp(this.DisjoiningPressure);
-                    //    //MultidimensionalArray TempIntRes = cp.EvaluateAtCp(Temp_Vap);
-
-                    //    MultidimensionalArray CurvIntRes = MultidimensionalArray.Create(Len, K);
-                    //    MultidimensionalArray pDisIntRes = MultidimensionalArray.Create(Len, K);
-                    //    MultidimensionalArray TempIntRes = MultidimensionalArray.Create(Len, K);
-
-                    //    this.Curvature.Evaluate(j0, Len, NS, CurvIntRes);
-                    //    this.DisjoiningPressure.Evaluate(j0, Len, NS, pDisIntRes);
-                    //    Temp_Vap.Evaluate(j0, Len, NS, TempIntRes);
-
-                    //    for(int j = 0; j < Len; j++) {
-                    //        for(int k = 0; k < K; k++) {
-
-                    //            double pc0 = (p_c < 0.0) ? this.Control.PhysicalParameters.Sigma * CurvIntRes[j, k] + pDisIntRes[j, k] : p_c;      // augmented capillary pressure (without nonlinear evaporative masss part)
-
-                    //            double T_intMin = Tsat * (1 + (pc0 / (rho_l * h_Vap)));
-
-                    //            double qEvap = 0.0;
-                    //            double T_int = TempIntRes[j, k];
-                    //            if(T_int > T_intMin)
-                    //                qEvap = dir * (T_int - T_intMin) / R_int;
-
-                    //            result[j, k] = qEvap * (h_Vap / rho_l); // volume flux
-                    //        }
-                    //    }
-                    //}, new Foundation.Quadrature.CellQuadratureScheme(true, LsTrk.Regions.GetNearFieldMask(1)));
-
-                    #endregion
-
-
-                    // check interface velocity
-                    int p = evapVelocity[0].Basis.Degree;
-                    SubGrid sgrd = LsTrk.Regions.GetCutCellSubgrid4LevSet(0);
-                    NodeSet[] Nodes = LsTrk.GridDat.Grid.RefElements.Select(Kref => Kref.GetQuadratureRule(p * 2).Nodes).ToArray();
-
-                    var cp = new ClosestPointFinder(LsTrk, 0, sgrd, Nodes);
-
-                    MultidimensionalArray[] VelocityEval = evapVelocity.Select(sf => cp.EvaluateAtCp(sf)).ToArray();
-
-                    double nNodes = VelocityEval[0].Length;
-                    double evapVelY = VelocityEval[1].Sum() / nNodes;
-                    Console.WriteLine("EvapVelocity = {0}", evapVelY);
-                    EvapVelocMean = evapVelY;
-
-                    //double evapVelMean = 0.0;
-                    //for(int s = 0; s < sgrd.GlobalNoOfCells; s++) {
-                    //    for (int n = 0; n < Nodes.Length; n++) {
-                    //        double velX = VelocityEval[0].To2DArray()[s, n];
-                    //        double velY = VelocityEval[1].To2DArray()[s, n];
-                    //        evapVelMean += Math.Sqrt(velX.Pow2() + velY.Pow2());
-                    //    }
-                    //}
-                    //evapVelMean /= nNodes;
-                    //Console.WriteLine("EvapVelocity = {0}", evapVelMean);
-
-                    // construct evolution velocity
-                    for (int d = 0; d < D; d++) {
-                        //SinglePhaseField FiltEvapVeloc = new SinglePhaseField(evapVelocity[d].Basis);
-                        //FiltEvapVeloc.AccLaidBack(1.0, evapVelocity[d]);
-                        //Filter(FiltEvapVeloc, 2, LsTrk.Regions.GetCutCellMask());
-                        //evapVelocity[d].Clear();
-                        //evapVelocity[d].Acc(1.0, FiltEvapVeloc);
-
-                        meanVelocity[d].Clear();
-                        if(this.Control.ThermalParameters.hVap_A > 0.0)
-                            meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField("B"), this.LsTrk.Regions.GetCutCellMask());
-                        else
-                            meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField("A"), this.LsTrk.Regions.GetCutCellMask());
-
-                        meanVelocity[d].Acc(1.0, evapVelocity[d]);
-                    }
-
-                    // plot
-                    //Tecplot.PlotFields(Mevap.ToArray(), "Mevap" + hack_TimestepIndex, hack_Phystime, 2);
-                    //Tecplot.PlotFields(evapVelocity.ToArray(), "EvapVelocity" + hack_TimestepIndex, hack_Phystime, 2);
-                    //Tecplot.PlotFields(meanVelocity.ToArray(), "meanVelocity" + hack_TimestepIndex, hack_Phystime, 2);
-                }
-
-                #endregion
-
-                // ===================================================================
-                // backup interface properties (mass conservation, surface changerate)
-                // ===================================================================
-
-                #region backup interface props
-
-                double oldSurfVolume = 0.0;
-                double oldSurfLength = 0.0;
-                double SurfChangerate = 0.0;
-                if (this.Control.CheckInterfaceProps) {
-                    oldSurfVolume = XNSEUtils.GetSpeciesArea(this.LsTrk, LsTrk.GetSpeciesId("A"));
-                    oldSurfLength = XNSEUtils.GetInterfaceLength(this.LsTrk);
-                    SurfChangerate = EnergyUtils.GetSurfaceChangerate(this.LsTrk, meanVelocity, this.m_HMForder);
-                }
-
-                #endregion
-
-                // ====================================================
-                // perform level-set evolution
-                // ====================================================
-
-                #region level-set evolution
-
-                // set up for Strang splitting
-                SinglePhaseField DGLevSet_old;
-                if (incremental)
-                    DGLevSet_old = this.DGLevSet.Current.CloneAs();
-                else
-                    DGLevSet_old = this.DGLevSet[0].CloneAs();
-
-
-                // set up for underrelaxation
-                SinglePhaseField DGLevSet_oldIter = this.DGLevSet.Current.CloneAs();
-
-                //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 0 }), 2);
-
-                // actual evolution
-                switch (this.Control.Option_LevelSetEvolution) {
-                    case LevelSetEvolution.None:
-                    throw new ArgumentException("illegal call");
-
-                    case LevelSetEvolution.FastMarching: {
-
-                            NarrowMarchingBand.Evolve_Mk2(
-                             dt, this.LsTrk, DGLevSet_old, this.DGLevSet.Current, this.DGLevSetGradient,
-                             meanVelocity, this.ExtensionVelocity.Current.ToArray(), //new DGField[] { LevSetSrc },
-                             this.m_HMForder, iTimestep);
-
-                            //FastMarchReinitSolver = new FastMarchReinit(DGLevSet.Current.Basis);
-                            //CellMask Accepted = LsTrk.Regions.GetCutCellMask();
-                            //CellMask ActiveField = LsTrk.Regions.GetNearFieldMask(1);
-                            //CellMask NegativeField = LsTrk.Regions.GetSpeciesMask("A");
-                            //FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
-
-                            break;
-                    }
-
-                    case LevelSetEvolution.Fourier: {
-                        Fourier_Timestepper.moveLevelSet(dt, meanVelocity);
-                        if (incremental)
-                            Fourier_Timestepper.updateFourierLevSet();
-                        Fourier_LevSet.ProjectToDGLevelSet(this.DGLevSet.Current, this.LsTrk);
-                        break;
-                    }
-
-                    case LevelSetEvolution.Prescribed: {
-                        this.DGLevSet.Current.Clear();
-                        this.DGLevSet.Current.ProjectField(1.0, Control.Phi.Vectorize(Phystime + dt));
-                        break;
-                    }
-
-                    case LevelSetEvolution.ScalarConvection: {
-                        var LSM = new LevelSetMover(EvoVelocity,
-                            this.ExtensionVelocity,
-                            this.LsTrk,
-                            XVelocityProjection.CutCellVelocityProjectiontype.L2_plain,
-                            this.DGLevSet,
-                            this.BcMap);
-
-                        int check1 = this.ExtensionVelocity.PushCount;
-                        int check2 = this.DGLevSet.PushCount;
-
-                        this.DGLevSet[1].Clear();
-                        this.DGLevSet[1].Acc(1.0, DGLevSet_old);
-                        LSM.Advect(dt);
-
-                        if (check1 != this.ExtensionVelocity.PushCount)
-                            throw new ApplicationException();
-                        if (check2 != this.DGLevSet.PushCount)
-                            throw new ApplicationException();
-
-                        break;
-                    }
-                    case LevelSetEvolution.ExtensionVelocity: {
-
-                            DGLevSetGradient.Clear();
-                            DGLevSetGradient.Gradient(1.0, DGLevSet.Current);
-
-                            ExtVelMover.Advect(dt);
-
-                            // Fast Marching: Specify the Domains first
-                            // Perform Fast Marching only on the Far Field
-                            if(this.Control.AdaptiveMeshRefinement) {
-                                int NoCells = ((GridData)this.GridData).Cells.Count;
-                                BitArray Refined = new BitArray(NoCells);
-                                for(int j = 0; j < NoCells; j++) {
-                                    if(((GridData)this.GridData).Cells.GetCell(j).RefinementLevel > 0)
-                                        Refined[j] = true;
+                            int rfidx = restartFields[ti - 1].IndexWhere(rf => rf.Identification == f.Identification);
+                            if (rfidx > -1) {
+                                DGField rf = restartFields[ti - 1].ElementAt(rfidx);
+                                if (f.Identification == "Phi") {
+                                    this.LevSet.Clear();
+                                    this.LevSet.Acc(1.0, rf);
+                                    restartIOFields.Add(this.LevSet);
+                                } else {
+                                    restartIOFields.Add(rf);
                                 }
-                                CellMask Accepted = new CellMask(this.GridData, Refined);
-                                CellMask AcceptedNeigh = Accepted.AllNeighbourCells();
-
-                                Accepted = Accepted.Union(AcceptedNeigh);
-                                CellMask ActiveField = Accepted.Complement();
-                                CellMask NegativeField = LsTrk.Regions.GetSpeciesMask("A");
-                                FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
-
                             } else {
-                                CellMask Accepted = LsTrk.Regions.GetNearFieldMask(1);
-                                CellMask ActiveField = Accepted.Complement();
-                                CellMask NegativeField = LsTrk.Regions.GetSpeciesMask("A");
-                                FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
-
-                            }
-                            //SubGrid AcceptedGrid = new SubGrid(Accepted);
-                            //ReInitPDE.ReInitialize(Restriction: AcceptedGrid);
-
-                            //CellMask ActiveField = Accepted.Complement();
-                            //CellMask NegativeField = LsTrk.Regions.GetSpeciesMask("A");
-                            //FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
-
-                            //ReInitPDE.ReInitialize();
-
-                            break;
-                        }
-                    default:
-                        throw new ApplicationException();
-                }
-
-
-                // performing underrelaxation
-                if (underrelax < 1.0) {
-                    this.DGLevSet.Current.Scale(underrelax);
-                    this.DGLevSet.Current.Acc((1.0 - underrelax), DGLevSet_oldIter);
-                }
-
-                //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 1 }), 2);
-
-
-                #endregion
-
-
-                // ======================
-                // postprocessing  
-                // =======================
-
-                if(this.Control.ReInitPeriod > 0 && hack_TimestepIndex % this.Control.ReInitPeriod == 0) {
-                    Console.WriteLine("Filtering DG-LevSet");
-                    SinglePhaseField FiltLevSet = new SinglePhaseField(DGLevSet.Current.Basis);
-                    FiltLevSet.AccLaidBack(1.0, DGLevSet.Current);
-                    Filter(FiltLevSet, 2, oldCC);
-                    DGLevSet.Current.Clear();
-                    DGLevSet.Current.Acc(1.0, FiltLevSet);
-
-                    Console.WriteLine("FastMarchReInit performing FirstOrderReInit");
-                    FastMarchReinitSolver = new FastMarchReinit(DGLevSet.Current.Basis);
-                    CellMask Accepted = LsTrk.Regions.GetCutCellMask();
-                    CellMask ActiveField = LsTrk.Regions.GetNearFieldMask(1);
-                    CellMask NegativeField = LsTrk.Regions.GetSpeciesMask("A");
-                    FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
-                }
-
-                #region ensure continuity
-
-                // make level set continuous
-                CellMask CC = LsTrk.Regions.GetCutCellMask4LevSet(0);
-                CellMask Near1 = LsTrk.Regions.GetNearMask4LevSet(0, 1);
-                CellMask PosFF = LsTrk.Regions.GetLevelSetWing(0, +1).VolumeMask;
-                ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, Near1, PosFF);
-
-                if(this.Control.Option_LevelSetEvolution == LevelSetEvolution.FastMarching) {
-                    CellMask Nearband = Near1.Union(CC);
-                    this.DGLevSet.Current.Clear(Nearband);
-                    this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet, Nearband);
-                    //ContinuityEnforcer.SetFarField(this.DGLevSet.Current, Near1, PosFF);
-                }
-
-                //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 2 }), 2);
-
-                #endregion
-
-
-                for (int d = 0; d < D; d++)
-                    this.XDGvelocity.Velocity[d].UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
-
-                if (this.Control.solveCoupledHeatEquation) {
-                    this.Temperature.UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
-                    if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
-                        for (int d = 0; d < D; d++)
-                            this.HeatFlux[d].UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
-                    }
-                }
-
-                //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 3 }), 2);
-
-
-                // ===============
-                // tracker update
-                // ===============
-
-                this.LsTrk.UpdateTracker(incremental: true);
-
-                //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 4 }), 2);
-
-                // update near field (in case of adaptive mesh refinement)
-                if (this.Control.AdaptiveMeshRefinement && this.Control.Option_LevelSetEvolution == LevelSetEvolution.FastMarching) {
-                    Near1 = LsTrk.Regions.GetNearMask4LevSet(0, 1);
-                    PosFF = LsTrk.Regions.GetLevelSetWing(0, +1).VolumeMask;
-                    ContinuityEnforcer.SetFarField(this.DGLevSet.Current, Near1, PosFF);
-                    ContinuityEnforcer.SetFarField(this.LevSet, Near1, PosFF);
-                }
-
-                //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 5 }), 2);
-
-
-                // ==================================================================
-                // check interface properties (mass conservation, surface changerate)
-                // ==================================================================
-
-                if (this.Control.CheckInterfaceProps) {
-
-                    double currentSurfVolume = XNSEUtils.GetSpeciesArea(this.LsTrk, LsTrk.GetSpeciesId("A"));
-                    double massChange = ((currentSurfVolume - oldSurfVolume) / oldSurfVolume) * 100;
-                    Console.WriteLine("Change of mass = {0}%", massChange);
-
-                    double currentSurfLength = XNSEUtils.GetInterfaceLength(this.LsTrk);
-                    double actualSurfChangerate = (currentSurfLength - oldSurfLength) / dt;
-                    Console.WriteLine("Interface divergence = {0}", SurfChangerate);
-                    Console.WriteLine("actual surface changerate = {0}", actualSurfChangerate);
-
-                }
-
-
-                // =====================
-                // solve coupled system
-                // =====================
-
-                if (this.Control.solveCoupledHeatEquation && m_BDF_coupledTimestepper != null) {
-                    m_BDF_coupledTimestepper.Solve(hack_Phystime, dt, Control.SkipSolveAndEvaluateResidual);
-                    //ComputeHeatflux();
-                }
-
-
-                // ==================
-                // compute residual
-                // ==================
-
-                var newCC = LsTrk.Regions.GetCutCellMask();
-                LsBkUp.Acc(-1.0, this.LevSet);
-                double LevSetResidual = LsBkUp.L2Norm(newCC.Union(oldCC));
-
-                return LevSetResidual;
-            }
-        }
-
-
-        private void EnforceVolumeConservation() {
-            double spcArea = XNSEUtils.GetSpeciesArea(LsTrk, LsTrk.SpeciesIdS[0]);
-            Console.WriteLine("area = {0}", spcArea);
-            double InterLength = XNSEUtils.GetInterfaceLength(LsTrk);
-
-            //double cmc = (consvRefArea - spcArea) / InterLength;
-            //Console.WriteLine("add constant: {0}", -cmc);
-            //this.DGLevSet.Current.AccConstant(-cmc);
-            //this.LevSet.AccConstant(-cmc);
-        }
-
-
-        private void Filter(SinglePhaseField FiltrdField, int NoOfSweeps, CellMask CC) {
-
-            Basis patchRecoveryBasis = FiltrdField.Basis;
-
-            L2PatchRecovery l2pr = new L2PatchRecovery(patchRecoveryBasis, patchRecoveryBasis, CC, true);
-
-            SinglePhaseField F_org = FiltrdField.CloneAs();
-
-            for(int pass = 0; pass < NoOfSweeps; pass++) {
-                F_org.Clear();
-                F_org.Acc(1.0, FiltrdField);
-                FiltrdField.Clear();
-                l2pr.Perform(FiltrdField, F_org);
-            }
-        }
-
-
-        /// <summary>
-        ///  Take density-weighted mean value in cut-cells
-        /// </summary>
-        /// <param name="EvoVelocity"></param>
-        /// <returns></returns>
-        private ConventionalDGField[] GetMeanVelocityFromXDGField(DGField[] EvoVelocity) {
-            int D = EvoVelocity.Length;
-            ConventionalDGField[] meanVelocity;
-
-            Debug.Assert(this.XDGvelocity != null);
-
-            meanVelocity = new ConventionalDGField[D];
-
-            double rho_A = this.Control.PhysicalParameters.rho_A, rho_B = this.Control.PhysicalParameters.rho_B;
-            double mu_A = this.Control.PhysicalParameters.mu_A, mu_B = this.Control.PhysicalParameters.mu_B;
-            CellMask CC = this.LsTrk.Regions.GetCutCellMask4LevSet(0);
-            CellMask Neg = this.LsTrk.Regions.GetLevelSetWing(0, -1).VolumeMask;
-            CellMask Pos = this.LsTrk.Regions.GetLevelSetWing(0, +1).VolumeMask;
-            CellMask posNear = this.LsTrk.Regions.GetNearMask4LevSet(0, 1).Except(Neg);
-            CellMask negNear = this.LsTrk.Regions.GetNearMask4LevSet(0, 1).Except(Pos);
-
-            for (int d = 0; d < D; d++) {
-                Basis b = this.XDGvelocity.Velocity[d].Basis.NonX_Basis;
-                meanVelocity[d] = new SinglePhaseField(b);
-
-
-                foreach (string spc in this.LsTrk.SpeciesNames) {
-                    double rhoSpc;
-                    double muSpc;
-                    switch (spc) {
-                        case "A": rhoSpc = rho_A; muSpc = mu_A; break;
-                        case "B": rhoSpc = rho_B; muSpc = mu_B; break;
-                        default: throw new NotSupportedException("Unknown species name '" + spc + "'");
-                    }
-
-                    double scale = 1.0;
-                    switch(this.Control.InterAverage) {
-                        case XNSE_Control.InterfaceAveraging.mean: {
-                                scale = 0.5;
-                                break;
-                            }
-                        case XNSE_Control.InterfaceAveraging.density: {
-                                scale = rhoSpc / (rho_A + rho_B);
-                                break;
-                            }
-                        case XNSE_Control.InterfaceAveraging.viscosity: {
-                                scale = muSpc / (mu_A + mu_B);
-                                break;
-                            }
-                    }
-                     
-                    meanVelocity[d].Acc(scale, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), CC);
-                    switch (spc) {
-                        //case "A": meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), Neg.Except(CC)); break;
-                        case "A": meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), negNear); break;
-                        case "B": meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), posNear); break;
-                        default: throw new NotSupportedException("Unknown species name '" + spc + "'");
-                    }
-                }
-
-            }
-
-            return meanVelocity;
-        }
-
-        #endregion
-
-
-        // ===================================================
-        // pre-/postprocessing, compute properties and logging
-        // ===================================================
-
-        private void Preprocessing(int TimestepInt, double phystime, double dt, TimestepNumber TimestepNo) {
-
-            if(this.Control.CheckInterfaceProps) {
-                double CL_length = this.GetContactLineLength();
-                Console.WriteLine("contact line length = {0}", CL_length);
-
-                double[] props = this.ComputeSphericalPorperties();
-                Console.WriteLine("volume = {0}", props[0]);
-                Console.WriteLine("surface = {0}", props[1]);
-            }
-
-        }
-        
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="TimestepInt"></param>
-        /// <param name="phystime"></param>
-        /// <param name="dt"></param>
-        /// <param name="TimestepNo"></param>
-        private void Postprocessing(int TimestepInt, double phystime, double dt, TimestepNumber TimestepNo) {
-
-
-            // ======================================
-            // Check jump conditions at the interface 
-            // ======================================
-
-            #region check jump conditions
-
-            if(this.Control.CheckJumpConditions) {
-
-                // mass balance
-                double velJump_Norm = XNSEUtils.VelocityJumpNorm(this.XDGvelocity.Velocity, false, this.m_HMForder);
-
-                Console.WriteLine("velocity jump norm = {0}", velJump_Norm);
-
-                this.MassBalanceAtInterface.Clear();
-                XNSEUtils.ProjectMassBalanceNorm(this.MassBalanceAtInterface, 1.0, this.XDGvelocity.Velocity, this.m_HMForder);
-
-
-                // momentum balance
-                CurvatureAlgorithms.CurvatureDriver(
-                    SurfaceStressTensor_IsotropicMode.Curvature_Projected,
-                    CurvatureAlgorithms.FilterConfiguration.NoFilter,
-                    this.Curvature, out VectorField<SinglePhaseField> LevSetGradient, this.LsTrk,
-                    this.m_HMForder, this.DGLevSet.Current);
-
-                ConventionalDGField[] meanVelocity = XNSEUtils.GetMeanVelocity(this.XDGvelocity.Velocity, this.LsTrk,
-                    this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B);
-
-
-                double[] momBal_Norm = XNSEUtils.MomentumBalanceNormAtInterface(this.Pressure, this.XDGvelocity.Velocity, this.Curvature,
-                    this.Control.PhysicalParameters, this.Control.AdvancedDiscretizationOptions.SurfStressTensor, this.m_HMForder);
-
-                Console.WriteLine("x-momentum balance norm = {0}", momBal_Norm[0]);
-                Console.WriteLine("y-momentum balance norm = {0}", momBal_Norm[1]);
-
-                for(int d = 0; d < this.Grid.SpatialDimension; d++) {
-                    this.MomentumBalanceAtInterface[d].Clear();
-                    XNSEUtils.ProjectMomentumBalanceNorm(this.MomentumBalanceAtInterface[d], 1.0, this.Pressure, this.XDGvelocity.Velocity, this.Curvature,
-                        this.Control.PhysicalParameters, this.Control.AdvancedDiscretizationOptions.SurfStressTensor, d, this.m_HMForder);
-                }
-
-
-                // energy balance
-                //double energyBal_Norm = XNSEUtils.EnergyBalanceNormAtInterface(this.Pressure, this.XDGvelocity.Velocity, meanVelocity, this.Curvature,
-                //    this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B, this.Control.PhysicalParameters.Sigma, this.m_HMForder);
-
-                //Console.WriteLine("energy balance norm = {0}", energyBal_Norm);
-
-                //this.EnergyBalanceAtInterface.Clear();
-                //XNSEUtils.ProjectEnergyBalanceNorm(this.EnergyBalanceAtInterface, 1.0, this.Pressure, this.XDGvelocity.Velocity, meanVelocity, this.Curvature,
-                //    this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B, this.Control.PhysicalParameters.Sigma, this.m_HMForder);
-
-            }
-
-            #endregion
-
-
-            // ====================================================
-            // Compute integral energy of the system
-            // ====================================================
-
-            #region integral energy computation 
-
-            if (this.Control.ComputeEnergy) {
-
-                // compute current energies
-                double[] rhoS = new double[] { this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B };
-                double currentKinEnergy = EnergyUtils.GetKineticEnergy(this.LsTrk, this.XDGvelocity.Velocity.ToArray(), rhoS, this.m_HMForder);
-                double currentSurfEnergy = EnergyUtils.GetSurfaceEnergy(this.LsTrk, this.Control.PhysicalParameters.Sigma, this.m_HMForder);
-
-                // compute changerates (kinetic, surface)
-                double CR_KinEnergy = 0.0;
-                double CR_SurfEnergy = 0.0;
-                if (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) {
-                    double prevKinEnergy = EnergyUtils.GetKineticEnergy(this.LsTrk, this.prevVel, rhoS, this.m_HMForder, 0);
-                    CR_KinEnergy = (currentKinEnergy - prevKinEnergy) / dt;
-
-                    double prevSurfEnergy = EnergyUtils.GetSurfaceEnergy(this.LsTrk, this.Control.PhysicalParameters.Sigma, this.m_HMForder, 0);
-                    CR_SurfEnergy = (currentSurfEnergy - prevSurfEnergy) / dt;
-
-                    Console.WriteLine("current kinetic energy = {0}; actual changerate = {1}", currentKinEnergy, CR_KinEnergy);
-                    Console.WriteLine("current surface energy = {0}; actual changerate = {1}", currentSurfEnergy, CR_SurfEnergy);
-                }
-
-                // changerate of kinetic energy from discretization
-                double[] muS = new double[] { this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B };
-                double kineticDissipationBulk = EnergyUtils.GetKineticDissipation(this.LsTrk, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
-                EnergyUtils.ProjectKineticDissipation(this.KineticDissipation, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
-
-                // changerate of surface energy form discretization
-                ConventionalDGField[] meanVelocity = XNSEUtils.GetMeanVelocity(this.XDGvelocity.Velocity, this.LsTrk,
-                    this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B);
-                double SurfDivergence = EnergyUtils.GetSurfaceChangerate(this.LsTrk, meanVelocity, this.m_HMForder);
-
-
-                // logging
-                this.EnergyLogger.TimeStep = TimestepInt;
-                this.EnergyLogger.CustomValue(phystime + dt, "PhysicalTime");
-                this.EnergyLogger.CustomValue(currentKinEnergy, "KineticEnergy");
-                this.EnergyLogger.CustomValue(currentSurfEnergy, "SurfaceEnergy");
-                this.EnergyLogger.CustomValue(CR_KinEnergy, "ChangerateKineticEnergy");
-                this.EnergyLogger.CustomValue(CR_SurfEnergy, "ChangerateSurfaceEnergy");
-                this.EnergyLogger.CustomValue(SurfDivergence, "SurfaceDivergence");
-                this.EnergyLogger.CustomValue(kineticDissipationBulk, "KineticDissipationBulk");
-
-
-                // surface viscosity parts
-                if (this.Control.AdvancedDiscretizationOptions.SurfStressTensor != SurfaceSressTensor.Isotropic) {
-
-                    double shearViscEnergyCR = 0.0;
-                    double dilViscEnergyCR = 0.0;
-
-                    // surface shear viscosity energy
-                    if (this.Control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.SurfaceRateOfDeformation
-                        || this.Control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
-
-                        shearViscEnergyCR = EnergyUtils.GetInterfaceShearViscosityEnergyCR(this.LsTrk, meanVelocity, this.Control.PhysicalParameters.mu_I, this.m_HMForder);
-                    }
-
-                    // surface dilatational viscosity energy
-                    if (this.Control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.SurfaceRateOfDeformation
-                        || this.Control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
-
-                        dilViscEnergyCR = EnergyUtils.GetInterfaceDilatationalViscosityEnergyCR(this.LsTrk, meanVelocity, this.Control.PhysicalParameters.lambda_I, this.m_HMForder);
-                    }
-
-
-                    this.EnergyLogger.CustomValue(shearViscEnergyCR, "ShearViscosityDR");
-                    this.EnergyLogger.CustomValue(dilViscEnergyCR, "DilatationalViscosityDR");
-
-                    Console.WriteLine("current kinetic energy dissipation from discretization = {0}", kineticDissipationBulk + shearViscEnergyCR + dilViscEnergyCR);
-
-                } else {
-
-                    Console.WriteLine("current kinetic energy dissipation from discretization = {0}", kineticDissipationBulk);
-                }
-
-
-                // logging
-                // =======
-
-                this.EnergyLogger.NextTimestep(true);
-
-
-                //double[] RhoS = new double[] { this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B };
-                //double newKinEnergy = XNSEUtils.GetKineticEnergy(this.LsTrk, this.CurrentVel, RhoS, this.m_HMForder);
-                //double oldKinEnergy;
-                //if (base.Control.CompMode == AppControl._CompMode.Transient) {
-                //    DGField[] prevVel;
-                //    if (this.XDGvelocity != null)
-                //        prevVel = this.XDGvelocity.Velocity.ToArray();//<DGField>();
-                //    else
-                //        prevVel = this.DGvelocity.Velocity.ToArray();
-                //    oldKinEnergy = XNSEUtils.GetKineticEnergy(this.LsTrk, prevVel, RhoS, this.m_HMForder);
-                //} else if (base.Control.CompMode == AppControl._CompMode.Steady) {
-                //    oldKinEnergy = newKinEnergy;
-                //} else {
-                //    throw new NotSupportedException();
-                //}
-                //double surfEnergy = XNSEUtils.GetSurfaceEnergy(this.LsTrk, this.Control.PhysicalParameters.Sigma.Abs(), this.m_HMForder);
-
-
-                //// Logging and Console Output
-                //// ===========================
-
-                //this.EnergyLogger.TimeStep = TimestepInt;
-                //this.EnergyLogger.CustomValue(phystime + dt, "PhysicalTime");
-                //this.EnergyLogger.CustomValue(oldKinEnergy, "OldKineticEnergy");
-                //this.EnergyLogger.CustomValue(newKinEnergy, "NewKineticEnergy");
-                //this.EnergyLogger.CustomValue(surfEnergy, "SurfaceEnergy");
-
-                //this.EnergyLogger.NextTimestep(true);
-
-            }
-
-            #endregion
-
-
-            // ====================================
-            // divergence of velocity
-            // ====================================
-
-            //ilPSP.Environment.StdoutOnlyOnRank0 = false;
-            this.divVelocity.Clear();
-            this.divVelocity.Divergence(1.0, this.XDGvelocity.Velocity);
-            //ilPSP.Environment.StdoutOnlyOnRank0 = true;
-
-
-            // ====================================
-            // L2 error against exact solution
-            // ====================================
-
-            this.ComputeL2Error(phystime + dt);
-
-            // =========== 
-            // check area
-            // ===========
-
-            //SpeciesId spcId = LsTrk.SpeciesIdS[0];
-            //double area = XNSEUtils.GetSpeciesArea(LsTrk, spcId, MomentFittingVariant);
-            //Console.WriteLine("Area of species 'A' = {0}", area);
-
-
-            //double[] props = this.ComputeSphericalPorperties();
-            //Console.WriteLine("volume = {0}", props[0]);
-            //Console.WriteLine("surface = {0}", props[1]);
-
-            //double CL_length = this.GetContactLineLength();
-            //Console.WriteLine("contact line length = {0}", CL_length);
-
-            //double CapHeight = GetCapillaryHeight();
-            //Console.WriteLine("Capillary height = {0}", CapHeight);
-
-            //ContinuityEnforcer = new ContinuityProjection(
-            //        ContBasis: this.LevSet.Basis,
-            //        DGBasis: this.DGLevSet.Current.Basis,
-            //        gridData: GridData,
-            //        Option: Control.LSContiProjectionMethod
-            //        );
-
-
-            // ====================================
-            // IO related to Fourier level set
-            // ====================================
-
-            if (base.MPIRank == 0) {
-                // save restart infos for FLS
-                if(Log_FourierLS != null) {
-                    Guid vecSamplP_id = this.DatabaseDriver.SaveVector<double>(Fourier_LevSet.getRestartInfo());
-                    Log_FourierLS.WriteLine(vecSamplP_id);
-                    Log_FourierLS.Flush();
-                }
-                // Log_files for FLS
-                //if (this.Control.FourierLevSetControl.WriteFLSdata) {
-                //    Fourier_LevSet.saveToLogFiles(TimestepNo.MajorNumber, phystime + dt);
-                //}
-            }
-
-
-            // ====================================================================== 
-            // IO for further external postprocessing/ Query handling for Testprogram
-            // ======================================================================
-
-            if(this.Control.TestMode == true) {
-                LogQueryValue(phystime + dt);
-            } else {
-                if(Log != null && this.Control.LogValues != XNSE_Control.LoggingValues.None && base.MPIRank == 0 && (TimestepNo.MajorNumber % this.Control.LogPeriod == 0))
-                    try {
-                        WriteLogLine(TimestepNo, phystime + dt);
-                    } catch(Exception e) {
-                        Console.WriteLine("An error occured during WriteLogLine: '{0}'", e);
-                    }
-
-            }
-
-            //Console.WriteLine("Pause");
-
-            //=======================
-            //var jmpNorm = XNSEUtils.VelocityJumpNorm(this.XDGvelocity.Velocity, true, MomentFittingVariant, -1);
-            //Console.WriteLine("Velocity Jump Norm: " + jmpNorm);
-            //var jmpStressNorm = XNSEUtils.MomentumJumpNorm(this.XDGvelocity.Velocity, this.Pressure, this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B, MomentFittingVariant, -1);
-            //Console.WriteLine("Stress Jump Norm [0]: " + jmpStressNorm[0]);
-            //Console.WriteLine("Stress Jump Norm [1]: " + jmpStressNorm[1]);
-            //PrintVelocityAtLevSet(TimestepNo.MajorNumber);
-
-        }
-
-        
-
-        #region property computation
-
-
-        public double[] ComputeSphericalPorperties() {
-
-            var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), this.m_HMForder, 1).XQuadSchemeHelper;
-
-            // area/volume
-            double volume = 0.0;
-            SpeciesId spcId = LsTrk.SpeciesIdS[0];
-            var vqs = SchemeHelper.GetVolumeQuadScheme(spcId);
-            CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
-                vqs.Compile(LsTrk.GridDat, this.m_HMForder),
-                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-                    EvalResult.SetAll(1.0);
-                },
-                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    for(int i = 0; i < Length; i++)
-                        volume += ResultsOfIntegration[i, 0];
-                }
-            ).Execute();
-
-            // surface
-            double surface = 0.0;
-            //CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
-            var surfElemVol = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spcId);
-            CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
-                surfElemVol.Compile(LsTrk.GridDat, this.m_HMForder),
-                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-                    EvalResult.SetAll(1.0);
-                },
-                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    for(int i = 0; i < Length; i++)
-                        surface += ResultsOfIntegration[i, 0];
-                }
-            ).Execute();
-
-            return new double[] { volume, surface };
-
-        }
-
-
-        public double GetContactLineLength() {
-
-            double CL_length = 0.0;
-
-            if(this.LsTrk.GridDat.SpatialDimension == 3) {
-
-                var metrics = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder);
-
-                XQuadSchemeHelper SchemeHelper = metrics.XQuadSchemeHelper;
-                EdgeQuadratureScheme SurfaceElement_Edge = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(this.LsTrk.GetSpeciesId("A"));
-
-                var QuadDom = SurfaceElement_Edge.Domain;
-                var boundaryCutEdge = QuadDom.Intersect(this.GridData.GetBoundaryEdgeMask());
-
-                var innerDom = QuadDom.Except(this.GridData.GetBoundaryEdgeMask());
-
-                System.Collections.BitArray lowerBits = new System.Collections.BitArray(((GridData)this.GridData).Edges.Count);
-                foreach(Chunk cnk in boundaryCutEdge) {
-                    for(int iE = cnk.i0; iE < cnk.JE; iE++) {
-                        if(((GridData)this.GridData).Edges.EdgeTags[iE] == 1) {
-                            lowerBits[iE] = true;
-                        }
-                    }
-                }
-                EdgeMask lowerDom = new EdgeMask(this.GridData, lowerBits);
-
-                EdgeMask dom = lowerDom;
-
-                var factory = metrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(0, LsTrk.GridDat.Grid.RefElements[0]);
-                SurfaceElement_Edge = new EdgeQuadratureScheme(factory, dom);
-
-                EdgeQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
-                    SurfaceElement_Edge.Compile(LsTrk.GridDat, this.m_HMForder),
-                    delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
-                        EvalResult.SetAll(1.0);
-                    },
-                    delegate (int i0, int length, MultidimensionalArray ResultsOfIntegration) {
-                        for(int i = 0; i < length; i++)
-                            CL_length += ResultsOfIntegration[i, 0];
-                    }
-                ).Execute();
-            }
-
-            return CL_length;
-
-        }
-
-
-        public double[] ComputeBenchmarkQuantities_RisingBubble() {
-
-            int order = 0;
-            if(LsTrk.GetCachedOrders().Count > 0) {
-                order = LsTrk.GetCachedOrders().Max();
-            } else {
-                order = 1;
-            }
-            var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
-
-            // area of bubble
-            double area = 0.0;
-            SpeciesId spcId = LsTrk.SpeciesIdS[0];
-            var vqs = SchemeHelper.GetVolumeQuadScheme(spcId);
-            CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
-                vqs.Compile(LsTrk.GridDat, order),
-                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-                    EvalResult.SetAll(1.0);
-                },
-                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    for(int i = 0; i < Length; i++)
-                        area += ResultsOfIntegration[i, 0];
-                }
-            ).Execute();
-
-            // center of mass/geometric center (for incommpressible fluid)
-            int D = this.Grid.SpatialDimension;
-            MultidimensionalArray center = MultidimensionalArray.Create(1, D);
-            CellQuadrature.GetQuadrature(new int[] { 2 }, LsTrk.GridDat,
-                vqs.Compile(LsTrk.GridDat, order),
-                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-                    NodeSet nodes_global = QR.Nodes.CloneAs();
-                    for(int i = i0; i < i0 + Length; i++) {
-                        LsTrk.GridDat.TransformLocal2Global(QR.Nodes, nodes_global, i);
-                        EvalResult.AccSubArray(1.0, nodes_global, new int[] { i - i0, -1, -1 });
-                    }
-                },
-                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    for(int i = 0; i < Length; i++) {
-                        for(int d = 0; d < D; d++) {
-                            center[0, d] += ResultsOfIntegration[i, d];
-                        }
-                    }
-                }
-            ).Execute();
-
-            center.Scale(1.0 / area);
-
-            // rise velocity
-            MultidimensionalArray VelocityAtCenter = MultidimensionalArray.Create(1, D);
-
-            // integral computation
-            CellQuadrature.GetQuadrature(new int[] { 2 }, LsTrk.GridDat,
-                vqs.Compile(LsTrk.GridDat, order),
-                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-                    for(int d = 0; d < D; d++) {
-                        this.CurrentVel[d].Evaluate(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, d));
-                    }
-                },
-                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    for(int i = 0; i < Length; i++) {
-                        for(int d = 0; d < D; d++) {
-                            VelocityAtCenter[0, d] += ResultsOfIntegration[i, d];
-                        }
-                    }
-                }
-            ).Execute();
-            VelocityAtCenter.Scale(1.0 / area);
-
-            double v_rise = VelocityAtCenter[0, 1];
-
-            //Console.WriteLine("rise velocity = " + v_rise);
-
-
-            // circularity
-            double diamtr_c = Math.Sqrt(4 * area / Math.PI);
-            double perimtr_b = 0.0;
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
-            CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
-                cqs.Compile(LsTrk.GridDat, order),
-                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-                    EvalResult.SetAll(1.0);
-                },
-                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    for(int i = 0; i < Length; i++)
-                        perimtr_b += ResultsOfIntegration[i, 0];
-                }
-            ).Execute();
-
-            double circ = Math.PI * diamtr_c / perimtr_b;
-
-            return new double[] { area, center[0, 0], center[0, 1], circ, VelocityAtCenter[0, 0], VelocityAtCenter[0, 1] };
-        }
-
-
-        public double[] ComputeBenchmarkQuantities_LineInterface() {
-
-            // interface length
-            double length = 0.0;
-            length = XNSEUtils.GetInterfaceLength(LsTrk);
-
-            // species area
-            double area = 0.0;
-            area = XNSEUtils.GetSpeciesArea(LsTrk, LsTrk.SpeciesIdS[0]);
-
-            // interface mean angle
-
-            return new double[] { length, area };
-        }
-
-
-        /// <summary>
-        /// Computes the L2 Error of the actual solution against the exact solution in the control object 
-        /// (<see cref="XNSE_Control.ExactSolutionVelocity"/> and <see cref="XNSE_Control.ExactSolutionPressure"/>).
-        /// </summary>
-        internal double[] ComputeL2Error(double time) {
-            int D = this.GridData.SpatialDimension;
-            double[] Ret = new double[D + 1];
-
-            if(this.Control.ExactSolutionVelocity == null && this.Control.ExactSolutionPressure == null)
-                // nothing to do
-                return Ret;
-
-            int order = 0;
-            if(LsTrk.GetCachedOrders().Count > 0) {
-                order = LsTrk.GetCachedOrders().Max();
-            } else {
-                order = 1;
-            }
-
-            var SchemeHelper = LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
-
-
-            // Velocity error
-            // ==============
-            if(this.Control.ExactSolutionVelocity != null) {
-                Dictionary<string, double[]> L2Error_Species = new Dictionary<string, double[]>();
-                double[] L2Error = new double[D];
-
-                foreach(var spc in this.LsTrk.SpeciesNames) {
-                    L2Error_Species.Add(spc, new double[D]);
-
-                    SpeciesId spId = this.LsTrk.GetSpeciesId(spc);
-                    var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
-
-
-                    for(int d = 0; d < D; d++) {
-                        ConventionalDGField Vel_d = ((XDGField)this.CurrentVel[d]).GetSpeciesShadowField(spc);
-    
-                        L2Error_Species[spc][d] = Vel_d.L2Error(this.Control.ExactSolutionVelocity[spc][d].Vectorize(time), order, scheme);
-                        L2Error[d] += L2Error_Species[spc][d].Pow2();
-
-                        base.QueryHandler.ValueQuery("L2err_" + VariableNames.Velocity_d(d) + "#" + spc, L2Error_Species[spc][d], true);
-                    }
-                }
-                L2Error = L2Error.Select(x => x.Sqrt()).ToArray();
-
-                for(int d = 0; d < D; d++) {
-                    base.QueryHandler.ValueQuery("L2err_" + VariableNames.Velocity_d(d), L2Error[d], true);
-                    Ret[d] = L2Error[d];
-                }
-
-            }
-
-
-            // pressure error
-            // ==============
-            if(this.Control.ExactSolutionPressure != null) {
-
-                // pass 1: mean value of pressure difference
-                double DiffInt = 0;
-                foreach(var spc in this.LsTrk.SpeciesNames) {
-
-                    SpeciesId spId = this.LsTrk.GetSpeciesId(spc);
-                    var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
-                    var rule = scheme.Compile(this.GridData, order);
-
-                    DiffInt += this.Pressure.GetSpeciesShadowField(spc).LxError(this.Control.ExactSolutionPressure[spc].Vectorize(time), (X, a, b) => (a - b), rule);
-                    //Volume +=  this.Pressure.GetSpeciesShadowField(spc).LxError(null, (a, b) => (1.0), rule);
-                }
-                double Volume2 = (new SubGrid(CellMask.GetFullMask(this.GridData))).Volume;
-                double PressureDiffMean = DiffInt / Volume2;
-
-
-                double L2Error = 0;
-                Dictionary<string, double> L2Error_Species = new Dictionary<string, double>();
-
-                foreach(var spc in this.LsTrk.SpeciesNames) {
-
-                    SpeciesId spId = this.LsTrk.GetSpeciesId(spc);
-                    var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
-                    var rule = scheme.Compile(this.GridData, order);
-
-                    double IdV = this.Pressure.GetSpeciesShadowField(spc).LxError(this.Control.ExactSolutionPressure[spc].Vectorize(time), (X, a, b) => (a - b - PressureDiffMean).Pow2(), rule);
-                    L2Error += IdV;
-                    L2Error_Species.Add(spc, IdV.Sqrt());
-
-                    base.QueryHandler.ValueQuery("L2err_" + VariableNames.Pressure + "#" + spc, L2Error_Species[spc], true);
-                }
-
-
-                L2Error = L2Error.Sqrt();
-                base.QueryHandler.ValueQuery("L2err_" + VariableNames.Pressure, L2Error, true);
-                Ret[D] = L2Error;
-
-            } //*/
-
-            return Ret;
-        }
-
-
-        #endregion
-
-
-        #region logging
-
-        /// <summary>
-        /// saves the vector Guid for the sample points 
-        /// </summary>
-        TextWriter Log_FourierLS;
-
-
-        /// <summary>
-        /// testcase specific LogFile
-        /// </summary>
-        TextWriter Log;
-
-        /// <summary>
-        /// saves interface points
-        /// </summary>
-        TextWriter LogInterfaceP;
-
-
-        /// <summary>
-        /// initializes the format of the Log File
-        /// </summary>
-        /// <param name="sessionID"></param>
-        public void InitLogFile(Guid sessionID) {
-
-            string header;
-
-            if (this.Control.WriteInterfaceP) {
-                LogInterfaceP = base.DatabaseDriver.FsDriver.GetNewLog("InterfaceP", sessionID);
-                header = String.Format("{0}\t{1}\t{2}", "#timestep", "#time", "interfacePoints");
-                LogInterfaceP.WriteLine(header);
-                LogInterfaceP.Flush();
-            }
-
-            switch(this.Control.LogValues) {
-                case XNSE_Control.LoggingValues.Wavelike: {
-
-                        // File for physical data
-                        TextWriter setUpData = base.DatabaseDriver.FsDriver.GetNewLog("SetUpData", sessionID);
-                        header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}", "lambda", "H0", "rho1", "rho2", "mu1", "mu2", "sigma", "g");
-                        setUpData.WriteLine(header);
-                        setUpData.Flush();
-                        string data = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}", this.Control.AdditionalParameters[1], this.Control.AdditionalParameters[2], this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B,
-                            this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B, this.Control.PhysicalParameters.Sigma, this.Control.AdditionalParameters[3]);
-                        setUpData.WriteLine(data);
-                        setUpData.Flush();
-
-
-                        // Log file for the interface height
-                        Log = base.DatabaseDriver.FsDriver.GetNewLog("Amplitude", sessionID);
-                        header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "#timestep", "#time", "magnitude", "real", "imaginary");
-
-                        return;
-                    }
-                case XNSE_Control.LoggingValues.RisingBubble: {
-
-                        Log = base.DatabaseDriver.FsDriver.GetNewLog("BenchmarkQuantities_RisingBubble", sessionID);
-                        header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", "#timestep", "#time", "area", "center of mass - x", "center of mass - y", "circularity", "rise velocity");
-
-                        return;
-                    }
-                case XNSE_Control.LoggingValues.MovingContactLine: {
-
-                        Log = base.DatabaseDriver.FsDriver.GetNewLog("ContactAngle", sessionID);
-                        header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", "#timestep", "#time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-angle");
-
-                        return;
-                    }
-                case XNSE_Control.LoggingValues.CapillaryHeight: {
-
-                        Log = base.DatabaseDriver.FsDriver.GetNewLog("CapillaryHeight", sessionID);
-                        header = String.Format("{0}\t{1}\t{2}\t{3}", "#timestep", "#time", "capillary-height", "at-PositionX");
-
-                        break;
-                    }
-                case XNSE_Control.LoggingValues.Evaporation: {
-
-                        Log = base.DatabaseDriver.FsDriver.GetNewLog("Evaporation", sessionID);
-                        header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "'#timestep", "time", "interfacePosition", "InterfaceVelocity", "MassFlux"); //, "Temperatureprofile");
-
-                        break;
-                    }
-                default:
-                    throw new ArgumentException("No specified LogFormat");
-            }
-
-            Log.WriteLine(header);
-            Log.Flush();
-        }
-
-        /// <summary>
-        /// writes one line to the Log File
-        /// </summary>
-        public void WriteLogLine(TimestepNumber TimestepNo, double phystime) {
-
-            if(this.Control.WriteInterfaceP) {
-                double[] interfaceP;
-                if(Fourier_LevSet != null) {
-                    interfaceP = Fourier_LevSet.current_interfaceP.To1DArray();
-                } else {
-                    MultidimensionalArray interP = XNSEUtils.GetInterfacePoints(this.LsTrk, this.LevSet);
-                    interfaceP = interP.ResizeShallow(interP.Length).To1DArray();
-                }
-                string logline = String.Format("{0}\t{1}", TimestepNo, phystime);
-                //for (int ip = 0; ip < interfaceP.Length; ip++) {
-                //    logline = logline + "\t" + interfaceP[ip].ToString();
-                //}
-                logline = logline + "\t" + String.Join("\t", interfaceP.Select(ip => ip.ToString()).ToArray());
-                LogInterfaceP.WriteLine(logline);
-                LogInterfaceP.Flush();
-            }
-
-            switch(this.Control.LogValues) {
-                case XNSE_Control.LoggingValues.Wavelike: {
-
-                        Complex DFT_k;
-                        int numP;
-                        if(Fourier_LevSet != null) {
-                            //amplitude = 2.0 * (Fourier_LevSet.DFT_coeff[1].Magnitude / Fourier_LevSet.current_samplP.Length);
-                            DFT_k = Fourier_LevSet.DFT_coeff[(int)this.Control.AdditionalParameters[0]];
-                            numP = Fourier_LevSet.current_samplP.Length;
-                        } else {
-                            MultidimensionalArray interP = XNSEUtils.GetInterfacePoints(this.LsTrk, this.LevSet);
-                            Complex[] DFT_coeff = DiscreteFourierTransformation.TransformForward_nonequidistant(interP, this.Control.AdditionalParameters[1]);
-                            DFT_k = DFT_coeff[(int)this.Control.AdditionalParameters[0]];
-                            numP = interP.Lengths[0];
-                            //amplitude = -2.0 * DFT_coeff[1].Imaginary / (double)interP.Lengths[0];
-                            //amplitude = DiscreteFourierTransformation.SingleSidedPowerSpectrum(DFT_coeff)[1];
-                        }
-                        string logline = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", TimestepNo, phystime, 2.0 * DFT_k.Magnitude / numP, 2.0 * DFT_k.Real / numP, -2.0 * DFT_k.Imaginary / numP);
-                        Log.WriteLine(logline);
-                        Log.Flush();
-
-                        return;
-                    }
-                case XNSE_Control.LoggingValues.RisingBubble: {
-
-                        double[] BmQ_RB = this.ComputeBenchmarkQuantities_RisingBubble();
-
-                        string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", TimestepNo, phystime, BmQ_RB[0], BmQ_RB[1], BmQ_RB[2], BmQ_RB[3], BmQ_RB[5]);
-                        Log.WriteLine(line);
-                        Log.Flush();
-
-                        return;
-                    }
-                case XNSE_Control.LoggingValues.MovingContactLine: {
-
-                        // contact angles at contact points
-                        //=================================
-
-                        List<double[]> contactPoints = new List<double[]>();
-                        List<double[]> contactVelocities = new List<double[]>();
-                        List<double> contactAngles = new List<double>();
-
-                        ConventionalDGField[] meanVelocity = GetMeanVelocityFromXDGField(this.CurrentVel);
-
-                        var Phi = (LevelSet)LsTrk.LevelSets[0];
-                        var LevelSetGradient = new VectorField<SinglePhaseField>(Grid.SpatialDimension, Phi.Basis, SinglePhaseField.Factory);
-                        LevelSetGradient.Gradient(1.0, (SinglePhaseField)LsTrk.LevelSets[0]);
-                        SinglePhaseField[] Normals = LevelSetGradient.ToArray();
-
-                        XQuadSchemeHelper SchemeHelper = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadSchemeHelper;
-                        EdgeQuadratureScheme SurfaceElement_Edge = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(this.LsTrk.GetSpeciesId("A"));
-
-                        var QuadDom = SurfaceElement_Edge.Domain;
-                        var boundaryEdge = ((GridData)this.GridData).GetBoundaryEdgeMask().GetBitMask();
-                        var boundaryCutEdge = QuadDom.Intersect(new EdgeMask((GridData)this.GridData, boundaryEdge, MaskType.Geometrical));
-
-                        var factory = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(0, LsTrk.GridDat.Grid.RefElements[0]);
-                        SurfaceElement_Edge = new EdgeQuadratureScheme(factory, boundaryCutEdge);
-
-                        EdgeQuadrature.GetQuadrature(new int[] { 5 }, LsTrk.GridDat,
-                            SurfaceElement_Edge.Compile(LsTrk.GridDat, 0),
-                            delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
-
-                                // contact point
-                                NodeSet Enode_l = QR.Nodes;
-                                int trf = LsTrk.GridDat.Edges.Edge2CellTrafoIndex[i0, 0];
-                                NodeSet Vnode_l = Enode_l.GetVolumeNodeSet(LsTrk.GridDat, trf);
-                                NodeSet Vnode_g = Vnode_l.CloneAs();
-                                int cell = LsTrk.GridDat.Edges.CellIndices[i0, 0];
-                                LsTrk.GridDat.TransformLocal2Global(Vnode_l, Vnode_g, cell);
-                                //Console.WriteLine("contact point: ({0},{1})", Vnode_g[0, 0], Vnode_g[0, 1]);
-
-                                int D = Grid.SpatialDimension;
-                                for(int d = 0; d < D; d++) {
-                                    EvalResult[0, 0, d] = Vnode_g[0, d];
-                                }
-
-                                // contact line velocity
-                                MultidimensionalArray U_IN = MultidimensionalArray.Create(new int[] { 1, 1, D });
-                                MultidimensionalArray U_OUT = MultidimensionalArray.Create(new int[] { 1, 1, D });
-                                for(int d = 0; d < D; d++) {
-                                    (meanVelocity[d] as SinglePhaseField).EvaluateEdge(i0, length, QR.Nodes, U_IN.ExtractSubArrayShallow(-1, -1, d), U_OUT.ExtractSubArrayShallow(-1, -1, d));
-                                }
-
-                                for(int d = 0; d < D; d++) {
-                                    EvalResult[0, 0, 2 + d] = U_IN[0, 0, d];
-                                }
-
-                                // contact angle
-                                MultidimensionalArray normal_IN = MultidimensionalArray.Create(new int[] { 1, 1, D });
-                                MultidimensionalArray normal_OUT = MultidimensionalArray.Create(new int[] { 1, 1, D });
-                                for(int d = 0; d < D; d++) {
-                                    Normals[d].EvaluateEdge(i0, length, QR.Nodes, normal_IN.ExtractSubArrayShallow(-1, -1, d), normal_OUT.ExtractSubArrayShallow(-1, -1, d));
-                                }
-
-                                double theta_surf = Math.Atan2(normal_IN[0, 0, 1], normal_IN[0, 0, 0]);
-                                double theta_edge = Math.Atan2(LsTrk.GridDat.Edges.NormalsForAffine[i0, 1], LsTrk.GridDat.Edges.NormalsForAffine[i0, 0]);
-                                double theta = (theta_surf - theta_edge) * (180 / Math.PI);
-
-                                EvalResult[0, 0, 2 * D] = (theta > 180) ? theta - 180 : theta;
-                                //Console.WriteLine("contact angle = {0}", EvalResult[0, 0, 2]);
-
-                            },
-                            delegate (int i0, int length, MultidimensionalArray ResultsOfIntegration) {
-                                int D = Grid.SpatialDimension;
-                                for(int i = 0; i < length; i++) {
-                                    if(ResultsOfIntegration[i, 2 * D] != 0.0) {
-                                        contactAngles.Add(Math.Abs(ResultsOfIntegration[i, 2 * D]));
-                                        double[] cp = new double[D];
-                                        double[] cpV = new double[D];
-                                        for(int d = 0; d < D; d++) {
-                                            cp[d] = ResultsOfIntegration[i, d];
-                                            cpV[d] = ResultsOfIntegration[i, 2 + d];
-                                        }
-                                        contactPoints.Add(cp);
-                                        contactVelocities.Add(cpV);
-                                    }
-                                }
-                            }
-                        ).Execute();
-
-
-                        for(int p = 0; p < contactAngles.Count; p++) {
-                            string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", TimestepNo, phystime, contactPoints.ElementAt(p)[0], contactPoints.ElementAt(p)[1], contactVelocities.ElementAt(p)[0], contactVelocities.ElementAt(p)[1], contactAngles.ElementAt(p));
-                            Log.WriteLine(line);
-                        }
-                        Log.Flush();
-
-                        return;
-                    }
-                case XNSE_Control.LoggingValues.CapillaryHeight: {
-
-                        MultidimensionalArray InterfacePoints = XNSEUtils.GetInterfacePoints(this.LsTrk, this.LevSet);
-
-                        double h_min = double.MaxValue, x_pos = 0.0;
-                        for(int i = 0; i < InterfacePoints.Lengths[0]; i++) {
-                            if(InterfacePoints[i, 1] < h_min) {
-                                h_min = InterfacePoints[i, 1];
-                                x_pos = InterfacePoints[i, 0];
+                                DGField rf = f.CloneAs();
+                                rf.Clear();
+                                restartIOFields.Add(rf);
                             }
                         }
 
-                        string line = String.Format("{0}\t{1}\t{2}\t{3}", TimestepNo, phystime, h_min, x_pos);
-                        Log.WriteLine(line);
-                        Log.Flush();
+                        //this.LevSet.Clear();
+                        //this.LevSet.Acc(1.0, LsBkUp);
 
-                        break;
-                    }
-                case XNSE_Control.LoggingValues.Evaporation: {
+                        ITimestepInfo rtsi;
+                        TimestepNumber tsn = new TimestepNumber(timestepno.MajorNumber - ti);
 
-                        MultidimensionalArray InterfacePoints = XNSEUtils.GetInterfacePoints(this.LsTrk, this.LevSet);
+                        //Console.WriteLine("saving to Database ...");
 
-                        double nNodes = InterfacePoints.GetLength(0);
-                        double posY = InterfacePoints.ExtractSubArrayShallow(-1, 1).To1DArray().Sum() / nNodes;
+                        //Exception e = null;
+                        try {
+                            rtsi = new TimestepInfo(
+                                t - ti * this.Control.GetFixedTimestep(),
+                                this.CurrentSessionInfo,
+                                tsn,
+                                restartIOFields);
+                        } catch (Exception ee) {
+                            Console.Error.WriteLine(ee.GetType().Name + " on rank " + this.MPIRank + " saving time-step " + tsn + ": " + ee.Message);
+                            Console.Error.WriteLine(ee.StackTrace);
+                            //tsi = null;
+                            //e = ee;
 
-                        double hVap = this.Control.ThermalParameters.hVap_A;
-                        double MassFlux = (hVap > 0) ? EvapVelocMean * hVap : -EvapVelocMean * hVap;
+                            if (ContinueOnIOError) {
+                                Console.WriteLine("Ignoring IO error: " + DateTime.Now);
+                            } else {
+                                throw ee;
+                            }
 
-                        // temperature profile
-                        int N = 100;
-                        double[] tempP = new double[N];
-                        double L = 10.3e-3;
-                        double x_probe = 1e-3;
-
-                        //for (int i = 0; i < N; i++) {
-                        //    double[] probe = new double[] { x_probe, (L/(double)N) };
-                        //    tempP[i] = this.Temperature.ProbeAt(probe);
-                        //}
-
-                        string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", TimestepNo, phystime, posY, EvapVelocMean, MassFlux); // tempP);
-                        Log.WriteLine(line);
-                        Log.Flush();
-
-                        break;
-                    }
-                default:
-                    throw new ArgumentException("No specified LogFormat");
-            }
-
-        }
-
-        double EvapVelocMean;
-
-        /// <summary>
-        /// encapsulated handling of query values
-        /// </summary>
-        public void LogQueryValue(double phystime) {
-
-            base.QueryResultTable.LogValue("time", phystime);
-
-            if(this.Control.WriteInterfaceP) {
-                double[] interfaceP;
-                if(Fourier_LevSet != null) {
-                    interfaceP = Fourier_LevSet.current_interfaceP.To1DArray();
-                } else {
-                    MultidimensionalArray interP = XNSEUtils.GetInterfacePoints(this.LsTrk, this.LevSet);
-                    interfaceP = interP.ResizeShallow(interP.Length).To1DArray();
-                }
-
-                base.QueryResultTable.LogValue("interfaceP", interfaceP);
-
-            }
-
-            switch(this.Control.LogValues) {
-                case XNSE_Control.LoggingValues.Wavelike: {
-
-                        double amplitude;
-                        if(Fourier_LevSet != null) {
-                            amplitude = 2.0 * (Fourier_LevSet.DFT_coeff[1].Magnitude / Fourier_LevSet.current_samplP.Length);
-                        } else {
-                            MultidimensionalArray interP = XNSEUtils.GetInterfacePoints(this.LsTrk, this.LevSet);
-                            Complex[] DFT_coeff = DiscreteFourierTransformation.TransformForward_nonequidistant(interP, this.Control.AdditionalParameters[1]);
-                            amplitude = -2.0 * DFT_coeff[1].Imaginary / (double)interP.Lengths[0];
-                            //amplitude = DiscreteFourierTransformation.SingleSidedPowerSpectrum(DFT_coeff)[1];
+                            tsi = null;
                         }
-
-                        base.QueryResultTable.LogValue("amplitude", amplitude);
-                        return;
-                    }
-                case XNSE_Control.LoggingValues.RisingBubble: {
-
-                        double[] BmQ_RB = this.ComputeBenchmarkQuantities_RisingBubble();
-
-                        base.QueryResultTable.LogValue("area", BmQ_RB[0]);
-                        base.QueryResultTable.LogValue("yCM", BmQ_RB[2]);
-                        base.QueryResultTable.LogValue("circ", BmQ_RB[3]);
-                        base.QueryResultTable.LogValue("riseV", BmQ_RB[5]);
-
-                        return;
-                    }
-                case XNSE_Control.LoggingValues.LinelikeLS: {
-                        break;
-                    }
-                case XNSE_Control.LoggingValues.CirclelikeLS: {
-
-                        double[] BmQ_RB = this.ComputeBenchmarkQuantities_RisingBubble();
-
-                        base.QueryResultTable.LogValue("area", BmQ_RB[0]);
-                        base.QueryResultTable.LogValue("xM", BmQ_RB[1]);
-                        base.QueryResultTable.LogValue("yM", BmQ_RB[2]);
-                        base.QueryResultTable.LogValue("circ", BmQ_RB[3]);
-                        base.QueryResultTable.LogValue("vM_x", BmQ_RB[4]);
-                        base.QueryResultTable.LogValue("vM_y", BmQ_RB[5]);
-
-                        break;
-                    }
-                default:
-                    return;
-            }
-
-        }
-
-
-        #endregion
-
-
-        // =========================================================
-        // related stuff for property tracking (e.g. kinetic energy)
-        // =========================================================
-        #region tracking
-
-        ResidualLogger m_EnergyLogger;
-
-        /// <summary>
-        /// Logger for kinetic and surface energy.
-        /// </summary>
-        ResidualLogger EnergyLogger {
-            get {
-                if(!this.Control.ComputeEnergy)
-                    return null;
-
-                if(m_EnergyLogger == null) {
-                    m_EnergyLogger = new ResidualLogger(base.MPIRank, base.DatabaseDriver, base.CurrentSessionInfo.ID);
-                    m_EnergyLogger.WriteResidualsToConsole = false;
-                    m_EnergyLogger.WriteResidualsToTextFile = true;
-                    m_EnergyLogger.TextFileFileName = "Energy";
-                }
-
-                return m_EnergyLogger;
-            }
-        }
-
-
-        SinglePhaseField MassBalanceAtInterface;
-
-        VectorField<SinglePhaseField> MomentumBalanceAtInterface;
-
-        SinglePhaseField EnergyBalanceAtInterface;
-
-        /// <summary>
-        /// kinetic energy derived via \f$ \rho \frac{vec{u} \cdot \vec{u}}{ 2 } \f$
-        /// </summary>
-        XDGField DerivedKineticEnergy;
-
-        XDGField GeneratedKineticEnergy;
-
-        /// <summary>
-        /// kinetic energy computed via <see cref="KineticEnergyBalanceOperator"/>
-        /// </summary>
-        XDGField KineticEnergy;
-
-        XDGField prevKineticEnergy;
-
-        /// <summary>
-        /// Residual of the kinetic energy balance
-        /// </summary>
-        XDGField ResidualKineticEnergy;
-
-        /// <summary>
-        /// source term for the kinetic energy
-        /// </summary>
-        XDGField KineticDissipation;
-
-        /// <summary>
-        /// spatial Operator for the kinetic energy balance
-        /// </summary>
-        XSpatialOperatorMk2 KineticEnergyBalanceOperator;
-
-        IDictionary<SpeciesId, IEnumerable<double>> MassScaleForEnergy {
-            get {
-                double rho_A = this.Control.PhysicalParameters.rho_A,
-                    rho_B = this.Control.PhysicalParameters.rho_B;
-
-                double[] _rho_A = new double[1];
-                _rho_A[0] = rho_A;
-                double[] _rho_B = new double[1];
-                _rho_B[0] = rho_B;
-
-                Dictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>>();
-                R.Add(this.LsTrk.GetSpeciesId("A"), _rho_A);
-                R.Add(this.LsTrk.GetSpeciesId("B"), _rho_B);
-
-                return R;
-            }
-        }
-
-        MultigridOperator.ChangeOfBasisConfig[][] MultigridEnergyOperatorConfig {
-            get {
-                int pEnergy = this.KineticEnergy.Basis.Degree;
-
-                // set the MultigridOperator configuration for each level:
-                // it is not necessary to have exactly as many configurations as actual multigrid levels:
-                // the last configuration enty will be used for all higher level
-                MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[1][];
-                for(int iLevel = 0; iLevel < configs.Length; iLevel++) {
-                    configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[1];
-
-                    // configuration for Temperature
-                    configs[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig() {
-                        DegreeS = new int[] { Math.Max(0, pEnergy - iLevel) },
-                        mode = MultigridOperator.Mode.Eye,
-                        VarIndex = new int[] { 0 }
-                    };
-                }
-
-                return configs;
-            }
-        }
-
-
-        EnergyMultiphaseBoundaryCondMap m_energyBcMap;
-
-        /// <summary>
-        /// Boundary conditions.
-        /// </summary>
-        EnergyMultiphaseBoundaryCondMap energyBcMap {
-            get {
-                if(m_energyBcMap == null) {
-                    m_energyBcMap = new EnergyMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
-                }
-                return m_energyBcMap;
-            }
-        }
-
-        CoordinateVector m_CurrentEnergySolution;
-
-        /// <summary>
-        /// Current temperature;
-        /// </summary>
-        internal CoordinateVector CurrentEnergySolution {
-            get {
-                if(m_CurrentEnergySolution == null) {
-                    m_CurrentEnergySolution = new CoordinateVector(this.KineticEnergy);
-                }
-                return m_CurrentEnergySolution;
-            }
-        }
-
-        CoordinateVector m_CurrentEnergyResidual;
-
-        /// <summary>
-        /// Current residual for coupled heat equation.
-        /// </summary>
-        internal CoordinateVector CurrentEnergyResidual {
-            get {
-                if(m_CurrentEnergyResidual == null) {
-                    m_CurrentEnergyResidual = new CoordinateVector(this.ResidualKineticEnergy);
-                }
-                return m_CurrentEnergyResidual;
-            }
-        }
-
-
-        /// <summary>
-        /// Implicit timestepping using Backward-Differentiation-Formulas (BDF),
-        /// specialized for XDG applications.
-        /// </summary>
-        XdgBDFTimestepping m_BDF_energyTimestepper;
-
-
-        public void generateKinEnergyOperator() {
-
-            int degK = this.KineticEnergy.Basis.Degree;
-            
-            int D = this.GridData.SpatialDimension;
-
-            string[] CodName = new string[] { "kinBalance" };
-            string[] Params = ArrayTools.Cat(
-                 VariableNames.VelocityVector(D),
-                 (new string[] { "VelocityX_Mean", "VelocityY_Mean", "VelocityZ_Mean" }).GetSubVector(0, D),
-                 VariableNames.VelocityX_GradientVector(),
-                 VariableNames.VelocityY_GradientVector(),
-                 VariableNames.Pressure,
-                 (new string[] { "PressureGradX", "PressureGradY", "PressureGradZ" }).GetSubVector(0, D),
-                 (new string[] { "GravityX", "GravityY", "GravityZ" }).GetSubVector(0, D),
-                 (new string[] { "NX", "NY", "NZ" }).GetSubVector(0, D),
-                 "Curvature");
-            string[] DomName = new string[] { "KineticEnergy" };
-
-            double rhoA = this.Control.PhysicalParameters.rho_A;
-            double rhoB = this.Control.PhysicalParameters.rho_B;
-            double muA = this.Control.PhysicalParameters.mu_A;
-            double muB = this.Control.PhysicalParameters.mu_B;
-            double sigma = this.Control.PhysicalParameters.Sigma;
-
-            double LFFA = this.Control.AdvancedDiscretizationOptions.LFFA;
-            double LFFB = this.Control.AdvancedDiscretizationOptions.LFFB;
-
-
-            var dntParams = this.Control.AdvancedDiscretizationOptions;
-
-            // create operator
-            // ===============
-            KineticEnergyBalanceOperator = new XSpatialOperatorMk2(DomName, Params, CodName, (A, B, C) => degK * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2), null);
-
-
-            // build the operator
-            // ==================
-            {
-
-                // convective part
-                // ================
-                {
-                    if(this.Control.PhysicalParameters.IncludeConvection) {
-
-                        var comps = KineticEnergyBalanceOperator.EquationComponents[CodName[0]];
-
-                        // kinetic energy
-                        var convK = new BoSSS.Solution.XNSECommon.Operator.Energy.KineticEnergyConvectionInBulk(D, energyBcMap, rhoA, rhoB, LFFA, LFFB, LsTrk);
-                        comps.Add(convK); // Bulk component
-
-
-                        bool movingmesh;
-                        switch(this.Control.Timestepper_LevelSetHandling) {
-                            case LevelSetHandling.Coupled_Once:
-                                movingmesh = true;
-                                break;
-                            case LevelSetHandling.LieSplitting:
-                            case LevelSetHandling.StrangSplitting:
-                            case LevelSetHandling.None:
-                                movingmesh = false;
-                                break;
-                            case LevelSetHandling.Coupled_Iterative:
-                            default:
-                                throw new NotImplementedException();
-                        }
-
-                        //comps.Add(new BoSSS.Solution.XNSECommon.Operator.Energy.KineticEnergyConvectionAtLevelSet(D, LsTrk, rhoA, rhoB, LFFA, LFFB, this.Control.PhysicalParameters.Material, energyBcMap, movingmesh));       // LevelSet component
-                    }
-                }
-
-                // Laplace of kinetic energy
-                // =========================
-                {
-                    var comps = KineticEnergyBalanceOperator.EquationComponents[CodName[0]];
-
-                    double penalty = dntParams.PenaltySafety;
-
-                    var Visc = new BoSSS.Solution.XNSECommon.Operator.Energy.KineticEnergyLaplace(
-                        dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                        energyBcMap, D, muA, muB);
-
-                    comps.Add(Visc);
-
-                    if(dntParams.UseGhostPenalties) {
-                        var ViscPenalty = new BoSSS.Solution.XNSECommon.Operator.Energy.KineticEnergyLaplace(penalty * 1.0, 0.0, energyBcMap, D, muA, muB);
-                        Xheat_Operator.GhostEdgesOperator.EquationComponents[CodName[0]].Add(ViscPenalty);
+                        // e.ExceptionBcast();
+                        csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                     }
 
-                    // Level-Set operator:
-                    //comps.Add(new BoSSS.Solution.XNSECommon.Operator.Energy.KineticEnergylaplceAtLevelSet(LsTrk, muA, muB, penalty * 1.0));
                 }
 
-                // Divergence of stress tensor
-                // ===========================
-                {
-                    var comps = KineticEnergyBalanceOperator.EquationComponents[CodName[0]];
-                    comps.Add(new BoSSS.Solution.XNSECommon.Operator.Energy.StressDivergence(D, energyBcMap, muA, muB));
-
-                    // Level-Set operator:
-                    //comps.Add(new BoSSS.Solution.XNSECommon.Operator.Energy.StressDivergenceAtLevelSet(LsTrk, muA, muB));
-                }
-
-                // surface energy (surface tension)
-                // ================================
-                {
-                    //var comps = KineticEnergyBalanceOperator.EquationComponents[CodName[0]];
-                    //comps.Add(new BoSSS.Solution.XNSECommon.Operator.Energy.SurfaceEnergy(D, LsTrk, sigma));
-                }
-
-                // pressure term
-                // =============
-                {
-                    var comps = KineticEnergyBalanceOperator.EquationComponents[CodName[0]];
-                    comps.Add(new BoSSS.Solution.XNSECommon.Operator.Energy.DivergencePressureEnergy(D, energyBcMap));
-                    //comps.Add(new BoSSS.Solution.XNSECommon.Operator.Energy.PressureConvectionInBulk(D, energyBcMap, LFFA, LFFB, LsTrk));
-                    //comps.Add(new BoSSS.Solution.XNSECommon.Operator.Energy.PressureGradientConvection(D));
-
-                    // Level-Set operator:
-                    //comps.Add(new BoSSS.Solution.XNSECommon.Operator.Energy.DivergencePressureEnergyAtLevelSet(LsTrk));
-                }
-
-                // dissipation
-                // ===========
-                {
-                    var comps = KineticEnergyBalanceOperator.EquationComponents[CodName[0]];
-                    comps.Add(new BoSSS.Solution.XNSECommon.Operator.Energy.Dissipation(D, muA, muB));
-                }
-
-                // gravity (volume forces)
-                // =======================
-                {
-                    var comps = KineticEnergyBalanceOperator.EquationComponents[CodName[0]];
-                    comps.Add(new BoSSS.Solution.XNSECommon.Operator.Energy.PowerofGravity(D, rhoA, rhoB));
-                }
-
-
-                // finalize
-                // ========
-
-                KineticEnergyBalanceOperator.Commit();
-
+                this.LevSet.Clear();
+                this.LevSet.Acc(1.0, LsBkUp);
             }
 
-        }
+#if DEBUG
+            //Debug/Test code for XDG database interaction
 
+            if(tsi != null) {
+                // checking some neccessary reference-equalities BEFORE serialisation
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-        void DelComputeEnergyOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
+                LevelSet.LevelSetInitializer lsi_1 = (LevelSet.LevelSetInitializer)(tsi.FieldInitializers.Single(fi => fi.Identification == this.LevSet.Identification));
+                XDGField.FieldInitializer pri = (XDGField.FieldInitializer)(tsi.FieldInitializers.Single(fi => fi.Identification == this.Pressure.Identification));
 
-            int D = this.GridData.SpatialDimension;
+                LevelSetTracker.LevelSetTrackerInitializer trki = ((XDGBasis.XDGBasisInitializer)(pri.BasisInfo)).TrackerInitializer;
 
-            SpeciesId[] SpcToCompute = AgglomeratedCellLengthScales.Keys.ToArray();
+                LevelSet.LevelSetInitializer lsi_2 = trki.LevelSets[0];
 
-            // parameter assembly
-            // ==================    
+                Debug.Assert(object.ReferenceEquals(lsi_1, lsi_2));
 
-            // velocity
-            var VelMap = new CoordinateMapping(this.XDGvelocity.Velocity.ToArray());
-            DGField[] VelParam = VelMap.Fields.ToArray();
-
-            // velocity mean
-            VectorField<XDGField> VelMeanParam = new VectorField<XDGField>(D, new XDGBasis(LsTrk, 0), "VelMean_", XDGField.Factory);
-            XheatUtils.ComputeAverageU(VelParam, VelMeanParam, m_HMForder, LsTrk.GetXDGSpaceMetrics(SpcToCompute, m_HMForder, 1).XQuadSchemeHelper, this.LsTrk);
-
-            // velocity gradient vectors
-            VectorField<DGField> GradVelX = new VectorField<DGField>(D, VelParam[0].Basis, "VelocityXGradient", XDGField.Factory);
-            for(int d = 0; d < D; d++) {
-                foreach(var Spc in this.LsTrk.SpeciesIdS) { 
-                    DGField f_Spc = ((VelParam[0] as XDGField).GetSpeciesShadowField(Spc));
-                    (GradVelX[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(1.0, f_Spc, d);
+                foreach(XDGField.FieldInitializer fi in tsi.FieldInitializers.Where(fii => fii is XDGField.XDGFieldInitializer)) {
+                    LevelSetTracker.LevelSetTrackerInitializer trki_alt = ((XDGBasis.XDGBasisInitializer)(fi.BasisInfo)).TrackerInitializer;
+                    Debug.Assert(object.ReferenceEquals(trki, trki_alt));
                 }
-            }
-            GradVelX.ForEach(F => F.CheckForNanOrInf(true, true, true));
-
-            VectorField<DGField> GradVelY = new VectorField<DGField>(D, VelParam[0].Basis, "VelocityYGradient", XDGField.Factory);
-            for(int d = 0; d < D; d++) {
-                foreach(var Spc in this.LsTrk.SpeciesIdS) {
-                    DGField f_Spc = ((VelParam[1] as XDGField).GetSpeciesShadowField(Spc));
-                    (GradVelY[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(1.0, f_Spc, d);
-                }
-            }
-            GradVelY.ForEach(F => F.CheckForNanOrInf(true, true, true));
-
-            // pressure and gradient
-            var PressMap = new CoordinateMapping(this.Pressure);
-            DGField[] PressParam = PressMap.Fields.ToArray();
-
-            VectorField<DGField> PressGrad = new VectorField<DGField>(D, PressParam[0].Basis, "PressureGrad", XDGField.Factory);
-            for(int d = 0; d < D; d++) {
-                foreach(var Spc in this.LsTrk.SpeciesIdS) {
-                    DGField f_Spc = ((PressParam[0] as XDGField).GetSpeciesShadowField(Spc));
-                    (PressGrad[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(1.0, f_Spc, d);
-                }
-            }
-            PressGrad.ForEach(F => F.CheckForNanOrInf(true, true, true));
-
-            // gravity
-            var GravMap = new CoordinateMapping(this.XDGvelocity.Gravity.ToArray());
-            DGField[] GravParam = GravMap.Fields.ToArray();
-
-            // normals:
-            SinglePhaseField[] Normals; // Normal vectors: length not normalized - will be normalized at each quad node within the flux functions.
-            var LevelSetGradient = new VectorField<SinglePhaseField>(D, LevSet.Basis, SinglePhaseField.Factory);
-            LevelSetGradient.Gradient(1.0, LevSet);
-            Normals = LevelSetGradient.ToArray();
-
-            // Curvature
-            CurvatureAlgorithms.CurvatureDriver(
-                SurfaceStressTensor_IsotropicMode.Curvature_Projected,
-                CurvatureAlgorithms.FilterConfiguration.Default,
-                this.Curvature, out VectorField<SinglePhaseField> LevSetGradient, this.LsTrk,
-                this.m_HMForder, this.DGLevSet.Current);
-
-
-            // concatenate everything
-            var Params = ArrayTools.Cat<DGField>(
-                VelParam,
-                VelMeanParam,
-                GradVelX,
-                GradVelY,
-                PressParam,
-                PressGrad,
-                GravMap,
-                Normals, 
-                this.Curvature);
-
-
-
-            // assemble the matrix & affine vector
-            // ===================================
-
-
-            // compute matrix
-            if(OpMtx != null) {
-
-                var mtxBuilder = KineticEnergyBalanceOperator.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, SpcToCompute);
-
-                mtxBuilder.time = phystime;
-
-                foreach(var kv in AgglomeratedCellLengthScales) {
-                    mtxBuilder.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
-                }
-
-                mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
-
-            } else {
-                XSpatialOperatorMk2.XEvaluatorNonlin eval = KineticEnergyBalanceOperator.GetEvaluatorEx(LsTrk,
-                    CurrentState.ToArray(), Params, Mapping,
-                    SpcToCompute);
-
-                foreach(var kv in AgglomeratedCellLengthScales) {
-                    eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
-                }
-
-                eval.time = phystime;
-
-                eval.Evaluate(1.0, 1.0, OpAffine);
-
             }
 
 
-            //OpAffine.ScaleV(-1.0);
-
-            //// mass matrix factory
-            //MassFact = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), m_HMForder, 1).MassMatrixFactory;// new MassMatrixFactory(maxB, CurrentAgg);
-            //var WholeMassMatrix = MassFact.GetMassMatrix(Mapping, MassScale); // mass matrix scaled with density rho
-
-            //// add power of gravity forces
-            //var WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(this.XDGvelocity.Gravity.ToArray<DGField>()));
-            //var WholeVelocity = new CoordinateVector(ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray<DGField>()));
-            //WholeMassMatrix.SpMV(1.0, WholeVelocity, 1.0, OpAffine);
-
-            //// transform from RHS to Affine
-            //OpAffine.ScaleV(-1.0);
-
-        }
-
-        /// <summary>
-        /// dummy delegate for coupled operators
-        /// </summary>
-        /// <param name="CurrentState"></param>
-        /// <param name="Phystime"></param>
-        /// <param name="dt"></param>
-        /// <param name="underrelax"></param>
-        /// <param name="incremental"></param>
-        /// <returns></returns>
-        double DelUpdateLevelSet_EnergyOperator(DGField[] CurrentState, double Phystime, double dt, double underrelax, bool incremental) {
-            // do nothing
-            return 0.0;
-        }
-
-
-        /// <summary>
-        /// The residual logger for this application.
-        /// </summary>
-        public ResidualLogger EnergyResLogger {
-            get {
-                return m_EnergyResLogger;
-            }
-        }
-
-        ResidualLogger m_EnergyResLogger;
-
-
-        #endregion
-
-
-        // =====================================
-        // related stuff for coupled heat solver
-        // =====================================
-        #region coupled heat solver
-
-        /// <summary>
-        /// prescribed volume flux for testing. If volume flux > 0, mass flux for domain A is > 0.
-        /// </summary>
-        //double m_prescribedVolumeFlux;
-
-
-        /// <summary>
-        /// prescribed disjoining pressure field for evaporation near wall 
-        /// </summary>
-        SinglePhaseField DisjoiningPressure;
-
-
-        /// <summary>
-        /// Temperature
-        /// </summary>
-        XDGField Temperature;
-
-        VectorField<XDGField> HeatFlux;
-
-        /// <summary>
-        /// Residual of the heat equation
-        /// </summary>
-        XDGField ResidualHeat;
-
-        VectorField<XDGField> ResidualAuxHeatFlux;
-
-
-        SinglePhaseField EvapFlowRate;
-
-
-        /// <summary>
-        /// the spatial operator (heat equation)
-        /// </summary>
-        XSpatialOperatorMk2 Xheat_Operator;
-
-
-        /// <summary>
-        /// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
-        /// </summary>
-        IDictionary<SpeciesId, IEnumerable<double>> HeatScale {
-            get {
-                double rho_A = this.Control.ThermalParameters.rho_A,
-                    rho_B = this.Control.ThermalParameters.rho_B;
-
-                double c_A = this.Control.ThermalParameters.c_A,
-                    c_B = this.Control.ThermalParameters.c_B;
-
-                double[] scale_A;
-                double[] scale_B;
-                if (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) {
-                    scale_A = new double[1];
-                    scale_A[0] = rho_A * c_A;
-                    scale_B = new double[1];
-                    scale_B[0] = rho_B * c_B;
-                } else {
-                    scale_A = new double[3];
-                    scale_A[0] = rho_A * c_A;
-                    scale_A[1] = 1.0;
-                    scale_A[2] = 1.0;
-                    scale_B = new double[3];
-                    scale_B[0] = rho_B * c_B;
-                    scale_B[1] = 1.0;
-                    scale_B[2] = 1.0;
-                }
-
-
-                Dictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>>();
-                R.Add(this.LsTrk.GetSpeciesId("A"), scale_A);
-                R.Add(this.LsTrk.GetSpeciesId("B"), scale_B);
-
-                return R;
-            }
-        }
-
-        MultigridOperator.ChangeOfBasisConfig[][] MultigridCoupledOperatorConfig {
-            get {
-                int pTemp = this.Temperature.Basis.Degree;
-
-                int D = LsTrk.GridDat.SpatialDimension;
-
-                // set the MultigridOperator configuration for each level:
-                // it is not necessary to have exactly as many configurations as actual multigrid levels:
-                // the last configuration enty will be used for all higher level
-                MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
-                for(int iLevel = 0; iLevel < configs.Length; iLevel++) {
-                    configs[iLevel] = (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) ? new MultigridOperator.ChangeOfBasisConfig[1] : new MultigridOperator.ChangeOfBasisConfig[1+D];
-
-                    // configuration for Temperature
-                    configs[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig() {
-                        DegreeS = new int[] { Math.Max(0, pTemp - iLevel) },
-                        mode = this.Control.TemperatureBlockPrecondMode,
-                        VarIndex = new int[] { 0 }
-                    };
-
-
-                    // configuration for auxiliary heat flux
-                    if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) { 
-                        int pFlux = this.HeatFlux[0].Basis.Degree;
-                        for (int d = 0; d < D; d++) {
-                            configs[iLevel][d + 1] = new MultigridOperator.ChangeOfBasisConfig() {
-                                DegreeS = new int[] { Math.Max(0, pFlux - iLevel) },
-                                mode = MultigridOperator.Mode.Eye,
-                                VarIndex = new int[] { d + 1 }
-                            };
-                        }
-                    }
-
-
-                }
-
-
-                return configs;
-            }
-        }
-
-
-        ThermalMultiphaseBoundaryCondMap m_coupledBcMap;
-
-        /// <summary>
-        /// Boundary conditions.
-        /// </summary>
-        ThermalMultiphaseBoundaryCondMap coupledBcMap {
-            get {
-                if(m_coupledBcMap == null) {
-                    m_coupledBcMap = new ThermalMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
-                }
-                return m_coupledBcMap;
-            }
-        }
-
-        CoordinateVector m_CurrentCoupledSolution;
-
-        /// <summary>
-        /// Current temperature;
-        /// </summary>
-        internal CoordinateVector CurrentCoupledSolution {
-            get {
-                if(m_CurrentCoupledSolution == null) {
-                    if (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP)
-                        m_CurrentCoupledSolution = new CoordinateVector(this.Temperature);
-                    else
-                        m_CurrentCoupledSolution = new CoordinateVector(new DGField[] { this.Temperature, this.HeatFlux[0], this.HeatFlux[1] });
-                }
-                return m_CurrentCoupledSolution;
-            }
-        }
-
-        CoordinateVector m_CurrentCoupledResidual;
-
-        /// <summary>
-        /// Current residual for coupled heat equation.
-        /// </summary>
-        internal CoordinateVector CurrentCoupledResidual {
-            get {
-                if(m_CurrentCoupledResidual == null) {
-                    if (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP)
-                        m_CurrentCoupledResidual = new CoordinateVector(this.ResidualHeat);
-                    else
-                        m_CurrentCoupledResidual = new CoordinateVector(new DGField[] { this.ResidualHeat, this.ResidualAuxHeatFlux[0], this.ResidualAuxHeatFlux[1] });
-                }
-                return m_CurrentCoupledResidual;
-            }
-        }
-
-
-        /// <summary>
-        /// Implicit timestepping using Backward-Differentiation-Formulas (BDF),
-        /// specialized for XDG applications.
-        /// </summary>
-        XdgBDFTimestepping m_BDF_coupledTimestepper;
-
-
-        public void generateCoupledOperator() {
-
-            int D = this.GridData.SpatialDimension;
-
-            string[] CodName = new string[] { EquationNames.HeatEquation };
-            string[] Params = ArrayTools.Cat(
-                 VariableNames.Velocity0Vector(D),
-                 VariableNames.Velocity0MeanVector(D),
-                 VariableNames.NormalVector(D),
-                 VariableNames.Temperature0,
-                 VariableNames.HeatFlux0Vector(D),
-                 VariableNames.Curvature,
-                 VariableNames.DisjoiningPressure);
-            string[] DomName = new string[] { VariableNames.Temperature };
-
-            if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
-                CodName = ArrayTools.Cat(CodName, EquationNames.AuxHeatFlux(D));
-                DomName = ArrayTools.Cat(DomName, VariableNames.HeatFluxVector(D));
-            }
-
-
-
-            // create operator
-            // ===============
-            Xheat_Operator = new XSpatialOperatorMk2(DomName, Params, CodName, (A, B, C) => m_HMForder, this.LsTrk.SpeciesIdS.ToArray());
-
-
-            // build the operator
-            // ==================
-            {
-
-                // species bulk components
-                for (int spc = 0; spc < LsTrk.TotalNoOfSpecies; spc++) {
-                    // heat equation
-                    Solution.XheatCommon.XOperatorComponentsFactory.AddSpeciesHeatEq(Xheat_Operator, XOpConfig,
-                         D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], coupledBcMap, LsTrk);
-                }
-
-                // interface components
-                Solution.XheatCommon.XOperatorComponentsFactory.AddInterfaceHeatEq(Xheat_Operator, XOpConfig, D, coupledBcMap, LsTrk);
-
-
-                //if (XOpConfig.isEvaporation)
-                //    XOperatorComponentsFactory.AddInterfaceHeatEq_withEvaporation(Xheat_Operator, XOpConfig, D, LsTrk);
-
-
-                // finalize
-                // ========
-
-                Xheat_Operator.Commit();
-
-            }
-
-        }
-
-
-        void DelComputeCoupledOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
-
-            int D = this.GridData.SpatialDimension;
-
-            SpeciesId[] SpcToCompute = AgglomeratedCellLengthScales.Keys.ToArray();
-
-            // parameter assembly
-            // ==================    
-
-            // velocity
-            var VelMap = new CoordinateMapping(this.XDGvelocity.Velocity.ToArray());
-            DGField[] VelParam = VelMap.Fields.ToArray();
-
-            // velocity mean
-            VectorField<XDGField> VelMeanParam = new VectorField<XDGField>(D, new XDGBasis(LsTrk, 0), "VelMean_", XDGField.Factory);
-            XheatUtils.ComputeAverageU(VelParam, VelMeanParam, m_HMForder, LsTrk.GetXDGSpaceMetrics(SpcToCompute, m_HMForder, 1).XQuadSchemeHelper, this.LsTrk);
-
-            // normals:
-            SinglePhaseField[] Normals; // Normal vectors: length not normalized - will be normalized at each quad node within the flux functions.
-            var LevelSetGradient = new VectorField<SinglePhaseField>(D, LevSet.Basis, SinglePhaseField.Factory);
-            LevelSetGradient.Gradient(1.0, LevSet);
-            Normals = LevelSetGradient.ToArray();
-
-            // temperature
-            var TempMap = new CoordinateMapping(this.Temperature);
-            DGField[] TempParam = TempMap.Fields.ToArray();
-
-            // heat flux for evaporation
-            DGField[] HeatFluxParam;
-            if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
-                var HeatFluxMap = new CoordinateMapping(this.HeatFlux.ToArray());
-                HeatFluxParam = HeatFluxMap.Fields.ToArray();
-            } else {
-                HeatFluxParam = new VectorField<XDGField>(D, TempParam[0].Basis, "HeatFlux0_", XDGField.Factory).ToArray();
-                Dictionary<string, double> kSpc = new Dictionary<string, double>();
-                kSpc.Add("A", -this.Control.ThermalParameters.k_A);
-                kSpc.Add("B", -this.Control.ThermalParameters.k_B);
-                XNSEUtils.ComputeGradientForParam(TempParam[0], HeatFluxParam, this.LsTrk, kSpc);
-            }
-
-
-            // concatenate everything
-            var Params = ArrayTools.Cat<DGField>(
-                VelParam,
-                VelMeanParam,
-                Normals,
-                TempParam,
-                HeatFluxParam,
-                this.Curvature,
-                this.DisjoiningPressure);
-
-
-
-            BitArray EvapMicroRegion = this.LsTrk.GridDat.GetBoundaryCells().GetBitMask();
-            EvapMicroRegion.SetAll(false);
-
-
-            // assemble the matrix & affine vector
-            // ===================================
-
-            // compute matrix
-            if (OpMtx != null) {
-
-                var mtxBuilder = Xheat_Operator.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, SpcToCompute);
-
-                mtxBuilder.time = phystime;
-
-               
-                foreach(var kv in AgglomeratedCellLengthScales) {
-                    mtxBuilder.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
-                    //eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", kv.Value);
-                    mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
-                }
-
-                mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
-
-            } else {
-                XSpatialOperatorMk2.XEvaluatorNonlin eval = Xheat_Operator.GetEvaluatorEx(LsTrk,
-                    CurrentState.ToArray(), Params, Mapping,
-                    SpcToCompute);
-
-                foreach(var kv in AgglomeratedCellLengthScales) {
-                    eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
-                    //eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", kv.Value);
-                    eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
-                }
+            if(tsi != null) {
+                // checking some neccessary equalities AFTER serialisation
+                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 
 
-                //if(Op.SurfaceElementOperator.TotalNoOfComponents > 0) {
-                //    foreach(var kv in InterfaceLengths)
-                //        eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("InterfaceLengths", kv.Value);
-                //}
+                var tsi_alt = this.DatabaseDriver.LoadTimestepInfo(tsi.ID, base.CurrentSessionInfo, base.GetDatabase());
 
-                eval.time = phystime;
+                Debug.Assert(!object.ReferenceEquals(tsi, tsi_alt));
 
-                eval.Evaluate(1.0, 1.0, OpAffine);
 
+                LevelSet.LevelSetInitializer lsi_1 = (LevelSet.LevelSetInitializer)(tsi_alt.FieldInitializers.Single(fi => fi.Identification == "Phi"));
+                XDGField.FieldInitializer pri = (XDGField.FieldInitializer)(tsi_alt.FieldInitializers.Single(fi => fi.Identification == this.Pressure.Identification));
+
+                LevelSetTracker.LevelSetTrackerInitializer trki = ((XDGBasis.XDGBasisInitializer)(pri.BasisInfo)).TrackerInitializer;
+
+                LevelSet.LevelSetInitializer lsi_2 = trki.LevelSets[0];
+
+                Debug.Assert(lsi_1.Equals(lsi_2));
+
+                foreach(XDGField.FieldInitializer fi in tsi_alt.FieldInitializers.Where(fii => fii is XDGField.XDGFieldInitializer)) {
+                    LevelSetTracker.LevelSetTrackerInitializer trki_alt = ((XDGBasis.XDGBasisInitializer)(fi.BasisInfo)).TrackerInitializer;
+                    Debug.Assert(trki.Equals(trki_alt));
+                }
+
+
+                var Fields = this.DatabaseDriver.LoadFields(tsi_alt, this.GridData);
+                LevelSet Rphi_1 = (LevelSet)(Fields.Single(f => f.Identification.Equals(this.LevSet.Identification)));
+
+                XDGField Rpressure = (XDGField)(Fields.Single(f => f.Identification.Equals(this.Pressure.Identification)));
+
+                LevelSetTracker Rtracker = Rpressure.Basis.Tracker;
+                Debug.Assert(!object.ReferenceEquals(this.LsTrk, Rtracker));
+                Debug.Assert(object.ReferenceEquals(Rtracker.LevelSets[0], Rphi_1));
+
+                foreach(XDGField xf in Fields.Where(fii => fii is XDGField)) {
+                    Debug.Assert(object.ReferenceEquals(xf.Basis.Tracker, Rtracker));
+                }
             }
 
-        }
+#endif
 
-        /// <summary>
-        /// dummy delegate for coupled operators
-        /// </summary>
-        /// <param name="CurrentState"></param>
-        /// <param name="Phystime"></param>
-        /// <param name="dt"></param>
-        /// <param name="underrelax"></param>
-        /// <param name="incremental"></param>
-        /// <returns></returns>
-        double DelUpdateLevelSet_CoupledOperator(DGField[] CurrentState, double Phystime, double dt, double underrelax, bool incremental) {
-            // do nothing
-            return 0.0;
+            return tsi;
         }
 
 
-        /// <summary>
-        /// The residual logger for this application.
-        /// </summary>
-        public ResidualLogger CouplededResLogger {
-            get {
-                return m_CoupledResLogger;
-            }
+        protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1) {
+            Tecplot.PlotFields(base.m_RegisteredFields, "XNSE_Solver" + timestepNo, physTime, superSampling);
+            //Tecplot.PlotFields(new DGField[] { this.LevSet }, "grid" + timestepNo, physTime, 0);
         }
 
-        ResidualLogger m_CoupledResLogger;
 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        //public void ComputeHeatFluxForParam(DGField TempP, DGField[] HeatFluxP, LevelSetTracker LsTrk) {
-        //    using (FuncTrace ft = new FuncTrace()) {
-
-        //        int D = LsTrk.GridDat.SpatialDimension;
-        //        for (int d = 0; d < D; d++) {
-
-        //            foreach (var Spc in LsTrk.SpeciesNames) { // loop over species...
-        //                // shadow fields
-        //                DGField Temp_Spc = ((TempP as XDGField).GetSpeciesShadowField(Spc));
-
-        //                double kSpc = 0.0;
-        //                switch (Spc) {
-        //                    case "A": kSpc = this.Control.ThermalParameters.k_A; break;
-        //                    case "B": kSpc = this.Control.ThermalParameters.k_B; break;
-        //                    default: throw new NotSupportedException("Unknown species name '" + Spc + "'");
-        //                }
-
-        //                (HeatFluxP[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(kSpc, Temp_Spc, d);
-        //            }
-        //        }
-
-        //        HeatFluxP.ForEach(F => F.CheckForNanOrInf(true, true, true));
-
-        //    }
-        //}
-
+        protected void PlotOnIterationCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
+            PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, iterIndex }), 2);
+        }
 
         #endregion
+
+
     }
 }

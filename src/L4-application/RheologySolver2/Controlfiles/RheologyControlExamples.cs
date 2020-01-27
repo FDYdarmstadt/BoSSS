@@ -45,8 +45,10 @@ namespace BoSSS.Application.Rheology {
         /// <summary>
         /// 4:1 Contraction Flow
         /// </summary>
-        static public RheologyControl Contraction(string path = @"\\dc1\userspace\kikker\cluster\cluster_db\ContractionNYC", int degree = 1, int GridLevel = 3) { //int kelem = 4
+        static public RheologyControl Contraction(string path = null, int degree = 1, int GridLevel = 3) { //int kelem = 4
             RheologyControl C = new RheologyControl();
+
+            //@"\\dc1\userspace\kikker\cluster\cluster_db\ContractionNYC"
 
             //Path für cluster
             //\\dc1\userspace\kikker\cluster\cluster_db\ContractionNYC
@@ -56,7 +58,7 @@ namespace BoSSS.Application.Rheology {
 
             //Solver Options
             C.NoOfTimesteps = 15;
-            C.savetodb = true;
+            C.savetodb = path != null;
             C.DbPath = path;
             C.ProjectName = "Contration";
             C.NonLinearSolver.MaxSolverIterations = 50;
@@ -384,7 +386,7 @@ namespace BoSSS.Application.Rheology {
             //string path = @"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag", 
             string path = @"d:\Users\kummer\default_bosss_db",
             //string path = @"c:\Users\florian\default_bosss_db",
-            int degree = 4) {
+            int degree = 2) {
             //BoSSS.Application.Rheology.RheologyControlExamples.ConfinedCylinder();
             RheologyControl C = new RheologyControl();
 
@@ -445,8 +447,8 @@ namespace BoSSS.Application.Rheology {
             C.FixedStreamwisePeriodicBC = false;
             C.beta = 0.59;
             C.Reynolds = 1;
-            C.Weissenberg = 0.0; //aim Weissenberg number!
-            C.RaiseWeissenberg = false;
+            C.Weissenberg = 1; //aim Weissenberg number!
+            C.RaiseWeissenberg = true;
             C.WeissenbergIncrement = 0.1;
 
             //Penalties
@@ -486,9 +488,9 @@ namespace BoSSS.Application.Rheology {
             //string grid = "1c9cb150-88d3-4ee1-974d-7970eabd3cf8"; // florian laptop (full, level 0)
             //string grid = "bb3239f2-479d-46e4-9187-ba47dc8cfc63"; // florian laptop (full, level 1)
             //string grid = "db1797a9-6bc4-4194-984a-03b67598fa19"; // florian laptop (full, level 2)
-            string grid = "c88c914b-c387-4894-9697-a78bad31f2da"; // florian terminal03 (full, level 0)
+            //string grid = "c88c914b-c387-4894-9697-a78bad31f2da"; // florian terminal03 (full, level 0)
             //string grid = "061e7cfb-7ffe-4540-bc74-bfffce824fef"; // florian terminal03 (full, level 1)
-            //string grid = "51aadb49-e3d5-4e88-897e-13b6b329995b"; // florian terminal03 (full, level 2)
+            string grid = "51aadb49-e3d5-4e88-897e-13b6b329995b"; // florian terminal03 (full, level 2)
 
             // half channel mesh3 for cond tests
             //string grid = "962bc97f-0298-4e2f-ac18-06940cb84956"; // anne
@@ -574,28 +576,36 @@ namespace BoSSS.Application.Rheology {
                 C.PresFunction = X => Pressurefunction(X, 0);
             }
 
-            //restart
-            //var database = new DatabaseInfo(path);
-            //Guid restartID = new Guid("9ae08191-ee15-4803-9e3f-566f119c9de4");
-            //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, null);
-            /*
-            //Set Initial Conditions
-            if (C.SetInitialConditions == true)
-            {
-                
-                C.InitialValues_Evaluators.Add("VelocityX", X => VelocityXfunction(X, 0));
-                C.InitialValues_Evaluators.Add("VelocityY", X => VelocityYfunction(X, 0));
-                C.InitialValues_Evaluators.Add("StressXX", X => 0);// StressXXfunction(X, 0));
-                C.InitialValues_Evaluators.Add("StressXY", X => StressXYfunction(X, 0));
-                C.InitialValues_Evaluators.Add("StressYY", X => StressYYfunction(X, 0));
+            // restart (florian, terminal03)
+            //Guid restartID = new Guid("45c813f2-8be5-43ab-9e41-7abbca99cc99"); 
+            //C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(1, 4)); // Weissenberg 0.4
+            //C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(1, 5)); // Weissenberg 0.5
 
-                if (C.SetInitialPressure == true || C.SkipSolveAndEvaluateResidual == true)
+            // another restart session (florian, terminal03)
+            Guid restartID = new Guid("ba559446-5032-4a55-8456-6ce4c02651b5");
+            C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(2, 2)); // Weissenberg 0.7
+
+
+            if (C.RestartInfo == null) {
+                /*
+                //Set Initial Conditions
+                if (C.SetInitialConditions == true)
                 {
-                    C.InitialValues_Evaluators.Add("Pressure", X => Pressurefunction(X, 0));
+
+                    C.InitialValues_Evaluators.Add("VelocityX", X => VelocityXfunction(X, 0));
+                    C.InitialValues_Evaluators.Add("VelocityY", X => VelocityYfunction(X, 0));
+                    C.InitialValues_Evaluators.Add("StressXX", X => 0);// StressXXfunction(X, 0));
+                    C.InitialValues_Evaluators.Add("StressXY", X => StressXYfunction(X, 0));
+                    C.InitialValues_Evaluators.Add("StressYY", X => StressYYfunction(X, 0));
+
+                    if (C.SetInitialPressure == true || C.SkipSolveAndEvaluateResidual == true)
+                    {
+                        C.InitialValues_Evaluators.Add("Pressure", X => Pressurefunction(X, 0));
+                    }
                 }
+                */
+                C.InitialValues_Evaluators.Add("Phi", X => -1);
             }
-            */
-            C.InitialValues_Evaluators.Add("Phi", X => -1);
 
             // Set Boundary Conditions
             //C.AddBoundaryValue("Wall_bottom", "VelocityX", X => 0);
@@ -606,7 +616,7 @@ namespace BoSSS.Application.Rheology {
             //C.AddBoundaryValue("Wall_cylinder", "VelocityY", X => 0);
             //C.AddBoundaryValue("Freeslip");
 
-
+            
             if (!C.FixedStreamwisePeriodicBC)
             {
                 C.AddBoundaryValue("Velocity_inlet", "VelocityX", VelocityXfunction);

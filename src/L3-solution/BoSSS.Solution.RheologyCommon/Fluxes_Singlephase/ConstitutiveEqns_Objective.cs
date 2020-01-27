@@ -119,7 +119,7 @@ namespace BoSSS.Solution.RheologyCommon {
         /// Extraction of velocity gradients from arguments
         /// </summary>
         void GetVelocityGrad(out double Grad1, out double Grad2, out double Grad3, out double Grad4, double[,] U) {
-            int offset = 3; // offset into trial var array
+            int offset = 4; // offset into trial var array
             switch (Component) {
                 case 0:
                 //VelGrads = new string[] { VariableNames.VelocityX_GradientX, VariableNames.VelocityX_GradientY, VariableNames.VelocityX_GradientX, VariableNames.VelocityX_GradientY };
@@ -139,8 +139,8 @@ namespace BoSSS.Solution.RheologyCommon {
 
                 case 2:
                 //VelGrads = new string[] { VariableNames.VelocityY_GradientX, VariableNames.VelocityY_GradientY, VariableNames.VelocityY_GradientX, VariableNames.VelocityY_GradientY };
-                Grad1 = U[offset + 0, 0];
-                Grad2 = U[offset + 0, 1];
+                Grad1 = U[offset + 1, 0];
+                Grad2 = U[offset + 1, 1];
                 Grad3 = U[offset + 1, 0];
                 Grad4 = U[offset + 1, 1];
                 break;
@@ -173,9 +173,10 @@ namespace BoSSS.Solution.RheologyCommon {
         public double InnerEdgeForm(ref CommonParams inp, double[] Tin, double[] Tout, double[,] Grad_Tin, double[,] Grad_Tout,
             double Vin, double Vout, double[] Grad_Vin, double[] Grad_Vout) {
 
-            double res = 0.0;
-            res += (Tin[0] - Tout[0]) + (Tin[1] - Tout[1]) + (Tin[2] - Tout[2]) + (Tin[3] - Tout[3]);
-            return (-m_Weissenberg) * res * (Vin - Vout);
+            //double res = 0.0;
+            //res += (Tin[0] - Tout[0]) + (Tin[1] - Tout[1]) + (Tin[2] - Tout[2]) + (Tin[3] - Tout[3]);
+            //return (-m_Weissenberg) * res * (Vin - Vout);
+            return 0.0;
         }
 
         /// <summary>
