@@ -88,7 +88,7 @@ namespace BoSSS.Application.FSI_Solver {
             m_ForcesAndTorqueWithoutRelaxation.Insert(0, hydrodynamics.CloneAs());
             ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation(hydrodynamics, m_ForcesAndTorquePreviousIteration);
             double[] relaxatedHydrodynamics;
-            if (m_ForcesAndTorquePreviousIteration.Count >= 3) {
+            if (m_ForcesAndTorquePreviousIteration.Count >= 4) {
                 relaxatedHydrodynamics = Underrelaxation.AitkenUnderrelaxation(ref omega, m_ForcesAndTorqueWithoutRelaxation);
             }
             else if (m_ForcesAndTorquePreviousIteration.Count >= 1) {

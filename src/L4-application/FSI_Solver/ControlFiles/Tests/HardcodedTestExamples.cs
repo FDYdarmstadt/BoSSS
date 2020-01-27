@@ -92,7 +92,6 @@ namespace BoSSS.Application.FSI_Solver {
 
         public static FSI_Control Test_ParticleInShearFlow(int k = 2) {
             FSI_Control C = new FSI_Control(k, "ParticleInShearFlow");
-
             // grid and boundary conditions
             // ============================
             List<string> boundaryValues = new List<string> {
@@ -101,11 +100,39 @@ namespace BoSSS.Application.FSI_Solver {
                 "Wall_upper",
                 "Wall_lower"
             };
-            C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 4, lengthY: 6, cellsPerUnitLength: 15, periodicX: false, periodicY: false);
+            C.GridFunc = delegate {
+                double[] Xnodes = GenericBlas.Linspace(-2, 2, 21);
+                double[] Ynodes = GenericBlas.Linspace(-3, 3, 31);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: true);
+
+                grd.EdgeTagNames.Add(1, "Velocity_Inlet_left");
+                grd.EdgeTagNames.Add(2, "Velocity_Inlet_right");
+
+
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte et = 0;
+                    if (Math.Abs(X[0] - (-2)) <= 1.0e-8)
+                        et = 1;
+                    if (Math.Abs(X[0] + (-2)) <= 1.0e-8)
+                        et = 2;
+
+                    Debug.Assert(et != 0);
+                    return et;
+                });
+
+                return grd;
+            };
+            C.BoundaryPositionPerDimension = new double[2][];
+            C.BoundaryIsPeriodic = new bool[2];
+            C.BoundaryPositionPerDimension[0] = new double[] { -2, 2 };
+            C.BoundaryPositionPerDimension[1] = new double[] { -3, 3 };
+            C.FluidDomainVolume = 6;
+            //C.SetBoundaries(boundaryValues);
+            //C.SetGrid(lengthX: 4, lengthY: 6, cellsPerUnitLength: 5, periodicX: false, periodicY: false);
             C.AddBoundaryValue("Velocity_Inlet_left", "VelocityY", X => 0.02);
             C.AddBoundaryValue("Velocity_Inlet_right", "VelocityY", X => -0.02);
-            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.hydrodynamicsConvergenceCriterion = 1e-1;
             double particleDensity = 1;
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, false, true);
             C.Particles.Add(new Particle_Sphere(motion, 0.4, new double[] { 0.0, 0.0 }));

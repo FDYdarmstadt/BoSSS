@@ -71,7 +71,7 @@ namespace FSI_Solver {
             // Some var definintion
             // =======================================================
             int ParticleOffset = particles.Length;
-            double distanceThreshold = m_hMin;
+            double distanceThreshold = m_hMin / 10;
 
             // Step 2
             // Loop over time until the particles hit.
@@ -164,7 +164,7 @@ namespace FSI_Solver {
                     // -------------------------------------------------------
                     if (SaveTimeStep >= 0)
                         AccDynamicTimestep += SaveTimeStep;
-                    if (AccDynamicTimestep >= 2 * m_dt) {
+                    if (AccDynamicTimestep >= m_dt) {
                         break;
                     }
                 }
@@ -512,8 +512,8 @@ namespace FSI_Solver {
             else {
                 double angle = particle.Motion.GetAngle(0);
                 Vector particleDirection = new Vector(Math.Cos(angle), Math.Sin(angle));
-                double testSign = particleDirection[0] * supportVector[1] - particleDirection[1] * supportVector[0];
-                double searchStartAngle = (1 - Math.Sign(testSign)) * Math.PI / 2 + Math.Acos((supportVector * particleDirection) / supportVector.L2Norm());
+                double crossProductDirectionSupportVector = particleDirection[0] * supportVector[1] - particleDirection[1] * supportVector[0];
+                double searchStartAngle = (1 - Math.Sign(crossProductDirectionSupportVector)) * Math.PI / 2 + Math.Acos((supportVector * particleDirection) / supportVector.L2Norm());
                 double L = searchStartAngle - Math.PI;
                 double R = searchStartAngle + Math.PI;
                 while (L < R && Math.Abs(L-R) > 1e-15) {

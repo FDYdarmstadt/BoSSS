@@ -921,7 +921,7 @@ namespace BoSSS.Application.FSI_Solver {
                         }
                         int iterationCounter = 0;
                         double hydroDynForceTorqueResidual = double.MaxValue;
-                        int minIteration = 3;
+                        int minIteration = 5;
                         Motion_AllParticles AllParticleHydrodynamics = new Motion_AllParticles(LsTrk);
                         while (hydroDynForceTorqueResidual > HydrodynConvergenceCriterion || iterationCounter < minIteration) {
                             if (iterationCounter > ((FSI_Control)Control).maxIterationsFullyCoupled)
@@ -959,6 +959,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                             // print iteration status
                             // -------------------------------------------------
+                            //Auxillary.PrintResultToConsole(m_Particles, phystime, hydroDynForceTorqueResidual, iterationCounter);
                             Auxillary.PrintResultToConsole(phystime, hydroDynForceTorqueResidual, iterationCounter);
                             LogResidual(phystime, iterationCounter, hydroDynForceTorqueResidual);
                         }
@@ -1391,6 +1392,7 @@ namespace BoSSS.Application.FSI_Solver {
                 // the owning process.
                 // ===================================================
                 if (isCollidedReceive[i] != 0) {
+                    Console.WriteLine("collided on " + i + " length " + isCollidedReceive.Length);
                     double[] dataSend = currentParticle.Motion.BuildSendArray();
                     int noOfVars = dataSend.Length;
 

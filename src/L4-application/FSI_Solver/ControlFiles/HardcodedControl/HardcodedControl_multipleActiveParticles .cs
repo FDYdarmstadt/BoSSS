@@ -149,9 +149,9 @@ namespace BoSSS.Application.FSI_Solver {
             //    "Wall"
             //};
             //C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 4, lengthY: 4, cellsPerUnitLength: 8, periodicX: true, periodicY: true);
+            C.SetGrid(lengthX: 4, lengthY: 4, cellsPerUnitLength: 12, periodicX: true, periodicY: true);
             //C.SetAddaptiveMeshRefinement(amrLevel: amrLevel);
-            C.hydrodynamicsConvergenceCriterion = 1e0;
+            C.hydrodynamicsConvergenceCriterion = 1e-1;
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
@@ -169,7 +169,7 @@ namespace BoSSS.Application.FSI_Solver {
             // misc. solver options
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            double dt = 1e-2;
+            double dt = 1e-3;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 100000000;

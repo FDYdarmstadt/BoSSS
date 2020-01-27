@@ -393,6 +393,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             if (this.LevelIndex == 0 && this.Mapping.AggBasis.Any(agb => agb.ReqModeIndexTrafo)) {
                 int J = this.Mapping.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+                if (J != BaseGridProblemMapping.GridDat.iLogicalCells.NoOfLocalUpdatedCells)
+                    throw new Exception("No of local cells wrong");
                 Debug.Assert(J == this.BaseGridProblemMapping.GridDat.iLogicalCells.NoOfLocalUpdatedCells);
                 IndexIntoProblemMapping_Local = new int[this.Mapping.LocalLength];
 #if DEBUG

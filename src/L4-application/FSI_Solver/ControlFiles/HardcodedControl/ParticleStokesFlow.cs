@@ -90,7 +90,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control WetParticleWallCollision(int k = 2, double DensityFactor = 200, int amrLevel = 2) {
+        public static FSI_Control WetParticleWallCollision(int k = 2, double DensityFactor = 1000, int amrLevel = 2) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "wetParticleWallCollision");
             C.SetSaveOptions(@"D:\BoSSS_databases\wetParticleCollision", 1);
 
@@ -103,7 +103,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.SetBoundaries(boundaryValues);
             C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 2, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel);
-            C.hydrodynamicsConvergenceCriterion = 1e-6;
+            C.hydrodynamicsConvergenceCriterion = 1e-2;
 
             // Fluid Properties
             // =============================
@@ -150,7 +150,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(dt: 1e-3, noOfTimesteps: 2500);
+            C.SetTimesteps(dt: 1e-2, noOfTimesteps: 2500);
 
             // haben fertig...
             // ===============

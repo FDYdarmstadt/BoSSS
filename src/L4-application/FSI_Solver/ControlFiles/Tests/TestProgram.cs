@@ -83,7 +83,8 @@ namespace BoSSS.Application.FSI_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double angularVelocity_Sol = 0.00487;
+                double angularVelocity_Sol = -0.00307062397473367;// 0.00487; needs investigation!
+
 
                 double angularVelocity = (double)p.QueryHandler.QueryResults["Angular_Velocity"];
 

@@ -1020,17 +1020,17 @@ namespace BoSSS.Application.FSI_Solver {
         public void WriteReceiveArray(double[] dataReceive, int offset) {
             m_RotationalVelocity[0] = dataReceive[0 + offset];
             m_RotationalAcceleration[0] = dataReceive[1 + offset];
-            m_TranslationalVelocity[0].Set(dataReceive[2 + offset], dataReceive[3 + offset]);
-            m_TranslationalAcceleration[0].Set(dataReceive[4 + offset], dataReceive[5 + offset]);
+            m_TranslationalVelocity[0] = new Vector(dataReceive[2 + offset], dataReceive[3 + offset]);
+            m_TranslationalAcceleration[0] = new Vector(dataReceive[4 + offset], dataReceive[5 + offset]);
             m_Angle[0] = dataReceive[6 + offset];
-            m_Position[0].Set(dataReceive[7 + offset], dataReceive[8 + offset]);
+            m_Position[0] = new Vector(dataReceive[7 + offset], dataReceive[8 + offset]);
             m_CollisionTimestep = dataReceive[9 + offset];
             m_RotationalVelocity[1] = dataReceive[10 + offset];
-            m_TranslationalVelocity[1].Set(dataReceive[11 + offset], dataReceive[12 + offset]);
+            m_TranslationalVelocity[1] = new Vector(dataReceive[11 + offset], dataReceive[12 + offset]);
             m_Angle[1] = dataReceive[13 + offset];
-            m_Position[1].Set(dataReceive[14 + offset], dataReceive[15 + offset]);
+            m_Position[1] = new Vector(dataReceive[14 + offset], dataReceive[15 + offset]);
             m_RotationalAcceleration[1] = dataReceive[16 + offset];
-            m_TranslationalAcceleration[1].Set(dataReceive[17 + offset], dataReceive[18 + offset]);
+            m_TranslationalAcceleration[1] = new Vector(dataReceive[17 + offset], dataReceive[18 + offset]);
         }
 
         public virtual object Clone() {

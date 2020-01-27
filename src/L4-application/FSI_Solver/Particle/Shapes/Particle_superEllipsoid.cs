@@ -143,9 +143,9 @@ namespace BoSSS.Application.FSI_Solver {
             if (SpatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported.");
             double angle = Motion.GetAngle(0);
-            int noOfCurrentPointWithNeighbours = 3;
-            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(noOfCurrentPointWithNeighbours, SpatialDim);
-            for (int j = 0; j < noOfCurrentPointWithNeighbours; j++) {
+            int noOfCurrentPointAndNeighbours = 3;
+            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(noOfCurrentPointAndNeighbours, SpatialDim);
+            for (int j = 0; j < noOfCurrentPointAndNeighbours; j++) {
                 double verticalAxis;
                 double horizontalAxis;
                 double currentAngle = searchAngle + dAngle * (j - 1);
