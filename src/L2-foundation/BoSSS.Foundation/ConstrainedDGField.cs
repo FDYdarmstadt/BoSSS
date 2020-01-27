@@ -36,14 +36,14 @@ namespace BoSSS.Foundation {
     /// <summary>
     /// continuous DG field via L2-projection with continuity constraints
     /// </summary>
-    public class ContinuousDGField {
+    public class ConstrainedDGField {
 
 
         /// <summary>
         /// ctor
         /// </summary>
         /// <param name="b"></param>
-        public ContinuousDGField(Basis b) {
+        public ConstrainedDGField(Basis b) {
             m_Basis = b;
             m_grd = (GridData)b.GridDat;
             m_Mapping = new UnsetteledCoordinateMapping(b);

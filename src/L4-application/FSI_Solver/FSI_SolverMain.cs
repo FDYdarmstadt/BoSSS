@@ -1227,25 +1227,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// over-ridden in oder to save the particles (<see cref="m_Particles"/>) to the database
         /// </summary>
-        protected override TimestepNumber RestartFromDatabase(out double time) {
-
-            // this sux, because the database API is totally fucked up
-            var db = GetDatabase();
-            Guid Rst_Tsid = base.GetRestartTimestepID();
-            Guid Rst_SessionId = Control.RestartInfo.Item1;
-            ISessionInfo session = db.Controller.GetSessionInfo(Rst_SessionId);
-
-            var ArschInfo = ((DatabaseDriver)(DatabaseDriver)).LoadTimestepInfo<FSI_TimestepInfo>(Rst_Tsid, session, db);
+        protected override void OnRestartTimestepInfo(TimestepInfo tsi) {
+            FSI_TimestepInfo fTsi = (FSI_TimestepInfo)tsi;
 
             // init particles
-            m_Particles = ArschInfo.Particles.ToList();
-            UpdateLevelSetParticles(ArschInfo.PhysicalTime);
-
-            // call base shit
-            var R = base.RestartFromDatabase(out time);
-
-            // return
-            return R;
+            m_Particles = fTsi.Particles.ToList();
+            UpdateLevelSetParticles(fTsi.PhysicalTime);
         }
 
 

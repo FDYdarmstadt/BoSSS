@@ -1048,7 +1048,7 @@ namespace BoSSS.Application.IBM_Solver {
                     ContBasis: this.LevSet.Basis,
                     DGBasis: this.DGLevSet.Current.Basis,
                     gridData: GridData,
-                    Option: Solution.LevelSetTools.ContinuityProjectionOption.ContinuousDG);
+                    Option: Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG);
 
                 //CellMask domain = this.LsTrk.Regions.GetNearFieldMask(1);
 

@@ -8,7 +8,7 @@
     <ProjectGuid>{985A90C0-4E63-4B8D-BC9B-946AF1AD3132}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>XNSE</RootNamespace>
+    <RootNamespace>BoSSS.Application.Rheology</RootNamespace>
     <AssemblyName>RheologySolver</AssemblyName>
     <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -69,6 +69,7 @@
     <Reference Include="System.Runtime.Serialization" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="RheologyTimestepInfo.cs" />
     <Compile Include="Tests\RheologyChannelTest.cs" />
     <Compile Include="Tests\RheologyConsistencyTest.cs" />
     <Compile Include="Tests\RheologyLocalDGTest.cs" />

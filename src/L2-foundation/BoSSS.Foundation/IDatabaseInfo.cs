@@ -42,14 +42,14 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// The sessions of this database.
         /// </summary>
-        IEnumerable<ISessionInfo> Sessions {
+        IList<ISessionInfo> Sessions {
             get;
         }
 
         /// <summary>
         /// The grids of this database.
         /// </summary>
-        IEnumerable<IGridInfo> Grids {
+        IList<IGridInfo> Grids {
             get;
         }
 
