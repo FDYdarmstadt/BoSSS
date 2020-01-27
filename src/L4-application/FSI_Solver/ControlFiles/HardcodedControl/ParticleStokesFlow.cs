@@ -22,6 +22,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Platform.LinAlg;
 using ilPSP;
+using BoSSS.Solution.Control;
 
 namespace BoSSS.Application.FSI_Solver {
     public class ParticleStokesFlow : IBM_Solver.HardcodedTestExamples {
@@ -90,9 +91,10 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control WetParticleWallCollision(int k = 2, double DensityFactor = 1000, int amrLevel = 2) {
+        public static FSI_Control WetParticleWallCollision(int k = 4, double DensityFactor = 1000, int amrLevel = 3) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "wetParticleWallCollision");
-            C.SetSaveOptions(@"D:\BoSSS_databases\wetParticleCollision", 1);
+            //C.SetSaveOptions(@"D:\BoSSS_databases\wetParticleCollision", 1);
+            C.SetSaveOptions(@"/home/ij83requ/default_bosss_db", 1);
 
             List<string> boundaryValues = new List<string> {
                 "Pressure_Outlet_left",
@@ -101,9 +103,9 @@ namespace BoSSS.Application.FSI_Solver {
                 "Pressure_Outlet_upper"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 2, periodicX: false, periodicY: false);
+            C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 4, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel);
-            C.hydrodynamicsConvergenceCriterion = 1e-2;
+            C.hydrodynamicsConvergenceCriterion = 1e-4;
 
             // Fluid Properties
             // =============================
@@ -138,6 +140,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
             C.LSunderrelax = 1.0;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
 
 
             // Coupling Properties

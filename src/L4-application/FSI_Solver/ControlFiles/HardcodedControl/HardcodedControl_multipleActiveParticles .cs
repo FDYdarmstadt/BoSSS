@@ -140,17 +140,17 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control TwoParticles(int k = 3, int amrLevel = 4, double aspectRatio = 0.5, double angle = -0) {
+        public static FSI_Control TwoParticles(int k = 2, int amrLevel = 6, double aspectRatio = 0.5, double angle = -0) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/home/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
 
-            //List<string> boundaryValues = new List<string> {
-            //    "Wall"
-            //};
-            //C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 4, lengthY: 4, cellsPerUnitLength: 12, periodicX: true, periodicY: true);
-            //C.SetAddaptiveMeshRefinement(amrLevel: amrLevel);
+            List<string> boundaryValues = new List<string> {
+                "Wall"
+            };
+            C.SetBoundaries(boundaryValues);
+            C.SetGrid(lengthX: 4, lengthY: 4, cellsPerUnitLength: 2, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(amrLevel: amrLevel);
             C.hydrodynamicsConvergenceCriterion = 1e-1;
             // Fluid Properties
             // =============================

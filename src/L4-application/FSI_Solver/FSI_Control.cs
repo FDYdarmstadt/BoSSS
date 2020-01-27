@@ -86,6 +86,7 @@ namespace BoSSS.Application.FSI_Solver {
             AdaptiveMeshRefinement = true;
             RefinementLevel = amrLevel;
             AMR_startUpSweeps = amrLevel;
+            Console.WriteLine("No of start up sweeps " + AMR_startUpSweeps);
         }
 
         public void SetBoundaries(List<string> boundaryValues) {
