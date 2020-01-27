@@ -235,11 +235,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 double[] scale_A = new double[D + 1];
                 double[] scale_B = new double[D + 1];
                 int mD = D + 1;
-                if (this.Control.solveKineticEnergyEquation) {
-                    scale_A = new double[D + 2];
-                    scale_B = new double[D + 2];
-                    mD = D + 2;
-                }
+                //if (this.Control.solveKineticEnergyEquation) {
+                //    scale_A = new double[D + 2];
+                //    scale_B = new double[D + 2];
+                //    mD = D + 2;
+                //}
                 if (this.Control.solveCoupledHeatEquation) {
                     scale_A = new double[mD + 1];
                     scale_B = new double[mD + 1];
@@ -296,9 +296,9 @@ namespace BoSSS.Application.XNSE_Solver {
             get {
                 if (m_CurrentSolution == null) {
                     m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(this.CurrentVel, this.Pressure));
-                    if (this.Control.solveKineticEnergyEquation) {
-                        m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(m_CurrentSolution.Mapping.Fields.ToArray(), this.KineticEnergy));
-                    }
+                    //if (this.Control.solveKineticEnergyEquation) {
+                    //    m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(m_CurrentSolution.Mapping.Fields.ToArray(), this.KineticEnergy));
+                    //}
                     if (this.Control.solveCoupledHeatEquation) {
                         //m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(this.CurrentVel, this.Pressure, this.Temperature));
                         m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(m_CurrentSolution.Mapping.Fields.ToArray(), this.Temperature));
@@ -324,9 +324,9 @@ namespace BoSSS.Application.XNSE_Solver {
             get {
                 if (m_CurrentResidual == null) {
                     m_CurrentResidual = new CoordinateVector(ArrayTools.Cat<DGField>(XDGvelocity.ResidualMomentum, ResidualContinuity));
-                    if (this.Control.solveKineticEnergyEquation) {
-                        m_CurrentResidual = new CoordinateVector(ArrayTools.Cat(m_CurrentResidual.Mapping.Fields.ToArray(), this.ResidualKineticEnergy));
-                    }
+                    //if (this.Control.solveKineticEnergyEquation) {
+                    //    m_CurrentResidual = new CoordinateVector(ArrayTools.Cat(m_CurrentResidual.Mapping.Fields.ToArray(), this.ResidualKineticEnergy));
+                    //}
                     if (this.Control.solveCoupledHeatEquation) {
                         //m_CurrentResidual = new CoordinateVector(ArrayTools.Cat<DGField>(XDGvelocity.ResidualMomentum, ResidualContinuity, ResidualHeat));
                         m_CurrentResidual = new CoordinateVector(ArrayTools.Cat(m_CurrentResidual.Mapping.Fields.ToArray(), this.ResidualHeat));
@@ -375,10 +375,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 1];
                     int mD = D + 1;
-                    if (this.Control.solveKineticEnergyEquation) {
-                        configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 2];
-                        mD = D + 2;
-                    }
+                    //if (this.Control.solveKineticEnergyEquation) {
+                    //    configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 2];
+                    //    mD = D + 2;
+                    //}
                     if (this.Control.solveCoupledHeatEquation) {
                         configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[mD + 1];
                         if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
@@ -408,15 +408,15 @@ namespace BoSSS.Application.XNSE_Solver {
                         VarIndex = new int[] { D }
                     };
                     
-                    if (this.Control.solveKineticEnergyEquation) {
-                        int pKinE = this.KineticEnergy.Basis.Degree;
-                        // configuration for kinetic energy
-                        configs[iLevel][D + 1] = new MultigridOperator.ChangeOfBasisConfig() {
-                            DegreeS = new int[] { Math.Max(1, pKinE - iLevel) },
-                            mode = this.Control.KineticEnergyeBlockPrecondMode,
-                            VarIndex = new int[] { D + 1 }
-                        };
-                    }
+                    //if (this.Control.solveKineticEnergyEquation) {
+                    //    int pKinE = this.KineticEnergy.Basis.Degree;
+                    //    // configuration for kinetic energy
+                    //    configs[iLevel][D + 1] = new MultigridOperator.ChangeOfBasisConfig() {
+                    //        DegreeS = new int[] { Math.Max(1, pKinE - iLevel) },
+                    //        mode = this.Control.KineticEnergyeBlockPrecondMode,
+                    //        VarIndex = new int[] { D + 1 }
+                    //    };
+                    //}
 
                     if (this.Control.solveCoupledHeatEquation) {
 
@@ -479,8 +479,10 @@ namespace BoSSS.Application.XNSE_Solver {
             //----------------
 
             m_HMForder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
-            if (this.Control.solveKineticEnergyEquation)
-                m_HMForder *= 2;
+            if (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye)
+                m_HMForder = 2 * m_HMForder + 1;
+            //if (this.Control.solveKineticEnergyEquation)
+            //    m_HMForder *= 2;
 
 
             // Create Spatial Operator
@@ -490,6 +492,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
             XNSFE_Operator = new XNSFE_OperatorFactory(XOpConfig, this.LsTrk, this.m_HMForder, this.BcMap, this.thermBcMap, degU);
             updateSolutionParams = new bool[CurrentResidual.Mapping.Fields.Count];
+
+            if(this.Control.solveKineticEnergyEquation)
+                this.generateKinEnergyOperator(XOpConfig);
 
             #endregion
 
@@ -510,10 +515,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 DGField[] flds = ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure);
                 DGField[] resi = ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity);
 
-                if (this.Control.solveKineticEnergyEquation) {
-                    flds = ArrayTools.Cat<DGField>(flds, this.KineticEnergy);
-                    resi = ArrayTools.Cat<DGField>(resi, this.ResidualKineticEnergy);
-                }
+                //if (this.Control.solveKineticEnergyEquation) {
+                //    flds = ArrayTools.Cat<DGField>(flds, this.KineticEnergy);
+                //    resi = ArrayTools.Cat<DGField>(resi, this.ResidualKineticEnergy);
+                //}
 
                 if (this.Control.solveCoupledHeatEquation) {
                     flds = ArrayTools.Cat<DGField>(flds, this.Temperature);
@@ -718,9 +723,9 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============================
             // Dimension: [ rho * G ] = mass / time^2 / len^2 == [ d/dt rho U ]
             var WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(this.XDGvelocity.Gravity.ToArray<DGField>(), new XDGField(this.Pressure.Basis)));
-            if (this.Control.solveKineticEnergyEquation) {
-                WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(WholeGravity.Mapping.Fields, new XDGField(this.KineticEnergy.Basis)));
-            }
+            //if (this.Control.solveKineticEnergyEquation) {
+            //    WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(WholeGravity.Mapping.Fields, new XDGField(this.KineticEnergy.Basis)));
+            //}
             if (this.Control.solveCoupledHeatEquation) {
                 WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(WholeGravity.Mapping.Fields, new XDGField(this.Temperature.Basis)));
                 if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
@@ -1054,7 +1059,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 hack_Phystime = phystime;
 
   
-                Preprocessing(TimestepInt, phystime, dt, TimestepNo);
+                //Preprocessing(TimestepInt, phystime, dt, TimestepNo);
 
 
                 if(Control.SkipSolveAndEvaluateResidual) {
@@ -1105,10 +1110,8 @@ namespace BoSSS.Application.XNSE_Solver {
                             this.prevVel[d].Clear();
                             this.prevVel[d].Acc(1.0, this.CurrentVel[d]);
                         }
-                        if (this.Control.ComputeEnergyProperties) {
-                            this.prevKineticEnergy.Clear();
-                            this.prevKineticEnergy.Acc(1.0, this.DerivedKineticEnergy);
-                        }
+                        this.prevKineticEnergy.Clear();
+                        this.prevKineticEnergy.Acc(1.0, this.DerivedKineticEnergy);
                     }
 
 
@@ -1136,23 +1139,23 @@ namespace BoSSS.Application.XNSE_Solver {
                             double underrelax = Math.Round(dt_LevSetCFL / dt, 1);
                             m_BDF_Timestepper.IterUnderrelax = underrelax;
                             Console.WriteLine("Exceeding Level-Set CFL: Setting underrelaxation factor to {0}", underrelax);
-                            if (this.Control.solveKineticEnergyEquation && (dt / (dt_LevSetCFL / 4.0)) > 1.0) {
-                                Console.WriteLine("Exceeding Level-Set CFL for kinetic energy equation: dt = {0}, dt_sigma = {1}, frac = {2}", dt, dt_LevSetCFL/4.0, (dt / (dt_LevSetCFL / 4.0)));
-                            }
+                            //if (this.Control.solveKineticEnergyEquation && (dt / (dt_LevSetCFL / 4.0)) > 1.0) {
+                            //    Console.WriteLine("Exceeding Level-Set CFL for kinetic energy equation: dt = {0}, dt_sigma = {1}, frac = {2}", dt, dt_LevSetCFL/4.0, (dt / (dt_LevSetCFL / 4.0)));
+                            //}
                         } else {
                             m_BDF_Timestepper.IterUnderrelax = 1.0;
                         }
                     }
 
-                    if (this.Control.solveKineticEnergyEquation) { 
-                        double kinE_Deg2 = this.KineticEnergy.Basis.Degree;
-                        kinE_Deg2 = kinE_Deg2 * kinE_Deg2;
-                        double dt_kinECFL = base.GridData.ComputeCFLTime(this.KineticEnergy.ToEnumerable(), dt * kinE_Deg2);
-                        dt_kinECFL = dt_kinECFL / kinE_Deg2;
-                        if (dt / dt_kinECFL > 1.0) {
-                            Console.WriteLine("Exceeding CFL-condition for kinetic energy equation: dt = {0}, dt_sigma = {1}, frac = {2}", dt, dt_kinECFL, dt / dt_kinECFL);
-                        }
-                    }
+                    //if (this.Control.solveKineticEnergyEquation) { 
+                    //    double kinE_Deg2 = this.KineticEnergy.Basis.Degree;
+                    //    kinE_Deg2 = kinE_Deg2 * kinE_Deg2;
+                    //    double dt_kinECFL = base.GridData.ComputeCFLTime(this.KineticEnergy.ToEnumerable(), dt * kinE_Deg2);
+                    //    dt_kinECFL = dt_kinECFL / kinE_Deg2;
+                    //    if (dt / dt_kinECFL > 1.0) {
+                    //        Console.WriteLine("Exceeding CFL-condition for kinetic energy equation: dt = {0}, dt_sigma = {1}, frac = {2}", dt, dt_kinECFL, dt / dt_kinECFL);
+                    //    }
+                    //}
 
                     //dt = Math.Min(dt, dt_LevSetCFL);
 
@@ -1217,12 +1220,144 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 }
 
+                // evaluate kinetic energy
+                // =======================
+
+                if (this.Control.solveKineticEnergyEquation) {
+
+                    // evaluate changerate from NSE-Solver
+                    // ===================================
+                    double[] OpAffine = new double[this.CurrentSolution.Length];
+
+                    var agg = this.LsTrk.GetAgglomerator(this.LsTrk.SpeciesIdS.ToArray(),
+                        this.KineticEnergy.Basis.Degree * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2),
+                        this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold);
+
+                    this.DelComputeOperatorMatrix(null, OpAffine, this.CurrentSolution.Mapping, this.CurrentSolution.Fields.ToArray(), 
+                        agg.CellLengthScales, phystime + dt);
+
+                    int[] ptuIdx = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 0);
+                    XDGField ptu = new XDGField(((XDGField)this.CurrentSolution.Fields[0]).Basis); //, "kinEchangerate_byNSE");
+                    double[] ptuAffine = new double[ptu.CoordinateVector.Length];
+                    ArrayTools.GetSubVector<int[], int[], double>(OpAffine, ptuAffine, ptuIdx);
+                    ptu.CoordinateVector.axpy<double[]>(ptuAffine, -1.0);
+
+                    //XDGField U01 = new XDGField(((XDGField)this.CurrentSolution.Fields[0]).Basis);
+                    //U01.Acc(0.5, this.prevVel[0]);
+                    //U01.Acc(0.5, this.CurrentSolution.Fields[0]);
+
+                    this.KineticEnergyNSEchangerate.Clear();
+                    this.KineticEnergyNSEchangerate.ProjectProduct(0.5, this.prevVel[0], ptu);
+                    this.KineticEnergyNSEchangerate.ProjectProduct(0.5, this.CurrentSolution.Fields[0], ptu);
+
+                    this.KineticEnergyNSE.Acc(dt, this.KineticEnergyNSEchangerate);
+
+
+                    // changerate by kinetic energy solver
+                    // ===================================
+
+                    double[] rhoS = new double[] { this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B };
+                    //EnergyUtils.ProjectKineticEnergy(this.KineticEnergy, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), rhoS, this.m_HMForder);
+
+                    double[] flux = new double[this.KineticEnergy.CoordinateVector.Length];
+                    this.EvaluateKineticEnergy(phystime + dt, flux);
+                    //XDGField ptk = new XDGField(((XDGField)this.KineticEnergy).Basis, "kinEchangerate_byKinE");
+                    this.KineticEnergyChangerate.Clear();
+                    this.KineticEnergyChangerate.CoordinateVector.axpy<double[]>(flux, -1.0);
+
+                    //this.KineticEnergyChangerate.Acc(0.5, this.prevKineticEnergyChangerate);
+                    //this.prevKineticEnergyChangerate.CoordinateVector.axpy<double[]>(flux, -1.0);
+
+                    this.KineticEnergy.Acc(dt, this.KineticEnergyChangerate);
+
+                    // changerate by projection
+                    // ========================
+
+
+                    XDGBasis bs = ((XDGField)this.KineticEnergy).Basis;
+                    XDGField projectedKineticEnergyChangerate = new XDGField(bs, "projKinEchangerate");
+
+                    double[] muS = new double[] { this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B };
+                    EnergyUtils.ProjectKineticDissipation(this.KineticDissipation, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
+                    //EnergyUtils.ProjectPowerOfStresses(this.PowerOfStresses, this.LsTrk, this.Pressure, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
+                    //EnergyUtils.ProjectKineticEnergyChangerateNSE(projectedKineticEnergyChangerate, LsTrk, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder * 2 + 1);
+
+                    //projectedKineticEnergyChangerate.Acc(1.0, this.KineticDissipation);
+                    //projectedKineticEnergyChangerate.Acc(1.0, this.PowerOfStresses);
+                    //XDGField fu = new XDGField(((XDGField)this.KineticEnergy).Basis);
+                    //fu.ProjectProduct(1.0, this.XDGvelocity.Gravity[0], this.CurrentSolution.Fields[0]);    // rho!!
+                    //projectedKineticEnergyChangerate.Acc(1.0, fu);
+
+
+                    VectorField<DGField> GradVelX = new VectorField<DGField>(D, bs, "VelocityXGradient", XDGField.Factory);
+                    VectorField<DGField> GradVelY = new VectorField<DGField>(D, bs, "VelocityYGradient", XDGField.Factory);
+                    for (int d = 0; d < D; d++) {
+                        foreach (var Spc in this.LsTrk.SpeciesIdS) {
+                            SubGrid sf = this.LsTrk.Regions.GetSpeciesSubGrid(Spc);
+                            DGField f_Spc = ((this.CurrentSolution.Fields[0] as XDGField).GetSpeciesShadowField(Spc));
+                            (GradVelX[d] as XDGField).GetSpeciesShadowField(Spc).DerivativeByFlux(1.0, f_Spc, d, optionalSubGrid: sf);
+                            f_Spc = ((this.CurrentSolution.Fields[1] as XDGField).GetSpeciesShadowField(Spc));
+                            (GradVelY[d] as XDGField).GetSpeciesShadowField(Spc).DerivativeByFlux(1.0, f_Spc, d, optionalSubGrid: sf);
+                        }
+                    }
+                    GradVelX.ForEach(F => F.CheckForNanOrInf(true, true, true));
+                    GradVelY.ForEach(F => F.CheckForNanOrInf(true, true, true));
+
+                    VectorField<DGField> GradVelU = new VectorField<DGField>(D, bs, "GradUU", XDGField.Factory);
+                    VectorField<DGField> GradVelTU = new VectorField<DGField>(D, bs, "GradUTU", XDGField.Factory);
+                    for (int d = 0; d < D; d++) {
+                        GradVelU[0].ProjectProduct(1.0, GradVelX[d], this.CurrentSolution.Fields[d]);
+                        GradVelU[1].ProjectProduct(1.0, GradVelY[d], this.CurrentSolution.Fields[d]);
+                        GradVelTU[d].ProjectProduct(1.0, GradVelX[d], this.CurrentSolution.Fields[0]);
+                        GradVelTU[d].ProjectProduct(1.0, GradVelY[d], this.CurrentSolution.Fields[1]);
+                    }
+
+                    XDGField divDuU = new XDGField(bs);
+                    //divDuU.DivergenceByFlux(1.0, GradVelU);
+                    divDuU.DivergenceByFlux(1.0, GradVelTU);
+
+                    projectedKineticEnergyChangerate.ProjectProduct(1.0, this.XDGvelocity.Gravity[0], this.CurrentSolution.Fields[0]);
+                    projectedKineticEnergyChangerate.Acc(1.0, divDuU);
+                    projectedKineticEnergyChangerate.Acc(1.0, this.KineticDissipation);
+
+
+                    // changerate by difference
+                    // ========================
+
+                    EnergyUtils.ProjectKineticEnergy(this.DerivedKineticEnergy, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), rhoS, this.m_HMForder);
+
+                    XDGField diffKineticEnergyChangerate = new XDGField(((XDGField)this.KineticEnergy).Basis, "diffKinEchangerate");
+                    diffKineticEnergyChangerate.Acc(1.0, this.DerivedKineticEnergy);
+                    diffKineticEnergyChangerate.Acc(-1.0, this.prevKineticEnergy);
+                    diffKineticEnergyChangerate.Scale(1.0 / dt);
+
+
+                    // compute generated kinetic energy
+                    // ================================
+                    GeneratedKineticEnergy.Clear();
+                    GeneratedKineticEnergy.Acc(1.0, this.DerivedKineticEnergy);
+                    GeneratedKineticEnergy.Acc(-1.0, this.KineticEnergy);
+
+
+                    Tecplot.PlotFields(ArrayTools.Cat<DGField>(this.CurrentSolution.Fields.ToArray(), this.DerivedKineticEnergy, this.KineticEnergyNSE, this.KineticEnergy,
+                        this.KineticEnergyNSEchangerate, this.KineticEnergyChangerate, projectedKineticEnergyChangerate, diffKineticEnergyChangerate, this.GeneratedKineticEnergy),
+                        "kinEchangerates" + hack_TimestepIndex, phystime, 3);
+
+
+                    //Tecplot.PlotFields(ArrayTools.Cat<DGField>(this.CurrentSolution.Fields.ToArray(), this.DerivedKineticEnergy, this.prevKineticEnergy,
+                    //    this.KineticEnergy, this.KineticEnergyNSE,
+                    //    this.DerivedKineticEnergyChangerate, this.KineticEnergyChangerate, this.KineticEnergyNSEchangerate,
+                    //    projectedKineticEnergyChangerate, diffKineticEnergyChangerate), 
+                    //    "kinEchangerates"+hack_TimestepIndex, phystime, 3 );
+
+                }
+
 
                 if (this.Control.solveCoupledHeatEquation && (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP))
                     this.ComputeHeatFlux();
 
 
-                Postprocessing(TimestepInt, phystime, dt, TimestepNo);
+                //Postprocessing(TimestepInt, phystime, dt, TimestepNo);
 
 
 
@@ -1244,6 +1379,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 return dt;
             }
         }
+
 
 
         protected override void SetInitial() {

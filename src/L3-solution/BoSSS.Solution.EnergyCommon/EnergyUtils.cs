@@ -127,7 +127,7 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
 
-        public static double GetKineticDissipation(LevelSetTracker LsTrk, DGField[] Velocity, double[] mu, int momentFittingOrder, DGField[] extF = null, int HistInd = 1) {
+        public static double GetKineticDissipation(LevelSetTracker LsTrk, DGField[] Velocity, double[] mu, int momentFittingOrder, int HistInd = 1) {
             using(new FuncTrace()) {
 
                 int D = LsTrk.GridDat.SpatialDimension;
@@ -146,7 +146,7 @@ namespace BoSSS.Solution.XNSECommon {
                     double _mu = mu[iSpc];
 
                     var Uspc = Velocity.Select(u => (u as XDGField).GetSpeciesShadowField(spcId)).ToArray();
-                    ScalarFunctionEx changerate_dEspc = GetSpeciesKineticDissipationFunc(Uspc, _mu, extF);
+                    ScalarFunctionEx changerate_dEspc = GetSpeciesKineticDissipationFunc(Uspc, _mu);
 
                     CellQuadratureScheme vqs = SchemeHelper.GetVolumeQuadScheme(spcId);
                     CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
@@ -301,7 +301,7 @@ namespace BoSSS.Solution.XNSECommon {
         #region local energy fields
 
 
-        static ScalarFunctionEx GetSpeciesKineticDissipationFunc(DGField[] U, double mu, DGField[] F = null) {
+        static ScalarFunctionEx GetSpeciesKineticDissipationFunc(DGField[] U, double mu) {
 
             int D = U[0].Basis.GridDat.SpatialDimension;
 
@@ -315,12 +315,8 @@ namespace BoSSS.Solution.XNSECommon {
                 }
 
                 MultidimensionalArray U_res = MultidimensionalArray.Create(Len, K, D);
-                MultidimensionalArray F_res = MultidimensionalArray.Create(Len, K, D);
-                if (F != null) {
-                    for (int i = 0; i < D; i++) {
-                        U.ElementAt(i).Evaluate(i0, Len, nds, U_res.ExtractSubArrayShallow(-1, -1, i));
-                        F.ElementAt(i).Evaluate(i0, Len, nds, F_res.ExtractSubArrayShallow(-1, -1, i));
-                    }
+                for (int i = 0; i < D; i++) {
+                    U.ElementAt(i).Evaluate(i0, Len, nds, U_res.ExtractSubArrayShallow(-1, -1, i));
                 }
 
                 double acc;
@@ -334,10 +330,6 @@ namespace BoSSS.Solution.XNSECommon {
                             for (int dd = 0; dd < D; dd++) {
                                 acc -= mu * (GradU_res[j, k, d, dd] * GradU_res[j, k, dd, d] + GradU_res[j, k, dd, d] * GradU_res[j, k, dd, d]);
                             }
-                            // external forces (gravity)
-                            if (F != null) {
-                                acc += F_res[j, k, d] * U_res[j, k, d];
-                            }
                         }
                         result[j, k] = acc;
                     }
@@ -348,7 +340,7 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
 
-        public static void ProjectKineticDissipation(this XDGField proj, LevelSetTracker LsTrk, DGField[] Velocity, double[] mu, int momentFittingOrder, DGField[] extF = null, int HistInd = 1) {
+        public static void ProjectKineticDissipation(this XDGField proj, LevelSetTracker LsTrk, DGField[] Velocity, double[] mu, int momentFittingOrder, int HistInd = 1) {
             using (new FuncTrace()) {
 
                 int D = LsTrk.GridDat.SpatialDimension;
@@ -365,7 +357,7 @@ namespace BoSSS.Solution.XNSECommon {
                     double muSpc = mu[iSpc];
 
                     var Uspc = Velocity.Select(u => (u as XDGField).GetSpeciesShadowField(spcId)).ToArray();
-                    ScalarFunctionEx spcKinDissip = GetSpeciesKineticDissipationFunc(Uspc, muSpc, extF);
+                    ScalarFunctionEx spcKinDissip = GetSpeciesKineticDissipationFunc(Uspc, muSpc);
 
                     proj.GetSpeciesShadowField(spcId).ProjectField(spcKinDissip);
 
@@ -536,6 +528,95 @@ namespace BoSSS.Solution.XNSECommon {
             }
         }
 
+
+        //static ScalarFunctionEx GetSpeciesKinEchangerateNSE(DGField[] U, double mu) {
+
+        //    int D = U[0].Basis.GridDat.SpatialDimension;
+
+        //    return delegate (int i0, int Len, NodeSet nds, MultidimensionalArray result) {
+
+        //        int K = result.GetLength(1); // No nof Nodes
+
+        //        MultidimensionalArray U_res = MultidimensionalArray.Create(Len, K, D);
+        //        MultidimensionalArray GradU_res = MultidimensionalArray.Create(Len, K, D, D);
+
+        //        for (int i = 0; i < D; i++) {
+        //            U.ElementAt(i).Evaluate(i0, Len, nds, U_res.ExtractSubArrayShallow(-1, -1, i));
+        //            U.ElementAt(i).EvaluateGradient(i0, Len, nds, GradU_res.ExtractSubArrayShallow(-1, -1, i, -1));
+        //        }
+
+        //        double acc;
+        //        for (int j = 0; j < Len; j++) {
+        //            for (int k = 0; k < K; k++) {
+
+        //                if (D > 2)
+        //                    throw new NotImplementedException("TODO");
+
+        //                acc = 0.0;
+        //                for (int d = 0; d < D; d++) {
+        //                    for (int dd = 0; dd < D; dd++) {
+        //                        // gradU:gradU
+        //                        acc += mu * GradU_res[j, k, d, dd] * GradU_res[j, k, d, dd];
+        //                        // gradU^T:gradU
+        //                        acc += mu * GradU_res[j, k, dd, d] * GradU_res[j, k, d, dd];
+        //                    }
+        //                }
+        //                result[j, k] = -acc;
+        //            }
+        //        }
+
+        //    };
+
+        //}
+
+
+        //public static void ProjectKineticEnergyChangerateNSE(this XDGField proj, LevelSetTracker LsTrk, DGField[] Velocity, double[] mu, int momentFittingOrder, int HistInd = 1) {
+
+        //    using (new FuncTrace()) {
+
+        //        int D = LsTrk.GridDat.SpatialDimension;
+        //        if (Velocity.Count() != D) {
+        //            throw new ArgumentException();
+        //        }
+        //        if (LsTrk.SpeciesIdS.Count != mu.Length)
+        //            throw new ArgumentException();
+
+
+        //        var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), momentFittingOrder, HistInd).XQuadSchemeHelper;
+
+        //        for (int iSpc = 0; iSpc < LsTrk.SpeciesIdS.Count; iSpc++) {
+        //            SpeciesId spcId = LsTrk.SpeciesIdS[iSpc];
+        //            double muSpc = mu[iSpc];
+
+        //            SubGrid sf = LsTrk.Regions.GetSpeciesSubGrid(spcId);
+
+        //            var Uspc = Velocity.Select(u => (u as XDGField).GetSpeciesShadowField(spcId)).ToArray();
+
+        //            //VectorField<DGField> GradVelX = new VectorField<DGField>(D, Velocity[0].Basis, XDGField.Factory);
+        //            //VectorField<DGField> GradVelY = new VectorField<DGField>(D, Velocity[1].Basis, XDGField.Factory);
+        //            //for (int d = 0; d < D; d++) {
+        //            //    DGField f_Spc;
+        //            //    f_Spc = ((Velocity[0] as XDGField).GetSpeciesShadowField(spcId));
+        //            //    (GradVelX[d] as XDGField).GetSpeciesShadowField(spcId).DerivativeByFlux(1.0, f_Spc, d, optionalSubGrid: sf);
+        //            //    f_Spc = ((Velocity[1] as XDGField).GetSpeciesShadowField(spcId));
+        //            //    (GradVelY[d] as XDGField).GetSpeciesShadowField(spcId).DerivativeByFlux(1.0, f_Spc, d, optionalSubGrid: sf);
+        //            //}
+        //            //GradVelX.ForEach(F => F.CheckForNanOrInf(true, true, true));
+        //            //GradVelY.ForEach(F => F.CheckForNanOrInf(true, true, true));
+
+        //            //DGField[,] GradU = new DGField[D, D];
+        //            //GradU[0, 0] = GradVelX[0];
+        //            //GradU[0, 1] = GradVelX[1];
+        //            //GradU[1, 0] = GradVelY[0];
+        //            //GradU[1, 1] = GradVelY[1];
+
+        //            ScalarFunctionEx spcPowStress = GetSpeciesKinEchangerateNSE(Uspc, muSpc);
+
+        //            proj.GetSpeciesShadowField(spcId).ProjectField(spcPowStress);
+
+        //        }
+        //    }
+        //}
 
         #endregion
 

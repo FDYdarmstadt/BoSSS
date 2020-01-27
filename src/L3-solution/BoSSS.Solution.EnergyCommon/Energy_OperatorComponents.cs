@@ -102,11 +102,13 @@ namespace BoSSS.Solution.EnergyCommon {
                 // Divergence of stress tensor
                 // ===========================
                 {
-                    if(config.getKinEviscousDiscretization == KineticEnergyViscousSourceTerms.fluxFormulation)
-                        comps.Add(new StressDivergenceInSpeciesBulk(D, BcMap, spcName, spcId, muSpc, transposed: !laplaceKinE));
 
-                    if (config.getKinEviscousDiscretization == KineticEnergyViscousSourceTerms.local)
-                        comps.Add(new StressDivergence_Local(D, muSpc, spcId, transposed: !laplaceKinE));
+                    comps.Add(new StressDivergenceInSpeciesBulk(D, BcMap, spcName, spcId, muSpc, transposed: !laplaceKinE));
+
+                    if (config.getKinEviscousDiscretization == KineticEnergyViscousSourceTerms.local) {
+                        throw new ApplicationException("deprecated option");
+                        //comps.Add(new StressDivergence_Local(D, muSpc, spcId, transposed: !laplaceKinE));
+                    }
                 }
 
                 // Dissipation
@@ -121,12 +123,12 @@ namespace BoSSS.Solution.EnergyCommon {
             // =============
             if (config.isPressureGradient) {
 
-                if (divergenceP) {
-                    comps.Add(new DivergencePressureEnergyInSpeciesBulk(D, BcMap, spcName, spcId));
-                    //comps.Add(new ConvectivePressureTerm_LLF(D, BcMap, spcName, spcId, LFFSpc, LsTrk));
-                } else {
-                    comps.Add(new PressureGradientConvection(D, spcId));
-                }
+                //if (divergenceP) {
+                //    comps.Add(new DivergencePressureEnergyInSpeciesBulk(D, BcMap, spcName, spcId));
+                //    //comps.Add(new ConvectivePressureTerm_LLF(D, BcMap, spcName, spcId, LFFSpc, LsTrk));
+                //} else {
+                //    comps.Add(new PressureGradientConvection(D, spcId));
+                //}
 
             }
 

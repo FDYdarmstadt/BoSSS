@@ -110,21 +110,21 @@ namespace BoSSS.Application.XNSE_Solver {
                 );
             DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure);
 
-            if (config.solveEnergy) {
-                CodName = ArrayTools.Cat(CodName, EquationNames.KineticEnergyEquation);
-                Params = ArrayTools.Cat(Params,
-                    VariableNames.VelocityX_GradientVector(),
-                    VariableNames.VelocityY_GradientVector(),
-                    new string[] { "VelocityXGradX_GradientX", "VelocityXGradX_GradientY" },
-                    new string[] { "VelocityXGradY_GradientX", "VelocityXGradY_GradientY" },
-                    new string[] { "VelocityYGradX_GradientX", "VelocityYGradX_GradientY" },
-                    new string[] { "VelocityYGradY_GradientX", "VelocityYGradY_GradientY" },
-                    VariableNames.Pressure0,
-                    VariableNames.PressureGradient(D),
-                    VariableNames.GravityVector(D)
-                    );
-                DomName = ArrayTools.Cat(DomName, VariableNames.KineticEnergy);
-            }
+            //if (config.solveEnergy) {
+            //    CodName = ArrayTools.Cat(CodName, EquationNames.KineticEnergyEquation);
+            //    Params = ArrayTools.Cat(Params,
+            //        VariableNames.VelocityX_GradientVector(),
+            //        VariableNames.VelocityY_GradientVector(),
+            //        new string[] { "VelocityXGradX_GradientX", "VelocityXGradX_GradientY" },
+            //        new string[] { "VelocityXGradY_GradientX", "VelocityXGradY_GradientY" },
+            //        new string[] { "VelocityYGradX_GradientX", "VelocityYGradX_GradientY" },
+            //        new string[] { "VelocityYGradY_GradientX", "VelocityYGradY_GradientY" },
+            //        VariableNames.Pressure0,
+            //        VariableNames.PressureGradient(D),
+            //        VariableNames.GravityVector(D)
+            //        );
+            //    DomName = ArrayTools.Cat(DomName, VariableNames.KineticEnergy);
+            //}
 
             if (config.solveHeat) {
                 Params = ArrayTools.Cat(Params,
@@ -155,13 +155,13 @@ namespace BoSSS.Application.XNSE_Solver {
                 DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(D, 1));
 
             int nBlocks = 2;
-            if (config.solveEnergy) {
-                nBlocks = 3;
-                if (config.getCodBlocks[2])
-                    CodNameSelected = ArrayTools.Cat(CodNameSelected, CodName.GetSubVector(D + 1, 1));
-                if (config.getDomBlocks[2])
-                    DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(D + 1, 1));
-            }
+            //if (config.solveEnergy) {
+            //    nBlocks = 3;
+            //    if (config.getCodBlocks[2])
+            //        CodNameSelected = ArrayTools.Cat(CodNameSelected, CodName.GetSubVector(D + 1, 1));
+            //    if (config.getDomBlocks[2])
+            //        DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(D + 1, 1));
+            //}
 
             if (config.solveHeat) {
                 if (config.getCodBlocks[nBlocks])
@@ -205,17 +205,17 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // add kinetic energy equation components
             // ======================================
-            if (config.solveEnergy) {
+            //if (config.solveEnergy) {
 
-                // species bulk components
-                for (int spc = 0; spc < LsTrk.TotalNoOfSpecies; spc++) {
-                    Solution.EnergyCommon.XOperatorComponentsFactory.AddSpeciesKineticEnergyEquation(m_XOp, config, D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap, LsTrk);
-                }
+            //    // species bulk components
+            //    for (int spc = 0; spc < LsTrk.TotalNoOfSpecies; spc++) {
+            //        Solution.EnergyCommon.XOperatorComponentsFactory.AddSpeciesKineticEnergyEquation(m_XOp, config, D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap, LsTrk);
+            //    }
 
-                // interface components
-                Solution.EnergyCommon.XOperatorComponentsFactory.AddInterfaceKineticEnergyEquation(m_XOp, config, D, BcMap, LsTrk, degU);
-                CurvatureRequired = true;
-            }
+            //    // interface components
+            //    Solution.EnergyCommon.XOperatorComponentsFactory.AddInterfaceKineticEnergyEquation(m_XOp, config, D, BcMap, LsTrk, degU);
+            //    CurvatureRequired = true;
+            //}
 
 
             // add Heat equation components
@@ -473,18 +473,18 @@ namespace BoSSS.Application.XNSE_Solver {
                 Curvature,
                 ((SurfaceForce != null) ? SurfaceForce.ToArray() : new SinglePhaseField[D]));
 
-            if (config.solveEnergy) {
-                Params = ArrayTools.Cat<DGField>(Params.ToArray<DGField>(),
-                    GradVelX,
-                    GradVelY,
-                    GradVelXGradX,
-                    GradVelXGradY,
-                    GradVelYGradX,
-                    GradVelYGradY,
-                    PressParam,
-                    PressGrad,
-                    GravMap);
-            }
+            //if (config.solveEnergy) {
+            //    Params = ArrayTools.Cat<DGField>(Params.ToArray<DGField>(),
+            //        GradVelX,
+            //        GradVelY,
+            //        GradVelXGradX,
+            //        GradVelXGradY,
+            //        GradVelYGradX,
+            //        GradVelYGradY,
+            //        PressParam,
+            //        PressGrad,
+            //        GravMap);
+            //}
 
             if (config.solveHeat) {
                 Params = ArrayTools.Cat<DGField>(Params.ToArray<DGField>(),

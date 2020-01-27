@@ -503,13 +503,16 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region physics
 
+            double rho = 1.0;
+            double mu = 0.1;
+            double sigma = 0.2;
+
             C.Tags.Add("Hysing");
             C.Tags.Add("La = 500");
-            C.PhysicalParameters.rho_A = 1e4;
-            C.PhysicalParameters.rho_B = 1e4;
-            C.PhysicalParameters.mu_A = 1;
-            C.PhysicalParameters.mu_B = 1;
-            double sigma = 0.1;
+            C.PhysicalParameters.rho_A = rho;
+            C.PhysicalParameters.rho_B = rho;
+            C.PhysicalParameters.mu_A = mu;
+            C.PhysicalParameters.mu_B = mu;
             C.PhysicalParameters.Sigma = sigma;
 
             //C.Tags.Add("La = 0.005");
@@ -538,8 +541,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             double ySize = 1.0;
 
             C.GridFunc = delegate () {
-                double[] Xnodes = GenericBlas.Linspace(0, xSize, kelem + 1);
-                double[] Ynodes = GenericBlas.Linspace(0, ySize, kelem + 1);
+                double[] Xnodes = GenericBlas.Linspace(0, xSize, kelem + 0);
+                double[] Ynodes = GenericBlas.Linspace(0, ySize, kelem + 0);
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
 
                 grd.EdgeTagNames.Add(1, "wall_lower");
@@ -587,15 +590,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
-            C.InitialValues_Evaluators.Add("VelocityX#A", X => 0.0);
-            C.InitialValues_Evaluators.Add("VelocityX#B", X => 0.0);
+            //C.InitialValues_Evaluators.Add("VelocityX#A", X => 0.0);
+            //C.InitialValues_Evaluators.Add("VelocityX#B", X => 0.0);
 
             //double Pjump = sigma / r;
             //C.InitialValues_Evaluators.Add("Pressure#A", X => Pjump);
             //C.InitialValues_Evaluators.Add("Pressure#B", X => 0.0);
 
-            C.InitialValues_Evaluators.Add("GravityY#A", X => 0.0);
-            C.InitialValues_Evaluators.Add("GravityY#B", X => 0.0);
+            //C.InitialValues_Evaluators.Add("GravityY#A", X => 0.0);
+            //C.InitialValues_Evaluators.Add("GravityY#B", X => 0.0);
 
 
             //// restart
@@ -658,6 +661,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.EnforceLevelSetConservation = true;
 
+            //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 80;
@@ -670,16 +676,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
 
-            C.Option_LevelSetEvolution = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.ExtensionVelocity;
+            C.Option_LevelSetEvolution = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
             //C.Option_LevelSetEvolution = LevelSetEvolution.None;
-            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
-            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.FullBoussinesqScriven;
-            C.PhysicalParameters.mu_I = 1 * sigma;
-            C.PhysicalParameters.lambda_I = 2 * sigma;
+            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
+            //C.PhysicalParameters.mu_I = 1 * sigma;
+            //C.PhysicalParameters.lambda_I = 2 * sigma;
 
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
-
+            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
             //C.LS_TrackerWidth = 2;
             //C.AdaptiveMeshRefinement = true;
@@ -727,7 +732,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //        break;
 
             //}
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF2;
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF3;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
             C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
@@ -737,7 +742,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.TimesteppingMode = compMode;
             //C.CompMode = AppControl._CompMode.Transient; 
 
-            double dt = 5e-2;
+            double dt = 2e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;

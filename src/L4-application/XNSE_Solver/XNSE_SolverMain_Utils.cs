@@ -166,10 +166,10 @@ namespace BoSSS.Application.XNSE_Solver {
             }
 
 
-            if (this.Control.solveKineticEnergyEquation) {
-                double[] rhoS = new double[] { this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B };
-                EnergyUtils.ProjectKineticEnergy(this.KineticEnergy, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), rhoS, this.m_HMForder);
-            }
+            //if (this.Control.solveKineticEnergyEquation) {
+            //    double[] rhoS = new double[] { this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B };
+            //    EnergyUtils.ProjectKineticEnergy(this.KineticEnergy, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), rhoS, this.m_HMForder);
+            //}
 
         }
 
@@ -261,6 +261,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
 
+                // interface divergence
+                EnergyUtils.ProjectInterfaceDivergence(this.InterfaceDivergence, 1.0, meanVelocity, this.LsTrk, this.Control.PhysicalParameters);
+
+
 
             }
 
@@ -315,8 +319,8 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
                 }
                 double kineticDissipationBulk = EnergyUtils.GetKineticDissipation(this.LsTrk, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
-                EnergyUtils.ProjectKineticDissipation(this.KineticDissipation, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder); //, extForce);
-                EnergyUtils.ProjectPowerOfStresses(this.PowerOfStresses, this.LsTrk, this.Pressure, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
+                //EnergyUtils.ProjectKineticDissipation(this.KineticDissipation, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
+                //EnergyUtils.ProjectPowerOfStresses(this.PowerOfStresses, this.LsTrk, this.Pressure, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
 
                 // changerate of surface energy form discretization
                 ConventionalDGField[] meanVelocity = XNSEUtils.GetMeanVelocity(this.XDGvelocity.Velocity, this.LsTrk,
@@ -324,10 +328,6 @@ namespace BoSSS.Application.XNSE_Solver {
                 double SurfDivergence = EnergyUtils.GetSurfaceChangerate(this.LsTrk, meanVelocity, this.m_HMForder);
 
                 //EnergyUtils.ProjectEnergyBalanceNorm(this.EnergyJumpCondition, 1.0, this.Pressure, this.XDGvelocity.Velocity, meanVelocity, this.Curvature, muS[0], muS[1], this.Control.PhysicalParameters.Sigma, this.m_HMForder);
-
-                // interface divergence
-                EnergyUtils.ProjectInterfaceDivergence(this.InterfaceDivergence, 1.0, meanVelocity, this.LsTrk, this.Control.PhysicalParameters);
-
 
 
                 // logging
@@ -423,15 +423,15 @@ namespace BoSSS.Application.XNSE_Solver {
                 GeneratedKineticEnergy.Acc(-1.0, this.KineticEnergy);
 
                 // compute change rates
-                KineticEnergyChangerate.Clear();
-                KineticEnergyChangerate.Acc(1.0, this.KineticEnergy);
-                KineticEnergyChangerate.Acc(-1.0, this.prevKineticEnergy);
-                KineticEnergyChangerate.Scale(1.0 / dt);
+                //KineticEnergyChangerate.Clear();
+                //KineticEnergyChangerate.Acc(1.0, this.KineticEnergy);
+                //KineticEnergyChangerate.Acc(-1.0, this.prevKineticEnergy);
+                //KineticEnergyChangerate.Scale(1.0 / dt);
 
-                DerivedKineticEnergyChangerate.Clear();
-                DerivedKineticEnergyChangerate.Acc(1.0, this.DerivedKineticEnergy);
-                DerivedKineticEnergyChangerate.Acc(-1.0, this.prevKineticEnergy);
-                DerivedKineticEnergyChangerate.Scale(1.0 / dt);
+                //DerivedKineticEnergyChangerate.Clear();
+                //DerivedKineticEnergyChangerate.Acc(1.0, this.DerivedKineticEnergy);
+                //DerivedKineticEnergyChangerate.Acc(-1.0, this.prevKineticEnergy);
+                //DerivedKineticEnergyChangerate.Scale(1.0 / dt);
 
 
             }
