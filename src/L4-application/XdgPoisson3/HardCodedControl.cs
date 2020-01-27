@@ -521,7 +521,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// </summary>
         /// <param name="myDB"></param>
         /// <returns></returns>
-        public static XdgPoisson3Control TestOrTreat(int solver = 3, int blocksize = 10000, string myDB = null)
+        public static XdgPoisson3Control TestOrTreat(int solver = 4, int blocksize = 10000, string myDB = null)
         {
             XdgPoisson3Control C = new XdgPoisson3Control();
 
@@ -540,9 +540,6 @@ namespace BoSSS.Application.XdgPoisson3 {
                     C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
                     break;
                 case 4:
-                    C.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
-                    break;
-                case 5:
                     C.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
                     break;
                 default:

@@ -81,7 +81,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public int CoarseLowOrder = 1;
 
         /// <summary>
-        /// Krankboden muss verdichtet werden
+        /// Krankplätze müssen verdichtet werden
         /// -Kranführer Ronny, ProSieben Reportage
         /// </summary>
         public void Init(MultigridOperator op) {
@@ -130,7 +130,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     hiSolver = new PARDISOSolver() {
                         CacheFactorization = true,
-                        UseDoublePrecision = true // keep it true, experiments showed, that this leads to fewer iterations
+                        UseDoublePrecision = true, // keep it true, experiments showed, that this leads to fewer iterations
+                        SolverVersion = Parallelism.OMP
                     };
                     hiSolver.DefineMatrix(P01HiMatrix);
                 }
@@ -140,7 +141,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             intSolver = new PARDISOSolver() {
                 CacheFactorization = true,
-                UseDoublePrecision = false // no difference towards =true observed for XDGPoisson
+                UseDoublePrecision = false, // no difference towards =true observed for XDGPoisson
             };
             intSolver.DefineMatrix(P01SubMatrix);
             
@@ -262,7 +263,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         double[] hi_Cor_c = new double[Hc];
                         hiSolver.Solve(hi_Cor_c, hi_Res_c);
                         hMask.AccVecToFull(hi_Cor_c, X);
-
                     }
                 }
             }

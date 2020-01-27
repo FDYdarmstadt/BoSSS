@@ -40,8 +40,6 @@ namespace BoSSS.Solution {
         /// <param name="nc"></param>
         /// <param name="lc"></param>
         public SolverFactory(NonLinearSolverConfig nc, LinearSolverConfig lc) {
-            lc_check = lc.CloneAs();
-            nc_check = nc.CloneAs();
             m_lc = lc;
             m_nc = nc;
         }
@@ -374,7 +372,7 @@ namespace BoSSS.Solution {
                     break;
 
                 case LinearSolverCode.exp_gmres_levelpmg:
-                    precond[0] = new LevelPmg() { UseHiOrderSmoothing = true, CoarseLowOrder = 1 };
+                    precond[0] = new LevelPmg() { UseHiOrderSmoothing = true, CoarseLowOrder = 1};
                     break;
 
                 case LinearSolverCode.exp_gmres_schwarz_pmg:
@@ -1037,9 +1035,6 @@ namespace BoSSS.Solution {
         /// </summary>
         private NonLinearSolverConfig m_nc;
 
-        private LinearSolverConfig lc_check;
-        private NonLinearSolverConfig nc_check;
-
         /// <summary>
         /// For developers, who want full control over solvers: In <see cref="selfmade_linsolver"/> you can insert your own config of linear solver.
         /// Clear() will clear the selfmade stuff and enables solver creation from linear and nonlinear config again.
@@ -1325,8 +1320,7 @@ namespace BoSSS.Solution {
         /// </summary>
         /// <returns></returns>
         private void Check_linsolver() {
-            if (!m_lc.Equals(lc_check))
-                Console.WriteLine("WARNING: LinearSolverConfig was changed since constructor!");
+            //tbd
         }
 
         /// <summary>
@@ -1334,8 +1328,7 @@ namespace BoSSS.Solution {
         /// </summary>
         /// <returns></returns>
         private void Check_precond() {
-            if (!m_lc.Equals(lc_check))
-                Console.WriteLine("WARNING: LinearSolverConfig was changed since constructor!");
+            
         }
 
         /// <summary>
@@ -1343,8 +1336,7 @@ namespace BoSSS.Solution {
         /// </summary>
         /// <returns></returns>
         private void Check_nonlinsolver() {
-            if(!m_nc.Equals(nc_check))
-                Console.WriteLine("WARNING: NonLinearSolverConfig was changed since constructor!");
+            //tbd
         }
 
         /// <summary>
