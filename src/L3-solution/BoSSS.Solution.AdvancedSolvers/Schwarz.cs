@@ -661,23 +661,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         if (UsePMGinBlocks) {
                             lowSel.ModeSelector(p => p <= this.pLow);
-
                             var HiSel = new SubBlockSelector(op.Mapping);
                             HiSel.CellSelector(bc.ToList(), false);
                             HiSel.ModeSelector(p => p > this.pLow);
-                            HiMask = new BlockMask(HiSel);
-                            Debug.Assert(HiMask.LocalLength == bc.Length);
+                            HiMask = new BlockMask(HiSel, m_Overlap > 0);
+                            Debug.Assert(HiMask.GetNoOfMaskedCells == bc.Length);
                         }
 
-                        var lowMask = new BlockMask(lowSel);
+                        var lowMask = new BlockMask(lowSel, m_Overlap > 0);
+
                         Debug.Assert(lowMask != null);
-                        Debug.Assert(lowMask.LocalLength == bc.Length);
+                        Debug.Assert(lowMask.GetNoOfMaskedCells == bc.Length);
 
                         var loBlock = lowMask.GetSubBlockMatrix(op.OperatorMatrix);
-                        var hiBlocks = HiMask.GetSubBlocks(op.OperatorMatrix,true,false,false);
-
-                        BlockMsrMatrix bal = new BlockMsrMatrix();
-                        bal.
+                        var hiBlocks = HiMask.GetSubBlocks(op.OperatorMatrix,true,false,false); //gets diagonal-blocks only
 
                         //var biI = BlkIdx_gI_lR[iPart];
                         //var biE = BlkIdx_gI_eR[iPart];
@@ -685,7 +682,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //var l2 = BlkIdx_lI_eR[iPart];
                         //var LBBi0 = LocalBlocks_i0[iPart];
                         //var LBBN = LocalBlocks_N[iPart];
-
 
                         //int Jblock = bc.Length;
                         //int anotherCounter = 0;
@@ -696,7 +692,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         /*
                         int j = bc[jblk];
                         int Nj = MgMap.GetLength(j);
-
 
                         if (j < Jup) {
                             // locally updated cell
@@ -729,8 +724,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Debug.Assert(ExternalRows_BlockI0.Count == ExternalRows_BlockN.Count);
                         Debug.Assert(ExternalRows_BlockI0.Count <= 1 ||
                             ExternalRows_BlockI0[ExternalRows_BlockI0.Count - 1] == ExternalRows_BlockI0[ExternalRows_BlockI0.Count - 2] + ExternalRows_BlockN[ExternalRows_BlockI0.Count - 2]);
-
-
 
                         LBBi0.Add(anotherCounter);
                         LBBN.Add(Nj);

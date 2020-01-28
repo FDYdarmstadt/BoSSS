@@ -1428,6 +1428,8 @@ namespace BoSSS.Solution {
             bool isLinPrecond = true;
 
             int DirectKickIn = _lc.TargetBlockSize;
+            if (DirectKickIn < _LocalDOF[_LocalDOF.Length - 1])
+                throw new ArgumentException("target Blocksize smaller than smallest possible blocks in mg");
 
             ISolverSmootherTemplate[] MultigridChain = new ISolverSmootherTemplate[MSLength];
             for (int iLevel = 0; iLevel < MSLength; iLevel++) {
@@ -1505,6 +1507,8 @@ namespace BoSSS.Solution {
 
             // my tests show that the ideal block size may be around 10'000
             int DirectKickIn = _lc.TargetBlockSize;
+            if (DirectKickIn < _LocalDOF[_LocalDOF.Length - 1])
+                throw new ArgumentException("target Blocksize smaller than smallest possible blocks in mg");
 
             //MultigridOperator Current = op;
             ISolverSmootherTemplate[] MultigridChain = new ISolverSmootherTemplate[MSLength];
@@ -1604,6 +1608,9 @@ namespace BoSSS.Solution {
             List<ISolverSmootherTemplate> MG_list = new List<ISolverSmootherTemplate>();
 
             int DirectKickIn = _lc.TargetBlockSize;
+            if (DirectKickIn < _LocalDOF[_LocalDOF.Length - 1])
+                throw new ArgumentException("target Blocksize smaller than smallest possible blocks in mg");
+
             int MaxMGDepth = GetMGdepth(DirectKickIn, MSLength, _LocalDOF);
             SetLinItCallback(subsmootherchain, true);
 
@@ -1675,7 +1682,9 @@ namespace BoSSS.Solution {
 
             // my tests show that the ideal block size may be around 10'000
             int DirectKickIn = _lc.TargetBlockSize;
-            
+            if (DirectKickIn < _LocalDOF[_LocalDOF.Length - 1])
+                throw new ArgumentException("target Blocksize smaller than smallest possible blocks in mg");
+
             //MultigridOperator Current = op;
             var SolverChain = new List<ISolverSmootherTemplate>();
             
@@ -1774,6 +1783,8 @@ namespace BoSSS.Solution {
 
             // my tests show that the ideal block size may be around 10'000
             int DirectKickIn = _lc.TargetBlockSize;
+            if (DirectKickIn < _LocalDOF[_LocalDOF.Length - 1])
+                throw new ArgumentException("target Blocksize smaller than smallest possible blocks in mg");
 
             //MultigridOperator Current = op;
             var SolverChain = new List<ISolverSmootherTemplate>();

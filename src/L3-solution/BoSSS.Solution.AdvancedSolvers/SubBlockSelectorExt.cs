@@ -11,12 +11,19 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Solution.AdvancedSolvers
 {
-    public class SubBlockSelector : SubBlockSelectorBase
-    {
+    public class SubBlockSelector : SubBlockSelectorBase {
         public SubBlockSelector(MultigridMapping map) : base(map) { }
     }
 
+
+    /// <summary>
+    /// Enables creation of submatrices of some or single cells and masks vectors accordingly. Useful for linear solvers in particular (e.g. Schwarz, levelpmg, etc.)
+    /// </summary>
     public class BlockMask {
+
+        /// <summary>
+        /// Auxiliary class, provides Local Block masks
+        /// </summary>
         private class BlockMaskLoc : BlockMaskBase {
             public BlockMaskLoc(SubBlockSelector sbs) : base(sbs, csMPI.Raw._COMM.SELF) { }
 
@@ -32,6 +39,10 @@ namespace BoSSS.Solution.AdvancedSolvers
                 }
             }
         }
+
+        /// <summary>
+        /// Auxiliary class, provides masking of external cells: overlap that is located on other MPI processes
+        /// </summary>
         private class BlockMaskExt : BlockMaskBase {
 
             public BlockMaskExt(SubBlockSelector SBS) : base(SBS, SBS.GetMapping.MPI_Comm) { }
@@ -44,7 +55,7 @@ namespace BoSSS.Solution.AdvancedSolvers
 
             protected override int m_CellOffset {
                 get {
-                    return m_map.AggBasis[0].AggGrid.iLogicalCells.NoOfLocalUpdatedCells - 1;
+                    return m_map.AggBasis[0].AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
                 }
             }
 
@@ -69,30 +80,40 @@ namespace BoSSS.Solution.AdvancedSolvers
             }
         }
 
-        public BlockMask (SubBlockSelector sbs,bool includeExternalCells) {
-            m_includeExternalCells = includeExternalCells; 
-            BMLoc =new BlockMaskLoc(sbs);
-            BMExt =new BlockMaskExt(sbs);
+        public BlockMask(SubBlockSelector sbs, bool includeExternalCells) {
+            m_includeExternalCells = includeExternalCells;
+            BMLoc = new BlockMaskLoc(sbs);
+            BMExt = new BlockMaskExt(sbs);
             m_map = sbs.GetMapping;
             if (includeExternalCells) {
                 SetThisShitUp(new BlockMaskBase[] { BMLoc, BMExt });
             } else {
                 SetThisShitUp(new BlockMaskBase[] { BMLoc });
             }
+
         }
 
         private void SetThisShitUp(BlockMaskBase[] masks) {
             List<int> tmpOffsetList = new List<int>();
             List<int> tmpLengthList = new List<int>();
-            List<extNi0[][][]> tmpNi0 = null;
+            List<extNi0[][][]> tmpNi0 = new List<extNi0[][][]>();
             foreach (var mask in masks) {
-                tmpOffsetList.AddRange(mask.GetAllSubMatrixCellOffsets());
+                var tmp = mask.GetAllSubMatrixCellOffsets().ToArray();
+                //If there are any external cells do something different:
+                if (mask.GetType() == typeof(BlockMaskExt)) {
+                    int offset = BMLoc.LocalDOF;
+                    for (int i = 0; i < tmp.Length; i++)
+                        tmp[i] += offset;
+                }
+                tmpOffsetList.AddRange(tmp);
                 tmpLengthList.AddRange(mask.GetAllSubMatrixCellLength());
                 tmpNi0.AddRange(mask.m_StructuredNi0.ToList());
             }
-            Debug.Assert(SubMatrixOffsets != null);
-            Debug.Assert(SubMatrixLen != null);
+            Debug.Assert(tmpOffsetList != null);
+            Debug.Assert(tmpLengthList != null);
             Debug.Assert(tmpNi0 != null);
+            Debug.Assert(tmpOffsetList.GroupBy(x => x).Any(g => g.Count() == 1));
+            Debug.Assert(tmpNi0.GroupBy(x => x).Any(g => g.Count() == 1));
             SubMatrixOffsets = tmpOffsetList;
             SubMatrixLen = tmpLengthList;
             StructuredNi0 = tmpNi0.ToArray();
@@ -145,8 +166,35 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                 target.AccSubMatrixTo(1.0, extBlock, BMLoc.m_GlobalMask, default(int[]), BMLoc.m_GlobalMask, default(int[]));
             }
-            Debug.Assert(extBlock!=null);
+            Debug.Assert(extBlock != null);
             return extBlock;
+        }
+
+
+        /// <summary>
+        /// Gets number of blocks covert by mask
+        /// </summary>
+        public int GetNoOfMaskedCells {
+            get {
+                if (m_includeExternalCells) {
+                    return BMLoc.m_StructuredNi0.Length + BMExt.m_StructuredNi0.Length;
+                } else {
+                    return BMLoc.m_StructuredNi0.Length;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets number of rows covert by mask
+        /// </summary>
+        public int GetNoOfMaskedRows {
+            get {
+                if (m_includeExternalCells) {
+                    return BMLoc.LocalDOF + BMExt.LocalDOF;
+                } else {
+                    return BMLoc.LocalDOF;
+                }
+            }
         }
 
         /// <summary>
@@ -460,17 +508,5 @@ namespace BoSSS.Solution.AdvancedSolvers
             }
             return subVector;
         }
-
-
-
-
-
-
-
-
-
-
     }
-
-
 }

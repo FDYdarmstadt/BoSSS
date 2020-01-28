@@ -457,7 +457,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     S += n;
                     return S;
                 } else {
-                    return m_i0_ExtGlob[jCell - AggGrid.iLogicalCells.NoOfLocalUpdatedCells];
+                    int S = m_i0_ExtGlob[jCell - AggGrid.iLogicalCells.NoOfLocalUpdatedCells];
+                    for (int iF = 0; iF < ifld; iF++)
+                        S += this.AggBasis[iF].GetLength(jCell, this.m_DgDegree[iF]);
+                    S += n;
+                    return S;
                 }
 
             }
