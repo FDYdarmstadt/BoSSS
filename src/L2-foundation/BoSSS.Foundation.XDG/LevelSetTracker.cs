@@ -1300,17 +1300,14 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Must be called after changing the level-set;
-        /// Invoking this method 
-        /// updates the members <see cref="m_LevSetRegions"/>, <see cref="m_LevSetRegionsUnsigned"/>
-        /// and <see cref="m_LenToNextChange"/>; <br/>
-        /// After this update, for every <see cref="XDGField"/> the method
-        /// <see cref="XDGField.UpdateMemory"/> must be invoked;
+        /// Invoking this method updates the state of cells (e.g. cut, -near, +near, etc.), <see cref="Regions"/>.
+        /// After this update, for every <see cref="XDGField"/> the method <see cref="XDGField.UpdateMemory"/> must be invoked;
         /// </summary>
         /// <param name="__NearRegionWith">
         /// new width of near region;
         /// </param>
         /// <param name="__LevSetAllowedMovement">
-        /// new values for the allowed level-set movement, see <see cref="GetLevSetAllowedMovement"/>;
+        /// new values for the allowed level-set movement.
         /// If this value is set to a number higher than the <see cref="NearRegionWidth"/>, the CFL test for the 
         /// corresponding 
         /// level set is omitted. 
@@ -1786,27 +1783,37 @@ namespace BoSSS.Foundation.XDG {
 
             // Remove obsolete observers from list...
             // ======================================
+            var ObserversRefs = new List<IObserver<LevelSetRegions>>();
+            {
+                int NoObservers = m_Observers.Count;
 
-            int NoObservers = m_Observers.Count;
-            int[] checkNoObservers = (new[] { NoObservers, -NoObservers }).MPIMax();
-            if (NoObservers != checkNoObservers[0] || NoObservers != -checkNoObservers[1])
-                throw new ApplicationException("MPI parallelization bug: number of observers of LevelSetTracker is not equal among MPI processors.");
+                int[] checkNoObservers = (new[] { NoObservers, -NoObservers }).MPIMax();
+                if (NoObservers != checkNoObservers[0] || NoObservers != -checkNoObservers[1])
+                    throw new ApplicationException("MPI parallelization bug: number of observers of LevelSetTracker is not equal among MPI processors.");
 
-            int[] AliveObservers = new int[NoObservers];
-            for (int i = 0; i < NoObservers; i++) {
-                AliveObservers[i] = m_Observers[i].IsAlive ? 0xff : 0;
-            }
-
-            // if observer was killed on any rank, we must also kill it locally!
-            int[] GlobalAliveObservers = AliveObservers.MPIMin();
-
-            for (int i = 0; i < NoObservers; i++) {
-                if (GlobalAliveObservers[i] <= 0) {
-                    m_Observers.RemoveAt(i);
-                    i--;
-                    NoObservers--;
+                int[] AliveObservers = new int[NoObservers];
+                for (int i = 0; i < NoObservers; i++) {
+                    ObserversRefs.Add(m_Observers[i].Target); // having a local ref. prevents the GC of collecting the object while we do MPI sync.
+                    AliveObservers[i] = ObserversRefs[i] != null ? 0xff : 0;
                 }
-            }
+
+                // if observer was killed on any rank, we must also kill it locally!
+                int[] GlobalAliveObservers = AliveObservers.MPIMin();
+
+                // observed fields must be synchronized over MPI processors, otherwise deadlocks may occur
+
+                int ii = 0;
+                for (int i = 0; i < NoObservers; i++) {
+                    if (GlobalAliveObservers[ii] <= 0) {
+                        m_Observers.RemoveAt(i);
+                        ObserversRefs.RemoveAt(i);
+                        i--;
+                        NoObservers--;
+                    }
+                    ii++;
+                }
+            } //*/
+
 
             // update memory of all registered fields
             // =====================================
@@ -1818,15 +1825,11 @@ namespace BoSSS.Foundation.XDG {
 
 
             // call the update method of all active fields
-            int iii = 0;
-            foreach (var reference in m_Observers) {
-                IObserver<LevelSetRegions> observer = reference.Target;
-                if (observer != null) {
-                    //Console.WriteLine($"  rnk {rnk}: observer {iii} is {observer.GetType().Name}");
-                    iii++;
-                    reference.Target.OnNext(Regions);
-                }
+            foreach (var t in ObserversRefs) {
+                t.OnNext(Regions);
             }
+            
+            
         }
 
         /// <summary>
@@ -1835,36 +1838,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public void ObserverHack() {
             using (new FuncTrace()) {
-
-                // Remove obsolete observers from list...
-                // ======================================
-                for (int i = 0; i < m_Observers.Count; i++) {
-                    if (!m_Observers[i].IsAlive) {
-                        m_Observers.RemoveAt(i);
-                        i--;
-                    }
-                }
-
-                // update memory of all registered fields
-                // =====================================
-                // a disadvantage of this notification-by-weak-ref -- approach
-                // is that the 'UpdateMemory' may be called also for
-                // objects that are already unused but not yet collected...
-                // A solution would be to call GC.Collect(), but it is not known
-                // whether a GC run or update of unused memory is more expensive.
-
-                
-                // call the update method of all active fields
-                foreach (var reference in m_Observers) {
-                    IObserver<LevelSetRegions> observer = reference.Target;
-                    if (observer != null) {
-                        //if(observer is XDGField) {
-                        //    ((XDGField)observer).Override_TrackerVersionCnt(Regions.Version);
-                        //}
-
-                        reference.Target.OnNext(Regions);
-                    }
-                }
+                this.ObserverUpdate();
             }
         }
 

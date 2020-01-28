@@ -470,7 +470,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// <summary>
         /// A spherical interface in the 3D domain \f$ (-2, 2)^3 \f$.
         /// </summary>
-        public static XdgPoisson3Control Ball3D() {
+        public static XdgPoisson3Control Ball3D(int pDeg, int Res, LinearSolverCode solverCode) {
             XdgPoisson3Control R = new XdgPoisson3Control();
 
             R.ProjectName = "XdgPoisson3/Ball3D";
@@ -481,12 +481,12 @@ namespace BoSSS.Application.XdgPoisson3 {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             R.FieldOptions.Add("u", new FieldOpts() {
-                Degree = 2,
+                Degree = pDeg,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
 
             R.GridFunc = delegate () {
-                return Grid3D.Cartesian3DGrid(GenericBlas.Linspace(-2, 2, 6), GenericBlas.Linspace(-2, 2, 6), GenericBlas.Linspace(-2, 2, 6));
+                return Grid3D.Cartesian3DGrid(GenericBlas.Linspace(-2, 2, Res), GenericBlas.Linspace(-2, 2, Res), GenericBlas.Linspace(-2, 2, Res));
             };
 
 
@@ -506,7 +506,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             R.xLaplaceBCs.g_Diri = ((CommonParamsBnd inp) => 0.0);
             R.xLaplaceBCs.IsDirichlet = (inp => true);
 
-            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;//R.solverName = "direct";
+            R.LinearSolver.SolverCode = solverCode;//R.solverName = "direct";
             R.AgglomerationThreshold = 0.1;
             R.PrePreCond = MultigridOperator.Mode.DiagBlockEquilib;
             R.penalty_multiplyer = 1.1;
@@ -521,7 +521,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// </summary>
         /// <param name="myDB"></param>
         /// <returns></returns>
-        public static XdgPoisson3Control TestOrTreat(int solver = 3, int blocksize = 10000, string myDB = null)
+        public static XdgPoisson3Control TestOrTreat(int solver = 4, int blocksize = 10000, string myDB = null)
         {
             XdgPoisson3Control C = new XdgPoisson3Control();
 
@@ -542,9 +542,6 @@ namespace BoSSS.Application.XdgPoisson3 {
                 case 4:
                     C.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
                     break;
-                case 5:
-                    C.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
-                    break;
                 default:
                     throw new NotImplementedException("guess again");
             }
@@ -552,7 +549,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.savetodb = false;
             //C.DbPath = @"E:\\XdgPerformance";
 
-            int Res = 2;
+            int Res = 4;
 
             C.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
