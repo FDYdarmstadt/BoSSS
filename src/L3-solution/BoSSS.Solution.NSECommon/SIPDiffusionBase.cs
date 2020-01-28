@@ -54,19 +54,19 @@ namespace BoSSS.Solution.NSECommon
 
         public TermActivationFlags BoundaryEdgeTerms {
             get {
-                return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV | TermActivationFlags.V | TermActivationFlags.GradV);
+                return TermActivationFlags.AllOn;
             }
         }
 
         public TermActivationFlags InnerEdgeTerms {
             get {
-                return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV);
+                return TermActivationFlags.AllOn;
             }
         }
 
         public TermActivationFlags VolTerms {
             get {
-                return TermActivationFlags.GradUxGradV;
+                return TermActivationFlags.AllOn;
             }
         }
 
@@ -185,8 +185,8 @@ namespace BoSSS.Solution.NSECommon
                 Acc += (DiffusivityA * _Grad_vA[d]) * (_uA[0] - u_D) * inp.Normal[d];
             }
 
-            Acc += DiffusivityA * (_uA[0] - u_D) * (_vA - 0) * pnlty;
-            return Acc;
+            Acc -= DiffusivityA * (_uA[0] - u_D) * (_vA - 0) * pnlty;
+            return -Acc;
         }
  
         /// <summary>
