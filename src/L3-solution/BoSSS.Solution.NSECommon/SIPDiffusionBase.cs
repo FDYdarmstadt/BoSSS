@@ -38,23 +38,6 @@ namespace BoSSS.Solution.NSECommon
         protected IncompressibleBoundaryCondMap BcMap;
         protected Func<double[], double, double>[] ArgumentFunction;
 
-        /// <summary>
-        /// Ctor.
-        /// </summary>
-        /// <param name="Coefficient">Coefficient Function in \nabla \dot (Coefficient \nabla u)</param>
-        /// <param name="PenaltyBase">C.f. Calculation of SIP penalty base, cf. Chapter 3 in 
-        /// K. Hillewaert, “Development of the discontinuous Galerkin method for high-resolution, large scale CFD and acoustics in industrial geometries”,
-        /// Université catholique de Louvain, 2013.</param>
-        /// <param name="BcMap">Boundary condition map</param>
-        /// <param name="Argument">The argument of the flux. Must be compatible with the DiffusionMode.</param>
-        /// <param name="PenaltyLengthScales"></param>
-        protected SIPDiffusionBase(double PenaltyBase, MultidimensionalArray PenaltyLengthScales, IncompressibleBoundaryCondMap BcMap, bool ParametersOK) {
-            this.PenaltyBase = PenaltyBase;
-            this.BcMap = BcMap;
-            this.cj = PenaltyLengthScales;
-            this.prmsOK = ParametersOK;
-            this.i = 0;
-        }
 
 
         /// <summary>
@@ -67,7 +50,7 @@ namespace BoSSS.Solution.NSECommon
         /// <param name="BcMap">Boundary condition map</param>
         /// <param name="Argument">The argument of the flux. Must be compatible with the DiffusionMode.</param>
         /// <param name="PenaltyLengthScales"></param>
-        protected SIPDiffusionBase(double PenaltyBase, MultidimensionalArray PenaltyLengthScales, IncompressibleBoundaryCondMap BcMap, bool ParametersOK, int speciesIndex) {
+        protected SIPDiffusionBase(double PenaltyBase, MultidimensionalArray PenaltyLengthScales, IncompressibleBoundaryCondMap BcMap, bool ParametersOK = false, int speciesIndex = 0) {
             this.PenaltyBase = PenaltyBase;
             this.BcMap = BcMap;
             this.cj = PenaltyLengthScales;
