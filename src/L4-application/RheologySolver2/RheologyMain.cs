@@ -416,6 +416,7 @@ namespace BoSSS.Application.Rheology {
                         // convective part:
                         if (!this.Control.Stokes ) {
                             comps.Add(new LocalLaxFriedrichsConvection(D, BcMap, d, 1.0));
+                            
                         } else {
                             Console.WriteLine("Using Stokes Equation - no convective term.");
                         }
@@ -1621,6 +1622,7 @@ namespace BoSSS.Application.Rheology {
             return U[0];
         }
     }
+
 }
 
 

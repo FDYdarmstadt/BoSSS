@@ -206,7 +206,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                                 // iterative solver with programmable termination is used - 
                                 
                                 double f0_L2 = f0.MPI_L2Norm();
-                                double thresh = f0_L2 * 0.001;
+                                double thresh = f0_L2 * 1e-5;
                                 Console.WriteLine($"Inexact Newton: setting convergence threshold to {thresh:0.##E-00}");
                                 pt.TerminationCriterion = (iter, R0_l2, R_l2) => {
                                     return (R_l2 > thresh) && (iter < 1000);
