@@ -1,5 +1,5 @@
 ﻿using BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler;
-using BoSSS.Platform.LinAlg;
+using ilPSP;
 using System.Collections.Generic;
 using System.Diagnostics;
 using BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter;

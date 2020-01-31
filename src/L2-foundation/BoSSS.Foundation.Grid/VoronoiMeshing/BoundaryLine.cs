@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using BoSSS.Platform.LinAlg;
+using ilPSP;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;

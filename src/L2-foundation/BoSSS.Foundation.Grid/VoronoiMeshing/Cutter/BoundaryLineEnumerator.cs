@@ -1,4 +1,4 @@
-﻿using BoSSS.Platform.LinAlg;
+﻿using ilPSP;
 using System.Collections.Generic;
 using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
 

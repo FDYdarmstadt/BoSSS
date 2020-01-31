@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics;
-using BoSSS.Platform.LinAlg;
+using ilPSP;
 using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter

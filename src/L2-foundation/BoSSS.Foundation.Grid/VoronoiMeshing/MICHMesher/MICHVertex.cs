@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using BoSSS.Platform.LinAlg;
+using ilPSP;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.MICHMesher
 {

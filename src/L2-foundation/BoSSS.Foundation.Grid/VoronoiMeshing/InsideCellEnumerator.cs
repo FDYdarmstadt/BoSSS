@@ -1,5 +1,5 @@
 ﻿using BoSSS.Platform;
-using BoSSS.Platform.LinAlg;
+using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

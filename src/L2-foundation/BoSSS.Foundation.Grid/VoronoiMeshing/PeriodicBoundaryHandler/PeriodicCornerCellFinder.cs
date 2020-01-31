@@ -1,6 +1,6 @@
 ﻿using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
 using BoSSS.Platform;
-using BoSSS.Platform.LinAlg;
+using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

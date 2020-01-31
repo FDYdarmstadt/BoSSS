@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System;
-using BoSSS.Platform.LinAlg;
+using ilPSP;
 using BoSSS.Platform;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter

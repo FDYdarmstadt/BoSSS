@@ -250,6 +250,73 @@ namespace BoSSS.Solution {
             }
         }
 
+        /// lets see if we have environment variables which override command line arguments
+        /// (environment variables are usually more robust w.r.t. e.g. escape characters)
+        static string[] CheckForEnvironmentVariableConflict(string[] args)
+        {
+            
+            List<string> _args = new List<string>(args);
+            int ArgCounter = 0;
+            while (true)
+            {
+                string ArgOverrideName = "BOSSS_ARG_" + ArgCounter;
+                string ArgValue = System.Environment.GetEnvironmentVariable(ArgOverrideName);
+                if (ArgValue == null)
+                    break;
+
+                if (ArgCounter < _args.Count)
+                {
+                    _args[ArgCounter] = ArgValue;
+                }
+                else
+                {
+                    _args.Add(ArgValue);
+                }
+
+                Console.WriteLine("arg #{0} override from environment variable '{1}': {2}", ArgCounter, ArgOverrideName, ArgValue);
+
+                ArgCounter++;
+            }
+
+            return _args.ToArray();
+        }
+
+        /// <summary>
+        /// Parse argument into CommandLineOptions
+        /// </summary>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        static CommandLineOptions ParseArguments(string[] args)
+        {
+            CommandLineOptions opt = new CommandLineOptions();
+            ICommandLineParser parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
+            bool argsParseSuccess;
+            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0)
+            {
+                argsParseSuccess = parser.ParseArguments(args, opt);
+                argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
+            }
+            else
+            {
+                argsParseSuccess = false;
+                argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
+            }
+
+            if (!argsParseSuccess)
+            {
+                MPI.Wrappers.csMPI.Raw.mpiFinalize();
+                m_MustFinalizeMPI = false;
+                System.Environment.Exit(-1);
+            }
+
+            if (opt.ControlfilePath != null)
+            {
+                opt.ControlfilePath = opt.ControlfilePath.Trim();
+            }
+            opt = opt.MPIBroadcast(0, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+            return opt;
+        }
+
         /// <summary>
         /// parses command line arguments, parses control file, runs the
         /// application
@@ -270,60 +337,15 @@ namespace BoSSS.Solution {
                 CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
                 InitMPI(args);
-        
 
-                // lets see if we have environment variables which override command line arguments
-                // (environment variables are usually more robust w.r.t. e.g. escape characters)
-                List<string> _args = new List<string>(args);
-                int ArgCounter = 0;
-                while (true) {
-                    string ArgOverrideName = "BOSSS_ARG_" + ArgCounter;
-                    string ArgValue = System.Environment.GetEnvironmentVariable(ArgOverrideName);
-                    if (ArgValue == null)
-                        break;
-
-                    if (ArgCounter < _args.Count) {
-                        _args[ArgCounter] = ArgValue;
-                    } else {
-                        _args.Add(ArgValue);
-                    }
-
-                    Console.WriteLine("arg #{0} override from environment variable '{1}': {2}", ArgCounter, ArgOverrideName, ArgValue);
-
-                    ArgCounter++;
-                }
-
-                args = _args.ToArray();
-
-
-                // parse arguments
-                CommandLineOptions opt = new CommandLineOptions();
-                ICommandLineParser parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
-                bool argsParseSuccess;
-                if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
-                    argsParseSuccess = parser.ParseArguments(args, opt);
-                    argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
-                } else {
-                    argsParseSuccess = false;
-                    argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
-                }
-
-                if (!argsParseSuccess) {
-                    MPI.Wrappers.csMPI.Raw.mpiFinalize();
-                    m_MustFinalizeMPI = false;
-                    System.Environment.Exit(-1);
-                }
-
-                if (opt.ControlfilePath != null) {
-                    opt.ControlfilePath = opt.ControlfilePath.Trim();
-                }
-                opt = opt.MPIBroadcast(0, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+                args = CheckForEnvironmentVariableConflict(args);
+                
+                CommandLineOptions opt = ParseArguments(args);
 
                 // Delete old plots if requested
                 if (opt.delPlt) {
                     DeleteOldPlotFiles();
                 }
-
 
                 // load control file
                 T ctrlV2 = null;

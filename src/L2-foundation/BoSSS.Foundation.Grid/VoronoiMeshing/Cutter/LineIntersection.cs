@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using BoSSS.Platform;
-using BoSSS.Platform.LinAlg;
+using ilPSP;
 using System.Text;
 using System.Threading.Tasks;
 

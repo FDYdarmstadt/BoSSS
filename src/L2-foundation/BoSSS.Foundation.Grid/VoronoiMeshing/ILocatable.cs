@@ -1,4 +1,4 @@
-﻿using BoSSS.Platform.LinAlg;
+﻿using ilPSP;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
