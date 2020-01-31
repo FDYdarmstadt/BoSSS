@@ -392,8 +392,8 @@ namespace BoSSS.Application.Rheology {
         /// Confined cylinder in a channel flow
         /// </summary>
         static public RheologyControl ConfinedCylinder(
-            //string path = @"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag", 
-            string path = @"d:\Users\kummer\default_bosss_db",
+            string path = @"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag", 
+            //string path = @"d:\Users\kummer\default_bosss_db",
             //string path = @"c:\Users\florian\default_bosss_db",
             int degree = 2) {
             //BoSSS.Application.Rheology.RheologyControlExamples.ConfinedCylinder();
@@ -424,7 +424,7 @@ namespace BoSSS.Application.Rheology {
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz_4Rheology;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;//.exp_Kcycle_schwarz_4Rheology;
             C.LinearSolver.NoOfMultigridLevels = 1;
             
             C.ObjectiveParam = 1.0;
@@ -499,7 +499,7 @@ namespace BoSSS.Application.Rheology {
             //string grid = "db1797a9-6bc4-4194-984a-03b67598fa19"; // florian laptop (full, level 2)
             //string grid = "c88c914b-c387-4894-9697-a78bad31f2da"; // florian terminal03 (full, level 0)
             //string grid = "061e7cfb-7ffe-4540-bc74-bfffce824fef"; // florian terminal03 (full, level 1)
-            string grid = "51aadb49-e3d5-4e88-897e-13b6b329995b"; // florian terminal03 (full, level 2)
+            //string grid = "51aadb49-e3d5-4e88-897e-13b6b329995b"; // florian terminal03 (full, level 2)
 
             // half channel mesh3 for cond tests
             //string grid = "962bc97f-0298-4e2f-ac18-06940cb84956"; // anne
@@ -508,7 +508,7 @@ namespace BoSSS.Application.Rheology {
             //string grid = "55c34774-1769-4f6b-bfc8-cc6c4d74076a";
 
             // full channel mesh0 for cond tests comparison - schneller?
-            //string grid = "ecd6444f-ddfe-46c4-9df5-a1390f9371d7";
+            string grid = "ecd6444f-ddfe-46c4-9df5-a1390f9371d7";
 
             //fine grid - only on cluster!           
             //string grid = "70797022-eba0-4c77-b179-334c665044b5";
@@ -526,7 +526,7 @@ namespace BoSSS.Application.Rheology {
             //Dennis Zylinder for drag validation
             //string grid = "a67192f5-6b59-4caf-a95a-0a08730c3365";
 
-            
+
             Guid gridGuid;
             if (Guid.TryParse(grid, out gridGuid))
             {
@@ -591,12 +591,12 @@ namespace BoSSS.Application.Rheology {
             //C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(1, 5)); // Weissenberg 0.5
 
             // another restart session (florian, terminal03)
-            Guid restartID = new Guid("ba559446-5032-4a55-8456-6ce4c02651b5");
-            C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(2, 2)); // Weissenberg 0.7
+            //Guid restartID = new Guid("ba559446-5032-4a55-8456-6ce4c02651b5");
+            //C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(2, 2)); // Weissenberg 0.7
 
 
             if (C.RestartInfo == null) {
-                /*
+                
                 //Set Initial Conditions
                 if (C.SetInitialConditions == true)
                 {
@@ -612,7 +612,7 @@ namespace BoSSS.Application.Rheology {
                         C.InitialValues_Evaluators.Add("Pressure", X => Pressurefunction(X, 0));
                     }
                 }
-                */
+                
                 C.InitialValues_Evaluators.Add("Phi", X => -1);
             }
 

@@ -422,7 +422,7 @@ namespace BoSSS.Application.Rheology {
 
                         // convective part:
                         if (!this.Control.Stokes ) {
-                            comps.Add(new LocalLaxFriedrichsConvection(D, BcMap, d, 1.0));
+                            //comps.Add(new LocalLaxFriedrichsConvection(D, BcMap, d, 1.0));
                         } else {
                             Console.WriteLine("Using Stokes Equation - no convective term.");
                         }
@@ -779,7 +779,7 @@ namespace BoSSS.Application.Rheology {
 
                                 if (Control.Bodyforces == true) {
 
-                                    double[] force = IBMSolverUtils.GetForces_BoundaryFitted(VelocityXGradient, VelocityYGradient, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
+                                    double[] force = IBMSolverUtils.GetForces_BoundaryFitted(Velocity.Current, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
                                     Console.WriteLine();
                                     Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
                                     Console.WriteLine();
@@ -799,7 +799,7 @@ namespace BoSSS.Application.Rheology {
 
                             if (Control.Bodyforces == true) {
 
-                                double[] force = IBMSolverUtils.GetForces_BoundaryFitted(VelocityXGradient, VelocityYGradient, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
+                                double[] force = IBMSolverUtils.GetForces_BoundaryFitted(Velocity.Current, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
                                 Console.WriteLine();
                                 Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
                                 Console.WriteLine();
@@ -846,7 +846,7 @@ namespace BoSSS.Application.Rheology {
 
                             if (Control.Bodyforces == true) {
 
-                                double[] force = IBMSolverUtils.GetForces_BoundaryFitted(VelocityXGradient, VelocityYGradient, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
+                                double[] force = IBMSolverUtils.GetForces_BoundaryFitted(Velocity.Current, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
                                 Console.WriteLine();
                                 Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
                                 Console.WriteLine();
@@ -894,7 +894,7 @@ namespace BoSSS.Application.Rheology {
 
                         if (Control.Bodyforces == true) {
 
-                            double[] force = IBMSolverUtils.GetForces_BoundaryFitted(VelocityXGradient, VelocityYGradient, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
+                            double[] force = IBMSolverUtils.GetForces_BoundaryFitted(Velocity.Current, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
                             Console.WriteLine();
                             Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
                             Console.WriteLine();
