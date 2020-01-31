@@ -211,9 +211,7 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         protected double Source(double[] x, double[] parameters, double[] U) {
-            //double Temperature = parameters[0];
-            //double Y0 = parameters[1];
-            //double Y1 = parameters[2];
+       
 
             double Temperature = U[0];
             double Y0 = U[1];
@@ -225,23 +223,7 @@ namespace BoSSS.Solution.NSECommon {
             double ExponentialPart = m_Da * Math.Exp(-ReactionRateConstants[1] / Temperature); // Da*exp(-Ta/T)
             rho = EoS.GetDensity(U);
 
-            /*
-            // 0. MassFraction (fuel) balance species source
-            if(SpeciesIndex == 0) {                // M_alpha/(M_1^a * M_2^b) * Da*exp(-Ta/T)*(rho*Y_f)_(k+1)*(rho*Y_f)_(k)^(a-1)*((rho*Y_o)_(k)^b
-                ReactionRate = ExponentialPart * OneOverMolarMass0MolarMass1 * rho * U[0] * Math.Pow(rho * Y0, ReactionRateConstants[2] - 1) * Math.Pow(rho * Y1, ReactionRateConstants[3]);
-            }
-            // 1. MassFraction (oxididizer) balance species source
-            else if(SpeciesIndex == 1) {                // M_alpha/(M_1^a * M_2^b) * Da*exp(-Ta/T)*(rho*Y_f)_(k)^(a)*(rho*Y_o)_(k+1)*(rho*Y_o)_(k)^(b-1)
-                ReactionRate = ExponentialPart * OneOverMolarMass0MolarMass1 * Math.Pow(rho * Y0, ReactionRateConstants[2]) * rho * U[0] * Math.Pow(rho * Y1, ReactionRateConstants[3] - 1);
-            }
-            // product balance species source
-            else if(SpeciesIndex > 1 && SpeciesIndex < NumberOfReactants) {                // M_alpha/(M_1^a * M_2^b) * Da*exp(-Ta/T)*(rho*Y_f)_(k)^a*(rho*Y_o)_(k)^b
-                ReactionRate = ExponentialPart * OneOverMolarMass0MolarMass1 * Math.Pow(rho * Y0, ReactionRateConstants[2]) * Math.Pow(rho * Y1, ReactionRateConstants[3]);
-            } else
-                throw new System.ArgumentException("Species index cannot be negative or greater than the number of reactants");
-                */
-
-                ReactionRate = ExponentialPart *OneOverMolarMass0MolarMass1 * Math.Pow(rho * Y0, ReactionRateConstants[2]) * Math.Pow(rho * Y1, ReactionRateConstants[3]);
+           ReactionRate = ExponentialPart *OneOverMolarMass0MolarMass1 * Math.Pow(rho * Y0, ReactionRateConstants[2]) * Math.Pow(rho * Y1, ReactionRateConstants[3]);
 
             Debug.Assert(!double.IsNaN(ReactionRate));
             Debug.Assert(!double.IsInfinity(ReactionRate));
