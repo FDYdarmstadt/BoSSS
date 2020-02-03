@@ -1329,7 +1329,7 @@ namespace BoSSS.Application.FSI_Solver {
                     for (int j = 0; j < ParticlesOfCurrentColor.Length; j++) {
                         currentParticles[j] = m_Particles[ParticlesOfCurrentColor[j]];
                     }
-                    FSI_Collision _Collision = new FSI_Collision(LsTrk, ((FSI_Control)Control).CoefficientOfRestitution, dt);
+                    FSI_Collision _Collision = new FSI_Collision(LsTrk, ((FSI_Control)Control).CoefficientOfRestitution, dt, ((FSI_Control)Control).WallPositionPerDimension);
                     _Collision.CalculateCollision(currentParticles, GridData);
                 }
 
@@ -1430,7 +1430,13 @@ namespace BoSSS.Application.FSI_Solver {
         /// </param>
         protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
             if (((FSI_Control)Control).AdaptiveMeshRefinement) {
-                bool AnyChangeInGrid = GridRefinementController.ComputeGridChange((GridData)GridData, null, GetCellMaskWithRefinementLevels(), out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                bool AnyChangeInGrid;
+                List<int> CellsToRefineList;
+                List<int[]> Coarsening;
+                if (((FSI_Control)Control).WallRefinement)
+                    AnyChangeInGrid = GridRefinementController.ComputeGridChange((GridData)GridData, null, GetCellMaskWithRefinementLevelsWithWallRefinement(), out CellsToRefineList, out Coarsening);
+                else
+                    AnyChangeInGrid = GridRefinementController.ComputeGridChange((GridData)GridData, null, GetCellMaskWithRefinementLevels(), out CellsToRefineList, out Coarsening);
                 if (AnyChangeInGrid) {
                     int[] consoleRefineCoarse = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length) }).MPISum();
                     int oldJ = this.GridData.CellPartitioning.TotalLength;
@@ -1451,6 +1457,46 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         double h_maxStart = 0;
+
+        /// <summary>
+        /// Creates the cellmask which should be refined.
+        /// </summary>
+        private List<Tuple<int, BitArray>> GetCellMaskWithRefinementLevelsWithWallRefinement() {
+            h_maxStart = h_maxStart == 0 ? LsTrk.GridDat.Cells.h_maxGlobal : h_maxStart;
+            int refinementLevel = ((FSI_Control)Control).RefinementLevel;
+            int mediumRefinementLevel = refinementLevel > 2 ? refinementLevel / 2 : 1;
+            int coarseRefinementLevel = refinementLevel > 4 ? refinementLevel / 4 : 1;
+            int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
+            BitArray coarseCells = new BitArray(noOfLocalCells);
+            BitArray mediumCells = new BitArray(noOfLocalCells);
+            BitArray fineCells = new BitArray(noOfLocalCells);
+            double radiusCoarseCells = 2 * h_maxStart;
+            double radiusMediumCells = h_maxStart;
+            double radiusFineCells = h_maxStart / mediumRefinementLevel;
+            CellMask boundaryCells = LsTrk.GridDat.GetBoundaryCells();
+            for (int p = 0; p < m_Particles.Count; p++) {
+                Particle particle = m_Particles[p];
+                for (int j = 0; j < noOfLocalCells; j++) {
+                    Vector centerPoint = new Vector(CellCenters[j, 0], CellCenters[j, 1]);
+                    if (!coarseCells[j]) {
+                        coarseCells[j] = particle.Contains(centerPoint, radiusCoarseCells);
+                    }
+                    if (!mediumCells[j]) {
+                        mediumCells[j] = particle.Contains(centerPoint, radiusMediumCells);
+                    }
+                    if (!fineCells[j] && boundaryCells.Contains(j)) {
+                        fineCells[j] = particle.Contains(centerPoint, radiusFineCells);
+                    }
+                }
+            }
+            List<Tuple<int, BitArray>> AllCellsWithMaxRefineLevel = new List<Tuple<int, BitArray>> {
+                new Tuple<int, BitArray>(refinementLevel, fineCells),
+                new Tuple<int, BitArray>(mediumRefinementLevel, mediumCells),
+                new Tuple<int, BitArray>(coarseRefinementLevel, coarseCells),
+            };
+            return AllCellsWithMaxRefineLevel;
+        }
 
         /// <summary>
         /// Creates the cellmask which should be refined.

@@ -62,6 +62,12 @@ namespace BoSSS.Application.FSI_Solver {
                 int offset = p * (m_Dim + 1);
                 double[] tempForces = currentParticle.Motion.CalculateHydrodynamicForces(hydrodynamicsIntegration, fluidDensity, cutCells);
                 double tempTorque = currentParticle.Motion.CalculateHydrodynamicTorque(hydrodynamicsIntegration, cutCells);
+                var test = tempTorque.MPIGatherO(0);
+                test = test.MPIBroadcast(0);
+                for (int i = 1; i < test.Length; i++) {
+                    if (test[i - 1] != test[i])
+                        Console.WriteLine("Error in hydrodynamics " + test[i - 1] + " != " + test[i] + " on rank " + i);
+                }
                 for (int d = 0; d < m_Dim; d++) {
                     hydrodynamics[offset + d] = tempForces[d];
                 }

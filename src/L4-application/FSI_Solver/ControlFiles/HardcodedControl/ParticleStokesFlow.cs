@@ -86,7 +86,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control WetParticleWallCollision(int k = 2, double DensityFactor = 1000, int amrLevel = 4) {
+        public static FSI_Control WetParticleWallCollision(int k = 2, double DensityFactor = 100, int amrLevel = 4) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "wetParticleWallCollision");
             C.SetSaveOptions(@"D:\BoSSS_databases\wetParticleCollision", 1);
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
@@ -98,16 +98,16 @@ namespace BoSSS.Application.FSI_Solver {
                 "Pressure_Outlet_upper"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 6, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel);
-            C.hydrodynamicsConvergenceCriterion = 1e-2;
+            C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 8, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(amrLevel, true);
+            C.hydrodynamicsConvergenceCriterion = 1e-4;
 
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.Material = true;
-            C.gravity = new Vector( 0, -9.81 );
+            C.gravity = new Vector( 0, -10 );
             double particleDensity = 1 * DensityFactor;
             // Particle Properties
             // =============================   

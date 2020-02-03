@@ -82,13 +82,16 @@ namespace BoSSS.Application.FSI_Solver {
                 savetodb = false;
         }
 
-        public void SetAddaptiveMeshRefinement(int amrLevel) {
+        public bool WallRefinement = false;
+
+        public void SetAddaptiveMeshRefinement(int amrLevel, bool wallRefinement = false) {
             if (amrLevel == 0)
                 return;
             AdaptiveMeshRefinement = true;
             RefinementLevel = amrLevel;
             AMR_startUpSweeps = amrLevel;
             Console.WriteLine("No of start up sweeps " + AMR_startUpSweeps);
+            WallRefinement = wallRefinement;
         }
 
         public void SetBoundaries(List<string> boundaryValues) {
@@ -103,9 +106,13 @@ namespace BoSSS.Application.FSI_Solver {
         readonly List<string> m_BoundaryValues = new List<string>();
         public double FluidDomainVolume;
         public double[][] BoundaryPositionPerDimension;
+        public double[][] WallPositionPerDimension;
         public bool[] BoundaryIsPeriodic;
         public void SetGrid(double lengthX, double lengthY, double cellsPerUnitLength, bool periodicX = false, bool periodicY = false) {
             BoundaryPositionPerDimension = new double[2][];
+            WallPositionPerDimension = new double[2][];
+            WallPositionPerDimension[0] = new double[2];
+            WallPositionPerDimension[1] = new double[2];
             BoundaryIsPeriodic = new bool[2];
             BoundaryPositionPerDimension[0] = new double[] { -lengthX / 2, lengthX / 2 };
             BoundaryPositionPerDimension[1] = new double[] { -lengthY / 2, lengthY / 2 };
@@ -146,12 +153,18 @@ namespace BoSSS.Application.FSI_Solver {
                                 if (m_BoundaryValues[i].Contains("left") || m_BoundaryValues[i].Contains("Left")) {
                                     et = (byte)(i + 1);
                                 }
+                                if (m_BoundaryValues[i].Contains("wall") || m_BoundaryValues[i].Contains("Wall")) {
+                                    WallPositionPerDimension[0][0] = -lengthX / 2;
+                                }
                             }
                         }
                         if (Math.Abs(X[0] + (-lengthX / 2)) <= 1.0e-8) {
                             for (int i = 0; i < m_BoundaryValues.Count(); i++) {
                                 if (m_BoundaryValues[i].Contains("right") || m_BoundaryValues[i].Contains("Right")) {
                                     et = (byte)(i + 1);
+                                }
+                                if (m_BoundaryValues[i].Contains("wall") || m_BoundaryValues[i].Contains("Wall")) {
+                                    WallPositionPerDimension[0][1] = lengthX / 2;
                                 }
                             }
                         }
@@ -161,12 +174,18 @@ namespace BoSSS.Application.FSI_Solver {
                                 if (m_BoundaryValues[i].Contains("lower") || m_BoundaryValues[i].Contains("Lower")) {
                                     et = (byte)(i + 1);
                                 }
+                                if (m_BoundaryValues[i].Contains("wall") || m_BoundaryValues[i].Contains("Wall")) {
+                                    WallPositionPerDimension[1][0] = -lengthY / 2;
+                                }
                             }
                         }
                         if (Math.Abs(X[1] + (-lengthY / 2)) <= 1.0e-8) {
                             for (int i = 0; i < m_BoundaryValues.Count(); i++) {
                                 if (m_BoundaryValues[i].Contains("upper") || m_BoundaryValues[i].Contains("Upper")) {
                                     et = (byte)(i + 1);
+                                }
+                                if (m_BoundaryValues[i].Contains("wall") || m_BoundaryValues[i].Contains("Wall")) {
+                                    WallPositionPerDimension[1][1] = lengthY / 2;
                                 }
                             }
                         }
