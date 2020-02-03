@@ -42,7 +42,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// <summary>
         /// \f$ \( \lambda_I - \mu_I \) \div_I \vec{u} \myMatrix{P}_I  \f$
         /// </summary>
-        SurfaceVelocityDivergence,
+        SurfaceDivergence,
 
         /// <summary>
         /// the Boussinesq-Scriven model, describing a newtonian-like surface with surface shear and dilatational viscosity

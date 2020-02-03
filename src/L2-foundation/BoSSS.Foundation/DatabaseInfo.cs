@@ -76,7 +76,7 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// The sessions of this database.
         /// </summary>
-        public IEnumerable<ISessionInfo> Sessions {
+        public IList<ISessionInfo> Sessions {
             get {
                 //Stopwatch stw = new Stopwatch();
 
@@ -90,7 +90,7 @@ namespace BoSSS.Foundation.IO {
                 //Console.WriteLine("sorting sessions...");
                 //stw.Reset();
                 //stw.Start();
-                var R = allsessions.OrderByDescending(s => s.WriteTime);
+                var R = allsessions.OrderByDescending(s => s.WriteTime).ToList();
                 //stw.Stop();
                 //Console.WriteLine("done. " + stw.ElapsedMilliseconds);
 
@@ -101,9 +101,9 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// The grids of this database.
         /// </summary>
-        public IEnumerable<IGridInfo> Grids {
+        public IList<IGridInfo> Grids {
             get {
-                return Controller.Grids.OrderByDescending(g => g.WriteTime);
+                return Controller.Grids.OrderByDescending(g => g.WriteTime).ToList();
             }
         }
 

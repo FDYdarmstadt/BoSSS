@@ -37,6 +37,7 @@ namespace BoSSS.Solution.XNSECommon {
         //=======================
         // Navier Stokes equation
         //=======================
+        #region nse
 
         /// <summary>
         /// 
@@ -276,8 +277,10 @@ namespace BoSSS.Solution.XNSECommon {
                         break;
                     case ViscosityMode.Viscoelastic:
                         //comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, 1 / reynoldsA, 1 / reynoldsB, penalty * 1.0, d, false));
+
                         comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, betaA / reynoldsA, betaB / reynoldsB, penalty, d, dntParams.UseWeightedAverages));
                         comps.Add(new Operator.Viscosity.StressDivergenceAtLevelSet(LsTrk, reynoldsA, reynoldsB, penalty1, penalty2, d, dntParams.UseWeightedAverages));
+
                         break;
 
                     default:
@@ -382,32 +385,35 @@ namespace BoSSS.Solution.XNSECommon {
 
                     double muI = physParams.mu_I;
                     double lamI = physParams.lambda_I;
+                    double lamI_t = (physParams.lambdaI_tilde < 0) ? (lamI - muI) : physParams.lambdaI_tilde;
 
                     double penalty_base = (degU + 1) * (degU + D) / D;
                     double penalty = penalty_base * dntParams.PenaltySafety;
+
+                    // surface dilatational viscosity
+                    if (dntParams.SurfStressTensor == SurfaceSressTensor.SurfaceDivergence ||
+                        dntParams.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
+
+                        var surfDiv = new BoussinesqScriven_SurfaceVelocityDivergence(d, D, lamI_t * 0.5, penalty, BcMap.EdgeTag2Type, true);
+                        XOp.SurfaceElementOperator.EquationComponents[CodName].Add(surfDiv);
+
+                    }
 
                     // surface shear viscosity 
                     if (dntParams.SurfStressTensor == SurfaceSressTensor.SurfaceRateOfDeformation ||
                         dntParams.SurfStressTensor == SurfaceSressTensor.SemiImplicit ||
                         dntParams.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
 
-                        var surfDeformRate = new BoussinesqScriven_SurfaceDeformationRate_GradU(d, muI * 0.5, penalty);
+                        var surfDeformRate = new BoussinesqScriven_SurfaceDeformationRate_GradU(d, D, muI * 0.5, penalty, true, dntParams.SurfStressTensor == SurfaceSressTensor.SemiImplicit);
                         XOp.SurfaceElementOperator.EquationComponents[CodName].Add(surfDeformRate);
 
                         if (dntParams.SurfStressTensor != SurfaceSressTensor.SemiImplicit) {
-                            var surfDeformRateT = new BoussinesqScriven_SurfaceDeformationRate_GradUTranspose(d, muI * 0.5, penalty);
+                            var surfDeformRateT = new BoussinesqScriven_SurfaceDeformationRate_GradUTranspose(d, D, muI * 0.5, penalty, true);
                             XOp.SurfaceElementOperator.EquationComponents[CodName].Add(surfDeformRateT);
                         }
 
                     }
-                    // surface dilatational viscosity
-                    if (dntParams.SurfStressTensor == SurfaceSressTensor.SurfaceVelocityDivergence ||
-                        dntParams.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
 
-                        var surfVelocDiv = new BoussinesqScriven_SurfaceVelocityDivergence(d, muI * 0.5, lamI * 0.5, penalty, BcMap.EdgeTag2Type);
-                        XOp.SurfaceElementOperator.EquationComponents[CodName].Add(surfVelocDiv);
-
-                    }
                 }
 
 
@@ -458,11 +464,13 @@ namespace BoSSS.Solution.XNSECommon {
 
         }
 
+        #endregion
 
 
         //====================
         // Continuity equation
         //====================
+        #region conti
 
         /// <summary>
         /// 
@@ -544,22 +552,9 @@ namespace BoSSS.Solution.XNSECommon {
             //comps.Add(stabint);
         }
 
-
-
-        //========================
-        // Kinetic energy equation
-        //========================
-
-        public static void AddSpeciesKineticEnergyBalance(XSpatialOperatorMk2 XOp) {
-
-        }
-
-        public static void AddInterfaceKineticEnergyBalance(XSpatialOperatorMk2 XOp) {
-
-        }
+        #endregion
 
     }
-
 
     /// <summary>
     /// base configuration options

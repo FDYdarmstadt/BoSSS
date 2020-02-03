@@ -61,7 +61,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         /// <param name="phi">scalars</param>
         /// <returns>dynamic viscosity</returns>
-        public double GetViscosity(params double[] phi){
+        public virtual double GetViscosity(params double[] phi){
             if (phi.Length == 1) {
                 return this.GetViscosity(phi[0]);
             } else {

@@ -48,7 +48,7 @@ namespace BoSSS.Solution.LevelSetTools {
         /// <summary>
         /// L2-projection with continuity constraints at inner cell boundaries
         /// </summary>
-        ContinuousDG
+        ConstrainedDG
     }
 
 
@@ -73,7 +73,7 @@ namespace BoSSS.Solution.LevelSetTools {
                         MyProjection = new ContinuityProjectionSpecFem(ContinuousLevelSetBasis);
                         break;
                     }
-                case ContinuityProjectionOption.ContinuousDG: {
+                case ContinuityProjectionOption.ConstrainedDG: {
                         MyProjection = new ContinuityProjectionCDG(ContBasis);
                         break;
                     }
@@ -101,7 +101,7 @@ namespace BoSSS.Solution.LevelSetTools {
                         var ContinuousLevelSetBasis = new SpecFemBasis(gridData, k);
                         return new LevelSet(ContinuousLevelSetBasis.ContainingDGBasis, "Phi");
                     }
-                case ContinuityProjectionOption.ContinuousDG: {
+                case ContinuityProjectionOption.ConstrainedDG: {
                         var ContinuousLevelSetDGBasis = new Basis(gridData, k);
                         return new LevelSet(ContinuousLevelSetDGBasis, "Phi");
                     }
@@ -195,9 +195,9 @@ namespace BoSSS.Solution.LevelSetTools {
     public class ContinuityProjectionCDG : IContinuityProjection {
 
         public ContinuityProjectionCDG(Basis myBasis) {
-            CDGField = new ContinuousDGField(myBasis);
+            CDGField = new ConstrainedDGField(myBasis);
         }
-        ContinuousDGField CDGField;
+        ConstrainedDGField CDGField;
 
         public void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain) {
             CDGField.ProjectDGField(1.0, DGLevelSet, Domain);
