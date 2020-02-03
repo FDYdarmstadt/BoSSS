@@ -153,7 +153,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                 double fnorminit = fnorm;
                 using (new BlockTrace("Slv Iter", tr)) {
                     while (
-                        (fnorm > ConvCrit * fnorminit*0 + ConvCrit && 
+                        (fnorm > ConvCrit * fnorminit + ConvCrit && 
                         /*secondCriteriumConverged == false &&*/ itc < MaxIter)   
                         || itc < MinIter) {
                         //Console.WriteLine("The convergence criterion is {0}", ConvCrit * fnorminit + ConvCrit);
@@ -209,7 +209,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                                 double thresh = f0_L2 * 1e-5;
                                 Console.WriteLine($"Inexact Newton: setting convergence threshold to {thresh:0.##E-00}");
                                 pt.TerminationCriterion = (iter, R0_l2, R_l2) => {
-                                    return (R_l2 > thresh) && (iter < 1000);
+                                    return (R_l2 > thresh) && (iter < 100);
                                 };
  
 

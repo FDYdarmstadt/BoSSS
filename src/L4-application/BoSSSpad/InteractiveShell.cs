@@ -27,6 +27,7 @@ using ilPSP;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation;
+using ilPSP.Utils;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -318,16 +319,125 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
+        /// Plotting of an grid with dummy data, 
         /// Driver interface for the <see cref="BoSSS.Solution.Tecplot.Tecplot"/> functionality.
         /// </summary>
-        static public void Tecplot(string filename, IGridData grd) {
+        static public void PlotGrid(string filename, IGridData grd) {
 
-            var g = new GridData((GridCommons)grd);
-            var dummy = new SinglePhaseField(new Basis(g, 0), "DummyData");
-            
 
-            Tecplot(filename, 0.0, 0, dummy);
+            string SanitizeName(string s) {
+                char[] ot = s.ToCharArray();
+                for(int k = 0; k < ot.Length; k++) {
+                    if(char.IsWhiteSpace(ot[k])) {
+                        ot[k] = '_';
+                    }
+
+                    if (ot[k] == '(')
+                        ot[k] = 'L';
+                    if (ot[k] == ')')
+                        ot[k] = 'R';
+                }
+                return new string(ot);
+            }
+
+           
+
+            var et2Name = grd.EdgeTagNames;
+            Console.WriteLine($"Grid containing {et2Name.Count} EdgeTag names: ");
+            int i = 0;
+            foreach (var t in et2Name) { // loop over all different edge tag names...
+                string name = t.Value;
+                byte tag2color = t.Key;
+
+                string sname = SanitizeName(name);
+
+                if (name.Equals(sname)) {
+                    Console.WriteLine($"   {i}: {name} -- tag = {tag2color}");
+                } else {
+                    Console.WriteLine($"   {i}: {name} -- tag = {tag2color}   (marked as '{sname}') in output file.");
+                }
+                i++;
+            }
+
+
+            var B0 = new Basis(grd, 0);
+            SinglePhaseField[] bndyMarkers = new SinglePhaseField[et2Name.Count + 1];
+
+            int[,] Edge2GeomCell = grd.iGeomEdges.CellIndices;
+            int[] G2L = grd.iGeomCells.GeomCell2LogicalCell;
+            byte[] EdgeTags = grd.iGeomEdges.EdgeTags;
+
+            i = 0;
+            foreach(var t in et2Name) { // loop over all different edge tag names...
+                string name = t.Value;
+                byte tag2color = t.Key;
+                string sname = SanitizeName(name);
+
+
+                var FI = new SinglePhaseField(B0, "Marker-" + sname);
+                bndyMarkers[i] = FI;
+                i++;
+
+                for (int e = 0; e < EdgeTags.Length; e++) { // loop over edges...
+                    byte tag_e = EdgeTags[e];
+
+                    if(tag_e == tag2color) {
+                        // mar cells next to edge e
+
+                        foreach(int jG in Edge2GeomCell.GetRow(e)) {
+                            if (jG < 0)
+                                continue;
+
+                            // convert geometrical cell index to logical cell index
+                            int jL;
+                            if (G2L == null)
+                                jL = jG;
+                            else
+                                jL = G2L[jG];
+
+                            // color respective cell
+                            FI.SetMeanValue(jL, tag2color);
+                        }
+
+                    }
+                }
+
+            }
+
+            var dummy = new SinglePhaseField(B0, "DummyData");
+            bndyMarkers[bndyMarkers.Length - 1] = dummy;
+
+            Tecplot(filename, 0.0, 0, bndyMarkers);
         }
+
+        /// <summary>
+        /// Plotting of an grid with dummy data, 
+        /// Driver interface for the <see cref="BoSSS.Solution.Tecplot.Tecplot"/> functionality.
+        /// </summary>
+        static public void PlotGrid(string filename, IGridInfo grdInfo) {
+            if (grdInfo is IGridData gdata) {
+                PlotGrid(filename, gdata);
+            } else {
+                Console.WriteLine("Initializing gird...");
+                var dbi = grdInfo.Database;
+                var drv = dbi.Controller.DBDriver;
+
+                var grd = drv.LoadGrid(grdInfo.ID, dbi);
+                var gdat = grd.iGridData;
+                Console.WriteLine("done.");
+                PlotGrid(filename, gdat);
+            }
+        }
+
+        /// <summary>
+        /// Plotting of an grid with dummy data, 
+        /// Driver interface for the <see cref="BoSSS.Solution.Tecplot.Tecplot"/> functionality.
+        /// </summary>
+        static public void PlotGrid(string filename, IGrid grd) {
+            var gdat = grd.iGridData;
+            PlotGrid(filename, gdat);
+        }
+
 
 
         /// <summary>

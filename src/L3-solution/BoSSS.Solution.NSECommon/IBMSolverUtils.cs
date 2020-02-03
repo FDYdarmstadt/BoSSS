@@ -759,8 +759,7 @@ namespace BoSSS.Solution.NSECommon {
             var _GradU = GradU.ToArray();
             var _GradV = GradV.ToArray();
 
-
-            int RequiredOrder = _GradU[0].Basis.Degree * 3 + 2;
+            int RequiredOrder = _GradU[0].Basis.Degree * 3 + 2 ;
             //int RequiredOrder = U[0].Basis.Degree * 3 + 2;
             //int RequiredOrder = LsTrk.GetXQuadFactoryHelper(momentFittingVariant).GetCachedSurfaceOrders(0).Max();
             //Console.WriteLine("Order reduction: {0} -> {1}", _RequiredOrder, RequiredOrder);

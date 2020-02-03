@@ -4,6 +4,10 @@ restart
   BoSSSpad C# interpreter
   _______________________
 
+Databases loaded:
+List of 1 instances of IDatabaseInfo {
+  0: { Session Count = 11; Grid Count = 9; Path = D:\Users\kummer\default_bosss_db }
+}
 
  Console ready for input. Type 'help' for help.
 
@@ -23,7 +27,7 @@ Project name is set to 'ConfinedCylinder_BodyforcesFix'.
 //var myDb = OpenOrCreateDatabase(@"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_unsteady");
 var myDb = OpenOrCreateDefaultDatabase();
 **************
-Opening existing database 'C:\Users\florian\default_bosss_db'.
+Opening existing database 'd:\Users\kummer\default_bosss_db'.
 
 ==============
 //var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\kikker\deploy_dir\","hpccluster",ComputeNodes : new[] {"hpccluster"});
@@ -33,12 +37,7 @@ var myBatch = new MiniBatchProcessorClient();
 ==============
 MiniBatchProcessor.Server.StartIfNotRunning();
 **************
-Starting mini batch processor in external process...
-<<<<<<< HEAD
-Started mini batch processor on local machine, process id is 6412.
-=======
-Started mini batch processor on local machine, process id is 79668.
->>>>>>> experimental/master
+Mini batch processor is already running.
 
 ==============
 // ======================
@@ -47,7 +46,7 @@ Started mini batch processor on local machine, process id is 79668.
 **************
 ==============
 int degree = 2;
-int gridNo = 1;
+int gridNo = 3;
 int[] procs = new int[] {4};
 **************
 ==============
@@ -111,7 +110,7 @@ Func<Vector, string> edgeTagFunc = delegate (Vector X) {
 bosssGrid.DefineEdgeTags(edgeTagFunc);            
 myDb.SaveGrid(ref bosssGrid);
 **************
-
+ab9b8f9a-e1aa-469d-8eea-b56a88e672a4
 ==============
 // =====================================
 // setup control object for a solver run
@@ -298,4 +297,4 @@ C# evaluator not initialized: use 'restart'.
 
 ==============
 **************
-
+==============
