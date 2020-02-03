@@ -187,7 +187,7 @@ namespace BoSSS.Application.FSI_Solver {
         public CellMask CutCells_P(LevelSetTracker LsTrk) {
             BitArray CellArray = new BitArray(LsTrk.GridDat.Cells.NoOfLocalUpdatedCells);
             MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
-            double h_min = LsTrk.GridDat.Cells.h_minGlobal;
+            var h_min = LsTrk.Regions.GetCutCellSubGrid().h_minSubGrd;
             for (int i = 0; i < CellArray.Length; i++) {
                 CellArray[i] = Contains(new Vector(CellCenters[i, 0], CellCenters[i, 1]), h_min);
             }

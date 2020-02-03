@@ -152,9 +152,9 @@ namespace BoSSS.Application.FSI_Solver {
                             for (int i = 0; i < m_BoundaryValues.Count(); i++) {
                                 if (m_BoundaryValues[i].Contains("left") || m_BoundaryValues[i].Contains("Left")) {
                                     et = (byte)(i + 1);
-                                }
-                                if (m_BoundaryValues[i].Contains("wall") || m_BoundaryValues[i].Contains("Wall")) {
-                                    WallPositionPerDimension[0][0] = -lengthX / 2;
+                                    if (m_BoundaryValues[i].Contains("wall") || m_BoundaryValues[i].Contains("Wall")) {
+                                        WallPositionPerDimension[0][0] = -lengthX / 2;
+                                    }
                                 }
                             }
                         }
@@ -162,9 +162,9 @@ namespace BoSSS.Application.FSI_Solver {
                             for (int i = 0; i < m_BoundaryValues.Count(); i++) {
                                 if (m_BoundaryValues[i].Contains("right") || m_BoundaryValues[i].Contains("Right")) {
                                     et = (byte)(i + 1);
-                                }
-                                if (m_BoundaryValues[i].Contains("wall") || m_BoundaryValues[i].Contains("Wall")) {
-                                    WallPositionPerDimension[0][1] = lengthX / 2;
+                                    if (m_BoundaryValues[i].Contains("wall") || m_BoundaryValues[i].Contains("Wall")) {
+                                        WallPositionPerDimension[0][1] = lengthX / 2;
+                                    }
                                 }
                             }
                         }
@@ -173,9 +173,9 @@ namespace BoSSS.Application.FSI_Solver {
                             for (int i = 0; i < m_BoundaryValues.Count(); i++) {
                                 if (m_BoundaryValues[i].Contains("lower") || m_BoundaryValues[i].Contains("Lower")) {
                                     et = (byte)(i + 1);
-                                }
-                                if (m_BoundaryValues[i].Contains("wall") || m_BoundaryValues[i].Contains("Wall")) {
-                                    WallPositionPerDimension[1][0] = -lengthY / 2;
+                                    if (m_BoundaryValues[i].Contains("wall") || m_BoundaryValues[i].Contains("Wall")) {
+                                        WallPositionPerDimension[1][0] = -lengthY / 2;
+                                    }
                                 }
                             }
                         }
@@ -183,9 +183,9 @@ namespace BoSSS.Application.FSI_Solver {
                             for (int i = 0; i < m_BoundaryValues.Count(); i++) {
                                 if (m_BoundaryValues[i].Contains("upper") || m_BoundaryValues[i].Contains("Upper")) {
                                     et = (byte)(i + 1);
-                                }
-                                if (m_BoundaryValues[i].Contains("wall") || m_BoundaryValues[i].Contains("Wall")) {
-                                    WallPositionPerDimension[1][1] = lengthY / 2;
+                                    if (m_BoundaryValues[i].Contains("wall") || m_BoundaryValues[i].Contains("Wall")) {
+                                        WallPositionPerDimension[1][1] = lengthY / 2;
+                                    }
                                 }
                             }
                         }

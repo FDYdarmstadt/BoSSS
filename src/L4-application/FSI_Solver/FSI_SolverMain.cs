@@ -440,7 +440,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         public override double DelUpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
 
-            switch (((FSI_Control)this.Control).Timestepper_LevelSetHandling) {
+            switch (((FSI_Control)Control).Timestepper_LevelSetHandling) {
                 case LevelSetHandling.None:
                     ScalarFunction Posfunction = NonVectorizedScalarFunction.Vectorize(((FSI_Control)Control).MovementFunc, phystime);
                     LevSet.ProjectField(Posfunction);
@@ -553,34 +553,34 @@ namespace BoSSS.Application.FSI_Solver {
                     // any color in one cellmask
                     // -----------------------------
                     allParticleMask = allParticleMask == null ? coloredCellMask : allParticleMask.Union(coloredCellMask);
-                    double levelSetFunction(double[] X, double t) {
-                        // Generating the correct sign
-                        double levelSetFunctionOneColor = Math.Pow(-1, particlesOfCurrentColor.Length - 1);
-                        // Multiplication over all particle-level-sets within the current color
-                        for (int pC = 0; pC < particlesOfCurrentColor.Length; pC++) {
-                            Particle currentParticle = m_Particles[particlesOfCurrentColor[pC]];
-                            double tempLevelSetFunction = currentParticle.LevelSetFunction(X);
-                            // prevent extreme values
-                            if (tempLevelSetFunction > 1)
-                                tempLevelSetFunction = 1;
-                            levelSetFunctionOneColor *= tempLevelSetFunction;
-                            // Delete the particle within the current color from the particle color array
-                            _globalParticleColor[particlesOfCurrentColor[pC]] = 0;
-                        }
-                        return levelSetFunctionOneColor;
-                    }
-                    // Particle level set
-                    // -----------------------------
                     //double levelSetFunction(double[] X, double t) {
-                    //    double levelSetFunctionOneColor = -1;
+                    //    // Generating the correct sign
+                    //    double levelSetFunctionOneColor = Math.Pow(-1, particlesOfCurrentColor.Length - 1);
+                    //    // Multiplication over all particle-level-sets within the current color
                     //    for (int pC = 0; pC < particlesOfCurrentColor.Length; pC++) {
                     //        Particle currentParticle = m_Particles[particlesOfCurrentColor[pC]];
-                    //        if(levelSetFunctionOneColor < currentParticle.LevelSetFunction(X))
-                    //            levelSetFunctionOneColor = currentParticle.LevelSetFunction(X);
+                    //        double tempLevelSetFunction = currentParticle.LevelSetFunction(X);
+                    //        // prevent extreme values
+                    //        if (tempLevelSetFunction > 1)
+                    //            tempLevelSetFunction = 1;
+                    //        levelSetFunctionOneColor *= tempLevelSetFunction;
+                    //        // Delete the particle within the current color from the particle color array
                     //        _globalParticleColor[particlesOfCurrentColor[pC]] = 0;
                     //    }
                     //    return levelSetFunctionOneColor;
                     //}
+                    // Particle level set
+                    // -----------------------------
+                    double levelSetFunction(double[] X, double t) {
+                        double levelSetFunctionOneColor = -1;
+                        for (int pC = 0; pC < particlesOfCurrentColor.Length; pC++) {
+                            Particle currentParticle = m_Particles[particlesOfCurrentColor[pC]];
+                            if (levelSetFunctionOneColor < currentParticle.LevelSetFunction(X))
+                                levelSetFunctionOneColor = currentParticle.LevelSetFunction(X);
+                            _globalParticleColor[particlesOfCurrentColor[pC]] = 0;
+                        }
+                        return levelSetFunctionOneColor;
+                    }
                     SetLevelSet(levelSetFunction, coloredCellMask, phystime);
                 }
             }
@@ -815,7 +815,7 @@ namespace BoSSS.Application.FSI_Solver {
                     currentParticle.ClosestPointOnOtherObjectToThis = new Vector(BoundaryCoordinates[d1][d2], particlePosition[1]);
                 else
                     currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[d1][d2]);
-                FSI_Collision periodicCollision = new FSI_Collision(LsTrk, 0, 0);
+                FSI_Collision periodicCollision = new FSI_Collision(LsTrk.GridDat.Cells.h_minGlobal, 0, 0);
                 periodicCollision.CalculateMinimumDistance(currentParticle, out _, out Vector _, out Vector _, out bool Overlapping);
                 return Overlapping;
             }
@@ -830,11 +830,11 @@ namespace BoSSS.Application.FSI_Solver {
                         currentParticle.ClosestPointOnOtherObjectToThis = new Vector(BoundaryCoordinates[d][wallID], particlePosition[1]);
                     else
                         currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[d][wallID]);
-                    FSI_Collision periodicCollision = new FSI_Collision(LsTrk, 0, 0);
+                    FSI_Collision periodicCollision = new FSI_Collision(LsTrk.GridDat.Cells.h_minGlobal, 0, 0);
                     periodicCollision.CalculateMinimumDistance(currentParticle, out _, out Vector _, out Vector _, out bool Overlapping);
                     if (Overlapping)
-                        return true;
-                }
+                        return true;    
+                }   
             }
             return false;
         }
@@ -932,19 +932,9 @@ namespace BoSSS.Application.FSI_Solver {
                                 InitializeParticlePerIteration(m_Particles, TimestepInt);
                             }
                             else {
-                                //VectorField<SinglePhaseField> velocityOld = Velocity.CloneAs();
-                                //SinglePhaseField pressureOld = Pressure.CloneAs();
                                 m_BDF_Timestepper.Solve(phystime, dt, false);
                                 ParticleHydrodynamicsIntegration hydrodynamicsIntegration = new ParticleHydrodynamicsIntegration(2, Velocity, Pressure, LsTrk, FluidViscosity);
                                 AllParticleHydrodynamics.CalculateHydrodynamics(m_Particles, hydrodynamicsIntegration, FluidDensity, false);
-                                //if (iterationCounter != 1) 
-                                //{
-                                //    double underrelax = 0.1;
-                                //    Velocity.Scale(underrelax);
-                                //    Velocity.Acc((1 - underrelax), velocityOld);
-                                //    Pressure.Scale(underrelax);
-                                //    Pressure.Acc((1 - underrelax), pressureOld);
-                                //}
                             }
                             if (TimestepInt != 1 || iterationCounter != 0)
                                 CalculateParticleVelocity(m_Particles, dt, iterationCounter);
@@ -1161,7 +1151,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// over-ridden in oder to save the particles (<see cref="m_Particles"/>) to the database
         /// </summary>
         protected override TimestepInfo GetCurrentTimestepInfo(TimestepNumber timestepno, double t) {
-            var tsi = new FSI_TimestepInfo(t, CurrentSessionInfo, timestepno, IOFields, m_Particles);
+            FSI_TimestepInfo tsi = new FSI_TimestepInfo(t, CurrentSessionInfo, timestepno, IOFields, m_Particles);
             SerialzeTester(tsi);
             return tsi;
         }
@@ -1219,7 +1209,7 @@ namespace BoSSS.Application.FSI_Solver {
             Debug.Assert(b.Particles.Length == o.Particles.Length);
             int L = b.Particles.Length;
             for (int l = 0; l < L; l++) { // loop over particles
-                Debug.Assert(GenericBlas.L2Dist((double[])b.Particles[l].Motion.GetPosition(0), (double[])o.Particles[l].Motion.GetPosition(0)) < 1e-13);
+                //Debug.Assert(GenericBlas.L2Dist((double[])b.Particles[l].Motion.GetPosition(0), (double[])o.Particles[l].Motion.GetPosition(0)) < 1e-13);
             }
 
         }
@@ -1329,7 +1319,7 @@ namespace BoSSS.Application.FSI_Solver {
                     for (int j = 0; j < ParticlesOfCurrentColor.Length; j++) {
                         currentParticles[j] = m_Particles[ParticlesOfCurrentColor[j]];
                     }
-                    FSI_Collision _Collision = new FSI_Collision(LsTrk, ((FSI_Control)Control).CoefficientOfRestitution, dt, ((FSI_Control)Control).WallPositionPerDimension);
+                    FSI_Collision _Collision = new FSI_Collision(LsTrk.GridDat.Cells.h_minGlobal, ((FSI_Control)Control).CoefficientOfRestitution, dt, ((FSI_Control)Control).WallPositionPerDimension);
                     _Collision.CalculateCollision(currentParticles, GridData);
                 }
 
@@ -1457,43 +1447,56 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         double h_maxStart = 0;
-
+        private bool Contains(Vector centerPoint, Vector point, double radius) {
+            double distance = point.L2Distance(centerPoint);
+            return distance < radius;
+        }
         /// <summary>
         /// Creates the cellmask which should be refined.
         /// </summary>
         private List<Tuple<int, BitArray>> GetCellMaskWithRefinementLevelsWithWallRefinement() {
             h_maxStart = h_maxStart == 0 ? LsTrk.GridDat.Cells.h_maxGlobal : h_maxStart;
             int refinementLevel = ((FSI_Control)Control).RefinementLevel;
-            int mediumRefinementLevel = refinementLevel > 2 ? refinementLevel / 2 : 1;
-            int coarseRefinementLevel = refinementLevel > 4 ? refinementLevel / 4 : 1;
+            int mediumRefinementLevel = 2;
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
-            BitArray coarseCells = new BitArray(noOfLocalCells);
             BitArray mediumCells = new BitArray(noOfLocalCells);
             BitArray fineCells = new BitArray(noOfLocalCells);
-            double radiusCoarseCells = 2 * h_maxStart;
             double radiusMediumCells = h_maxStart;
-            double radiusFineCells = h_maxStart / mediumRefinementLevel;
-            CellMask boundaryCells = LsTrk.GridDat.GetBoundaryCells();
+            double radiusFineCells = h_maxStart / 2;
+            Vector[] nearFieldWallPoint = new Vector[4];
             for (int p = 0; p < m_Particles.Count; p++) {
                 Particle particle = m_Particles[p];
+                Vector particlePosition = particle.Motion.GetPosition(0);
+                double[][] WallCoordinates = ((FSI_Control)Control).WallPositionPerDimension;
+                for (int w0 = 0; w0 < WallCoordinates.Length; w0++) {
+                    for (int w1 = 0; w1 < WallCoordinates[w0].Length; w1++) {
+                        if (WallCoordinates[w0][w1] == 0)
+                            continue;
+                        if (w0 == 0)
+                            nearFieldWallPoint[w0 + w1] = new Vector(WallCoordinates[0][w1], particlePosition[1]);
+                        else
+                            nearFieldWallPoint[w0 * 2 + w1] = new Vector(particlePosition[0], WallCoordinates[1][w1]);
+                    }
+                }
                 for (int j = 0; j < noOfLocalCells; j++) {
                     Vector centerPoint = new Vector(CellCenters[j, 0], CellCenters[j, 1]);
-                    if (!coarseCells[j]) {
-                        coarseCells[j] = particle.Contains(centerPoint, radiusCoarseCells);
-                    }
-                    if (!mediumCells[j]) {
+                    if (!mediumCells[j] && !particle.Contains(centerPoint, -2 * radiusFineCells)) {
                         mediumCells[j] = particle.Contains(centerPoint, radiusMediumCells);
                     }
-                    if (!fineCells[j] && boundaryCells.Contains(j)) {
-                        fineCells[j] = particle.Contains(centerPoint, radiusFineCells);
+                    if (!fineCells[j] && !particle.Contains(centerPoint, -2 * radiusFineCells)) {
+                        for (int w = 0; w < WallCoordinates.Length; w++) {
+                            if (nearFieldWallPoint[w].IsNullOrEmpty())
+                                continue;
+                            if((particlePosition - nearFieldWallPoint[w]).Abs() < 2 * h_maxStart && LsTrk.GridDat.GetBoundaryCells().Contains(j))
+                                fineCells[j] = Contains(nearFieldWallPoint[w], centerPoint, 2 * h_maxStart);
+                        }
                     }
                 }
             }
             List<Tuple<int, BitArray>> AllCellsWithMaxRefineLevel = new List<Tuple<int, BitArray>> {
                 new Tuple<int, BitArray>(refinementLevel, fineCells),
                 new Tuple<int, BitArray>(mediumRefinementLevel, mediumCells),
-                new Tuple<int, BitArray>(coarseRefinementLevel, coarseCells),
             };
             return AllCellsWithMaxRefineLevel;
         }

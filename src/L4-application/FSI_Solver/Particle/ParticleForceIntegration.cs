@@ -19,6 +19,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
+using BoSSS.Solution.Utils;
 using ilPSP;
 using System;
 using System.Collections.Generic;

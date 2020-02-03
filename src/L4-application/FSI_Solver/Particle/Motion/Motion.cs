@@ -54,9 +54,6 @@ namespace BoSSS.Application.FSI_Solver {
                 m_HydrodynamicForces.Add(new Vector(m_Dim));
                 m_HydrodynamicTorque.Add(new double());
             }
-            m_CollisionTranslationalVelocity.Add(new Vector(m_Dim));
-            m_CollisionNormalVector.Add(new Vector(m_Dim));
-            m_CollisionTangentialVector.Add(new Vector(m_Dim));
         }
         internal double omega = 1;
         [NonSerialized]
@@ -523,8 +520,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// The timestep ID. Used to distinguish between the first timestep and all other steps.
         /// </param>
         public virtual void PredictForceAndTorque(double activeStress, double circumference, int timestepID, double fluidViscosity, double fluidDensity, double dt) {
-            m_HydrodynamicForces[0] = new Vector(m_HydrodynamicForces[1]);
-            m_HydrodynamicTorque[0] = m_HydrodynamicTorque[1];
+            m_HydrodynamicForces[0] = new Vector(0,0);// new Vector(m_HydrodynamicForces[1]);
+            m_HydrodynamicTorque[0] = 0;// m_HydrodynamicTorque[1];
             Aux.TestArithmeticException(m_HydrodynamicForces[0], "hydrodynamic forces");
             Aux.TestArithmeticException(m_HydrodynamicTorque[0], "hydrodynamic torque");
         }
@@ -944,7 +941,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// Collision post-processing. Sums up the results of the multiple binary collisions of one timestep
         /// </summary>
         public void PostProcessCollisionTranslation() {
-            Console.WriteLine("CLLSNm_CollisionTranslationalVelocity " + m_CollisionTranslationalVelocity[0][0]);
             if (m_CollisionTranslationalVelocity.Count >= 1) {
                 Vector normal = new Vector(m_Dim);
                 Vector tangential = new Vector(m_Dim);

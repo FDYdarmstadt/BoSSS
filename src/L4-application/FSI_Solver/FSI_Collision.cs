@@ -29,9 +29,8 @@ using System.Diagnostics;
 namespace FSI_Solver {
     class FSI_Collision {
         private readonly double Dt;
-        private readonly double HMin;
+        private readonly double GridLengthScale;
         private readonly double CoefficientOfRestitution;
-        private readonly LevelSetTracker LevelSetTracker;
         private double AccDynamicTimestep = 0;
         private double[][] SaveTimeStepArray;
         private double[][] Distance;
@@ -39,18 +38,16 @@ namespace FSI_Solver {
         private Vector[][] ClosestPoints;
         private double[][] WallCoordinates;
 
-        public FSI_Collision(LevelSetTracker levelSetTracker, double coefficientOfRestitution, double dt) {
+        public FSI_Collision(double gridLenghtscale, double coefficientOfRestitution, double dt) {
             CoefficientOfRestitution = coefficientOfRestitution;
             Dt = dt;
-            HMin = levelSetTracker.GridDat.Cells.h_minGlobal;
-            LevelSetTracker = levelSetTracker;
+            GridLengthScale = gridLenghtscale;
         }
 
-        public FSI_Collision(LevelSetTracker levelSetTracker, double coefficientOfRestitution, double dt, double[][] wallCoordinates) {
+        public FSI_Collision(double gridLenghtscale, double coefficientOfRestitution, double dt, double[][] wallCoordinates) {
             CoefficientOfRestitution = coefficientOfRestitution;
             Dt = dt;
-            HMin = levelSetTracker.GridDat.Cells.h_minGlobal;
-            LevelSetTracker = levelSetTracker;
+            GridLengthScale = gridLenghtscale;
             WallCoordinates = wallCoordinates;
         }
 
@@ -80,7 +77,7 @@ namespace FSI_Solver {
             // Some var definintion
             // =======================================================
             int ParticleOffset = particles.Length;
-            double distanceThreshold = HMin / 10;
+            double distanceThreshold = GridLengthScale / 10;
 
             // Step 2
             // Loop over time until the particles hit.
@@ -106,9 +103,6 @@ namespace FSI_Solver {
                         // Test for wall collisions for all particles 
                         // of the current color.
                         // -------------------------------------------------------
-                        //CellMask ParticleCutCells = particles[p0].CutCells_P(LevelSetTracker);
-                        //CellMask ParticleBoundaryCells = gridData.GetBoundaryCells().Intersect(ParticleCutCells);
-                        //GetWall(gridData, ParticleBoundaryCells, out double[][] wallPoints);
                         Vector[] nearFieldWallPoints = GetNearFieldWall(particles[p0]);
                         for (int w = 0; w < nearFieldWallPoints.Length; w++) {
                             particles[p0].ClosestPointOnOtherObjectToThis = new Vector(particles[p0].Motion.GetPosition(0));
@@ -116,14 +110,6 @@ namespace FSI_Solver {
                                 continue;
                             else
                                 particles[p0].ClosestPointOnOtherObjectToThis = new Vector(nearFieldWallPoints[w]);
-                            //else if (nearFieldWallPoints[w][0] != 0) {
-                            //    particles[p0].ClosestPointOnOtherObjectToThis = new Vector(wallPoints[w][0], particles[p0].Motion.GetPosition(0)[1]);
-                            //}
-                            //else if (nearFieldWallPoints[w][1] != 0) {
-                            //    particles[p0].ClosestPointOnOtherObjectToThis = new Vector(particles[p0].Motion.GetPosition(0)[0], wallPoints[w][1]);
-                            //}
-                            //else
-                            //    continue;
                             CalculateMinimumDistance(particles[p0], out double temp_Distance, out Vector temp_DistanceVector, out Vector temp_ClosestPoint_p0, out bool temp_Overlapping);
                             Distance[p0][ParticleOffset + w] = temp_Distance;
                             Vector normalVector = new Vector(temp_DistanceVector) / temp_DistanceVector.Abs();
@@ -139,6 +125,8 @@ namespace FSI_Solver {
                                 SaveTimeStep = -Dt * 0.25; // reset time to find a particle state before they overlap.
                                 minimalDistance = double.MaxValue;
                             }
+                            Console.WriteLine("Distance " + minimalDistance);
+                            Console.WriteLine("threshold " + distanceThreshold);
                         }
 
                         // Step 2.1.3
@@ -176,6 +164,8 @@ namespace FSI_Solver {
                     // -------------------------------------------------------
                     if (SaveTimeStep >= 0)
                         AccDynamicTimestep += SaveTimeStep;
+                    else
+                        AccDynamicTimestep = 0;
                     if (AccDynamicTimestep >= Dt) {
                         break;
                     }
@@ -260,7 +250,7 @@ namespace FSI_Solver {
             }
             else
                 detectCollisionVn_P1 = 0;
-            return (detectCollisionVn_P1 - detectCollisionVn_P0 == 0) ? double.MaxValue : 0.9 * distance / (detectCollisionVn_P1 - detectCollisionVn_P0);
+            return (detectCollisionVn_P1 - detectCollisionVn_P0 == 0) ? double.MaxValue : 0.5 * distance / (detectCollisionVn_P1 - detectCollisionVn_P0);
         }
 
         /// <summary>
@@ -273,7 +263,7 @@ namespace FSI_Solver {
         private double DynamicTimestep(Particle particle, Vector closestPoint, Vector normalVector, double distance) {
             CalculatePointVelocity(particle, closestPoint, out Vector pointVelocity0);
             double detectCollisionVn_P0 = normalVector * pointVelocity0;
-            return detectCollisionVn_P0 == 0 ? double.MaxValue : 0.9 * distance / (-detectCollisionVn_P0);
+            return detectCollisionVn_P0 == 0 ? double.MaxValue : 0.5 * distance / (-detectCollisionVn_P0);
         }
 
         /// <summary>
@@ -782,7 +772,8 @@ namespace FSI_Solver {
                     if (WallCoordinates[w0][w1] == 0)
                         continue;
                     double minDistance = Math.Abs(particlePosition[w0] - WallCoordinates[w0][w1]) - particleMaxLengthscale;
-                    if(minDistance < 2 * HMin) {
+                    if(minDistance < 5 * GridLengthScale || minDistance < 1e-2)
+                    {
                         if (w0 == 0)
                             nearFieldWallPoint[w0 + w1] = new Vector(WallCoordinates[0][w1], particlePosition[1]);
                         else
@@ -791,62 +782,6 @@ namespace FSI_Solver {
                 }
             }
             return nearFieldWallPoint;
-        }
-
-        /// <summary>
-        /// Searches for all possible walls the particle might collide with
-        /// </summary>
-        /// <param name="GridData"></param>
-        /// <param name="ParticleBoundaryCells">
-        /// Cells which have the particle color and are boundary cells
-        /// </param>
-        /// <param name="WallPoints">
-        /// The coordinate of one point on each wall found.
-        /// </param>
-        internal void GetWall(IGridData GridData, CellMask ParticleBoundaryCells, out double[][] WallPoints) {
-            int SpatialDim = ParticleBoundaryCells.GridData.SpatialDimension;
-            int NoOfMaxWallEdges = 4;
-            WallPoints = new double[NoOfMaxWallEdges][];
-            int[][] Cells2Edges = GridData.iLogicalCells.Cells2Edges;
-            IList<AffineTrafo> trafo = GridData.iGeomEdges.Edge2CellTrafos;
-            foreach (Chunk cnk in ParticleBoundaryCells) {
-                for (int i = cnk.i0; i < cnk.JE; i++) {
-                    foreach (int e in Cells2Edges[i]) {
-                        int eId = (e < 0) ? -e - 1 : e - 1;
-                        byte et = GridData.iGeomEdges.EdgeTags[eId];
-                        if (GridData.EdgeTagNames[et].Contains("wall") || GridData.EdgeTagNames[et].Contains("Wall")) {
-                            int jCell = GridData.iGeomEdges.CellIndices[eId, 0];
-                            int iKref = GridData.iGeomEdges.GetRefElementIndex(jCell);
-
-                            NodeSet[] refNodes = GridData.iGeomEdges.EdgeRefElements.Select(Kref2 => Kref2.GetQuadratureRule(5 * 2).Nodes).ToArray();
-                            NodeSet Nodes = refNodes.ElementAt(iKref);
-
-                            int trafoIdx = GridData.iGeomEdges.Edge2CellTrafoIndex[eId, 0];
-                            MultidimensionalArray transFormed = trafo[trafoIdx].Transform(Nodes);
-                            MultidimensionalArray WallVerticies = transFormed.CloneAs();
-                            GridData.TransformLocal2Global(transFormed, WallVerticies, jCell);
-                            double[] WallPoint1 = WallVerticies.GetRow(0);
-                            double[] WallPoint2 = WallVerticies.GetRow(1);
-                            if (Math.Abs(WallPoint1[0] - WallPoint2[0]) < 1e-12) {
-                                if (WallPoints[0] == null || Math.Abs(WallPoint1[0] - WallPoints[0][0]) < 1e-12)
-                                    WallPoints[0] = new double[] { WallPoint1[0], 0 };
-                                else if (WallPoints[1] == null || Math.Abs(WallPoint1[0] - WallPoints[1][0]) < 1e-12)
-                                    WallPoints[1] = new double[] { WallPoint1[0], 0 };
-                                else
-                                    throw new ArithmeticException("Error trying to get wall position. Please use horizontal/vertical boudaries");
-                            }
-                            if (Math.Abs(WallPoint1[1] - WallPoint2[1]) < 1e-12) {
-                                if (WallPoints[2] == null || Math.Abs(WallPoint1[1] - WallPoints[2][1]) < 1e-12)
-                                    WallPoints[2] = new double[] { 0, WallPoint1[1] };
-                                else if (WallPoints[3] == null || Math.Abs(WallPoint1[1] - WallPoints[3][1]) < 1e-12)
-                                    WallPoints[3] = new double[] { 0, WallPoint1[1] };
-                                else
-                                    throw new ArithmeticException("Error trying to get wall position. Please use horizontal/vertical boudaries");
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 }

@@ -98,9 +98,10 @@ namespace BoSSS.Application.FSI_Solver {
                 "Pressure_Outlet_upper"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 8, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel, true);
-            C.hydrodynamicsConvergenceCriterion = 1e-4;
+            C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 4, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(amrLevel, false);
+            C.hydrodynamicsConvergenceCriterion = 1e-1;
+            C.pureDryCollisions = false;
 
             // Fluid Properties
             // =============================
@@ -113,7 +114,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================   
             // Defining particles
             C.Particles = new List<Particle>();
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, 0);
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, false, false, 0);
             C.Particles.Add(new Particle_Sphere(motion, 0.25, new double[] { 0.0, 0.0 }, 0, 0, new double[] { 0, 0}));
 
             // Quadrature rules
