@@ -84,6 +84,7 @@
     <Compile Include="IncompressibleBcType.cs" />
     <Compile Include="IncompressibleBoundaryCondMap.cs" />
     <Compile Include="LinearizedConvection.cs" />
+    <Compile Include="LinearizedConvectionJacobiBase.cs" />
     <Compile Include="PressureGradient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SolverUtils.cs" />
