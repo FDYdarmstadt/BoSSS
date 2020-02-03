@@ -35,7 +35,6 @@ namespace BoSSS.Solution.NSECommon
         protected abstract double Diffusivity(params double[] Parameters);
 
         protected double PenaltyBase;
-        protected IncompressibleBoundaryCondMap BcMap;
         protected Func<double[], double, double>[] ArgumentFunction;
 
         /// <summary>
@@ -48,27 +47,26 @@ namespace BoSSS.Solution.NSECommon
         /// <param name="BcMap">Boundary condition map</param>
         /// <param name="Argument">The argument of the flux. Must be compatible with the DiffusionMode.</param>
         /// <param name="PenaltyLengthScales"></param>
-        protected SIPDiffusionBase(double PenaltyBase, MultidimensionalArray PenaltyLengthScales, IncompressibleBoundaryCondMap BcMap) {
+        protected SIPDiffusionBase(double PenaltyBase, MultidimensionalArray PenaltyLengthScales) {
             this.PenaltyBase = PenaltyBase;
-            this.BcMap = BcMap;
             this.cj = PenaltyLengthScales;
         }
 
         public TermActivationFlags BoundaryEdgeTerms {
             get {
-                return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV | TermActivationFlags.V | TermActivationFlags.GradV);
+                return TermActivationFlags.AllOn;
             }
         }
 
         public TermActivationFlags InnerEdgeTerms {
             get {
-                return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV);
+                return TermActivationFlags.AllOn;
             }
         }
 
         public TermActivationFlags VolTerms {
             get {
-                return TermActivationFlags.GradUxGradV;
+                return TermActivationFlags.AllOn;
             }
         }
 
@@ -179,7 +177,6 @@ namespace BoSSS.Solution.NSECommon
             double DiffusivityA = Diffusivity(inp.Parameters_IN);
             Debug.Assert(!double.IsNaN(DiffusivityA));
             Debug.Assert(!double.IsInfinity(DiffusivityA));
-            IncompressibleBcType edgType = BcMap.EdgeTag2Type[inp.EdgeTag];
 
             // inhom. Dirichlet b.c.
             // =====================
