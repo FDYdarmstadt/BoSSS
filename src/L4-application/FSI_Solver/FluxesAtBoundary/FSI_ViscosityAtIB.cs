@@ -66,6 +66,10 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
             // Particle parameters
             // =====================
+            if (inp.X.IsNullOrEmpty())
+                throw new Exception("X is null or empty");
+            if (m_GetParticleParams == null)
+                throw new Exception("m_GetParticleParams is null or empty");
             FSI_ParameterAtIB coupling = m_GetParticleParams(inp.X);
             Vector orientation = new Vector(Math.Cos(coupling.Angle()), Math.Sin(coupling.Angle()));
             Vector orientationNormal = new Vector(-Math.Sin(coupling.Angle()), Math.Cos(coupling.Angle()));

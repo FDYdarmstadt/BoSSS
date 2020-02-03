@@ -415,9 +415,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         private FSI_ParameterAtIB CreateCouplingAtParticleBoundary(Vector X) {
             double[] couplingArray = new double[X.Dim + 6];
-            FSI_ParameterAtIB couplingParameters;
+            FSI_ParameterAtIB couplingParameters = null;
             foreach (Particle p in m_Particles) {
-                bool containsParticle = m_Particles.Count == 1 ? true : p.Contains(X, GridData.iGeomCells.h_min.Min());
+                int refinementLevel = (int)(((FSI_Control)Control).RefinementLevel * 0.75);
+                bool containsParticle = m_Particles.Count == 1 ? true : p.Contains(X, refinementLevel * GridData.iGeomCells.h_min.Min());
                 if (containsParticle) {
                     couplingParameters = new FSI_ParameterAtIB(p, X);
                     p.CalculateRadialVector(X, out Vector RadialVector, out double radialLength);
@@ -429,10 +430,9 @@ namespace BoSSS.Application.FSI_Solver {
                     couplingArray[5] = radialLength;
                     couplingArray[6] = p.ActiveStress; // zero for passive particles
                     couplingArray[7] = p.Motion.GetAngle(0);
-                    return couplingParameters;
                 }
             }
-            return null;
+            return couplingParameters;
         }
 
         /// <summary>
@@ -1463,9 +1463,9 @@ namespace BoSSS.Application.FSI_Solver {
             BitArray coarseCells = new BitArray(noOfLocalCells);
             BitArray mediumCells = new BitArray(noOfLocalCells);
             BitArray fineCells = new BitArray(noOfLocalCells);
-            double radiusCoarseCells = LsTrk.GridDat.Cells.h_maxGlobal;
-            double radiusMediumCells = 4 * LsTrk.GridDat.Cells.h_minGlobal;
-            double radiusFineCells = 2 * LsTrk.GridDat.Cells.h_minGlobal;
+            double radiusCoarseCells = 2*LsTrk.GridDat.Cells.h_maxGlobal;
+            double radiusMediumCells = LsTrk.GridDat.Cells.h_maxGlobal;
+            double radiusFineCells = 4 * LsTrk.GridDat.Cells.h_minGlobal;
             for (int p = 0; p < m_Particles.Count; p++) {
                 Particle particle = m_Particles[p];
                 for (int j = 0; j < noOfLocalCells; j++) {
@@ -1481,11 +1481,11 @@ namespace BoSSS.Application.FSI_Solver {
                     }
                 }
             }
-            int medioumRefinementLevel = refinementLevel > 2 ? refinementLevel / 2 + 1 : 1;
+            int mediumRefinementLevel = refinementLevel > 2 ? refinementLevel / 2 + 1 : 1;
             int coarseRefinementLevel = refinementLevel > 4 ? refinementLevel / 4 : 1;
             List<Tuple<int, BitArray>> AllCellsWithMaxRefineLevel = new List<Tuple<int, BitArray>> {
                 new Tuple<int, BitArray>(refinementLevel, fineCells),
-                new Tuple<int, BitArray>(medioumRefinementLevel, mediumCells),
+                new Tuple<int, BitArray>(mediumRefinementLevel, mediumCells),
                 new Tuple<int, BitArray>(coarseRefinementLevel, coarseCells),
             };
             return AllCellsWithMaxRefineLevel;

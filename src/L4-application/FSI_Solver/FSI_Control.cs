@@ -83,6 +83,8 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         public void SetAddaptiveMeshRefinement(int amrLevel) {
+            if (amrLevel == 0)
+                return;
             AdaptiveMeshRefinement = true;
             RefinementLevel = amrLevel;
             AMR_startUpSweeps = amrLevel;

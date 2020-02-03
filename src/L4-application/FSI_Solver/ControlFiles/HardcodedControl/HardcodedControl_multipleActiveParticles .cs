@@ -140,17 +140,17 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control TwoParticles(int k = 2, int amrLevel = 6, double aspectRatio = 0.5, double angle = -0) {
+        public static FSI_Control TwoParticles(int k = 2, double yPert = 0.0001, double angle = 0) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
-            //C.SetSaveOptions(@"/home/ij83requ/default_bosss_db", 1);
+            //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
 
             List<string> boundaryValues = new List<string> {
                 "Wall"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 4, lengthY: 4, cellsPerUnitLength: 2, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel: amrLevel);
+            C.SetGrid(lengthX: 8, lengthY: 8, cellsPerUnitLength: 2, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(amrLevel: 4);
             C.hydrodynamicsConvergenceCriterion = 1e-1;
             // Fluid Properties
             // =============================
@@ -161,10 +161,10 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Particle Properties
             // =============================
-            double particleDensity = 10;
+            double particleDensity = 2;
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, 1);
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { -1, 0 }, startAngl: 0, activeStress: 10));
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { 1, 0 }, startAngl: 180 + angle, activeStress: 10));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.2, new double[] { -1, 0 - (yPert / 2) }, startAngl: 0, activeStress: 10));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.2, new double[] { 1, 0 + (yPert / 2) }, startAngl: 180 + angle, activeStress: 10));
 
             // misc. solver options
             // =============================  
