@@ -1951,7 +1951,7 @@ namespace ilPSP.LinSolvers {
 
         /// <summary>
         /// see <see cref="IMutableMatrixEx.GetOccupiedColumnIndices"/>;
-        /// in contrast to <see cref="GetRowShallow"/>, the returned array is a non-shallow copy of the row;
+        /// the returned array is a non-shallow copy of the row;
         /// </summary>
         public int GetRow(int i, ref int[] ColumnIndices, ref double[] Values) {
             return GetRowInternal(i, ref ColumnIndices, ref Values, false);
@@ -2374,13 +2374,39 @@ namespace ilPSP.LinSolvers {
         }
 
 
-
+        /// <summary>
+        /// Ad-hoc iperformance instrumentation
+        /// </summary>
         public static Stopwatch SPMV_tot = new Stopwatch();
+
+        /// <summary>
+        /// Ad-hoc iperformance instrumentation
+        /// </summary>
         public static Stopwatch SPMV_inner = new Stopwatch();
+
+        /// <summary>
+        /// Ad-hoc iperformance instrumentation
+        /// </summary>
         public static Stopwatch SpMV_local = new Stopwatch();
+
+        /// <summary>
+        /// Ad-hoc iperformance instrumentation
+        /// </summary>
         public static Stopwatch SpMV_initSending = new Stopwatch();
+
+        /// <summary>
+        /// Ad-hoc iperformance instrumentation
+        /// </summary>
         public static Stopwatch SpMV_receive = new Stopwatch();
+
+        /// <summary>
+        /// Ad-hoc iperformance instrumentation
+        /// </summary>
         public static Stopwatch SpMV_external = new Stopwatch();
+
+        /// <summary>
+        /// Ad-hoc iperformance instrumentation
+        /// </summary>
         public static Stopwatch SpMV_indextrans = new Stopwatch();
 
         /// <summary>

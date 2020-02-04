@@ -528,7 +528,7 @@ namespace BoSSS.Solution.Control {
                     Console.WriteLine("Info: setting database path to: " + this.DbPath);
                 } else {
                     if(!this.DbPath.Equals(grd.Database.Path)) {
-                        Console.WriteLine("Warning: database mismatch! (Grid is saved at {0}, while DbPath of control object is {2})", grd.Database.Path, this.DbPath);
+                        Console.WriteLine("Warning: database mismatch! (Grid is saved at {0}, while DbPath of control object is {1})", grd.Database.Path, this.DbPath);
                     }
                 }
             }

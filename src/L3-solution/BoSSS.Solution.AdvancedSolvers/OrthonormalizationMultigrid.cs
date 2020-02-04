@@ -342,6 +342,61 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        ISparseSolver PlottiesFullsolver = null;
+
+        void PlottyMcPlot(double[] rl, double[] _xl, double[] _xl_prev, double[] RawCorr) {
+            if (viz == null)
+                return;
+
+            if (this.m_MgOperator.LevelIndex > 0)
+                return;
+
+
+            if (_xl_prev == null)
+                _xl_prev = new double[rl.Length];
+            if (RawCorr == null)
+                RawCorr = new double[rl.Length];
+
+            double[] rlcc = rl.CloneAs();
+            rlcc.Normalize();
+
+            if (PlottiesFullsolver == null) {
+                PlottiesFullsolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver() {
+                    CacheFactorization = true
+                };
+                PlottiesFullsolver.DefineMatrix(m_MgOperator.OperatorMatrix);
+            }
+
+            double[] optCorr = new double[rlcc.Length];
+            PlottiesFullsolver.Solve(optCorr, rl);
+
+            double[] OrthoCorr = _xl.CloneAs();
+            OrthoCorr.AccV(-1, _xl);
+
+            double[] deltaCorr = OrthoCorr.CloneAs();
+            deltaCorr.AccV(-1.0, optCorr);
+
+
+            string[] Names = new[] { "Solution",
+                                     "LastCorrection",
+                                     "OrthoCorr",
+                                     "ExactCorrection",
+                                     "DeltaCorrection",
+                                     "Residual",
+                                     "NormalizedResidual" };
+            this.viz.PlotVectors(new double[][] {
+                               _xl.ToArray(), //            current solution
+                                RawCorr, //                 last precond result (correction)
+                                OrthoCorr, //         
+                                optCorr, //                 optimal correction
+                                deltaCorr, //               delta of precond and optimal correction
+                                rl.ToArray(), //            current residual
+                                rlcc //                     normed residual
+                            }, Names);
+
+        }
+
+
 
         /// <summary>
         /// the multigrid iterations for a linear problem
@@ -374,22 +429,43 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double[] rl = new double[L];
                 double[] rlc = Lc > 0 ? new double[Lc] : null;
 
-                //double[] Xex = _B.ToArray();
-                //Xex.ClearEntries();
-                //m_MgOperator.MassMatrix.Solve_Direct(Xex, _B);
-
 
                 double[] Sol0 = X.CloneAs();
                 double[] Res0 = new double[L];
                 Residual(Res0, Sol0, B);
                 Array.Copy(Res0, rl, L);
 
+                /*
+                ISparseSolver Fullsolver = null;
+                string[] Names = new[] { "Solution", "LastCorrection", "ExactCorrection", "DeltaCorrection", "Residual", "NormalizedResidual" };
                 if (this.m_MgOperator.LevelIndex == 0 && viz != null) {
                     double[] rlcc = rl.CloneAs();
                     rlcc.Normalize();
 
-                    this.viz.PlotVectors(new double[][] { _xl.ToArray(), new double[_xl.Count], rl.ToArray(), rlcc },
-                            new[] { "Solution", "LastCorrection", "Residual", "NormalizedResidual" });
+                    Fullsolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver() {
+                        CacheFactorization = true
+                    };
+                    Fullsolver.DefineMatrix(m_MgOperator.OperatorMatrix);
+
+                    double[] deltaCorr = new double[rlcc.Length];
+                    double[] optCorr = new double[rlcc.Length];
+                    double[] dummy = new double[rlcc.Length];
+
+                    this.viz.PlotVectors(new double[][] {
+                               _xl.ToArray(), //     current solution
+                                dummy, //            last precond result (correction)
+                                optCorr, //          optimal correction
+                                deltaCorr, //        delta of precond and optimal correction
+                                rl.ToArray(), //     current residual
+                                rlcc //              normed residual
+                            }, Names);
+                }
+                */
+                PlottyMcPlot(rl, X, null, null);
+                double[] Xprev = null, Corr = null;
+                if(PlottiesFullsolver != null) {
+                    Xprev = X.CloneAs();
+                    Corr = new double[Xprev.Length];
                 }
 
                 double iter0_resNorm = Res0.MPI_L2Norm();
@@ -418,9 +494,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         // compute correction
                         double[] PreCorr = new double[L];
                         PreSmoother.Solve(PreCorr, rl); // Vorglättung
+                        if (Corr != null)
+                            Corr.SetV(PreCorr);
 
                         // orthonormalization and residual minimization
                         AddSol(ref PreCorr);
+                        if (Xprev != null)
+                            Xprev.SetV(X);
                         resNorm = MinimizeResidual(X, Sol0, Res0, rl);
                         if(!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
                             Converged = true;
@@ -428,13 +508,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                     }
 
-                    if (this.m_MgOperator.LevelIndex == 0 && viz != null) {
-                        double[] rlcc = rl.CloneAs();
-                        rlcc.Normalize();
-
-                        this.viz.PlotVectors(new double[][] { _xl.ToArray(), this.SolHistory.Last(), rl.ToArray(), rlcc },
-                                new[] { "Solution", "LastCorrection", "Residual", "NormalizedResidual" });
-                    }
+                    PlottyMcPlot(rl, X, Xprev, Corr);
 
 
                     // coarse grid correction
@@ -459,9 +533,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         // Prolongation der Grobgitterkorrektur
                         double[] vl = new double[L];
                         this.m_MgOperator.CoarserLevel.Prolongate(1.0, vl, 1.0, vlc);
+                        if (Corr != null)
+                            Corr.SetV(vl);
 
                         // orthonormalization and residual minimization
                         AddSol(ref vl);
+                        if (Xprev != null)
+                            Xprev.SetV(X);
                         resNorm = MinimizeResidual(X, Sol0, Res0, rl);
                         if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
                             Converged = true;
@@ -486,13 +564,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
 
-                    if (this.m_MgOperator.LevelIndex == 0 && viz != null && usedCoarse) {
-                        double[] rlcc = rl.CloneAs();
-                        rlcc.Normalize();
-
-                        this.viz.PlotVectors(new double[][] { _xl.ToArray(), this.SolHistory.Last(), rl.ToArray(), rlcc },
-                                new[] { "Solution", "LastCorrection", "Residual", "NormalizedResidual" });
-                    }
+                    PlottyMcPlot(rl, X, Xprev, Corr);
 
                     // post-smoother
                     // -------------
@@ -509,14 +581,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         // compute correction
                         double[] PreCorr = new double[L];
                         PostSmoother.Solve(PreCorr, rl); // Vorglättung
+                        if (Corr != null)
+                            Corr.SetV(PreCorr);
 
                         // orthonormalization and residual minimization
                         AddSol(ref PreCorr);
+                        if (Xprev != null)
+                            Xprev.SetV(X);
                         resNorm = MinimizeResidual(X, Sol0, Res0, rl);
                         if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
                             Converged = true;
                             break;
                         }
+
+                        PlottyMcPlot(rl, X, Xprev, Corr);
                     }
 
                     // iteration callback

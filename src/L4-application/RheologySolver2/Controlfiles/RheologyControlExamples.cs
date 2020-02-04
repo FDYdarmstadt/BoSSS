@@ -68,9 +68,7 @@ namespace BoSSS.Application.Rheology {
             C.LinearSolver.MinSolverIterations = 1;
             C.LinearSolver.ConvergenceCriterion = 1E-7;
 
-            C.dt = 1E20;
-            C.dtMax = C.dt;
-            C.dtMin = C.dt;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.ObjectiveParam = 1.0;
@@ -399,7 +397,7 @@ namespace BoSSS.Application.Rheology {
                                           
             //Solver Options
             C.NoOfTimesteps = 1;
-            C.savetodb = false;
+            C.savetodb = true;
             C.DbPath = path;
             C.ProjectName = "Cylinder";
 
@@ -421,7 +419,10 @@ namespace BoSSS.Application.Rheology {
             C.LinearSolver.ConvergenceCriterion = 1E-7;
 
             //C.UnderRelax = 1.0;
-            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            C.dtFixed = 0.1;
+            //C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz_4Rheology;
@@ -458,7 +459,7 @@ namespace BoSSS.Application.Rheology {
             C.Reynolds = 1;
             C.Weissenberg = 1; //aim Weissenberg number!
             C.RaiseWeissenberg = true;
-            C.WeissenbergIncrement = 0.1;
+            C.WeissenbergIncrement = 0.1001;
 
             //Penalties
             C.ViscousPenaltyScaling = 1.0;
@@ -494,12 +495,13 @@ namespace BoSSS.Application.Rheology {
             // Create Grid
 
             // grids used by florian
-            string grid = "1c9cb150-88d3-4ee1-974d-7970eabd3cf8"; // florian laptop (full, level 0)
+            //string grid = "1c9cb150-88d3-4ee1-974d-7970eabd3cf8"; // florian laptop (full, level 0)
             //string grid = "bb3239f2-479d-46e4-9187-ba47dc8cfc63"; // florian laptop (full, level 1)
             //string grid = "db1797a9-6bc4-4194-984a-03b67598fa19"; // florian laptop (full, level 2)
             //string grid = "c88c914b-c387-4894-9697-a78bad31f2da"; // florian terminal03 (full, level 0)
             //string grid = "061e7cfb-7ffe-4540-bc74-bfffce824fef"; // florian terminal03 (full, level 1)
-            //string grid = "51aadb49-e3d5-4e88-897e-13b6b329995b"; // florian terminal03 (full, level 2)
+            string grid = "51aadb49-e3d5-4e88-897e-13b6b329995b"; // florian terminal03 (full, level 2)
+            //string grid = "ab9b8f9a-e1aa-469d-8eea-b56a88e672a4"; // florian terminal03 (full, level 3)
 
             // half channel mesh3 for cond tests
             //string grid = "962bc97f-0298-4e2f-ac18-06940cb84956"; // anne
@@ -526,16 +528,12 @@ namespace BoSSS.Application.Rheology {
             //Dennis Zylinder for drag validation
             //string grid = "a67192f5-6b59-4caf-a95a-0a08730c3365";
 
-            
+
             Guid gridGuid;
-            if (Guid.TryParse(grid, out gridGuid))
-            {
+            if(Guid.TryParse(grid, out gridGuid)) {
                 C.GridGuid = gridGuid;
-            }
-            else
-            {
-                C.GridFunc = delegate ()
-                {
+            } else {
+                C.GridFunc = delegate () {
                     GridCommons _grid;
 
                     _grid = GridImporter.Import(grid);
@@ -587,13 +585,24 @@ namespace BoSSS.Application.Rheology {
 
             // restart (florian, terminal03)
             //Guid restartID = new Guid("45c813f2-8be5-43ab-9e41-7abbca99cc99"); 
-            //C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(1, 4)); // Weissenberg 0.4
-            //C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(1, 5)); // Weissenberg 0.5
+            //C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(1, 4)); // Weissenberg 0.4, deg = 2
+            //C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(1, 5)); // Weissenberg 0.5, deg = 2
+
+            // another restart session (florian, terminal03)
+            //Guid restartID = new Guid("ba559446-5032-4a55-8456-6ce4c02651b5"); 
+            //C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(2, 2)); // Weissenberg 0.7, deg = 2
+
+            // another restart session (florian, terminal03)
+            //Guid restartID = new Guid("e74f4933-0739-4edf-997c-bdd3054aba63"); 
+            //C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(3, 2)); // Weissenberg 0.9, deg = 2
 
             // another restart session (florian, terminal03)
             //Guid restartID = new Guid("ba559446-5032-4a55-8456-6ce4c02651b5");
             //C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(2, 2)); // Weissenberg 0.7
 
+
+            Guid restartID = new Guid("056c96f6-7ce0-440c-8826-2b08395ffafa");
+            C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(3, 0)); // Weissenberg 0.7, deg = 2
 
             if (C.RestartInfo == null) {
                 /*

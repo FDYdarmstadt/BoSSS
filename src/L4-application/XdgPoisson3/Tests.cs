@@ -57,12 +57,10 @@ namespace BoSSS.Application.XdgPoisson3 {
                 Res = 12;
                 p = 3;
 #endif
-                Console.WriteLine("comment me in. Some kinda mis-merge happened");
-                //var C = HardCodedControl.Ball3D(pDeg: p, Res: Res, solverCode: SolverName);
+                var C = HardCodedControl.Ball3D(pDeg: p,Res: Res, solverCode: SolverName);
 
-
-                //solver.Init(C);
-                //solver.RunSolverMode();
+                solver.Init(C);
+                solver.RunSolverMode();
             }
         }
 
