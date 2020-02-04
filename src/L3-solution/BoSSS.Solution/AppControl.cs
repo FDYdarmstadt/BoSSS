@@ -1058,6 +1058,123 @@ namespace BoSSS.Solution.Control {
 
         }
 
-        
+        /// <summary>
+        /// 
+        /// </summary>
+        public override int GetHashCode() {
+            return -1;
+        }
+
+
+        /// <summary>
+        /// Equality of control files - mostly relevant for the job manager
+        /// </summary>
+        public override bool Equals(object obj) {
+            // basic type comparison
+            // =====================
+            if(obj == null)
+                return false;
+            if(obj.GetType() != this.GetType())
+                return false;
+
+            AppControl oCtr = (AppControl)obj;
+
+            // compare grid
+            // ============
+            if(!ReferenceEquals(this.GridFunc, oCtr.GridFunc))
+                return false;
+
+            if((this.GridGuid != null) != (oCtr.GridGuid != null))
+                return false;
+
+            if(this.GridGuid != null) {
+                if(!this.GridGuid.Equals(oCtr.GridGuid))
+                    return false;
+            }
+
+            // restart info
+            // ============
+            if((this.RestartInfo != null) != (oCtr.RestartInfo != null))
+                return false;
+            if(this.RestartInfo != null) {
+                if(!this.RestartInfo.Item1.Equals(this.RestartInfo.Item1))
+                    return false;
+                if(!this.RestartInfo.Item2.Equals(this.RestartInfo.Item2))
+                    return false;
+            }
+
+
+            // timestepping setting
+            // ====================
+            if(this.TimesteppingMode != oCtr.TimesteppingMode)
+                return false;
+
+            if(this.TimesteppingMode == _TimesteppingMode.Transient) {
+                if(this.dtMin != oCtr.dtMin)
+                   return false;
+                if(this.dtMax != oCtr.dtMax)
+                   return false;
+            }
+
+            // initial values
+            // ==============
+
+            if(!this.InitialValues.Keys.SetEquals(oCtr.InitialValues.Keys))
+                return false;
+
+            foreach(string ivk in this.InitialValues.Keys) {
+                var f1 = this.InitialValues[ivk];
+                var f2 = oCtr.InitialValues[ivk];
+
+                if(!f1.Equals(f2))
+                    return false;
+            }
+
+            // field options
+            // =============
+
+            if(!this.FieldOptions.Keys.SetEquals(oCtr.FieldOptions.Keys))
+                return false;
+            foreach(var fok in this.FieldOptions.Keys) {
+                var o1 = this.FieldOptions[fok];
+                var o2 = oCtr.FieldOptions[fok];
+
+                if(!o1.Equals(o2))
+                    return false;
+            }
+
+
+            // boundary values
+            // ===============
+
+            if(!this.BoundaryValues.Keys.SetEquals(oCtr.BoundaryValues.Keys))
+                return false;
+
+            foreach(var bvk in this.BoundaryValues.Keys) {
+                var bvc = this.BoundaryValues[bvk];
+                var bvd = oCtr.BoundaryValues[bvk];
+
+                if(!bvc.Evaluators.Keys.SetEquals(bvd.Evaluators.Keys))
+                    return false;
+
+                if(!bvc.Values.Keys.SetEquals(bvd.Values.Keys))
+                    return false;
+
+                foreach(string s in bvc.Values.Keys) {
+                    var f1 = bvc.Values[s];
+                    var f2 = bvd.Values[s];
+
+                    if(!f1.Equals(f2))
+                        return false;
+                }
+            }
+
+            // passed all the tests
+            // ====================
+
+            return true;
+        }
+
+
     }
 }

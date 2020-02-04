@@ -404,7 +404,8 @@ namespace BoSSS.Application.Rheology {
             C.AlternateDbPaths = new[] {
                 (@"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag", "hpccluster"),
                 (@"d:\Users\kummer\default_bosss_db", "terminal03"),
-                (@"c:\Users\florian\default_bosss_db", "rennmaschin")
+                (@"c:\Users\florian\default_bosss_db", "rennmaschin"),
+                (@"c:\Users\flori\default_bosss_db", "stormbreaker")
             };
 
 
@@ -486,9 +487,9 @@ namespace BoSSS.Application.Rheology {
             Func<double[], double, double> StressYYfunction = (X, t) => (0.0);
 
             // Insert Exact Solution
-            C.ExSol_Velocity = new Func<double[], double, double>[] { VelocityXfunction, VelocityYfunction };
-            C.ExSol_Pressure = Pressurefunction;
-            C.ExSol_Stress = new Func<double[], double, double>[] { StressXXfunction, StressXYfunction, StressYYfunction };
+            //C.ExSol_Velocity = new Func<double[], double, double>[] { VelocityXfunction, VelocityYfunction };
+            //C.ExSol_Pressure = Pressurefunction;
+            //C.ExSol_Stress = new Func<double[], double, double>[] { StressXXfunction, StressXYfunction, StressYYfunction };
 
             C.SetDGdegree(degree);
 
@@ -627,21 +628,21 @@ namespace BoSSS.Application.Rheology {
 
             // Set Boundary Conditions
             //C.AddBoundaryValue("Wall_bottom", "VelocityX", X => 0);
-            C.AddBoundaryValue("Wall_top", "VelocityX", X => 0);
+            C.AddBoundaryValue("Wall_top", "VelocityX", "X => 0", TimeDependent:false);
             //C.AddBoundaryValue("Wall_bottom", "VelocityY", X => 0);
             //C.AddBoundaryValue("Wall_top", "VelocityY", X => 0);
             //C.AddBoundaryValue("Wall_cylinder", "VelocityX", X => 0);
             //C.AddBoundaryValue("Wall_cylinder", "VelocityY", X => 0);
             //C.AddBoundaryValue("Freeslip");
 
-            
-            if (!C.FixedStreamwisePeriodicBC)
-            {
-                C.AddBoundaryValue("Velocity_inlet", "VelocityX", VelocityXfunction);
-                C.AddBoundaryValue("Velocity_inlet", "VelocityY", VelocityYfunction);
-                C.AddBoundaryValue("Velocity_inlet", "StressXX", StressXXfunction);
-                C.AddBoundaryValue("Velocity_inlet", "StressXY", StressXYfunction);
-                C.AddBoundaryValue("Velocity_inlet", "StressYY", StressYYfunction);
+
+            if(!C.FixedStreamwisePeriodicBC) {
+                
+                C.AddBoundaryValue("Velocity_inlet", "VelocityX", $"X => {u0} * (1 - (X[1] * X[1]) / {h})", TimeDependent:false);
+                C.AddBoundaryValue("Velocity_inlet", "VelocityY", $"X => 0.0", TimeDependent:false);
+                C.AddBoundaryValue("Velocity_inlet", "StressXX", $"X => 2 * {C.Weissenberg} * (1 - {C.beta}) * {u0} * (-2 / {h}) * X[1] * {u0} * (-2 / {h}) * X[1]", TimeDependent:false);
+                C.AddBoundaryValue("Velocity_inlet", "StressXY", $"X => (1 - {C.beta}) * {u0} * (-2 / {h}) * X[1]", TimeDependent:false);
+                C.AddBoundaryValue("Velocity_inlet", "StressYY", $"X => 0.0", TimeDependent:false);
                 //C.AddBoundaryCondition("Velocity_inlet", "Pressure", Pressurefunction);
                 C.AddBoundaryValue("Pressure_Outlet");
 

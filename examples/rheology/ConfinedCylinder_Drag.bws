@@ -37,12 +37,6 @@ var myBatch = new MiniBatchProcessorClient();
 ==============
 MiniBatchProcessor.Server.StartIfNotRunning();
 **************
-<<<<<<< HEAD
-Starting mini batch processor in external process...
-=======
-Mini batch processor is already running.
-
->>>>>>> exchangeGitLab/master
 ==============
 // ======================
 // Convergence Parameters

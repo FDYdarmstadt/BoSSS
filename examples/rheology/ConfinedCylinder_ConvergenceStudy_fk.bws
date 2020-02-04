@@ -12,6 +12,7 @@ List of 0 instances of IDatabaseInfo {
 Setting Matlab Connector to Octave...
 
  Console ready for input. Type 'help' for help.
+Mini batch processor is already running.
 
 ==============
 var myDb = OpenOrCreateDefaultDatabase();
@@ -29,6 +30,9 @@ WorkflowMgm.Init("Cylinder");
 Project name is set to 'Cylinder'.
 
 ==============
+WorkflowMgm.SetEqualityBasedSessionJobControllCorrelation();
+**************
+==============
 //WorkflowMgm.Grids;
 **************
 ==============
@@ -39,12 +43,13 @@ Project name is set to 'Cylinder'.
 ==============
 databases[0].Grids;
 **************
-List of 5 instances of IGridInfo {
-  0: { Guid = bb3239f2-479d-46e4-9187-ba47dc8cfc63; Name = confined_cylinder; Cell Count = 2416; Dim = 2 }
-  1: { Guid = db1797a9-6bc4-4194-984a-03b67598fa19; Name = confined_cylinder; Cell Count = 8504; Dim = 2 }
-  2: { Guid = 1c9cb150-88d3-4ee1-974d-7970eabd3cf8; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
-  3: { Guid = de21d682-8289-4d6d-8669-a07ee995f69c; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
-  4: { Guid = 3b80ee3c-7b94-4d18-a297-9f3f815a7110; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
+List of 6 instances of IGridInfo {
+  0: { Guid = fb5b0959-f165-4291-b0ce-aac46ba131a8; Name = confined_cylinder; Cell Count = 29424; Dim = 2 }
+  1: { Guid = bb3239f2-479d-46e4-9187-ba47dc8cfc63; Name = confined_cylinder; Cell Count = 2416; Dim = 2 }
+  2: { Guid = db1797a9-6bc4-4194-984a-03b67598fa19; Name = confined_cylinder; Cell Count = 8504; Dim = 2 }
+  3: { Guid = 1c9cb150-88d3-4ee1-974d-7970eabd3cf8; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
+  4: { Guid = de21d682-8289-4d6d-8669-a07ee995f69c; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
+  5: { Guid = 3b80ee3c-7b94-4d18-a297-9f3f815a7110; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
 }
 ==============
 var GridSeq = new IGridInfo[4];
@@ -68,7 +73,7 @@ List of 4 instances of IGridInfo {
   0: { Guid = 1c9cb150-88d3-4ee1-974d-7970eabd3cf8; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
   1: { Guid = bb3239f2-479d-46e4-9187-ba47dc8cfc63; Name = confined_cylinder; Cell Count = 2416; Dim = 2 }
   2: { Guid = db1797a9-6bc4-4194-984a-03b67598fa19; Name = confined_cylinder; Cell Count = 8504; Dim = 2 }
-  3: 
+  3: { Guid = fb5b0959-f165-4291-b0ce-aac46ba131a8; Name = confined_cylinder; Cell Count = 29424; Dim = 2 }
 }
 ==============
 // Plotting 
@@ -110,15 +115,19 @@ for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
     }
 }
 **************
-(12,9): error CS0103: The name `myDb' does not exist in the current context
-No. of errors|warnings: 1|0.
-
 ==============
+GridSeq;
 **************
+List of 4 instances of IGridInfo {
+  0: { Guid = 1c9cb150-88d3-4ee1-974d-7970eabd3cf8; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
+  1: { Guid = bb3239f2-479d-46e4-9187-ba47dc8cfc63; Name = confined_cylinder; Cell Count = 2416; Dim = 2 }
+  2: { Guid = db1797a9-6bc4-4194-984a-03b67598fa19; Name = confined_cylinder; Cell Count = 8504; Dim = 2 }
+  3: { Guid = fb5b0959-f165-4291-b0ce-aac46ba131a8; Name = confined_cylinder; Cell Count = 29424; Dim = 2 }
+}
 ==============
-// ====================
+// ======================
 // Create Control objects
-// ====================
+// ======================
 **************
 ==============
 int[] degS = new int[] { 1, 2, 3, 4 };
@@ -134,138 +143,83 @@ for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
     var grd  = GridSeq[iGrd];
     
     C.SetGrid(grd);
-    //C.SetDGdegree(pDeg);
+    C.SetDGdegree(pDeg);
+    C.SessionName = "ConvStudy_k" + pDeg + "_mesh" + iGrd;
     
-    //controls[iDeg,iGrd] = C;
+    
+    controls[iDeg,iGrd] = C;
+    C.CreateJob(); // job will be permanently linked to control object
 }
 }
 **************
-(4,9): warning CS0219: The variable `pDeg' is assigned but its value is never used
-System.FormatException occurred: Index (zero based) must be greater than or equal to zero and less than the size of the argument list.. Type 'LastError' for details.
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
 
 ==============
-LastError;
+controls[0,0].ProjectName;
 **************
-System.FormatException: Index (zero based) must be greater than or equal to zero and less than the size of the argument list.
-   at System.Text.StringBuilder.AppendFormatHelper(IFormatProvider provider, String format, ParamsArray args)
-   at System.String.FormatHelper(IFormatProvider provider, String format, ParamsArray args)
-   at System.IO.TextWriter.WriteLine(String format, Object arg0, Object arg1)
-   at System.IO.TextWriter.SyncTextWriter.WriteLine(String format, Object arg0, Object arg1)
-   at System.Console.WriteLine(String format, Object arg0, Object arg1)
-   at BoSSS.Solution.Control.AppControl.SetGrid(IGridInfo grd) in d:\Users\kummer\Documents\BoSSS-master\public\src\L3-solution\BoSSS.Solution\AppControl.cs:line 535
+Cylinder
+==============
+controls[0,0].SessionName == null;
+**************
+False
+==============
+**************
+==============
+**************
+System.ArgumentException occurred: Job with name 'ConvStudy_k1_mesh0' is already defined in the workflow management.. Type 'LastError' for details.
+
+==============
+LastError
+**************
+System.ArgumentException: Job with name 'ConvStudy_k1_mesh0' is already defined in the workflow management.
+   at BoSSS.Application.BoSSSpad.Job..ctor(String name, Type solver) in C:\Users\flori\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\Job.cs:line 64
+   at BoSSS.Application.BoSSSpad.AppControlExtensions.CreateJob(AppControl ctrl) in C:\Users\flori\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\AppControlExtensions.cs:line 84
    at <InteractiveExpressionClass>.Host(Object& $retval)
    at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
-   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in d:\Users\kummer\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:line 349
+   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\Users\flori\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:line 346
 ==============
+WorkflowMgm.AllJobs;
 **************
-==============
-**************
-==============
-databases[0].Sessions;
-**************
-List of 22 instances of ISessionInfo {
-  0: Cylinder	empty-session-name*	01/31/2020 16:39:16	4a3a1ac9...
-  1: Cylinder	empty-session-name*	01/31/2020 16:21:24	c200efdb...
-  2: Cylinder	empty-session-name*	01/31/2020 15:44:15	a4882360...
-  3: Cylinder	empty-session-name*	01/31/2020 14:03:18	ffa04623...
-  4: Cylinder	empty-session-name*	01/31/2020 13:55:29	adec40a6...
-  5: Cylinder	empty-session-name*	01/31/2020 09:28:21	056c96f6...
-  6: Cylinder	empty-session-name*	01/31/2020 06:05:06	00e71ce8...
-  7: Cylinder	empty-session-name*	01/31/2020 06:03:23	293cf1c5...
-  8: Cylinder	empty-session-name*	01/30/2020 19:26:59	6a44b85f...
-  9: Cylinder	empty-session-name*	01/30/2020 17:55:15	8800e427...
-  10: Cylinder	empty-session-name*	01/30/2020 17:46:20	e8e352df...
-  11: Cylinder	empty-session-name*	01/30/2020 14:45:20	e74f4933...
-  12: Cylinder	empty-session-name*	01/21/2020 11:17:58	c3210bd5...
-  13: Cylinder	empty-session-name*	01/21/2020 10:36:07	ba559446...
-  14: Cylinder	empty-session-name*	01/21/2020 10:31:24	a2328232...
-  15: Cylinder	empty-session-name*	01/21/2020 09:33:51	3f69146c...
-  16: Cylinder	empty-session-name*	01/21/2020 09:31:43	87d01583...
-  17: Cylinder	empty-session-name*	01/21/2020 07:07:24	d5d3d8c6...
-  18: Cylinder	empty-session-name*	01/21/2020 07:04:03	573260bc...
-  19: Cylinder	empty-session-name*	01/21/2020 07:00:50	09de0b0f...
-  20: Cylinder	empty-session-name*	01/17/2020 15:36:14	45c813f2...
-  21: Cylinder	empty-session-name	01/15/2020 18:15:10	cd95a19f...
+List of 16 instances of KeyValuePair{String,Job} {
+  0: [ConvStudy_k1_mesh0, ConvStudy_k1_mesh0: PreActivation]
+  1: [ConvStudy_k1_mesh1, ConvStudy_k1_mesh1: PreActivation]
+  2: [ConvStudy_k1_mesh2, ConvStudy_k1_mesh2: PreActivation]
+  3: [ConvStudy_k1_mesh3, ConvStudy_k1_mesh3: PreActivation]
+  4: [ConvStudy_k2_mesh0, ConvStudy_k2_mesh0: PreActivation]
+  5: [ConvStudy_k2_mesh1, ConvStudy_k2_mesh1: PreActivation]
+  6: [ConvStudy_k2_mesh2, ConvStudy_k2_mesh2: PreActivation]
+  7: [ConvStudy_k2_mesh3, ConvStudy_k2_mesh3: PreActivation]
+  8: [ConvStudy_k3_mesh0, ConvStudy_k3_mesh0: PreActivation]
+  9: [ConvStudy_k3_mesh1, ConvStudy_k3_mesh1: PreActivation]
+  10: [ConvStudy_k3_mesh2, ConvStudy_k3_mesh2: PreActivation]
+  11: [ConvStudy_k3_mesh3, ConvStudy_k3_mesh3: PreActivation]
+  12: [ConvStudy_k4_mesh0, ConvStudy_k4_mesh0: PreActivation]
+  13: [ConvStudy_k4_mesh1, ConvStudy_k4_mesh1: PreActivation]
+  14: [ConvStudy_k4_mesh2, ConvStudy_k4_mesh2: PreActivation]
+  15: [ConvStudy_k4_mesh3, ConvStudy_k4_mesh3: PreActivation]
 }
 ==============
-var S = databases[0].Sessions[0];
-**************
-==============
-S.ID;
-**************
-4a3a1ac9-57ee-4f6b-8acd-d37e67b9cdc1
-==============
-S.Timesteps;
-**************
-List of 6 instances of ITimestepInfo {
-  0:  { Time-step: 3.0; Physical time: 0s; Fields: Phi, VelocityX, VelocityY, ResidualMomentumX, ResidualMomentumY, Pressure, ResidualConti, StressXX, StressXY, StressYY, ResidualStressXX, ResidualStressXY, ResidualStressYY; Name:  }
-  1:  { Time-step: 4.0; Physical time: 0s; Fields: Phi, VelocityX, VelocityY, ResidualMomentumX, ResidualMomentumY, Pressure, ResidualConti, StressXX, StressXY, StressYY, ResidualStressXX, ResidualStressXY, ResidualStressYY; Name:  }
-  2:  { Time-step: 4.1; Physical time: 0s; Fields: Phi, VelocityX, VelocityY, ResidualMomentumX, ResidualMomentumY, Pressure, ResidualConti, StressXX, StressXY, StressYY, ResidualStressXX, ResidualStressXY, ResidualStressYY; Name:  }
-  3:  { Time-step: 4.2; Physical time: 0s; Fields: Phi, VelocityX, VelocityY, ResidualMomentumX, ResidualMomentumY, Pressure, ResidualConti, StressXX, StressXY, StressYY, ResidualStressXX, ResidualStressXY, ResidualStressYY; Name:  }
-  4:  { Time-step: 4.3; Physical time: 0s; Fields: Phi, VelocityX, VelocityY, ResidualMomentumX, ResidualMomentumY, Pressure, ResidualConti, StressXX, StressXY, StressYY, ResidualStressXX, ResidualStressXY, ResidualStressYY; Name:  }
-  5:  { Time-step: 4.-2147483648; Physical time: 0s; Fields: Phi, VelocityX, VelocityY, ResidualMomentumX, ResidualMomentumY, Pressure, ResidualConti, StressXX, StressXY, StressYY, ResidualStressXX, ResidualStressXY, ResidualStressYY; Name:  }
-}
-==============
-var tsi = S.Timesteps.Last();
-**************
-==============
-tsi.GetType();
-**************
-BoSSS.Foundation.IO.TimestepProxy
-==============
-var realtsi = ((BoSSS.Foundation.IO.TimestepProxy)tsi).GetInternal();
-**************
-==============
-realtsi.GetType();
-**************
-BoSSS.Application.Rheology.RheologyTimestepInfo
-==============
-var rrtsi = (BoSSS.Application.Rheology.RheologyTimestepInfo) realtsi;
-**************
-==============
-rrtsi.currentWeissenbergNumber;
-**************
-1
-==============
-tsi.ID;
-**************
-1824f671-9d62-462f-987f-060635a1d505
-==============
-tsi.TimeStepNumber;
-**************
-List of 2 instances of Int32 {
-  0: 4
-  1: -2147483648
-}
-==============
-foreach(var tsi in S.Timesteps) {
-    var realtsi = ((BoSSS.Foundation.IO.TimestepProxy)tsi).GetInternal();
-    var rrtsi = (BoSSS.Application.Rheology.RheologyTimestepInfo) realtsi;
-    Console.WriteLine("# " + rrtsi.TimeStepNumber + " We=" + rrtsi.currentWeissenbergNumber + "  t=" + rrtsi.PhysicalTime);    
-}
-**************
-# 3.0 We=0  t=0
-# 4.0 We=0.7  t=0
-# 4.1 We=0.8001  t=0
-# 4.2 We=0.9002  t=0
-# 4.3 We=1  t=0
-# 4.-2147483648 We=1  t=0
-
-==============
+var C00clone = WorkflowMgm.AllJobs.Pick(0).Value.GetControl();
 **************
 ==============
 **************
 ==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
+C00clone.Equals(
 **************
 ==============
 **************

@@ -42,8 +42,20 @@ namespace BoSSS.Application.BoSSSpad {
         /// </param>
         /// <param name="solver"></param>
         public Job(string name, Type solver) {
+            if(name.IsEmptyOrWhite()) {
+                int i = 1;
+                string newName;
+                do {
+                    newName = "EmptyJobName_" + i;
+                    i++;
+                } while(InteractiveShell.WorkflowMgm.AllJobs.ContainsKey(newName));
+                
+                Console.WriteLine($"Empty job name - picking new name '{newName}'");
+                name = newName;
+            }
             this.Solver = solver;
             this.Name = name;
+            
             if (InteractiveShell.WorkflowMgm.AllJobs.ContainsKey(name)) {
                 throw new ArgumentException("Job with name '" + name + "' is already defined in the workflow management.");
             }
@@ -268,23 +280,28 @@ namespace BoSSS.Application.BoSSSpad {
         */
 
 
+        BoSSS.Solution.Control.AppControl m_ctrl;
+        int m_ctrl_index;
+        string ControlName = null;
+
         /// <summary>
         /// Specifies the control object for application startup; overrides any startup arguments (<see cref="CommandLineArguments"/>)
         /// set so far.
         /// </summary>
         public void SetControlObject(BoSSS.Solution.Control.AppControl ctrl) {
             TestActivation();
+            m_ctrl = ctrl;
             
             // serialize control object
             // ========================
 
             ctrl.VerifyEx();
-            string ControlName, text;
-            int index = -1;
+            string text;
+            m_ctrl_index = -1;
             if (ctrl.GeneratedFromCode) {
                 text = ctrl.ControlFileText;
                 ControlName = "control.cs";
-                index = ctrl.ControlFileText_Index;
+                m_ctrl_index = ctrl.ControlFileText_Index;
             } else {
                 text = ctrl.Serialize();
                 ControlName = "control.obj";
@@ -304,8 +321,8 @@ namespace BoSSS.Application.BoSSSpad {
                 "--prjnmn", PrjName,
                 "--sesnmn", this.Name
             };
-            if (index >= 0) {
-                ArrayTools.Cat(args, "--pstudy_case", index.ToString());
+            if (m_ctrl_index >= 0) {
+                ArrayTools.Cat(args, "--pstudy_case", m_ctrl_index.ToString());
             }
 
 
@@ -315,6 +332,51 @@ namespace BoSSS.Application.BoSSSpad {
 
             // 
         }
+
+        /// <summary>
+        /// Returns a clone of the control object linked to this job
+        /// </summary>
+        public BoSSS.Solution.Control.AppControl GetControl() {
+            if(ControlName == null)
+                return null;
+
+            var data = AdditionalDeploymentFiles.Single(tt => tt.Item2.Equals(ControlName));
+            string ctrlfileContent = Encoding.UTF8.GetString(data.Item1);
+            BoSSS.Solution.Control.AppControl ctrl;
+            
+            if (ControlName.EndsWith(".obj")) {
+
+                ctrl = BoSSS.Solution.Control.AppControl.Deserialize(ctrlfileContent);
+
+            } else if (ControlName.EndsWith(".cs")) {
+                                
+                BoSSS.Solution.Control.AppControl.FromCode(ctrlfileContent,m_ctrl.GetType(), out ctrl, out BoSSS.Solution.Control.AppControl[] ctrl_paramstudy);
+
+                if (ctrl != null) {
+                    // passt eh
+                } else if (ctrl_paramstudy != null) {
+                    
+
+                    ctrl =  ctrl_paramstudy.ElementAt(m_ctrl_index);
+                } else {
+                    //throw new Exception(string.Format(
+                    //    "Invalid control instruction: unable to cast the last"
+                    //        + " result of the control file/cs-script of type {0} to type {1}",
+                    //    controlObj.GetType().FullName,
+                    //    typeof(T).FullName));
+                    throw new NotSupportedException("unknown state.");
+                }
+            } else {
+                throw new IOException("Unable to restore control object from given data.");
+            }
+
+            if(!m_ctrl.Equals(ctrl))
+                throw new IOException("Control object mismatch after serialize/deserialize.");
+
+            return ctrl;
+        }
+
+
 
         /*
         /// <summary>
@@ -391,17 +453,14 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
-        /// Returns the session which is the result of this job.
+        /// Returns all session which can be correlated to this job,
+        /// <see cref="WorkflowMgm.SessionInfoJobCorrelation"/>.
         /// </summary>
         public ISessionInfo[] AllSessions {
             get {
-                //string ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
-
-                //InteractiveShell.WorkflowMgm.ResetSessionsCache();
+                
                 var AllCandidates = InteractiveShell.WorkflowMgm.Sessions.Where(
-                    sinf => sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.SESSIONNAME_KEY)
-                         && Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.SESSIONNAME_KEY]).Equals(this.Name)
-                    );
+                    sinf => InteractiveShell.WorkflowMgm.SessionInfoJobCorrelation(sinf, this));
 
                 var cnt = AllCandidates.Count();
 
@@ -411,6 +470,13 @@ namespace BoSSS.Application.BoSSSpad {
 
                 return AllCandidates.ToArray();
             }
+        }
+
+        /// <summary>
+        /// Alias for <see cref="AllSessions"/>
+        /// </summary>
+        public ISessionInfo[] GetAllSessions() {
+            return AllSessions;
         }
 
 
