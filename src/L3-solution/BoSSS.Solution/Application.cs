@@ -1169,10 +1169,41 @@ namespace BoSSS.Solution {
         /// </summary>
         /// <returns></returns>
         protected virtual IDatabaseInfo GetDatabase() {
-            if (this.Control == null || this.Control.DbPath.IsNullOrEmpty()) {
+            if (this.Control == null || (this.Control.DbPath.IsNullOrEmpty() && (this.Control.AlternateDbPaths == null || this.Control.AlternateDbPaths.Length <= 0))) {
                 return NullDatabaseInfo.Instance;
             } else {
-                return new DatabaseInfo(this.Control.DbPath);
+                List<ValueTuple<string, string>> allPaths = new List<(string, string)>();
+                if (this.Control.DbPath.IsNullOrEmpty())
+                    allPaths.Add((this.Control.DbPath, null));
+                if (this.Control.AlternateDbPaths != null)
+                    allPaths.AddRange(this.Control.AlternateDbPaths);
+
+                string mName = System.Environment.MachineName.ToLowerInvariant();
+
+                string dbPath = null;
+                foreach(var t in allPaths) {
+                    string path = t.Item1;
+                    string filter = t.Item2;
+
+                    if(!filter.IsNullOrEmpty() && !filter.IsEmptyOrWhite()) {
+                        if (!mName.Contains(filter)) {
+                            continue;
+                        } 
+                    }
+
+                    if(Directory.Exists(path)) {
+                        dbPath = path;
+                        break;
+                    }
+
+                }
+
+                if(dbPath == null) {
+                    throw new IOException("Unable to open database - all given paths either don't exist or are ruled out by the machine filter.");
+                }
+
+
+                return new DatabaseInfo(dbPath);
             }
         }
 

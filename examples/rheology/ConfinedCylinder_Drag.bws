@@ -34,12 +34,6 @@ var myBatch = new MiniBatchProcessorClient();
 MiniBatchProcessor.Server.StartIfNotRunning();
 **************
 Starting mini batch processor in external process...
-<<<<<<< HEAD
-Started mini batch processor on local machine, process id is 6412.
-=======
-Started mini batch processor on local machine, process id is 79668.
->>>>>>> experimental/master
-
 ==============
 // ======================
 // Convergence Parameters

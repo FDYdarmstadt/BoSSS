@@ -647,7 +647,7 @@ namespace ilPSP {
         }
 
         /// <summary>
-        /// Tests if a string is empty or contains only whitespaces.
+        /// Tests if a string is null/empty or contains only whitespaces.
         /// </summary>
         public static bool IsEmptyOrWhite(this string s) {
             if (s == null)

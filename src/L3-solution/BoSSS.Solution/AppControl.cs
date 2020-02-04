@@ -729,6 +729,15 @@ namespace BoSSS.Solution.Control {
         public string DbPath = null;
 
         /// <summary>
+        /// Alternative paths to access the database, if <see cref="DbPath"/> is not present on a given machine.
+        /// This allows to use the same control file or object on different machines, where the database is located in a different path.
+        /// - 1st entry: path into the local file system
+        /// - 2nd entry: optional machine name filter
+        /// </summary>
+        [DataMember]
+        public ValueTuple<string, string>[] AlternateDbPaths = null;
+        
+        /// <summary>
         /// Sets <see cref="DbPath"/>.
         /// </summary>
         public void SetDatabase(IDatabaseInfo dbi) {
