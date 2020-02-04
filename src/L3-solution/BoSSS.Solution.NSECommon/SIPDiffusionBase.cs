@@ -50,7 +50,7 @@ namespace BoSSS.Solution.NSECommon
         /// <param name="BcMap">Boundary condition map</param>
         /// <param name="Argument">The argument of the flux. Must be compatible with the DiffusionMode.</param>
         /// <param name="PenaltyLengthScales"></param>
-        protected SIPDiffusionBase(double PenaltyBase, MultidimensionalArray PenaltyLengthScales, IncompressibleBoundaryCondMap BcMap, bool ParametersOK = false, int speciesIndex = 0) {
+        protected SIPDiffusionBase(double PenaltyBase, MultidimensionalArray PenaltyLengthScales, bool ParametersOK = false, int speciesIndex = 0) {
             this.PenaltyBase = PenaltyBase;
             this.BcMap = BcMap;
             this.cj = PenaltyLengthScales;
@@ -201,7 +201,7 @@ namespace BoSSS.Solution.NSECommon
             double DiffusivityA = Diffusivity(difusivityArguments_IN);
             Debug.Assert(!double.IsNaN(DiffusivityA));
             Debug.Assert(!double.IsInfinity(DiffusivityA));
-            IncompressibleBcType edgType = BcMap.EdgeTag2Type[inp.EdgeTag];
+
 
             // inhom. Dirichlet b.c.
             // =====================
