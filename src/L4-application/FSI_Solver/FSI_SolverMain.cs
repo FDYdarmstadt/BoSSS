@@ -909,9 +909,8 @@ namespace BoSSS.Application.FSI_Solver {
 
                     // print
                     // -------------------------------------------------
-                    Auxillary.PrintResultToConsole(m_Particles, 0, 0, phystime, TimestepInt, ((FSI_Control)Control).FluidDomainVolume, out double MPIangularVelocity, out Test_Force);
+                    Auxillary.PrintResultToConsole(m_Particles, 0, 0, phystime, TimestepInt, ((FSI_Control)Control).FluidDomainVolume);
                     LogPhysicalData(phystime);
-                    SaveForNUnitTest(MPIangularVelocity);
 
                 }
                 // particle motion & collisions plus flow solver
