@@ -557,6 +557,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         //internal set
         public List<int> m_GlobalMask = null;
         public List<int> m_LocalMask = null;
+        public List<int> m_SubBlockMask = null;
         public extNi0[][][][] m_StructuredNi0 = null;
         public int m_Ni0Len;
         private int m_MaskLen;
@@ -625,6 +626,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     for (int i = 0; i < newNi0.N; i++) {
                                         Globalint.Add(newNi0.Gi0 + i);
                                         Localint.Add(newNi0.Li0 + i);
+                                        SubBlockIdx.Add(newNi0.Si0 + i);
                                         MaskLen++;
                                     }
                                     // Fill Ni0 Lists
@@ -659,12 +661,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Debug.Assert(Localint.GroupBy(x => x).Any(g => g.Count() == 1));
             Debug.Assert(Globalint.GroupBy(x => x).Any(g => g.Count() == 1));
             Debug.Assert(Localint.Count() == MaskLen);
+            Debug.Assert(SubBlockIdx.Count()== MaskLen);
+            Debug.Assert(SubBlockIdx.GroupBy(x => x).Any(g => g.Count() == 1));
 
             m_GlobalMask = Globalint;
             m_LocalMask = Localint;
             m_StructuredNi0 = tmpStructNi0;
             m_MaskLen = MaskLen;
             m_Ni0Len = Ni0Length;
+            m_SubBlockMask = SubBlockIdx;
         }
 
         /// <summary>
@@ -725,6 +730,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 intList.Add(GetCellwiseSubIdx(iCell));
             return intList;
         }
+
         /// <summary>
         /// gets subblock offset relative to the parent cellblock
         /// </summary>
@@ -745,7 +751,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         private extNi0[][][] GetSubBlockNi0Cellwise(int iCell) {
             return m_StructuredNi0[iCell];
         }
-
 
         /// <summary>
         /// Pre generates Offsets and Length for a default Variable block with the maximal DGdegree, to save computation time.
