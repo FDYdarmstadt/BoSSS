@@ -143,6 +143,30 @@ namespace BoSSS.Solution.XNSECommon {
         public double Weissenberg_b = 0.0;
 
         /// <summary>
+        /// Giesekus dimensionless: Giesekus factor (fluid A)
+        /// </summary>
+        [DataMember]
+        public double giesekusfactor_a = 0.0;
+
+        /// <summary>
+        /// Giesekus dimensionless: Giesekus factor (fluid B)
+        /// </summary>
+        [DataMember]
+        public double giesekusfactor_b = 0.0;
+
+        /// <summary>
+        /// Giesekus in fluid A?
+        /// </summary>
+        [DataMember]
+        public bool Giesekus_a = false;
+
+        /// <summary>
+        /// Giesekus in fluid B?
+        /// </summary>
+        [DataMember]
+        public bool Giesekus_b = false;
+
+        /// <summary>
         /// is the interface a material one or is it non-material?
         /// </summary>
         [DataMember]
