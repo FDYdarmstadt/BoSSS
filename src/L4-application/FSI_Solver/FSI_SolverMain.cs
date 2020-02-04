@@ -58,6 +58,8 @@ namespace BoSSS.Application.FSI_Solver {
         protected override void SetInitial() {
             m_Particles = ((FSI_Control)this.Control).Particles;
             UpdateLevelSetParticles(phystime: 0.0);
+            CreatePhysicalDataLogger();
+            CreateResidualLogger();
             base.SetInitial();
         }
 
@@ -448,24 +450,12 @@ namespace BoSSS.Application.FSI_Solver {
                     break;
 
                 case LevelSetHandling.Coupled_Once:
-                    UpdateLevelSetParticles(phystime);
-                    break;
-
                 case LevelSetHandling.Coupled_Iterative:
-                    Console.WriteLine("WARNING: Coupled iterative solver is not tested!");
-                    Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
-                    CalculateHydrodynamicForces();
                     UpdateLevelSetParticles(phystime);
-                    break;
+                    throw new NotImplementedException("Moving interface solver will be implemented in the near future");
 
                 case LevelSetHandling.LieSplitting:
-                    UpdateLevelSetParticles(phystime);
-                    break;
-
                 case LevelSetHandling.FSI_LieSplittingFullyCoupled:
-                    UpdateLevelSetParticles(phystime);
-                    break;
-
                 case LevelSetHandling.StrangSplitting:
                     UpdateLevelSetParticles(phystime);
                     break;
@@ -480,7 +470,7 @@ namespace BoSSS.Application.FSI_Solver {
             double forces_PResidual;
             if (((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
                 int iterationCounter = 0;
-                Motion_AllParticles AllParticleHydrodynamics = new Motion_AllParticles(LsTrk);
+                MotionHydrodynamics AllParticleHydrodynamics = new MotionHydrodynamics(LsTrk);
                 forces_PResidual = iterationCounter == 0 ? double.MaxValue : AllParticleHydrodynamics.CalculateParticleResidual(ref iterationCounter); ;
                 Console.WriteLine("Current forces_PResidual:   " + forces_PResidual);
             }
@@ -602,6 +592,15 @@ namespace BoSSS.Application.FSI_Solver {
             // Step 6
             // Update level set tracker
             // =======================================================
+            LsTrk.UpdateTracker(__NearRegionWith: 2);
+        }
+
+        private void SingleParticleLevelSet(Particle particle, double phystime) {
+            double levelSetFunction(double[] X, double t) {
+                return -particle.LevelSetFunction(X);
+            }
+            SetLevelSet(levelSetFunction, CellMask.GetFullMask(GridData), phystime);
+            PerformLevelSetSmoothing(CellMask.GetFullMask(GridData), null, false);
             LsTrk.UpdateTracker(__NearRegionWith: 2);
         }
 
@@ -890,15 +889,14 @@ namespace BoSSS.Application.FSI_Solver {
                 // only particle motion & collisions, no flow solver
                 // =================================================
                 if (((FSI_Control)Control).pureDryCollisions) {
-                    if (phystime == 0) { CreatePhysicalDataLogger(); }
                     LsTrk.PushStacks(); // in other branches, called by the BDF timestepper
                     DGLevSet.Push();
-
                     Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
 
                     // physics
                     // -------------------------------------------------
-                    CalculateHydrodynamicForces();
+                    MotionHydrodynamics AllParticleHydrodynamics = new MotionHydrodynamics(LsTrk);
+                    CalculateParticleForcesAndTorque(AllParticleHydrodynamics);
                     CalculateParticleVelocity(m_Particles, dt, 0);
                     CalculateCollision(m_Particles, dt, phystime);
                     CalculateParticlePosition(dt);
@@ -914,78 +912,63 @@ namespace BoSSS.Application.FSI_Solver {
                 // particle motion & collisions plus flow solver
                 // =================================================
                 else {
-                    if (((FSI_Control)Control).Timestepper_LevelSetHandling != LevelSetHandling.Coupled_Iterative) {
-                        if (phystime == 0) {
-                            CreatePhysicalDataLogger();
-                            CreateResidualLogger();
+                    int iterationCounter = 0;
+                    double hydroDynForceTorqueResidual = double.MaxValue;
+                    int minimumNumberOfIterations = 5;
+                    MotionHydrodynamics AllParticleHydrodynamics = new MotionHydrodynamics(LsTrk);
+                    while (hydroDynForceTorqueResidual > HydrodynConvergenceCriterion || iterationCounter < minimumNumberOfIterations) {
+                        if (iterationCounter > ((FSI_Control)Control).maxIterationsFullyCoupled)
+                            throw new ApplicationException("No convergence in coupled iterative solver, number of iterations: " + iterationCounter);
+
+                        Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
+                        AllParticleHydrodynamics.SaveHydrodynamicOfPreviousIteration(m_Particles);
+
+                        if (IsFullyCoupled && iterationCounter == 0) {
+                            InitializeParticlePerIteration(m_Particles, TimestepInt);
                         }
-                        int iterationCounter = 0;
-                        double hydroDynForceTorqueResidual = double.MaxValue;
-                        int minIteration = 5;
-                        Motion_AllParticles AllParticleHydrodynamics = new Motion_AllParticles(LsTrk);
-                        while (hydroDynForceTorqueResidual > HydrodynConvergenceCriterion || iterationCounter < minIteration) {
-                            if (iterationCounter > ((FSI_Control)Control).maxIterationsFullyCoupled)
-                                throw new ApplicationException("No convergence in coupled iterative solver, number of iterations: " + iterationCounter);
-                            Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
-                            AllParticleHydrodynamics.SaveHydrodynamicOfPreviousIteration(m_Particles);
-                            if (IsFullyCoupled && iterationCounter == 0) {
-                                InitializeParticlePerIteration(m_Particles, TimestepInt);
-                            }
-                            else {
-                                m_BDF_Timestepper.Solve(phystime, dt, false);
-                                ParticleHydrodynamicsIntegration hydrodynamicsIntegration = new ParticleHydrodynamicsIntegration(2, Velocity, Pressure, LsTrk, FluidViscosity);
-                                AllParticleHydrodynamics.CalculateHydrodynamics(m_Particles, hydrodynamicsIntegration, FluidDensity, false);
-                            }
-                            if (TimestepInt != 1 || iterationCounter != 0)
-                                CalculateParticleVelocity(m_Particles, dt, iterationCounter);
-                            // not a fully coupled system? -> no iteration
-                            // -------------------------------------------------
-                            if (!IsFullyCoupled)
-                                break;
-
-                            // residual
-                            // -------------------------------------------------
-                            hydroDynForceTorqueResidual = AllParticleHydrodynamics.CalculateParticleResidual(ref iterationCounter);
-
-                            // print iteration status
-                            // -------------------------------------------------
-                            //Auxillary.PrintResultToConsole(m_Particles, phystime, hydroDynForceTorqueResidual, iterationCounter);
-                            Auxillary.PrintResultToConsole(phystime, hydroDynForceTorqueResidual, iterationCounter);
-                            LogResidual(phystime, iterationCounter, hydroDynForceTorqueResidual);
+                        else {
+                            m_BDF_Timestepper.Solve(phystime, dt, false);
+                            CalculateParticleForcesAndTorque(AllParticleHydrodynamics);
                         }
-                        if (TimestepInt == 1 || IsMultiple(TimestepInt, 10)) {
-                            for (int p = 0; p < m_Particles.Count(); p++) {
-                                m_Particles[p].Motion.CreateStressLogger(CurrentSessionInfo, DatabaseDriver, phystime, p);
-                                m_Particles[p].Motion.LogStress(phystime);
-                            }
-                        }
+                        CalculateParticleVelocity(m_Particles, dt, iterationCounter);
 
-                        // collision
+                        // not a fully coupled system? -> no iteration
                         // -------------------------------------------------
-                        CalculateCollision(m_Particles, dt, phystime);
+                        if (!IsFullyCoupled)
+                            break;
 
-                        // particle position
+                        // residual
                         // -------------------------------------------------
-                        CalculateParticlePosition(dt);
+                        hydroDynForceTorqueResidual = AllParticleHydrodynamics.CalculateParticleResidual(ref iterationCounter);
 
-                        // print
+                        // print iteration status
                         // -------------------------------------------------
-                        Auxillary.PrintResultToConsole(m_Particles, FluidViscosity, FluidDensity, phystime, TimestepInt, ((FSI_Control)Control).FluidDomainVolume, out double Test_RotationalVelocity, out Test_Force);
-                        LogPhysicalData(phystime);
-
-                        // Save for NUnit Test
-                        // -------------------------------------------------
-                        SaveForNUnitTest(Test_RotationalVelocity);
-
-                        // level set tracker 
-                        // -------------------------------------------------
-                        if (IsFullyCoupled) {// in other branches, called by the BDF timestepper
-                            LsTrk.IncreaseHistoryLength(1);
-                            LsTrk.PushStacks();
-                        }
+                        Auxillary.PrintResultToConsole(phystime, hydroDynForceTorqueResidual, iterationCounter);
+                        LogResidual(phystime, iterationCounter, hydroDynForceTorqueResidual);
                     }
-                    else {// LevelSetHandling.Coupled_Iterative
-                        m_BDF_Timestepper.Solve(phystime, dt, false);
+
+                    // collision
+                    // -------------------------------------------------
+                    CalculateCollision(m_Particles, dt, phystime);
+
+                    // particle position
+                    // -------------------------------------------------
+                    CalculateParticlePosition(dt);
+
+                    // print
+                    // -------------------------------------------------
+                    Auxillary.PrintResultToConsole(m_Particles, FluidViscosity, FluidDensity, phystime, TimestepInt, ((FSI_Control)Control).FluidDomainVolume, out double Test_RotationalVelocity, out Test_Force);
+                    LogPhysicalData(phystime);
+
+                    // Save for NUnit Test
+                    // -------------------------------------------------
+                    SaveForNUnitTest(Test_RotationalVelocity);
+
+                    // level set tracker 
+                    // -------------------------------------------------
+                    if (IsFullyCoupled) {// in other branches, called by the BDF timestepper
+                        LsTrk.IncreaseHistoryLength(1);
+                        LsTrk.PushStacks();
                     }
                 }
 
@@ -999,8 +982,9 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        public bool IsMultiple(int a, int b) {
-            return (a % b) == 0;
+        private void CalculateParticleForcesAndTorque(MotionHydrodynamics AllParticleHydrodynamics) {
+            ParticleHydrodynamicsIntegration hydrodynamicsIntegration = new ParticleHydrodynamicsIntegration(2, Velocity, Pressure, LsTrk, FluidViscosity);
+            AllParticleHydrodynamics.CalculateHydrodynamics(m_Particles, hydrodynamicsIntegration, FluidDensity, IsFullyCoupled);
         }
 
         /// <summary>
@@ -1015,31 +999,6 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calls the calculation of the hydrodyn. forces and torque in the particle.cs
-        /// </summary>
-        /// <param name="particles">
-        /// </param>
-        /// /// <param name="dt">
-        /// </param>
-        /// /// <param name="firstIteration">
-        /// </param>
-        private void CalculateHydrodynamicForces() {
-            // Note on MPI parallelization of particle solver:
-            // ===============================================
-            // - hydrodynamic forces are computed for each domain and added together;
-            //   e.g. in the case of particles at MPI-boundaries each processor computes his part of the integral
-            // - collisions are detected globally / collision forces are thus only computed on MPI rank 0
-            // - finally, the forces on all particles are summed over all MPI processors and the result is stored on all processors (MPI_Allreduce)
-            // - particle motion is computed for all particles simultaneously on all processors; every processor knows every particle
-            // - since the particle solver is much cheaper than the flow solver, this "not-really parallel" approach may work up to a few hundreds of particles
-            // ===============================================
-            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            Motion_AllParticles AllParticleHydrodynamics = new Motion_AllParticles(LsTrk);
-            ParticleHydrodynamicsIntegration hydrodynamicsIntegration = new ParticleHydrodynamicsIntegration(2, Velocity, Pressure, LsTrk, FluidViscosity);
-            AllParticleHydrodynamics.CalculateHydrodynamics(m_Particles, hydrodynamicsIntegration, FluidDensity, IsFullyCoupled);
-        }
-
-        /// <summary>
         /// Update of added damping tensors and prediction of hydrdynamics.
         /// </summary>
         /// <param name="Particles">
@@ -1051,7 +1010,6 @@ namespace BoSSS.Application.FSI_Solver {
         internal void InitializeParticlePerIteration(List<Particle> Particles, int TimestepInt) {
             for (int p = 0; p < Particles.Count; p++) {
                 Particle currentParticle = Particles[p];
-                Console.WriteLine("Predicting forces for the next timestep...");
                 if (currentParticle.Motion.UseAddedDamping) {
                     currentParticle.Motion.UpdateDampingTensors();
                 }
@@ -1336,13 +1294,6 @@ namespace BoSSS.Application.FSI_Solver {
             foreach (Particle p in m_Particles) {
                 Collision_MPICommunication(p, MPISize);
             }
-            //bool anyCollision = false; 
-            //foreach (Particle p in Particles) {
-            //    if (p.IsCollided)
-            //        anyCollision = true;
-            //}
-            //if (!((FSI_Control)Control).pureDryCollisions && anyCollision)
-            //    m_BDF_Timestepper.Solve(phystime, dt, false);
         }
 
         /// <summary>

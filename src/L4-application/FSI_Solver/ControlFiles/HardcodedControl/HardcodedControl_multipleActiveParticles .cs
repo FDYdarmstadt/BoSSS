@@ -140,7 +140,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control TwoParticles(int k = 2, double yPert = 0.0001, double angle = 0) {
+        public static FSI_Control TwoParticles(int k = 2, double yPert = 0.1, double angle = 0) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
@@ -151,7 +151,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.SetBoundaries(boundaryValues);
             C.SetGrid(lengthX: 8, lengthY: 8, cellsPerUnitLength: 2, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel: 4);
-            C.hydrodynamicsConvergenceCriterion = 1e-1;
+            C.hydrodynamicsConvergenceCriterion = 1e-2;
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
@@ -169,7 +169,7 @@ namespace BoSSS.Application.FSI_Solver {
             // misc. solver options
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            double dt = 1e-3;
+            double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 100000000;
@@ -211,16 +211,16 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Particle Properties
             // =============================
-            double particleDensity = 1;
+            double particleDensity = 10;
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, 1);
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { -0.75, 0.333 }, startAngl: 0, activeStress: 10));
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { 0.75, 0.333 }, startAngl: 180, activeStress: 10));
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { -0.75, -0.333 }, startAngl: 0, activeStress: 10));
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { 0.75, -0.333 }, startAngl: 180, activeStress: 10));
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { -0.75, 1 }, startAngl: 180, activeStress: 10));
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { -0.75, -1 }, startAngl: 180, activeStress: 10));
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { 0.75, -1 }, startAngl: 0, activeStress: 10));
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { 0.75, 1 }, startAngl: 0, activeStress: 10));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { -0.75, 0.333 }, startAngl: 0, activeStress: 1));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { 0.75, 0.333 }, startAngl: 180, activeStress: 1));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { -0.75, -0.333 }, startAngl: 0, activeStress: 1));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { 0.75, -0.333 }, startAngl: 180, activeStress: 1));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { -0.75, 1 }, startAngl: 180, activeStress: 1));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { -0.75, -1 }, startAngl: 180, activeStress: 1));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { 0.75, -1 }, startAngl: 0, activeStress: 1));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4 * aspectRatio, new double[] { 0.75, 1 }, startAngl: 0, activeStress: 1));
 
             // misc. solver options
             // =============================  

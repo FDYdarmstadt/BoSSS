@@ -520,8 +520,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// The timestep ID. Used to distinguish between the first timestep and all other steps.
         /// </param>
         public virtual void PredictForceAndTorque(double activeStress, double circumference, int timestepID, double fluidViscosity, double fluidDensity, double dt) {
-            m_HydrodynamicForces[0] = new Vector(0,0);// new Vector(m_HydrodynamicForces[1]);
-            m_HydrodynamicTorque[0] = 0;// m_HydrodynamicTorque[1];
+            m_HydrodynamicForces[0] = new Vector(m_HydrodynamicForces[1]);
+            m_HydrodynamicTorque[0] = m_HydrodynamicTorque[1];
             Aux.TestArithmeticException(m_HydrodynamicForces[0], "hydrodynamic forces");
             Aux.TestArithmeticException(m_HydrodynamicTorque[0], "hydrodynamic torque");
         }

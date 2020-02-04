@@ -149,7 +149,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(dt: 1e-2, noOfTimesteps: 2500);
+            C.SetTimesteps(dt: 1e-4, noOfTimesteps: 10000);
 
             // haben fertig...
             // ===============
