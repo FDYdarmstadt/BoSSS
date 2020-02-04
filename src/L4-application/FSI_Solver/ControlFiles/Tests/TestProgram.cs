@@ -77,20 +77,16 @@ namespace BoSSS.Application.FSI_Solver {
         public static void TestFlowRotationalCoupling() {
             using (FSI_SolverMain p = new FSI_SolverMain()) {
 
-                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.Test_ParticleInShearFlow(k: 1);
-                //ctrl.ImmediatePlotPeriod = 1;
-                //ctrl.SuperSampling = 2;
+                var ctrl = HardcodedTestExamples.Test_ParticleInShearFlow(k: 1);
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double angularVelocity_Sol = -0.00307062397473367;// 0.00487; needs investigation!
+                double angularVelocitySol = -0.00307062397473367;// 0.00487; needs investigation!
+                double angularVelocityIs = p.Particles[0].Motion.GetRotationalVelocity(0);
 
-
-                double angularVelocity = (double)p.QueryHandler.QueryResults["Angular_Velocity"];
-
-                double diff_Velocity = Math.Abs(angularVelocity - angularVelocity_Sol);
-                Console.WriteLine("   angular velocity is " + angularVelocity);
-                Console.WriteLine("         should be     " + angularVelocity_Sol);
+                double diff_Velocity = Math.Abs(angularVelocityIs - angularVelocitySol);
+                Console.WriteLine("   angular velocity is " + angularVelocityIs);
+                Console.WriteLine("         should be     " + angularVelocitySol);
                 Console.WriteLine("         difference is " + diff_Velocity);
 
 

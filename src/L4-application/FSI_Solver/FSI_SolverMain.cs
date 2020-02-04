@@ -153,6 +153,11 @@ namespace BoSSS.Application.FSI_Solver {
         private double DtMax => ((FSI_Control)Control).dtMax;
 
         /// <summary>
+        /// Volume of the fluid domain
+        /// </summary>
+        private double FluidDomainVolume => ((FSI_Control)Control).FluidDomainVolume;
+
+        /// <summary>
         /// FluidViscosity
         /// </summary>
         private double FluidViscosity => ((FSI_Control)Control).pureDryCollisions ? 0 : ((FSI_Control)Control).PhysicalParameters.mu_A;
@@ -957,12 +962,8 @@ namespace BoSSS.Application.FSI_Solver {
 
                     // print
                     // -------------------------------------------------
-                    Auxillary.PrintResultToConsole(m_Particles, FluidViscosity, FluidDensity, phystime, TimestepInt, ((FSI_Control)Control).FluidDomainVolume, out double Test_RotationalVelocity, out Test_Force);
+                    Auxillary.PrintResultToConsole(m_Particles, FluidViscosity, FluidDensity, phystime, TimestepInt, FluidDomainVolume);
                     LogPhysicalData(phystime);
-
-                    // Save for NUnit Test
-                    // -------------------------------------------------
-                    SaveForNUnitTest(Test_RotationalVelocity);
 
                     // level set tracker 
                     // -------------------------------------------------
@@ -985,17 +986,6 @@ namespace BoSSS.Application.FSI_Solver {
         private void CalculateParticleForcesAndTorque(MotionHydrodynamics AllParticleHydrodynamics) {
             ParticleHydrodynamicsIntegration hydrodynamicsIntegration = new ParticleHydrodynamicsIntegration(2, Velocity, Pressure, LsTrk, FluidViscosity);
             AllParticleHydrodynamics.CalculateHydrodynamics(m_Particles, hydrodynamicsIntegration, FluidDensity, IsFullyCoupled);
-        }
-
-        /// <summary>
-        /// Saves forces and rotational velocity for NUnit test.
-        /// </summary>
-        /// <param name="TestRotationalVelocity">
-        /// </param>
-        private void SaveForNUnitTest(double TestRotationalVelocity) {
-            QueryHandler.ValueQuery("C_Drag", 2 * Test_Force[0], true); // Only for Diameter 1 (TestCase NSE stationary)
-            QueryHandler.ValueQuery("C_Lift", 2 * Test_Force[1], true); // Only for Diameter 1 (TestCase NSE stationary)
-            QueryHandler.ValueQuery("Angular_Velocity", TestRotationalVelocity, true); // (TestCase FlowRotationalCoupling)
         }
 
         /// <summary>
