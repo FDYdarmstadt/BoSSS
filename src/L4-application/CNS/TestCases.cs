@@ -3619,7 +3619,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl IBMBowShock(string dbPath = null, int savePeriod = 100, int dgDegree = 0, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 2, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 10.0, string restart = "False", double lambdaMax = 15.0) {
+        public static CNSControl IBMBowShock(string dbPath = null, int savePeriod = 100, int dgDegree = 2, double sensorLimit = 1e-4, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 1, int numberOfSubGrids = 2, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 6.0, string restart = "False", double lambdaMax = 15.0, int numOfCellsX = 20, int numOfCellsY = 80) {
             IBMControl c = new IBMControl();
 
             //System.Threading.Thread.Sleep(10000);
@@ -3652,33 +3652,91 @@ namespace CNS {
             c.GridPartType = GridPartType.METIS;
             c.DynamicLoadBalancing_On = false;
 
+            // Grid
+            double xMin = -2.0;
+            double xMax = 0.0;
+            double yMin = -4.0;
+            double yMax = 4.0;
+
+            // Shift grid
+            double h = Math.Abs(xMax - xMin) / numOfCellsX;
+            xMin = xMin - h / 2;
+            xMax = xMax - h / 2;
+
+            if (restart == "True") {
+                // Restart Lichtenberg
+                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("9b3ee853-aaf2-4777-a50d-7c53c5e23ae6"), -1);
+                c.GridGuid = new Guid("b1de3801-a54d-4083-8af2-e400947e626a");
+            } else {
+                c.GridFunc = delegate {
+                    double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
+                    double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
+                    GridCommons grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
+
+                    grid.EdgeTagNames.Add(1, "SupersonicInlet");
+                    grid.EdgeTagNames.Add(2, "SupersonicOutlet");
+                    grid.EdgeTagNames.Add(3, "AdiabaticSlipWall");
+
+                    grid.DefineEdgeTags(delegate (double[] X) {
+                        if (Math.Abs(X[0] - xMax) < 1e-14) {    // Right boundary
+                            if (Math.Abs(X[1]) - 0.1 < 1e-14) { // Right boundary (part of void area)
+                                return 3;
+                            } else {
+                                return 2;
+                            }
+                        } else if (Math.Abs(X[0] - xMin) < 1e-14) { // Left boundary
+                            return 1;
+                        } else {    // Top and bottom boundary
+                            return 1;
+                        }
+                    });
+
+                    //var gDat = new GridData(grid);
+                    //var em1 = gDat.GetBoundaryEdges();
+                    //em1.SaveToTextFile("alledges.csv", false, (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => (double)gDat.iGeomEdges.EdgeTags[GeomItemIndex]);
+
+                    return grid;
+                };
+            }
+
             // Level-set
             c.DomainType = DomainTypes.StaticImmersedBoundary;
             c.LevelSetFunction = delegate (double[] X, double t) {
-                //// Circle 1
-                //double x0 = 0.0;
-                //double y0 = 0.5;
-                //double r0 = 0.5;
+                // Circle 1
+                double x0 = 0.0;
+                double y0 = 0.5;
+                double r0 = 0.5;
 
-                //// Circle 2
-                //double x1 = 0.0;
-                //double y1 = -0.5;
-                //double r1 = 0.5;
+                // Circle 2
+                double x1 = 0.0;
+                double y1 = -0.5;
+                double r1 = 0.5;
 
-                //return ((X[0] - x0) * (X[0] - x0) + (X[1] - y0) * (X[1] - y0) - r0 * r0) * ((X[0] - x1) * (X[0] - x1) + (X[1] - y1) * (X[1] - y1) - r1 * r1);
-
-                //if (Math.Abs(X[0] + 0.5 > 1 -)Math.Abs(X[1] - ) > 1e-14) {
-
+                // Signed distance formulation
+                //if (X[1] >= 0.5) {
+                //    return Math.Sqrt((X[0] - x0) * (X[0] - x0) + (X[1] - y0) * (X[1] - y0)) - r0;
+                //} else if (X[1] <= -0.5) {
+                //    return Math.Sqrt((X[0] - x1) * (X[0] - x1) + (X[1] - y1) * (X[1] - y1)) - r1;
+                //} else {
+                //    return -(X[0] + 0.5);
                 //}
 
-                return (X[0] - 0.0) * (X[0] - 0.0) + (X[1] - 0.0) * (X[1] - 0.0) - 0.5 * 0.5;
+                // Quadratic formulation
+                if (X[1] >= 0.5) {
+                    return (X[0] - x0) * (X[0] - x0) + (X[1] - y0) * (X[1] - y0) - r0 * r0;
+                } else if (X[1] <= -0.5) {
+                    return (X[0] - x1) * (X[0] - x1) + (X[1] - y1) * (X[1] - y1) - r1 * r1;
+                } else {
+                    return X[0] * X[0] - 0.5 * 0.5;
+                }
             };
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
             c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
-            c.LevelSetQuadratureOrder = 3 * dgDegree;
+            int levelSetDegree = 2;
+            c.LevelSetQuadratureOrder = 3 * levelSetDegree;
             c.AgglomerationThreshold = 0.3;
             c.SaveAgglomerationPairs = false;
-            c.AddVariable(IBMVariables.LevelSet, 5);
+            c.AddVariable(IBMVariables.LevelSet, levelSetDegree);
 
             bool AV;
             if (dgDegree > 0) {
@@ -3696,7 +3754,7 @@ namespace CNS {
 
             // Shock-capturing
             double epsilon0 = 1.0;
-            double kappa = 1.0;
+            double kappa = 0.5;
 
             if (AV) {
                 Variable sensorVariable = CompressibleVariables.Density;
@@ -3736,49 +3794,6 @@ namespace CNS {
                 c.AddVariable(CNSVariables.LTSClusters, 0);
             }
 
-            // Grid
-            double xMin = -2.0;
-            double xMax = 0.0;
-            double yMin = -2.0;
-            double yMax = 2.0;
-
-            int numOfCellsX = 20;
-            int numOfCellsY = 40;
-
-            if (restart == "True") {
-                // Restart Lichtenberg
-                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("9b3ee853-aaf2-4777-a50d-7c53c5e23ae6"), -1);
-                c.GridGuid = new Guid("b1de3801-a54d-4083-8af2-e400947e626a");
-            } else {
-                c.GridFunc = delegate {
-                    double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
-                    double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
-                    GridCommons grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
-
-                    grid.EdgeTagNames.Add(1, "SupersonicInlet");
-                    grid.EdgeTagNames.Add(2, "SupersonicOutlet");
-                    grid.EdgeTagNames.Add(3, "AdiabaticSlipWall");
-
-                    grid.DefineEdgeTags(delegate (double[] X) {
-                        if (Math.Abs(X[0] - 0.0) < 1e-14) {
-                            if (Math.Abs(X[1]) - 0.5 < 1e-14) {
-                                return 3;
-                            } else {
-                                return 2;
-                            }
-                        } else {
-                            return 1;
-                        }
-                    });
-
-                    //var gDat = new GridData(grid);
-                    //var em1 = gDat.GetBoundaryEdges();
-                    //em1.SaveToTextFile("alledges.csv", false, (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => (double)gDat.iGeomEdges.EdgeTags[GeomItemIndex]);
-
-                    return grid;
-                };
-            }
-
             // Boundary conditions
             double density = 1.0;
             double pressure = 1.0;
@@ -3810,18 +3825,18 @@ namespace CNS {
             c.CFLFraction = CFLFraction;
             c.NoOfTimesteps = int.MaxValue;
 
-            c.ProjectName = "bowShock";
+            c.ProjectName = "IBMBowShock";
 
             // Session name
             string tempSessionName;
             if (c.ExplicitScheme == ExplicitSchemes.RungeKutta) {
-                tempSessionName = string.Format("BowShock_p{0}_s0={1:0.0E-00}_CFLFrac{2}_RK{3}",
+                tempSessionName = string.Format("IBMBowShock_p{0}_s0={1:0.0E-00}_CFLFrac{2}_RK{3}",
                     dgDegree, sensorLimit, CFLFraction, explicitOrder);
             } else if (c.ExplicitScheme == ExplicitSchemes.AdamsBashforth) {
-                tempSessionName = string.Format("BowShock_p{0}_s0={1:0.0E-00}_CFLFrac{2}_AB{3}",
+                tempSessionName = string.Format("IBMBowShock_p{0}_s0={1:0.0E-00}_CFLFrac{2}_AB{3}",
                     dgDegree, sensorLimit, CFLFraction, explicitOrder);
             } else {
-                tempSessionName = string.Format("BowShock_p{0}_s0={1:0.0E-00}_CFLFrac{2}_ALTS{3}_{4}_re{5}_subs{6}",
+                tempSessionName = string.Format("IBMBowShock_p{0}_s0={1:0.0E-00}_CFLFrac{2}_ALTS{3}_{4}_re{5}_subs{6}",
                     dgDegree, sensorLimit, CFLFraction, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps);
             }
 
