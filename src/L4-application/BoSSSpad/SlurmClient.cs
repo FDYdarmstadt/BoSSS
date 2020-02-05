@@ -33,34 +33,122 @@ namespace BoSSS.Application.BoSSSpad {
         string m_Username;
         string m_Password;
         string m_ServerName;
+        string m_PrivateKeyFilePath;
         SshClient SSHConnection;
+
+
+        /// <summary>
+        /// Configuration options specific to the <see cref="SlurmClient"/>
+        /// </summary>
+        [Serializable]
+        public new class Config : BatchProcessorClient.Config {
+
+            /// <summary>
+            /// %
+            /// </summary>
+            public string ServerName;
+            
+            /// <summary>
+            /// %
+            /// </summary>
+            public string Username;
+            
+            /// <summary>
+            /// %
+            /// </summary>
+            public string PrivateKeyFilePath;
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public string SlurmAccount;
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public string Email;
+
+
+            /// <summary>
+            /// %
+            /// </summary>
+            public override BatchProcessorClient Instance() {
+                var r = new SlurmClient(
+                    base.DeploymentBaseDirectory,
+                    ServerName,
+                    Username,
+                    PrivateKeyFilePath);
+                r.SlurmAccount = SlurmAccount;
+                r.Email = Email;
+
+                return r;
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public override BatchProcessorClient.Config GetConfig() {
+            return new SlurmClient.Config() {
+                DeploymentBaseDirectory = this.DeploymentBaseDirectory,
+                DeployRuntime = this.DeployRuntime,
+                PrivateKeyFilePath = this.m_PrivateKeyFilePath,
+                ServerName = this.m_ServerName,
+                Username = this.m_Username,
+                Email = this.Email,
+                SlurmAccount = this.SlurmAccount
+            };
+        }
+
 
         /// <summary>
         /// Client for submitting jobs directly from the BoSSSpad to slurm systems
         /// </summary>
-        /// <param name="DeploymentBaseDirectory"></param>
-        /// <param name="ServerName"></param>
-        /// <param name="Username"></param>
-        public SlurmClient(string DeploymentBaseDirectory, string ServerName, string Username = null) {
+        public SlurmClient(string DeploymentBaseDirectory, string ServerName, string Username, string PrivateKeyFilePath, bool AskForPassword = true) {
             base.DeploymentBaseDirectory = DeploymentBaseDirectory;
             m_Username = Username;
             m_ServerName = ServerName;
+            m_PrivateKeyFilePath = PrivateKeyFilePath;
 
             if (!Directory.Exists(base.DeploymentBaseDirectory))
                 Directory.CreateDirectory(base.DeploymentBaseDirectory);
 
-            Console.WriteLine();
-            Console.WriteLine("Please enter your password...");
-            m_Password = ReadPassword();
-            Console.WriteLine("Connecting to " + ServerName + "...");
-            Console.WriteLine();
-
-            SSHConnection = new SshClient(m_ServerName, m_Username, m_Password);
-
-
+            if(AskForPassword) {
+                Console.WriteLine();
+                Console.WriteLine("Please enter your password...");
+                m_Password = ReadPassword();
+                Console.WriteLine("Connecting to " + ServerName + "...");
+                Console.WriteLine();
+            
+                SSHConnection = new SshClient(m_ServerName, m_Username, m_Password);
+            } else {
+                var pkf = new PrivateKeyFile(PrivateKeyFilePath);
+                SSHConnection = new SshClient(m_ServerName, m_Username, pkf);
+            }
+                       
             SSHConnection.Connect();
         }
 
+        /// <summary>
+        /// The number of the project where the job shall be executed (see HHLR-Antrag or csum, csreport)
+        /// </summary>
+        public string SlurmAccount {
+            set;
+            get;
+        }
+
+        /// <summary>
+        /// If set, SLURM may send email notifications for the current job
+        /// </summary>
+        public string Email {
+            set;
+            get;
+        }
+
+        /// <summary>
+        /// .
+        /// </summary>
         public override void EvaluateStatus(Job myJob, out int SubmitCount, out bool isRunning, out bool wasSuccessful, out bool isFailed, out string DeployDir) {
             string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
             DeployDir = null;
@@ -176,14 +264,14 @@ namespace BoSSS.Application.BoSSSpad {
             string userName = m_Username;
             string startupstring;
             string quote = "\"";
-            string HHLR_project = myJob.HHLR_project;
+            string HHLR_project = HHLR_project;
             string memPerCPU;
             if (myJob.MemPerCPU != null) {
                 memPerCPU = myJob.MemPerCPU;
             } else {
                 memPerCPU = "5000";
             }
-            string email = myJob.EmailAddress;
+            string email = Email;
 
             using (var str = new StringWriter()) {
                 str.Write("mpiexec mono ");

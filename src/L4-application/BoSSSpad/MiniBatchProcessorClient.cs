@@ -31,6 +31,33 @@ namespace BoSSS.Application.BoSSSpad {
     public class MiniBatchProcessorClient : BatchProcessorClient {
 
         /// <summary>
+        /// Configuration options specific to the <see cref="MiniBatchProcessorClient"/>
+        /// </summary>
+        [Serializable]
+        public new class Config : BatchProcessorClient.Config {
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public override BatchProcessorClient Instance() {
+                return new MiniBatchProcessorClient(base.DeploymentBaseDirectory) {
+                    DeployRuntime = base.DeployRuntime
+                };
+            }
+        }
+
+        /// <summary>
+        /// .
+        /// </summary>
+        public override BatchProcessorClient.Config GetConfig() {
+            return new MiniBatchProcessorClient.Config() {
+                DeploymentBaseDirectory = this.DeploymentBaseDirectory,
+                DeployRuntime = this.DeployRuntime
+            };
+        }
+
+
+        /// <summary>
         /// Path to standard output file, if present - otherwise null.
         /// </summary>
         public override string GetStdoutFile(Job myJob) {

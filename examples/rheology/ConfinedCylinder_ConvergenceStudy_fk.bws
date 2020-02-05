@@ -20,6 +20,12 @@ var myDb = OpenOrCreateDefaultDatabase();
 Opening existing database 'C:\Users\flori\default_bosss_db'.
 
 ==============
+ExecutionQueues;
+**************
+List of 1 instances of BatchProcessorClient {
+  0: BoSSS.Application.BoSSSpad.MiniBatchProcessorClient
+}
+==============
 using BoSSS.Application.Rheology;
 **************
 ==============
@@ -33,7 +39,6 @@ Project name is set to 'Cylinder'.
 WorkflowMgm.SetEqualityBasedSessionJobControllCorrelation();
 **************
 ==============
-//WorkflowMgm.Grids;
 **************
 ==============
 // ===========================
@@ -174,24 +179,16 @@ controls[0,0].ProjectName;
 **************
 Cylinder
 ==============
-controls[0,0].SessionName == null;
 **************
-False
+==============
+// =============
+// Activate Jobs
+// =============
+**************
 ==============
 **************
 ==============
 **************
-System.ArgumentException occurred: Job with name 'ConvStudy_k1_mesh0' is already defined in the workflow management.. Type 'LastError' for details.
-
-==============
-LastError
-**************
-System.ArgumentException: Job with name 'ConvStudy_k1_mesh0' is already defined in the workflow management.
-   at BoSSS.Application.BoSSSpad.Job..ctor(String name, Type solver) in C:\Users\flori\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\Job.cs:line 64
-   at BoSSS.Application.BoSSSpad.AppControlExtensions.CreateJob(AppControl ctrl) in C:\Users\flori\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\AppControlExtensions.cs:line 84
-   at <InteractiveExpressionClass>.Host(Object& $retval)
-   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
-   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\Users\flori\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:line 346
 ==============
 WorkflowMgm.AllJobs;
 **************
@@ -217,13 +214,42 @@ List of 16 instances of KeyValuePair{String,Job} {
 var C00clone = WorkflowMgm.AllJobs.Pick(0).Value.GetControl();
 **************
 ==============
+controls[0,0].GetJob();
+**************
+ConvStudy_k1_mesh0: PreActivation
+==============
 **************
 ==============
-C00clone.Equals(
 **************
 ==============
 **************
 ==============
+**************
+==============
+//var fdyBatch = new MsHPC2012Client(
+//   DeploymentBaseDirectory : @"\\130.83.248.247\userspace\kummer\cluster", 
+//   ServerName : "hpccluster", 
+//   Username : @"FDY\kummer", 
+//   DeployRuntime : true);
+**************
+System.Security.Authentication.InvalidCredentialException occurred: The server has rejected the client credentials.. Type 'LastError' for details.
+
+==============
+**************
+==============
+//var lichtbBatch = new SlurmClient(
+//   DeploymentBaseDirectory : @"X:\bosss_deploy", 
+//   ServerName : "lcluster3.hrz.tu-darmstadt.de", 
+//   Username : @"fk69umer", 
+//   PrivateKeyFilePath : @"C:\Users\flori\.ssh\id_rsa",
+//   AskForPassword : false);
+**************
+==============
+//AddExecutionQueue(lichtbBatch);
+**************
+1
+==============
+//SaveExecutionQueues();
 **************
 ==============
 **************

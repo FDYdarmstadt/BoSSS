@@ -30,6 +30,34 @@ namespace BoSSS.Application.BoSSSpad {
     abstract public class BatchProcessorClient {
 
         /// <summary>
+        /// common baseclass 
+        /// </summary>
+        [Serializable]
+        public abstract class Config {
+
+            /// <summary>
+            /// <see cref="BatchProcessorClient.DeploymentBaseDirectory"/>
+            /// </summary>
+            public string DeploymentBaseDirectory;
+
+            /// <summary>
+            /// <see cref="BatchProcessorClient.DeployRuntime"/>
+            /// </summary>
+            public bool DeployRuntime;
+
+
+            /// <summary>
+            /// %
+            /// </summary>
+            public abstract BatchProcessorClient Instance();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public abstract Config GetConfig();
+
+        /// <summary>
         /// Base directory where the executables should be deployed.
         /// </summary>
         public string DeploymentBaseDirectory {

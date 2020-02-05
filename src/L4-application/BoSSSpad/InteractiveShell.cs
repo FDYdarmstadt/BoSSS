@@ -487,6 +487,69 @@ namespace BoSSS.Application.BoSSSpad {
 
         }
 
+        /// <summary>
+        /// Reload from configuration file
+        /// </summary>
+        public static void ReloadExecutionQueues() {
+            executionQueues = new List<BatchProcessorClient>();
+
+            BatchProcessorConfig bpc;
+            try {
+                bpc = BatchProcessorConfig.LoadOrDefault();
+
+            } catch (Exception e) {
+                Console.Error.WriteLine($"{e.GetType().Name} caught while loading batch processor configuration file - using a default configuration. Message: {e.Message}");
+
+                executionQueues.Add(new MiniBatchProcessorClient());
+                return;
+            } 
+            
+            foreach(var c in bpc.AllQueus) {
+                executionQueues.Add(c.Instance());
+            }
+        }
+
+
+
+
+
+        /// <summary>
+        /// A list of predefined batch system clients.
+        /// </summary>
+        public static IReadOnlyList<BatchProcessorClient> ExecutionQueues {
+            get {
+                if(executionQueues == null) {
+                    ReloadExecutionQueues();
+                }
+
+                return executionQueues.AsReadOnly();
+            }
+        }
+
+        static List<BatchProcessorClient> executionQueues = null;
+
+        /// <summary>
+        /// Adds an entry to <see cref="ExecutionQueues"/>.
+        /// </summary>
+        public static int AddExecutionQueue(BatchProcessorClient bpc) {
+            executionQueues.Add(bpc);
+            return executionQueues.Count - 1;
+        }
+
+        /// <summary>
+        /// Writes the configuration file according to the current status of <see cref="ExecutionQueues"/>.
+        /// </summary>
+        public static void SaveExecutionQueues() {
+            var conf = new BatchProcessorConfig() {
+                AllQueus = new BatchProcessorClient.Config[ExecutionQueues.Count]
+            };
+
+            for(int i = 0; i < ExecutionQueues.Count; i++) {
+                conf.AllQueus[i] = ExecutionQueues[i].GetConfig();
+            }
+
+            BatchProcessorConfig.SaveConfiguration(conf);
+        }
     }
 }
 

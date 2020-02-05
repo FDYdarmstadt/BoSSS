@@ -69,6 +69,19 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
+        /// Runs the solver described by the control object <paramref name="ctrl"/> on a batch system from the currently defined queues (<see cref="InteractiveShell.ExecutionQueues"/>).
+        /// The method returns immediately.
+        /// </summary>
+        /// <param name="ctrl"></param>
+        /// <param name="queueIdx">
+        /// Index int <see cref="InteractiveShell.ExecutionQueues"/>
+        /// </param>
+        public static Job RunBatch(this AppControl ctrl, int queueIdx = 0) {
+            var b = InteractiveShell.ExecutionQueues[queueIdx];
+            return RunBatch(ctrl, queueIdx);
+        }
+
+        /// <summary>
         /// Creates a job for the control object <paramref name="ctrl"/>.
         /// The method returns immediately.
         /// This job can still be configured (e.g. setting number of MPI processors) and must be activated (<see cref="Job.Activate(BatchProcessorClient)"/>)

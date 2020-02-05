@@ -73,14 +73,7 @@ namespace BoSSS.Application.BoSSSpad {
             get;
         }
 
-        /// <summary>
-        /// The number of the project where the job shall be executed (see HHLR-Antrag or csum, csreport)
-        /// </summary>
-        public string HHLR_project {
-            set;
-            get;
-        }
-
+        
         /// <summary>
         /// The memory (in MB) that is resevered for every core
         /// </summary>
@@ -89,13 +82,7 @@ namespace BoSSS.Application.BoSSSpad {
             get;
         }
 
-        /// <summary>
-        /// Bool for dis-/enabling email notifications for the current job
-        /// </summary>
-        public string EmailAddress {
-            set;
-            get;
-        }
+        
 
         /// <summary>
         /// (Optional) object used by some batch processor (after calling <see cref="BatchProcessorClient.Submit(Job)"/>)
