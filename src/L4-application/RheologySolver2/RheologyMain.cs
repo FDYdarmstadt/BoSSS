@@ -48,7 +48,7 @@ using BoSSS.Solution.Gnuplot;
 using MPI.Wrappers;
 using NUnit.Framework;
 using BoSSS.Foundation.SpecFEM;
-
+using System.IO;
 
 namespace BoSSS.Application.Rheology {
 
@@ -224,7 +224,7 @@ namespace BoSSS.Application.Rheology {
         // Some initialisation of variables
         //============================================
         IncompressibleBoundaryCondMap BcMap;
-        
+
         /// <summary>
         /// Current Weissenberg number,
         /// if the solver is used in Weissenberg-increment mode
@@ -239,7 +239,7 @@ namespace BoSSS.Application.Rheology {
 
 
         bool ChangeMesh = true;
-        
+
         /// <summary>
         /// Spatial operator 
         /// </summary>
@@ -249,7 +249,7 @@ namespace BoSSS.Application.Rheology {
         /// Linearization of <see cref="XOP"/>
         /// </summary>
         SpatialOperator JacobiOp;
-        
+
         /// <summary>
         /// Timestepping object
         /// </summary>
@@ -309,7 +309,7 @@ namespace BoSSS.Application.Rheology {
         }
 
         CoordinateVector m_CurrentSolution = null;
-        
+
         /// <summary>
         /// Current solution vector
         /// </summary>
@@ -421,13 +421,13 @@ namespace BoSSS.Application.Rheology {
                         var comps = XOP.EquationComponents[CodName[d]];
 
                         // convective part:
-                        if (!this.Control.Stokes ) {
+                        if (!this.Control.Stokes) {
                             comps.Add(new LocalLaxFriedrichsConvection(D, BcMap, d, 1.0));
                         } else {
                             Console.WriteLine("Using Stokes Equation - no convective term.");
                         }
 
-                        
+
                         // pressure part:
                         var pres = new PressureGradientLin_d(d, BcMap);
                         comps.Add(pres);
@@ -438,11 +438,11 @@ namespace BoSSS.Application.Rheology {
                             var pressSource = new SrcPressureGradientLin_d(this.Control.SrcPressureGrad[d]);
                             comps.Add(pressSource);
                         }
-                        
+
 
                         // viscous part:
                         //Type GridType = GridData.iGeomCells.RefElements[0].GetType();
-                        
+
                         if (this.Control.beta < 0.0) {
                             throw new ArithmeticException("Illegal setting in control object: 'beta' is out of range, must be non-negative.");
                         }
@@ -696,7 +696,7 @@ namespace BoSSS.Application.Rheology {
             return 0.0;
         }
 
-        
+
         // Build and solve system
         //=================================================================
         /// <summary>
@@ -707,7 +707,7 @@ namespace BoSSS.Application.Rheology {
                 if (this.Control.OperatorMatrixAnalysis == true) {
 
                     OpAnalysisBase myAnalysis = new OpAnalysisBase(DelComputeOperatorMatrix, CurrentSolution.Mapping, CurrentSolution.Mapping.Fields.ToArray(), null, phystime);
-                    myAnalysis.VarGroup = new int[] { 0,1,2};
+                    myAnalysis.VarGroup = new int[] { 0, 1, 2 };
                     double[] cond = myAnalysis.CondNum();//Analyse();
                     Console.WriteLine("Condition number for full matrix is " + cond[0] + ". Condition number for inner matrix is " + cond[1] + ".");
                     base.QueryHandler.ValueQuery("condFull", cond[0], true);
@@ -760,7 +760,7 @@ namespace BoSSS.Application.Rheology {
 
                             for (int j = 0; j < 3; j++) {
 
-                                
+
 
 
                                 if (Control.UsePerssonSensor == true) {
@@ -778,12 +778,14 @@ namespace BoSSS.Application.Rheology {
                                 SaveToDatabase(new TimestepNumber(TimestepNo.MajorNumber, i), phystime);
 
                                 if (Control.Bodyforces == true) {
-
-                                    double[] force = IBMSolverUtils.GetForces_BoundaryFitted(VelocityXGradient, VelocityYGradient, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
-                                    Console.WriteLine();
-                                    Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
-                                    Console.WriteLine();
-
+                                    if (Log != null) {
+                                        WriteLogLine(TimestepNo.MajorNumber, phystime);
+                                    } else {
+                                        double[] force = IBMSolverUtils.GetForces_BoundaryFitted(Velocity.Current, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta, "Wall_cylinder");
+                                        Console.WriteLine();
+                                        Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
+                                        Console.WriteLine();
+                                    }
                                 }
 
                                 artificialMaxViscosity = artificialMaxViscosity - 0.5;
@@ -798,12 +800,14 @@ namespace BoSSS.Application.Rheology {
                             SaveToDatabase(new TimestepNumber(TimestepNo.MajorNumber, i), phystime);
 
                             if (Control.Bodyforces == true) {
-
-                                double[] force = IBMSolverUtils.GetForces_BoundaryFitted(VelocityXGradient, VelocityYGradient, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
-                                Console.WriteLine();
-                                Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
-                                Console.WriteLine();
-
+                                if (Log != null) {
+                                    WriteLogLine(TimestepNo.MajorNumber, phystime);
+                                } else {
+                                    double[] force = IBMSolverUtils.GetForces_BoundaryFitted(Velocity.Current, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta, "Wall_cylinder");
+                                    Console.WriteLine();
+                                    Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
+                                    Console.WriteLine();
+                                }
                             }
                         }
 
@@ -819,7 +823,7 @@ namespace BoSSS.Application.Rheology {
                             currentWeissenberg = currentWeissenberg + Control.WeissenbergIncrement;
                             Console.WriteLine();
                             Console.WriteLine("Raise Weissenberg number to " + currentWeissenberg);
-                            Console.WriteLine();                            
+                            Console.WriteLine();
                         }
 
                     }
@@ -845,12 +849,14 @@ namespace BoSSS.Application.Rheology {
                             //SaveToDatabase(new TimestepNumber(TimestepNo.MajorNumber, i), phystime);
 
                             if (Control.Bodyforces == true) {
-
-                                double[] force = IBMSolverUtils.GetForces_BoundaryFitted(VelocityXGradient, VelocityYGradient, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
-                                Console.WriteLine();
-                                Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
-                                Console.WriteLine();
-
+                                if (Log != null) {
+                                    WriteLogLine(TimestepNo.MajorNumber, phystime);
+                                } else {
+                                    double[] force = IBMSolverUtils.GetForces_BoundaryFitted(Velocity.Current, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta, "Wall_cylinder");
+                                    Console.WriteLine();
+                                    Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
+                                    Console.WriteLine();
+                                }
                             }
 
                             artificialMaxViscosity = artificialMaxViscosity - 0.5;
@@ -893,12 +899,14 @@ namespace BoSSS.Application.Rheology {
                         //____________________________________________________________________________________________
 
                         if (Control.Bodyforces == true) {
-
-                            double[] force = IBMSolverUtils.GetForces_BoundaryFitted(VelocityXGradient, VelocityYGradient, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
-                            Console.WriteLine();
-                            Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
-                            Console.WriteLine();
-
+                            if (Log != null) {
+                                WriteLogLine(TimestepNo.MajorNumber, phystime);
+                            } else {
+                                double[] force = IBMSolverUtils.GetForces_BoundaryFitted(Velocity.Current, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta, "Wall_cylinder");
+                                Console.WriteLine();
+                                Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
+                                Console.WriteLine();
+                            }
                         }
                     }
                 }
@@ -974,7 +982,7 @@ namespace BoSSS.Application.Rheology {
         internal void CheckJacobian() {
             // Parameters
             DGField[] Params;
-            if(this.Control.UseArtificialDiffusion) {
+            if (this.Control.UseArtificialDiffusion) {
                 Params = new[] { artificalViscosity };
             } else {
                 Params = null;
@@ -1046,7 +1054,7 @@ namespace BoSSS.Application.Rheology {
             if (U0.Count != D)
                 throw new ArgumentException("Spatial dimension and number of velocity parameter components does not match!");
 
-            if (Stress0.Count != (D*D + D)/2)
+            if (Stress0.Count != (D * D + D) / 2)
                 throw new ArgumentException("Spatial dimension and number of stress parameter components does not match!");
 
 
@@ -1063,7 +1071,7 @@ namespace BoSSS.Application.Rheology {
                 U0_U0mean = new SinglePhaseField[2 * D];
             }
 
-            DGField [] Params;
+            DGField[] Params;
 
             if (this.Control.useFDJacobianForOperatorMatrix) {
                 Params = ArrayTools.Cat<DGField>(U0_U0mean, VelocityXGradient, VelocityYGradient, Stress0, artificalViscosity);
@@ -1142,7 +1150,6 @@ namespace BoSSS.Application.Rheology {
                 //OpAffine.SaveToTextFile("RHS-" + counter + ".txt");
                 //counter++;
 
-
                 // Set Pressure Reference Point
                 //======================================================
                 if (!this.BcMap.DirichletPressureBoundary) {
@@ -1197,7 +1204,7 @@ namespace BoSSS.Application.Rheology {
                     int pVelLv = Math.Max(1, pVel - iLevel);
                     int pPreLv = Math.Max(1, pPrs - iLevel);
                     int pStrLv = Math.Max(1, pStr - iLevel);
-                    
+
                     /*
                     configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[2];
                     configs[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig() {
@@ -1213,9 +1220,9 @@ namespace BoSSS.Application.Rheology {
                     };
                     //*/
 
-                    
-                    
-                    
+
+
+
                     configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[1];
                     configs[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig() {
                         mode = MultigridOperator.Mode.LeftInverse_DiagBlock,
@@ -1329,6 +1336,10 @@ namespace BoSSS.Application.Rheology {
 
             Console.WriteLine("Total number of cells:    {0}", Grid.NumberOfCells);
             Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Mapping.TotalLength);
+
+            if (this.CurrentSessionInfo.ID != Guid.Empty && base.MPIRank == 0) {
+                InitLogFile(this.CurrentSessionInfo.ID);
+            }
 
         }
 
@@ -1620,7 +1631,7 @@ namespace BoSSS.Application.Rheology {
                 old2NewGrid = null;
             }
         }
-        
+
         /// <summary>
         /// Appends the <see cref="currentWeissenberg"/> number to the timestep
         /// </summary>
@@ -1646,7 +1657,31 @@ namespace BoSSS.Application.Rheology {
                 }
             }
         }
-    }
+
+
+        #region logging
+
+        TextWriter Log;
+        string header;
+
+        public void InitLogFile(Guid sessionID) {
+
+            if (this.Control.Bodyforces) {
+                Log = base.DatabaseDriver.FsDriver.GetNewLog("BodyForces", sessionID);
+                header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "#timestep", "#time","Wi", "ForceX", "ForceY");
+            }
+        }
+
+        public void WriteLogLine(TimestepNumber TimestepNo, double phystime) {
+
+            double[] force = IBMSolverUtils.GetForces_BoundaryFitted(Velocity.Current, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta, "Wall_cylinder");
+            string logline = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", TimestepNo, phystime, currentWeissenberg, force[0], force[1]);
+            Log.WriteLine(logline);
+            Log.Flush();
+        }
+
+        #endregion
+    }  
 
     class Idsource : LinearSource {
         public Idsource(string _var) {
