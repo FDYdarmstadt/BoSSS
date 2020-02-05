@@ -35,7 +35,6 @@ namespace BoSSS.Solution.NSECommon
         protected abstract double Diffusivity(params double[] Parameters);
 
         protected double PenaltyBase;
-        protected IncompressibleBoundaryCondMap BcMap;
         protected Func<double[], double, double>[] ArgumentFunction;
 
 
@@ -52,7 +51,6 @@ namespace BoSSS.Solution.NSECommon
         /// <param name="PenaltyLengthScales"></param>
         protected SIPDiffusionBase(double PenaltyBase, MultidimensionalArray PenaltyLengthScales, bool ParametersOK = false, int speciesIndex = 0) {
             this.PenaltyBase = PenaltyBase;
-            this.BcMap = BcMap;
             this.cj = PenaltyLengthScales;
             this.prmsOK = ParametersOK;
             this.i = speciesIndex;
