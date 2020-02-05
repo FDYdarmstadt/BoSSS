@@ -724,7 +724,10 @@ namespace BoSSS.Application.BoSSSpad {
                 RequiresDeploy = false;
             }
 
-
+            if(m_ctrl != null) {
+                // some database syncing might be necessary 
+            }
+            
             if (RequiresDeploy) {
                 this.DeploymentDirectory = bpc.GetNewDeploymentDir(this);
                 bpc.DeployExecuteables(this, AdditionalDeploymentFiles);

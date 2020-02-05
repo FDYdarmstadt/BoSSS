@@ -74,6 +74,8 @@ namespace BoSSS.Application.BoSSSpad {
             set;
         }
 
+        //public string[] 
+
         /// <summary>
         /// Returns the directory where the assemblies for <paramref name="myJob"/> 
         /// are deployed if <paramref name="myJob"/> is assigned to this batch processor.

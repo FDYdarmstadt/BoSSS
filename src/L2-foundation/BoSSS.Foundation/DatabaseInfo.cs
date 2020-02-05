@@ -33,7 +33,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="path">Path to the database</param>
         public DatabaseInfo(string path) {
             this.Path = path;
-            if (path == null) {
+            if(path == null) {
                 Controller = NullDatabaseController.Instance;
             } else {
                 Controller = new DatabaseController(this);
@@ -97,7 +97,7 @@ namespace BoSSS.Foundation.IO {
                 return R;
             }
         }
-        
+
         /// <summary>
         /// The grids of this database.
         /// </summary>
@@ -129,9 +129,33 @@ namespace BoSSS.Foundation.IO {
                     ((List<ISessionInfo>)ProjectSessions).Add(s);
                 }
 
-                
+
                 return R;
             }
+        }
+
+        /// <summary>
+        /// Alternative paths to access the database, if <see cref="DbPath"/> is not present on a given machine.
+        /// This allows to use the same control file or object on different machines, where the database is located in a different path.
+        /// - 1st entry: path into the local file system
+        /// - 2nd entry: optional machine name filter
+        /// </summary>
+        public (string, string)[] AlternateDbPaths {
+            get {
+                string[] lines = File.ReadAllLines(System.IO.Path.Combine(this.Path, "AlternatePaths.txt"));
+
+                var ret = new List<ValueTuple<string, string>>();
+                foreach(var line in lines) {
+                    string[] parts = line.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries);
+                    if(parts.Length >= 2) {
+                        ret.Add((parts[0], parts[1]));
+                    } else if(parts.Length >= 1) {
+                        ret.Add((parts[0], null));
+                    }
+                }
+                
+                return ret.ToArray();
+            }    
         }
     }
 }

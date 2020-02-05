@@ -82,9 +82,18 @@ namespace BoSSS.Foundation.IO {
             }
         }
 
+        /// <summary>
+        /// Contains nothing
+        /// </summary>
+        public (string, string)[] AlternateDbPaths {
+            get {
+                return new ValueTuple<string, string>[0];
+            }
+        }
+
         #endregion
 
 
-        
+
     }
 }
