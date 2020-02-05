@@ -395,7 +395,7 @@ namespace BoSSS.Application.Rheology {
             string path = @"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag", 
             //string path = @"d:\Users\kummer\default_bosss_db",
             //string path = @"c:\Users\florian\default_bosss_db",
-            int degree = 2) {
+            int degree = 1) {
             //BoSSS.Application.Rheology.RheologyControlExamples.ConfinedCylinder();
             RheologyControl C = new RheologyControl();
 
@@ -406,8 +406,12 @@ namespace BoSSS.Application.Rheology {
             //C:\AnnesBoSSSdb\ConfinedCylinder
 
             //Solver Options
-            C.NoOfTimesteps = 1;
-            C.savetodb = false;
+            C.NoOfTimesteps = 10;
+            C.dt = 0.1;
+            C.dt = 1E20;
+            C.dtMax = C.dt;
+            C.dtMin = C.dt;
+            C.savetodb = true;
             C.DbPath = path;
             C.ProjectName = "Cylinder";
 
@@ -421,7 +425,7 @@ namespace BoSSS.Application.Rheology {
             C.LinearSolver.ConvergenceCriterion = 1E-7;
 
             //C.UnderRelax = 1.0;
-            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;//   Steady;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;//.exp_Kcycle_schwarz_4Rheology;
@@ -456,7 +460,7 @@ namespace BoSSS.Application.Rheology {
             C.FixedStreamwisePeriodicBC = false;
             C.beta = 0.59;
             C.Reynolds = 1;
-            C.Weissenberg = 1; //aim Weissenberg number!
+            C.Weissenberg = 0.3; //aim Weissenberg number!
             C.RaiseWeissenberg = true;
             C.WeissenbergIncrement = 0.1;
 

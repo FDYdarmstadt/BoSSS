@@ -747,7 +747,7 @@ namespace BoSSS.Solution.NSECommon {
         /// Calculates the drag (x-component) and lift (y-component) forces acting on a cylinder wall of a boundary fitted grid. The definition of the wall is HARDCODED!
         /// </summary>
         static public double[] GetForces_BoundaryFitted(VectorField<SinglePhaseField> U, SinglePhaseField StressXX, //VectorField<SinglePhaseField> GradU, VectorField<SinglePhaseField> GradV
-            SinglePhaseField StressXY, SinglePhaseField StressYY, SinglePhaseField P, LevelSetTracker LsTrk, double muA, double beta) {
+            SinglePhaseField StressXY, SinglePhaseField StressYY, SinglePhaseField P, LevelSetTracker LsTrk, double muA, double beta, string EdgeTagName) {
             int D = LsTrk.GridDat.SpatialDimension;
 
             if (D > 2) {
@@ -768,8 +768,8 @@ namespace BoSSS.Solution.NSECommon {
             //if (RequiredOrder > agg.HMForder)
             //    throw new ArgumentException();
 
-            Console.WriteLine();
-            Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
+            //Console.WriteLine();
+            //Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
 
             SinglePhaseField _StressXX = StressXX;
             SinglePhaseField _StressXY = StressXY;
@@ -867,7 +867,7 @@ namespace BoSSS.Solution.NSECommon {
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
 
                 //EdgeMask Mask = new EdgeMask(LsTrk.GridDat, "Wall_bottom");
-                EdgeMask Mask = new EdgeMask(LsTrk.GridDat, "Wall_cylinder");
+                EdgeMask Mask = new EdgeMask(LsTrk.GridDat, EdgeTagName);
 
                 EdgeQuadratureScheme eqs = SchemeHelper.GetEdgeQuadScheme(LsTrk.GetSpeciesId("A"), IntegrationDomain: Mask);
 
