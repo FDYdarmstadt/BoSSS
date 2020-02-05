@@ -41,6 +41,9 @@ namespace bcl.init_db {
             Directory.CreateDirectory(Path.Combine(targetDirectory.FullName, "grids"));
             Directory.CreateDirectory(Path.Combine(targetDirectory.FullName, "sessions"));
 
+            // Create 'AlternatePaths.txt'
+            File.WriteAllText(Path.Combine(targetDirectory.FullName, "AlternatePaths.txt"), ""); 
+
             // Register it
             register_db.Program p = new register_db.Program();
             p.DecodeArgs(new string[] { targetDirectory.FullName });
