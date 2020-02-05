@@ -246,7 +246,8 @@ namespace BoSSS.Solution.NSECommon {
 
                 case ViscosityOption.VariableViscosity:
                 case ViscosityOption.VariableViscosityDimensionless:
-                    throw new NotImplementedException("Nonlinear dependence - todo.");
+                    //throw new NotImplementedException("Nonlinear dependence - todo.");
+                   return new IEquationComponent[] { this };
 
 
                 default:
