@@ -502,11 +502,9 @@ namespace BoSSS.Application.BoSSSpad {
 
                 executionQueues.Add(new MiniBatchProcessorClient());
                 return;
-            } 
-            
-            foreach(var c in bpc.AllQueus) {
-                executionQueues.Add(c.Instance());
             }
+
+            executionQueues.AddRange(bpc.AllQueues);
         }
 
 
@@ -532,6 +530,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// Adds an entry to <see cref="ExecutionQueues"/>.
         /// </summary>
         public static int AddExecutionQueue(BatchProcessorClient bpc) {
+            if(executionQueues == null)
+                executionQueues = new List<BatchProcessorClient>();
             executionQueues.Add(bpc);
             return executionQueues.Count - 1;
         }
@@ -541,12 +541,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public static void SaveExecutionQueues() {
             var conf = new BatchProcessorConfig() {
-                AllQueus = new BatchProcessorClient.Config[ExecutionQueues.Count]
+                AllQueues = ExecutionQueues.ToArray()
             };
 
-            for(int i = 0; i < ExecutionQueues.Count; i++) {
-                conf.AllQueus[i] = ExecutionQueues[i].GetConfig();
-            }
+            //for(int i = 0; i < ExecutionQueues.Count; i++) {
+            //    conf.AllQueus[i] = ExecutionQueues[i].GetConfig();
+            //}
 
             BatchProcessorConfig.SaveConfiguration(conf);
         }

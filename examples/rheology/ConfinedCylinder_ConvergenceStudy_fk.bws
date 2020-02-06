@@ -4,10 +4,10 @@ restart
   BoSSSpad C# interpreter
   _______________________
 
-IOException caught while opening database at 'C:\Users\florian\Documents\BoSSS-master\public\src\L4-application\CNS\bin\Debug\bosss_db_performance_3': Could not find or access a database located at 'C:\Users\florian\Documents\BoSSS-master\public\src\L4-application\CNS\bin\Debug\bosss_db_performance_3'
-IOException caught while opening database at 'D:\tmp\test_db': Could not find or access a database located at 'D:\tmp\test_db'
 Databases loaded:
-List of 0 instances of IDatabaseInfo {
+List of 2 instances of IDatabaseInfo {
+  0: { Session Count = 1; Grid Count = 6; Path = C:\Users\flori\default_bosss_db }
+  1: { Session Count = 0; Grid Count = 0; Path = X:\bosss_db_lichtenberg }
 }
 Setting Matlab Connector to Octave...
 
@@ -22,9 +22,30 @@ Opening existing database 'C:\Users\flori\default_bosss_db'.
 ==============
 ExecutionQueues;
 **************
-List of 1 instances of BatchProcessorClient {
+Mini: private ctor called
+Slurm: private ctor called
+List of 2 instances of BatchProcessorClient {
   0: BoSSS.Application.BoSSSpad.MiniBatchProcessorClient
+  1: BoSSS.Application.BoSSSpad.SlurmClient
 }
+==============
+//(ExecutionQueues[1] as SlurmClient).TestSSH();
+**************
+BoSSS
+BoSSS-native
+BoSSSpad
+HelloMPI
+bosss_db_lichtenberg
+bosss_deploy
+bosss_install
+dotnet-sdk-2.2.401-linux-x64.tar.gz
+ipPoisson
+libmetis.so
+link2scr
+moduled.txt
+mono
+
+
 ==============
 using BoSSS.Application.Rheology;
 **************
@@ -250,6 +271,12 @@ System.Security.Authentication.InvalidCredentialException occurred: The server h
 1
 ==============
 //SaveExecutionQueues();
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

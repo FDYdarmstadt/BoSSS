@@ -31,7 +31,7 @@ namespace BoSSS.Application.BoSSSpad {
     /// A <see cref="BatchProcessorClient"/>-implementation which uses a Microsoft HPC 2012 server.
     /// </summary>
     public class MsHPC2012Client : BatchProcessorClient {
-
+        /*
         /// <summary>
         /// Configuration options specific to the <see cref="MiniBatchProcessorClient"/>
         /// </summary>
@@ -71,8 +71,8 @@ namespace BoSSS.Application.BoSSSpad {
                     base.DeployRuntime);
             }
         }
-
-         /// <summary>
+        
+        /// <summary>
         /// .
         /// </summary>
         public override BatchProcessorClient.Config GetConfig() {
@@ -85,7 +85,7 @@ namespace BoSSS.Application.BoSSSpad {
                 ServerName = this.m_ServerName
             };
         }
-
+        */
 
         /// <summary>
         /// Ctor.

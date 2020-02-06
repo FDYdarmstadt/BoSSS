@@ -13,7 +13,9 @@ namespace BoSSS.Application.BoSSSpad {
     /// </summary>
     public class BatchProcessorConfig {
 
-        public BatchProcessorClient.Config[] AllQueus;
+        //public BatchProcessorClient.Config[] AllQueus;
+
+        public BatchProcessorClient[] AllQueues;
 
 
         static string ConfigFilePath {
@@ -37,8 +39,8 @@ namespace BoSSS.Application.BoSSSpad {
                 return bpc;
             } else {
                 var r = new BatchProcessorConfig() {
-                    AllQueus = new BatchProcessorClient.Config[] {
-                        new MiniBatchProcessorClient.Config()
+                    AllQueues = new BatchProcessorClient[] {
+                        new MiniBatchProcessorClient()
                     }
                 };
 
