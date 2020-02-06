@@ -137,6 +137,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.hydrodynamicsConvergenceCriterion = 1e-1;
             double particleDensity = 1;
+            C.gravity = new Vector(0, 0);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, false, true);
             C.Particles.Add(new Particle_Sphere(motion, 0.4, new double[] { 0.0, 0.0 }));
             C.PhysicalParameters.rho_A = 1;
@@ -345,10 +346,11 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Fluid Properties
             // =============================
-            C.PhysicalParameters.rho_A = 0.1;//pg/(mum^3)
-            C.PhysicalParameters.mu_A = 1e-1;//pg(mum*s)
+            C.PhysicalParameters.rho_A = 0.1;
+            C.PhysicalParameters.mu_A = 1e-1;
             C.PhysicalParameters.Material = true;
             double particleDensity = 1.0;
+            C.gravity = new Vector(0, 0);
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, false, false, 1);
             // Particle Properties
             // =============================   
