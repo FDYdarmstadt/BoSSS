@@ -29,13 +29,18 @@ using System.Linq;
 namespace FSI_Solver {
     internal class FSI_LevelSetUpdate {
 
-        internal FSI_LevelSetUpdate(LevelSetTracker levelSetTracker, IGridData gridData) {
+        internal FSI_LevelSetUpdate(LevelSetTracker levelSetTracker, IGridData gridData, double maxGridLength, double minGridLength) {
             m_LevelSetTracker = levelSetTracker;
             this.gridData = gridData;
+            this.maxGridLength = maxGridLength;
+            this.minGridLength = minGridLength;
         }
 
         private readonly LevelSetTracker m_LevelSetTracker;
         private readonly IGridData gridData;
+        private readonly double minGridLength;
+        private readonly double maxGridLength;
+
 
         /// <summary>
         /// compiles a cell mask from all cells with a specific color
@@ -170,8 +175,8 @@ namespace FSI_Solver {
             int J = gridData.iLogicalCells.NoOfLocalUpdatedCells;
             List<int> CurrentColor = new List<int>();
             for (int p = 0; p < Particles.Count; p++) {
-                double h_min = m_LevelSetTracker.GridDat.Cells.h_minGlobal > Particles[p].GetLengthScales().Min()
-                    ? 1.5 * m_LevelSetTracker.GridDat.Cells.h_minGlobal
+                double h_min = minGridLength > Particles[p].GetLengthScales().Min()
+                    ? 1.5 * minGridLength
                     : 0;
                 int temp = 0;
                 for (int i = 0; i < ColoredCellsSorted.Count; i++) {
