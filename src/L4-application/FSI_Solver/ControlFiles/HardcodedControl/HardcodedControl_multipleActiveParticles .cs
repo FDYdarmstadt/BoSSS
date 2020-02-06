@@ -165,11 +165,11 @@ namespace BoSSS.Application.FSI_Solver {
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, 1);
             C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.2, new double[] { -1, 0 - (yPert / 2) }, startAngl: 0, activeStress: 10));
             C.Particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.2, new double[] { 1, 0 + (yPert / 2) }, startAngl: 180 + angle, activeStress: 10));
-
+                        
             // misc. solver options
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            double dt = 1e-2;
+            double dt = 1e-3;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 100000000;

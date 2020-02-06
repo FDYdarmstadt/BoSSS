@@ -1363,7 +1363,10 @@ namespace BoSSS.Application.FSI_Solver {
             List<int[]> Coarsening = new List<int[]>();
             if (((FSI_Control)Control).AdaptiveMeshRefinement) {
                 BitArray cutCells = LsTrk.Regions.GetCutCellMask().GetBitMask();
-                AnyChangeInGrid = GridRefinementController.ComputeGridChange(gridData, cutCells, GetCellMaskWithRefinementLevelsWithPersson(), out CellsToRefineList, out Coarsening);
+                if(TimestepNo <= 1)
+                    AnyChangeInGrid = GridRefinementController.ComputeGridChange(gridData, cutCells, GetCellMaskWithRefinementLevelsStartUpSweeps(), out CellsToRefineList, out Coarsening);
+                else
+                    AnyChangeInGrid = GridRefinementController.ComputeGridChange(gridData, cutCells, GetCellMaskWithRefinementLevelsWithPersson(), out CellsToRefineList, out Coarsening);
             } 
             if (AnyChangeInGrid) {
                 int[] consoleRefineCoarse = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length) }).MPISum();
@@ -1400,6 +1403,27 @@ namespace BoSSS.Application.FSI_Solver {
                     if (!perssonCells[j] && ((FSI_Control)Control).pureDryCollisions) {
                         Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
                         perssonCells[j] = m_Particles[p].Contains(cellCenter, MaxGridLength / 2);
+                    }
+                }
+            }
+            return new List<Tuple<int, BitArray>> { new Tuple<int, BitArray>(refinementLevel, perssonCells), };
+        }
+
+        /// <summary>
+        /// Finds all cells to be refined with the perssonsensor.
+        /// </summary>
+        private List<Tuple<int, BitArray>> GetCellMaskWithRefinementLevelsStartUpSweeps() {
+            int refinementLevel = ((FSI_Control)Control).RefinementLevel;
+            int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            BitArray perssonCells = new BitArray(noOfLocalCells);
+            SpeciesId fluidSpeciesID = LsTrk.GetSpeciesId("A");
+            for (int p = 0; p < m_Particles.Count(); p++) {
+                for (int j = 0; j < noOfLocalCells; j++) {
+                    if (LsTrk.Regions.IsSpeciesPresentInCell(fluidSpeciesID, j)) {
+                        if (!perssonCells[j]) {
+                            Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
+                            perssonCells[j] = m_Particles[p].Contains(cellCenter, 2 * MaxGridLength);
+                        }
                     }
                 }
             }
