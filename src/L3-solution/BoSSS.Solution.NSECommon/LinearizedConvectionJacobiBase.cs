@@ -38,8 +38,8 @@ namespace BoSSS.Application.NSECommon{
             double ScalarOut = GetScalar(Uout);
 
             for (int i = 0; i < m_SpatialDimension; ++i) {
-                r += ScalarIn * Uin[i] * inp.Normal[i];
-                r += ScalarOut * Uout[i] * inp.Normal[i];
+                r += 0.5 * ScalarIn * Uin[i] * inp.Normal[i];
+                r += 0.5 * ScalarOut * Uout[i] * inp.Normal[i];
             }
 
 
@@ -58,7 +58,7 @@ namespace BoSSS.Application.NSECommon{
 
             double Lambda = Math.Max(LambdaIn, LambdaOut);
 
-            r += 0.5 * Lambda * (GetScalar(Uin) - GetScalar(Uout));
+            r += 0.5 * Lambda * (ScalarIn - ScalarOut);
             if(double.IsNaN(r))
                 throw new NotFiniteNumberException();
 
