@@ -580,7 +580,6 @@ namespace BoSSS.Application.IBM_Solver {
             // Set Pressure Reference Point
             if (!this.boundaryCondMap.DirichletPressureBoundary) {
                 if (OpMatrix != null) {
-
                     IBMSolverUtils.SetPressureReferencePoint(
                         CurrentSolution.Mapping,
                         this.GridData.SpatialDimension,

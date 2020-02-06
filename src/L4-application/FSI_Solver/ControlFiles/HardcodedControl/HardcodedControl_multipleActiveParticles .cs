@@ -146,7 +146,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
 
             List<string> boundaryValues = new List<string> {
-                "Pressure_Outlet"
+                "Wall"
             };
             C.SetBoundaries(boundaryValues);
             C.SetGrid(lengthX: 8, lengthY: 8, cellsPerUnitLength:2, periodicX: false, periodicY: false);
