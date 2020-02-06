@@ -134,6 +134,14 @@ namespace BoSSS.Application.BoSSSpad {
                                 }
                             }
                         }
+
+                        // remove empty entries
+                        for(int i = 0; i < m_AllowedDatabases.Count; i++) {
+                            if(m_AllowedDatabases[i] == null) {
+                                m_AllowedDatabases.RemoveAt(i);
+                                i--;
+                            }
+                        }
                     }
                 }
                 

@@ -271,30 +271,128 @@ namespace BoSSS.Application.BoSSSpad {
         int m_ctrl_index;
         string ControlName = null;
 
+        private void FiddleControlFile(BatchProcessorClient bpc) {
+            if(m_ctrl == null)
+                return;
+
+            // check the database 
+            // ==================
+            IDatabaseInfo ctrl_db = m_ctrl.GetDatabase();
+            if(bpc.AllowedDatabases != null && bpc.AllowedDatabases.Count > 0) {
+                
+                IDatabaseInfo newDb = null;
+                if(ctrl_db == null) {
+                    newDb = bpc.AllowedDatabases[0];
+                } else {
+                    bool ok = false;
+                    foreach(var allow_dba in bpc.AllowedDatabases) {
+                        if(allow_dba.Equals(ctrl_db)) {
+                            ok = true;
+                            break;
+                        }
+                    }
+
+                    if(!ok)
+                        newDb = bpc.AllowedDatabases[0];
+                }
+
+                if(newDb != null) {
+                    Console.WriteLine("Resetting database for control object to " + newDb.ToString());
+                    m_ctrl.SetDatabase(newDb);
+                    ctrl_db = newDb;
+                }
+            } 
+
+            // check grid & restart info
+            // =========================
+
+            if(ctrl_db != null) {
+                if(!m_ctrl.GridGuid.Equals(Guid.Empty)) {
+
+                    var GridIn_ctrl_db = ctrl_db.Grids.FirstOrDefault(GrdInf => GrdInf.ID.Equals(m_ctrl.GridGuid));
+
+                    if(GridIn_ctrl_db == null) {
+                        Console.WriteLine($"Grid {m_ctrl.GridGuid} is not present in database - copy to target system...");
+
+                        var grid2copy = InteractiveShell.AllGrids.FirstOrDefault(dbGrid => dbGrid.ID.Equals(m_ctrl.GridGuid));
+                        if(grid2copy == null) {
+                            // maybe replace exception with a warning, if job should be tried anyway
+                            throw new IOException($"Unable to find grid '{m_ctrl.GridGuid}' in any database - job will most likely crash.");
+                        } else {
+                            grid2copy.Copy(ctrl_db);
+                        }
+                        
+                        Console.WriteLine("done.");
+                    }
+                } else {
+                    Console.Error.WriteLine($"Warning: no grid seems to be specified for the job to submit.");
+                }
+
+                if(m_ctrl.RestartInfo != null) {
+                    Guid Rstsess_guid = m_ctrl.RestartInfo.Item1;
+
+
+                    var Rstsess_ctrl_db = ctrl_db.Sessions.FirstOrDefault(sinf => sinf.ID.Equals(Rstsess_guid));
+
+                    if(Rstsess_ctrl_db == null) {
+                        Console.WriteLine($"Session {m_ctrl.GridGuid} to restart from is not present in database - copy to target system...");
+
+                        var sess_2copy = InteractiveShell.AllSessions.FirstOrDefault(sinf => sinf.ID.Equals(Rstsess_guid));
+                        if(sess_2copy == null) {
+                            // maybe replace exception with a warning, if job should be tried anyway
+                            throw new IOException($"Unable to find session '{sess_2copy}' in any database - job will most likely crash.");
+                        } else {
+                            sess_2copy.Copy(ctrl_db);
+                        }
+                        
+                        Console.WriteLine("done.");
+                    }
+                }
+
+            } else {
+                Console.Error.WriteLine($"Warning: no database is set for the job to submit; nothing ma be saved.");
+            }
+
+            // finally, serialize the object
+            // =============================
+            {
+                string text;
+                m_ctrl_index = -1;
+                if(m_ctrl.GeneratedFromCode) {
+                    text = m_ctrl.ControlFileText;
+                    ControlName = "control.cs";
+                    m_ctrl_index = m_ctrl.ControlFileText_Index;
+                } else {
+                    text = m_ctrl.Serialize();
+                    ControlName = "control.obj";
+                }
+                byte[] buffer = Encoding.UTF8.GetBytes(text);
+
+                int remIdx = AdditionalDeploymentFiles.IndexWhere(tt => tt.Item2 == ControlName);
+                if(remIdx >= 0)
+                    AdditionalDeploymentFiles.RemoveAt(remIdx);
+
+                AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(buffer, ControlName));
+            }
+        }
+
+
+
         /// <summary>
         /// Specifies the control object for application startup; overrides any startup arguments (<see cref="CommandLineArguments"/>)
         /// set so far.
         /// </summary>
         public void SetControlObject(BoSSS.Solution.Control.AppControl ctrl) {
             TestActivation();
-            m_ctrl = ctrl;
             
             // serialize control object
             // ========================
 
             ctrl.VerifyEx();
-            string text;
-            m_ctrl_index = -1;
-            if (ctrl.GeneratedFromCode) {
-                text = ctrl.ControlFileText;
-                ControlName = "control.cs";
-                m_ctrl_index = ctrl.ControlFileText_Index;
-            } else {
-                text = ctrl.Serialize();
-                ControlName = "control.obj";
-            }
-            byte[] buffer = Encoding.UTF8.GetBytes(text);
-            AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(buffer, ControlName));
+            m_ctrl = ctrl;
+            // note: serialization is done later, immediately before deployment,
+            // since we may need to fix database issues (path on batch system, evtl. transfer of grid)
+
 
             // Project & Session Name
             // ======================
@@ -321,12 +419,13 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Returns a clone of the control object linked to this job
+        /// Returns the control object linked to this job
         /// </summary>
         public BoSSS.Solution.Control.AppControl GetControl() {
             if(ControlName == null)
                 return null;
 
+            /*
             var data = AdditionalDeploymentFiles.Single(tt => tt.Item2.Equals(ControlName));
             string ctrlfileContent = Encoding.UTF8.GetString(data.Item1);
             BoSSS.Solution.Control.AppControl ctrl;
@@ -359,8 +458,10 @@ namespace BoSSS.Application.BoSSSpad {
 
             if(!m_ctrl.Equals(ctrl))
                 throw new IOException("Control object mismatch after serialize/deserialize.");
+                */
 
-            return ctrl;
+
+            return m_ctrl;
         }
 
 
@@ -727,7 +828,9 @@ namespace BoSSS.Application.BoSSSpad {
             if(m_ctrl != null) {
                 // some database syncing might be necessary 
             }
-            
+
+            FiddleControlFile(bpc);
+
             if (RequiresDeploy) {
                 this.DeploymentDirectory = bpc.GetNewDeploymentDir(this);
                 bpc.DeployExecuteables(this, AdditionalDeploymentFiles);

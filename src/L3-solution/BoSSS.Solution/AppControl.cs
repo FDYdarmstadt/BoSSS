@@ -738,10 +738,11 @@ namespace BoSSS.Solution.Control {
         public ValueTuple<string, string>[] AlternateDbPaths = null;
         
         /// <summary>
-        /// Sets <see cref="DbPath"/>.
+        /// Sets <see cref="DbPath"/>, <see cref="AlternateDbPaths"/>.
         /// </summary>
         public void SetDatabase(IDatabaseInfo dbi) {
             DbPath = dbi.Path;
+            AlternateDbPaths = dbi.AlternateDbPaths;
         }
         
 

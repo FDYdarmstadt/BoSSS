@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using ilPSP;
 using Microsoft.Win32.SafeHandles;
 using System;
 using System.Collections.Generic;
@@ -156,6 +157,52 @@ namespace BoSSS.Foundation.IO {
             }
         }
 
+         /// <summary>
+        /// Reference equality
+        /// </summary>
+        public bool Equals(IDatabaseInfo other) {
+            if(object.ReferenceEquals(this, other))
+                return true;
+
+
+            string mName = System.Environment.MachineName.ToLowerInvariant();
+
+            List<ValueTuple<string, string>> allPaths = new List<(string, string)>();
+            allPaths.Add((other.Path, null));
+            allPaths.AddRange(other.AlternateDbPaths);
+
+            foreach(var t in allPaths) {
+                string path = t.Item1;
+                string filter = t.Item2;
+
+                if(!filter.IsNullOrEmpty() && !filter.IsEmptyOrWhite()) {
+                    if(!mName.Contains(filter)) {
+                        continue;
+                    }
+                }
+
+                if(this.PathMatch(path))
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override bool Equals(object obj) {
+            return this.Equals(obj as NullDatabaseInfo);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override int GetHashCode() {
+            return 1; // deactivate hashing
+        }
+
+
         /// <summary>
         /// Alternative paths to access the database, if <see cref="DbPath"/> is not present on a given machine.
         /// This allows to use the same control file or object on different machines, where the database is located in a different path.
@@ -164,10 +211,17 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         public (string, string)[] AlternateDbPaths {
             get {
-                string[] lines = File.ReadAllLines(System.IO.Path.Combine(this.Path, "AlternatePaths.txt"));
+                string p = System.IO.Path.Combine(this.Path, "AlternatePaths.txt");
+                
+                if(!File.Exists(p))
+                    return new ValueTuple<string, string>[0];
+
+                string[] lines = File.ReadAllLines(p);
 
                 var ret = new List<ValueTuple<string, string>>();
                 foreach(var line in lines) {
+                    if(line.StartsWith(";;"))
+                        continue;
                     string[] parts = line.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries);
                     if(parts.Length >= 2) {
                         ret.Add((parts[0], parts[1]));

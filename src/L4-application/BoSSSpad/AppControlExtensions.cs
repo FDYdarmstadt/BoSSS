@@ -190,6 +190,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
 
+        
         /// <summary>
         /// Verifies a control object, especially if it is suitable for serialization.
         /// </summary>
@@ -291,6 +292,54 @@ namespace BoSSS.Application.BoSSSpad {
 
             }
 
+        }
+
+        /// <summary>
+        /// Creates the <see cref="IDatabaseInfo"/> for the current settings of the control file #
+        /// (<see cref="AppControl.DbPath/>, <see cref="AppControl.AlternateDbPaths"/>),
+        /// if accessible on the current computer.
+        /// </summary>
+        static public IDatabaseInfo GetDatabase(this AppControl Control) {
+            List<ValueTuple<string, string>> allPaths = new List<(string, string)>();
+            if(Control.DbPath.IsNullOrEmpty())
+                allPaths.Add((Control.DbPath, null));
+            if(Control.AlternateDbPaths != null)
+                allPaths.AddRange(Control.AlternateDbPaths);
+
+            string mName = System.Environment.MachineName.ToLowerInvariant();
+
+            string dbPath = null;
+            foreach(var t in allPaths) {
+                string path = t.Item1;
+                string filter = t.Item2;
+
+                if(path.IsNullOrEmpty() || path.IsEmptyOrWhite())
+                    continue;
+
+                if(!filter.IsNullOrEmpty() && !filter.IsEmptyOrWhite()) {
+                    if(!mName.Contains(filter)) {
+                        continue;
+                    }
+                }
+
+                if(System.IO.Directory.Exists(path)) {
+                    dbPath = path;
+                    break;
+                }
+            }
+
+            if(dbPath == null) {
+                return null;
+            }
+
+            // try to match it with on of the already known databases
+            foreach(var db in InteractiveShell.databases) {
+                if(db.PathMatch(dbPath))
+                    return db;
+            }
+
+            // otherwise, create new db
+            return new DatabaseInfo(dbPath);
         }
     }
 }

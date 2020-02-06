@@ -22,7 +22,7 @@ namespace BoSSS.Foundation.IO {
     /// <summary>
     /// Relevant information of a database object
     /// </summary>
-    public interface IDatabaseInfo {
+    public interface IDatabaseInfo : IEquatable<IDatabaseInfo> {
 
         /// <summary>
         /// Full path to the base directory of the database.

@@ -151,6 +151,33 @@ namespace BoSSS.Application.BoSSSpad {
         public static IList<IDatabaseInfo> databases;
 
         /// <summary>
+        /// Sessions in all Databases
+        /// </summary>
+        static public IList<ISessionInfo> AllSessions {
+            get {
+                var ret = new List<ISessionInfo>();
+                foreach(var db in databases) {
+                    ret.AddRange(db.Sessions);
+                }
+                return ret;
+            }
+        }
+
+        /// <summary>
+        /// Grids in all Databases
+        /// </summary>
+        static public IList<IGridInfo> AllGrids {
+            get {
+                var ret = new List<IGridInfo>();
+                foreach(var db in databases) {
+                    ret.AddRange(db.Grids);
+                }
+                return ret;
+            }
+        }
+
+
+        /// <summary>
         /// path to the default BoSSS database directory for the current user
         /// </summary>
         static public string GetDefaultDatabaseDir() {

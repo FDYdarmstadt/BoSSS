@@ -92,6 +92,27 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// Reference equality
+        /// </summary>
+        public bool Equals(IDatabaseInfo other) {
+            return object.ReferenceEquals(this,other);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override bool Equals(object obj) {
+            return this.Equals(obj as NullDatabaseInfo);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override int GetHashCode() {
+            return 1; // deactivate hashing
+        }
+
+        /// <summary>
         /// Always false
         /// </summary>
         public bool PathMatch(string otherPath) {
