@@ -111,6 +111,12 @@ namespace BoSSS.Application.Rheology {
         public bool Stokes = false;
 
         /// <summary>
+        /// Stokes (true), but iterative for convection in constitutive
+        /// </summary>
+        [DataMember]
+        public bool StokesConvection = false;
+
+        /// <summary>
         /// insert initial conditions
         /// </summary>
         [DataMember]

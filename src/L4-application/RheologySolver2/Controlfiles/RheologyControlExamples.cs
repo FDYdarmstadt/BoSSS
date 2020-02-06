@@ -406,16 +406,16 @@ namespace BoSSS.Application.Rheology {
             //C:\AnnesBoSSSdb\ConfinedCylinder
 
             //Solver Options
-            C.NoOfTimesteps = 10;
-            C.dt = 0.1;
+            C.NoOfTimesteps = 1;
+            //C.dt = 0.1;
             C.dt = 1E20;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
-            C.savetodb = true;
+            C.savetodb = false;
             C.DbPath = path;
             C.ProjectName = "Cylinder";
 
-            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MinSolverIterations = 1;
             C.NonLinearSolver.ConvergenceCriterion = 1E-7;
 
@@ -425,7 +425,7 @@ namespace BoSSS.Application.Rheology {
             C.LinearSolver.ConvergenceCriterion = 1E-7;
 
             //C.UnderRelax = 1.0;
-            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;//   Steady;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady; //Transient;//   Steady;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;//.exp_Kcycle_schwarz_4Rheology;
@@ -457,12 +457,14 @@ namespace BoSSS.Application.Rheology {
             double h = 4;
 
             C.Stokes = false;
+            C.StokesConvection = true;
             C.FixedStreamwisePeriodicBC = false;
             C.beta = 0.59;
             C.Reynolds = 1;
             C.Weissenberg = 0.3; //aim Weissenberg number!
             C.RaiseWeissenberg = true;
             C.WeissenbergIncrement = 0.1;
+            C.giesekusfactor = 0.1;
 
             //Penalties
             C.ViscousPenaltyScaling = 1.0;

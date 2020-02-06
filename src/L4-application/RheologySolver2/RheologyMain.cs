@@ -421,7 +421,7 @@ namespace BoSSS.Application.Rheology {
                         var comps = XOP.EquationComponents[CodName[d]];
 
                         // convective part:
-                        if (!this.Control.Stokes) {
+                        if (!this.Control.StokesConvection || !this.Control.Stokes) {
                             comps.Add(new LocalLaxFriedrichsConvection(D, BcMap, d, 1.0));
                         } else {
                             Console.WriteLine("Using Stokes Equation - no convective term.");
