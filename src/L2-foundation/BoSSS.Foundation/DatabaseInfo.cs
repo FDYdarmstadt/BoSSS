@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using Microsoft.Win32.SafeHandles;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -48,6 +49,8 @@ namespace BoSSS.Foundation.IO {
             private set;
         }
 
+        
+
         /// <summary>
         /// Provides functionality to copy/move/delete info objects stored in
         /// the database
@@ -71,6 +74,25 @@ namespace BoSSS.Foundation.IO {
             return "{ Session Count = " + ((DatabaseController)Controller).SessionCount
                 + "; Grid Count = " + ((DatabaseController)Controller).GridCount
                 + "; Path = " + Path + " }";
+        }
+
+        /// <summary>
+        /// detects if some other path actually also points to this database
+        /// </summary>
+        public bool PathMatch(string otherPath) {
+            if(this.Path == otherPath)
+                return true;
+            if(!Directory.Exists(otherPath))
+                return false;
+
+            string TokenName = Guid.NewGuid().ToString() + ".token";
+
+            string file1 = System.IO.Path.Combine(this.Path, TokenName);
+            File.WriteAllText(file1, "this is a test file which can be safely deleted.");
+
+            string file2 = System.IO.Path.Combine(otherPath, TokenName);
+
+            return File.Exists(file2);
         }
 
         /// <summary>

@@ -91,6 +91,13 @@ namespace BoSSS.Foundation.IO {
             }
         }
 
+        /// <summary>
+        /// Always false
+        /// </summary>
+        public bool PathMatch(string otherPath) {
+            return false;
+        }
+
         #endregion
 
 

@@ -15,37 +15,34 @@ Setting Matlab Connector to Octave...
 Mini batch processor is already running.
 
 ==============
+databases;
+**************
+List of 2 instances of IDatabaseInfo {
+  0: { Session Count = 1; Grid Count = 6; Path = C:\Users\flori\default_bosss_db }
+  1: { Session Count = 0; Grid Count = 0; Path = X:\bosss_db_lichtenberg }
+}
+==============
 var myDb = OpenOrCreateDefaultDatabase();
 **************
-Opening existing database 'C:\Users\flori\default_bosss_db'.
-
 ==============
 ExecutionQueues;
 **************
-Mini: private ctor called
-Slurm: private ctor called
 List of 2 instances of BatchProcessorClient {
   0: BoSSS.Application.BoSSSpad.MiniBatchProcessorClient
-  1: BoSSS.Application.BoSSSpad.SlurmClient
+  1: SlurmClient: fk69umer@lcluster3.hrz.tu-darmstadt.de
 }
 ==============
 //(ExecutionQueues[1] as SlurmClient).TestSSH();
 **************
-BoSSS
-BoSSS-native
-BoSSSpad
-HelloMPI
-bosss_db_lichtenberg
-bosss_deploy
-bosss_install
-dotnet-sdk-2.2.401-linux-x64.tar.gz
-ipPoisson
-libmetis.so
-link2scr
-moduled.txt
-mono
-
-
+==============
+ExecutionQueues[1].AllowedDatabases;
+**************
+List of 1 instances of IDatabaseInfo {
+  0: { Session Count = 0; Grid Count = 0; Path = X:\bosss_db_lichtenberg }
+}
+==============
+//object.ReferenceEquals(ExecutionQueues[1].AllowedDatabases[0], databases[1]);
+**************
 ==============
 using BoSSS.Application.Rheology;
 **************
@@ -271,6 +268,12 @@ System.Security.Authentication.InvalidCredentialException occurred: The server h
 1
 ==============
 //SaveExecutionQueues();
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

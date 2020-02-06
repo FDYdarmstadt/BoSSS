@@ -178,6 +178,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// Opens a database at a specific path, resp. creates one if the 
         /// </summary>
         static public IDatabaseInfo OpenOrCreateDatabase(string dbDir) {
+            foreach(var existing_dbi in InteractiveShell.databases) {
+                if(existing_dbi.PathMatch(dbDir)) {
+                    return existing_dbi;
+                }
+            }
+            
             if (Directory.Exists(dbDir)) {
                 if (!DatabaseUtils.IsValidBoSSSDatabase(dbDir)) {
                     throw new ArgumentException("Directory '" + dbDir + "' exists, but is not a valid BoSSS database.");

@@ -114,9 +114,26 @@ namespace BoSSS.Application.BoSSSpad {
                         
                         // pass 1: search in already-known databases
                         for(int i = 0; i < AllowedDatabasesPaths.Length; i++) {
-
+                            foreach(var db in InteractiveShell.databases) {
+                                if(db.PathMatch(AllowedDatabasesPaths[i])) {
+                                    // bingo
+                                    m_AllowedDatabases[i] = db;
+                                    break;
+                                }
+                            }
                         }
                         
+                        // pass 2: try to open other databases
+                        for(int i = 0; i < AllowedDatabasesPaths.Length; i++) {
+                            if(m_AllowedDatabases[i] == null) {
+                                try {
+                                    m_AllowedDatabases[i] = new DatabaseInfo(AllowedDatabasesPaths[i]);
+                                } catch(Exception e) {
+                                    Console.Error.WriteLine($"Unable to open 'allowed database' for {this.ToString()} at path {AllowedDatabasesPaths[i]}. Check configuration file 'BatchProcessorConfig.json'. ({e.GetType().Name} : {e.Message})");
+                                    Console.Error.WriteLine($"{this.ToString()} will continue to work, but database syncronization on job submission might not work correctly.");
+                                }
+                            }
+                        }
                     }
                 }
                 
