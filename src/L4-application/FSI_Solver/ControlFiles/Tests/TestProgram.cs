@@ -15,15 +15,8 @@ limitations under the License.
 */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
-using BoSSS.Foundation;
-using BoSSS.Solution;
 using MPI.Wrappers;
 using NUnit.Framework;
-using BoSSS.Platform.LinAlg;
 using ilPSP;
 
 namespace BoSSS.Application.FSI_Solver {
@@ -46,12 +39,12 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         [Test]
-        public static void Test_ParticleParameter()
+        public static void TestParticleParameter()
         {
             using (FSI_SolverMain p = new FSI_SolverMain())
             {
 
-                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.Test_ParticleParameter();
+                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.TestParticleParameter();
                 //ctrl.ImmediatePlotPeriod = 1;
                 //ctrl.SuperSampling = 2;
                 p.Init(ctrl);
@@ -74,14 +67,14 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         [Test]
-        public static void TestFlowRotationalCoupling() {
+        public static void TestParticleInShearFlow() {
             using (FSI_SolverMain p = new FSI_SolverMain()) {
 
-                var ctrl = HardcodedTestExamples.Test_ParticleInShearFlow(k: 1);
+                var ctrl = HardcodedTestExamples.TestParticleInShearFlow(k: 2);
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double angularVelocitySol = -0.00307062397473367;// 0.00487; needs investigation!
+                double angularVelocitySol = -0.00307062397584702;// 0.00487; needs investigation!
                 double angularVelocityIs = p.Particles[0].Motion.GetRotationalVelocity(0);
 
                 double diff_Velocity = Math.Abs(angularVelocityIs - angularVelocitySol);
@@ -96,19 +89,19 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         [Test]
-        public static void SingleDryParticleAgainstWall([Values(false, true)]  bool MeshRefine) { 
+        public static void TestSingleDryParticleAgainstWall([Values(false, true)]  bool MeshRefine) { 
             using (FSI_SolverMain p = new FSI_SolverMain()) {
 
-                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.Test_SingleDryParticleAgainstWall(MeshRefine);
+                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.TestSingleDryParticleAgainstWall(MeshRefine);
                 p.Init(ctrl);
                 p.RunSolverMode();
 
 
                 Vector Dest_Should;
                 if (MeshRefine)
-                    Dest_Should = new Vector(0.0144722215136374, -0.783548288682611); 
+                    Dest_Should = new Vector(0.129894946699224, -0.665600182135642); 
                 else
-                    Dest_Should = new Vector(0.841055215524838, 0.158898360953243); 
+                    Dest_Should = new Vector(-0.219276785595999, 0.569191702686835); 
 
                 Vector Dest_Is = new Vector((double[])p.Particles[0].Motion.GetPosition(0));
 
@@ -121,10 +114,10 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         [Test]
-        public static void StickyTrap() {
+        public static void TestStickyTrap() {
             using (FSI_SolverMain p = new FSI_SolverMain()) {
 
-                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.Test_StickyTrap();
+                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.TestStickyTrap();
                 p.Init(ctrl);
                 p.RunSolverMode();
 
@@ -148,15 +141,15 @@ namespace BoSSS.Application.FSI_Solver {
         
 
         [Test]
-        public static void Test_HydrodynamicForces()
+        public static void TestHydrodynamicForces()
         {
             using (FSI_SolverMain p = new FSI_SolverMain())
             {
-                var ctrl = HardcodedTestExamples.Test_HydrodynamicForces();
+                var ctrl = HardcodedTestExamples.TestHydrodynamicForces();
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double ForcesSoll = 5.61097771967084;
+                double ForcesSoll = 3.37861181188738;
 
                 double Forces = p.Particles[0].Motion.GetHydrodynamicForces(0)[0];
 

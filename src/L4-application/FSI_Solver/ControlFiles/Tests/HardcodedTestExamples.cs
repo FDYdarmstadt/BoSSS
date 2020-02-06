@@ -27,7 +27,7 @@ using BoSSS.Solution.XdgTimestepping;
 namespace BoSSS.Application.FSI_Solver {
     public class HardcodedTestExamples {
 
-        public static FSI_Control Test_ParticleParameter(int k = 2)
+        public static FSI_Control TestParticleParameter(int k = 2)
         {
             FSI_Control C = new FSI_Control(k, "ParticleParameterTest");
 
@@ -90,7 +90,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
 
-        public static FSI_Control Test_ParticleInShearFlow(int k = 2) {
+        public static FSI_Control TestParticleInShearFlow(int k = 2) {
             FSI_Control C = new FSI_Control(k, "ParticleInShearFlow");
             // grid and boundary conditions
             // ============================
@@ -126,6 +126,9 @@ namespace BoSSS.Application.FSI_Solver {
             C.BoundaryIsPeriodic = new bool[2];
             C.BoundaryPositionPerDimension[0] = new double[] { -2, 2 };
             C.BoundaryPositionPerDimension[1] = new double[] { -3, 3 };
+            C.WallPositionPerDimension = new double[2][];
+            C.WallPositionPerDimension[0] = new double[2];
+            C.WallPositionPerDimension[1] = new double[] { -3, 3 };
             C.FluidDomainVolume = 6;
             //C.SetBoundaries(boundaryValues);
             //C.SetGrid(lengthX: 4, lengthY: 6, cellsPerUnitLength: 5, periodicX: false, periodicY: false);
@@ -175,8 +178,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Testing of particle/wall interactions using a single particle
         /// </summary>
-        public static FSI_Control Test_SingleDryParticleAgainstWall(bool meshRefine = true) {
-            FSI_Control C = new FSI_Control(1, "DryParticleWallCollision");
+        public static FSI_Control TestSingleDryParticleAgainstWall(bool meshRefine = false) {
+            FSI_Control C = new FSI_Control(2, "DryParticleWallCollision");
             C.SessionName = C.ProjectName;
             C.Tags.Add("with immersed boundary method");
             C.AdaptiveMeshRefinement = meshRefine;
@@ -252,12 +255,11 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control Test_StickyTrap(int k = 2)
+        public static FSI_Control TestStickyTrap(int k = 2)
         {
             FSI_Control C = new FSI_Control(degree: k, projectName: "ParticleCollisionTest") {
                 pureDryCollisions = true
             };
-
             // grid and boundary conditions
             // ============================ 
             List<string> boundaryValues = new List<string> {
@@ -324,7 +326,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control Test_HydrodynamicForces(int k = 2)
+        public static FSI_Control TestHydrodynamicForces(int k = 2)
         {
             FSI_Control C = new FSI_Control(degree: k, projectName: "HydrodynamicForces");
             //C.SetSaveOptions(@"/home/ij83requ/default_bosss_db", 1);
@@ -336,7 +338,7 @@ namespace BoSSS.Application.FSI_Solver {
                 "Wall_upper"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 8, lengthY: 6, cellsPerUnitLength: 0.5, periodicX: false, periodicY: false);
+            C.SetGrid(lengthX: 8, lengthY: 6, cellsPerUnitLength: 2, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel: 1);
             C.hydrodynamicsConvergenceCriterion = 1e-2;
             C.AddBoundaryValue("Velocity_Inlet_left", "VelocityX", X => 1.0);

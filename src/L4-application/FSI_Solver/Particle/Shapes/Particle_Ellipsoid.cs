@@ -65,7 +65,6 @@ namespace BoSSS.Application.FSI_Solver {
             Aux.TestArithmeticException(thickness, "Particle thickness");
 
             Motion.GetParticleLengthscale(GetLengthScales().Max());
-            Motion.GetParticleMinimalLengthscale(GetLengthScales().Min());
             Motion.GetParticleArea(Area);
             Motion.GetParticleMomentOfInertia(MomentOfInertia);
         }
@@ -204,6 +203,8 @@ namespace BoSSS.Application.FSI_Solver {
                                                              ActiveStress,
                                                              Motion.GetTranslationalVelocity(),
                                                              Motion.GetRotationalVelocity());
+            clonedParticle.IsMaster = IsMaster;
+
             return clonedParticle;
         }
     }

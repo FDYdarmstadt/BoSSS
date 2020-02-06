@@ -146,6 +146,12 @@ namespace BoSSS.Application.FSI_Solver {
                 if (m_BoundaryValues.Count() == 1) {
                     grd.DefineEdgeTags(delegate (double[] X) {
                         byte et = 1;
+                        if (m_BoundaryValues[0].Contains("wall") || m_BoundaryValues[0].Contains("Wall")) {
+                            WallPositionPerDimension[0][0] = -lengthX / 2;
+                            WallPositionPerDimension[0][1] = lengthX / 2;
+                            WallPositionPerDimension[1][0] = -lengthY / 2;
+                            WallPositionPerDimension[1][1] = lengthY / 2;
+                        }
                         return et;
                     });
                 }

@@ -420,14 +420,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// Init of the moment of inertia.
         /// </summary>
         /// <param name="moment"></param>
-        public void GetParticleMinimalLengthscale(double lengthscale) => MinParticleLengthScale = lengthscale;
-
-        private double MinParticleLengthScale;
-
-        /// <summary>
-        /// Init of the moment of inertia.
-        /// </summary>
-        /// <param name="moment"></param>
         public void GetParticleMomentOfInertia(double moment) => MomentOfInertia = moment;
 
         /// <summary>

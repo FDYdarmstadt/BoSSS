@@ -38,18 +38,10 @@ namespace BoSSS.Application.FSI_Solver {
         internal override bool IsGhost { get; } = true;
 
         [DataMember]
-        private Vector Position;
-        [DataMember]
         private Vector TranslationalVelocity;
-        [DataMember]
-        private double Angle;
         [DataMember]
         private double RotationalVelocity;
         
-        internal override void CopyNewPosition(Vector position, double angle) {
-            Position = new Vector(position);
-            Angle = angle;
-        }
 
         internal override void CopyNewVelocity(Vector translational, double rotational) {
             TranslationalVelocity = new Vector(translational);

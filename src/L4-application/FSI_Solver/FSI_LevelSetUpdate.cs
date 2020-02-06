@@ -29,17 +29,13 @@ using System.Linq;
 namespace FSI_Solver {
     internal class FSI_LevelSetUpdate {
 
-        internal FSI_LevelSetUpdate(LevelSetTracker levelSetTracker, IGridData gridData, double maxGridLength, double minGridLength) {
-            m_LevelSetTracker = levelSetTracker;
+        internal FSI_LevelSetUpdate(IGridData gridData, double minGridLength) {
             this.gridData = gridData;
-            this.maxGridLength = maxGridLength;
             this.minGridLength = minGridLength;
         }
 
-        private readonly LevelSetTracker m_LevelSetTracker;
         private readonly IGridData gridData;
         private readonly double minGridLength;
-        private readonly double maxGridLength;
 
 
         /// <summary>

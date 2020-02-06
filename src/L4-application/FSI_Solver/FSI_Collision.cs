@@ -36,7 +36,7 @@ namespace FSI_Solver {
         private double[][] Distance;
         private Vector[][] DistanceVector;
         private Vector[][] ClosestPoints;
-        private double[][] WallCoordinates;
+        private readonly double[][] WallCoordinates;
 
         public FSI_Collision(double gridLenghtscale, double coefficientOfRestitution, double dt) {
             CoefficientOfRestitution = coefficientOfRestitution;
@@ -72,7 +72,7 @@ namespace FSI_Solver {
         /// <param name="particles">
         /// List of all particles
         /// </param>
-        public void CalculateCollision(Particle[] particles, IGridData gridData) {
+        public void CalculateCollision(Particle[] particles) {
             // Step 1
             // Some var definintion
             // =======================================================

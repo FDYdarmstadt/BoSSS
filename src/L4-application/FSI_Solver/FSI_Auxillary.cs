@@ -195,7 +195,7 @@ namespace FSI_Solver {
         /// </param>
         /// <param name="phystime"></param>
         /// <param name="IterationCounter"> </param>
-        internal void PrintResultToConsole(double phystime, double residual, int IterationCounter) {
+        internal void PrintResultToConsole(double residual, int IterationCounter) {
             Console.WriteLine("Iteration, Residual: {1}, {0}", residual, IterationCounter);
         }
 
