@@ -105,10 +105,14 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public static Job GetJob(this AppControl ctrl) {
             foreach(var j in InteractiveShell.WorkflowMgm.AllJobs.Values) {
-                if(j.GetControl().Equals(ctrl))
+                var cj = j.GetControl();
+                if(cj == null)
+                    continue;
+
+                if(cj.Equals(ctrl))
                     return j;
             }
-            Console.WriteLine("No Job assigend for given control object yet.");
+            Console.WriteLine("No Job assigned for given control object yet.");
             return null;
         }
 

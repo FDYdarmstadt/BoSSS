@@ -23,6 +23,7 @@ using Renci.SshNet;
 using System.IO;
 using System.Security;
 using System.Runtime.Serialization;
+using ilPSP;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -376,7 +377,7 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
                 sw.WriteLine("#SBATCH -n " + MPIcores);
-                if (email != null) {
+                if (!email.IsEmptyOrWhite()) {
                     sw.WriteLine("#SBATCH --mail-user=" + email);
                     sw.WriteLine("#SBATCH --mail-type=ALL");
                 }
@@ -430,7 +431,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// 
         /// </summary>
         public override string ToString() {
-            return "SlurmClient: " + Username + "@" + ServerName;
+            return "SlurmClient: " + Username + "@" + ServerName + ", Slurm account: " + (SlurmAccount ?? "NONE");
         }
 
     }

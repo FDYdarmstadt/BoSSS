@@ -393,6 +393,14 @@ namespace BoSSS.Application.BoSSSpad {
             // note: serialization is done later, immediately before deployment,
             // since we may need to fix database issues (path on batch system, evtl. transfer of grid)
 
+            m_ctrl_index = -1;
+            if(m_ctrl.GeneratedFromCode) {
+                ControlName = "control.cs";
+                m_ctrl_index = m_ctrl.ControlFileText_Index;
+            } else {
+                ControlName = "control.obj";
+            }
+
 
             // Project & Session Name
             // ======================
@@ -422,10 +430,10 @@ namespace BoSSS.Application.BoSSSpad {
         /// Returns the control object linked to this job
         /// </summary>
         public BoSSS.Solution.Control.AppControl GetControl() {
+            /*
             if(ControlName == null)
                 return null;
 
-            /*
             var data = AdditionalDeploymentFiles.Single(tt => tt.Item2.Equals(ControlName));
             string ctrlfileContent = Encoding.UTF8.GetString(data.Item1);
             BoSSS.Solution.Control.AppControl ctrl;

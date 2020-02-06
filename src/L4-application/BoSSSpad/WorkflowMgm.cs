@@ -100,13 +100,27 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public void SetEqualityBasedSessionJobControllCorrelation() {
             SessionInfoJobCorrelation = delegate (ISessionInfo sinf, Job job) {
-                var c_sinf = sinf.GetControl();
                 var c_job = job.GetControl();
-                return c_sinf.Equals(c_job);
+                try {
+                    var c_sinf = sinf.GetControl();
+                    if(c_sinf != null)
+                        return c_sinf.Equals(c_job);
+                    else
+                        return false;
+                } catch(Exception) {
+                    return false;
+                }
             };
             SessionInfoAppControlCorrelation = delegate (ISessionInfo sinf, AppControl ctrl) {
-                var c_sinf = sinf.GetControl();
-                return c_sinf.Equals(ctrl);
+                try {
+                    var c_sinf = sinf.GetControl();
+                    if(c_sinf != null)
+                        return c_sinf.Equals(ctrl);
+                    else
+                        return false;
+                } catch(Exception) {
+                    return false;
+                }
             };
         }
 

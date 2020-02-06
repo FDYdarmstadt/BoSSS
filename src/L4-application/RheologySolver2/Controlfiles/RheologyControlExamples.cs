@@ -622,7 +622,7 @@ namespace BoSSS.Application.Rheology {
                     }
                 }
                 */
-                C.InitialValues_Evaluators.Add("Phi", X => -1);
+                C.AddInitialValue("Phi", "X => -1", false);
             }
 
             // Set Boundary Conditions

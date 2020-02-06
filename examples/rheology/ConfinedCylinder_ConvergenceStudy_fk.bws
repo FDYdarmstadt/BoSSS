@@ -1,24 +1,24 @@
 restart
 **************
-
   BoSSSpad C# interpreter
   _______________________
 
 Databases loaded:
 List of 2 instances of IDatabaseInfo {
-  0: { Session Count = 1; Grid Count = 6; Path = C:\Users\flori\default_bosss_db }
+  0: { Session Count = 6; Grid Count = 6; Path = C:\Users\flori\default_bosss_db }
   1: { Session Count = 0; Grid Count = 0; Path = X:\bosss_db_lichtenberg }
 }
 Setting Matlab Connector to Octave...
 
  Console ready for input. Type 'help' for help.
-Mini batch processor is already running.
+Starting mini batch processor in external process...
+Started mini batch processor on local machine, process id is 20012.
 
 ==============
 databases;
 **************
 List of 2 instances of IDatabaseInfo {
-  0: { Session Count = 1; Grid Count = 6; Path = C:\Users\flori\default_bosss_db }
+  0: { Session Count = 6; Grid Count = 6; Path = C:\Users\flori\default_bosss_db }
   1: { Session Count = 0; Grid Count = 0; Path = X:\bosss_db_lichtenberg }
 }
 ==============
@@ -29,7 +29,7 @@ ExecutionQueues;
 **************
 List of 2 instances of BatchProcessorClient {
   0: BoSSS.Application.BoSSSpad.MiniBatchProcessorClient
-  1: SlurmClient: fk69umer@lcluster3.hrz.tu-darmstadt.de
+  1: SlurmClient: fk69umer@lcluster3.hrz.tu-darmstadt.de, Slurm account: project01217
 }
 ==============
 //(ExecutionQueues[1] as SlurmClient).TestSSH();
@@ -193,11 +193,27 @@ Info: setting database path to: C:\Users\flori\default_bosss_db
 Info: setting database path to: C:\Users\flori\default_bosss_db
 
 ==============
-controls[0,0].ProjectName;
+// ==================
+// Activate first job
+// ==================
 **************
-Cylinder
 ==============
+controls[0,0].RestartInfo == null;
 **************
+True
+==============
+var j00 = controls[0,0].GetJob();
+**************
+==============
+j00.NumberOfMPIProcs = 4;
+**************
+==============
+j00.Activate(ExecutionQueues[1]);
+**************
+Loading session 056c96f6-7ce0-440c-8826-2b08395ffafa failed with message 'Could not find file 'C:\Users\flori\default_bosss_db\sessions\056c96f6-7ce0-440c-8826-2b08395ffafa\Session.info'.'
+Loading session ba559446-5032-4a55-8456-6ce4c02651b5 failed with message 'Could not find file 'C:\Users\flori\default_bosss_db\sessions\ba559446-5032-4a55-8456-6ce4c02651b5\Session.info'.'
+System.IO.IOException occurred: Unable to find control object (C:\Users\flori\default_bosss_db\sessions\41a6406c-7875-4977-ac87-24d0b3d6e617\Control-obj.txt) or control script (C:\Users\flori\default_bosss_db\sessions\41a6406c-7875-4977-ac87-24d0b3d6e617\Control-script.txt).. Type 'LastError' for details.
+
 ==============
 // =============
 // Activate Jobs
@@ -268,6 +284,14 @@ System.Security.Authentication.InvalidCredentialException occurred: The server h
 1
 ==============
 //SaveExecutionQueues();
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

@@ -441,7 +441,19 @@ namespace BoSSS.Solution.Control {
             InitialValues.Add(fieldname, value);
         }
 
-
+        /// <summary>
+        /// Adds an initial value to <see cref="InitialValues"/>
+        /// </summary>
+        /// <param name="fieldname"></param>
+        /// <param name="FormulaText">
+        /// Text representation of a delegate, see <see cref="Formula"/>.
+        /// </param>
+        /// <param name="TimeDependent">
+        /// Whether the formula in <paramref name="FormulaText"/> is time-dependent or not, see <see cref="Formula"/>.
+        /// </param>
+        public void AddInitialValue(string fieldname, string FormulaText, bool TimeDependent) {
+           InitialValues.Add(fieldname, new Formula(FormulaText, TimeDependent));
+        }
 
 
         ///// <summary>
