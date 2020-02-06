@@ -169,7 +169,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// 
         /// </summary>
-        protected  double Source(double[] x, double[] parameters, double[] U) {
+        protected double Source(double[] x, double[] parameters, double[] U) {
             //rho = EoS.GetDensity(parameters);
             rho = EoS.GetDensity(U);
 
