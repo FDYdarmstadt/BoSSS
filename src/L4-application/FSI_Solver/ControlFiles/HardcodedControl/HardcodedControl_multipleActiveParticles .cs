@@ -149,8 +149,8 @@ namespace BoSSS.Application.FSI_Solver {
                 "Pressure_Dirichlet"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 8, lengthY: 8, cellsPerUnitLength:2, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel: 3);
+            C.SetGrid(lengthX: 8, lengthY: 8, cellsPerUnitLength:3, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(amrLevel: 2);
             C.hydrodynamicsConvergenceCriterion = 1e-2;
             // Fluid Properties
             // =============================
@@ -169,7 +169,7 @@ namespace BoSSS.Application.FSI_Solver {
             // misc. solver options
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            double dt = 1e-3;
+            double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 100000000;
