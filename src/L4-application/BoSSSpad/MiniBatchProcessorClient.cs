@@ -21,6 +21,7 @@ using System.Linq;
 using System.IO;
 using System.Reflection;
 using BoSSS.Platform;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Application.BoSSSpad {
     
@@ -28,7 +29,43 @@ namespace BoSSS.Application.BoSSSpad {
     /// A <see cref="BatchProcessorClient"/>-implementation using the mini batch processor, i.e. the local computer,
     /// see <see cref="MiniBatchProcessor.Client"/>.
     /// </summary>
+    [DataContract]
     public class MiniBatchProcessorClient : BatchProcessorClient {
+
+        /*
+        /// <summary>
+        /// Configuration options specific to the <see cref="MiniBatchProcessorClient"/>
+        /// </summary>
+        [Serializable]
+        public new class Config : BatchProcessorClient.Config {
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public override BatchProcessorClient Instance() {
+                return new MiniBatchProcessorClient(base.DeploymentBaseDirectory) {
+                    DeployRuntime = base.DeployRuntime
+                };
+            }
+        }
+        
+
+        /// <summary>
+        /// .
+        /// </summary>
+        public override BatchProcessorClient.Config GetConfig() {
+            return new MiniBatchProcessorClient.Config() {
+                DeploymentBaseDirectory = this.DeploymentBaseDirectory,
+                DeployRuntime = this.DeployRuntime
+            };
+        }
+        */
+
+        /// <summary>
+        /// Empty constructor for de-serialization
+        /// </summary>
+        private MiniBatchProcessorClient() {
+        }
 
         /// <summary>
         /// Path to standard output file, if present - otherwise null.

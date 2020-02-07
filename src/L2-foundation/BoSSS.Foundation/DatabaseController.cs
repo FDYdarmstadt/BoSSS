@@ -144,9 +144,13 @@ namespace BoSSS.Foundation.IO {
 
 
             foreach (XmlNode xmlDatabase in xmlDatabases) {
-                XmlElement xmlPath = xmlDatabase.SelectSingleNode("path") as XmlElement;
-                string dbpath = xmlPath.GetAttribute("value");
-                databases.Add(new DatabaseInfo(dbpath));
+                    XmlElement xmlPath = xmlDatabase.SelectSingleNode("path") as XmlElement;
+                    string dbpath = xmlPath.GetAttribute("value");
+                try {
+                    databases.Add(new DatabaseInfo(dbpath));
+                } catch( Exception e) {
+                    Console.Error.WriteLine($"{e.GetType().Name} caught while opening database at '{dbpath}': {e.Message}");
+                }
             }
 
             return databases;

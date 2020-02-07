@@ -151,6 +151,33 @@ namespace BoSSS.Application.BoSSSpad {
         public static IList<IDatabaseInfo> databases;
 
         /// <summary>
+        /// Sessions in all Databases
+        /// </summary>
+        static public IList<ISessionInfo> AllSessions {
+            get {
+                var ret = new List<ISessionInfo>();
+                foreach(var db in databases) {
+                    ret.AddRange(db.Sessions);
+                }
+                return ret;
+            }
+        }
+
+        /// <summary>
+        /// Grids in all Databases
+        /// </summary>
+        static public IList<IGridInfo> AllGrids {
+            get {
+                var ret = new List<IGridInfo>();
+                foreach(var db in databases) {
+                    ret.AddRange(db.Grids);
+                }
+                return ret;
+            }
+        }
+
+
+        /// <summary>
         /// path to the default BoSSS database directory for the current user
         /// </summary>
         static public string GetDefaultDatabaseDir() {
@@ -178,6 +205,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// Opens a database at a specific path, resp. creates one if the 
         /// </summary>
         static public IDatabaseInfo OpenOrCreateDatabase(string dbDir) {
+            foreach(var existing_dbi in InteractiveShell.databases) {
+                if(existing_dbi.PathMatch(dbDir)) {
+                    return existing_dbi;
+                }
+            }
+            
             if (Directory.Exists(dbDir)) {
                 if (!DatabaseUtils.IsValidBoSSSDatabase(dbDir)) {
                     throw new ArgumentException("Directory '" + dbDir + "' exists, but is not a valid BoSSS database.");
@@ -487,6 +520,69 @@ namespace BoSSS.Application.BoSSSpad {
 
         }
 
+        /// <summary>
+        /// Reload from configuration file
+        /// </summary>
+        public static void ReloadExecutionQueues() {
+            executionQueues = new List<BatchProcessorClient>();
+
+            BatchProcessorConfig bpc;
+            try {
+                bpc = BatchProcessorConfig.LoadOrDefault();
+
+            } catch (Exception e) {
+                Console.Error.WriteLine($"{e.GetType().Name} caught while loading batch processor configuration file - using a default configuration. Message: {e.Message}");
+
+                executionQueues.Add(new MiniBatchProcessorClient());
+                return;
+            }
+
+            executionQueues.AddRange(bpc.AllQueues);
+        }
+
+
+
+
+
+        /// <summary>
+        /// A list of predefined batch system clients.
+        /// </summary>
+        public static IReadOnlyList<BatchProcessorClient> ExecutionQueues {
+            get {
+                if(executionQueues == null) {
+                    ReloadExecutionQueues();
+                }
+
+                return executionQueues.AsReadOnly();
+            }
+        }
+
+        static List<BatchProcessorClient> executionQueues = null;
+
+        /// <summary>
+        /// Adds an entry to <see cref="ExecutionQueues"/>.
+        /// </summary>
+        public static int AddExecutionQueue(BatchProcessorClient bpc) {
+            if(executionQueues == null)
+                executionQueues = new List<BatchProcessorClient>();
+            executionQueues.Add(bpc);
+            return executionQueues.Count - 1;
+        }
+
+        /// <summary>
+        /// Writes the configuration file according to the current status of <see cref="ExecutionQueues"/>.
+        /// </summary>
+        public static void SaveExecutionQueues() {
+            var conf = new BatchProcessorConfig() {
+                AllQueues = ExecutionQueues.ToArray()
+            };
+
+            //for(int i = 0; i < ExecutionQueues.Count; i++) {
+            //    conf.AllQueus[i] = ExecutionQueues[i].GetConfig();
+            //}
+
+            BatchProcessorConfig.SaveConfiguration(conf);
+        }
     }
 }
 

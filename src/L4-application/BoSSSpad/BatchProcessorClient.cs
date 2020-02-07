@@ -14,12 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.IO;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -27,11 +29,50 @@ namespace BoSSS.Application.BoSSSpad {
     /// <summary>
     /// Abstraction for all kind of batch systems (aka. job managers).
     /// </summary>
+    [DataContract]
     abstract public class BatchProcessorClient {
+
+        /*
+        /// <summary>
+        /// common baseclass 
+        /// </summary>
+        [Serializable]
+        public abstract class Config {
+
+            /// <summary>
+            /// <see cref="BatchProcessorClient.DeploymentBaseDirectory"/>
+            /// </summary>
+            public string DeploymentBaseDirectory;
+
+            /// <summary>
+            /// <see cref="BatchProcessorClient.DeployRuntime"/>
+            /// </summary>
+            public bool DeployRuntime;
+
+            /// <summary>
+            /// <see cref="BatchProcessorClient.AllowedDatabasesPaths"/>
+            /// </summary>
+            public string[] AllowedDatabasesPaths;
+
+            /// <summary>
+            /// %
+            /// </summary>
+            public abstract BatchProcessorClient Instance();
+
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public abstract Config GetConfig();
+        */
+
 
         /// <summary>
         /// Base directory where the executables should be deployed.
         /// </summary>
+        [DataMember]
         public string DeploymentBaseDirectory {
             get;
             protected set;
@@ -41,10 +82,75 @@ namespace BoSSS.Application.BoSSSpad {
         /// True, if it is required to deploy the runtime on the destination system,
         /// in order to execute a job.
         /// </summary>
+        [DataMember]
         public bool DeployRuntime {
             get;
             set;
         }
+
+        /// <summary>
+        /// If not null, specifies paths to databases which are accessible to the computer system 
+        /// on which this batch processor submits its jobs.
+        /// This triggers data synchronization on job submission, if e.g. grid or restart timestep
+        /// are in some other database.
+        /// </summary>
+        [DataMember]
+        public string[] AllowedDatabasesPaths;
+
+
+        List<IDatabaseInfo> m_AllowedDatabases;
+
+        /// <summary>
+        /// See <see cref="AllowedDatabasesPaths"/>
+        /// </summary>
+        public IReadOnlyList<IDatabaseInfo> AllowedDatabases {
+            get {
+                if(m_AllowedDatabases == null) {
+                    m_AllowedDatabases = new List<IDatabaseInfo>();
+                    if(AllowedDatabasesPaths != null) {
+
+                        // fill up with empty entries
+                        m_AllowedDatabases.AddRange(AllowedDatabasesPaths.Select(path => default(IDatabaseInfo)));
+                        
+                        // pass 1: search in already-known databases
+                        for(int i = 0; i < AllowedDatabasesPaths.Length; i++) {
+                            foreach(var db in InteractiveShell.databases) {
+                                if(db.PathMatch(AllowedDatabasesPaths[i])) {
+                                    // bingo
+                                    m_AllowedDatabases[i] = db;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        // pass 2: try to open other databases
+                        for(int i = 0; i < AllowedDatabasesPaths.Length; i++) {
+                            if(m_AllowedDatabases[i] == null) {
+                                try {
+                                    m_AllowedDatabases[i] = new DatabaseInfo(AllowedDatabasesPaths[i]);
+                                } catch(Exception e) {
+                                    Console.Error.WriteLine($"Unable to open 'allowed database' for {this.ToString()} at path {AllowedDatabasesPaths[i]}. Check configuration file 'BatchProcessorConfig.json'. ({e.GetType().Name} : {e.Message})");
+                                    Console.Error.WriteLine($"{this.ToString()} will continue to work, but database syncronization on job submission might not work correctly.");
+                                }
+                            }
+                        }
+
+                        // remove empty entries
+                        for(int i = 0; i < m_AllowedDatabases.Count; i++) {
+                            if(m_AllowedDatabases[i] == null) {
+                                m_AllowedDatabases.RemoveAt(i);
+                                i--;
+                            }
+                        }
+                    }
+                }
+                
+                return m_AllowedDatabases.AsReadOnly();
+            }
+        }
+
+
+
 
         /// <summary>
         /// Returns the directory where the assemblies for <paramref name="myJob"/> 

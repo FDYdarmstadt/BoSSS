@@ -22,6 +22,7 @@ using System.Text;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.XdgTimestepping;
 using System.Runtime.Serialization;
+using ilPSP.Utils;
 
 namespace BoSSS.Application.Rheology {
 
@@ -419,6 +420,7 @@ namespace BoSSS.Application.Rheology {
         /// </summary>
         [DataMember]
         public int deg;
+        
         /// <summary>
         /// Grid resolution
         /// </summary>
@@ -432,6 +434,8 @@ namespace BoSSS.Application.Rheology {
         /// %
         /// </summary>
         public override void SetDGdegree(int degree) {
+            FieldOptions.Clear();
+
             FieldOptions.Add("VelocityX", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             FieldOptions.Add("VelocityY", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             FieldOptions.Add("Pressure", new FieldOpts() { Degree = degree - 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
@@ -452,6 +456,73 @@ namespace BoSSS.Application.Rheology {
             FieldOptions.Add("Phi", new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
         }
 
+        /// <summary>
+        /// Dummy override
+        /// </summary>
+        public override int GetHashCode() {
+            return base.GetHashCode();
+        }
+
+        /// <summary>
+        /// Mainly for use by the job manager in BoSSSpad, in order to check if a specific configuration is already computed 
+        /// (i.e. an equal control object can be found in the database),
+        /// or not.
+        /// Therefore, we only check attributes that considered `essential' properties (e.g. <see cref="Weissenberg"/>, not <see cref="AppControl.Tags"/>),
+        /// in order to avoid a discrimination which is `too sharp'.
+        /// </summary>
+        public override bool Equals(object obj) {
+            if(!base.Equals(obj))
+                return false; // checks initial values, etc.
+
+            RheologyControl oCtrl = obj as RheologyControl;
+            if(oCtrl == null)
+                return false;
+
+            if(this.Weissenberg != oCtrl.Weissenberg)
+                return false;
+
+            if(this.Reynolds != oCtrl.Reynolds)
+                return false;
+
+            if(this.Stokes != oCtrl.Stokes)
+                return false;
+
+            if(this.UsePerssonSensor != oCtrl.UsePerssonSensor)
+                return false;
+
+            if(this.UsePerssonSensor != oCtrl.UsePerssonSensor)
+                return false;
+ 
+            if(this.alpha != oCtrl.alpha)
+                return false;
+
+            if(this.beta != oCtrl.beta)
+                return false;
+
+            if(this.GravitySource != oCtrl.GravitySource)
+                return false;
+
+            if(!this.Penalty1.ListEquals(oCtrl.Penalty1))
+                return false;
+
+            if(this.Penalty2 != oCtrl.Penalty2)
+                return false;
+
+            if(!this.PresPenalty1.ListEquals(oCtrl.PresPenalty1))
+                return false;
+
+            if(this.PresPenalty2 != oCtrl.PresPenalty2)
+                return false;
+
+            if(this.PresPenalty2 != oCtrl.PresPenalty2)
+                return false;
+
+                        if(this.PresPenalty2 != oCtrl.PresPenalty2)
+                return false;
+
+
+            return true;
+        }
 
     }
 }

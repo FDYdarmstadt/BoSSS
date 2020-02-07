@@ -32,6 +32,9 @@ using BoSSS.Solution.Control;
 
 namespace BoSSS.Application.BoSSSpad {
 
+
+
+
     /// <summary>
     /// Workflow management.
     /// </summary>
@@ -75,6 +78,62 @@ namespace BoSSS.Application.BoSSSpad {
                 m_UpdatePeriod = value;
             }
         }
+
+        /// <summary>
+        /// Correlation of session, job and control object is done by name
+        /// </summary>
+        public void SetNameBasedSessionJobControllCorrelation() {
+            SessionInfoJobCorrelation = delegate (ISessionInfo sinf, Job job) {
+                return sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.SESSIONNAME_KEY)
+                && Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.SESSIONNAME_KEY]).Equals(job.Name);
+
+            };
+            SessionInfoAppControlCorrelation = delegate (ISessionInfo sinf, AppControl ctrl) {
+                return sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.SESSIONNAME_KEY)
+                && Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.SESSIONNAME_KEY]).Equals(ctrl.SessionName);
+            };
+        }
+
+
+        // <summary>
+        /// Correlation of session, job and control object is done <see cref="AppControl.Equals(object)"/>
+        /// </summary>
+        public void SetEqualityBasedSessionJobControllCorrelation() {
+            SessionInfoJobCorrelation = delegate (ISessionInfo sinf, Job job) {
+                var c_job = job.GetControl();
+                try {
+                    var c_sinf = sinf.GetControl();
+                    if(c_sinf != null)
+                        return c_sinf.Equals(c_job);
+                    else
+                        return false;
+                } catch(Exception) {
+                    return false;
+                }
+            };
+            SessionInfoAppControlCorrelation = delegate (ISessionInfo sinf, AppControl ctrl) {
+                try {
+                    var c_sinf = sinf.GetControl();
+                    if(c_sinf != null)
+                        return c_sinf.Equals(ctrl);
+                    else
+                        return false;
+                } catch(Exception) {
+                    return false;
+                }
+            };
+        }
+
+
+        /// <summary>
+        /// Defines, global for the entire workflow management, how session in the project correlate to jobs.
+        /// </summary>
+        public Func<ISessionInfo, Job, bool> SessionInfoJobCorrelation;
+
+        /// <summary>
+        /// Defines, global for the entire workflow management, how session in the project correlate to control objects.
+        /// </summary>
+        public Func<ISessionInfo, AppControl, bool> SessionInfoAppControlCorrelation;
 
 
         /// <summary>

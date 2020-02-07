@@ -1966,9 +1966,9 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
-        /// Plots interfcae postion/velocity and evaporative mass flux over time if a  "Evaporation.txt" exists.
+        /// Plots interface position/velocity and evaporative mass flux over time if a  "Evaporation.txt" exists.
         /// </summary>
-        /// <param name="sess"></param> List of sessions to be evaluated
+        /// <param name="pSessions"></param> List of sessions to be evaluated
         public static void EvalEvaporationData(this IEnumerable<ISessionInfo> pSessions) {
 
             int numberSessions = pSessions.Count();
@@ -2057,7 +2057,6 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// Plots the temperature profile if a  "Evaporation.txt" exists.
         /// </summary>
-        /// <param name="sess"></param> List of sessions to be evaluated
         public static void PlotTemperatureProfileAt(this ISessionInfo pSession, int[] timestepIndex) {
 
             int numberTimesteps = timestepIndex.Count();
@@ -2110,8 +2109,8 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// Plots selected energy over time if an  "Energy.txt" exists.
         /// </summary>
-        /// <param name="pSessions"></param> List of sessions to be evaluated
-        /// <param name="energytype"></param> Energytypes to be plotted, can be partial
+        /// <param name="pSessions">List of sessions to be evaluated</param> 
+        /// <param name="energytype"> Energytypes to be plotted, can be partial</param>
         public static void EvalEnergy(this IEnumerable<ISessionInfo> pSessions, string[] energytype) {
             int numberSessions = pSessions.Count();
             List<Gnuplot> Plots = new List<Gnuplot>();

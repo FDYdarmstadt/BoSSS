@@ -1,0 +1,312 @@
+restart
+**************
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 2 instances of IDatabaseInfo {
+  0: { Session Count = 6; Grid Count = 6; Path = C:\Users\flori\default_bosss_db }
+  1: { Session Count = 0; Grid Count = 0; Path = X:\bosss_db_lichtenberg }
+}
+Setting Matlab Connector to Octave...
+
+ Console ready for input. Type 'help' for help.
+Starting mini batch processor in external process...
+Started mini batch processor on local machine, process id is 20012.
+
+==============
+databases;
+**************
+List of 2 instances of IDatabaseInfo {
+  0: { Session Count = 6; Grid Count = 6; Path = C:\Users\flori\default_bosss_db }
+  1: { Session Count = 0; Grid Count = 0; Path = X:\bosss_db_lichtenberg }
+}
+==============
+var myDb = OpenOrCreateDefaultDatabase();
+**************
+==============
+ExecutionQueues;
+**************
+List of 2 instances of BatchProcessorClient {
+  0: BoSSS.Application.BoSSSpad.MiniBatchProcessorClient
+  1: SlurmClient: fk69umer@lcluster3.hrz.tu-darmstadt.de, Slurm account: project01217
+}
+==============
+//(ExecutionQueues[1] as SlurmClient).TestSSH();
+**************
+==============
+ExecutionQueues[1].AllowedDatabases;
+**************
+List of 1 instances of IDatabaseInfo {
+  0: { Session Count = 0; Grid Count = 0; Path = X:\bosss_db_lichtenberg }
+}
+==============
+//object.ReferenceEquals(ExecutionQueues[1].AllowedDatabases[0], databases[1]);
+**************
+==============
+using BoSSS.Application.Rheology;
+**************
+==============
+**************
+==============
+WorkflowMgm.Init("Cylinder");
+**************
+Project name is set to 'Cylinder'.
+
+==============
+WorkflowMgm.SetEqualityBasedSessionJobControllCorrelation();
+**************
+==============
+**************
+==============
+// ===========================
+// Grids for Convergence Study
+// ===========================
+**************
+==============
+databases[0].Grids;
+**************
+List of 6 instances of IGridInfo {
+  0: { Guid = fb5b0959-f165-4291-b0ce-aac46ba131a8; Name = confined_cylinder; Cell Count = 29424; Dim = 2 }
+  1: { Guid = bb3239f2-479d-46e4-9187-ba47dc8cfc63; Name = confined_cylinder; Cell Count = 2416; Dim = 2 }
+  2: { Guid = db1797a9-6bc4-4194-984a-03b67598fa19; Name = confined_cylinder; Cell Count = 8504; Dim = 2 }
+  3: { Guid = 1c9cb150-88d3-4ee1-974d-7970eabd3cf8; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
+  4: { Guid = de21d682-8289-4d6d-8669-a07ee995f69c; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
+  5: { Guid = 3b80ee3c-7b94-4d18-a297-9f3f815a7110; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
+}
+==============
+var GridSeq = new IGridInfo[4];
+**************
+==============
+GridSeq[3] = databases[0].Grids.FirstOrDefault(g => g.NumberOfCells == 29424 && g.Name == "confined_cylinder");
+**************
+==============
+GridSeq[2] = databases[0].Grids.FirstOrDefault(g => g.NumberOfCells == 8504 && g.Name == "confined_cylinder");
+**************
+==============
+GridSeq[1] = databases[0].Grids.FirstOrDefault(g => g.NumberOfCells == 2416 && g.Name == "confined_cylinder");
+**************
+==============
+GridSeq[0] = databases[0].Grids.FirstOrDefault(g => g.NumberOfCells == 640 && g.Name == "confined_cylinder");
+**************
+==============
+GridSeq;
+**************
+List of 4 instances of IGridInfo {
+  0: { Guid = 1c9cb150-88d3-4ee1-974d-7970eabd3cf8; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
+  1: { Guid = bb3239f2-479d-46e4-9187-ba47dc8cfc63; Name = confined_cylinder; Cell Count = 2416; Dim = 2 }
+  2: { Guid = db1797a9-6bc4-4194-984a-03b67598fa19; Name = confined_cylinder; Cell Count = 8504; Dim = 2 }
+  3: { Guid = fb5b0959-f165-4291-b0ce-aac46ba131a8; Name = confined_cylinder; Cell Count = 29424; Dim = 2 }
+}
+==============
+// Plotting 
+//PlotGrid("g2416", g2416);
+**************
+==============
+Func<Vector, string> edgeTagFunc = delegate (Vector X) {
+    double x = X[0];
+    double y = X[1];
+    
+    if (Math.Abs(x - (-15)) < 1.0e-10)
+        return "Velocity_inlet";
+    if (Math.Abs(x - (15)) < 1.0e-10)
+        return "Pressure_Outlet";
+    if (Math.Abs(y - (-2)) < 1.0e-10)
+        return "Wall_bottom";        
+    if (Math.Abs(y - (+2)) < 1.0e-10)
+        return "Wall_top";
+    if (-1.0 < y && y < 1.0 && -1.0 < x  && x < 1.0)
+        return "Wall_cylinder";
+                    
+    throw new ArgumentOutOfRangeException("at x = " + x + "and y = " + y);
+};
+**************
+==============
+// import Grid if not present
+for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
+    if(GridSeq[iGrid] == null) {
+        var path = System.IO.Path.Combine(
+            CurrentDocDir,
+            @"Cylinder_GRIDS\mesh_karman_OriginalBox_MEDIUM_" + iGrid + ".msh");
+        Gmsh gmshGrid         = new Gmsh(path);
+        GridCommons bosssGrid = gmshGrid.GenerateBoSSSGrid();
+        
+        bosssGrid.Name = "confined_cylinder";
+        bosssGrid.DefineEdgeTags(edgeTagFunc);
+        myDb.SaveGrid(ref bosssGrid);  
+        GridSeq[iGrid] = bosssGrid;
+    }
+}
+**************
+==============
+GridSeq;
+**************
+List of 4 instances of IGridInfo {
+  0: { Guid = 1c9cb150-88d3-4ee1-974d-7970eabd3cf8; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
+  1: { Guid = bb3239f2-479d-46e4-9187-ba47dc8cfc63; Name = confined_cylinder; Cell Count = 2416; Dim = 2 }
+  2: { Guid = db1797a9-6bc4-4194-984a-03b67598fa19; Name = confined_cylinder; Cell Count = 8504; Dim = 2 }
+  3: { Guid = fb5b0959-f165-4291-b0ce-aac46ba131a8; Name = confined_cylinder; Cell Count = 29424; Dim = 2 }
+}
+==============
+// ======================
+// Create Control objects
+// ======================
+**************
+==============
+int[] degS = new int[] { 1, 2, 3, 4 };
+**************
+==============
+RheologyControl[,] controls = new RheologyControl[GridSeq.Length,degS.Length];
+**************
+==============
+for(int iDeg = 0; iDeg < degS.Length; iDeg++) {
+for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
+    var C    = RheologyControlExamples.ConfinedCylinder();
+    int pDeg = degS[iDeg];   
+    var grd  = GridSeq[iGrd];
+    
+    C.SetGrid(grd);
+    C.SetDGdegree(pDeg);
+    C.SessionName = "ConvStudy_k" + pDeg + "_mesh" + iGrd;
+    
+    
+    controls[iDeg,iGrd] = C;
+    C.CreateJob(); // job will be permanently linked to control object
+}
+}
+**************
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+Info: setting database path to: C:\Users\flori\default_bosss_db
+
+==============
+// ==================
+// Activate first job
+// ==================
+**************
+==============
+controls[0,0].RestartInfo == null;
+**************
+True
+==============
+var j00 = controls[0,0].GetJob();
+**************
+==============
+j00.NumberOfMPIProcs = 4;
+**************
+==============
+j00.Activate(ExecutionQueues[1]);
+**************
+Loading session 056c96f6-7ce0-440c-8826-2b08395ffafa failed with message 'Could not find file 'C:\Users\flori\default_bosss_db\sessions\056c96f6-7ce0-440c-8826-2b08395ffafa\Session.info'.'
+Loading session ba559446-5032-4a55-8456-6ce4c02651b5 failed with message 'Could not find file 'C:\Users\flori\default_bosss_db\sessions\ba559446-5032-4a55-8456-6ce4c02651b5\Session.info'.'
+System.IO.IOException occurred: Unable to find control object (C:\Users\flori\default_bosss_db\sessions\41a6406c-7875-4977-ac87-24d0b3d6e617\Control-obj.txt) or control script (C:\Users\flori\default_bosss_db\sessions\41a6406c-7875-4977-ac87-24d0b3d6e617\Control-script.txt).. Type 'LastError' for details.
+
+==============
+// =============
+// Activate Jobs
+// =============
+**************
+==============
+**************
+==============
+**************
+==============
+WorkflowMgm.AllJobs;
+**************
+List of 16 instances of KeyValuePair{String,Job} {
+  0: [ConvStudy_k1_mesh0, ConvStudy_k1_mesh0: PreActivation]
+  1: [ConvStudy_k1_mesh1, ConvStudy_k1_mesh1: PreActivation]
+  2: [ConvStudy_k1_mesh2, ConvStudy_k1_mesh2: PreActivation]
+  3: [ConvStudy_k1_mesh3, ConvStudy_k1_mesh3: PreActivation]
+  4: [ConvStudy_k2_mesh0, ConvStudy_k2_mesh0: PreActivation]
+  5: [ConvStudy_k2_mesh1, ConvStudy_k2_mesh1: PreActivation]
+  6: [ConvStudy_k2_mesh2, ConvStudy_k2_mesh2: PreActivation]
+  7: [ConvStudy_k2_mesh3, ConvStudy_k2_mesh3: PreActivation]
+  8: [ConvStudy_k3_mesh0, ConvStudy_k3_mesh0: PreActivation]
+  9: [ConvStudy_k3_mesh1, ConvStudy_k3_mesh1: PreActivation]
+  10: [ConvStudy_k3_mesh2, ConvStudy_k3_mesh2: PreActivation]
+  11: [ConvStudy_k3_mesh3, ConvStudy_k3_mesh3: PreActivation]
+  12: [ConvStudy_k4_mesh0, ConvStudy_k4_mesh0: PreActivation]
+  13: [ConvStudy_k4_mesh1, ConvStudy_k4_mesh1: PreActivation]
+  14: [ConvStudy_k4_mesh2, ConvStudy_k4_mesh2: PreActivation]
+  15: [ConvStudy_k4_mesh3, ConvStudy_k4_mesh3: PreActivation]
+}
+==============
+var C00clone = WorkflowMgm.AllJobs.Pick(0).Value.GetControl();
+**************
+==============
+controls[0,0].GetJob();
+**************
+ConvStudy_k1_mesh0: PreActivation
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+//var fdyBatch = new MsHPC2012Client(
+//   DeploymentBaseDirectory : @"\\130.83.248.247\userspace\kummer\cluster", 
+//   ServerName : "hpccluster", 
+//   Username : @"FDY\kummer", 
+//   DeployRuntime : true);
+**************
+System.Security.Authentication.InvalidCredentialException occurred: The server has rejected the client credentials.. Type 'LastError' for details.
+
+==============
+**************
+==============
+//var lichtbBatch = new SlurmClient(
+//   DeploymentBaseDirectory : @"X:\bosss_deploy", 
+//   ServerName : "lcluster3.hrz.tu-darmstadt.de", 
+//   Username : @"fk69umer", 
+//   PrivateKeyFilePath : @"C:\Users\flori\.ssh\id_rsa",
+//   AskForPassword : false);
+**************
+==============
+//AddExecutionQueue(lichtbBatch);
+**************
+1
+==============
+//SaveExecutionQueues();
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

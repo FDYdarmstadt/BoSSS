@@ -77,8 +77,6 @@ namespace BoSSS.Foundation {
         public static Func<int[], int[], int[], int> NonLinearWithoutParameters(int NonLinDeg, bool RoundUp = false) {
             return ((DomDegs, ParamDegs, CoDomDegs) => {
                 int pBase = QuadOrderFunc.SumOfMaxDegreesWithRounding(DomDegs, new int[0], CoDomDegs, NonLinDeg, RoundUp);
-                pBase += 20;
-                Console.WriteLine("running on quad order " + pBase);
                 return pBase;
             });
             }

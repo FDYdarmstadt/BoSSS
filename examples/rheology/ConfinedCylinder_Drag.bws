@@ -37,8 +37,6 @@ var myBatch = new MiniBatchProcessorClient();
 ==============
 MiniBatchProcessor.Server.StartIfNotRunning();
 **************
-Mini batch processor is already running.
-
 ==============
 // ======================
 // Convergence Parameters
