@@ -43,7 +43,9 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Not intended for user interaction.
         /// </summary>
-        internal WorkflowMgm() { }
+        internal WorkflowMgm() {
+            SetNameBasedSessionJobControllCorrelation();
+        }
 
         string m_CurrentProject;
 
@@ -84,13 +86,25 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public void SetNameBasedSessionJobControllCorrelation() {
             SessionInfoJobCorrelation = delegate (ISessionInfo sinf, Job job) {
-                return sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.SESSIONNAME_KEY)
-                && Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.SESSIONNAME_KEY]).Equals(job.Name);
+                try {
+                    if(!sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.SESSIONNAME_KEY))
+                        return false;
+
+                    return Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.SESSIONNAME_KEY]).Equals(job.Name);
+                } catch(Exception) {
+                    return false;
+                }
 
             };
             SessionInfoAppControlCorrelation = delegate (ISessionInfo sinf, AppControl ctrl) {
-                return sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.SESSIONNAME_KEY)
-                && Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.SESSIONNAME_KEY]).Equals(ctrl.SessionName);
+                try {
+                    if(!sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.SESSIONNAME_KEY))
+                        return false;
+                    
+                    return Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.SESSIONNAME_KEY]).Equals(ctrl.SessionName);
+                } catch(Exception) {
+                    return false;
+                }
             };
         }
 
