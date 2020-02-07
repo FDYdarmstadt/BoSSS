@@ -510,7 +510,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
-        /// Where are the job files?
+        /// The deployment directory, accessible from the local machine (e.g. a mounted path if the job is deployed to another computer)
         /// </summary>
         public string DeploymentDirectory {
             get;

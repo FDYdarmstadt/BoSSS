@@ -1173,7 +1173,7 @@ namespace BoSSS.Solution {
                 return NullDatabaseInfo.Instance;
             } else {
                 List<ValueTuple<string, string>> allPaths = new List<(string, string)>();
-                if (this.Control.DbPath.IsNullOrEmpty())
+                if (!this.Control.DbPath.IsNullOrEmpty())
                     allPaths.Add((this.Control.DbPath, null));
                 if (this.Control.AlternateDbPaths != null)
                     allPaths.AddRange(this.Control.AlternateDbPaths);
@@ -1191,7 +1191,7 @@ namespace BoSSS.Solution {
                         } 
                     }
 
-                    if(Directory.Exists(path)) {
+                    if(Directory.Exists(path) || File.Exists(path)) { // th latter is for ZIP-file databases
                         dbPath = path;
                         break;
                     }

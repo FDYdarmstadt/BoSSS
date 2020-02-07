@@ -70,7 +70,8 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
-        /// Base directory where the executables should be deployed.
+        /// Base directory where the executables should be deployed,
+        /// accessible from the local machine (e.g. a mounted path if the batch processor deploys on another computer system)
         /// </summary>
         [DataMember]
         public string DeploymentBaseDirectory {

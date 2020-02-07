@@ -11,8 +11,7 @@ List of 2 instances of IDatabaseInfo {
 Setting Matlab Connector to Octave...
 
  Console ready for input. Type 'help' for help.
-Starting mini batch processor in external process...
-Started mini batch processor on local machine, process id is 20012.
+Mini batch processor is already running.
 
 ==============
 databases;
@@ -159,8 +158,8 @@ int[] degS = new int[] { 1, 2, 3, 4 };
 RheologyControl[,] controls = new RheologyControl[GridSeq.Length,degS.Length];
 **************
 ==============
-for(int iDeg = 0; iDeg < degS.Length; iDeg++) {
-for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
+for(int iDeg = 0; iDeg < 1/*degS.Length*/; iDeg++) {
+for(int iGrd = 0; iGrd < 1/*GridSeq.Length*/; iGrd++) {
     var C    = RheologyControlExamples.ConfinedCylinder();
     int pDeg = degS[iDeg];   
     var grd  = GridSeq[iGrd];
@@ -169,6 +168,8 @@ for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
     C.SetDGdegree(pDeg);
     C.SessionName = "ConvStudy_k" + pDeg + "_mesh" + iGrd;
     
+    if(pDeg <= 1)
+        C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
     
     controls[iDeg,iGrd] = C;
     C.CreateJob(); // job will be permanently linked to control object
@@ -212,7 +213,216 @@ j00.Activate(ExecutionQueues[1]);
 **************
 Loading session 056c96f6-7ce0-440c-8826-2b08395ffafa failed with message 'Could not find file 'C:\Users\flori\default_bosss_db\sessions\056c96f6-7ce0-440c-8826-2b08395ffafa\Session.info'.'
 Loading session ba559446-5032-4a55-8456-6ce4c02651b5 failed with message 'Could not find file 'C:\Users\flori\default_bosss_db\sessions\ba559446-5032-4a55-8456-6ce4c02651b5\Session.info'.'
-System.IO.IOException occurred: Unable to find control object (C:\Users\flori\default_bosss_db\sessions\41a6406c-7875-4977-ac87-24d0b3d6e617\Control-obj.txt) or control script (C:\Users\flori\default_bosss_db\sessions\41a6406c-7875-4977-ac87-24d0b3d6e617\Control-script.txt).. Type 'LastError' for details.
+Job not submitted yet, or no result session is known - starting submission.
+Resetting database for control object to { Session Count = 0; Grid Count = 0; Path = X:\bosss_db_lichtenberg }
+Grid 1c9cb150-88d3-4ee1-974d-7970eabd3cf8 is not present in database - copy to target system...
+done.
+Deploying executables and additional files ...
+Deployment directory: X:\bosss_deploy\RheologySolver2020Feb06_18-24-21
+Source directory: C:\Users\flori\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Debug
+copied 31 files.
+   writing file: control.obj
+deployment finished.
+
+Lmod: loading emacs 26.3 
+Lmod: loading git 2.24.1 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.16.2 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.7.0 
+Lmod: loading openmpi 4.0.2 
+dos2unix: converting file /home/fk69umer/bosss_deploy/RheologySolver2020Feb06_18-24-21/batch.sh to Unix format ...
+
+Submitted batch job 14065869
+[1;37m[I][0m Selected project: project01217
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+[1;37m[I][0m Possible specials     = short
+
+
+==============
+j00.Status;
+**************
+FinishedSuccessful
+==============
+j00.Stderr;
+**************
+Lmod: unloading emacs 26.3 
+Lmod: loading emacs 26.3 
+Lmod: unloading git 2.24.1 
+Lmod: loading git 2.24.1 
+Lmod: unloading gcc 8.3.0 
+Lmod: unloading cmake 3.16.2 
+Lmod: unloading mono 6.0.0 
+Lmod: unloading openblas 0.2.20 
+Lmod: unloading openucx 1.7.0 
+Lmod: unloading openmpi 4.0.2 
+Lmod: loading gcc 8.3.0 
+Lmod: loading cmake 3.16.2 
+Lmod: loading mono 6.0.0 
+Lmod: loading openblas 0.2.20 
+Lmod: loading openucx 1.7.0 
+Lmod: loading openmpi 4.0.2 
+Lmod: unloading mono 6.0.0 
+Lmod: loading mono 6.0.0 
+Lmod: unloading openblas 0.2.20 
+Lmod: loading openblas 0.2.20 
+Lmod: unloading openmpi 4.0.2 
+Lmod: loading openmpi 4.0.2 
+
+Unhandled Exception:
+System.ArithmeticException: LAPACK dgetrf info: the -4-th argument had an illegal value
+  at ilPSP.IMatrixExtensions.FactorizeLU[T] (T M, System.Int32[] _ipiv) [0x0017e] in <1878071017314084aed31b23ffa3220c>:0 
+  at BoSSS.Solution.AdvancedSolvers.LevelPmg.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x0014c] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
+  at BoSSS.Solution.AdvancedSolvers.OrthonormalizationMultigrid.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x000e6] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
+  at BoSSS.Solution.AdvancedSolvers.Newton.SolverDriver[S] (BoSSS.Foundation.CoordinateVector SolutionVec, S RHS) [0x001af] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
+  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve_Increment (System.Int32 increment, System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00303] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
+  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve (System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00086] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
+  at BoSSS.Application.Rheology.Rheology.RunSolverOneStep (System.Int32 TimestepInt, System.Double phystime, System.Double dt) [0x00399] in <b8d2cc73db554405b50951108db63020>:0 
+  at BoSSS.Solution.Application`1[T].RunSolverMode () [0x00284] in <359d0762e00245e39e989d739ee8210b>:0 
+  at BoSSS.Solution.Application`1[T].AppEntry (System.Func`1[TResult] ApplicationFactory, BoSSS.Solution.CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy) [0x00150] in <359d0762e00245e39e989d739ee8210b>:0 
+  at BoSSS.Solution.Application`1[T]._Main (System.String[] args, System.Boolean noControlFile, System.Func`1[TResult] ApplicationFactory) [0x001b4] in <359d0762e00245e39e989d739ee8210b>:0 
+  at BoSSS.Application.Rheology.Rheology.Main (System.String[] args) [0x00001] in <b8d2cc73db554405b50951108db63020>:0 
+[ERROR] FATAL UNHANDLED EXCEPTION: System.ArithmeticException: LAPACK dgetrf info: the -4-th argument had an illegal value
+  at ilPSP.IMatrixExtensions.FactorizeLU[T] (T M, System.Int32[] _ipiv) [0x0017e] in <1878071017314084aed31b23ffa3220c>:0 
+  at BoSSS.Solution.AdvancedSolvers.LevelPmg.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x0014c] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
+  at BoSSS.Solution.AdvancedSolvers.OrthonormalizationMultigrid.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x000e6] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
+  at BoSSS.Solution.AdvancedSolvers.Newton.SolverDriver[S] (BoSSS.Foundation.CoordinateVector SolutionVec, S RHS) [0x001af] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
+  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve_Increment (System.Int32 increment, System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00303] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
+  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve (System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00086] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
+  at BoSSS.Application.Rheology.Rheology.RunSolverOneStep (System.Int32 TimestepInt, System.Double phystime, System.Double dt) [0x00399] in <b8d2cc73db554405b50951108db63020>:0 
+  at BoSSS.Solution.Application`1[T].RunSolverMode () [0x00284] in <359d0762e00245e39e989d739ee8210b>:0 
+  at BoSSS.Solution.Application`1[T].AppEntry (System.Func`1[TResult] ApplicationFactory, BoSSS.Solution.CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy) [0x00150] in <359d0762e00245e39e989d739ee8210b>:0 
+  at BoSSS.Solution.Application`1[T]._Main (System.String[] args, System.Boolean noControlFile, System.Func`1[TResult] ApplicationFactory) [0x001b4] in <359d0762e00245e39e989d739ee8210b>:0 
+  at BoSSS.Application.Rheology.Rheology.Main (System.String[] args) [0x00001] in <b8d2cc73db554405b50951108db63020>:0 
+
+Unhandled Exception:
+System.ArithmeticException: LAPACK dgetrf info: the -4-th argument had an illegal value
+  at ilPSP.IMatrixExtensions.FactorizeLU[T] (T M, System.Int32[] _ipiv) [0x0017e] in <1878071017314084aed31b23ffa3220c>:0 
+  at BoSSS.Solution.AdvancedSolvers.LevelPmg.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x0014c] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
+  at BoSSS.Solution.AdvancedSolvers.OrthonormalizationMultigrid.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x000e6] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
+  at BoSSS.Solution.AdvancedSolvers.Newton.SolverDriver[S] (BoSSS.Foundation.CoordinateVector SolutionVec, S RHS) [0x001af] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
+  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve_Increment (System.Int32 increment, System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00303] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
+  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve (System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00086] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
+  at BoSSS.Application.Rheology.Rheology.RunSolverOneStep (System.Int32 TimestepInt, System.Double phystime, System.Double dt) [0x00399] in <b8d2cc73db554405b50951108db63020>:0 
+  at BoSSS.Solution.Application`1[T].RunSolverMode () [0x00284] in <359d0762e00245e39e989d739ee8210b>:0 
+  at BoSSS.Solution.Application`1[T].AppEntry (System.Func`1[TResult] ApplicationFactory, BoSSS.Solution.CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy) [0x00150] in <359d0762e00245e39e989d739ee8210b>:0 
+  at BoSSS.Solution.Application`1[T]._Main (System.String[] args, System.Boolean noControlFile, System.Func`1[TResult] ApplicationFactory) [0x001b4] in <359d0762e00245e39e989d739ee8210b>:0 
+  at BoSSS.Application.Rheology.Rheology.Main (System.String[] args) [0x00001] in <b8d2cc73db554405b50951108db63020>:0 
+[ERROR] FATAL UNHANDLED EXCEPTION: System.ArithmeticException: LAPACK dgetrf info: the -4-th argument had an illegal value
+  at ilPSP.IMatrixExtensions.FactorizeLU[T] (T M, System.Int32[] _ipiv) [0x0017e] in <1878071017314084aed31b23ffa3220c>:0 
+  at BoSSS.Solution.AdvancedSolvers.LevelPmg.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x0014c] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
+  at BoSSS.Solution.AdvancedSolvers.OrthonormalizationMultigrid.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x000e6] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
+  at BoSSS.Solution.AdvancedSolvers.Newton.SolverDriver[S] (BoSSS.Foundation.CoordinateVector SolutionVec, S RHS) [0x001af] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
+  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve_Increment (System.Int32 increment, System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00303] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
+  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve (System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00086] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
+  at BoSSS.Application.Rheology.Rheology.RunSolverOneStep (System.Int32 TimestepInt, System.Double phystime, System.Double dt) [0x00399] in <b8d2cc73db554405b50951108db63020>:0 
+  at BoSSS.Solution.Application`1[T].RunSolverMode () [0x00284] in <359d0762e00245e39e989d739ee8210b>:0 
+  at BoSSS.Solution.Application`1[T].AppEntry (System.Func`1[TResult] ApplicationFactory, BoSSS.Solution.CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy) [0x00150] in <359d0762e00245e39e989d739ee8210b>:0 
+  at BoSSS.Solution.Application`1[T]._Main (System.String[] args, System.Boolean noControlFile, System.Func`1[TResult] ApplicationFactory) [0x001b4] in <359d0762e00245e39e989d739ee8210b>:0 
+  at BoSSS.Application.Rheology.Rheology.Main (System.String[] args) [0x00001] in <b8d2cc73db554405b50951108db63020>:0 
+
+Unhandled Exception:
+System.ArithmeticException: LAPACK dgetrf info: the -4-th argument had an illegal value
+  at ilPSP.IMatrixExtensions.FactorizeLU[T] (T M, System.Int32[] _ipiv) [0x0017e] in <1878071017314084aed31b23ffa3220c>:0 
+  at BoSSS.Solution.AdvancedSolvers.LevelPmg.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x0014c] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
+  at BoSSS.Solution.AdvancedSolvers.OrthonormalizationMultigrid.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x000e6] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
+  at BoSSS.Solution.AdvancedSolvers.Newton.SolverDriver[S] (BoSSS.Foundation.CoordinateVector SolutionVec, S RHS) [0x001af] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
+  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve_Increment (System.Int32 increment, System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00303] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
+  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve (System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00086] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
+  at BoSSS.Application.Rheology.Rheology.RunSolverOneStep (System.Int32 TimestepInt, System.Double phystime, System.Double dt) [0x00399] in <b8d2cc73db554405b50951108db63020>:0 
+  at BoSSS.Solution.Application`1[T].RunSolverMode () [0x00284] in <359d0762e00245e39e989d739ee8210b>:0 
+  at BoSSS.Solution.Application`1[T].AppEntry (System.Func`1[TResult] ApplicationFactory, BoSSS.Solution.CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy) [0x00150] in <359d0762e00245e39e989d739ee8210b>:0 
+  at BoSSS.Solution.Application`1[T]._Main (System.String[] args, System.Boolean noControlFile, System.Func`1[TResult] ApplicationFactory) [0x001b4] in <359d0762e00245e39e989d739ee8210b>:0 
+  at BoSSS.Application.Rheology.Rheology.Main (System.String[] args) [0x00001] in <b8d2cc73db554405b50951108db63020>:0 
+[ERROR] FATAL UNHANDLED EXCEPTION: System.ArithmeticException: LAPACK dgetrf info: the -4-th argument had an illegal value
+  at ilPSP.IMatrixExtensions.FactorizeLU[T] (T M, System.Int32[] _ipiv) [0x0017e] in <1878071017314084aed31b23ffa3220c>:0 
+  at BoSSS.Solution.AdvancedSolvers.LevelPmg.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x0014c] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
+  at BoSSS.Solution.AdvancedSolvers.OrthonormalizationMultigrid.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x000e6] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
+  at BoSSS.Solution.AdvancedSolvers.Newton.SolverDriver[S] (BoSSS.Foundation.CoordinateVector SolutionVec, S RHS) [0x001af] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
+  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve_Increment (System.Int32 increment, System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00303] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
+  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve (System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00086] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
+  at BoSSS.Application.Rheology.Rheology.RunSolverOneStep (System.Int32 TimestepInt, System.Double phystime, System.Double dt) [0x00399] in <b8d2cc73db554405b50951108db63020>:0 
+  at BoSSS.Solution.Application`1[T].RunSolverMode () [0x00284] in <359d0762e00245e39e989d739ee8210b>:0 
+  at BoSSS.Solution.Application`1[T].AppEntry (System.Func`1[TResult] ApplicationFactory, BoSSS.Solution.CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy) [0x00150] in <359d0762e00245e39e989d739ee8210b>:0 
+  at BoSSS.Solution.Application`1[T]._Main (System.String[] args, System.Boolean noControlFile, System.Func`1[TResult] ApplicationFactory) [0x001b4] in <359d0762e00245e39e989d739ee8210b>:0 
+  at BoSSS.Application.Rheology.Rheology.Main (System.String[] args) [0x00001] in <b8d2cc73db554405b50951108db63020>:0 
+
+Unhandled Exception:
+System.ArithmeticException: LAPACK dgetrf info: the -4-th argument had an illegal value
+  at ilPSP.IMatrixExtensions.FactorizeLU[T] (T M, System.Int32[] _ipiv) [0x0017e] in <1878071017314084aed31b23ffa3220c>:0 
+  at BoSSS.Solution.AdvancedSolvers.LevelPmg.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x0014c] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
+  at BoSSS.Solution.AdvancedSolvers.OrthonormalizationMultigrid.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x000e6] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
+  at BoSSS.Solution.AdvancedSolvers.Newton.SolverDriver[S] (BoSSS.Foundation.CoordinateVector SolutionVec, S RHS) [0x001af] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
+  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve_Increment (System.Int32 increment, System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00303] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
+  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve (System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00086] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
+  at BoSSS.Application.Rheology.Rheology.RunSolverOneStep (System.Int32 TimestepInt, System.Double phystime, System.Double dt) [0x00399] in <b8d2cc73db554405b50951108db63020>:0 
+  at BoSSS.Solution.Application`1[T].RunSolverMode () [0x00284] in <359d0762e00245e39e989d739ee8210b>:0 
+  at BoSSS.Solution.Application`1[T].AppEntry (System.Func`1[TResult] ApplicationFactory, BoSSS.Solution.CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy) [0x00150] in <359d0762e00245e39e989d739ee8210b>:0 
+  at BoSSS.Solution.Application`1[T]._Main (System.String[] args, System.Boolean noControlFile, System.Func`1[TResult] ApplicationFactory) [0x001b4] in <359d0762e00245e39e989d739ee8210b>:0 
+  at BoSSS.Application.Rheology.Rheology.Main (System.String[] args) [0x00001] in <b8d2cc73db554405b50951108db63020>:0 
+[ERROR] FATAL UNHANDLED EXCEPTION: System.ArithmeticException: LAPACK dgetrf info: the -4-th argument had an illegal value
+  at ilPSP.IMatrixExtensions.FactorizeLU[T] (T M, System.Int32[] _ipiv) [0x0017e] in <1878071017314084aed31b23ffa3220c>:0 
+  at BoSSS.Solution.AdvancedSolvers.LevelPmg.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x0014c] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
+  at BoSSS.Solution.AdvancedSolvers.OrthonormalizationMultigrid.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x000e6] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
+  at BoSSS.Solution.AdvancedSolvers.Newton.SolverDriver[S] (BoSSS.Foundation.CoordinateVector SolutionVec, S RHS) [0x001af] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
+  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve_Increment (System.Int32 increment, System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00303] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
+  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve (System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00086] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
+  at BoSSS.Application.Rheology.Rheology.RunSolverOneStep (System.Int32 TimestepInt, System.Double phystime, System.Double dt) [0x00399] in <b8d2cc73db554405b50951108db63020>:0 
+  at BoSSS.Solution.Application`1[T].RunSolverMode () [0x00284] in <359d0762e00245e39e989d739ee8210b>:0 
+  at BoSSS.Solution.Application`1[T].AppEntry (System.Func`1[TResult] ApplicationFactory, BoSSS.Solution.CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy) [0x00150] in <359d0762e00245e39e989d739ee8210b>:0 
+  at BoSSS.Solution.Application`1[T]._Main (System.String[] args, System.Boolean noControlFile, System.Func`1[TResult] ApplicationFactory) [0x001b4] in <359d0762e00245e39e989d739ee8210b>:0 
+  at BoSSS.Application.Rheology.Rheology.Main (System.String[] args) [0x00001] in <b8d2cc73db554405b50951108db63020>:0 
+--------------------------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code. Per user-direction, the job has been aborted.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpiexec detected that one or more processes exited with non-zero status, thus causing
+the job to be terminated. The first process to do so was:
+
+  Process name: [[41817,1],2]
+  Exit code:    1
+--------------------------------------------------------------------------
+
+==============
+j00.Stdout;
+**************
+      ___           ___           ___           ___           ___     
+     /\  \         /\  \         /\  \         /\  \         /\  \    
+    /::\  \       /::\  \       /::\  \       /::\  \       /::\  \   
+   /:/\:\  \     /:/\:\  \     /:/\ \  \     /:/\ \  \     /:/\ \  \  
+  /::\~\:\__\   /:/  \:\  \   _\:\~\ \  \   _\:\~\ \  \   _\:\~\ \  \ 
+ /:/\:\ \:|__| /:/__/ \:\__\ /\ \:\ \ \__\ /\ \:\ \ \__\ /\ \:\ \ \__\
+ \:\~\:\/:/  / \:\  \ /:/  / \:\ \:\ \/__/ \:\ \:\ \/__/ \:\ \:\ \/__/
+  \:\ \::/  /   \:\  /:/  /   \:\ \:\__\    \:\ \:\__\    \:\ \:\__\  
+   \:\/:/  /     \:\/:/  /     \:\/:/  /     \:\/:/  /     \:\/:/  /  
+    \::/__/       \::/  /       \::/  /       \::/  /       \::/  /   
+     ~~            \/__/         \/__/         \/__/         \/__/    
+                                                                      
+Running with 4 MPI process(es)
+Session ID: 4db65cfe-d1ee-408e-ac6d-b1674af72bce, DB path: '/home/fk69umer/bosss_db_lichtenberg'.
+configuring Weissenberg number: 1e+00
+Total number of cells:    640
+Total number of DOFs:     10240
+Instationary solve, timestep #1.0, dt = 0.1 ...
+current Weissenberg at 0
+experimental MG configuration for rheology
+   KcycleMultiSchwarz: lv 0, no of blocks 2 : 
+linear Solver: exp_Kcycle_schwarz_4Rheology
+nonlinear Solver: Newton
+Residual base.init:   18.0463323365662
+#Line,#Time,#Iter	 L2Norm ResidualMomentumX	 L2Norm ResidualMomentumY	 L2Norm ResidualConti	 L2Norm ResidualStressXX	 L2Norm ResidualStressXY	 L2Norm ResidualStressYY
+1,1,1	 7.616910E+001	 2.544073E-014	 1.736269E+000	 1.424973E+000	 2.086154E-012	 2.156994E-016
+OrthonormalizationMultigrid: running coarse solver on same level.
+
+Intel MKL ERROR: Parameter 4 was incorrect on entry to DGETRF.
+
+Intel MKL ERROR: Parameter 4 was incorrect on entry to DGETRF.
+
+Intel MKL ERROR: Parameter 4 was incorrect on entry to DGETRF.
+
+Intel MKL ERROR: Parameter 4 was incorrect on entry to DGETRF.
 
 ==============
 // =============
@@ -221,6 +431,7 @@ System.IO.IOException occurred: Unable to find control object (C:\Users\flori\de
 **************
 ==============
 **************
+FinishedSuccessful
 ==============
 **************
 ==============
@@ -284,6 +495,10 @@ System.Security.Authentication.InvalidCredentialException occurred: The server h
 1
 ==============
 //SaveExecutionQueues();
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

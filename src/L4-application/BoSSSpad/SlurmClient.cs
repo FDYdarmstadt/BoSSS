@@ -70,6 +70,23 @@ namespace BoSSS.Application.BoSSSpad {
             set;
         }
 
+
+        /// <summary>
+        /// Base directory where the executables should be deployed,
+        /// i.e. tha same location as <see cref="BatchProcessorClient.DeploymentBaseDirectory"/>, 
+        /// but in the file system of the remote computer on which slurm is running.
+        /// 
+        /// Example:
+        ///  - <see cref="BatchProcessorClient.DeploymentBaseDirectory"/> is set to <tt>C:\serverSSFFSmount\jobdeploy</tt>
+        ///  - <see cref="DeploymentBaseDirectoryAtRemote"/> is set to <tt>/home/linuxuser/jobdeploy</tt>
+        /// </summary>
+        [DataMember]
+        public string DeploymentBaseDirectoryAtRemote {
+            get;
+            protected set;
+        }
+
+
         SshClient m_SSHConnection;
 
         SshClient SSHConnection {
@@ -92,74 +109,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-
-
-        /*
-        /// <summary>
-        /// Configuration options specific to the <see cref="SlurmClient"/>
-        /// </summary>
-        [Serializable]
-        public new class Config : BatchProcessorClient.Config {
-
-            /// <summary>
-            /// %
-            /// </summary>
-            public string ServerName;
-            
-            /// <summary>
-            /// %
-            /// </summary>
-            public string Username;
-            
-            /// <summary>
-            /// %
-            /// </summary>
-            public string PrivateKeyFilePath;
-
-            /// <summary>
-            /// 
-            /// </summary>
-            public string SlurmAccount;
-
-            /// <summary>
-            /// 
-            /// </summary>
-            public string Email;
-
-
-            /// <summary>
-            /// %
-            /// </summary>
-            public override BatchProcessorClient Instance() {
-                var r = new SlurmClient(
-                    base.DeploymentBaseDirectory,
-                    ServerName,
-                    Username,
-                    PrivateKeyFilePath);
-                r.SlurmAccount = SlurmAccount;
-                r.Email = Email;
-
-                return r;
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public override BatchProcessorClient.Config GetConfig() {
-            return new SlurmClient.Config() {
-                DeploymentBaseDirectory = this.DeploymentBaseDirectory,
-                DeployRuntime = this.DeployRuntime,
-                PrivateKeyFilePath = this.m_PrivateKeyFilePath,
-                ServerName = this.m_ServerName,
-                Username = this.m_Username,
-                Email = this.Email,
-                SlurmAccount = this.SlurmAccount
-            };
-        }
-        */
-
+        
         /// <summary>
         /// Empty constructor for de-serialization
         /// </summary>
@@ -285,17 +235,20 @@ namespace BoSSS.Application.BoSSSpad {
             buildSlurmScript(myJob, new string[] { "source " + "/home/" + Username + "/.bashrc" });
 
             string path = "\\home\\" + Username + myJob.DeploymentDirectory.Substring(2);
+            
             // Converting script to unix format
-            string convertCmd = " dos2unix " + path + "\\batch.sh";
+            //string convertCmd = " dos2unix " + path + "\\batch.sh";
 
             // Submitting script to sbatch system
             string sbatchCmd = " sbatch " + path + "\\batch.sh";
 
+            
             // Convert from Windows to Unix and submit job
             Console.WriteLine();
-            var result1 = SSHConnection.RunCommand(convertCmd.Replace("\\", "/"));
+            //var result1 = SSHConnection.RunCommand(convertCmd.Replace("\\", "/"));
             var result2 = SSHConnection.RunCommand(sbatchCmd.Replace("\\", "/"));
 
+            /*
             // Otherwise it didn´t work because uploading speed at some clusters is too slow
             if (result1.Error == "" || result2.Result == "") {
                 Console.Write("Waiting for file transfer to finish");
@@ -309,6 +262,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
             Console.WriteLine(result1.Error);
+            */
             Console.WriteLine(result2.Result);
 
             // Hardcoded extract of JobID
@@ -316,6 +270,11 @@ namespace BoSSS.Application.BoSSSpad {
 
             return null;
         }
+
+        /// <summary>
+        /// the deployment directory, mounted in the filesystem of the local machine
+        /// </summary>
+        string m_DeploymentDirectory;
 
         /// <summary>
         /// build batch script with all necessary parameters
@@ -360,9 +319,12 @@ namespace BoSSS.Application.BoSSSpad {
                 startupstring = str.ToString();
             }
 
-            string path = myJob.DeploymentDirectory + "\\batch.sh";
+            string path = Path.Combine(myJob.DeploymentDirectory, "batch.sh");
+            m_DeploymentDirectory = myJob.DeploymentDirectory;
 
             using (StreamWriter sw = File.CreateText(path)) {
+                sw.NewLine = "\n"; // Unix file endings
+
                 sw.WriteLine("#!/bin/sh");
                 sw.WriteLine("#SBATCH -J " + jobname);
                 if (HHLR_project != null) {
@@ -391,6 +353,8 @@ namespace BoSSS.Application.BoSSSpad {
 
                 // Set startupstring
                 sw.WriteLine(startupstring);
+
+                sw.WriteLine("echo $? > exit.txt");
             }
 
         }
