@@ -427,6 +427,7 @@ namespace CNS {
                     }
                 }
 
+                WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
                 plotDriver.PlotFields("CNS-" + timestepNo, physTime, m_IOFields);
             }
         }

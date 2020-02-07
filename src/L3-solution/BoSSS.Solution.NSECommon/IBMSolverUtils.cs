@@ -746,30 +746,30 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Calculates the drag (x-component) and lift (y-component) forces acting on a cylinder wall of a boundary fitted grid. The definition of the wall is HARDCODED!
         /// </summary>
-        static public double[] GetForces_BoundaryFitted(VectorField<SinglePhaseField> GradU, VectorField<SinglePhaseField> GradV, SinglePhaseField StressXX,
-            SinglePhaseField StressXY, SinglePhaseField StressYY, SinglePhaseField P, LevelSetTracker LsTrk, double muA, double beta) {
+        static public double[] GetForces_BoundaryFitted(VectorField<SinglePhaseField> U, SinglePhaseField StressXX, //VectorField<SinglePhaseField> GradU, VectorField<SinglePhaseField> GradV
+            SinglePhaseField StressXY, SinglePhaseField StressYY, SinglePhaseField P, LevelSetTracker LsTrk, double muA, double beta, string EdgeTagName) {
             int D = LsTrk.GridDat.SpatialDimension;
 
             if (D > 2) {
                 throw new ArgumentException("Method GetForces_BoundaryFitted only implemented for 2D (viscoelastic)!");
             }
             // var UA = U.Select(u => u.GetSpeciesShadowField("A")).ToArray();
-            //var UA = U.ToArray();
-            MultidimensionalArray Grad_U = new MultidimensionalArray(D);
-            var _GradU = GradU.ToArray();
-            var _GradV = GradV.ToArray();
+            var UA = U.ToArray();
+            //MultidimensionalArray Grad_U = new MultidimensionalArray(D);
+            //var _GradU = GradU.ToArray();
+            //var _GradV = GradV.ToArray();
 
 
-            int RequiredOrder = _GradU[0].Basis.Degree * 3 + 2;
-            //int RequiredOrder = U[0].Basis.Degree * 3 + 2;
+            //int RequiredOrder = _GradU[0].Basis.Degree * 3 + 20;
+            int RequiredOrder = U[0].Basis.Degree * 3 + 2;
             //int RequiredOrder = LsTrk.GetXQuadFactoryHelper(momentFittingVariant).GetCachedSurfaceOrders(0).Max();
             //Console.WriteLine("Order reduction: {0} -> {1}", _RequiredOrder, RequiredOrder);
 
             //if (RequiredOrder > agg.HMForder)
             //    throw new ArgumentException();
 
-            Console.WriteLine();
-            Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
+            //Console.WriteLine();
+            //Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
 
             SinglePhaseField _StressXX = StressXX;
             SinglePhaseField _StressXY = StressXY;
@@ -780,7 +780,11 @@ namespace BoSSS.Solution.NSECommon {
             //pA = P.GetSpeciesShadowField("A");
             pA = P;
 
-
+            VectorField<SinglePhaseField>[] VelGread = new VectorField<SinglePhaseField>[D];
+            for(int d = 0; d < D; d++) {
+                VelGread[d] = new VectorField<SinglePhaseField>(D, U[d].Basis, (b, name) => new SinglePhaseField(b, name));
+                VelGread[d].GradientByFlux(1.0, U[d]);
+            }
 
 
             double[] forces = new double[D];
@@ -800,14 +804,19 @@ namespace BoSSS.Solution.NSECommon {
 
 
                     for (int i = 0; i < D; i++) {
-                        _GradU[i].EvaluateEdge(j0, Len, Ns, Grad_URes.ExtractSubArrayShallow(-1, -1, i),
+                        VelGread[0][i].EvaluateEdge(j0, Len, Ns, Grad_URes.ExtractSubArrayShallow(-1, -1, i),
                             Grad_URes.ExtractSubArrayShallow(-1, -1, i), ResultIndexOffset: 0, ResultPreScale: 1);
 
-                        _GradV[i].EvaluateEdge(j0, Len, Ns, Grad_VRes.ExtractSubArrayShallow(-1, -1, i),
+                        VelGread[1][i].EvaluateEdge(j0, Len, Ns, Grad_VRes.ExtractSubArrayShallow(-1, -1, i),
                             Grad_VRes.ExtractSubArrayShallow(-1, -1, i), ResultIndexOffset: 0, ResultPreScale: 1);
+                        //UA[0].EvaluateGradient(j0, Len, Ns, Grad_URes, 0, 1); //
+                        //UA[1].EvaluateGradient(j0, Len, Ns, Grad_VRes, 0, 1); //
+                         //UA[i].EvaluateGradient(j0, Len, Ns, Grad_URes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
 
-                        //UA[i].EvaluateGradient(j0, Len, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
+
                     }
+
+
 
                     //pA.Evaluate(j0, Len, Ns, pARes);
                     pA.EvaluateEdge(j0, Len, Ns, pARes, pARes, ResultIndexOffset: 0, ResultPreScale: 1);
@@ -858,7 +867,7 @@ namespace BoSSS.Solution.NSECommon {
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
 
                 //EdgeMask Mask = new EdgeMask(LsTrk.GridDat, "Wall_bottom");
-                EdgeMask Mask = new EdgeMask(LsTrk.GridDat, "Wall_cylinder");
+                EdgeMask Mask = new EdgeMask(LsTrk.GridDat, EdgeTagName);
 
                 EdgeQuadratureScheme eqs = SchemeHelper.GetEdgeQuadScheme(LsTrk.GetSpeciesId("A"), IntegrationDomain: Mask);
 

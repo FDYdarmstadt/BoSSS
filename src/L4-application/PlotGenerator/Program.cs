@@ -40,6 +40,9 @@ namespace BoSSS.PlotGenerator {
         /// </param>
         static void Main(string[] args) {
             bool mustFinalizeMPI;
+
+            var t = typeof(BoSSS.Application.Rheology.RheologyTimestepInfo);
+            
             
             ilPSP.Environment.Bootstrap(args, BoSSS.Solution.Application.GetBoSSSInstallDir(), out mustFinalizeMPI);
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
