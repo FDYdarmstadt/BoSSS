@@ -1,0 +1,790 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 2 instances of IDatabaseInfo {
+  0: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+  1: { Session Count = 0; Grid Count = 2; Path = V:\Test4Anne\DB_Rheology }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+var DB = OpenOrCreateDatabase(@"V:\SyncHHLR\DB_Cube_3");
+**************
+Opening existing database 'V:\SyncHHLR\DB_Cube_3'.
+
+==============
+using ilPSP.Tracing;
+using System.IO;
+**************
+(1,2): warning CS0105: The using directive for `ilPSP.Tracing' appeared previously in this namespace
+(2,1): warning CS0105: The using directive for `System.IO' appeared previously in this namespace
+No. of errors|warnings: 0|2.
+
+==============
+DB.Sessions.Pick(0).KeysAndQueries["Grid:NoOfCells"]
+**************
+13107200
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+static class AddCols {
+
+    static public object NoOfCores(ISessionInfo SI){
+        return (int)SI.GetProfiling().Count();
+    }
+    static public object CellsPerCore(ISessionInfo SI){
+        return (int)(Convert.ToInt32(SI.KeysAndQueries["Grid:NoOfCells"])/SI.GetProfiling().Count());
+    }
+}
+**************
+==============
+static class Baemsen {
+    public static double[][] kMeans(ISessionInfo SI, string method, bool exclusive, int MaxNoOfclusters, out double[] means, bool forced){
+                    var mcr           = SI.GetProfiling();
+                    double[] runtimes = new double[mcr.Count()];
+
+                    for (int j = 0; j < mcr.Count(); j++) {
+                    try{
+                        if (exclusive) {
+                            mcr[j].FindChildren(method).ForEach(s => runtimes[j]+=s.TimeExclusive.TotalSeconds);
+                        } else {
+                            mcr[j].FindChildren(method).ForEach(s => runtimes[j]+=s.TimeSpentInMethod.TotalSeconds);
+                        }
+                    } catch(Exception e){
+                        Console.WriteLine(SI.Name);
+                        Console.WriteLine(SI.ID);
+                        Console.WriteLine(e.Message);
+                    } 
+                    }
+                    int clusters = -1;
+                        switch((int)AddCols.NoOfCores(SI)){
+                            case 4:
+                            clusters = 1;
+                            break;
+                            case 8:
+                            clusters = 2;
+                            break;
+                            case 16:
+                            case 32:
+                            case 64:
+                            clusters = 4;
+                            break;
+                        }
+
+                    clusters = forced?clusters:MaxNoOfclusters;
+                    means    = new double[clusters];
+                    
+                    //find good seeding points
+                    double[] distances = new double[runtimes.Length];
+                    double[] times = runtimes.CloneAs();
+                    Array.Sort(times);
+                    var dict = new Dictionary<double,double>();
+                    for(int itimes=1; itimes<times.Length; itimes++){
+                        distances[itimes] = times[itimes]-times[itimes-1];
+                        dict.Add(distances[itimes],times[itimes]);
+                    }
+                    int m = 0;
+                    foreach(var dist in dict.OrderByDescending(s => s.Key)){
+                        if(m>=clusters)
+                            break;
+                        means[m]=dist.Value;
+                        m++;
+                        }
+                    var KmeanAlg = new Kmeans(runtimes,clusters,means,200);
+                    var Ids      = KmeanAlg.Cluster();
+                    Array.Sort(runtimes,Ids);
+                    
+                    double[][] tmp = new double[MaxNoOfclusters][];
+                    int k = 0;
+                    for(int i=0;i<MaxNoOfclusters;i++){
+                        
+                        int no = Ids.Where(e => e==i).Count();
+                        tmp[i]=new double[no];
+                        for(int j=0;j<no;j++){
+                            tmp[i][j]=runtimes[k];
+                            k++;
+                            }
+                        }
+        return tmp;
+    }
+        public static double[][] greatestgap(ISessionInfo SI, string method, bool exclusive, int MaxNoOfclusters, out double[] means, bool forced) {
+            var mcr = SI.GetProfiling();
+            double[] runtimes = new double[mcr.Count()];
+
+            for (int j = 0; j < mcr.Count(); j++) {
+                try {
+                    if (exclusive) {
+                        mcr[j].FindChildren(method).ForEach(s => runtimes[j] += s.TimeExclusive.TotalSeconds);
+                    } else {
+                        mcr[j].FindChildren(method).ForEach(s => runtimes[j] += s.TimeSpentInMethod.TotalSeconds);
+                    }
+                } catch (Exception e) {
+                    Console.WriteLine(SI.Name);
+                    Console.WriteLine(SI.ID);
+                    Console.WriteLine(e.Message);
+                }
+                //Console.WriteLine(runtimes[j]);
+            }
+
+
+            int gaps = -1;
+            int clusters = -1;
+            switch ((int)AddCols.NoOfCores(SI)) {
+                case 4:
+                    clusters = 1;
+                    break;
+                case 8:
+                    clusters = 2;
+                    break;
+                case 16:
+                case 32:
+                case 64:
+                    clusters = 4;
+                    break;
+            }
+            gaps  = forced ? clusters: MaxNoOfclusters;
+            means = new double[clusters];
+
+            //initial gaps
+            int[] Idxgap = GetIdxs(runtimes,gaps, null);
+            //int[] Idxgap_prev = new int[gaps+1];
+
+            //loop section
+            //int it_cnt = 0;
+            //bool qcrt  = false;
+            
+            //do {
+            //    Idxgap_prev = Idxgap;
+            //    Idxgap      = GetIdxs(runtimes, gaps, Idxgap_prev);
+            //    bool test   = false;
+          
+            //    for(int iIdx=0; iIdx<Idxgap.Length; iIdx++) {
+            //        test &= (Idxgap_prev[iIdx] - Idxgap[iIdx] == 0);
+            //    }
+            //    Console.WriteLine("It: "+it_cnt);
+            //    it_cnt++;
+            //    qcrt = (it_cnt >= MaxIt) || test;
+            //} while (!qcrt);
+
+            
+            //generate masking
+            Array.Sort(Idxgap);
+            int cnt = 1;
+            var Ids = new int[runtimes.Length];
+            for (int t = 0; t < runtimes.Length; t++) {
+                if (t > Idxgap[cnt])
+                    cnt++;
+                Ids[t] = cnt-1;
+            }
+            
+            //generate output
+            double[][] tmp = new double[MaxNoOfclusters][];
+            int k = 0;
+            for (int i = 0; i < MaxNoOfclusters; i++) {
+
+                int no = Ids.Where(e => e == i).Count();
+                tmp[i] = new double[no];
+                for (int j = 0; j < no; j++) {
+                    tmp[i][j] = runtimes[k];
+                    k++;
+                }
+            }
+            return tmp;
+        }
+  private static int[] GetIdxs(double[] data, int gaps, int[] prev_Idx) {
+        int[] Idxgap = new int[gaps + 1];
+        //double[] distances = new double[data.Length];
+        double[] reldist = new double[data.Length];
+        //distances[0] = double.MaxValue;
+        reldist[0] = 0;
+        var dict = new Dictionary<int, double>();
+        //int c = 0;
+        Array.Sort(data);
+        if (prev_Idx != null) {
+            Array.Sort(prev_Idx);
+            //Console.WriteLine(prev_Idx[0]);
+        }
+        for (int itimes = 0; itimes < data.Length-1; itimes++) {
+            //distances[itimes] = data[itimes] - data[itimes - 1];
+                if (prev_Idx != null) {
+                    //c += itimes > prev_Idx[c + 1] ? 1 : 0;
+                    //reldist[itimes] = distances[itimes] / (data[itimes - 1] - data[prev_Idx[c]]);
+                } else {
+                    //reldist[itimes] = 1/(data[itimes] - data[itimes - 1])*(data[itimes + 1] - data[itimes])  ;
+                    reldist[itimes] = (data[itimes+1] - data[itimes])/data[itimes]  ;
+                }
+                //Console.WriteLine(itimes +" : "+ reldist[itimes]);
+            dict.Add(itimes, reldist[itimes]);
+        }
+            int m = 0;
+            double[] showme = new double[gaps];
+            foreach (var dist in dict.OrderByDescending(s => s.Value)) {
+                if (m == gaps - 1)
+                    break;//first index shall be 0 always
+                Idxgap[m] = dist.Key;
+                showme[m] = dist.Value;
+                m++;
+            }
+            //Console.WriteLine("distances");
+            foreach (var s in showme)
+                //Console.WriteLine(s);
+        Idxgap[Idxgap.Length - 1] = data.Length - 1;
+        return Idxgap;
+    }
+ public static double[][] PredefinedClustering(ISessionInfo SI, string method, bool exclusive, int MaxNoOfclusters, out double[] means, bool forced) {
+            var mcr = SI.GetProfiling();
+            double[] runtimes = new double[mcr.Count()];
+
+            for (int j = 0; j < mcr.Count(); j++) {
+                try {
+                    if (exclusive) {
+                        mcr[j].FindChildren(method).ForEach(s => runtimes[j] += s.TimeExclusive.TotalSeconds);
+                    } else {
+                        mcr[j].FindChildren(method).ForEach(s => runtimes[j] += s.TimeSpentInMethod.TotalSeconds);
+                    }
+                } catch (Exception e) {
+                    Console.WriteLine(SI.Name);
+                    Console.WriteLine(SI.ID);
+                    Console.WriteLine(e.Message);
+                }
+                //Console.WriteLine(runtimes[j]);
+            }
+            int[] IdN = null;
+            means = null;
+            if (forced) {
+                switch ((int)AddCols.NoOfCores(SI)) {
+                    case 4:
+                        IdN = new int[] { 4, 0, 0, 0 };
+                        break;
+                    case 8:
+                        IdN = new int[] { 4, 4, 0, 0 };
+                        break;
+                    case 16:
+                        IdN = new int[] { 4, 4, 4, 4 };
+                        break;
+                    case 32:
+                        IdN = new int[] { 12, 4, 12, 4 };
+                        break;
+                    case 64:
+                        IdN = new int[] { 36, 12, 12, 4 };
+                        break;
+                }
+            } else {
+                switch ((int)AddCols.NoOfCores(SI)) {
+                    case 4:
+                        IdN = new int[] { 1, 1, 1, 1 };
+                        break;
+                    case 8:
+                        IdN = new int[] { 2, 2, 2, 2 };
+                        break;
+                    case 16:
+                        IdN = new int[] { 4, 4, 4, 4 };
+                        break;
+                    case 32:
+                        IdN = new int[] { 12, 4, 12, 4 };
+                        break;
+                    case 64:
+                        IdN = new int[] { 36, 12, 12, 4 };
+                        break;
+                }
+            }
+            //generate Index masking
+            int offset = 0;
+            int[] Ids = new int[runtimes.Length];
+            for (int m=0; m<IdN.Length; m++) {
+                int n = IdN[m];
+                for (int i = 0; i < n; i++) {
+                    Ids[i + offset]=m;
+                }
+                offset += n;
+            }
+            Array.Sort(runtimes);
+            //generate output
+            double[][] tmp = new double[MaxNoOfclusters][];
+            int k = 0;
+            for (int i = 0; i < MaxNoOfclusters; i++) {
+
+                int no = Ids.Where(e => e == i).Count();
+                tmp[i] = new double[no];
+                for (int j = 0; j < no; j++) {
+                    tmp[i][j] = runtimes[k];
+                    k++;
+                }
+            }
+            return tmp;
+        }
+}
+**************
+==============
+Func<ISessionInfo,string,double[][]> ClusteringAlg = delegate(ISessionInfo SI, string method){
+    bool exclusive      = false;
+    int MaxNoOfclusters = 4;
+    double[] means = null;
+    bool forced = true;
+    //var bla = Baemsen.kMeans(SI,method,exclusive,MaxNoOfclusters,out means,forced);
+    //var bla = Baemsen.greatestgap(SI,method,exclusive,MaxNoOfclusters,out means,forced);
+    var bla = Baemsen.PredefinedClustering(SI,method,exclusive,MaxNoOfclusters,out means,forced);
+    return bla;
+}
+**************
+==============
+var session = DB.Sessions.Pick(38);
+var bla     = ClusteringAlg(session,"Flux-Eval:OptimizedHLLCMomentumFlux:BoSSS.Solution.CompressibleFlowCommon.Convection.OptimizedHLLCMomentumFlux");
+**************
+==============
+var ret = new List<double>();
+bla.ForEach(b=>ret.AddRange(b));
+var gp        = new Gnuplot();
+var Fmt       = new PlotFormat();
+Fmt.PointSize = 0.5;
+Fmt.LineWidth = 3;
+Fmt.Style     = Styles.LinesPoints;
+Fmt.DashType  = DashTypes.Solid;
+gp.PlotY(ret.ToArray(),"bla",Fmt);
+//gp.PlotY(means,"blub",Fmt);
+gp.PlotNow();
+**************
+Using gnuplot: V:\BoSSS-BIN\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+System.Drawing.Bitmap
+==============
+**************
+==============
+bla.Length.ForLoop(i=>bla[i].Length);
+**************
+List of 4 instances of Int32 {
+  0: 36
+  1: 12
+  2: 12
+  3: 4
+}
+==============
+var gp        = new Gnuplot();
+var Fmt       = new PlotFormat();
+Fmt.PointSize = 0.5;
+Fmt.LineWidth = 3;
+Fmt.Style     = Styles.LinesPoints;
+Fmt.DashType  = DashTypes.Solid;
+double offset = 0;
+for(int i=0;i<bla.Length;i++){
+Fmt.LineColor = (LineColors)i;
+double[] xdummy    = bla[i].Length.ForLoop<double>(s=>s+offset);
+offset += bla[i].Length;
+gp.PlotXY(xdummy,bla[i].ToArray(),String.Format("{0}",i),Fmt);
+}
+gp.SetYLabel("corewise runtime [s]");
+gp.SetXLabel("cores (ascending runtime)");
+gp.SetXRange(0,offset+10);
+gp.PlotNow();
+**************
+Using gnuplot: V:\BoSSS-BIN\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+System.Drawing.Bitmap
+==============
+int cpc = (int)AddCols.CellsPerCore(session);
+int nc  = (int)AddCols.NoOfCores(session);
+var CL  = gp.PlotCairolatex(xSize:16,ySize:12);
+CL.WriteMinimalCompileableExample(Path.Combine(@"T:\Performance_CNS_Koop_Informatik\study_5","Color"+cpc+"_"+nc+"_"+NoOfClusters+".tex"),"_"+cpc+"_"+nc+"_"+NoOfClusters+".tex");
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+var tmp = new System.Data.DataTable();
+
+tmp.Columns.Add("NoOfCores", typeof(Int32));
+tmp.Columns.Add("CellsPerCore", typeof(Int32));
+for(int icluster=0;icluster<NoOfClusters;icluster++){
+    string colname = String.Format("Cluster{0}",icluster);
+    tmp.Columns.Add(colname, typeof(Int32));
+}
+tmp.Columns.Add("NR", typeof(Int32));
+int cnt = 0;  
+foreach(var SI in DB.Sessions){
+    var newrow = tmp.NewRow();
+    var baem   = ClusteringAlg(SI,"Flux-Eval:OptimizedHLLCMomentumFlux:BoSSS.Solution.CompressibleFlowCommon.Convection.OptimizedHLLCMomentumFlux");
+    newrow["NoOfCores"]=AddCols.NoOfCores(SI);
+    newrow["CellsPerCore"]=AddCols.CellsPerCore(SI);
+    for(int icluster=0;icluster<NoOfClusters;icluster++){
+        string colname = String.Format("Cluster{0}",icluster);
+        newrow[colname]=baem[icluster].Length;
+    }
+    newrow["NR"]=cnt;
+    tmp.Rows.Add(newrow);
+    cnt++;
+}
+System.Data.DataView dv        = tmp.DefaultView;
+dv.Sort                        = "NoOfCores,CellsPerCore";
+System.Data.DataTable sortedDT = dv.ToTable();
+sortedDT.Print();
+**************
+     NoOfCores CellsPerCore Cluster0 Cluster1 Cluster2 Cluster3 NR  
+0:   4         1600         4        0        0        0        28  
+1:   4         1600         4        0        0        0        63  
+2:   4         1600         4        0        0        0        75  
+3:   4         1600         4        0        0        0        99  
+4:   4         6400         4        0        0        0        27  
+5:   4         6400         4        0        0        0        62  
+6:   4         6400         4        0        0        0        74  
+7:   4         6400         4        0        0        0        98  
+8:   4         25600        4        0        0        0        26  
+9:   4         25600        4        0        0        0        59  
+10:  4         25600        4        0        0        0        70  
+11:  4         25600        4        0        0        0        95  
+12:  4         102400       4        0        0        0        22  
+13:  4         102400       4        0        0        0        52  
+14:  4         102400       4        0        0        0        66  
+15:  4         102400       4        0        0        0        90  
+16:  4         409600       4        0        0        0        10  
+17:  4         409600       4        0        0        0        40  
+18:  4         409600       4        0        0        0        55  
+19:  4         409600       4        0        0        0        79  
+20:  8         1600         4        4        0        0        18  
+21:  8         1600         4        4        0        0        61  
+22:  8         1600         4        4        0        0        73  
+23:  8         1600         4        4        0        0        97  
+24:  8         6400         4        4        0        0        25  
+25:  8         6400         4        4        0        0        60  
+26:  8         6400         4        4        0        0        72  
+27:  8         6400         4        4        0        0        96  
+28:  8         25600        4        4        0        0        19  
+29:  8         25600        4        4        0        0        58  
+30:  8         25600        4        4        0        0        69  
+31:  8         25600        4        4        0        0        94  
+32:  8         25600        4        4        0        0        100 
+33:  8         102400       4        4        0        0        13  
+34:  8         102400       4        4        0        0        51  
+35:  8         102400       4        4        0        0        65  
+36:  8         102400       4        4        0        0        89  
+37:  8         409600       4        4        0        0        9   
+38:  8         409600       4        4        0        0        41  
+39:  8         409600       4        4        0        0        54  
+40:  8         409600       4        4        0        0        78  
+41:  16        1600         4        4        4        4        24  
+42:  16        1600         4        4        4        4        50  
+43:  16        1600         4        4        4        4        71  
+44:  16        1600         4        4        4        4        93  
+45:  16        6400         4        4        4        4        21  
+46:  16        6400         4        4        4        4        53  
+47:  16        6400         4        4        4        4        68  
+48:  16        6400         4        4        4        4        92  
+49:  16        25600        4        4        4        4        16  
+50:  16        25600        4        4        4        4        48  
+51:  16        25600        4        4        4        4        67  
+52:  16        25600        4        4        4        4        91  
+53:  16        102400       4        4        4        4        2   
+54:  16        102400       4        4        4        4        12  
+55:  16        102400       4        4        4        4        64  
+56:  16        102400       4        4        4        4        86  
+57:  16        409600       4        4        4        4        6   
+58:  16        409600       4        4        4        4        34  
+59:  16        409600       4        4        4        4        49  
+60:  16        409600       4        4        4        4        77  
+61:  32        1600         12       4        12       4        14  
+62:  32        1600         12       4        12       4        44  
+63:  32        1600         12       4        12       4        57  
+64:  32        1600         12       4        12       4        88  
+65:  32        6400         12       4        12       4        4   
+66:  32        6400         12       4        12       4        23  
+67:  32        6400         12       4        12       4        56  
+68:  32        6400         12       4        12       4        87  
+69:  32        25600        12       4        12       4        3   
+70:  32        25600        12       4        12       4        20  
+71:  32        25600        12       4        12       4        43  
+72:  32        25600        12       4        12       4        85  
+73:  32        102400       12       4        12       4        1   
+74:  32        102400       12       4        12       4        39  
+75:  32        102400       12       4        12       4        47  
+76:  32        102400       12       4        12       4        81  
+77:  32        409600       12       4        12       4        0   
+78:  32        409600       12       4        12       4        7   
+79:  32        409600       12       4        12       4        31  
+80:  32        409600       12       4        12       4        37  
+81:  64        1600         36       12       12       4        17  
+82:  64        1600         36       12       12       4        36  
+83:  64        1600         36       12       12       4        46  
+84:  64        1600         36       12       12       4        84  
+85:  64        6400         36       12       12       4        5   
+86:  64        6400         36       12       12       4        35  
+87:  64        6400         36       12       12       4        45  
+88:  64        6400         36       12       12       4        83  
+89:  64        25600        36       12       12       4        15  
+90:  64        25600        36       12       12       4        33  
+91:  64        25600        36       12       12       4        42  
+92:  64        25600        36       12       12       4        82  
+93:  64        102400       36       12       12       4        11  
+94:  64        102400       36       12       12       4        32  
+95:  64        102400       36       12       12       4        38  
+96:  64        102400       36       12       12       4        80  
+97:  64        409600       36       12       12       4        8   
+98:  64        409600       36       12       12       4        29  
+99:  64        409600       36       12       12       4        30  
+100: 64        409600       36       12       12       4        76  NR
+==============
+//Collect results for a specific point (combination of cellspercore and noofcores)
+Func<string,int,Dictionary<int[],List<double>[]>> whatever = delegate(string method,int NoOfClusters){
+int[] cores = new int[]{4,8,16,32,64};
+int[] cellspercore = new int[]{1600,6400,25600,102400,409600};
+List<double>[] samplesCluster = new List<double>[NoOfClusters];
+Dictionary<int[],List<double>[]> points = new Dictionary<int[],List<double>[]>();
+foreach(int cp in cellspercore){
+    foreach(int c in cores){
+        var sess       = DB.Sessions.Where(s=>(Convert.ToInt32(s.KeysAndQueries["Grid:NoOfCells"])/s.GetProfiling().Count()).Equals(cp)).Where(s=>s.GetProfiling().Count().Equals(c));
+        samplesCluster = NoOfClusters.ForLoop(s=>new List<double>());
+        foreach(var s in sess){
+            var bla = ClusteringAlg(s,method);
+            for(int i=0;i<NoOfClusters;i++){
+                if(bla[i]==null)
+                    throw new Exception(String.Format("at{0}:{1}",cp,c));
+                samplesCluster[i].AddRange(bla[i]);
+                }
+            }
+            points.Add(new int[]{cp, c},samplesCluster);
+        }
+    }
+    return points;
+}
+**************
+==============
+var methods = new string[]{
+    "Flux-Eval:OptimizedLaplacianArtificialViscosityFlux:BoSSS.Solution.CompressibleFlowCommon.ShockCapturing.OptimizedLaplacianArtificialViscosityFlux",
+    "Flux-Eval:OptimizedHLLCDensityFlux:BoSSS.Solution.CompressibleFlowCommon.Convection.OptimizedHLLCDensityFlux",
+    "Flux-Eval:OptimizedHLLCMomentumFlux:BoSSS.Solution.CompressibleFlowCommon.Convection.OptimizedHLLCMomentumFlux",
+    "Flux-Eval:OptimizedHLLCEnergyFlux:BoSSS.Solution.CompressibleFlowCommon.Convection.OptimizedHLLCEnergyFlux"
+    };
+**************
+==============
+var ViscosityFlux = whatever(methods[0],NoOfClusters);
+**************
+==============
+ViscosityFlux.Count();
+**************
+25
+==============
+int cluster = 0;
+foreach(var datapoint in ViscosityFlux){
+    string keys   = String.Join(",",datapoint.Key);
+    string values = String.Join(",",datapoint.Value[cluster]);
+    Console.WriteLine(keys+" : "+values);
+    }
+**************
+1600,4 : 1.2794001,1.2817532,1.2881907,1.3067087,1.281853,1.282353,1.2944659,1.2958316,1.2846476,1.2859729,1.2915775,1.3205123,1.2893782,1.2916921,1.2993927,1.3013592
+1600,8 : 1.3728399,1.3740292,1.3776295,1.3778879,1.2824573,1.2862625,1.2882717,1.2890724,1.2867425,1.2909165,1.2953844,1.3008042,1.2864541,1.288176,1.2883945,1.2893628
+1600,16 : 1.286553,1.2868439,1.2882582,1.2902357,1.2826872,1.2833609,1.2844727,1.2881487,1.2781132,1.2826143,1.2873967,1.2875381,1.3683837,1.3747338,1.3789397,1.380383
+1600,32 : 1.2876364,1.2899877,1.2900695,1.290323,1.2903681,1.2932733,1.2949099,1.2979727,1.2998766,1.301231,1.3076417,1.3081749,1.2867798,1.287242,1.2941202,1.2969965,1.3039333,1.3043805,1.3044341,1.3180955,1.3207584,1.3218277,1.3248211,1.3260743,1.2859967,1.2871724,1.2908537,1.2982252,1.2990881,1.2999452,1.300792,1.3020466,1.3046325,1.3125815,1.3153325,1.315465,1.2397485,1.260997,1.2700361,1.2710772,1.2745066,1.2871939,1.3433351,1.3554067,1.3733745,1.373749,1.3738803,1.375014
+1600,64 : 1.2867604,1.304674,1.3065893,1.3180706,1.3183276,1.3198612,1.3202419,1.3215446,1.3217529,1.3219312,1.3221626,1.3223066,1.3223076,1.3232206,1.3234354,1.3244271,1.3245251,1.3251089,1.3252628,1.3256726,1.3260053,1.326722,1.3274575,1.3277537,1.3285361,1.3296134,1.3298699,1.3300935,1.3302247,1.3305625,1.3306724,1.3307023,1.3308937,1.3315347,1.3335019,1.3340075,1.2821259,1.3012634,1.3050033,1.3155037,1.3158333,1.3166182,1.3177555,1.3177872,1.3189911,1.3194293,1.3195042,1.3199022,1.3202933,1.321373,1.3214571,1.3214623,1.3228656,1.3235263,1.3238109,1.3239607,1.3254742,1.325798,1.3262829,1.3264253,1.3271235,1.3272195,1.328042,1.3293485,1.3294092,1.32973,1.3302028,1.3303688,1.3304728,1.3304805,1.3305021,1.3305485,1.2872511,1.3114166,1.3133543,1.3168909,1.3171166,1.3182138,1.3184054,1.3188709,1.3199358,1.3219557,1.3226998,1.3228057,1.3230605,1.3242914,1.3243204,1.3243435,1.3244961,1.3245007,1.3247439,1.3247851,1.3254567,1.3254773,1.3259744,1.326448,1.3265792,1.3268111,1.3269227,1.3273831,1.3275812,1.3287743,1.3291864,1.3294719,1.3295182,1.3300621,1.330367,1.3309367,1.2453177,1.2558154,1.2694545,1.2699542,1.2709986,1.2719012,1.2760509,1.2774925,1.2775774,1.277642,1.2783265,1.2796278,1.2796485,1.2801831,1.28995,1.2913097,1.3678414,1.3680519,1.3689113,1.3714928,1.3733045,1.3739467,1.3751472,1.3764784,1.3766144,1.3767482,1.378087,1.3785531,1.3786712,1.3789925,1.3791598,1.3798126,1.3811959,1.3815577,1.3842346,1.3853463
+6400,4 : 5.456123,5.5443337,5.6324059,5.7047556,5.3468852,5.5053434,5.6328712,5.7239797,5.343286,5.5370186,5.8311075,5.9944617,5.3345984,5.3697192,5.5269279,5.5680637
+6400,8 : 5.6971471,5.7205031,5.7993992,5.8261358,5.6737854,5.7439902,5.7799246,5.8620961,5.3504057,5.3802787,5.4110974,5.4448146,5.3870456,5.4047683,5.5362327,5.5521474
+6400,16 : 5.3703451,5.4029126,5.4100907,5.4757389,5.4823804,5.4897152,5.505182,5.5744218,5.3492367,5.436085,5.4645812,5.5120598,5.8038601,5.8301413,5.8796487,5.8824245
+6400,32 : 5.5006864,5.5253648,5.5435269,5.5610134,5.573667,5.5799302,5.5882399,5.5890248,5.5946034,5.6174291,5.6325211,5.6380949,5.4389949,5.47217,5.4898455,5.4939341,5.4964902,5.5067517,5.5097524,5.5183975,5.5265754,5.5285748,5.5550803,5.5720216,5.3978592,5.4806982,5.519223,5.5237767,5.5409833,5.5417287,5.5423372,5.5642103,5.6008884,5.6181412,5.6187546,5.6555429,5.3001985,5.3608745,5.4498595,5.457881,5.4876352,5.5017986,5.516466,5.5318872,5.8121805,5.8323461,5.8401226,5.844104
+6400,64 : 5.5053352,5.5183647,5.5264763,5.5977961,5.6099463,5.6201133,5.6276594,5.6329428,5.6350913,5.6398764,5.6500762,5.6538925,5.6564265,5.657244,5.6599879,5.6613385,5.6624099,5.6632407,5.665407,5.6664296,5.6801266,5.6805384,5.6844246,5.6878491,5.6940634,5.6944285,5.6955448,5.6997444,5.7026497,5.706561,5.7074745,5.7098774,5.7101896,5.7125522,5.718905,5.7266661,5.495932,5.5150437,5.5283273,5.5371664,5.5403474,5.5850854,5.5920129,5.595716,5.6283227,5.6310955,5.6370381,5.6374257,5.6420731,5.6585419,5.6610065,5.6613214,5.6652701,5.6719366,5.6751344,5.6755975,5.6781202,5.6802287,5.6888879,5.6912711,5.6966239,5.6985567,5.6988028,5.700788,5.7091851,5.709189,5.7172735,5.7204252,5.7213566,5.7220135,5.7220866,5.7282351,5.4552096,5.4661623,5.5136537,5.5190552,5.5617669,5.5999537,5.6014615,5.6253503,5.6293052,5.6340453,5.6349811,5.6359782,5.6396219,5.6450855,5.6478052,5.6595452,5.6600646,5.6640952,5.6765129,5.67943,5.6861174,5.6869243,5.694894,5.6989977,5.7018354,5.7055976,5.7100488,5.7126261,5.7144163,5.7161978,5.72024,5.7218051,5.7225696,5.7251033,5.7358587,5.7402387,5.2706173,5.2901608,5.319666,5.4116937,5.4257503,5.4297422,5.43167,5.4405975,5.4675965,5.4698141,5.5165161,5.5355451,5.5531396,5.679667,5.7385857,5.7461803,5.7727886,5.8056346,5.8242268,5.8311212,5.8359058,5.8404211,5.8428174,5.8450868,5.8576029,5.8678719,5.869383,5.8723549,5.87539,5.8863084,5.8902705,5.8954974,5.90374,5.9040293,5.9054044,5.9078637
+25600,4 : 21.1778805,21.4761106,21.5101157,21.5662001,21.3188558,21.3674753,21.4971286,21.5725976,21.2472697,21.4063476,21.4856002,21.5526847,21.2782899,21.4033326,21.4408518,21.8786349
+25600,8 : 22.6108405,22.6805331,22.7221251,22.7426497,22.7952862,22.8555724,22.8851011,22.9287047,21.2350009,21.308181,21.3339541,21.3446822,22.752823,22.7796348,22.8143978,22.8713775,21.2720367,21.3153212,21.3852736,21.4754109
+25600,16 : 20.7804937,20.8989267,20.9497484,21.0942076,20.6788474,20.7067653,20.8116728,20.8360681,20.797884,20.8703244,20.8861347,21.2764572,22.0806799,22.2724729,22.6206016,22.662666
+25600,32 : 20.5734933,20.6201077,20.7900169,20.8375347,21.1422038,21.1818083,21.1843418,21.2230976,21.2243952,21.2346971,21.2528049,21.3372145,20.6887157,20.7104091,20.7617768,20.8325464,21.0719435,21.1693306,21.2057107,21.2761122,21.2768019,21.3154017,21.3507561,21.3649392,20.9009737,20.9276599,20.943327,20.9681558,21.261634,21.2889892,21.3269598,21.3435063,21.3502867,21.3742049,21.3940059,21.4264832,20.4213201,20.4850481,20.5557212,20.7394866,20.8831426,20.9426596,21.0283969,21.4398226,21.9881424,22.0213635,22.0820772,22.0956306
+25600,64 : 21.2077372,21.2084315,21.2273916,21.2321421,21.2342962,21.2430711,21.2501641,21.2554886,21.2563255,21.2660413,21.2720872,21.2748316,21.2849655,21.3077771,21.309163,21.3121949,21.3190786,21.3200798,21.3282206,21.353298,21.3617542,21.3761295,21.3809358,21.3873377,21.3943838,21.4281717,21.4313357,21.4370963,21.4429594,21.4480659,21.4713262,21.4967185,21.517584,21.5321562,21.578083,21.6484845,21.0049398,21.1239827,21.1609536,21.1793116,21.1853533,21.1927665,21.2007899,21.2095716,21.2204833,21.2238103,21.2256436,21.2356872,21.2986761,21.2997437,21.3247566,21.3307883,21.3360036,21.3465078,21.3497985,21.3672318,21.3690313,21.3931104,21.3938967,21.4015941,21.4039539,21.4173534,21.4181016,21.4275641,21.4446157,21.4646921,21.4709316,21.4739697,21.5076381,21.5082395,21.5318706,21.5440286,21.0316354,21.1583156,21.1587997,21.1715452,21.1877005,21.1883252,21.2183376,21.2299025,21.2407925,21.2537225,21.2747276,21.2850869,21.2931599,21.310277,21.3106002,21.3126418,21.3464047,21.3527309,21.3537773,21.364366,21.3748288,21.3853109,21.3877058,21.4239936,21.4372829,21.4409706,21.4488855,21.4597048,21.4618137,21.4620032,21.4641291,21.4986593,21.5308052,21.5397703,21.5550898,21.5628786,19.8946992,19.90747,20.4176871,20.4387023,20.4538622,20.4835852,20.5138376,20.5248521,20.5334218,20.7035147,20.7129802,20.9207263,20.9590147,21.0331832,21.0958098,21.1943162,21.8828458,21.9127651,21.9484481,21.9611093,21.9756358,22.0073272,22.0121169,22.0162886,22.0166913,22.0293268,22.0447193,22.0542191,22.1027482,22.1052499,22.1325204,22.1372595,22.1634312,22.1780383,22.1826215,22.2182557
+102400,4 : 83.5208292,83.5523363,83.622376,83.7141867,83.2036703,83.2118977,83.379077,83.6541619,83.081203,83.0885984,83.5238328,83.8635377,82.7849009,82.9686412,83.1446979,85.5184422
+102400,8 : 82.9887876,82.9965903,83.263392,83.3462336,88.0029909,88.1364583,88.1472017,88.3952397,83.0581098,83.307044,83.3230445,83.3574835,82.856939,82.9229914,83.0283334,83.045767
+102400,16 : 82.7416404,82.9596708,82.9786536,83.073582,82.3675224,83.0382934,83.0685395,83.3642509,82.1699399,82.8213163,82.9028007,83.0743955,88.0752382,88.0753285,88.1230329,88.1621194
+102400,32 : 82.729513,82.786818,82.8492996,83.0180199,83.0834711,83.093464,83.3694196,83.3800865,83.5898825,83.7081713,83.8338625,84.0219782,82.8030447,82.8770256,82.9025542,83.0278401,83.127017,83.1647362,83.2605066,83.4705446,83.637645,83.75547,83.8085908,83.8090095,83.2555901,83.331784,83.3729262,83.6782173,83.7180158,83.788953,83.8555725,83.9535455,84.0018542,84.1761214,84.2454794,84.6407651,82.9980349,83.0347764,83.1022274,83.1517719,83.1636404,83.4336084,83.9310389,84.1228361,84.1411637,84.1720697,84.2665877,84.423228
+102400,64 : 83.5809557,83.826785,84.336044,84.5540374,84.6346653,84.6921115,84.8317378,84.8672215,84.9531438,85.0077991,85.0112983,85.0287435,85.0709061,85.1213383,85.1496563,85.1535746,85.2032468,85.2263159,85.2357711,85.273661,85.2842252,85.3421944,85.350836,85.4087386,85.4152158,85.4476818,85.4887845,85.4924204,85.5401113,85.5406586,85.5448615,85.5567626,85.5717699,85.5816371,85.645599,85.6579697,83.052182,83.0707814,83.0965049,84.3040583,84.6396096,84.6696551,84.6994368,84.82683,84.882676,84.9207918,84.9465422,84.9501211,84.9733164,84.9789303,84.9939537,84.9944983,85.0023341,85.1246947,85.2081345,85.2096956,85.2331401,85.234198,85.2497054,85.254677,85.2582568,85.2591347,85.2960805,85.3403506,85.3487808,85.3715553,85.3824512,85.3968953,85.3980219,85.4217978,85.4253997,85.4616207,82.8710124,83.5576907,84.472622,84.7507019,84.7988727,84.821647,84.8432053,84.8544647,84.8611768,84.8819908,84.9331554,84.9545709,85.0020956,85.0224848,85.104406,85.109973,85.1230803,85.1265209,85.1468236,85.151907,85.1533016,85.1984025,85.2469188,85.2627995,85.3382276,85.4157813,85.4323886,85.4417789,85.4635308,85.4802386,85.5060148,85.5379131,85.5481731,85.5507013,85.5555508,85.5689259,80.1097945,80.2643802,80.4179841,80.4424745,81.874049,82.0542579,82.2177988,82.2970304,82.364559,82.4145356,82.5012381,82.7389675,83.1299442,83.3257196,83.5016295,83.7435812,87.65875,87.7934892,87.8737972,87.9103084,88.0692911,88.166039,88.3510485,88.364831,88.3706616,88.4501772,88.4586663,88.5470093,88.6012494,88.6040736,88.6202806,88.6245874,88.6966201,88.715792,88.7327977,88.7484894
+409600,4 : 337.3278297,339.1133855,343.1286786,344.4803972,333.796691,334.7649952,335.8976189,341.7409059,335.2855366,337.0946183,342.4588193,352.8657164,331.8731889,336.2336249,340.4110569,340.8265905
+409600,8 : 336.121243,336.4591458,336.7455277,337.3746271,334.4129258,336.0894634,336.9049925,336.9089045,334.5195264,336.0966618,336.5394165,337.0558579,331.7139969,336.0496333,336.370423,336.5276605
+409600,16 : 352.002881,353.1011845,353.1184572,353.1819863,332.6825414,332.7479698,332.8270537,332.9875142,331.5679305,332.1843197,332.1951013,332.4383013,332.3533318,332.8450843,332.8982569,333.1512759
+409600,32 : 331.1476665,331.4759129,331.5989961,331.692264,332.3195164,332.6082101,332.6792337,333.2867585,333.8228985,334.3036463,335.0826734,335.8691909,331.2271378,331.7901935,331.9157145,332.1233979,332.1828049,332.3921236,333.3884475,334.1272084,334.2367331,335.7066765,337.7738782,339.5405578,331.84271,332.7973456,333.6477604,333.8356785,333.9346493,334.0556749,334.1093235,334.7659484,335.5715223,336.3998982,338.1253749,338.5989792,330.4921724,331.5782944,331.6531288,331.8048498,333.9212862,334.7304766,335.2557443,335.4595457,335.6397782,338.8177447,339.0128589,339.9118303
+409600,64 : 332.8212699,333.268314,333.5679193,337.814346,338.4695985,338.9541018,339.0776624,339.1520293,339.2483901,339.5897607,339.8470681,339.9644212,340.0549045,340.090444,340.1234028,340.2824656,340.3551316,340.4633787,340.6406239,340.8604577,340.8731207,340.9448379,340.9657315,341.0169155,341.0572953,341.1413053,341.2343252,341.4059685,341.4110641,341.4540832,341.4689046,341.4743777,341.6323492,341.6701794,341.7698712,341.8463215,330.8679168,331.1120126,333.1195914,339.0516306,339.0559364,339.6587311,339.7418861,339.7752778,339.8159174,339.9326983,340.0390809,340.1171299,340.4369626,340.5201751,340.6450013,340.6633108,340.6642701,340.6644743,340.8198437,340.9226295,340.9266992,341.0141938,341.0782095,341.0807861,341.0854725,341.1703713,341.223922,341.3115448,341.4368608,341.6007852,341.6334808,341.7381409,341.9079387,342.0239686,342.0385626,342.087933,330.4604186,331.7410401,332.4765773,333.0521727,337.9251369,338.0253693,339.0181386,339.2724154,339.741826,339.7640213,339.8116129,340.6810779,340.7034817,340.7106432,340.8253363,340.862916,341.0357008,341.1122416,341.1307552,341.1740933,341.1952239,341.2152028,341.2717634,341.2978012,341.3324754,341.5063056,341.5850751,341.6367065,341.6616742,341.7328237,341.7546692,341.7555906,341.8007312,341.8208993,341.8261439,341.8322942,332.6938407,333.7650913,334.4823563,338.2542545,338.6710241,339.1587199,339.1701684,339.2905174,339.3404056,339.4645411,339.5165885,339.7182465,339.8180236,339.8457064,340.0394141,340.0610709,340.1276328,340.1435031,340.1514016,340.1736744,340.3160101,340.3983027,340.6415683,340.7752938,341.2261524,341.2322657,341.2784575,341.4725766,341.5201644,341.7292031,341.8008999,341.8418167,341.8919191,342.117113,342.1499229,342.2949396
+
+==============
+var DensityFlux = whatever(methods[1],NoOfClusters);
+**************
+==============
+int cluster = 0;
+foreach(var datapoint in DensityFlux){
+    string keys   = String.Join(",",datapoint.Key);
+    string values = String.Join(",",datapoint.Value[cluster]);
+    Console.WriteLine(keys+" : "+values);
+    }
+**************
+1600,4 : 0.3055175,0.3160509,0.3362572,0.3551199,0.3034229,0.3156516,0.3346226,0.3542071,0.3041524,0.31861,0.3368012,0.3555095,0.3035191,0.3166836,0.33717,0.3559998
+1600,8 : 0.3319206,0.3367958,0.3428479,0.3439606,0.3077804,0.3092648,0.3110129,0.319783,0.3098739,0.3115975,0.3117099,0.3125382,0.3083685,0.3096853,0.3109761,0.3200679
+1600,16 : 0.2678031,0.2787359,0.2822633,0.2888487,0.2688936,0.2798671,0.2803987,0.2887234,0.2683624,0.2786976,0.2808768,0.2881924,0.2878449,0.2999827,0.3026667,0.3105594
+1600,32 : 0.2658022,0.266964,0.2717983,0.2722183,0.2724254,0.2764455,0.2768816,0.2790082,0.2831251,0.2837287,0.2858945,0.2902767,0.2661061,0.2668869,0.2717174,0.2718425,0.2736508,0.2775836,0.2776178,0.2793265,0.2844232,0.2845279,0.288392,0.288605,0.2651312,0.2653219,0.2714686,0.2720188,0.2721879,0.276871,0.2773789,0.2787433,0.2832905,0.2837405,0.2869158,0.2877233,0.2668007,0.2678383,0.2723011,0.2749856,0.2850063,0.2854594,0.2858068,0.2904773,0.2916291,0.2929625,0.2951405,0.297655
+1600,64 : 0.2724956,0.2726112,0.2727384,0.2733008,0.2735049,0.2735269,0.2735824,0.2738811,0.2745298,0.2762184,0.2773976,0.2775061,0.2779175,0.2779851,0.2779888,0.27924,0.2792914,0.2793419,0.2822617,0.2830971,0.2835818,0.2837864,0.2843897,0.2846217,0.2851853,0.2870222,0.2871892,0.2895439,0.2897161,0.2897474,0.2901575,0.294209,0.2958639,0.2959024,0.2969575,0.2971857,0.2718967,0.2722871,0.2722956,0.2723309,0.2726842,0.2728445,0.2736104,0.274167,0.275777,0.276071,0.2779254,0.2782363,0.2783278,0.2785148,0.2785149,0.2788713,0.2790686,0.2796516,0.2801309,0.2831221,0.283179,0.2832786,0.2833492,0.2839762,0.2850372,0.287366,0.2880253,0.2891938,0.2892213,0.2893222,0.2920615,0.2952879,0.2957051,0.2958194,0.2960601,0.2979442,0.2729501,0.2732428,0.2734589,0.2742851,0.2743556,0.2744207,0.274449,0.2748359,0.2749035,0.2749406,0.277515,0.2782255,0.27859,0.2791257,0.279239,0.2793856,0.2802406,0.2806605,0.2806939,0.2833516,0.2838085,0.2842945,0.2843974,0.2849911,0.2852277,0.2874792,0.288691,0.2891122,0.2892834,0.2905044,0.2919507,0.2954656,0.2960843,0.2961064,0.2968457,0.2969093,0.2568038,0.257017,0.2641095,0.2662911,0.2681868,0.2683433,0.2689078,0.2718937,0.2720551,0.2748655,0.2799868,0.2842095,0.2842196,0.2842612,0.2856344,0.2858883,0.2863631,0.2867751,0.2872815,0.2893273,0.2901249,0.2905757,0.2910137,0.291123,0.2969861,0.2972841,0.2975241,0.2975295,0.2987454,0.3001639,0.3009592,0.301785,0.3088571,0.3093028,0.3096334,0.310362
+6400,4 : 1.2967653,1.336044,1.3392617,1.4221371,1.28229,1.3130544,1.3268532,1.5781262,1.2823717,1.3112952,1.3304509,1.3442976,1.2954916,1.3257351,1.339428,1.3539829
+6400,8 : 1.3173881,1.3403405,1.3406123,1.3433378,1.3118288,1.3193868,1.3338807,1.3362664,1.2309653,1.2378964,1.2455287,1.2490334,1.2590478,1.2598506,1.260752,1.2613067
+6400,16 : 1.067345,1.0872803,1.1185708,1.1524949,1.0678316,1.0842518,1.1044928,1.1657566,1.0719125,1.1091737,1.151578,1.1516619,1.1358318,1.155675,1.179858,1.232531
+6400,32 : 1.0830832,1.0866465,1.0875729,1.0898778,1.0997929,1.1098344,1.1274673,1.131927,1.1577279,1.1643655,1.1926239,1.2599497,1.0837496,1.0847392,1.0909633,1.0927482,1.1084102,1.1127164,1.1173272,1.1317423,1.134071,1.1425174,1.1426735,1.1564744,1.0911515,1.0953057,1.0987597,1.1051049,1.1067633,1.109263,1.1344377,1.1392909,1.1393516,1.1423054,1.1559712,1.2469343,1.053361,1.0696937,1.121909,1.1438486,1.1563955,1.1606585,1.1652958,1.1786148,1.1918787,1.1952059,1.2003788,1.2032037
+6400,64 : 1.09215,1.0946531,1.0951352,1.1063339,1.1076747,1.10875,1.110337,1.1108615,1.1144196,1.1159235,1.1167402,1.1174856,1.1213008,1.1217162,1.1218359,1.1221268,1.1223593,1.1229868,1.123621,1.1245771,1.1246722,1.1263476,1.1263575,1.1312153,1.1344334,1.1348887,1.1369545,1.1383191,1.1399993,1.1405591,1.1424452,1.1462793,1.1619237,1.1785199,1.2010269,1.2408132,1.0930936,1.0936029,1.0938187,1.1005741,1.1027251,1.1056103,1.1058516,1.1091235,1.1096365,1.1125577,1.1130236,1.1141003,1.1196277,1.1205162,1.1207348,1.1216169,1.1219218,1.1222155,1.1245371,1.1246593,1.1251747,1.1261432,1.1291042,1.1312613,1.1312918,1.1327082,1.1328851,1.1329884,1.133989,1.1346342,1.1348044,1.146392,1.1569131,1.1609964,1.1852577,1.1993036,1.0932222,1.0950292,1.0956037,1.104854,1.1080015,1.1086084,1.1091484,1.112314,1.1128857,1.1188414,1.1193431,1.120601,1.1206824,1.1222646,1.122717,1.1232294,1.1238012,1.1240387,1.1242669,1.1247167,1.1252306,1.125728,1.1266761,1.1285048,1.1296373,1.1329046,1.1339687,1.1345109,1.1363633,1.1393546,1.1503711,1.153104,1.1656491,1.1781082,1.1825517,1.2345303,1.0591126,1.0674823,1.0724902,1.0746171,1.0800933,1.0828778,1.0874452,1.0916138,1.0926654,1.093667,1.1370372,1.1375181,1.1375466,1.1458227,1.1473482,1.1529791,1.1565149,1.1588931,1.1595196,1.1597814,1.1617677,1.1632211,1.1647868,1.1651792,1.1668854,1.1675564,1.1716534,1.1753316,1.1758967,1.178155,1.1785193,1.1803493,1.1846088,1.2063762,1.2138325,1.2161027
+25600,4 : 4.3375752,4.4624011,4.6436484,4.6608408,4.3186361,4.4042878,4.5586376,4.6389842,4.346509,4.4579282,4.6391396,4.6812666,4.3897105,4.4392351,4.5988898,4.6691252
+25600,8 : 4.6678609,4.6714238,4.6922191,4.7215019,4.5907405,4.5978579,4.6058962,4.6127128,4.3371865,4.3777945,4.3875774,4.4097292,4.5815757,4.6158602,4.6258799,4.6290199,4.3989926,4.4056434,4.4124131,4.4168942
+25600,16 : 4.2482073,4.2745527,4.2840625,4.3281523,4.24099,4.2974737,4.3416447,4.3521498,4.235347,4.2950146,4.3429131,4.3430601,4.5042174,4.5541253,4.6060845,4.6065772
+25600,32 : 4.2297596,4.2342145,4.2442177,4.249161,4.2819565,4.2822493,4.2989911,4.3095288,4.3136523,4.3169426,4.34652,4.3674355,4.197245,4.2200706,4.2534422,4.2566666,4.2749641,4.2809744,4.2873852,4.3117965,4.3178594,4.3232057,4.3283924,4.3286162,4.2283322,4.2358374,4.2605008,4.2671692,4.2763384,4.2771216,4.2783836,4.2828286,4.2971119,4.3080364,4.3127207,4.3217835,4.1021505,4.1491721,4.1589615,4.2314199,4.2445064,4.2756253,4.4005349,4.4415708,4.4432312,4.4654575,4.4753224,4.4827491
+25600,64 : 4.2828091,4.2858846,4.287736,4.2910032,4.2925662,4.2931211,4.2994493,4.3136577,4.3187957,4.3202736,4.3225576,4.349745,4.3686335,4.3754657,4.376598,4.3782441,4.3793842,4.3840871,4.3861809,4.388488,4.3894664,4.3907816,4.3918891,4.4009073,4.4014205,4.4023877,4.4120782,4.4265604,4.4299678,4.4359625,4.4386141,4.4439265,4.4448769,4.453838,4.4601008,4.4712408,4.2707416,4.2816405,4.2925895,4.2937434,4.2943244,4.3024632,4.3054072,4.3056906,4.3127057,4.3204743,4.3443222,4.3628014,4.3630048,4.3794872,4.3835627,4.3850728,4.3897875,4.3943238,4.3972394,4.3997497,4.4006236,4.40268,4.4031509,4.4039878,4.4064936,4.4073175,4.4287959,4.4319735,4.4338814,4.4348799,4.4381493,4.4385152,4.4399446,4.4515045,4.4532577,4.4553779,4.2854627,4.2924176,4.2992678,4.3019094,4.3045467,4.3179962,4.3250461,4.3262759,4.3275902,4.3285745,4.3366664,4.3520048,4.3804919,4.3846505,4.3918503,4.392802,4.394915,4.3982278,4.3982498,4.3983423,4.4019054,4.4137296,4.4200729,4.4208546,4.4244179,4.4244701,4.4334838,4.4404611,4.4476549,4.4526085,4.4552966,4.4571218,4.4644754,4.4670756,4.4684697,4.4722529,4.1252717,4.143448,4.1510074,4.2057365,4.2615159,4.2703568,4.2842468,4.2912529,4.2927757,4.3406571,4.3537147,4.3547859,4.3729991,4.4081703,4.4434746,4.4477871,4.4499984,4.4527022,4.4581508,4.4693106,4.4987719,4.5315078,4.541359,4.5425831,4.557569,4.557848,4.5607743,4.5657666,4.5669741,4.5706558,4.5771665,4.5850588,4.5859005,4.5902671,4.5912737,4.5922698
+102400,4 : 17.4237443,17.4272434,17.7689845,17.8924708,17.2376678,17.4838598,17.9842387,18.084045,17.3000168,17.464386,17.8812837,18.1178445,17.2119457,17.4716274,17.7581517,17.8685746
+102400,8 : 16.6697328,16.971763,17.0278943,17.5394744,17.6658154,17.9581313,17.9794936,18.6938599,16.7297147,16.9142265,16.9205775,17.4909048,16.7157817,16.9109793,16.9514592,17.6525196
+102400,16 : 16.6708679,16.7606134,17.1163238,17.1537813,16.7161415,16.9189243,17.2323935,17.2383622,16.6436022,16.8682341,17.1042578,17.1989396,17.7079297,17.9401923,18.2106344,18.2296424
+102400,32 : 17.004885,17.1232191,17.1681423,17.1734669,17.2091103,17.2227195,17.2303065,17.2491332,17.2711257,17.2828842,17.3618549,17.4068052,16.8699854,17.1044837,17.1118752,17.1188314,17.1260946,17.181704,17.2019577,17.2058865,17.2282277,17.2674849,17.3429881,17.3942447,16.9188992,17.0786097,17.0917185,17.1231032,17.1519833,17.2168383,17.2457374,17.2606987,17.2705581,17.2783778,17.2894634,17.4287254,16.9031072,17.1210707,17.123754,17.1265711,17.1382655,17.1419354,17.2326478,17.2343618,17.2672329,17.2707987,17.3279321,17.3882929
+102400,64 : 17.1008944,17.184545,17.2502601,17.2860714,17.2888345,17.2902131,17.3052721,17.3509748,17.3789619,17.3816298,17.3869629,17.423107,17.4329552,17.4769084,17.4983961,17.5430711,17.5686378,17.5820391,17.5833476,17.6125418,17.664675,17.7072862,17.8736264,17.8791733,17.8841382,17.8851045,17.8856994,17.9285703,17.9350482,17.9462167,17.9744313,17.990521,18.036817,18.040837,18.0532579,18.0537938,17.1075399,17.1315248,17.2264009,17.2579233,17.2593248,17.2714336,17.301842,17.3253029,17.3511914,17.4008587,17.4153861,17.4231288,17.4566372,17.4607745,17.5001511,17.5605097,17.5700382,17.6423973,17.6896087,17.6911113,17.6941277,17.7154127,17.8810698,17.9086591,17.9207002,17.9359224,17.9409028,17.9521094,17.9635753,17.9656648,17.9783076,17.9795698,18.0198101,18.0267846,18.048622,18.050246,17.0198496,17.1487631,17.3088525,17.3167355,17.3283295,17.3522453,17.3565652,17.3612031,17.3938056,17.3998997,17.4298522,17.4418635,17.451928,17.4534198,17.4680517,17.5065342,17.5698164,17.5763813,17.6149023,17.6724152,17.6878071,17.74136,17.8459724,17.8869993,17.9229121,17.9319745,17.955474,17.9585262,17.9703796,17.9776674,17.9943037,17.998658,18.0018774,18.0085078,18.1136001,18.1274216,16.6736463,16.7087303,16.7244901,16.8311353,16.9417886,16.9988638,17.0828289,17.0884416,17.2396294,17.2595196,17.2869402,17.3343993,17.348591,17.4183664,17.4915469,17.4965097,17.7025557,17.7432749,17.8921289,17.9907143,18.0063679,18.016075,18.0678962,18.14905,18.1770311,18.1903882,18.2106078,18.2168664,18.2774307,18.4402648,18.532143,18.5618713,18.5961833,18.613911,18.6346978,18.6358353
+409600,4 : 69.9044149,71.5425351,72.0335128,73.5220398,67.9523433,69.8838673,70.4170469,71.2712229,69.8619236,70.2356239,70.4985896,73.7311315,68.4962928,69.1014157,70.130484,71.4179965
+409600,8 : 68.6097998,69.472347,70.0665741,70.5883216,70.1829055,70.3048154,70.3857442,70.5642899,69.3831219,69.7582646,69.8159379,70.35166,68.6315838,68.6548529,69.2606676,70.2208457
+409600,16 : 71.8663302,72.0333356,72.3091241,72.9763275,67.3797673,67.6544952,67.722086,69.4931905,67.7730561,67.8231612,68.7091119,69.4504586,67.6530645,67.8429697,68.3030611,68.6019964
+409600,32 : 68.3305338,68.5239196,68.6462546,68.6818683,68.8463268,69.3372,69.4267565,69.6771152,69.9568455,70.1575054,70.1888704,70.1962785,68.427752,68.4326682,68.6262175,68.7817398,68.8030864,69.3675182,69.5726953,69.7476171,69.8591553,69.9079405,69.9248571,69.9750715,68.6102206,68.7039822,68.7477802,68.8312086,68.9666632,69.0429311,69.5634643,69.5821073,69.766019,69.9216396,69.9329251,69.959029,68.4932504,68.7638898,68.7720224,68.8043624,68.8427359,69.12805,69.5092806,69.5847586,69.8667928,69.8735158,69.902238,70.0706882
+409600,64 : 68.0035001,68.1191045,68.3453103,68.6097639,68.8978802,68.9808511,69.0914131,69.1326091,69.3750248,69.4937599,69.4943329,69.6318548,69.6414554,69.6777468,69.8000061,69.8034886,69.8982875,69.9325468,69.9450513,69.9538702,70.0902033,70.1622401,70.1775956,70.3583681,70.4988503,70.6474956,70.6835979,70.7133301,70.7839658,70.890292,71.0394377,71.3871003,71.4337913,71.4585654,71.4648186,71.5441078,67.9982144,68.0674672,68.3244787,68.3901213,68.8257533,68.9571035,68.9834752,68.984835,69.0400901,69.0454552,69.1801362,69.5797689,69.6258979,69.7018239,69.72371,69.7295798,69.7614398,69.820021,69.8913337,70.0303651,70.0443777,70.1357187,70.282639,70.4047949,70.4120288,70.5852834,70.7362135,70.8952289,71.0447613,71.2191821,71.4008479,71.4235871,71.4238194,71.4424038,71.4657147,71.5366551,68.0762293,68.4264381,68.4588704,69.0450069,69.0920237,69.0953473,69.1839211,69.4164144,69.4410946,69.4477835,69.499747,69.5610422,69.6182875,69.6322523,69.7623402,69.7791861,69.7853166,69.8124634,69.9806024,70.1962091,70.2177468,70.270695,70.3039774,70.5480835,70.6202595,70.6279216,70.6653852,70.6993934,70.7114798,70.8620387,71.009791,71.04269,71.4430311,71.5253157,71.5274423,71.5389181,68.0736745,68.2255073,68.7663407,68.8654041,68.9099668,68.911338,68.9199593,68.9845873,69.0383094,69.0673095,69.1477143,69.4231381,69.5597042,69.6169164,69.6261983,69.7137145,69.770247,69.8071004,69.8845766,69.9754794,70.0651611,70.1210574,70.2315229,70.3640489,70.525522,70.606005,70.6105016,70.7575761,70.883212,70.9429319,70.9980249,71.1415335,71.1553324,71.3029233,71.4521592,71.4945267
+
+==============
+var MomentumFlux = whatever(methods[2],NoOfClusters);
+**************
+==============
+int cluster = 1;
+foreach(var datapoint in MomentumFlux){
+    string keys   = String.Join(",",datapoint.Key);
+    string values = String.Join(",",datapoint.Value[cluster]);
+    Console.WriteLine(keys+" : "+values);
+    }
+**************
+1600,4 : 
+1600,8 : 1.0905931,1.0991006,1.1093926,1.1177659,1.0128956,1.0214895,1.0256231,1.0349549,1.0138136,1.0208959,1.0325629,1.0438423,1.0174632,1.0212209,1.0289806,1.0433174
+1600,16 : 0.9708093,0.971182,0.9732772,0.9776981,0.9757965,0.9822655,0.9863963,0.9918999,0.962544,0.9680396,0.9757556,0.9875374,1.0304616,1.03847,1.0473927,1.0524755
+1600,32 : 0.9418063,0.9431084,0.9566054,0.9618795,0.9541639,0.9598588,0.9774794,0.98401,0.9431619,0.949428,0.9597061,0.9632714,0.9117697,0.928524,0.9533626,0.960685
+1600,64 : 0.9454204,0.9489121,0.9551632,0.9575861,0.9808029,0.9892241,0.9901562,0.9925053,0.9944781,0.9950661,0.995499,0.9962005,0.9463695,0.9488767,0.9489933,0.955933,0.9787702,0.9823909,0.9903287,0.9929413,0.9936888,0.9949042,0.9966788,0.9989418,0.9457036,0.9517644,0.9522238,0.9556142,0.9845002,0.9881898,0.9907115,0.9937168,0.9944554,0.9979238,0.9993268,1.0001359,0.9350511,0.9382822,0.9592101,0.9615486,0.9642088,1.0117227,1.015663,1.019858,1.0205812,1.0258069,1.0287823,1.0308338
+6400,4 : 
+6400,8 : 4.0606527,4.0870509,4.1433866,4.1724177,4.0326631,4.1960513,4.2423909,4.5208638,3.8811657,3.9305307,3.9469614,3.949028,3.7992482,3.8108111,3.976385,4.0671693
+6400,16 : 3.6980477,3.711272,3.7189322,3.7205315,3.7049646,3.730415,3.730462,3.7655197,3.6987982,3.7235541,3.743925,3.7832212,3.9211272,3.9408469,3.9895772,3.9950123
+6400,32 : 3.7383006,3.7392622,3.7422302,3.7556207,3.7358638,3.7497592,3.7516384,3.7586314,3.7201628,3.7325445,3.7395777,3.7735926,3.6733799,3.6992452,3.7020932,3.7035475
+6400,64 : 3.7206967,3.77184,3.7786746,3.785601,3.7865487,3.8139164,3.8147712,3.8220206,3.8313994,3.8409222,3.8480648,3.8572741,3.6955163,3.7056281,3.743731,3.7978634,3.8052467,3.8251342,3.8392019,3.8430102,3.8433525,3.8440268,3.8549071,3.8597728,3.70483,3.7252797,3.7453775,3.7539382,3.7601779,3.7889167,3.817492,3.8309117,3.8368541,3.8425519,3.8488644,3.8503834,3.6868798,3.7328348,3.7474059,3.8756854,3.8954711,3.9345477,3.9401372,3.9488675,3.9522137,3.961917,3.9665874,3.9689198
+25600,4 : 
+25600,8 : 14.6427219,14.7489461,14.7770067,14.8299955,14.4671393,14.5168535,14.6342207,14.6793472,13.8338854,13.8672532,13.8956999,14.1540167,14.5314985,14.5380112,14.6199535,14.6803237,13.8602059,13.8921048,14.0586762,14.0836554
+25600,16 : 13.3858082,13.404874,13.8177359,13.8892803,14.0400167,14.651705,14.6745973,14.7031487,13.7004886,14.4788457,14.5406127,14.5670102,14.3847541,14.9843546,14.9901281,15.4584111
+25600,32 : 13.9431844,14.2955948,14.3060377,14.3579695,13.6052471,13.6500089,13.680905,13.696852,14.1944346,14.2891719,14.3307029,14.4039942,14.1273677,14.1928018,14.4277816,14.5606176
+25600,64 : 13.7480376,13.761014,13.8409219,13.8415848,13.846467,13.853207,13.871526,13.8807626,13.8915108,13.9054947,13.9055359,13.9123013,13.7203124,13.7423152,13.7504278,13.798818,13.803252,13.8113393,13.8130213,13.830281,13.8389021,13.8471466,13.8495882,13.8771322,13.7653853,13.7862398,13.7961683,13.8078218,13.8094174,13.8176725,13.8867203,13.8927632,13.8960608,13.9265519,13.9294439,14.2057343,14.1541369,14.1629295,14.164161,14.1708101,14.1809624,14.1966399,14.2157471,14.2225413,14.2312925,14.2778182,14.2859315,14.3029322
+102400,4 : 
+102400,8 : 54.2000271,54.206874,54.3004332,54.9977392,57.216858,57.234938,57.8336323,58.1523944,54.0410755,54.0510818,54.1651584,54.9774608,53.9872483,54.0295878,54.3224292,55.0611274
+102400,16 : 53.1793524,53.2834102,53.3090707,53.3180444,53.4023882,53.4159333,53.5560583,53.5809417,53.3156754,53.3208478,53.406884,53.408784,56.5026685,56.6773172,56.7151697,56.7330051
+102400,32 : 53.8809455,53.8889931,53.9433147,54.0143547,53.8261685,53.9297071,53.9462912,53.9556499,53.9234848,53.9354733,53.9482123,53.9662987,53.8642595,53.9247217,53.9347461,53.9943186
+102400,64 : 55.3548927,55.3644897,55.3826887,55.5031471,55.6835018,55.7258335,55.8157803,55.8352547,55.9095647,55.914384,56.0187642,56.0447187,55.4206201,55.4227689,55.5652886,55.5919471,55.6876882,55.7760252,55.7999295,55.8359348,55.8955096,55.9164649,56.006826,56.0410441,55.6186986,55.6210257,55.6622511,55.691937,55.7132455,55.7557304,55.7687543,55.8038636,55.9341001,55.9455984,55.9704559,56.0419895,57.4182555,57.5092796,57.5335952,57.5497857,57.6292812,57.7491557,57.8145155,57.8481472,57.991615,58.0237622,58.0844779,58.1229084
+409600,4 : 
+409600,8 : 218.9811396,219.2044965,219.7906064,219.9159159,217.3336714,218.1093883,219.0401755,219.3489363,216.9799056,218.3656524,219.0347397,223.7835252,218.7361648,218.7815779,220.0408627,221.1457755
+409600,16 : 227.7188887,228.3668162,228.6039979,228.6336832,215.2829193,216.3104346,216.6896251,217.2163325,214.9172475,215.0456823,215.3288821,216.2174936,214.6534725,214.9098318,215.2365034,215.706033
+409600,32 : 216.9625956,217.0389101,217.2993985,217.4788745,217.14712,217.4095198,217.5490609,217.724138,216.4336526,216.9244433,217.0742865,217.4742284,216.5059215,216.5891354,216.6508056,217.4359301
+409600,64 : 220.3184479,220.355685,220.4345187,220.7500354,220.8551586,221.361276,221.3641391,221.9569078,222.5740459,223.0188856,223.0454151,223.5901675,220.3519222,220.6112612,220.7421654,220.8117947,221.0072023,221.1533259,222.4417866,222.6242021,222.913602,223.4723191,223.6740492,223.8270998,220.6421584,220.920392,220.9697673,221.3522785,221.451299,222.3155232,222.6622078,223.3770281,223.3961811,223.6255515,223.673778,223.7599681,220.349974,220.791252,221.1057664,221.8779134,222.420085,222.532723,222.8639975,222.9604923,223.3429057,223.3620298,223.5026893,223.593307
+
+==============
+var EnergyFlux = whatever(methods[3],NoOfClusters);
+**************
+==============
+int cluster = 1;
+foreach(var datapoint in EnergyFlux){
+    string keys   = String.Join(",",datapoint.Key);
+    string values = String.Join(",",datapoint.Value[cluster]);
+    Console.WriteLine(keys+" : "+values);
+    }
+**************
+1600,4 : 
+1600,8 : 0.4590145,0.4647916,0.4738519,0.4934643,0.4325066,0.4344695,0.462181,0.4637885,0.4313783,0.44645,0.4652717,0.4692454,0.434427,0.4388116,0.4634163,0.4675629
+1600,16 : 0.4295546,0.4331575,0.4344051,0.4353859,0.411574,0.4287,0.4308736,0.432531,0.425274,0.4261814,0.4283897,0.4341715,0.4598036,0.4603684,0.4629455,0.4662549
+1600,32 : 0.4118903,0.4199105,0.4215612,0.4236275,0.416538,0.4260904,0.4267784,0.4295627,0.4138293,0.422676,0.4228191,0.4228971,0.4139543,0.416514,0.4167316,0.424215
+1600,64 : 0.4146115,0.4148209,0.4163145,0.425731,0.4261208,0.4281159,0.4304324,0.4317047,0.4321041,0.4323677,0.4352843,0.4364907,0.4158141,0.4161902,0.4188174,0.4249683,0.4265024,0.4282992,0.4283971,0.4308229,0.4311385,0.435988,0.437316,0.4400836,0.4161307,0.4166712,0.4202458,0.4252502,0.4263196,0.428571,0.4291107,0.42946,0.4315332,0.431869,0.4360017,0.4368041,0.4169728,0.4179662,0.4187938,0.4233154,0.4255715,0.4407395,0.4411667,0.4425903,0.4444661,0.444832,0.447804,0.4507606
+6400,4 : 
+6400,8 : 1.8458665,1.8577326,1.9275426,1.9355324,1.8462118,1.915549,1.9947026,2.200096,1.709903,1.7382015,1.7874666,1.8027242,1.7264981,1.7507534,1.7952154,1.9293017
+6400,16 : 1.6754596,1.7092852,1.7206024,1.7236193,1.6577534,1.7123013,1.7185274,1.7259989,1.6847003,1.7077285,1.7121068,1.7154289,1.7860337,1.8114427,1.8209303,1.8249591
+6400,32 : 1.7101452,1.7178245,1.725879,1.7308494,1.6988328,1.7114575,1.7221674,1.7229829,1.7021517,1.7100099,1.7182411,1.7321758,1.6444443,1.6716389,1.7177301,1.7321705
+6400,64 : 1.7148791,1.7183839,1.7280016,1.7354208,1.7368027,1.7382562,1.7455789,1.7500688,1.7519531,1.7520028,1.7549174,1.7576721,1.6734758,1.693823,1.7079336,1.7136306,1.7178347,1.7349981,1.7379581,1.7390196,1.7425848,1.7451362,1.7516265,1.7530243,1.687905,1.6981545,1.7061335,1.7169021,1.7252761,1.7319359,1.7343725,1.7429056,1.745951,1.7479301,1.7594495,1.7596585,1.6771112,1.7025798,1.7132951,1.7476929,1.7569778,1.7768542,1.7831462,1.7899789,1.7926634,1.7944502,1.802637,1.8168709
+25600,4 : 
+25600,8 : 7.0822533,7.1216374,7.1326031,7.1346982,7.0364118,7.0386528,7.0640481,7.1498012,6.6265812,6.7190325,6.7261157,6.7458036,6.967679,7.0090126,7.0773577,7.1313163,6.7047851,6.7133457,6.769576,6.7784879
+25600,16 : 6.0318243,6.0517801,6.0740642,6.0760773,6.0804736,6.0920688,6.0948527,6.1245684,6.0099337,6.03172,6.0807958,6.0885965,6.4484573,6.449575,6.4655452,6.4658263
+25600,32 : 6.0609773,6.0626639,6.0739312,6.0852814,6.0766091,6.1033283,6.1033888,6.2157282,6.0209697,6.0228531,6.0372702,6.0799788,6.2604611,6.2777262,6.2845367,6.2900831
+25600,64 : 6.2745402,6.3756518,6.3960791,6.4255893,6.4278277,6.4571816,6.4579704,6.4868717,6.5347514,6.5800218,6.6009526,6.6379635,6.4313965,6.4349497,6.4395431,6.4883141,6.4953391,6.5317887,6.5623174,6.6061215,6.6267622,6.638722,6.6390059,6.6544836,6.2011386,6.2089083,6.2131443,6.2161092,6.2172269,6.2494362,6.2807985,6.2986257,6.349161,6.3948105,6.4473742,6.4558434,6.4221869,6.4239038,6.4289399,6.4768961,6.5134639,6.5650511,6.6989031,6.7349265,6.7963591,6.8100868,6.8130443,6.8431906
+102400,4 : 
+102400,8 : 24.2795708,24.3699782,24.4207577,24.735463,25.8014226,25.8434999,25.9469283,26.2253508,24.2443845,24.267759,24.3539337,24.6911065,24.3570466,24.3981976,24.4643106,24.7534051
+102400,16 : 23.8869715,23.8870873,23.9105208,23.9439071,23.9554817,23.9666783,23.9907482,24.0493824,23.8582813,23.8930023,23.9021484,23.9192679,25.3428511,25.3473256,25.3581331,25.3959378
+102400,32 : 24.1299206,24.132775,24.1387087,24.1540099,24.1063364,24.1090362,24.1243326,24.1409791,24.1130011,24.1918556,24.2075313,24.2279831,24.1257911,24.1541465,24.1907839,24.1982117
+102400,64 : 24.8728494,24.9002325,24.9286107,24.9568876,25.0177152,25.0374522,25.0430426,25.0533746,25.0596921,25.0687363,25.0944754,25.1272067,24.8092142,24.9215603,24.9281991,24.9285945,24.9671461,25.029071,25.108707,25.1166365,25.1204944,25.1215635,25.1294815,25.1302654,24.843228,24.9241778,24.9738225,25.0077902,25.0591715,25.0907309,25.0921878,25.1023792,25.1071176,25.125165,25.1410526,25.1467733,25.7114282,25.744476,25.7677555,25.7893397,25.9235639,25.9241017,25.9376397,26.0121554,26.0544751,26.062121,26.0700986,26.0865511
+409600,4 : 
+409600,8 : 97.8994577,98.2535547,98.8383168,99.0950042,97.6363863,97.9370397,99.1502829,99.7620435,97.7879848,97.8978649,98.9276576,102.434275,98.1373637,99.0098031,99.2231702,99.3099872
+409600,16 : 101.9509165,102.5475101,102.5570781,102.6118409,95.9884101,96.0350426,96.5206625,96.652659,96.0558661,96.2943586,96.7400821,97.0959461,95.8188979,96.3444254,96.4633566,96.5126628
+409600,32 : 96.6481259,96.6565993,96.9058962,96.988388,96.5971302,96.7476297,97.0916745,97.1944701,96.6232416,96.6973554,96.8533527,96.9356019,96.40924,96.5736114,96.7173603,96.9017108
+409600,64 : 98.6235563,98.7309236,98.7493334,98.7682698,98.805,100.0348072,100.1455552,100.2228333,100.2332383,100.2609435,100.2770502,100.4080139,98.4784895,98.527497,98.7561218,98.8654993,99.0302199,99.0878412,100.041248,100.0991115,100.1106839,100.1776854,100.2566921,100.2921922,98.5799639,98.715471,98.762436,98.8392472,98.9775999,99.897312,99.902735,100.0341465,100.0342466,100.0352113,100.1676079,100.2213739,98.7218228,98.7375105,98.8141786,98.9209175,98.9417691,99.108654,99.2955608,99.8695929,99.9669348,100.0022238,100.0981165,100.1004095
+
+==============
+using System.IO;
+**************
+(1,2): warning CS0105: The using directive for `System.IO' appeared previously in this namespace
+No. of errors|warnings: 0|1.
+
+==============
+using (StreamWriter sw = new StreamWriter(String.Format("clustering_before_1-4cluster.txt")))
+{ 
+    sw.WriteLine("PARAMETER cores cells");
+    sw.WriteLine("POINTS (4 1600) (8 1600)  (16 1600) (32 1600) (64 1600)");
+    sw.WriteLine("POINTS (4 6400) (8 6400)  (16 6400) (32 6400) (64 6400)");
+    sw.WriteLine("POINTS (4 25600) (8 25600)  (16 25600) (32 25600) (64 25600)");
+    sw.WriteLine("POINTS (4 102400) (8 102400)  (16 102400) (32 102400) (64 102400)");
+    sw.WriteLine("POINTS (4 409600) (8 409600)  (16 409600) (32 409600) (64 409600)");
+    sw.WriteLine();
+    
+    for(int icluster=0;icluster<ViscosityFlux.Pick(0).Value.Length;icluster++){
+        sw.WriteLine(String.Format("REGION viscosity_flux_cluster_{0}",icluster));
+        sw.WriteLine("#DATA <data for 4, 1600, repetition 1-4> ...");
+        sw.WriteLine("#DATA <data for 8, 1600, repetition 1-4> ...");
+        sw.WriteLine("#...");
+        sw.WriteLine("#DATA <data for 4, 6400, repetition 1-4> ...");
+        sw.WriteLine("#...");
+        foreach(var datapoint in ViscosityFlux){
+            string values = String.Join("\t",datapoint.Value[icluster]);
+            sw.WriteLine("DATA\t"+values);
+        }
+        sw.WriteLine();
+    }
+    for(int icluster=0;icluster<DensityFlux.Pick(0).Value.Length;icluster++){
+        sw.WriteLine(String.Format("REGION density_flux_cluster_{0}",icluster));
+        foreach(var datapoint in DensityFlux){
+            string values = String.Join("\t",datapoint.Value[icluster]);
+            sw.WriteLine("DATA\t"+values);
+        }
+        sw.WriteLine();
+    }
+    for(int icluster=0;icluster<MomentumFlux.Pick(0).Value.Length;icluster++){
+        sw.WriteLine(String.Format("REGION momentum_flux_cluster_{0}",icluster));
+        foreach(var datapoint in MomentumFlux){
+            string values = String.Join("\t",datapoint.Value[icluster]);
+            sw.WriteLine("DATA\t"+values);
+        }
+        sw.WriteLine();
+    }
+    for(int icluster=0;icluster<EnergyFlux.Pick(0).Value.Length;icluster++){
+        sw.WriteLine(String.Format("REGION energy_flux_cluster_{0}",icluster));
+        foreach(var datapoint in EnergyFlux){
+            string values = String.Join("\t",datapoint.Value[icluster]);
+            sw.WriteLine("DATA\t"+values);
+        }
+        sw.WriteLine();
+    }
+}
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
