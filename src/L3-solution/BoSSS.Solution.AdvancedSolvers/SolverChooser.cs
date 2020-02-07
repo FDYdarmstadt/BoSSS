@@ -54,7 +54,7 @@ namespace BoSSS.Solution {
         /// <param name="ts_MultigridOperatorConfig"></param>
         /// <param name="ts_SessionPath"></param>
         /// <param name="ts_MGS"></param>
-        public void GenerateNonLin(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linsolver, OperatorEvalOrLin ts_AssembleMatrixCallback, IEnumerable<AggregationGridBasis[]> ts_MultigridBasis,  MultigridOperator.ChangeOfBasisConfig[][] ts_MultigridOperatorConfig, string ts_SessionPath, AggregationGridData[] ts_MGS) {
+        public void GenerateNonLin(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linsolver, OperatorEvalOrLin ts_AssembleMatrixCallback, IEnumerable<AggregationGridBasis[]> ts_MultigridBasis, MultigridOperator.ChangeOfBasisConfig[][] ts_MultigridOperatorConfig, string ts_SessionPath, AggregationGridData[] ts_MGS) {
 
             if (m_nonlinsolver != null && (m_linsolver == null || m_precond == null))
                 throw new NotImplementedException("an uncomplete nonlinear solver is overgiven.");
@@ -69,7 +69,7 @@ namespace BoSSS.Solution {
             ISolverSmootherTemplate precondsolver = null;
 
             linsolver = GenerateLinear_body(m_lc, ts_MGS, ts_MultigridOperatorConfig);
-            
+
             var pretmp = GeneratePrecond(m_lc, ts_MGS, ts_MultigridOperatorConfig);//only interesting for GMRES-Newton, look into _body for more info
             if (pretmp != null) {
                 precondsolver = pretmp[0];
@@ -196,7 +196,7 @@ namespace BoSSS.Solution {
                         ts_MultigridBasis,
                         MultigridOperatorConfig) {
                         m_NLSequence = new NonlinearSolver[] { myFixPoint, myNewton }
-                    };           
+                    };
                     break;
 
                 case NonLinearSolverCode.selfmade:
@@ -228,8 +228,8 @@ namespace BoSSS.Solution {
                 m_lc.SolverCode = LinearSolverCode.selfmade;
             }
             linSolve = GenerateLinear_body(m_lc, ts_MultigridSequence, ts_MultigridOperatorConfig);
-            
-            
+
+
             Debug.Assert(linSolve != null);
         }
 
@@ -294,7 +294,7 @@ namespace BoSSS.Solution {
             int MultigridSeqLength = MultigridSequence.Length;
 
             switch (lc.SolverCode) {
-                
+
                 //no preconditioner used ...
                 case LinearSolverCode.classic_mumps:
                 case LinearSolverCode.classic_pardiso:
@@ -372,7 +372,7 @@ namespace BoSSS.Solution {
                     break;
 
                 case LinearSolverCode.exp_gmres_levelpmg:
-                    precond[0] = new LevelPmg() { UseHiOrderSmoothing = true, CoarseLowOrder = 1};
+                    precond[0] = new LevelPmg() { UseHiOrderSmoothing = true, CoarseLowOrder = 1 };
                     break;
 
                 case LinearSolverCode.exp_gmres_schwarz_pmg:
@@ -448,10 +448,11 @@ namespace BoSSS.Solution {
                                 },
                                 UsePMGinBlocks=false,
                                 EnableOverlapScaling=false,
-                                pLow=1,
+                                CoarseLowOrder=1,
                             },
                     };
                     break;
+
                 case LinearSolverCode.selfmade:
                     Console.WriteLine("Selfmade Preconditioner is used!");
                     precond[0] = m_precond;
@@ -463,29 +464,33 @@ namespace BoSSS.Solution {
             }
 
             if (precond != null) {
-                //special stdout stuff for Schwarz Preconds
-                if (precond[0] is Schwarz)
-                    Console.WriteLine("Additive Schwarz w. direct coarse, No of blocks: " + NoOfBlocks.MPISum());
-                if (precond.Length > 1) {
-                    foreach (var pre in precond) {
-                        SetLinItCallback(pre, true);
-                    }
-                } else {
-                    SetLinItCallback(precond[0], true);
+                
+                foreach (var pre in precond) {
+                    GenerateInfoMessageAtSetup(pre,NoOfBlocks);
+                    SetLinItCallback(pre, true);
                 }
-#if DEBUG
-                if (precond.Length > 1) {
-                    foreach (var pre in precond) {
-                        Console.WriteLine("preconditioner: {0}", pre.GetType());
-                    }
-                } else {
-                    Console.WriteLine("preconditioner: {0}", precond[0].GetType());
-                }
-#endif
+
                 Check_precond();
             }
 
             return precond;
+        }
+
+        private void GenerateInfoMessageAtSetup(ISolverSmootherTemplate solver, int NoOfBlocks) {
+            Console.WriteLine("preconditioner: {0}", solver.GetType());
+            List<string> solverinfotxt = new List<string>();
+            if (solver.GetType() == typeof(LevelPmg)) {
+                solverinfotxt.Add("entries upto p=" + ((LevelPmg)solver).CoarseLowOrder + " are assigned to low order blocks");
+            }
+            if (solver.GetType() == typeof(Schwarz)) {
+                if (((Schwarz)solver).UsePMGinBlocks) {
+                    solverinfotxt.Add("pmg used in Schwarz Blocks");
+                    solverinfotxt.Add("entries upto p=" + ((Schwarz)solver).CoarseLowOrder + " are assigned to low order blocks");
+                }
+                solverinfotxt.Add("Additive Schwarz w. direct coarse, No of blocks: " + NoOfBlocks);
+            }
+            foreach(string line in solverinfotxt)
+                Console.WriteLine(solver.GetType()+" INFO:\t"+ line);
         }
 
         /// <summary>
@@ -1857,7 +1862,7 @@ namespace BoSSS.Solution {
                         UseHiOrderSmoothing = false,
                         CoarseLowOrder = 1
                     };
-
+                    GenerateInfoMessageAtSetup(CoarseSolver,NoOfBlocks);
 
                     levelSolver = new OrthonormalizationMultigrid() {
                         PreSmoother = smoother1,

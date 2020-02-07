@@ -400,12 +400,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set;
         }
 
+        public int CoarseLowOrder {
+            get { return pLow; }
+            set { pLow = value; }
+        }
+
         /// <summary>
         /// DG degree at low order sub-blocks; If p-multi-grid is used (<see cref="UsePMGinBlocks"/>), 
         /// this degree is the boundary which divides into low order and high order blocks.
         /// </summary>
-        public int pLow = 1;
-
+        private int pLow = 1;
 
         /// <summary>
         /// ~
@@ -576,6 +580,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     fullSel.CellSelector(bc.ToList(), false);
                     var fullMask = new BlockMask(fullSel, m_Overlap > 0);
                     var fullBlock = fullMask.GetSubBlockMatrix(op.OperatorMatrix);
+                    BMfullBlocks[iPart] = fullMask;
 
                     if (UsePMGinBlocks) {
                         //generate selector instructions
@@ -593,8 +598,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         var HiMask = new BlockMask(HiSel, m_Overlap > 0);
                         Debug.Assert(HiMask.GetNoOfMaskedCells == bc.Length);
                         Debug.Assert(lowMask.GetNoOfMaskedCells == bc.Length);
-                        BMhiBlocks = HiMask;
-                        BMloBlocks = lowMask;
+                        BMhiBlocks[iPart] = HiMask;
+                        BMloBlocks[iPart] = lowMask;
 
                         //get subblocks from masking
                         MultidimensionalArray[] hiBlocks = null;
@@ -686,27 +691,37 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     var XExchange = new MPIexchangeInverse<double[]>(this.m_MgOp.Mapping, SolScale);
 
+                    //int extLength = MgMap.AggGrid.iLogicalCells.NoOfExternalCells + MgMap.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+                    //double[] sammel = new double[extLength];
+
                     for (int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) {
-                        int[] ci = BlockIndices_Local[iPart];
-                        int[] ciE = BlockIndices_External[iPart];
-                        int L = ci.Length;
-                        int Le = ciE != null ? ciE.Length : 0;
+
+                        int rows = BMfullBlocks[iPart].GetNoOfMaskedRows;
+                        double[] druffdamit = rows.ForLoop<double>(i=>1.0);
+
+                        BMfullBlocks[iPart].AccVecToFull(druffdamit, XExchange.Vector_Ext, SolScale);
+
+                        //int[] ci = BlockIndices_Local[iPart];
+                        //int[] ciE = BlockIndices_External[iPart];
+                        //int L = ci.Length;
+                        //int Le = ciE != null ? ciE.Length : 0;
 
 
                         // accumulate block solution 'xi' to global solution 'X'
-                        //X.AccV(1.0, xi, ci, default(int[]));
-                        for (int l = 0; l < L; l++) {
-                            SolScale[ci[l]] += 1.0;
-                        }
+                        ////X.AccV(1.0, xi, ci, default(int[]));
+                        //for (int l = 0; l < L; l++) {
+                        //    SolScale[ci[l]] += 1.0;
+                        //}
 
-                        SolScale
+                        //SolScale
 
-                        if (ciE != null && ciE.Length > 0) {
-                            //XExchange.Vector_Ext.AccV(1.0, xi, ciE, default(int[]), acc_index_shift: (-LocLength), b_index_shift: ci.Length);
-                            for (int l = 0; l < Le; l++) {
-                                XExchange.Vector_Ext[ciE[l] - LocalLength] += 1.0;
-                            }
-                        }
+                        //if (ciE != null && ciE.Length > 0) {
+                        //    //XExchange.Vector_Ext.AccV(1.0, xi, ciE, default(int[]), acc_index_shift: (-LocLength), b_index_shift: ci.Length);
+                        //    for (int l = 0; l < Le; l++) {
+                        //        XExchange.Vector_Ext[ciE[l] - LocalLength] += 1.0;
+                        //    }
+                        //}
+
                     }
 
                     XExchange.TransceiveStartImReturn();
@@ -939,9 +954,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         //int[][] BlockIndices_External;
 
 
-        BlockMask BMhiBlocks;
+        BlockMask[] BMhiBlocks;
 
-        BlockMask BMloBlocks;
+        BlockMask[] BMloBlocks;
+
+        BlockMask[] BMfullBlocks;
 
         private int m_Overlap = 1;
 
@@ -1006,7 +1023,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where V : IList<double> //
         {
             using (var tr = new FuncTrace()) {
-                int NoParts = this.BlockIndices_Local.Length;
+                int NoParts = this.BMfullBlocks.Length;
 
                 // --------
                 // Reminder: we solve for a correction, the basic idea is:
@@ -1030,11 +1047,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 } else {
                     ResExchange = null;
                     XExchange = null;
-#if DEBUG
-                    foreach (var ciE in BlockIndices_External) {
-                        Debug.Assert(ciE == null || ciE.Length <= 0);
-                    }
-#endif
+//#if DEBUG
+//                    foreach (var ciE in BlockIndices_External) {
+//                        Debug.Assert(ciE == null || ciE.Length <= 0);
+//                    }
+//#endif
                 }
 
                 int LocLength = m_MgOp.Mapping.LocalLength;
@@ -1075,56 +1092,60 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     using (new BlockTrace("block_solve_level" + this.m_MgOp.LevelIndex, tr)) {
 
                         for (int iPart = 0; iPart < NoParts; iPart++) {
-                            int[] ci = BlockIndices_Local[iPart];
-                            int[] ciE = BlockIndices_External[iPart];
-                            int L = ci.Length;
-                            if (ciE != null)
-                                L += ciE.Length;
+                            //int[] ci = BlockIndices_Local[iPart];
+                            //int[] ciE = BlockIndices_External[iPart];
+                            //int L = ci.Length;
+                            //if (ciE != null)
+                            //    L += ciE.Length;
 
-                            double[] bi = new double[L];
-                            double[] xi = new double[L];
+                            //double[] bi = new double[L];
+                            //double[] xi = new double[L];
 
                           
                             // extract block part of residual
-                            bi.AccV(1.0, Res, default(int[]), ci);
-                            //chackScheiss_iPart.AccV(1.0, chackScheiss, default(int[]), ci);
-                            //chackScheiss_iPart.SaveToTextFile("chackScheiss" + iPart + ".txt");
-                            if (ciE != null && ciE.Length > 0)
-                                bi.AccV(1.0, ResExchange.Vector_Ext, default(int[]), ciE, acc_index_shift: ci.Length, b_index_shift: (-LocLength));
-
+                            //bi.AccV(1.0, Res, default(int[]), ci);
+                            ////chackScheiss_iPart.AccV(1.0, chackScheiss, default(int[]), ci);
+                            ////chackScheiss_iPart.SaveToTextFile("chackScheiss" + iPart + ".txt");
+                            //if (ciE != null && ciE.Length > 0)
+                            //    bi.AccV(1.0, ResExchange.Vector_Ext, default(int[]), ciE, acc_index_shift: ci.Length, b_index_shift: (-LocLength));
+                            var bi=BMfullBlocks[iPart].GetSubBlockVec(ResExchange.Vector_Ext, Res);
+                            double[] xi = new double[bi.Length];
                             if (UsePMGinBlocks) {
                                 // +++++++++++++++++++++++++++++++++
                                 // P-multigrid in each Schwarz block
                                 // +++++++++++++++++++++++++++++++++
 
                                 // solve the low-order system
-                                int[] ciLo = PmgBlock_LoModes[iPart];
-                                int Llo = ciLo.Length;
+                                //int[] ciLo = PmgBlock_LoModes[iPart];
+                                //int Llo = ciLo.Length;
 
-                                double[] biLo = new double[Llo];
-                                biLo.AccV(1.0, bi, default(int[]), ciLo);
-                                double[] xiLo = new double[Llo];
+                                //double[] biLo = new double[Llo];
+                                var biLo=BMloBlocks[iPart].GetSubBlockVec(bi);
+                                //biLo.AccV(1.0, bi, default(int[]), ciLo);
+                                double[] xiLo = new double[biLo.Length];
                                 try {
                                     blockSolvers[iPart].Solve(xiLo, biLo);
                                 } catch (ArithmeticException ae) {
                                     Console.Error.WriteLine(ae.Message);
                                     throw ae;
                                 }
-                                xi.AccV(1.0, xiLo, ciLo, default(int[]));
+
+                                BMloBlocks[iPart].AccVecToFull(xiLo,xi);
+                                //xi.AccV(1.0, xiLo, ciLo, default(int[]));
 
                                 {
                                     // re-evaluate the residual
                                     this.BlockMatrices[iPart].SpMV(-1.0, xi, 1.0, bi);
 
                                     // solve the high-order system
-                                    int[] ciHi = PmgBlock_HiModes[iPart];
+                                    //int[] ciHi = PmgBlock_HiModes[iPart];
                                     var HiModeSolvers = PmgBlock_HiModeSolvers[iPart];
                                     int NoCells = HiModeSolvers.Length;
 
                                     double[] xiHi = null;
                                     double[] biHi = null;
 
-                                    int ptr_CiHi = 0;
+                                    //int ptr_CiHi = 0;
                                     for (int j = 0; j < NoCells; j++) {
                                         var HiModeSolver = HiModeSolvers[j];
                                         int Np = HiModeSolver.NoOfRows;
@@ -1135,18 +1156,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                         if (biHi == null || biHi.Length != Np)
                                             biHi = new double[Np];
 
-                                        for (int n = 0; n < Np; n++) {
-                                            biHi[n] = bi[ciHi[ptr_CiHi + n]];
-                                        }
+                                        //for (int n = 0; n < Np; n++) {
+                                        //    biHi[n] = bi[ciHi[ptr_CiHi + n]];
+                                        //}
+                                        biHi = BMhiBlocks[iPart].GetVectorCellwise(bi,j);
 
                                         HiModeSolver.GEMV(1.0, biHi, 0.0, xiHi);
 
-                                        for (int n = 0; n < Np; n++) {
-                                            xi[ciHi[ptr_CiHi + n]] = xiHi[n];
-                                        }
-                                        ptr_CiHi += Np;
+                                        //for (int n = 0; n < Np; n++) {
+                                        //    xi[ciHi[ptr_CiHi + n]] = xiHi[n];
+                                        //}
+                                        BMhiBlocks[iPart].AccVecCellwiseToFull(xiHi, j,xi);
+                                        //ptr_CiHi += Np;
                                     }
-                                    Debug.Assert(ptr_CiHi == ciHi.Length);
+                                    //Debug.Assert(ptr_CiHi == ciHi.Length);
                                 }
 
                             } else {
@@ -1159,9 +1182,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             }
 
                             // accumulate block solution 'xi' to global solution 'X'
-                            X.AccV(1.0, xi, ci, default(int[]));
-                            if (ciE != null && ciE.Length > 0)
-                                XExchange.Vector_Ext.AccV(1.0, xi, ciE, default(int[]), acc_index_shift: (-LocLength), b_index_shift: ci.Length);
+                            //X.AccV(1.0, xi, ci, default(int[]));
+                            //if (ciE != null && ciE.Length > 0)
+                            //    XExchange.Vector_Ext.AccV(1.0, xi, ciE, default(int[]), acc_index_shift: (-LocLength), b_index_shift: ci.Length);
+                            BMfullBlocks[iPart].AccVecToFull(xi, XExchange.Vector_Ext,X);
                         }
                     }
 

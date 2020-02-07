@@ -75,10 +75,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
         MultidimensionalArray[] HighOrderBlocks_LU;
         int[][] HighOrderBlocks_LUpivots;
 
+        public int CoarseLowOrder {
+            get { return m_CoarseLowOrder; }
+            set { m_CoarseLowOrder = value; }
+        }
+
+
         /// <summary>
         /// DG degree at low order blocks. This degree is the border, which divides into low order and high order blocks
         /// </summary>
-        public int CoarseLowOrder = 1;
+        private int m_CoarseLowOrder = 1;
+
+
 
         /// <summary>
         /// Krankplätze müssen verdichtet werden
@@ -90,7 +98,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //            //ilPSP.Environment.StdoutOnlyOnRank0 = false;
             m_op = op;
 
-            if (CoarseLowOrder > m_op.Mapping.DgDegree.Max())
+            if (m_CoarseLowOrder > m_op.Mapping.DgDegree.Max())
                 throw new ArgumentOutOfRangeException("CoarseLowOrder is higher than maximal DG degree");
 
 #if TEST
@@ -103,13 +111,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
            
 
             var DGlowSelect = new SubBlockSelector(op.Mapping);
-            DGlowSelect.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D ? CoarseLowOrder : CoarseLowOrder - 1)); // dirty hack for mixed order stokes
+            DGlowSelect.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D ? m_CoarseLowOrder : m_CoarseLowOrder - 1)); // dirty hack for mixed order stokes
             lMask = new BlockMask(DGlowSelect,false);
             m_lowMaskLen = lMask.GetNoOfMaskedRows;
 
             if (UseHiOrderSmoothing) {
                 var DGhighSelect = new SubBlockSelector(op.Mapping);
-                DGhighSelect.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D ? CoarseLowOrder : CoarseLowOrder - 1));
+                DGhighSelect.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D ? m_CoarseLowOrder : m_CoarseLowOrder - 1));
                 hMask = new BlockMask(DGhighSelect,false);
                 m_highMaskLen = hMask.GetNoOfMaskedRows;
 

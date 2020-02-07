@@ -493,9 +493,29 @@ namespace BoSSS.Solution.AdvancedSolvers
 
         }
 
-        public void AccExtVec
+        public double[] GetSubBlockVec( IList<double> extvector, IList<double> locvector)
+        {
+            int SubL = BMExt.LocalDOF + BMLoc.LocalDOF;
+            var subvector = new double[SubL];
+            int acc_offset = BMLoc.LocalDOF;
+            int target_offset = m_map.LocalLength;
+            if(BMExt.m_LocalMask!=null && BMExt.LocalDOF > 0)
+                subvector.AccV(1.0, extvector, default(int[]), BMExt.m_LocalMask, acc_index_shift: acc_offset, b_index_shift: (-target_offset));
+            subvector.AccV(1.0, locvector, default(int[]), BMLoc.m_LocalMask);
+            return subvector;
+        }
 
-        public void get
+        public void AccVecToFull<U ,V, W>(W accVector, V extvector, U locvector)
+            where V : IList<double>
+            where W : IList<double>
+            where U : IList<double> {
+            locvector.AccV(1.0, accVector, BMLoc.m_LocalMask, default(int[]));
+            
+            int target_offset = m_map.LocalLength;
+            int acc_offset = BMLoc.LocalDOF;
+            if(BMExt.m_LocalMask != null && BMExt.LocalDOF > 0)
+                extvector.AccV(1.0, accVector, BMExt.m_LocalMask, default(int[]), acc_index_shift: (-target_offset), b_index_shift: acc_offset);
+        }
 
         private void AuxAcc<V, W>(BlockMaskBase mask, W accVector, int iCell, V targetVector)
             where V : IList<double>

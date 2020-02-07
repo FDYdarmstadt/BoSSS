@@ -549,7 +549,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.savetodb = false;
             //C.DbPath = @"E:\\XdgPerformance";
 
-            int Res = 2;
+            int Res = 4;
 
             C.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
@@ -567,7 +567,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             C.GridPartType = GridPartType.directHilbert;
             C.LinearSolver.TargetBlockSize = blocksize;
-            C.SetDGdegree(2);
+            C.SetDGdegree(3);
 
             C.LinearSolver.NoOfMultigridLevels = 4;
             C.LinearSolver.ConvergenceCriterion = 1e-6;

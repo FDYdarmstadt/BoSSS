@@ -265,11 +265,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if (RelResidualNorm > 1.0e-10) {
 
                         //Console.WriteLine("High residual from direct solver: abs {0}, rel {1}", ResidualNorm , ResidualNorm / SolutionNorm);
-
+#if TEST
                         m_Mtx.SaveToTextFileSparse("Mtx.txt");
                         X.SaveToTextFile("X.txt");
                         B.SaveToTextFile("B.txt");
-
+#endif
                         string ErrMsg;
                         using (var stw = new StringWriter()) {
                             stw.WriteLine("High residual from direct solver (using {0}).", SolverName);
