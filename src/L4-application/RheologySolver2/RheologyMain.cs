@@ -787,7 +787,7 @@ namespace BoSSS.Application.Rheology {
                             // USING Weissenberg increase, NO artificial viscosity
                             // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                            //m_BDF_Timestepper.Solve(phystime, dt, m_SkipSolveAndEvaluateResidual);
+                            m_BDF_Timestepper.Solve(phystime, dt, m_SkipSolveAndEvaluateResidual);
 
                             //this.ResLogger.NextTimestep(false);
 
