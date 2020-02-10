@@ -82,37 +82,28 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         /// <param name="stepSize">The step size between two points along the curve (first entry has to be user defined)</param>
         /// <returns></returns>
         public static int WalkOnCurve(GridData gridData, SinglePhaseField field, int maxIterations, double threshold, MultidimensionalArray points, double[] secondDerivative, double[] stepSize) {
+            // Set initial step size to 0.5 * h_minGlobal
+            stepSize[0] = gridData.Cells.h_minGlobal;
+
             // Init
             // Current (global) point
-            double[] initialPoint = points.ExtractSubArrayShallow(0, -1).To1DArray();
+            double[] currentPoint = points.ExtractSubArrayShallow(0, -1).To1DArray();
 
             // Compute global cell index of current point
-            gridData.LocatePoint(initialPoint, out long GlobalId, out long GlobalIndex, out bool IsInside, out bool OnThisProcess);
+            gridData.LocatePoint(currentPoint, out long GlobalId, out long GlobalIndex, out bool IsInside, out bool OnThisProcess);
 
             // Compute local node set
-            NodeSet nodeSet = GetLocalNodeSet(gridData, initialPoint, (int)GlobalIndex);
+            NodeSet nodeSet = GetLocalNodeSet(gridData, currentPoint, (int)GlobalIndex);
 
             // Get local cell index of current point
             int j0Grd = gridData.CellPartitioning.i0;
             int jLocal = (int)(GlobalIndex - j0Grd);
 
+            // Evaluate the second derivative
             secondDerivative[0] = SecondDerivative(field, jLocal, nodeSet);
 
             int n = 1;
             while (n < maxIterations + 1) {
-                // Current (global) point
-                double[] currentPoint = points.ExtractSubArrayShallow(n - 1, -1).To1DArray();
-
-                // Compute global cell index of current point
-                gridData.LocatePoint(currentPoint, out GlobalId, out GlobalIndex, out IsInside, out OnThisProcess);
-
-                // Compute local node set
-                nodeSet = GetLocalNodeSet(gridData, currentPoint, (int)GlobalIndex);
-
-                // Get local cell index of current point
-                j0Grd = gridData.CellPartitioning.i0;
-                jLocal = (int)(GlobalIndex - j0Grd);
-
                 // Evaluate the gradient of the current point
                 double[] gradient = Gradient(field, jLocal, nodeSet);
 
@@ -120,19 +111,17 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 //gridData.Cells.IsInCell()       
 
                 // Compute new point along curve
-                double[] newPoint = new double[currentPoint.Length];
-                newPoint[0] = currentPoint[0] + gradient[0] * stepSize[n - 1];
-                newPoint[1] = currentPoint[1] + gradient[1] * stepSize[n - 1];
-                points[n, 0] = newPoint[0];
-                points[n, 1] = newPoint[1];
-                               
+                points[n, 0] = currentPoint[0] + gradient[0] * stepSize[n - 1];
+                points[n, 1] = currentPoint[1] + gradient[1] * stepSize[n - 1];
+                currentPoint = points.ExtractSubArrayShallow(n, -1).To1DArray();
+
                 // Compute global cell index of new point
-                gridData.LocatePoint(newPoint, out GlobalId, out GlobalIndex, out IsInside, out OnThisProcess);
+                gridData.LocatePoint(currentPoint, out GlobalId, out GlobalIndex, out IsInside, out OnThisProcess);
 
                 // Compute local node set
-                nodeSet = GetLocalNodeSet(gridData, newPoint, (int)GlobalIndex);
+                nodeSet = GetLocalNodeSet(gridData, currentPoint, (int)GlobalIndex);
 
-                // Get local cell index of current point
+                // Get local cell index of new point
                 jLocal = (int)(GlobalIndex - j0Grd);
 
                 // Evaluate the second derivative of the new point
@@ -149,9 +138,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 n++;
 
                 // Termination criterion
-                double[] diff = new double[newPoint.Length];
-                diff[0] = newPoint[0] - currentPoint[0];
-                diff[1] = newPoint[1] - currentPoint[1];
+                // Remark: n has already been incremented!
+                double[] diff = new double[currentPoint.Length];
+                diff[0] = points[n - 1, 0] - points[n - 2, 0];
+                diff[1] = points[n - 1, 1] - points[n - 2, 1];
                 if (diff.L2Norm() < threshold) {
                     break;
                 }
