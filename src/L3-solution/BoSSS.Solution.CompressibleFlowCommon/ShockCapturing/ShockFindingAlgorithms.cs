@@ -83,9 +83,19 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             return g_alpha_alpha;
         }
 
+        /// <summary>
+        /// Algorithm to find an inflection point along a curve in the direction of the gradient
+        /// </summary>
+        /// <param name="gridData">The corresponding grid</param>
+        /// <param name="field">The DG field, which shall be evalauted</param>
+        /// <param name="maxIterations">The maximum number of iterations (user defined)</param>
+        /// <param name="threshold">A threshold, e.g. 1e-6 (user defined)</param>
+        /// <param name="points">The points along the curve (first entry has to be user defined)</param>
+        /// <param name="secondDerivative">The second derivative at each point</param>
+        /// <param name="stepSize">The step size between two points along the curve (first entry has to be user defined)</param>
+        /// <returns></returns>
         public static int WalkOnCurve(GridData gridData, SinglePhaseField field, int maxIterations, double threshold, MultidimensionalArray points, double[] secondDerivative, double[] stepSize) {
             // Init
-            stepSize[0] = 0.1;
             secondDerivative[0] = SecondDerivative(gridData, field, points.ExtractSubArrayShallow(0, -1).To1DArray());
 
             int n = 1;
@@ -100,8 +110,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 double[] newPoint = new double[currentPoint.Length];
                 newPoint[0] = currentPoint[0] + gradient[0] * stepSize[n - 1];
                 newPoint[1] = currentPoint[1] + gradient[1] * stepSize[n - 1];
-                MultidimensionalArray tmp = MultidimensionalArray.CreateWrapper(newPoint, 1, newPoint.Length);
-                points.SetSubArray(tmp.ExtractSubArrayShallow(0, -1), new int[] { n, -1 });
+                points[n, 0] = newPoint[0];
+                points[n, 1] = newPoint[1];
 
                 // Evaluate the second derivative of the new point
                 secondDerivative[n] = SecondDerivative(gridData, field, newPoint);
