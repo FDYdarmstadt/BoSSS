@@ -149,6 +149,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Level-Set is handled using Lie-Splitting. Use this for the fully coupled FSI-Solver
         /// </summary>
         FSI_LieSplittingFullyCoupled = 5,
+
+        /// <summary>
+        /// Level-Set is handled using Lie-Splitting. Use this for the fully coupled FSI-Solver
+        /// </summary>
+        FSI_Coupled_Iterative = 6,
     }
 
     public enum SpatialOperatorType {

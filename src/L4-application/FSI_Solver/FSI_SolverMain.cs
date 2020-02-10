@@ -132,6 +132,7 @@ namespace BoSSS.Application.FSI_Solver {
                 switch (((FSI_Control)Control).Timestepper_LevelSetHandling) {
                     case LevelSetHandling.Coupled_Once:
                     case LevelSetHandling.Coupled_Iterative:
+                    case LevelSetHandling.FSI_Coupled_Iterative:
                         return true;
 
                     case LevelSetHandling.LieSplitting:
@@ -159,7 +160,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Fully coupled LieSplitting?
         /// </summary>
-        private bool IsFullyCoupled => ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled;
+        private bool IsFullyCoupled => ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled || ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_Coupled_Iterative;
 
         /// <summary>
         /// The maximum timestep setted in the control file.
@@ -388,6 +389,7 @@ namespace BoSSS.Application.FSI_Solver {
             MassMatrixShapeandDependence MassMatrixShape;
             switch (((FSI_Control)Control).Timestepper_LevelSetHandling) {
                 case LevelSetHandling.Coupled_Iterative:
+                case LevelSetHandling.FSI_Coupled_Iterative:
                 case LevelSetHandling.FSI_LieSplittingFullyCoupled:
                     MassMatrixShape = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
                     break;
@@ -478,13 +480,14 @@ namespace BoSSS.Application.FSI_Solver {
                     LsTrk.UpdateTracker();
                     break;
 
-                case LevelSetHandling.Coupled_Once:
                 case LevelSetHandling.Coupled_Iterative:
                     UpdateLevelSetParticles(phystime);
                     throw new NotImplementedException("Moving interface solver will be implemented in the near future");
 
+                case LevelSetHandling.Coupled_Once:
                 case LevelSetHandling.LieSplitting:
                 case LevelSetHandling.FSI_LieSplittingFullyCoupled:
+                case LevelSetHandling.FSI_Coupled_Iterative:
                 case LevelSetHandling.StrangSplitting:
                     UpdateLevelSetParticles(phystime);
                     break;
@@ -530,9 +533,8 @@ namespace BoSSS.Application.FSI_Solver {
             // Step 1
             // Define an array with the respective cell colors
             // =======================================================
-            cellColor = cellColor == null ? InitializeColoring() : UpdateColoring();
-            if (cellColor == null && m_Particles.Count() >= 1)
-                throw new Exception("Found no colour");
+            cellColor = cellColor == null ? InitializeColoring() : UpdateColoring();    
+
             // Step 2
             // Delete the old level set
             // =======================================================
@@ -970,7 +972,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                     // particle position
                     // -------------------------------------------------
-                    CalculateParticlePosition(dt);
+                    //CalculateParticlePosition(dt);
 
                     // print
                     // -------------------------------------------------
@@ -1363,7 +1365,7 @@ namespace BoSSS.Application.FSI_Solver {
             List<int[]> Coarsening = new List<int[]>();
             if (((FSI_Control)Control).AdaptiveMeshRefinement) {
                 BitArray cutCells = LsTrk.Regions.GetCutCellMask().GetBitMask();
-                if(TimestepNo <= 1)
+                if(TimestepNo <= 1 || ((FSI_Control)Control).ConstantRefinement)
                     AnyChangeInGrid = GridRefinementController.ComputeGridChange(gridData, cutCells, GetCellMaskWithRefinementLevelsStartUpSweeps(), out CellsToRefineList, out Coarsening);
                 else
                     AnyChangeInGrid = GridRefinementController.ComputeGridChange(gridData, cutCells, GetCellMaskWithRefinementLevelsWithPersson(), out CellsToRefineList, out Coarsening);
@@ -1394,10 +1396,10 @@ namespace BoSSS.Application.FSI_Solver {
                 for (int j = 0; j < noOfLocalCells; j++) {
                     if (LsTrk.Regions.IsSpeciesPresentInCell(fluidSpeciesID, j)) {
                         double perssonValue = perssonsensor.GetValue(j);
-                        double upperbound = 0.01;
-                        if (!perssonCells[j] && perssonValue > upperbound) {
+                        double threshold = 1e-6;
+                        if (!perssonCells[j] && perssonValue > threshold) {
                             Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
-                            perssonCells[j] = m_Particles[p].Contains(cellCenter, 2 * MaxGridLength);
+                            perssonCells[j] = m_Particles[p].Contains(cellCenter, m_Particles[p].GetLengthScales().Min());
                         }
                     }
                     if (!perssonCells[j] && ((FSI_Control)Control).pureDryCollisions) {
@@ -1422,7 +1424,7 @@ namespace BoSSS.Application.FSI_Solver {
                     if (LsTrk.Regions.IsSpeciesPresentInCell(fluidSpeciesID, j)) {
                         if (!perssonCells[j]) {
                             Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
-                            perssonCells[j] = m_Particles[p].Contains(cellCenter, 2 * MaxGridLength);
+                            perssonCells[j] = m_Particles[p].Contains(cellCenter, m_Particles[p].GetLengthScales().Min());
                         }
                     }
                 }

@@ -82,16 +82,16 @@ namespace BoSSS.Application.FSI_Solver {
                 savetodb = false;
         }
 
-        public bool WallRefinement = false;
+        public bool ConstantRefinement = false;
 
-        public void SetAddaptiveMeshRefinement(int amrLevel, bool wallRefinement = false) {
+        public void SetAddaptiveMeshRefinement(int amrLevel, bool constantRefinement = false) {
             if (amrLevel == 0)
                 return;
             AdaptiveMeshRefinement = true;
             RefinementLevel = amrLevel;
             AMR_startUpSweeps = amrLevel;
             Console.WriteLine("No of start up sweeps " + AMR_startUpSweeps);
-            WallRefinement = wallRefinement;
+            ConstantRefinement = constantRefinement;
         }
 
         public void SetBoundaries(List<string> boundaryValues) {

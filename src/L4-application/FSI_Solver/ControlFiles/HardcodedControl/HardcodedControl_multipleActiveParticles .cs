@@ -149,8 +149,8 @@ namespace BoSSS.Application.FSI_Solver {
                 "Pressure_Dirichlet"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 8, lengthY: 8, cellsPerUnitLength:3, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel: 2);
+            C.SetGrid(lengthX: 8, lengthY: 8, cellsPerUnitLength: 3, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(amrLevel: 3);
             C.hydrodynamicsConvergenceCriterion = 1e-2;
             // Fluid Properties
             // =============================

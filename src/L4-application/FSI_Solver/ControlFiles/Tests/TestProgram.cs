@@ -162,7 +162,7 @@ namespace BoSSS.Application.FSI_Solver {
         [Test]
         public static void PeriodicTest() {
             using (FSI_SolverMain p = new FSI_SolverMain()) {
-                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.TestPeriodicBoundaries();
+                var ctrl = HardcodedTestExamples.TestPeriodicBoundaries();
                 p.Init(ctrl);
                 p.RunSolverMode();
                 Vector[] expectedPosition = new Vector[4];
