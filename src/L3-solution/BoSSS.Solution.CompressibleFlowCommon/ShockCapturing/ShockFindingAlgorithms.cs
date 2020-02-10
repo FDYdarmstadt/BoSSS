@@ -26,54 +26,38 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
     /// in two dimensions. Can be used to find the shock location. 
     /// </summary>
     public static class ShockFindingAlgorithms {
-        public static NodeSet GetLocalNodeSet(GridData gridData, double[] point, long GlobalIndex) {
+        public static NodeSet GetLocalNodeSet(GridData gridData, double[] globalPoint, int globalIndex) {
             int D = 2;
-
-            MultidimensionalArray GlobalVerticesIn = MultidimensionalArray.CreateWrapper(point, 1, D);
+            MultidimensionalArray GlobalVerticesIn = MultidimensionalArray.CreateWrapper(globalPoint, 1, D);
             MultidimensionalArray LocalVerticesOut = MultidimensionalArray.CreateWrapper(new double[D], 1, D);
 
-            gridData.TransformGlobal2Local(GlobalVerticesIn, LocalVerticesOut, (int)GlobalIndex, NewtonConvergence: null);
+            gridData.TransformGlobal2Local(GlobalVerticesIn, LocalVerticesOut, globalIndex, NewtonConvergence: null);
 
-            return new NodeSet(gridData.Cells.GetRefElement((int)GlobalIndex), LocalVerticesOut);
+            return new NodeSet(gridData.Cells.GetRefElement(globalIndex), LocalVerticesOut);
         }
 
-        public static double[] Gradient(GridData gridData, SinglePhaseField field, double[] point) {
-            // Compute global cell ID of the point
-            gridData.LocatePoint(point, out long GlobalId, out long GlobalIndex, out bool IsInside, out bool OnThisProcess);
-
-            // Compute local node set
-            NodeSet nodeSet = GetLocalNodeSet(gridData, point, GlobalIndex);
-
+        public static double[] Gradient(SinglePhaseField field, int localIndex, NodeSet nodeSet) {
             // Evaluate gradient
             int length = 1;
             int noOfNodes = 1;
             int D = 2;
             MultidimensionalArray gradient = MultidimensionalArray.Create(length, noOfNodes, D);
-            field.EvaluateGradient((int)GlobalIndex, 1, nodeSet, gradient, ResultCellindexOffset: 0, ResultPreScale: 1.0);
+            field.EvaluateGradient(localIndex, 1, nodeSet, gradient, ResultCellindexOffset: 0, ResultPreScale: 1.0);
 
             return gradient.ExtractSubArrayShallow(0, 0, -1).To1DArray();
         }
 
-        public static double SecondDerivative(GridData gridData, SinglePhaseField field, double[] point) {
-            // Compute global cell ID of the point
-            gridData.LocatePoint(point, out long GlobalId, out long GlobalIndex, out bool IsInside, out bool OnThisProcess);
-
-            int j0Grd = gridData.CellPartitioning.i0;
-            int jLocal = (int)(GlobalIndex - j0Grd);
-
-            // Compute local node set
-            NodeSet nodeSet = GetLocalNodeSet(gridData, point, GlobalIndex);
-
+        public static double SecondDerivative(SinglePhaseField field, int localIndex, NodeSet nodeSet) {
             // Evaluate gradient
             int length = 1;
             int noOfNodes = 1;
             int D = 2;
             MultidimensionalArray gradient = MultidimensionalArray.Create(length, noOfNodes, D);
-            field.EvaluateGradient(jLocal, 1, nodeSet, gradient, ResultCellindexOffset: 0, ResultPreScale: 1.0);
+            field.EvaluateGradient(localIndex, 1, nodeSet, gradient, ResultCellindexOffset: 0, ResultPreScale: 1.0);
 
             // Evalaute Hessian matrix
             MultidimensionalArray hessian = MultidimensionalArray.Create(length, noOfNodes, D, D);
-            field.EvaluateHessian(jLocal, 1, nodeSet, hessian);
+            field.EvaluateHessian(localIndex, 1, nodeSet, hessian);
 
             // Compute second derivative along curve
             double g_alpha_alpha = 2 * ((hessian[0, 0, 0, 0] * gradient[0, 0, 0]
@@ -99,18 +83,40 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         /// <returns></returns>
         public static int WalkOnCurve(GridData gridData, SinglePhaseField field, int maxIterations, double threshold, MultidimensionalArray points, double[] secondDerivative, double[] stepSize) {
             // Init
-            secondDerivative[0] = SecondDerivative(gridData, field, points.ExtractSubArrayShallow(0, -1).To1DArray());
+            // Current (global) point
+            double[] initialPoint = points.ExtractSubArrayShallow(0, -1).To1DArray();
+
+            // Compute global cell index of current point
+            gridData.LocatePoint(initialPoint, out long GlobalId, out long GlobalIndex, out bool IsInside, out bool OnThisProcess);
+
+            // Compute local node set
+            NodeSet nodeSet = GetLocalNodeSet(gridData, initialPoint, (int)GlobalIndex);
+
+            // Get local cell index of current point
+            int j0Grd = gridData.CellPartitioning.i0;
+            int jLocal = (int)(GlobalIndex - j0Grd);
+
+            secondDerivative[0] = SecondDerivative(field, jLocal, nodeSet);
 
             int n = 1;
             while (n < maxIterations + 1) {
-                // Current point
+                // Current (global) point
                 double[] currentPoint = points.ExtractSubArrayShallow(n - 1, -1).To1DArray();
 
+                // Compute global cell index of current point
+                gridData.LocatePoint(currentPoint, out GlobalId, out GlobalIndex, out IsInside, out OnThisProcess);
+
+                // Compute local node set
+                nodeSet = GetLocalNodeSet(gridData, currentPoint, (int)GlobalIndex);
+
+                // Get local cell index of current point
+                j0Grd = gridData.CellPartitioning.i0;
+                jLocal = (int)(GlobalIndex - j0Grd);
+
                 // Evaluate the gradient of the current point
-                double[] gradient = Gradient(gridData, field, currentPoint);
+                double[] gradient = Gradient(field, jLocal, nodeSet);
 
                 //gridData.GetCellNeighbours(jCell, GetCellNeighbours_Mode.ViaVertices, out int[] cellneighbours, out int[] connectingEntities);
-
                 //gridData.Cells.IsInCell()       
 
                 // Compute new point along curve
@@ -119,9 +125,18 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 newPoint[1] = currentPoint[1] + gradient[1] * stepSize[n - 1];
                 points[n, 0] = newPoint[0];
                 points[n, 1] = newPoint[1];
+                               
+                // Compute global cell index of new point
+                gridData.LocatePoint(newPoint, out GlobalId, out GlobalIndex, out IsInside, out OnThisProcess);
+
+                // Compute local node set
+                nodeSet = GetLocalNodeSet(gridData, newPoint, (int)GlobalIndex);
+
+                // Get local cell index of current point
+                jLocal = (int)(GlobalIndex - j0Grd);
 
                 // Evaluate the second derivative of the new point
-                secondDerivative[n] = SecondDerivative(gridData, field, newPoint);
+                secondDerivative[n] = SecondDerivative(field, jLocal, nodeSet);
 
                 // Check if sign of second derivative has changed
                 // Halve the step size and change direction
