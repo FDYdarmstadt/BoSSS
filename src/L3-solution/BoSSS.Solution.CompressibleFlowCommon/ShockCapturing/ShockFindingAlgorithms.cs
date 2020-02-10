@@ -19,6 +19,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using System;
+using System.Collections;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
     /// <summary>
@@ -36,7 +37,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             return new NodeSet(gridData.Cells.GetRefElement(globalCellIndex), LocalVerticesOut);
         }
 
-        public static double[] Gradient(SinglePhaseField field, int localCellIndex, NodeSet nodeSet) {
+        public static double[] NormalizedGradient(SinglePhaseField field, int localCellIndex, NodeSet nodeSet) {
             // Evaluate gradient
             int length = 1;
             int noOfNodes = 1;
@@ -44,7 +45,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             MultidimensionalArray gradient = MultidimensionalArray.Create(length, noOfNodes, D);
             field.EvaluateGradient(localCellIndex, 1, nodeSet, gradient, ResultCellindexOffset: 0, ResultPreScale: 1.0);
 
-            return gradient.ExtractSubArrayShallow(0, 0, -1).To1DArray();
+            // Normalize gradient
+            double[] tmp = gradient.ExtractSubArrayShallow(0, 0, -1).To1DArray();
+            tmp.Normalize();
+            return tmp;
         }
 
         public static double SecondDerivative(SinglePhaseField field, int localCellIndex, NodeSet nodeSet) {
@@ -83,7 +87,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         /// <returns></returns>
         public static int WalkOnCurve(GridData gridData, SinglePhaseField field, int maxIterations, double threshold, MultidimensionalArray points, double[] secondDerivative, double[] stepSize) {
             // Set initial step size to 0.5 * h_minGlobal
-            stepSize[0] = gridData.Cells.h_minGlobal;
+            stepSize[0] = 0.5 * gridData.Cells.h_minGlobal;
 
             // Init
             // Current (global) point
@@ -105,24 +109,32 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             int n = 1;
             while (n < maxIterations + 1) {
                 // Evaluate the gradient of the current point
-                double[] gradient = Gradient(field, jLocal, nodeSet);
-
-                //gridData.GetCellNeighbours(jCell, GetCellNeighbours_Mode.ViaVertices, out int[] cellneighbours, out int[] connectingEntities);
-                //gridData.Cells.IsInCell()       
+                double[] gradient = NormalizedGradient(field, jLocal, nodeSet);
 
                 // Compute new point along curve
                 points[n, 0] = currentPoint[0] + gradient[0] * stepSize[n - 1];
                 points[n, 1] = currentPoint[1] + gradient[1] * stepSize[n - 1];
                 currentPoint = points.ExtractSubArrayShallow(n, -1).To1DArray();
 
-                // Compute global cell index of new point
-                gridData.LocatePoint(currentPoint, out GlobalId, out GlobalIndex, out IsInside, out OnThisProcess);
+                // Check if new point is still in the same cell or has moved to one of its neighbours
+                if (!gridData.Cells.IsInCell(currentPoint, jLocal)) {
+                    // Get CellMask of cell neighbours
+                    gridData.GetCellNeighbours(jLocal, GetCellNeighbours_Mode.ViaVertices, out int[] cellNeighbours, out int[] connectingEntities);
+                    BitArray btArray = new BitArray(gridData.Cells.NoOfLocalUpdatedCells);
+                    foreach (int neighbour in cellNeighbours) {
+                        btArray[neighbour] = true;
+                    }
+                    CellMask neighbours = new CellMask(gridData, btArray);
 
-                // Compute local node set
-                nodeSet = GetLocalNodeSet(gridData, currentPoint, (int)GlobalIndex);
+                    // Compute global cell index of new point
+                    gridData.LocatePoint(currentPoint, out GlobalId, out GlobalIndex, out IsInside, out OnThisProcess, neighbours);
 
-                // Get local cell index of new point
-                jLocal = (int)(GlobalIndex - j0Grd);
+                    // Compute local node set
+                    nodeSet = GetLocalNodeSet(gridData, currentPoint, (int)GlobalIndex);
+
+                    // Get local cell index of new point
+                    jLocal = (int)(GlobalIndex - j0Grd);
+                }
 
                 // Evaluate the second derivative of the new point
                 secondDerivative[n] = SecondDerivative(field, jLocal, nodeSet);
