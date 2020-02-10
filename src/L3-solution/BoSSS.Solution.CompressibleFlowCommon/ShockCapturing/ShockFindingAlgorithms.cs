@@ -26,38 +26,38 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
     /// in two dimensions. Can be used to find the shock location. 
     /// </summary>
     public static class ShockFindingAlgorithms {
-        public static NodeSet GetLocalNodeSet(GridData gridData, double[] globalPoint, int globalIndex) {
+        public static NodeSet GetLocalNodeSet(GridData gridData, double[] globalPoint, int globalCellIndex) {
             int D = 2;
             MultidimensionalArray GlobalVerticesIn = MultidimensionalArray.CreateWrapper(globalPoint, 1, D);
             MultidimensionalArray LocalVerticesOut = MultidimensionalArray.CreateWrapper(new double[D], 1, D);
 
-            gridData.TransformGlobal2Local(GlobalVerticesIn, LocalVerticesOut, globalIndex, NewtonConvergence: null);
+            gridData.TransformGlobal2Local(GlobalVerticesIn, LocalVerticesOut, globalCellIndex, NewtonConvergence: null);
 
-            return new NodeSet(gridData.Cells.GetRefElement(globalIndex), LocalVerticesOut);
+            return new NodeSet(gridData.Cells.GetRefElement(globalCellIndex), LocalVerticesOut);
         }
 
-        public static double[] Gradient(SinglePhaseField field, int localIndex, NodeSet nodeSet) {
+        public static double[] Gradient(SinglePhaseField field, int localCellIndex, NodeSet nodeSet) {
             // Evaluate gradient
             int length = 1;
             int noOfNodes = 1;
             int D = 2;
             MultidimensionalArray gradient = MultidimensionalArray.Create(length, noOfNodes, D);
-            field.EvaluateGradient(localIndex, 1, nodeSet, gradient, ResultCellindexOffset: 0, ResultPreScale: 1.0);
+            field.EvaluateGradient(localCellIndex, 1, nodeSet, gradient, ResultCellindexOffset: 0, ResultPreScale: 1.0);
 
             return gradient.ExtractSubArrayShallow(0, 0, -1).To1DArray();
         }
 
-        public static double SecondDerivative(SinglePhaseField field, int localIndex, NodeSet nodeSet) {
+        public static double SecondDerivative(SinglePhaseField field, int localCellIndex, NodeSet nodeSet) {
             // Evaluate gradient
             int length = 1;
             int noOfNodes = 1;
             int D = 2;
             MultidimensionalArray gradient = MultidimensionalArray.Create(length, noOfNodes, D);
-            field.EvaluateGradient(localIndex, 1, nodeSet, gradient, ResultCellindexOffset: 0, ResultPreScale: 1.0);
+            field.EvaluateGradient(localCellIndex, 1, nodeSet, gradient, ResultCellindexOffset: 0, ResultPreScale: 1.0);
 
             // Evalaute Hessian matrix
             MultidimensionalArray hessian = MultidimensionalArray.Create(length, noOfNodes, D, D);
-            field.EvaluateHessian(localIndex, 1, nodeSet, hessian);
+            field.EvaluateHessian(localCellIndex, 1, nodeSet, hessian);
 
             // Compute second derivative along curve
             double g_alpha_alpha = 2 * ((hessian[0, 0, 0, 0] * gradient[0, 0, 0]
