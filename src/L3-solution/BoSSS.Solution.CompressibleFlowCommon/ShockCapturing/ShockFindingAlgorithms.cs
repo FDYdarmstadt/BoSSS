@@ -58,6 +58,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             // Compute global cell ID of the point
             gridData.LocatePoint(point, out long GlobalId, out long GlobalIndex, out bool IsInside, out bool OnThisProcess);
 
+            int j0Grd = gridData.CellPartitioning.i0;
+            int jLocal = (int)(GlobalIndex - j0Grd);
+
             // Compute local node set
             NodeSet nodeSet = GetLocalNodeSet(gridData, point, GlobalIndex);
 
@@ -66,11 +69,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             int noOfNodes = 1;
             int D = 2;
             MultidimensionalArray gradient = MultidimensionalArray.Create(length, noOfNodes, D);
-            field.EvaluateGradient((int)GlobalIndex, 1, nodeSet, gradient, ResultCellindexOffset: 0, ResultPreScale: 1.0);
+            field.EvaluateGradient(jLocal, 1, nodeSet, gradient, ResultCellindexOffset: 0, ResultPreScale: 1.0);
 
             // Evalaute Hessian matrix
             MultidimensionalArray hessian = MultidimensionalArray.Create(length, noOfNodes, D, D);
-            field.EvaluateHessian((int)GlobalIndex, 1, nodeSet, hessian);
+            field.EvaluateHessian(jLocal, 1, nodeSet, hessian);
 
             // Compute second derivative along curve
             double g_alpha_alpha = 2 * ((hessian[0, 0, 0, 0] * gradient[0, 0, 0]
@@ -106,6 +109,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 // Evaluate the gradient of the current point
                 double[] gradient = Gradient(gridData, field, currentPoint);
 
+                //gridData.GetCellNeighbours(jCell, GetCellNeighbours_Mode.ViaVertices, out int[] cellneighbours, out int[] connectingEntities);
+
+                //gridData.Cells.IsInCell()       
+
                 // Compute new point along curve
                 double[] newPoint = new double[currentPoint.Length];
                 newPoint[0] = currentPoint[0] + gradient[0] * stepSize[n - 1];
@@ -136,6 +143,18 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             }
 
             return n;
+        }
+
+        public static double[] GetAVMeanValues(GridData gridData, SinglePhaseField avField) {
+            CellMask allCells = CellMask.GetFullMask(gridData);
+            int numOfCells = gridData.iGeomCells.Count;
+            double[] result = new double[numOfCells];
+
+            foreach (int cell in allCells.ItemEnum) {
+                result[cell] = avField.GetMeanValue(cell);
+            }
+
+            return result;
         }
     }
 }
