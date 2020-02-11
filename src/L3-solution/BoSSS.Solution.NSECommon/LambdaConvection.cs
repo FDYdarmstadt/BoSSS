@@ -28,28 +28,30 @@ namespace BoSSS.Solution.NSECommon {
     static public class LambdaConvection {
 
         /// <summary>
-        /// Lambda for convective operators without density,
-        /// i.e. incompressible momentum equation and
-        /// Level-Set advection for multiphase flows.
+        /// Generic Lambda for convective operators of form \nabla(U Scalar)
         /// </summary>
+        /// <param name="ScalarMean"></param>
         /// <param name="VelocityMean"></param>
         /// <param name="Normal"></param>
         /// <param name="FactorTwo">
-        /// True: Lambda = 2.0 * V_n (used for momentum equation).
-        /// False: Lambda = V_n (used for Level-Set equation).
+        /// True: Lambda = 2.0 * rho * V_n (used for momentum equation).
+        /// False: Lambda = rho * V_n (used for temperature equation).
         /// </param>
-        /// <returns>
+        /// <returns>        
         /// </returns>
-        static public double GetLambda(double[] VelocityMean, double[] Normal, bool FactorTwo) {
+        static public double GetLambda(double[] VelocityMean, double[] Normal, bool FactorTwo, double ScalarMean = 1) {
             Debug.Assert(VelocityMean.Length == Normal.Length, "Mismatch in dimensions!");
 
             double V_n = 0.0;
             for (int d = 0; d < VelocityMean.Length; d++)
                 V_n += VelocityMean[d] * Normal[d];
 
-            double Lambda = V_n;
+            double Lambda = ScalarMean * V_n;
             if (FactorTwo)
                 Lambda *= 2.0;
+
+            if (double.IsNaN(Lambda) || double.IsInfinity(Lambda))
+                throw new NotFiniteNumberException();
 
             return Math.Abs(Lambda);
         }
@@ -70,22 +72,9 @@ namespace BoSSS.Solution.NSECommon {
         /// <returns>        
         /// </returns>
         static public double GetLambda(double[] VelocityMean, double[] Normal, MaterialLaw EoS, bool FactorTwo, params double[] ScalarMean) {
-            Debug.Assert(VelocityMean.Length == Normal.Length, "Mismatch in dimensions!");
-
-            double V_n = 0.0;
-            for (int d = 0; d < VelocityMean.Length; d++)
-                V_n += VelocityMean[d] * Normal[d];
-
             double rhoMean = EoS.GetDensity(ScalarMean);
-
-            double Lambda = rhoMean * V_n;
-            if (FactorTwo)
-                Lambda *= 2.0;
-
-            if (double.IsNaN(Lambda) || double.IsInfinity(Lambda))
-                throw new NotFiniteNumberException();
-
-            return Math.Abs(Lambda);
+            return GetLambda(VelocityMean, Normal, FactorTwo, rhoMean);
         }
+
     }
 }
