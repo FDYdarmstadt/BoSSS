@@ -1334,8 +1334,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
 
 #if DEBUG
-                if (Config_MassMatrixShapeandDependence != MassMatrixShapeandDependence.IsIdentity
-                    && this.ComputeMassMatrix == null) {
+                if (Config_MassMatrixShapeandDependence != MassMatrixShapeandDependence.IsIdentity && this.ComputeMassMatrix == null) {
                     // compare "private" and "official" mass matrix stack
                     // (private may be removed soon)
 

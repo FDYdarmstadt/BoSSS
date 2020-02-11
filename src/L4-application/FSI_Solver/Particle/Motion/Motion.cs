@@ -852,7 +852,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="fluidViscosity"></param>
         public double ComputeParticleRe(double fluidViscosity) {
-            return m_TranslationalVelocity[0].L2Norm() * MaxParticleLengthScale / fluidViscosity;
+            return 2 * m_TranslationalVelocity[0].L2Norm() * MaxParticleLengthScale / fluidViscosity;
         }
 
         /// <summary>

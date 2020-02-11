@@ -25,6 +25,7 @@ using BoSSS.Solution;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.RheologyCommon;
 using BoSSS.Solution.Tecplot;
+using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;
 using FSI_Solver;
@@ -376,7 +377,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             CreateTimestepper();
         }
-
+        int bdforder = 0;
         /// <summary>
         /// Creates the BDF-Timestepper
         /// </summary>
@@ -412,7 +413,7 @@ namespace BoSSS.Application.FSI_Solver {
                 bdfOrder = Convert.ToInt32(this.Control.Timestepper_Scheme.ToString().Substring(3));
             else
                 throw new NotImplementedException("Only Crank-Nicolson, Implicit-Euler and BDFxxx are implemented.");
-
+            bdforder = bdfOrder;
             m_BDF_Timestepper = new XdgBDFTimestepping(
                 Fields: ArrayTools.Cat(Velocity, Pressure),
                 IterationResiduals: ArrayTools.Cat(ResidualMomentum, ResidualContinuity),
@@ -570,22 +571,6 @@ namespace BoSSS.Application.FSI_Solver {
                     // any color in one cellmask
                     // -----------------------------
                     allParticleMask = allParticleMask == null ? coloredCellMask : allParticleMask.Union(coloredCellMask);
-                    //double levelSetFunction(double[] X, double t) {
-                    //    // Generating the correct sign
-                    //    double levelSetFunctionOneColor = Math.Pow(-1, particlesOfCurrentColor.Length - 1);
-                    //    // Multiplication over all particle-level-sets within the current color
-                    //    for (int pC = 0; pC < particlesOfCurrentColor.Length; pC++) {
-                    //        Particle currentParticle = m_Particles[particlesOfCurrentColor[pC]];
-                    //        double tempLevelSetFunction = currentParticle.LevelSetFunction(X);
-                    //        // prevent extreme values
-                    //        if (tempLevelSetFunction > 1)
-                    //            tempLevelSetFunction = 1;
-                    //        levelSetFunctionOneColor *= tempLevelSetFunction;
-                    //        // Delete the particle within the current color from the particle color array
-                    //        _globalParticleColor[particlesOfCurrentColor[pC]] = 0;
-                    //    }
-                    //    return levelSetFunctionOneColor;
-                    //}
                     // Particle level set
                     // -----------------------------
                     double levelSetFunction(double[] X, double t) {
@@ -886,6 +871,8 @@ namespace BoSSS.Application.FSI_Solver {
             using (new FuncTrace()) {
                 // init
                 ResLogger.TimeStep = TimestepInt;
+                var m_TSCchain = BDFCommon.GetChain(bdforder);
+                var S = m_TSCchain[0].S;
                 dt = GetFixedTimestep();
                 Console.WriteLine("Starting time-step " + TimestepInt + "...");
                 if (initAddedDamping) {
@@ -972,7 +959,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                     // particle position
                     // -------------------------------------------------
-                    //CalculateParticlePosition(dt);
+                    CalculateParticlePosition(dt);
 
                     // print
                     // -------------------------------------------------
@@ -982,7 +969,7 @@ namespace BoSSS.Application.FSI_Solver {
                     // level set tracker 
                     // -------------------------------------------------
                     if (IsFullyCoupled) {// in other branches, called by the BDF timestepper
-                        LsTrk.IncreaseHistoryLength(1);
+                        LsTrk.IncreaseHistoryLength(S+1);
                         LsTrk.PushStacks();
                     }
                 }

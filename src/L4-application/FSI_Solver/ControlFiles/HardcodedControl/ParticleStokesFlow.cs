@@ -70,7 +70,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Coupling Properties
             // =============================
-            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
             C.maxIterationsFullyCoupled = 20000;
 
@@ -86,9 +86,9 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control WetParticleWallCollision(int k = 3, double DensityFactor = 100, int amrLevel = 4) {
+        public static FSI_Control WetParticleWallCollision(int k = 2, double DensityFactor = 100, int amrLevel = 0) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "wetParticleWallCollision");
-            C.SetSaveOptions(@"D:\BoSSS_databases\wetParticleCollision", 1);
+            C.SetSaveOptions(@"\\hpccluster\hpccluster-scratch\deussen\cluster_db\WetParticleCollision", 1);
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
 
             List<string> boundaryValues = new List<string> {
@@ -98,8 +98,8 @@ namespace BoSSS.Application.FSI_Solver {
                 "Pressure_Dirichlet_upper"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 8, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(3);
+            C.SetGrid(lengthX: 1, lengthY: 1, cellsPerUnitLength: 8, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(amrLevel);
             C.hydrodynamicsConvergenceCriterion = 1e-1;
             C.pureDryCollisions = false;
 
@@ -149,7 +149,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(dt: 1e-4, noOfTimesteps: 10000);
+            C.SetTimesteps(dt: 1e-3, noOfTimesteps: 10000);
 
             // haben fertig...
             // ===============
