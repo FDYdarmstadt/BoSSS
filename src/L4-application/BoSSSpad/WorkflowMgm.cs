@@ -87,10 +87,22 @@ namespace BoSSS.Application.BoSSSpad {
         public void SetNameBasedSessionJobControllCorrelation() {
             SessionInfoJobCorrelation = delegate (ISessionInfo sinf, Job job) {
                 try {
+                    // compare project name
+                    if(!sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.PROJECTNAME_KEY))
+                        return false;
+
+                    if(!Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.PROJECTNAME_KEY]).Equals(this.CurrentProject))
+                        return false;
+
+                    // compare session name
                     if(!sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.SESSIONNAME_KEY))
                         return false;
 
-                    return Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.SESSIONNAME_KEY]).Equals(job.Name);
+                    if(!Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.SESSIONNAME_KEY]).Equals(job.Name))
+                        return false;
+                    
+                    // fall tests passed
+                    return true;
                 } catch(Exception) {
                     return false;
                 }
@@ -98,13 +110,37 @@ namespace BoSSS.Application.BoSSSpad {
             };
             SessionInfoAppControlCorrelation = delegate (ISessionInfo sinf, AppControl ctrl) {
                 try {
+                    // compare project name
+                    if(!sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.PROJECTNAME_KEY))
+                        return false;
+
+                    if(!Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.PROJECTNAME_KEY]).Equals(ctrl.ProjectName))
+                        return false;
+
+                    // compare session name
                     if(!sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.SESSIONNAME_KEY))
                         return false;
-                    
-                    return Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.SESSIONNAME_KEY]).Equals(ctrl.SessionName);
+
+                    if(!Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.SESSIONNAME_KEY]).Equals(ctrl.SessionName))
+                        return false;
+
+                    // fall tests passed
+                    return true;
+
                 } catch(Exception) {
                     return false;
                 }
+            };
+
+            JobAppControlCorrelation = delegate (Job j, AppControl c) {
+                Debug.Assert(j != null);
+                var jc = j.GetControl();
+                if(jc == null) {
+                    return false;
+                }
+                if(c == null)
+                    return false;
+                return (jc.SessionName == c.SessionName) && (jc.ProjectName == c.ProjectName);
             };
         }
 
@@ -136,6 +172,15 @@ namespace BoSSS.Application.BoSSSpad {
                     return false;
                 }
             };
+
+            JobAppControlCorrelation = delegate (Job j, AppControl c) {
+                Debug.Assert(j != null);
+                var jc = j.GetControl();
+                if(jc == null) {
+                    return false;
+                }
+                return jc.Equals(c);
+            };
         }
 
 
@@ -149,6 +194,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public Func<ISessionInfo, AppControl, bool> SessionInfoAppControlCorrelation;
 
+        /// <summary>
+        /// Defines, global for the entire workflow management, how jobs in the project correlate to control objects.
+        /// </summary>
+        public Func<Job, AppControl, bool> JobAppControlCorrelation;
+
+       
 
         /// <summary>
         /// Defines the name of the current project;

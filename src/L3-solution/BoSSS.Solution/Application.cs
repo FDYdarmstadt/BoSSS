@@ -925,6 +925,8 @@ namespace BoSSS.Solution {
 
                     CurrentSessionInfo.Description = this.Control.ProjectDescription;
 
+                    if (this.Control.ProjectName != null)
+                        CurrentSessionInfo.KeysAndQueries.Add(PROJECTNAME_KEY, this.Control.ProjectName);
                     if (this.Control.SessionName != null)
                         CurrentSessionInfo.KeysAndQueries.Add(SESSIONNAME_KEY, this.Control.SessionName);
                 }
@@ -2375,14 +2377,18 @@ namespace BoSSS.Solution {
             throw new NotImplementedException("Must be implemented by user (if he wants to use load balancing).");
         }
 
-
+        /// <summary>
+        /// The name of a specific simulation should be logged in the <see cref="ISessionInfo.KeysAndQueries"/> under this key,
+        /// see also <see cref="AppControl.SessionName"/>
+        /// </summary>
+        public const string SESSIONNAME_KEY = "SessionName";
 
 
         /// <summary>
-        /// The name of a specific simulation should be logged in the <see cref="ISessionInfo.KeysAndQueries"/>
-        /// under this key.
+        /// The name of a specific project should be logged in the <see cref="ISessionInfo.KeysAndQueries"/> under this key,
+        /// see also <see cref="AppControl.ProjectName"/>
         /// </summary>
-        public const string SESSIONNAME_KEY = "SessionName";
+        public const string PROJECTNAME_KEY = "ProjectName";
 
         /// <summary>
         /// Called before application finishes (internal Bye)

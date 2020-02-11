@@ -142,7 +142,97 @@ namespace BoSSS.Application.BoSSSpad {
             databases = new IDatabaseInfo[0];
             m_WorkflowMgm = null;
         }
+        
 
+        /// <summary>
+        /// Prints Information on an object state.
+        /// </summary>
+        static public void Info(object o, int MaxRecursionDepth = 20) {
+            InfoRecursive(o, 0, MaxRecursionDepth);
+        }
+
+
+        static void InfoRecursive(object obj, int RecursionDepth, int MaxRecursionDepth) {
+            if(obj == null) {
+                Console.WriteLine("Null");
+                return;
+            }
+
+            if(RecursionDepth > MaxRecursionDepth) {
+                Console.WriteLine(" ... no further recursion - max recursion depth reached.");
+                return;
+            }
+
+            Type objT = obj.GetType();
+            if ((objT.IsPrimitive || objT.IsEnum || objT == typeof(string))) {
+                Console.WriteLine(obj.ToString() + " (" + objT.Name + ")");
+                return;
+            }
+
+            if (objT.IsSubclassOf(typeof(System.Delegate))) {
+                // unable to log delegates
+                Console.WriteLine("Delegate");
+                return;
+            }
+
+            void WriteSpaces() {
+                //Console.WriteLine();
+                for(int i = 0; i < RecursionDepth; i++)
+                    Console.Write(" ");
+            }
+
+
+            if (obj is System.Collections.IEnumerable) {
+                System.Collections.IEnumerable objEnu = (System.Collections.IEnumerable)obj;
+                int cnt = 0;
+                foreach (var objE in objEnu) {
+                    WriteSpaces();
+                    Console.Write("[{0}]: ", cnt);
+                    cnt++;
+                    InfoRecursive(objE, RecursionDepth + 1, MaxRecursionDepth);
+                }
+                return;
+            }
+
+            BindingFlags biFlags = BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public | BindingFlags.GetProperty;
+
+            MemberInfo[] PIs = objT.GetProperties(biFlags);
+            MemberInfo[] FIs = objT.GetFields(biFlags);
+
+            foreach (MemberInfo mi in ArrayTools.Cat(PIs, FIs)) {
+                WriteSpaces();
+                Console.Write(mi.Name + ": ");
+                
+                object Val;
+                if (mi is PropertyInfo) {
+                    PropertyInfo pi = ((PropertyInfo)mi);
+                    if(!pi.CanRead) {
+                        Console.WriteLine("cannot read.");
+                        continue;
+                    }
+                    if(pi.GetIndexParameters() != null && pi.GetIndexParameters().Length > 0) {
+                        // no support for indexed properties.
+                        Console.WriteLine("indexed property - not supported.");
+                        continue;
+                    }
+
+                    //pi.GetIndexParameters
+                    try {
+                        Val = pi.GetValue(obj, biFlags, null, null, null);
+                    } catch (TargetInvocationException tie) {
+                        Console.WriteLine(tie.GetType().Name + ": " + tie.Message);
+                        continue;
+                    }
+                } else if (mi is FieldInfo) {
+                    Val = ((FieldInfo)mi).GetValue(obj);
+                } else {
+                    Console.WriteLine("unsupported member type: " + mi.GetType().FullName + ".");
+                    continue;
+                }
+
+                InfoRecursive(Val, RecursionDepth + 1, MaxRecursionDepth);
+            }
+        }
 
 
         /// <summary>

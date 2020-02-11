@@ -67,6 +67,7 @@ namespace BoSSS.Application.BoSSSpad {
 
         /// <summary>
         /// The name for the job; note that it serves as a unique, persistent identifier within the work flow management.
+        /// Usually, set equal to the session name <see cref="BoSSS.Solution.Control.AppControl.SessionName"/>.
         /// </summary>
         public string Name {
             private set;
@@ -75,7 +76,7 @@ namespace BoSSS.Application.BoSSSpad {
 
         
         /// <summary>
-        /// The memory (in MB) that is resevered for every core
+        /// The memory (in MB) that is reserved for every core
         /// </summary>
         public string MemPerCPU {
             set;
@@ -88,7 +89,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// (Optional) object used by some batch processor (after calling <see cref="BatchProcessorClient.Submit(Job)"/>)
         /// in order to identify the job.
         /// </summary>
-        public object BatchProcessorIdentifierToken {
+        public string BatchProcessorIdentifierToken {
             private set;
             get;
         }
@@ -390,6 +391,8 @@ namespace BoSSS.Application.BoSSSpad {
 
             ctrl.VerifyEx();
             m_ctrl = ctrl;
+            m_ctrl.ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
+
             // note: serialization is done later, immediately before deployment,
             // since we may need to fix database issues (path on batch system, evtl. transfer of grid)
 
@@ -472,20 +475,7 @@ namespace BoSSS.Application.BoSSSpad {
             return m_ctrl;
         }
 
-
-
-        /*
-        /// <summary>
-        /// Specifies command line arguments for application startup; overrides any startup arguments (<see cref="CommandLineArguments"/>)
-        /// set so far.
-        /// </summary>
-        public void SetControlFile(string FileName) {
-            File.ReadAllText(FileName);
-            SetControlCode(File.ReadAllText(FileName));
-        }
-        */
-
-
+        
         string[] m_CommandLineArguments = new string[0];
 
         /// <summary>
@@ -510,11 +500,23 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
-        /// The deployment directory, accessible from the local machine (e.g. a mounted path if the job is deployed to another computer)
+        /// The deployment directory, accessible from the local machine (e.g. a mounted path if the job is deployed to another computer);
+        /// This should be an absolute path.
         /// </summary>
         public string DeploymentDirectory {
             get;
             private set;            
+        }
+
+
+        /// <summary>
+        /// The last directory of <see cref="DeploymentDirectory"/>.
+        /// </summary>
+        public string RelativeDeploymentDirectory {
+            get {
+                var parts = DeploymentDirectory.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
+                return parts.Last();
+            }
         }
 
         int m_NumberOfMPIProcs = 1;
@@ -691,36 +693,49 @@ namespace BoSSS.Application.BoSSSpad {
             if (AssignedBatchProc == null)
                 return JobStatus.PreActivation;
 
-            bool isSubmitted, isRunning, wasSuccessful, isFailed;
-            AssignedBatchProc.EvaluateStatus(this, out SubmitCount, out isRunning, out wasSuccessful, out isFailed, out DD);
-            isSubmitted = SubmitCount > 0;
-            bool isPending = isSubmitted && !(isRunning || wasSuccessful || isFailed);
-
-            if (isPending)
-                return JobStatus.PendingInExecutionQueue;
-
-            if (isRunning)
-                return JobStatus.InProgress;
-
+            // test is session exists
             ISessionInfo[] RR = this.AllSessions;
             ISessionInfo R = RR.Length > 0 ? RR.OrderBy(si => si.CreationTime).Last() : null;
 
-            //if (RR.Length == 0)
-            //    // maybe finished, but no result is known.
-            //    return JobStatus.PreActivation;
-
-            if (wasSuccessful || RR.Any(si => !si.Tags.Contains(SessionInfo.NOT_TERMINATED_TAG)))
+            if (RR.Any(si => !si.Tags.Contains(SessionInfo.NOT_TERMINATED_TAG)))
                 return JobStatus.FinishedSuccessful;
 
-            if (isSubmitted && !(isFailed || wasSuccessful) && (R == null))
+            // find the deployment directory
+            var directories = AssignedBatchProc.GetAllExistingDeployDirectories(this);
+            if(directories == null || directories.Length <= 0) {
+                throw new IOException("Job is assigned to batch processor, but no deployment directory can be found.");
+            }
+            Array.Sort(directories, FuncComparerExtensions.ToComparer((DirectoryInfo a, DirectoryInfo b) => DateTime.Compare(a.CreationTime, b.CreationTime)));
+            DirectoryInfo _DD = directories.Last();
+            DD = _DD.FullName;
+            SubmitCount = DD.Length;
+
+            // Obtain token
+            string bpcToken = this.BatchProcessorIdentifierToken;
+            if(bpcToken.IsNullOrEmpty()) {
+                var l = File.ReadAllText(Path.Combine(DD, "IdentifierToken.txt"));
+                bpcToken = l.Trim();
+                this.BatchProcessorIdentifierToken = bpcToken;
+            }
+            
+            // ask the batch processor
+            AssignedBatchProc.EvaluateStatus(bpcToken, DD, out bool isRunning, out bool isTerminated, out int ExitCode);
+            bool isPending = (isRunning == false) && (isTerminated == false);
+
+            if (isPending)
                 return JobStatus.PendingInExecutionQueue;
+            if (isRunning)
+                return JobStatus.InProgress;
 
-            if (isSubmitted == false && isRunning == false && wasSuccessful == false && isFailed == false && (RR.Length <= 0))
-                return JobStatus.PreActivation;
+            if(isTerminated) {
+                if(R != null && R.Tags.Contains(SessionInfo.NOT_TERMINATED_TAG))
+                    return JobStatus.Failed;
 
-            if (isFailed || (R == null || R.Tags.Contains(SessionInfo.NOT_TERMINATED_TAG)))
-                return JobStatus.Failed;
+                if(ExitCode != 0)
+                    return JobStatus.Failed;
 
+                return JobStatus.FinishedSuccessful;
+            }
 
             throw new IOException("Unable to determine job status.");
         }
@@ -833,12 +848,10 @@ namespace BoSSS.Application.BoSSSpad {
                 RequiresDeploy = false;
             }
 
-            if(m_ctrl != null) {
-                // some database syncing might be necessary 
-            }
-
+            // some database syncing might be necessary 
             FiddleControlFile(bpc);
 
+            // deploy additional files
             if (RequiresDeploy) {
                 this.DeploymentDirectory = bpc.GetNewDeploymentDir(this);
                 bpc.DeployExecuteables(this, AdditionalDeploymentFiles);
@@ -846,6 +859,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             // submit job
             this.BatchProcessorIdentifierToken = bpc.Submit(this);
+            File.WriteAllText(Path.Combine(this.DeploymentDirectory, "IdentifierToken.txt"), this.BatchProcessorIdentifierToken);
         }
 
         int m_RetryCount = 1;

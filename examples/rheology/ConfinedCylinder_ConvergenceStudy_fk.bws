@@ -5,8 +5,8 @@ restart
 
 Databases loaded:
 List of 2 instances of IDatabaseInfo {
-  0: { Session Count = 6; Grid Count = 6; Path = C:\Users\flori\default_bosss_db }
-  1: { Session Count = 0; Grid Count = 0; Path = X:\bosss_db_lichtenberg }
+  0: { Session Count = 20; Grid Count = 9; Path = C:\Users\flori\default_bosss_db }
+  1: { Session Count = 5; Grid Count = 2; Path = X:\bosss_db_lichtenberg }
 }
 Setting Matlab Connector to Octave...
 
@@ -17,8 +17,8 @@ Mini batch processor is already running.
 databases;
 **************
 List of 2 instances of IDatabaseInfo {
-  0: { Session Count = 6; Grid Count = 6; Path = C:\Users\flori\default_bosss_db }
-  1: { Session Count = 0; Grid Count = 0; Path = X:\bosss_db_lichtenberg }
+  0: { Session Count = 20; Grid Count = 9; Path = C:\Users\flori\default_bosss_db }
+  1: { Session Count = 5; Grid Count = 2; Path = X:\bosss_db_lichtenberg }
 }
 ==============
 var myDb = OpenOrCreateDefaultDatabase();
@@ -37,7 +37,7 @@ List of 2 instances of BatchProcessorClient {
 ExecutionQueues[1].AllowedDatabases;
 **************
 List of 1 instances of IDatabaseInfo {
-  0: { Session Count = 0; Grid Count = 0; Path = X:\bosss_db_lichtenberg }
+  0: { Session Count = 5; Grid Count = 2; Path = X:\bosss_db_lichtenberg }
 }
 ==============
 //object.ReferenceEquals(ExecutionQueues[1].AllowedDatabases[0], databases[1]);
@@ -65,13 +65,16 @@ WorkflowMgm.SetEqualityBasedSessionJobControllCorrelation();
 ==============
 databases[0].Grids;
 **************
-List of 6 instances of IGridInfo {
-  0: { Guid = fb5b0959-f165-4291-b0ce-aac46ba131a8; Name = confined_cylinder; Cell Count = 29424; Dim = 2 }
-  1: { Guid = bb3239f2-479d-46e4-9187-ba47dc8cfc63; Name = confined_cylinder; Cell Count = 2416; Dim = 2 }
-  2: { Guid = db1797a9-6bc4-4194-984a-03b67598fa19; Name = confined_cylinder; Cell Count = 8504; Dim = 2 }
-  3: { Guid = 1c9cb150-88d3-4ee1-974d-7970eabd3cf8; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
-  4: { Guid = de21d682-8289-4d6d-8669-a07ee995f69c; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
-  5: { Guid = 3b80ee3c-7b94-4d18-a297-9f3f815a7110; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
+List of 9 instances of IGridInfo {
+  0: { Guid = c76fc3a9-612b-429b-b563-088cfcf183f5; Name = confined_cylinder; Cell Count = 29424; Dim = 2 }
+  1: { Guid = c8b9c86b-e963-4794-9172-1906f13a29c8; Name = confined_cylinder; Cell Count = 8504; Dim = 2 }
+  2: { Guid = 8e2368da-9880-430f-8db3-5cec041e9c86; Name = confined_cylinder; Cell Count = 2416; Dim = 2 }
+  3: { Guid = 3ec220d5-462e-4419-af24-9eb60a054d84; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
+  4: { Guid = ee5e22fa-5042-4457-a724-72aca22c14c1; Name = ; Cell Count = 1024; Dim = 2 }
+  5: { Guid = e076c8db-756e-4689-9bba-2e8e2aca758b; Name = ; Cell Count = 256; Dim = 2 }
+  6: { Guid = 07bb2a2e-caf5-422f-998e-bf7c9414a1bc; Name = ; Cell Count = 64; Dim = 2 }
+  7: { Guid = df08ceaf-2fac-43c2-86a2-a012f61ea304; Name = ; Cell Count = 16; Dim = 2 }
+  8: { Guid = b55230a3-cf2c-4431-a452-a127dc2f44bb; Name = ; Cell Count = 4; Dim = 2 }
 }
 ==============
 var GridSeq = new IGridInfo[4];
@@ -92,10 +95,10 @@ GridSeq[0] = databases[0].Grids.FirstOrDefault(g => g.NumberOfCells == 640 && g.
 GridSeq;
 **************
 List of 4 instances of IGridInfo {
-  0: { Guid = 1c9cb150-88d3-4ee1-974d-7970eabd3cf8; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
-  1: { Guid = bb3239f2-479d-46e4-9187-ba47dc8cfc63; Name = confined_cylinder; Cell Count = 2416; Dim = 2 }
-  2: { Guid = db1797a9-6bc4-4194-984a-03b67598fa19; Name = confined_cylinder; Cell Count = 8504; Dim = 2 }
-  3: { Guid = fb5b0959-f165-4291-b0ce-aac46ba131a8; Name = confined_cylinder; Cell Count = 29424; Dim = 2 }
+  0: { Guid = 3ec220d5-462e-4419-af24-9eb60a054d84; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
+  1: { Guid = 8e2368da-9880-430f-8db3-5cec041e9c86; Name = confined_cylinder; Cell Count = 2416; Dim = 2 }
+  2: { Guid = c8b9c86b-e963-4794-9172-1906f13a29c8; Name = confined_cylinder; Cell Count = 8504; Dim = 2 }
+  3: { Guid = c76fc3a9-612b-429b-b563-088cfcf183f5; Name = confined_cylinder; Cell Count = 29424; Dim = 2 }
 }
 ==============
 // Plotting 
@@ -141,10 +144,29 @@ for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
 GridSeq;
 **************
 List of 4 instances of IGridInfo {
-  0: { Guid = 1c9cb150-88d3-4ee1-974d-7970eabd3cf8; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
-  1: { Guid = bb3239f2-479d-46e4-9187-ba47dc8cfc63; Name = confined_cylinder; Cell Count = 2416; Dim = 2 }
-  2: { Guid = db1797a9-6bc4-4194-984a-03b67598fa19; Name = confined_cylinder; Cell Count = 8504; Dim = 2 }
-  3: { Guid = fb5b0959-f165-4291-b0ce-aac46ba131a8; Name = confined_cylinder; Cell Count = 29424; Dim = 2 }
+  0: { Guid = 3ec220d5-462e-4419-af24-9eb60a054d84; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
+  1: { Guid = 8e2368da-9880-430f-8db3-5cec041e9c86; Name = confined_cylinder; Cell Count = 2416; Dim = 2 }
+  2: { Guid = c8b9c86b-e963-4794-9172-1906f13a29c8; Name = confined_cylinder; Cell Count = 8504; Dim = 2 }
+  3: { Guid = c76fc3a9-612b-429b-b563-088cfcf183f5; Name = confined_cylinder; Cell Count = 29424; Dim = 2 }
+}
+==============
+//databases[0].Grids;
+**************
+==============
+AllGrids;
+**************
+List of 11 instances of IGridInfo {
+  0: { Guid = c76fc3a9-612b-429b-b563-088cfcf183f5; Name = confined_cylinder; Cell Count = 29424; Dim = 2 }
+  1: { Guid = c8b9c86b-e963-4794-9172-1906f13a29c8; Name = confined_cylinder; Cell Count = 8504; Dim = 2 }
+  2: { Guid = 8e2368da-9880-430f-8db3-5cec041e9c86; Name = confined_cylinder; Cell Count = 2416; Dim = 2 }
+  3: { Guid = 3ec220d5-462e-4419-af24-9eb60a054d84; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
+  4: { Guid = ee5e22fa-5042-4457-a724-72aca22c14c1; Name = ; Cell Count = 1024; Dim = 2 }
+  5: { Guid = e076c8db-756e-4689-9bba-2e8e2aca758b; Name = ; Cell Count = 256; Dim = 2 }
+  6: { Guid = 07bb2a2e-caf5-422f-998e-bf7c9414a1bc; Name = ; Cell Count = 64; Dim = 2 }
+  7: { Guid = df08ceaf-2fac-43c2-86a2-a012f61ea304; Name = ; Cell Count = 16; Dim = 2 }
+  8: { Guid = b55230a3-cf2c-4431-a452-a127dc2f44bb; Name = ; Cell Count = 4; Dim = 2 }
+  9: { Guid = 3ec220d5-462e-4419-af24-9eb60a054d84; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
+  10: { Guid = 1c9cb150-88d3-4ee1-974d-7970eabd3cf8; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
 }
 ==============
 // ======================
@@ -158,8 +180,8 @@ int[] degS = new int[] { 1, 2, 3, 4 };
 RheologyControl[,] controls = new RheologyControl[GridSeq.Length,degS.Length];
 **************
 ==============
-for(int iDeg = 0; iDeg < 1/*degS.Length*/; iDeg++) {
-for(int iGrd = 0; iGrd < 1/*GridSeq.Length*/; iGrd++) {
+for(int iDeg = 0; iDeg < degS.Length; iDeg++) {
+for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
     var C    = RheologyControlExamples.ConfinedCylinder();
     int pDeg = degS[iDeg];   
     var grd  = GridSeq[iGrd];
@@ -194,6 +216,9 @@ Info: setting database path to: C:\Users\flori\default_bosss_db
 Info: setting database path to: C:\Users\flori\default_bosss_db
 
 ==============
+Info(controls[0,0]);
+**************
+==============
 // ==================
 // Activate first job
 // ==================
@@ -211,218 +236,36 @@ j00.NumberOfMPIProcs = 4;
 ==============
 j00.Activate(ExecutionQueues[1]);
 **************
-Loading session 056c96f6-7ce0-440c-8826-2b08395ffafa failed with message 'Could not find file 'C:\Users\flori\default_bosss_db\sessions\056c96f6-7ce0-440c-8826-2b08395ffafa\Session.info'.'
-Loading session ba559446-5032-4a55-8456-6ce4c02651b5 failed with message 'Could not find file 'C:\Users\flori\default_bosss_db\sessions\ba559446-5032-4a55-8456-6ce4c02651b5\Session.info'.'
-Job not submitted yet, or no result session is known - starting submission.
-Resetting database for control object to { Session Count = 0; Grid Count = 0; Path = X:\bosss_db_lichtenberg }
-Grid 1c9cb150-88d3-4ee1-974d-7970eabd3cf8 is not present in database - copy to target system...
-done.
-Deploying executables and additional files ...
-Deployment directory: X:\bosss_deploy\RheologySolver2020Feb06_18-24-21
-Source directory: C:\Users\flori\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Debug
-copied 31 files.
-   writing file: control.obj
-deployment finished.
-
-Lmod: loading emacs 26.3 
-Lmod: loading git 2.24.1 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.16.2 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.2 
-dos2unix: converting file /home/fk69umer/bosss_deploy/RheologySolver2020Feb06_18-24-21/batch.sh to Unix format ...
-
-Submitted batch job 14065869
-[1;37m[I][0m Selected project: project01217
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-[1;37m[I][0m Possible specials     = short
-
+System.NotSupportedException occurred: Job can only be activated once.. Type 'LastError' for details.
 
 ==============
 j00.Status;
 **************
-FinishedSuccessful
+System.ArgumentNullException occurred: Value cannot be null.
+Parameter name: path1. Type 'LastError' for details.
+
 ==============
 j00.Stderr;
 **************
-Lmod: unloading emacs 26.3 
-Lmod: loading emacs 26.3 
-Lmod: unloading git 2.24.1 
-Lmod: loading git 2.24.1 
-Lmod: unloading gcc 8.3.0 
-Lmod: unloading cmake 3.16.2 
-Lmod: unloading mono 6.0.0 
-Lmod: unloading openblas 0.2.20 
-Lmod: unloading openucx 1.7.0 
-Lmod: unloading openmpi 4.0.2 
-Lmod: loading gcc 8.3.0 
-Lmod: loading cmake 3.16.2 
-Lmod: loading mono 6.0.0 
-Lmod: loading openblas 0.2.20 
-Lmod: loading openucx 1.7.0 
-Lmod: loading openmpi 4.0.2 
-Lmod: unloading mono 6.0.0 
-Lmod: loading mono 6.0.0 
-Lmod: unloading openblas 0.2.20 
-Lmod: loading openblas 0.2.20 
-Lmod: unloading openmpi 4.0.2 
-Lmod: loading openmpi 4.0.2 
+System.ArgumentNullException occurred: Value cannot be null.
+Parameter name: path1. Type 'LastError' for details.
 
-Unhandled Exception:
-System.ArithmeticException: LAPACK dgetrf info: the -4-th argument had an illegal value
-  at ilPSP.IMatrixExtensions.FactorizeLU[T] (T M, System.Int32[] _ipiv) [0x0017e] in <1878071017314084aed31b23ffa3220c>:0 
-  at BoSSS.Solution.AdvancedSolvers.LevelPmg.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x0014c] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
-  at BoSSS.Solution.AdvancedSolvers.OrthonormalizationMultigrid.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x000e6] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
-  at BoSSS.Solution.AdvancedSolvers.Newton.SolverDriver[S] (BoSSS.Foundation.CoordinateVector SolutionVec, S RHS) [0x001af] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
-  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve_Increment (System.Int32 increment, System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00303] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
-  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve (System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00086] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
-  at BoSSS.Application.Rheology.Rheology.RunSolverOneStep (System.Int32 TimestepInt, System.Double phystime, System.Double dt) [0x00399] in <b8d2cc73db554405b50951108db63020>:0 
-  at BoSSS.Solution.Application`1[T].RunSolverMode () [0x00284] in <359d0762e00245e39e989d739ee8210b>:0 
-  at BoSSS.Solution.Application`1[T].AppEntry (System.Func`1[TResult] ApplicationFactory, BoSSS.Solution.CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy) [0x00150] in <359d0762e00245e39e989d739ee8210b>:0 
-  at BoSSS.Solution.Application`1[T]._Main (System.String[] args, System.Boolean noControlFile, System.Func`1[TResult] ApplicationFactory) [0x001b4] in <359d0762e00245e39e989d739ee8210b>:0 
-  at BoSSS.Application.Rheology.Rheology.Main (System.String[] args) [0x00001] in <b8d2cc73db554405b50951108db63020>:0 
-[ERROR] FATAL UNHANDLED EXCEPTION: System.ArithmeticException: LAPACK dgetrf info: the -4-th argument had an illegal value
-  at ilPSP.IMatrixExtensions.FactorizeLU[T] (T M, System.Int32[] _ipiv) [0x0017e] in <1878071017314084aed31b23ffa3220c>:0 
-  at BoSSS.Solution.AdvancedSolvers.LevelPmg.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x0014c] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
-  at BoSSS.Solution.AdvancedSolvers.OrthonormalizationMultigrid.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x000e6] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
-  at BoSSS.Solution.AdvancedSolvers.Newton.SolverDriver[S] (BoSSS.Foundation.CoordinateVector SolutionVec, S RHS) [0x001af] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
-  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve_Increment (System.Int32 increment, System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00303] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
-  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve (System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00086] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
-  at BoSSS.Application.Rheology.Rheology.RunSolverOneStep (System.Int32 TimestepInt, System.Double phystime, System.Double dt) [0x00399] in <b8d2cc73db554405b50951108db63020>:0 
-  at BoSSS.Solution.Application`1[T].RunSolverMode () [0x00284] in <359d0762e00245e39e989d739ee8210b>:0 
-  at BoSSS.Solution.Application`1[T].AppEntry (System.Func`1[TResult] ApplicationFactory, BoSSS.Solution.CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy) [0x00150] in <359d0762e00245e39e989d739ee8210b>:0 
-  at BoSSS.Solution.Application`1[T]._Main (System.String[] args, System.Boolean noControlFile, System.Func`1[TResult] ApplicationFactory) [0x001b4] in <359d0762e00245e39e989d739ee8210b>:0 
-  at BoSSS.Application.Rheology.Rheology.Main (System.String[] args) [0x00001] in <b8d2cc73db554405b50951108db63020>:0 
-
-Unhandled Exception:
-System.ArithmeticException: LAPACK dgetrf info: the -4-th argument had an illegal value
-  at ilPSP.IMatrixExtensions.FactorizeLU[T] (T M, System.Int32[] _ipiv) [0x0017e] in <1878071017314084aed31b23ffa3220c>:0 
-  at BoSSS.Solution.AdvancedSolvers.LevelPmg.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x0014c] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
-  at BoSSS.Solution.AdvancedSolvers.OrthonormalizationMultigrid.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x000e6] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
-  at BoSSS.Solution.AdvancedSolvers.Newton.SolverDriver[S] (BoSSS.Foundation.CoordinateVector SolutionVec, S RHS) [0x001af] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
-  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve_Increment (System.Int32 increment, System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00303] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
-  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve (System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00086] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
-  at BoSSS.Application.Rheology.Rheology.RunSolverOneStep (System.Int32 TimestepInt, System.Double phystime, System.Double dt) [0x00399] in <b8d2cc73db554405b50951108db63020>:0 
-  at BoSSS.Solution.Application`1[T].RunSolverMode () [0x00284] in <359d0762e00245e39e989d739ee8210b>:0 
-  at BoSSS.Solution.Application`1[T].AppEntry (System.Func`1[TResult] ApplicationFactory, BoSSS.Solution.CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy) [0x00150] in <359d0762e00245e39e989d739ee8210b>:0 
-  at BoSSS.Solution.Application`1[T]._Main (System.String[] args, System.Boolean noControlFile, System.Func`1[TResult] ApplicationFactory) [0x001b4] in <359d0762e00245e39e989d739ee8210b>:0 
-  at BoSSS.Application.Rheology.Rheology.Main (System.String[] args) [0x00001] in <b8d2cc73db554405b50951108db63020>:0 
-[ERROR] FATAL UNHANDLED EXCEPTION: System.ArithmeticException: LAPACK dgetrf info: the -4-th argument had an illegal value
-  at ilPSP.IMatrixExtensions.FactorizeLU[T] (T M, System.Int32[] _ipiv) [0x0017e] in <1878071017314084aed31b23ffa3220c>:0 
-  at BoSSS.Solution.AdvancedSolvers.LevelPmg.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x0014c] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
-  at BoSSS.Solution.AdvancedSolvers.OrthonormalizationMultigrid.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x000e6] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
-  at BoSSS.Solution.AdvancedSolvers.Newton.SolverDriver[S] (BoSSS.Foundation.CoordinateVector SolutionVec, S RHS) [0x001af] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
-  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve_Increment (System.Int32 increment, System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00303] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
-  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve (System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00086] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
-  at BoSSS.Application.Rheology.Rheology.RunSolverOneStep (System.Int32 TimestepInt, System.Double phystime, System.Double dt) [0x00399] in <b8d2cc73db554405b50951108db63020>:0 
-  at BoSSS.Solution.Application`1[T].RunSolverMode () [0x00284] in <359d0762e00245e39e989d739ee8210b>:0 
-  at BoSSS.Solution.Application`1[T].AppEntry (System.Func`1[TResult] ApplicationFactory, BoSSS.Solution.CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy) [0x00150] in <359d0762e00245e39e989d739ee8210b>:0 
-  at BoSSS.Solution.Application`1[T]._Main (System.String[] args, System.Boolean noControlFile, System.Func`1[TResult] ApplicationFactory) [0x001b4] in <359d0762e00245e39e989d739ee8210b>:0 
-  at BoSSS.Application.Rheology.Rheology.Main (System.String[] args) [0x00001] in <b8d2cc73db554405b50951108db63020>:0 
-
-Unhandled Exception:
-System.ArithmeticException: LAPACK dgetrf info: the -4-th argument had an illegal value
-  at ilPSP.IMatrixExtensions.FactorizeLU[T] (T M, System.Int32[] _ipiv) [0x0017e] in <1878071017314084aed31b23ffa3220c>:0 
-  at BoSSS.Solution.AdvancedSolvers.LevelPmg.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x0014c] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
-  at BoSSS.Solution.AdvancedSolvers.OrthonormalizationMultigrid.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x000e6] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
-  at BoSSS.Solution.AdvancedSolvers.Newton.SolverDriver[S] (BoSSS.Foundation.CoordinateVector SolutionVec, S RHS) [0x001af] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
-  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve_Increment (System.Int32 increment, System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00303] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
-  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve (System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00086] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
-  at BoSSS.Application.Rheology.Rheology.RunSolverOneStep (System.Int32 TimestepInt, System.Double phystime, System.Double dt) [0x00399] in <b8d2cc73db554405b50951108db63020>:0 
-  at BoSSS.Solution.Application`1[T].RunSolverMode () [0x00284] in <359d0762e00245e39e989d739ee8210b>:0 
-  at BoSSS.Solution.Application`1[T].AppEntry (System.Func`1[TResult] ApplicationFactory, BoSSS.Solution.CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy) [0x00150] in <359d0762e00245e39e989d739ee8210b>:0 
-  at BoSSS.Solution.Application`1[T]._Main (System.String[] args, System.Boolean noControlFile, System.Func`1[TResult] ApplicationFactory) [0x001b4] in <359d0762e00245e39e989d739ee8210b>:0 
-  at BoSSS.Application.Rheology.Rheology.Main (System.String[] args) [0x00001] in <b8d2cc73db554405b50951108db63020>:0 
-[ERROR] FATAL UNHANDLED EXCEPTION: System.ArithmeticException: LAPACK dgetrf info: the -4-th argument had an illegal value
-  at ilPSP.IMatrixExtensions.FactorizeLU[T] (T M, System.Int32[] _ipiv) [0x0017e] in <1878071017314084aed31b23ffa3220c>:0 
-  at BoSSS.Solution.AdvancedSolvers.LevelPmg.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x0014c] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
-  at BoSSS.Solution.AdvancedSolvers.OrthonormalizationMultigrid.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x000e6] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
-  at BoSSS.Solution.AdvancedSolvers.Newton.SolverDriver[S] (BoSSS.Foundation.CoordinateVector SolutionVec, S RHS) [0x001af] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
-  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve_Increment (System.Int32 increment, System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00303] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
-  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve (System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00086] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
-  at BoSSS.Application.Rheology.Rheology.RunSolverOneStep (System.Int32 TimestepInt, System.Double phystime, System.Double dt) [0x00399] in <b8d2cc73db554405b50951108db63020>:0 
-  at BoSSS.Solution.Application`1[T].RunSolverMode () [0x00284] in <359d0762e00245e39e989d739ee8210b>:0 
-  at BoSSS.Solution.Application`1[T].AppEntry (System.Func`1[TResult] ApplicationFactory, BoSSS.Solution.CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy) [0x00150] in <359d0762e00245e39e989d739ee8210b>:0 
-  at BoSSS.Solution.Application`1[T]._Main (System.String[] args, System.Boolean noControlFile, System.Func`1[TResult] ApplicationFactory) [0x001b4] in <359d0762e00245e39e989d739ee8210b>:0 
-  at BoSSS.Application.Rheology.Rheology.Main (System.String[] args) [0x00001] in <b8d2cc73db554405b50951108db63020>:0 
-
-Unhandled Exception:
-System.ArithmeticException: LAPACK dgetrf info: the -4-th argument had an illegal value
-  at ilPSP.IMatrixExtensions.FactorizeLU[T] (T M, System.Int32[] _ipiv) [0x0017e] in <1878071017314084aed31b23ffa3220c>:0 
-  at BoSSS.Solution.AdvancedSolvers.LevelPmg.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x0014c] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
-  at BoSSS.Solution.AdvancedSolvers.OrthonormalizationMultigrid.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x000e6] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
-  at BoSSS.Solution.AdvancedSolvers.Newton.SolverDriver[S] (BoSSS.Foundation.CoordinateVector SolutionVec, S RHS) [0x001af] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
-  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve_Increment (System.Int32 increment, System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00303] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
-  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve (System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00086] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
-  at BoSSS.Application.Rheology.Rheology.RunSolverOneStep (System.Int32 TimestepInt, System.Double phystime, System.Double dt) [0x00399] in <b8d2cc73db554405b50951108db63020>:0 
-  at BoSSS.Solution.Application`1[T].RunSolverMode () [0x00284] in <359d0762e00245e39e989d739ee8210b>:0 
-  at BoSSS.Solution.Application`1[T].AppEntry (System.Func`1[TResult] ApplicationFactory, BoSSS.Solution.CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy) [0x00150] in <359d0762e00245e39e989d739ee8210b>:0 
-  at BoSSS.Solution.Application`1[T]._Main (System.String[] args, System.Boolean noControlFile, System.Func`1[TResult] ApplicationFactory) [0x001b4] in <359d0762e00245e39e989d739ee8210b>:0 
-  at BoSSS.Application.Rheology.Rheology.Main (System.String[] args) [0x00001] in <b8d2cc73db554405b50951108db63020>:0 
-[ERROR] FATAL UNHANDLED EXCEPTION: System.ArithmeticException: LAPACK dgetrf info: the -4-th argument had an illegal value
-  at ilPSP.IMatrixExtensions.FactorizeLU[T] (T M, System.Int32[] _ipiv) [0x0017e] in <1878071017314084aed31b23ffa3220c>:0 
-  at BoSSS.Solution.AdvancedSolvers.LevelPmg.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x0014c] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
-  at BoSSS.Solution.AdvancedSolvers.OrthonormalizationMultigrid.Init (BoSSS.Solution.AdvancedSolvers.MultigridOperator op) [0x000e6] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
-  at BoSSS.Solution.AdvancedSolvers.Newton.SolverDriver[S] (BoSSS.Foundation.CoordinateVector SolutionVec, S RHS) [0x001af] in <1191318a1e494a0e894e6f2e1d6dd263>:0 
-  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve_Increment (System.Int32 increment, System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00303] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
-  at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve (System.Double phystime, System.Double dt, System.Boolean ComputeOnlyResidual) [0x00086] in <e7007ef9eb404491b4b4b19f53aeda5d>:0 
-  at BoSSS.Application.Rheology.Rheology.RunSolverOneStep (System.Int32 TimestepInt, System.Double phystime, System.Double dt) [0x00399] in <b8d2cc73db554405b50951108db63020>:0 
-  at BoSSS.Solution.Application`1[T].RunSolverMode () [0x00284] in <359d0762e00245e39e989d739ee8210b>:0 
-  at BoSSS.Solution.Application`1[T].AppEntry (System.Func`1[TResult] ApplicationFactory, BoSSS.Solution.CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy) [0x00150] in <359d0762e00245e39e989d739ee8210b>:0 
-  at BoSSS.Solution.Application`1[T]._Main (System.String[] args, System.Boolean noControlFile, System.Func`1[TResult] ApplicationFactory) [0x001b4] in <359d0762e00245e39e989d739ee8210b>:0 
-  at BoSSS.Application.Rheology.Rheology.Main (System.String[] args) [0x00001] in <b8d2cc73db554405b50951108db63020>:0 
---------------------------------------------------------------------------
-Primary job  terminated normally, but 1 process returned
-a non-zero exit code. Per user-direction, the job has been aborted.
---------------------------------------------------------------------------
---------------------------------------------------------------------------
-mpiexec detected that one or more processes exited with non-zero status, thus causing
-the job to be terminated. The first process to do so was:
-
-  Process name: [[41817,1],2]
-  Exit code:    1
---------------------------------------------------------------------------
-
+==============
+LastError;
+**************
+System.ArgumentNullException: Value cannot be null.
+Parameter name: path1
+   at System.IO.Path.Combine(String path1, String path2)
+   at BoSSS.Application.BoSSSpad.SlurmClient.EvaluateStatus(Job myJob, Int32& SubmitCount, Boolean& isRunning, Boolean& wasSuccessful, Boolean& isFailed, String& DeployDir) in C:\Users\flori\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\SlurmClient.cs:line 189
+   at BoSSS.Application.BoSSSpad.Job.GetStatus(Int32& SubmitCount, String& DD) in C:\Users\flori\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\Job.cs:line 708
+   at <InteractiveExpressionClass>.Host(Object& $retval)
+   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\Users\flori\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:line 346
 ==============
 j00.Stdout;
 **************
-      ___           ___           ___           ___           ___     
-     /\  \         /\  \         /\  \         /\  \         /\  \    
-    /::\  \       /::\  \       /::\  \       /::\  \       /::\  \   
-   /:/\:\  \     /:/\:\  \     /:/\ \  \     /:/\ \  \     /:/\ \  \  
-  /::\~\:\__\   /:/  \:\  \   _\:\~\ \  \   _\:\~\ \  \   _\:\~\ \  \ 
- /:/\:\ \:|__| /:/__/ \:\__\ /\ \:\ \ \__\ /\ \:\ \ \__\ /\ \:\ \ \__\
- \:\~\:\/:/  / \:\  \ /:/  / \:\ \:\ \/__/ \:\ \:\ \/__/ \:\ \:\ \/__/
-  \:\ \::/  /   \:\  /:/  /   \:\ \:\__\    \:\ \:\__\    \:\ \:\__\  
-   \:\/:/  /     \:\/:/  /     \:\/:/  /     \:\/:/  /     \:\/:/  /  
-    \::/__/       \::/  /       \::/  /       \::/  /       \::/  /   
-     ~~            \/__/         \/__/         \/__/         \/__/    
-                                                                      
-Running with 4 MPI process(es)
-Session ID: 4db65cfe-d1ee-408e-ac6d-b1674af72bce, DB path: '/home/fk69umer/bosss_db_lichtenberg'.
-configuring Weissenberg number: 1e+00
-Total number of cells:    640
-Total number of DOFs:     10240
-Instationary solve, timestep #1.0, dt = 0.1 ...
-current Weissenberg at 0
-experimental MG configuration for rheology
-   KcycleMultiSchwarz: lv 0, no of blocks 2 : 
-linear Solver: exp_Kcycle_schwarz_4Rheology
-nonlinear Solver: Newton
-Residual base.init:   18.0463323365662
-#Line,#Time,#Iter	 L2Norm ResidualMomentumX	 L2Norm ResidualMomentumY	 L2Norm ResidualConti	 L2Norm ResidualStressXX	 L2Norm ResidualStressXY	 L2Norm ResidualStressYY
-1,1,1	 7.616910E+001	 2.544073E-014	 1.736269E+000	 1.424973E+000	 2.086154E-012	 2.156994E-016
-OrthonormalizationMultigrid: running coarse solver on same level.
-
-Intel MKL ERROR: Parameter 4 was incorrect on entry to DGETRF.
-
-Intel MKL ERROR: Parameter 4 was incorrect on entry to DGETRF.
-
-Intel MKL ERROR: Parameter 4 was incorrect on entry to DGETRF.
-
-Intel MKL ERROR: Parameter 4 was incorrect on entry to DGETRF.
+System.ArgumentNullException occurred: Value cannot be null.
+Parameter name: path1. Type 'LastError' for details.
 
 ==============
 // =============
@@ -431,29 +274,13 @@ Intel MKL ERROR: Parameter 4 was incorrect on entry to DGETRF.
 **************
 ==============
 **************
-FinishedSuccessful
 ==============
 **************
 ==============
 WorkflowMgm.AllJobs;
 **************
-List of 16 instances of KeyValuePair{String,Job} {
-  0: [ConvStudy_k1_mesh0, ConvStudy_k1_mesh0: PreActivation]
-  1: [ConvStudy_k1_mesh1, ConvStudy_k1_mesh1: PreActivation]
-  2: [ConvStudy_k1_mesh2, ConvStudy_k1_mesh2: PreActivation]
-  3: [ConvStudy_k1_mesh3, ConvStudy_k1_mesh3: PreActivation]
-  4: [ConvStudy_k2_mesh0, ConvStudy_k2_mesh0: PreActivation]
-  5: [ConvStudy_k2_mesh1, ConvStudy_k2_mesh1: PreActivation]
-  6: [ConvStudy_k2_mesh2, ConvStudy_k2_mesh2: PreActivation]
-  7: [ConvStudy_k2_mesh3, ConvStudy_k2_mesh3: PreActivation]
-  8: [ConvStudy_k3_mesh0, ConvStudy_k3_mesh0: PreActivation]
-  9: [ConvStudy_k3_mesh1, ConvStudy_k3_mesh1: PreActivation]
-  10: [ConvStudy_k3_mesh2, ConvStudy_k3_mesh2: PreActivation]
-  11: [ConvStudy_k3_mesh3, ConvStudy_k3_mesh3: PreActivation]
-  12: [ConvStudy_k4_mesh0, ConvStudy_k4_mesh0: PreActivation]
-  13: [ConvStudy_k4_mesh1, ConvStudy_k4_mesh1: PreActivation]
-  14: [ConvStudy_k4_mesh2, ConvStudy_k4_mesh2: PreActivation]
-  15: [ConvStudy_k4_mesh3, ConvStudy_k4_mesh3: PreActivation]
+List of 1 instances of KeyValuePair{String,Job} {
+  0: [ConvStudy_k1_mesh0, ConvStudy_k1_mesh0: FinishedSuccessful (SlurmClient: fk69umer@lcluster3.hrz.tu-darmstadt.de, Slurm account: project01217)]
 }
 ==============
 var C00clone = WorkflowMgm.AllJobs.Pick(0).Value.GetControl();
@@ -461,15 +288,43 @@ var C00clone = WorkflowMgm.AllJobs.Pick(0).Value.GetControl();
 ==============
 controls[0,0].GetJob();
 **************
-ConvStudy_k1_mesh0: PreActivation
+ConvStudy_k1_mesh0: FinishedSuccessful (SlurmClient: fk69umer@lcluster3.hrz.tu-darmstadt.de, Slurm account: project01217)
 ==============
 **************
 ==============
+var SI = controls[0,0].GetAllSessions();
 **************
 ==============
+SI[0].Timesteps;
+**************
+List of 12 instances of ITimestepInfo {
+  0:  { Time-step: 0; Physical time: 0s; Fields: Phi, VelocityX, VelocityY, ResidualMomentumX, ResidualMomentumY, Pressure, ResidualConti, StressXX, StressXY, StressYY, ResidualStressXX, ResidualStressXY, ResidualStressYY; Name:  }
+  1:  { Time-step: 1.0; Physical time: 0s; Fields: Phi, VelocityX, VelocityY, ResidualMomentumX, ResidualMomentumY, Pressure, ResidualConti, StressXX, StressXY, StressYY, ResidualStressXX, ResidualStressXY, ResidualStressYY; Name:  }
+  2:  { Time-step: 1.1; Physical time: 0s; Fields: Phi, VelocityX, VelocityY, ResidualMomentumX, ResidualMomentumY, Pressure, ResidualConti, StressXX, StressXY, StressYY, ResidualStressXX, ResidualStressXY, ResidualStressYY; Name:  }
+  3:  { Time-step: 1.2; Physical time: 0s; Fields: Phi, VelocityX, VelocityY, ResidualMomentumX, ResidualMomentumY, Pressure, ResidualConti, StressXX, StressXY, StressYY, ResidualStressXX, ResidualStressXY, ResidualStressYY; Name:  }
+  4:  { Time-step: 1.3; Physical time: 0s; Fields: Phi, VelocityX, VelocityY, ResidualMomentumX, ResidualMomentumY, Pressure, ResidualConti, StressXX, StressXY, StressYY, ResidualStressXX, ResidualStressXY, ResidualStressYY; Name:  }
+  5:  { Time-step: 1.4; Physical time: 0s; Fields: Phi, VelocityX, VelocityY, ResidualMomentumX, ResidualMomentumY, Pressure, ResidualConti, StressXX, StressXY, StressYY, ResidualStressXX, ResidualStressXY, ResidualStressYY; Name:  }
+  6:  { Time-step: 1.5; Physical time: 0s; Fields: Phi, VelocityX, VelocityY, ResidualMomentumX, ResidualMomentumY, Pressure, ResidualConti, StressXX, StressXY, StressYY, ResidualStressXX, ResidualStressXY, ResidualStressYY; Name:  }
+  7:  { Time-step: 1.6; Physical time: 0s; Fields: Phi, VelocityX, VelocityY, ResidualMomentumX, ResidualMomentumY, Pressure, ResidualConti, StressXX, StressXY, StressYY, ResidualStressXX, ResidualStressXY, ResidualStressYY; Name:  }
+  8:  { Time-step: 1.7; Physical time: 0s; Fields: Phi, VelocityX, VelocityY, ResidualMomentumX, ResidualMomentumY, Pressure, ResidualConti, StressXX, StressXY, StressYY, ResidualStressXX, ResidualStressXY, ResidualStressYY; Name:  }
+  9:  { Time-step: 1.8; Physical time: 0s; Fields: Phi, VelocityX, VelocityY, ResidualMomentumX, ResidualMomentumY, Pressure, ResidualConti, StressXX, StressXY, StressYY, ResidualStressXX, ResidualStressXY, ResidualStressYY; Name:  }
+  10:  { Time-step: 1.9; Physical time: 0s; Fields: Phi, VelocityX, VelocityY, ResidualMomentumX, ResidualMomentumY, Pressure, ResidualConti, StressXX, StressXY, StressYY, ResidualStressXX, ResidualStressXY, ResidualStressYY; Name:  }
+  11:  { Time-step: 1; Physical time: 0.1s; Fields: Phi, VelocityX, VelocityY, ResidualMomentumX, ResidualMomentumY, Pressure, ResidualConti, StressXX, StressXY, StressYY, ResidualStressXX, ResidualStressXY, ResidualStressYY; Name:  }
+}
+==============
+var final = SI[0].Timesteps.Last();
 **************
 ==============
+var rtsi = ((RheologyTimestepInfo) (((TimestepProxy)final).GetInternal()));
 **************
+==============
+rtsi;
+**************
+ { Time-step: 1; Physical time: 0.1s; Fields: Phi, VelocityX, VelocityY, ResidualMomentumX, ResidualMomentumY, Pressure, ResidualConti, StressXX, StressXY, StressYY, ResidualStressXX, ResidualStressXY, ResidualStressYY; Name:  }
+==============
+rtsi.currentWeissenbergNumber;
+**************
+1
 ==============
 //var fdyBatch = new MsHPC2012Client(
 //   DeploymentBaseDirectory : @"\\130.83.248.247\userspace\kummer\cluster", 
@@ -477,8 +332,6 @@ ConvStudy_k1_mesh0: PreActivation
 //   Username : @"FDY\kummer", 
 //   DeployRuntime : true);
 **************
-System.Security.Authentication.InvalidCredentialException occurred: The server has rejected the client credentials.. Type 'LastError' for details.
-
 ==============
 **************
 ==============
@@ -492,9 +345,14 @@ System.Security.Authentication.InvalidCredentialException occurred: The server h
 ==============
 //AddExecutionQueue(lichtbBatch);
 **************
-1
 ==============
 //SaveExecutionQueues();
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

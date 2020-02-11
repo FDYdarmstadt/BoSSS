@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation.IO;
+using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -32,43 +33,7 @@ namespace BoSSS.Application.BoSSSpad {
     [DataContract]
     abstract public class BatchProcessorClient {
 
-        /*
-        /// <summary>
-        /// common baseclass 
-        /// </summary>
-        [Serializable]
-        public abstract class Config {
-
-            /// <summary>
-            /// <see cref="BatchProcessorClient.DeploymentBaseDirectory"/>
-            /// </summary>
-            public string DeploymentBaseDirectory;
-
-            /// <summary>
-            /// <see cref="BatchProcessorClient.DeployRuntime"/>
-            /// </summary>
-            public bool DeployRuntime;
-
-            /// <summary>
-            /// <see cref="BatchProcessorClient.AllowedDatabasesPaths"/>
-            /// </summary>
-            public string[] AllowedDatabasesPaths;
-
-            /// <summary>
-            /// %
-            /// </summary>
-            public abstract BatchProcessorClient Instance();
-
-
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public abstract Config GetConfig();
-        */
-
-
+        
         /// <summary>
         /// Base directory where the executables should be deployed,
         /// accessible from the local machine (e.g. a mounted path if the batch processor deploys on another computer system)
@@ -150,7 +115,15 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+        string JobDirectoryBaseName(Job myJob) {
+            string Exe = Path.GetFileNameWithoutExtension(myJob.EntryAssembly.Location);
+            string Proj = InteractiveShell.WorkflowMgm.CurrentProject;
+            string Sess = myJob.Name;
 
+            return Proj 
+                //+ "-" + Sess 
+                + "-" + Exe;
+        }
 
 
         /// <summary>
@@ -158,17 +131,73 @@ namespace BoSSS.Application.BoSSSpad {
         /// are deployed if <paramref name="myJob"/> is assigned to this batch processor.
         /// </summary>
         virtual public string GetNewDeploymentDir(Job myJob) {
-            string ShortName = Path.GetFileNameWithoutExtension(myJob.EntryAssembly.Location);
+            if(Path.IsPathRooted(DeploymentBaseDirectory))
+                throw new IOException($"Deployment base directory for {this.ToString()} must be rooted/absolute, but '{DeploymentBaseDirectory}' is not.");
+
+            string ShortName = JobDirectoryBaseName(myJob);
             string DeployDir;
             int Counter = 0;
             do {
                 string Suffix = Counter > 0 ? "-" + Counter : "";
-                string DateNtime = DateTime.Now.ToString("yyyyMMMdd_HH-mm-ss");
+                string DateNtime = DateTime.Now.ToString("yyyyMMMdd_HHmmss");
                 DeployDir = Path.Combine(DeploymentBaseDirectory, ShortName + DateNtime + Suffix);
                 Counter++;
             } while (Directory.Exists(DeployDir) == true);
 
             return DeployDir;
+        }
+
+        /// <summary>
+        /// All deployment directories which potentially could match the job on the current batch processor.
+        /// </summary>
+        virtual public DirectoryInfo[] GetAllExistingDeployDirectories(Job myJob) {
+            if(Path.IsPathRooted(DeploymentBaseDirectory))
+                throw new IOException($"Deployment base directory for {this.ToString()} must be rooted/absolute, but '{DeploymentBaseDirectory}' is not.");
+
+            var jobControl = myJob.GetControl();
+            if(jobControl == null)
+                return null;
+
+            // find all deployment directories relevant for project & job
+            // ==========================================================
+            string ShortName = Path.GetFileNameWithoutExtension(myJob.EntryAssembly.Location);
+
+            var AllDirs = Directory.GetDirectories(DeploymentBaseDirectory, ShortName + "*");
+
+
+            // filter appropriate ones 
+            // =======================
+
+            var filtDirs = new List<DirectoryInfo>();
+            foreach(string dir in AllDirs) {
+                string ControlObj = Path.Combine(dir, "control.obj");
+                if(File.Exists(ControlObj)) {
+                    var ctrl = BoSSS.Solution.Control.AppControl.Deserialize(ControlObj);
+                    if(InteractiveShell.WorkflowMgm.JobAppControlCorrelation(myJob, ctrl)) {
+                        filtDirs.Add(new DirectoryInfo(dir));
+                        continue;
+                    }
+                }
+
+                string ControlScript = Path.Combine(dir, "control.cs");
+                if(File.Exists(ControlScript)) {
+                    int control_index = 0;
+                    int i = myJob.CommandLineArguments.IndexWhere(arg => arg == "--pstudy_case");
+                    if(i >= 0) {
+                        control_index = int.Parse(myJob.CommandLineArguments[i + 1]);
+                    }
+
+                    var ctrl = BoSSS.Solution.Control.AppControl.FromFile(ControlScript, jobControl.GetType(), control_index);
+                    if(InteractiveShell.WorkflowMgm.JobAppControlCorrelation(myJob, ctrl)) {
+                        filtDirs.Add(new DirectoryInfo(dir));
+                        continue;
+                    }
+                }
+            }
+            
+            // return
+            // ======
+            return filtDirs.ToArray();
         }
 
         /// <summary>
@@ -178,28 +207,23 @@ namespace BoSSS.Application.BoSSSpad {
         /// <returns>
         /// An optional identifier token (<see cref="Job.BatchProcessorIdentifierToken"/>).
         /// </returns>
-        abstract public object Submit(Job myJob);
+        abstract public string Submit(Job myJob);
 
         /// <summary>
         /// Try to get some information about a job from the job manager.
         /// </summary>
-        /// <param name="myJob"></param>
-        /// <param name="SubmitCount">
-        /// Number of jobs in the batch processor which match <paramref name="myJob"/>.
-        /// </param>
+        /// <param name="idToken">Identification within batch processor</param>
+        /// <param name="DeployDir"></param>
         /// <param name="isRunning">
         /// True, if <paramref name="myJob"/> is currently running.
         /// </param>
-        /// <param name="isFailed">
-        /// True, if <paramref name="myJob"/> has terminated with an error state.
+        /// <param name="ExitCode">
+        /// if <paramref name="isTerminated"/> is true, the exit code of the application.
         /// </param>
-        /// <param name="wasSuccessful">
-        /// True, if <paramref name="myJob"/> has terminated without an error state.
+        /// <param name="isTerminated">
+        /// True, if the application has exited
         /// </param>
-        /// <param name="DeployDir">
-        /// If job is already known, the directory of the executable.
-        /// </param>
-        public abstract void EvaluateStatus(Job myJob, out int SubmitCount, out bool isRunning, out bool wasSuccessful, out bool isFailed, out string DeployDir);
+        public abstract void EvaluateStatus(string idToken, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode);
 
         /// <summary>
         /// Path to standard output file, if present - otherwise null.
@@ -288,6 +312,12 @@ namespace BoSSS.Application.BoSSSpad {
             
             // finally
             Console.WriteLine("deployment finished.");
+
+            // test
+            var directories = this.GetAllExistingDeployDirectories(myJob);
+            if(directories == null || directories.Length <= 0) {
+                throw new IOException("Job is assigned to batch processor, but no deployment directory can be found.");
+            }
         }
 
         /// <summary>
