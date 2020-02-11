@@ -703,7 +703,8 @@ namespace BoSSS.Application.BoSSSpad {
             // find the deployment directory
             var directories = AssignedBatchProc.GetAllExistingDeployDirectories(this);
             if(directories == null || directories.Length <= 0) {
-                throw new IOException("Job is assigned to batch processor, but no deployment directory can be found.");
+                return JobStatus.PreActivation;
+                //throw new IOException("Job is assigned to batch processor, but no deployment directory can be found.");
             }
             Array.Sort(directories, FuncComparerExtensions.ToComparer((DirectoryInfo a, DirectoryInfo b) => DateTime.Compare(a.CreationTime, b.CreationTime)));
             DirectoryInfo _DD = directories.Last();
@@ -713,11 +714,19 @@ namespace BoSSS.Application.BoSSSpad {
             // Obtain token
             string bpcToken = this.BatchProcessorIdentifierToken;
             if(bpcToken.IsNullOrEmpty()) {
-                var l = File.ReadAllText(Path.Combine(DD, "IdentifierToken.txt"));
-                bpcToken = l.Trim();
-                this.BatchProcessorIdentifierToken = bpcToken;
+                try {
+                    var l = File.ReadAllText(Path.Combine(DD, "IdentifierToken.txt"));
+                    bpcToken = l.Trim();
+                    this.BatchProcessorIdentifierToken = bpcToken;
+                } catch(Exception) {
+                    // job was probably deployed, but never submitted
+                    // ignore this.
+                }
             }
             
+            if(bpcToken.IsEmptyOrWhite())
+                return JobStatus.PreActivation;
+
             // ask the batch processor
             AssignedBatchProc.EvaluateStatus(bpcToken, DD, out bool isRunning, out bool isTerminated, out int ExitCode);
             bool isPending = (isRunning == false) && (isTerminated == false);

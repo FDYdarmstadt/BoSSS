@@ -131,7 +131,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// are deployed if <paramref name="myJob"/> is assigned to this batch processor.
         /// </summary>
         virtual public string GetNewDeploymentDir(Job myJob) {
-            if(Path.IsPathRooted(DeploymentBaseDirectory))
+            if(!Path.IsPathRooted(DeploymentBaseDirectory))
                 throw new IOException($"Deployment base directory for {this.ToString()} must be rooted/absolute, but '{DeploymentBaseDirectory}' is not.");
 
             string ShortName = JobDirectoryBaseName(myJob);
@@ -151,7 +151,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// All deployment directories which potentially could match the job on the current batch processor.
         /// </summary>
         virtual public DirectoryInfo[] GetAllExistingDeployDirectories(Job myJob) {
-            if(Path.IsPathRooted(DeploymentBaseDirectory))
+            if(!Path.IsPathRooted(DeploymentBaseDirectory))
                 throw new IOException($"Deployment base directory for {this.ToString()} must be rooted/absolute, but '{DeploymentBaseDirectory}' is not.");
 
             var jobControl = myJob.GetControl();
@@ -160,7 +160,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             // find all deployment directories relevant for project & job
             // ==========================================================
-            string ShortName = Path.GetFileNameWithoutExtension(myJob.EntryAssembly.Location);
+            string ShortName = JobDirectoryBaseName(myJob);
 
             var AllDirs = Directory.GetDirectories(DeploymentBaseDirectory, ShortName + "*");
 
@@ -172,7 +172,7 @@ namespace BoSSS.Application.BoSSSpad {
             foreach(string dir in AllDirs) {
                 string ControlObj = Path.Combine(dir, "control.obj");
                 if(File.Exists(ControlObj)) {
-                    var ctrl = BoSSS.Solution.Control.AppControl.Deserialize(ControlObj);
+                    var ctrl = BoSSS.Solution.Control.AppControl.Deserialize(File.ReadAllText(ControlObj));
                     if(InteractiveShell.WorkflowMgm.JobAppControlCorrelation(myJob, ctrl)) {
                         filtDirs.Add(new DirectoryInfo(dir));
                         continue;
