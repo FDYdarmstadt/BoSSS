@@ -20,6 +20,7 @@ using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using System;
 using System.Collections;
+using System.Diagnostics;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
     /// <summary>
@@ -71,6 +72,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                                        + hessian[0, 0, 1, 1] * gradient[0, 0, 1])
                                        * gradient[0, 0, 1]);
 
+            if (g_alpha_alpha == 0.0 || g_alpha_alpha.IsNaN()) {
+                throw new NotSupportedException("Second derivative is zero");
+            }
+
             return g_alpha_alpha;
         }
 
@@ -86,9 +91,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         /// <param name="stepSize">The step size between two points along the curve (first entry has to be user defined)</param>
         /// <returns></returns>
         public static int WalkOnCurve(GridData gridData, SinglePhaseField field, int maxIterations, double threshold, MultidimensionalArray points, double[] secondDerivative, double[] stepSize) {
-            // Set initial step size to 0.5 * h_minGlobal
-            stepSize[0] = 0.5 * gridData.Cells.h_minGlobal;
-
             // Init
             // Current (global) point
             double[] currentPoint = points.ExtractSubArrayShallow(0, -1).To1DArray();
@@ -105,6 +107,13 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
             // Evaluate the second derivative
             secondDerivative[0] = SecondDerivative(field, jLocal, nodeSet);
+
+            // Set initial step size to 0.5 * h_minGlobal
+            // Set the search direction depending on the sign of the curvature
+            stepSize[0] = 0.5 * gridData.Cells.h_minGlobal;
+            //if (secondDerivative[0] < 0.0) {
+            //    stepSize[0] = -stepSize[0];
+            //}
 
             int n = 1;
             while (n < maxIterations + 1) {
@@ -137,7 +146,13 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 }
 
                 // Evaluate the second derivative of the new point
-                secondDerivative[n] = SecondDerivative(field, jLocal, nodeSet);
+                NotSupportedException e = null;
+                try {
+                    secondDerivative[n] = SecondDerivative(field, jLocal, nodeSet);
+                } catch (NotSupportedException ee) {
+                    e = ee;
+                    break;
+                }
 
                 // Check if sign of second derivative has changed
                 // Halve the step size and change direction
@@ -249,6 +264,44 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             grid[8, 1] = cellCenter[1] + 0.4 * hmin;
 
             return grid;
+        }
+
+        public static MultidimensionalArray SortPoints(GridData gridData, SinglePhaseField field, MultidimensionalArray points) {
+            double[] sortedXCoords = new double[points.Lengths[0]];
+            double[] sortedYCoords = new double[points.Lengths[0]];
+            int keptEntries = 0;
+
+            for (int i = 0; i < points.Lengths[0]; i++) {
+                // Compute global cell index of the point
+                double[] currentPoint = points.ExtractSubArrayShallow(i, 0, -1).To1DArray();
+                gridData.LocatePoint(currentPoint, out long GlobalId, out long GlobalIndex, out bool IsInside, out bool OnThisProcess);
+
+                // Compute local node set
+                NodeSet nodeSet = GetLocalNodeSet(gridData, currentPoint, (int)GlobalIndex);
+
+                // Get local cell index of current point
+                int j0Grd = gridData.CellPartitioning.i0;
+                int jLocal = (int)(GlobalIndex - j0Grd);
+
+                // Calculate secondDerivative
+                double secondDerivative = SecondDerivative(field, jLocal, nodeSet);
+
+                // Select points where second derivative is larger than zero
+                if (secondDerivative > 0.0) {
+                    sortedXCoords[keptEntries] = currentPoint[0];
+                    sortedYCoords[keptEntries] = currentPoint[1];
+                    keptEntries++;
+                }
+            }
+
+            // Resize final array
+            MultidimensionalArray result = MultidimensionalArray.Create(keptEntries, points.Lengths[1], points.Lengths[2]);
+            for (int i = 0; i < keptEntries; i++) {
+                result[i, 0, 0] = sortedXCoords[i];
+                result[i, 0, 1] = sortedYCoords[i];
+            }
+
+            return result;
         }
     }
 }
