@@ -77,7 +77,7 @@ namespace FSI_Solver {
             // Some var definintion
             // =======================================================
             int ParticleOffset = particles.Length;
-            double distanceThreshold = GridLengthScale / 10;
+            double distanceThreshold = GridLengthScale / 100;
 
             // Step 2
             // Loop over time until the particles hit.

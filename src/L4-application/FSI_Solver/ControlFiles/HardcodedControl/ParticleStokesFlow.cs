@@ -86,19 +86,19 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control WetParticleWallCollision(int k = 2, double DensityFactor = 100, int amrLevel = 0) {
+        public static FSI_Control WetParticleWallCollision(int k = 3, double DensityFactor = 250, int amrLevel = 3) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "wetParticleWallCollision");
-            C.SetSaveOptions(@"\\hpccluster\hpccluster-scratch\deussen\cluster_db\WetParticleCollision", 1);
+            C.SetSaveOptions(@"D:\BoSSS_databases\Channel", 1);
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
 
             List<string> boundaryValues = new List<string> {
-                "Pressure_Dirichlet_left",
-                "Pressure_Dirichlet_right",
+                "Wall_left",
+                "Wall_right",
                 "Wall_lower",
-                "Pressure_Dirichlet_upper"
+                "Pressure_Outlet_upper"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 1, lengthY: 1, cellsPerUnitLength: 8, periodicX: false, periodicY: false);
+            C.SetGrid(lengthX: 10, lengthY: 1, cellsPerUnitLength: 6, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel);
             C.hydrodynamicsConvergenceCriterion = 1e-1;
             C.pureDryCollisions = false;
@@ -108,14 +108,14 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.Material = true;
-            C.gravity = new Vector( 0, -10 );
+            C.gravity = new Vector( 0, -5 );
             double particleDensity = 1 * DensityFactor;
             // Particle Properties
             // =============================   
             // Defining particles
             C.Particles = new List<Particle>();
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions, false, false, 0);
-            C.Particles.Add(new Particle_Sphere(motion, 0.25, new double[] { 0.0, 0.0 }, 0, 0, new double[] { 0, 0}));
+            C.Particles.Add(new Particle_Sphere(motion, 0.125, new double[] { 0.0, 0 }, 0, 0, new double[] { 0, 0}));
 
             // Quadrature rules
             // =============================   
