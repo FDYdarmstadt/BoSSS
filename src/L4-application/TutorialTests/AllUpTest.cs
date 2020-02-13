@@ -102,6 +102,8 @@ namespace BoSSS.Application.TutorialTests {
             string FullTexName = Path.Combine(DirectoryOffset, TexFileName);
             Assert.IsTrue(File.Exists(FullTexName), "unable to find TeX source: " + FullTexName);
 
+            MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: false);
+
             int ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { "--texbatch", FullTexName });
 
             Console.WriteLine("TutorialTests.exe: finished '{0}', error count is {1}.", FullTexName, ErrCount);
