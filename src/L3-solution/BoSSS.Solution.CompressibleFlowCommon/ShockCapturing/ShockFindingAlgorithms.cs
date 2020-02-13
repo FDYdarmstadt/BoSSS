@@ -28,6 +28,21 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
     /// in two dimensions. Can be used to find the shock location. 
     /// </summary>
     public static class ShockFindingAlgorithms {
+
+        private static SinglePhaseField gradientX;
+        private static SinglePhaseField gradientY;
+        private static SinglePhaseField hessianXX;
+        private static SinglePhaseField hessianXY;
+        private static SinglePhaseField hessianYX;
+        private static SinglePhaseField hessianYY;
+
+        private static MultidimensionalArray resultGradX;
+        private static MultidimensionalArray resultGradY;
+        private static MultidimensionalArray resultHessXX;
+        private static MultidimensionalArray resultHessXY;
+        private static MultidimensionalArray resultHessYX;
+        private static MultidimensionalArray resultHessYY;
+
         public static NodeSet GetLocalNodeSet(GridData gridData, double[] globalPoint, int globalCellIndex) {
             int D = 2;
             MultidimensionalArray GlobalVerticesIn = MultidimensionalArray.CreateWrapper(globalPoint, 1, D);
@@ -50,6 +65,29 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             double[] tmp = gradient.ExtractSubArrayShallow(0, 0, -1).To1DArray();
             tmp.Normalize();
             return tmp;
+        }
+
+        public static double[] NormalizedGradientByFlux(SinglePhaseField field, int jCell, NodeSet nodeSet) {
+            if (gradientX == null) {
+                // Evaluate gradient
+                Basis basis = new Basis(field.GridDat, field.Basis.Degree);
+                gradientX = new SinglePhaseField(basis);
+                gradientY = new SinglePhaseField(basis);
+                gradientX.DerivativeByFlux(1.0, field, d: 0);
+                gradientY.DerivativeByFlux(1.0, field, d: 1);
+            }
+
+            if (resultGradX == null) {
+                resultGradX = MultidimensionalArray.Create(1, 1);
+                resultGradY = MultidimensionalArray.Create(1, 1);
+            }
+
+            gradientX.Evaluate(jCell, 1, nodeSet, resultGradX);
+            gradientY.Evaluate(jCell, 1, nodeSet, resultGradY);
+
+            double[] gradient = new double[] { resultGradX[0, 0], resultGradY[0, 0] };
+            gradient.Normalize();
+            return gradient;
         }
 
         public static double SecondDerivative(SinglePhaseField field, int localCellIndex, NodeSet nodeSet) {
@@ -79,6 +117,60 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             return g_alpha_alpha;
         }
 
+        public static double SecondDerivativeByFlux(SinglePhaseField field, int jCell, NodeSet nodeSet) {
+            if (gradientX == null) {
+                // Evaluate gradient
+                Basis basis = new Basis(field.GridDat, field.Basis.Degree);
+                gradientX = new SinglePhaseField(basis);
+                gradientY = new SinglePhaseField(basis);
+                gradientX.DerivativeByFlux(1.0, field, d: 0);
+                gradientY.DerivativeByFlux(1.0, field, d: 1);
+            }
+
+            if (hessianXX == null) {
+                // Evaluate Hessian matrix
+                Basis basis = new Basis(field.GridDat, field.Basis.Degree);
+                hessianXX = new SinglePhaseField(basis);
+                hessianXY = new SinglePhaseField(basis);
+                hessianYX = new SinglePhaseField(basis);
+                hessianYY = new SinglePhaseField(basis);
+                hessianXX.DerivativeByFlux(1.0, gradientX, d: 0);
+                hessianXY.DerivativeByFlux(1.0, gradientX, d: 1);
+                hessianYX.DerivativeByFlux(1.0, gradientY, d: 0);
+                hessianYY.DerivativeByFlux(1.0, gradientY, d: 1);
+            }
+
+            if (resultGradX == null) {
+                resultGradX = MultidimensionalArray.Create(1, 1);
+                resultGradY = MultidimensionalArray.Create(1, 1);
+            }
+
+            if (resultHessXX == null) {
+                resultHessXX = MultidimensionalArray.Create(1, 1);
+                resultHessXY = MultidimensionalArray.Create(1, 1);
+                resultHessYX = MultidimensionalArray.Create(1, 1);
+                resultHessYY = MultidimensionalArray.Create(1, 1);
+            }
+
+            gradientX.Evaluate(jCell, 1, nodeSet, resultGradX);
+            gradientY.Evaluate(jCell, 1, nodeSet, resultGradY);
+
+            hessianXX.Evaluate(jCell, 1, nodeSet, resultHessXX);
+            hessianXY.Evaluate(jCell, 1, nodeSet, resultHessXY);
+            hessianYX.Evaluate(jCell, 1, nodeSet, resultHessYX);
+            hessianYY.Evaluate(jCell, 1, nodeSet, resultHessYY);
+
+            // Compute second derivative along curve
+            double g_alpha_alpha = 2 * ((resultHessXX[0, 0] * resultGradX[0, 0] + resultHessXY[0, 0] * resultGradY[0, 0]) * resultGradX[0, 0]
+                + (resultHessYX[0, 0] * resultGradX[0, 0] + resultHessYY[0, 0] * resultGradY[0, 0]) * resultGradY[0, 0]);
+
+            if (g_alpha_alpha == 0.0 || g_alpha_alpha.IsNaN()) {
+                throw new NotSupportedException("Second derivative is zero");
+            }
+
+            return g_alpha_alpha;
+        }
+
         /// <summary>
         /// Algorithm to find an inflection point along a curve in the direction of the gradient
         /// </summary>
@@ -90,7 +182,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         /// <param name="secondDerivative">The second derivative at each point</param>
         /// <param name="stepSize">The step size between two points along the curve (first entry has to be user defined)</param>
         /// <returns></returns>
-        public static int WalkOnCurve(GridData gridData, SinglePhaseField field, int maxIterations, double threshold, MultidimensionalArray points, double[] secondDerivative, double[] stepSize) {
+        public static int WalkOnCurve(GridData gridData, SinglePhaseField field, int maxIterations, double threshold, MultidimensionalArray points, double[] secondDerivative, double[] stepSize, double[] values, bool byFlux = false) {
             // Init
             // Current (global) point
             double[] currentPoint = points.ExtractSubArrayShallow(0, -1).To1DArray();
@@ -106,53 +198,81 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             int jLocal = (int)(GlobalIndex - j0Grd);
 
             // Evaluate the second derivative
-            secondDerivative[0] = SecondDerivative(field, jLocal, nodeSet);
+            if (byFlux) {
+                secondDerivative[0] = SecondDerivativeByFlux(field, jLocal, nodeSet);
+            } else {
+                secondDerivative[0] = SecondDerivative(field, jLocal, nodeSet);
+            }
+
+            // Evaluate the function
+            MultidimensionalArray f = MultidimensionalArray.Create(1, 1);
+            field.Evaluate(jLocal, 1, nodeSet, f);
+            values[0] = f[0, 0];
 
             // Set initial step size to 0.5 * h_minGlobal
             // Set the search direction depending on the sign of the curvature
             stepSize[0] = 0.5 * gridData.Cells.h_minGlobal;
-            //if (secondDerivative[0] < 0.0) {
-            //    stepSize[0] = -stepSize[0];
-            //}
 
             int n = 1;
             while (n < maxIterations + 1) {
                 // Evaluate the gradient of the current point
-                double[] gradient = NormalizedGradient(field, jLocal, nodeSet);
+                double[] gradient;
+                if (byFlux) {
+                    gradient = NormalizedGradientByFlux(field, jLocal, nodeSet);
+                } else {
+                    gradient = NormalizedGradient(field, jLocal, nodeSet);
+                }
 
                 // Compute new point along curve
-                points[n, 0] = currentPoint[0] + gradient[0] * stepSize[n - 1];
-                points[n, 1] = currentPoint[1] + gradient[1] * stepSize[n - 1];
-                currentPoint = points.ExtractSubArrayShallow(n, -1).To1DArray();
+                currentPoint[0] = currentPoint[0] + gradient[0] * stepSize[n - 1];
+                currentPoint[1] = currentPoint[1] + gradient[1] * stepSize[n - 1];
+
+                // New point has been calculated --> old node set is invalid
+                nodeSet = null;
 
                 // Check if new point is still in the same cell or has moved to one of its neighbours
                 if (!gridData.Cells.IsInCell(currentPoint, jLocal)) {
-                    // Get CellMask of cell neighbours
+                    // Get indices of cell neighbours
                     gridData.GetCellNeighbours(jLocal, GetCellNeighbours_Mode.ViaVertices, out int[] cellNeighbours, out int[] connectingEntities);
-                    BitArray btArray = new BitArray(gridData.Cells.NoOfLocalUpdatedCells);
+
+                    double[] newLocalCoord = new double[currentPoint.Length];
+                    bool found = false;
+                    // Find neighbour
                     foreach (int neighbour in cellNeighbours) {
-                        btArray[neighbour] = true;
-                    }
-                    CellMask neighbours = new CellMask(gridData, btArray);
-
-                    // Compute global cell index of new point
-                    gridData.LocatePoint(currentPoint, out GlobalId, out GlobalIndex, out IsInside, out OnThisProcess, neighbours);
-                    if (!IsInside) {
-                        Console.WriteLine("New point is outside of the grid. Skip this curve and go on.");
-                        break;
+                        if (gridData.Cells.IsInCell(currentPoint, neighbour, newLocalCoord)) {
+                            // If neighbour has been found, update
+                            jLocal = neighbour + j0Grd;
+                            nodeSet = GetLocalNodeSet(gridData, currentPoint, jLocal);
+                            found = true;
+                            break;
+                        }
                     }
 
-                    // Compute local node set
-                    nodeSet = GetLocalNodeSet(gridData, currentPoint, (int)GlobalIndex);
-
-                    // Get local cell index of new point
-                    jLocal = (int)(GlobalIndex - j0Grd);
+                    if (found == false) {
+                        throw new NotSupportedException("No neighbour found");
+                    }
+                } else {
+                    // New point is still in the same cell --> update only the coordiantes (local node set)
+                    nodeSet = GetLocalNodeSet(gridData, currentPoint, jLocal + j0Grd);
                 }
+
+                // Update output
+                points[n, 0] = currentPoint[0];
+                points[n, 1] = currentPoint[1];
+
+                // Evaluate the function
+                f.Clear();
+                field.Evaluate(jLocal, 1, nodeSet, f);
+                values[n] = f[0, 0];
 
                 // Evaluate the second derivative of the new point
                 NotSupportedException e = null;
                 try {
-                    secondDerivative[n] = SecondDerivative(field, jLocal, nodeSet);
+                    if (byFlux) {
+                        secondDerivative[n] = SecondDerivativeByFlux(field, jLocal, nodeSet);
+                    } else {
+                        secondDerivative[n] = SecondDerivative(field, jLocal, nodeSet);
+                    }
                 } catch (NotSupportedException ee) {
                     e = ee;
                     break;
@@ -270,7 +390,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             return grid;
         }
 
-        public static MultidimensionalArray SortPoints(GridData gridData, SinglePhaseField field, MultidimensionalArray points) {
+        public static MultidimensionalArray SortPoints(GridData gridData, SinglePhaseField field, MultidimensionalArray points, bool byFlux = false) {
             double[] sortedXCoords = new double[points.Lengths[0]];
             double[] sortedYCoords = new double[points.Lengths[0]];
             int keptEntries = 0;
@@ -288,7 +408,12 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 int jLocal = (int)(GlobalIndex - j0Grd);
 
                 // Calculate secondDerivative
-                double secondDerivative = SecondDerivative(field, jLocal, nodeSet);
+                double secondDerivative;
+                if (byFlux) {
+                    secondDerivative = SecondDerivativeByFlux(field, jLocal, nodeSet);
+                } else {
+                    secondDerivative = SecondDerivative(field, jLocal, nodeSet);
+                }
 
                 // Select points where second derivative is larger than zero
                 if (secondDerivative > 0.0) {
