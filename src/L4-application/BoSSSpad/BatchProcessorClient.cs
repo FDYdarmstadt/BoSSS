@@ -279,10 +279,10 @@ namespace BoSSS.Application.BoSSSpad {
 
                 File.Copy(fOrg, fTarget);
                 if(OriginDir == null || !OriginDir.Equals(Path.GetDirectoryName(fOrg))) {
-                    if (OriginDir != null)
-                        Console.WriteLine();
+                    //if (OriginDir != null)
+                    //    Console.WriteLine();
                     OriginDir = Path.GetDirectoryName(fOrg);
-                    Console.WriteLine("Source directory: " + OriginDir);
+                    //Console.WriteLine("Source directory: " + OriginDir);
                     //Console.Write("   copied: ");
                 }
 

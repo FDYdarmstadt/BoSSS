@@ -54,6 +54,7 @@ namespace BoSSS.Application.BoSSSpad {
             int ctrl_idx = InteractiveShell.WorkflowMgm.RegisterControl(ctrl);
             if(JobName.IsEmptyOrWhite()) {
                 JobName = "UnnamedJob_" + ctrl_idx;
+                ctrl.SessionName = JobName;
             }
 
             Type solverClass = ctrl.GetSolverType();
