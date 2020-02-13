@@ -249,7 +249,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                     }
 
                     if (found == false) {
-                        throw new NotSupportedException("No neighbour found");
+                        Console.WriteLine("No neighbour found");
+                        return n;
                     }
                 } else {
                     // New point is still in the same cell --> update only the coordiantes (local node set)
