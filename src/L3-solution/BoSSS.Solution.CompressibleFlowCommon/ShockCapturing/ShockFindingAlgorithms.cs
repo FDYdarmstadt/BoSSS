@@ -137,6 +137,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
                     // Compute global cell index of new point
                     gridData.LocatePoint(currentPoint, out GlobalId, out GlobalIndex, out IsInside, out OnThisProcess, neighbours);
+                    if (!IsInside) {
+                        Console.WriteLine("New point is outside of the grid. Skip this curve and go on.");
+                        break;
+                    }
 
                     // Compute local node set
                     nodeSet = GetLocalNodeSet(gridData, currentPoint, (int)GlobalIndex);
