@@ -162,16 +162,93 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             return n;
         }
 
-        public static double[] GetAVMeanValues(GridData gridData, SinglePhaseField avField) {
+        /// <summary>
+        /// Returns all cells with the respective artificial viscosity value
+        /// if the value is larger than zero
+        /// </summary>
+        /// <param name="gridData"></param>
+        /// <param name="avField"></param>
+        /// <returns><see cref="MultidimensionalArray"/>, first index: cellIndex, second index: artificial viscosity value</returns>
+        public static MultidimensionalArray GetAvMeanValues(GridData gridData, SinglePhaseField avField) {
             CellMask allCells = CellMask.GetFullMask(gridData);
-            int numOfCells = gridData.iGeomCells.Count;
-            double[] result = new double[numOfCells];
+            double[] cellIndices = new double[allCells.NoOfItemsLocally];
+            double[] avValues = new double[allCells.NoOfItemsLocally];
 
+            int count = 0;
             foreach (int cell in allCells.ItemEnum) {
-                result[cell] = avField.GetMeanValue(cell);
+                double avValue = avField.GetMeanValue(cell);
+                if (avValue > 0.0) {
+                    cellIndices[count] = cell;
+                    avValues[count] = avValue;
+                    count++;
+                }
             }
 
+            Array.Resize(ref cellIndices, count);
+            Array.Resize(ref avValues, count);
+
+            MultidimensionalArray result = MultidimensionalArray.Create(count, 2);
+            result.SetSubVector(cellIndices, new int[] { -1, 0 });
+            result.SetSubVector(avValues, new int[] { -1, 1 });
+
             return result;
+        }
+
+        /// <summary>
+        /// Get a 3x3 grid in a cell
+        /// </summary>
+        /// <param name="gridData"></param>
+        /// <param name="jCell">Local cell index</param>
+        /// <returns><see cref="MultidimensionalArray"/>, first index: x-coord., second index: y-coord.</returns>
+        public static MultidimensionalArray GetGlobal3x3NodeSet(GridData gridData, int jCell) {
+            int D = 2;
+            int numOfNodes = 9;
+            double hmin = gridData.Cells.h_minGlobal;
+            double[] cellCenter = gridData.Cells.GetCenter(jCell);
+
+            MultidimensionalArray grid = MultidimensionalArray.Create(numOfNodes, D);
+
+            // Create a 3x3 grid in a cell
+            // Bottom row
+            // Node 0
+            grid[0, 0] = cellCenter[0] - 0.4 * hmin;
+            grid[0, 1] = cellCenter[1] - 0.4 * hmin;
+
+            // Node 1
+            grid[1, 0] = cellCenter[0];
+            grid[1, 1] = cellCenter[1] - 0.4 * hmin;
+
+            // Node 2
+            grid[2, 0] = cellCenter[0] + 0.4 * hmin;
+            grid[2, 1] = cellCenter[1] - 0.4 * hmin;
+
+            // Middle row
+            // Node 3
+            grid[3, 0] = cellCenter[0] - 0.4 * hmin;
+            grid[3, 1] = cellCenter[1];
+
+            // Node 4
+            grid[4, 0] = cellCenter[0];
+            grid[4, 1] = cellCenter[1];
+
+            // Node 5
+            grid[5, 0] = cellCenter[0] + 0.4 * hmin;
+            grid[5, 1] = cellCenter[1];
+
+            // Top row
+            // Node 6
+            grid[6, 0] = cellCenter[0] - 0.4 * hmin;
+            grid[6, 1] = cellCenter[1] + 0.4 * hmin;
+
+            // Node 7
+            grid[7, 0] = cellCenter[0];
+            grid[7, 1] = cellCenter[1] + 0.4 * hmin;
+
+            // Node 8
+            grid[8, 0] = cellCenter[0] + 0.4 * hmin;
+            grid[8, 1] = cellCenter[1] + 0.4 * hmin;
+
+            return grid;
         }
     }
 }
