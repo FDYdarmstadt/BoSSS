@@ -3854,6 +3854,211 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
+        public static XNSE_Control StokesSphere(int p = 1, int kelem = 4, string _DbPath = null) {
+
+            XNSE_Control C = new XNSE_Control();
+
+            
+            // basic database options
+            // ======================
+            #region db
+
+            C.DbPath = _DbPath;
+            C.savetodb = C.DbPath != null;
+            C.ProjectName = "XNSE/StokesSphere";
+            C.ProjectDescription = "static droplet";
+            
+            #endregion
+
+
+            // DG degrees
+            // ==========
+            #region degrees
+
+            C.FieldOptions.Add("Velocity*", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Pressure", new FieldOpts() {
+                Degree = p - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            
+            C.FieldOptions.Add("GravityY", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("PhiDG", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Curvature", new FieldOpts() {
+                Degree = Math.Max(4, 2*p + 2),
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+
+            #endregion
+
+
+            // grid genration
+            // ==============
+            #region grid
+
+            
+
+            C.GridFunc = delegate () {
+                double[] Xnodes = GenericBlas.Linspace(-1, 1, kelem + 1);
+                double[] Ynodes = GenericBlas.Linspace(-1, 1, kelem + 1);
+                double[] Znodes = GenericBlas.Linspace(-1, 1, kelem + 1);
+                var grd = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
+
+
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte et = 0;
+                    if (Math.Abs(X[0] - (-1)) <= 1.0e-8)
+                        return "wall_left";
+                    if (Math.Abs(X[0] - (+1)) <= 1.0e-8)
+                        return "wall_right";
+                    if (Math.Abs(X[1] - (-1)) <= 1.0e-8)
+                        return "wall_front";
+                    if (Math.Abs(X[1] - (+1)) <= 1.0e-8)
+                        return "wall_back";
+                    if (Math.Abs(X[2] - (-1)) <= 1.0e-8)
+                        return "wall_top";
+                    if (Math.Abs(X[2] - (+1)) <= 1.0e-8)
+                        return "wall_bottom";
+
+                    throw new ArgumentException("unknown wall");
+                });
+                return grd;
+            };
+
+
+            #endregion
+
+
+            // Physical Parameters
+            // ===================
+            #region physics
+
+
+            // Air-Water (lenght scale == centimeters, 3D space)
+            C.PhysicalParameters.rho_A = 1e-3; //     kg / cm³
+            C.PhysicalParameters.rho_B = 1.2e-6; //   kg / cm³
+            C.PhysicalParameters.mu_A = 1e-5; //      kg / cm / sec
+            C.PhysicalParameters.mu_B = 17.1e-8; //   kg / cm / sec
+            C.PhysicalParameters.Sigma = 72.75e-3; // kg / sec²   
+
+
+
+            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.Material = true;
+
+            #endregion
+
+
+            // Initial Values
+            // ==============
+            #region init
+
+
+            //double[] center = new double[] { 0.5, 0.5 };
+            ////double a = 2.4;
+            ////double b = 2.4;
+            ////Func<double, double> radius = phi => a * b / Math.Sqrt(a.Pow2() * Math.Sin(phi).Pow2() + b.Pow2() * Math.Cos(phi).Pow2());
+            //double radius = 0.25;
+            //Func<double, double> radiusFunc = phi => radius;
+
+            //double delta = 0.0;
+
+            double r = 0.7;
+            double nonsp = 0.2;
+
+            C.AddInitialValue("Phi", new Formula($"X => (X[0]/{r*nonsp}).Pow2() + (X[1]/{r}).Pow2() + (X[2]/{r}).Pow2()-1", false));
+
+            C.LSContiProjectionMethod = ContinuityProjectionOption.None;
+
+
+            #endregion
+
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+            //C.AddBoundaryValue("wall_lower");
+            //C.AddBoundaryValue("wall_upper");
+            //C.AddBoundaryValue("wall_left");
+            //C.AddBoundaryValue("wall_right");
+            //C.AddBoundaryValue("wall_left");
+            //C.AddBoundaryValue("wall_right");
+
+            #endregion
+
+
+
+
+
+            // misc. solver options
+            // ====================
+            #region solver
+
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+
+            C.ComputeEnergyProperties = false;
+
+            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
+            //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
+
+            //C.ContiField = XNSE_Control.ContinuityProjection.ContinuousDG;
+            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
+            C.LinearSolver.NoOfMultigridLevels = 3;
+            C.LinearSolver.MaxSolverIterations = 50;
+            C.LinearSolver.TargetBlockSize = 200;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            //C.Solver_MaxIterations = 50;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.LinearSolver.ConvergenceCriterion = 1e-8;
+            //C.Solver_ConvergenceCriterion = 1e-8;
+            C.LevelSet_ConvergenceCriterion = 1e-6;
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
+
+            //C.AdvancedDiscretizationOptions.surfTensionMode = Solution.XNSECommon.SurfaceTensionMode.LaplaceBeltrami_Local;
+            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
+            //C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
+
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver.verbose=true;
+            C.NonLinearSolver.verbose = true;
+            #endregion
+
+
+            // Timestepping
+            // ============
+            #region time
+
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
+            C.Option_LevelSetEvolution = LevelSetEvolution.None;
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+
+
+            #endregion
+
+            return C;
+
+        }
+
+
 
         public static XNSE_Control CollidingDroplets(int p = 2, int kelem = 40, string _DbPath = null) {
 

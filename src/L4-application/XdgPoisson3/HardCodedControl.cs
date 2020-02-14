@@ -521,7 +521,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// </summary>
         /// <param name="myDB"></param>
         /// <returns></returns>
-        public static XdgPoisson3Control TestOrTreat(int solver = 1, int blocksize = 80, string myDB = null)
+        public static XdgPoisson3Control TestOrTreat(int solver = 3, int blocksize = 80, string myDB = null)
         {
             XdgPoisson3Control C = new XdgPoisson3Control();
 
