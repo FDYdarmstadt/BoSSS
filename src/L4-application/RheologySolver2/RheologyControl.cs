@@ -93,6 +93,13 @@ namespace BoSSS.Application.Rheology {
         [DataMember]
         public double ObjectiveParam = 1.0;
 
+
+        /// <summary>
+        /// Giesekus model factor with which Giesekus term should be multiplied, if factor = 0 we have Oldroyd B
+        /// </summary>
+        [DataMember]
+        public double giesekusfactor = 0.0;
+
         //_____________________________________________________________________________________________
 
         //SOLVING SYSTEM
@@ -103,6 +110,12 @@ namespace BoSSS.Application.Rheology {
         /// </summary>
         [DataMember]
         public bool Stokes = false;
+
+        /// <summary>
+        /// Stokes (true), but iterative for convection in constitutive
+        /// </summary>
+        [DataMember]
+        public bool StokesConvection = false;
 
         /// <summary>
         /// insert initial conditions
@@ -162,7 +175,7 @@ namespace BoSSS.Application.Rheology {
         /// Use finite differences Jacobian for Linearization
         /// </summary>
         [DataMember]
-        public bool useJacobianForOperatorMatrix = false;
+        public bool useFDJacobianForOperatorMatrix = false;
 
         /// <summary>
         /// periodic BC?

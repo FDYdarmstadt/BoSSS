@@ -35,6 +35,7 @@ namespace BoSSS.Solution.RheologyCommon {
         BoundaryCondMap<IncompressibleBcType> m_BcMap;
         protected double m_Weissenberg; // Weissenberg number
         protected double m_alpha; // upwind-paramter
+        protected bool m_UseFDJacobian;
 
         /// <summary>
         /// Mapping from edge tags to boundary values.
@@ -51,11 +52,12 @@ namespace BoSSS.Solution.RheologyCommon {
         ///// </summary>
         //protected Func<double[], double, double>[,] velFunction;
 
-        public ConstitutiveEqns_Convective(int _Component, BoundaryCondMap<IncompressibleBcType> _BcMap, double Weissenberg, double alpha = 1.0) {
+        public ConstitutiveEqns_Convective(int _Component, BoundaryCondMap<IncompressibleBcType> _BcMap, double Weissenberg, bool UseFDJacobian, double alpha = 1.0) {
             Component = _Component;
             this.m_BcMap = _BcMap;
             this.m_Weissenberg = Weissenberg;
             this.m_alpha = alpha;
+            this.m_UseFDJacobian = UseFDJacobian;
 
             //StressFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, 2, 2];
 
@@ -115,8 +117,11 @@ namespace BoSSS.Solution.RheologyCommon {
 
         public IList<string> ParameterOrdering {
             get {
-                return null;
-                //return VariableNames.Velocity0Vector(2);
+                if (m_UseFDJacobian) {
+                    return VariableNames.Velocity0Vector(2);
+                } else {
+                    return null;
+                }
             }
         }
 
@@ -151,11 +156,14 @@ namespace BoSSS.Solution.RheologyCommon {
             double flxIn = 0;
             double n_u1 = 0;
 
-            //for (int d = 0; d < 2; d++) {
-            //    n_u1 += Normale[d] * 0.5 * (inp.Parameters_IN[d] + inp.Parameters_IN[d]);
-            //}
-            Vector Velocity_IN = new Vector(_Tin, 1, inp.D);
-            n_u1 = Normale * Velocity_IN;
+            if (m_UseFDJacobian) {
+                for (int d = 0; d < 2; d++) {
+                    n_u1 += Normale[d] * 0.5 * (inp.Parameters_IN[d] + inp.Parameters_IN[d]);
+                }
+            } else {
+                Vector Velocity_IN = new Vector(_Tin, 1, inp.D);
+                n_u1 = Normale * Velocity_IN;
+            }
 
             double factor;
             if (n_u1 < 0)
@@ -178,12 +186,15 @@ namespace BoSSS.Solution.RheologyCommon {
             double flxIn = 0;
             double n_u1 = 0;
 
-            //for (int d = 0; d < 2; d++) {
-            //    n_u1 += Normale[d] * 0.5 * (inp.Parameters_IN[d] + inp.Parameters_OUT[d]);
-            //}
-            Vector Velocity_IN = new Vector(Tin, 1, inp.D);
-            Vector Velocity_OT = new Vector(Tout, 1, inp.D);
-            n_u1 = 0.5 * (Normale * (Velocity_IN + Velocity_OT));
+            if (m_UseFDJacobian) {
+                for (int d = 0; d < 2; d++) {
+                    n_u1 += Normale[d] * 0.5 * (inp.Parameters_IN[d] + inp.Parameters_OUT[d]);
+                }
+            } else {
+                Vector Velocity_IN = new Vector(Tin, 1, inp.D);
+                Vector Velocity_OT = new Vector(Tout, 1, inp.D);
+                n_u1 = 0.5 * (Normale * (Velocity_IN + Velocity_OT));
+            }
 
             double factor;
             if (n_u1 < 0)
@@ -201,10 +212,16 @@ namespace BoSSS.Solution.RheologyCommon {
             double n_u2 = 0;
 
             Normale.Scale(-1.0);
-            //for (int d = 0; d < 2; d++) {
-            //    n_u2 += Normale[d] * 0.5 * (inp.Parameters_OUT[d] + inp.Parameters_IN[d]);
-            //}
-            n_u2 = 0.5 * (Normale * (Velocity_IN + Velocity_OT));
+
+            if (m_UseFDJacobian) {
+                for (int d = 0; d < 2; d++) {
+                    n_u2 += Normale[d] * 0.5 * (inp.Parameters_OUT[d] + inp.Parameters_IN[d]);
+                }
+            } else {
+                Vector Velocity_IN = new Vector(Tin, 1, inp.D);
+                Vector Velocity_OT = new Vector(Tout, 1, inp.D);
+                n_u2 = 0.5 * (Normale * (Velocity_IN + Velocity_OT));
+            }
 
             double factor2;
             if (n_u2 < 0)
@@ -219,14 +236,17 @@ namespace BoSSS.Solution.RheologyCommon {
         }
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] T, double[,] GradT, double V, double[] GradV) {
-            //double res = 0.0;
-            //res += cpv.Parameters[0] * GradT[0, 0] + cpv.Parameters[1] * GradT[0, 1];
-            //return m_Weissenberg * res * V;
 
-            Vector Velocity = new Vector(T, 1, cpv.D);
-            Vector _GradT = GradT.GetRowPt(0);
-            double res = Velocity*_GradT;
-            return m_Weissenberg * res * V;
+            if (m_UseFDJacobian) {
+                double res = 0.0;
+                res += cpv.Parameters[0] * GradT[0, 0] + cpv.Parameters[1] * GradT[0, 1];
+                return m_Weissenberg * res * V;
+            } else {
+                Vector Velocity = new Vector(T, 1, cpv.D);
+                Vector _GradT = GradT.GetRowPt(0);
+                double res = Velocity * _GradT;
+                return m_Weissenberg * res * V;
+            }
         }
 
         /// <summary>

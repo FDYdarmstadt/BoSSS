@@ -168,7 +168,7 @@ namespace BoSSS.Solution.NSECommon {
                 case "Temperature":
                     DiffussionTerm = 1.0 / (ReynoldsNumber * PrandtlNumber) * Math.Cos(x_ * y_) * (Math.Pow(x_, 2) + Math.Pow(y_, 2)); // OK for lowmach AND combustion
                     SourceTerm = HeatReleaseFactor * Math.Cos(x_ * y_) * ReactionRate;
-                    break; 
+                    break;
                 case "MassFraction":
                     if(SpeciesIndex == -1)
                         throw new ArgumentException("Species index needs to be specified");
@@ -197,19 +197,9 @@ namespace BoSSS.Solution.NSECommon {
             if(!chemReactionOK)
                 SourceTerm = 0;
 
-
-            return -(ConvectionTerm* ConvectionTermSwitch + DiffussionTerm * DiffussionTermSwitch + SourceTerm ) * V;
-
-
+            return -(ConvectionTerm * ConvectionTermSwitch + DiffussionTerm * DiffussionTermSwitch + SourceTerm) * V;
         }
-
-
-
-
-
     }
-
-
 }
 
 
