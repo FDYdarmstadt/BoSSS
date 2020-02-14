@@ -182,8 +182,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         /// <param name="secondDerivative">The second derivative at each point</param>
         /// <param name="stepSize">The step size between two points along the curve (first entry has to be user defined)</param>
         /// <returns></returns>
-        public static int WalkOnCurve(GridData gridData, SinglePhaseField field, int maxIterations, double threshold, MultidimensionalArray points, double[] secondDerivative, double[] stepSize, double[] values, bool byFlux = false) {
+        public static int WalkOnCurve(GridData gridData, SinglePhaseField field, int maxIterations, double threshold, MultidimensionalArray points, double[] secondDerivative, double[] stepSize, double[] values, out bool converged, bool byFlux = true) {
             // Init
+            converged = false;
+
             // Current (global) point
             double[] currentPoint = points.ExtractSubArrayShallow(0, -1).To1DArray();
 
@@ -198,10 +200,16 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             int jLocal = (int)(GlobalIndex - j0Grd);
 
             // Evaluate the second derivative
-            if (byFlux) {
-                secondDerivative[0] = SecondDerivativeByFlux(field, jLocal, nodeSet);
-            } else {
-                secondDerivative[0] = SecondDerivative(field, jLocal, nodeSet);
+            //NotSupportedException e = null;
+            try {
+                if (byFlux) {
+                    secondDerivative[0] = SecondDerivativeByFlux(field, jLocal, nodeSet);
+                } else {
+                    secondDerivative[0] = SecondDerivative(field, jLocal, nodeSet);
+                }
+            } catch (NotSupportedException ee) {
+                //e = ee;
+                return 0;
             }
 
             // Evaluate the function
@@ -267,7 +275,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 values[n] = f[0, 0];
 
                 // Evaluate the second derivative of the new point
-                NotSupportedException e = null;
+                //NotSupportedException e = null;
                 try {
                     if (byFlux) {
                         secondDerivative[n] = SecondDerivativeByFlux(field, jLocal, nodeSet);
@@ -275,7 +283,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                         secondDerivative[n] = SecondDerivative(field, jLocal, nodeSet);
                     }
                 } catch (NotSupportedException ee) {
-                    e = ee;
+                    //e = ee;
                     break;
                 }
 
@@ -295,6 +303,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 diff[0] = points[n - 1, 0] - points[n - 2, 0];
                 diff[1] = points[n - 1, 1] - points[n - 2, 1];
                 if (diff.L2Norm() < threshold) {
+                    converged = true;
                     break;
                 }
             }
@@ -335,12 +344,12 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         }
 
         /// <summary>
-        /// Get a 3x3 grid in a cell
+        /// Get a grid consisting of 3 x 3 points per cell
         /// </summary>
         /// <param name="gridData"></param>
         /// <param name="jCell">Local cell index</param>
         /// <returns><see cref="MultidimensionalArray"/>, first index: x-coord., second index: y-coord.</returns>
-        public static MultidimensionalArray GetGlobal3x3NodeSet(GridData gridData, int jCell) {
+        public static MultidimensionalArray Get3x3Grid(GridData gridData, int jCell) {
             int D = 2;
             int numOfNodes = 9;
             double hmin = gridData.Cells.h_minGlobal;
