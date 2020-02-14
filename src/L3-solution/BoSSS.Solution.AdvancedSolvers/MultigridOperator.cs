@@ -26,6 +26,7 @@ using BoSSS.Platform;
 using BoSSS.Platform.Utils;
 using BoSSS.Foundation;
 using ilPSP.Tracing;
+using MPI.Wrappers;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -374,7 +375,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (basisES.Count() <= 0) {
                 throw new ArgumentException("At least one multigrid level is required.");
             }
-
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             this.BaseGridProblemMapping = _pm;
             if (cobc.Count() < 1)
                 throw new ArgumentException();
@@ -392,6 +393,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             if (this.LevelIndex == 0 && this.Mapping.AggBasis.Any(agb => agb.ReqModeIndexTrafo)) {
                 int J = this.Mapping.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+                if (J != BaseGridProblemMapping.GridDat.iLogicalCells.NoOfLocalUpdatedCells)
+                    throw new Exception("No of local cells wrong");
                 Debug.Assert(J == this.BaseGridProblemMapping.GridDat.iLogicalCells.NoOfLocalUpdatedCells);
                 IndexIntoProblemMapping_Local = new int[this.Mapping.LocalLength];
 #if DEBUG
