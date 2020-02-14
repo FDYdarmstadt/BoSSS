@@ -57,9 +57,7 @@ namespace BoSSS.Application.FSI_Solver {
         public Particle_TrapRight(ParticleMotionInit motionInit, double width, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
             m_Length = width;
             Aux.TestArithmeticException(width, "Particle width");
-
             Motion.GetParticleLengthscale(width);
-            Motion.GetParticleMinimalLengthscale(width);
             Motion.GetParticleArea(Area);
             Motion.GetParticleMomentOfInertia(MomentOfInertia);
 
@@ -111,25 +109,14 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="point">
         /// The point to be tested.
         /// </param>
-        /// <param name="minTolerance">
-        /// Minimum tolerance length.
+        /// <param name="tolerance">
+        /// tolerance length.
         /// </param>
-        /// <param name="maxTolerance">
-        /// Maximal tolerance length. Equal to h_min if not specified.
-        /// </param>
-        /// <param name="WithoutTolerance">
-        /// No tolerance.
-        /// </param>
-        public override bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false) {
+        public override bool Contains(Vector point, double tolerance = 0) {
             // only for rectangular cells
-            if (h_max == 0)
-                h_max = h_min;
-            double radiusTolerance = !WithoutTolerance ? 5 * m_Length + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
+            double radiusTolerance = 5 * m_Length + tolerance;
             var distance = point.L2Distance(Motion.GetPosition(0));
-            if (distance < (radiusTolerance)) {
-                return true;
-            }
-            return false;
+            return distance < radiusTolerance;
         }
 
         /// <summary>

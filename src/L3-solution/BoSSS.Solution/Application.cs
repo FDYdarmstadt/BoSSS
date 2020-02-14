@@ -1825,8 +1825,10 @@ namespace BoSSS.Solution {
 
                 int i = i0.MajorNumber;
                 for (int s = 0; s < this.Control.AMR_startUpSweeps; s++) {
+                    Console.WriteLine("s " + s);
                     this.MpiRedistributeAndMeshAdapt(i, physTime);
-
+                }
+                { 
 
                     if (this.Control != null && this.Control.AdaptiveMeshRefinement) {
                         ResetInitial();

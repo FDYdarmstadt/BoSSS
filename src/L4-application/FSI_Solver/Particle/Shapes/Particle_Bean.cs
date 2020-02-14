@@ -58,7 +58,6 @@ namespace BoSSS.Application.FSI_Solver {
             Aux.TestArithmeticException(radius, "Particle radius");
 
             Motion.GetParticleLengthscale(radius);
-            Motion.GetParticleMinimalLengthscale(radius);
             Motion.GetParticleArea(Area);
             Motion.GetParticleMomentOfInertia(MomentOfInertia);
         }
@@ -101,22 +100,14 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="point">
         /// The point to be tested.
         /// </param>
-        /// <param name="minTolerance">
-        /// Minimum tolerance length.
+        /// <param name="tolerance">
+        /// tolerance length.
         /// </param>
-        /// <param name="maxTolerance">
-        /// Maximal tolerance length. Equal to h_min if not specified.
-        /// </param>
-        /// <param name="WithoutTolerance">
-        /// No tolerance.
-        /// </param>
-        public override bool Contains(double[] point, double minTolerance, double maxTolerance = 0, bool WithoutTolerance = false) {
+        public override bool Contains(Vector point, double tolerance = 0) {
             double alpha = Motion.GetAngle(0);
-            double[] position = Motion.GetPosition(0);
+            Vector position = Motion.GetPosition(0);
             // only for rectangular cells
-            if (maxTolerance == 0)
-                maxTolerance = minTolerance;
-            double radiusTolerance = !WithoutTolerance ? 1.0 + Math.Sqrt(maxTolerance.Pow2() + minTolerance.Pow2()) : 1;
+            double radiusTolerance = 1.0 + tolerance;
             double a = 4.0 * radiusTolerance.Pow2();
             double b = 1.0 * radiusTolerance.Pow2();
             if (-((((point[0] - position[0]) * Math.Cos(alpha) - (point[1] - position[1]) * Math.Sin(alpha)).Pow(2) + ((point[0] - position[0]) * Math.Sin(alpha) + (point[1] - position[1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((point[0] - position[0]) * Math.Cos(alpha) - (point[1] - position[1]) * Math.Sin(alpha)).Pow(3) - b * ((point[0] - position[0]) * Math.Sin(alpha) + (point[1] - position[1]) * Math.Cos(alpha)).Pow2()) > 0) {
