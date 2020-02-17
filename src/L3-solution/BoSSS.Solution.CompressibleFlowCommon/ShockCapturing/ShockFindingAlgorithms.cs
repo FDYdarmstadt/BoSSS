@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 using ilPSP;
 using System;
 using System.Collections;
@@ -71,8 +72,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             if (gradientX == null) {
                 // Evaluate gradient
                 Basis basis = new Basis(field.GridDat, field.Basis.Degree);
-                gradientX = new SinglePhaseField(basis);
-                gradientY = new SinglePhaseField(basis);
+                gradientX = new SinglePhaseField(basis, "gradientX");
+                gradientY = new SinglePhaseField(basis, "gradientY");
                 gradientX.DerivativeByFlux(1.0, field, d: 0);
                 gradientY.DerivativeByFlux(1.0, field, d: 1);
             }
@@ -121,8 +122,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             if (gradientX == null) {
                 // Evaluate gradient
                 Basis basis = new Basis(field.GridDat, field.Basis.Degree);
-                gradientX = new SinglePhaseField(basis);
-                gradientY = new SinglePhaseField(basis);
+                gradientX = new SinglePhaseField(basis, "gradientX");
+                gradientY = new SinglePhaseField(basis, "gradientY");
                 gradientX.DerivativeByFlux(1.0, field, d: 0);
                 gradientY.DerivativeByFlux(1.0, field, d: 1);
             }
@@ -130,14 +131,21 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             if (hessianXX == null) {
                 // Evaluate Hessian matrix
                 Basis basis = new Basis(field.GridDat, field.Basis.Degree);
-                hessianXX = new SinglePhaseField(basis);
-                hessianXY = new SinglePhaseField(basis);
-                hessianYX = new SinglePhaseField(basis);
-                hessianYY = new SinglePhaseField(basis);
+                hessianXX = new SinglePhaseField(basis, "hessianXX");
+                hessianXY = new SinglePhaseField(basis, "hessianXY");
+                hessianYX = new SinglePhaseField(basis, "hessianYX");
+                hessianYY = new SinglePhaseField(basis, "hessianYY");
                 hessianXX.DerivativeByFlux(1.0, gradientX, d: 0);
                 hessianXY.DerivativeByFlux(1.0, gradientX, d: 1);
                 hessianYX.DerivativeByFlux(1.0, gradientY, d: 0);
                 hessianYY.DerivativeByFlux(1.0, gradientY, d: 1);
+
+                if (PatchRecoveryOn) {
+                    hessianXX = PatchRecovery(hessianXX);
+                    hessianXY = PatchRecovery(hessianXY);
+                    hessianYX = PatchRecovery(hessianYX);
+                    hessianYY = PatchRecovery(hessianYY);
+                }
             }
 
             if (resultGradX == null) {
@@ -155,6 +163,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             gradientX.Evaluate(jCell, 1, nodeSet, resultGradX);
             gradientY.Evaluate(jCell, 1, nodeSet, resultGradY);
 
+            // Use patch recovery if it has been activated in method "WalkOnCurve(...)"
+
+
             hessianXX.Evaluate(jCell, 1, nodeSet, resultHessXX);
             hessianXY.Evaluate(jCell, 1, nodeSet, resultHessXY);
             hessianYX.Evaluate(jCell, 1, nodeSet, resultHessYX);
@@ -171,6 +182,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             return g_alpha_alpha;
         }
 
+        private static bool PatchRecoveryOn;
+
         /// <summary>
         /// Algorithm to find an inflection point along a curve in the direction of the gradient
         /// </summary>
@@ -182,9 +195,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         /// <param name="secondDerivative">The second derivative at each point</param>
         /// <param name="stepSize">The step size between two points along the curve (first entry has to be user defined)</param>
         /// <returns></returns>
-        public static int WalkOnCurve(GridData gridData, SinglePhaseField field, int maxIterations, double threshold, MultidimensionalArray points, double[] secondDerivative, double[] stepSize, double[] values, out bool converged, bool byFlux = true) {
+        public static int WalkOnCurve(GridData gridData, SinglePhaseField field, int maxIterations, double threshold, MultidimensionalArray points, double[] secondDerivative, double[] stepSize, double[] values, out bool converged, bool patchRecoveryOn = false, bool byFlux = true) {
             // Init
             converged = false;
+            PatchRecoveryOn = patchRecoveryOn;
 
             // Current (global) point
             double[] currentPoint = points.ExtractSubArrayShallow(0, -1).To1DArray();
@@ -441,6 +455,24 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Performs the patch recovery on a given DG field
+        /// </summary>
+        /// <param name="input">A <see cref="SinglePhaseField"/></param>
+        /// <returns>A patch recovered <see cref="SinglePhaseField"/> with a degree of inputDegreee + 2</returns>
+        public static SinglePhaseField PatchRecovery(SinglePhaseField input) {
+            Console.WriteLine(String.Format("Patch recovery of field {0} started", input.Identification));
+
+            Basis prcBasis = new Basis(input.GridDat, input.Basis.Degree + 2);
+            L2PatchRecovery prc = new L2PatchRecovery(input.Basis, prcBasis, CellMask.GetFullMask(input.GridDat), RestrictToCellMask: true);
+            SinglePhaseField prcField = new SinglePhaseField(prcBasis);
+            prc.Perform(prcField, input);
+
+            Console.WriteLine(String.Format("Patch recovery of field {0} finished", input.Identification));
+
+            return prcField;
         }
     }
 }
