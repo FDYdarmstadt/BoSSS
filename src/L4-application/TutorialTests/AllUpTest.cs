@@ -46,6 +46,7 @@ namespace BoSSS.Application.TutorialTests {
             BoSSS.Solution.Application.InitMPI(new string[0]);
 
              if (System.Environment.MachineName.ToLowerInvariant().EndsWith("rennmaschin")
+                || System.Environment.MachineName.ToLowerInvariant().EndsWith("stormbreaker")
                 //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
                 ) {
                 // This is Florians Laptop;
@@ -100,6 +101,8 @@ namespace BoSSS.Application.TutorialTests {
             // run test:
             string FullTexName = Path.Combine(DirectoryOffset, TexFileName);
             Assert.IsTrue(File.Exists(FullTexName), "unable to find TeX source: " + FullTexName);
+
+            MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: false);
 
             int ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { "--texbatch", FullTexName });
 

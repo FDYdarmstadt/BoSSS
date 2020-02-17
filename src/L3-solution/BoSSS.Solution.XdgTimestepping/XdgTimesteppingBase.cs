@@ -49,7 +49,7 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// </param>
     /// <param name="time"></param>
     public delegate void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time);
-    
+        
     /// <summary>
     /// Callback-Template for the mass matrix update.
     /// </summary>
@@ -149,6 +149,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Level-Set is handled using Lie-Splitting. Use this for the fully coupled FSI-Solver
         /// </summary>
         FSI_LieSplittingFullyCoupled = 5,
+
+        /// <summary>
+        /// Level-Set is handled using Lie-Splitting. Use this for the fully coupled FSI-Solver
+        /// </summary>
+        FSI_Coupled_Iterative = 6,
     }
 
     public enum SpatialOperatorType {
@@ -506,7 +511,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         void MiniLogResi(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
             double resiNorm = currentRes.MPI_L2Norm();
-            Console.WriteLine("    " + resiNorm);
+            Console.WriteLine("    " + iterIndex + "  "+ resiNorm);
         }
 
 

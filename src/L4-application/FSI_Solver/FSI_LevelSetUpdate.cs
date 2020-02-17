@@ -15,8 +15,11 @@ limitations under the License.
 */
 
 using BoSSS.Application.FSI_Solver;
+using BoSSS.Foundation.Comm;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
+using ilPSP;
 using MPI.Wrappers;
 using System;
 using System.Collections;
@@ -26,14 +29,17 @@ using System.Linq;
 namespace FSI_Solver {
     internal class FSI_LevelSetUpdate {
 
-        internal FSI_LevelSetUpdate(LevelSetTracker levelSetTracker) {
-            m_LevelSetTracker = levelSetTracker;
+        internal FSI_LevelSetUpdate(IGridData gridData, double minGridLength) {
+            this.gridData = gridData;
+            this.minGridLength = minGridLength;
         }
 
-        private readonly LevelSetTracker m_LevelSetTracker;
+        private readonly IGridData gridData;
+        private readonly double minGridLength;
+
 
         /// <summary>
-        /// compiles a cell mask from all cells with a specific color and their direct neighbors
+        /// compiles a cell mask from all cells with a specific color
         /// </summary>
         /// <param name="gridData">
         /// the grid that this mask will be associated with
@@ -47,42 +53,15 @@ namespace FSI_Solver {
         /// /// <param name="J">
         /// the number of locally updated cells
         /// </param>
-        internal CellMask CellsOneColor(IGridData gridData, List<int[]> ColoredCellsSorted, int CurrentColor, int J, bool FindNeighbours = true) {
-            int[] CellIDCurrentColor = FindCellIDs(ColoredCellsSorted, CurrentColor);
+        internal CellMask CellsOneColor(IGridData gridData, int[][] ColoredCellsSorted, int CurrentColor, int J) {
+            int[] ListID = BinarySearchWithNeighbors(ColoredCellsSorted, CurrentColor);
             BitArray ColoredCells = new BitArray(J);
-            for (int i = 0; i < CellIDCurrentColor.Length; i++) {
-                if (CellIDCurrentColor[i] < J)
-                    ColoredCells[CellIDCurrentColor[i]] = true;
+            for (int i = 0; i < ListID.Length; i++) {
+                if (ColoredCellsSorted[ListID[i]][0] < J)
+                    ColoredCells[ColoredCellsSorted[ListID[i]][0]] = true;
             }
             CellMask ColoredCellMask = new CellMask(gridData, ColoredCells);
-
-            if (FindNeighbours) {
-                CellMask ColoredCellMaskNeighbour = ColoredCellMask.AllNeighbourCells();
-                ColoredCellMask = ColoredCellMask.Union(ColoredCellMaskNeighbour);
-            }
             return ColoredCellMask;
-        }
-
-        /// <summary>
-        /// searchs for all cell ID with the current color
-        /// </summary>
-        /// <param name="ColoredCellsSorted">
-        /// a list of all cells sorted by color
-        /// </param>
-        /// <param name="CurrentColor">
-        /// the color which is associated with the Cell Mask
-        /// </param>
-        private int[] FindCellIDs(List<int[]> ColoredCellsSorted, int CurrentColor) {
-            List<int> ColorList = new List<int>();
-            for (int i = 0; i < ColoredCellsSorted.Count(); i++) {
-                ColorList.Add(ColoredCellsSorted[i][1]);
-            }
-            int[] ListID = BinarySearchWithNeighbors(ColorList, CurrentColor);
-            int[] CellID = new int[ListID.Length];
-            for (int i = 0; i < ListID.Length; i++) {
-                CellID[i] = ColoredCellsSorted[ListID[i]][0];
-            }
-            return CellID;
         }
 
         /// <summary>
@@ -94,75 +73,38 @@ namespace FSI_Solver {
         /// <param name="Target">
         /// The element to be found
         /// </param>
-        internal int[] BinarySearchWithNeighbors(List<int> SortedList, int Target) {
-            int StartIndex = BinarySearch(SortedList, Target);
-            if (StartIndex == 0)
-                return LeftSearch(SortedList, StartIndex);
-            else if (StartIndex == SortedList.Count() - 1)
-                return RightSearch(SortedList, StartIndex);
-            else {
-                int[] Right = RightSearch(SortedList, StartIndex);
-                int[] Left = LeftSearch(SortedList, StartIndex);
-                return Left.Union(Right).ToArray();
-            }
-
-        }
-
-        /// <summary>
-        /// Binary search algorithm
-        /// </summary>
-        /// <param name="SortedList">
-        /// A sorted list of all elements
-        /// </param>
-        /// <param name="Target">
-        /// The element to be found
-        /// </param>
-        int BinarySearch(List<int> SortedList, int Target) {
+        internal int[] BinarySearchWithNeighbors(int[][] SortedList, int Target) {
             int L = 0;
-            int R = SortedList.Count() - 1;
-            int TargetIndex = 0;
-
-            while (L <= R) {
-                TargetIndex = (L + R) / 2;
-                if (SortedList[TargetIndex] < Target)
-                    L = TargetIndex + 1;
-                else if (SortedList[TargetIndex] > Target)
-                    R = TargetIndex - 1;
+            int R = SortedList.Length - 1;
+            List<int> targetID = new List<int>();
+            while (L <= R) { // find a random cell with the current color
+                int currentID = (L + R) / 2;
+                Console.WriteLine("L " + L + " R " + R + " color " + SortedList[currentID][1]);
+                if (SortedList[currentID][1] == Target) {
+                    targetID.Add(currentID);
+                    break;
+                }
+                else if (SortedList[currentID][1] > Target)
+                    R = currentID - 1;
+                else
+                    L = currentID + 1;
+            }
+            Console.WriteLine("TargetID " + targetID.Count() +  "Target " +Target + "dafsd " + SortedList.Length);
+            while (targetID[0] > 0) {
+                if (SortedList[targetID[0] - 1][1] == Target) { // find all cells with the current color on the left side of the previous found cells
+                    targetID.Insert(0, targetID[0] - 1);
+                }
                 else
                     break;
             }
-
-            return TargetIndex;
-        }
-
-        /// <summary>
-        /// Search for left neighbours
-        /// </summary>
-        /// <param name="SortedList">
-        /// A sorted list of all elements
-        /// </param>
-        /// <param name="StartIndex"></param>
-        private int[] LeftSearch(List<int> SortedList, int StartIndex) {
-            List<int> temp = new List<int> { StartIndex };
-            while (temp.Last() + 1 < SortedList.Count() && SortedList[temp.Last() + 1] == SortedList[temp.Last()]) {
-                temp.Add(temp.Last() + 1);
+            while (targetID.Last() < SortedList.Length - 1){
+                if (SortedList[targetID.Last() + 1][1] == Target) { // find all cells with the current color on the right side of the previous found cells
+                    targetID.Add(targetID.Last() + 1);
+                }
+                else
+                    break;
             }
-            return temp.ToArray();
-        }
-
-        /// <summary>
-        /// Search for right neighbours
-        /// </summary>
-        /// <param name="SortedList">
-        /// A sorted list of all elements
-        /// </param>
-        /// <param name="StartIndex"></param>
-        private int[] RightSearch(List<int> SortedList, int StartIndex) {
-            List<int> temp = new List<int> { StartIndex };
-            while (temp.Last() - 1 > 0 && SortedList[temp.Last() - 1] == SortedList[temp.Last()]) {
-                temp.Add(temp.Last() - 1);
-            }
-            return temp.ToArray();
+            return targetID.ToArray();
         }
 
         /// <summary>
@@ -184,88 +126,6 @@ namespace FSI_Solver {
             return temp.ToArray();
         }
 
-        /// <summary>
-        /// searchs for all particles with the same color
-        /// </summary>
-        /// <param name="ParticleColor">
-        /// a list of all particles with their specific color
-        /// </param>
-        /// <param name="CurrentColor">
-        /// the color which is associated with the Cell Mask
-        /// </param
-        internal List<Particle> GetParticleListOneColor(List<Particle> AllParticles, int[] ParticleColor, int CurrentColor) {
-            List<Particle> temp = new List<Particle>();
-            for (int i = 0; i < ParticleColor.Length; i++) {
-                if (ParticleColor[i] == CurrentColor) {
-                    temp.Add(AllParticles[i]);
-                }
-            }
-            return temp;
-        }
-
-        /// <summary>
-        /// method to find the color of all particle
-        /// </summary>
-        /// <param name="gridData">
-        /// the grid that this mask will be associated with
-        /// </param>
-        /// <param name="ColoredCellsSorted">
-        /// a list of all cells sorted by color
-        /// </param>
-        /// <param name="Particles">
-        /// a list of all particles
-        /// </param>
-        public int[] FindParticleColor(IGridData gridData, List<Particle> Particles, List<int[]> ColoredCellsSorted) {
-            int J = gridData.iLogicalCells.NoOfLocalUpdatedCells;
-            List<int> CurrentColor = new List<int>();
-            for (int p = 0; p < Particles.Count; p++) {
-                double h_min = m_LevelSetTracker.GridDat.Cells.h_minGlobal > Particles[p].GetLengthScales().Min()
-                    ? 1.5 * m_LevelSetTracker.GridDat.Cells.h_minGlobal
-                    : 2 * m_LevelSetTracker.GridDat.Cells.h_minGlobal;
-                double[] ParticlePos = Particles[p].Motion.GetPosition();
-                double Upperedge = ParticlePos[1] + h_min;
-                double Loweredge = ParticlePos[1] - h_min;
-                double Leftedge = ParticlePos[0] - h_min;
-                double Rightedge = ParticlePos[0] + h_min;
-                int temp = 0;
-                for (int i = 0; i < ColoredCellsSorted.Count; i++) {
-                    if (ColoredCellsSorted[i][0] < J) {
-                        double[] center = gridData.iLogicalCells.GetCenter(ColoredCellsSorted[i][0]);
-                        if (center[0] > Leftedge && center[0] < Rightedge && center[1] > Loweredge && center[1] < Upperedge && ColoredCellsSorted[i][1] != 0) {
-                            temp = ColoredCellsSorted[i][1];
-                            break;
-                        }
-                    }
-
-                }
-                CurrentColor.Add(temp);
-            }
-            return CurrentColor.ToArray();
-        }
-
-        /// <summary>
-        /// method to sort all cells by their color
-        /// </summary>
-        /// <param name="CellColor">
-        /// all cells with their color
-        /// </param>
-        internal List<int[]> ColoredCellsFindAndSort(int[] CellColor) {
-            List<int[]> ColoredCellsSorted = new List<int[]>();
-            int ListIndex;
-            for (int CellID = 0; CellID < CellColor.Length; CellID++) {
-                ListIndex = 0;
-                if (ColoredCellsSorted.Count != 0) {
-                    while (ListIndex < ColoredCellsSorted.Count && CellColor[CellID] >= ColoredCellsSorted[ListIndex][1]) {
-                        ListIndex += 1;
-                    }
-                }
-                int[] temp = new int[2];
-                temp[0] = CellID;
-                temp[1] = CellColor[CellID];
-                ColoredCellsSorted.Insert(ListIndex, temp);
-            }
-            return ColoredCellsSorted;
-        }
 
         /// <summary>
         /// Method find the color of all particles combined with MPI communication.
@@ -293,6 +153,136 @@ namespace FSI_Solver {
                 GlobalParticleColor[i] = Convert.ToInt32(GlobalStateBuffer[i]);
             }
             return GlobalParticleColor;
+        }
+
+        /// <summary>
+        /// method to find the color of all particle
+        /// </summary>
+        /// <param name="gridData">
+        /// the grid that this mask will be associated with
+        /// </param>
+        /// <param name="ColoredCellsSorted">
+        /// a list of all cells sorted by color
+        /// </param>
+        /// <param name="Particles">
+        /// a list of all particles
+        /// </param>
+        public int[] FindParticleColor(IGridData gridData, List<Particle> Particles, List<int[]> ColoredCellsSorted) {
+            int J = gridData.iLogicalCells.NoOfLocalUpdatedCells;
+            List<int> CurrentColor = new List<int>();
+            for (int p = 0; p < Particles.Count; p++) {
+                double h_min = minGridLength > Particles[p].GetLengthScales().Min()
+                    ? 1.5 * minGridLength
+                    : 0;
+                int temp = 0;
+                for (int i = 0; i < ColoredCellsSorted.Count; i++) {
+                    if (ColoredCellsSorted[i][0] < J) {
+                        Vector center = new Vector(gridData.iLogicalCells.GetCenter(ColoredCellsSorted[i][0]));
+                        if (ColoredCellsSorted[i][1] != 0 && Particles[p].Contains(center, h_min)) {
+                            temp = ColoredCellsSorted[i][1];
+                            break;
+                        }
+                    }
+
+                }
+                CurrentColor.Add(temp);
+            }
+            return CurrentColor.ToArray();
+        }
+
+        /// <summary>
+        /// method to sort all cells by their color
+        /// </summary>
+        /// <param name="CellColor">
+        /// all cells with their color
+        /// </param>
+        internal List<int[]> ColoredCellsFindAndSort(int[] CellColor) {
+            List<int[]> ColoredCellsSorted = new List<int[]>();
+            int ListIndex;
+            for (int CellID = 0; CellID < CellColor.Length; CellID++) {
+                if (CellColor[CellID] == 0)
+                    continue;
+                ListIndex = 0;
+                if (ColoredCellsSorted.Count != 0) {
+                    while (ListIndex < ColoredCellsSorted.Count && CellColor[CellID] >= ColoredCellsSorted[ListIndex][1]) {
+                        ListIndex += 1;
+                    }
+                }
+                ColoredCellsSorted.Insert(ListIndex, new int[] { CellID, CellColor[CellID] });
+            }
+            return ColoredCellsSorted;
+        }
+
+        internal void ColorNeighborCells(int[] coloredCells, int[] coloredCellsExchange) {
+            int neighbourSearchDepth = 1;
+            int noOfLocalCells = gridData.iLogicalCells.NoOfLocalUpdatedCells;
+            for (int k = 0; k < neighbourSearchDepth; k++) {
+                for (int j = 0; j < noOfLocalCells; j++) {
+                    gridData.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaEdges, out int[] CellNeighbors, out _);
+                    for (int i = 0; i < CellNeighbors.Length; i++) {
+                        if (coloredCellsExchange[CellNeighbors[i]] != 0 && coloredCellsExchange[j] == 0) {
+                            coloredCells[j] = coloredCellsExchange[CellNeighbors[i]];
+                        }
+                    }
+                }
+                coloredCellsExchange = coloredCells.CloneAs();
+                coloredCellsExchange.MPIExchange(gridData);
+            }
+        }
+
+        internal void RecolorCellsOfNeighborParticles(int[] coloredCells, int[] coloredCellsExchange, int MPISize) {
+            int[,] colorToRecolorWith = FindCellsToRecolor(coloredCells, coloredCellsExchange, MPISize);
+            int maxColor = coloredCells.Max().MPIMax();
+            int J = gridData.iLogicalCells.NoOfLocalUpdatedCells;
+            for (int i = maxColor; i > 0; i--) {
+                if (colorToRecolorWith[i, 0] != 0) {
+                    for (int j = 0; j < J; j++) {
+                        if (coloredCells[j] == colorToRecolorWith[i, 0]) {
+                            coloredCells[j] = colorToRecolorWith[i, 1];
+                        }
+                    }
+                }
+            }
+        }
+
+        private int[,] FindCellsToRecolor(int[] coloredCells, int[] coloredCellsExchange, int MPISize) {
+            int maxColor = coloredCells.Max().MPIMax();
+            int noOfLocalCells = gridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int[,] colorToRecolorWith = new int[maxColor + 1, 2];
+            for (int j = 0; j < noOfLocalCells; j++) {
+                if (coloredCells[j] != 0) {
+                    gridData.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaEdges, out int[] CellNeighbors, out _);
+                    for (int i = 0; i < CellNeighbors.Length; i++) {
+                        if (coloredCellsExchange[CellNeighbors[i]] != coloredCells[j] && coloredCellsExchange[CellNeighbors[i]] > 0) {
+                            if (coloredCellsExchange[CellNeighbors[i]] < coloredCells[j] || colorToRecolorWith[coloredCells[j], 1] > coloredCellsExchange[CellNeighbors[i]]) {
+                                colorToRecolorWith[coloredCells[j], 0] = coloredCells[j];
+                                colorToRecolorWith[coloredCells[j], 1] = coloredCellsExchange[CellNeighbors[i]];
+                            }
+                            if (coloredCellsExchange[CellNeighbors[i]] > coloredCells[j]) {
+                                if (colorToRecolorWith[coloredCellsExchange[CellNeighbors[i]], 0] == 0 || colorToRecolorWith[coloredCellsExchange[CellNeighbors[i]], 1] > coloredCells[j]) {
+                                    colorToRecolorWith[coloredCellsExchange[CellNeighbors[i]], 0] = coloredCellsExchange[CellNeighbors[i]];
+                                    colorToRecolorWith[coloredCellsExchange[CellNeighbors[i]], 1] = coloredCells[j];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Communicate
+            // -----------------------------
+            int[][,] GlobalColorToRecolorWith = colorToRecolorWith.MPIGatherO(0);
+            GlobalColorToRecolorWith = GlobalColorToRecolorWith.MPIBroadcast(0);
+            for (int m = 0; m < MPISize; m++) {
+                for (int i = 0; i < maxColor + 1; i++) {
+                    if (GlobalColorToRecolorWith[0][i, 1] == 0 || GlobalColorToRecolorWith[0][i, 1] > GlobalColorToRecolorWith[m][i, 1] && GlobalColorToRecolorWith[m][i, 1] != 0) {
+                        GlobalColorToRecolorWith[0][i, 0] = GlobalColorToRecolorWith[m][i, 0];
+                        GlobalColorToRecolorWith[0][i, 1] = GlobalColorToRecolorWith[m][i, 1];
+                    }
+                }
+            }
+            colorToRecolorWith = GlobalColorToRecolorWith[0];
+            return colorToRecolorWith;
         }
     }
 }

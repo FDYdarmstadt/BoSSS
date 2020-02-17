@@ -17,14 +17,13 @@ limitations under the License.
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.XdgTimestepping;
+using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 
 
 
@@ -83,10 +82,16 @@ namespace BoSSS.Application.FSI_Solver {
                 savetodb = false;
         }
 
-        public void SetAddaptiveMeshRefinement(int amrLevel) {
+        public bool ConstantRefinement = false;
+
+        public void SetAddaptiveMeshRefinement(int amrLevel, bool constantRefinement = false) {
+            if (amrLevel == 0)
+                return;
             AdaptiveMeshRefinement = true;
             RefinementLevel = amrLevel;
             AMR_startUpSweeps = amrLevel;
+            Console.WriteLine("No of start up sweeps " + AMR_startUpSweeps);
+            ConstantRefinement = constantRefinement;
         }
 
         public void SetBoundaries(List<string> boundaryValues) {
@@ -100,8 +105,23 @@ namespace BoSSS.Application.FSI_Solver {
 
         readonly List<string> m_BoundaryValues = new List<string>();
         public double FluidDomainVolume;
-
+        public double[][] BoundaryPositionPerDimension;
+        public double[][] WallPositionPerDimension;
+        public bool[] BoundaryIsPeriodic;
+        public double MaxGridLength;
+        public double MinGridLength;
         public void SetGrid(double lengthX, double lengthY, double cellsPerUnitLength, bool periodicX = false, bool periodicY = false) {
+            MaxGridLength = 1 / cellsPerUnitLength;
+            MinGridLength = MaxGridLength / RefinementLevel;
+            BoundaryPositionPerDimension = new double[2][];
+            WallPositionPerDimension = new double[2][];
+            WallPositionPerDimension[0] = new double[2];
+            WallPositionPerDimension[1] = new double[2];
+            BoundaryIsPeriodic = new bool[2];
+            BoundaryPositionPerDimension[0] = new double[] { -lengthX / 2, lengthX / 2 };
+            BoundaryPositionPerDimension[1] = new double[] { -lengthY / 2, lengthY / 2 };
+            BoundaryIsPeriodic[0] = periodicX;
+            BoundaryIsPeriodic[1] = periodicY;
             GridFunc = delegate {
                 FluidDomainVolume = lengthX * lengthY;
                 int q = new int(); // #Cells in x-dircetion + 1
@@ -115,17 +135,23 @@ namespace BoSSS.Application.FSI_Solver {
 
                 Grid2D grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: periodicX, periodicY: periodicY);
 
-                for(int i = 0; i < m_BoundaryValues.Count(); i++) {
+                for (int i = 0; i < m_BoundaryValues.Count(); i++) {
                     byte iB = (byte)(i + 1);
                     grd.EdgeTagNames.Add(iB, m_BoundaryValues[i]);
                 }
 
-                if (m_BoundaryValues.Count() == 0)
+                if (m_BoundaryValues.Count() == 0 && periodicX == false && periodicY == false)
                     throw new Exception("Please specify boundaries before creating the grid");
 
                 if (m_BoundaryValues.Count() == 1) {
                     grd.DefineEdgeTags(delegate (double[] X) {
                         byte et = 1;
+                        if (m_BoundaryValues[0].Contains("wall") || m_BoundaryValues[0].Contains("Wall")) {
+                            WallPositionPerDimension[0][0] = -lengthX / 2;
+                            WallPositionPerDimension[0][1] = lengthX / 2;
+                            WallPositionPerDimension[1][0] = -lengthY / 2;
+                            WallPositionPerDimension[1][1] = lengthY / 2;
+                        }
                         return et;
                     });
                 }
@@ -136,6 +162,9 @@ namespace BoSSS.Application.FSI_Solver {
                             for (int i = 0; i < m_BoundaryValues.Count(); i++) {
                                 if (m_BoundaryValues[i].Contains("left") || m_BoundaryValues[i].Contains("Left")) {
                                     et = (byte)(i + 1);
+                                    if (m_BoundaryValues[i].Contains("wall") || m_BoundaryValues[i].Contains("Wall")) {
+                                        WallPositionPerDimension[0][0] = -lengthX / 2;
+                                    }
                                 }
                             }
                         }
@@ -143,6 +172,9 @@ namespace BoSSS.Application.FSI_Solver {
                             for (int i = 0; i < m_BoundaryValues.Count(); i++) {
                                 if (m_BoundaryValues[i].Contains("right") || m_BoundaryValues[i].Contains("Right")) {
                                     et = (byte)(i + 1);
+                                    if (m_BoundaryValues[i].Contains("wall") || m_BoundaryValues[i].Contains("Wall")) {
+                                        WallPositionPerDimension[0][1] = lengthX / 2;
+                                    }
                                 }
                             }
                         }
@@ -151,6 +183,9 @@ namespace BoSSS.Application.FSI_Solver {
                             for (int i = 0; i < m_BoundaryValues.Count(); i++) {
                                 if (m_BoundaryValues[i].Contains("lower") || m_BoundaryValues[i].Contains("Lower")) {
                                     et = (byte)(i + 1);
+                                    if (m_BoundaryValues[i].Contains("wall") || m_BoundaryValues[i].Contains("Wall")) {
+                                        WallPositionPerDimension[1][0] = -lengthY / 2;
+                                    }
                                 }
                             }
                         }
@@ -158,6 +193,9 @@ namespace BoSSS.Application.FSI_Solver {
                             for (int i = 0; i < m_BoundaryValues.Count(); i++) {
                                 if (m_BoundaryValues[i].Contains("upper") || m_BoundaryValues[i].Contains("Upper")) {
                                     et = (byte)(i + 1);
+                                    if (m_BoundaryValues[i].Contains("wall") || m_BoundaryValues[i].Contains("Wall")) {
+                                        WallPositionPerDimension[1][1] = lengthY / 2;
+                                    }
                                 }
                             }
                         }
@@ -169,6 +207,7 @@ namespace BoSSS.Application.FSI_Solver {
                 return grd;
             };
         }
+
 
         public void SetTimesteps(double dt, int noOfTimesteps) {
             dtMax = dt;
@@ -185,7 +224,7 @@ namespace BoSSS.Application.FSI_Solver {
         public int maxIterationsFullyCoupled = 100000;
 
         /// <summary>
-        /// Set true if translation of the particle should be induced by hydrodynamical forces.
+        /// Set true if the lower wall should be plastic, i.e. the coefficient of restitution is 0.
         /// </summary>
         [DataMember]
         public bool LowerWallFullyPlastic = false;
@@ -220,30 +259,29 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         public double LSunderrelax = 1.0;
 
-
         /// <summary>
         /// coefficient of restitution
         /// </summary>
         [DataMember]
         public double CoefficientOfRestitution = 1.0;
-
-        [DataMember]
-        public ParticleUnderrelaxationParam underrelaxationParam = new ParticleUnderrelaxationParam(1e-8, ParticleUnderrelaxationParam.UnderrelaxationMethod.ProcentualRelaxation, 1, false);
-
+        
         /// <summary>
         /// Gravity acting on the particles, zero by default.
         /// </summary>
         [DataMember]
-        public double[] gravity = new double[] { 0, 0 };
+        public Vector gravity = new Vector(0, 0);
 
+        /// <summary>
+        /// used for added damping model. By default added damping is not applied to the particles. The value should be set between 0.5-1.5.
+        /// </summary>
         [DataMember]
         public double addedDampingCoefficient = -1;
 
         /// <summary>
-        /// See <see cref="LevelSetHandling"/>
+        /// See <see cref="LevelSetHandling"/>, Lie-Splitting with iterative coupling by default.
         /// </summary>
         [DataMember]
-        public LevelSetHandling Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+        public LevelSetHandling Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
 
         /// <summary>
         /// Function describing the boundary values at the level-set (VelocityX, VelocityY)
@@ -280,5 +318,7 @@ namespace BoSSS.Application.FSI_Solver {
         public override Type GetSolverType() {
             return typeof(FSI_SolverMain);
         }
+
+        public bool UsePerssonSensor = true;
     }
 }

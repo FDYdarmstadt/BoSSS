@@ -18,7 +18,6 @@ using System;
 using System.Runtime.Serialization;
 using ilPSP;
 using System.Linq;
-using ilPSP.Utils;
 using MathNet.Numerics;
 
 namespace BoSSS.Application.FSI_Solver {
@@ -71,7 +70,6 @@ namespace BoSSS.Application.FSI_Solver {
             Aux.TestArithmeticException(superEllipsoidExponent, "super ellipsoid exponent");
 
             Motion.GetParticleLengthscale(GetLengthScales().Max());
-            Motion.GetParticleMinimalLengthscale(GetLengthScales().Min());
             Motion.GetParticleArea(Area);
             Motion.GetParticleMomentOfInertia(MomentOfInertia);
         }
@@ -121,28 +119,17 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="point">
         /// The point to be tested.
         /// </param>
-        /// <param name="minTolerance">
-        /// Minimum tolerance length.
+        /// <param name="tolerance">
+        /// tolerance length.
         /// </param>
-        /// <param name="maxTolerance">
-        /// Maximal tolerance length. Equal to h_min if not specified.
-        /// </param>
-        /// <param name="WithoutTolerance">
-        /// No tolerance.
-        /// </param>
-        public override bool Contains(double[] point, double minTolerance, double maxTolerance = 0, bool WithoutTolerance = false) {
-            WithoutTolerance = false;
-            // only for rectangular cells
-            if (maxTolerance == 0)
-                maxTolerance = minTolerance;
-            double radiusTolerance = 1;
-            double a = !WithoutTolerance ? m_Length + Math.Sqrt(maxTolerance.Pow2() + minTolerance.Pow2()) : m_Length;
-            double b = !WithoutTolerance ? m_Thickness + Math.Sqrt(maxTolerance.Pow2() + minTolerance.Pow2()) : m_Thickness;
-            double Superellipsoid = Math.Pow(((point[0] - Motion.GetPosition(0)[0]) * Math.Cos(Motion.GetAngle(0)) + (point[1] - Motion.GetPosition(0)[1]) * Math.Sin(Motion.GetAngle(0))) / a, m_Exponent) + (Math.Pow((-(point[0] - Motion.GetPosition(0)[0]) * Math.Sin(Motion.GetAngle(0)) + (point[1] - Motion.GetPosition(0)[1]) * Math.Cos(Motion.GetAngle(0))) / b, m_Exponent));
-            if (Superellipsoid < radiusTolerance)
-                return true;
-            else
-                return false;
+        public override bool Contains(Vector point, double tolerance = 0) {
+            Vector orientation = new Vector(Math.Cos(Motion.GetAngle(0)), Math.Sin(Motion.GetAngle(0)));
+            Vector normalOrientation = new Vector(-Math.Sin(Motion.GetAngle(0)), Math.Cos(Motion.GetAngle(0)));
+            Vector distancePointToPosition = point - Motion.GetPosition(0);
+            double a = m_Length + tolerance;
+            double b = m_Thickness + tolerance;
+            double Superellipsoid = Math.Pow(distancePointToPosition * orientation / a, m_Exponent) + Math.Pow(distancePointToPosition * normalOrientation / b, m_Exponent);
+            return Superellipsoid < 1;
         }
 
         /// <summary>
@@ -155,9 +142,9 @@ namespace BoSSS.Application.FSI_Solver {
             if (SpatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported.");
             double angle = Motion.GetAngle(0);
-            int noOfCurrentPointWithNeighbours = 3;
-            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(noOfCurrentPointWithNeighbours, SpatialDim);
-            for (int j = 0; j < noOfCurrentPointWithNeighbours; j++) {
+            int noOfCurrentPointAndNeighbours = 3;
+            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(noOfCurrentPointAndNeighbours, SpatialDim);
+            for (int j = 0; j < noOfCurrentPointAndNeighbours; j++) {
                 double verticalAxis;
                 double horizontalAxis;
                 double currentAngle = searchAngle + dAngle * (j - 1);

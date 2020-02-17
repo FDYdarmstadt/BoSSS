@@ -19,12 +19,15 @@ using System.Collections.Generic;
 using BoSSS.Foundation.XDG;
 using System.Diagnostics;
 using BoSSS.Foundation;
+using ilPSP.Utils;
+using BoSSS.Platform.LinAlg;
+using FSI_Solver;
+using ilPSP;
 
 namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
     public class FSI_ViscosityAtIB : ILevelSetForm {
-        public FSI_ViscosityAtIB(int currentDim, int spatialDim, LevelSetTracker levelSetTracker, double penalty, Func<double, int, double> penaltyFunction, double fluidViscosity,
-            Func<double[], double[]> getParticleParams) {
+        public FSI_ViscosityAtIB(int currentDim, int spatialDim, LevelSetTracker levelSetTracker, double penalty, Func<double, int, double> penaltyFunction, double fluidViscosity, Func<Vector, FSI_ParameterAtIB> getParticleParams) {
             m_penalty = penalty;
             m_PenaltyFunc = penaltyFunction;
             m_LsTrk = levelSetTracker;
@@ -41,7 +44,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         /// <summary>
         /// Describes: 0: velX, 1: velY, 2: rotVel, 3: particleradius, 4: active_stress, 5: first scaling parameter, 6: second scaling parameter, 7: current angle
         /// </summary>
-        private readonly Func<double[], double[]> m_GetParticleParams;
+        private readonly Func<Vector, FSI_ParameterAtIB> m_GetParticleParams;
 
         /// <summary>
         /// Viscosity in species A
@@ -49,122 +52,105 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         private readonly double muA;
         private readonly double m_penalty;
         private readonly Func<double, int, double> m_PenaltyFunc;
+        private enum BoundaryConditionType {
+            passive = 0,
+            active = 1
+        }
 
         /// <summary>
         /// default-implementation
         /// </summary>
-        public double LevelSetForm(ref CommonParams inp,
-            double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
-            double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            double[] N = inp.Normal;
+        public double LevelSetForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+            int dim = inp.Normal.Dim;
             double _penalty = m_PenaltyFunc(m_penalty, inp.jCellIn);
-            int D = N.Length;
 
             // Particle parameters
-            // ============================= 
-            var parameters_P = m_GetParticleParams(inp.X);
-            double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
-            double wLevSet = parameters_P[2];
+            // =====================
+            if (inp.X.IsNullOrEmpty())
+                throw new Exception("X is null or empty");
+            if (m_GetParticleParams == null)
+                throw new Exception("m_GetParticleParams is null or empty");
+            FSI_ParameterAtIB coupling = m_GetParticleParams(inp.X);
+            Vector orientation = new Vector(Math.Cos(coupling.Angle()), Math.Sin(coupling.Angle()));
+            Vector orientationNormal = new Vector(-Math.Sin(coupling.Angle()), Math.Cos(coupling.Angle()));
+            Vector activeStressVector = orientationNormal * inp.Normal > 0 ? new Vector(-coupling.ActiveStress() * inp.Normal[1], coupling.ActiveStress() * inp.Normal[0]) 
+                                                                  : new Vector(coupling.ActiveStress() * inp.Normal[1], -coupling.ActiveStress() * inp.Normal[0]);
+            BoundaryConditionType bcType = orientation * inp.Normal <= 0 || coupling.ActiveStress() == 0 ? BoundaryConditionType.passive : BoundaryConditionType.active;
 
-            double[] RadialNormalVector = new double[] { parameters_P[3], parameters_P[4] };
-            double RadialLength = parameters_P[5];
+            Debug.Assert(ArgumentOrdering.Count == dim);
+            Debug.Assert(Grad_uA.GetLength(0) == ArgumentOrdering.Count);
+            Debug.Assert(Grad_uB.GetLength(0) == ArgumentOrdering.Count);
+            Debug.Assert(Grad_uA.GetLength(1) == dim);
+            Debug.Assert(Grad_uB.GetLength(1) == dim);
 
-            double active_stress = parameters_P[6];
-            double scaleActiveBoundary = parameters_P[7];
-            double Ang_P = parameters_P[8];
-
-            Debug.Assert(ArgumentOrdering.Count == D);
-            Debug.Assert(Grad_uA.GetLength(0) == this.ArgumentOrdering.Count);
-            Debug.Assert(Grad_uB.GetLength(0) == this.ArgumentOrdering.Count);
-            Debug.Assert(Grad_uA.GetLength(1) == D);
-            Debug.Assert(Grad_uB.GetLength(1) == D);
-            
             // Gradient of u and v 
-            // ============================= 
+            // =====================
             double Grad_uA_xN = 0, Grad_vA_xN = 0;
-            for (int d = 0; d < D; d++) {
-                Grad_uA_xN += Grad_uA[component, d] * N[d];
-                Grad_vA_xN += Grad_vA[d] * N[d];
+            for (int d = 0; d < dim; d++) {
+                Grad_uA_xN += Grad_uA[component, d] * inp.Normal[d];
+                Grad_vA_xN += Grad_vA[d] * inp.Normal[d];
             }
 
-            double Ret = 0.0;
+            double returnValue = 0.0;
 
             // 3D for IBM_Solver
-            // ============================= 
-            if (inp.X.Dim == 3) {
-
-                Ret -= Grad_uA_xN * (vA);                                     // consistency term
-                Ret -= Grad_vA_xN * (uA[component] - 0) * (1 - scaleActiveBoundary);        // symmetry term
-                Ret += _penalty * (uA[component] - 0) * (vA) * (1 - scaleActiveBoundary);   // penalty term
-
-                Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
-                return Ret * muA;
+            // =====================
+            if (dim == 3) {
+                returnValue -= Grad_uA_xN * (vA);                                                    // consistency term
+                returnValue -= Grad_vA_xN * (uA[component] - 0);                                     // symmetry term
+                returnValue += _penalty * (uA[component] - 0) * (vA);                                // penalty term
+                Debug.Assert(!(double.IsInfinity(returnValue) || double.IsNaN(returnValue)));
+                return returnValue * muA;
             }
 
             // 2D
-            // ============================= 
-            double uAFict = uLevSet[component] + RadialLength * wLevSet * RadialNormalVector[component];
-            double[] orientation = new double[] { -Math.Sin(Ang_P), Math.Cos(Ang_P) };
-            double f_xT;
-            if (orientation[0] * inp.Normal[0] + orientation[1] * inp.Normal[1] > 0) {
-                f_xT = component == 0 ? -active_stress * (inp.Normal[1]) : active_stress * (inp.Normal[0]);
-            }
-            else {
-                f_xT = component == 0 ? active_stress * (inp.Normal[1]) : -active_stress * (inp.Normal[0]);
-            }
+            // =====================
+            Vector uAFict = coupling.VelocityAtPointOnLevelSet(); 
 
-            // Dirichlet
-            if (scaleActiveBoundary == 0) {
-                for (int d = 0; d < D; d++) {
-                    Ret -= muA * Grad_uA[component, d] * vA * N[d];
-                    Ret -= muA * Grad_vA[d] * (uA[component] - uAFict) * N[d];
-                }
-                Ret += muA * (uA[component] - uAFict) * vA * _penalty;
-            }
-            // Active boundary
-            else {
-                // normal
-                for (int dN = 0; dN < D; dN++) {
-                    for (int dD = 0; dD < D; dD++) {
-                        Ret -= muA * (N[dN] * Grad_uA[dN, dD] * N[dD]) * (vA * N[component]);   // consistency term 
-                        Ret -= muA * (N[component] * Grad_vA[dD] * N[dD]) * uA[dN] * N[dN];     // symmetry term 
-                    }                                                                           //
-                    Ret += muA * (uA[dN] * N[dN]) * (vA * N[component]) * _penalty;             // penalty term
-                }                                                                               //
-                                                                                                //tangential         
-                double[,] P = new double[D, D];
-                for (int d1 = 0; d1 < D; d1++) {
-                    for (int d2 = 0; d2 < D; d2++) {
-                        double nn = 0;
-                        if (d1 == d2) {
-                            nn = Math.Abs(N[d1] * N[d2]);
+            switch (bcType) {
+                case BoundaryConditionType.passive: {
+                        for (int d = 0; d < dim; d++) {
+                            returnValue -= muA * Grad_uA[component, d] * vA * inp.Normal[d];
+                            returnValue -= muA * Grad_vA[d] * (uA[component] - uAFict[component]) * inp.Normal[d];
                         }
-                        if (d1 != d2) {
-                            nn = -Math.Abs((N[d1]) * (N[d2]));
-                        }
-                        if (d1 == d2) {
-                            P[d1, d2] = 1 - nn;
-                        }
-                        else {
-                            P[d1, d2] = -nn;
-                        }
+                        returnValue += muA * (uA[component] - uAFict[component]) * vA * _penalty;
+                        break;
                     }
-                }
-                //for (int d1 = 0; d1 < D; d1++) {
-                //    for (int d2 = 0; d2 < D; d2++) {
-                //        Ret += (P[d1, d2] * f_xT * muA * scaleActiveBoundary) * (P[d1, component] * vA);
-                //    }
-                //}
-                for (int d1 = 0; d1 < D; d1++) {
-                    for (int d2 = 0; d2 < D; d2++) {
-                        Ret -= (P[d1, d2] * f_xT * muA) * (P[d1, component] * vA);
-                    }
-                }
-                //Ret += f_xT * (vA) * muA * scaleActiveBoundary;                                 // active force term
-            }
 
-            Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
-            return Ret;
+                case BoundaryConditionType.active: {
+                        // normal direction, solid wall
+                        for (int dN = 0; dN < dim; dN++) {
+                            for (int dD = 0; dD < dim; dD++) {
+                                // consistency term
+                                returnValue -= muA * (inp.Normal[dN] * Grad_uA[dN, dD] * inp.Normal[dD]) * vA * inp.Normal[component];
+                                // symmetry term
+                                returnValue -= muA * (Grad_vA[dD] * inp.Normal[dD]) * (inp.Normal[dN] * uA[dN] - inp.Normal[dN] * uAFict[dN]) * inp.Normal[component];      
+                            }
+                            // penalty term
+                            returnValue += muA * inp.Normal[dN] * (uA[dN] - uAFict[dN]) * inp.Normal[component] * vA * _penalty;                  
+                        }
+                        // tangential direction, active part
+                        double[,] P = new double[dim, dim];
+                        for (int d1 = 0; d1 < dim; d1++) {
+                            for (int d2 = 0; d2 < dim; d2++) {
+                                if (d1 == d2) {
+                                    P[d1, d2] = 1 - inp.Normal[d1] * inp.Normal[d2];
+                                }
+                                else {
+                                    P[d1, d2] = inp.Normal[d1] * inp.Normal[d2];
+                                }
+                            }
+                        }
+                        for (int d1 = 0; d1 < dim; d1++) {
+                            for (int d2 = 0; d2 < dim; d2++) {
+                                returnValue -= P[d1, d2] * activeStressVector[d2] * (P[d1, component] * vA); 
+                            }
+                        }
+                        break;
+                    }
+            }
+            Debug.Assert(!(double.IsInfinity(returnValue) || double.IsNaN(returnValue)));
+            return returnValue;
         }
 
         public int LevelSetIndex {

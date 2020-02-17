@@ -65,7 +65,6 @@ namespace BoSSS.Application.FSI_Solver {
             Aux.TestArithmeticException(thickness, "Particle thickness");
 
             Motion.GetParticleLengthscale(GetLengthScales().Max());
-            Motion.GetParticleMinimalLengthscale(GetLengthScales().Min());
             Motion.GetParticleArea(Area);
             Motion.GetParticleMomentOfInertia(MomentOfInertia);
         }
@@ -113,25 +112,17 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="point">
         /// The point to be tested.
         /// </param>
-        /// <param name="minTolerance">
-        /// Minimum tolerance length.
+        /// <param name="tolerance">
+        /// tolerance length.
         /// </param>
-        /// <param name="maxTolerance">
-        /// Maximal tolerance length. Equal to h_min if not specified.
-        /// </param>
-        /// <param name="WithoutTolerance">
-        /// No tolerance.
-        /// </param>
-        public override bool Contains(double[] point, double minTolerance, double maxTolerance = 0, bool WithoutTolerance = false) {
-            double angle = Motion.GetAngle(0);
-            double[] position = Motion.GetPosition(0);
-            if (maxTolerance == 0)
-                maxTolerance = minTolerance;
-            double radiusTolerance = 1;
-            double a = !WithoutTolerance ? m_Length + Math.Sqrt(maxTolerance.Pow2() + minTolerance.Pow2()) : m_Length;
-            double b = !WithoutTolerance ? m_Thickness + Math.Sqrt(maxTolerance.Pow2() + minTolerance.Pow2()) : m_Thickness;
-            double Ellipse = ((point[0] - position[0]) * Math.Cos(angle) + (point[1] - position[1]) * Math.Sin(angle)).Pow2() / a.Pow2() + (-(point[0] - position[0]) * Math.Sin(angle) + (point[1] - position[1]) * Math.Cos(angle)).Pow2() / b.Pow2();
-            return Ellipse < radiusTolerance;
+        public override bool Contains(Vector point, double tolerance = 0) {
+            Vector orientation = new Vector(Math.Cos(Motion.GetAngle(0)), Math.Sin(Motion.GetAngle(0)));
+            Vector normalOrientation = new Vector(-Math.Sin(Motion.GetAngle(0)), Math.Cos(Motion.GetAngle(0)));
+            Vector position = Motion.GetPosition(0);
+            double a = m_Length + tolerance;
+            double b = m_Thickness + tolerance;
+            double Ellipse = ((point - position) * orientation).Pow2() / a.Pow2() + ((point - position) * normalOrientation).Pow2() / b.Pow2();
+            return Ellipse < 1;
         }
 
         /// <summary>
@@ -161,14 +152,14 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="vector">
         /// A vector. 
         /// </param>
-        override public double[] GetSupportPoint(double[] vector, int SubParticleID) {
-            Aux.TestArithmeticException(vector, "vector in calc of support point");
-            if (vector.L2Norm() == 0)
+        override public Vector GetSupportPoint(Vector supportVector, int SubParticleID) {
+            Aux.TestArithmeticException(supportVector, "vector in calc of support point");
+            if (supportVector.L2Norm() == 0)
                 throw new ArithmeticException("The given vector has no length");
 
-            double[] SupportPoint = new double[SpatialDim];
+            Vector SupportPoint = new Vector(SpatialDim);
             double angle = Motion.GetAngle(0);
-            double[] position = Motion.GetPosition(0);
+            Vector position = new Vector(Motion.GetPosition(0));
 
             double[,] rotMatrix = new double[2, 2];
             rotMatrix[0, 0] = m_Length * Math.Cos(angle);
@@ -182,7 +173,7 @@ namespace BoSSS.Application.FSI_Solver {
             double[] rotVector = new double[2];
             for (int i = 0; i < 2; i++) {
                 for (int j = 0; j < 2; j++) {
-                    rotVector[i] += transposeRotMatrix[i, j] * vector[j];
+                    rotVector[i] += transposeRotMatrix[i, j] * supportVector[j];
                 }
             }
             rotVector.ScaleV(1 / rotVector.L2Norm());
@@ -201,6 +192,20 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         override public double[] GetLengthScales() {
             return new double[] { m_Length, m_Thickness };
+        }
+
+        public override object Clone() {
+            Particle clonedParticle = new Particle_Ellipsoid(MotionInitializer,
+                                                             m_Length,
+                                                             m_Thickness,
+                                                             Motion.GetPosition(),
+                                                             Motion.GetAngle() * 360 / (2 * Math.PI),
+                                                             ActiveStress,
+                                                             Motion.GetTranslationalVelocity(),
+                                                             Motion.GetRotationalVelocity());
+            clonedParticle.IsMaster = IsMaster;
+
+            return clonedParticle;
         }
     }
 }
