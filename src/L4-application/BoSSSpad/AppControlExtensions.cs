@@ -55,6 +55,7 @@ namespace BoSSS.Application.BoSSSpad {
             int ctrl_idx = InteractiveShell.WorkflowMgm.RegisterControl(ctrl);
             if(JobName.IsEmptyOrWhite()) {
                 JobName = "UnnamedJob_" + ctrl_idx;
+                ctrl.SessionName = JobName;
             }
 
             Type solverClass = ctrl.GetSolverType();
@@ -67,6 +68,19 @@ namespace BoSSS.Application.BoSSSpad {
             job.Activate(BatchSys);
             
             return job;
+        }
+
+        /// <summary>
+        /// Runs the solver described by the control object <paramref name="ctrl"/> on a batch system from the currently defined queues (<see cref="InteractiveShell.ExecutionQueues"/>).
+        /// The method returns immediately.
+        /// </summary>
+        /// <param name="ctrl"></param>
+        /// <param name="queueIdx">
+        /// Index int <see cref="InteractiveShell.ExecutionQueues"/>
+        /// </param>
+        public static Job RunBatch(this AppControl ctrl, int queueIdx = 0) {
+            var b = InteractiveShell.ExecutionQueues[queueIdx];
+            return RunBatch(ctrl, queueIdx);
         }
 
         /// <summary>
@@ -86,6 +100,37 @@ namespace BoSSS.Application.BoSSSpad {
 
             
             return job;
+        }
+
+        /// <summary>
+        /// Returns the job correlated to a control object
+        /// </summary>
+        public static Job GetJob(this AppControl ctrl) {
+            foreach(var j in InteractiveShell.WorkflowMgm.AllJobs.Values) {
+                var cj = j.GetControl();
+                if(cj == null)
+                    continue;
+
+                if(cj.Equals(ctrl))
+                    return j;
+            }
+            Console.WriteLine("No Job assigned for given control object yet.");
+            return null;
+        }
+
+        /// <summary>
+        /// Returns all sessions which can be correlated to a specific control object
+        /// </summary>
+        public static ISessionInfo[] GetAllSessions(this AppControl ctrl) {
+            var AllCandidates = InteractiveShell.WorkflowMgm.Sessions.Where(
+                    sinf => InteractiveShell.WorkflowMgm.SessionInfoAppControlCorrelation(sinf, ctrl));
+
+            var cnt = AllCandidates.Count();
+
+            if(cnt <= 0)
+                return new ISessionInfo[0];
+
+            return AllCandidates.ToArray();
         }
 
 
@@ -151,6 +196,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
 
+        
         /// <summary>
         /// Verifies a control object, especially if it is suitable for serialization.
         /// </summary>
@@ -190,12 +236,12 @@ namespace BoSSS.Application.BoSSSpad {
             if(!ctrl.InitialValues.Keys.SetEquals(ctrlBack.InitialValues.Keys))
                 throw new ArgumentException("Unable to serialize/deserialize initial values correctly.");
 
-            foreach(var ivk in ctrl.InitialValues.Keys) {
+            foreach(string ivk in ctrl.InitialValues.Keys) {
                 var f1 = ctrl.InitialValues[ivk];
                 var f2 = ctrlBack.InitialValues[ivk];
 
                 if(!f1.Equals(f2))
-                    throw new ArgumentException("Unable to serialize/deserialize initial values correctly.");
+                    throw new ArgumentException($"Unable to serialize/deserialize initial values for '{ivk}' correctly. Note that you cannot use delegates with the workflow management, use either formulas as text or 'GetFormulaObject(...)' in the BoSSSpad.");
             }
 
             if (!ctrl.FieldOptions.Keys.SetEquals(ctrlBack.FieldOptions.Keys))
@@ -211,6 +257,10 @@ namespace BoSSS.Application.BoSSSpad {
             if (!ctrl.InitialValues_Evaluators.Keys.SetEquals(ctrlBack.InitialValues_Evaluators.Keys))
                 throw new ArgumentException("Unable to serialize/deserialize initial values correctly.");
 
+            string errBnyd(string n) {
+                return $"Unable to serialize/deserialize boundary values for '{n}' correctly. Note that you cannot use delegates with the workflow management, use either formulas as text or 'GetFormulaObject(...)' in the BoSSSpad.";
+            }
+
             if(!ctrl.BoundaryValues.Keys.SetEquals(ctrlBack.BoundaryValues.Keys))
                 throw new ArgumentException("Unable to serialize/deserialize boundary values correctly.");
 
@@ -219,17 +269,17 @@ namespace BoSSS.Application.BoSSSpad {
                 var bvd = ctrlBack.BoundaryValues[bvk];
 
                 if(!bvc.Evaluators.Keys.SetEquals(bvd.Evaluators.Keys))
-                    throw new ArgumentException("Unable to serialize/deserialize boundary values correctly.");
+                    throw new ArgumentException(errBnyd(bvk));
 
                 if(!bvc.Values.Keys.SetEquals(bvd.Values.Keys))
-                    throw new ArgumentException("Unable to serialize/deserialize boundary values correctly.");
+                    throw new ArgumentException(errBnyd(bvk));
 
                 foreach(string s in bvc.Values.Keys) {
                     var f1 = bvc.Values[s];
                     var f2 = bvd.Values[s];
 
                     if(!f1.Equals(f2))
-                        throw new ArgumentException("Unable to serialize/deserialize boundary values correctly.");
+                        throw new ArgumentException(errBnyd(bvk + "," + s));
                 }
             }
 
@@ -248,6 +298,54 @@ namespace BoSSS.Application.BoSSSpad {
 
             }
 
+        }
+
+        /// <summary>
+        /// Creates the <see cref="IDatabaseInfo"/> for the current settings of the control file #
+        /// (<see cref="AppControl.DbPath/>, <see cref="AppControl.AlternateDbPaths"/>),
+        /// if accessible on the current computer.
+        /// </summary>
+        static public IDatabaseInfo GetDatabase(this AppControl Control) {
+            List<ValueTuple<string, string>> allPaths = new List<(string, string)>();
+            if(Control.DbPath.IsNullOrEmpty())
+                allPaths.Add((Control.DbPath, null));
+            if(Control.AlternateDbPaths != null)
+                allPaths.AddRange(Control.AlternateDbPaths);
+
+            string mName = System.Environment.MachineName.ToLowerInvariant();
+
+            string dbPath = null;
+            foreach(var t in allPaths) {
+                string path = t.Item1;
+                string filter = t.Item2;
+
+                if(path.IsNullOrEmpty() || path.IsEmptyOrWhite())
+                    continue;
+
+                if(!filter.IsNullOrEmpty() && !filter.IsEmptyOrWhite()) {
+                    if(!mName.Contains(filter)) {
+                        continue;
+                    }
+                }
+
+                if(System.IO.Directory.Exists(path)) {
+                    dbPath = path;
+                    break;
+                }
+            }
+
+            if(dbPath == null) {
+                return null;
+            }
+
+            // try to match it with on of the already known databases
+            foreach(var db in InteractiveShell.databases) {
+                if(db.PathMatch(dbPath))
+                    return db;
+            }
+
+            // otherwise, create new db
+            return new DatabaseInfo(dbPath);
         }
     }
 }

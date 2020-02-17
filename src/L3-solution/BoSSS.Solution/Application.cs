@@ -925,6 +925,8 @@ namespace BoSSS.Solution {
 
                     CurrentSessionInfo.Description = this.Control.ProjectDescription;
 
+                    if (this.Control.ProjectName != null)
+                        CurrentSessionInfo.KeysAndQueries.Add(PROJECTNAME_KEY, this.Control.ProjectName);
                     if (this.Control.SessionName != null)
                         CurrentSessionInfo.KeysAndQueries.Add(SESSIONNAME_KEY, this.Control.SessionName);
                 }
@@ -1169,10 +1171,41 @@ namespace BoSSS.Solution {
         /// </summary>
         /// <returns></returns>
         protected virtual IDatabaseInfo GetDatabase() {
-            if (this.Control == null || this.Control.DbPath.IsNullOrEmpty()) {
+            if (this.Control == null || (this.Control.DbPath.IsNullOrEmpty() && (this.Control.AlternateDbPaths == null || this.Control.AlternateDbPaths.Length <= 0))) {
                 return NullDatabaseInfo.Instance;
             } else {
-                return new DatabaseInfo(this.Control.DbPath);
+                List<ValueTuple<string, string>> allPaths = new List<(string, string)>();
+                if (!this.Control.DbPath.IsNullOrEmpty())
+                    allPaths.Add((this.Control.DbPath, null));
+                if (this.Control.AlternateDbPaths != null)
+                    allPaths.AddRange(this.Control.AlternateDbPaths);
+
+                string mName = System.Environment.MachineName.ToLowerInvariant();
+
+                string dbPath = null;
+                foreach(var t in allPaths) {
+                    string path = t.Item1;
+                    string filter = t.Item2;
+
+                    if(!filter.IsNullOrEmpty() && !filter.IsEmptyOrWhite()) {
+                        if (!mName.Contains(filter)) {
+                            continue;
+                        } 
+                    }
+
+                    if(Directory.Exists(path) || File.Exists(path)) { // th latter is for ZIP-file databases
+                        dbPath = path;
+                        break;
+                    }
+
+                }
+
+                if(dbPath == null) {
+                    throw new IOException("Unable to open database - all given paths either don't exist or are ruled out by the machine filter.");
+                }
+
+
+                return new DatabaseInfo(dbPath);
             }
         }
 
@@ -2346,14 +2379,18 @@ namespace BoSSS.Solution {
             throw new NotImplementedException("Must be implemented by user (if he wants to use load balancing).");
         }
 
-
+        /// <summary>
+        /// The name of a specific simulation should be logged in the <see cref="ISessionInfo.KeysAndQueries"/> under this key,
+        /// see also <see cref="AppControl.SessionName"/>
+        /// </summary>
+        public const string SESSIONNAME_KEY = "SessionName";
 
 
         /// <summary>
-        /// The name of a specific simulation should be logged in the <see cref="ISessionInfo.KeysAndQueries"/>
-        /// under this key.
+        /// The name of a specific project should be logged in the <see cref="ISessionInfo.KeysAndQueries"/> under this key,
+        /// see also <see cref="AppControl.ProjectName"/>
         /// </summary>
-        public const string SESSIONNAME_KEY = "SessionName";
+        public const string PROJECTNAME_KEY = "ProjectName";
 
         /// <summary>
         /// Called before application finishes (internal Bye)

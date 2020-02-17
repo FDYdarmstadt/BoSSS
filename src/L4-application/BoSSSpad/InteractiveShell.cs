@@ -27,6 +27,7 @@ using ilPSP;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation;
+using ilPSP.Utils;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -141,13 +142,130 @@ namespace BoSSS.Application.BoSSSpad {
             databases = new IDatabaseInfo[0];
             m_WorkflowMgm = null;
         }
+        
 
+        /// <summary>
+        /// Prints Information on an object state.
+        /// </summary>
+        static public void Info(object o, int MaxRecursionDepth = 20) {
+            InfoRecursive(o, 0, MaxRecursionDepth);
+        }
+
+
+        static void InfoRecursive(object obj, int RecursionDepth, int MaxRecursionDepth) {
+            if(obj == null) {
+                Console.WriteLine("Null");
+                return;
+            }
+
+            if(RecursionDepth > MaxRecursionDepth) {
+                Console.WriteLine(" ... no further recursion - max recursion depth reached.");
+                return;
+            }
+
+            Type objT = obj.GetType();
+            if ((objT.IsPrimitive || objT.IsEnum || objT == typeof(string))) {
+                Console.WriteLine(obj.ToString() + " (" + objT.Name + ")");
+                return;
+            }
+
+            if (objT.IsSubclassOf(typeof(System.Delegate))) {
+                // unable to log delegates
+                Console.WriteLine("Delegate");
+                return;
+            }
+
+            void WriteSpaces() {
+                //Console.WriteLine();
+                for(int i = 0; i < RecursionDepth; i++)
+                    Console.Write(" ");
+            }
+
+
+            if (obj is System.Collections.IEnumerable) {
+                System.Collections.IEnumerable objEnu = (System.Collections.IEnumerable)obj;
+                int cnt = 0;
+                foreach (var objE in objEnu) {
+                    WriteSpaces();
+                    Console.Write("[{0}]: ", cnt);
+                    cnt++;
+                    InfoRecursive(objE, RecursionDepth + 1, MaxRecursionDepth);
+                }
+                return;
+            }
+
+            BindingFlags biFlags = BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public | BindingFlags.GetProperty;
+
+            MemberInfo[] PIs = objT.GetProperties(biFlags);
+            MemberInfo[] FIs = objT.GetFields(biFlags);
+
+            foreach (MemberInfo mi in ArrayTools.Cat(PIs, FIs)) {
+                WriteSpaces();
+                Console.Write(mi.Name + ": ");
+                
+                object Val;
+                if (mi is PropertyInfo) {
+                    PropertyInfo pi = ((PropertyInfo)mi);
+                    if(!pi.CanRead) {
+                        Console.WriteLine("cannot read.");
+                        continue;
+                    }
+                    if(pi.GetIndexParameters() != null && pi.GetIndexParameters().Length > 0) {
+                        // no support for indexed properties.
+                        Console.WriteLine("indexed property - not supported.");
+                        continue;
+                    }
+
+                    //pi.GetIndexParameters
+                    try {
+                        Val = pi.GetValue(obj, biFlags, null, null, null);
+                    } catch (TargetInvocationException tie) {
+                        Console.WriteLine(tie.GetType().Name + ": " + tie.Message);
+                        continue;
+                    }
+                } else if (mi is FieldInfo) {
+                    Val = ((FieldInfo)mi).GetValue(obj);
+                } else {
+                    Console.WriteLine("unsupported member type: " + mi.GetType().FullName + ".");
+                    continue;
+                }
+
+                InfoRecursive(Val, RecursionDepth + 1, MaxRecursionDepth);
+            }
+        }
 
 
         /// <summary>
         /// All the databases; the workflow-management (see <see cref="WorkflowMgm"/>) must have access to those.
         /// </summary>
         public static IList<IDatabaseInfo> databases;
+
+        /// <summary>
+        /// Sessions in all Databases
+        /// </summary>
+        static public IList<ISessionInfo> AllSessions {
+            get {
+                var ret = new List<ISessionInfo>();
+                foreach(var db in databases) {
+                    ret.AddRange(db.Sessions);
+                }
+                return ret;
+            }
+        }
+
+        /// <summary>
+        /// Grids in all Databases
+        /// </summary>
+        static public IList<IGridInfo> AllGrids {
+            get {
+                var ret = new List<IGridInfo>();
+                foreach(var db in databases) {
+                    ret.AddRange(db.Grids);
+                }
+                return ret;
+            }
+        }
+
 
         /// <summary>
         /// path to the default BoSSS database directory for the current user
@@ -177,6 +295,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// Opens a database at a specific path, resp. creates one if the 
         /// </summary>
         static public IDatabaseInfo OpenOrCreateDatabase(string dbDir) {
+            foreach(var existing_dbi in InteractiveShell.databases) {
+                if(existing_dbi.PathMatch(dbDir)) {
+                    return existing_dbi;
+                }
+            }
+            
             if (Directory.Exists(dbDir)) {
                 if (!DatabaseUtils.IsValidBoSSSDatabase(dbDir)) {
                     throw new ArgumentException("Directory '" + dbDir + "' exists, but is not a valid BoSSS database.");
@@ -318,16 +442,125 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
+        /// Plotting of an grid with dummy data, 
         /// Driver interface for the <see cref="BoSSS.Solution.Tecplot.Tecplot"/> functionality.
         /// </summary>
-        static public void Tecplot(string filename, IGridData grd) {
+        static public void PlotGrid(string filename, IGridData grd) {
 
-            var g = new GridData((GridCommons)grd);
-            var dummy = new SinglePhaseField(new Basis(g, 0), "DummyData");
-            
 
-            Tecplot(filename, 0.0, 0, dummy);
+            string SanitizeName(string s) {
+                char[] ot = s.ToCharArray();
+                for(int k = 0; k < ot.Length; k++) {
+                    if(char.IsWhiteSpace(ot[k])) {
+                        ot[k] = '_';
+                    }
+
+                    if (ot[k] == '(')
+                        ot[k] = 'L';
+                    if (ot[k] == ')')
+                        ot[k] = 'R';
+                }
+                return new string(ot);
+            }
+
+           
+
+            var et2Name = grd.EdgeTagNames;
+            Console.WriteLine($"Grid containing {et2Name.Count} EdgeTag names: ");
+            int i = 0;
+            foreach (var t in et2Name) { // loop over all different edge tag names...
+                string name = t.Value;
+                byte tag2color = t.Key;
+
+                string sname = SanitizeName(name);
+
+                if (name.Equals(sname)) {
+                    Console.WriteLine($"   {i}: {name} -- tag = {tag2color}");
+                } else {
+                    Console.WriteLine($"   {i}: {name} -- tag = {tag2color}   (marked as '{sname}') in output file.");
+                }
+                i++;
+            }
+
+
+            var B0 = new Basis(grd, 0);
+            SinglePhaseField[] bndyMarkers = new SinglePhaseField[et2Name.Count + 1];
+
+            int[,] Edge2GeomCell = grd.iGeomEdges.CellIndices;
+            int[] G2L = grd.iGeomCells.GeomCell2LogicalCell;
+            byte[] EdgeTags = grd.iGeomEdges.EdgeTags;
+
+            i = 0;
+            foreach(var t in et2Name) { // loop over all different edge tag names...
+                string name = t.Value;
+                byte tag2color = t.Key;
+                string sname = SanitizeName(name);
+
+
+                var FI = new SinglePhaseField(B0, "Marker-" + sname);
+                bndyMarkers[i] = FI;
+                i++;
+
+                for (int e = 0; e < EdgeTags.Length; e++) { // loop over edges...
+                    byte tag_e = EdgeTags[e];
+
+                    if(tag_e == tag2color) {
+                        // mar cells next to edge e
+
+                        foreach(int jG in Edge2GeomCell.GetRow(e)) {
+                            if (jG < 0)
+                                continue;
+
+                            // convert geometrical cell index to logical cell index
+                            int jL;
+                            if (G2L == null)
+                                jL = jG;
+                            else
+                                jL = G2L[jG];
+
+                            // color respective cell
+                            FI.SetMeanValue(jL, tag2color);
+                        }
+
+                    }
+                }
+
+            }
+
+            var dummy = new SinglePhaseField(B0, "DummyData");
+            bndyMarkers[bndyMarkers.Length - 1] = dummy;
+
+            Tecplot(filename, 0.0, 0, bndyMarkers);
         }
+
+        /// <summary>
+        /// Plotting of an grid with dummy data, 
+        /// Driver interface for the <see cref="BoSSS.Solution.Tecplot.Tecplot"/> functionality.
+        /// </summary>
+        static public void PlotGrid(string filename, IGridInfo grdInfo) {
+            if (grdInfo is IGridData gdata) {
+                PlotGrid(filename, gdata);
+            } else {
+                Console.WriteLine("Initializing gird...");
+                var dbi = grdInfo.Database;
+                var drv = dbi.Controller.DBDriver;
+
+                var grd = drv.LoadGrid(grdInfo.ID, dbi);
+                var gdat = grd.iGridData;
+                Console.WriteLine("done.");
+                PlotGrid(filename, gdat);
+            }
+        }
+
+        /// <summary>
+        /// Plotting of an grid with dummy data, 
+        /// Driver interface for the <see cref="BoSSS.Solution.Tecplot.Tecplot"/> functionality.
+        /// </summary>
+        static public void PlotGrid(string filename, IGrid grd) {
+            var gdat = grd.iGridData;
+            PlotGrid(filename, gdat);
+        }
+
 
 
         /// <summary>
@@ -377,6 +610,69 @@ namespace BoSSS.Application.BoSSSpad {
 
         }
 
+        /// <summary>
+        /// Reload from configuration file
+        /// </summary>
+        public static void ReloadExecutionQueues() {
+            executionQueues = new List<BatchProcessorClient>();
+
+            BatchProcessorConfig bpc;
+            try {
+                bpc = BatchProcessorConfig.LoadOrDefault();
+
+            } catch (Exception e) {
+                Console.Error.WriteLine($"{e.GetType().Name} caught while loading batch processor configuration file - using a default configuration. Message: {e.Message}");
+
+                executionQueues.Add(new MiniBatchProcessorClient());
+                return;
+            }
+
+            executionQueues.AddRange(bpc.AllQueues);
+        }
+
+
+
+
+
+        /// <summary>
+        /// A list of predefined batch system clients.
+        /// </summary>
+        public static IReadOnlyList<BatchProcessorClient> ExecutionQueues {
+            get {
+                if(executionQueues == null) {
+                    ReloadExecutionQueues();
+                }
+
+                return executionQueues.AsReadOnly();
+            }
+        }
+
+        static List<BatchProcessorClient> executionQueues = null;
+
+        /// <summary>
+        /// Adds an entry to <see cref="ExecutionQueues"/>.
+        /// </summary>
+        public static int AddExecutionQueue(BatchProcessorClient bpc) {
+            if(executionQueues == null)
+                executionQueues = new List<BatchProcessorClient>();
+            executionQueues.Add(bpc);
+            return executionQueues.Count - 1;
+        }
+
+        /// <summary>
+        /// Writes the configuration file according to the current status of <see cref="ExecutionQueues"/>.
+        /// </summary>
+        public static void SaveExecutionQueues() {
+            var conf = new BatchProcessorConfig() {
+                AllQueues = ExecutionQueues.ToArray()
+            };
+
+            //for(int i = 0; i < ExecutionQueues.Count; i++) {
+            //    conf.AllQueus[i] = ExecutionQueues[i].GetConfig();
+            //}
+
+            BatchProcessorConfig.SaveConfiguration(conf);
+        }
     }
 }
 
