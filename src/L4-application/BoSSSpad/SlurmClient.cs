@@ -107,7 +107,7 @@ namespace BoSSS.Application.BoSSSpad {
                     if(PrivateKeyFilePath != null) {
                         var pkf = new PrivateKeyFile(PrivateKeyFilePath);
                         m_SSHConnection = new SshClient(ServerName, Username, pkf);
-                    } else if(Password == null) {
+                    } else if(Password != null) {
                         m_SSHConnection = new SshClient(ServerName, Username, Password);
                     } else {
                         throw new NotSupportedException("Unable to initiate SSH connection -- either a password or private key file is required.");
@@ -138,7 +138,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Client for submitting jobs directly from the BoSSSpad to slurm systems
         /// </summary>
-        public SlurmClient(string DeploymentBaseDirectory, string ServerName, string Username, string PrivateKeyFilePath, bool AskForPassword = true) {
+        public SlurmClient(string DeploymentBaseDirectory, string ServerName, string Username, string PrivateKeyFilePath = null, bool AskForPassword = true) {
             base.DeploymentBaseDirectory = DeploymentBaseDirectory;
             this.Username = Username;
             this.ServerName = ServerName;
