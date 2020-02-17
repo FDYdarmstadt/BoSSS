@@ -104,12 +104,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             var DGlowSelect = new SubBlockSelector(op.Mapping);
             DGlowSelect.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D ? CoarseLowOrder : CoarseLowOrder - 1)); // dirty hack for mixed order stokes
+            //DGlowSelect.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg <= CoarseLowOrder);
             lMask = new BlockMask(DGlowSelect);
             m_lowMaskLen = lMask.LocalDOF;
 
             if (UseHiOrderSmoothing) {
                 var DGhighSelect = new SubBlockSelector(op.Mapping);
                 DGhighSelect.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D ? CoarseLowOrder : CoarseLowOrder - 1));
+                //DGhighSelect.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg > CoarseLowOrder );
                 hMask = new BlockMask(DGhighSelect);
                 m_highMaskLen = hMask.LocalDOF;
 

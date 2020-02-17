@@ -386,7 +386,7 @@ namespace BoSSS.Solution {
                         CoarseSolver = null,
                         Overlap = 1,
                         EnableOverlapScaling = false,
-                        UsePMGinBlocks = false,
+                        UsePMGinBlocks = true,
 
                     };
                     break;

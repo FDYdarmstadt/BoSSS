@@ -3854,7 +3854,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
-        public static XNSE_Control StokesSphere(int p = 1, int kelem = 4, string _DbPath = null) {
+        public static XNSE_Control StokesSphere(int p = 2, int kelem = 4, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -3973,8 +3973,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //double delta = 0.0;
 
-            double r = 0.7;
-            double nonsp = 0.2;
+            double r = 0.5;
+            double nonsp = 0.5;
 
             C.AddInitialValue("Phi", new Formula($"X => (X[0]/{r*nonsp}).Pow2() + (X[1]/{r}).Pow2() + (X[2]/{r}).Pow2()-1", false));
 
@@ -4016,7 +4016,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.ContiField = XNSE_Control.ContinuityProjection.ContinuousDG;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 3;
-            C.LinearSolver.MaxSolverIterations = 50;
+            C.LinearSolver.MaxSolverIterations = 500;
             C.LinearSolver.TargetBlockSize = 200;
             C.NonLinearSolver.MaxSolverIterations = 50;
             //C.Solver_MaxIterations = 50;
@@ -4034,7 +4034,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             //C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
             C.LinearSolver.verbose=true;
             C.NonLinearSolver.verbose = true;
             #endregion
