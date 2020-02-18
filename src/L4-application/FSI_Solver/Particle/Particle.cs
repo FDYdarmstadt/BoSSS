@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 using System;
-using System.Linq;
 using System.Runtime.Serialization;
 using BoSSS.Foundation.XDG;
 using ilPSP;
@@ -23,7 +22,6 @@ using ilPSP.Utils;
 using BoSSS.Foundation.Grid;
 using System.Collections;
 using FSI_Solver;
-using System.Collections.Generic;
 
 namespace BoSSS.Application.FSI_Solver {
 
@@ -65,20 +63,45 @@ namespace BoSSS.Application.FSI_Solver {
         public Particle(ParticleMotionInit motionInit, double[] startPos, double startAngl = 0.0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) {
             SpatialDim = startPos.Length;
             ActiveStress = activeStress;
-            m_MotionInit = motionInit;
             Aux = new FSI_Auxillary();
 
-            m_MotionInit.CheckInput();
-            Motion = m_MotionInit.ParticleMotion;
+            motionInit.CheckInput();
+            Motion = motionInit.ParticleMotion;
             Motion.InitializeParticlePositionAndAngle(startPos, startAngl);
             Motion.InitializeParticleVelocity(startTransVelocity, startRotVelocity);
             particleDensity = Motion.Density;
+            MotionInitializer = motionInit;
         }
+
+        /// <summary>
+        /// rank in ghost hierachy; 0 = master, 1 = ghost mirrored in x-direction, 2 = ghost mirrored in y - direction, 3 = sub ghost of 1 mirrored in y - direction
+        /// </summary>
+        public int GhostRank { get; private set; }
+        public bool IsMaster = true;
+        public int[] MasterGhostIDs = new int[4];
+
+        public void SetMaster(Motion newMotionType) {
+            newMotionType.TransferPhysicalData(Motion);
+            Motion = newMotionType;
+            IsMaster = true;
+        }
+
+        public void SetGhost() {
+            HiddenMotion = Motion;
+            Motion = new MotionGhost(new Vector(0, 0), 0);
+            Motion.TransferPhysicalData(HiddenMotion);
+            IsMaster = false;
+        }
+
+        public void SetGhostHierachy(int[] hierachy) {
+            MasterGhostIDs = hierachy.CloneAs();
+        }
+
+        [DataMember]
+        public Motion HiddenMotion { get; private set; }
 
         [NonSerialized]
         protected readonly FSI_Auxillary Aux;
-        [DataMember]
-        private readonly ParticleMotionInit m_MotionInit;
         [DataMember]
         private readonly double particleDensity;
 
@@ -89,7 +112,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// Instantiate object for particle motion.
         /// </summary>
         [DataMember]
-        public Motion_Wet Motion { get; private set; } = new Motion_Wet(gravity: new double[] { 0, 9.81 }, density: 1);
+        public Motion Motion { get; private set; }
+
+        public ParticleMotionInit MotionInitializer { get; private set; }
 
         /// <summary>
         /// Mass of the current particle.
@@ -119,13 +144,13 @@ namespace BoSSS.Application.FSI_Solver {
         /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
         /// </summary>
         [DataMember]
-        public double[] ClosestPointToOtherObject { get; set; }
+        public Vector ClosestPointToOtherObject = new Vector(2);
 
         /// <summary>
         /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
         /// </summary>
         [DataMember]
-        public double[] ClosestPointOnOtherObjectToThis { get; set; }
+        public Vector ClosestPointOnOtherObjectToThis = new Vector(2);
 
         /// <summary>
         /// Active stress on the current particle.
@@ -145,13 +170,6 @@ namespace BoSSS.Application.FSI_Solver {
         public abstract double LevelSetFunction(double[] X);
 
         /// <summary>
-        /// Necessary for active particles. Returns 0 for the non active boundary region and a number between 0 and 1 for the active region.
-        /// </summary>
-        public double SeperateBoundaryRegions(double[] X) => Math.Cos(Motion.GetAngle(0)) * (X[0] - Motion.GetPosition(0)[0]) + Math.Sin(Motion.GetAngle(0)) * (X[1] - Motion.GetPosition(0)[1]) < 1e-8
-            ? (Math.Cos(Motion.GetAngle(0)) * (X[0] - Motion.GetPosition(0)[0]) + Math.Sin(Motion.GetAngle(0)) * (X[1] - Motion.GetPosition(0)[1])) / Math.Sqrt((X[0] - Motion.GetPosition(0)[0]).Pow2() + (X[1] - Motion.GetPosition(0)[1]).Pow2())
-            : 0;
-
-        /// <summary>
         /// Circumference of the current particle.
         /// </summary>
         public abstract double Circumference { get; }
@@ -169,11 +187,9 @@ namespace BoSSS.Application.FSI_Solver {
         public CellMask CutCells_P(LevelSetTracker LsTrk) {
             BitArray CellArray = new BitArray(LsTrk.GridDat.Cells.NoOfLocalUpdatedCells);
             MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
-            double h_min = LsTrk.GridDat.Cells.h_minGlobal;
-            double h_max = LsTrk.GridDat.Cells.h_maxGlobal;
-
+            var h_min = LsTrk.Regions.GetCutCellSubGrid().h_minSubGrd;
             for (int i = 0; i < CellArray.Length; i++) {
-                CellArray[i] = Contains(new double[] { CellCenters[i, 0], CellCenters[i, 1] }, h_min, h_max, false);
+                CellArray[i] = Contains(new Vector(CellCenters[i, 0], CellCenters[i, 1]), h_min);
             }
             CellMask CutCells = new CellMask(LsTrk.GridDat, CellArray, MaskType.Logical);
             CutCells = CutCells.Intersect(LsTrk.Regions.GetCutCellMask());
@@ -184,10 +200,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Gives a bool whether the particle contains a certain point or not
         /// </summary>
         /// <param name="point"></param>
-        /// <param name="h_min"></param>
-        /// <param name="h_max"></param>
-        /// <param name="WithoutTolerance"></param>
-        public virtual bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false) => throw new NotImplementedException();
+        public virtual bool Contains(Vector point, double tolerance = 0) => throw new NotImplementedException();
 
         /// <summary>
         /// Return the lengthscales of the particle (length and thickness)
@@ -203,8 +216,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Calculates the support point with an analytic formula (if applicable)
         /// </summary>
-        /// <param name="Vector"></param>
-        public virtual double[] GetSupportPoint(double[] Vector, int SubParticleID) => throw new NotImplementedException();
+        /// <param name="supportVector"></param>
+        public virtual Vector GetSupportPoint(Vector supportVector, int SubParticleID) => throw new NotImplementedException();
 
         /// <summary>
         /// Calculates the radial vector (SurfacePoint-ParticleReadOnlyPosition)
@@ -215,42 +228,29 @@ namespace BoSSS.Application.FSI_Solver {
         /// </param>
         /// <param name="RadialLength">
         /// </param>
-        internal void CalculateRadialVector(double[] SurfacePoint, out double[] RadialVector, out double RadialLength) {
-            RadialVector = new double[] { SurfacePoint[0] - Motion.GetPosition(0)[0], SurfacePoint[1] - Motion.GetPosition(0)[1] };
+        internal void CalculateRadialVector(Vector SurfacePoint, out Vector RadialVector, out double RadialLength) {
+            RadialVector = new Vector(SurfacePoint[0] - Motion.GetPosition(0)[0], SurfacePoint[1] - Motion.GetPosition(0)[1]);
             if (RadialVector.L2Norm() == 0)
-                throw new ArithmeticException("The given vector has no length");
-            RadialLength = RadialVector.L2Norm();
+                throw new ArithmeticException("The radial vector has no length");
+            RadialLength = RadialVector.Abs();
             RadialVector.ScaleV(1 / RadialLength);
             Aux.TestArithmeticException(RadialVector, "particle radial vector");
             Aux.TestArithmeticException(RadialLength, "particle radial length");
         }
 
         /// <summary>
-        /// Calculates the vector normal to the radial vector.
-        /// </summary>
-        /// <param name="SurfacePoint">
-        /// </param>
-        /// <param name="RadialNormalVector">
-        /// </param>
-        internal void CalculateRadialNormalVector(double[] SurfacePoint, out double[] RadialNormalVector) {
-            RadialNormalVector = new double[] { SurfacePoint[1] - Motion.GetPosition(0)[1], -SurfacePoint[0] + Motion.GetPosition(0)[0] };
-            RadialNormalVector.ScaleV(1 / RadialNormalVector.L2Norm());
-            Aux.TestArithmeticException(RadialNormalVector, "particle vector normal to radial vector");
-        }
-
-        /// <summary>
         /// Calculates the eccentricity of a collision
         /// </summary>
         internal void CalculateEccentricity() {
-            CalculateRadialVector(ClosestPointToOtherObject, out double[] RadialVector, out _);
-            Eccentricity = RadialVector[0] * Motion.GetLastCollisionTangentialVector()[0] + RadialVector[1] * Motion.GetLastCollisionTangentialVector()[1];
+            CalculateRadialVector(ClosestPointToOtherObject, out Vector RadialVector, out _);
+            Eccentricity = RadialVector * Motion.GetLastCollisionTangentialVector();
             Aux.TestArithmeticException(Eccentricity, "particle eccentricity");
         }
 
         /// <summary>
         /// clone, not implemented
         /// </summary>
-        public virtual object Clone() => throw new NotImplementedException("Currently cloning of a particle is not available");
+        public virtual object Clone() => throw new NotImplementedException("Currently cloning of this type of particle is not available");
     }
 }
 

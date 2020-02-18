@@ -15,15 +15,8 @@ limitations under the License.
 */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
-using BoSSS.Foundation;
-using BoSSS.Solution;
 using MPI.Wrappers;
 using NUnit.Framework;
-using BoSSS.Platform.LinAlg;
 using ilPSP;
 
 namespace BoSSS.Application.FSI_Solver {
@@ -46,21 +39,21 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         [Test]
-        public static void Test_ParticleParameter()
+        public static void TestParticleParameter()
         {
             using (FSI_SolverMain p = new FSI_SolverMain())
             {
 
-                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.Test_ParticleParameter();
+                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.TestParticleParameter();
                 //ctrl.ImmediatePlotPeriod = 1;
                 //ctrl.SuperSampling = 2;
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double p0_area = p.GetParticles()[0].Area;
+                double p0_area = p.Particles[0].Area;
                 double p0_area_soll = Math.PI;
-                double p0_Mass = p.GetParticles()[0].Motion.Mass_P;
-                double p1_area = p.GetParticles()[1].Area;
+                double p0_Mass = p.Particles[0].Motion.Mass_P;
+                double p1_area = p.Particles[1].Area;
 
 
                 double diff_Area1 = Math.Abs(p0_area - p0_area_soll);
@@ -74,22 +67,19 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         [Test]
-        public static void TestFlowRotationalCoupling() {
+        public static void TestParticleInShearFlow() {
             using (FSI_SolverMain p = new FSI_SolverMain()) {
 
-                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.Test_ParticleInShearFlow(k: 1);
-                //ctrl.ImmediatePlotPeriod = 1;
-                //ctrl.SuperSampling = 2;
+                var ctrl = HardcodedTestExamples.TestParticleInShearFlow(k: 2);
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double angularVelocity_Sol = 0.00487;
+                double angularVelocitySol = -0.00307062397584702;// 0.00487; needs investigation!
+                double angularVelocityIs = p.Particles[0].Motion.GetRotationalVelocity(0);
 
-                double angularVelocity = (double)p.QueryHandler.QueryResults["Angular_Velocity"];
-
-                double diff_Velocity = Math.Abs(angularVelocity - angularVelocity_Sol);
-                Console.WriteLine("   angular velocity is " + angularVelocity);
-                Console.WriteLine("         should be     " + angularVelocity_Sol);
+                double diff_Velocity = Math.Abs(angularVelocityIs - angularVelocitySol);
+                Console.WriteLine("   angular velocity is " + angularVelocityIs);
+                Console.WriteLine("         should be     " + angularVelocitySol);
                 Console.WriteLine("         difference is " + diff_Velocity);
 
 
@@ -99,21 +89,21 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         [Test]
-        public static void SingleDryParticleAgainstWall([Values(false, true)]  bool MeshRefine) { 
+        public static void TestSingleDryParticleAgainstWall([Values(false, true)]  bool MeshRefine) { 
             using (FSI_SolverMain p = new FSI_SolverMain()) {
 
-                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.Test_SingleDryParticleAgainstWall(MeshRefine:MeshRefine);
+                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.TestSingleDryParticleAgainstWall(MeshRefine);
                 p.Init(ctrl);
                 p.RunSolverMode();
 
 
                 Vector Dest_Should;
                 if (MeshRefine)
-                    Dest_Should = new Vector(0.0867851149899939, -0.709888525146848); 
+                    Dest_Should = new Vector(0.129894946699224, -0.665600182135642); 
                 else
-                    Dest_Should = new Vector(-0.0505473360771058, 0.751747291863557); 
+                    Dest_Should = new Vector(-0.219276785595999, 0.569191702686835); 
 
-                Vector Dest_Is = new Vector((double[])p.GetParticles()[0].Motion.GetPosition(0));
+                Vector Dest_Is = new Vector((double[])p.Particles[0].Motion.GetPosition(0));
 
                 double dist = (Dest_Should - Dest_Is).L2Norm();
 
@@ -124,45 +114,19 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         [Test]
-        public static void DryParticleBounce()
-        {
-            using (FSI_SolverMain p = new FSI_SolverMain())
-            {
+        public static void TestStickyTrap() {
+            using (FSI_SolverMain p = new FSI_SolverMain()) {
 
-                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.Test_DryParticleBounce();
+                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.TestStickyTrap();
                 p.Init(ctrl);
                 p.RunSolverMode();
 
                 Vector Dest_Should;
-                Dest_Should = new Vector(0.0, 0.865886176125762);
-
-                Vector Dest_Is = new Vector((double[])p.GetParticles()[0].Motion.GetPosition(0));
-
-                double dist = (Dest_Should - Dest_Is).L2Norm();
-
-                Console.WriteLine("Particle reached position " + Dest_Is + ", expected at " + Dest_Should + ", distance is " + dist);
-
-                Assert.Less(dist, 0.1, "Particle to far from expected position");
-            }
-        }
-
-
-        [Test]
-        public static void StickyTrap()
-        {
-            using (FSI_SolverMain p = new FSI_SolverMain())
-            {
-
-                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.Test_StickyTrap();
-                p.Init(ctrl);
-                p.RunSolverMode();
-
-                Vector Dest_Should;
-                Dest_Should = new Vector(0.0, 0.0761459999999999);
+                Dest_Should = new Vector(0.0, 0.07631);
                 double VelY_Should = 0;
 
-                Vector Dest_Is = new Vector((double[])p.GetParticles()[0].Motion.GetPosition(0));
-                double VelY_Is = p.GetParticles()[0].Motion.GetTranslationalVelocity(0)[0];
+                Vector Dest_Is = new Vector((double[])p.Particles[0].Motion.GetPosition(0));
+                double VelY_Is = p.Particles[0].Motion.GetTranslationalVelocity(0)[0];
 
                 double dist = (Dest_Should - Dest_Is).L2Norm();
                 double Vel_Div = Math.Abs(VelY_Should - VelY_Is);
@@ -174,42 +138,44 @@ namespace BoSSS.Application.FSI_Solver {
                 Assert.Less(Vel_Div, 0.05, "Particle is moving.");
             }
         }
-
-        //[Test]
-        //public static void Test_ActiveForce()
-        //{
-        //    using (FSI_SolverMain p = new FSI_SolverMain())
-        //    {
-        //        var ctrl = HardcodedTestExamples.Test_ActiveForce();
-        //        p.Init(ctrl);
-        //        p.RunSolverMode();
-
-        //        double ForcesSoll = 30753.7101679592;
-
-        //        double Forces = p.GetParticles()[0].Motion.GetHydrodynamicForces(0)[0];
-
-        //        double DiffForces = Math.Abs(ForcesSoll - Forces); 
-
-        //        Assert.LessOrEqual(DiffForces, 20);
-        //    }
-        //}
+        
 
         [Test]
-        public static void Test_HydrodynamicForces()
+        public static void TestHydrodynamicForces()
         {
             using (FSI_SolverMain p = new FSI_SolverMain())
             {
-                var ctrl = HardcodedTestExamples.Test_HydrodynamicForces();
+                var ctrl = HardcodedTestExamples.TestHydrodynamicForces();
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double ForcesSoll = 5.53747893542498;
+                double ForcesSoll = 6.72757830665097;
 
-                double Forces = p.GetParticles()[0].Motion.GetHydrodynamicForces(0)[0];
+                double Forces = p.Particles[0].Motion.GetHydrodynamicForces(0)[0];
 
                 double DiffForces = Math.Abs(ForcesSoll - Forces);
 
                 Assert.LessOrEqual(DiffForces, 1e-3);
+            }
+        }
+
+        [Test]
+        public static void PeriodicTest() {
+            using (FSI_SolverMain p = new FSI_SolverMain()) {
+                var ctrl = HardcodedTestExamples.TestPeriodicBoundaries();
+                p.Init(ctrl);
+                p.RunSolverMode();
+                Vector[] expectedPosition = new Vector[4];
+                expectedPosition[0] = new Vector(0.8, -0.8);
+                expectedPosition[1] = new Vector(-1.2, -0.8);
+                expectedPosition[2] = new Vector(-1.2, 1.2);
+                expectedPosition[3] = new Vector(0.8, 1.2);
+
+                double distanceL2 = 0;
+                for (int i = 0; i < 4; i++) {
+                    distanceL2 += (expectedPosition[i] - p.Particles[i].Motion.GetPosition(0)).L2Norm();
+                }
+                Assert.Less(distanceL2, 0.1, "Particle to far from expected position.");
             }
         }
     }

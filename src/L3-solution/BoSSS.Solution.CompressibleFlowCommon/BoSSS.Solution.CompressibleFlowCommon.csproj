@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -71,6 +71,7 @@
     <Compile Include="Diffusion\INonlinear2ndOrderForm.cs" />
     <Compile Include="EquationSystem\CompressibleOperatorFactory.cs" />
     <Compile Include="ILimiter.cs" />
+    <Compile Include="ShockCapturing\ShockFindingAlgorithms.cs" />
     <Compile Include="ShockCapturing\XOptimizedLaplacianArtificialViscosityFlux.cs" />
     <Compile Include="ShockCapturing\IShockSensor.cs" />
     <Compile Include="ISpeciesMap.cs" />
@@ -121,6 +122,10 @@
     <ProjectReference Include="..\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj">
       <Project>{E56B9CE4-14DC-4256-A337-46E5D298B722}</Project>
       <Name>BoSSS.Solution.NSECommon</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj">
+      <Project>{0d8f577e-316d-4362-816b-9f610c5eb4a5}</Project>
+      <Name>BoSSS.Solution.XNSECommon</Name>
     </ProjectReference>
     <ProjectReference Include="..\BoSSS.Solution\BoSSS.Solution.csproj">
       <Project>{df7f5abd-e606-41cd-beef-31a95d136dea}</Project>

@@ -258,9 +258,9 @@ namespace BoSSS.Foundation {
             // compute finite difference
             double dU_iVar = (f1 - f0) / delta;
             if (double.IsInfinity(dU_iVar))
-                throw new ArithmeticException();
+                throw new ArithmeticException("Got INF while differentiation of volume part of " + m_VolForm.GetType().Name);
             if (double.IsNaN(dU_iVar))
-                throw new ArithmeticException();
+                throw new ArithmeticException("Got NAN while differentiation of volume part of " + m_VolForm.GetType().Name);
 
             // restore un-perturbed state
             PertubVar = bkup;
@@ -435,9 +435,9 @@ namespace BoSSS.Foundation {
             // compute finite difference
             double dU_iVar = (f1 - f0) / delta;
             if (double.IsInfinity(dU_iVar))
-                throw new ArithmeticException();
+                throw new ArithmeticException("Got INF while differentiation of inner edge part of " + m_EdgForm.GetType().Name);
             if (double.IsNaN(dU_iVar))
-                throw new ArithmeticException();
+                throw new ArithmeticException("Got NAN while differentiation of inner edge part of " + m_EdgForm.GetType().Name);
 
             // restore un-perturbed state
             PertubVar = bkup;
@@ -507,9 +507,9 @@ namespace BoSSS.Foundation {
             // compute finite difference
             double dU_iVar = (f1 - f0) / delta;
             if (double.IsInfinity(dU_iVar))
-                throw new ArithmeticException();
+                throw new ArithmeticException("Got INF while differentiation of boundary edge part of " + m_EdgForm.GetType().Name);
             if (double.IsNaN(dU_iVar))
-                throw new ArithmeticException();
+                throw new ArithmeticException("Got NAN while differentiation of boundary edge part of " + m_EdgForm.GetType().Name);
             
             // restore un-perturbed state
             PertubVar = bkup;

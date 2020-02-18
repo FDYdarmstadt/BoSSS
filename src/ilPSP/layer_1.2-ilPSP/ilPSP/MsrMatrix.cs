@@ -1634,7 +1634,7 @@ namespace ilPSP.LinSolvers {
             i -= (int)m_RowPartitioning.i0;
 
             if (i < 0 || i >= m_Entries.Length)
-                throw new IndexOutOfRangeException("row index out of range");
+                throw new IndexOutOfRangeException("row index out of range " + i);
             if (j < 0 || j >= this.NoOfCols)
                 throw new IndexOutOfRangeException("column index out of range");
 

@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.XDG;
+using ilPSP;
+using System.Collections.Generic;
 
 namespace BoSSS.Application.FSI_Solver {
-    public class Motion_Wet_NoRotation : Motion_Wet {
+    public class MotionWetNoRotation : Motion {
 
         /// <summary>
         /// The dry description of motion including hydrodynamics without rotation.
@@ -33,7 +33,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// /// <param name="underrelaxationParam">
         /// The underrelaxation parameters (convergence limit, prefactor and a bool whether to use addaptive underrelaxation) defined in <see cref="ParticleUnderrelaxationParam"/>.
         /// </param>
-        public Motion_Wet_NoRotation(double[] gravity, double density, ParticleUnderrelaxationParam underrelaxationParam = null) : base(gravity, density, underrelaxationParam) {
+        public MotionWetNoRotation(Vector gravity, double density) : base(new Vector(gravity), density) {
             IncludeRotation = false;
         }
 
@@ -86,15 +86,37 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calls the calculation of the hydrodynamics
+        /// Update Forces and Torque acting from fluid onto the particle
+        /// </summary>
+        /// <param name="hydrodynamicsIntegration"></param>
+        /// <param name="fluidDensity"></param>
+        public override Vector CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, CellMask cutCells, double dt) {
+            Vector tempForces = new Vector(hydrodynamicsIntegration.Forces(out List<double[]>[] stressToPrintOut, cutCells));
+            currentStress = TransformStressToPrint(stressToPrintOut);
+            Aux.TestArithmeticException(tempForces, "temporal forces during calculation of hydrodynamics");
+            tempForces = Force_MPISum(tempForces);
+            tempForces = CalculateGravity(fluidDensity, tempForces);
+            return tempForces;
+        }
+
+        /// <summary>
+        /// Update Forces and Torque acting from fluid onto the particle
         /// </summary>
         /// <param name="U"></param>
         /// <param name="P"></param>
         /// <param name="levelSetTracker"></param>
         /// <param name="fluidViscosity"></param>
-        public override void UpdateForcesAndTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, bool firstIteration, double dt = 0) {
-            double[] tempForces = CalculateHydrodynamicForces(hydrodynamicsIntegration, fluidDensity);
-            HydrodynamicsPostprocessing(tempForces);
+        /// <param name="cutCells"></param>
+        /// <param name="dt"></param>
+        public override double CalculateHydrodynamicTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, CellMask cutCells, double dt) {
+            return 0;
+        }
+
+        public override object Clone() {
+            Motion clonedMotion = new MotionWetNoRotation(Gravity, Density);
+            clonedMotion.GetParticleArea(ParticleArea);
+            clonedMotion.GetParticleMomentOfInertia(MomentOfInertia);
+            return clonedMotion;
         }
     }
 }

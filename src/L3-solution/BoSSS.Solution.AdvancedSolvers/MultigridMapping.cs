@@ -142,10 +142,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </param>
         /// <param name="DgDegrees"></param>
         public MultigridMapping(UnsetteledCoordinateMapping __ProblemMapping, AggregationGridBasis[] __aggGrdB, int[] DgDegrees) {
-            using (new FuncTrace()) {
+            using (var tr =new FuncTrace()) {
                 // check args
                 // ===========
-
+                tr.Info("Entering multigrid mapping " + __aggGrdB[0] + " Basis length " + __aggGrdB.Length);
 
                 if (__aggGrdB.Length != __ProblemMapping.BasisS.Count)
                     throw new ArgumentException("Mismatch between number of multigrid basis objects and number of variables in problem mapping.");

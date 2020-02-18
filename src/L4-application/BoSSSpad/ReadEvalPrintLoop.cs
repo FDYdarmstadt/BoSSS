@@ -110,6 +110,7 @@ namespace BoSSS.Application.BoSSSpad {
             eval.ReferenceAssembly(typeof(BoSSS.Solution.XheatCommon.AuxiliaryHeatFlux_Identity).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.XdgTimestepping.LevelSetHandling).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.LevelSetTools.ContinuityProjection).Assembly);
+            eval.ReferenceAssembly(typeof(BoSSS.Solution.CompressibleFlowCommon.ShockCapturing.ShockFindingAlgorithms).Assembly);
             eval.ReferenceAssembly(typeof(BoSSSpad.BoSSSpadMain).Assembly);
             eval.ReferenceAssembly(typeof(Renci.SshNet.SftpClient).Assembly);
             eval.ReferenceAssembly(typeof(MiniBatchProcessor.Client).Assembly);
@@ -229,6 +230,8 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
                 eval.Run(@"Console.WriteLine(""\n Console ready for input. Type 'help' for help."");");
+
+                MiniBatchProcessor.Server.StartIfNotRunning();
 
                 // Log results of startup
                 Console.Out.Flush();
