@@ -123,6 +123,7 @@ namespace BoSSS.Solution.NSECommon {
 
                 double rho;
                 if(ThermodynamicPressureValue != -1) { // this is a really ugly hack to allow the SIMPLE project to use the p0 DG field. A better solution has to be found
+                    //rho = 1/ phi[0];
                     rho = ThermodynamicPressureValue / phi[0];
                 } else {
                     rho = ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
@@ -181,7 +182,8 @@ namespace BoSSS.Solution.NSECommon {
                         double viscosity = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
                         Debug.Assert(!double.IsNaN(viscosity));
                         Debug.Assert(!double.IsInfinity(viscosity));
-                        double lambda = viscosity; //// using viscosity = lambda for Pr = cte...
+
+                        double lambda = viscosity; //// using viscosity = lambda for Pr = 1...
                         return lambda;
                     }
                 case MaterialParamsMode.PowerLaw: {
