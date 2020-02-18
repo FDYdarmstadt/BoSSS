@@ -46,11 +46,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// control object for various testing
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control ChannelFlow_WithInterface(int p = 4, int kelem = 16, int wallBC = 0) {
+        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 16, int wallBC = 0) {
 
             XNSE_Control C = new XNSE_Control();
 
-            string _DbPath = null; // @"D:\local\local_test_db";
+            string _DbPath = @"D:\local\local_test_db";
 
             //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
@@ -61,9 +61,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.DbPath = _DbPath;
             C.savetodb = C.DbPath != null;
             C.ProjectName = "XNSE/Channel";
-            C.ProjectDescription = "Channel flow with vertical interface";
+            C.ProjectDescription = "Channel flow with kinetic energy";
 
             C.ContinueOnIoError = false;
+            C.LogValues = XNSE_Control.LoggingValues.ChannelFlow;
 
             #endregion
 
@@ -102,10 +103,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //    Degree = p,
             //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             //});
-            //C.FieldOptions.Add("KineticEnergy", new FieldOpts() {
-            //    Degree = 2*p,
-            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            //});
+            C.FieldOptions.Add("KineticEnergy", new FieldOpts() {
+                Degree = 2*p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
 
             #endregion
 
@@ -192,17 +193,17 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region init
 
 
-            //Func<double[], double> PhiFunc = (X => -1.0); // X[1] - (H / 2.1)); // + (H/20)*Math.Cos(8 * Math.PI * X[0] / L));
-            //C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+            Func<double[], double> PhiFunc = (X => -1.0); // X[1] - (H / 2.1)); // + (H/20)*Math.Cos(8 * Math.PI * X[0] / L));
+            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
 
             double[] center = new double[] { H / 2.0, H / 2.0 };
             double radius = 0.15;
 
-            C.InitialValues_Evaluators.Add("Phi",
-                //(X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2())   // quadratic form
-                (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius)  // signed-distance form
-                );
+            //C.InitialValues_Evaluators.Add("Phi",
+            //    //(X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2())   // quadratic form
+            //    (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius)  // signed-distance form
+            //    );
 
 
             double U = 0.125;
@@ -303,11 +304,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             //C.ComputeEnergyProperties = true;
-            //C.solveKineticEnergyEquation = true;
+            C.solveKineticEnergyEquation = true;
             ////C.CheckJumpConditions = true;
-            //C.kinEViscousDiscretization = Solution.EnergyCommon.KineticEnergyViscousSourceTerms.fluxFormulation;
+            C.kinEViscousDiscretization = Solution.EnergyCommon.KineticEnergyViscousSourceTerms.laplaceKinE;
             //C.kinEPressureDiscretization = Solution.EnergyCommon.KineticEnergyPressureSourceTerms.divergence;
-            //C.withDissipativePressure = false;
+            C.withDissipativePressure = false;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
 
@@ -327,7 +328,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.Phi = (X,t) => ((X[0] - (center[0]+U*t)).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius;
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+            C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.SkipSolveAndEvaluateResidual = true;
@@ -343,17 +344,17 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.CrankNicolson;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-            double dt = 1e-2;
+            double dt = 1e-4;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 100;
+            C.NoOfTimesteps = 5000;
             C.saveperiod = 10;
 
             #endregion

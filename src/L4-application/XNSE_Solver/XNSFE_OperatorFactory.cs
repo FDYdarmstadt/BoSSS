@@ -165,15 +165,15 @@ namespace BoSSS.Application.XNSE_Solver {
 
             if (config.solveHeat) {
                 if (config.getCodBlocks[nBlocks])
-                    CodNameSelected = ArrayTools.Cat(CodNameSelected, CodName.GetSubVector(nBlocks + (D - 1) + 1, 1));
+                    CodNameSelected = ArrayTools.Cat(CodNameSelected, CodName.GetSubVector(D + 1, 1));
                 if (config.getDomBlocks[nBlocks])
-                    DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(nBlocks + (D - 1) + 1, 1));
+                    DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(D + 1, 1));
 
                 if (config.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
                     if (config.getCodBlocks[nBlocks + 1])
-                        CodNameSelected = ArrayTools.Cat(CodNameSelected, CodName.GetSubVector(nBlocks + (D - 1) + 2, D));
+                        CodNameSelected = ArrayTools.Cat(CodNameSelected, CodName.GetSubVector(D + 2, D));
                     if (config.getDomBlocks[nBlocks + 1])
-                        DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(nBlocks + (D - 1) + 2, D));
+                        DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(D + 2, D));
                 }
             }
 

@@ -139,7 +139,12 @@ namespace BoSSS.Application.XNSE_Solver {
             /// <summary>
             /// additional refinement at contact line
             /// </summary>
-            ContactLineRefined
+            ContactLineRefined,
+
+            /// <summary>
+            /// additional refinement at navier slip boundary
+            /// </summary>
+            NavierSlipRefined
         }
 
         /// <summary>
@@ -170,8 +175,8 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// option for clearing the velocities for restart
         /// </summary>
-        //[DataMember]
-        //public bool ClearVelocitiesOnRestart = false;
+        [DataMember]
+        public bool ClearVelocitiesOnRestart = false;
 
         [DataMember]
         public int ReInitPeriod = 0;
@@ -252,7 +257,12 @@ namespace BoSSS.Application.XNSE_Solver {
             /// <summary>
             /// Evaporative mass flux and speed of displacement (circle interface)
             /// </summary>
-            EvaporationC
+            EvaporationC,
+
+            /// <summary>
+            /// Channel flow type testcases
+            /// </summary>
+            ChannelFlow
         }
 
         /// <summary>
@@ -432,10 +442,16 @@ namespace BoSSS.Application.XNSE_Solver {
         //public bool ComputeEnergy = false;
 
         /// <summary>
-        /// if true, kinetic energy equation will be solved 
+        /// if true, kinetic energy equation will be solved as postprocessing
         /// </summary>
         [DataMember]
         public bool solveKineticEnergyEquation = false;
+
+        /// <summary>
+        /// if false, the kinetic energy timestepping is one order higher than the flow solver
+        /// </summary>
+        [DataMember]
+        public bool equalTimesteppingForKineticEnergy = true;
 
         /// <summary>
         /// discretization option for the visocus source terms of the kinetic energy equation
