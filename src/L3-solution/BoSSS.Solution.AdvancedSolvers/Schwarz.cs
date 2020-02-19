@@ -569,7 +569,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #endif
 
                 blockSolvers = new ISparseSolver[NoOfSchwzBlocks];
-                
+                BMfullBlocks = new BlockMask[NoOfSchwzBlocks];
+                BlockMatrices = new BlockMsrMatrix[NoOfSchwzBlocks];
+
                 for (int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) { // loop over parts...
                     Debug.Assert(BlockCells!=null);
                     int[] bc = BlockCells[iPart];
@@ -580,6 +582,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     fullSel.CellSelector(bc.ToList(), false);
                     var fullMask = new BlockMask(fullSel, m_Overlap > 0);
                     var fullBlock = fullMask.GetSubBlockMatrix(op.OperatorMatrix);
+
                     BMfullBlocks[iPart] = fullMask;
 
                     if (UsePMGinBlocks) {

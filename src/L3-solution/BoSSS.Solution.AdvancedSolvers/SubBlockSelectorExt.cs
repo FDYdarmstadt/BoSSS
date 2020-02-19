@@ -59,7 +59,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                 int jMax = m_map.AggGrid.iLogicalCells.Count - 1;
                 int LE = m_map.LocalUniqueIndex(0, jMax, 0) + m_map.GetLength(jMax);
 
-                foreach (int idx in this.m_GlobalMask) {
+                foreach (int idx in this.m_LocalMask) {
                     Debug.Assert(idx >= LL);
                     Debug.Assert(idx < LE);
                 }
@@ -103,9 +103,10 @@ namespace BoSSS.Solution.AdvancedSolvers
         }
 
         public BlockMask(SubBlockSelector sbs, bool includeExternalCells) {
+            m_map = sbs.GetMapping;
             m_includeExternalCells = includeExternalCells&& m_map.MpiSize > 1;
             BMLoc = new BlockMaskLoc(sbs);
-            m_map = sbs.GetMapping;
+            
             if (m_includeExternalCells) {
                 BMExt = new BlockMaskExt(sbs);
                 SetThisShitUp(new BlockMaskBase[] { BMLoc, BMExt });
@@ -495,6 +496,8 @@ namespace BoSSS.Solution.AdvancedSolvers
 
         public double[] GetSubBlockVec( IList<double> extvector, IList<double> locvector)
         {
+            if (BMExt == null)
+                return GetSubBlockVec(locvector);
             int SubL = BMExt.LocalDOF + BMLoc.LocalDOF;
             var subvector = new double[SubL];
             int acc_offset = BMLoc.LocalDOF;
@@ -510,11 +513,12 @@ namespace BoSSS.Solution.AdvancedSolvers
             where W : IList<double>
             where U : IList<double> {
             locvector.AccV(1.0, accVector, BMLoc.m_LocalMask, default(int[]));
-            
-            int target_offset = m_map.LocalLength;
-            int acc_offset = BMLoc.LocalDOF;
-            if(BMExt.m_LocalMask != null && BMExt.LocalDOF > 0)
-                extvector.AccV(1.0, accVector, BMExt.m_LocalMask, default(int[]), acc_index_shift: (-target_offset), b_index_shift: acc_offset);
+            if (BMExt != null) {
+                int target_offset = m_map.LocalLength;
+                int acc_offset = BMLoc.LocalDOF;
+                if (BMExt.m_LocalMask != null && BMExt.LocalDOF > 0)
+                    extvector.AccV(1.0, accVector, BMExt.m_LocalMask, default(int[]), acc_index_shift: (-target_offset), b_index_shift: acc_offset);
+            }
         }
 
         private void AuxAcc<V, W>(BlockMaskBase mask, W accVector, int iCell, V targetVector)
