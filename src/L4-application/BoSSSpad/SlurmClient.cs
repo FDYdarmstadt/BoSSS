@@ -104,10 +104,15 @@ namespace BoSSS.Application.BoSSSpad {
             get {
                 if(m_SSHConnection == null || m_SSHConnection.IsConnected == false) {
                     // SSHConnection = new SshClient(m_ServerName, m_Username, m_Password);
-                    if(PrivateKeyFilePath != null) {
+                    if (PrivateKeyFilePath != null) {
                         var pkf = new PrivateKeyFile(PrivateKeyFilePath);
                         m_SSHConnection = new SshClient(ServerName, Username, pkf);
-                    } else if(Password != null) {
+                    } else if (Password != null) {
+                        m_SSHConnection = new SshClient(ServerName, Username, Password);
+                    } else if (Password == null) {
+                        Console.WriteLine();
+                        Console.WriteLine("Please enter your password...");
+                        Password = ReadPassword();
                         m_SSHConnection = new SshClient(ServerName, Username, Password);
                     } else {
                         throw new NotSupportedException("Unable to initiate SSH connection -- either a password or private key file is required.");
