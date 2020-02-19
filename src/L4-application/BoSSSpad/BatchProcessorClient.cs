@@ -33,7 +33,7 @@ namespace BoSSS.Application.BoSSSpad {
     [DataContract]
     abstract public class BatchProcessorClient {
 
-        
+
         /// <summary>
         /// Base directory where the executables should be deployed,
         /// accessible from the local machine (e.g. a mounted path if the batch processor deploys on another computer system)
@@ -71,30 +71,30 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public IReadOnlyList<IDatabaseInfo> AllowedDatabases {
             get {
-                if(m_AllowedDatabases == null) {
+                if (m_AllowedDatabases == null) {
                     m_AllowedDatabases = new List<IDatabaseInfo>();
-                    if(AllowedDatabasesPaths != null) {
+                    if (AllowedDatabasesPaths != null) {
 
                         // fill up with empty entries
                         m_AllowedDatabases.AddRange(AllowedDatabasesPaths.Select(path => default(IDatabaseInfo)));
-                        
+
                         // pass 1: search in already-known databases
-                        for(int i = 0; i < AllowedDatabasesPaths.Length; i++) {
-                            foreach(var db in InteractiveShell.databases) {
-                                if(db.PathMatch(AllowedDatabasesPaths[i])) {
+                        for (int i = 0; i < AllowedDatabasesPaths.Length; i++) {
+                            foreach (var db in InteractiveShell.databases) {
+                                if (db.PathMatch(AllowedDatabasesPaths[i])) {
                                     // bingo
                                     m_AllowedDatabases[i] = db;
                                     break;
                                 }
                             }
                         }
-                        
+
                         // pass 2: try to open other databases
-                        for(int i = 0; i < AllowedDatabasesPaths.Length; i++) {
-                            if(m_AllowedDatabases[i] == null) {
+                        for (int i = 0; i < AllowedDatabasesPaths.Length; i++) {
+                            if (m_AllowedDatabases[i] == null) {
                                 try {
                                     m_AllowedDatabases[i] = new DatabaseInfo(AllowedDatabasesPaths[i]);
-                                } catch(Exception e) {
+                                } catch (Exception e) {
                                     Console.Error.WriteLine($"Unable to open 'allowed database' for {this.ToString()} at path {AllowedDatabasesPaths[i]}. Check configuration file 'BatchProcessorConfig.json'. ({e.GetType().Name} : {e.Message})");
                                     Console.Error.WriteLine($"{this.ToString()} will continue to work, but database syncronization on job submission might not work correctly.");
                                 }
@@ -102,15 +102,15 @@ namespace BoSSS.Application.BoSSSpad {
                         }
 
                         // remove empty entries
-                        for(int i = 0; i < m_AllowedDatabases.Count; i++) {
-                            if(m_AllowedDatabases[i] == null) {
+                        for (int i = 0; i < m_AllowedDatabases.Count; i++) {
+                            if (m_AllowedDatabases[i] == null) {
                                 m_AllowedDatabases.RemoveAt(i);
                                 i--;
                             }
                         }
                     }
                 }
-                
+
                 return m_AllowedDatabases.AsReadOnly();
             }
         }
@@ -120,7 +120,7 @@ namespace BoSSS.Application.BoSSSpad {
             string Proj = InteractiveShell.WorkflowMgm.CurrentProject;
             string Sess = myJob.Name;
 
-            return Proj 
+            return Proj
                 //+ "-" + Sess 
                 + "-" + Exe;
         }
@@ -131,7 +131,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// are deployed if <paramref name="myJob"/> is assigned to this batch processor.
         /// </summary>
         virtual public string GetNewDeploymentDir(Job myJob) {
-            if(!Path.IsPathRooted(DeploymentBaseDirectory))
+            if (!Path.IsPathRooted(DeploymentBaseDirectory))
                 throw new IOException($"Deployment base directory for {this.ToString()} must be rooted/absolute, but '{DeploymentBaseDirectory}' is not.");
 
             string ShortName = JobDirectoryBaseName(myJob);
@@ -151,11 +151,11 @@ namespace BoSSS.Application.BoSSSpad {
         /// All deployment directories which potentially could match the job on the current batch processor.
         /// </summary>
         virtual public DirectoryInfo[] GetAllExistingDeployDirectories(Job myJob) {
-            if(!Path.IsPathRooted(DeploymentBaseDirectory))
+            if (!Path.IsPathRooted(DeploymentBaseDirectory))
                 throw new IOException($"Deployment base directory for {this.ToString()} must be rooted/absolute, but '{DeploymentBaseDirectory}' is not.");
 
             var jobControl = myJob.GetControl();
-            if(jobControl == null)
+            if (jobControl == null)
                 return null;
 
             // find all deployment directories relevant for project & job
@@ -169,32 +169,32 @@ namespace BoSSS.Application.BoSSSpad {
             // =======================
 
             var filtDirs = new List<DirectoryInfo>();
-            foreach(string dir in AllDirs) {
+            foreach (string dir in AllDirs) {
                 string ControlObj = Path.Combine(dir, "control.obj");
-                if(File.Exists(ControlObj)) {
+                if (File.Exists(ControlObj)) {
                     var ctrl = BoSSS.Solution.Control.AppControl.Deserialize(File.ReadAllText(ControlObj));
-                    if(InteractiveShell.WorkflowMgm.JobAppControlCorrelation(myJob, ctrl)) {
+                    if (InteractiveShell.WorkflowMgm.JobAppControlCorrelation(myJob, ctrl)) {
                         filtDirs.Add(new DirectoryInfo(dir));
                         continue;
                     }
                 }
 
                 string ControlScript = Path.Combine(dir, "control.cs");
-                if(File.Exists(ControlScript)) {
+                if (File.Exists(ControlScript)) {
                     int control_index = 0;
                     int i = myJob.CommandLineArguments.IndexWhere(arg => arg == "--pstudy_case");
-                    if(i >= 0) {
+                    if (i >= 0) {
                         control_index = int.Parse(myJob.CommandLineArguments[i + 1]);
                     }
 
                     var ctrl = BoSSS.Solution.Control.AppControl.FromFile(ControlScript, jobControl.GetType(), control_index);
-                    if(InteractiveShell.WorkflowMgm.JobAppControlCorrelation(myJob, ctrl)) {
+                    if (InteractiveShell.WorkflowMgm.JobAppControlCorrelation(myJob, ctrl)) {
                         filtDirs.Add(new DirectoryInfo(dir));
                         continue;
                     }
                 }
             }
-            
+
             // return
             // ======
             return filtDirs.ToArray();
@@ -239,7 +239,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Copies the executable files to the <see cref="DeploymentBaseDirectory"/>, 
         /// but does not submit the job.
         /// </summary>
-        virtual public void DeployExecuteables(Job myJob, IEnumerable<Tuple<byte[],string>> AdditionalFiles) {
+        virtual public void DeployExecuteables(Job myJob, IEnumerable<Tuple<byte[], string>> AdditionalFiles) {
 
             Console.WriteLine("Deploying executables and additional files ...");
 
@@ -249,10 +249,10 @@ namespace BoSSS.Application.BoSSSpad {
                 //string SystemPath = Path.GetDirectoryName(typeof(object).Assembly.Location);
                 string MainAssemblyDir = Path.GetDirectoryName(myJob.EntryAssembly.Location);
                 foreach (var a in myJob.AllDependentAssemblies) {
-                    if(Path.GetDirectoryName(a.Location).Equals(MainAssemblyDir)
+                    if (Path.GetDirectoryName(a.Location).Equals(MainAssemblyDir)
                         || Path.GetFileName(a.Location).StartsWith("BoSSS")
                         || Path.GetFileName(a.Location).StartsWith("ilPSP")
-                        || !a.GlobalAssemblyCache) { 
+                        || !a.GlobalAssemblyCache) {
                         files.Add(a.Location);
                     }
                 }
@@ -265,20 +265,20 @@ namespace BoSSS.Application.BoSSSpad {
 
             Console.WriteLine("Deployment directory: " + DeployDir);
             string OriginDir = null;
-                        
+
             // copy files
-            foreach(var fOrg in files) {
+            foreach (var fOrg in files) {
                 string fNmn = Path.GetFileName(fOrg);
                 if (fNmn.Equals("mscorlib.dll"))
                     throw new ApplicationException("internal error - something went wrong during filtering.");
 
                 string fTarget = Path.Combine(DeployDir, fNmn);
-                if(File.Exists(fTarget)) {
+                if (File.Exists(fTarget)) {
                     throw new IOException("File '" + fTarget + "' already exists - wont over write.");
                 }
 
                 File.Copy(fOrg, fTarget);
-                if(OriginDir == null || !OriginDir.Equals(Path.GetDirectoryName(fOrg))) {
+                if (OriginDir == null || !OriginDir.Equals(Path.GetDirectoryName(fOrg))) {
                     //if (OriginDir != null)
                     //    Console.WriteLine();
                     OriginDir = Path.GetDirectoryName(fOrg);
@@ -291,8 +291,8 @@ namespace BoSSS.Application.BoSSSpad {
             Console.WriteLine("copied " + files.Count + " files.");
 
             // additional files
-            if(AdditionalFiles != null) {
-                foreach(var t in AdditionalFiles) {
+            if (AdditionalFiles != null) {
+                foreach (var t in AdditionalFiles) {
                     string fTarget = Path.Combine(DeployDir, t.Item2);
                     if (File.Exists(fTarget)) {
                         throw new IOException("File '" + fTarget + "' already exists - wont over write.");
@@ -301,22 +301,24 @@ namespace BoSSS.Application.BoSSSpad {
                     Console.WriteLine("   writing file: " + t.Item2);
                 }
             }
-                        
+
             //
             if (DeployRuntime) {
-                string BosssInstall =  BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir();
+                string BosssInstall = BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir();
                 string BosssBinNative = Path.Combine(BosssInstall, "bin", Path.Combine("native", "win"));
                 CopyDirectoryRec(BosssBinNative, DeployDir, "amd64");
                 Console.WriteLine("   copied 'amd64' runtime.");
             }
-            
+
             // finally
             Console.WriteLine("deployment finished.");
 
             // test
-            var directories = this.GetAllExistingDeployDirectories(myJob);
-            if(directories == null || directories.Length <= 0) {
-                throw new IOException("Job is assigned to batch processor, but no deployment directory can be found.");
+            if (myJob.GetControl() != null) {
+                var directories = this.GetAllExistingDeployDirectories(myJob);
+                if (directories == null || directories.Length <= 0) {
+                    throw new IOException("Job is assigned to batch processor, but no deployment directory can be found.");
+                }
             }
         }
 
@@ -328,7 +330,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="filter">search pattern/filter</param>
         static void CopyDirectoryRec(string srcDir, string dstDir, string filter) {
             string[] srcFiles = Directory.GetFiles(srcDir);
-            
+
             foreach (string srcFile in srcFiles) {
                 TryCopy(srcFile, Path.Combine(dstDir, Path.GetFileName(srcFile)));
             }
