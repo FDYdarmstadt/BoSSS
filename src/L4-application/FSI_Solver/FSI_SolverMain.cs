@@ -173,10 +173,16 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         private double MaxGridLength => ((FSI_Control)Control).MaxGridLength;
 
+
         /// <summary>
         /// FluidDensity
         /// </summary>
-        private double MinGridLength => ((FSI_Control)Control).MinGridLength;
+        private double RefinementLevel => ((FSI_Control)Control).RefinementLevel;
+
+        /// <summary>
+        /// FluidDensity
+        /// </summary>
+        private double MinGridLength => MaxGridLength / Math.Pow(2, RefinementLevel); 
 
         /// <summary>
         /// Volume of the fluid domain
@@ -853,7 +859,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
             return true;
         }
-        
+        double oldTimestep = 1e-2;
         bool initAddedDamping = true;
         /// <summary>
         /// runs solver one step?!
@@ -871,9 +877,27 @@ namespace BoSSS.Application.FSI_Solver {
             using (new FuncTrace()) {
                 // init
                 ResLogger.TimeStep = TimestepInt;
-                var m_TSCchain = BDFCommon.GetChain(bdforder);
-                var S = m_TSCchain[0].S;
-                dt = GetFixedTimestep();
+                BDFSchemeCoeffs[] m_TSCchain = BDFCommon.GetChain(bdforder);
+                int S = m_TSCchain[0].S;
+                double maxVelocityL2Norm = 1e-15;
+                foreach (Particle p in m_Particles) {
+                    double expectedVelocity = 2 * (p.Motion.GetTranslationalVelocity(0) + 10 * p.Motion.GetTranslationalAcceleration(0) * oldTimestep).L2Norm();
+                    maxVelocityL2Norm = Math.Max(maxVelocityL2Norm, expectedVelocity);
+                }
+                dt = Math.Min(DtMax, MinGridLength / maxVelocityL2Norm);
+                if (dt / oldTimestep > 1.1)
+                    dt = oldTimestep * 1.1;
+                else if (dt / oldTimestep < 0.9)
+                    dt = oldTimestep * 0.9;
+                dt = dt.MPIMin();
+                if (dt < 1e-6)
+                    dt = 1e-6;
+                Console.WriteLine("((FSI_Control)Control).MinGridLength " + MinGridLength + " maxVelocityL2Norm " + maxVelocityL2Norm + " new time step " + dt + ", old time step " + oldTimestep);
+                foreach(Particle p in m_Particles) {
+                    p.Motion.AdaptToNewTimestep(dt, oldTimestep);
+                }
+                oldTimestep = dt;
+                //dt = GetFixedTimestep();
                 Console.WriteLine("Starting time-step " + TimestepInt + "...");
                 if (initAddedDamping) {
                     foreach (Particle p in m_Particles) {

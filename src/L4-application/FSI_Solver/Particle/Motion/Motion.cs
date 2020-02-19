@@ -59,7 +59,7 @@ namespace BoSSS.Application.FSI_Solver {
         [NonSerialized]
         internal readonly FSI_Auxillary Aux = new FSI_Auxillary();
         [DataMember]
-        private const int m_HistoryLength = 8;
+        private const int m_HistoryLength = 3;
         [DataMember]
         protected static int m_Dim = 2;
         [DataMember]
@@ -402,6 +402,72 @@ namespace BoSSS.Application.FSI_Solver {
                 m_RotationalAcceleration[h] = motionDataToTransfer.GetRotationalAcceleration(h);
                 m_HydrodynamicTorque[h] = motionDataToTransfer.GetHydrodynamicTorque(h);
             }
+        }
+
+        public void AdaptToNewTimestep(double newTimestep, double oldTimestep) {
+            AdaptNewTimestep(m_Position, newTimestep, oldTimestep);
+            AdaptNewTimestep(m_TranslationalVelocity, newTimestep, oldTimestep);
+            AdaptNewTimestep(m_TranslationalAcceleration, newTimestep, oldTimestep);
+            AdaptNewTimestep(m_Angle, newTimestep, oldTimestep);
+            AdaptNewTimestep(m_RotationalVelocity, newTimestep, oldTimestep);
+            AdaptNewTimestep(m_RotationalAcceleration, newTimestep, oldTimestep);
+        }
+
+        private void AdaptNewTimestep(List<Vector> variable, double newTimestep, double oldTimestep) {
+            List<Vector> stuetzstelle = new List<Vector>();
+            for (int h = 0; h <  m_HistoryLength; h++) {
+                stuetzstelle.Add(new Vector(variable[h]));
+            }
+            List<Vector> newVariable = new List<Vector> { new Vector(variable[0]) };
+            for (int i = 1; i < m_HistoryLength; i++) {
+                double currentNewTimestep = -i * newTimestep;
+                double[] langrangePoly = CalculateLangrangePolynom(currentNewTimestep, oldTimestep);
+                newVariable.Add(new Vector(langrangePoly[0] * variable[i]));
+                for (int j = 1; j < m_HistoryLength; j++) {
+                    newVariable[i] = newVariable[i] + langrangePoly[j] * stuetzstelle[j];
+                }
+            }
+            variable.Clear();
+            for (int h = 0; h < m_HistoryLength; h++) {
+                variable.Add(new Vector(newVariable[h]));
+            }
+        }
+
+        private void AdaptNewTimestep(List<double> variable, double newTimestep, double oldTimestep) {
+            List<double> stuetzstelle = new List<double>();
+            for (int h = 0; h < m_HistoryLength; h++) {
+                stuetzstelle.Add(variable[h]);
+            }
+            List<double> newVariable = new List<double>();
+            newVariable.Add(variable[0]);
+            for (int i = 1; i < m_HistoryLength; i++) {
+                double currentNewTimestep = -i * newTimestep;
+                double[] langrangePoly = CalculateLangrangePolynom(currentNewTimestep, oldTimestep);
+                newVariable.Add(langrangePoly[0] * variable[i]);
+                for (int j = 1; j < m_HistoryLength; j++) {
+                    newVariable[i] = newVariable[i] + langrangePoly[j] * stuetzstelle[j];
+                }
+            }
+            variable.Clear();
+            for (int h = 0; h < m_HistoryLength; h++) {
+                variable.Add(newVariable[h]);
+            }
+        }
+
+        private double[] CalculateLangrangePolynom(double time, double oldTimestep) {
+            double[] lPoly = new double[m_HistoryLength];
+            for (int i = 0; i < m_HistoryLength; i++) {
+                if (i != 0)
+                    lPoly[i] = time / (i * oldTimestep);
+                for (int j = 1; j < m_HistoryLength; j++) {
+                    if (j == i)
+                        continue;
+                    if (i == 0 && j == 1)
+                        lPoly[i] = (time - j * oldTimestep) / ((i - j) * oldTimestep);
+                    lPoly[i] *= (time - j * oldTimestep) / ((i - j) * oldTimestep);
+                }
+            }
+            return lPoly;
         }
 
         /// <summary>

@@ -112,7 +112,6 @@ namespace BoSSS.Application.FSI_Solver {
         public double MinGridLength;
         public void SetGrid(double lengthX, double lengthY, double cellsPerUnitLength, bool periodicX = false, bool periodicY = false) {
             MaxGridLength = 1 / cellsPerUnitLength;
-            MinGridLength = MaxGridLength / RefinementLevel;
             BoundaryPositionPerDimension = new double[2][];
             WallPositionPerDimension = new double[2][];
             WallPositionPerDimension[0] = new double[2];

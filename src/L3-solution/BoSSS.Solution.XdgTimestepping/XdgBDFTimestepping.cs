@@ -345,14 +345,16 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             // Solution-Stack
             // --------------
-            // entry 0 should remain the same object all the time
-            var Cvtmp = m_Stack_u[m_Stack_u.Length - 1];
-            for (int i = m_Stack_u.Length - 1; i >= 2; i--) {
-                m_Stack_u[i] = m_Stack_u[i - 1];
+            if(m_CurrentPhystime != fsiOldPhystime) { // only true in case of fsi_splitting fully coupled
+                // entry 0 should remain the same object all the time
+                var Cvtmp = m_Stack_u[m_Stack_u.Length - 1];
+                for (int i = m_Stack_u.Length - 1; i >= 2; i--) {
+                    m_Stack_u[i] = m_Stack_u[i - 1];
+                }
+                m_Stack_u[1] = Cvtmp;
+                m_Stack_u[1].Clear();
+                m_Stack_u[1].Acc(1.0, m_Stack_u[0]);
             }
-            m_Stack_u[1] = Cvtmp;
-            m_Stack_u[1].Clear();
-            m_Stack_u[1].Acc(1.0, m_Stack_u[0]);
 
             // mass-matrix stack
             // -----------------
@@ -1443,8 +1445,10 @@ namespace BoSSS.Solution.XdgTimestepping {
         public void Solve(double phystime, double dt, bool ComputeOnlyResidual = false) {
             if (dt <= 0)
                 throw new ArgumentOutOfRangeException();
-            if (m_CurrentDt_Timestep > 0 && Math.Abs(dt / m_CurrentDt_Timestep - 1.0) > 1.0e-14)
-                throw new ArgumentOutOfRangeException();
+            //if (m_CurrentDt_Timestep > 0 && Math.Abs(dt / m_CurrentDt_Timestep - 1.0) > 1.0e-14)
+            //    throw new ArgumentOutOfRangeException();
+            if (m_CurrentDt_Timestep > 0 && Math.Abs(m_CurrentDt_Timestep - dt) > 1e-14)
+                AdaptToNewTimestep(dt, m_CurrentDt_Timestep);
 
             m_CurrentDt_Timestep = dt;
 
@@ -1460,9 +1464,49 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
         }
 
+        private void AdaptToNewTimestep(double newTimestep, double oldTimestep) {
+            if (Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative || Config_LevelSetHandling == LevelSetHandling.Coupled_Once)
+                throw new NotImplementedException("Interpolation of mass_matrix_stack is not implemented");
+
+            int timestepHistory = m_Stack_u.Length;
+            CoordinateVector[] stuetzstelle = m_Stack_u.CloneAs();
+            CoordinateVector[] newStackU = m_Stack_u.CloneAs();
+            for (int i = 1; i < timestepHistory; i++) {
+                double currentNewTimestep = -i * newTimestep;
+                double[] langrangePoly = CalculateLangrangePolynom(currentNewTimestep, oldTimestep);
+                newStackU[i].Scale(0);
+                newStackU[i].CopyEntries(stuetzstelle[0]);
+                newStackU[i].Scale(langrangePoly[0]);
+                for (int j = 1; j < timestepHistory; j++) {
+                    newStackU[i].Acc(langrangePoly[j], stuetzstelle[j]);
+                }
+            }
+            m_Stack_u.Clear();
+            m_Stack_u = newStackU.CloneAs();
+        }
+
+        private double[] CalculateLangrangePolynom(double time, double oldTimestep) {
+            int timestepHistory = m_Stack_u.Length;
+            double[] lPoly = new double[timestepHistory];
+            for (int i = 0; i < timestepHistory; i++) {
+                if(i != 0)
+                    lPoly[i] = time / (-i * oldTimestep);
+                for (int j = 1; j < timestepHistory; j++) {
+                    if (j == i)
+                        continue;
+                    if (i == 0 && j == 1)
+                        lPoly[i] = (time + j * oldTimestep) / ((j - i) * oldTimestep);
+                    lPoly[i] *= (time + j * oldTimestep) / ((j - i) * oldTimestep);
+                }
+            }
+            return lPoly;
+        }
+
         double m_CurrentDt_Timestep = -1;
 
         bool OneTimeMgInit = false;
+
+        double fsiOldPhystime = 0;
 
         /// <summary>
         /// Solver;
@@ -1482,8 +1526,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         void Solve_Increment(int increment, double phystime, double dt, bool ComputeOnlyResidual = false) {
             if (dt <= 0)
                 throw new ArgumentOutOfRangeException();
-            if (m_CurrentDt > 0 && Math.Abs(dt / m_CurrentDt - 1.0) > 1.0e-14)
-                throw new ArgumentOutOfRangeException();
+            //if (m_CurrentDt > 0 && Math.Abs(dt / m_CurrentDt - 1.0) > 1.0e-14)
+            //    throw new ArgumentOutOfRangeException();
 
             m_CurrentPhystime = phystime;
             m_CurrentDt = dt;
@@ -1492,6 +1536,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             m_InnerCoupledIterations = 0;
 
             PushStack(increment);
+            fsiOldPhystime = phystime;
             if (incrementTimesteps == 1)
                 dt = m_CurrentDt;
             else
