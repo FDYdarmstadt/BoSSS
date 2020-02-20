@@ -174,6 +174,11 @@ namespace BoSSS.Solution.AdvancedSolvers
         extNi0[][][][] StructuredNi0;
         MultigridMapping m_map;
 
+        //public MultigridMapping GenerateMappingfromMask() {
+
+        //}
+
+
         /// <summary>
         /// If you want nothing special. Take this one. If you want only diagonal block matrix choose one of the other methods
         /// </summary>

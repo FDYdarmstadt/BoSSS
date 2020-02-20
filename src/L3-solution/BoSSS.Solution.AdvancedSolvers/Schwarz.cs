@@ -571,6 +571,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 blockSolvers = new ISparseSolver[NoOfSchwzBlocks];
                 BMfullBlocks = new BlockMask[NoOfSchwzBlocks];
                 BlockMatrices = new BlockMsrMatrix[NoOfSchwzBlocks];
+                BMhiBlocks = new BlockMask[NoOfSchwzBlocks];
+                BMloBlocks = new BlockMask[NoOfSchwzBlocks];
+                PmgBlock_HiModeSolvers = new MultidimensionalArray[NoOfSchwzBlocks][];
 
                 for (int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) { // loop over parts...
                     Debug.Assert(BlockCells!=null);
@@ -589,10 +592,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //generate selector instructions
                         var lowSel = new SubBlockSelector(op.Mapping);
                         lowSel.CellSelector(bc.ToList(), false);
-                        lowSel.ModeSelector(p => p <= this.pLow);
+                        //lowSel.ModeSelector(p => p <= this.pLow);
+                        lowSel.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D ? pLow : pLow - 1));
                         var HiSel = new SubBlockSelector(op.Mapping);
                         HiSel.CellSelector(bc.ToList(), false);
-                        HiSel.ModeSelector(p => p > this.pLow);
+                        //HiSel.ModeSelector(p => p > this.pLow);
+                        HiSel.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D ? pLow : pLow - 1));
 
                         //generate Blockmasking
                         var lowMask = new BlockMask(lowSel, m_Overlap > 0);
@@ -615,6 +620,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 block.Invert();
                         }
                         PmgBlock_HiModeSolvers[iPart] = hiBlocks;
+
+#if TEST
+                    BlkIdx_gI_lR[iPart] = lowMask.GetGlobalMask_Loc();
+                    BlkIdx_gI_eR[iPart] = lowMask.GetGlobalMask_Ext();
+                    Blocks.Add(fullBlock);
+#endif
                     }
 
                     blockSolvers[iPart] = new PARDISOSolver() {
@@ -629,12 +640,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
                     BlockMatrices[iPart] = fullBlock;
-
-#if TEST
-                    BlkIdx_gI_lR[iPart] = lowMask.GetGlobalMask_Loc();
-                    BlkIdx_gI_eR[iPart] = lowMask.GetGlobalMask_Ext();
-                    Blocks.Add(fullBlock);
-#endif
                 }
 
 
@@ -802,7 +807,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
                     double[] testX = new double[testRHS.Length];
-                    MPIexchangeInverse<double[]> XExchange = new MPIexchangeInverse<double[]>(MgMap, testX);
+                    MPIexchangeInverse<double[]> XXExchange = new MPIexchangeInverse<double[]>(MgMap, testX);
 
                     g = 0;
                     for (int rankCounter = 0; rankCounter < myMpisize; rankCounter++) {
@@ -825,7 +830,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 }
                                 if (LE > 0) {
                                     for (int i = 0; i < LE; i++) {
-                                        XExchange.Vector_Ext[this.BlockIndices_External[iBlock][i] - offset] += (g + 1);
+                                        XXExchange.Vector_Ext[this.BlockIndices_External[iBlock][i] - offset] += (g + 1);
                                     }
                                 }
                             } else {
@@ -835,8 +840,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             g++;
                         }
                     }
-                    XExchange.TransceiveStartImReturn();
-                    XExchange.TransceiveFinish(1.0);
+                    XXExchange.TransceiveStartImReturn();
+                    XXExchange.TransceiveFinish(1.0);
 
                     matlab.Cmd("testXref = zeros({0},1);", MgMap.TotalLength);
                     for (int iGlbBlock = 0; iGlbBlock < GlobalNoOfBlocks; iGlbBlock++) {
@@ -1017,6 +1022,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         //    }
         //}
 
+        private double[] Xdummy, Resdummy;
 
         /// <summary>
         /// ~
@@ -1118,12 +1124,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 // P-multigrid in each Schwarz block
                                 // +++++++++++++++++++++++++++++++++
 
+                                // This is a workaround, because Masking of a subblock is not implemented yet
+                                // Therefore always projection from parts onto MGO map
+                                if (Xdummy == null) {
+                                    Xdummy = new double[X.Count];
+                                } else {
+                                    Xdummy.ClearEntries();
+                                }
+                                if (Resdummy == null) {
+                                    Resdummy = new double[B.Count];
+                                } else {
+                                    Resdummy.ClearEntries();
+                                }
+
                                 // solve the low-order system
                                 //int[] ciLo = PmgBlock_LoModes[iPart];
                                 //int Llo = ciLo.Length;
 
                                 //double[] biLo = new double[Llo];
-                                var biLo=BMloBlocks[iPart].GetSubBlockVec(bi);
+                                var biLo=BMloBlocks[iPart].GetSubBlockVec(ResExchange.Vector_Ext, Res);
                                 //biLo.AccV(1.0, bi, default(int[]), ciLo);
                                 double[] xiLo = new double[biLo.Length];
                                 try {
@@ -1133,12 +1152,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     throw ae;
                                 }
 
-                                BMloBlocks[iPart].AccVecToFull(xiLo,xi);
+                                BMloBlocks[iPart].AccVecToFull(xiLo,Xdummy);
                                 //xi.AccV(1.0, xiLo, ciLo, default(int[]));
 
                                 {
+                                    xi = BMfullBlocks[iPart].GetSubBlockVec(Xdummy);
                                     // re-evaluate the residual
                                     this.BlockMatrices[iPart].SpMV(-1.0, xi, 1.0, bi);
+                                    BMfullBlocks[iPart].AccVecToFull(bi,Resdummy);
 
                                     // solve the high-order system
                                     //int[] ciHi = PmgBlock_HiModes[iPart];
@@ -1162,18 +1183,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                         //for (int n = 0; n < Np; n++) {
                                         //    biHi[n] = bi[ciHi[ptr_CiHi + n]];
                                         //}
-                                        biHi = BMhiBlocks[iPart].GetVectorCellwise(bi,j);
+
+                                        biHi = BMhiBlocks[iPart].GetVectorCellwise(Resdummy, j);
 
                                         HiModeSolver.GEMV(1.0, biHi, 0.0, xiHi);
 
                                         //for (int n = 0; n < Np; n++) {
                                         //    xi[ciHi[ptr_CiHi + n]] = xiHi[n];
                                         //}
-                                        BMhiBlocks[iPart].AccVecCellwiseToFull(xiHi, j,xi);
+                                        BMhiBlocks[iPart].AccVecCellwiseToFull(xiHi, j,Xdummy);
+                                        
                                         //ptr_CiHi += Np;
                                     }
                                     //Debug.Assert(ptr_CiHi == ciHi.Length);
                                 }
+                                xi=BMfullBlocks[iPart].GetSubBlockVec(Xdummy);
+                                Xdummy.ClearEntries();
+                                Resdummy.ClearEntries();
 
                             } else {
                                 // ++++++++++++++++++++++++++++++
