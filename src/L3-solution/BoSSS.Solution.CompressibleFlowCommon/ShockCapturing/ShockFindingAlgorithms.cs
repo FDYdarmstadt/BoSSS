@@ -204,7 +204,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         /// <param name="secondDerivative">The second derivative at each point</param>
         /// <param name="stepSize">The step size between two points along the curve (first entry has to be user defined)</param>
         /// <returns></returns>
-        public static int WalkOnCurve(GridData gridData, SinglePhaseField field, int maxIterations, double threshold, MultidimensionalArray points, double[] secondDerivative, double[] stepSize, double[] values, out bool converged, bool patchRecoveryGradient = false, bool patchRecoveryHessian = false, bool byFlux = true) {
+        public static int WalkOnCurve(GridData gridData, SinglePhaseField field, int maxIterations, double threshold, MultidimensionalArray points, double[] secondDerivative, double[] stepSize, double[] values, out bool converged, out int jLocal, bool patchRecoveryGradient = false, bool patchRecoveryHessian = false, bool byFlux = true) {
             // Init
             converged = false;
             PatchRecoveryGradient = patchRecoveryGradient;
@@ -221,18 +221,16 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
             // Get local cell index of current point
             int j0Grd = gridData.CellPartitioning.i0;
-            int jLocal = (int)(GlobalIndex - j0Grd);
+            jLocal = (int)(GlobalIndex - j0Grd);
 
             // Evaluate the second derivative
-            //NotSupportedException e = null;
             try {
                 if (byFlux) {
                     secondDerivative[0] = SecondDerivativeByFlux(field, jLocal, nodeSet);
                 } else {
                     secondDerivative[0] = SecondDerivative(field, jLocal, nodeSet);
                 }
-            } catch (NotSupportedException ee) {
-                //e = ee;
+            } catch (NotSupportedException) {
                 return 0;
             }
 
@@ -299,15 +297,13 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 values[n] = f[0, 0];
 
                 // Evaluate the second derivative of the new point
-                //NotSupportedException e = null;
                 try {
                     if (byFlux) {
                         secondDerivative[n] = SecondDerivativeByFlux(field, jLocal, nodeSet);
                     } else {
                         secondDerivative[n] = SecondDerivative(field, jLocal, nodeSet);
                     }
-                } catch (NotSupportedException ee) {
-                    //e = ee;
+                } catch (NotSupportedException) {
                     break;
                 }
 
