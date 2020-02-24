@@ -76,11 +76,34 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         private SinglePhaseField Error;
 
+        ///// <summary>
+        ///// intermediate object
+        ///// </summary>
+        //private DGField[] Polynomials;
+
+        ///// <summary>
+        ///// intermediate object
+        ///// </summary>
+        //private SinglePhaseField p_temp;
+
+
+
         /// <summary>
         /// DG field instantiation
         /// </summary>
         protected override void CreateFields() {
             base.CreateFields();
+
+            //Polynomials = new DGField[T.Basis.Polynomials[0].Count];
+            //double[] p_ones = new double[T.GridDat.iGeomCells.Count];
+            //p_ones.SetAll(1.0);
+
+            //for (int i = 0; i < T.Basis.Polynomials[0].Count; i++)
+            //{
+            //    p_temp = new SinglePhaseField(new Basis(this.GridData, T.Basis.Degree + 1), $"p{i}");
+            //    p_temp.Coordinates.SetColumn(i, p_ones);
+            //    Polynomials[i] = p_temp;
+            //}            
 
             ResiualKP1 = new SinglePhaseField(new Basis(this.GridData, T.Basis.Degree + 1), "ResidualKP1");
             base.IOFields.Add(ResiualKP1);
@@ -1172,6 +1195,7 @@ namespace BoSSS.Application.SipPoisson {
 
             DGField[] Fields = new DGField[] { T, Tex, RHS, ResiualKP1, Error };
             Fields = Fields.Cat(this.MGColoring);
+            //Fields = Fields.Cat(this.Polynomials);
             BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, AnalyseOutputpath+ "poisson_MG_coloring" + timestepNo + caseStr, phystime, superSampling);
         }
 

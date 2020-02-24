@@ -30,6 +30,7 @@ using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
+using System.IO;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -381,6 +382,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
 
+            //WARNING INJECTORS ARE PROGRESSIVE FROM LEVEL TO LEVEL, NOT FOLLOWED BY CURVED AGGREGATION
             // check if aggregation is performed on a curved or affine linear grid
             if (((GridData)maxDgBasis.GridDat).Cells.ContainsNonlinearCell())
             {
@@ -435,7 +437,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //ortho_Level = null;
                 }
 
-
                 // all other levels
                 for (int iLevel = 2; iLevel < agSeq.Length; iLevel++)
                 { // loop over levels...
@@ -455,6 +456,59 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     Injectors[iLevel] = BuildInjector_Lv2andup(maxDgBasis, Np, InjectorsBase, InjectorsBaseReady, Jagg, Ag2Pt_Fine, C2F);
                 }
             }
+
+#if DEBUG
+            // export plot data of the aggregation basis
+            DGField[] AggregatedBasisCoords = new DGField[0];
+
+            //WARNING INJECTORS ARE PROGRESSIVE FROM LEVEL TO LEVEL, NOT FOLLOWED BY CURVED AGGREGATION
+            //for (int ilevel = 0; ilevel < agSeq.Length; ilevel++)
+            for (int ilevel = 0; ilevel < 2; ilevel++)
+            {
+
+                DGField[] iLevelBasis = new DGField[maxDgBasis.Polynomials[0].Count];
+
+                //Polynomials = new DGField[T.Basis.Polynomials[0].Count];
+                //double[] p_ones = new double[T.GridDat.iGeomCells.Count];
+                //p_ones.SetAll(1.0);
+
+                //for (int i = 0; i < T.Basis.Polynomials[0].Count; i++)
+                //{
+                //    p_temp = new SinglePhaseField(new Basis(this.GridData, T.Basis.Degree + 1), $"p{i}");
+                //    p_temp.Coordinates.SetColumn(i, p_ones);
+                //    Polynomials[i] = p_temp;
+                //}            
+                // iterate over the aggregation levels
+                for (int k = 0; k < maxDgBasis.Polynomials[0].Count; k++)
+                {
+                    iLevelBasis[k] = new SinglePhaseField(new Basis(maxDgBasis.GridDat, maxDgBasis.Degree), $"ag{ilevel}_p{k}");
+                    if (ilevel == 0)
+                    {
+                        // dummy array to intitialize iLevelBasis[0] with ones
+                        MultidimensionalArray coords = MultidimensionalArray.Create(maxDgBasis.GridDat.iGeomCells.Count);
+                        coords.SetAll(1.0);
+                        iLevelBasis[k].Coordinates.SetColumn(k, coords.To1DArray());
+                    }
+                    else
+                    {
+                        // iterate over all cells
+                        for (int cell = 0; cell < maxDgBasis.GridDat.iGeomCells.Count; cell++)
+                        {
+                        
+                            // reconstruct the basis coordinates in the given cells
+                            int indexLogicalCell = agSeq[ilevel].iGeomCells.GeomCell2LogicalCell[cell];
+                            int partIndexLogicalCell = Array.IndexOf(agSeq[ilevel].iLogicalCells.AggregateCellToParts[indexLogicalCell], cell);
+
+                            iLevelBasis[k].Coordinates.SetRow(cell, Injectors[ilevel][indexLogicalCell].ExtractSubArrayShallow(partIndexLogicalCell, -1, k).To1DArray());
+                        }
+                    }
+                }
+
+                AggregatedBasisCoords = AggregatedBasisCoords.Cat(iLevelBasis);
+            }
+
+            PlotBasis(AggregatedBasisCoords);
+#endif
 
             // create basis sequence
             // ---------------------
@@ -1271,6 +1325,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
             return m_ModeIndexForDegree[p];
+        }
+
+        private static void PlotBasis(DGField[] _fields)
+        {
+            BoSSS.Solution.Tecplot.Tecplot.PlotFields(_fields, Directory.GetCurrentDirectory() + "\\AggregationBasis", 0, 2);
         }
         
     }
