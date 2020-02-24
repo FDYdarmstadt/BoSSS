@@ -49,15 +49,19 @@ namespace BoSSS.Application.SipPoisson {
             R.ProjectName = "ipPoison/curved";
             R.savetodb = false;
 
-            R.FieldOptions.Add("T", new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            //R.FieldOptions.Add("T", new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            R.FieldOptions.Add("T", new FieldOpts() { Degree = 5, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             R.FieldOptions.Add("Tex", new FieldOpts() { Degree = 15 });
             R.InitialValues_Evaluators.Add("RHS", X => 0.0);
             R.InitialValues_Evaluators.Add("Tex", X => (Math.Log(X[0].Pow2() + X[1].Pow2()) / Math.Log(4.0)) + 1.0);
             R.ExactSolution_provided = true;
+            R.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            R.SuperSampling = 2;
+            R.NoOfMultigridLevels = 6;
 
             R.GridFunc = delegate ()
             {
-                var grd = Grid2D.CurvedSquareGrid(GenericBlas.Linspace(1, 2, 3), GenericBlas.Linspace(0, 1, 11), CellType.Square_9, true);
+                var grd = Grid2D.CurvedSquareGrid(GenericBlas.Linspace(1, 2, 5), GenericBlas.Linspace(0, 1, 17), CellType.Square_9, true);
                 grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
                 grd.DefineEdgeTags((Vector X) => 1);
                 return grd;
@@ -203,7 +207,7 @@ namespace BoSSS.Application.SipPoisson {
 
 
 
-
+        
 
         /// <summary>
         /// Test on a Cartesian grid, with a sinusodial solution.
@@ -222,7 +226,6 @@ namespace BoSSS.Application.SipPoisson {
         /// </param>
         public static SipControl TestCartesian2(int Res, int Dim, LinearSolverCode solver_name = LinearSolverCode.exp_Kcycle_schwarz, int deg = 5) {
             //BoSSS.Application.SipPoisson.SipHardcodedControl.TestCartesian2(8,3,deg:2)
-
 
             if (Dim != 2 && Dim != 3)
                 throw new ArgumentOutOfRangeException();

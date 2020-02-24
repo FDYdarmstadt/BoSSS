@@ -119,11 +119,15 @@ namespace BoSSS.Foundation {
                 CellQuadrature.GetQuadrature(new int[2] { N, N }, m_Context,
                     (new CellQuadratureScheme(true, cellMask)).Compile(m_Context, this.Degree * 2), // integrate over target cell
                     delegate (int i0, int Length, QuadRule QR, MultidimensionalArray _EvalResult) {
+                        // get a set of quad points on the reference element
                         NodeSet nodes_Cell0 = QR.Nodes;
                         Debug.Assert(Length == 1);
 
+                        // retrieve physical quad points for jcell0
                         NodesGlobal.Allocate(1, nodes_Cell0.GetLength(0), nodes_Cell0.GetLength(1));
                         m_Context.TransformLocal2Global(nodes_Cell0, jCell0, 1, NodesGlobal, 0);
+
+                        // Extrapolation of quadrule for jcell1?
                         var nodes_Cell1 = new NodeSet(GridDat.iGeomCells.GetRefElement(jCell1), nodes_Cell0.GetLength(0), nodes_Cell0.GetLength(1));
                         m_Context.TransformGlobal2Local(NodesGlobal.ExtractSubArrayShallow(0, -1, -1), nodes_Cell1, jCell1, null);
                         nodes_Cell1.LockForever();
