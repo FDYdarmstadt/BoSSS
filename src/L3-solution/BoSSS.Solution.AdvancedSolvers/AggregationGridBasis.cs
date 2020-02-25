@@ -462,8 +462,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             DGField[] AggregatedBasisCoords = new DGField[0];
 
             //WARNING INJECTORS ARE PROGRESSIVE FROM LEVEL TO LEVEL, NOT FOLLOWED BY CURVED AGGREGATION
-            //for (int ilevel = 0; ilevel < agSeq.Length; ilevel++)
-            for (int ilevel = 0; ilevel < 2; ilevel++)
+            for (int ilevel = 0; ilevel < agSeq.Length; ilevel++)
+            //for (int ilevel = 0; ilevel < 2; ilevel++)
             {
 
                 DGField[] iLevelBasis = new DGField[maxDgBasis.Polynomials[0].Count];

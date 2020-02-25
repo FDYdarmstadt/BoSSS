@@ -55,7 +55,6 @@ namespace BoSSS.Foundation
                 InjectorCoarse[i].ExtractSubArrayShallow(-1, 0, 0).Acc(1, GetCoefficients0Degree(agGrd, dgBasis, parts));
 
                 // compute the columns in the Injection operator for subsequent basis functions
-                // SO FAR DUMMY FUNCTION
                 for (int n = 1; n < Np; n++)
                 {
                     InjectorCoarse[i].ExtractSubArrayShallow(new int[] { 0, 0, n},new int[] { parts.Length-1, n, -1 }).Acc(1, GetCoefficients(agGrd, dgBasis, InjectorCoarse[i], parts, iedges, n));
@@ -151,67 +150,86 @@ namespace BoSSS.Foundation
                 int index_i = Array.IndexOf(parts, cell_i);
                 int index_j = Array.IndexOf(parts, cell_j);
 
-                // get reference edge
-                int ref_edge_i = _agGrd.iGeomEdges.Edge2CellTrafoIndex[iedges[row], 0];
-                int ref_edge_j = _agGrd.iGeomEdges.Edge2CellTrafoIndex[iedges[row], 1];
+                //// get reference edge
+                //int ref_edge_i = _agGrd.iGeomEdges.Edge2CellTrafoIndex[iedges[row], 0];
+                //int ref_edge_j = _agGrd.iGeomEdges.Edge2CellTrafoIndex[iedges[row], 1];
 
-                // get reference edge vertex indices
-                // WILL NOT WORK FaceToVertexIndices IS NOT CORRECT AS OF RN
-                List<int> ref_vert_i = new List<int>();
-                for (int v=0; v < _agGrd.iGeomCells.GetRefElement(cell_i).FaceToVertexIndices.GetLength(1); v++)
+                //// get reference edge vertex indices
+                //// WILL NOT WORK FaceToVertexIndices IS NOT CORRECT AS OF RN
+                //List<int> ref_vert_i = new List<int>();
+                //for (int v=0; v < _agGrd.iGeomCells.GetRefElement(cell_i).FaceToVertexIndices.GetLength(1); v++)
+                //{
+                //    ref_vert_i.Add(_agGrd.iGeomCells.GetRefElement(cell_i).FaceToVertexIndices[ref_edge_i,v]);
+                //}
+                //List<int> ref_vert_j = new List<int>();
+                //for (int v = 0; v < _agGrd.iGeomCells.GetRefElement(cell_j).FaceToVertexIndices.GetLength(1); v++)
+                //{
+                //    ref_vert_j.Add(_agGrd.iGeomCells.GetRefElement(cell_j).FaceToVertexIndices[ref_edge_j, v]);
+                //}
+
+                //// get a list with all vertices on that edge
+                //MultidimensionalArray ref_vert_coord_i = MultidimensionalArray.Create(currentDegree + 1, _maxDgBasis.GridDat.SpatialDimension);
+                //foreach (var v in ref_vert_i)
+                //{
+                //    ref_vert_coord_i.ExtractSubArrayShallow(ref_vert_i.IndexOf(v), -1).Acc(1.0, _agGrd.iGeomCells.GetRefElement(cell_i).Vertices.ExtractSubArrayShallow(v, -1));
+                //}
+
+                //MultidimensionalArray ref_vert_coord_j = MultidimensionalArray.Create(currentDegree + 1, _maxDgBasis.GridDat.SpatialDimension);
+                //foreach (var v in ref_vert_j)
+                //{
+                //    ref_vert_coord_j.ExtractSubArrayShallow(ref_vert_j.IndexOf(v), -1).Acc(1.0, _agGrd.iGeomCells.GetRefElement(cell_j).Vertices.ExtractSubArrayShallow(v, -1));
+                //}
+
+                //// create sequence of sampling points through linear combination of vertex coordinates
+                //int pointIndex = 0;
+                //while (ref_vert_i.Count + pointIndex < currentDegree + 1 || ref_vert_j.Count + pointIndex < currentDegree + 1) {
+                //    ref_vert_coord_i.ExtractSubArrayShallow(ref_vert_i.Count + pointIndex, -1).Acc(0.5, ref_vert_coord_i.ExtractSubArrayShallow(pointIndex, -1) + ref_vert_coord_i.ExtractSubArrayShallow(pointIndex + 1, -1));
+
+                //    ref_vert_coord_j.ExtractSubArrayShallow(ref_vert_j.Count + pointIndex, -1).Acc(0.5, ref_vert_coord_j.ExtractSubArrayShallow(pointIndex, -1) + ref_vert_coord_j.ExtractSubArrayShallow(pointIndex + 1, -1));
+
+                //    pointIndex++;
+                //}
+
+                //// Collect points in a NodeSet
+                //NodeSet vert_coord_i = new NodeSet(_agGrd.iGeomCells.GetRefElement(cell_i), ref_vert_coord_i);
+                //NodeSet vert_coord_j = new NodeSet(_agGrd.iGeomCells.GetRefElement(cell_i), ref_vert_coord_i);
+
+                // alternative
+                MultidimensionalArray edge_eval_points = MultidimensionalArray.Create(currentDegree + 1, 1);
+
+                // construct evaluation points
+                edge_eval_points[0, 0] = 0.0;
+                for (int i = 1; i < currentDegree + 1; i++)
                 {
-                    ref_vert_i.Add(_agGrd.iGeomCells.GetRefElement(cell_i).FaceToVertexIndices[ref_edge_i,v]);
-                }
-                List<int> ref_vert_j = new List<int>();
-                for (int v = 0; v < _agGrd.iGeomCells.GetRefElement(cell_j).FaceToVertexIndices.GetLength(1); v++)
-                {
-                    ref_vert_j.Add(_agGrd.iGeomCells.GetRefElement(cell_j).FaceToVertexIndices[ref_edge_j, v]);
+                    edge_eval_points[i, 0] = (double) i/currentDegree;
                 }
 
-                // get a list with all vertices on that edge
-                MultidimensionalArray ref_vert_coord_i = MultidimensionalArray.Create(currentDegree + 1, _maxDgBasis.GridDat.SpatialDimension);
-                foreach (var v in ref_vert_i)
-                {
-                    ref_vert_coord_i.ExtractSubArrayShallow(ref_vert_i.IndexOf(v), -1).Acc(1.0, _agGrd.iGeomCells.GetRefElement(cell_i).Vertices.ExtractSubArrayShallow(v, -1));
-                }
+                // create NodeSet
+                NodeSet edge_coords = new NodeSet(_agGrd.iGeomEdges.EdgeRefElements[0], edge_eval_points);
+                edge_coords.LockForever();
 
-                MultidimensionalArray ref_vert_coord_j = MultidimensionalArray.Create(currentDegree + 1, _maxDgBasis.GridDat.SpatialDimension);
-                foreach (var v in ref_vert_j)
-                {
-                    ref_vert_coord_j.ExtractSubArrayShallow(ref_vert_j.IndexOf(v), -1).Acc(1.0, _agGrd.iGeomCells.GetRefElement(cell_j).Vertices.ExtractSubArrayShallow(v, -1));
-                }
+                // evaluate the polynomials on the edge for both cells
+                Tuple<MultidimensionalArray, MultidimensionalArray> edge_values = _maxDgBasis.EdgeEval(edge_coords, edge, 1);
 
-                // create sequence of sampling points through linear combination of vertex coordinates
-                int pointIndex = 0;
-                while (ref_vert_i.Count + pointIndex < currentDegree + 1 || ref_vert_j.Count + pointIndex < currentDegree + 1) {
-                    ref_vert_coord_i.ExtractSubArrayShallow(ref_vert_i.Count + pointIndex, -1).Acc(0.5, ref_vert_coord_i.ExtractSubArrayShallow(pointIndex, -1) + ref_vert_coord_i.ExtractSubArrayShallow(pointIndex + 1, -1));
-
-                    ref_vert_coord_j.ExtractSubArrayShallow(ref_vert_j.Count + pointIndex, -1).Acc(0.5, ref_vert_coord_j.ExtractSubArrayShallow(pointIndex, -1) + ref_vert_coord_j.ExtractSubArrayShallow(pointIndex + 1, -1));
-
-                    pointIndex++;
-                }
-
-                // Collect points in a NodeSet
-                NodeSet vert_coord_i = new NodeSet(_agGrd.iGeomCells.GetRefElement(cell_i), ref_vert_coord_i);
-                NodeSet vert_coord_j = new NodeSet(_agGrd.iGeomCells.GetRefElement(cell_i), ref_vert_coord_i);
 
                 for (int i = 0; i < (currentDegree + 1); i++)
                 {
-                    // DUMMY, TODO IMPLEMENTATION OF EVALUATION ON SAMPLING POINT ON THE EDGE IN BOTH CELLS
-                    // It is missing the transformation from reference to physical cell
-                    int polyLength = _maxDgBasis.Polynomials[0].Where(poly => poly.AbsoluteDegree <= currentDegree).Count();
+                    //// It is missing the transformation from reference to physical cell
+                    //int polyLength = _maxDgBasis.Polynomials[0].Where(poly => poly.AbsoluteDegree <= currentDegree).Count();
 
-                    MultidimensionalArray value_i = MultidimensionalArray.Create(currentDegree + 1, polyLength);
-                    value_i.Multiply(1.0, _agGrd.ChefBasis.BasisValues.GetValues(vert_coord_i, currentDegree), _maxDgBasis.GridDat.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(cell_i, 1, currentDegree).ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { -1, polyLength - 1, polyLength - 1 }), 0.0, "ij", "ik", "kj");
+                    //MultidimensionalArray value_i = MultidimensionalArray.Create(currentDegree + 1, polyLength);
+                    //value_i.Multiply(1.0, _agGrd.ChefBasis.BasisValues.GetValues(vert_coord_i, currentDegree), _maxDgBasis.GridDat.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(cell_i, 1, currentDegree).ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { -1, polyLength - 1, polyLength - 1 }), 0.0, "ij", "ik", "kj");
                     
-                    MultidimensionalArray value_j = MultidimensionalArray.Create(currentDegree + 1, polyLength);
-                    value_j.Multiply(1.0, _agGrd.ChefBasis.BasisValues.GetValues(vert_coord_j, currentDegree), _maxDgBasis.GridDat.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(cell_j, 1, currentDegree).ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { -1, polyLength - 1, polyLength - 1 }), 0.0, "ij", "ik", "kj");
+                    //MultidimensionalArray value_j = MultidimensionalArray.Create(currentDegree + 1, polyLength);
+                    //value_j.Multiply(1.0, _agGrd.ChefBasis.BasisValues.GetValues(vert_coord_j, currentDegree), _maxDgBasis.GridDat.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(cell_j, 1, currentDegree).ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { -1, polyLength - 1, polyLength - 1 }), 0.0, "ij", "ik", "kj");
 
                     for (int column = 0; column < basisIndex + 1; column++)
                     {
 
-                        aggEq[row * (currentDegree + 1) + i + rowOffset, index_i * (basisIndex + 1) + column] = value_i[i, column];
-                        aggEq[row * (currentDegree + 1) + i + rowOffset, index_j * (basisIndex + 1) + column] = -value_j[i, column];
+                        //aggEq[row * (currentDegree + 1) + i + rowOffset, index_i * (basisIndex + 1) + column] = value_i[i, column];
+                        aggEq[row * (currentDegree + 1) + i + rowOffset, index_i * (basisIndex + 1) + column] = edge_values.Item1[0, i, column];
+                        //aggEq[row * (currentDegree + 1) + i + rowOffset, index_j * (basisIndex + 1) + column] = -value_j[i, column];
+                        aggEq[row * (currentDegree + 1) + i + rowOffset, index_j * (basisIndex + 1) + column] = -edge_values.Item2[0, i, column];
                     }
                 }
             }
@@ -301,29 +319,33 @@ namespace BoSSS.Foundation
 
             // bring augmented system in reduced row echelon form
             //(var aggSol, var pivots, var cols, int rankAug) = aggSys.ReducedRowEchelonForm();
+
             double[] sol = new double[varCount];
             aggEq.LeastSquareSolve(sol, aggRhs.To1DArray());
 
-            //// check consistency
-            //if (rankAug != varCount) {
+            // check consistency
+            //if (rankAug != varCount)
+            //{
             //    int rank = aggEq.ReducedRowEchelonForm().Item4;
             //    // TODO handling of the infinite solutions case, select some solution with minimum L2-norm or whatever
             //    if (rank == rankAug)
             //    {
-            //        throw new ArgumentException($"Error while computing the injection operator for curved cells and basis function {basisIndex}: Infinite Solutions");
+            //        Console.WriteLine($"Warning: Infinite Solutions, while computing the injection operator for curved cells and basis function {basisIndex}");
             //    }
             //    else if (rank < rankAug)
             //    {
-            //        throw new ArgumentException($"Error while computing the injection operator for curved cells and basis function {basisIndex}: No Solution"); 
+            //        throw new ArgumentException($"Error while computing the injection operator for curved cells and basis function {basisIndex}: No Solution");
             //    }
             //    else
             //    {
             //        throw new ArgumentException($"Error while computing the injection operator for curved cells and basis function {basisIndex}");
-            //    }                    
+            //    }
             //}
 
             // create solution vector
-            //MultidimensionalArray vector_InjectorNDegree = aggSol.ExtractSubArrayShallow(-1, varCount);
+            //MultidimensionalArray rref_sol = aggSol.ExtractSubArrayShallow(-1, varCount);
+
+            //double dist_sol = sol.L2Dist(rref_sol.To1DArray());
 
             // compute the diagonal entry of the Injector for the first cell in parts and then solve the dependencies to the other cells
             // normality condition
