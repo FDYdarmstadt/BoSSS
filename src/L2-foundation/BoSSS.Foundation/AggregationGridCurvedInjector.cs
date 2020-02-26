@@ -307,8 +307,10 @@ namespace BoSSS.Foundation
                         // iterate over the variables
                         for (int column = 1; column < basisIndex + 1; column++)
                         {
-                            aggEq[row * (basisIndex * 2) + (k - 1) + i * basisIndex + rowOffset, index_i * (basisIndex + 1) + column] = gradient[i, k - 1, 0, column - 1];
-                            aggEq[row * (basisIndex * 2) + (k - 1) + i * basisIndex + rowOffset, index_j * (basisIndex + 1) + column] = gradient[i, k - 1, 1, column - 1];
+                            double lagrangeMult = 0.001;
+                            //double lagrangeMult = 1.0;
+                            aggEq[row * (basisIndex * 2) + (k - 1) + i * basisIndex + rowOffset, index_i * (basisIndex + 1) + column] = lagrangeMult * gradient[i, k - 1, 0, column - 1];
+                            aggEq[row * (basisIndex * 2) + (k - 1) + i * basisIndex + rowOffset, index_j * (basisIndex + 1) + column] = lagrangeMult * gradient[i, k - 1, 1, column - 1];
                         }
                     }
                 }
@@ -362,40 +364,6 @@ namespace BoSSS.Foundation
 
             return InjectorNDegree;
         }
-
-
-        private static MultidimensionalArray GetEdgeGradient(Basis _dgBasis, AggregationGridData _aggGrd, int _edge, int _cell_i, int _cell_j, int _basisIndex)
-        {
-            MultidimensionalArray gradientsInt = MultidimensionalArray.Create(2, _basisIndex, 2, _basisIndex);
-            MultidimensionalArray gradients = MultidimensionalArray.Create(2,_basisIndex + 1);
-
-            for (int i = 1; i < _basisIndex + 1; i++)
-            {
-                //// compute the inverse of the transposed jacobian of the transformation for cell i
-                //multidimensionalarray jac = _agggrd.jacobian.getvalue_cell(_agggrd.ancestorgrid.cells.getrefelement(_cell_i).vertices, _cell_i, 1).transpose().invertto();
-
-                //// build the gradient of the i-th basis function
-                //multidimensionalarray grad = multidimensionalarray.create(_dgbasis.griddat.spatialdimension);
-
-                //// extract the normal in reference coordinates for the given edge on cell i
-                //multidimensionalarray norm = _agggrd.ancestorgrid.cells.getrefelement(_cell_i).facenormals.extractsubarrayshallow(_agggrd.igeomedges.edge2celltrafoindex[_edge, 0], -1);
-
-                //// compute (jac * grad, norm)
-                //grad.multiply(1.0, jac, grad, 0.0, "i", "ij", "j");
-
-                //MultidimensionalArray dummy_node = _maxDgBasis.GridDat.GlobalNodes.GetValue_Cell(vert_coord_i, cell_i, 1);
-                //MultidimensionalArray Dummy = _maxDgBasis.CellEvalGradient(new NodeSet(_agGrd.iGeomCells.GetRefElement(cell_i), dummy_node.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { -1, 1, 1 })), cell_i, 1);
-
-                // repeat for cell j
-                //gradients[0, i - 1] = norm.InnerProduct(grad);
-
-                //gradients.ExtractSubArrayShallow(0,-1).Multiply(1.0, jac, grad, "","","")
-                //gradients[1, i];
-            }
-
-            return gradientsInt;
-        }
-
 
     }
 }

@@ -508,6 +508,34 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
             PlotBasis(AggregatedBasisCoords);
+
+            
+            // REMOVE LATER, test if iterative and direct injector generation is equal
+            int lCell1 = 0;
+            int hCell1 = agSeq[1].iLogicalCells.AggregateCellToParts[lCell1][0];
+            int hCell2 = agSeq[1].iLogicalCells.AggregateCellToParts[lCell1][1];
+            int hL1Cell1 = Array.IndexOf(agSeq[1].iLogicalCells.AggregateCellToParts[lCell1], hCell1);
+            int hL1Cell2 = Array.IndexOf(agSeq[1].iLogicalCells.AggregateCellToParts[lCell1], hCell2);
+
+            int lCell2 = agSeq[2].iGeomCells.GeomCell2LogicalCell[hCell1];
+            int hL2Cell1 = Array.IndexOf(agSeq[2].iLogicalCells.AggregateCellToParts[lCell2], hCell1);
+            int hL2Cell2 = Array.IndexOf(agSeq[2].iLogicalCells.AggregateCellToParts[lCell2], hCell2);
+
+
+            MultidimensionalArray hAgg1 = MultidimensionalArray.Create(Np, Np);
+            MultidimensionalArray hAgg1Inv = MultidimensionalArray.Create(Np, Np);
+            Injectors[1][lCell1].ExtractSubArrayShallow(hL1Cell1, -1, -1).TriangularInvert(hAgg1Inv);
+            hAgg1.Multiply(1.0, hAgg1Inv, Injectors[2][lCell2].ExtractSubArrayShallow(hL2Cell1, -1, -1), 0.0, "ij", "ik", "kj");
+
+            MultidimensionalArray hAgg2 = MultidimensionalArray.Create(Np, Np);
+            MultidimensionalArray hAgg2Inv = MultidimensionalArray.Create(Np, Np);
+            Injectors[1][lCell1].ExtractSubArrayShallow(hL1Cell2, -1, -1).TriangularInvert(hAgg2Inv);
+            hAgg2.Multiply(1.0, hAgg2Inv, Injectors[2][lCell2].ExtractSubArrayShallow(hL2Cell2, -1, -1), 0.0, "ij", "ik", "kj");
+
+            double hDist = hAgg1.L2Dist(hAgg2);
+            hAgg1.Acc(-1.0, hAgg2);
+            hAgg1.SaveToTextFile("Matrix.txt");
+            
 #endif
 
             // create basis sequence
