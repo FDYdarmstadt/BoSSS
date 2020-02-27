@@ -58,7 +58,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AggregationGrid.cs" />
-    <Compile Include="AggregationGridCurvedInjector.cs" />
     <Compile Include="AggregationGridData.cs" />
     <Compile Include="AggregationGridData_BasisData.cs" />
     <Compile Include="AggregationGridData_CellData.cs" />

@@ -524,11 +524,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             MultidimensionalArray hAgg1 = MultidimensionalArray.Create(Np, Np);
             MultidimensionalArray hAgg1Inv = MultidimensionalArray.Create(Np, Np);
+            // Q_1_1
             Injectors[1][lCell1].ExtractSubArrayShallow(hL1Cell1, -1, -1).TriangularInvert(hAgg1Inv);
             hAgg1.Multiply(1.0, hAgg1Inv, Injectors[2][lCell2].ExtractSubArrayShallow(hL2Cell1, -1, -1), 0.0, "ij", "ik", "kj");
 
             MultidimensionalArray hAgg2 = MultidimensionalArray.Create(Np, Np);
             MultidimensionalArray hAgg2Inv = MultidimensionalArray.Create(Np, Np);
+            // Q_1_2
             Injectors[1][lCell1].ExtractSubArrayShallow(hL1Cell2, -1, -1).TriangularInvert(hAgg2Inv);
             hAgg2.Multiply(1.0, hAgg2Inv, Injectors[2][lCell2].ExtractSubArrayShallow(hL2Cell2, -1, -1), 0.0, "ij", "ik", "kj");
 
