@@ -331,13 +331,14 @@ namespace BoSSS.Solution.AdvancedSolvers
             // then apply an additional weight, which also takes into account the number of equations for that condition
             // weight * number orthogonality eq's / number eq's for this condition
 
+            /*
             // compute the weigths
-            double wCont = 0.1 * (basisIndex + 1) / ((basisIndex + (currentDegree + 1) * iedges.Length) - (basisIndex));
-            double wGrad = 0.1 * (basisIndex + 1) / ((basisIndex + 1 + (currentDegree + 1 + basisIndex * 2) * iedges.Length - 1) - (basisIndex + (currentDegree + 1) * iedges.Length));
+            double wCont = 1.0 * (basisIndex + 1) / ((basisIndex + (currentDegree + 1) * iedges.Length) - (basisIndex));
+            double wGrad = 1.0 * (basisIndex + 1) / ((basisIndex + 1 + (currentDegree + 1 + basisIndex * 2) * iedges.Length - 1) - (basisIndex + (currentDegree + 1) * iedges.Length));
             // apply scaling
             aggEq.ExtractSubArrayShallow(new int[] { basisIndex + 1, 0 }, new int[] { basisIndex + (currentDegree + 1) * iedges.Length, varCount - 1 }).Scale(wCont / sclCont);
             aggEq.ExtractSubArrayShallow(new int[] { basisIndex + 1 + (currentDegree + 1) * iedges.Length, 0 }, new int[] { basisIndex + 1 + (currentDegree + 1 + basisIndex * 2) * iedges.Length - 1, varCount - 1 }).Scale(wGrad / sclGrad);
-
+            */
 
             // bring augmented system in reduced row echelon form
             //(var aggSol, var pivots, var cols, int rankAug) = aggSys.ReducedRowEchelonForm();

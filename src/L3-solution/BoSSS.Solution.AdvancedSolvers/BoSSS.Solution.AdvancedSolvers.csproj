@@ -64,6 +64,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AggregationGridBasis.cs" />
+    <Compile Include="AggregationGridCurvedInjector.cs" />
     <Compile Include="AppControlSolver.cs" />
     <Compile Include="BlockJacobi.cs" />
     <Compile Include="ClassicMultigrid.cs" />
