@@ -26,27 +26,7 @@ using NUnit.Framework;
 
 namespace BoSSS.Solution.NSECommon {
 
-    /// <summary>
-    /// Mode for material parameters,
-    /// i.e. dynamic viscosity and heat conductivity.
-    /// </summary>
-    public enum MaterialParamsMode {
-
-        /// <summary>
-        /// Constant material parameters.
-        /// </summary>
-        Constant,
-
-        /// <summary>
-        /// Using Sutherland's law.
-        /// </summary>
-        Sutherland,
-
-        /// <summary>
-        /// Using Power-Law.
-        /// </summary>
-        PowerLaw
-    }
+    
 
     /// <summary>
     /// Material law for low Mach number flows.
@@ -75,8 +55,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public override IList<string> ParameterOrdering {
             get {
-                return new string[] { VariableNames.Temperature0, VariableNames.Rho };
-                //, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0}; 
+                return new string[] { VariableNames.Temperature0/*, VariableNames.Rho */};            
             }
         }
 
@@ -98,8 +77,26 @@ namespace BoSSS.Solution.NSECommon {
         /// 
         /// </summary>
         [NonSerialized]
-        public double ThermodynamicPressureValue = 1.0;
+        public double ThermodynamicPressureValue = -1;
         
+
+
+        /// <summary>
+        /// Hack to initalize ThermodynamicPressure. 
+        /// </summary>
+        /// <param name="ThermodynamicPressure">
+        /// Hack for introducing the value of p0 as a double. has to be changed
+        /// </param>
+        public void Initialize(ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure, ref double ThermodynamicPressureValue) {
+            if (!IsInitialized) {
+                this.ThermodynamicPressure = ThermodynamicPressure;
+                this.ThermodynamicPressureValue = ThermodynamicPressureValue;
+            } else {
+                throw new ApplicationException("Initialize() can be called only once.");
+            }
+        }
+
+
         /// <summary>
         /// Hack to initalize ThermodynamicPressure - called by NSE_SIMPLE.VariableSet.Initialize()
         /// </summary>
@@ -124,14 +121,18 @@ namespace BoSSS.Solution.NSECommon {
             if(IsInitialized) {
                 Debug.Assert(phi[0] > 0);
 
-                double rho;             
-                rho = ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];    //rho = ThermodynamicPressureValue / phi[0];
+                double rho;
+                if(ThermodynamicPressureValue != -1) { // this is a really ugly hack to allow the SIMPLE project to use the p0 DG field. A better solution has to be found
+                    rho = ThermodynamicPressureValue / phi[0];
+                } else {
+                    rho = ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
+                }
                 Debug.Assert(!double.IsNaN(rho));
                 Debug.Assert(!double.IsInfinity(rho));
 
-                if(rhoOne) {
+                if(rhoOne) 
                     rho = 1.0;
-                }
+                
                 return rho;
             } else {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");
@@ -154,6 +155,7 @@ namespace BoSSS.Solution.NSECommon {
                         double viscosity = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
                         Debug.Assert(!double.IsNaN(viscosity));
                         Debug.Assert(!double.IsInfinity(viscosity));
+                        Debug.Assert(viscosity > 0);
                         return viscosity;
                     }
                 case MaterialParamsMode.PowerLaw: {

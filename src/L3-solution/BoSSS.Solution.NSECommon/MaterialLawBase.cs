@@ -22,6 +22,29 @@ using System.Text;
 
 namespace BoSSS.Solution.NSECommon {
 
+
+    /// <summary>
+    /// Mode for material parameters,
+    /// i.e. dynamic viscosity and heat conductivity.
+    /// </summary>
+    public enum MaterialParamsMode {
+
+        /// <summary>
+        /// Constant material parameters.
+        /// </summary>
+        Constant,
+
+        /// <summary>
+        /// Using Sutherland's law.
+        /// </summary>
+        Sutherland,
+
+        /// <summary>
+        /// Using Power-Law.
+        /// </summary>
+        PowerLaw
+    }
+
     /// <summary>
     /// Base class for implementing different material laws.
     /// </summary>

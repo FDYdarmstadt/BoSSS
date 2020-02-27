@@ -37,8 +37,10 @@ namespace BoSSS.Solution.NSECommon
         protected double PenaltyBase;
         protected Func<double[], double, double>[] ArgumentFunction;
 
+
+
         /// <summary>
-        /// Ctor.
+        /// Ctor for Species transport equations
         /// </summary>
         /// <param name="Coefficient">Coefficient Function in \nabla \dot (Coefficient \nabla u)</param>
         /// <param name="PenaltyBase">C.f. Calculation of SIP penalty base, cf. Chapter 3 in 
@@ -47,28 +49,42 @@ namespace BoSSS.Solution.NSECommon
         /// <param name="BcMap">Boundary condition map</param>
         /// <param name="Argument">The argument of the flux. Must be compatible with the DiffusionMode.</param>
         /// <param name="PenaltyLengthScales"></param>
-        protected SIPDiffusionBase(double PenaltyBase, MultidimensionalArray PenaltyLengthScales) {
+        protected SIPDiffusionBase(double PenaltyBase, MultidimensionalArray PenaltyLengthScales, bool ParametersOK = false, int speciesIndex = 0) {
             this.PenaltyBase = PenaltyBase;
             this.cj = PenaltyLengthScales;
+            this.prmsOK = ParametersOK;
+            this.i = speciesIndex;
         }
+
 
         public TermActivationFlags BoundaryEdgeTerms {
             get {
-                return TermActivationFlags.AllOn;
+                return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV | TermActivationFlags.V | TermActivationFlags.GradV);
             }
         }
 
         public TermActivationFlags InnerEdgeTerms {
             get {
-                return TermActivationFlags.AllOn;
+                return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV);
             }
         }
 
         public TermActivationFlags VolTerms {
             get {
-                return TermActivationFlags.AllOn;
+                return TermActivationFlags.GradUxGradV | TermActivationFlags.UxGradV; // should be changed. The term UxGradV is not allways needed
             }
         }
+
+
+        /// <summary>
+        /// really really ugly hack for defining if the <see cref="Diffusivity(double[])"/> method should take arguments or variables as argument
+        /// </summary>
+        bool prmsOK;
+
+        /// <summary>
+        /// Index that indicates which element of the argumentOrdering is being used for calculating the forms. Default is 0
+        /// </summary>
+        protected int i;
 
         protected MultidimensionalArray cj;
 
@@ -146,8 +162,10 @@ namespace BoSSS.Solution.NSECommon
             double DiffusivityA;
             double DiffusivityB;
             double DiffusivityMax;
-            DiffusivityA = Diffusivity(inp.Parameters_IN);
-            DiffusivityB = Diffusivity(inp.Parameters_OUT);
+            double[] difusivityArguments_IN = prmsOK ? inp.Parameters_IN : _uA;
+            double[] difusivityArguments_OUT = prmsOK ? inp.Parameters_OUT : _uB;
+            DiffusivityA = Diffusivity(difusivityArguments_IN);
+            DiffusivityB = Diffusivity(difusivityArguments_OUT);
 
             foreach (var Diffusivity in new double[]{DiffusivityA, DiffusivityB})
             {
@@ -157,13 +175,15 @@ namespace BoSSS.Solution.NSECommon
 
             for (int d = 0; d < inp.D; d++) {
                 // consistency term
-                Acc += 0.5 * (DiffusivityA * _Grad_uA[0, d] + DiffusivityB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normal[d];
+                Acc += 0.5 * (DiffusivityA * _Grad_uA[i, d] + DiffusivityB * _Grad_uB[i, d]) * (_vA - _vB) * inp.Normal[d];
                 // symmetry term                
-                Acc += 0.5 * (DiffusivityA * _Grad_vA[d] + DiffusivityB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normal[d];
+                Acc += 0.5 * (DiffusivityA * _Grad_vA[d] + DiffusivityB * _Grad_vB[d]) * (_uA[i] - _uB[i]) * inp.Normal[d];
             }
             // penalty term          
             DiffusivityMax = (Math.Abs(DiffusivityA) > Math.Abs(DiffusivityB)) ? DiffusivityA : DiffusivityB;
-            Acc -= (_uA[0] - _uB[0]) * (_vA - _vB) * pnlty * DiffusivityMax;
+
+            Acc -= (_uA[i] - _uB[i]) * (_vA - _vB) * pnlty * DiffusivityMax;
+
             return -Acc;
         }
 
@@ -173,19 +193,22 @@ namespace BoSSS.Solution.NSECommon
         protected double BoundaryEdgeFormDirichlet(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA, double u_D) {
             double Acc = 0.0;
 
-            double pnlty = 2 * GetPenalty(inp.jCellIn, -1);//, inp.GridDat.Cells.cj);
-            double DiffusivityA = Diffusivity(inp.Parameters_IN);
+            double pnlty = 2 * GetPenalty(inp.jCellIn, -1);
+            double[] difusivityArguments_IN = prmsOK ? inp.Parameters_IN : _uA;
+
+            double DiffusivityA = Diffusivity(difusivityArguments_IN);
             Debug.Assert(!double.IsNaN(DiffusivityA));
             Debug.Assert(!double.IsInfinity(DiffusivityA));
+
 
             // inhom. Dirichlet b.c.
             // =====================
             for (int d = 0; d < m_D; d++) {
-                Acc += (DiffusivityA * _Grad_uA[0, d]) * (_vA) * inp.Normal[d];
-                Acc += (DiffusivityA * _Grad_vA[d]) * (_uA[0] - u_D) * inp.Normal[d];
+                Acc += (DiffusivityA * _Grad_uA[i, d]) * (_vA) * inp.Normal[d];
+                Acc += (DiffusivityA * _Grad_vA[d]) * (_uA[i] - u_D) * inp.Normal[d];
             }
 
-            Acc -= DiffusivityA * (_uA[0] - u_D) * (_vA - 0) * pnlty;
+            Acc -= DiffusivityA * (_uA[i] - u_D) * (_vA - 0) * pnlty;
             return -Acc;
         }
  
@@ -203,12 +226,13 @@ namespace BoSSS.Solution.NSECommon
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double Acc = 0;
-            double DiffusivityValue = Diffusivity(cpv.Parameters);
+            double[] difusivityArguments = prmsOK ? cpv.Parameters : U;
+            double DiffusivityValue = Diffusivity(difusivityArguments);
             Debug.Assert(!double.IsNaN(DiffusivityValue));
             Debug.Assert(!double.IsInfinity(DiffusivityValue));
 
             for(int d = 0; d < cpv.D; d++)
-                Acc -= DiffusivityValue * GradU[0, d] * GradV[d];
+                Acc -= DiffusivityValue * GradU[i, d] * GradV[d];
             return -Acc;
         }
   
