@@ -54,6 +54,12 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("RHS", X => 0.0);
             R.InitialValues_Evaluators.Add("Tex", X => (Math.Log(X[0].Pow2() + X[1].Pow2()) / Math.Log(4.0)) + 1.0);
             R.ExactSolution_provided = true;
+            R.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            R.SuperSampling = 3;
+
+            R.LinearSolver.NoOfMultigridLevels = 3;
+            R.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            R.LinearSolver.TargetBlockSize = 10;
 
             R.GridFunc = delegate ()
             {
@@ -238,6 +244,7 @@ namespace BoSSS.Application.SipPoisson {
             R.ExactSolution_provided = true;
             R.LinearSolver.NoOfMultigridLevels = int.MaxValue;
             R.LinearSolver.SolverCode = solver_name;
+            R.SuperSampling = 3;
             // exp_Kcycle_schwarz
             // exp_gmres_levelpmg
 

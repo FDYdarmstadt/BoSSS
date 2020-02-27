@@ -389,18 +389,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Debug.Assert(Ag2Pt.Length >= Jagg);
                 Debug.Assert(C2F.Length >= Jagg);
 
-#if DEBUG
-                var InjectorsBase_clone = InjectorsBase.CloneAs();
-                var InjectorsBaseReady_clone = InjectorsBaseReady.CloneAs();
-                int[][] Ag2Pt_Fine = Jbase.ForLoop(j => new int[1] { j });
-                MultidimensionalArray[] InjCheck = BuildInjector_Lv2andup(maxDgBasis, Np, InjectorsBase_clone, InjectorsBaseReady_clone, Jagg, Ag2Pt_Fine, C2F);
-#endif
+#if DEBUG       //
+                //var InjectorsBase_clone = InjectorsBase.CloneAs();
+                //var InjectorsBaseReady_clone = InjectorsBaseReady.CloneAs();
+                //int[][] Ag2Pt_Fine = Jbase.ForLoop(j => new int[1] { j });
+                //MultidimensionalArray[] InjCheck = BuildInjector_Lv2andup(maxDgBasis, Np, InjectorsBase_clone, InjectorsBaseReady_clone, /Jagg,/ Ag2Pt_Fine, C2F);
+#endif          //
                 Injectors[iLevel] = BuildInjector_Lv1(maxDgBasis, Np, InjectorsBase, InjectorsBaseReady, Jagg, Ag2Pt, C2F);
-#if DEBUG
-                for(int jAgg = 0; jAgg < Math.Max(InjCheck.Length, Injectors[iLevel].Length); jAgg++) {
-                    double err = InjCheck[jAgg].L2Dist( Injectors[iLevel][jAgg]);
-                    Debug.Assert(err < Math.Max(InjCheck[jAgg].L2Norm(), Injectors[iLevel][jAgg].L2Norm()) * 1e-8);
-                }
+#if DEBUG       //
+                //for(int jAgg = 0; jAgg < Math.Max(InjCheck.Length, Injectors[iLevel].Length); jAgg++) {
+                //    double err = InjCheck[jAgg].L2Dist( Injectors[iLevel][jAgg]);
+                //    Debug.Assert(err < Math.Max(InjCheck[jAgg].L2Norm(), Injectors[iLevel][jAgg].L2Norm()) * 1e-8);
+                //}
 #endif
             } else {
                 //ortho_Level = null;
