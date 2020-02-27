@@ -1,4 +1,5 @@
-﻿using BoSSS.Foundation.Grid;
+﻿using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Quadrature;
 using ilPSP;
@@ -10,7 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Foundation
+namespace BoSSS.Solution.AdvancedSolvers
 {
     public class AggregationGridCurvedInjector
     {
@@ -21,7 +22,8 @@ namespace BoSSS.Foundation
             Basis dgBasis = _maxDgBasis;
 
             // check type of underlying reference elements
-            foreach (var refel in agGrd.AncestorGrid.iGeomCells.RefElements){
+            foreach (var refel in agGrd.AncestorGrid.iGeomCells.RefElements)
+            {
                 if (refel.GetType() != typeof(BoSSS.Foundation.Grid.RefElements.Square)) { throw new NotSupportedException("currently only square elements are supported"); }
             }
 
@@ -31,8 +33,8 @@ namespace BoSSS.Foundation
 
             MultidimensionalArray[] InjectorCoarse = new MultidimensionalArray[Jagg];
 
-            for (int i=0; i < Jagg; i++)
-            {   
+            for (int i = 0; i < Jagg; i++)
+            {
                 // get parts of current aggregation cell
                 int[] parts = agGrd.iLogicalCells.AggregateCellToParts[i];
 
@@ -40,11 +42,13 @@ namespace BoSSS.Foundation
                 int[] iedges;
                 List<int> l_iedges = new List<int>();
 
-                for (int j = 0; j < agGrd.iGeomEdges.Count; j++){
+                for (int j = 0; j < agGrd.iGeomEdges.Count; j++)
+                {
                     // check for outer edges and if both cells on the edge belong to the current aggregation cell     
-                    if (agGrd.iGeomEdges.LogicalCellIndices[j, 0] == agGrd.iGeomEdges.LogicalCellIndices[j, 1] && agGrd.iGeomEdges.LogicalCellIndices[j, 0] == i) {                                           
-                        l_iedges.Add(j);                        
-                    }                    
+                    if (agGrd.iGeomEdges.LogicalCellIndices[j, 0] == agGrd.iGeomEdges.LogicalCellIndices[j, 1] && agGrd.iGeomEdges.LogicalCellIndices[j, 0] == i)
+                    {
+                        l_iedges.Add(j);
+                    }
                 }
                 // convert to array
                 iedges = l_iedges.ToArray();
@@ -57,7 +61,7 @@ namespace BoSSS.Foundation
                 // compute the columns in the Injection operator for subsequent basis functions
                 for (int n = 1; n < Np; n++)
                 {
-                    InjectorCoarse[i].ExtractSubArrayShallow(new int[] { 0, 0, n},new int[] { parts.Length-1, n, -1 }).Acc(1, GetCoefficients(agGrd, dgBasis, InjectorCoarse[i], parts, iedges, n));
+                    InjectorCoarse[i].ExtractSubArrayShallow(new int[] { 0, 0, n }, new int[] { parts.Length - 1, n, -1 }).Acc(1, GetCoefficients(agGrd, dgBasis, InjectorCoarse[i], parts, iedges, n));
                 }
 
             }
@@ -67,19 +71,19 @@ namespace BoSSS.Foundation
 
         // computes the injector coefficients for the first basis functions
         private static MultidimensionalArray GetCoefficients0Degree(AggregationGridData _agGrd, Basis _maxDgBasis, int[] parts)
-        { 
-            var Injector0Degree =  MultidimensionalArray.Create(parts.Length);
+        {
+            var Injector0Degree = MultidimensionalArray.Create(parts.Length);
 
             // calculate total aggregation cell volume
             double aggVol = 0;
-            foreach(int i in parts)
+            foreach (int i in parts)
             {
                 aggVol += _agGrd.AncestorGrid.Cells.GetCellVolume(i);
             }
-                
+
             // For the first basis functions with constant value this breaks down to a simple scaling
-            double scale = 1/Math.Sqrt(aggVol);
-                       
+            double scale = 1 / Math.Sqrt(aggVol);
+
             int count = 0;
             foreach (int i in parts)
             {
@@ -102,11 +106,11 @@ namespace BoSSS.Foundation
             // basisIndex + 1 equations for othogonality
             // (currentdegree + 1) * iedges.Length equations for continuity along inneredges
             // (basisIndex + 1) * iedges.Length equations for edge-normal gradient jump minimization (smootheness)
-            MultidimensionalArray aggEq = MultidimensionalArray.Create(basisIndex + 1 + (currentDegree + 1 + basisIndex * 2) * iedges.Length,varCount);
+            MultidimensionalArray aggEq = MultidimensionalArray.Create(basisIndex + 1 + (currentDegree + 1 + basisIndex * 2) * iedges.Length, varCount);
 
             // rhs
             MultidimensionalArray aggRhs = MultidimensionalArray.Create(basisIndex + 1 + (currentDegree + 1 + basisIndex * 2) * iedges.Length);
-            
+
             // assemble system
             MultidimensionalArray aggSys = MultidimensionalArray.Create(basisIndex + 1 + (currentDegree + 1 + basisIndex * 2) * iedges.Length, varCount + 1);
             aggEq = aggSys.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { basisIndex + 1 + (currentDegree + 1 + basisIndex * 2) * iedges.Length - 1, varCount - 1 });
@@ -124,10 +128,15 @@ namespace BoSSS.Foundation
                 {
                     for (int column = 0; column <= row; column++)
                     {
-                        aggEq[row, i * (basisIndex + 1) + column] = _inj[i,row-column,row];
+                        aggEq[row, i * (basisIndex + 1) + column] = _inj[i, row - column, row];
                     }
                 }
             }
+
+            // variables to scale the conditions later on
+            double sclCont = 1.0;
+            double sclGrad = 1.0;
+
 
             // continuity
             // TODO harder part: Select currentDegree + 1 points per shared edge and ensure continuity there
@@ -201,7 +210,7 @@ namespace BoSSS.Foundation
                 edge_eval_points[0, 0] = 0.0;
                 for (int i = 1; i < currentDegree + 1; i++)
                 {
-                    edge_eval_points[i, 0] = (double) i/currentDegree;
+                    edge_eval_points[i, 0] = (double)i / currentDegree;
                 }
 
                 // create NodeSet
@@ -219,13 +228,14 @@ namespace BoSSS.Foundation
 
                     //MultidimensionalArray value_i = MultidimensionalArray.Create(currentDegree + 1, polyLength);
                     //value_i.Multiply(1.0, _agGrd.ChefBasis.BasisValues.GetValues(vert_coord_i, currentDegree), _maxDgBasis.GridDat.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(cell_i, 1, currentDegree).ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { -1, polyLength - 1, polyLength - 1 }), 0.0, "ij", "ik", "kj");
-                    
+
                     //MultidimensionalArray value_j = MultidimensionalArray.Create(currentDegree + 1, polyLength);
                     //value_j.Multiply(1.0, _agGrd.ChefBasis.BasisValues.GetValues(vert_coord_j, currentDegree), _maxDgBasis.GridDat.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(cell_j, 1, currentDegree).ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { -1, polyLength - 1, polyLength - 1 }), 0.0, "ij", "ik", "kj");
 
                     for (int column = 0; column < basisIndex + 1; column++)
                     {
-
+                        // keep maximum for scaling
+                        sclCont = Math.Max(sclCont, edge_values.Item1[0, i, column].Abs() > edge_values.Item2[0, i, column].Abs() ? edge_values.Item1[0, i, column].Abs() : edge_values.Item2[0, i, column].Abs());
                         //aggEq[row * (currentDegree + 1) + i + rowOffset, index_i * (basisIndex + 1) + column] = value_i[i, column];
                         aggEq[row * (currentDegree + 1) + i + rowOffset, index_i * (basisIndex + 1) + column] = edge_values.Item1[0, i, column];
                         //aggEq[row * (currentDegree + 1) + i + rowOffset, index_j * (basisIndex + 1) + column] = -value_j[i, column];
@@ -295,7 +305,7 @@ namespace BoSSS.Foundation
                                                  }).Execute();
 
 
-               
+
                 // iterate over both cells (leading coeffcient)
                 for (int i = 0; i <= 1; i++)
                 {
@@ -307,16 +317,26 @@ namespace BoSSS.Foundation
                         // iterate over the variables
                         for (int column = 1; column < basisIndex + 1; column++)
                         {
-                            double lagrangeMult = 0.001;
-                            //double lagrangeMult = 1.0;
-                            aggEq[row * (basisIndex * 2) + (k - 1) + i * basisIndex + rowOffset, index_i * (basisIndex + 1) + column] = lagrangeMult * gradient[i, k - 1, 0, column - 1];
-                            aggEq[row * (basisIndex * 2) + (k - 1) + i * basisIndex + rowOffset, index_j * (basisIndex + 1) + column] = lagrangeMult * gradient[i, k - 1, 1, column - 1];
+                            // keep maximum for later scaling
+                            sclGrad = Math.Max(sclCont, gradient[i, k - 1, 0, column - 1].Abs() > gradient[i, k - 1, 1, column - 1].Abs() ? gradient[i, k - 1, 0, column - 1].Abs() : gradient[i, k - 1, 1, column - 1].Abs());
+                            aggEq[row * (basisIndex * 2) + (k - 1) + i * basisIndex + rowOffset, index_i * (basisIndex + 1) + column] = gradient[i, k - 1, 0, column - 1];
+                            aggEq[row * (basisIndex * 2) + (k - 1) + i * basisIndex + rowOffset, index_j * (basisIndex + 1) + column] = gradient[i, k - 1, 1, column - 1];
                         }
                     }
                 }
             }
 
+            // apply scalings to the different conditions
+            // first ensure the maximum entry for a set of conditions is of Order ~1
+            // then apply an additional weight, which also takes into account the number of equations for that condition
+            // weight * number orthogonality eq's / number eq's for this condition
 
+            // compute the weigths
+            double wCont = 0.1 * (basisIndex + 1) / ((basisIndex + (currentDegree + 1) * iedges.Length) - (basisIndex));
+            double wGrad = 0.1 * (basisIndex + 1) / ((basisIndex + 1 + (currentDegree + 1 + basisIndex * 2) * iedges.Length - 1) - (basisIndex + (currentDegree + 1) * iedges.Length));
+            // apply scaling
+            aggEq.ExtractSubArrayShallow(new int[] { basisIndex + 1, 0 }, new int[] { basisIndex + (currentDegree + 1) * iedges.Length, varCount - 1 }).Scale(wCont / sclCont);
+            aggEq.ExtractSubArrayShallow(new int[] { basisIndex + 1 + (currentDegree + 1) * iedges.Length, 0 }, new int[] { basisIndex + 1 + (currentDegree + 1 + basisIndex * 2) * iedges.Length - 1, varCount - 1 }).Scale(wGrad / sclGrad);
 
 
             // bring augmented system in reduced row echelon form
@@ -359,7 +379,7 @@ namespace BoSSS.Foundation
             // restructure to Injector operator form
             for (int i = 0; i < parts.Length; i++)
             {
-                InjectorNDegree.ExtractSubArrayShallow(i, -1).Acc(1.0, vector_InjectorNDegree.ExtractSubArrayShallow(new int[] { i * (basisIndex + 1) },new int[] {(i+1) * (basisIndex + 1) - 1 }));
+                InjectorNDegree.ExtractSubArrayShallow(i, -1).Acc(1.0, vector_InjectorNDegree.ExtractSubArrayShallow(new int[] { i * (basisIndex + 1) }, new int[] { (i + 1) * (basisIndex + 1) - 1 }));
             }
 
             return InjectorNDegree;
