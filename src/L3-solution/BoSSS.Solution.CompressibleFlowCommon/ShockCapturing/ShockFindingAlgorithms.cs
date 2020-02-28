@@ -76,6 +76,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 gradientY = new SinglePhaseField(basis, "gradientY");
                 gradientX.DerivativeByFlux(1.0, field, d: 0);
                 gradientY.DerivativeByFlux(1.0, field, d: 1);
+
+                if (PatchRecoveryGradient) {
+                    gradientX = PatchRecovery(gradientX);
+                    gradientY = PatchRecovery(gradientY);
+                }
             }
 
             if (resultGradX == null) {
@@ -126,6 +131,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 gradientY = new SinglePhaseField(basis, "gradientY");
                 gradientX.DerivativeByFlux(1.0, field, d: 0);
                 gradientY.DerivativeByFlux(1.0, field, d: 1);
+
+                if (PatchRecoveryGradient) {
+                    gradientX = PatchRecovery(gradientX);
+                    gradientY = PatchRecovery(gradientY);
+                }
             }
 
             if (hessianXX == null) {
@@ -140,7 +150,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 hessianYX.DerivativeByFlux(1.0, gradientY, d: 0);
                 hessianYY.DerivativeByFlux(1.0, gradientY, d: 1);
 
-                if (PatchRecoveryOn) {
+                if (PatchRecoveryHessian) {
                     hessianXX = PatchRecovery(hessianXX);
                     hessianXY = PatchRecovery(hessianXY);
                     hessianYX = PatchRecovery(hessianYX);
@@ -163,9 +173,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             gradientX.Evaluate(jCell, 1, nodeSet, resultGradX);
             gradientY.Evaluate(jCell, 1, nodeSet, resultGradY);
 
-            // Use patch recovery if it has been activated in method "WalkOnCurve(...)"
-
-
             hessianXX.Evaluate(jCell, 1, nodeSet, resultHessXX);
             hessianXY.Evaluate(jCell, 1, nodeSet, resultHessXY);
             hessianYX.Evaluate(jCell, 1, nodeSet, resultHessYX);
@@ -182,7 +189,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             return g_alpha_alpha;
         }
 
-        private static bool PatchRecoveryOn;
+        private static bool PatchRecoveryGradient;
+
+        private static bool PatchRecoveryHessian;
 
         /// <summary>
         /// Algorithm to find an inflection point along a curve in the direction of the gradient
@@ -195,10 +204,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         /// <param name="secondDerivative">The second derivative at each point</param>
         /// <param name="stepSize">The step size between two points along the curve (first entry has to be user defined)</param>
         /// <returns></returns>
-        public static int WalkOnCurve(GridData gridData, SinglePhaseField field, int maxIterations, double threshold, MultidimensionalArray points, double[] secondDerivative, double[] stepSize, double[] values, out bool converged, bool patchRecoveryOn = false, bool byFlux = true) {
+        public static int WalkOnCurve(GridData gridData, SinglePhaseField field, int maxIterations, double threshold, MultidimensionalArray points, double[] secondDerivative, double[] stepSize, double[] values, out bool converged, out int jLocal, bool patchRecoveryGradient = false, bool patchRecoveryHessian = false, bool byFlux = true) {
             // Init
             converged = false;
-            PatchRecoveryOn = patchRecoveryOn;
+            PatchRecoveryGradient = patchRecoveryGradient;
+            PatchRecoveryHessian = patchRecoveryHessian;
 
             // Current (global) point
             double[] currentPoint = points.ExtractSubArrayShallow(0, -1).To1DArray();
@@ -211,18 +221,16 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
             // Get local cell index of current point
             int j0Grd = gridData.CellPartitioning.i0;
-            int jLocal = (int)(GlobalIndex - j0Grd);
+            jLocal = (int)(GlobalIndex - j0Grd);
 
             // Evaluate the second derivative
-            //NotSupportedException e = null;
             try {
                 if (byFlux) {
                     secondDerivative[0] = SecondDerivativeByFlux(field, jLocal, nodeSet);
                 } else {
                     secondDerivative[0] = SecondDerivative(field, jLocal, nodeSet);
                 }
-            } catch (NotSupportedException ee) {
-                //e = ee;
+            } catch (NotSupportedException) {
                 return 0;
             }
 
@@ -289,15 +297,13 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 values[n] = f[0, 0];
 
                 // Evaluate the second derivative of the new point
-                //NotSupportedException e = null;
                 try {
                     if (byFlux) {
                         secondDerivative[n] = SecondDerivativeByFlux(field, jLocal, nodeSet);
                     } else {
                         secondDerivative[n] = SecondDerivative(field, jLocal, nodeSet);
                     }
-                } catch (NotSupportedException ee) {
-                    //e = ee;
+                } catch (NotSupportedException) {
                     break;
                 }
 
@@ -463,14 +469,14 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         /// <param name="input">A <see cref="SinglePhaseField"/></param>
         /// <returns>A patch recovered <see cref="SinglePhaseField"/> with a degree of inputDegreee + 2</returns>
         public static SinglePhaseField PatchRecovery(SinglePhaseField input) {
-            Console.WriteLine(String.Format("Patch recovery of field {0} started", input.Identification));
+            Console.WriteLine(String.Format("Patch recovery of field {0} started...", input.Identification));
 
             Basis prcBasis = new Basis(input.GridDat, input.Basis.Degree + 2);
             L2PatchRecovery prc = new L2PatchRecovery(input.Basis, prcBasis, CellMask.GetFullMask(input.GridDat), RestrictToCellMask: true);
             SinglePhaseField prcField = new SinglePhaseField(prcBasis);
             prc.Perform(prcField, input);
 
-            Console.WriteLine(String.Format("Patch recovery of field {0} finished", input.Identification));
+            Console.WriteLine(String.Format("finished", input.Identification));
 
             return prcField;
         }
