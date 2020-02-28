@@ -224,6 +224,9 @@ namespace BoSSS.Solution.NSECommon {
             rho = EoS.GetDensity(U);
 
            ReactionRate = ExponentialPart *OneOverMolarMass0MolarMass1 * Math.Pow(rho * Y0, ReactionRateConstants[2]) * Math.Pow(rho * Y1, ReactionRateConstants[3]);
+            //if(ReactionRate < 0) {
+            //    ReactionRate = 0.0;
+            //}
 
             Debug.Assert(!double.IsNaN(ReactionRate));
             Debug.Assert(!double.IsInfinity(ReactionRate));
