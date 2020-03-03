@@ -443,8 +443,7 @@ namespace BoSSS.Platform.Utils.Geom {
 
 
         /// <summary>
-        /// finds the minimum distance of point <paramref name="pt"/> to one point within
-        /// the box;
+        /// finds the minimum distance of point <paramref name="pt"/> to the box;
         /// </summary>
         /// <param name="pt"></param>
         /// <returns></returns>

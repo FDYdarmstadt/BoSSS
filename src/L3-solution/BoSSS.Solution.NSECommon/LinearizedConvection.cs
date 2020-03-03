@@ -665,8 +665,6 @@ namespace BoSSS.Solution.NSECommon {
                         // Details: siehe Note 0022;
 
                         double r = 0.0;
-                        double v1, v2, v3 = 0.0, u_d;
-
 
                         // Setup params
                         // ============

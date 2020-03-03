@@ -705,6 +705,7 @@ namespace BoSSS.Application.Rheology {
         /// </summary>
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
             using (new FuncTrace()) {
+                /*
                 if (this.Control.OperatorMatrixAnalysis == true) {
 
                     OpAnalysisBase myAnalysis = new OpAnalysisBase(DelComputeOperatorMatrix, CurrentSolution.Mapping, CurrentSolution.Mapping.Fields.ToArray(), null, phystime);
@@ -714,6 +715,7 @@ namespace BoSSS.Application.Rheology {
                     base.QueryHandler.ValueQuery("condFull", cond[0], true);
                     base.QueryHandler.ValueQuery("condInner", cond[1], true);
                 }
+                */
 
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
                 int D = this.GridData.SpatialDimension;

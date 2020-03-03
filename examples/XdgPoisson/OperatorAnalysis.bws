@@ -1,0 +1,331 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+IOException caught while opening database at 'X:\bosss_db_lichtenberg': Could not find or access a database located at 'X:\bosss_db_lichtenberg'
+Databases loaded:
+List of 1 instances of IDatabaseInfo {
+  0: { Session Count = 21; Grid Count = 10; Path = C:\Users\flori\default_bosss_db }
+}
+Setting Matlab Connector to Octave...
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Application.XdgPoisson3;
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+var Cond = Tests.DiscretizationTest(2);
+**************
+Session ID: 00000000-0000-0000-0000-000000000000, DB path: 'EMPTY'.
+  Species A: no of agglomerated cells: 0
+  Species B: no of agglomerated cells: 8
+Matrix norm: 5870370.03286426
+Symm. diff: 4.58749127574265E-09
+s 0
+Steady solve ...
+searching for library variants of PARDISO in following order: SEQ
+Setting up multigrid operator...
+NLinS-, Precond-, LinS-, total-Iterations : Type, SolverName, InfResi, Multigridlevel
+0,0,1,1, : LinSolver, SparseSolver, 1.07076083890482E-13, 0
+Solver: SparseSolver, converged? True, 1 iterations.
+   System size:                 192
+   No of blocks:                16
+   No of blocks in matrix:      64
+   No of blocks with Cutcell    4
+   DG coordinates per cell:     12
+   Non-zeros per matrix block:  144
+   Total non-zeros in matrix:   9216
+   maximal matrix storage (MB): 0.10546875
+DOF: 120
+min Blocksize: 6
+max Blocksize: 12
+maximal Multigridlevel: 0
+done.
+Removing tag: NotTerminated
+Session ID: 00000000-0000-0000-0000-000000000000, DB path: 'EMPTY'.
+  Species A: no of agglomerated cells: 0
+  Species B: no of agglomerated cells: 0
+Matrix norm: 9585913.88956279
+Symm. diff: 1.20098169039314E-09
+s 0
+Steady solve ...
+Setting up multigrid operator...
+NLinS-, Precond-, LinS-, total-Iterations : Type, SolverName, InfResi, Multigridlevel
+0,0,1,1, : LinSolver, SparseSolver, 1.63439051755612E-13, 0
+Solver: SparseSolver, converged? True, 1 iterations.
+   System size:                 300
+   No of blocks:                25
+   No of blocks in matrix:      105
+   No of blocks with Cutcell    8
+   DG coordinates per cell:     12
+   Non-zeros per matrix block:  144
+   Total non-zeros in matrix:   15120
+   maximal matrix storage (MB): 0.17303466796875
+DOF: 198
+min Blocksize: 6
+max Blocksize: 12
+maximal Multigridlevel: 0
+done.
+Removing tag: NotTerminated
+Session ID: 00000000-0000-0000-0000-000000000000, DB path: 'EMPTY'.
+  Species A: no of agglomerated cells: 8
+  Species B: no of agglomerated cells: 8
+Matrix norm: 23771988.716357
+Symm. diff: 1.63757552703222E-08
+s 0
+Steady solve ...
+Setting up multigrid operator...
+NLinS-, Precond-, LinS-, total-Iterations : Type, SolverName, InfResi, Multigridlevel
+0,0,1,1, : LinSolver, SparseSolver, 2.09393084084859E-13, 0
+Solver: SparseSolver, converged? True, 1 iterations.
+   System size:                 768
+   No of blocks:                64
+   No of blocks in matrix:      288
+   No of blocks with Cutcell    4
+   DG coordinates per cell:     12
+   Non-zeros per matrix block:  144
+   Total non-zeros in matrix:   41472
+   maximal matrix storage (MB): 0.474609375
+DOF: 408
+min Blocksize: 6
+max Blocksize: 12
+maximal Multigridlevel: 0
+done.
+Removing tag: NotTerminated
+Session ID: 00000000-0000-0000-0000-000000000000, DB path: 'EMPTY'.
+  Species A: no of agglomerated cells: 0
+  Species B: no of agglomerated cells: 4
+Matrix norm: 72429701.5342565
+Symm. diff: 2.09852260013577E-08
+s 0
+Steady solve ...
+Setting up multigrid operator...
+NLinS-, Precond-, LinS-, total-Iterations : Type, SolverName, InfResi, Multigridlevel
+0,0,1,1, : LinSolver, SparseSolver, 2.32259555613029E-13, 0
+Solver: SparseSolver, converged? True, 1 iterations.
+   System size:                 972
+   No of blocks:                81
+   No of blocks in matrix:      369
+   No of blocks with Cutcell    12
+   DG coordinates per cell:     12
+   Non-zeros per matrix block:  144
+   Total non-zeros in matrix:   53136
+   maximal matrix storage (MB): 0.60809326171875
+DOF: 558
+min Blocksize: 6
+max Blocksize: 12
+maximal Multigridlevel: 0
+done.
+Removing tag: NotTerminated
+Session ID: 00000000-0000-0000-0000-000000000000, DB path: 'EMPTY'.
+  Species A: no of agglomerated cells: 8
+  Species B: no of agglomerated cells: 12
+Matrix norm: 113683823.203448
+Symm. diff: 5.31629969676336E-08
+s 0
+Steady solve ...
+Setting up multigrid operator...
+NLinS-, Precond-, LinS-, total-Iterations : Type, SolverName, InfResi, Multigridlevel
+0,0,1,1, : LinSolver, SparseSolver, 4.14922009346715E-13, 0
+Solver: SparseSolver, converged? True, 1 iterations.
+   System size:                 3072
+   No of blocks:                256
+   No of blocks in matrix:      1216
+   No of blocks with Cutcell    16
+   DG coordinates per cell:     12
+   Non-zeros per matrix block:  144
+   Total non-zeros in matrix:   175104
+   maximal matrix storage (MB): 2.00390625
+DOF: 1632
+min Blocksize: 6
+max Blocksize: 12
+maximal Multigridlevel: 0
+done.
+Removing tag: NotTerminated
+Session ID: 00000000-0000-0000-0000-000000000000, DB path: 'EMPTY'.
+  Species A: no of agglomerated cells: 8
+  Species B: no of agglomerated cells: 20
+Matrix norm: 214856487.399357
+Symm. diff: 1.19791366159916E-07
+s 0
+Steady solve ...
+Setting up multigrid operator...
+NLinS-, Precond-, LinS-, total-Iterations : Type, SolverName, InfResi, Multigridlevel
+0,0,1,1, : LinSolver, SparseSolver, 4.14782807709535E-13, 0
+Solver: SparseSolver, converged? True, 1 iterations.
+   System size:                 3468
+   No of blocks:                289
+   No of blocks in matrix:      1377
+   No of blocks with Cutcell    12
+   DG coordinates per cell:     12
+   Non-zeros per matrix block:  144
+   Total non-zeros in matrix:   198288
+   maximal matrix storage (MB): 2.26922607421875
+DOF: 1806
+min Blocksize: 6
+max Blocksize: 12
+maximal Multigridlevel: 0
+done.
+Removing tag: NotTerminated
+Session ID: 00000000-0000-0000-0000-000000000000, DB path: 'EMPTY'.
+  Species A: no of agglomerated cells: 16
+  Species B: no of agglomerated cells: 4
+Matrix norm: 655194391.063562
+Symm. diff: 9.60620430608591E-08
+s 0
+Steady solve ...
+Setting up multigrid operator...
+NLinS-, Precond-, LinS-, total-Iterations : Type, SolverName, InfResi, Multigridlevel
+0,0,1,1, : LinSolver, SparseSolver, 8.18294261590228E-13, 0
+Solver: SparseSolver, converged? True, 1 iterations.
+   System size:                 12288
+   No of blocks:                1024
+   No of blocks in matrix:      4992
+   No of blocks with Cutcell    48
+   DG coordinates per cell:     12
+   Non-zeros per matrix block:  144
+   Total non-zeros in matrix:   718848
+   maximal matrix storage (MB): 8.2265625
+DOF: 6432
+min Blocksize: 6
+max Blocksize: 12
+maximal Multigridlevel: 0
+done.
+Removing tag: NotTerminated
+Session ID: 00000000-0000-0000-0000-000000000000, DB path: 'EMPTY'.
+  Species A: no of agglomerated cells: 8
+  Species B: no of agglomerated cells: 24
+Matrix norm: 1035165685.39769
+Symm. diff: 3.84869053959846E-07
+s 0
+Steady solve ...
+Setting up multigrid operator...
+NLinS-, Precond-, LinS-, total-Iterations : Type, SolverName, InfResi, Multigridlevel
+0,0,1,1, : LinSolver, SparseSolver, 7.3670637383044E-13, 0
+Solver: SparseSolver, converged? True, 1 iterations.
+   System size:                 13068
+   No of blocks:                1089
+   No of blocks in matrix:      5313
+   No of blocks with Cutcell    40
+   DG coordinates per cell:     12
+   Non-zeros per matrix block:  144
+   Total non-zeros in matrix:   765072
+   maximal matrix storage (MB): 8.75555419921875
+DOF: 6774
+min Blocksize: 6
+max Blocksize: 12
+maximal Multigridlevel: 0
+done.
+Removing tag: NotTerminated
+Session ID: 00000000-0000-0000-0000-000000000000, DB path: 'EMPTY'.
+  Species A: no of agglomerated cells: 24
+  Species B: no of agglomerated cells: 36
+Matrix norm: 2481028101.29359
+Symm. diff: 9.99619563420614E-07
+s 0
+Steady solve ...
+Setting up multigrid operator...
+NLinS-, Precond-, LinS-, total-Iterations : Type, SolverName, InfResi, Multigridlevel
+0,0,1,1, : LinSolver, SparseSolver, 1.47141438026421E-12, 0
+Solver: SparseSolver, converged? True, 1 iterations.
+   System size:                 49152
+   No of blocks:                4096
+   No of blocks in matrix:      20224
+   No of blocks with Cutcell    80
+   DG coordinates per cell:     12
+   Non-zeros per matrix block:  144
+   Total non-zeros in matrix:   2912256
+   maximal matrix storage (MB): 33.328125
+DOF: 25056
+min Blocksize: 6
+max Blocksize: 12
+maximal Multigridlevel: 0
+done.
+Removing tag: NotTerminated
+
+==============
+var tab = TableExtensions.ToDataTable(Cond);
+**************
+==============
+tab.Print();
+**************
+   Grid:NoOfCells Grid:hMin          Grid:hMax          Grid:1Dres TotCondNo        InnerCondNo      BlockCondNo-innerUncut BlockCondNo-innerCut BlockCondNo-bndyUncut BlockCondNo-bndyCut 
+0: 16             0.75               1.06066017177982   4          504769.770618733 233.004201160852 1                      20.1679193076264     8.12925945868962      16.42015482999      
+1: 25             0.6                0.848528137423857  5          1846205.05871262 387694.533500199 34.7313542753418       23.2932338511819     17.6708539251273      1                   
+2: 64             0.375              0.530330085889911  8          2645953.67352417 1529006.14220972 26.1750827859792       27.8891584337159     16.1578667137093      1                   
+3: 81             0.333333333333333  0.471404520791032  9          3970798.73719981 2529478.78272389 33.5585554821209       24.3627648541072     15.9612669268517      1                   
+4: 256            0.1875             0.265165042944955  16         12716239.3970815 10247431.35306   33.1208452846557       28.4118130958866     15.9612669268517      1                   
+5: 289            0.176470588235294  0.249567099242311  17         10672277.4865913 8723095.90292421 32.082353095593        28.1579706911444     15.9612669268517      1                   
+6: 1024           0.09375            0.132582521472478  32         46594132.4633376 42178884.8294983 32.9066417527889       35.2562626984225     15.9612669268517      1                   
+7: 1089           0.0909090909090908 0.128564869306646  33         43390110.7525873 39398795.3738428 32.5875876183126       27.0631604634096     15.9612669268517      1                   
+8: 4096           0.046875           0.0662912607362388 64         157285429.412333 149885361.269181 33.1654251010492       35.4064273512943     15.9612669268517      1                   
+==============
+var Ptot = tab.ToPlot("Grid:1Dres","TotCondNo");
+Ptot.dataGroups[0].Name = "total cond no";
+Ptot.dataGroups[0].Format.FromString("-or");
+**************
+==============
+var Pinn = tab.ToPlot("Grid:1Dres","InnerCondNo");
+Pinn.dataGroups[0].Name = "inner cells loc cond no";
+Pinn.dataGroups[0].Format.FromString("-xg");
+**************
+==============
+var Pcut = tab.ToPlot("Grid:1Dres","BlockCondNo-innerCut");
+Pcut.dataGroups[0].Name = "cut cells cond no";
+Pcut.dataGroups[0].Format.FromString("-b+");
+**************
+==============
+var Punc = tab.ToPlot("Grid:1Dres","BlockCondNo-innerUncut");
+Punc.dataGroups[0].Name = "uncut cells loc cond no";
+Punc.dataGroups[0].Format.FromString("-c*");
+**************
+==============
+var Pfull = Ptot.Merge(Pinn, Pcut, Punc);
+**************
+==============
+Pfull.LogX            = true;
+Pfull.LogY            = true;
+Pfull.LegendAlignment = new[]{"i", "t", "l" };
+Pfull.YrangeMin       = 1e-1;
+Pfull.YrangeMax       = 1e10;
+Pfull.PlotNow();
+**************
+Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"inside top left Left reverse 
+Gnuplot Error: 
+gnuplot> set yrange [0.1:10000000000]
+                         ^
+         line 0: warning: integer overflow; changing to floating point
+
+System.Drawing.Bitmap
+==============
+LastError;
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

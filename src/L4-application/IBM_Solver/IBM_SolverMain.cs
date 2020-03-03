@@ -625,6 +625,7 @@ namespace BoSSS.Application.IBM_Solver {
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
             using (new FuncTrace()) {
 
+                /*
                 //Es folgt: die Analyse des Operators
                 if (this.Control.OperatorMatrixAnalysis == true && AnalyseCounter!=0)
                 {
@@ -638,7 +639,7 @@ namespace BoSSS.Application.IBM_Solver {
                     myAnalysis.Analyse();
                     AnalyseCounter--;
                 }
-
+                */
 
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
                 int D = this.GridData.SpatialDimension;

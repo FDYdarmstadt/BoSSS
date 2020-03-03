@@ -640,7 +640,9 @@ namespace BoSSS.Application.Rheology {
             //C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, new TimestepNumber(3, 0)); // Weissenberg 0.7, deg = 2
 
             if (C.RestartInfo == null) {
-                
+
+                C.SetInitialConditions = false;
+
                 //Set Initial Conditions
                 if (C.SetInitialConditions == true)
                 {

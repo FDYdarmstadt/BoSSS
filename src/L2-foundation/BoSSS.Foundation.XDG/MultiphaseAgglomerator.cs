@@ -712,6 +712,9 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
+        /// <summary>
+        /// 
+        /// </summary>
         static public IEnumerable<Tuple<int, int>> FindAgglomeration(LevelSetTracker Tracker, SpeciesId spId, double AgglomerationThreshold,
             MultidimensionalArray CellVolumes, MultidimensionalArray edgeArea,
             bool AgglomerateNewborn, bool AgglomerateDeceased, bool ExceptionOnFailedAgglomeration,

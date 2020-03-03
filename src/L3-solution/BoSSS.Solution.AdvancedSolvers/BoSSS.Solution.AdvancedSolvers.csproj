@@ -74,6 +74,7 @@
     <Compile Include="MGviz.cs" />
     <Compile Include="NLSolverSequence.cs" />
     <Compile Include="NonLinearSolverConfig.cs" />
+    <Compile Include="OpAnalysisBase.cs" />
     <Compile Include="OrthonormalizationMultigrid.cs" />
     <Compile Include="SolverChooser.cs" />
     <Compile Include="SparseSolver.cs" />

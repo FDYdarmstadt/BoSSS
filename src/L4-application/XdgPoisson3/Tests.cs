@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation.XDG;
+using BoSSS.Solution.AdvancedSolvers;
 using MPI.Wrappers;
 using NUnit.Framework;
 using System;
@@ -44,7 +45,10 @@ namespace BoSSS.Application.XdgPoisson3 {
             XQuadFactoryHelper.CheckQuadRules = true;
         }
 
-
+        /// <summary>
+        /// Test for iterative solver
+        /// </summary>
+        /// <param name="SolverName"></param>
         [Test]
         public static void SolverTest([Values(Code.exp_Kcycle_schwarz, Code.exp_gmres_levelpmg)] Code SolverName) {
             using (var solver = new XdgPoisson3Main()) {
@@ -61,6 +65,75 @@ namespace BoSSS.Application.XdgPoisson3 {
 
                 solver.Init(C);
                 solver.RunSolverMode();
+            }
+        }
+
+
+        /// <summary>
+        /// Grid scale tests for condition numbers
+        /// </summary>
+        public static IDictionary<string,double[]> DiscretizationTest(
+            [Values(1,2,3,4)] int dgDegree
+            ) {
+
+            var Controls = new List<XdgPoisson3Control>();
+            foreach(int res in new int[] { 4, 5, 8, 9, 16, 17, 32, 33, 64 }) {
+                var C = HardCodedControl.Circle(Resolution: res, p: dgDegree);
+                C.LinearSolver.SolverCode = Code.classic_pardiso;
+                C.savetodb = false;
+                C.PrePreCond = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
+            
+                Controls.Add(C);
+            }
+
+            var ret = new Dictionary<string, List<double>>();
+
+            foreach(var C in Controls) {
+                using(var solver = new XdgPoisson3Main()) {
+                    solver.Init(C);
+                    solver.RunSolverMode();
+
+                    int J = Convert.ToInt32(solver.CurrentSessionInfo.KeysAndQueries["Grid:NoOfCells"]);
+                    double hMin = Convert.ToDouble(solver.CurrentSessionInfo.KeysAndQueries["Grid:hMin"]);
+                    double hMax = Convert.ToDouble(solver.CurrentSessionInfo.KeysAndQueries["Grid:hMax"]);
+                    int D = Convert.ToInt32(solver.CurrentSessionInfo.KeysAndQueries["Grid:SpatialDimension"]);
+                    double J1d = Math.Pow(J, 1.0 / D);
+
+                    var prop = solver.OperatorAnalysis();
+
+                    if(ret.Count == 0) {
+                        ret.Add("Grid:NoOfCells", new List<double>());
+                        ret.Add("Grid:hMin", new List<double>());
+                        ret.Add("Grid:hMax", new List<double>());
+                        ret.Add("Grid:1Dres", new List<double>());
+
+                        foreach(var kv in prop) {
+                            ret.Add(kv.Key, new List<double>());
+                        }
+                    } 
+                    
+                    {
+                        ret["Grid:NoOfCells"].Add(J);
+                        ret["Grid:hMin"].Add(hMin);
+                        ret["Grid:hMax"].Add(hMax);
+                        ret["Grid:1Dres"].Add(J1d);
+
+                        foreach(var kv in prop) {
+                            ret[kv.Key].Add(kv.Value);
+                        }
+                    }
+                }
+            }
+
+            // data conversion & return 
+            // ========================
+            {
+                var realRet = new Dictionary<string, double[]>();
+                foreach(var kv in ret) {
+                    realRet.Add(kv.Key, kv.Value.ToArray());
+                }
+
+                return realRet;
             }
         }
 

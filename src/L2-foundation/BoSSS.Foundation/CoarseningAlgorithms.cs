@@ -33,6 +33,9 @@ using BoSSS.Foundation.Grid.Classic;
 
 namespace BoSSS.Foundation.Grid.Aggregation {
 
+    /// <summary>
+    /// Creation of multigrid hierarchies
+    /// </summary>
     static public class CoarseningAlgorithms {
 
         /// <summary>
