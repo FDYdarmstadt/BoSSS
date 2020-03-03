@@ -17,11 +17,12 @@ limitations under the License.
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.Statistic;
+using BoSSS.Solution.Utils;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 using ilPSP;
 using System;
-using System.Collections;
-using System.Diagnostics;
+using System.IO;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
     /// <summary>
@@ -479,6 +480,96 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             Console.WriteLine(String.Format("finished", input.Identification));
 
             return prcField;
+        }
+
+        public static DGField ReconstructLevelSet(GridData gridData, int dgDegree, SinglePhaseField field, MultidimensionalArray points) {
+            // Evaluate gradient
+            Basis basis = new Basis(field.GridDat, field.Basis.Degree);
+            gradientX = new SinglePhaseField(basis, "gradientX");
+            gradientY = new SinglePhaseField(basis, "gradientY");
+            gradientX.DerivativeByFlux(1.0, field, d: 0);
+            gradientY.DerivativeByFlux(1.0, field, d: 1);
+            gradientX = PatchRecovery(gradientX);
+            gradientY = PatchRecovery(gradientY);
+            FieldEvaluation ev = new FieldEvaluation(gridData);
+            MultidimensionalArray GradVals = MultidimensionalArray.Create(points.GetLength(0), 2);
+            ev.Evaluate(1.0, new DGField[] { gradientX, gradientY }, points, 0.0, GradVals);
+
+            int count = 0;
+            Func<double[], double> func = delegate (double[] X) {
+                double minDistSigned = double.MaxValue;
+                int iMin = int.MaxValue;
+                double closestPointOnInterfaceX = double.MaxValue;
+                double closestPointOnInterfaceY = double.MaxValue;
+
+                double x = X[0];
+                double y = X[1];
+
+                for (int i = 0; i < points.Lengths[0]; i++) {
+                    double currentPointX = points[i, 0];
+                    double currentPointY = points[i, 1];
+
+                    double deltaX = x - currentPointX;
+                    double deltaY = y - currentPointY;
+
+                    double dist = Math.Sqrt(deltaX * deltaX + deltaY * deltaY);
+
+                    if (dist <= minDistSigned) {
+                        iMin = i;
+                        minDistSigned = dist;
+                        closestPointOnInterfaceX = currentPointX;
+                        closestPointOnInterfaceY = currentPointY;
+                    }
+                }
+
+                //// Compute global cell index of quadrature node
+                //gridData.LocatePoint(X, out long GlobalId, out long GlobalIndex, out bool IsInside, out bool OnThisProcess);
+
+                //// Compute local node set
+                //NodeSet nodeSet = GetLocalNodeSet(gridData, X, (int)GlobalIndex);
+
+                //// Evaluate gradient
+                //// Get local cell index of quadrature node
+                //int j0Grd = gridData.CellPartitioning.i0;
+                //int j0 = (int)(GlobalIndex - j0Grd);
+
+                //int Len = 1;
+                //MultidimensionalArray resultGradX = MultidimensionalArray.Create(1, 1);
+                //MultidimensionalArray resultGradY = MultidimensionalArray.Create(1, 1);
+                //gradientX.Evaluate(j0, Len, nodeSet, resultGradX);
+                //gradientY.Evaluate(j0, Len, nodeSet, resultGradY);
+
+                int sign = Math.Sign((x - closestPointOnInterfaceX) * GradVals[iMin, 0] + (y - closestPointOnInterfaceY) * GradVals[iMin, 1]);
+                minDistSigned *= sign;
+
+                Console.WriteLine(String.Format("Quadrature point #{0}: ({1}, {2}), interface point: ({3}, {4})", count, X[0], X[1], closestPointOnInterfaceX, closestPointOnInterfaceY));
+                count++;
+
+                return minDistSigned;
+            };
+
+            DGField result = new SinglePhaseField(new Basis(gridData, dgDegree), "levelSetReconstructed");
+            result.ProjectField(func.Vectorize());
+            return result;
+        }
+
+        /// <summary>
+        /// Reads a text where a clustering is saved
+        /// Index 0: x-coordinate, index 1: y-coordinate, index 2: field value, index 3: cluster number
+        /// </summary>
+        /// <param name="path">Path of the file to read</param>
+        public static MultidimensionalArray ReadTextFile(string path) {
+            string[] lines = File.ReadAllLines(path);
+            int cols = lines[0].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries).Length;
+            MultidimensionalArray result = MultidimensionalArray.Create(lines.Length, cols);
+
+            for (int i = 0; i < lines.Length; i++) {
+                for (int j = 0; j < cols; j++) {
+                    result[i, j] = Convert.ToDouble(lines[i].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[j]);
+                }
+            }
+
+            return result;
         }
     }
 }
