@@ -169,6 +169,11 @@ namespace BoSSS.Application.FSI_Solver {
         private double DtMax => ((FSI_Control)Control).dtMax;
 
         /// <summary>
+        /// The maximum timestep setted in the control file.
+        /// </summary>
+        private double startDt => ((FSI_Control)Control).dtMax / 10;
+
+        /// <summary>
         /// FluidDensity
         /// </summary>
         private double MaxGridLength => ((FSI_Control)Control).MaxGridLength;
@@ -859,8 +864,9 @@ namespace BoSSS.Application.FSI_Solver {
             }
             return true;
         }
-        double oldTimestep = 1e-2;
+        double oldTimestep;
         bool initAddedDamping = true;
+        //int postCollisionCounter = 0;
         /// <summary>
         /// runs solver one step?!
         /// </summary>
@@ -880,25 +886,35 @@ namespace BoSSS.Application.FSI_Solver {
                 BDFSchemeCoeffs[] m_TSCchain = BDFCommon.GetChain(bdforder);
                 int S = m_TSCchain[0].S;
                 double maxVelocityL2Norm = 1e-15;
-                foreach (Particle p in m_Particles) {
-                    double expectedVelocity = 2 * (p.Motion.GetTranslationalVelocity(0) + 10 * p.Motion.GetTranslationalAcceleration(0) * oldTimestep).L2Norm();
-                    maxVelocityL2Norm = Math.Max(maxVelocityL2Norm, expectedVelocity);
-                }
-                dt = Math.Min(DtMax, MinGridLength / maxVelocityL2Norm);
-                if (dt / oldTimestep > 1.1)
-                    dt = oldTimestep * 1.1;
-                else if (dt / oldTimestep < 0.9)
-                    dt = oldTimestep * 0.9;
-                dt = dt.MPIMin();
-                if (dt < 1e-6)
-                    dt = 1e-6;
-                Console.WriteLine("((FSI_Control)Control).MinGridLength " + MinGridLength + " maxVelocityL2Norm " + maxVelocityL2Norm + " new time step " + dt + ", old time step " + oldTimestep);
-                foreach(Particle p in m_Particles) {
-                    p.Motion.AdaptToNewTimestep(dt, oldTimestep);
+                if (phystime == 0)
+                    dt = startDt;
+                else {
+                    foreach (Particle p in m_Particles) {
+                        double expectedVelocity = p.Motion.GetTranslationalVelocity(0).L2Norm() + (p.Motion.GetHydrodynamicForces(0) * DtMax / p.Motion.Mass_P).L2Norm();
+                        maxVelocityL2Norm = Math.Max(maxVelocityL2Norm, expectedVelocity);
+                    }
+                    dt = Math.Min(DtMax, MinGridLength / (2 * maxVelocityL2Norm));
+                    if (dt / oldTimestep > 1.1)
+                        dt = oldTimestep * 1.1;
+                    else if (dt / oldTimestep < 0.9)
+                        dt = oldTimestep * 0.9;
+                    dt = dt.MPIMin();
+                    if (dt < 1e-6)
+                        dt = 1e-6;
+                    foreach (Particle p in m_Particles) {
+                        //if (p.IsCollided) {
+                        //    dt = oldTimestep;
+                        //    postCollisionCounter = bdforder;
+                        //}
+                        p.Motion.AdaptToNewTimestep(dt, oldTimestep);
+                    }
                 }
                 oldTimestep = dt;
                 //dt = GetFixedTimestep();
-                Console.WriteLine("Starting time-step " + TimestepInt + "...");
+                Console.WriteLine("lengthscale = " + MinGridLength / 4);
+                Console.WriteLine();
+                Console.WriteLine("Starting time-step " + TimestepInt + ", size: " + dt + "...............................................................................");
+                Console.WriteLine();
                 if (initAddedDamping) {
                     foreach (Particle p in m_Particles) {
                         if (p.Motion.UseAddedDamping) {
@@ -1412,6 +1428,10 @@ namespace BoSSS.Application.FSI_Solver {
                             Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
                             perssonCells[j] = m_Particles[p].Contains(cellCenter, m_Particles[p].GetLengthScales().Min());
                         }
+                        else if (!perssonCells[j]) {
+                            Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
+                            perssonCells[j] = m_Particles[p].Contains(cellCenter, MinGridLength * 4);
+                        }
                     }
                     if (!perssonCells[j] && ((FSI_Control)Control).pureDryCollisions) {
                         Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
@@ -1419,6 +1439,7 @@ namespace BoSSS.Application.FSI_Solver {
                     }
                 }
             }
+            
             return new List<Tuple<int, BitArray>> { new Tuple<int, BitArray>(refinementLevel, perssonCells), };
         }
 

@@ -95,7 +95,8 @@ namespace BoSSS.Foundation.Grid {
             int[] levelIndicator = GetGlobalLevelIndicator(currentGrid, CellsWithMaxRefineLevel, globalCellNeigbourship);
             cellsToRefine = GetCellsToRefine(currentGrid, levelIndicator);
 
-            BitArray oK2Coarsen = GetCellsOk2Coarsen(currentGrid, CutCells, levelIndicator, globalCellNeigbourship);
+            BitArray notOk2Coarsen = GetCellsNotOk2Coarsen(currentGrid, CellsMaxRefineLevel);
+            BitArray oK2Coarsen = GetCellsOk2Coarsen(currentGrid, notOk2Coarsen, levelIndicator, globalCellNeigbourship);
             int[][] coarseningClusters = FindCoarseningClusters(oK2Coarsen, currentGrid);
             cellsToCoarsen = GetCoarseningCells(currentGrid, coarseningClusters);
 
@@ -125,12 +126,6 @@ namespace BoSSS.Foundation.Grid {
                         }
                 }
             }
-            //for (int j = 0; j < globalCutCells.Length; j++) {
-            //    if (globalCutCells[j])
-            //        for (int i = 0; i < globalCellNeighbourship[j].Length; i++) {
-            //            globalCutCells[globalCellNeighbourship[j][i]] = true;
-            //        }
-            //}
             return globalCutCells;
         }
 
@@ -150,7 +145,6 @@ namespace BoSSS.Foundation.Grid {
             int localJ = currentGrid.Cells.NoOfLocalUpdatedCells;
             int[] localCellsMaxRefineLvl = new int[localJ];
             int levelSetMaxLevel = 0;
-            int local_i0 = cellPartitioning.i0;
 
             for (int i = 0; i < CellsMaxRefineLevel.Count(); i++) {
                 BitArray currentArray = CellsMaxRefineLevel[i].Item2;
@@ -177,6 +171,26 @@ namespace BoSSS.Foundation.Grid {
                 }
             }
             return globalCellsMaxRefineLvl;
+        }
+
+        private static BitArray GetCellsNotOk2Coarsen(GridData currentGrid, List<Tuple<int, BitArray>> CellsMaxRefineLevel) {
+            int localJ = currentGrid.Cells.NoOfLocalUpdatedCells;
+            BitArray localCellsNotOk2Coarsen = new BitArray(localJ);
+            bool anyCellsNotOk = false;
+            for (int i = 0; i < CellsMaxRefineLevel.Count(); i++) {
+                if (CellsMaxRefineLevel[i].Item1 == -1) {
+                    anyCellsNotOk = true;
+                    BitArray currentArray = CellsMaxRefineLevel[i].Item2;
+                    for (int j = 0; j < localJ; j++) {
+                        if (!localCellsNotOk2Coarsen[j])
+                            localCellsNotOk2Coarsen[j] = currentArray[j];
+                    }
+                }
+            }
+            if (anyCellsNotOk)
+                return localCellsNotOk2Coarsen;
+            else
+                return null;
         }
 
         /// <summary>
@@ -424,12 +438,12 @@ namespace BoSSS.Foundation.Grid {
                 }
             }
 
-            //if (cellsNotOK2Coarsen != null) {
-            //    for (int j = 0; j < localJ; j++) {
-            //        if(cellsNotOK2Coarsen[j])
-            //            oK2Coarsen[j] = false;
-            //    }
-            //}
+            if (cellsNotOK2Coarsen != null) {
+                for (int j = 0; j < localJ; j++) {
+                    if (cellsNotOK2Coarsen[j])
+                        oK2Coarsen[j] = false;
+                }
+            }
 
             return oK2Coarsen;
         }

@@ -422,7 +422,7 @@ namespace BoSSS.Application.FSI_Solver {
             for (int i = 1; i < m_HistoryLength; i++) {
                 double currentNewTimestep = -i * newTimestep;
                 double[] langrangePoly = CalculateLangrangePolynom(currentNewTimestep, oldTimestep);
-                newVariable.Add(new Vector(langrangePoly[0] * variable[i]));
+                newVariable.Add(new Vector(langrangePoly[0] * variable[0]));
                 for (int j = 1; j < m_HistoryLength; j++) {
                     newVariable[i] = newVariable[i] + langrangePoly[j] * stuetzstelle[j];
                 }
@@ -458,13 +458,13 @@ namespace BoSSS.Application.FSI_Solver {
             double[] lPoly = new double[m_HistoryLength];
             for (int i = 0; i < m_HistoryLength; i++) {
                 if (i != 0)
-                    lPoly[i] = time / (i * oldTimestep);
+                    lPoly[i] = time / (-i * oldTimestep);
                 for (int j = 1; j < m_HistoryLength; j++) {
                     if (j == i)
                         continue;
                     if (i == 0 && j == 1)
-                        lPoly[i] = (time - j * oldTimestep) / ((i - j) * oldTimestep);
-                    lPoly[i] *= (time - j * oldTimestep) / ((i - j) * oldTimestep);
+                        lPoly[i] = (time + j * oldTimestep) / ((j - i) * oldTimestep);
+                    lPoly[i] *= (time + j * oldTimestep) / ((j - i) * oldTimestep);
                 }
             }
             return lPoly;

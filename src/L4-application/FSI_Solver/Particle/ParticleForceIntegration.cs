@@ -205,14 +205,16 @@ namespace BoSSS.Application.FSI_Solver {
         private double TorqueStressTensor(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, MultidimensionalArray NodeSetClone, double FluidViscosity, int k, int j, double[] currentPosition) {
             double temp1;
             double temp2;
+            Vector distance = new Vector(NodeSetClone[k, 0] - currentPosition[0], NodeSetClone[k, 1] - currentPosition[1]);
+            double absDistance = distance.Abs();
             temp1 = CalculateStressTensorX(Grad_UARes, pARes, NormalVector, FluidViscosity, k, j);
             //temp1 *= -NormalVector[j, k, 1] * (currentPosition[1] - NodeSetClone[k, 1]).Abs();
-            temp1 *= -(NodeSetClone[k, 1] - currentPosition[1]);
+            temp1 *= -(NodeSetClone[k, 1] - currentPosition[1]) / absDistance;
             if (double.IsNaN(temp1) || double.IsInfinity(temp1))
                 throw new ArithmeticException("Error trying to calculate the particle torque");
             temp2 = CalculateStressTensorY(Grad_UARes, pARes, NormalVector, FluidViscosity, k, j);
             //temp2 *= NormalVector[j, k, 0] * (currentPosition[0] - NodeSetClone[k, 0]).Abs();
-            temp2 *= (NodeSetClone[k, 0] - currentPosition[0]);
+            temp2 *= (NodeSetClone[k, 0] - currentPosition[0]) / absDistance;
             if (double.IsNaN(temp2) || double.IsInfinity(temp2))
                 throw new ArithmeticException("Error trying to calculate the particle torque");
             return temp1 + temp2;
