@@ -81,7 +81,6 @@ namespace BoSSS.Application.XdgPoisson3 {
                 var C = HardCodedControl.Circle(Resolution: res, p: dgDegree);
                 C.LinearSolver.SolverCode = Code.classic_pardiso;
                 C.savetodb = false;
-                C.PrePreCond = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             
                 Controls.Add(C);
             }

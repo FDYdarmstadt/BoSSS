@@ -250,9 +250,11 @@ namespace BoSSS.Solution {
 
             var Mtx = m_MultigridOp.OperatorMatrix;
 
+            
 
-            // masks
-            var InnerCellsMask = grd.GetBoundaryCells().Complement();
+
+                // masks
+                var InnerCellsMask = grd.GetBoundaryCells().Complement();
 
             // 
             var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
@@ -293,6 +295,8 @@ namespace BoSSS.Solution {
                 double condestInner = output[1, 0];
 
                 double[] condestOut = new double[] { condestFull, condestInner };
+
+                Console.WriteLine("MATLAB condition number: " + condestFull);
 
                 Debug.Assert(condestOut[0].MPIEquals(), "value does not match on procs");
                 Debug.Assert(condestOut[1].MPIEquals(), "value does not match on procs");

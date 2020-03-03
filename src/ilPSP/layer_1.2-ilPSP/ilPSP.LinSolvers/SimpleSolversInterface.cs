@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using ilPSP.Utils;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -69,6 +70,24 @@ namespace ilPSP.LinSolvers {
             using(var slv = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
                 slv.DefineMatrix(Matrix);
                 var SolRes = slv.Solve(X, B.ToArray());
+            }
+        }
+
+        /// <summary>
+        /// Condition number estimate by MUMPS; Rem.: MUMPS manual does not tell in which norm.
+        /// </summary>
+        public static double Condest_MUMPS(this IMutableMatrixEx Mtx) {
+            using(var slv = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
+                slv.Statistics = MUMPS.MUMPSStatistics.AllStatistics;
+
+                slv.DefineMatrix(Mtx);
+                double[] dummyRHS = new double[Mtx.RowPartitioning.LocalLength];
+                double[] dummySol = new double[dummyRHS.Length];
+                dummyRHS.SetAll(1.11);
+                
+                slv.Solve(dummySol, dummyRHS);
+
+                return slv.LastCondNo;
             }
         }
     }

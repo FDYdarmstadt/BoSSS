@@ -25,6 +25,21 @@ using System.Diagnostics;
 using ilPSP.Utils;
 
 namespace ilPSP.LinSolvers.MUMPS {
+
+    /// <summary>
+    /// MUMPS parameter ICNTL(11)
+    /// </summary>
+    public enum MUMPSStatistics {
+        NoErrorAnalysis = 0,
+
+        /// <summary>
+        /// includ
+        /// </summary>
+        AllStatistics = 1,
+
+        MainStatistics = 2
+    }
+
     public class MUMPSSolver : ISparseSolver, IDisposable {
 
         MUMPS_csharp.DMUMPS_STRUC_CS mumps_par = new MUMPS_csharp.DMUMPS_STRUC_CS();
@@ -36,6 +51,29 @@ namespace ilPSP.LinSolvers.MUMPS {
         bool verbose;
 
         MPI_Comm m_MPI_Comm;
+
+        MUMPSStatistics m_Statistics = MUMPSStatistics.NoErrorAnalysis;
+
+        /// <summary>
+        /// Adjust if e.g. 
+        /// </summary>
+        public MUMPSStatistics Statistics {
+            get {
+                return m_Statistics;
+            }
+            set {
+                m_Statistics = value;
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public double LastCondNo {
+            get;
+            private set;
+        }
+
 
         /// <summary>
         /// 
@@ -170,9 +208,15 @@ namespace ilPSP.LinSolvers.MUMPS {
 
                     r.RunTime = st.Elapsed;
                 }
-                // Trying to get as output the condition number of the matrix. Controled by icntl[10]
-//                Console.WriteLine("cond1: {0}",mumps_par.rinfog[9]);
-//                Console.WriteLine("cond2: {0}",mumps_par.rinfog[10]);
+                // Trying to get as output the condition number of the matrix. Controlled by icntl[10]
+                //Console.WriteLine("cond1: {0}",mumps_par.rinfog[9]);
+                //Console.WriteLine("cond2: {0}",mumps_par.rinfog[10]);
+                if(m_Statistics == MUMPSStatistics.AllStatistics) {
+                    LastCondNo = mumps_par.rinfog[9];
+                } else {
+                    LastCondNo = -1.0;
+                }
+
 
                 return r;
 
@@ -255,7 +299,8 @@ namespace ilPSP.LinSolvers.MUMPS {
 
                 //0:no error analysis (default), 1:full statistics, 2:main statistics
 
-//                mumps_par.icntl[10] = 1;
+
+                mumps_par.icntl[10] = (int)m_Statistics;
 
 
                 mumps_par.job = 2;

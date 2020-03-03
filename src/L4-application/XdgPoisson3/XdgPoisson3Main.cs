@@ -455,7 +455,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             }
 
 
-            OperatorAnalysis();
+            //OperatorAnalysis();
             return dt;
         }
 
@@ -506,6 +506,13 @@ namespace BoSSS.Application.XdgPoisson3 {
             Ret.Add("BlockCondNo-innerCut", innerCut_MaxCondNo); 
             Ret.Add("BlockCondNo-bndyUncut", bndyUncut_MaxCondNo); 
             Ret.Add("BlockCondNo-bndyCut", bndyCut_MaxCondNo);
+
+
+            //var locCondNo = new SinglePhaseField(new Basis(this.GridData, 0), "StencilCondNo");
+            //locCondNo.CoordinateVector.Acc(1.0, bcn);
+
+            //Tecplot.PlotFields(new DGField[] { locCondNo, this.Phi }, "LocConNo", 0.0, 2);
+
 
 
             //innerUncut.SaveToTextFile("innerUncut.csv", WriteHeader:false);
