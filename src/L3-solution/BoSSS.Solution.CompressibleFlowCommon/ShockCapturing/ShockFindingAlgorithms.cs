@@ -17,12 +17,16 @@ limitations under the License.
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.Statistic;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 using ilPSP;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
     /// <summary>
@@ -482,19 +486,24 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             return prcField;
         }
 
-        public static DGField ReconstructLevelSet(GridData gridData, int dgDegree, SinglePhaseField field, MultidimensionalArray points) {
+        public static SinglePhaseField ReconstructLevelSetField(SinglePhaseField field, MultidimensionalArray points) {
+            // Init
+            IGridData gridData = field.GridDat;
+
             // Evaluate gradient
             Basis basis = new Basis(field.GridDat, field.Basis.Degree);
-            gradientX = new SinglePhaseField(basis, "gradientX");
-            gradientY = new SinglePhaseField(basis, "gradientY");
+            SinglePhaseField gradientX = new SinglePhaseField(basis, "gradientX");
+            SinglePhaseField gradientY = new SinglePhaseField(basis, "gradientY");
             gradientX.DerivativeByFlux(1.0, field, d: 0);
             gradientY.DerivativeByFlux(1.0, field, d: 1);
-            gradientX = PatchRecovery(gradientX);
-            gradientY = PatchRecovery(gradientY);
-            FieldEvaluation ev = new FieldEvaluation(gridData);
+            //gradientX = PatchRecovery(gradientX);
+            //gradientY = PatchRecovery(gradientY);
+            FieldEvaluation ev = new FieldEvaluation((GridData)gridData);
             MultidimensionalArray GradVals = MultidimensionalArray.Create(points.GetLength(0), 2);
             ev.Evaluate(1.0, new DGField[] { gradientX, gradientY }, points, 0.0, GradVals);
 
+            // Level set reconstruction
+            Console.WriteLine("Reconstruction of level set field started...");
             int count = 0;
             Func<double[], double> func = delegate (double[] X) {
                 double minDistSigned = double.MaxValue;
@@ -542,15 +551,61 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                 int sign = Math.Sign((x - closestPointOnInterfaceX) * GradVals[iMin, 0] + (y - closestPointOnInterfaceY) * GradVals[iMin, 1]);
                 minDistSigned *= sign;
 
-                Console.WriteLine(String.Format("Quadrature point #{0}: ({1}, {2}), interface point: ({3}, {4})", count, X[0], X[1], closestPointOnInterfaceX, closestPointOnInterfaceY));
+                //Console.WriteLine(String.Format("Quadrature point #{0}: ({1}, {2}), interface point: ({3}, {4})", count, X[0], X[1], closestPointOnInterfaceX, closestPointOnInterfaceY));
                 count++;
 
                 return minDistSigned;
             };
 
-            DGField result = new SinglePhaseField(new Basis(gridData, dgDegree), "levelSetReconstructed");
-            result.ProjectField(func.Vectorize());
-            return result;
+            // DG level set field
+            SinglePhaseField DGLevelSet = new SinglePhaseField(field.Basis, "levelSetReconstructed");
+            DGLevelSet.ProjectField(func.Vectorize());
+
+            Console.WriteLine("finished");
+            return DGLevelSet;
+        }
+
+        /// <summary>
+        /// Creates a continuous version of a DG level set field
+        /// </summary>
+        /// <param name="DGLevelSet">The input DG level set field</param>
+        /// <returns>A continuous level set <see cref="SinglePhaseField"/> with one order higher than the input</returns>
+        public static SinglePhaseField ContinuousLevelSet(SinglePhaseField DGLevelSet, MultidimensionalArray points) {
+            // Init
+            IGridData gridData = DGLevelSet.GridDat;
+            SinglePhaseField continuousLevelSet = new SinglePhaseField(new Basis(gridData, DGLevelSet.Basis.Degree + 1), "levelSetContinuous");
+
+            // Create narrow band
+            double[] jCells = points.ExtractSubArrayShallow(-1, 3).To1DArray();
+            List<int> allNeighbours = new List<int>();
+            foreach (int cell in jCells) {
+                gridData.GetCellNeighbours(cell, GetCellNeighbours_Mode.ViaVertices, out int[] cellNeighbours, out int[] connectingEntities);
+                allNeighbours.Add(cell);
+                allNeighbours.AddRange(cellNeighbours);
+            }
+            List<int> narrowBandCells = allNeighbours.Distinct().ToList();
+            BitArray bitMaskNarrowBand = new BitArray(gridData.iLogicalCells.NoOfLocalUpdatedCells);
+            foreach (int cell in narrowBandCells) {
+                bitMaskNarrowBand[cell] = true;
+            }
+            CellMask narrowBand = new CellMask(gridData, bitMaskNarrowBand);
+
+            // Create positive mask
+            BitArray bitMaskPos = new BitArray(gridData.iLogicalCells.NoOfLocalUpdatedCells);
+            for (int i = 0; i < gridData.iLogicalCells.NoOfLocalUpdatedCells; i++) {
+                if (DGLevelSet.GetMeanValue(i) > 0 && !bitMaskNarrowBand[i]) {
+                    bitMaskPos[i] = true;
+                }
+            }
+            CellMask posMask = new CellMask(gridData, bitMaskPos);
+
+            // Continuity projection
+            ContinuityProjection continuityProjection = new ContinuityProjection(continuousLevelSet.Basis, DGLevelSet.Basis, gridData, ContinuityProjectionOption.ConstrainedDG);
+            continuityProjection.MakeContinuous(DGLevelSet, continuousLevelSet, narrowBand, posMask);
+
+            Console.WriteLine("Continuity projection finished");
+
+            return continuousLevelSet;
         }
 
         /// <summary>
