@@ -1971,6 +1971,61 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// Solves the linear equation system:
+        /// 
+        /// <paramref name="M"/>*<paramref name="x"/> = <paramref name="b"/>
+        /// under the condition
+        /// <paramref name="N"/>*<paramref name="x"/> = <paramref name="c"/>
+        /// if no such exact solution exists the first set is solved exactly,
+        /// in such a fashion to minimize the residual of the second set
+        /// </summary>
+        /// <param name="x">On exit, the solution of the equation system.</param>
+        /// <param name="b">Right-hand-side of the main equation system.</param>
+        /// <param name="M">General matrix.</param>
+        /// <param name="c">Right-hand-side of the side equation system.</param>
+        /// <param name="N">General matrix.</param>
+        /// The second system is used to solve
+        static public void SolveWithCondition<T>(this T M, double[] x, double[] b, T N, double[] c) where T : IMatrix
+        {
+            if (M.NoOfCols != N.NoOfCols)
+                throw new ApplicationException("Solutionspace of both systems has to be of equal dimension");
+            if (x.Length != M.NoOfCols)
+                throw new ArgumentException("length of x must be equal to number of columns");
+            if (b.Length != M.NoOfRows)
+                throw new ArgumentException("length of b must be equal to number of rows of M");
+            if (c.Length != N.NoOfRows)
+                throw new ArgumentException("length of c must be equal to number of rows of N");
+
+            // compute the nullspace of M
+            //MultidimensionalArray SRREF = M.GetSolutionSpace();
+            MultidimensionalArray S = M.GetSolutionSpaceSVD();
+            if (S == null)
+            {
+                throw new ApplicationException("Something went wrong");
+            }
+
+            // retrieve the particular solution for the first system
+            // I believe this could be done while retrieving the nullspace
+            M.LeastSquareSolve(x, b);
+
+            // Solve the augmented second system N * S * xi = (c - N * v)
+            // In such a manner to minimize ||N * S * xi - (c - N * v)||
+            // x = S * xi + v
+
+            // non-shallow copy of c
+            double[] rhs = new double[c.Length];
+            c.CopyTo(rhs, 0);
+            double[] xi = new double[S.NoOfCols];
+
+            // create the new rhs
+            N.MatVecMul(-1.0, x, 1.0, rhs);
+            GEMM(N, S).LeastSquareSolve(xi, rhs);
+
+            // compute the final solution
+            S.MatVecMul(1.0, xi, 1.0, x);
+        }
+
+        /// <summary>
         /// computes a LU-Factorization of <paramref name="M"/> and stores it in-place, using LAPACK function DGETRF
         /// </summary>
         /// <param name="M">(input, output) General quadratic, non-singular matrix; on exit, the LU-factorization</param>
@@ -2258,7 +2313,7 @@ namespace ilPSP {
 
             (var RRE, var pivots, var cols, int rank) = ReducedRowEchelonForm(Mtx);
 
-            Console.WriteLine("The rank of the matrix coming from the Reduced Row Echelon Form: rank={0}", rank);
+            //Console.WriteLine("The rank of the matrix coming from the Reduced Row Echelon Form: rank={0}", rank);
 
             if (cols.Length != Mtx.NoOfCols - rank)
                 throw new ArithmeticException("Error in reduced row echelon form.");
@@ -2292,6 +2347,104 @@ namespace ilPSP {
             return S;
         }
 
+        /// <summary>
+        /// Alternative for <see cref="GetSolutionSpace{T}(T)"> using Lapack routine dgesvd
+        /// Converts an implicit subspace representation (given as the solution of a singular matrix <paramref name="Mtx"/>)
+        /// into an explicit representation.
+        /// </summary>
+        /// <param name="Mtx">
+        /// A matrix implicitly defines a subspace.
+        /// </param>
+        /// <returns>
+        /// A matrix whose columns span the nullspace of the input matrix <paramref name="Mtx"/>.
+        /// </returns>
+        public static MultidimensionalArray GetSolutionSpaceSVD<T>(this T Mtx) where T : IMatrix
+        {
+            int M = Mtx.NoOfRows;
+            int N = Mtx.NoOfCols;
+
+            int JOBU = 'N';
+            int JOBVT = 'A';
+
+            int LDA = M >= 1 ? M : 1;
+            int LDU = 1;
+            switch (JOBU)
+            {
+                case 'A':
+                case 'S':
+                    LDU = M;
+                    break;
+                default:
+                    LDU = 1;
+                    break;
+            }
+
+            int LDVT = 1;
+            switch (JOBVT)
+            {
+                case 'A':
+                case 'S':
+                    LDVT = N;
+                    break;
+                default:
+                    LDVT = 1;
+                    break;
+            }
+            int LDS = Math.Min(M, N);
+
+            MultidimensionalArray S = MultidimensionalArray.Create(LDS,1);
+            MultidimensionalArray VT = MultidimensionalArray.Create(LDVT, LDVT);
+
+            unsafe
+            {
+
+                int i0, i1, i2, i3;
+                double[] __A = TempBuffer.GetTempBuffer(out i0, M * N);
+                double[] __S = TempBuffer.GetTempBuffer(out i1, LDS);
+                double[] __U = TempBuffer.GetTempBuffer(out i2, LDU * LDU);
+                double[] __VT = TempBuffer.GetTempBuffer(out i3, LDVT * LDVT);
+                fixed (double* _A = __A, _S = __S, _U = __U, _VT = __VT)
+                {
+                    CopyToUnsafeBuffer(Mtx, _A, true);
+
+                    LAPACK.F77_LAPACK.DGESVD(JOBU, JOBVT, M, N, _A, LDA, _S, _U, LDU, _VT, LDVT);
+
+                    CopyFromUnsafeBuffer(S, _S, true);
+                    CopyFromUnsafeBuffer(VT, _VT, true);
+                }
+                TempBuffer.FreeTempBuffer(i0);
+                TempBuffer.FreeTempBuffer(i1);
+                TempBuffer.FreeTempBuffer(i2);
+                TempBuffer.FreeTempBuffer(i3);
+            }
+
+            // we need the original V not V^T
+            VT.TransposeInPlace();
+
+            int nullspaceDim = M < N ? N - M : 0;
+
+            double thresh = 1.0E-14;
+            for (int i = 0; i < LDS; i++)
+            {
+                if (S.Storage[i] < thresh)
+                {
+                    nullspaceDim++;
+                }
+            }
+
+            MultidimensionalArray Nullspace = null;
+            if (nullspaceDim > 0)
+            {
+                Nullspace = MultidimensionalArray.Create(N, nullspaceDim);
+                Nullspace.Acc(1.0, VT.ExtractSubArrayShallow(new int[] { 0, LDVT - nullspaceDim }, new int[] { LDVT - 1, LDVT - 1 }));
+            }
+            else
+            {
+                Console.WriteLine("Warning: Nullspace is empty");
+            }
+
+            return Nullspace;
+        }
 
         /// <summary>
         /// Computes a reduced row echelon form
