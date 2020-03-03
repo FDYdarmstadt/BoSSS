@@ -50,14 +50,14 @@ namespace BoSSS.Application.SipPoisson {
             R.savetodb = false;
 
             //R.FieldOptions.Add("T", new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            R.FieldOptions.Add("T", new FieldOpts() { Degree = 3, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            R.FieldOptions.Add("T", new FieldOpts() { Degree = 4, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             R.FieldOptions.Add("Tex", new FieldOpts() { Degree = 15 });
             R.InitialValues_Evaluators.Add("RHS", X => 0.0);
             R.InitialValues_Evaluators.Add("Tex", X => (Math.Log(X[0].Pow2() + X[1].Pow2()) / Math.Log(4.0)) + 1.0);
             R.ExactSolution_provided = true;
             R.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             R.SuperSampling = 2;
-            R.NoOfMultigridLevels = 6;
+            R.NoOfMultigridLevels = 4;
 
             R.GridFunc = delegate ()
             {

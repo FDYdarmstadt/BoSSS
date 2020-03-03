@@ -2,7 +2,9 @@
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Quadrature;
+using BoSSS.Platform;
 using ilPSP;
+using ilPSP.LinSolvers;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
@@ -15,10 +17,23 @@ namespace BoSSS.Solution.AdvancedSolvers
 {
     public class AggregationGridCurvedInjector
     {
-        public static MultidimensionalArray[] AggregateCurvedCells(AggregationGridData _agGrd, Basis _maxDgBasis, int _ilevel)
+        /// <summary>
+        /// The function computes a Np*Np operator for each cell of the grid.
+        /// This operator transforms the basis from aggregation level 0 to the
+        /// maximum aggregation level. It preserves continuity along inner aggregation cell edges
+        /// and the orthonormality of the basis on the aggregation cell. 
+        /// Furthermore it seeks a solution that minimizes the gradient jump along inner edges.
+        /// </summary>
+        /// <param name="_agGrd"></param>
+        /// Grid Data for the coarse aggregation level
+        /// <param name="_maxDgBasis"></param>
+        /// underlying DG basis
+        /// <returns> 
+        /// - index corresponds to the index of the geometric cell
+        /// </returns>
+        public static MultidimensionalArray[] AggregateCurvedCells(AggregationGridData _agGrd, Basis _maxDgBasis)
         {
             AggregationGridData agGrd = _agGrd;
-            int ilevel = _ilevel;
             Basis dgBasis = _maxDgBasis;
 
             // check type of underlying reference elements
@@ -31,7 +46,8 @@ namespace BoSSS.Solution.AdvancedSolvers
             int Jagg = agGrd.iLogicalCells.NoOfLocalUpdatedCells;
             int Np = dgBasis.Length;
 
-            MultidimensionalArray[] InjectorCoarse = new MultidimensionalArray[Jagg];
+            MultidimensionalArray[] InjectorCoarseLogicalCell = new MultidimensionalArray[Jagg];
+            MultidimensionalArray[] InjectorCoarse = new MultidimensionalArray[agGrd.iGeomCells.Count];
 
             for (int i = 0; i < Jagg; i++)
             {
@@ -53,17 +69,22 @@ namespace BoSSS.Solution.AdvancedSolvers
                 // convert to array
                 iedges = l_iedges.ToArray();
 
-                InjectorCoarse[i] = MultidimensionalArray.Create(parts.Length, Np, Np);
+                InjectorCoarseLogicalCell[i] = MultidimensionalArray.Create(parts.Length, Np, Np);
 
                 // special case for the first basis function
-                InjectorCoarse[i].ExtractSubArrayShallow(-1, 0, 0).Acc(1, GetCoefficients0Degree(agGrd, dgBasis, parts));
+                InjectorCoarseLogicalCell[i].ExtractSubArrayShallow(-1, 0, 0).Acc(1, GetCoefficients0Degree(agGrd, dgBasis, parts));
 
                 // compute the columns in the Injection operator for subsequent basis functions
                 for (int n = 1; n < Np; n++)
                 {
-                    InjectorCoarse[i].ExtractSubArrayShallow(new int[] { 0, 0, n }, new int[] { parts.Length - 1, n, -1 }).Acc(1, GetCoefficients(agGrd, dgBasis, InjectorCoarse[i], parts, iedges, n));
+                    InjectorCoarseLogicalCell[i].ExtractSubArrayShallow(new int[] { 0, 0, n }, new int[] { parts.Length - 1, n, -1 }).Acc(1, GetCoefficients(agGrd, dgBasis, InjectorCoarseLogicalCell[i], parts, iedges, n));
                 }
 
+                // accumulate the direct operator
+                foreach(int k in parts)
+                {
+                    InjectorCoarse[k] = InjectorCoarseLogicalCell[i].ExtractSubArrayShallow(Array.IndexOf(parts, k), -1, -1);
+                }                    
             }
 
             return InjectorCoarse;
@@ -106,20 +127,17 @@ namespace BoSSS.Solution.AdvancedSolvers
             // basisIndex + 1 equations for othogonality
             // (currentdegree + 1) * iedges.Length equations for continuity along inneredges
             // (basisIndex + 1) * iedges.Length equations for edge-normal gradient jump minimization (smootheness)
-            MultidimensionalArray aggEq = MultidimensionalArray.Create(basisIndex + 1 + (currentDegree + 1 + basisIndex * 2) * iedges.Length, varCount);
+            MultidimensionalArray aggE1 = MultidimensionalArray.Create(basisIndex + 1 + (currentDegree + 1) * iedges.Length, varCount);
+            MultidimensionalArray aggE2 = MultidimensionalArray.Create((basisIndex * 2) * iedges.Length, varCount);
 
             // rhs
-            MultidimensionalArray aggRhs = MultidimensionalArray.Create(basisIndex + 1 + (currentDegree + 1 + basisIndex * 2) * iedges.Length);
-
-            // assemble system
-            MultidimensionalArray aggSys = MultidimensionalArray.Create(basisIndex + 1 + (currentDegree + 1 + basisIndex * 2) * iedges.Length, varCount + 1);
-            aggEq = aggSys.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { basisIndex + 1 + (currentDegree + 1 + basisIndex * 2) * iedges.Length - 1, varCount - 1 });
-            aggRhs = aggSys.ExtractSubArrayShallow(-1, varCount);
+            MultidimensionalArray aggRhs1 = MultidimensionalArray.Create(basisIndex + 1 + (currentDegree + 1) * iedges.Length);
+            MultidimensionalArray aggRhs2 = MultidimensionalArray.Create((basisIndex * 2) * iedges.Length);
 
             // construct the system
             // row[basisIndex] is a placeholder for the normality condition, to ensure full rank of the system
-            aggEq[basisIndex, basisIndex] = 1;
-            aggRhs[basisIndex] = 1;
+            aggE1[basisIndex, basisIndex] = 1;
+            aggRhs1[basisIndex] = 1;
 
             // orthogonality
             for (int row = 0; row < basisIndex; row++)
@@ -128,15 +146,10 @@ namespace BoSSS.Solution.AdvancedSolvers
                 {
                     for (int column = 0; column <= row; column++)
                     {
-                        aggEq[row, i * (basisIndex + 1) + column] = _inj[i, row - column, row];
+                        aggE1[row, i * (basisIndex + 1) + column] = _inj[i, row - column, row];
                     }
                 }
             }
-
-            // variables to scale the conditions later on
-            double sclCont = 1.0;
-            double sclGrad = 1.0;
-
 
             // continuity
             // TODO harder part: Select currentDegree + 1 points per shared edge and ensure continuity there
@@ -157,56 +170,12 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                 // get indices of left and right hand cell on the respective edge
                 int index_i = Array.IndexOf(parts, cell_i);
-                int index_j = Array.IndexOf(parts, cell_j);
+                int index_j = Array.IndexOf(parts, cell_j);                      
 
-                //// get reference edge
-                //int ref_edge_i = _agGrd.iGeomEdges.Edge2CellTrafoIndex[iedges[row], 0];
-                //int ref_edge_j = _agGrd.iGeomEdges.Edge2CellTrafoIndex[iedges[row], 1];
-
-                //// get reference edge vertex indices
-                //// WILL NOT WORK FaceToVertexIndices IS NOT CORRECT AS OF RN
-                //List<int> ref_vert_i = new List<int>();
-                //for (int v=0; v < _agGrd.iGeomCells.GetRefElement(cell_i).FaceToVertexIndices.GetLength(1); v++)
-                //{
-                //    ref_vert_i.Add(_agGrd.iGeomCells.GetRefElement(cell_i).FaceToVertexIndices[ref_edge_i,v]);
-                //}
-                //List<int> ref_vert_j = new List<int>();
-                //for (int v = 0; v < _agGrd.iGeomCells.GetRefElement(cell_j).FaceToVertexIndices.GetLength(1); v++)
-                //{
-                //    ref_vert_j.Add(_agGrd.iGeomCells.GetRefElement(cell_j).FaceToVertexIndices[ref_edge_j, v]);
-                //}
-
-                //// get a list with all vertices on that edge
-                //MultidimensionalArray ref_vert_coord_i = MultidimensionalArray.Create(currentDegree + 1, _maxDgBasis.GridDat.SpatialDimension);
-                //foreach (var v in ref_vert_i)
-                //{
-                //    ref_vert_coord_i.ExtractSubArrayShallow(ref_vert_i.IndexOf(v), -1).Acc(1.0, _agGrd.iGeomCells.GetRefElement(cell_i).Vertices.ExtractSubArrayShallow(v, -1));
-                //}
-
-                //MultidimensionalArray ref_vert_coord_j = MultidimensionalArray.Create(currentDegree + 1, _maxDgBasis.GridDat.SpatialDimension);
-                //foreach (var v in ref_vert_j)
-                //{
-                //    ref_vert_coord_j.ExtractSubArrayShallow(ref_vert_j.IndexOf(v), -1).Acc(1.0, _agGrd.iGeomCells.GetRefElement(cell_j).Vertices.ExtractSubArrayShallow(v, -1));
-                //}
-
-                //// create sequence of sampling points through linear combination of vertex coordinates
-                //int pointIndex = 0;
-                //while (ref_vert_i.Count + pointIndex < currentDegree + 1 || ref_vert_j.Count + pointIndex < currentDegree + 1) {
-                //    ref_vert_coord_i.ExtractSubArrayShallow(ref_vert_i.Count + pointIndex, -1).Acc(0.5, ref_vert_coord_i.ExtractSubArrayShallow(pointIndex, -1) + ref_vert_coord_i.ExtractSubArrayShallow(pointIndex + 1, -1));
-
-                //    ref_vert_coord_j.ExtractSubArrayShallow(ref_vert_j.Count + pointIndex, -1).Acc(0.5, ref_vert_coord_j.ExtractSubArrayShallow(pointIndex, -1) + ref_vert_coord_j.ExtractSubArrayShallow(pointIndex + 1, -1));
-
-                //    pointIndex++;
-                //}
-
-                //// Collect points in a NodeSet
-                //NodeSet vert_coord_i = new NodeSet(_agGrd.iGeomCells.GetRefElement(cell_i), ref_vert_coord_i);
-                //NodeSet vert_coord_j = new NodeSet(_agGrd.iGeomCells.GetRefElement(cell_i), ref_vert_coord_i);
-
-                // alternative
+                // get basis values on the edge
                 MultidimensionalArray edge_eval_points = MultidimensionalArray.Create(currentDegree + 1, 1);
 
-                // construct evaluation points
+                // construct evaluation points, currently only viable for 1D edges
                 edge_eval_points[0, 0] = 0.0;
                 for (int i = 1; i < currentDegree + 1; i++)
                 {
@@ -223,23 +192,11 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                 for (int i = 0; i < (currentDegree + 1); i++)
                 {
-                    //// It is missing the transformation from reference to physical cell
-                    //int polyLength = _maxDgBasis.Polynomials[0].Where(poly => poly.AbsoluteDegree <= currentDegree).Count();
-
-                    //MultidimensionalArray value_i = MultidimensionalArray.Create(currentDegree + 1, polyLength);
-                    //value_i.Multiply(1.0, _agGrd.ChefBasis.BasisValues.GetValues(vert_coord_i, currentDegree), _maxDgBasis.GridDat.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(cell_i, 1, currentDegree).ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { -1, polyLength - 1, polyLength - 1 }), 0.0, "ij", "ik", "kj");
-
-                    //MultidimensionalArray value_j = MultidimensionalArray.Create(currentDegree + 1, polyLength);
-                    //value_j.Multiply(1.0, _agGrd.ChefBasis.BasisValues.GetValues(vert_coord_j, currentDegree), _maxDgBasis.GridDat.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(cell_j, 1, currentDegree).ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { -1, polyLength - 1, polyLength - 1 }), 0.0, "ij", "ik", "kj");
 
                     for (int column = 0; column < basisIndex + 1; column++)
                     {
-                        // keep maximum for scaling
-                        sclCont = Math.Max(sclCont, edge_values.Item1[0, i, column].Abs() > edge_values.Item2[0, i, column].Abs() ? edge_values.Item1[0, i, column].Abs() : edge_values.Item2[0, i, column].Abs());
-                        //aggEq[row * (currentDegree + 1) + i + rowOffset, index_i * (basisIndex + 1) + column] = value_i[i, column];
-                        aggEq[row * (currentDegree + 1) + i + rowOffset, index_i * (basisIndex + 1) + column] = edge_values.Item1[0, i, column];
-                        //aggEq[row * (currentDegree + 1) + i + rowOffset, index_j * (basisIndex + 1) + column] = -value_j[i, column];
-                        aggEq[row * (currentDegree + 1) + i + rowOffset, index_j * (basisIndex + 1) + column] = -edge_values.Item2[0, i, column];
+                        aggE1[row * (currentDegree + 1) + i + rowOffset, index_i * (basisIndex + 1) + column] = edge_values.Item1[0, i, column];
+                        aggE1[row * (currentDegree + 1) + i + rowOffset, index_j * (basisIndex + 1) + column] = -edge_values.Item2[0, i, column];
                     }
                 }
             }
@@ -250,7 +207,6 @@ namespace BoSSS.Solution.AdvancedSolvers
             // 2. compute the Gram determinant for the edge
             // 3. integrate the basisfunction couplings (originating from the L2-norm) over the edge (Caching would be highly advisable, because the same integrals will be needed for the next basis function to aggregate)
             // 4. write values in aggEq
-            rowOffset = basisIndex + 1 + (currentDegree + 1) * iedges.Length;
 
             // iterate over edges
             for (int row = 0; row < iedges.Length; row++)
@@ -317,58 +273,34 @@ namespace BoSSS.Solution.AdvancedSolvers
                         // iterate over the variables
                         for (int column = 1; column < basisIndex + 1; column++)
                         {
-                            // keep maximum for later scaling
-                            sclGrad = Math.Max(sclCont, gradient[i, k - 1, 0, column - 1].Abs() > gradient[i, k - 1, 1, column - 1].Abs() ? gradient[i, k - 1, 0, column - 1].Abs() : gradient[i, k - 1, 1, column - 1].Abs());
-                            aggEq[row * (basisIndex * 2) + (k - 1) + i * basisIndex + rowOffset, index_i * (basisIndex + 1) + column] = gradient[i, k - 1, 0, column - 1];
-                            aggEq[row * (basisIndex * 2) + (k - 1) + i * basisIndex + rowOffset, index_j * (basisIndex + 1) + column] = gradient[i, k - 1, 1, column - 1];
+                            aggE2[row * (basisIndex * 2) + (k - 1) + i * basisIndex, index_i * (basisIndex + 1) + column] = gradient[i, k - 1, 0, column - 1];
+                            aggE2[row * (basisIndex * 2) + (k - 1) + i * basisIndex, index_j * (basisIndex + 1) + column] = gradient[i, k - 1, 1, column - 1];
                         }
                     }
                 }
             }
-
-            // apply scalings to the different conditions
-            // first ensure the maximum entry for a set of conditions is of Order ~1
-            // then apply an additional weight, which also takes into account the number of equations for that condition
-            // weight * number orthogonality eq's / number eq's for this condition
-
             
-            // compute the weigths
-            double wCont = 1.0 * (basisIndex + 1) / ((basisIndex + (currentDegree + 1) * iedges.Length) - (basisIndex));
-            double wGrad = 0.01 * (basisIndex + 1) / ((basisIndex + 1 + (currentDegree + 1 + basisIndex * 2) * iedges.Length - 1) - (basisIndex + (currentDegree + 1) * iedges.Length));
-            // apply scaling
-            aggEq.ExtractSubArrayShallow(new int[] { basisIndex + 1, 0 }, new int[] { basisIndex + (currentDegree + 1) * iedges.Length, varCount - 1 }).Scale(wCont / sclCont);
-            aggEq.ExtractSubArrayShallow(new int[] { basisIndex + 1 + (currentDegree + 1) * iedges.Length, 0 }, new int[] { basisIndex + 1 + (currentDegree + 1 + basisIndex * 2) * iedges.Length - 1, varCount - 1 }).Scale(wGrad / sclGrad);
-            
-
-            // bring augmented system in reduced row echelon form
-            //(var aggSol, var pivots, var cols, int rankAug) = aggSys.ReducedRowEchelonForm();
-
+            // compute the solution that fullfills the orthogonality and continuity exactly and the minimizes the gradient jumps
             double[] sol = new double[varCount];
-            aggEq.LeastSquareSolve(sol, aggRhs.To1DArray());
+            aggE1.SolveWithCondition(sol, aggRhs1.To1DArray(), aggE2, aggRhs2.To1DArray());
 
-            // check consistency
-            //if (rankAug != varCount)
+
+            // check sparsity
+            //int nonzeroCount1 = 0;
+            //foreach (double t in aggE1.To2DArray()) {
+            //    nonzeroCount1 += t != 0.0 ? 1 : 0; 
+            //}
+            //int nonzeroCount2 = 0;
+            //foreach (double t in aggE2.To2DArray())
             //{
-            //    int rank = aggEq.ReducedRowEchelonForm().Item4;
-            //    // TODO handling of the infinite solutions case, select some solution with minimum L2-norm or whatever
-            //    if (rank == rankAug)
-            //    {
-            //        Console.WriteLine($"Warning: Infinite Solutions, while computing the injection operator for curved cells and basis function {basisIndex}");
-            //    }
-            //    else if (rank < rankAug)
-            //    {
-            //        throw new ArgumentException($"Error while computing the injection operator for curved cells and basis function {basisIndex}: No Solution");
-            //    }
-            //    else
-            //    {
-            //        throw new ArgumentException($"Error while computing the injection operator for curved cells and basis function {basisIndex}");
-            //    }
+            //    nonzeroCount2 += t != 0.0 ? 1 : 0;
             //}
 
-            // create solution vector
-            //MultidimensionalArray rref_sol = aggSol.ExtractSubArrayShallow(-1, varCount);
+            //double sparsity1 = (double)nonzeroCount1 / (aggE1.NoOfRows * aggE1.NoOfCols);
+            //double sparsity2 =  (double)nonzeroCount2 / (aggE2.NoOfRows * aggE2.NoOfCols);
+            //Console.WriteLine($"Sparsity of first equation set: {sparsity1}; Sparsity of second equation set: {sparsity2}");
 
-            //double dist_sol = sol.L2Dist(rref_sol.To1DArray());
+
 
             // compute the diagonal entry of the Injector for the first cell in parts and then solve the dependencies to the other cells
             // normality condition
@@ -386,5 +318,172 @@ namespace BoSSS.Solution.AdvancedSolvers
             return InjectorNDegree;
         }
 
-    }
+        // recursively extracts the Injection operator from ilevel-1 to  ilevel from the direct operator to ilevel
+        public static void ExtractInjectorCurved(AggregationGridData[] _agGrd, Basis _maxDgBasis, MultidimensionalArray[][] _Injectors, MultidimensionalArray[] _injectorCoarse, int ilevel)
+        {
+            // get dimensions of Injection operator
+            int Jagg = _agGrd[ilevel].iLogicalCells.Count;
+            int Np = _maxDgBasis.Length;
+            var Context = _maxDgBasis.GridDat;
+
+
+            _Injectors[ilevel] = new MultidimensionalArray[Jagg];
+
+
+            // iterate over all aggregate (logical) cells of ilevel
+            for (int aggCell = 0; aggCell < Jagg; aggCell++)
+            {
+
+                // logical cells on ilevel-1 that build the aggregated cell on ilevel
+                int[] aggParts = _agGrd[ilevel].jCellCoarse2jCellFine[aggCell];
+                _Injectors[ilevel][aggCell] = MultidimensionalArray.Create(aggParts.Length, Np, Np);
+
+                // iterate over all aggregate (logical) cells of ilevel - 1
+                foreach (int lCell in aggParts)
+                {
+                    int[] parts = _agGrd[ilevel - 1].iLogicalCells.AggregateCellToParts[lCell];
+                    MultidimensionalArray ortho = MultidimensionalArray.Create(Np, Np);
+                    MultidimensionalArray orthoInv = MultidimensionalArray.Create(Np, Np);
+
+                    // compute the mass matrix for lCell on ilevel - 1 when using the Injector to ilevel
+                    MultidimensionalArray MMtemp = MultidimensionalArray.Create(Np, Np);
+                    foreach (int gCell in parts)
+                    {
+
+                        var cellMask = new CellMask(Context, new[] { new Chunk() { i0 = gCell, Len = 1 } }, MaskType.Geometrical);
+
+                        CellQuadrature.GetQuadrature(new int[2] { Np, Np }, Context,
+                        (new CellQuadratureScheme(true, cellMask)).Compile(Context, _maxDgBasis.Degree * 2), // integrate over target cell
+                        delegate (int i0, int Length, QuadRule QR, MultidimensionalArray _EvalResult)
+                        {
+                            // get a set of quad points on the reference element
+                            NodeSet nodes = QR.Nodes;
+                            Debug.Assert(Length == 1);
+
+                            var phi_0 = _maxDgBasis.CellEval(nodes, gCell, 1).ExtractSubArrayShallow(0, -1, -1);
+                            // apply the coarse injector
+                            MultidimensionalArray phi = phi_0.CloneAs();
+                            phi.Multiply(1.0, phi_0, _injectorCoarse[gCell], 0.0, "ki", "kj", "ji");
+
+                            var EvalResult = _EvalResult.ExtractSubArrayShallow(0, -1, -1, -1);
+
+                            EvalResult.Multiply(1.0, phi, phi, 0.0, "kmn", "kn", "km");
+                        },
+                        /*_SaveIntegrationResults:*/ delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration)
+                                                     {
+                                                         Debug.Assert(Length == 1);
+
+                                                         var res = ResultsOfIntegration.ExtractSubArrayShallow(0, -1, -1);
+                                                         MMtemp.Acc(1.0, res);
+                                                     }).Execute();
+                    }
+
+                    // orthonormalize
+                    // use left or right?
+                    //MMtemp.SymmetricLDLInversion(orthoInv, null);
+                    MMtemp.Cholesky();
+                    MMtemp.TransposeTo(ortho);
+                    ortho.InvertTo(orthoInv);
+                    //orthoInv.InvertTo(ortho);
+                    _Injectors[ilevel][aggCell].ExtractSubArrayShallow(Array.IndexOf(aggParts, lCell), -1, -1).Acc(1.0, ortho);
+
+                    // form the new direct injector to ilevel - 1
+                    foreach (int gCell in parts)
+                    {
+                        MultidimensionalArray coarseClone = _injectorCoarse[gCell].CloneAs();
+                        _injectorCoarse[gCell].Multiply(1.0, coarseClone, orthoInv, 0.0, "ij", "ik", "kj");
+                    }
+
+#if DEBUG
+                    MMtemp.Clear();
+
+                    // check orthonormality (move to a more suitable location later on)
+                    foreach (int gCell in parts)
+                    {
+
+                        var cellMask = new CellMask(Context, new[] { new Chunk() { i0 = gCell, Len = 1 } }, MaskType.Geometrical);
+                        
+                        CellQuadrature.GetQuadrature(new int[2] { Np, Np }, Context,
+                        (new CellQuadratureScheme(true, cellMask)).Compile(Context, _maxDgBasis.Degree * 2), // integrate over target cell
+                        delegate (int i0, int Length, QuadRule QR, MultidimensionalArray _EvalResult)
+                        {
+                            // get a set of quad points on the reference element
+                            NodeSet nodes = QR.Nodes;
+                            Debug.Assert(Length == 1);
+
+                            var phi_0 = _maxDgBasis.CellEval(nodes, gCell, 1).ExtractSubArrayShallow(0, -1, -1);
+                            // apply the coarse injector
+                            MultidimensionalArray phi = phi_0.CloneAs();
+                            phi.Multiply(1.0, phi_0, _injectorCoarse[gCell], 0.0, "ki", "kj", "ji");
+
+                            var EvalResult = _EvalResult.ExtractSubArrayShallow(0, -1, -1, -1);
+
+                            EvalResult.Multiply(1.0, phi, phi, 0.0, "kmn", "kn", "km");
+                        },
+                        /*_SaveIntegrationResults:*/ delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration)
+                                                     {
+                                                         Debug.Assert(Length == 1);
+
+                                                         var res = ResultsOfIntegration.ExtractSubArrayShallow(0, -1, -1);
+                                                         MMtemp.Acc(1.0, res);
+                                                     }).Execute();
+                    }
+
+                    // calculate distance to expected unity matrix
+                    MultidimensionalArray Eye = MultidimensionalArray.Create(Np, Np);
+                    Eye.AccEye(1.0);
+                    Eye.Acc(-1.0, MMtemp);
+                    double dist = Eye.L2Norm();
+                    Console.WriteLine($"distance between Eye and MM for level {ilevel - 1} and lCell {lCell}: {dist}");
+
+#endif
+
+                }
+            }
+
+            // recursive repeat until ilevel = 1
+            if (ilevel > 2)
+            {
+                ExtractInjectorCurved(_agGrd, _maxDgBasis, _Injectors, _injectorCoarse, ilevel - 1);
+            }
+            else if (ilevel == 2)
+            {
+                ExtractInjectorCurvedLv1(_agGrd, _maxDgBasis, _Injectors, _injectorCoarse);
+            }
+
+        }
+
+        // recursively extracts the Injection operator from ilevel-1 to  ilevel from the direct operator to ilevel
+        public static void ExtractInjectorCurvedLv1(AggregationGridData[] _agGrd, Basis _maxDgBasis, MultidimensionalArray[][] _Injectors, MultidimensionalArray[] _injectorCoarse)
+        {
+            // get dimensions of Injection operator
+            int Jagg = _agGrd[1].iLogicalCells.Count;
+            int Np = _maxDgBasis.Length;
+            var Context = _maxDgBasis.GridDat;
+
+
+            _Injectors[1] = new MultidimensionalArray[Jagg];
+
+
+            // iterate over all aggregate (logical) cells of ilevel
+            for (int aggCell = 0; aggCell < Jagg; aggCell++)
+            {
+
+                // logical cells on ilevel-1 that build the aggregated cell on ilevel
+                int[] aggParts = _agGrd[1].jCellCoarse2jCellFine[aggCell];
+                _Injectors[1][aggCell] = MultidimensionalArray.Create(aggParts.Length, Np, Np);
+
+                // iterate over all aggregate (logical) cells of ilevel - 1
+                foreach (int lCell in aggParts)
+                {                   
+                    // insert the submatrices from the direct injector 0 to 1
+                    _Injectors[1][aggCell].ExtractSubArrayShallow(Array.IndexOf(aggParts, lCell), -1, -1).Acc(1.0, _injectorCoarse[lCell]);
+
+                }
+            }
+        }
+
+
+
+        }
 }

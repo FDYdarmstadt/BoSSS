@@ -392,17 +392,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 if (!maxDgBasis.IsOrthonormal) { throw new NotImplementedException("DG Basis has to be orthonormal"); }
 
-                // compute the Injector for the coarsest mesh
-                for (int ilevel = 1; ilevel < agSeq.Length; ilevel++)
-                {
-                    Injectors[ilevel] = AggregationGridCurvedInjector.AggregateCurvedCells(agSeq[ilevel], maxDgBasis, ilevel);
-                }
-                
-                // compute the Injectors for the other MG levels starting from the coarsest level
+                // compute the direct Injector for the coarsest mesh
+                MultidimensionalArray[] InjectorCoarse = new MultidimensionalArray[agSeq.Last().iGeomCells.Count];
 
+                int maxMGlevel = agSeq.Length - 1;
+                InjectorCoarse = AggregationGridCurvedInjector.AggregateCurvedCells(agSeq.Last(), maxDgBasis);
 
+                // extract the hierarchical level to level injectors, recursive function
+                AggregationGridCurvedInjector.ExtractInjectorCurved(agSeq, maxDgBasis, Injectors, InjectorCoarse, maxMGlevel);
 
-                //throw new NotImplementedException("Nonlinear aggregation currently under work");
             }
             else
             {       
@@ -457,88 +455,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
 
-#if DEBUG
-            // export plot data of the aggregation basis
-            DGField[] AggregatedBasisCoords = new DGField[0];
-
-            //WARNING INJECTORS ARE PROGRESSIVE FROM LEVEL TO LEVEL, NOT FOLLOWED BY CURVED AGGREGATION
-            for (int ilevel = 0; ilevel < agSeq.Length; ilevel++)
-            //for (int ilevel = 0; ilevel < 2; ilevel++)
-            {
-
-                DGField[] iLevelBasis = new DGField[maxDgBasis.Polynomials[0].Count];
-
-                //Polynomials = new DGField[T.Basis.Polynomials[0].Count];
-                //double[] p_ones = new double[T.GridDat.iGeomCells.Count];
-                //p_ones.SetAll(1.0);
-
-                //for (int i = 0; i < T.Basis.Polynomials[0].Count; i++)
-                //{
-                //    p_temp = new SinglePhaseField(new Basis(this.GridData, T.Basis.Degree + 1), $"p{i}");
-                //    p_temp.Coordinates.SetColumn(i, p_ones);
-                //    Polynomials[i] = p_temp;
-                //}            
-                // iterate over the aggregation levels
-                for (int k = 0; k < maxDgBasis.Polynomials[0].Count; k++)
-                {
-                    iLevelBasis[k] = new SinglePhaseField(new Basis(maxDgBasis.GridDat, maxDgBasis.Degree), $"ag{ilevel}_p{k}");
-                    if (ilevel == 0)
-                    {
-                        // dummy array to intitialize iLevelBasis[0] with ones
-                        MultidimensionalArray coords = MultidimensionalArray.Create(maxDgBasis.GridDat.iGeomCells.Count);
-                        coords.SetAll(1.0);
-                        iLevelBasis[k].Coordinates.SetColumn(k, coords.To1DArray());
-                    }
-                    else
-                    {
-                        // iterate over all cells
-                        for (int cell = 0; cell < maxDgBasis.GridDat.iGeomCells.Count; cell++)
-                        {
-                        
-                            // reconstruct the basis coordinates in the given cells
-                            int indexLogicalCell = agSeq[ilevel].iGeomCells.GeomCell2LogicalCell[cell];
-                            int partIndexLogicalCell = Array.IndexOf(agSeq[ilevel].iLogicalCells.AggregateCellToParts[indexLogicalCell], cell);
-
-                            iLevelBasis[k].Coordinates.SetRow(cell, Injectors[ilevel][indexLogicalCell].ExtractSubArrayShallow(partIndexLogicalCell, -1, k).To1DArray());
-                        }
-                    }
-                }
-
-                AggregatedBasisCoords = AggregatedBasisCoords.Cat(iLevelBasis);
-            }
-
-            PlotBasis(AggregatedBasisCoords);
-
-            
-            // REMOVE LATER, test if iterative and direct injector generation is equal
-            int lCell1 = 0;
-            int hCell1 = agSeq[1].iLogicalCells.AggregateCellToParts[lCell1][0];
-            int hCell2 = agSeq[1].iLogicalCells.AggregateCellToParts[lCell1][1];
-            int hL1Cell1 = Array.IndexOf(agSeq[1].iLogicalCells.AggregateCellToParts[lCell1], hCell1);
-            int hL1Cell2 = Array.IndexOf(agSeq[1].iLogicalCells.AggregateCellToParts[lCell1], hCell2);
-
-            int lCell2 = agSeq[2].iGeomCells.GeomCell2LogicalCell[hCell1];
-            int hL2Cell1 = Array.IndexOf(agSeq[2].iLogicalCells.AggregateCellToParts[lCell2], hCell1);
-            int hL2Cell2 = Array.IndexOf(agSeq[2].iLogicalCells.AggregateCellToParts[lCell2], hCell2);
-
-
-            MultidimensionalArray hAgg1 = MultidimensionalArray.Create(Np, Np);
-            MultidimensionalArray hAgg1Inv = MultidimensionalArray.Create(Np, Np);
-            // Q_1_1
-            Injectors[1][lCell1].ExtractSubArrayShallow(hL1Cell1, -1, -1).TriangularInvert(hAgg1Inv);
-            hAgg1.Multiply(1.0, hAgg1Inv, Injectors[2][lCell2].ExtractSubArrayShallow(hL2Cell1, -1, -1), 0.0, "ij", "ik", "kj");
-
-            MultidimensionalArray hAgg2 = MultidimensionalArray.Create(Np, Np);
-            MultidimensionalArray hAgg2Inv = MultidimensionalArray.Create(Np, Np);
-            // Q_1_2
-            Injectors[1][lCell1].ExtractSubArrayShallow(hL1Cell2, -1, -1).TriangularInvert(hAgg2Inv);
-            hAgg2.Multiply(1.0, hAgg2Inv, Injectors[2][lCell2].ExtractSubArrayShallow(hL2Cell2, -1, -1), 0.0, "ij", "ik", "kj");
-
-            double hDist = hAgg1.L2Dist(hAgg2);
-            hAgg1.Acc(-1.0, hAgg2);
-            hAgg1.SaveToTextFile("Matrix.txt");
-            
-#endif
+            // plot aggregation basis
+            PlotAggregationBasis(agSeq, maxDgBasis, Injectors);
 
             // create basis sequence
             // ---------------------
@@ -1357,11 +1275,64 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return m_ModeIndexForDegree[p];
         }
 
+        private static void PlotAggregationBasis(AggregationGridData[] _agGrd, Basis _maxDgBasis, MultidimensionalArray[][] _Injectors)
+        {
+            int cellCount = _agGrd[0].iGeomCells.Count;
+            int Np = _maxDgBasis.Length;
+            MultidimensionalArray directInjector = MultidimensionalArray.Create(cellCount, Np, Np);
+
+            // export plot data of the aggregation basis
+            DGField[] AggregatedBasisCoords = new DGField[0];
+
+            for (int ilevel = 0; ilevel < _agGrd.Length; ilevel++)
+            {
+                if (ilevel == 0)
+                {
+                    for (int cell = 0; cell < _maxDgBasis.GridDat.iGeomCells.Count; cell++)
+                    {
+                        directInjector.ExtractSubArrayShallow(cell, -1, -1).AccEye(1.0);
+                    }
+                }
+                else
+                {
+                    for (int cell = 0; cell < _maxDgBasis.GridDat.iGeomCells.Count; cell++)
+                    {
+                        int lCell = _agGrd[ilevel].iGeomCells.GeomCell2LogicalCell[cell];
+                        int lCell_before = _agGrd[ilevel - 1].iGeomCells.GeomCell2LogicalCell[cell];
+                        int cellIndex = Array.IndexOf(_agGrd[ilevel].jCellCoarse2jCellFine[lCell], lCell_before);
+                        directInjector.ExtractSubArrayShallow(cell, -1, -1).Multiply(1.0, directInjector.ExtractSubArrayShallow(cell, -1, -1).CloneAs(), _Injectors[ilevel][lCell].ExtractSubArrayShallow(cellIndex, -1, -1), 0.0, "ij", "ik", "kj");
+                    }
+                }
+
+
+
+
+                DGField[] iLevelBasis = new DGField[_maxDgBasis.Polynomials[0].Count];
+
+                // iterate over the aggregation levels
+                for (int k = 0; k < _maxDgBasis.Polynomials[0].Count; k++)
+                {
+                    iLevelBasis[k] = new SinglePhaseField(_maxDgBasis, $"ag{ilevel}_p{k}");
+                    // iterate over all cells
+                    for (int cell = 0; cell < _maxDgBasis.GridDat.iGeomCells.Count; cell++)
+                    {
+                        // set the coordinates for cell and basisfunction k
+                        iLevelBasis[k].Coordinates.SetRow(cell, directInjector.ExtractSubArrayShallow(cell, -1, k).To1DArray());
+                    }
+                }
+
+                AggregatedBasisCoords = AggregatedBasisCoords.Cat(iLevelBasis);
+            }
+
+            PlotBasis(AggregatedBasisCoords);
+        }
+
+
         private static void PlotBasis(DGField[] _fields)
         {
             BoSSS.Solution.Tecplot.Tecplot.PlotFields(_fields, Directory.GetCurrentDirectory() + "\\AggregationBasis", 0, 2);
         }
-        
+
     }
 
 }
