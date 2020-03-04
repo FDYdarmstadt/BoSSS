@@ -221,7 +221,9 @@ namespace BoSSS.Foundation.IO {
         /// <param name="other"></param>
         /// <returns></returns>
         public bool Equals(IGridInfo other) {
-            return realGrid.Value.Equals(other);
+            if(other == null)
+                return false;
+            return this.ID.Equals(other.ID);
         }
 
         #endregion

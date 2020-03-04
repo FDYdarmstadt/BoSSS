@@ -462,12 +462,9 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// Equality.
         /// </summary>
         public bool Equals(IGridInfo other) {
-            if (other == null)
-            {
+            if(other == null) {
                 return false;
-            }
-            else
-            {
+            } else {
                 return this.ID == other.ID;
             }
         }

@@ -441,7 +441,19 @@ namespace BoSSS.Solution.Control {
             InitialValues.Add(fieldname, value);
         }
 
-
+        /// <summary>
+        /// Adds an initial value to <see cref="InitialValues"/>
+        /// </summary>
+        /// <param name="fieldname"></param>
+        /// <param name="FormulaText">
+        /// Text representation of a delegate, see <see cref="Formula"/>.
+        /// </param>
+        /// <param name="TimeDependent">
+        /// Whether the formula in <paramref name="FormulaText"/> is time-dependent or not, see <see cref="Formula"/>.
+        /// </param>
+        public void AddInitialValue(string fieldname, string FormulaText, bool TimeDependent) {
+           InitialValues.Add(fieldname, new Formula(FormulaText, TimeDependent));
+        }
 
 
         ///// <summary>
@@ -528,7 +540,7 @@ namespace BoSSS.Solution.Control {
                     Console.WriteLine("Info: setting database path to: " + this.DbPath);
                 } else {
                     if(!this.DbPath.Equals(grd.Database.Path)) {
-                        Console.WriteLine("Warning: database mismatch! (Grid is saved at {0}, while DbPath of control object is {2})", grd.Database.Path, this.DbPath);
+                        Console.WriteLine("Warning: database mismatch! (Grid is saved at {0}, while DbPath of control object is {1})", grd.Database.Path, this.DbPath);
                     }
                 }
             }
@@ -729,10 +741,20 @@ namespace BoSSS.Solution.Control {
         public string DbPath = null;
 
         /// <summary>
-        /// Sets <see cref="DbPath"/>.
+        /// Alternative paths to access the database, if <see cref="DbPath"/> is not present on a given machine.
+        /// This allows to use the same control file or object on different machines, where the database is located in a different path.
+        /// - 1st entry: path into the local file system
+        /// - 2nd entry: optional machine name filter
+        /// </summary>
+        [DataMember]
+        public ValueTuple<string, string>[] AlternateDbPaths = null;
+        
+        /// <summary>
+        /// Sets <see cref="DbPath"/>, <see cref="AlternateDbPaths"/>.
         /// </summary>
         public void SetDatabase(IDatabaseInfo dbi) {
             DbPath = dbi.Path;
+            AlternateDbPaths = dbi.AlternateDbPaths;
         }
         
 
@@ -1049,6 +1071,123 @@ namespace BoSSS.Solution.Control {
 
         }
 
-        
+        /// <summary>
+        /// 
+        /// </summary>
+        public override int GetHashCode() {
+            return -1;
+        }
+
+
+        /// <summary>
+        /// Equality of control files - mostly relevant for the job manager
+        /// </summary>
+        public override bool Equals(object obj) {
+            // basic type comparison
+            // =====================
+            if(obj == null)
+                return false;
+            if(obj.GetType() != this.GetType())
+                return false;
+
+            AppControl oCtr = (AppControl)obj;
+
+            // compare grid
+            // ============
+            if(!ReferenceEquals(this.GridFunc, oCtr.GridFunc))
+                return false;
+
+            if((this.GridGuid != null) != (oCtr.GridGuid != null))
+                return false;
+
+            if(this.GridGuid != null) {
+                if(!this.GridGuid.Equals(oCtr.GridGuid))
+                    return false;
+            }
+
+            // restart info
+            // ============
+            if((this.RestartInfo != null) != (oCtr.RestartInfo != null))
+                return false;
+            if(this.RestartInfo != null) {
+                if(!this.RestartInfo.Item1.Equals(this.RestartInfo.Item1))
+                    return false;
+                if(!this.RestartInfo.Item2.Equals(this.RestartInfo.Item2))
+                    return false;
+            }
+
+
+            // timestepping setting
+            // ====================
+            if(this.TimesteppingMode != oCtr.TimesteppingMode)
+                return false;
+
+            if(this.TimesteppingMode == _TimesteppingMode.Transient) {
+                if(this.dtMin != oCtr.dtMin)
+                   return false;
+                if(this.dtMax != oCtr.dtMax)
+                   return false;
+            }
+
+            // initial values
+            // ==============
+
+            if(!this.InitialValues.Keys.SetEquals(oCtr.InitialValues.Keys))
+                return false;
+
+            foreach(string ivk in this.InitialValues.Keys) {
+                var f1 = this.InitialValues[ivk];
+                var f2 = oCtr.InitialValues[ivk];
+
+                if(!f1.Equals(f2))
+                    return false;
+            }
+
+            // field options
+            // =============
+
+            if(!this.FieldOptions.Keys.SetEquals(oCtr.FieldOptions.Keys))
+                return false;
+            foreach(var fok in this.FieldOptions.Keys) {
+                var o1 = this.FieldOptions[fok];
+                var o2 = oCtr.FieldOptions[fok];
+
+                if(!o1.Equals(o2))
+                    return false;
+            }
+
+
+            // boundary values
+            // ===============
+
+            if(!this.BoundaryValues.Keys.SetEquals(oCtr.BoundaryValues.Keys))
+                return false;
+
+            foreach(var bvk in this.BoundaryValues.Keys) {
+                var bvc = this.BoundaryValues[bvk];
+                var bvd = oCtr.BoundaryValues[bvk];
+
+                if(!bvc.Evaluators.Keys.SetEquals(bvd.Evaluators.Keys))
+                    return false;
+
+                if(!bvc.Values.Keys.SetEquals(bvd.Values.Keys))
+                    return false;
+
+                foreach(string s in bvc.Values.Keys) {
+                    var f1 = bvc.Values[s];
+                    var f2 = bvd.Values[s];
+
+                    if(!f1.Equals(f2))
+                        return false;
+                }
+            }
+
+            // passed all the tests
+            // ====================
+
+            return true;
+        }
+
+
     }
 }

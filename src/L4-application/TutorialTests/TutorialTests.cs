@@ -36,10 +36,10 @@ namespace BoSSS.Application.TutorialTests {
             //AllUpTest.RunWorksheets("tutorial6/tutorial6.tex");
             //AllUpTest.RunWorksheets("tutorial9-SIP/sip.tex");
             // ---
-            AllUpTest.RunWorksheets("tutorial10-PoissonSystem/Poisson.tex");
+            //AllUpTest.RunWorksheets("tutorial10-PoissonSystem/Poisson.tex");
             //AllUpTest.RunWorksheets("tutorial11-Stokes/StokesEq.tex");
-            //AllUpTest.RunWorksheets("CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex"); 
-            //AllUpTest.RunWorksheets("convergenceStudyTutorial/convStudy.tex"); 
+            AllUpTest.RunWorksheets("CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex"); 
+            AllUpTest.RunWorksheets("convergenceStudyTutorial/convStudy.tex"); 
 
             AllUpTest.TestFixtureTearDown();
         }

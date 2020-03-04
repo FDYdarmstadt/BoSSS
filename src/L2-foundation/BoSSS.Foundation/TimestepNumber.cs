@@ -19,6 +19,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
+using ilPSP;
 using ilPSP.Utils;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -44,9 +45,12 @@ namespace BoSSS.Foundation.IO {
         [DataMember]
         private int[] numbers;
 
+        /// <summary>
+        /// retuns a clone of the internal indices
+        /// </summary>
         public int[] GetNumbers {
             get {
-                return numbers;
+                return numbers.CloneAs();
             }
         }
 

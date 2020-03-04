@@ -257,7 +257,11 @@ namespace BoSSS.Foundation.IO {
         /// See <see cref="SessionInfo.Equals"/>
         /// </summary>
         public bool Equals(ISessionInfo other) {
-            return RealSessionInfo.Equals(other);
+            if (other == null) {
+                return false;
+            } else {
+                return this.ID.Equals(other.ID);
+            }
         }
 
         #endregion
