@@ -478,7 +478,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
             Basis prcBasis = new Basis(input.GridDat, input.Basis.Degree + 2);
             L2PatchRecovery prc = new L2PatchRecovery(input.Basis, prcBasis, CellMask.GetFullMask(input.GridDat), RestrictToCellMask: true);
-            SinglePhaseField prcField = new SinglePhaseField(prcBasis);
+            SinglePhaseField prcField = new SinglePhaseField(prcBasis, input.Identification + "_prc");
             prc.Perform(prcField, input);
 
             Console.WriteLine(String.Format("finished", input.Identification));
@@ -503,7 +503,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             ev.Evaluate(1.0, new DGField[] { gradientX, gradientY }, points, 0.0, GradVals);
 
             // Level set reconstruction
-            Console.WriteLine("Reconstruction of level set field started...");
+            Console.WriteLine(String.Format("Reconstruction of level set started...", field.Identification));
             int count = 0;
             Func<double[], double> func = delegate (double[] X) {
                 double minDistSigned = double.MaxValue;
@@ -558,7 +558,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             };
 
             // DG level set field
-            SinglePhaseField DGLevelSet = new SinglePhaseField(field.Basis, "levelSetReconstructed");
+            SinglePhaseField DGLevelSet = new SinglePhaseField(field.Basis, "levelSet_recon");
             DGLevelSet.ProjectField(func.Vectorize());
 
             Console.WriteLine("finished");
@@ -573,7 +573,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         public static SinglePhaseField ContinuousLevelSet(SinglePhaseField DGLevelSet, MultidimensionalArray points) {
             // Init
             IGridData gridData = DGLevelSet.GridDat;
-            SinglePhaseField continuousLevelSet = new SinglePhaseField(new Basis(gridData, DGLevelSet.Basis.Degree + 1), "levelSetContinuous");
+            SinglePhaseField continuousLevelSet = new SinglePhaseField(new Basis(gridData, DGLevelSet.Basis.Degree + 1), DGLevelSet.Identification + "_cont");
 
             // Create narrow band
             double[] jCells = points.ExtractSubArrayShallow(-1, 3).To1DArray();
@@ -603,7 +603,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             ContinuityProjection continuityProjection = new ContinuityProjection(continuousLevelSet.Basis, DGLevelSet.Basis, gridData, ContinuityProjectionOption.ConstrainedDG);
             continuityProjection.MakeContinuous(DGLevelSet, continuousLevelSet, narrowBand, posMask);
 
-            Console.WriteLine("Continuity projection finished");
+            Console.WriteLine(String.Format("Continuity projection of field {0} finished", DGLevelSet.Identification));
 
             return continuousLevelSet;
         }
