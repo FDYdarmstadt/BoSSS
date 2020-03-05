@@ -17,11 +17,16 @@ limitations under the License.
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.LevelSetTools;
+using BoSSS.Solution.Statistic;
+using BoSSS.Solution.Utils;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 using ilPSP;
 using System;
 using System.Collections;
-using System.Diagnostics;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
     /// <summary>
@@ -473,12 +478,153 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
             Basis prcBasis = new Basis(input.GridDat, input.Basis.Degree + 2);
             L2PatchRecovery prc = new L2PatchRecovery(input.Basis, prcBasis, CellMask.GetFullMask(input.GridDat), RestrictToCellMask: true);
-            SinglePhaseField prcField = new SinglePhaseField(prcBasis);
+            SinglePhaseField prcField = new SinglePhaseField(prcBasis, input.Identification + "_prc");
             prc.Perform(prcField, input);
 
             Console.WriteLine(String.Format("finished", input.Identification));
 
             return prcField;
+        }
+
+        public static SinglePhaseField ReconstructLevelSetField(SinglePhaseField field, MultidimensionalArray points) {
+            // Init
+            IGridData gridData = field.GridDat;
+
+            // Evaluate gradient
+            Basis basis = new Basis(field.GridDat, field.Basis.Degree);
+            SinglePhaseField gradientX = new SinglePhaseField(basis, "gradientX");
+            SinglePhaseField gradientY = new SinglePhaseField(basis, "gradientY");
+            gradientX.DerivativeByFlux(1.0, field, d: 0);
+            gradientY.DerivativeByFlux(1.0, field, d: 1);
+            //gradientX = PatchRecovery(gradientX);
+            //gradientY = PatchRecovery(gradientY);
+            FieldEvaluation ev = new FieldEvaluation((GridData)gridData);
+            MultidimensionalArray GradVals = MultidimensionalArray.Create(points.GetLength(0), 2);
+            ev.Evaluate(1.0, new DGField[] { gradientX, gradientY }, points, 0.0, GradVals);
+
+            // Level set reconstruction
+            Console.WriteLine(String.Format("Reconstruction of level set started...", field.Identification));
+            int count = 0;
+            Func<double[], double> func = delegate (double[] X) {
+                double minDistSigned = double.MaxValue;
+                int iMin = int.MaxValue;
+                double closestPointOnInterfaceX = double.MaxValue;
+                double closestPointOnInterfaceY = double.MaxValue;
+
+                double x = X[0];
+                double y = X[1];
+
+                for (int i = 0; i < points.Lengths[0]; i++) {
+                    double currentPointX = points[i, 0];
+                    double currentPointY = points[i, 1];
+
+                    double deltaX = x - currentPointX;
+                    double deltaY = y - currentPointY;
+
+                    double dist = Math.Sqrt(deltaX * deltaX + deltaY * deltaY);
+
+                    if (dist <= minDistSigned) {
+                        iMin = i;
+                        minDistSigned = dist;
+                        closestPointOnInterfaceX = currentPointX;
+                        closestPointOnInterfaceY = currentPointY;
+                    }
+                }
+
+                //// Compute global cell index of quadrature node
+                //gridData.LocatePoint(X, out long GlobalId, out long GlobalIndex, out bool IsInside, out bool OnThisProcess);
+
+                //// Compute local node set
+                //NodeSet nodeSet = GetLocalNodeSet(gridData, X, (int)GlobalIndex);
+
+                //// Evaluate gradient
+                //// Get local cell index of quadrature node
+                //int j0Grd = gridData.CellPartitioning.i0;
+                //int j0 = (int)(GlobalIndex - j0Grd);
+
+                //int Len = 1;
+                //MultidimensionalArray resultGradX = MultidimensionalArray.Create(1, 1);
+                //MultidimensionalArray resultGradY = MultidimensionalArray.Create(1, 1);
+                //gradientX.Evaluate(j0, Len, nodeSet, resultGradX);
+                //gradientY.Evaluate(j0, Len, nodeSet, resultGradY);
+
+                int sign = Math.Sign((x - closestPointOnInterfaceX) * GradVals[iMin, 0] + (y - closestPointOnInterfaceY) * GradVals[iMin, 1]);
+                minDistSigned *= sign;
+
+                //Console.WriteLine(String.Format("Quadrature point #{0}: ({1}, {2}), interface point: ({3}, {4})", count, X[0], X[1], closestPointOnInterfaceX, closestPointOnInterfaceY));
+                count++;
+
+                return minDistSigned;
+            };
+
+            // DG level set field
+            SinglePhaseField DGLevelSet = new SinglePhaseField(field.Basis, "levelSet_recon");
+            DGLevelSet.ProjectField(func.Vectorize());
+
+            Console.WriteLine("finished");
+            return DGLevelSet;
+        }
+
+        /// <summary>
+        /// Creates a continuous version of a DG level set field
+        /// </summary>
+        /// <param name="DGLevelSet">The input DG level set field</param>
+        /// <returns>A continuous level set <see cref="SinglePhaseField"/> with one order higher than the input</returns>
+        public static SinglePhaseField ContinuousLevelSet(SinglePhaseField DGLevelSet, MultidimensionalArray points) {
+            // Init
+            IGridData gridData = DGLevelSet.GridDat;
+            SinglePhaseField continuousLevelSet = new SinglePhaseField(new Basis(gridData, DGLevelSet.Basis.Degree + 1), DGLevelSet.Identification + "_cont");
+
+            // Create narrow band
+            double[] jCells = points.ExtractSubArrayShallow(-1, 3).To1DArray();
+            List<int> allNeighbours = new List<int>();
+            foreach (int cell in jCells) {
+                gridData.GetCellNeighbours(cell, GetCellNeighbours_Mode.ViaVertices, out int[] cellNeighbours, out int[] connectingEntities);
+                allNeighbours.Add(cell);
+                allNeighbours.AddRange(cellNeighbours);
+            }
+            List<int> narrowBandCells = allNeighbours.Distinct().ToList();
+            BitArray bitMaskNarrowBand = new BitArray(gridData.iLogicalCells.NoOfLocalUpdatedCells);
+            foreach (int cell in narrowBandCells) {
+                bitMaskNarrowBand[cell] = true;
+            }
+            CellMask narrowBand = new CellMask(gridData, bitMaskNarrowBand);
+
+            // Create positive mask
+            BitArray bitMaskPos = new BitArray(gridData.iLogicalCells.NoOfLocalUpdatedCells);
+            for (int i = 0; i < gridData.iLogicalCells.NoOfLocalUpdatedCells; i++) {
+                if (DGLevelSet.GetMeanValue(i) > 0 && !bitMaskNarrowBand[i]) {
+                    bitMaskPos[i] = true;
+                }
+            }
+            CellMask posMask = new CellMask(gridData, bitMaskPos);
+
+            // Continuity projection
+            ContinuityProjection continuityProjection = new ContinuityProjection(continuousLevelSet.Basis, DGLevelSet.Basis, gridData, ContinuityProjectionOption.ConstrainedDG);
+            continuityProjection.MakeContinuous(DGLevelSet, continuousLevelSet, narrowBand, posMask);
+
+            Console.WriteLine(String.Format("Continuity projection of field {0} finished", DGLevelSet.Identification));
+
+            return continuousLevelSet;
+        }
+
+        /// <summary>
+        /// Reads a text where a clustering is saved
+        /// Index 0: x-coordinate, index 1: y-coordinate, index 2: field value, index 3: cluster number
+        /// </summary>
+        /// <param name="path">Path of the file to read</param>
+        public static MultidimensionalArray ReadTextFile(string path) {
+            string[] lines = File.ReadAllLines(path);
+            int cols = lines[0].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries).Length;
+            MultidimensionalArray result = MultidimensionalArray.Create(lines.Length, cols);
+
+            for (int i = 0; i < lines.Length; i++) {
+                for (int j = 0; j < cols; j++) {
+                    result[i, j] = Convert.ToDouble(lines[i].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[j]);
+                }
+            }
+
+            return result;
         }
     }
 }

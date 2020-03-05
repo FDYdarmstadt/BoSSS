@@ -391,7 +391,7 @@ namespace BoSSS.Solution {
 
                 ControlObjFromCode(StringwithoutPrefix, out ctrlV2, out ctrlV2_ParameterStudy);
 
-            } else if (ControlFilePath.ToLower().EndsWith(".cs")) {
+            } else if (ControlFilePath.ToLower().EndsWith(".cs") || ControlFilePath.ToLower().EndsWith(".bws")) {
                 // +++++++++
                 // C#-script
                 // +++++++++
@@ -1825,7 +1825,6 @@ namespace BoSSS.Solution {
 
                 int i = i0.MajorNumber;
                 for (int s = 0; s < this.Control.AMR_startUpSweeps; s++) {
-                    Console.WriteLine("s " + s);
                     this.MpiRedistributeAndMeshAdapt(i, physTime);
                 }
                 { 
