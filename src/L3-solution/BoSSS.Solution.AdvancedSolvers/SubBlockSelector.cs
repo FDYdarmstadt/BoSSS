@@ -378,6 +378,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public Func<int, bool> CellFilter {
             get { return m_CellFilter; }
         }
@@ -513,17 +516,32 @@ namespace BoSSS.Solution.AdvancedSolvers {
         private int m_NoOfVariables;
         private int[][] m_NoOfSpecies;
         //internal set
-        private List<int> m_GlobalMask = null;
-        private List<int> m_LocalMask = null;
+        private List<int> m_GlobalIndices = null;
+        private List<int> m_LocalIndices = null;
+
+        /// <summary>
+        /// indexing:
+        /// - 1st index: cell within selection
+        /// - 2nd index: variable
+        /// - 3rd index: species within cell
+        /// - 4th index: DG polynomial degree
+        /// </summary>
         private extNi0[][][][] m_StructuredNi0 = null;
+        
         private int m_Ni0Len;
         private int m_MaskLen;
         private Ni0[] m_Ni0;
 
 
-        public List<int> LocalMask {
+        public List<int> LocalIndices {
             get {
-                return m_LocalMask;
+                return m_LocalIndices;
+            }
+        }
+
+        public List<int> GlobalIndices {
+            get {
+                return m_GlobalIndices;
             }
         }
 
@@ -625,8 +643,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Debug.Assert(Globalint.GroupBy(x => x).Any(g => g.Count() == 1));
             Debug.Assert(Localint.Count() == MaskLen);
 
-            m_GlobalMask = Globalint;
-            m_LocalMask = Localint;
+            m_GlobalIndices = Globalint;
+            m_LocalIndices = Localint;
             m_StructuredNi0 = tmpStructNi0;
             m_MaskLen = MaskLen;
             m_Ni0Len = Ni0Length;
@@ -693,11 +711,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// gets subblock offset relative to the parent cellblock
         /// </summary>
-        /// <param name="iCell"></param>
-        /// <param name="iVar"></param>
-        /// <param name="iSpc"></param>
-        /// <param name="iMod"></param>
-        /// <returns></returns>
         private int GetRelativeSubBlockOffset(int iCell, int iVar, int iSpc, int iMod) {
             return m_StructuredNi0[iCell][iVar][iSpc][iMod].Si0 - m_StructuredNi0[iCell][0][0][0].Si0;
         }
@@ -808,67 +821,88 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// Get Array of Cellblocks
+        /// Extracts diagonal blocks from matrix <paramref name="source"/>, i.e. one block per cell
         /// </summary>
-        /// <param name="target"></param>
-        /// <param name="ignoreCellCoupling"></param>
-        /// <param name="ignoreVarCoupling"></param>
-        /// <param name="ignoreSpecCoupling"></param>
+        /// <param name="source"></param>
+        /// <param name="ignoreVarCoupling">
+        /// if true, no coupling blocks between variables are included, i.e. the returned blocks will have block-diagonal structure themselves
+        /// </param>
+        /// <param name="ignoreSpecCoupling">
+        /// If true, no coupling blocks between species (in the XDG case) are included, i.e. the returned blocks will have block-diagonal structure themselves;
+        /// If XDG is NotFiniteNumberException used, this has no effect.
+        /// </param>
         /// <returns></returns>
-        public MultidimensionalArray[] GetSubBlocks(BlockMsrMatrix target, bool ignoreCellCoupling, bool ignoreVarCoupling, bool ignoreSpecCoupling) {
+        public MultidimensionalArray[] GetDiagonalBlocks(BlockMsrMatrix source, bool ignoreVarCoupling, bool ignoreSpecCoupling) {
             int NoOfCells = m_StructuredNi0.Length;
-            int size = ignoreCellCoupling ? NoOfCells : NoOfCells * NoOfCells;
+            int size = NoOfCells;
 
             MultidimensionalArray[] Sblocks = new MultidimensionalArray[size];
 
-            int auxIdx = 0;
-            for (int iLoc = 0; iLoc < m_StructuredNi0.Length; iLoc++) {
-                for (int jLoc = 0; jLoc < m_StructuredNi0.Length; jLoc++) {
-                    if (ignoreCellCoupling && jLoc != iLoc) {
+            for(int iLoc = 0; iLoc < m_StructuredNi0.Length; iLoc++) { // loop over cells 
+                Sblocks[iLoc] = GetBlock(source, ignoreVarCoupling, ignoreSpecCoupling, iLoc, iLoc);
+            }
+            return Sblocks;
+        }
+
+        private MultidimensionalArray GetBlock(BlockMsrMatrix target, bool ignoreVarCoupling, bool ignoreSpecCoupling, int iLoc, int jLoc) {
+            var _Sblocks = MultidimensionalArray.Create(GetCellwiseLength(iLoc), GetCellwiseLength(jLoc));
+            
+            
+            for(int iVar = 0; iVar < m_StructuredNi0[iLoc].Length; iVar++) { // loop over (row/codomain/test) variables
+                for(int jVar = 0; jVar < m_StructuredNi0[jLoc].Length; jVar++) { // loop over (column/domain/trial) variables
+                    if(ignoreVarCoupling && jVar != iVar) {
                         continue;
                     }
-                    int CellBlockLen = GetCellwiseLength(jLoc);
-                    Sblocks[auxIdx] = MultidimensionalArray.Create(CellBlockLen, CellBlockLen);
-                    for (int iVar = 0; iVar < m_StructuredNi0[iLoc].Length; iVar++) {
-                        for (int jVar = 0; jVar < m_StructuredNi0[jLoc].Length; jVar++) {
-                            if (ignoreVarCoupling && jVar != iVar) {
+                    for(int iSpc = 0; iSpc < m_StructuredNi0[iLoc][iVar].Length; iSpc++) { // loop over species 
+                        for(int jSpc = 0; jSpc < m_StructuredNi0[jLoc][jVar].Length; jSpc++) {
+                            if(ignoreSpecCoupling && jSpc != iSpc) {
                                 continue;
                             }
-                            for (int iSpc = 0; iSpc < m_StructuredNi0[iLoc][iVar].Length; iSpc++) {
-                                for (int jSpc = 0; jSpc < m_StructuredNi0[jLoc][jVar].Length; jSpc++) {
-                                    if (ignoreSpecCoupling && jSpc != iSpc) {
-                                        continue;
-                                    }
-                                    for (int iMode = 0; iMode < m_StructuredNi0[iLoc][iVar][iSpc].Length; iMode++) {
-                                        for (int jMode = 0; jMode < m_StructuredNi0[jLoc][jVar][jSpc].Length; jMode++) {
-                                            extNi0 RowNi0 = m_StructuredNi0[iLoc][iVar][iSpc][iMode];
-                                            extNi0 ColNi0 = m_StructuredNi0[jLoc][jVar][jSpc][jMode];
-                                            int Targeti0 = RowNi0.Gi0;
-                                            int Targetj0 = ColNi0.Gi0;
-                                            int Subi0 = GetRelativeSubBlockOffset(iLoc, iVar, iSpc, iMode);
-                                            int Subj0 = GetRelativeSubBlockOffset(jLoc, jVar, jSpc, jMode);
-                                            int Subie = Subi0 + RowNi0.N - 1;
-                                            int Subje = Subj0 + ColNi0.N - 1;
+                            for(int iMode = 0; iMode < m_StructuredNi0[iLoc][iVar][iSpc].Length; iMode++) {
+                                for(int jMode = 0; jMode < m_StructuredNi0[jLoc][jVar][jSpc].Length; jMode++) {
+                                    extNi0 RowNi0 = m_StructuredNi0[iLoc][iVar][iSpc][iMode];
+                                    extNi0 ColNi0 = m_StructuredNi0[jLoc][jVar][jSpc][jMode];
+                                    int Targeti0 = RowNi0.Gi0;
+                                    int Targetj0 = ColNi0.Gi0;
+                                    int Subi0 = GetRelativeSubBlockOffset(iLoc, iVar, iSpc, iMode);
+                                    int Subj0 = GetRelativeSubBlockOffset(jLoc, jVar, jSpc, jMode);
+                                    int Subie = Subi0 + RowNi0.N - 1;
+                                    int Subje = Subj0 + ColNi0.N - 1;
 
-                                            target.ReadBlock(Targeti0, Targetj0,
-                                                Sblocks[auxIdx].ExtractSubArrayShallow(new int[] { Subi0, Subj0 }, new int[] { Subie, Subje }));
-                                        }
-                                    }
+                                    target.ReadBlock(Targeti0, Targetj0,
+                                        _Sblocks.ExtractSubArrayShallow(new int[] { Subi0, Subj0 }, new int[] { Subie, Subje }));
                                 }
                             }
                         }
                     }
-                    auxIdx++;
+                }
+            }
+
+            return _Sblocks;
+        }
+
+        /// <summary>
+        /// Extracts blocks from matrix <paramref name="source"/>, i.e. one block per cell and the coupling between these cells.
+        /// </summary>
+        public MultidimensionalArray[,] GetFullSubBlocks(BlockMsrMatrix source, bool ignoreVarCoupling = false, bool ignoreSpecCoupling = false) {
+            int NoOfCells = m_StructuredNi0.Length;
+            MultidimensionalArray[,] Sblocks = new MultidimensionalArray[NoOfCells, NoOfCells];
+
+            for (int iLoc = 0; iLoc < m_StructuredNi0.Length; iLoc++) {
+                for (int jLoc = 0; jLoc < m_StructuredNi0.Length; jLoc++) {
+                    
+                    Sblocks[iLoc, jLoc] = GetBlock(source, ignoreVarCoupling, ignoreSpecCoupling, iLoc, jLoc);
                 }
             }
             return Sblocks;
         }
 
+
         /// <summary>
         /// If you want nothing special. Take this one. If you want only diagonal block matrix choose one of the other methods
         /// </summary>
         /// <returns></returns>
-        public BlockMsrMatrix GetSubBlockMatrix(BlockMsrMatrix target) {
+        public BlockMsrMatrix GetSubBlockMatrix(BlockMsrMatrix source) {
             int Loclength = m_MaskLen;
 
             var tmpN = GetAllSubMatrixCellLength();
@@ -876,12 +910,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             BlockPartitioning localBlocking = new BlockPartitioning(Loclength, tmpi0.ToArray(), tmpN.ToArray(), m_map.MPI_Comm, i0isLocal: true);
             var SubMSR = new BlockMsrMatrix(localBlocking);
-            target.AccSubMatrixTo(1.0, SubMSR, m_GlobalMask, default(int[]), m_GlobalMask, default(int[]));
+            source.AccSubMatrixTo(1.0, SubMSR, m_GlobalIndices, default(int[]), m_GlobalIndices, default(int[]));
             return SubMSR;
         }
 
         /// <summary>
-        /// Coupling can be ignored. If you want full output take the basic GetSubBlockMatrix() method, which will be faster.
+        /// Coupling can be ignored. If you want full output take the basic <see cref="GetSubBlockMatrix"/> method, which will be faster.
         /// </summary>
         /// <param name="target"></param>
         /// <param name="ignoreCellCoupling"></param>
@@ -959,7 +993,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 throw new ArgumentException("Length of targetVector != Length of original");
             if (accVector.Count() != m_MaskLen)
                 throw new ArgumentException("accVector length is not equal to length of mask");
-            targetVector.AccV(1.0, accVector, m_LocalMask, default(int[]));
+            targetVector.AccV(1.0, accVector, m_LocalIndices, default(int[]));
         }
 
         /// <summary>
@@ -1011,7 +1045,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 throw new ArgumentException("Length of targetVector not equal Length of original");
             int Len = m_MaskLen;
             double[] subVector = new double[m_MaskLen];
-            subVector.AccV(1.0, fullVector, default(int[]), m_LocalMask);
+            subVector.AccV(1.0, fullVector, default(int[]), m_LocalIndices);
             return subVector;
         }
 

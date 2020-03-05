@@ -12,11 +12,14 @@ using BoSSS.Foundation.Grid;
 using MPI.Wrappers;
 using ilPSP.Utils;
 using System.Diagnostics;
+using BoSSS.Solution.AdvancedSolvers;
+using System.Linq;
 
 namespace BoSSS.Solution {
 
     public class OpAnalysisBase {
 
+        /*
         /// <summary>
         /// Delegate for computation of operator matrix with:
         /// </summary>
@@ -31,7 +34,7 @@ namespace BoSSS.Solution {
         /// <param name="AgglomeratedCellLengthScales"></param>
         /// <param name="time"></param>
         public delegate void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time);
-
+        
 
         /// <summary>
         /// Ctor for operator analysis class
@@ -43,8 +46,6 @@ namespace BoSSS.Solution {
         /// <param name="time"></param>
         public OpAnalysisBase(DelComputeOperatorMatrix delComputeOperatorMatrix, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time){
 
-            //System.Threading.Thread.Sleep(10000);
-
             m_OpMtx = new BlockMsrMatrix(Mapping, Mapping); //operator matrix
             localRHS = new double[Mapping.LocalLength]; //right hand side
             RHSlen = Mapping.TotalLength;
@@ -53,33 +54,52 @@ namespace BoSSS.Solution {
             VarGroup = m_map.BasisS.Count.ForLoop(i => i); //default: all dependent variables are included in operator matrix
             delComputeOperatorMatrix(m_OpMtx, localRHS, Mapping, CurrentState, AgglomeratedCellLengthScales, time); // delegate for computing the operator matrix
         }
+        */
+
+        /// <summary>
+        /// Constructor for XDG solvers
+        /// </summary>
+        public OpAnalysisBase(LevelSetTracker LsTrk, BlockMsrMatrix Mtx, double[] RHS, UnsetteledCoordinateMapping Mapping, MultiphaseCellAgglomerator CurrentAgglomeration, BlockMsrMatrix _mass, IEnumerable<MultigridOperator.ChangeOfBasisConfig[]> OpConfig) {
 
 
-        public OpAnalysisBase(BlockMsrMatrix Mtx, double[] RHS, UnsetteledCoordinateMapping Mapping) {
-
-            //System.Threading.Thread.Sleep(10000);
-
-            m_OpMtx = new BlockMsrMatrix(Mapping, Mapping); //operator matrix
-            localRHS = new double[Mapping.LocalLength]; //right hand side
-            RHSlen = Mapping.TotalLength;
+            int RHSlen = Mapping.TotalLength;
             m_map = Mapping; // mapping
+            VarGroup = Mapping.BasisS.Count.ForLoop(i => i); //default: all dependent variables are included in operator matrix
 
-            VarGroup = m_map.BasisS.Count.ForLoop(i => i); //default: all dependent variables are included in operator matrix
-            m_OpMtx = Mtx;
-            localRHS = RHS;
+            m_LsTrk = LsTrk;
 
+            m_OpMtx = Mtx.CloneAs();
+            localRHS = RHS.CloneAs();
 
+            // create the Dummy XDG aggregation basis
+            var baseGrid = Mapping.GridDat;
+            var mgSeq = Foundation.Grid.Aggregation.CoarseningAlgorithms.CreateSequence(baseGrid, 1);
+            AggregationGridBasis[][] XAggB = AggregationGridBasis.CreateSequence(mgSeq, Mapping.BasisS);
+
+            //
+            XAggB.UpdateXdgAggregationBasis(CurrentAgglomeration);
+
+            // create multigrid operator
+            m_MultigridOp = new MultigridOperator(XAggB, Mapping,
+                m_OpMtx,
+                _mass,
+                OpConfig);
         }
 
 
-        BlockMsrMatrix m_OpMtx;
-        int RHSlen;
+        LevelSetTracker m_LsTrk;
+
         UnsetteledCoordinateMapping m_map;
         int[] _VarGroup;
+        
+        BlockMsrMatrix m_OpMtx;
         double[] localRHS;
+        
+        MultigridOperator m_MultigridOp;
+
 
         /// <summary>
-        /// user-defined indices of dependend variables, if not the full matrix should be analyzed, e.g. 0 = u_x, 1=u_y, 2=u_z, 3=p ...
+        /// user-defined indices of depended variables, if not the full matrix should be analyzed, e.g. 0 = u_x, 1=u_y, 2=u_z, 3=p ...
         /// </summary>
         public int[] VarGroup{
             get{
@@ -153,6 +173,9 @@ namespace BoSSS.Solution {
         /// <param name="RHS"></param>
         public void rankAnalysis(BlockMsrMatrix OpMatrix, double[] RHS){
 
+            int RHSlen = this.localRHS.Length;
+            Debug.Assert(RHSlen == m_OpMtx.RowPartitioning.LocalLength);
+
             MultidimensionalArray outputArray = MultidimensionalArray.Create(2, 1); // The two rank values
 
             //At this point OpMatrix and RHS are local, they are collected within bmc on proc rank==0
@@ -225,82 +248,75 @@ namespace BoSSS.Solution {
         /// returns the condition number of the full matrix and the inner matrix without boundary terms
         /// </summary>
         /// <returns>Array condestOut=[ConditionNumberFullOp, ConditionNumberInnerOp]</returns>
-        public double[] CondNum(){
+        public double[] CondNum() {
 
             int[] DepVars = this.VarGroup;
             var grd = m_map.GridDat;
             int NoOfCells = grd.Grid.NumberOfCells;
             int NoOfBdryCells = grd.GetBoundaryCells().NoOfItemsLocally_WithExternal;
 
-            // only for full matrix, if there are no inner cells
-            if (NoOfCells == NoOfBdryCells){
 
-                Console.WriteLine("");
-                Console.WriteLine("Since there are only boundary cells, the condest of the non-existing inner matrix is set to zero!");
+            var Mtx = m_MultigridOp.OperatorMatrix;
 
-                double[] Full_0Vars = this.m_map.GetSubvectorIndices(true, DepVars).Select(i => i + 1.0).ToArray();
-                MultidimensionalArray output = MultidimensionalArray.Create(1, 1);
+            
 
-                using (BatchmodeConnector bmc = new BatchmodeConnector()){
 
-                    // if Octave should be used instead of Matlab....
-                    //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
+            // Blocks and selectors 
+            // ====================
+            var InnerCellsMask = grd.GetBoundaryCells().Complement();
 
-                    bmc.PutSparseMatrix(m_OpMtx, "FullMatrix");
-                    bmc.PutVector(Full_0Vars, "Full_0Vars");
-                    bmc.Cmd("output = zeros(1,1)");
-                    bmc.Cmd("output = condest(FullMatrix(Full_0Vars,Full_0Vars));");
-                    bmc.GetMatrix(output, "output");
-                    bmc.Execute(false);
-                }
+            var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
+            FullSel.VariableSelector(this.VarGroup);
+
+            var InnerSel = new SubBlockSelector(m_MultigridOp.Mapping);
+            InnerSel.VariableSelector(this.VarGroup);
+            InnerSel.CellSelector(InnerCellsMask);
+
+
+            // MUMPS condition number
+            // ======================
+
+            double condestFullMUMPS = (new BlockMask(FullSel)).GetSubBlockMatrix(Mtx).Condest_MUMPS();
+
+            // Matlab
+            // ======
+
+            double[] Full_0Vars = (new BlockMask(FullSel)).GlobalIndices.Select(i => i + 1.0).ToArray();
+            double[] Inner_0Vars = (new BlockMask(InnerSel)).GlobalIndices.Select(i => i + 1.0).ToArray();
+
+            MultidimensionalArray output = MultidimensionalArray.Create(2, 1);
+            string[] names = new string[] { "Full_0Vars", "Inner_0Vars" };
+
+            using(BatchmodeConnector bmc = new BatchmodeConnector()) {
+
+                // if Octave should be used instead of Matlab....
+                // BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
+
+                bmc.PutSparseMatrix(Mtx, "FullMatrix");
+
+                if(Inner_0Vars.Length > 0)
+                    bmc.PutVector(Inner_0Vars, "Inner_0Vars");
+                bmc.PutVector(Full_0Vars, "Full_0Vars");
+
+                bmc.Cmd("output = ones(2,1);");
+
+                bmc.Cmd("output(1) = condest(FullMatrix(Full_0Vars,Full_0Vars));");
+                if(Inner_0Vars.Length > 0)
+                    bmc.Cmd("output(2) = condest(FullMatrix(Inner_0Vars,Inner_0Vars));");
+
+                bmc.GetMatrix(output, "output");
+                bmc.Execute(false);
 
                 double condestFull = output[0, 0];
-                double condestInner = 0;
+                double condestInner = output[1, 0];
 
-                double[] condestOut = new double[] { condestFull, condestInner };
+                double[] condestOut = new double[] { condestFullMUMPS, condestInner };
+
+                Console.WriteLine($"MATLAB condition number: {condestFull:0.###e-00}");
+
+                Debug.Assert(condestOut[0].MPIEquals(), "value does not match on procs");
+                Debug.Assert(condestOut[1].MPIEquals(), "value does not match on procs");
                 return condestOut;
-            }
-            // for full and inner matrix
-            else{
-
-                CellMask InnerCellsMask = grd.GetBoundaryCells().Complement();
-                SubGrid InnerCells = new SubGrid(InnerCellsMask);
-
-                double[] Full_0Vars = this.m_map.GetSubvectorIndices(true, DepVars).Select(i => i + 1.0).ToArray();
-                double[] Inner_0Vars = this.m_map.GetSubvectorIndices(InnerCells, true, DepVars).Select(i => i + 1.0).ToArray();
-
-                MultidimensionalArray output = MultidimensionalArray.Create(2, 1);
-                string[] names = new string[] { "Full_0Vars", "Inner_0Vars" };
-
-                using (BatchmodeConnector bmc = new BatchmodeConnector()){
-
-                    // if Octave should be used instead of Matlab....
-                    // BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-
-                    bmc.PutSparseMatrix(m_OpMtx, "FullMatrix");
-                    bmc.PutVector(Inner_0Vars, "Inner_0Vars");
-                    bmc.PutVector(Full_0Vars, "Full_0Vars");
-                    bmc.Cmd("output = zeros(2,1)");
-
-                    int k = 1;
-                    foreach (var s in names){
-                        bmc.Cmd("output({1}) = condest(FullMatrix({0},{0}));", s,k);
-                        k++;
-                    }
-
-                    bmc.GetMatrix(output, "output");
-                    bmc.Execute(false);
-
-                    double condestFull = output[0, 0];
-                    double condestInner = output[1, 0];
-
-                    double[] condestOut = new double[] { condestFull, condestInner };
-
-
-                    Debug.Assert(condestOut[0].MPIEquals(),"value does not match on procs");
-                    Debug.Assert(condestOut[1].MPIEquals(), "value does not match on procs");
-                    return condestOut;
-                }
             }
         }
 
@@ -394,5 +410,191 @@ namespace BoSSS.Solution {
             return myeigs;
         }
 
+
+        /// <summary>
+        /// Local condition number for the block formed by each cell.
+        /// </summary>
+        /// <returns>
+        /// one value per cell:
+        /// - index: local cell index
+        /// - content: condition number (one norm) of the local stencil
+        /// </returns>
+        public double[] BlockCondNumbers() {
+            int J = m_map.LocalNoOfBlocks;
+            Debug.Assert(J == m_map.GridDat.iLogicalCells.NoOfLocalUpdatedCells);
+            
+            var Mtx = m_MultigridOp.OperatorMatrix;
+            Debug.Assert(Mtx._ColPartitioning.LocalNoOfBlocks == J);
+            Debug.Assert(Mtx._RowPartitioning.LocalNoOfBlocks == J);
+
+
+            var Sel = new SubBlockSelector(m_MultigridOp.Mapping);
+            Sel.VariableSelector(this.VarGroup);
+           
+            var Mask = new BlockMask(Sel);
+
+            MultidimensionalArray[] Blocks = Mask.GetDiagonalBlocks(Mtx, ignoreSpecCoupling: false, ignoreVarCoupling: false);
+            Debug.Assert(Blocks.Length == J);
+
+            double[] BCN = new double[J];
+            for(int j = 0; j < J; j++) {
+#if DEBUG
+                int N = this.VarGroup.Sum(iVar => m_MultigridOp.Mapping.AggBasis[iVar].GetLength(j, m_MultigridOp.Degrees[iVar]));
+                Debug.Assert(Blocks[j].NoOfCols == N);
+                Debug.Assert(Blocks[j].NoOfRows == N);
+
+                int i0 = m_MultigridOp.Mapping.GlobalUniqueIndex(this.VarGroup.Min(), j, 0);
+                Debug.Assert(Mtx[i0, i0] == Blocks[j][0, 0]);
+#endif
+
+
+                BCN[j] = Blocks[j].Cond();
+            }
+
+            return BCN;
+        }
+
+
+        /// <summary>
+        /// Local condition number formed by the block of each cell and its neighbors.
+        /// </summary>
+        /// <returns>
+        /// one value per cell:
+        /// - index: local cell index
+        /// - content: condition number (one norm) of the local stencil
+        /// </returns>
+        public double[] StencilCondNumbers() {
+            int J = m_map.LocalNoOfBlocks;
+            Debug.Assert(J == m_map.GridDat.iLogicalCells.NoOfLocalUpdatedCells);
+
+            var Mtx = m_MultigridOp.OperatorMatrix;
+            Debug.Assert(Mtx._ColPartitioning.LocalNoOfBlocks == J);
+            Debug.Assert(Mtx._RowPartitioning.LocalNoOfBlocks == J);
+
+            var grd = m_MultigridOp.Mapping.AggGrid;
+
+            double[] BCN = new double[J];
+            for(int j = 0; j < J; j++) {
+
+                var LocBlk = grd.GetCellNeighboursViaEdges(j).Select(t => t.Item1).ToList();
+                LocBlk.Add(j);
+                for(int i = 0; i < LocBlk.Count; i++) {
+                    if(LocBlk[i] >= J) {
+                        LocBlk.RemoveAt(i);
+                        i--;
+                    }
+                }
+
+                var Sel = new SubBlockSelector(m_MultigridOp.Mapping);
+                Sel.VariableSelector(this.VarGroup);
+                Sel.CellSelector(LocBlk);
+                var Mask = new BlockMask(Sel);
+
+                MultidimensionalArray[,] Blocks = Mask.GetFullSubBlocks(Mtx, ignoreSpecCoupling: false, ignoreVarCoupling: false);
+
+                MultidimensionalArray FullBlock = Blocks.Cat();
+
+                BCN[j] = FullBlock.Cond();
+
+            }
+            return BCN;
+        }
+
+        /// <summary>
+        /// Local condition number formed by the block of each cell and its neighbors, visualized as a degree-0 DG field.
+        /// </summary>
+        /// <returns>
+        /// a DG field of degree 0, where the average value in each cell represents the respective local condition number
+        /// </returns>
+        public SinglePhaseField StencilCondNumbersV() {
+            var grd = m_map.GridDat;
+
+            SinglePhaseField ret = new SinglePhaseField(new Basis(grd, 0), "StencilCondNo-" + VarNames);
+
+            double[] BCN = StencilCondNumbers();
+
+            for(int j = 0; j < BCN.Length; j++)
+                ret.SetMeanValue(j, BCN[j]);
+
+            return ret;
+        }
+
+
+        string VarNames {
+            get {
+                int[] vgs = this.VarGroup;
+                if(vgs.Length <= 1) {
+                    return "Var0";
+                } else {
+                    Array.Sort(vgs);
+
+                    string R = "Vars";
+                    for(int i = 0; i < vgs.Length; i++) {
+                        R += vgs[i];
+                        if(i < vgs.Length - 1)
+                            R += ".";
+                    }
+                    return R;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Various condition numbers, organized in a dictionary to create a regression over multiple meshes
+        /// </summary>
+        public IDictionary<string, double> GetNamedProperties() {
+            var Ret = new Dictionary<string, double>();
+
+            var grd = m_map.GridDat;
+            
+
+
+            // global condition numbers
+            // ========================
+            double[] CondNo = this.CondNum();
+            Ret.Add("TotCondNo", CondNo[0]);
+            Ret.Add("InnerCondNo", CondNo[1]);
+
+            // block-wise condition numbers
+            // ============================
+            double[] bcn = this.StencilCondNumbers();//BlockCondNumbers();
+
+            CellMask innerUncut, innerCut, bndyUncut, bndyCut;
+            if(m_LsTrk != null) {
+                // +++++++++
+                // using XDG
+                // +++++++++
+                innerUncut = grd.GetBoundaryCells().Complement().Except(m_LsTrk.Regions.GetCutCellMask());
+                innerCut = m_LsTrk.Regions.GetCutCellMask().Except(grd.GetBoundaryCells());
+
+                bndyUncut = grd.GetBoundaryCells().Except(m_LsTrk.Regions.GetCutCellMask());
+                bndyCut = grd.GetBoundaryCells().Intersect(m_LsTrk.Regions.GetCutCellMask());
+            } else {
+                // ++++++++
+                // using DG 
+                // ++++++++
+                innerUncut = grd.GetBoundaryCells().Complement();
+                innerCut = CellMask.GetEmptyMask(grd);
+
+                bndyUncut = grd.GetBoundaryCells();
+                bndyCut = CellMask.GetEmptyMask(grd);
+            }
+            double innerUncut_MaxCondNo = innerUncut.NoOfItemsLocally > 0 ? innerUncut.ItemEnum.Max(jCell => bcn[jCell]) : 1.0;
+            double innerCut_MaxCondNo = innerCut.NoOfItemsLocally > 0 ? innerCut.ItemEnum.Max(jCell => bcn[jCell]) : 1.0;
+            double bndyUncut_MaxCondNo = bndyUncut.NoOfItemsLocally > 0 ? bndyUncut.ItemEnum.Max(jCell => bcn[jCell]) : 1.0;
+            double bndyCut_MaxCondNo = bndyCut.NoOfItemsLocally > 0 ? bndyCut.ItemEnum.Max(jCell => bcn[jCell]) : 1.0;
+
+            innerUncut_MaxCondNo = innerUncut_MaxCondNo.MPIMax();
+            innerCut_MaxCondNo = innerCut_MaxCondNo.MPIMax();
+            bndyUncut_MaxCondNo = bndyUncut_MaxCondNo.MPIMax();
+            bndyCut_MaxCondNo = bndyCut_MaxCondNo.MPIMax();
+
+            Ret.Add("StencilCondNo-innerUncut", innerUncut_MaxCondNo);
+            Ret.Add("StencilCondNo-innerCut", innerCut_MaxCondNo);
+            Ret.Add("StencilCondNo-bndyUncut", bndyUncut_MaxCondNo);
+            Ret.Add("StencilCondNo-bndyCut", bndyCut_MaxCondNo);
+
+            return Ret;
+        }
     }
 }

@@ -1066,12 +1066,9 @@ namespace BoSSS.Application.SipPoisson {
                         
                         var RHSvec = RHS.CoordinateVector.ToArray();
                         BLAS.daxpy(RHSvec.Length, -1.0, this.LaplaceAffine, 1, RHSvec, 1);
-                        ilPSP.IMatrixExtensions.DGETRF_stopwatch = new Stopwatch();
                         MultigridOp.UseSolver(solver, T2, RHSvec);
                         T.CoordinateVector.SetV(T2);
                     }
-                    double dgetrf_time = ilPSP.IMatrixExtensions.DGETRF_stopwatch.Elapsed.TotalSeconds;
-                    ilPSP.IMatrixExtensions.DGETRF_stopwatch = null;
                     solverIteration.Stop();
                     Console.WriteLine("done. (" + solverIteration.Elapsed.TotalSeconds + " sec)");
 
@@ -1083,8 +1080,6 @@ namespace BoSSS.Application.SipPoisson {
                     Console.WriteLine("  spmv total " + BlockMsrMatrix.SPMV_tot.Elapsed.TotalSeconds);
                     Console.WriteLine("  spmv inner " + BlockMsrMatrix.SPMV_inner.Elapsed.TotalSeconds);
                     Console.WriteLine("  spmv outer " + BlockMsrMatrix.SpMV_local.Elapsed.TotalSeconds);
-
-                    Console.WriteLine("  dgetrf core " + dgetrf_time);
 
                     // time measurement, statistics
                     stw.Stop();

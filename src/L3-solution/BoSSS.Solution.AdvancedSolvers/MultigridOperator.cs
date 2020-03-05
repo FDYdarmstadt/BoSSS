@@ -48,7 +48,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="_ProblemMapping">
         /// DG coordinate mapping on the original grid, see <see cref="BaseGridProblemMapping"/>.
         /// </param>
-        /// <param name="OperatorMatrix"></param>
+        /// <param name="OperatorMatrix">
+        /// Operator Matrix, aka. Jacobian Matrix,
+        /// agglomeration (if applicable) should already be applied.
+        /// </param>
         /// <param name="MassMatrix">
         /// Mass matrix on the original grid. If null, the identity matrix is assumed. It is only required if the 
         /// </param>
