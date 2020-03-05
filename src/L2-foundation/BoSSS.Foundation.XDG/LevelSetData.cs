@@ -810,6 +810,8 @@ namespace BoSSS.Foundation.XDG {
 
             private static void RecursiveColoring(IGridData g, BitArray Msk, int j, int Color, int[] ColorMap, ref bool IsIsolated) {
                 Debug.Assert(Msk[j] == true, "illegal to call on non-occupied cells");
+                if (Msk[j] != true)
+                    throw new Exception("illegal to call on non-occupied cells");
                 int J = g.iLogicalCells.NoOfLocalUpdatedCells;
                 int JE = g.iLogicalCells.NoOfExternalCells + J;
                 Debug.Assert(Msk.Length == JE);

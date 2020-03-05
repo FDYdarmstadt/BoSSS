@@ -32,6 +32,9 @@ using BoSSS.Solution.Control;
 
 namespace BoSSS.Application.BoSSSpad {
 
+
+
+
     /// <summary>
     /// Workflow management.
     /// </summary>
@@ -40,7 +43,9 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Not intended for user interaction.
         /// </summary>
-        internal WorkflowMgm() { }
+        internal WorkflowMgm() {
+            SetNameBasedSessionJobControllCorrelation();
+        }
 
         string m_CurrentProject;
 
@@ -76,6 +81,125 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+        /// <summary>
+        /// Correlation of session, job and control object is done by name
+        /// </summary>
+        public void SetNameBasedSessionJobControllCorrelation() {
+            SessionInfoJobCorrelation = delegate (ISessionInfo sinf, Job job) {
+                try {
+                    // compare project name
+                    if(!sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.PROJECTNAME_KEY))
+                        return false;
+
+                    if(!Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.PROJECTNAME_KEY]).Equals(this.CurrentProject))
+                        return false;
+
+                    // compare session name
+                    if(!sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.SESSIONNAME_KEY))
+                        return false;
+
+                    if(!Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.SESSIONNAME_KEY]).Equals(job.Name))
+                        return false;
+                    
+                    // fall tests passed
+                    return true;
+                } catch(Exception) {
+                    return false;
+                }
+
+            };
+            SessionInfoAppControlCorrelation = delegate (ISessionInfo sinf, AppControl ctrl) {
+                try {
+                    // compare project name
+                    if(!sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.PROJECTNAME_KEY))
+                        return false;
+
+                    if(!Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.PROJECTNAME_KEY]).Equals(ctrl.ProjectName))
+                        return false;
+
+                    // compare session name
+                    if(!sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.SESSIONNAME_KEY))
+                        return false;
+
+                    if(!Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.SESSIONNAME_KEY]).Equals(ctrl.SessionName))
+                        return false;
+
+                    // fall tests passed
+                    return true;
+
+                } catch(Exception) {
+                    return false;
+                }
+            };
+
+            JobAppControlCorrelation = delegate (Job j, AppControl c) {
+                Debug.Assert(j != null);
+                var jc = j.GetControl();
+                if(jc == null) {
+                    return false;
+                }
+                if(c == null)
+                    return false;
+                return (jc.SessionName == c.SessionName) && (jc.ProjectName == c.ProjectName);
+            };
+        }
+
+
+        // <summary>
+        /// Correlation of session, job and control object is done <see cref="AppControl.Equals(object)"/>
+        /// </summary>
+        public void SetEqualityBasedSessionJobControllCorrelation() {
+            SessionInfoJobCorrelation = delegate (ISessionInfo sinf, Job job) {
+                var c_job = job.GetControl();
+                try {
+                    var c_sinf = sinf.GetControl();
+                    if(c_sinf != null)
+                        return c_sinf.Equals(c_job);
+                    else
+                        return false;
+                } catch(Exception) {
+                    return false;
+                }
+            };
+            SessionInfoAppControlCorrelation = delegate (ISessionInfo sinf, AppControl ctrl) {
+                try {
+                    var c_sinf = sinf.GetControl();
+                    if(c_sinf != null)
+                        return c_sinf.Equals(ctrl);
+                    else
+                        return false;
+                } catch(Exception) {
+                    return false;
+                }
+            };
+
+            JobAppControlCorrelation = delegate (Job j, AppControl c) {
+                Debug.Assert(j != null);
+                var jc = j.GetControl();
+                if(jc == null) {
+                    return false;
+                }
+                return jc.Equals(c);
+            };
+        }
+
+
+        /// <summary>
+        /// Defines, global for the entire workflow management, how session in the project correlate to jobs.
+        /// </summary>
+        public Func<ISessionInfo, Job, bool> SessionInfoJobCorrelation;
+
+        /// <summary>
+        /// Defines, global for the entire workflow management, how session in the project correlate to control objects.
+        /// </summary>
+        public Func<ISessionInfo, AppControl, bool> SessionInfoAppControlCorrelation;
+
+        /// <summary>
+        /// Defines, global for the entire workflow management, how jobs in the project correlate to control objects.
+        /// </summary>
+        public Func<Job, AppControl, bool> JobAppControlCorrelation;
+
+       
 
         /// <summary>
         /// Defines the name of the current project;

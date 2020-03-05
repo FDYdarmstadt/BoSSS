@@ -62,16 +62,10 @@ namespace BoSSS.Application.IBM_Solver {
         public DoNotTouchParameters AdvancedDiscretizationOptions = new DoNotTouchParameters();
 
         /// <summary>
-        /// desired minimum refinement level, 2 is minimum
+        /// desired minimum refinement level
         /// </summary>
         [DataMember]
         public int RefinementLevel = 2;
-
-        /// <summary>
-        /// reciprocal of the ratio between curvature and hmin
-        /// </summary>
-        [DataMember]
-        public int maxCurvature = 2;
 
         /// <summary>
         /// Sets the DG polynomial degree 

@@ -3619,8 +3619,10 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl IBMBowShock(string dbPath = null, int savePeriod = 100, int dgDegree = 2, double sensorLimit = 1e-4, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 1, int numberOfSubGrids = 2, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 6.0, string restart = "False", double lambdaMax = 15.0, int numOfCellsX = 20, int numOfCellsY = 80) {
+        public static IBMControl IBMBowShock(string dbPath = null, int savePeriod = 100, int dgDegree = 0, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 2, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 8.0, string restart = "False", int numOfCellsX = 80, int numOfCellsY = 320, double? lambdaMax = null) {
             IBMControl c = new IBMControl();
+
+            //double? lambdaMax = 10;
 
             //System.Threading.Thread.Sleep(10000);
             //Debugger.Launch();
@@ -3629,6 +3631,7 @@ namespace CNS {
             //dbPath = @"c:\bosss_db";                                          // Local
             //dbPath = @"E:\geisenhofer\bosss_db_paper_ibmdmr";                   // HPC cluster
             //dbPath = @"\\dc1\userspace\geisenhofer\bosss_db_IBMShockTube";    // Network
+            //dbPath = @"H:\geisenhofer\bosss_db_bowShock";
 
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
@@ -3665,8 +3668,8 @@ namespace CNS {
 
             if (restart == "True") {
                 // Restart Lichtenberg
-                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("9b3ee853-aaf2-4777-a50d-7c53c5e23ae6"), -1);
-                c.GridGuid = new Guid("b1de3801-a54d-4083-8af2-e400947e626a");
+                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("3f5353f6-0b3d-4482-8204-0695ff66a1ef"), -1);
+                c.GridGuid = new Guid("c691d970-6e52-4dd2-9d10-e95ab99f0482");
             } else {
                 c.GridFunc = delegate {
                     double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
@@ -3731,7 +3734,7 @@ namespace CNS {
                 }
             };
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
             int levelSetDegree = 2;
             c.LevelSetQuadratureOrder = 3 * levelSetDegree;
             c.AgglomerationThreshold = 0.3;
@@ -3754,12 +3757,12 @@ namespace CNS {
 
             // Shock-capturing
             double epsilon0 = 1.0;
-            double kappa = 0.5;
+            double kappa = 1.0;
 
             if (AV) {
                 Variable sensorVariable = CompressibleVariables.Density;
                 c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-                if (lambdaMax == -1.0) { // dynamic lambdaMax
+                if (lambdaMax == null) { // dynamic lambdaMax
                     c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
                 } else { // fixed lamdaMax
                     c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: lambdaMax);
@@ -3779,6 +3782,7 @@ namespace CNS {
             c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
             c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
             c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Enthalpy, dgDegree);
 
             c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
             c.AddVariable(CNSVariables.Rank, 0);
@@ -3830,15 +3834,38 @@ namespace CNS {
             // Session name
             string tempSessionName;
             if (c.ExplicitScheme == ExplicitSchemes.RungeKutta) {
-                tempSessionName = string.Format("IBMBowShock_p{0}_s0={1:0.0E-00}_CFLFrac{2}_RK{3}",
-                    dgDegree, sensorLimit, CFLFraction, explicitOrder);
+                if (dgDegree == 0) {
+                    tempSessionName = string.Format("IBMBowShock_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}",
+                        dgDegree, numOfCellsX, numOfCellsY, CFLFraction, explicitOrder);
+                } else {
+                    tempSessionName = string.Format("IBMBowShock_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}_s0={5:0.0E-00}_lambdaMax{6}",
+                        dgDegree, numOfCellsX, numOfCellsY, CFLFraction, explicitOrder, sensorLimit, lambdaMax);
+                }
             } else if (c.ExplicitScheme == ExplicitSchemes.AdamsBashforth) {
                 tempSessionName = string.Format("IBMBowShock_p{0}_s0={1:0.0E-00}_CFLFrac{2}_AB{3}",
                     dgDegree, sensorLimit, CFLFraction, explicitOrder);
             } else {
-                tempSessionName = string.Format("IBMBowShock_p{0}_s0={1:0.0E-00}_CFLFrac{2}_ALTS{3}_{4}_re{5}_subs{6}",
-                    dgDegree, sensorLimit, CFLFraction, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps);
+                tempSessionName = string.Format("IBMBowShock_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_ALTS{4}_{5}_re{6}_subs{7}_s0={8:0.0E-00}_lambdaMax{9}",
+                    dgDegree, numOfCellsX, numOfCellsY, CFLFraction, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, sensorLimit, lambdaMax);
             }
+            c.SessionName = tempSessionName;
+
+            return c;
+        }
+
+        /// <summary>
+        /// Version to be submitted on the TU Darmstadt HHLR Lichtenberg cluster
+        /// </summary>
+        public static IBMControl IBMBowShockHHLR(int savePeriod, int dgDegree, double sensorLimit, double CFLFraction, int explicitScheme, int explicitOrder, int numberOfSubGrids, int reclusteringInterval, int maxNumOfSubSteps, double endTime, int numOfCellsX, int numOfCellsY, double? lambdaMax) {
+
+            // Lichtenberg
+            string dbPath = @"/work/scratch/yp19ysog/bosss_db_ibmbowshock";
+            string restart = "False";
+
+            IBMControl c = IBMBowShock(dbPath, savePeriod, dgDegree, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, endTime, restart, numOfCellsX, numOfCellsY, lambdaMax);
+
+            c.ProjectName = "ibmbowshock_hhlr";
+            //c.NoOfTimesteps = 10;
 
             return c;
         }

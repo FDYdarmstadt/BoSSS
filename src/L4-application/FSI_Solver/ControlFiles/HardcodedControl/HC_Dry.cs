@@ -14,50 +14,56 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using System;
 using System.Collections.Generic;
+using BoSSS.Platform;
+using BoSSS.Solution.Control;
+using BoSSS.Foundation.Grid;
+using System.Diagnostics;
+using BoSSS.Solution.AdvancedSolvers;
+using ilPSP.Utils;
+using BoSSS.Foundation.Grid.Classic;
+using ilPSP;
 using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
-    public class HC_2ParticleInteraction : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control Main(int k = 2, int amrLevel = 2, double aspectRatio = 2, double relaxationFactor = 0.3, bool addaptiveUnderrelaxation = true, double conv = 1e-6) {
+    public class HC_Dry : IBM_Solver.HardcodedTestExamples {
+        public static FSI_Control SingleParticleFalling(int k = 4, int amrLevel = 4) {
             FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
-            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
+            //C.SetSaveOptions(dataBasePath: @"/home/ij83requ/default_bosss_db", savePeriod: 1);
 
             // Domain
             // =============================
             List<string> boundaryValues = new List<string> {
-                "Pressure_Outlet_left",
-                "Pressure_Outlet_right",
-                "Pressure_Outlet_lower",
-                "Pressure_Outlet_upper"
+                "Wall"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 10, lengthY: 10, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
+            C.SetGrid(lengthX: 0.5, lengthY: 0.5, cellsPerUnitLength: 40, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel);
 
             // Coupling Properties
             // =============================
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.LevelSetSmoothing = false;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.hydrodynamicsConvergenceCriterion = conv;
+            C.hydrodynamicsConvergenceCriterion = 1e-4;
 
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.IncludeConvection = false;
-            double particleDensity = 1;
+            double particleDensity = 100;
+            C.pureDryCollisions = true;
 
             // Particle Properties
             // =============================   
-            
-            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, false, false, false, 1.5);
-            double particleRadius = 0.5;
+            ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, true, false, false);
+            double particleRadius = 0.1;
             C.Particles = new List<Particle> {
-                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { 0.0, 0.0 }, 0, 1)
-            };
+                new Particle_Ellipsoid(motion, particleRadius, particleRadius, new double[] {0,0 },0, 0, new double[] {0,-0.1 })
+            };   
 
             // misc. solver options
             // =============================  
@@ -66,15 +72,16 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LevelSetSmoothing = false;
 
 
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(dt: 1e-3, noOfTimesteps: 250000);
+            C.SetTimesteps(dt: 1e-2, noOfTimesteps: int.MaxValue);
 
             return C;
         }
-
     }
 }
