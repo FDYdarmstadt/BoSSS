@@ -17,6 +17,7 @@ limitations under the License.
 using System;
 using System.Diagnostics;
 using BoSSS.Foundation;
+using BoSSS.Foundation.XDG;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using ilPSP;
@@ -34,8 +35,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <param name="boundaryMap">
         /// Mapping for boundary conditions
         /// </param>
-        public OptimizedHLLCEnergyFlux(IBoundaryConditionMap boundaryMap, Material material)
-            : base(boundaryMap, material) {
+        public OptimizedHLLCEnergyFlux(IBoundaryConditionMap boundaryMap, Material material, SpeciesId speciesId = new SpeciesId())
+            : base(boundaryMap, material, speciesId) {
         }
 
         /// <summary>

@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
+using BoSSS.Foundation.XDG;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using ilPSP;
@@ -42,8 +43,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <param name="component">
         /// The component of the momentum vector.
         /// </param>
-        public OptimizedHLLCMomentumFlux(IBoundaryConditionMap boundaryMap, int component, Material material)
-            : base(boundaryMap, material) {
+        public OptimizedHLLCMomentumFlux(IBoundaryConditionMap boundaryMap, int component, Material material, SpeciesId speciesId = new SpeciesId())
+            : base(boundaryMap, material, speciesId) {
             this.component = component;
         }
 
