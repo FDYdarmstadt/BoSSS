@@ -391,7 +391,7 @@ namespace BoSSS.Solution {
 
                 ControlObjFromCode(StringwithoutPrefix, out ctrlV2, out ctrlV2_ParameterStudy);
 
-            } else if (ControlFilePath.ToLower().EndsWith(".cs")) {
+            } else if (ControlFilePath.ToLower().EndsWith(".cs") || ControlFilePath.ToLower().EndsWith(".bws")) {
                 // +++++++++
                 // C#-script
                 // +++++++++
