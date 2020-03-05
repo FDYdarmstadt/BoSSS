@@ -459,103 +459,18 @@ namespace BoSSS.Application.XdgPoisson3 {
             return dt;
         }
 
-
+        /// <summary>
+        /// Operator stability analysis
+        /// </summary>
         public IDictionary<string,double> OperatorAnalysis() {
-            AggregationGridBasis[][] XAggB = AggregationGridBasis.CreateSequence(base.MultigridSequence, u.Mapping.BasisS);
-
-            XAggB.UpdateXdgAggregationBasis(this.Op_Agglomeration);
-
-            var MultigridOp = new MultigridOperator(XAggB, this.u.Mapping,
-                this.Op_Matrix,
-                this.Op_mass.GetMassMatrix(new UnsetteledCoordinateMapping(this.u.Basis), false),
-                OpConfig);
-
-            var PcOpMatrix = MultigridOp.OperatorMatrix;
-            //PcOpMatrix.SaveToTextFileSparse("C:\\temp\\Xpoisson.txt");
-
-
-            var ana = new BoSSS.Solution.OpAnalysisBase(this.Op_Matrix, this.Op_Affine, this.u.Mapping, Op_Agglomeration, Op_mass, this.OpConfig);
-            var Ret = new Dictionary<string, double>();
-
-            // global condition numbers
-            // ========================
-            double[] CondNo = ana.CondNum();
-            Ret.Add("TotCondNo", CondNo[0]);
-            Ret.Add("InnerCondNo", CondNo[1]);
-
-            // block-wise condition numbers
-            // ============================
-            double[] bcn = ana.StencilCondNumbers();//BlockCondNumbers();
-            CellMask innerUncut = this.GridData.GetBoundaryCells().Complement().Except(this.LsTrk.Regions.GetCutCellMask());
-            CellMask innerCut = this.LsTrk.Regions.GetCutCellMask().Except(this.GridData.GetBoundaryCells());
             
-            CellMask bndyUncut = this.GridData.GetBoundaryCells().Except(this.LsTrk.Regions.GetCutCellMask());
-            CellMask bndyCut = this.GridData.GetBoundaryCells().Intersect(this.LsTrk.Regions.GetCutCellMask());
+            var ana = new BoSSS.Solution.OpAnalysisBase(this.LsTrk, 
+                this.Op_Matrix, this.Op_Affine, 
+                this.u.Mapping, Op_Agglomeration, 
+                this.Op_mass.GetMassMatrix(this.u.Mapping, new double[] { 1.0 }, false, this.LsTrk.SpeciesIdS.ToArray()), 
+                this.OpConfig);
 
-            double innerUncut_MaxCondNo = innerUncut.NoOfItemsLocally > 0 ? innerUncut.ItemEnum.Max(jCell => bcn[jCell]) : 1.0;
-            double innerCut_MaxCondNo = innerCut.NoOfItemsLocally > 0 ? innerCut.ItemEnum.Max(jCell => bcn[jCell]) : 1.0;
-            double bndyUncut_MaxCondNo = bndyUncut.NoOfItemsLocally > 0 ? bndyUncut.ItemEnum.Max(jCell => bcn[jCell]) : 1.0;
-            double bndyCut_MaxCondNo = bndyCut.NoOfItemsLocally > 0 ? bndyCut.ItemEnum.Max(jCell => bcn[jCell]) : 1.0;
-
-            innerUncut_MaxCondNo = innerUncut_MaxCondNo.MPIMax();
-            innerCut_MaxCondNo = innerCut_MaxCondNo.MPIMax();
-            bndyUncut_MaxCondNo = bndyUncut_MaxCondNo.MPIMax();
-            bndyCut_MaxCondNo = bndyCut_MaxCondNo.MPIMax();
-            
-            Ret.Add("BlockCondNo-innerUncut", innerUncut_MaxCondNo); 
-            Ret.Add("BlockCondNo-innerCut", innerCut_MaxCondNo); 
-            Ret.Add("BlockCondNo-bndyUncut", bndyUncut_MaxCondNo); 
-            Ret.Add("BlockCondNo-bndyCut", bndyCut_MaxCondNo);
-
-
-            //var locCondNo = new SinglePhaseField(new Basis(this.GridData, 0), "StencilCondNo");
-            //locCondNo.CoordinateVector.Acc(1.0, bcn);
-
-            //Tecplot.PlotFields(new DGField[] { locCondNo, this.Phi }, "LocConNo", 0.0, 2);
-
-
-
-            //innerUncut.SaveToTextFile("innerUncut.csv", WriteHeader:false);
-            //innerCut.SaveToTextFile("innerCut.csv", WriteHeader:false);
-            //bndyUncut.SaveToTextFile("bndyUncut.csv", WriteHeader:false);
-            //bndyCut.SaveToTextFile("bndyCut.csv", WriteHeader:false);
-            
-            return Ret;
-
-            /*
-            MultidimensionalArray ret = MultidimensionalArray.Create(1, 4);
-
-            using (BatchmodeConnector bmc = new BatchmodeConnector()) {
-                bmc.PutSparseMatrix(PcOpMatrix, "OpMtx");
-                bmc.Cmd("OpMtxSym = 0.5*(OpMtx + OpMtx');");
-                bmc.Cmd("condNo = condest(OpMtxSym);");
-                bmc.Cmd("eigMaxi = eigs(OpMtxSym,1,'lm')");
-                bmc.Cmd("eigMini = eigs(OpMtxSym,1,'sm')");
-                bmc.Cmd("lasterr");
-                bmc.Cmd("[V,r]=chol(OpMtxSym);");
-                bmc.Cmd("ret = [condNo, eigMaxi, eigMini, r]");
-                bmc.GetMatrix(ret, "ret");
-
-                bmc.Execute(false);
-            }
-
-            double condNo = ret[0, 0];
-            double eigMaxi = ret[0, 1];
-            double eigMini = ret[0, 2];
-            double posDef = ret[0, 3] == 0 ? 1 : 0;
-
-            Console.WriteLine("Condition number: {0:0.####E-00}", condNo);
-
-            if (posDef == 0.0)
-                Console.WriteLine("WARNING: Operator matrix is not positive definite.");
-
-            base.QueryHandler.ValueQuery("condNo", condNo, false);
-            base.QueryHandler.ValueQuery("eigMaxi", eigMaxi, false);
-            base.QueryHandler.ValueQuery("eigMini", eigMini, false);
-            base.QueryHandler.ValueQuery("posDef", posDef, false);
-            */
-
-
+            return ana.GetNamedProperties();
         }
 
         MultigridOperator.ChangeOfBasisConfig[][] OpConfig {

@@ -2294,14 +2294,22 @@ namespace ilPSP {
         /// <summary>
         /// Condition number of a quadratic matrix 
         /// </summary>
-        static public double Cond<T>(this T M) where T : IMatrix {
+        /// <param name="M"></param>
+        /// <param name="NORM">
+        /// Switch between one and infinity norm
+        /// - char '1': the one norm
+        /// - char 'I': the infinity norm
+        /// </param>
+        static public double Cond<T>(this T M, int NORM = '1') where T : IMatrix {
             if (M.NoOfRows != M.NoOfCols)
                 throw new ArgumentException("Only supported for quadratic matrix.");
             int N = M.NoOfCols;
 
             double RCOND = double.NaN;
             int INFO = 0;
-            
+
+            if(NORM != '1' && NORM != 'I')
+                throw new ArgumentException("Unknown norm specifier; expecting either '1' for one-norm or 'I' for infinity norm.");
 
             unsafe {
                 double[] _this_Entries = TempBuffer.GetTempBuffer(out int i0, N*N);
@@ -2311,14 +2319,13 @@ namespace ilPSP {
                 fixed(double* A = _this_Entries, work = _work) {
                     CopyToUnsafeBuffer(M, A, true);
 
-                    int NORM = '1';
                     int LDA = N;
                     double ANORM;
 
                     if(NORM == '1' || NORM == 'O')
                         ANORM = M.OneNorm();
                     else if(NORM == 'I')
-                        ANORM = M.OneNorm();
+                        ANORM = M.InfNorm();
                     else
                         throw new ArgumentException("Illegal Matrix Norm Specifier.");
 

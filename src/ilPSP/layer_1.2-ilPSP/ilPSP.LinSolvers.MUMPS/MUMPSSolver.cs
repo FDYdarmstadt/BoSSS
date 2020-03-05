@@ -209,8 +209,8 @@ namespace ilPSP.LinSolvers.MUMPS {
                     r.RunTime = st.Elapsed;
                 }
                 // Trying to get as output the condition number of the matrix. Controlled by icntl[10]
-                //Console.WriteLine("cond1: {0}",mumps_par.rinfog[9]);
-                //Console.WriteLine("cond2: {0}",mumps_par.rinfog[10]);
+                //Console.WriteLine("cond1: {0:0.###e-00}",mumps_par.rinfog[9]);
+                //Console.WriteLine("cond2: {0:0.###e-00}",mumps_par.rinfog[10]);
                 if(m_Statistics == MUMPSStatistics.AllStatistics) {
                     LastCondNo = mumps_par.rinfog[9];
                 } else {

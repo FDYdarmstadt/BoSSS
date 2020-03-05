@@ -51,10 +51,12 @@ max Blocksize: 12
 maximal Multigridlevel: 0
 done.
 searching for library variants of PARDISO in following order: SEQ
-MUMPS: Full error analysis
-cond1: 206748.612942732
-cond2: 1
-MATLAB condition number: 504769.770618733
+cond1: 2.067e05
+cond2: 1e00
+MATLAB condition number: 5.048e05
+cond1: 2.067e05
+cond2: 1e00
+MATLAB condition number: 5.048e05
 Removing tag: NotTerminated
 Session ID: 00000000-0000-0000-0000-000000000000, DB path: 'EMPTY'.
   Species A: no of agglomerated cells: 0
@@ -80,10 +82,12 @@ min Blocksize: 6
 max Blocksize: 12
 maximal Multigridlevel: 0
 done.
-MUMPS: Full error analysis
-cond1: 380452.942465123
-cond2: 1
-MATLAB condition number: 1846205.05871262
+cond1: 3.805e05
+cond2: 1e00
+MATLAB condition number: 1.846e06
+cond1: 3.805e05
+cond2: 1e00
+MATLAB condition number: 1.846e06
 Removing tag: NotTerminated
 Session ID: 00000000-0000-0000-0000-000000000000, DB path: 'EMPTY'.
   Species A: no of agglomerated cells: 8
@@ -109,10 +113,12 @@ min Blocksize: 6
 max Blocksize: 12
 maximal Multigridlevel: 0
 done.
-MUMPS: Full error analysis
-cond1: 802239.643408806
-cond2: 1
-MATLAB condition number: 2645953.67352427
+cond1: 8.022e05
+cond2: 1e00
+MATLAB condition number: 2.646e06
+cond1: 8.022e05
+cond2: 1e00
+MATLAB condition number: 2.646e06
 Removing tag: NotTerminated
 Session ID: 00000000-0000-0000-0000-000000000000, DB path: 'EMPTY'.
   Species A: no of agglomerated cells: 0
@@ -138,10 +144,12 @@ min Blocksize: 6
 max Blocksize: 12
 maximal Multigridlevel: 0
 done.
-MUMPS: Full error analysis
-cond1: 968002.862378202
-cond2: 1
-MATLAB condition number: 3970798.73719981
+cond1: 9.68e05
+cond2: 1e00
+MATLAB condition number: 3.971e06
+cond1: 9.68e05
+cond2: 1e00
+MATLAB condition number: 3.971e06
 Removing tag: NotTerminated
 Session ID: 00000000-0000-0000-0000-000000000000, DB path: 'EMPTY'.
   Species A: no of agglomerated cells: 8
@@ -167,10 +175,12 @@ min Blocksize: 6
 max Blocksize: 12
 maximal Multigridlevel: 0
 done.
-MUMPS: Full error analysis
-cond1: 3311000.37707026
-cond2: 1
-MATLAB condition number: 12716239.3970815
+cond1: 3.311e06
+cond2: 1e00
+MATLAB condition number: 1.272e07
+cond1: 3.311e06
+cond2: 1e00
+MATLAB condition number: 1.272e07
 Removing tag: NotTerminated
 Session ID: 00000000-0000-0000-0000-000000000000, DB path: 'EMPTY'.
   Species A: no of agglomerated cells: 8
@@ -196,10 +206,12 @@ min Blocksize: 6
 max Blocksize: 12
 maximal Multigridlevel: 0
 done.
-MUMPS: Full error analysis
-cond1: 3312699.12270019
-cond2: 1
-MATLAB condition number: 10672277.48659
+cond1: 3.313e06
+cond2: 1e00
+MATLAB condition number: 1.067e07
+cond1: 3.313e06
+cond2: 1e00
+MATLAB condition number: 1.067e07
 Removing tag: NotTerminated
 Session ID: 00000000-0000-0000-0000-000000000000, DB path: 'EMPTY'.
   Species A: no of agglomerated cells: 16
@@ -225,10 +237,12 @@ min Blocksize: 6
 max Blocksize: 12
 maximal Multigridlevel: 0
 done.
-MUMPS: Full error analysis
-cond1: 11823272.5583255
-cond2: 1
-MATLAB condition number: 46594132.4633376
+cond1: 1.182e07
+cond2: 1e00
+MATLAB condition number: 4.659e07
+cond1: 1.182e07
+cond2: 1e00
+MATLAB condition number: 4.659e07
 Removing tag: NotTerminated
 Session ID: 00000000-0000-0000-0000-000000000000, DB path: 'EMPTY'.
   Species A: no of agglomerated cells: 8
@@ -239,7 +253,7 @@ s 0
 Steady solve ...
 Setting up multigrid operator...
 NLinS-, Precond-, LinS-, total-Iterations : Type, SolverName, InfResi, Multigridlevel
-0,0,1,1, : LinSolver, SparseSolver, 7.45538233170602E-13, 0
+0,0,1,1, : LinSolver, SparseSolver, 7.3670637383044E-13, 0
 Solver: SparseSolver, converged? True, 1 iterations.
    System size:                 13068
    No of blocks:                1089
@@ -254,10 +268,12 @@ min Blocksize: 6
 max Blocksize: 12
 maximal Multigridlevel: 0
 done.
-MUMPS: Full error analysis
-cond1: 12037516.4014652
-cond2: 1
-MATLAB condition number: 43390110.7525884
+cond1: 1.204e07
+cond2: 1e00
+MATLAB condition number: 4.339e07
+cond1: 1.204e07
+cond2: 1e00
+MATLAB condition number: 4.339e07
 Removing tag: NotTerminated
 Session ID: 00000000-0000-0000-0000-000000000000, DB path: 'EMPTY'.
   Species A: no of agglomerated cells: 24
@@ -268,7 +284,7 @@ s 0
 Steady solve ...
 Setting up multigrid operator...
 NLinS-, Precond-, LinS-, total-Iterations : Type, SolverName, InfResi, Multigridlevel
-0,0,1,1, : LinSolver, SparseSolver, 1.47141438026421E-12, 0
+0,0,1,1, : LinSolver, SparseSolver, 1.47142082959978E-12, 0
 Solver: SparseSolver, converged? True, 1 iterations.
    System size:                 49152
    No of blocks:                4096
@@ -283,10 +299,12 @@ min Blocksize: 6
 max Blocksize: 12
 maximal Multigridlevel: 0
 done.
-MUMPS: Full error analysis
-cond1: 42416990.0142745
-cond2: 1
-MATLAB condition number: 157285427.063014
+cond1: 4.242e07
+cond2: 1e00
+MATLAB condition number: 1.573e08
+cond1: 4.242e07
+cond2: 1e00
+MATLAB condition number: 1.573e08
 Removing tag: NotTerminated
 
 ==============
@@ -296,15 +314,15 @@ var tab = TableExtensions.ToDataTable(Cond);
 tab.Print();
 **************
    Grid:NoOfCells Grid:hMin          Grid:hMax          Grid:1Dres TotCondNo        InnerCondNo      BlockCondNo-innerUncut BlockCondNo-innerCut BlockCondNo-bndyUncut BlockCondNo-bndyCut 
-0: 16             0.75               1.06066017177982   4          504769.770618733 233.004201160852 1                      20.1679193076264     8.12925945868962      16.42015482999      
-1: 25             0.6                0.848528137423857  5          1846205.05871262 387694.533500199 34.7313542753418       23.2932338511819     17.6708539251273      1                   
-2: 64             0.375              0.530330085889911  8          2645953.67352427 1529006.14220972 26.1750827859792       27.8891584337159     16.1578667137093      1                   
-3: 81             0.333333333333333  0.471404520791032  9          3970798.73719981 2529478.78272389 33.5585554821209       24.3627648541072     15.9612669268517      1                   
-4: 256            0.1875             0.265165042944955  16         12716239.3970815 10247431.3530649 33.1208452846557       28.4118130958866     15.9612669268517      1                   
-5: 289            0.176470588235294  0.249567099242311  17         10672277.48659   8723095.90292421 32.082353095593        28.1579706911444     15.9612669268517      1                   
-6: 1024           0.09375            0.132582521472478  32         46594132.4633376 42178884.8294983 32.9066417527889       35.2562626984225     15.9612669268517      1                   
-7: 1089           0.0909090909090908 0.128564869306646  33         43390110.7525884 39398795.3738428 32.5875876183126       27.0631604634096     15.9612669268517      1                   
-8: 4096           0.046875           0.0662912607362388 64         157285427.063014 149885361.26918  33.1654251010492       35.4064273512943     15.9612669268517      1                   
+0: 16             0.75               1.06066017177982   4          206748.612942732 233.004201160852 1                      20.1679193076264     8.12925945868962      16.42015482999      
+1: 25             0.6                0.848528137423857  5          380452.942465123 387694.533500199 34.7313542753418       23.2932338511819     17.6708539251273      1                   
+2: 64             0.375              0.530330085889911  8          802239.643408806 1529006.14220972 26.1750827859792       27.8891584337159     16.1578667137093      1                   
+3: 81             0.333333333333333  0.471404520791032  9          968002.862378202 2529478.78272389 33.5585554821209       24.3627648541072     15.9612669268517      1                   
+4: 256            0.1875             0.265165042944955  16         3311000.37707026 10247431.35306   33.1208452846557       28.4118130958866     15.9612669268517      1                   
+5: 289            0.176470588235294  0.249567099242311  17         3312699.12270019 8723095.902923   32.082353095593        28.1579706911444     15.9612669268517      1                   
+6: 1024           0.09375            0.132582521472478  32         11823272.5583255 42178884.8294983 32.9066417527889       35.2562626984225     15.9612669268517      1                   
+7: 1089           0.0909090909090908 0.128564869306646  33         12037516.4014652 39398795.3738428 32.5875876183126       27.0631604634096     15.9612669268517      1                   
+8: 4096           0.046875           0.0662912607362388 64         42416990.0142745 149885361.26918  33.1654251010492       35.4064273512943     15.9612669268517      1                   
 ==============
 var Ptot = tab.ToPlot("Grid:1Dres","TotCondNo");
 Ptot.dataGroups[0].Name = "total cond no";
@@ -338,14 +356,13 @@ Pfull.PlotNow();
 **************
 Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 set key font ",16"inside top left Left reverse 
-Gnuplot Error: 
-gnuplot> set yrange [0.1:10000000000]
-                         ^
-         line 0: warning: integer overflow; changing to floating point
-
 System.Drawing.Bitmap
 ==============
 LastError;
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

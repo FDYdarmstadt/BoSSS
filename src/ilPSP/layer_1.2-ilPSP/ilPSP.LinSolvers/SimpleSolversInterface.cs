@@ -51,7 +51,7 @@ namespace ilPSP.LinSolvers {
         }
 
         /// <summary>
-        /// Soves a linear system using a direct solver.
+        /// Solves a linear system using a direct solver.
         /// </summary>
         /// <param name="Matrix">the matrix of the linear problem.</param>
         /// <param name="X">Output, (hopefully) the solution.</param>
