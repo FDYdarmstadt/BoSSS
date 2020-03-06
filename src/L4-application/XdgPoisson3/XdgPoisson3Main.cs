@@ -60,9 +60,12 @@ namespace BoSSS.Application.XdgPoisson3 {
             BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
             //BatchmodeConnector.MatlabExecuteable = "D:\\cygwin\\bin\\bash.exe";
 
-            //BoSSS.Application.XdgPoisson3.Tests.TestFixtureSetUp();
-            //BoSSS.Application.XdgPoisson3.Tests.SolverTest(Code.exp_softpcg_mg);
-            //Assert.IsTrue(false, "remove me");
+
+            Tests.TestFixtureSetUp();
+            Tests.DiscretizationScalingTest(1);
+            Tests.TestFixtureTearDown();
+            return;
+
 
             BoSSS.Solution.Application<XdgPoisson3Control>._Main(args, false, delegate () {
                 return new XdgPoisson3Main();
@@ -128,6 +131,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 //currentDomain.UnhandledException += new UnhandledExceptionEventHandler(MyHandler);
             }
 
+           
             base.SetInitial();
             this.LsTrk.UpdateTracker();
             base.SetInitial();

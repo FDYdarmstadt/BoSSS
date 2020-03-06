@@ -68,27 +68,62 @@ namespace BoSSS.Application.XdgPoisson3 {
             }
         }
 
+        private static double Regression(double[] xValues, double[] yValues) {
+            double xAvg = xValues.Average();
+            double yAvg = yValues.Average();
+
+            double v1 = 0.0;
+            double v2 = 0.0;
+
+            for (int i = 0; i < yValues.Length; i++) {
+                v1 += (xValues[i] - xAvg) * (yValues[i] - yAvg);
+                v2 += Math.Pow(xValues[i] - xAvg, 2);
+            }
+
+            double a = v1 / v2;
+            double b = yAvg - a * xAvg;
+
+            return a;
+        }
+
 
         /// <summary>
         /// Grid scale tests for condition numbers
         /// </summary>
-        public static IDictionary<string,double[]> DiscretizationTest(
-            [Values(1,2,3,4)] int dgDegree
+        public static void DiscretizationScalingTest(
+            [Values(1,2)] int dgDegree
             ) {
 
             var Controls = new List<XdgPoisson3Control>();
-            foreach(int res in new int[] { 4, 5, 8, 9, 16, 17, 32, 33, 64 }) {
+            foreach (int res in new int[] { 8, 9, 16, 17, 32, 33, 64, 65 }) {
                 var C = HardCodedControl.Circle(Resolution: res, p: dgDegree);
                 C.LinearSolver.SolverCode = Code.classic_pardiso;
                 C.savetodb = false;
-            
+
                 Controls.Add(C);
             }
+            
+            
+            var data = RunAndLog(Controls);
 
+            string[] xKeys = data.Keys.Where(name => name.StartsWith("Grid:")).ToArray();
+            string[] yKeys = data.Keys.Where(name => !name.StartsWith("Grid:")).ToArray();
+
+            foreach(var yKey in yKeys) {
+                double[] xVals = data["Grid:1Dres"];
+                double[] yVals = data[yKey];
+
+                double Slope = Regression(xVals.Select(x => Math.Log10(x)).ToArray(), yVals.Select(y => Math.Log10(y)).ToArray());
+
+                Console.WriteLine($"Slope for {yKey}: {Slope:0.###e-00}");
+            }
+        }
+
+        private static IDictionary<string, double[]> RunAndLog(List<XdgPoisson3Control> Controls) {
             var ret = new Dictionary<string, List<double>>();
 
-            foreach(var C in Controls) {
-                using(var solver = new XdgPoisson3Main()) {
+            foreach (var C in Controls) {
+                using (var solver = new XdgPoisson3Main()) {
                     solver.Init(C);
                     solver.RunSolverMode();
 
@@ -100,24 +135,24 @@ namespace BoSSS.Application.XdgPoisson3 {
 
                     var prop = solver.OperatorAnalysis();
 
-                    if(ret.Count == 0) {
+                    if (ret.Count == 0) {
                         ret.Add("Grid:NoOfCells", new List<double>());
                         ret.Add("Grid:hMin", new List<double>());
                         ret.Add("Grid:hMax", new List<double>());
                         ret.Add("Grid:1Dres", new List<double>());
 
-                        foreach(var kv in prop) {
+                        foreach (var kv in prop) {
                             ret.Add(kv.Key, new List<double>());
                         }
-                    } 
-                    
+                    }
+
                     {
                         ret["Grid:NoOfCells"].Add(J);
                         ret["Grid:hMin"].Add(hMin);
                         ret["Grid:hMax"].Add(hMax);
                         ret["Grid:1Dres"].Add(J1d);
 
-                        foreach(var kv in prop) {
+                        foreach (var kv in prop) {
                             ret[kv.Key].Add(kv.Value);
                         }
                     }
@@ -128,14 +163,12 @@ namespace BoSSS.Application.XdgPoisson3 {
             // ========================
             {
                 var realRet = new Dictionary<string, double[]>();
-                foreach(var kv in ret) {
+                foreach (var kv in ret) {
                     realRet.Add(kv.Key, kv.Value.ToArray());
                 }
 
                 return realRet;
             }
         }
-
-
     }
 }

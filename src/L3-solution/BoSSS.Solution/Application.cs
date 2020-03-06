@@ -1623,7 +1623,6 @@ namespace BoSSS.Solution {
 
                 // pass 2: XDG fields
                 // ===========================
-
                 if (Pass2_Evaluators.Count > 0) {
                     LsTrk.UpdateTracker();
                     LsTrk.PushStacks();
