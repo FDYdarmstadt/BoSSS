@@ -35,8 +35,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <param name="boundaryMap">
         /// Mapping for boundary conditions
         /// </param>
-        public OptimizedHLLCEnergyFlux(IBoundaryConditionMap boundaryMap, Material material, SpeciesId speciesId = new SpeciesId())
-            : base(boundaryMap, material, speciesId) {
+        public OptimizedHLLCEnergyFlux(IBoundaryConditionMap boundaryMap, Material material)
+            : base(boundaryMap, material) {
         }
 
         /// <summary>

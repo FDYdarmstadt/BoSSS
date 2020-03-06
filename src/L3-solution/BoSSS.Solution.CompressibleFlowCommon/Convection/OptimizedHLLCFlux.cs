@@ -28,7 +28,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
     /// <summary>
     /// Base class for optimized versions of the HLLC flux
     /// </summary>
-    public abstract class OptimizedHLLCFlux : INonlinearFlux, IEquationComponentSpeciesNotification, ISpeciesFilter {
+    public abstract class OptimizedHLLCFlux : INonlinearFlux, IEquationComponentSpeciesNotification {
 
         /// <summary>
         /// <see cref="OptimizedHLLCDensityFlux.OptimizedHLLCDensityFlux"/>
@@ -45,10 +45,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <param name="boundaryMap">
         /// Mapping for boundary conditions
         /// </param>
-        public OptimizedHLLCFlux(IBoundaryConditionMap boundaryMap, Material material, SpeciesId speciesId) {
+        public OptimizedHLLCFlux(IBoundaryConditionMap boundaryMap, Material material) {
             this.boundaryMap = boundaryMap;
             this.material = material;
-            this.validSpeciesId = speciesId;
         }
 
         #region INonlinearFlux Members
@@ -147,10 +146,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
             }
         }
 
-        #endregion
-
-        #region ISpeciesFilter Members
-        public SpeciesId validSpeciesId { get; }
         #endregion
     }
 }

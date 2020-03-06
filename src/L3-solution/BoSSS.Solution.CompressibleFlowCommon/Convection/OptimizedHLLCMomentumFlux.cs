@@ -43,8 +43,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <param name="component">
         /// The component of the momentum vector.
         /// </param>
-        public OptimizedHLLCMomentumFlux(IBoundaryConditionMap boundaryMap, int component, Material material, SpeciesId speciesId = new SpeciesId())
-            : base(boundaryMap, material, speciesId) {
+        public OptimizedHLLCMomentumFlux(IBoundaryConditionMap boundaryMap, int component, Material material)
+            : base(boundaryMap, material) {
             this.component = component;
         }
 
