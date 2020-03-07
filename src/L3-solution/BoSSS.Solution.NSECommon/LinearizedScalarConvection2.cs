@@ -677,10 +677,6 @@ namespace BoSSS.Solution.NSECommon {
                             default:
                                 throw new NotImplementedException();
                         }
-
-
-                      
-
                         // Calculate BorderEdgeFlux as InnerEdgeFlux
                         // =========================================                         
 

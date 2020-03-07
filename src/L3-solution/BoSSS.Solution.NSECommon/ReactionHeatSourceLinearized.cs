@@ -187,6 +187,8 @@ namespace BoSSS.Solution.NSECommon {
 
             ReactionRate = m_Da * Math.Exp(-ReactionRateConstants[1] / Temperature) * OneOverMolarMass0MolarMass1 * Math.Pow(rho * Y0, ReactionRateConstants[2]) * Math.Pow(rho * Y1, ReactionRateConstants[3]);
 
+            //if (ReactionRate < 0)
+            //    ReactionRate = 0;
             return HeatReleaseFactor * U[0] * ReactionRate;
 
         }

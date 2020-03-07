@@ -646,7 +646,6 @@ namespace BoSSS.Solution.NSECommon {
         /// flux at the boundary
         /// </summary>
         protected double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
-
             IncompressibleBcType edgeType = m_bcmap.EdgeTag2Type[inp.EdgeTag];
 
             switch(edgeType) {
@@ -656,6 +655,7 @@ namespace BoSSS.Solution.NSECommon {
                 case IncompressibleBcType.SlipSymmetry:
                 case IncompressibleBcType.NavierSlip_Linear:
                 case IncompressibleBcType.Velocity_Inlet: {
+
 
                         // Fluss am Rand: f(u[d]) = n∙v∙u[d]
                         // wobei n der Normalenvektor, v=(v1,v2) resp. v=(v1,v2,v3) der Linearisierungspunkt.
