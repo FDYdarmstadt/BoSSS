@@ -50,7 +50,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// </summary>
         /// <param name="SolverName"></param>
         [Test]
-        public static void SolverTest([Values(Code.exp_Kcycle_schwarz, Code.exp_gmres_levelpmg)] Code SolverName) {
+        public static void IterativeSolverTest([Values(Code.exp_Kcycle_schwarz, Code.exp_gmres_levelpmg)] Code SolverName) {
             using (var solver = new XdgPoisson3Main()) {
 
                 int Res, p;
@@ -68,7 +68,10 @@ namespace BoSSS.Application.XdgPoisson3 {
             }
         }
 
-        private static double Regression(double[] xValues, double[] yValues) {
+        private static double LogLogRegression(IEnumerable<double> _xValues, IEnumerable<double> _yValues) {
+            double[] xValues = _xValues.Select(x => Math.Log10(x)).ToArray();
+            double[] yValues = _yValues.Select(y => Math.Log10(y)).ToArray();
+
             double xAvg = xValues.Average();
             double yAvg = yValues.Average();
 
@@ -90,12 +93,29 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// <summary>
         /// Grid scale tests for condition numbers
         /// </summary>
+        [Test]
         public static void DiscretizationScalingTest(
-            [Values(1,2)] int dgDegree
-            ) {
+#if DEBUG
+            [Values(1)] 
+#else
+            [Values(1,2,3,4)] 
+#endif
+            int dgDegree
+            ) //
+        {
 
             var Controls = new List<XdgPoisson3Control>();
-            foreach (int res in new int[] { 8, 9, 16, 17, 32, 33, 64, 65 }) {
+
+            int[] ResS = null;
+            switch(dgDegree) {
+                case 1: ResS = new int[] { 8, 9, 16, 17, 32, 33, 64, 65, 128 }; break;
+                case 2: ResS = new int[] { 8, 9, 16, 17, 32, 33, 64, 65 }; break;
+                case 3: ResS = new int[] { 8, 9, 16, 17, 32, 33, 64 }; break;
+                case 4: ResS = new int[] { 8, 9, 16, 17, 32, 33 }; break;
+                default: throw new NotImplementedException();
+            }
+            
+            foreach (int res in ResS) {
                 var C = HardCodedControl.Circle(Resolution: res, p: dgDegree);
                 C.LinearSolver.SolverCode = Code.classic_pardiso;
                 C.savetodb = false;
@@ -106,16 +126,42 @@ namespace BoSSS.Application.XdgPoisson3 {
             
             var data = RunAndLog(Controls);
 
-            string[] xKeys = data.Keys.Where(name => name.StartsWith("Grid:")).ToArray();
-            string[] yKeys = data.Keys.Where(name => !name.StartsWith("Grid:")).ToArray();
+            //string[] xKeys = data.Keys.Where(name => name.StartsWith("Grid:")).ToArray();
+            //string[] yKeys = data.Keys.Where(name => !name.StartsWith("Grid:")).ToArray();
 
-            foreach(var yKey in yKeys) {
-                double[] xVals = data["Grid:1Dres"];
-                double[] yVals = data[yKey];
 
-                double Slope = Regression(xVals.Select(x => Math.Log10(x)).ToArray(), yVals.Select(y => Math.Log10(y)).ToArray());
+            /*
+            Für p = 1:
+            Slope for TotCondNo-Var0: 2.153e00
+            Slope for InnerCondNo-Var0: 2.59e00
+            Slope for StencilCondNo-innerUncut-Var0: 1.486e-01
+            Slope for StencilCondNo-innerCut-Var0: 9.957e-02
+            Slope for StencilCondNo-bndyUncut-Var0: 1.226e-04
+            Slope for StencilCondNo-bndyCut-Var0: 0e00             
+            */
 
-                Console.WriteLine($"Slope for {yKey}: {Slope:0.###e-00}");
+            var ExpectedSlopes = new List<ValueTuple<string, string, double>>();
+            ExpectedSlopes.Add(("Grid:1Dres", "TotCondNo-Var0", 2.5));
+            ExpectedSlopes.Add(("Grid:1Dres", "StencilCondNo-innerUncut-Var0", 0.5));
+            ExpectedSlopes.Add(("Grid:1Dres", "StencilCondNo-innerCut-Var0", 0.5));
+
+
+            foreach (var ttt in ExpectedSlopes) {
+                double[] xVals = data[ttt.Item1];
+                double[] yVals = data[ttt.Item2];
+
+                double Slope = LogLogRegression(xVals, yVals);
+
+                Console.WriteLine($"Slope for {ttt.Item2}: {Slope:0.###e-00}");
+            }
+
+            foreach (var ttt in ExpectedSlopes) {
+                double[] xVals = data[ttt.Item1];
+                double[] yVals = data[ttt.Item2];
+
+                double Slope = LogLogRegression(xVals, yVals);
+
+                Assert.LessOrEqual(Slope, ttt.Item3, $"Condition number slope for {ttt.Item2} to high; at max. {ttt.Item3}");
             }
         }
 

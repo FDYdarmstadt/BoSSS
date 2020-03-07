@@ -808,7 +808,7 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
-            /*
+            
             private static void RecursiveColoring(IGridData g, BitArray Msk, int j, int Color, int[] ColorMap, ref bool IsIsolated) {
                 Debug.Assert(Msk[j] == true, "illegal to call on non-occupied cells");
                 if (Msk[j] != true)
@@ -858,7 +858,7 @@ namespace BoSSS.Foundation.XDG {
 
                 return;
             }
-            */
+            
 
             /// <summary>
             /// 'Non-Recursive' implementation of the recursive algorithm, should be less prone to stack overflow.
@@ -885,22 +885,20 @@ namespace BoSSS.Foundation.XDG {
 
                     ColorMap[j] = Color;
 
-                    bool Recursion = false;
-                    for(; iNeigh < jNeigh.Length; iNeigh++) {
+                    //bool Recursion = false;
+                    if (iNeigh < jNeigh.Length) {
                         int jN = jNeigh[iNeigh];
+                        iNeigh += 1;
 
-                        if (Msk[jN] == false)
+                        if (Msk[jN] == false) {
                             // Neighbor cell does not contain species -> end of recursion
-                            continue;
 
-                        if (jN >= J) {
+                        } else if (jN >= J) {
                             // external cell -> no further recursion
                             IsIsolated = false;
                             ColorMap[jN] = Color;
-                            continue;
-                        }
 
-                        if (ColorMap[jN] > 0) {
+                        } else if (ColorMap[jN] > 0) {
                             // note: there may be the case that a part splits in two on the local MPI processor,
                             //       but the part is connected through another processor; 
                             //       thats why we can't test external cells.
@@ -909,20 +907,20 @@ namespace BoSSS.Foundation.XDG {
                             if (ColorMap[jN] != Color) {
                                 throw new ApplicationException("error in Algorithm, cell " + jN); // Debug.Assert would also be fine, *if* our homies would ever run DEBUG
                             }
-                            continue;
+
+                        } else {
+
+                            //RecursiveColoring(g, Msk, jN, Color, ColorMap, ref IsIsolated);
+                            // if we have not hit a continue until here, we need to do the recursion
+                            
+                            //Recursion = true;
+                            neighCounterStack.Push(iNeigh);
+                            cellStack.Push(j);
+                            j = jN;
+                            jNeigh = g.iLogicalCells.CellNeighbours[j];
+                            iNeigh = 0;
                         }
-
-                        //RecursiveColoring(g, Msk, jN, Color, ColorMap, ref IsIsolated);
-                        // if we have not hit a continue until here, we need to do the recursion
-                        Recursion = true;
-                        neighCounterStack.Push(iNeigh);
-                        cellStack.Push(j);
-                        j = jN;
-                        jNeigh = g.iLogicalCells.CellNeighbours[j];
-                        break;
-                    }
-
-                    if(!Recursion) {
+                    } else {
                         Debug.Assert(cellStack.Count == neighCounterStack.Count);
                         Debug.Assert(cellStack.Count <= JE + 1);
                         if (cellStack.Count == 0) {
@@ -933,7 +931,20 @@ namespace BoSSS.Foundation.XDG {
                             jNeigh = g.iLogicalCells.CellNeighbours[j];
                         }
                     }
-                   
+
+                    /*
+                    if(!Recursion || iNeigh >= jNeigh.Length) {
+                        Debug.Assert(cellStack.Count == neighCounterStack.Count);
+                        Debug.Assert(cellStack.Count <= JE + 1);
+                        if (cellStack.Count == 0) {
+                            break;
+                        } else {
+                            iNeigh = neighCounterStack.Pop();
+                            j = cellStack.Pop();
+                            jNeigh = g.iLogicalCells.CellNeighbours[j];
+                        }
+                    }
+                   */
                 }
 
                 return;

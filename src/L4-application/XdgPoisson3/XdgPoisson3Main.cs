@@ -62,7 +62,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
 
             Tests.TestFixtureSetUp();
-            Tests.DiscretizationScalingTest(1);
+            Tests.IterativeSolverTest(Code.exp_gmres_levelpmg);
             Tests.TestFixtureTearDown();
             return;
 
