@@ -475,11 +475,14 @@ namespace BoSSS.Application.IBM_Solver {
             }
         }
 
+        int DelComputeOperatorMatrix_CallCounter = 0;
+
         /// <summary>
         /// Used by <see cref="m_BDF_Timestepper"/> to compute operator matrices (linearizations) and/or to evaluate residuals of current solution.
         /// </summary>
         protected virtual void DelComputeOperatorMatrix(BlockMsrMatrix OpMatrix, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
             int D = this.LsTrk.GridDat.SpatialDimension;
+            
 
             // compute operator
             //Debug.Assert(OpMatrix.InfNorm() == 0.0);
@@ -505,7 +508,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             // create matrix and affine vector:
             if (OpMatrix != null) {
-
+                DelComputeOperatorMatrix_CallCounter++;
 
                 // using ad-hoc linearization:
                 // - - - - - - - - - - - - - - 
