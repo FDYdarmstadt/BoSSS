@@ -853,7 +853,7 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
-            
+            /*
             private static void RecursiveColoring(IGridData g, BitArray Msk, int j, int Color, int[] ColorMap, ref bool IsIsolated) {
                 Debug.Assert(Msk[j] == true, "illegal to call on non-occupied cells");
                 if (Msk[j] != true)
@@ -903,7 +903,7 @@ namespace BoSSS.Foundation.XDG {
 
                 return;
             }
-            
+            */
 
             /// <summary>
             /// 'Non-Recursive' implementation of the recursive algorithm, should be less prone to stack overflow.

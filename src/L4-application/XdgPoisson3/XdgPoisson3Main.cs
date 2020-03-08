@@ -62,6 +62,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             //Tests.TestFixtureSetUp();
             //Tests.DiscretizationScalingTest(1);
             //throw new ApplicationException("remove me");
+            //Debugger.Launch();
 
             BoSSS.Solution.Application<XdgPoisson3Control>._Main(args, false, delegate () {
                 return new XdgPoisson3Main();
