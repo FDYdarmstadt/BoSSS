@@ -382,7 +382,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
 
-            //WARNING INJECTORS ARE PROGRESSIVE FROM LEVEL TO LEVEL, NOT FOLLOWED BY CURVED AGGREGATION
             // check if aggregation is performed on a curved or affine linear grid
             if (((GridData)maxDgBasis.GridDat).Cells.ContainsNonlinearCell())
             {

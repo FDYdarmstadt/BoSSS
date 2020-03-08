@@ -146,7 +146,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                 {
                     for (int column = 0; column <= row; column++)
                     {
-                        aggE1[row, i * (basisIndex + 1) + column] = _inj[i, row - column, row];
+                        aggE1[row, i * (basisIndex + 1) + column] = _inj[i, column, row];
                     }
                 }
             }
@@ -173,17 +173,38 @@ namespace BoSSS.Solution.AdvancedSolvers
                 int index_j = Array.IndexOf(parts, cell_j);                      
 
                 // get basis values on the edge
-                MultidimensionalArray edge_eval_points = MultidimensionalArray.Create(currentDegree + 1, 1);
+                // construct evaluation points, currently only viable for 1D edges                
+                // create NodeSet
+                int edgeRef = _agGrd.iGeomEdges.GetRefElementIndex(edge);
+                var refEl = _agGrd.iGeomEdges.EdgeRefElements[edgeRef];
+                int edgeVertCount = refEl.NoOfVertices;
 
-                // construct evaluation points, currently only viable for 1D edges
-                edge_eval_points[0, 0] = 0.0;
-                for (int i = 1; i < currentDegree + 1; i++)
+                MultidimensionalArray edgeEvalPoints = MultidimensionalArray.Create(currentDegree + 1, refEl.SpatialDimension);
+                    refEl.Vertices.To2DArray();
+                if (edgeVertCount < currentDegree + 1)
                 {
-                    edge_eval_points[i, 0] = (double)i / currentDegree;
+                    for (int i = 0; i < edgeVertCount; i++)
+                    {
+                        edgeEvalPoints.ExtractSubArrayShallow(i, -1).Acc(1.0, refEl.Vertices.ExtractSubArrayShallow(i, -1));
+                    }
+                    
+                    for(int i = edgeVertCount; i < currentDegree + 1; i++)
+                    {
+                        // construct a point as middle point between the edge vertices
+                        edgeEvalPoints.ExtractSubArrayShallow(i, -1).Acc(0.5, edgeEvalPoints.ExtractSubArrayShallow(i - edgeVertCount, -1));
+                        edgeEvalPoints.ExtractSubArrayShallow(i, -1).Acc(0.5, edgeEvalPoints.ExtractSubArrayShallow(i - edgeVertCount + 1, -1));
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < currentDegree + 1; i++)
+                    {
+                        edgeEvalPoints.ExtractSubArrayShallow(i, -1).Acc(1.0, refEl.Vertices.ExtractSubArrayShallow(i, -1));
+                    }
                 }
 
-                // create NodeSet
-                NodeSet edge_coords = new NodeSet(_agGrd.iGeomEdges.EdgeRefElements[0], edge_eval_points);
+
+                NodeSet edge_coords = new NodeSet(refEl, edgeEvalPoints);
                 edge_coords.LockForever();
 
                 // evaluate the polynomials on the edge for both cells
@@ -321,132 +342,134 @@ namespace BoSSS.Solution.AdvancedSolvers
         // recursively extracts the Injection operator from ilevel-1 to  ilevel from the direct operator to ilevel
         public static void ExtractInjectorCurved(AggregationGridData[] _agGrd, Basis _maxDgBasis, MultidimensionalArray[][] _Injectors, MultidimensionalArray[] _injectorCoarse, int ilevel)
         {
-            // get dimensions of Injection operator
-            int Jagg = _agGrd[ilevel].iLogicalCells.Count;
-            int Np = _maxDgBasis.Length;
-            var Context = _maxDgBasis.GridDat;
-
-
-            _Injectors[ilevel] = new MultidimensionalArray[Jagg];
-
-
-            // iterate over all aggregate (logical) cells of ilevel
-            for (int aggCell = 0; aggCell < Jagg; aggCell++)
+            if (ilevel > 1)
             {
 
-                // logical cells on ilevel-1 that build the aggregated cell on ilevel
-                int[] aggParts = _agGrd[ilevel].jCellCoarse2jCellFine[aggCell];
-                _Injectors[ilevel][aggCell] = MultidimensionalArray.Create(aggParts.Length, Np, Np);
+                // get dimensions of Injection operator
+                int Jagg = _agGrd[ilevel].iLogicalCells.Count;
+                int Np = _maxDgBasis.Length;
+                var Context = _maxDgBasis.GridDat;
 
-                // iterate over all aggregate (logical) cells of ilevel - 1
-                foreach (int lCell in aggParts)
+
+                _Injectors[ilevel] = new MultidimensionalArray[Jagg];
+
+
+                // iterate over all aggregate (logical) cells of ilevel
+                for (int aggCell = 0; aggCell < Jagg; aggCell++)
                 {
-                    int[] parts = _agGrd[ilevel - 1].iLogicalCells.AggregateCellToParts[lCell];
-                    MultidimensionalArray ortho = MultidimensionalArray.Create(Np, Np);
-                    MultidimensionalArray orthoInv = MultidimensionalArray.Create(Np, Np);
 
-                    // compute the mass matrix for lCell on ilevel - 1 when using the Injector to ilevel
-                    MultidimensionalArray MMtemp = MultidimensionalArray.Create(Np, Np);
-                    foreach (int gCell in parts)
+                    // logical cells on ilevel-1 that build the aggregated cell on ilevel
+                    int[] aggParts = _agGrd[ilevel].jCellCoarse2jCellFine[aggCell];
+                    _Injectors[ilevel][aggCell] = MultidimensionalArray.Create(aggParts.Length, Np, Np);
+
+                    // iterate over all aggregate (logical) cells of ilevel - 1
+                    foreach (int lCell in aggParts)
                     {
+                        int[] parts = _agGrd[ilevel - 1].iLogicalCells.AggregateCellToParts[lCell];
+                        MultidimensionalArray ortho = MultidimensionalArray.Create(Np, Np);
+                        MultidimensionalArray orthoInv = MultidimensionalArray.Create(Np, Np);
 
-                        var cellMask = new CellMask(Context, new[] { new Chunk() { i0 = gCell, Len = 1 } }, MaskType.Geometrical);
-
-                        CellQuadrature.GetQuadrature(new int[2] { Np, Np }, Context,
-                        (new CellQuadratureScheme(true, cellMask)).Compile(Context, _maxDgBasis.Degree * 2), // integrate over target cell
-                        delegate (int i0, int Length, QuadRule QR, MultidimensionalArray _EvalResult)
+                        // compute the mass matrix for lCell on ilevel - 1 when using the Injector to ilevel
+                        MultidimensionalArray MMtemp = MultidimensionalArray.Create(Np, Np);
+                        foreach (int gCell in parts)
                         {
+
+                            var cellMask = new CellMask(Context, new[] { new Chunk() { i0 = gCell, Len = 1 } }, MaskType.Geometrical);
+
+                            CellQuadrature.GetQuadrature(new int[2] { Np, Np }, Context,
+                            (new CellQuadratureScheme(true, cellMask)).Compile(Context, _maxDgBasis.Degree * 2), // integrate over target cell
+                            delegate (int i0, int Length, QuadRule QR, MultidimensionalArray _EvalResult)
+                            {
                             // get a set of quad points on the reference element
                             NodeSet nodes = QR.Nodes;
-                            Debug.Assert(Length == 1);
+                                Debug.Assert(Length == 1);
 
-                            var phi_0 = _maxDgBasis.CellEval(nodes, gCell, 1).ExtractSubArrayShallow(0, -1, -1);
+                                var phi_0 = _maxDgBasis.CellEval(nodes, gCell, 1).ExtractSubArrayShallow(0, -1, -1);
                             // apply the coarse injector
                             MultidimensionalArray phi = phi_0.CloneAs();
-                            phi.Multiply(1.0, phi_0, _injectorCoarse[gCell], 0.0, "ki", "kj", "ji");
+                                phi.Multiply(1.0, phi_0, _injectorCoarse[gCell], 0.0, "ki", "kj", "ji");
 
-                            var EvalResult = _EvalResult.ExtractSubArrayShallow(0, -1, -1, -1);
+                                var EvalResult = _EvalResult.ExtractSubArrayShallow(0, -1, -1, -1);
 
-                            EvalResult.Multiply(1.0, phi, phi, 0.0, "kmn", "kn", "km");
-                        },
-                        /*_SaveIntegrationResults:*/ delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration)
-                                                     {
-                                                         Debug.Assert(Length == 1);
+                                EvalResult.Multiply(1.0, phi, phi, 0.0, "kmn", "kn", "km");
+                            },
+                            /*_SaveIntegrationResults:*/ delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration)
+                                                         {
+                                                             Debug.Assert(Length == 1);
 
-                                                         var res = ResultsOfIntegration.ExtractSubArrayShallow(0, -1, -1);
-                                                         MMtemp.Acc(1.0, res);
-                                                     }).Execute();
-                    }
+                                                             var res = ResultsOfIntegration.ExtractSubArrayShallow(0, -1, -1);
+                                                             MMtemp.Acc(1.0, res);
+                                                         }).Execute();
+                        }
 
-                    // orthonormalize
-                    // use left or right?
-                    //MMtemp.SymmetricLDLInversion(orthoInv, null);
-                    MMtemp.Cholesky();
-                    MMtemp.TransposeTo(ortho);
-                    ortho.InvertTo(orthoInv);
-                    //orthoInv.InvertTo(ortho);
-                    _Injectors[ilevel][aggCell].ExtractSubArrayShallow(Array.IndexOf(aggParts, lCell), -1, -1).Acc(1.0, ortho);
+                        // orthonormalize
+                        // use left or right?
+                        //MMtemp.SymmetricLDLInversion(orthoInv, null);
+                        MMtemp.Cholesky();
+                        MMtemp.TransposeTo(ortho);
+                        ortho.InvertTo(orthoInv);
+                        //orthoInv.InvertTo(ortho);
+                        _Injectors[ilevel][aggCell].ExtractSubArrayShallow(Array.IndexOf(aggParts, lCell), -1, -1).Acc(1.0, ortho);
 
-                    // form the new direct injector to ilevel - 1
-                    foreach (int gCell in parts)
-                    {
-                        MultidimensionalArray coarseClone = _injectorCoarse[gCell].CloneAs();
-                        _injectorCoarse[gCell].Multiply(1.0, coarseClone, orthoInv, 0.0, "ij", "ik", "kj");
-                    }
+                        // form the new direct injector to ilevel - 1
+                        foreach (int gCell in parts)
+                        {
+                            MultidimensionalArray coarseClone = _injectorCoarse[gCell].CloneAs();
+                            _injectorCoarse[gCell].Multiply(1.0, coarseClone, orthoInv, 0.0, "ij", "ik", "kj");
+                        }
 
 #if DEBUG
-                    MMtemp.Clear();
+                        MMtemp.Clear();
 
-                    // check orthonormality (move to a more suitable location later on)
-                    foreach (int gCell in parts)
-                    {
-
-                        var cellMask = new CellMask(Context, new[] { new Chunk() { i0 = gCell, Len = 1 } }, MaskType.Geometrical);
-                        
-                        CellQuadrature.GetQuadrature(new int[2] { Np, Np }, Context,
-                        (new CellQuadratureScheme(true, cellMask)).Compile(Context, _maxDgBasis.Degree * 2), // integrate over target cell
-                        delegate (int i0, int Length, QuadRule QR, MultidimensionalArray _EvalResult)
+                        // check orthonormality (move to a more suitable location later on)
+                        foreach (int gCell in parts)
                         {
+
+                            var cellMask = new CellMask(Context, new[] { new Chunk() { i0 = gCell, Len = 1 } }, MaskType.Geometrical);
+
+                            CellQuadrature.GetQuadrature(new int[2] { Np, Np }, Context,
+                            (new CellQuadratureScheme(true, cellMask)).Compile(Context, _maxDgBasis.Degree * 2), // integrate over target cell
+                            delegate (int i0, int Length, QuadRule QR, MultidimensionalArray _EvalResult)
+                            {
                             // get a set of quad points on the reference element
                             NodeSet nodes = QR.Nodes;
-                            Debug.Assert(Length == 1);
+                                Debug.Assert(Length == 1);
 
-                            var phi_0 = _maxDgBasis.CellEval(nodes, gCell, 1).ExtractSubArrayShallow(0, -1, -1);
+                                var phi_0 = _maxDgBasis.CellEval(nodes, gCell, 1).ExtractSubArrayShallow(0, -1, -1);
                             // apply the coarse injector
                             MultidimensionalArray phi = phi_0.CloneAs();
-                            phi.Multiply(1.0, phi_0, _injectorCoarse[gCell], 0.0, "ki", "kj", "ji");
+                                phi.Multiply(1.0, phi_0, _injectorCoarse[gCell], 0.0, "ki", "kj", "ji");
 
-                            var EvalResult = _EvalResult.ExtractSubArrayShallow(0, -1, -1, -1);
+                                var EvalResult = _EvalResult.ExtractSubArrayShallow(0, -1, -1, -1);
 
-                            EvalResult.Multiply(1.0, phi, phi, 0.0, "kmn", "kn", "km");
-                        },
-                        /*_SaveIntegrationResults:*/ delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration)
-                                                     {
-                                                         Debug.Assert(Length == 1);
+                                EvalResult.Multiply(1.0, phi, phi, 0.0, "kmn", "kn", "km");
+                            },
+                            /*_SaveIntegrationResults:*/ delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration)
+                                                         {
+                                                             Debug.Assert(Length == 1);
 
-                                                         var res = ResultsOfIntegration.ExtractSubArrayShallow(0, -1, -1);
-                                                         MMtemp.Acc(1.0, res);
-                                                     }).Execute();
-                    }
+                                                             var res = ResultsOfIntegration.ExtractSubArrayShallow(0, -1, -1);
+                                                             MMtemp.Acc(1.0, res);
+                                                         }).Execute();
+                        }
 
-                    // calculate distance to expected unity matrix
-                    MultidimensionalArray Eye = MultidimensionalArray.Create(Np, Np);
-                    Eye.AccEye(1.0);
-                    Eye.Acc(-1.0, MMtemp);
-                    double dist = Eye.L2Norm();
-                    Console.WriteLine($"distance between Eye and MM for level {ilevel - 1} and lCell {lCell}: {dist}");
+                        // calculate distance to expected unity matrix
+                        MultidimensionalArray Eye = MultidimensionalArray.Create(Np, Np);
+                        Eye.AccEye(1.0);
+                        Eye.Acc(-1.0, MMtemp);
+                        double dist = Eye.L2Norm();
+                        Debug.Assert(dist < 1E-10);
+                        //Console.WriteLine($"distance between Eye and MM for level {ilevel - 1} and lCell {lCell}: {dist}");
 
 #endif
 
+                    }
                 }
-            }
 
-            // recursive repeat until ilevel = 1
-            if (ilevel > 2)
-            {
+                // recursive repeat until ilevel = 1
                 ExtractInjectorCurved(_agGrd, _maxDgBasis, _Injectors, _injectorCoarse, ilevel - 1);
             }
-            else if (ilevel == 2)
+            else if (ilevel == 1)
             {
                 ExtractInjectorCurvedLv1(_agGrd, _maxDgBasis, _Injectors, _injectorCoarse);
             }
