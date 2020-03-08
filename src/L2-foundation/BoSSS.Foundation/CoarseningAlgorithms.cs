@@ -87,8 +87,9 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
                     bool localReduction = (Jloc < localNoOfCells.Last()).MPIOr();
                     bool globalReduction = Jtot < globalNoOfCells.Last();
-                    
-                    if (!(localReduction && globalReduction))
+
+
+                    if (localReduction == false || globalReduction == false)
                         // no more refinement possible
                         break;
 

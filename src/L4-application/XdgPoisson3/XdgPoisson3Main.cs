@@ -59,7 +59,9 @@ namespace BoSSS.Application.XdgPoisson3 {
         static void Main(string[] args) {
             BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
             //BatchmodeConnector.MatlabExecuteable = "D:\\cygwin\\bin\\bash.exe";
-
+            //Tests.TestFixtureSetUp();
+            //Tests.DiscretizationScalingTest(1);
+            //throw new ApplicationException("remove me");
 
             BoSSS.Solution.Application<XdgPoisson3Control>._Main(args, false, delegate () {
                 return new XdgPoisson3Main();

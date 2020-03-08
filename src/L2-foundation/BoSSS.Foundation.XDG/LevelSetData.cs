@@ -437,8 +437,44 @@ namespace BoSSS.Foundation.XDG {
                     // data structure to store color equality
                     // --------------------------------------
 
-                    var locColEq = new Dictionary<int, HashSet<int>>(); // key: some locally used color value; value: all colors that should be equal (includes also the key)
+                    var locColEq = new Dictionary<int, HashSet<int>>(); // key:   some locally used color value; 
+                    //                                                     value: all colors that should be equal (includes also the key)
                     void AddEqPairing(int Color0, int Color1) { // add some color pair to 'locColEq'
+
+                        if (locColEq.ContainsKey(Color0) && locColEq.ContainsKey(Color1)) {
+                            if(!object.ReferenceEquals(locColEq[Color0], locColEq[Color1])) {
+                                var set0 = locColEq[Color0];
+                                var set1 = locColEq[Color1];
+                                foreach (int c in locColEq[Color1])
+                                    set0.Add(c);
+                                //locColEq[Color1] = set0;
+
+                                foreach(int c in set1) {
+                                    Debug.Assert(object.ReferenceEquals(set1, locColEq[c]));
+                                    locColEq[c] = set0;
+                                }
+
+                                Debug.Assert(object.ReferenceEquals(locColEq[Color0], locColEq[Color1]));
+
+#if DEBUG
+                                // check data integrity:
+                                foreach (var kv in locColEq) { // for each color in 'locColEq'
+                                    int col = kv.Key;
+                                    var _equalCols = kv.Value;
+
+                                    Debug.Assert(_equalCols.Contains(col)); // equal colors must contain key value itself
+                                    foreach (var pairCol in _equalCols) { // all equal colors...
+                                        if (pairCol != col) {
+                                            Debug.Assert(locColEq.ContainsKey(pairCol)); // must also be in the dictionary...
+                                            Debug.Assert(object.ReferenceEquals(locColEq[pairCol], _equalCols)); // ...and the equality set must be tha same.
+                                        }
+                                    }
+                                }
+#endif
+
+                            }
+                        }
+
 
                         HashSet<int> equalCols;
                         if (!locColEq.TryGetValue(Color0, out equalCols)) {
@@ -447,17 +483,22 @@ namespace BoSSS.Foundation.XDG {
                                 locColEq.Add(Color1, equalCols);
                             }
                             locColEq.Add(Color0, equalCols);
+
+                            Debug.Assert(locColEq.ContainsKey(Color0));
+                            Debug.Assert(locColEq.ContainsKey(Color1));
+                            Debug.Assert(object.ReferenceEquals(locColEq[Color0], locColEq[Color1]));
+
                         } else {
                             if(!locColEq.ContainsKey(Color1)) {
                                 locColEq.Add(Color1, equalCols);
                             }
+
+                            Debug.Assert(locColEq.ContainsKey(Color0));
+                            Debug.Assert(locColEq.ContainsKey(Color1));
+                            Debug.Assert(object.ReferenceEquals(locColEq[Color0], locColEq[Color1]));
                         }
                         equalCols.Add(Color0);
                         equalCols.Add(Color1);
-
-                        Debug.Assert(object.ReferenceEquals(locColEq[Color0], equalCols));
-                        Debug.Assert(object.ReferenceEquals(locColEq[Color1], equalCols));
-
 #if DEBUG
                         // check data integrity:
                         foreach (var kv in locColEq) { // for each color in 'locColEq'
@@ -473,6 +514,10 @@ namespace BoSSS.Foundation.XDG {
                             }
                         }
 #endif
+
+                        Debug.Assert(object.ReferenceEquals(locColEq[Color0], equalCols));
+                        Debug.Assert(object.ReferenceEquals(locColEq[Color1], equalCols));
+
                     }
 
 
