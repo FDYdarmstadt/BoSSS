@@ -61,12 +61,6 @@ namespace BoSSS.Application.XdgPoisson3 {
             //BatchmodeConnector.MatlabExecuteable = "D:\\cygwin\\bin\\bash.exe";
 
 
-            Tests.TestFixtureSetUp();
-            Tests.IterativeSolverTest(Code.exp_gmres_levelpmg);
-            Tests.TestFixtureTearDown();
-            return;
-
-
             BoSSS.Solution.Application<XdgPoisson3Control>._Main(args, false, delegate () {
                 return new XdgPoisson3Main();
             });
@@ -335,15 +329,11 @@ namespace BoSSS.Application.XdgPoisson3 {
         SinglePhaseField[] MGColoring;
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-            //if (base.Control.timeDependent) {
-            //    dt = base.GetFixedTimestep();
-            //    Console.WriteLine("Timestep {0}, dt = {1} ...", TimestepNo, dt);
-            //} else {
             base.TerminationKey = true;
             dt = 1.0;
             Console.WriteLine("Steady solve ...");
-            //}
 
+           
             double mintime, maxtime;
             bool converged;
             int NoOfIterations, DOFs;
@@ -458,8 +448,6 @@ namespace BoSSS.Application.XdgPoisson3 {
                 Console.WriteLine("Error norm (HMF):            " + L2_ERR_HMF);
             }
 
-
-            //OperatorAnalysis();
             return dt;
         }
 

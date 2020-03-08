@@ -520,7 +520,7 @@ namespace BoSSS.Solution {
 
                 var Sel = new SubBlockSelector(m_MultigridOp.Mapping);
                 Sel.VariableSelector(this.VarGroup);
-                Sel.CellSelector(LocBlk);
+                Sel.SelectCellList(LocBlk, global: false);
                 var Mask = new BlockMask(Sel);
 
                 MultidimensionalArray[,] Blocks = Mask.GetFullSubBlocks(Mtx, ignoreSpecCoupling: false, ignoreVarCoupling: false);
