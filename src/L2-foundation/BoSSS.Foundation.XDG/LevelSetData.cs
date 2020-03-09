@@ -347,7 +347,7 @@ namespace BoSSS.Foundation.XDG {
                             //Part.Clear();
                             int CurrentColor = ColorCounter;
                             bool IsIsolated = true;
-                            RecursiveColoring(this.GridDat, SpBitMask, j, CurrentColor, ColorMap, ref IsIsolated);
+                            RecursiveColoring2(this.GridDat, SpBitMask, j, CurrentColor, ColorMap, ref IsIsolated);
 
                             ColorCounter++;
                             Debug.Assert(ColorCounter > CurrentColor);
@@ -437,8 +437,44 @@ namespace BoSSS.Foundation.XDG {
                     // data structure to store color equality
                     // --------------------------------------
 
-                    var locColEq = new Dictionary<int, HashSet<int>>(); // key: some locally used color value; value: all colors that should be equal (includes also the key)
+                    var locColEq = new Dictionary<int, HashSet<int>>(); // key:   some locally used color value; 
+                    //                                                     value: all colors that should be equal (includes also the key)
                     void AddEqPairing(int Color0, int Color1) { // add some color pair to 'locColEq'
+
+                        if (locColEq.ContainsKey(Color0) && locColEq.ContainsKey(Color1)) {
+                            if(!object.ReferenceEquals(locColEq[Color0], locColEq[Color1])) {
+                                var set0 = locColEq[Color0];
+                                var set1 = locColEq[Color1];
+                                foreach (int c in locColEq[Color1])
+                                    set0.Add(c);
+                                //locColEq[Color1] = set0;
+
+                                foreach(int c in set1) {
+                                    Debug.Assert(object.ReferenceEquals(set1, locColEq[c]));
+                                    locColEq[c] = set0;
+                                }
+
+                                Debug.Assert(object.ReferenceEquals(locColEq[Color0], locColEq[Color1]));
+
+#if DEBUG
+                                // check data integrity:
+                                foreach (var kv in locColEq) { // for each color in 'locColEq'
+                                    int col = kv.Key;
+                                    var _equalCols = kv.Value;
+
+                                    Debug.Assert(_equalCols.Contains(col)); // equal colors must contain key value itself
+                                    foreach (var pairCol in _equalCols) { // all equal colors...
+                                        if (pairCol != col) {
+                                            Debug.Assert(locColEq.ContainsKey(pairCol)); // must also be in the dictionary...
+                                            Debug.Assert(object.ReferenceEquals(locColEq[pairCol], _equalCols)); // ...and the equality set must be tha same.
+                                        }
+                                    }
+                                }
+#endif
+
+                            }
+                        }
+
 
                         HashSet<int> equalCols;
                         if (!locColEq.TryGetValue(Color0, out equalCols)) {
@@ -447,17 +483,22 @@ namespace BoSSS.Foundation.XDG {
                                 locColEq.Add(Color1, equalCols);
                             }
                             locColEq.Add(Color0, equalCols);
+
+                            Debug.Assert(locColEq.ContainsKey(Color0));
+                            Debug.Assert(locColEq.ContainsKey(Color1));
+                            Debug.Assert(object.ReferenceEquals(locColEq[Color0], locColEq[Color1]));
+
                         } else {
                             if(!locColEq.ContainsKey(Color1)) {
                                 locColEq.Add(Color1, equalCols);
                             }
+
+                            Debug.Assert(locColEq.ContainsKey(Color0));
+                            Debug.Assert(locColEq.ContainsKey(Color1));
+                            Debug.Assert(object.ReferenceEquals(locColEq[Color0], locColEq[Color1]));
                         }
                         equalCols.Add(Color0);
                         equalCols.Add(Color1);
-
-                        Debug.Assert(object.ReferenceEquals(locColEq[Color0], equalCols));
-                        Debug.Assert(object.ReferenceEquals(locColEq[Color1], equalCols));
-
 #if DEBUG
                         // check data integrity:
                         foreach (var kv in locColEq) { // for each color in 'locColEq'
@@ -473,6 +514,10 @@ namespace BoSSS.Foundation.XDG {
                             }
                         }
 #endif
+
+                        Debug.Assert(object.ReferenceEquals(locColEq[Color0], equalCols));
+                        Debug.Assert(object.ReferenceEquals(locColEq[Color1], equalCols));
+
                     }
 
 
@@ -804,10 +849,11 @@ namespace BoSSS.Foundation.XDG {
                         continue;
                     if (ColorMap[jN] == 0)
                         continue;
-                    RepaintRecursive(NewColor, ColorMap, jN, gdat);
+                    RepaintRecursive(NewColor, ColorMap, jN, gdat); // should at some point maybe be replaced by a non-recursive implementation
                 }
             }
 
+            /*
             private static void RecursiveColoring(IGridData g, BitArray Msk, int j, int Color, int[] ColorMap, ref bool IsIsolated) {
                 Debug.Assert(Msk[j] == true, "illegal to call on non-occupied cells");
                 if (Msk[j] != true)
@@ -816,50 +862,9 @@ namespace BoSSS.Foundation.XDG {
                 int JE = g.iLogicalCells.NoOfExternalCells + J;
                 Debug.Assert(Msk.Length == JE);
                 Debug.Assert(ColorMap.Length == JE);
-                //Debug.Assert(oldColorMap == null || oldColorMap.Length == JE);
-                //bool incremental = oldColorMap != null;
-
-                //int NextColor = Color + 1;
-
-                        /*
-                if (incremental) {
-                    int oldColor_j = oldColorMap[j];
-
-                    // we care about the old colors
-                    if (oldColor_j != 0) {
-                        OldColors.Add(oldColor_j);
-
-                        if (oldColor_j != Color) {
-                            if (ColorNegotiable) {
-                                // colors in previous map should match old colors
-                                // for the current part, we are still not fixed in terms of color - we can re-paint the cells painted so far
-
-                                if (!UsedColors.Contains(oldColor_j)) {
-                                    // repainting is allowed, the old color (from previous time-step) is not yet used in this time-step
-                                    Color = oldColor_j;
-                                    foreach (int jk in Part) {
-                                        ColorMap[jk] = oldColor_j;
-                                    }
-                                } else {
-                                    // this is a topology change/a split
-
-                                }
-
-                                NextColor = Math.Max(NextColor, Color + 1);
-
-                                ColorNegotiable = false;
-                            } else {
-                                // this is a topology change/a merge
-                                NextColor = Math.Max(NextColor, oldColorMap[j] + 1);
-
-                            }
-                        }
-                    }
-                }
-                        */
+               
 
                 ColorMap[j] = Color;
-                //Part.Add(j);
 
                 if (j >= J)
                     // external cell -> no further recursion
@@ -886,18 +891,7 @@ namespace BoSSS.Foundation.XDG {
 
                         // already colored -> end of recursion
                         if (ColorMap[jN] != Color) {
-                            /*
-                            using (var stw = new System.IO.StreamWriter("megafut.csv")) {
-                                //foreach (int i in new[] { j, jN }) {
-                                for(int i = 0; i < JE; i++) {
-                                    var cen = g.GlobalNodes.GetValue_Cell(Grid.RefElements.Square.Instance.Center, i, 1);
-                                    double x = cen[0, 0, 0];
-                                    double y = cen[0, 0, 1];
-                                    stw.WriteLine("{0}\t{1}\t{2}", x, y, ColorMap[i]);
-                                }
-
-                            }
-                            */
+                            
 
                             throw new ApplicationException("error in Algorithm, cell " + jN); // Debug.Assert would also be fine, *if* our homies would ever run DEBUG
                         }
@@ -905,13 +899,102 @@ namespace BoSSS.Foundation.XDG {
                     }
 
                     RecursiveColoring(g, Msk, jN, Color, ColorMap, ref IsIsolated);
-                    //int recNextColor = RecursiveColoring(g, Msk, jN, ref Color, ColorMap, oldColorMap, ref ColorNegotiable, Part, UsedColors, ref IsIsolated);
-                    //NextColor = Math.Max(NextColor, recNextColor);
                 }
 
-                //return NextColor;
                 return;
             }
+            */
+
+            /// <summary>
+            /// 'Non-Recursive' implementation of the recursive algorithm, should be less prone to stack overflow.
+            /// </summary>
+            private static void RecursiveColoring2(IGridData g, BitArray Msk, int j, int Color, int[] ColorMap, ref bool IsIsolated) {
+                Debug.Assert(Msk[j] == true, "illegal to call on non-occupied cells");
+                if (Msk[j] != true)
+                    throw new Exception("illegal to call on non-occupied cells");
+                int J = g.iLogicalCells.NoOfLocalUpdatedCells;
+                int JE = g.iLogicalCells.NoOfExternalCells + J;
+                Debug.Assert(Msk.Length == JE);
+                Debug.Assert(ColorMap.Length == JE);
+
+                Debug.Assert(j < J);
+
+                var cellStack = new Stack<int>();
+                var neighCounterStack = new Stack<int>();
+                int[] jNeigh = g.iLogicalCells.CellNeighbours[j];
+                int iNeigh = 0;
+                while (true) {
+                    Debug.Assert(j < J);
+                    Debug.Assert(cellStack.Count == neighCounterStack.Count);
+                    Debug.Assert(cellStack.Count <= JE + 1);
+
+                    ColorMap[j] = Color;
+
+                    //bool Recursion = false;
+                    if (iNeigh < jNeigh.Length) {
+                        int jN = jNeigh[iNeigh];
+                        iNeigh += 1;
+
+                        if (Msk[jN] == false) {
+                            // Neighbor cell does not contain species -> end of recursion
+
+                        } else if (jN >= J) {
+                            // external cell -> no further recursion
+                            IsIsolated = false;
+                            ColorMap[jN] = Color;
+
+                        } else if (ColorMap[jN] > 0) {
+                            // note: there may be the case that a part splits in two on the local MPI processor,
+                            //       but the part is connected through another processor; 
+                            //       thats why we can't test external cells.
+
+                            // already colored -> end of recursion
+                            if (ColorMap[jN] != Color) {
+                                throw new ApplicationException("error in Algorithm, cell " + jN); // Debug.Assert would also be fine, *if* our homies would ever run DEBUG
+                            }
+
+                        } else {
+
+                            //RecursiveColoring(g, Msk, jN, Color, ColorMap, ref IsIsolated);
+                            // if we have not hit a continue until here, we need to do the recursion
+                            
+                            //Recursion = true;
+                            neighCounterStack.Push(iNeigh);
+                            cellStack.Push(j);
+                            j = jN;
+                            jNeigh = g.iLogicalCells.CellNeighbours[j];
+                            iNeigh = 0;
+                        }
+                    } else {
+                        Debug.Assert(cellStack.Count == neighCounterStack.Count);
+                        Debug.Assert(cellStack.Count <= JE + 1);
+                        if (cellStack.Count == 0) {
+                            break;
+                        } else {
+                            iNeigh = neighCounterStack.Pop();
+                            j = cellStack.Pop();
+                            jNeigh = g.iLogicalCells.CellNeighbours[j];
+                        }
+                    }
+
+                    /*
+                    if(!Recursion || iNeigh >= jNeigh.Length) {
+                        Debug.Assert(cellStack.Count == neighCounterStack.Count);
+                        Debug.Assert(cellStack.Count <= JE + 1);
+                        if (cellStack.Count == 0) {
+                            break;
+                        } else {
+                            iNeigh = neighCounterStack.Pop();
+                            j = cellStack.Pop();
+                            jNeigh = g.iLogicalCells.CellNeighbours[j];
+                        }
+                    }
+                   */
+                }
+
+                return;
+            }
+
 
 
             /// <summary>

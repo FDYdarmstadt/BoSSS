@@ -126,6 +126,7 @@ namespace ilPSP {
                 Debug.Assert(NE == _SubblkLen2[iBlockType]);
                 BlockType[iBlock] = iBlockType;
             }
+            int gFrameBlockSize = FrameBlockSize.MPIMin();
 
             //
 
@@ -133,7 +134,7 @@ namespace ilPSP {
             int NoOfBlockTypes = _SubblkLen1.Count;
             int[][] i0_Sblk = NoOfBlockTypes.ForLoop(iBlkType => new int[] { 0 });
             int[][] LenSblk = NoOfBlockTypes.ForLoop(iBlkType => new int[] { _SubblkLen1[iBlkType] });
-            ConstructorCommon(FrameBlockSize, i0_Sblk, LenSblk, BlockType, MpiComm);
+            ConstructorCommon(gFrameBlockSize, i0_Sblk, LenSblk, BlockType, MpiComm);
 
         }
 

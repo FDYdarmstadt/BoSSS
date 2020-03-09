@@ -25,6 +25,9 @@ using System.Runtime.Serialization;
 namespace BoSSS.Application.XdgPoisson3 {
 
 
+    /// <summary>
+    /// Control object for XDG Poisson solver 
+    /// </summary>
     [DataContract]
     [Serializable]
     public class XdgPoisson3Control : AppControlSolver {
@@ -38,7 +41,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         }
 
         /// <summary>
-        /// Type of <see cref="SipPoissonMain"/>.
+        /// Type of <see cref="XdgPoisson3Main"/>.
         /// </summary>
         public override Type GetSolverType() {
             return typeof(XdgPoisson3Main);
@@ -59,7 +62,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             FieldOptions.Clear();
 
             FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = 2,
+                Degree = Math.Max(2, p),
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
 

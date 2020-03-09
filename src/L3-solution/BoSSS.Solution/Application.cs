@@ -1048,18 +1048,19 @@ namespace BoSSS.Solution {
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
-                if (DoDbLogging) {
-                    if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:NoOfCells"))
+                if(this.CurrentSessionInfo != null) {
+                    if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:NoOfCells"))
                         this.CurrentSessionInfo.KeysAndQueries.Add("Grid:NoOfCells", Grid.NumberOfCells);
+                    if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:SpatialDimension"))
+                        this.CurrentSessionInfo.KeysAndQueries.Add("Grid:SpatialDimension", GridData.SpatialDimension);
+
                     try //ToDo
-                    { 
-                        if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMax"))
-                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMax", ((GridData)GridData).Cells.h_maxGlobal);
-                        if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMin"))
-                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMin", ((GridData)GridData).Cells.h_minGlobal);
-                    }
-                    catch (InvalidCastException e)
                     {
+                        if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMax"))
+                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMax", ((GridData)GridData).Cells.h_maxGlobal);
+                        if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMin"))
+                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMin", ((GridData)GridData).Cells.h_minGlobal);
+                    } catch(InvalidCastException e) {
                         Console.WriteLine("Error: Could not log everything.\n {0}", e);
                     }
                 }
@@ -1622,7 +1623,6 @@ namespace BoSSS.Solution {
 
                 // pass 2: XDG fields
                 // ===========================
-
                 if (Pass2_Evaluators.Count > 0) {
                     LsTrk.UpdateTracker();
                     LsTrk.PushStacks();
