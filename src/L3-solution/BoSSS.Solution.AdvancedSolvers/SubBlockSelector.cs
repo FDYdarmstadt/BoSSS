@@ -115,37 +115,43 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="ListOfCellIdx"></param>
         /// <param name="global"></param>
         /// <returns></returns>
-        public SubBlockSelector CellSelector(List<int> ListOfCellIdx, bool global = true) {
+        public SubBlockSelector SelectCellList(IEnumerable<int> ListOfCellIdx, bool global = true) {
             int LocNoOfBlocks = m_map.LocalNoOfBlocks;
             int GlobNoOfBlocks = m_map.TotalNoOfBlocks;
 
+            var CellPart = m_map.AggGrid.CellPartitioning;
+
             foreach (int CellIdx in ListOfCellIdx) {
                 if (global) {
-                    if (CellIdx >= GlobNoOfBlocks || CellIdx < 0)
-                        throw new ArgumentOutOfRangeException(CellIdx + " is greater then global No of Blocks: " + GlobNoOfBlocks + " or smaller than 0");
+                    CellPart.TestIfInLocalRange(CellIdx);
                 } else {
-                    if (CellIdx >= LocNoOfBlocks || CellIdx < 0)
-                        throw new ArgumentOutOfRangeException(CellIdx + " is greater then Local No of Blocks: " + LocNoOfBlocks + " or smaller than 0");
+                    if (CellIdx < 0 || CellIdx >= CellPart.LocalLength)
+                        throw new ArgumentOutOfRangeException("Local cell index is out of range.");
                 }
             }
 
 
             List<int> tmpList = new List<int>();
             if (global) {
+                int j0 = CellPart.i0;
                 foreach (int CellIdx in ListOfCellIdx) {
-                    int tmpIdx = CellIdx;
-                    tmpIdx -= m_map.i0;
+                    
+                    int tmpIdx = CellIdx - j0;
+                    tmpList.Add(tmpIdx);
+                    Debug.Assert(tmpIdx >= 0 && tmpIdx < CellPart.LocalLength);
 
-                    int idxfound = 0;
-                    if (m_map.i0 <= tmpIdx && m_map.iE >= tmpIdx)
-                        idxfound = 1;
-                    Debug.Assert(idxfound.MPISum() == 1);
+                    // Wenn der folgende code wirklich so gebrauch wird (mit filternung von lokalen Zellen),
+                    // bitte Rückspreache mit FK.
+                    //int idxfound = 0;
+                    //if (m_map.i0 <= tmpIdx && m_map.iE >= tmpIdx) // must be '>' 
+                    //    idxfound = 1;
+                    ////Debug.Assert(idxfound.MPISum() == 1); // template for deadlock 
 
-                    if (idxfound == 1)
-                        tmpList.Add(tmpIdx);
+                    //if (idxfound == 1)
+                    //    tmpList.Add(tmpIdx);
                 }
             } else {
-                tmpList = ListOfCellIdx;
+                tmpList = ListOfCellIdx.ToList();
             }
             this.m_CellFilter = GetListInstruction(tmpList);
             return this;
@@ -311,8 +317,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         #region BasisInstructions
 
         private Func<int, bool> GetListInstruction(IEnumerable<int> intList) {
+#if DEBUG
             if(!intList.IsSet())
                 throw new ArgumentException("List contains duplicates!");
+#endif
             bool[] Selector = new bool[intList.Max() + 1];
             foreach(int i in intList) {
                 Selector[i] = true;

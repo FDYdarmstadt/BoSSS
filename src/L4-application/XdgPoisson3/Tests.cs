@@ -50,7 +50,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// </summary>
         /// <param name="SolverName"></param>
         [Test]
-        public static void SolverTest([Values(Code.exp_Kcycle_schwarz, Code.exp_gmres_levelpmg)] Code SolverName) {
+        public static void IterativeSolverTest([Values(Code.exp_Kcycle_schwarz, Code.exp_gmres_levelpmg)] Code SolverName) {
             using (var solver = new XdgPoisson3Main()) {
 
                 int Res, p;
@@ -68,27 +68,113 @@ namespace BoSSS.Application.XdgPoisson3 {
             }
         }
 
+        private static double LogLogRegression(IEnumerable<double> _xValues, IEnumerable<double> _yValues) {
+            double[] xValues = _xValues.Select(x => Math.Log10(x)).ToArray();
+            double[] yValues = _yValues.Select(y => Math.Log10(y)).ToArray();
+
+            double xAvg = xValues.Average();
+            double yAvg = yValues.Average();
+
+            double v1 = 0.0;
+            double v2 = 0.0;
+
+            for (int i = 0; i < yValues.Length; i++) {
+                v1 += (xValues[i] - xAvg) * (yValues[i] - yAvg);
+                v2 += Math.Pow(xValues[i] - xAvg, 2);
+            }
+
+            double a = v1 / v2;
+            double b = yAvg - a * xAvg;
+
+            return a;
+        }
+
 
         /// <summary>
         /// Grid scale tests for condition numbers
         /// </summary>
-        public static IDictionary<string,double[]> DiscretizationTest(
-            [Values(1,2,3,4)] int dgDegree
-            ) {
+        [Test]
+        public static void DiscretizationScalingTest(
+#if DEBUG
+            [Values(1)] 
+#else
+            [Values(1,2,3,4)] 
+#endif
+            int dgDegree
+            ) //
+        {
 
             var Controls = new List<XdgPoisson3Control>();
-            foreach(int res in new int[] { 4, 5, 8, 9, 16, 17, 32, 33, 64 }) {
+
+            int[] ResS = null;
+            switch(dgDegree) {
+                case 1: ResS = new int[] { 8, 9, 16, 17, 32, 33, 64, 65, 128 }; break;
+                case 2: ResS = new int[] { 8, 9, 16, 17, 32, 33, 64, 65 }; break;
+                case 3: ResS = new int[] { 8, 9, 16, 17, 32, 33, 64 }; break;
+                case 4: ResS = new int[] { 8, 9, 16, 17, 32, 33 }; break;
+                default: throw new NotImplementedException();
+            }
+            
+            foreach (int res in ResS) {
                 var C = HardCodedControl.Circle(Resolution: res, p: dgDegree);
                 C.LinearSolver.SolverCode = Code.classic_pardiso;
                 C.savetodb = false;
-            
+
                 Controls.Add(C);
             }
+            
+            
+            var data = RunAndLog(Controls);
 
+            //string[] xKeys = data.Keys.Where(name => name.StartsWith("Grid:")).ToArray();
+            //string[] yKeys = data.Keys.Where(name => !name.StartsWith("Grid:")).ToArray();
+
+
+            /*
+            Für p = 1:
+            Slope for TotCondNo-Var0: 2.153e00
+            Slope for InnerCondNo-Var0: 2.59e00
+            Slope for StencilCondNo-innerUncut-Var0: 1.486e-01
+            Slope for StencilCondNo-innerCut-Var0: 9.957e-02
+            Slope for StencilCondNo-bndyUncut-Var0: 1.226e-04
+            Slope for StencilCondNo-bndyCut-Var0: 0e00             
+            */
+
+            var ExpectedSlopes = new List<ValueTuple<string, string, double>>();
+            ExpectedSlopes.Add(("Grid:1Dres", "TotCondNo-Var0", 2.5));
+            ExpectedSlopes.Add(("Grid:1Dres", "StencilCondNo-innerUncut-Var0", 0.5));
+            ExpectedSlopes.Add(("Grid:1Dres", "StencilCondNo-innerCut-Var0", 0.5));
+
+
+            foreach (var ttt in ExpectedSlopes) {
+                double[] xVals = data[ttt.Item1];
+                double[] yVals = data[ttt.Item2];
+
+                double Slope = LogLogRegression(xVals, yVals);
+
+                Console.WriteLine($"Slope for {ttt.Item2}: {Slope:0.###e-00}");
+            }
+
+            foreach (var ttt in ExpectedSlopes) {
+                double[] xVals = data[ttt.Item1];
+                double[] yVals = data[ttt.Item2];
+
+                double Slope = LogLogRegression(xVals, yVals);
+
+                Assert.LessOrEqual(Slope, ttt.Item3, $"Condition number slope for {ttt.Item2} to high; at max. {ttt.Item3}");
+            }
+        }
+
+        private static IDictionary<string, double[]> RunAndLog<T>(T Controls)
+            where T : IEnumerable<BoSSS.Solution.Control.AppControl> //
+        {
+            
             var ret = new Dictionary<string, List<double>>();
 
-            foreach(var C in Controls) {
-                using(var solver = new XdgPoisson3Main()) {
+            foreach (var C in Controls) {
+                var st = C.GetSolverType();
+
+                using (var solver = (BoSSS.Solution.IApplication) Activator.CreateInstance(st)) {
                     solver.Init(C);
                     solver.RunSolverMode();
 
@@ -100,24 +186,24 @@ namespace BoSSS.Application.XdgPoisson3 {
 
                     var prop = solver.OperatorAnalysis();
 
-                    if(ret.Count == 0) {
+                    if (ret.Count == 0) {
                         ret.Add("Grid:NoOfCells", new List<double>());
                         ret.Add("Grid:hMin", new List<double>());
                         ret.Add("Grid:hMax", new List<double>());
                         ret.Add("Grid:1Dres", new List<double>());
 
-                        foreach(var kv in prop) {
+                        foreach (var kv in prop) {
                             ret.Add(kv.Key, new List<double>());
                         }
-                    } 
-                    
+                    }
+
                     {
                         ret["Grid:NoOfCells"].Add(J);
                         ret["Grid:hMin"].Add(hMin);
                         ret["Grid:hMax"].Add(hMax);
                         ret["Grid:1Dres"].Add(J1d);
 
-                        foreach(var kv in prop) {
+                        foreach (var kv in prop) {
                             ret[kv.Key].Add(kv.Value);
                         }
                     }
@@ -128,14 +214,12 @@ namespace BoSSS.Application.XdgPoisson3 {
             // ========================
             {
                 var realRet = new Dictionary<string, double[]>();
-                foreach(var kv in ret) {
+                foreach (var kv in ret) {
                     realRet.Add(kv.Key, kv.Value.ToArray());
                 }
 
                 return realRet;
             }
         }
-
-
     }
 }

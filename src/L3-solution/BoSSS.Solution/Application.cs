@@ -391,7 +391,7 @@ namespace BoSSS.Solution {
 
                 ControlObjFromCode(StringwithoutPrefix, out ctrlV2, out ctrlV2_ParameterStudy);
 
-            } else if (ControlFilePath.ToLower().EndsWith(".cs")) {
+            } else if (ControlFilePath.ToLower().EndsWith(".cs") || ControlFilePath.ToLower().EndsWith(".bws")) {
                 // +++++++++
                 // C#-script
                 // +++++++++
@@ -1623,7 +1623,6 @@ namespace BoSSS.Solution {
 
                 // pass 2: XDG fields
                 // ===========================
-
                 if (Pass2_Evaluators.Count > 0) {
                     LsTrk.UpdateTracker();
                     LsTrk.PushStacks();
@@ -1826,7 +1825,6 @@ namespace BoSSS.Solution {
 
                 int i = i0.MajorNumber;
                 for (int s = 0; s < this.Control.AMR_startUpSweeps; s++) {
-                    Console.WriteLine("s " + s);
                     this.MpiRedistributeAndMeshAdapt(i, physTime);
                 }
                 { 
@@ -3157,6 +3155,17 @@ namespace BoSSS.Solution {
                 }
             }
         }
+
+        /// <summary>
+        /// This method should be overridden to support automatic numerical stability analysis of the PDE's operator
+        /// </summary>
+        /// <returns>
+        /// Pairs of property name and value, e.g. ConditionNumber and the respective value of the operators Jacobian matrix condition number.
+        /// </returns>
+        virtual public IDictionary<string, double> OperatorAnalysis() {
+            throw new NotImplementedException();
+        }
+
 
         /// <summary>
         /// This method just forces the C# - compiler to integrate

@@ -134,7 +134,7 @@ namespace BoSSS.Solution {
 
             Console.WriteLine("Starting matrix Analysis");
             Console.WriteLine("Calculating condition number");
-            double[] CondNum_Write = CondNum();
+            double[] CondNum_Write = CondNumMUMPS();
             Console.WriteLine("Doing symmetry test");
             bool[] Symmetry_Write = Symmetry();
             Console.WriteLine("Doing eigenvalues test");
@@ -248,7 +248,7 @@ namespace BoSSS.Solution {
         /// returns the condition number of the full matrix and the inner matrix without boundary terms
         /// </summary>
         /// <returns>Array condestOut=[ConditionNumberFullOp, ConditionNumberInnerOp]</returns>
-        public double[] CondNum() {
+        public double[] CondNumMUMPS() {
 
             int[] DepVars = this.VarGroup;
             var grd = m_map.GridDat;
@@ -258,7 +258,7 @@ namespace BoSSS.Solution {
 
             var Mtx = m_MultigridOp.OperatorMatrix;
 
-            
+
 
 
             // Blocks and selectors 
@@ -277,7 +277,44 @@ namespace BoSSS.Solution {
             // ======================
 
             double condestFullMUMPS = (new BlockMask(FullSel)).GetSubBlockMatrix(Mtx).Condest_MUMPS();
+            double condestInnerMUMPS = 1.0;
 
+            if (InnerCellsMask.NoOfItemsLocally.MPISum() > 0) {
+                condestInnerMUMPS = (new BlockMask(InnerSel)).GetSubBlockMatrix(Mtx).Condest_MUMPS();
+            }
+
+
+            return new[] { condestFullMUMPS, condestInnerMUMPS };
+        }
+
+        /// <summary>
+        /// returns the condition number of the full matrix and the inner matrix without boundary terms
+        /// </summary>
+        /// <returns>Array condestOut=[ConditionNumberFullOp, ConditionNumberInnerOp]</returns>
+        public double[] CondNumMatlab() {
+
+            int[] DepVars = this.VarGroup;
+            var grd = m_map.GridDat;
+            int NoOfCells = grd.Grid.NumberOfCells;
+            int NoOfBdryCells = grd.GetBoundaryCells().NoOfItemsLocally_WithExternal;
+
+
+            var Mtx = m_MultigridOp.OperatorMatrix;
+
+
+
+
+            // Blocks and selectors 
+            // ====================
+            var InnerCellsMask = grd.GetBoundaryCells().Complement();
+
+            var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
+            FullSel.VariableSelector(this.VarGroup);
+
+            var InnerSel = new SubBlockSelector(m_MultigridOp.Mapping);
+            InnerSel.VariableSelector(this.VarGroup);
+            InnerSel.CellSelector(InnerCellsMask);
+            
             // Matlab
             // ======
 
@@ -310,7 +347,7 @@ namespace BoSSS.Solution {
                 double condestFull = output[0, 0];
                 double condestInner = output[1, 0];
 
-                double[] condestOut = new double[] { condestFullMUMPS, condestInner };
+                double[] condestOut = new double[] { condestFull, condestInner };
 
                 Console.WriteLine($"MATLAB condition number: {condestFull:0.###e-00}");
 
@@ -318,6 +355,7 @@ namespace BoSSS.Solution {
                 Debug.Assert(condestOut[1].MPIEquals(), "value does not match on procs");
                 return condestOut;
             }
+            
         }
 
 
@@ -358,14 +396,10 @@ namespace BoSSS.Solution {
 
             bool posDef = true;
             // only proc 0 gets info so the following is executed exclusively on rank 0
-            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0)
-            {
-                try
-                {
+            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+                try {
                     FullyPopulatedMatrix.Cholesky();
-                }
-                catch (ArithmeticException)
-                {
+                } catch (ArithmeticException) {
                     posDef = false;
                 }
             }
@@ -447,7 +481,6 @@ namespace BoSSS.Solution {
                 Debug.Assert(Mtx[i0, i0] == Blocks[j][0, 0]);
 #endif
 
-
                 BCN[j] = Blocks[j].Cond();
             }
 
@@ -487,7 +520,7 @@ namespace BoSSS.Solution {
 
                 var Sel = new SubBlockSelector(m_MultigridOp.Mapping);
                 Sel.VariableSelector(this.VarGroup);
-                Sel.CellSelector(LocBlk);
+                Sel.SelectCellList(LocBlk, global: false);
                 var Mask = new BlockMask(Sel);
 
                 MultidimensionalArray[,] Blocks = Mask.GetFullSubBlocks(Mtx, ignoreSpecCoupling: false, ignoreVarCoupling: false);
@@ -546,14 +579,12 @@ namespace BoSSS.Solution {
             var Ret = new Dictionary<string, double>();
 
             var grd = m_map.GridDat;
-            
-
 
             // global condition numbers
             // ========================
-            double[] CondNo = this.CondNum();
-            Ret.Add("TotCondNo", CondNo[0]);
-            Ret.Add("InnerCondNo", CondNo[1]);
+            double[] CondNo = this.CondNumMUMPS();
+            Ret.Add("TotCondNo-" + VarNames, CondNo[0]);
+            Ret.Add("InnerCondNo-" + VarNames, CondNo[1]);
 
             // block-wise condition numbers
             // ============================
@@ -589,10 +620,10 @@ namespace BoSSS.Solution {
             bndyUncut_MaxCondNo = bndyUncut_MaxCondNo.MPIMax();
             bndyCut_MaxCondNo = bndyCut_MaxCondNo.MPIMax();
 
-            Ret.Add("StencilCondNo-innerUncut", innerUncut_MaxCondNo);
-            Ret.Add("StencilCondNo-innerCut", innerCut_MaxCondNo);
-            Ret.Add("StencilCondNo-bndyUncut", bndyUncut_MaxCondNo);
-            Ret.Add("StencilCondNo-bndyCut", bndyCut_MaxCondNo);
+            Ret.Add("StencilCondNo-innerUncut-" + VarNames, innerUncut_MaxCondNo);
+            Ret.Add("StencilCondNo-innerCut-" + VarNames, innerCut_MaxCondNo);
+            Ret.Add("StencilCondNo-bndyUncut-" + VarNames, bndyUncut_MaxCondNo);
+            Ret.Add("StencilCondNo-bndyCut-" + VarNames, bndyCut_MaxCondNo);
 
             return Ret;
         }

@@ -68,6 +68,12 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
                 List<AggregationGridData> aggGrids = new List<AggregationGridData>();
                 aggGrids.Add(ZeroAggregation(GridDat));
+
+                var localNoOfCells = new List<int>();
+                var globalNoOfCells = new List<int>();
+                localNoOfCells.Add(aggGrids[0].iLogicalCells.NoOfLocalUpdatedCells);
+                globalNoOfCells.Add(aggGrids[0].CellPartitioning.TotalLength);
+
                 while (true) {
                     if (aggGrids.Count >= MaxDepth)
                         break;
@@ -76,13 +82,20 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                     AggregationGridData grid = Coarsen(aggGrids.Last(), (int)(Math.Pow(2, D)));
                     //AggregationGridData grid = Coarsen_hardcoded(aggGrids.Last(), (int)(Math.Pow(2, D)));
 
+                    int Jloc = grid.CellPartitioning.LocalLength;
+                    int Jtot = grid.CellPartitioning.TotalLength;
 
-                    if ((grid.iLogicalCells.NoOfLocalUpdatedCells.MPISum() >= aggGrids.Last().iLogicalCells.NoOfLocalUpdatedCells.MPISum()))
+                    bool localReduction = (Jloc < localNoOfCells.Last()).MPIOr();
+                    bool globalReduction = Jtot < globalNoOfCells.Last();
+
+
+                    if (localReduction == false || globalReduction == false)
                         // no more refinement possible
                         break;
 
                     aggGrids.Add(grid);
-
+                    localNoOfCells.Add(Jloc);
+                    globalNoOfCells.Add(Jtot);
 
 #if DEBUG
                     int iLevel = aggGrids.Count - 2; // index of fine level (finer == low index)
@@ -91,10 +104,14 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                     Debug.Assert(aggGrids[iLevel + 1].iLogicalCells.Count == (aggGrids[iLevel + 1].iLogicalCells.NoOfLocalUpdatedCells + aggGrids[iLevel + 1].iLogicalCells.NoOfExternalCells));
 
                     // test that the coarse grid has significantly less cells than the fine grid.
-                    double dJfine = aggGrids[iLevel].iLogicalCells.NoOfLocalUpdatedCells;
-                    double dJcoarse = aggGrids[iLevel + 1].iLogicalCells.NoOfLocalUpdatedCells;
-                    if (JCoarse >= 10)
-                        Debug.Assert(dJfine * 0.8 >= dJcoarse);
+                    double dJfine = globalNoOfCells[iLevel];
+                    double dJcoarse = globalNoOfCells[iLevel + 1];
+                    if (JCoarse >= 10) {
+                        if(!(dJfine * 0.8 >= dJcoarse)) {
+                            Console.Error.WriteLine($"Warning: aggregation multigrid seems de-generate, nonly reducting from {globalNoOfCells[iLevel]} to {globalNoOfCells[iLevel + 1]} cells from level {iLevel} to {iLevel + 1}");
+                        }
+                    }
+
 
                     // test the coarse-to-fine map
                     bool[] testMarker = new bool[JFine];
