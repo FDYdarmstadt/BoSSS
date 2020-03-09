@@ -608,7 +608,7 @@ namespace BoSSS.Foundation.XDG {
                                     if (cSoll != Color0) {
                                         // part has to be re-painted
 
-                                        RepaintRecursive(cSoll, ColorMap, Cell0, this.GridDat);
+                                        RepaintRecursive2(cSoll, ColorMap, Cell0, this.GridDat);
                                     }
                                 }
                             }
@@ -788,7 +788,7 @@ namespace BoSSS.Foundation.XDG {
 
                             // re-paint if necessary
                             if(NewColor != FinalColor) {
-                                RepaintRecursive(FinalColor, ColorMap, j, this.GridDat);
+                                RepaintRecursive2(FinalColor, ColorMap, j, this.GridDat);
                             }
                         }
                     }
@@ -830,7 +830,7 @@ namespace BoSSS.Foundation.XDG {
                     FindColorsRecursive(OldColors, marker, jN, NewColor, ColorMap, OldColorMap, gdat);
                 }
             }
-
+            /*
             private static void RepaintRecursive(int NewColor, int[] ColorMap, int j, IGridData gdat) {
                 int J = gdat.iLogicalCells.NoOfLocalUpdatedCells;
                 int JE = gdat.iLogicalCells.NoOfExternalCells + J;
@@ -851,6 +851,74 @@ namespace BoSSS.Foundation.XDG {
                         continue;
                     RepaintRecursive(NewColor, ColorMap, jN, gdat); // should at some point maybe be replaced by a non-recursive implementation
                 }
+            }
+            */
+
+            private static void RepaintRecursive2(int NewColor, int[] ColorMap, int j, IGridData g) {
+                int J = g.iLogicalCells.NoOfLocalUpdatedCells;
+                int JE = g.iLogicalCells.NoOfExternalCells + J;
+                Debug.Assert(ColorMap.Length == JE);
+
+                Debug.Assert(ColorMap[j] != 0);
+                Debug.Assert(ColorMap[j] != NewColor);
+                Debug.Assert(NewColor != 0);
+                
+                /*
+                if (j >= J)
+                    return; // end of recursion
+
+                foreach (int jN in gdat.iLogicalCells.CellNeighbours[j]) {
+                    if (ColorMap[jN] == NewColor)
+                        continue;
+                    if (ColorMap[jN] == 0)
+                        continue;
+                    RepaintRecursive(NewColor, ColorMap, jN, g); // should at some point maybe be replaced by a non-recursive implementation
+                }
+                */
+
+                var cellStack = new Stack<int>();
+                var neighCounterStack = new Stack<int>();
+                int[] jNeigh = g.iLogicalCells.CellNeighbours[j];
+                int iNeigh = 0;
+                while (true) {
+                    Debug.Assert(j < J);
+                    Debug.Assert(cellStack.Count == neighCounterStack.Count);
+                    Debug.Assert(cellStack.Count <= JE + 1);
+
+                    ColorMap[j] = NewColor;
+
+                    //bool Recursion = false;
+                    if (iNeigh < jNeigh.Length) {
+                        int jN = jNeigh[iNeigh];
+                        iNeigh += 1;
+
+                        if (ColorMap[jN] == NewColor || ColorMap[jN] == 0 || jN >= J) {
+                            //  end of recursion
+
+
+                        } else {
+                            // recursion
+                            neighCounterStack.Push(iNeigh);
+                            cellStack.Push(j);
+                            j = jN;
+                            jNeigh = g.iLogicalCells.CellNeighbours[j];
+                            iNeigh = 0;
+                        }
+                    } else {
+                        // pop back to last cell 
+                        Debug.Assert(cellStack.Count == neighCounterStack.Count);
+                        Debug.Assert(cellStack.Count <= JE + 1);
+                        if (cellStack.Count == 0) {
+                            break;
+                        } else {
+                            iNeigh = neighCounterStack.Pop();
+                            j = cellStack.Pop();
+                            jNeigh = g.iLogicalCells.CellNeighbours[j];
+                        }
+                    }
+
+                }
+
             }
 
             /*
@@ -977,19 +1045,7 @@ namespace BoSSS.Foundation.XDG {
                         }
                     }
 
-                    /*
-                    if(!Recursion || iNeigh >= jNeigh.Length) {
-                        Debug.Assert(cellStack.Count == neighCounterStack.Count);
-                        Debug.Assert(cellStack.Count <= JE + 1);
-                        if (cellStack.Count == 0) {
-                            break;
-                        } else {
-                            iNeigh = neighCounterStack.Pop();
-                            j = cellStack.Pop();
-                            jNeigh = g.iLogicalCells.CellNeighbours[j];
-                        }
-                    }
-                   */
+                   
                 }
 
                 return;
