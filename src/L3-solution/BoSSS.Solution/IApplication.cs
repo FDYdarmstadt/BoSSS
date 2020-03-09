@@ -119,6 +119,14 @@ namespace BoSSS.Solution {
         /// Runs the application in the "solver"-mode. 
         /// </summary>
         void RunSolverMode();
+
+        /// <summary>
+        /// This method should be overridden to support automatic numerical stability analysis of the PDE's operator
+        /// </summary>
+        /// <returns>
+        /// Pairs of property name and value, e.g. ConditionNumber and the respective value of the operators Jacobian matrix condition number.
+        /// </returns>
+        IDictionary<string, double> OperatorAnalysis();
     }
 
 

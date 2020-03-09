@@ -165,11 +165,16 @@ namespace BoSSS.Application.XdgPoisson3 {
             }
         }
 
-        private static IDictionary<string, double[]> RunAndLog(List<XdgPoisson3Control> Controls) {
+        private static IDictionary<string, double[]> RunAndLog<T>(T Controls)
+            where T : IEnumerable<BoSSS.Solution.Control.AppControl> //
+        {
+            
             var ret = new Dictionary<string, List<double>>();
 
             foreach (var C in Controls) {
-                using (var solver = new XdgPoisson3Main()) {
+                var st = C.GetSolverType();
+
+                using (var solver = (BoSSS.Solution.IApplication) Activator.CreateInstance(st)) {
                     solver.Init(C);
                     solver.RunSolverMode();
 
