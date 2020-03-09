@@ -52,7 +52,7 @@ namespace BoSSS.Foundation.Grid.Voronoi {
             this.boundary = boundary;
         }
 
-        public double EdgeVelocity(int jEdge, double[] x, Vector normal)
+        public double NormalEdgeVelocity(int jEdge, double[] x, Vector normal)
         {
             int jCellIn = this.iGridData.iGeomEdges.CellIndices[jEdge, 1];
             int jCellOut = this.iGridData.iGeomEdges.CellIndices[jEdge, 0];
@@ -67,6 +67,13 @@ namespace BoSSS.Foundation.Grid.Voronoi {
             double[] velIn = velocities.GetRow(jCell_in);
             double result = VoronoiEdge.NormalVelocity(posOt, velOt, posIn, velIn, x, normal);
             return result;
+        }
+
+        public Vector CellVelocity(int jCell)
+        {
+            int jCellIn = this.iGridData.iGeomCells.GeomCell2LogicalCell[jCell];
+            var velocity = new Vector(Nodes.Velocity[jCellIn, 0], Nodes.Velocity[jCellIn, 1]);
+            return velocity;
         }
     }
 

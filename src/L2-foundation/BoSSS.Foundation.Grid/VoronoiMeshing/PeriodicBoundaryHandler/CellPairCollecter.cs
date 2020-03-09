@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler.NodeLocation;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 {
@@ -17,6 +18,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             CellPairCollection<T> candidates = new CellPairCollection<T>();
             int firstBoundaryEdgeNumber = -1;
             bool isFirstBoundaryLine = true;
+            MeshCell<T> last;
 
             foreach (Edge<T> edge in periodicEdges)
             {
@@ -26,7 +28,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
                 }
                 if (isFirstBoundaryLine)
                 {
-                    if (NodeOfEdgeIsOutsideOfBoundary(edge))
+                    if (NodeOfEdgeIsOnRightSideOfEdge(edge))
                     {
                         firstOuterCells.AddLast(edge.Cell);
                     }
@@ -37,7 +39,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
                 }
                 else
                 {
-                    if (NodeOfEdgeIsOutsideOfBoundary(edge))
+                    if (NodeOfEdgeIsOnRightSideOfEdge(edge))
                     {
                         candidates.AddOuterCell(edge.Cell, edge.BoundaryEdgeNumber);
                     }
@@ -59,19 +61,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
                 firstBoundaryEdgeNumber = boundaryEdgeNumber;
             }
             return firstBoundaryEdgeNumber == boundaryEdgeNumber;
-        }
-
-        static bool NodeOfEdgeIsOutsideOfBoundary(Edge<T> edge)
-        {
-            Vector position = edge.Cell.Node.Position;
-            return IsOnRightSide(position, edge);
-        }
-
-        static bool IsOnRightSide(Vector node, Line line)
-        {
-            Vector start = line.Start.Position;
-            Vector end = line.End.Position;
-            return ((end.x - start.x) * (node.y - start.y) - (end.y - start.y) * (node.x - start.x)) < 0;
         }
     }
 }

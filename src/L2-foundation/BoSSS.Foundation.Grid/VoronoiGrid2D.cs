@@ -92,8 +92,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
         public static VoronoiGrid Polygonal(
             VoronoiBoundary boundary, 
             int noOfLyyodsIter,
-            int noOfNodeSeed
-            )
+            int noOfNodeSeed)
         {
             if (boundary.BoundingBox == null)
             {
@@ -129,7 +128,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
         /// <param name="NoOfLyyodsIter">
         /// Number of smoothing iterations.
         /// </param>
-        /// <param name="FirstCellNode_Indice">
+        /// <param name="FirstCellNodeIndice">
         /// Indice of node where the algorithm will start looking for the first Vector of PolygonBoundary.
         /// </param>
         /// <returns></returns>
@@ -137,7 +136,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             MultidimensionalArray nodePositions,
             Vector[] PolygonBoundary,
             int NoOfLyyodsIter,
-            int FirstCellNode_Indice)
+            int FirstCellNodeIndice)
         {
             //Short hack
             VoronoiNodes nodes = new VoronoiNodes(nodePositions);
@@ -152,7 +151,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
                     EdgeTags = DefaultEdgeTags(PolygonBoundary.Length),
                 },
                 NumberOfLloydIterations = NoOfLyyodsIter,
-                FirstCellNode_indice = FirstCellNode_Indice
+                FirstCellNode_indice = FirstCellNodeIndice
             };
 
             VoronoiMesher mesher = new VoronoiMesher(settings);

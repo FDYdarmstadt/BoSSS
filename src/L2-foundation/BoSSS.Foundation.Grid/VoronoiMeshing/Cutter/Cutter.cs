@@ -77,17 +77,34 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
                     //Handle intersection
                     if (firstCut)
                     {
-                        edgeEnumerator = TryFirstCut(ref circleCells, edgeEnumerator);
-                        //Start with empty line set
                         if (state.Case != IntersectionCase.NotIntersecting)
                         {
                             firstCut = false;
                             FinishFirstCut(lines);
                         }
+                        edgeEnumerator = TryFirstCut(ref circleCells, edgeEnumerator);
+                        //Start with empty line set
                     }
                     else
                     {
                         edgeEnumerator = TryCut(ref circleCells, edgeEnumerator, lines);
+                    }
+                    switch (state.Case)
+                    {
+                        case IntersectionCase.NotIntersecting:
+                            break;
+                        case IntersectionCase.InMiddle:
+                        case IntersectionCase.StartOfLine:
+                        case IntersectionCase.EndOfEdge:
+                            lines.Clear();
+                            break;
+                        case IntersectionCase.EndOfLine:
+                        case IntersectionCase.EndOfEdgeAndLine:
+                            lines.Clear();
+                            circleCells = false;
+                            break;
+                        default:
+                            throw new Exception();
                     }
                     if (state.Case != IntersectionCase.NotIntersecting)
                     {
@@ -96,7 +113,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
                 }
                 lines.Add(activeLine);
             }
-            HandleLastCell();
+            HandleLastCell(lines);
             boundaryLines.Reset();
             greatDivider.RemoveOutsideCells();
         }
@@ -138,14 +155,14 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
                 case IntersectionCase.StartOfLine:
                     activeRidge = meshIntersecter.FirstCut(activeRidge, state.AlphaCut);
                     runningEnum = meshIntersecter.GetConnectedEdgeEnum(activeRidge);
-                    ridgeEnum = edgeCutter.CutOut(runningEnum, activeRidge);
+                    (ridgeEnum, state.Case) = edgeCutter.CutOut(runningEnum, activeRidge);
                     break;
                 case IntersectionCase.EndOfLine:
                     activeRidge = meshIntersecter.FirstCut(activeRidge, state.AlphaCut);
                     if (boundaryLines.MoveNext())
                     {
                         runningEnum = meshIntersecter.GetConnectedEdgeEnum(activeRidge);
-                        ridgeEnum = edgeCutter.CutOut(runningEnum, activeRidge);
+                        (ridgeEnum, state.Case) = edgeCutter.CutOut(runningEnum, activeRidge);
                     }
                     else
                     {
@@ -155,14 +172,14 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
                 case IntersectionCase.EndOfEdge:
                     meshIntersecter.VertexCut(activeRidge, state.AlphaCut);
                     runningEnum = meshIntersecter.GetConnectedEdgeEnum(activeRidge);
-                    ridgeEnum = edgeCutter.CutOut(runningEnum, activeRidge);
+                    (ridgeEnum, state.Case) = edgeCutter.CutOut(runningEnum, activeRidge);
                     break;
                 case IntersectionCase.EndOfEdgeAndLine:
                     meshIntersecter.VertexCut(activeRidge, state.AlphaCut);
                     if (boundaryLines.MoveNext())
                     {
                         runningEnum = meshIntersecter.GetConnectedEdgeEnum(activeRidge);
-                        ridgeEnum = edgeCutter.CutOut(runningEnum, activeRidge);
+                        (ridgeEnum, state.Case) = edgeCutter.CutOut(runningEnum, activeRidge);
                     }
                     else
                     {
@@ -184,10 +201,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
                 linesFirstCell = new List<BoundaryLine>(lines),
                 CutCase = state.Case
             };
-            if (firstCell.linesFirstCell.Count == 0)
-            {
-                firstCell.linesFirstCell.Add(boundaryLines.Current);
-            }
         }
 
         IEnumerator<Edge<T>> TryCut(
@@ -214,7 +227,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
                     if (boundaryLines.MoveNext())
                     {
                         runningEnum = meshIntersecter.GetConnectedEdgeEnum(activeRidge);
-                        ridgeEnum = edgeCutter.CutOut(runningEnum, activeRidge);
+                        (ridgeEnum, state.Case) = edgeCutter.CutOut(runningEnum, activeRidge);
                     }
                     else
                     {
@@ -224,14 +237,14 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
                 case IntersectionCase.EndOfEdge:
                     activeRidge = meshIntersecter.SubdivideWithoutNewVertex(activeRidge, lines, boundaryLines.LineIndex());
                     runningEnum = meshIntersecter.GetConnectedEdgeEnum(activeRidge);
-                    ridgeEnum = edgeCutter.CutOut(runningEnum, activeRidge);
+                    (ridgeEnum, state.Case) = edgeCutter.CutOut(runningEnum, activeRidge);
                     break;
                 case IntersectionCase.EndOfEdgeAndLine:
                     activeRidge = meshIntersecter.SubdivideWithoutNewVertex(activeRidge, lines, boundaryLines.LineIndex());
                     if (boundaryLines.MoveNext())
                     {
                         runningEnum = meshIntersecter.GetConnectedEdgeEnum(activeRidge);
-                        ridgeEnum = edgeCutter.CutOut(runningEnum, activeRidge);
+                        (ridgeEnum, state.Case) = edgeCutter.CutOut(runningEnum, activeRidge);
                     }
                     else
                     {
@@ -260,14 +273,15 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
             return foundIntersection;
         }
 
-        void HandleLastCell()
+        void HandleLastCell(List<BoundaryLine> lines)
         {
             //Handle last cell
             //-----------------------------------------------------------
             switch (state.Case)
             {
                 case IntersectionCase.NotIntersecting:
-                    meshIntersecter.CloseMesh(firstCell.linesFirstCell, firstCell.firstCellCutRidge, boundaryLines.LineIndex());
+                    lines.AddRange(firstCell.linesFirstCell);
+                    meshIntersecter.CloseMesh(lines, firstCell.firstCellCutRidge, boundaryLines.LineIndex());
                     break;
                 case IntersectionCase.EndOfLine:
                 case IntersectionCase.EndOfEdgeAndLine:

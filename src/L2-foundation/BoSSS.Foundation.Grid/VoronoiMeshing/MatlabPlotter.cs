@@ -36,10 +36,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             plotter.Plot(mesh, "mesh");
         }
 
-        public void Plot<T>(Domain<T> mesh, string name)
+        public static void Plot<T>(Domain<T> mesh, string name)
             where T: ILocatable
         {
-            Plot(mesh.Mesh, name);
+            MatlabPlotter plotter = new MatlabPlotter();
+            plotter.Plot(mesh.Mesh, name);
         }
 
         public void Plot<T>(Mesh<T> mesh, string name)

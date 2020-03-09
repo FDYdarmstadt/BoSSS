@@ -72,15 +72,15 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             CellPairCollection<T>.EdgeCombo edgePair,
             CellPairCollection<T> candidates)
         {
-            CellPairCollection<T>.EdgeCombo mergePair = new CellPairCollection<T>.EdgeCombo(edgePair.EdgeNumber);
-            
+            var mergePair = new CellPairCollection<T>.EdgeCombo(edgePair.EdgeNumber);
             int pairedBoundary = map.PeriodicBoundaryCorrelation[edgePair.EdgeNumber];
             candidates.TryGetOuterCells(pairedBoundary, out List<MeshCell<T>> pairedOuterCells);
             mergePair.Outer = pairedOuterCells;
             mergePair.Inner = new List<MeshCell<T>>(ArrayMethods.GetReverseOrderArray(edgePair.Inner));
+            Debug.Assert(mergePair.Outer.Count == mergePair.Inner.Count);
+
             cleaner.RemoveAlreadyDealtWithCornerCellMergePairsFrom(mergePair);
             InitializeGlueMapOf(mergePair);
-
             return mergePair;
         }
 

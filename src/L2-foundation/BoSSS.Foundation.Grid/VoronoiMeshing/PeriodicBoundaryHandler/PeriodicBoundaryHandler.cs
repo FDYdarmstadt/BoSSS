@@ -69,7 +69,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
         public void RecomposePeriodicEdges(Domain<T> mesh)
         {
             Debug.Assert(ContainsPeriodicBoundaries == true);
-
+            
             IEnumerable<Edge<T>> periodicEdges = PeriodicEdgesOf(mesh);
             recomposer.RecomposePeriodicEdges(mesh, periodicEdges);
 

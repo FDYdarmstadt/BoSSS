@@ -69,6 +69,7 @@
     <Compile Include="VoronoiMeshing\Converter\BoundaryConverter.cs" />
     <Compile Include="VoronoiMeshing\Converter\BoundaryFace.cs" />
     <Compile Include="VoronoiMeshing\Converter\EdgePairer.cs" />
+    <Compile Include="VoronoiMeshing\Corner.cs" />
     <Compile Include="VoronoiMeshing\ILocatable.cs" />
     <Compile Include="VoronoiMeshing\IMesh.cs" />
     <Compile Include="VoronoiMeshing\MatlabColorPalette.cs" />
@@ -78,6 +79,7 @@
     <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\MeshEdgeDivider.cs" />
     <Compile Include="VoronoiMeshing\Converter\PeriodicBoundaryConverterMap.cs" />
     <Compile Include="VoronoiMeshing\Converter\PeriodicBoundaryConverter.cs" />
+    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\NodeLocation.cs" />
     <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\PeriodicCornerBoundaryAssigner.cs" />
     <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\PeriodicCornerBoundaryIdentifier.cs" />
     <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\PeriodicCornerCellFinder.cs" />

@@ -31,7 +31,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
             (GridCommons grid, int[][] aggregation) = ExtractGridCommonsAndCellAggregation(mesh.Cells, boundaryConverter);
             VoronoiNodes nodes = ExtractVoronoiNodes(mesh);
             VoronoiGrid voronoiGrid = new VoronoiGrid(grid, aggregation, nodes, boundary);
-            var test = grid.iGridData.iGeomEdges.CellIndices;
 
             return voronoiGrid;
         }

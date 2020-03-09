@@ -12,7 +12,7 @@ namespace VoronoiTests.Grid
     {
         public override void Run()
         {
-            FiveNodesInRectangle();
+            OnlyEdgesOnBoundary();
         }
 
         [Test]
@@ -42,13 +42,51 @@ namespace VoronoiTests.Grid
         }
 
         [Test]
-        public void ToDo()
+        public void CornerSpeziale()
         {
-            MultidimensionalArray nodes1 = MultidimensionalArray.Create(2, 2);
+            MultidimensionalArray nodes1 = MultidimensionalArray.Create(3, 2);
             nodes1.SetRowPt(0, new Vector(-1, 1));
             nodes1.SetRowPt(1, new Vector(1, 1));
-            //klappt nicht bei den 2 Zellen, the fuck?!
+            nodes1.SetRowPt(2, new Vector(-1, -1));
             VoronoiGrid grid1 = VoronoiGrid2D.Polygonal(nodes1, GridShapes.Rectangle(2,2), 0, 0);
+        }
+
+        [Test]
+        public void SomeEdgesOnBoundary()
+        {
+            MultidimensionalArray nodes1 = MultidimensionalArray.Create(4, 2);
+            nodes1.SetRowPt(0, new Vector(0, 2));
+            nodes1.SetRowPt(1, new Vector(0, 0));
+            nodes1.SetRowPt(2, new Vector(-1, 0));
+            nodes1.SetRowPt(3, new Vector(-1, -1));
+            VoronoiGrid grid1 = VoronoiGrid2D.Polygonal(nodes1, GridShapes.Rectangle(2, 2), 0, 0);
+        }
+
+        [Test]
+        public void OnlyEdgesOnBoundary()
+        {
+            MultidimensionalArray nodes1 = MultidimensionalArray.Create(8, 2);
+            nodes1.SetRowPt(0, new Vector(0, 1.5));
+            nodes1.SetRowPt(1, new Vector(-0.5, 0));
+            nodes1.SetRowPt(2, new Vector(0, -0.5));
+            nodes1.SetRowPt(3, new Vector(0.5, 0));
+            nodes1.SetRowPt(4, new Vector(0, 0.5));
+            nodes1.SetRowPt(5, new Vector(1.5, 0));
+            nodes1.SetRowPt(6, new Vector(-1.5, 0));
+            nodes1.SetRowPt(7, new Vector(0, -1.5));
+            VoronoiGrid grid1 = VoronoiGrid2D.Polygonal(nodes1, GridShapes.Rectangle(2, 2), 0, 1);
+        }
+
+        static Vector[] Rectangle(double width, double height)
+        {
+            Vector[] polygonBoundary = new Vector[]
+            {
+                new Vector(-width / 2, height / 2),
+                new Vector(width / 2, height / 2),
+                new Vector(width / 2, -height / 2),
+                new Vector(-width / 2, -height / 2)
+            };
+            return polygonBoundary;
         }
     }
 }

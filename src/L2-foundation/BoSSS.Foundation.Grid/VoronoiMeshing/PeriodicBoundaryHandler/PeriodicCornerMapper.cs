@@ -70,7 +70,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 
         public void RemoveAlreadyDealtWithCornerCellMergePairsFrom<T>(CellPairCollection<T>.EdgeCombo edge)
         {
-            Debug.Assert(edge.Outer.Count == edge.Inner.Count);
             if (edge.Outer.Count > 0)
             {
                 MeshCell<T> firstCandidate = edge.Outer[0];

@@ -103,7 +103,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
 
         public void Clear()
         {
-            periodicBoundaryConverter.Clear();
+            if(periodicBoundaryConverter != null)
+            {
+                periodicBoundaryConverter.Clear();
+            }
         }
     }
 }

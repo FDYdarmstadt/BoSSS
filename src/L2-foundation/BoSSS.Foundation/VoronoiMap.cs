@@ -136,12 +136,8 @@ namespace BoSSS.Foundation.Voronoi
         {
             for (int i = 0; i < towardsThis.Length; ++i)
             {
-                Connection towardsConnection = towardsThis.GetConnection(i);
-                if (towardsConnection == Connection.Remained)
-                {
-                    SetMapping(i, towardsThis.GetMapping(i));
-                    SetConnection(Connection.Remained, i);
-                }
+                SetMapping(i, towardsThis.GetMapping(i));
+                SetConnection(Connection.Remained, i);
             }
         }
     }

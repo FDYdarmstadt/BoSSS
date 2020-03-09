@@ -40,8 +40,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             {
                 nodes = boundaryHandler.CloneNodesAlongPeriodicBoundaries(mesh);
                 mesh = CreateMeshFrom(nodes, mesh.Boundary.FirstCorner);
+                //MatlabPlotter.Plot(mesh, "WTF");
                 boundaryHandler.RecomposePeriodicEdges(mesh);
             }
+            //MatlabPlotter.Plot(mesh, "kacke2");
             return mesh;
         }
 
@@ -55,7 +57,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 BoundaryLines = boundaryLines,
                 FirstCorner = mesh.Cells[firstCornerNodeIndice]
             };
-
             cutter.CutOut(mesh, boundary);
             return new Domain<T>
             {

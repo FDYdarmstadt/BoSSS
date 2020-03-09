@@ -21,17 +21,17 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
             this.boundary = boundary;
         }
 
-        public IEnumerator<Edge<T>> CutOut(
+        public (IEnumerator<Edge<T>>, IntersectionCase ) CutOut(
             IEnumerator<Edge<T>> edgeEnum,
             Edge<T> outerEdge)
         {
             bool keepOnRunning = true;
             Edge<T> activeEdge = default(Edge<T>);
             BoundaryLine activeLine = default(BoundaryLine);
+            IntersectionCase intersectionCase = IntersectionCase.NotIntersecting;
             while (keepOnRunning)
             {
                 keepOnRunning = false;
-                IntersectionCase intersectionCase = IntersectionCase.NotIntersecting;
                 double alphaCut = 0;
                 activeLine = boundary.Current;
                 while (edgeEnum.MoveNext() && !keepOnRunning)
@@ -73,7 +73,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
                 }
             }
             edgeEnum = meshIntersecter.GetNeighborFromLineDirection(outerEdge, activeLine);
-            return edgeEnum;
+            return (edgeEnum, intersectionCase);
         }
     }
 }

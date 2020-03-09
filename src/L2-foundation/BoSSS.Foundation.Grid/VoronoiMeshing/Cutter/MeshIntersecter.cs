@@ -125,18 +125,31 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
             return edge;
         }
 
+        static double accuracy = 1e-10;
+
         public Edge<T> FirstCut(Edge<T> edge, double alpha)
         {
-            //Divide Ridge and update Ridge Arrays
-            //-------------------------------------
-            Vertex newVertex = DivideEdge(edge, alpha, out Edge<T> newEdge);
-            edge.Twin.Cell.IntersectionVertex = newVertex.ID;
+            if(alpha > 1 - accuracy )
+            {
+                edge.Cell.IntersectionVertex = edge.Start.ID;
+            }else if ( alpha < accuracy)
+            {
+                edge.Cell.IntersectionVertex = edge.End.ID;
+            }
+            else
+            {
+                //Divide Ridge and update Ridge Arrays
+                //-------------------------------------
+                Vertex newVertex = DivideEdge(edge, alpha, out Edge<T> newEdge);
+                edge.Twin.Cell.IntersectionVertex = newVertex.ID;
 
-            //Find Intersection and insert Ridge
-            edge.Cell.IntersectionVertex = newVertex.ID;
-
+                //Find Intersection and insert Ridge
+                edge.Cell.IntersectionVertex = newVertex.ID;
+            }
             return edge;
         }
+
+
 
         public Vertex DivideEdge(Edge<T> edge, double alpha, out Edge<T> newEdge)
         {
@@ -183,14 +196,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Cutter
             Vertex[] verticesOfNewRidgeBoundary = new Vertex[lines.Count + 2];
             verticesOfNewRidgeBoundary[0] = firstCutEdge.End;
             verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 1] = mesh.Vertices[cell.IntersectionVertex];
-            verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 2] = lines[0].Start;
-            int ID = mesh.AddVertex(verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 2]);
-
             //Add Vertices of lines
-            for (int i = 2; i < verticesOfNewRidgeBoundary.Length - 1; ++i)
+            for (int i = 1; i < verticesOfNewRidgeBoundary.Length - 1; ++i)
             {
-                verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 1 - i] = lines[i - 1].End;
-                ID = mesh.AddVertex(verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 1 - i]);
+                verticesOfNewRidgeBoundary[i] = lines[lines.Count - i].End;
+                int ID = mesh.AddVertex(verticesOfNewRidgeBoundary[i]);
             }
 
             //New Edges
