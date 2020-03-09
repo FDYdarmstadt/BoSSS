@@ -1,23 +1,23 @@
 restart
 **************
+
   BoSSSpad C# interpreter
   _______________________
 
 Databases loaded:
 List of 2 instances of IDatabaseInfo {
-  0: { Session Count = 20; Grid Count = 9; Path = C:\Users\flori\default_bosss_db }
+  0: { Session Count = 1; Grid Count = 1; Path = C:\Users\flori\default_bosss_db }
   1: { Session Count = 5; Grid Count = 2; Path = X:\bosss_db_lichtenberg }
 }
 Setting Matlab Connector to Octave...
 
  Console ready for input. Type 'help' for help.
-Mini batch processor is already running.
 
 ==============
 databases;
 **************
 List of 2 instances of IDatabaseInfo {
-  0: { Session Count = 20; Grid Count = 9; Path = C:\Users\flori\default_bosss_db }
+  0: { Session Count = 1; Grid Count = 1; Path = C:\Users\flori\default_bosss_db }
   1: { Session Count = 5; Grid Count = 2; Path = X:\bosss_db_lichtenberg }
 }
 ==============
@@ -65,16 +65,8 @@ WorkflowMgm.SetEqualityBasedSessionJobControllCorrelation();
 ==============
 databases[0].Grids;
 **************
-List of 9 instances of IGridInfo {
-  0: { Guid = c76fc3a9-612b-429b-b563-088cfcf183f5; Name = confined_cylinder; Cell Count = 29424; Dim = 2 }
-  1: { Guid = c8b9c86b-e963-4794-9172-1906f13a29c8; Name = confined_cylinder; Cell Count = 8504; Dim = 2 }
-  2: { Guid = 8e2368da-9880-430f-8db3-5cec041e9c86; Name = confined_cylinder; Cell Count = 2416; Dim = 2 }
-  3: { Guid = 3ec220d5-462e-4419-af24-9eb60a054d84; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
-  4: { Guid = ee5e22fa-5042-4457-a724-72aca22c14c1; Name = ; Cell Count = 1024; Dim = 2 }
-  5: { Guid = e076c8db-756e-4689-9bba-2e8e2aca758b; Name = ; Cell Count = 256; Dim = 2 }
-  6: { Guid = 07bb2a2e-caf5-422f-998e-bf7c9414a1bc; Name = ; Cell Count = 64; Dim = 2 }
-  7: { Guid = df08ceaf-2fac-43c2-86a2-a012f61ea304; Name = ; Cell Count = 16; Dim = 2 }
-  8: { Guid = b55230a3-cf2c-4431-a452-a127dc2f44bb; Name = ; Cell Count = 4; Dim = 2 }
+List of 1 instances of IGridInfo {
+  0: { Guid = ca22b2b1-39c4-48df-af23-7909804c3048; Name = ; Cell Count = 320; Dim = 2 }
 }
 ==============
 var GridSeq = new IGridInfo[4];
@@ -95,10 +87,10 @@ GridSeq[0] = databases[0].Grids.FirstOrDefault(g => g.NumberOfCells == 640 && g.
 GridSeq;
 **************
 List of 4 instances of IGridInfo {
-  0: { Guid = 3ec220d5-462e-4419-af24-9eb60a054d84; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
-  1: { Guid = 8e2368da-9880-430f-8db3-5cec041e9c86; Name = confined_cylinder; Cell Count = 2416; Dim = 2 }
-  2: { Guid = c8b9c86b-e963-4794-9172-1906f13a29c8; Name = confined_cylinder; Cell Count = 8504; Dim = 2 }
-  3: { Guid = c76fc3a9-612b-429b-b563-088cfcf183f5; Name = confined_cylinder; Cell Count = 29424; Dim = 2 }
+  0: 
+  1: 
+  2: 
+  3: 
 }
 ==============
 // Plotting 
@@ -140,14 +132,19 @@ for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
     }
 }
 **************
+
+
+
+
+
 ==============
 GridSeq;
 **************
 List of 4 instances of IGridInfo {
-  0: { Guid = 3ec220d5-462e-4419-af24-9eb60a054d84; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
-  1: { Guid = 8e2368da-9880-430f-8db3-5cec041e9c86; Name = confined_cylinder; Cell Count = 2416; Dim = 2 }
-  2: { Guid = c8b9c86b-e963-4794-9172-1906f13a29c8; Name = confined_cylinder; Cell Count = 8504; Dim = 2 }
-  3: { Guid = c76fc3a9-612b-429b-b563-088cfcf183f5; Name = confined_cylinder; Cell Count = 29424; Dim = 2 }
+  0: { Guid = 8ef20294-87d4-4d66-aef5-d671d8a79482; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
+  1: { Guid = feaf5088-1706-4b7a-86d4-d2c5e401f6db; Name = confined_cylinder; Cell Count = 2416; Dim = 2 }
+  2: { Guid = bdf5ca4c-05a1-47f8-9d5e-bff2c164f4a5; Name = confined_cylinder; Cell Count = 8504; Dim = 2 }
+  3: { Guid = aa8f19df-8597-4b23-a5f2-1dfa032d5c6d; Name = confined_cylinder; Cell Count = 29424; Dim = 2 }
 }
 ==============
 //databases[0].Grids;
@@ -155,18 +152,14 @@ List of 4 instances of IGridInfo {
 ==============
 AllGrids;
 **************
-List of 11 instances of IGridInfo {
-  0: { Guid = c76fc3a9-612b-429b-b563-088cfcf183f5; Name = confined_cylinder; Cell Count = 29424; Dim = 2 }
-  1: { Guid = c8b9c86b-e963-4794-9172-1906f13a29c8; Name = confined_cylinder; Cell Count = 8504; Dim = 2 }
-  2: { Guid = 8e2368da-9880-430f-8db3-5cec041e9c86; Name = confined_cylinder; Cell Count = 2416; Dim = 2 }
-  3: { Guid = 3ec220d5-462e-4419-af24-9eb60a054d84; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
-  4: { Guid = ee5e22fa-5042-4457-a724-72aca22c14c1; Name = ; Cell Count = 1024; Dim = 2 }
-  5: { Guid = e076c8db-756e-4689-9bba-2e8e2aca758b; Name = ; Cell Count = 256; Dim = 2 }
-  6: { Guid = 07bb2a2e-caf5-422f-998e-bf7c9414a1bc; Name = ; Cell Count = 64; Dim = 2 }
-  7: { Guid = df08ceaf-2fac-43c2-86a2-a012f61ea304; Name = ; Cell Count = 16; Dim = 2 }
-  8: { Guid = b55230a3-cf2c-4431-a452-a127dc2f44bb; Name = ; Cell Count = 4; Dim = 2 }
-  9: { Guid = 3ec220d5-462e-4419-af24-9eb60a054d84; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
-  10: { Guid = 1c9cb150-88d3-4ee1-974d-7970eabd3cf8; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
+List of 7 instances of IGridInfo {
+  0: { Guid = aa8f19df-8597-4b23-a5f2-1dfa032d5c6d; Name = confined_cylinder; Cell Count = 29424; Dim = 2 }
+  1: { Guid = bdf5ca4c-05a1-47f8-9d5e-bff2c164f4a5; Name = confined_cylinder; Cell Count = 8504; Dim = 2 }
+  2: { Guid = feaf5088-1706-4b7a-86d4-d2c5e401f6db; Name = confined_cylinder; Cell Count = 2416; Dim = 2 }
+  3: { Guid = 8ef20294-87d4-4d66-aef5-d671d8a79482; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
+  4: { Guid = ca22b2b1-39c4-48df-af23-7909804c3048; Name = ; Cell Count = 320; Dim = 2 }
+  5: { Guid = 3ec220d5-462e-4419-af24-9eb60a054d84; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
+  6: { Guid = 1c9cb150-88d3-4ee1-974d-7970eabd3cf8; Name = confined_cylinder; Cell Count = 640; Dim = 2 }
 }
 ==============
 // ======================
@@ -199,22 +192,17 @@ for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
 }
 **************
 Info: setting database path to: C:\Users\flori\default_bosss_db
-Info: setting database path to: C:\Users\flori\default_bosss_db
-Info: setting database path to: C:\Users\flori\default_bosss_db
-Info: setting database path to: C:\Users\flori\default_bosss_db
-Info: setting database path to: C:\Users\flori\default_bosss_db
-Info: setting database path to: C:\Users\flori\default_bosss_db
-Info: setting database path to: C:\Users\flori\default_bosss_db
-Info: setting database path to: C:\Users\flori\default_bosss_db
-Info: setting database path to: C:\Users\flori\default_bosss_db
-Info: setting database path to: C:\Users\flori\default_bosss_db
-Info: setting database path to: C:\Users\flori\default_bosss_db
-Info: setting database path to: C:\Users\flori\default_bosss_db
-Info: setting database path to: C:\Users\flori\default_bosss_db
-Info: setting database path to: C:\Users\flori\default_bosss_db
-Info: setting database path to: C:\Users\flori\default_bosss_db
-Info: setting database path to: C:\Users\flori\default_bosss_db
+System.ArgumentException occurred: Unable to serialize/deserialize initial values correctly.. Type 'LastError' for details.
 
+==============
+**************
+System.ArgumentException: Unable to serialize/deserialize initial values correctly.
+   at BoSSS.Application.BoSSSpad.AppControlExtensions.VerifyEx(AppControl ctrl) in C:\Users\flori\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\AppControlExtensions.cs:line 264
+   at BoSSS.Application.BoSSSpad.Job.SetControlObject(AppControl ctrl) in C:\Users\flori\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\Job.cs:line 393
+   at BoSSS.Application.BoSSSpad.AppControlExtensions.CreateJob(AppControl ctrl) in C:\Users\flori\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\AppControlExtensions.cs:line 101
+   at <InteractiveExpressionClass>.Host(Object& $retval)
+   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\Users\flori\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:line 346
 ==============
 Info(controls[0,0]);
 **************
@@ -347,6 +335,8 @@ rtsi.currentWeissenbergNumber;
 **************
 ==============
 //SaveExecutionQueues();
+**************
+==============
 **************
 ==============
 **************

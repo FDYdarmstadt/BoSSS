@@ -358,6 +358,101 @@ namespace BoSSS.Platform.Utils.Geom {
         /// bounding box of all points, possibly extended a bit
         /// </summary>
         public BoundingBox PointsBB;
+
+
+        /// <summary>
+        /// finds the next point out of <see cref="Points"/> to <paramref name="pt"/>.
+        /// </summary>
+        public (int,Vector) FindNextPoint(Vector pt) {
+            int D = this.Points.GetLength(1);
+            if(pt.Dim != D)
+                throw new ArgumentException("Spatial dimension mismatch.");
+            if(pt.Dim != this.PointsBB.D)
+                throw new ArgumentException("Spatial dimension mismatch.");
+
+            
+            InitTree();
+
+
+            double distPow2= double.MaxValue;
+            int iMin = int.MaxValue;
+
+            BoundingBoxCode cd; cd.Branch.Code = 0; cd.SignificantBits = 0;
+            uint MaxDepth = 0;
+            FindNextPointsRecursice(pt, ref distPow2, ref iMin, 0, Codes.Length, D, cd, 0x80000000, ref MaxDepth, false, 0);
+
+            if(iMin < 0) {
+                var nanVex = new Vector(D);
+                for(int d = 0; d < D; d++)
+                    nanVex[d] = double.NaN;
+
+                return (iMin, nanVex);
+            } else {
+                return (iMin, Points.GetRowPt(iMin));
+            }
+        }
+
+        void FindNextPointsRecursice(Vector pt, ref double MinDistSoFarPow2, ref int iMin,
+            int i0, int Len, int _D, BoundingBoxCode BoxCode, uint shifti, ref uint MaxDepth, bool forceTst, int treeNodeIdx) {
+            TreeNode[] tree = __tree;
+            uint Depth = BoxCode.SignificantBits;
+            {
+                
+
+                if (Len <= 0)
+                    // no points in branch => terminate recursion
+                    return;
+
+                var __helper = new BoundingBox(_D);
+                PointsBB.SubBoxFromCode(__helper, BoxCode);
+                //helper.ExtendByFactor(0.01);
+                double di = __helper.Distance(pt);
+                if (di * di > MinDistSoFarPow2) {
+                   
+                    
+                    return; // no interesting points in box => terminate recursion
+                }
+            }
+
+            MaxDepth = Math.Max(MaxDepth, Depth);
+            
+            if (Len <= 2 || Depth == 32 || forceTst) {
+                // only a few points remaining, or maximum tree depth reached - test all of them
+
+                for (int n = i0; n < (i0 + Len); n++) {
+                    double distPow2 = 0;
+                    for (int d = _D - 1; d >= 0; d--) {
+                        double delta = pt[d] - this.Points[n, d];
+                        distPow2 += delta * delta;
+                    }
+
+                    if(distPow2 < MinDistSoFarPow2) {
+                        MinDistSoFarPow2 = distPow2;
+                        iMin = n;
+                    }
+                }
+
+            } else {
+                // do recursion;
+
+                BoundingBoxCode BoxB = BoxCode; BoxB.Branch.Code += shifti;
+                shifti = shifti >> 1;
+                Depth++;
+                BoxB.SignificantBits++;
+                BoxCode.SignificantBits++;
+                                
+                int idxMid = tree[treeNodeIdx].iMid;
+
+                int LenLeft = idxMid - i0;
+                int LenRigt = Len + i0 - idxMid;
+
+                bool forceLeft = (LenLeft == Len);
+                bool forceRigt = (LenRigt == Len);
+
+                FindNextPointsRecursice(pt, ref MinDistSoFarPow2, ref iMin, i0,     LenLeft, _D, BoxCode, shifti, ref MaxDepth, forceLeft, tree[treeNodeIdx].Left );
+                FindNextPointsRecursice(pt, ref MinDistSoFarPow2, ref iMin, idxMid, LenRigt, _D, BoxB,    shifti, ref MaxDepth, forceRigt, tree[treeNodeIdx].Right);
+            }
+        }
         
         /// <summary>
         /// Finds all points (in <see cref="Points"/>) within
@@ -383,7 +478,7 @@ namespace BoSSS.Platform.Utils.Geom {
 
             
         }
-
+                          
         BoundingBox helper;
 
         void FindNearPointsRecursice(ICollection<int> IndicesIntoPoints, double epsPow2, double[] pt, int i0, int Len, int _D, BoundingBoxCode BoxCode, uint shifti, ref uint MaxDepth, bool forceTst, int treeNodeIdx) {

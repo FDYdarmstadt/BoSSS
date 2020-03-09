@@ -116,7 +116,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 BlockMsrMatrix P01HiMatrix = null;
 
                 if (UseDiagonalPmg) {
-                    HighOrderBlocks_LU = hMask.GetSubBlocks(op.OperatorMatrix, true, false, false);
+                    HighOrderBlocks_LU = hMask.GetDiagonalBlocks(op.OperatorMatrix, false, false);
                     int NoOfBlocks = HighOrderBlocks_LU.Length;
                     HighOrderBlocks_LUpivots = new int[NoOfBlocks][];
 

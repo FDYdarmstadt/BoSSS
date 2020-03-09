@@ -576,6 +576,17 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        public Plot2Ddata Merge(params Plot2Ddata[] otherS) {
+            var r = this;
+            foreach(var p in otherS) {
+                r = r.Merge(p);
+            }
+            return r;
+        }
+
+        /// <summary>
         /// Merges the this object and the given data set
         /// <paramref name="other"/> into a new data set (while making a deep
         /// copy of the data)

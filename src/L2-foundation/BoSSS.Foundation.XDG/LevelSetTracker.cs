@@ -1157,6 +1157,10 @@ namespace BoSSS.Foundation.XDG {
             int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
             var msk = new BitArray(J);
 
+            //
+            // @Markus: undid your changes, because they caused thest to fail:
+            //
+
             // check for cell color, necessary to prevent failing on periodic boundaries
             int[] coloredCells = Regions.ColorMap4Spc[GetSpeciesId("B")];
 
@@ -1168,6 +1172,7 @@ namespace BoSSS.Foundation.XDG {
             foreach (int j in newCut.ItemEnum) {
                 int old_dist = LevelSetTracker.DecodeLevelSetDist(oldCode[j], LevSetIdx);
                 if (Math.Abs(old_dist) > 1 && coloredCells[j] < 1) {
+                //if (Math.Abs(old_dist) > 1) {
                     fail_count++;
                     msk[j] = true;
                 }

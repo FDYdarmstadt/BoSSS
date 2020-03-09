@@ -229,7 +229,7 @@ namespace BoSSS.Application.BoSSSpad {
             };
 
             int id = MiniBatchProcessor.Client.SubmitJob(JD);
-            return id.ToString();
+            return id.ToString(); ;
         }
     }
 }

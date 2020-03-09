@@ -67,14 +67,14 @@ namespace MPI.Wrappers {
 
             byte[] buffer = null;
             int Size = -1;
-            
-            if (root == MyRank) {
-                using (var ms = new MemoryStream()) {
+
+            if(root == MyRank) {
+                using(var ms = new MemoryStream()) {
                     _Formatter.Serialize(ms, o);
                     Size = (int)ms.Position;
                     buffer = ms.GetBuffer();
                 }
-                if (Size <= 0)
+                if(Size <= 0)
                     throw new IOException("Error serializing object for MPI broadcast - size is 0");
                 Array.Resize(ref buffer, Size);
             }
@@ -87,22 +87,22 @@ namespace MPI.Wrappers {
             // 2nd phase: broadcast object
             // ---------------------------
             Debug.Assert(Size > 0);
-            if (buffer == null) {
+            if(buffer == null) {
                 buffer = new byte[Size];
             }
 
             unsafe {
-                fixed (byte* pBuffer = buffer) {
+                fixed(byte* pBuffer = buffer) {
                     csMPI.Raw.Bcast((IntPtr)pBuffer, Size, csMPI.Raw._DATATYPE.BYTE, root, comm);
                 }
             }
 
-            if (MyRank == root) {
-               
+            if(MyRank == root) {
+
                 return o;
             } else {
                 T r;
-                using (var ms = new MemoryStream(buffer)) {
+                using(var ms = new MemoryStream(buffer)) {
                     r = (T)_Formatter.Deserialize(ms);
                     return r;
                 }
@@ -149,13 +149,13 @@ namespace MPI.Wrappers {
 
             byte[] buffer = null;
             int Size;
-            if (root != MyRank) {
-                using (var ms = new MemoryStream()) {
+            if(root != MyRank) {
+                using(var ms = new MemoryStream()) {
                     _Formatter.Serialize(ms, o);
                     Size = (int)ms.Position;
                     buffer = ms.GetBuffer();
                 }
-                if (Size <= 0)
+                if(Size <= 0)
                     throw new IOException("Error serializing object for MPI broadcast - size is 0");
                 Array.Resize(ref buffer, Size);
 
@@ -174,13 +174,13 @@ namespace MPI.Wrappers {
             // -----------------------------------------------------
             // 3rd phase: de-serialize
             // -----------------------------------------------------
-            
 
-            if (MyRank == root) {
+
+            if(MyRank == root) {
                 T[] ret = new T[MpiSize];
-                using (var ms = new MemoryStream(rcvBuffer)) {
-                    for (int r = 0; r < MpiSize; r++) {
-                        if (r == MyRank) {
+                using(var ms = new MemoryStream(rcvBuffer)) {
+                    for(int r = 0; r < MpiSize; r++) {
+                        if(r == MyRank) {
                             ret[r] = o;
                         } else {
                             ret[r] = (T)_Formatter.Deserialize(ms);
@@ -228,12 +228,12 @@ namespace MPI.Wrappers {
             byte[] buffer = null;
             int Size;
 
-            using (var ms = new MemoryStream()) {
+            using(var ms = new MemoryStream()) {
                 _Formatter.Serialize(ms, o);
                 Size = (int)ms.Position;
                 buffer = ms.GetBuffer();
             }
-            if (Size <= 0)
+            if(Size <= 0)
                 throw new IOException("Error serializing object for MPI broadcast - size is 0");
             Array.Resize(ref buffer, Size);
 
@@ -250,9 +250,9 @@ namespace MPI.Wrappers {
             // 3rd phase: de-serialize
             // -----------------------------------------------------
             T[] ret = new T[MpiSize];
-            using (var ms = new MemoryStream(rcvBuffer)) {
-                for (int r = 0; r < MpiSize; r++) {
-                    if (r == MyRank) {
+            using(var ms = new MemoryStream(rcvBuffer)) {
+                for(int r = 0; r < MpiSize; r++) {
+                    if(r == MyRank) {
                         ret[r] = o;
                     } else {
                         ret[r] = (T)_Formatter.Deserialize(ms);
@@ -316,7 +316,7 @@ namespace MPI.Wrappers {
             //else
             //    return;
 
-            if (e != null)
+            if(e != null)
                 csMPI.Raw.Comm_Rank(comm, out ExcSrc);
 
             unsafe {
@@ -326,7 +326,7 @@ namespace MPI.Wrappers {
             }
 
 
-            if (ExcSrc < int.MaxValue) {
+            if(ExcSrc < int.MaxValue) {
                 // an exception occured on some process
 
                 int myRank;
@@ -334,11 +334,11 @@ namespace MPI.Wrappers {
 
                 object reduced;
 
-                if (myRank == ExcSrc) {
+                if(myRank == ExcSrc) {
                     // sender branch
 
 
-                    if (e.GetType().GetCustomAttributes(typeof(SerializableAttribute), false).Length > 0)
+                    if(e.GetType().GetCustomAttributes(typeof(SerializableAttribute), false).Length > 0)
                         // exception is serializeable -> bcast exception itself
                         reduced = MPIBroadcast<object>(e, ExcSrc, comm);
                     else
@@ -350,9 +350,9 @@ namespace MPI.Wrappers {
                     reduced = MPIBroadcast<object>(null, ExcSrc, comm);
                 }
 
-                if (reduced is string) {
+                if(reduced is string) {
                     throw new ApplicationException("On MPI Process #" + myRank + ": " + ((string)reduced));
-                } else if (reduced is Exception) {
+                } else if(reduced is Exception) {
                     throw ((Exception)reduced);
                 } else {
                     throw new ApplicationException("should never occur");
@@ -403,7 +403,7 @@ namespace MPI.Wrappers {
         /// <paramref name="comm"/>--communicator.
         /// </summary>
         static public bool MPIOr(this bool b, MPI_Comm comm) {
-            int loc = b ? 0: 1;
+            int loc = b ? 1 : 0;
             unsafe {
                 int glob = 0;
                 csMPI.Raw.Allreduce(((IntPtr)(&loc)), ((IntPtr)(&glob)), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.SUM, comm);
@@ -424,7 +424,7 @@ namespace MPI.Wrappers {
         /// <paramref name="comm"/>--communicator.
         /// </summary>
         static public bool MPIAnd(this bool b, MPI_Comm comm) {
-            int loc = b ? 0: 1;
+            int loc = b ? 1 : 0;
             unsafe {
                 int glob = 0;
                 csMPI.Raw.Allreduce(((IntPtr)(&loc)), ((IntPtr)(&glob)), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.PROD, comm);
@@ -448,7 +448,7 @@ namespace MPI.Wrappers {
         static public double[] MPIMax(this double[] i, MPI_Comm comm) {
             double[] R = new double[i.Length];
             unsafe {
-                fixed (double* loc = i, glob = R) {
+                fixed(double* loc = i, glob = R) {
                     csMPI.Raw.Allreduce(((IntPtr)(loc)), ((IntPtr)(glob)), i.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.MAX, comm);
                 }
             }
@@ -470,7 +470,7 @@ namespace MPI.Wrappers {
         static public double[] MPIMin(this double[] i, MPI_Comm comm) {
             double[] R = new double[i.Length];
             unsafe {
-                fixed (double* loc = i, glob = R) {
+                fixed(double* loc = i, glob = R) {
                     csMPI.Raw.Allreduce(((IntPtr)(loc)), ((IntPtr)(glob)), i.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.MIN, comm);
                 }
             }
@@ -485,18 +485,25 @@ namespace MPI.Wrappers {
         /// </summary>
         /// <param name="i"></param>
         /// <returns></returns>
-        static public bool MPIEquals(this bool b)
-        {
+        static public bool MPIEquals(this bool b) {
             return MPIEquals(b, csMPI.Raw._COMM.WORLD);
         }
 
-        static public bool MPIEquals(this bool b, MPI_Comm comm)
-        {
-            byte loc= (byte)(b ? 1 : 0);
-            byte glob = 0;
-            unsafe
-            {
-                csMPI.Raw.Allreduce(((IntPtr)(&loc)), ((IntPtr)(&glob)), 1, csMPI.Raw._DATATYPE.BYTE, csMPI.Raw._OP.BXOR, comm);
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="b"></param>
+        /// <param name="comm"></param>
+        /// <returns></returns>
+        static public bool MPIEquals(this bool b, MPI_Comm comm) {
+            csMPI.Raw.Comm_Size(comm, out int sz);
+            if(sz <= 1)
+                return true;
+
+            int loc = (b ? 1 : 0);
+            int glob = 0;
+            unsafe {
+                csMPI.Raw.Allreduce(((IntPtr)(&loc)), ((IntPtr)(&glob)), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.BXOR, comm);
             }
             return glob == 0 ? true : false;
         }
@@ -506,8 +513,7 @@ namespace MPI.Wrappers {
         /// </summary>
         /// <param name="i"></param>
         /// <returns></returns>
-        static public bool MPIEquals(this double i)
-        {
+        static public bool MPIEquals(this double i) {
             return MPIEquals(i, csMPI.Raw._COMM.WORLD);
         }
 
@@ -517,15 +523,16 @@ namespace MPI.Wrappers {
         /// <param name="i"></param>
         /// <param name="comm"></param>
         /// <returns></returns>
-        static public bool MPIEquals(this double i, MPI_Comm comm)
-        {
-            ulong u_loc=(ulong)i;
+        static public bool MPIEquals(this double i, MPI_Comm comm) {
+            csMPI.Raw.Comm_Size(comm, out int sz);
+            if(sz <= 1)
+                return true;
+
             ulong u_glob = ulong.MaxValue;
-            unsafe
-            {
-                 csMPI.Raw.Allreduce(((IntPtr)(&u_loc)), ((IntPtr)(&u_glob)), 1, csMPI.Raw._DATATYPE.UNSIGNED_LONG_LONG, csMPI.Raw._OP.BXOR, comm);
+            unsafe {
+                csMPI.Raw.Allreduce(((IntPtr)(&i)), ((IntPtr)(&u_glob)), 1, csMPI.Raw._DATATYPE.UNSIGNED_LONG_LONG, csMPI.Raw._OP.BXOR, comm);
             }
-            return u_glob == 0? true:false;
+            return u_glob == 0 ? true : false;
         }
 
         /// <summary>
@@ -533,8 +540,7 @@ namespace MPI.Wrappers {
         /// </summary>
         /// <param name="i"></param>
         /// <returns></returns>
-        static public bool MPIEquals(this int i)
-        {
+        static public bool MPIEquals(this int i) {
             return MPIEquals(i, csMPI.Raw._COMM.WORLD);
         }
 
@@ -544,13 +550,14 @@ namespace MPI.Wrappers {
         /// <param name="i"></param>
         /// <param name="comm"></param>
         /// <returns></returns>
-        static public bool MPIEquals(this int i, MPI_Comm comm)
-        {
-            double loc = i;
-            double glob = int.MaxValue;
-            unsafe
-            {
-                csMPI.Raw.Allreduce(((IntPtr)(&loc)), ((IntPtr)(&glob)), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.BXOR, comm);
+        static public bool MPIEquals(this int i, MPI_Comm comm) {
+            csMPI.Raw.Comm_Size(comm, out int sz);
+            if(sz <= 1)
+                return true;
+
+            int glob = int.MaxValue;
+            unsafe {
+                csMPI.Raw.Allreduce(((IntPtr)(&i)), ((IntPtr)(&glob)), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.BXOR, comm);
             }
             return glob == 0 ? true : false;
         }
@@ -560,31 +567,32 @@ namespace MPI.Wrappers {
         /// </summary>
         /// <param name="i"></param>
         /// <returns></returns>
-        static public bool[] MPIEquals(this double[] i)
-        {
+        static public bool[] MPIEquals(this double[] i) {
             return MPIEquals(i, csMPI.Raw._COMM.WORLD);
         }
 
         /// <summary>
         /// returns true on every process for every entry of <paramref name="i"/> if they are equal at every process
         /// </summary>
-        /// <param name="i"></param>
+        /// <param name="bAry"></param>
         /// <param name="comm"></param>
         /// <returns></returns>
-        static public bool[] MPIEquals(this double[] i, MPI_Comm comm) {
-            ulong[] conv_loc = new ulong[i.Length];
-            for (int iDbl = 0; iDbl < i.Length; iDbl++) {
-                conv_loc[iDbl] = (ulong)i[iDbl];
+        static public bool[] MPIEquals(this double[] bAry, MPI_Comm comm) {
+            bool[] check = new bool[bAry.Length];
+
+            csMPI.Raw.Comm_Size(comm, out int sz);
+            if(sz <= 1) {
+                for(int i = 0; i < check.Length; i++)
+                    check[i] = true;
             }
 
-            ulong[] R = new ulong[i.Length];
-            bool[] check = new bool[i.Length];
+            double[] R = new double[bAry.Length];
             unsafe {
-                fixed (ulong* loc = conv_loc, glob = R) {
-                    csMPI.Raw.Allreduce(((IntPtr)(loc)), ((IntPtr)(glob)), i.Length, csMPI.Raw._DATATYPE.UNSIGNED_LONG_LONG, csMPI.Raw._OP.BXOR, comm);
+                fixed (void* loc = bAry, glob = R) {
+                    csMPI.Raw.Allreduce(((IntPtr)(loc)), ((IntPtr)(glob)), bAry.Length, csMPI.Raw._DATATYPE.UNSIGNED_LONG_LONG, csMPI.Raw._OP.BXOR, comm);
                 }
             }
-            for (int k = 0; k < i.Length; k++) {
+            for (int k = 0; k < bAry.Length; k++) {
                 check[k] = R[k] == 0 ? true : false;
             }
             return check;
@@ -601,32 +609,31 @@ namespace MPI.Wrappers {
         }
 
         /// <summary>
-        /// returns true on every process for every entry of <paramref name="i"/> if they are equal at every process
+        /// returns true on every process for every entry of <paramref name="iAry"/> if they are equal at every process
         /// </summary>
-        /// <param name="i"></param>
+        /// <param name="iAry"></param>
         /// <param name="comm"></param>
         /// <returns></returns>
-        static public bool[] MPIEquals(this int[] i, MPI_Comm comm)
-        {
-            int[] R = new int[i.Length];
-            bool[] check = new bool[i.Length];
-            unsafe
-            {
-                fixed (int* loc = i, glob = R)
-                {
-                    csMPI.Raw.Allreduce(((IntPtr)(loc)), ((IntPtr)(glob)), i.Length, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.BXOR, comm);
+        static public bool[] MPIEquals(this int[] iAry, MPI_Comm comm) {
+            bool[] check = new bool[iAry.Length];
+
+            csMPI.Raw.Comm_Size(comm, out int sz);
+            if(sz <= 1) {
+                for(int i = 0; i < check.Length; i++)
+                    check[i] = true;
+            }
+
+            int[] R = new int[iAry.Length];
+            unsafe {
+                fixed(int* loc = iAry, glob = R) {
+                    csMPI.Raw.Allreduce(((IntPtr)(loc)), ((IntPtr)(glob)), iAry.Length, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.BXOR, comm);
                 }
             }
-            for (int k = 0; k < i.Length; k++)
-            {
+            for(int k = 0; k < iAry.Length; k++) {
                 check[k] = R[k] == 0 ? true : false;
             }
             return check;
         }
-
-
-
-
 
 
         /// <summary>

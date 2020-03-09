@@ -251,10 +251,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         int m_PopulatedStackDepth = 0;
 
-        /// <summary>
-        /// Unscaled, agglomerated mass matrix used by the preconditioner.
-        /// </summary>
-        BlockMsrMatrix m_PrecondMassMatrix;
+
 
 
         /// <summary>
