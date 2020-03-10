@@ -3620,7 +3620,7 @@ namespace CNS {
             return c;
         }
 
-        public static IBMControl IBMBowShock(string dbPath = null, int savePeriod = 100, int dgDegree = 0, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 2, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 8.0, string restart = "False", int numOfCellsX = 80, int numOfCellsY = 320, double? lambdaMax = null) {
+        public static IBMControl IBMBowShock(string dbPath = null, int savePeriod = 100, int dgDegree = 0, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 2, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 8.0, string restart = "False", int numOfCellsX = 20, int numOfCellsY = 80, double? lambdaMax = null) {
             IBMControl c = new IBMControl();
 
             //double? lambdaMax = 10;
@@ -3637,7 +3637,7 @@ namespace CNS {
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
             c.saveperiod = savePeriod;
-            c.PrintInterval = 1;
+            c.PrintInterval = 10000;
 
             c.WriteLTSLog = false;
             c.WriteLTSConsoleOutput = false;
@@ -3669,7 +3669,7 @@ namespace CNS {
 
             if (restart == "True") {
                 // Restart Lichtenberg
-                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("3f5353f6-0b3d-4482-8204-0695ff66a1ef"), -1);
+                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("fec66d79-d3dc-4fc3-abf1-e19b95edcf40"), -1);
                 c.GridGuid = new Guid("c691d970-6e52-4dd2-9d10-e95ab99f0482");
             } else {
                 c.GridFunc = delegate {
@@ -3695,9 +3695,9 @@ namespace CNS {
                         }
                     });
 
-                    //var gDat = new GridData(grid);
-                    //var em1 = gDat.GetBoundaryEdges();
-                    //em1.SaveToTextFile("alledges.csv", false, (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => (double)gDat.iGeomEdges.EdgeTags[GeomItemIndex]);
+                    var gDat = new GridData(grid);
+                    var em1 = gDat.GetBoundaryEdges();
+                    em1.SaveToTextFile("alledges.csv", false, (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => (double)gDat.iGeomEdges.EdgeTags[GeomItemIndex]);
 
                     return grid;
                 };
@@ -3827,8 +3827,9 @@ namespace CNS {
             c.dtMin = 0.0;
             c.dtMax = 1.0;
             c.Endtime = endTime;
-            c.CFLFraction = CFLFraction;
+            //c.CFLFraction = CFLFraction;
             c.NoOfTimesteps = int.MaxValue;
+            c.dtFixed = 1e-3;
 
             c.ProjectName = "IBMBowShock";
 
@@ -3839,7 +3840,7 @@ namespace CNS {
                     tempSessionName = string.Format("IBMBowShock_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}",
                         dgDegree, numOfCellsX, numOfCellsY, CFLFraction, explicitOrder);
                 } else {
-                    tempSessionName = string.Format("IBMBowShock_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}_s0={5:0.0E-00}_lambdaMax{6}",
+                    tempSessionName = string.Format("IBMBowShock_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}_s0={5:0.0E-00}_lambdaMax{6}_RESTART10",
                         dgDegree, numOfCellsX, numOfCellsY, CFLFraction, explicitOrder, sensorLimit, lambdaMax);
                 }
             } else if (c.ExplicitScheme == ExplicitSchemes.AdamsBashforth) {
@@ -3860,12 +3861,19 @@ namespace CNS {
         public static IBMControl IBMBowShockHHLR(int savePeriod, int dgDegree, double sensorLimit, double CFLFraction, int explicitScheme, int explicitOrder, int numberOfSubGrids, int reclusteringInterval, int maxNumOfSubSteps, double endTime, int numOfCellsX, int numOfCellsY, double? lambdaMax) {
 
             // Lichtenberg
-            string dbPath = @"/work/scratch/yp19ysog/bosss_db_ibmbowshock";
-            string restart = "False";
+            string dbPath = @"/work/scratch/yp19ysog/bosss_db_bowShock";
+            //string dbPath = @"/work/scratch/yp19ysog/bosss_db_ibmbowshock";
+            //string dbPath = @"H:\geisenhofer\bosss_db_ibmbowshock";
+            string restart = "True";
 
             IBMControl c = IBMBowShock(dbPath, savePeriod, dgDegree, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, endTime, restart, numOfCellsX, numOfCellsY, lambdaMax);
 
-            c.ProjectName = "ibmbowshock_hhlr";
+            c.TracingNamespaces = "BoSSS.Solution";
+
+            c.ProjectName = "IBMBowShock_P3";
+            //c.ProjectName = "ibmbowshock_hhlr";
+            //c.ProjectName = "IBMBowShock_P2_FineGrid";
+
             //c.NoOfTimesteps = 10;
 
             return c;
