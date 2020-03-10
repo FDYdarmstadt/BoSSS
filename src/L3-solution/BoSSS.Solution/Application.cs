@@ -3157,6 +3157,17 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
+        /// This method should be overridden to support automatic numerical stability analysis of the PDE's operator
+        /// </summary>
+        /// <returns>
+        /// Pairs of property name and value, e.g. ConditionNumber and the respective value of the operators Jacobian matrix condition number.
+        /// </returns>
+        virtual public IDictionary<string, double> OperatorAnalysis() {
+            throw new NotImplementedException();
+        }
+
+
+        /// <summary>
         /// This method just forces the C# - compiler to integrate
         /// BoSSS.Foundation.Grid.dll into the manifest of BoSSS.Solution.dll;
         /// Otherwise, without this useless method BoSSS.Foundation.Grid.dll

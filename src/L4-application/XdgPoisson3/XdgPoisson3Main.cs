@@ -457,7 +457,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// <summary>
         /// Operator stability analysis
         /// </summary>
-        public IDictionary<string,double> OperatorAnalysis() {
+        override public IDictionary<string,double> OperatorAnalysis() {
             
             var ana = new BoSSS.Solution.OpAnalysisBase(this.LsTrk, 
                 this.Op_Matrix, this.Op_Affine, 
