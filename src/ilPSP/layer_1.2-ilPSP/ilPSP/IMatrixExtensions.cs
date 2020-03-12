@@ -839,34 +839,86 @@ namespace ilPSP {
             }
         }
 
-        ///// <summary>
-        ///// General matrix/matrix multiplication:
-        ///// <paramref name="C"/> = <paramref name="alpha"/>*<paramref name="A"/>*<paramref name="B"/> + <paramref name="beta"/>*<paramref name="C"/>;
-        ///// </summary>
-        //public static void gemm(double alpha, FullMatrix A, FullMatrix B, double beta, FullMatrix C) {
-        //    if (A.NoOfCols != B.NoOfRows)
-        //        throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
-        //    if (A.NoOfRows != C.NoOfRows)
-        //        throw new ArgumentException("A.NoOfRows != C.NoOfRows", "A,C");
-        //    if (B.NoOfCols != C.NoOfCols)
-        //        throw new ArgumentException("B.NoOfCols != C.NoOfCols", "B,C");
+        /// <summary>
+        /// General matrix/matrix multiplication:
+        /// Based on Level 3 Blas routine dgemm
+        /// <paramref name="M"/> = <paramref name="alpha"/>*<paramref name="A"/>*<paramref name="B"/> + <paramref name="beta"/>*<paramref name="M"/>;
+        /// define wether Matrix A or B should be used as transpose by setting <paramref name="transA"/> and <paramref name="transB"/>
+        /// </summary>
+        static public void DGEMM<Matrix1, Matrix2, Matrix3>(this Matrix1 C, double alpha, Matrix2 A, Matrix3 B, double beta, bool transA = false, bool transB = false) 
+            where Matrix1 : IMatrix
+            where Matrix2 : IMatrix
+            where Matrix3 : IMatrix
+        {
+            if (!transA && !transB)
+            {
+                if (A.NoOfCols != B.NoOfRows)
+                    throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
+                if (A.NoOfRows != C.NoOfRows)
+                    throw new ArgumentException("A.NoOfRows != C.NoOfRows", "A,C");
+                if (B.NoOfCols != C.NoOfCols)
+                    throw new ArgumentException("B.NoOfCols != C.NoOfCols", "B,C");
+            }
+            else if (transA && !transB)
+            {
+                if (A.NoOfRows != B.NoOfRows)
+                    throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
+                if (A.NoOfCols != C.NoOfRows)
+                    throw new ArgumentException("A.NoOfRows != C.NoOfRows", "A,C");
+                if (B.NoOfCols != C.NoOfCols)
+                    throw new ArgumentException("B.NoOfCols != C.NoOfCols", "B,C");
+            }
+            else if (!transA && transB)
+            {
+                if (A.NoOfCols != B.NoOfCols)
+                    throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
+                if (A.NoOfRows != C.NoOfRows)
+                    throw new ArgumentException("A.NoOfRows != C.NoOfRows", "A,C");
+                if (B.NoOfRows != C.NoOfCols)
+                    throw new ArgumentException("B.NoOfCols != C.NoOfCols", "B,C");
+            }
+            else if (transA && transB)
+            {
+                if (A.NoOfRows != B.NoOfCols)
+                    throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
+                if (A.NoOfCols != C.NoOfRows)
+                    throw new ArgumentException("A.NoOfRows != C.NoOfRows", "A,C");
+                if (B.NoOfRows != C.NoOfCols)
+                    throw new ArgumentException("B.NoOfCols != C.NoOfCols", "B,C");
+            }
 
-        //    int K = A.NoOfCols;
+            unsafe 
+            {                
+                int TRANSA = transA ? 't' : 'n';
+                int TRANSB = transB ? 't' : 'n';
 
-        //    for (int i = C.NoOfRows - 1; i >= 0; i--) {
-        //        for (int j = C.NoOfCols - 1; j >= 0; j--) {
-        //            double r = 0;
+                int M = transA ? A.NoOfCols : A.NoOfRows;
+                int N = transB ? B.NoOfRows : B.NoOfCols;
+                int K = transA ? A.NoOfRows : A.NoOfCols;
 
+                int LDA = transA ? Math.Max(1, K) : Math.Max(1, M);
+                int LDB = transB ? Math.Max(1, N) : Math.Max(1, K);
+                int LDC = Math.Max(1, M);
 
-        //            for (int k = K - 1; k >= 0; k--)
-        //                r += A[i, k] * B[k, j];
+                int i0, i1, i2;
+                double[] __A = TempBuffer.GetTempBuffer(out i0, M * K);
+                double[] __B = TempBuffer.GetTempBuffer(out i1, N * K);
+                double[] __C = TempBuffer.GetTempBuffer(out i2, M * N);
+                fixed (double* _A = __A, _B = __B, _C = __C)
+                {
+                    CopyToUnsafeBuffer(A, _A, true);
+                    CopyToUnsafeBuffer(B, _B, true);
+                    CopyToUnsafeBuffer(C, _C, true);
 
-        //            r *= alpha;
-        //            C[i, j] = C[i, j] * beta + r;
-        //        }
+                    BLAS.dgemm(TRANSA, TRANSB, M, N, K, alpha, _A, LDA, _B, LDB, beta, _C, LDC);
 
-        //    }
-        //}
+                    CopyFromUnsafeBuffer(C, _C, true);
+                }
+                TempBuffer.FreeTempBuffer(i0);
+                TempBuffer.FreeTempBuffer(i1);
+                TempBuffer.FreeTempBuffer(i2);                             
+            }
+        }
 
         /// <summary>
         /// total absolute sum of all entries

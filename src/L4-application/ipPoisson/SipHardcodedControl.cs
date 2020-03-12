@@ -31,6 +31,7 @@ using System.Diagnostics;
 using BoSSS.Platform.Utils.Geom;
 using BoSSS.Solution.Gnuplot;
 using BoSSS.Foundation.Grid;
+using BoSSS.Solution.GridImport;
 
 namespace BoSSS.Application.SipPoisson {
 
@@ -47,27 +48,42 @@ namespace BoSSS.Application.SipPoisson {
         {
             var R = new SipControl();
             R.ProjectName = "ipPoison/curved";
-            R.savetodb = false;
+            R.savetodb = false; // true;
+            R.DbPath = @"D:\bosss_db_masterthesis";
 
             //R.FieldOptions.Add("T", new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            R.FieldOptions.Add("T", new FieldOpts() { Degree = 3, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = 15 });
+            R.FieldOptions.Add("T", new FieldOpts() { Degree = 4, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = 4 });
             R.InitialValues_Evaluators.Add("RHS", X => 0.0);
             R.InitialValues_Evaluators.Add("Tex", X => (Math.Log(X[0].Pow2() + X[1].Pow2()) / Math.Log(4.0)) + 1.0);
             R.ExactSolution_provided = true;
             R.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            R.LinearSolver.TargetBlockSize = 1000;
             R.SuperSampling = 2;
             R.NoOfMultigridLevels = 4;
 
-            R.GridFunc = delegate ()
-            {
-                //var grd = Grid2D.CurvedSquareGrid(GenericBlas.Linspace(1, 2, 5), GenericBlas.Linspace(0, 1, 17), CellType.Square_9, true);
-                var grd = Grid2D.CurvedSquareGrid(GenericBlas.Linspace(1, 2, 3), GenericBlas.Linspace(0, 1, 5), CellType.Square_9, true);
-                grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
-                grd.DefineEdgeTags((Vector X) => 1);
-                return grd;
-            };
+            string grid = "49a33f3f-6c8d-48fe-af1d-054ff3c3d000";
 
+            Guid gridGuid;
+
+            if (Guid.TryParse(grid, out gridGuid))
+            {
+                R.GridGuid = gridGuid;
+            }
+            else
+            {
+                R.GridFunc = delegate ()
+                {
+                    //var grd = Grid2D.CurvedSquareGrid(GenericBlas.Linspace(1, 2, 17), GenericBlas.Linspace(0, 1, 65), CellType.Square_9, true);
+                    var grd = Grid2D.CurvedSquareGrid(GenericBlas.Linspace(1, 2, 9), GenericBlas.Linspace(0, 1, 17), CellType.Square_9, true);
+                    grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
+                    grd.DefineEdgeTags((Vector X) => 1);
+                    return grd;
+                };
+            }
+
+            
+            
             R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T",
                  delegate (double[] X)
                  {

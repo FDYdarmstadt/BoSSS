@@ -142,6 +142,10 @@
       <Project>{9A8CDC1F-64F7-441E-849D-66F2C56600F2}</Project>
       <Name>BoSSS.Foundation.XDG</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\L4-application\ProgressBar\ProgressBar\ProgressBar.csproj">
+      <Project>{c6fbafe1-b5e4-4b94-ba63-46f557034539}</Project>
+      <Name>ProgressBar</Name>
+    </ProjectReference>
     <ProjectReference Include="..\BoSSS.Solution.Gnuplot\BoSSS.Solution.Gnuplot.csproj">
       <Project>{D4FADB7C-0B11-4F41-A97A-146DC1F7034E}</Project>
       <Name>BoSSS.Solution.Gnuplot</Name>

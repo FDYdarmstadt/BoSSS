@@ -622,7 +622,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.LinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.savetodb = false;
-            C.DbPath = @"P:\BoSSS_DBs\ChannelFlow";
+            C.DbPath = null;// @"P:\BoSSS_DBs\ChannelFlow";
             C.ProjectName = "ChannelFlow";
 
             C.PhysicalParameters.IncludeConvection = true;
@@ -795,14 +795,16 @@ namespace BoSSS.Application.IBM_Solver {
             // misc. solver options
             // ====================
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
 
             C.LevelSetSmoothing = false;
             C.LinearSolver.MaxKrylovDim = 20;
             C.LinearSolver.MaxSolverIterations = 20;
             C.NonLinearSolver.MaxSolverIterations = 20;
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.LinearSolver.NoOfMultigridLevels = 0;
+            //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
+            C.LinearSolver.NoOfMultigridLevels = 3;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver.TargetBlockSize = 1000;
 
             // Timestepping
             // ============
@@ -812,7 +814,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 70;
-            C.NoOfTimesteps = 100000;
+            C.NoOfTimesteps = 1;//100000;
 
             return C;
         }

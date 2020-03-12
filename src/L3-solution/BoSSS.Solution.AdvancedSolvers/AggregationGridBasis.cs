@@ -385,21 +385,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // check if aggregation is performed on a curved or affine linear grid
             if (((GridData)maxDgBasis.GridDat).Cells.ContainsNonlinearCell())
             {
-                // directly compute the Injector for the coarsest level
-                //int ilevel = agSeq.Length - 1;
+                if (agSeq.Length >= 2)
+                {
+                    // directly compute the Injector for the coarsest level
+                    //int ilevel = agSeq.Length - 1;
 
+                    if (!maxDgBasis.IsOrthonormal) { throw new NotImplementedException("DG Basis has to be orthonormal"); }
 
-                if (!maxDgBasis.IsOrthonormal) { throw new NotImplementedException("DG Basis has to be orthonormal"); }
+                    // compute the direct Injector for the coarsest mesh
+                    MultidimensionalArray[] InjectorCoarse = new MultidimensionalArray[agSeq.Last().iGeomCells.Count];
 
-                // compute the direct Injector for the coarsest mesh
-                MultidimensionalArray[] InjectorCoarse = new MultidimensionalArray[agSeq.Last().iGeomCells.Count];
+                    Stopwatch stop = new Stopwatch();
+                    stop.Start();
+                    int maxMGlevel = agSeq.Length - 1;
+                    InjectorCoarse = AggregationGridCurvedInjector.AggregateCurvedCells(agSeq.Last(), maxDgBasis);
 
-                int maxMGlevel = agSeq.Length - 1;
-                InjectorCoarse = AggregationGridCurvedInjector.AggregateCurvedCells(agSeq.Last(), maxDgBasis);
-
-                // extract the hierarchical level to level injectors, recursive function
-                AggregationGridCurvedInjector.ExtractInjectorCurved(agSeq, maxDgBasis, Injectors, InjectorCoarse, maxMGlevel);
-
+                    // extract the hierarchical level to level injectors, recursive function
+                    AggregationGridCurvedInjector.ExtractInjectorCurved(agSeq, maxDgBasis, Injectors, InjectorCoarse, maxMGlevel);
+                    stop.Stop();
+                    Console.WriteLine($"Construction of curved MG operators took: {stop.Elapsed}");
+                }
             }
             else
             {       
