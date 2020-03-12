@@ -11,7 +11,7 @@ namespace VoronoiTests.Grid
     {
         public override void Run()
         {
-            PeriodicBoundaryPairBoundaryOnEdge();
+            PeriodicBoundaryPairLarge();
         }
 
         [Test]

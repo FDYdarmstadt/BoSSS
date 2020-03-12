@@ -7,6 +7,7 @@ using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
@@ -121,8 +122,30 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
             {
                 Cells = cellsGridCommons.ToArray()
             };
+            
             boundaryConverter.RegisterEdgesTo(grid);
             return (grid, aggregation.ToArray());
+        }
+
+        static void PrintEdgeTags(List<BoSSS.Foundation.Grid.Classic.Cell> cellsGridCommons)
+        {
+            using (StreamWriter sw = new StreamWriter("EdgeTags.txt"))
+            {
+                foreach (Cell cell in cellsGridCommons)
+                {
+                    for (int i = 0; i < (cell.CellFaceTags?.Length ?? 0); ++i)
+                    {
+                        CellFaceTag tag = cell.CellFaceTags[i];
+                        double x = cell.TransformationParams[(tag.FaceIndex) % 3, 0]
+                            + cell.TransformationParams[(tag.FaceIndex + 1) % 3, 0];
+                        x /= 2;
+                        double y = cell.TransformationParams[(tag.FaceIndex) % 3, 1]
+                            + cell.TransformationParams[(tag.FaceIndex + 1) % 3, 1];
+                        y /= 2;
+                        sw.WriteLine($"{x}, {y}, {tag.EdgeTag}");
+                    }
+                }
+            }
         }
 
         static List<BoundaryFace> GetBoundaryFacesOf(MeshCell<T> cell, int iV0, int iV1, int iV2)

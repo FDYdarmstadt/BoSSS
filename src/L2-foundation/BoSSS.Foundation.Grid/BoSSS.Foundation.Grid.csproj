@@ -90,7 +90,7 @@
     <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\BoundaryElementEnumerator.cs" />
     <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\BoundaryRecomposer.cs" />
     <Compile Include="VoronoiMeshing\BoundaryTransformation.cs" />
-    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\BoundaryMover.cs" />
+    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\CellDetacher.cs" />
     <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\CellPairCollection.cs" />
     <Compile Include="VoronoiMeshing\DataStructures\ReverseEnumerator.cs" />
     <Compile Include="VoronoiMeshing\DataStructures\Convolution.cs" />

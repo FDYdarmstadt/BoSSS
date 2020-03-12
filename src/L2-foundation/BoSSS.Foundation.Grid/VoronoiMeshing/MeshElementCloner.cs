@@ -89,7 +89,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return clone;
         }
 
-        static Vertex[] Clone(IList<Vertex> vertices)
+        public static Vertex[] Clone(IList<Vertex> vertices)
         {
             Vertex[] clones = new Vertex[vertices.Count];
             for (int i = 0; i < vertices.Count; ++i)
@@ -99,7 +99,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return clones;
         }
 
-        static Vertex Clone(Vertex vertex)
+        public static Vertex Clone(Vertex vertex)
         {
             Vertex clone = new Vertex
             {

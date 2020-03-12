@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -8,69 +9,115 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
     {
         readonly IDMesh<T> mesh;
 
+        static EdgeComparer<T> edgeComparer = new EdgeComparer<T>();
+
         public MeshEdgeDivider(IDMesh<T> mesh)
         {
             this.mesh = mesh;
         }
 
-        public void DivideEdge(Edge<T> edge, int edgeIndiceInCell)
+        public void DivideBoundary(IList<MeshCell<T>> cells)
         {
-            Edge<T> clone = MeshElementCloner.Clone(edge);
-            mesh.AddVertex(clone.Start);
-            mesh.AddVertex(clone.End);
-            SwitchEdges(edge, edgeIndiceInCell, clone);
-        }
-
-        static void SwitchEdges(Edge<T> old, int indiceInCell, Edge<T> newEdge)
-        {
-            MeshCell<T> cell = old.Cell;
-            if(cell.ID != newEdge.Cell.ID)
+            var corners = new Convolution<IndiceEdge>(BoundaryClockwise(cells));
+            foreach (Pair<IndiceEdge> corner in corners)
             {
-                throw new Exception("Edges are not registered to the same cell.");
+                Divide(corner);
             }
-            Edge<T> before = cell.Edges[(indiceInCell - 1 + cell.Edges.Length) % cell.Edges.Length];
-            Edge<T> after = cell.Edges[(indiceInCell + 1 + cell.Edges.Length) % cell.Edges.Length];
-
-            cell.Edges[indiceInCell] = newEdge;
-            before.End = newEdge.Start;
-            after.Start = newEdge.End;
-            UpdateVerticesOf(cell);
-
-            newEdge.Twin = old.Twin;
-            newEdge.Twin.Twin = newEdge;
-
-            //SwitchVertex(before.Twin.Start, before.Twin.Cell, newEdge.Start);
-            //SwitchVertex(after.Twin.End, after.Twin.Cell, newEdge.End);
         }
 
-        static void SwitchVertex(Vertex old, MeshCell<T> cell, Vertex newVertex)
+        struct IndiceEdge
         {
-            (Edge<T> before, Edge<T> ofVertex) = GetEdgePair(old, cell);
-            ofVertex.Start = newVertex;
-            before.End = newVertex;
-            UpdateVerticesOf(cell);
+            public Edge<T> Edge;
+            public int Indice;
         }
 
-        static (Edge<T> before, Edge<T> ofVertex) GetEdgePair(Vertex vertex, MeshCell<T> cell)
+        static IEnumerable<IndiceEdge> BoundaryClockwise(IList<MeshCell<T>> cells)
         {
-            for (int i = 0; i < cell.Edges.Length; ++i)
+            foreach (MeshCell<T> cell in cells)
             {
-                Edge<T> current = cell.Edges[i];
-                if (current.Start.ID == vertex.ID)
+                for (int i = cell.Edges.Length - 1; i > -1; --i)
                 {
-                    Edge<T> before = cell.Edges[(i - 1 + cell.Edges.Length) % cell.Edges.Length];
-                    return (before, current);
+                    Edge<T> edge = cell.Edges[i];
+                    if (edge.IsBoundary)
+                    {
+                        yield return new IndiceEdge
+                        { 
+                            Edge = edge, 
+                            Indice = i
+                        };
+                    }
                 }
             }
-            throw new Exception("Vertex not found in Cell");
         }
 
-        static void UpdateVerticesOf(MeshCell<T> cell)
+        void Divide(Pair<IndiceEdge> corner)
         {
-            for (int i = 0; i < cell.Edges.Length; ++i)
+            if(corner.Current.Edge.End == corner.Previous.Edge.Start)
             {
-                cell.Vertices[i] = cell.Edges[i].Start;
+                Vertex clone = MeshElementCloner.Clone(corner.Current.Edge.End);
+                mesh.AddVertex(clone);
+                CircleAndInsert(clone, corner.Previous, corner.Current);
             }
+            else
+            {
+                Vertex clone = MeshElementCloner.Clone(corner.Current.Edge.End);
+                mesh.AddVertex(clone);
+                InsertAtEnd(clone, corner.Current);
+
+                Vertex clone2 = MeshElementCloner.Clone(corner.Previous.Edge.Start);
+                mesh.AddVertex(clone2);
+                InsertAtStart(clone2, corner.Previous);
+            }
+        }
+
+        static void CircleAndInsert(Vertex clone, IndiceEdge from, IndiceEdge to)
+        {
+            IndiceEdge current = from;
+            while (!edgeComparer.Equals(current.Edge, to.Edge.Twin))
+            {
+                current.Edge.Start = clone;
+                current.Edge.Cell.Vertices[current.Indice] = clone;
+
+                int nextEdgeIndice = GoRound(current.Indice - 1, current.Edge.Cell.Edges.Length);
+                Edge<T> next = current.Edge.Cell.Edges[nextEdgeIndice];
+                next.End = clone;
+
+
+                current = new IndiceEdge
+                {
+                    Edge = next.Twin,
+                    Indice = FindIndiceInCell(next.Twin)
+                };
+            }
+        }
+
+        static int FindIndiceInCell(Edge<T> edge)
+        {
+            for(int i = 0; i < edge.Cell.Vertices.Length; ++i)
+            {
+                if (edge.Start.ID == edge.Cell.Vertices[i].ID)
+                    return i;
+            }
+            return -1;
+        }
+
+        static int GoRound(int i, int length)
+        {
+            return (i + length) % length;
+        }
+        
+        static void InsertAtStart(Vertex clone, IndiceEdge edge)
+        {
+            edge.Edge.Start = clone;
+            edge.Edge.Cell.Vertices[edge.Indice] = clone;
+            edge.Edge.Cell.Edges[GoRound(edge.Indice - 1, edge.Edge.Cell.Edges.Length)]. End = clone;
+        }
+
+        static void InsertAtEnd(Vertex clone, IndiceEdge edge)
+        {
+            edge.Edge.End = clone;
+            edge.Edge.Cell.Vertices[GoRound(edge.Indice + 1, edge.Edge.Cell.Vertices.Length)] = clone;
+            edge.Edge.Cell.Edges[GoRound(edge.Indice + 1, edge.Edge.Cell.Edges.Length)].Start = clone;
         }
     }
 }

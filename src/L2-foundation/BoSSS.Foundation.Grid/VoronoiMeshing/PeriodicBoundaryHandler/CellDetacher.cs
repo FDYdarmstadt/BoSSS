@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 {
-    class BoundaryMover<T>
+    class CellDetacher<T>
     {
         readonly MeshEdgeDivider<T> edgeDivider;
 
@@ -11,11 +11,17 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 
         readonly BoundaryElementEnumerator<T> boundaryEnumerator;
 
-        public BoundaryMover(Domain<T> mesh)
+        public CellDetacher(Domain<T> mesh)
         {
             edgeDivider = new MeshEdgeDivider<T>(mesh.Mesh);
             boundary = mesh.Boundary;
             boundaryEnumerator = new BoundaryElementEnumerator<T>(mesh);
+        }
+
+        public void DetachCells(IList<MeshCell<T>> cells, int boundaryEdgeNumber, int pairedBoundaryEdgeNumber)
+        {
+            MoveBoundary(cells, boundaryEdgeNumber, pairedBoundaryEdgeNumber);
+            edgeDivider.DivideBoundary(cells);
         }
 
         public void MoveBoundary(IList<MeshCell<T>> cells, int boundaryEdgeNumber, int pairedBoundaryEdgeNumber)
@@ -85,21 +91,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             {
                 edge.IsBoundary = true;
                 edge.BoundaryEdgeNumber = boundaryEdgeNumber;
-            }
-        }
-
-        public void DivideBoundary(IList<MeshCell<T>> cells)
-        {
-            foreach(MeshCell<T> cell in cells)
-            {
-                for(int i = 0; i < cell.Edges.Length; ++i)
-                {
-                    Edge<T> edge = cell.Edges[i];
-                    if (edge.IsBoundary)
-                    {
-                        edgeDivider.DivideEdge(edge, i);
-                    }
-                }
             }
         }
     }

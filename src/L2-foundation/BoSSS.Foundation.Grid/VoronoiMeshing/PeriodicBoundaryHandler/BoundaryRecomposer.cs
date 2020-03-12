@@ -12,7 +12,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 
         readonly PeriodicCornerMapper<T> cornerMapper;
 
-        BoundaryMover<T> boundaryMover;
+        CellDetacher<T> cellDetacher;
 
         CornerCleaner cleaner;
 
@@ -32,7 +32,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 
         void RecomposeCutCells(Domain<T> mesh, CellPairCollection<T> candidates)
         {
-            boundaryMover = new BoundaryMover<T>(mesh);
+            cellDetacher = new CellDetacher<T>(mesh);
             cleaner = new CornerCleaner(map.PeriodicCornerCorrelation.Count);
 
             MatlabPlotter plotter = new MatlabPlotter();
@@ -136,8 +136,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
         void MoveBoundary(CellPairCollection<T>.EdgeCombo mergePair)
         {
             int pairedBoundary = map.PeriodicBoundaryCorrelation[mergePair.EdgeNumber];
-            boundaryMover.MoveBoundary(mergePair.Outer, pairedBoundary, mergePair.EdgeNumber);
-            boundaryMover.DivideBoundary(mergePair.Outer);
+            cellDetacher.DetachCells(mergePair.Outer, pairedBoundary, mergePair.EdgeNumber);
         }
 
         void Transform(CellPairCollection<T>.EdgeCombo mergePair)

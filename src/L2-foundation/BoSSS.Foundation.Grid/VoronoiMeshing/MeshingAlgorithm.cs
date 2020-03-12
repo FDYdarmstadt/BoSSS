@@ -45,7 +45,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             }
             stopwatch.Stop();
             Console.WriteLine(stopwatch.ElapsedMilliseconds);
-            //MatlabPlotter.Plot(domain.Mesh);
+            MatlabPlotter.Plot(domain.Mesh);
+            Debug.Assert(EdgesAlign(domain.Mesh));
             return domain;
         }
 
@@ -71,6 +72,25 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             }
             centerOfGravity.Scale(1.0 / cell.Vertices.Length);
             return centerOfGravity;
+        }
+
+        static bool EdgesAlign<T>(Mesh<T> mesh)
+        {
+            foreach(MeshCell<T> cell in mesh.Cells)
+            {
+                for(int i = 0; i < cell.Edges.Length; ++i)
+                {
+                    Edge<T> edge = cell.Edges[i];
+                    if (!edge.IsBoundary)
+                    {
+                        if((edge.Start.ID != edge.Twin.End.ID) || (edge.End.ID != edge.Twin.Start.ID))
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
         }
     }
 }
