@@ -45,7 +45,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             }
             stopwatch.Stop();
             Console.WriteLine(stopwatch.ElapsedMilliseconds);
-            MatlabPlotter.Plot(domain.Mesh);
             Debug.Assert(EdgesAlign(domain.Mesh));
             return domain;
         }
