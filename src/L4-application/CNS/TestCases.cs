@@ -3636,7 +3636,7 @@ namespace CNS {
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
             c.saveperiod = savePeriod;
-            c.PrintInterval = 1;
+            c.PrintInterval = 1000;
 
             c.WriteLTSLog = false;
             c.WriteLTSConsoleOutput = false;
@@ -3694,9 +3694,9 @@ namespace CNS {
                         }
                     });
 
-                    var gDat = new GridData(grid);
-                    var em1 = gDat.GetBoundaryEdges();
-                    em1.SaveToTextFile("alledges.csv", false, (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => (double)gDat.iGeomEdges.EdgeTags[GeomItemIndex]);
+                    //var gDat = new GridData(grid);
+                    //var em1 = gDat.GetBoundaryEdges();
+                    //em1.SaveToTextFile("alledges.csv", false, (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => (double)gDat.iGeomEdges.EdgeTags[GeomItemIndex]);
 
                     return grid;
                 };
@@ -3826,9 +3826,9 @@ namespace CNS {
             c.dtMin = 0.0;
             c.dtMax = 1.0;
             c.Endtime = endTime;
-            //c.CFLFraction = CFLFraction;
-            c.NoOfTimesteps = 70;
-            c.dtFixed = 1e-3;
+            c.CFLFraction = CFLFraction;
+            c.NoOfTimesteps = int.MaxValue;
+            //c.dtFixed = 1e-3;
 
             c.ProjectName = "IBMBowShock";
 
@@ -4103,7 +4103,7 @@ namespace CNS {
 
             IBMControl c = IBMBowShock(dbPath, savePeriod, dgDegree, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, endTime, restart, numOfCellsX, numOfCellsY, lambdaMax);
 
-            c.TracingNamespaces = "BoSSS.Solution";
+            //c.TracingNamespaces = "BoSSS.Solution";
 
             c.ProjectName = "IBMBowShock_P3";
             //c.ProjectName = "ibmbowshock_hhlr";
