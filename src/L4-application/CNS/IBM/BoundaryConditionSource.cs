@@ -29,6 +29,7 @@ using System.Diagnostics;
 using System.Linq;
 using BoSSS.Solution.CompressibleFlowCommon.Diffusion;
 using BoSSS.Solution.CompressibleFlowCommon.Convection;
+using System.IO;
 
 namespace CNS.IBM {
 
@@ -163,6 +164,8 @@ namespace CNS.IBM {
 
         #region INonlinearSource Members
 
+        //private static StreamWriter writer;
+
         /// <summary>
         /// Evaluates the configured flux function (see
         /// <see cref="BoundaryConditionSourceFromINonlinearFlux.BoundaryConditionSourceFromINonlinearFlux(CNSControl, ISpeciesMap, BoundaryCondition, INonlinearFlux)"/>
@@ -186,6 +189,8 @@ namespace CNS.IBM {
             for (int i = 0; i < noOfVariables; i++) {
                 Uout[i] = MultidimensionalArray.Create(Lenght, noOfNodes);
             }
+
+            //bool writeFluxes = false;
 
             double[] xLocal = new double[D];
             Material material = speciesMap.GetMaterial(double.NaN);
@@ -214,10 +219,40 @@ namespace CNS.IBM {
                         Uout[d + 1][i, j] = stateOut.Momentum[d];
                     }
                     Uout[D + 1][i, j] = stateOut.Energy;
+
+                    //if (boundaryCondition is AdiabaticSlipWall) {
+                    //    writeFluxes = true;
+                    //}                   
                 }
             }
 
             fluxFunction.InnerEdgeFlux(time, -1, x, normal, U, Uout, IndexOffset, Lenght, Output);
+
+            //string bulkFluxName = null;
+            //if (fluxFunction is OptimizedHLLCDensityFlux) {
+            //    bulkFluxName = "rho";
+            //} else if (fluxFunction is OptimizedHLLCMomentumFlux tmp) {
+            //    bulkFluxName = "m";
+            //} else if (fluxFunction is OptimizedHLLCEnergyFlux) {
+            //    bulkFluxName = "rhoE";
+            //}
+
+            //if (writeFluxes) {
+            //    for (int i = 0; i < x.Lengths[1]; i++) {
+            //        //Console.WriteLine(String.Format("Flux at ({0:0.00000000}, {1:0.00000000}) = {2:0.00000000} \t normal = ({3:0.00000000}, {4:0.00000000})", x[0, i, 0], x[0, i, 1], Output[0, i], normal[0, i, 0], normal[0, i, 1]));
+
+            //        // StreamWriter
+            //        if (writer == null) {
+            //            writer = new StreamWriter("CNS_Flux.txt");
+            //            writer.WriteLine("bulkFlux \t\t\t x \t y \t \t \t \t ### \t n_x \t n_y \t flux \t \t \t \t ### \t Uin[0] \t Uin[1] \t Uin[2] \t Uin[3] \t ### \t Uout[0] \t Uout[1] \t Uout[2] \t Uout[3]");
+            //        }
+
+            //        string resultLine;
+            //        resultLine = String.Format(bulkFluxName + "\t\t ### \t {0:0.000000} \t {1:0.000000} \t ### \t {2:0.000000} \t {3:0.000000} \t {4:0.000000} \t ### \t {5:0.000000} \t {6:0.000000} \t {7:0.000000} \t {8:0.000000} \t ### \t {9:0.000000} \t {10:0.000000} \t {11:0.000000} \t {12:0.000000}", x[0, i, 0], x[0, i, 1], normal[0, i, 0], normal[0, i, 1], Output[0, i], U[0][0, i], U[1][0, i], U[2][0, i], U[3][0, i], Uout[0][0, i], Uout[1][0, i], Uout[2][0, i], Uout[3][0, i]);
+            //        writer.WriteLine(resultLine);
+            //        writer.Flush();
+            //    }
+            //}
         }
 
         #endregion
