@@ -29,7 +29,7 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
-
+using System.Diagnostics;
 
 namespace BoSSS.Foundation {
 

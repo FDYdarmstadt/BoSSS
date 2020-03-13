@@ -423,6 +423,7 @@ namespace BoSSS.Application.Rheology {
                         // convective part:
                         if (!this.Control.StokesConvection || !this.Control.Stokes) {
                             comps.Add(new LocalLaxFriedrichsConvection(D, BcMap, d, 1.0));
+                            
                         } else {
                             Console.WriteLine("Using Stokes Equation - no convective term.");
                         }
@@ -704,6 +705,7 @@ namespace BoSSS.Application.Rheology {
         /// </summary>
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
             using (new FuncTrace()) {
+                /*
                 if (this.Control.OperatorMatrixAnalysis == true) {
 
                     OpAnalysisBase myAnalysis = new OpAnalysisBase(DelComputeOperatorMatrix, CurrentSolution.Mapping, CurrentSolution.Mapping.Fields.ToArray(), null, phystime);
@@ -713,6 +715,7 @@ namespace BoSSS.Application.Rheology {
                     base.QueryHandler.ValueQuery("condFull", cond[0], true);
                     base.QueryHandler.ValueQuery("condInner", cond[1], true);
                 }
+                */
 
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
                 int D = this.GridData.SpatialDimension;
@@ -733,6 +736,8 @@ namespace BoSSS.Application.Rheology {
                 bool m_SkipSolveAndEvaluateResidual = this.Control.SkipSolveAndEvaluateResidual;
 
                 if (Control.RaiseWeissenberg == true) {
+                    
+
 
                     currentWeissenberg = restartWeissenberg;
                     restartWeissenberg = 0.0; // make sure the restart value is used only once
@@ -751,10 +756,12 @@ namespace BoSSS.Application.Rheology {
                         throw new ArgumentException("Raise Weissenberg is turned on, but aim Weissenberg is 0.0 (Newtonian)!");
                     }
 
-                    for (int i = 0; i <= NoIncrementTimestep; i++) {
+                    for (int WeIncCounter = 0; WeIncCounter <= NoIncrementTimestep; WeIncCounter++) {
 
                         if (Control.UseArtificialDiffusion == true) {
-
+                            // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            // USING Weissenberg increase, USING artificial viscosity
+                            // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
                             artificialMaxViscosity = 1.0;
 
@@ -774,8 +781,8 @@ namespace BoSSS.Application.Rheology {
                                 //this.ResLogger.NextTimestep(false);
 
                                 // this evaluation must later out of this loop. now here for comparing resluts with  
-                                PlotCurrentState(phystime, new TimestepNumber(TimestepNo.MajorNumber, i));
-                                SaveToDatabase(new TimestepNumber(TimestepNo.MajorNumber, i), phystime);
+                                PlotCurrentState(phystime, new TimestepNumber(TimestepNo.MajorNumber, WeIncCounter));
+                                SaveToDatabase(new TimestepNumber(TimestepNo.MajorNumber, WeIncCounter), phystime);
 
                                 if (Control.Bodyforces == true) {
                                     if (Log != null) {
@@ -791,13 +798,17 @@ namespace BoSSS.Application.Rheology {
                                 artificialMaxViscosity = artificialMaxViscosity - 0.5;
                             }
                         } else {
+                            // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            // USING Weissenberg increase, NO artificial viscosity
+                            // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
                             m_BDF_Timestepper.Solve(phystime, dt, m_SkipSolveAndEvaluateResidual);
 
                             //this.ResLogger.NextTimestep(false);
 
                             // this evaluation must later out of this loop. now here for comparing results with  
-                            PlotCurrentState(phystime, new TimestepNumber(TimestepNo.MajorNumber, i));
-                            SaveToDatabase(new TimestepNumber(TimestepNo.MajorNumber, i), phystime);
+                            //PlotCurrentState(phystime, new TimestepNumber(TimestepNo.MajorNumber, WeIncCounter));
+                            SaveToDatabase(new TimestepNumber(TimestepNo.MajorNumber, WeIncCounter), phystime);
 
                             if (Control.Bodyforces == true) {
                                 if (Log != null) {
@@ -821,17 +832,23 @@ namespace BoSSS.Application.Rheology {
 
                         if (currentWeissenberg < Control.Weissenberg) {
                             currentWeissenberg = currentWeissenberg + Control.WeissenbergIncrement;
-                            Console.WriteLine();
-                            Console.WriteLine("Raise Weissenberg number to " + currentWeissenberg);
-                            Console.WriteLine();
+                        } else {
+                            WeIncCounter = int.MaxValue; // breaks the Weissenberg-increase loop.
                         }
 
+                        currentWeissenberg = Math.Min(currentWeissenberg, Control.Weissenberg); // prevents any overshoot
+                        Console.WriteLine("Raise Weissenberg number to " + currentWeissenberg);
                     }
                 } else {
 
                     currentWeissenberg = Control.Weissenberg;
 
                     if (Control.UseArtificialDiffusion == true) {
+                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        // USING artificial viscosity, but NO Weissenberg increase
+                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
                         artificialMaxViscosity = 1.0;
 
                         for (int j = 0; j < 3; j++) {
@@ -867,6 +884,9 @@ namespace BoSSS.Application.Rheology {
                             this.MpiRedistributeAndMeshAdapt(TimestepNo.MajorNumber, phystime);
                         }
                     } else {
+                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        // Using only timestepper, NO ADDITIONAL LOOP
+                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
                         m_BDF_Timestepper.Solve(phystime, dt, m_SkipSolveAndEvaluateResidual);
 
@@ -1700,6 +1720,7 @@ namespace BoSSS.Application.Rheology {
             return U[0];
         }
     }
+
 }
 
 

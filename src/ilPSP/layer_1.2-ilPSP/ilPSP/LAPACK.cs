@@ -81,7 +81,22 @@ namespace ilPSP.Utils {
         _DPOSV  dposv;
         _DGESVD dgesvd;
         //_DSYTRF dsytrf;
+        _DGECON dgecon;
 #pragma warning restore 649
+
+        /// <summary>
+        /// Reciprocal condition number
+        /// </summary>
+        public unsafe delegate void _DGECON(ref int NORM, ref int N, double* A, ref int LDA, ref double ANORM, ref double RCOND, double* WORK, int* IWORK, ref int INFO);
+ 
+        /// <summary>
+        /// Reciprocal condition number
+        /// </summary>
+        public _DGECON DGECON_ {
+            get {
+                return dgecon;
+            }
+        }
 
         /// <summary>
         /// Solution by Cholesky factorization

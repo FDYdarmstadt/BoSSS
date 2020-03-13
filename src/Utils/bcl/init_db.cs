@@ -41,6 +41,20 @@ namespace bcl.init_db {
             Directory.CreateDirectory(Path.Combine(targetDirectory.FullName, "grids"));
             Directory.CreateDirectory(Path.Combine(targetDirectory.FullName, "sessions"));
 
+            // Create 'AlternatePaths.txt'
+            using(var stw = File.CreateText(Path.Combine(targetDirectory.FullName, "AlternatePaths.txt"))) {
+                stw.WriteLine(";; Add alternative paths for this database (on a different computer) here;");
+                stw.WriteLine(";; The format is:");
+                stw.WriteLine(";; path[,machine-filter]");
+                stw.WriteLine(";; ");
+                stw.WriteLine(";; E.g. suppose a database which is stored on a remote linux system namned as 'smurf.domain.com' under '/home/asrael/bosss_db'.");
+                stw.WriteLine(";; On the local workstation '/home/asrael' is mounted (e.h. via sshfs) as 'X:'.");
+                stw.WriteLine(";; then, the entries here may look (with out leading comment ;; marker)as: ");
+                stw.WriteLine(";; ");
+                stw.WriteLine(";; /home/asrael/bosss_db,smurf");
+                stw.WriteLine(";; X:\\bosss_db");
+                stw.Flush();
+            }
             // Register it
             register_db.Program p = new register_db.Program();
             p.DecodeArgs(new string[] { targetDirectory.FullName });

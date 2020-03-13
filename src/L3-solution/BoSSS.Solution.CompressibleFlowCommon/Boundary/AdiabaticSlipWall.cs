@@ -19,6 +19,7 @@ using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
 using System.Diagnostics;
 using ilPSP;
+using System.IO;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
@@ -44,6 +45,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
             this.WallVelocities = wallVelocities;
         }
 
+        //private static int count = 0;
+
+        //private static StreamWriter writer;
+
         /// <summary>
         /// Calculates the boundary value for an isolating slip wall according
         /// to the first variant described in VegtVen2002. The basic idea is to
@@ -58,7 +63,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
             Debug.Assert(normal.Dim == stateIn.Dimension);
             int D = normal.Dim;
-            
+
             StateVector stateOut;
             if (WallVelocities == null) {
                 // VegtVen2002, page 14, second equation
@@ -76,10 +81,23 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
                     stateIn.Material, stateIn.Density, uOut, stateIn.Pressure);
             }
 
+            //Console.WriteLine(String.Format("{0}: \t x = ({1:0.0000}, {2:0.0000}) \t stateOut = ({3:0.0000}, {4:0.0000}, {5:0.0000}, {6:0.0000}) \t normal = ({7:0.0000}, {8:0.0000})", count, x.x, x.y, stateOut.Density, stateOut.Momentum.x, stateOut.Momentum.y, stateOut.Energy, normal.x, normal.y));
+            //count++;
+
+            //// StreamWriter
+            //if (writer == null) {
+            //    writer = new StreamWriter("QuadraturePoints.txt");
+            //}
+
+            //string resultLine;
+            //resultLine = x.x + "\t" + x.y + "\t" + stateOut.Density + "\t" + stateOut.Momentum.x + "\t" + stateOut.Momentum.y + "\t" + stateOut.Energy + "\t" + normal.x + "\t" + normal.y;
+            //writer.WriteLine(resultLine);
+            //writer.Flush();
+
             //Convection.OptimizedHLLCFlux.AdiabaticSlipWall.Stop();
             return stateOut;
         }
 
-        
+
     }
 }

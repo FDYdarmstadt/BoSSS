@@ -391,7 +391,7 @@ namespace BoSSS.Solution {
 
                 ControlObjFromCode(StringwithoutPrefix, out ctrlV2, out ctrlV2_ParameterStudy);
 
-            } else if (ControlFilePath.ToLower().EndsWith(".cs")) {
+            } else if (ControlFilePath.ToLower().EndsWith(".cs") || ControlFilePath.ToLower().EndsWith(".bws")) {
                 // +++++++++
                 // C#-script
                 // +++++++++
@@ -925,6 +925,8 @@ namespace BoSSS.Solution {
 
                     CurrentSessionInfo.Description = this.Control.ProjectDescription;
 
+                    if (this.Control.ProjectName != null)
+                        CurrentSessionInfo.KeysAndQueries.Add(PROJECTNAME_KEY, this.Control.ProjectName);
                     if (this.Control.SessionName != null)
                         CurrentSessionInfo.KeysAndQueries.Add(SESSIONNAME_KEY, this.Control.SessionName);
                 }
@@ -1046,18 +1048,19 @@ namespace BoSSS.Solution {
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
-                if (DoDbLogging) {
-                    if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:NoOfCells"))
+                if(this.CurrentSessionInfo != null) {
+                    if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:NoOfCells"))
                         this.CurrentSessionInfo.KeysAndQueries.Add("Grid:NoOfCells", Grid.NumberOfCells);
+                    if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:SpatialDimension"))
+                        this.CurrentSessionInfo.KeysAndQueries.Add("Grid:SpatialDimension", GridData.SpatialDimension);
+
                     try //ToDo
-                    { 
-                        if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMax"))
-                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMax", ((GridData)GridData).Cells.h_maxGlobal);
-                        if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMin"))
-                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMin", ((GridData)GridData).Cells.h_minGlobal);
-                    }
-                    catch (InvalidCastException e)
                     {
+                        if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMax"))
+                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMax", ((GridData)GridData).Cells.h_maxGlobal);
+                        if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMin"))
+                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMin", ((GridData)GridData).Cells.h_minGlobal);
+                    } catch(InvalidCastException e) {
                         Console.WriteLine("Error: Could not log everything.\n {0}", e);
                     }
                 }
@@ -1169,10 +1172,41 @@ namespace BoSSS.Solution {
         /// </summary>
         /// <returns></returns>
         protected virtual IDatabaseInfo GetDatabase() {
-            if (this.Control == null || this.Control.DbPath.IsNullOrEmpty()) {
+            if (this.Control == null || (this.Control.DbPath.IsNullOrEmpty() && (this.Control.AlternateDbPaths == null || this.Control.AlternateDbPaths.Length <= 0))) {
                 return NullDatabaseInfo.Instance;
             } else {
-                return new DatabaseInfo(this.Control.DbPath);
+                List<ValueTuple<string, string>> allPaths = new List<(string, string)>();
+                if (!this.Control.DbPath.IsNullOrEmpty())
+                    allPaths.Add((this.Control.DbPath, null));
+                if (this.Control.AlternateDbPaths != null)
+                    allPaths.AddRange(this.Control.AlternateDbPaths);
+
+                string mName = System.Environment.MachineName.ToLowerInvariant();
+
+                string dbPath = null;
+                foreach(var t in allPaths) {
+                    string path = t.Item1;
+                    string filter = t.Item2;
+
+                    if(!filter.IsNullOrEmpty() && !filter.IsEmptyOrWhite()) {
+                        if (!mName.Contains(filter)) {
+                            continue;
+                        } 
+                    }
+
+                    if(Directory.Exists(path) || File.Exists(path)) { // th latter is for ZIP-file databases
+                        dbPath = path;
+                        break;
+                    }
+
+                }
+
+                if(dbPath == null) {
+                    throw new IOException("Unable to open database - all given paths either don't exist or are ruled out by the machine filter.");
+                }
+
+
+                return new DatabaseInfo(dbPath);
             }
         }
 
@@ -1589,7 +1623,6 @@ namespace BoSSS.Solution {
 
                 // pass 2: XDG fields
                 // ===========================
-
                 if (Pass2_Evaluators.Count > 0) {
                     LsTrk.UpdateTracker();
                     LsTrk.PushStacks();
@@ -1793,7 +1826,8 @@ namespace BoSSS.Solution {
                 int i = i0.MajorNumber;
                 for (int s = 0; s < this.Control.AMR_startUpSweeps; s++) {
                     this.MpiRedistributeAndMeshAdapt(i, physTime);
-
+                }
+                { 
 
                     if (this.Control != null && this.Control.AdaptiveMeshRefinement) {
                         ResetInitial();
@@ -2344,14 +2378,18 @@ namespace BoSSS.Solution {
             throw new NotImplementedException("Must be implemented by user (if he wants to use load balancing).");
         }
 
-
+        /// <summary>
+        /// The name of a specific simulation should be logged in the <see cref="ISessionInfo.KeysAndQueries"/> under this key,
+        /// see also <see cref="AppControl.SessionName"/>
+        /// </summary>
+        public const string SESSIONNAME_KEY = "SessionName";
 
 
         /// <summary>
-        /// The name of a specific simulation should be logged in the <see cref="ISessionInfo.KeysAndQueries"/>
-        /// under this key.
+        /// The name of a specific project should be logged in the <see cref="ISessionInfo.KeysAndQueries"/> under this key,
+        /// see also <see cref="AppControl.ProjectName"/>
         /// </summary>
-        public const string SESSIONNAME_KEY = "SessionName";
+        public const string PROJECTNAME_KEY = "ProjectName";
 
         /// <summary>
         /// Called before application finishes (internal Bye)
@@ -3117,6 +3155,17 @@ namespace BoSSS.Solution {
                 }
             }
         }
+
+        /// <summary>
+        /// This method should be overridden to support automatic numerical stability analysis of the PDE's operator
+        /// </summary>
+        /// <returns>
+        /// Pairs of property name and value, e.g. ConditionNumber and the respective value of the operators Jacobian matrix condition number.
+        /// </returns>
+        virtual public IDictionary<string, double> OperatorAnalysis() {
+            throw new NotImplementedException();
+        }
+
 
         /// <summary>
         /// This method just forces the C# - compiler to integrate

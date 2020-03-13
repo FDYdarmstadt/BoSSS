@@ -231,6 +231,8 @@ namespace BoSSS.Application.BoSSSpad {
 
                 eval.Run(@"Console.WriteLine(""\n Console ready for input. Type 'help' for help."");");
 
+                //MiniBatchProcessor.Server.StartIfNotRunning();
+
                 // Log results of startup
                 Console.Out.Flush();
                 Console.Error.Flush();

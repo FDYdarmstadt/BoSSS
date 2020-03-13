@@ -49,7 +49,7 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// </param>
     /// <param name="time"></param>
     public delegate void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time);
-    
+        
     /// <summary>
     /// Callback-Template for the mass matrix update.
     /// </summary>
@@ -149,6 +149,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Level-Set is handled using Lie-Splitting. Use this for the fully coupled FSI-Solver
         /// </summary>
         FSI_LieSplittingFullyCoupled = 5,
+
+        /// <summary>
+        /// Level-Set is handled using Lie-Splitting. Use this for the fully coupled FSI-Solver
+        /// </summary>
+        FSI_Coupled_Iterative = 6,
     }
 
     public enum SpatialOperatorType {
@@ -506,7 +511,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         void MiniLogResi(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
             double resiNorm = currentRes.MPI_L2Norm();
-            Console.WriteLine("    " + resiNorm);
+            Console.WriteLine("    " + iterIndex + "  "+ resiNorm);
         }
 
 
@@ -678,5 +683,21 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </param>
         abstract protected void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt, bool Linearization);
 
+        /// <summary>
+        /// Unscaled, agglomerated mass matrix used by the preconditioner.
+        /// </summary>
+        protected BlockMsrMatrix m_PrecondMassMatrix;
+
+        /// <summary>
+        /// Returns a collection of local and global condition numbers in order to assess the operators stability
+        /// </summary>
+        public IDictionary<string,double> OperatorAnalysis() {
+            AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, this.CurrentStateMapping.Fields.ToArray(), true);
+
+            
+            var ana = new BoSSS.Solution.OpAnalysisBase(this.m_LsTrk, System, Affine, this.CurrentStateMapping, this.m_CurrentAgglomeration, MassMatrix, this.Config_MultigridOperator);
+
+            return ana.GetNamedProperties();
+        }
     }
 }

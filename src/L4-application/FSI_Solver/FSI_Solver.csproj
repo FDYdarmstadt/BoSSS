@@ -82,9 +82,9 @@
   <ItemGroup>
     <Compile Include="ControlFiles\HardcodedControl\HardcodedControl.cs" />
     <Compile Include="ControlFiles\HardcodedControl\HardcodedControlDeriabina.cs" />
-    <Compile Include="ControlFiles\HardcodedControl\FourCellsTest.cs" />
     <Compile Include="ControlFiles\HardcodedControl\DryParticles.cs" />
     <Compile Include="ControlFiles\HardcodedControl\HardcodedControlDeussen.cs" />
+    <Compile Include="ControlFiles\HardcodedControl\HC_Dry.cs" />
     <Compile Include="ControlFiles\HardcodedControl\HC_2ParticleInteraction.cs" />
     <Compile Include="ControlFiles\HardcodedControl\HC_CollisionRuntime.cs" />
     <Compile Include="ControlFiles\HardcodedControl\HardcodedControl_multipleActiveParticles .cs" />
@@ -96,25 +96,26 @@
     <Compile Include="ControlFiles\Tests\TestProgram.cs" />
     <Compile Include="FluxesAtBoundary\FSI_ConvectionAtIB.cs" />
     <Compile Include="FluxesAtBoundary\FSI_DivergenceAtIB.cs" />
+    <Compile Include="FluxesAtBoundary\FSI_ParameterAtIB.cs" />
     <Compile Include="FluxesAtBoundary\FSI_PressureAtIB.cs" />
     <Compile Include="FluxesAtBoundary\FSI_ViscosityAtIB.cs" />
     <Compile Include="FSI_Collision.cs" />
     <Compile Include="FSI_TimestepInfo.cs" />
     <Compile Include="FSI_LevelSetUpdate.cs" />
-    <Compile Include="FSI_Tutorial.cs" />
-    <Compile Include="Particle\Motion\Motion_Wet_NoTranslation.cs" />
-    <Compile Include="Particle\Motion\Motion_Wet_NoRotation.cs" />
-    <Compile Include="Particle\Motion\Motion_AddedDamping.cs" />
-    <Compile Include="Particle\Motion\Motion_Dry_NoTranslation.cs" />
-    <Compile Include="Particle\Motion\Motion_Dry_NoRotation.cs" />
-    <Compile Include="Particle\Motion\Motion_Dry.cs" />
-    <Compile Include="Particle\Motion\Motion_Fixed.cs" />
+    <Compile Include="Particle\Motion\Motion.AllParticles.cs" />
+    <Compile Include="Particle\Motion\Motion.Fixed.withForces.cs" />
+    <Compile Include="Particle\Motion\Motion.Ghost.cs" />
+    <Compile Include="Particle\Motion\Motion.Wet.NoTranslation.cs" />
+    <Compile Include="Particle\Motion\Motion.Wet.NoRotation.cs" />
+    <Compile Include="Particle\Motion\Motion.AddedDamping.cs" />
+    <Compile Include="Particle\Motion\Motion.Dry.NoTranslation.cs" />
+    <Compile Include="Particle\Motion\Motion.Dry.NoRotation.cs" />
+    <Compile Include="Particle\Motion\Motion.Dry.cs" />
+    <Compile Include="Particle\Motion\Motion.Fixed.cs" />
     <Compile Include="Particle\Motion\ParticleMotionInit.cs" />
     <Compile Include="Particle\ParticleAddedDamping.cs" />
     <Compile Include="Particle\ParticleForceIntegration.cs" />
-    <Compile Include="Particle\Motion\_Motion_Main.cs" />
-    <Compile Include="Particle\ParticleUnderrelaxation.cs" />
-    <Compile Include="Particle\ParticleUnderrelaxationParam.cs" />
+    <Compile Include="Particle\Motion\Motion.cs" />
     <Compile Include="Particle\Shapes\Particle_Shell.cs" />
     <Compile Include="Particle\Shapes\Particle_Rectangle.cs" />
     <Compile Include="Particle\Shapes\Particle_TrapRight.cs" />
@@ -127,7 +128,7 @@
     <Compile Include="Particle\Shapes\Particle_Ellipsoid.cs" />
     <Compile Include="FSI_Control.cs" />
     <Compile Include="FSI_SolverMain.cs" />
-    <Compile Include="Particle\Particle_Main.cs" />
+    <Compile Include="Particle\Particle.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="FSI_Auxillary.cs" />
   </ItemGroup>
@@ -171,6 +172,10 @@
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj">
       <Project>{e56b9ce4-14dc-4256-a337-46e5d298b722}</Project>
       <Name>BoSSS.Solution.NSECommon</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.RheologyCommon\BoSSS.Solution.RheologyCommon.csproj">
+      <Project>{02864872-FF49-4BD2-96FC-9769AC268B5A}</Project>
+      <Name>BoSSS.Solution.RheologyCommon</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj">
       <Project>{d0546422-ec92-4964-82e9-8ee819a2f786}</Project>

@@ -251,10 +251,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         int m_PopulatedStackDepth = 0;
 
-        /// <summary>
-        /// Unscaled, agglomerated mass matrix used by the preconditioner.
-        /// </summary>
-        BlockMsrMatrix m_PrecondMassMatrix;
+
 
 
         /// <summary>
@@ -274,7 +271,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 restartInfo[i - 1] = new List<DGField>();
 
                 if(this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once
-                    || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
+                    || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative || this.Config_LevelSetHandling == LevelSetHandling.FSI_Coupled_Iterative) {
 
                     DGField phiField = (DGField)m_LsTrk.LevelSetHistories[0][1 - i];
                     restartInfo[i - 1].Add(phiField);
@@ -311,6 +308,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 case LevelSetHandling.LieSplitting:
                 case LevelSetHandling.StrangSplitting:
                 case LevelSetHandling.FSI_LieSplittingFullyCoupled:
+                case LevelSetHandling.FSI_Coupled_Iterative:
                     // noop.
                     break;
 
@@ -1077,7 +1075,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 bool updateAgglom = false;
                 if ((this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once && m_IterationCounter == 0)
                     || (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative && m_IterationCounter == 0)
-                    || (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative && CoupledIteration)) {
+                    || (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative && CoupledIteration) || this.Config_LevelSetHandling == LevelSetHandling.FSI_Coupled_Iterative) {
 
                     m_CoupledIterations++;
                     if(this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative)
@@ -1243,7 +1241,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // right-hand-side, resp. affine vector
                 double[] RHS = new double[CurrentAffine.Length];
                 if (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once
-                    || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
+                    || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative || this.Config_LevelSetHandling == LevelSetHandling.FSI_Coupled_Iterative) {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // MovingMesh:
                     // (1/dt)*(M1*u1 - M0*u0) + theta1*(Op1*u1 + b1) + theta0*(Op0*u0 + b0);
@@ -1333,8 +1331,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
 
 #if DEBUG
-                if (Config_MassMatrixShapeandDependence != MassMatrixShapeandDependence.IsIdentity
-                    && this.ComputeMassMatrix == null) {
+                if (Config_MassMatrixShapeandDependence != MassMatrixShapeandDependence.IsIdentity && this.ComputeMassMatrix == null) {
                     // compare "private" and "official" mass matrix stack
                     // (private may be removed soon)
 
@@ -1542,7 +1539,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     oldTs__AgglomerationTreshold: new double[] { 0.0 });
                 for (int i = 0; i < this.m_Stack_u.Length; i++)
                     SplittingAgg.Extrapolate(this.m_Stack_u[i].Mapping);
-
+                
                 // delete new agglomeration; in case of splitting, the agglomeration for the **bulk operator timestep** does not depend on previous time-steps
                 m_CurrentAgglomeration = null;
             }
