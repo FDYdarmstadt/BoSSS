@@ -3636,7 +3636,7 @@ namespace CNS {
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
             c.saveperiod = savePeriod;
-            c.PrintInterval = 1000;
+            c.PrintInterval = 1;
 
             c.WriteLTSLog = false;
             c.WriteLTSConsoleOutput = false;
@@ -3826,9 +3826,9 @@ namespace CNS {
             c.dtMin = 0.0;
             c.dtMax = 1.0;
             c.Endtime = endTime;
-            c.CFLFraction = CFLFraction;
-            c.NoOfTimesteps = int.MaxValue;
-            //c.dtFixed = 1e-3;
+            //c.CFLFraction = CFLFraction;
+            c.NoOfTimesteps = 70;
+            c.dtFixed = 1e-3;
 
             c.ProjectName = "IBMBowShock";
 
@@ -3854,7 +3854,7 @@ namespace CNS {
             return c;
         }
 
-        public static IBMControl IBMBowShockTEST(string dbPath = null, int savePeriod = 100, int dgDegree = 0, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 2, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 8.0, string restart = "False", int numOfCellsX = 4, int numOfCellsY = 16, double? lambdaMax = null) {
+        public static IBMControl IBMBowShockTEST(string dbPath = null, int savePeriod = 100, int dgDegree = 0, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 2, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 8.0, string restart = "False", int numOfCellsX = 4, int numOfCellsY = 8, double? lambdaMax = null) {
             IBMControl c = new IBMControl();
 
             //double? lambdaMax = 10;
@@ -3893,8 +3893,8 @@ namespace CNS {
             // Grid
             double xMin = -2.0;
             double xMax = 0.0;
-            double yMin = -4.0;
-            double yMax = 4.0;
+            double yMin = -2.0;
+            double yMax = 2.0;
 
             // Shift grid
             double h = Math.Abs(xMax - xMin) / numOfCellsX;
@@ -3917,7 +3917,7 @@ namespace CNS {
 
                     grid.DefineEdgeTags(delegate (double[] X) {
                         if (Math.Abs(X[0] - xMax) < 1e-14) {    // Right boundary
-                            if (Math.Abs(X[1]) - 0.7 < 1e-14) { // Right boundary (part of void area)
+                            if (Math.Abs(X[1]) - 0.5 < 1e-14) { // Right boundary (part of void area)
                                 return 3;
                             } else {
                                 return 2;
@@ -3930,9 +3930,9 @@ namespace CNS {
                         }
                     });
 
-                    var gDat = new GridData(grid);
-                    var em1 = gDat.GetBoundaryEdges();
-                    em1.SaveToTextFile("alledges.csv", false, (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => (double)gDat.iGeomEdges.EdgeTags[GeomItemIndex]);
+                    //var gDat = new GridData(grid);
+                    //var em1 = gDat.GetBoundaryEdges();
+                    //em1.SaveToTextFile("alledges.csv", false, (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => (double)gDat.iGeomEdges.EdgeTags[GeomItemIndex]);
 
                     return grid;
                 };

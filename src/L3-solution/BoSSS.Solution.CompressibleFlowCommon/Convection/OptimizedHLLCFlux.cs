@@ -82,7 +82,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
             Vector xLocal = new Vector(D);
             Vector normalLocal = new Vector(D);
 
-            //bool writeFluxes = false;
+            bool isWall = false;
 
             // Loop over edges
             for (int e = 0; e < Lenght; e++) {
@@ -108,12 +108,14 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
                 boundaryCondition.GetBoundaryState(Uout, time, x, normal, Uin, edge, __L, normalFlipped, material);
                 e += __L - 1;
 
-                //if (boundaryCondition is AdiabaticSlipWall) {
-                //    writeFluxes = true;
-                //}
+                if (boundaryCondition is AdiabaticSlipWall) {
+                    isWall = true;
+                }
             }
 
-            InnerEdgeFlux(time, jEdge, x, normal, Uin, Uout, Offset, Lenght, Output);
+            if (!isWall) {
+                InnerEdgeFlux(time, jEdge, x, normal, Uin, Uout, Offset, Lenght, Output);
+            }
 
             //if (writeFluxes) {
             //    Console.WriteLine(String.Format("Flux at ({0:0.00000000}, {1:0.00000000}) = {2:0.00000000} \t normal = ({3:0.00000000}, {4:0.00000000})", x[0, 0, 0], x[0, 0, 1], Output[0, 0], normal[0, 0, 0], normal[0, 0, 1]));

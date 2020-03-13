@@ -117,18 +117,22 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
                     // cf. Toro2009, equation 10.70
                     double speedDiff = cOut * normalVelocityOut - cIn * normalVelocityIn;
-                    //if (Math.Abs(speedDiff) < 1e-13) {
-                    //    speedDiff = 0.0;
-                    //}
+                    if (Math.Abs(speedDiff) < 1e-13) {
+                        speedDiff = 0.0;
+                    }
 
                     double pIn_minus_pOut = pIn - pOut;
-                    //if (Math.Abs(pIn_minus_pOut) < 1e-13) {
-                    //    pIn_minus_pOut = 0.0;
-                    //}
+                    if (Math.Abs(pIn_minus_pOut) < 1e-13) {
+                        pIn_minus_pOut = 0.0;
+                    }
 
                     double intermediateWaveSpeed =
                         (speedDiff + pIn_minus_pOut / MachScaling) /
                         (cOut - cIn);
+
+                    //double intermediateWaveSpeed =
+                    //    (cOut * normalVelocityOut - cIn * normalVelocityIn + (pIn - pOut) / MachScaling) /
+                    //    (cOut - cIn);
 
                     double edgeFlux = 0.0;
                     // cf. Toro2009, equation 10.71
@@ -149,7 +153,12 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
                     }
 
                     Debug.Assert(!double.IsNaN(edgeFlux) || double.IsInfinity(edgeFlux));
+
+                    //edgeFlux = 0.0;
+
                     Output[e + Offset, n] += edgeFlux;
+
+                    Console.WriteLine(String.Format("{0:0.00000000}\t{1:0.00000000}\tflux = {2:0.00000000}", x[e + Offset, n, 0], x[e + Offset, n, 1], edgeFlux));
                 }
             }
         }
