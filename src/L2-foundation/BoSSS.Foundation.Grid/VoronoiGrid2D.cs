@@ -61,8 +61,8 @@ namespace BoSSS.Foundation.Grid.Voronoi
             };
 
             VoronoiNodes nodes = GetVoronoiNodesIn(mesherSettings.Boundary, noOfNodeSeed);
-
             VoronoiMesher mesher = new VoronoiMesher(mesherSettings);
+
             return mesher.CreateGrid(nodes);
         }
 
@@ -71,7 +71,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
         static VoronoiNodes GetVoronoiNodesIn(VoronoiBoundary boundary, int amount)
         {
             MultidimensionalArray nodePositions = RandomVoronoiNodesInBoundingBox(boundary.BoundingBox, amount);
-            nodePositions.SetRowPt(0, boundary.Polygon[0] + new Vector(0.1, - 0.1));
+            nodePositions.SetRowPt(0, boundary.Polygon[0] + new Vector(0.01, - 0.01));
             VoronoiNodes nodes = new VoronoiNodes(nodePositions);
             return nodes;
         }

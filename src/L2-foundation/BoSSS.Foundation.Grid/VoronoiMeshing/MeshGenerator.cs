@@ -72,11 +72,17 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         static void AddDistantBoundingNodes(IList<T> nodes, Vector[] boundingBox)
         {
+            Vector center = new Vector(0,0);
+            foreach(Vector corner in boundingBox)
+            {
+                center += corner;
+            }
+            center /= boundingBox.Length;    
             foreach (Vector corner in boundingBox)
             {
                 T cornerNode = new T()
                 {
-                    Position = corner * 10
+                    Position = (corner - center) * 10 + center
                 };
                 nodes.Add(cornerNode);
             }
