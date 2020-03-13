@@ -50,6 +50,10 @@ namespace BoSSS.Application.IBM_Solver {
             C.DbPath = null;
             C.ProjectName = "ChannelFlow";
             C.SessionName = "GasGebn";
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.NoOfMultigridLevels = 2;
+            C.LinearSolver.TargetBlockSize = 1000;
 
             // Calculate Navier-Stokes? 
             C.PhysicalParameters.IncludeConvection = true;
@@ -802,7 +806,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.LinearSolver.MaxSolverIterations = 20;
             C.NonLinearSolver.MaxSolverIterations = 20;
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.LinearSolver.NoOfMultigridLevels = 3;
+            C.LinearSolver.NoOfMultigridLevels = 2;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             C.LinearSolver.TargetBlockSize = 1000;
 
