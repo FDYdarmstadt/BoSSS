@@ -71,25 +71,26 @@ namespace BoSSS.Application.XNSE_Solver {
             return typeof(XNSE_SolverMain);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public override void SetDGdegree(int p) {
+            SetFieldOptions(p, Math.Max(2, p));
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
         public void SetFieldOptions(int VelDegree, int LevSetDegree, FieldOpts.SaveToDBOpt SaveFilteredVelocity =  FieldOpts.SaveToDBOpt.TRUE, FieldOpts.SaveToDBOpt SaveCurvature = FieldOpts.SaveToDBOpt.TRUE) {
-            FieldOptions.Add(VariableNames.VelocityX, new FieldOpts() {
+            FieldOptions.Add("Velocity*", new FieldOpts() {
                 Degree = VelDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            FieldOptions.Add(VariableNames.VelocityY, new FieldOpts() {
-                Degree = VelDegree,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            FieldOptions.Add("FilteredVelocityX", new FieldOpts() {
+            FieldOptions.Add("FilteredVelocity*", new FieldOpts() {
                 SaveToDB = SaveFilteredVelocity
             });
-            FieldOptions.Add("FilteredVelocityY", new FieldOpts() {
-                SaveToDB = SaveFilteredVelocity
-            });
-            FieldOptions.Add("SurfaceForceDiagnosticX", new FieldOpts() {
-                SaveToDB = FieldOpts.SaveToDBOpt.FALSE
-            });
-            FieldOptions.Add("SurfaceForceDiagnosticY", new FieldOpts() {
+            FieldOptions.Add("SurfaceForceDiagnostic*", new FieldOpts() {
                 SaveToDB = FieldOpts.SaveToDBOpt.FALSE
             });
             FieldOptions.Add(VariableNames.Pressure, new FieldOpts() {
@@ -512,11 +513,6 @@ namespace BoSSS.Application.XNSE_Solver {
         public InterfaceAveraging InterAverage = InterfaceAveraging.density;
 
 
-        /// <summary>
-        /// Turn XDG for the velocity on/off; if off, only the pressure is approximated by XDG,
-        /// the velocity is plain DG.
-        /// </summary>
-        //public bool UseXDG4Velocity = true;
 
         /// <summary>
         /// An explicit expression of the Level-set over time.
@@ -576,6 +572,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Block-Precondition for the Temperature-block
         /// </summary>
+        [DataMember]
         public MultigridOperator.Mode TemperatureBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
 
 
