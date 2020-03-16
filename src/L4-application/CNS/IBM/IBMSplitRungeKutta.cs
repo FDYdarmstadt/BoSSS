@@ -26,7 +26,6 @@ using System.Linq;
 using ilPSP;
 using System.Collections.Generic;
 using ilPSP.Utils;
-using System;
 
 namespace CNS.IBM {
 
@@ -100,8 +99,6 @@ namespace CNS.IBM {
             speciesMap.Agglomerator.Extrapolate(CurrentState.Mapping);
         }
 
-        int count = 0;
-
         /// <summary>
         /// Computes the change rates by sequentially evaluating the standard
         /// and immersed boundary operators. Afterwards, the change rate is
@@ -140,9 +137,6 @@ namespace CNS.IBM {
                 // Apply inverse to all cells with non-identity mass matrix
                 IBMMassMatrixFactory massMatrixFactory = speciesMap.GetMassMatrixFactory(Mapping);
                 IBMUtility.SubMatrixSpMV(massMatrixFactory.InverseMassMatrix, 1.0, k, 0.0, k, cutAndTargetCells);
-
-                k.SaveToTextFile(String.Format("k_{0}.txt", count));
-                count++;
             }
         }
     }

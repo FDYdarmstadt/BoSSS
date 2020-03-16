@@ -463,37 +463,28 @@ namespace CNS {
                 ////}
                 ////#endregion
 
-                #region Write DG fields to text file
-                // Sample points
-                int noOfPoints = 16;
-                double[] nodes = GenericBlas.Linspace(-1.8, -0.3, noOfPoints);
-                MultidimensionalArray points = MultidimensionalArray.Create(noOfPoints, 2);
-                for (int i = 0; i < noOfPoints; i++) {
-                    points[i, 0] = nodes[i];
-                    points[i, 1] = -0.65;
-                }
+                //#region Write DG fields to text file
+                //// FieldEvaluation
+                //MultidimensionalArray resultsFields = MultidimensionalArray.Create(noOfPoints, m_IOFields.Count());
+                //for (int i = 0; i < m_IOFields.Count(); i++) {
+                //    FieldEvaluation fieldEvaluator = new FieldEvaluation((GridData)this.GridData);
+                //    fieldEvaluator.Evaluate(1.0, m_IOFields, points, 0.0, resultsFields);
+                //}
 
-                // FieldEvaluation
-                MultidimensionalArray resultsFields = MultidimensionalArray.Create(noOfPoints, m_IOFields.Count());
-                for (int i = 0; i < m_IOFields.Count(); i++) {
-                    FieldEvaluation fieldEvaluator = new FieldEvaluation((GridData)this.GridData);
-                    fieldEvaluator.Evaluate(1.0, m_IOFields, points, 0.0, resultsFields);
-                }
-
-                // StreamWriter
-                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(String.Format("DGFields{0}.txt", timestepNo))) {
-                    //Console.WriteLine("x \t y \t result");
-                    //sw.WriteLine("x \t y \t rho \t xMom \t yMom \t rhoE");
-                    string resultLine;
-                    for (int i = 0; i < noOfPoints; i++) {
-                        resultLine = points[i, 0] + "\t" + points[i, 1] + "\t" + resultsFields[i, 0] + "\t" + resultsFields[i, 1] + "\t" + resultsFields[i, 2] + "\t" + resultsFields[i, 3] + "\t";
-                        //Console.WriteLine(resultLine);
-                        sw.WriteLine(resultLine);
-                    }
-                    sw.Flush();
-                }
-                WorkingSet.ConservativeVariables[0].CoordinateVector.SaveToTextFile(String.Format("DensityCoordVec_{0}.txt", timestepNo));
-                #endregion
+                //// StreamWriter
+                //using (System.IO.StreamWriter sw = new System.IO.StreamWriter(String.Format("DGFields{0}.txt", timestepNo))) {
+                //    //Console.WriteLine("x \t y \t result");
+                //    //sw.WriteLine("x \t y \t rho \t xMom \t yMom \t rhoE");
+                //    string resultLine;
+                //    for (int i = 0; i < noOfPoints; i++) {
+                //        resultLine = points[i, 0] + "\t" + points[i, 1] + "\t" + resultsFields[i, 0] + "\t" + resultsFields[i, 1] + "\t" + resultsFields[i, 2] + "\t" + resultsFields[i, 3] + "\t";
+                //        //Console.WriteLine(resultLine);
+                //        sw.WriteLine(resultLine);
+                //    }
+                //    sw.Flush();
+                //}
+                //WorkingSet.ConservativeVariables[0].CoordinateVector.SaveToTextFile(String.Format("DensityCoordVec_{0}.txt", timestepNo));
+                //#endregion
             }
         }
 
