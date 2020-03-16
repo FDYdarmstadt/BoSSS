@@ -521,7 +521,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// </summary>
         /// <param name="myDB"></param>
         /// <returns></returns>
-        public static XdgPoisson3Control TestOrTreat(int solver = 1, int blocksize = 20, string myDB = null)
+        public static XdgPoisson3Control TestOrTreat(int solver = 1, int blocksize = 1000, string myDB = null)
         {
             XdgPoisson3Control C = new XdgPoisson3Control();
 
@@ -549,7 +549,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.savetodb = false;
             //C.DbPath = @"E:\\XdgPerformance";
 
-            int Res = 2;
+            int Res = 8;
 
             C.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
@@ -569,7 +569,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.LinearSolver.TargetBlockSize = blocksize;
             C.SetDGdegree(2);
 
-            C.LinearSolver.NoOfMultigridLevels = 4;
+            C.LinearSolver.NoOfMultigridLevels = 2;
             C.LinearSolver.ConvergenceCriterion = 1e-8;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MaxKrylovDim = 50;

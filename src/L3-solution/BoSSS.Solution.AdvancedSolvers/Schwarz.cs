@@ -14,9 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// extensive testing
-#define MATLAB_CHECK
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -472,10 +469,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 /// - very expensive, only for debugging of small systems
                 /// - to enable this define TEST in Advanced Solver project
                 /// - might not work with UsePMGinBlocks=true
-#if TEST
-                ilPSP.Connectors.Matlab.BatchmodeConnector matlab;
-                matlab = new ilPSP.Connectors.Matlab.BatchmodeConnector();
-#endif
+//#if TEST
+//                ilPSP.Connectors.Matlab.BatchmodeConnector matlab;
+//                matlab = new ilPSP.Connectors.Matlab.BatchmodeConnector();
+//#endif
 
                 //Mop.Clear();
                 //for(int i = Mop.RowPartitioning.i0; i < Mop.RowPartitioning.iE; i++) {
@@ -562,11 +559,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
 
-#if TEST
-                List<BlockMsrMatrix> Blocks = new List<BlockMsrMatrix>();
-                var BlkIdx_gI_lR = NoOfSchwzBlocks.ForLoop(b => new List<int>());
-                var BlkIdx_gI_eR = NoOfSchwzBlocks.ForLoop(b => new List<int>());
-#endif
+                //#if TEST
+                //                List<BlockMsrMatrix> Blocks = new List<BlockMsrMatrix>();
+                //                var BlkIdx_gI_lR = NoOfSchwzBlocks.ForLoop(b => new List<int>());
+                //                var BlkIdx_gI_eR = NoOfSchwzBlocks.ForLoop(b => new List<int>());
+                //#endif
+
+                //Extract External cells
+                //List<int> ExtCellList = new List<int>();
+                //foreach(var bc in BlockCells) {
+                //    for(int iCell=0; iCell < bc.Length;iCell++) {
+                //        if (bc[iCell] >= MgMap.AggGrid.iLogicalCells.NoOfLocalUpdatedCells)
+                //            ExtCellList.Add(bc[iCell]);
+                //    }
+                //}
+
+                BlockMsrMatrix ExtRows=null;
+                if (m_Overlap > 0)
+                    ExtRows=BlockMask.GetAllExternalRows(m_MgOp);
+
+                ExtRows.SaveToTextFileSparseDebug("ExtRows");
 
                 blockSolvers = new ISparseSolver[NoOfSchwzBlocks];
                 BMfullBlocks = new BlockMask[NoOfSchwzBlocks];
@@ -581,9 +593,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     BlockMsrMatrix loBlock = null;
 
-                    var fullSel= new SubBlockSelector(op.Mapping);
+                    bc.SaveToTextFileDebug(String.Format("bc_part{0}",iPart));
+
+                    var fullSel = new SubBlockSelector(op.Mapping);
                     fullSel.CellSelector(bc.ToList(), false);
-                    var fullMask = new BlockMask(fullSel, m_Overlap > 0);
+                    var fullMask = new BlockMask(fullSel, ExtRows);
                     var fullBlock = fullMask.GetSubBlockMatrix(op.OperatorMatrix);
 
                     BMfullBlocks[iPart] = fullMask;
@@ -600,10 +614,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         HiSel.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D ? pLow : pLow - 1));
 
                         //generate Blockmasking
-                        var lowMask = new BlockMask(lowSel, m_Overlap > 0);
+                        var lowMask = new BlockMask(lowSel, ExtRows);
                         Debug.Assert(lowMask != null);
                         Debug.Assert(lowMask.GetNoOfMaskedCells == bc.Length);
-                        var HiMask = new BlockMask(HiSel, m_Overlap > 0);
+                        var HiMask = new BlockMask(HiSel, ExtRows);
                         Debug.Assert(HiMask.GetNoOfMaskedCells == bc.Length);
                         Debug.Assert(lowMask.GetNoOfMaskedCells == bc.Length);
                         BMhiBlocks[iPart] = HiMask;
@@ -611,21 +625,32 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         //get subblocks from masking
                         MultidimensionalArray[] hiBlocks = null;
-                        hiBlocks = HiMask.GetSubBlocks(op.OperatorMatrix, true, false, false); //gets diagonal-blocks only
+                        hiBlocks = HiMask.GetSubBlocks(op.OperatorMatrix, true, true, false); //gets diagonal-blocks only
                         loBlock = lowMask.GetSubBlockMatrix(op.OperatorMatrix);
 
                         //get inverse of hiorder blocks
                         if (hiBlocks != null) {
                             foreach (var block in hiBlocks)
-                                block.Invert();
+                                try {
+                                    block.Invert();
+                                } catch (Exception e){
+                                    Console.WriteLine(e);
+                                }
                         }
                         PmgBlock_HiModeSolvers[iPart] = hiBlocks;
 
-#if TEST
-                    BlkIdx_gI_lR[iPart] = lowMask.GetGlobalMask_Loc();
-                    BlkIdx_gI_eR[iPart] = lowMask.GetGlobalMask_Ext();
-                    Blocks.Add(fullBlock);
-#endif
+                        int cnt = 0;
+                        foreach (var block in PmgBlock_HiModeSolvers[iPart]) {
+                            block.SaveToTextFile(String.Format("{0}_block{1}_part{2}", op.Mapping.MpiRank, cnt,iPart));
+                            cnt++;
+                        }
+                        loBlock.SaveToTextFileSparseDebug(String.Format("{0}_block_part{1}", op.Mapping.MpiRank, iPart));
+
+                        //#if TEST
+                        //                    BlkIdx_gI_lR[iPart] = lowMask.GetGlobalMask_Loc();
+                        //                    BlkIdx_gI_eR[iPart] = lowMask.GetGlobalMask_Ext();
+                        //                    Blocks.Add(fullBlock);
+                        //#endif
                     }
 
                     blockSolvers[iPart] = new PARDISOSolver() {
@@ -641,52 +666,55 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     BlockMatrices[iPart] = fullBlock;
                 }
+               
 
+//#if TEST
+//                BlockMask.MatlabDebugging(BMfullBlocks, op);
+//#endif
+                //#if TEST
 
-#if TEST
-                
-                int globalBlockCounter = 0;
-                for (int rankCounter = 0; rankCounter < myMpisize; rankCounter++) {
-                    int rank_NoBlks = NoOfSchwzBlocks.MPIBroadcast(rankCounter);
-                    if (rankCounter == myMpiRank)
-                        Debug.Assert(rank_NoBlks == NoOfSchwzBlocks);
+                //                int globalBlockCounter = 0;
+                //                for (int rankCounter = 0; rankCounter < myMpisize; rankCounter++) {
+                //                    int rank_NoBlks = NoOfSchwzBlocks.MPIBroadcast(rankCounter);
+                //                    if (rankCounter == myMpiRank)
+                //                        Debug.Assert(rank_NoBlks == NoOfSchwzBlocks);
 
-                    for (int iBlock = 0; iBlock < rank_NoBlks; iBlock++) {
-                        double[] vec;
-                        if (rankCounter == myMpiRank) {
-                            vec = ArrayTools.Cat(BlkIdx_gI_lR[iBlock], BlkIdx_gI_eR[iBlock]).Select(ii => ((double)(ii + 1))).ToArray();
-                        } else {
-                            vec = new double[0];
-                        }
+                //                    for (int iBlock = 0; iBlock < rank_NoBlks; iBlock++) {
+                //                        double[] vec;
+                //                        if (rankCounter == myMpiRank) {
+                //                            vec = ArrayTools.Cat(BlkIdx_gI_lR[iBlock], BlkIdx_gI_eR[iBlock]).Select(ii => ((double)(ii + 1))).ToArray();
+                //                        } else {
+                //                            vec = new double[0];
+                //                        }
 
-                        matlab.PutVector(vec, string.Format("BlockIdx{0}", globalBlockCounter));
+                //                        matlab.PutVector(vec, string.Format("BlockIdx{0}", globalBlockCounter));
 
-                        globalBlockCounter++;
-                        csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                //                        globalBlockCounter++;
+                //                        csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
-                    }
+                //                    }
 
-                }
+                //                }
 
-                globalBlockCounter = 0;
-                for (int rankCounter = 0; rankCounter < myMpisize; rankCounter++) {
-                    int rank_NoBlks = NoOfSchwzBlocks.MPIBroadcast(rankCounter);
-                    for (int iBlock = 0; iBlock < rank_NoBlks; iBlock++) {
-                        BlockMsrMatrix Block;
-                        if (rankCounter == myMpiRank) {
-                            Block = Blocks[iBlock];
-                        } else {
-                            Block = null;
-                        }
+                //                globalBlockCounter = 0;
+                //                for (int rankCounter = 0; rankCounter < myMpisize; rankCounter++) {
+                //                    int rank_NoBlks = NoOfSchwzBlocks.MPIBroadcast(rankCounter);
+                //                    for (int iBlock = 0; iBlock < rank_NoBlks; iBlock++) {
+                //                        BlockMsrMatrix Block;
+                //                        if (rankCounter == myMpiRank) {
+                //                            Block = Blocks[iBlock];
+                //                        } else {
+                //                            Block = null;
+                //                        }
 
-                        matlab.PutSparseMatrix(Block, string.Format("Block{0}", globalBlockCounter));
+                //                        matlab.PutSparseMatrix(Block, string.Format("Block{0}", globalBlockCounter));
 
-                        globalBlockCounter++;
-                        csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                //                        globalBlockCounter++;
+                //                        csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
-                    }
-                }
-#endif
+                //                    }
+                //                }
+                //#endif
 
 
                 // solution scaling in overlapping regions
@@ -738,141 +766,142 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     for (int l = 0; l < LocalLength; l++) {
                         SolScale[l] = 1.0 / SolScale[l];
                     }
+
                 }
 
 
                 // Debug & Test-Code 
                 // =================
-#if TEST
-                    Console.WriteLine("Matlab dir: " + matlab.WorkingDirectory);
+//#if TEST
+//                    Console.WriteLine("Matlab dir: " + matlab.WorkingDirectory);
 
-                    matlab.PutSparseMatrix(Mop, "Full");
-                    int GlobalNoOfBlocks = NoOfSchwzBlocks.MPISum();
-
-
-
-                    for (int iGlbBlock = 0; iGlbBlock < GlobalNoOfBlocks; iGlbBlock++) {
-                        matlab.Cmd("BlockErr({0} + 1, 1) = norm( Block{0} - Full( BlockIdx{0}, BlockIdx{0} ), inf );", iGlbBlock);
-                    }
-
-                    Random rnd = new Random(myMpiRank);
-                    double[] testRHS = new double[MgMap.LocalLength];
-                    for (int i = 0; i < testRHS.Length; i++) {
-                        testRHS[i] = rnd.NextDouble();
-                    }
-                    matlab.PutVector(testRHS, "testRHS");
-
-                    MPIexchange<double[]> ResExchange = new MPIexchange<double[]>(MgMap, testRHS);
-                    ResExchange.TransceiveStartImReturn();
-                    ResExchange.TransceiveFinish(0.0);
-
-                    int offset = MgMap.LocalLength;
-
-                    int g = 0;
-                    for (int rankCounter = 0; rankCounter < myMpisize; rankCounter++) {
-                        int rank_NoBlks = NoOfSchwzBlocks.MPIBroadcast(rankCounter);
-                        for (int iBlock = 0; iBlock < rank_NoBlks; iBlock++) {
-                            double[] SubVec;
-                            if (rankCounter == myMpiRank) {
-                                int LL = this.BlockIndices_Local[iBlock].Length;
-                                int LE;
-                                if (this.BlockIndices_External[iBlock] != null) {
-                                    LE = this.BlockIndices_External[iBlock].Length;
-                                } else {
-                                    LE = 0;
-                                }
-                                int L = LL + LE;
-
-                                SubVec = new double[L];
-                                for (int i = 0; i < LL; i++) {
-                                    SubVec[i] = testRHS[this.BlockIndices_Local[iBlock][i]];
-                                }
-                                if (LE > 0) {
-                                    for (int i = 0; i < LE; i++) {
-                                        SubVec[i + LL] = ResExchange.Vector_Ext[this.BlockIndices_External[iBlock][i] - offset];
-                                    }
-                                }
-                            } else {
-                                SubVec = new double[0];
-                            }
-
-                            matlab.PutVector(SubVec, "SubVec" + g);
-
-                            g++;
-                        }
-                    }
-
-                    for (int iGlbBlock = 0; iGlbBlock < GlobalNoOfBlocks; iGlbBlock++) {
-                        matlab.Cmd("RhsErr({0} + 1, 1) = norm( SubVec{0} - testRHS( BlockIdx{0} ), inf );", iGlbBlock);
-                    }
-
-                    double[] testX = new double[testRHS.Length];
-                    MPIexchangeInverse<double[]> XXExchange = new MPIexchangeInverse<double[]>(MgMap, testX);
-
-                    g = 0;
-                    for (int rankCounter = 0; rankCounter < myMpisize; rankCounter++) {
-                        int rank_NoBlks = NoOfSchwzBlocks.MPIBroadcast(rankCounter);
-                        for (int iBlock = 0; iBlock < rank_NoBlks; iBlock++) {
-
-                            if (rankCounter == myMpiRank) {
-                                int LL = this.BlockIndices_Local[iBlock].Length;
-                                int LE;
-                                if (this.BlockIndices_External[iBlock] != null) {
-                                    LE = this.BlockIndices_External[iBlock].Length;
-                                } else {
-                                    LE = 0;
-                                }
-                                int L = LL + LE;
+//                    matlab.PutSparseMatrix(Mop, "Full");
+//                    int GlobalNoOfBlocks = NoOfSchwzBlocks.MPISum();
 
 
-                                for (int i = 0; i < LL; i++) {
-                                    testX[this.BlockIndices_Local[iBlock][i]] += (g + 1);
-                                }
-                                if (LE > 0) {
-                                    for (int i = 0; i < LE; i++) {
-                                        XXExchange.Vector_Ext[this.BlockIndices_External[iBlock][i] - offset] += (g + 1);
-                                    }
-                                }
-                            } else {
-                                //nop
-                            }
 
-                            g++;
-                        }
-                    }
-                    XXExchange.TransceiveStartImReturn();
-                    XXExchange.TransceiveFinish(1.0);
+//                    for (int iGlbBlock = 0; iGlbBlock < GlobalNoOfBlocks; iGlbBlock++) {
+//                        matlab.Cmd("BlockErr({0} + 1, 1) = norm( Block{0} - Full( BlockIdx{0}, BlockIdx{0} ), inf );", iGlbBlock);
+//                    }
 
-                    matlab.Cmd("testXref = zeros({0},1);", MgMap.TotalLength);
-                    for (int iGlbBlock = 0; iGlbBlock < GlobalNoOfBlocks; iGlbBlock++) {
-                        matlab.Cmd("testXref(BlockIdx{0},1) = testXref(BlockIdx{0},1) + ({0} + 1);", iGlbBlock);
-                    }
+//                    Random rnd = new Random(myMpiRank);
+//                    double[] testRHS = new double[MgMap.LocalLength];
+//                    for (int i = 0; i < testRHS.Length; i++) {
+//                        testRHS[i] = rnd.NextDouble();
+//                    }
+//                    matlab.PutVector(testRHS, "testRHS");
 
-                    matlab.PutVector(testX, "testX");
-                    matlab.Cmd("testXErr = norm(testX - testXref, inf);");
+//                    MPIexchange<double[]> ResExchange = new MPIexchange<double[]>(MgMap, testRHS);
+//                    ResExchange.TransceiveStartImReturn();
+//                    ResExchange.TransceiveFinish(0.0);
 
-                    MultidimensionalArray BlockErr = MultidimensionalArray.Create(GlobalNoOfBlocks, 1);
-                    MultidimensionalArray RhsErr = MultidimensionalArray.Create(GlobalNoOfBlocks, 1);
-                    MultidimensionalArray testXErr = MultidimensionalArray.Create(1, 1);
+//                    int offset = MgMap.LocalLength;
 
-                    matlab.GetMatrix(BlockErr, "BlockErr");
-                    matlab.GetMatrix(RhsErr, "RhsErr");
-                    matlab.GetMatrix(testXErr, "testXErr");
+//                    int g = 0;
+//                    for (int rankCounter = 0; rankCounter < myMpisize; rankCounter++) {
+//                        int rank_NoBlks = NoOfSchwzBlocks.MPIBroadcast(rankCounter);
+//                        for (int iBlock = 0; iBlock < rank_NoBlks; iBlock++) {
+//                            double[] SubVec;
+//                            if (rankCounter == myMpiRank) {
+//                                int LL = this.BlockIndices_Local[iBlock].Length;
+//                                int LE;
+//                                if (this.BlockIndices_External[iBlock] != null) {
+//                                    LE = this.BlockIndices_External[iBlock].Length;
+//                                } else {
+//                                    LE = 0;
+//                                }
+//                                int L = LL + LE;
 
-                    matlab.Execute();
+//                                SubVec = new double[L];
+//                                for (int i = 0; i < LL; i++) {
+//                                    SubVec[i] = testRHS[this.BlockIndices_Local[iBlock][i]];
+//                                }
+//                                if (LE > 0) {
+//                                    for (int i = 0; i < LE; i++) {
+//                                        SubVec[i + LL] = ResExchange.Vector_Ext[this.BlockIndices_External[iBlock][i] - offset];
+//                                    }
+//                                }
+//                            } else {
+//                                SubVec = new double[0];
+//                            }
 
-                    for (int iGlbBlock = 0; iGlbBlock < GlobalNoOfBlocks; iGlbBlock++) {
-                        Console.WriteLine("Block #{0} Error (external? ) " + BlockErr[iGlbBlock, 0], iGlbBlock);
-                        Console.WriteLine("RHS #{0} Error " + RhsErr[iGlbBlock, 0], iGlbBlock);
-                        Debug.Assert(BlockErr[iGlbBlock, 0] == 0);
-                        Debug.Assert(RhsErr[iGlbBlock, 0] == 0);
-                    }
+//                            matlab.PutVector(SubVec, "SubVec" + g);
 
-                    Console.WriteLine("X Error " + testXErr[0, 0]);
-                    Debug.Assert(testXErr[0, 0] == 0.0);
+//                            g++;
+//                        }
+//                    }
 
-                    matlab.Dispose();
-#endif
+//                    for (int iGlbBlock = 0; iGlbBlock < GlobalNoOfBlocks; iGlbBlock++) {
+//                        matlab.Cmd("RhsErr({0} + 1, 1) = norm( SubVec{0} - testRHS( BlockIdx{0} ), inf );", iGlbBlock);
+//                    }
+
+//                    double[] testX = new double[testRHS.Length];
+//                    MPIexchangeInverse<double[]> XXExchange = new MPIexchangeInverse<double[]>(MgMap, testX);
+
+//                    g = 0;
+//                    for (int rankCounter = 0; rankCounter < myMpisize; rankCounter++) {
+//                        int rank_NoBlks = NoOfSchwzBlocks.MPIBroadcast(rankCounter);
+//                        for (int iBlock = 0; iBlock < rank_NoBlks; iBlock++) {
+
+//                            if (rankCounter == myMpiRank) {
+//                                int LL = this.BlockIndices_Local[iBlock].Length;
+//                                int LE;
+//                                if (this.BlockIndices_External[iBlock] != null) {
+//                                    LE = this.BlockIndices_External[iBlock].Length;
+//                                } else {
+//                                    LE = 0;
+//                                }
+//                                int L = LL + LE;
+
+
+//                                for (int i = 0; i < LL; i++) {
+//                                    testX[this.BlockIndices_Local[iBlock][i]] += (g + 1);
+//                                }
+//                                if (LE > 0) {
+//                                    for (int i = 0; i < LE; i++) {
+//                                        XXExchange.Vector_Ext[this.BlockIndices_External[iBlock][i] - offset] += (g + 1);
+//                                    }
+//                                }
+//                            } else {
+//                                //nop
+//                            }
+
+//                            g++;
+//                        }
+//                    }
+//                    XXExchange.TransceiveStartImReturn();
+//                    XXExchange.TransceiveFinish(1.0);
+
+//                    matlab.Cmd("testXref = zeros({0},1);", MgMap.TotalLength);
+//                    for (int iGlbBlock = 0; iGlbBlock < GlobalNoOfBlocks; iGlbBlock++) {
+//                        matlab.Cmd("testXref(BlockIdx{0},1) = testXref(BlockIdx{0},1) + ({0} + 1);", iGlbBlock);
+//                    }
+
+//                    matlab.PutVector(testX, "testX");
+//                    matlab.Cmd("testXErr = norm(testX - testXref, inf);");
+
+//                    MultidimensionalArray BlockErr = MultidimensionalArray.Create(GlobalNoOfBlocks, 1);
+//                    MultidimensionalArray RhsErr = MultidimensionalArray.Create(GlobalNoOfBlocks, 1);
+//                    MultidimensionalArray testXErr = MultidimensionalArray.Create(1, 1);
+
+//                    matlab.GetMatrix(BlockErr, "BlockErr");
+//                    matlab.GetMatrix(RhsErr, "RhsErr");
+//                    matlab.GetMatrix(testXErr, "testXErr");
+
+//                    matlab.Execute();
+
+//                    for (int iGlbBlock = 0; iGlbBlock < GlobalNoOfBlocks; iGlbBlock++) {
+//                        Console.WriteLine("Block #{0} Error (external? ) " + BlockErr[iGlbBlock, 0], iGlbBlock);
+//                        Console.WriteLine("RHS #{0} Error " + RhsErr[iGlbBlock, 0], iGlbBlock);
+//                        Debug.Assert(BlockErr[iGlbBlock, 0] == 0);
+//                        Debug.Assert(RhsErr[iGlbBlock, 0] == 0);
+//                    }
+
+//                    Console.WriteLine("X Error " + testXErr[0, 0]);
+//                    Debug.Assert(testXErr[0, 0] == 0.0);
+
+//                    matlab.Dispose();
+//#endif
             }
         }
 
@@ -1126,13 +1155,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                                 // This is a workaround, because Masking of a subblock is not implemented yet
                                 // Therefore always projection from parts onto MGO map
+
+                                // hack the hack
+
+                                int ExtLen=GetLocalandExternalDOF();
+
                                 if (Xdummy == null) {
-                                    Xdummy = new double[X.Count];
+                                    Xdummy = new double[ExtLen];
                                 } else {
                                     Xdummy.ClearEntries();
                                 }
                                 if (Resdummy == null) {
-                                    Resdummy = new double[B.Count];
+                                    Resdummy = new double[ExtLen];
                                 } else {
                                     Resdummy.ClearEntries();
                                 }
@@ -1210,6 +1244,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 //SingleFilter(xi);
                             }
 
+                            xi.SaveToTextFileDebug(String.Format("x{0}",iPart));
+
                             // accumulate block solution 'xi' to global solution 'X'
                             //X.AccV(1.0, xi, ci, default(int[]));
                             //if (ciE != null && ciE.Length > 0)
@@ -1240,6 +1276,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             } // end FuncTrace
         }
 
+
+        private int GetLocalandExternalDOF() {
+            var map = m_MgOp.Mapping;
+            int eCell = map.LocalNoOfBlocks + map.AggBasis[0].AggGrid.iLogicalCells.NoOfExternalCells - 1;
+            int eVar = m_MgOp.Mapping.AggBasis.Length-1;
+            int eN = m_MgOp.Mapping.GetLength(eCell)-1;
+            return m_MgOp.Mapping.LocalUniqueIndex(eVar,eCell,eN)+1;
+        }
 
         /// <summary>
         /// ~

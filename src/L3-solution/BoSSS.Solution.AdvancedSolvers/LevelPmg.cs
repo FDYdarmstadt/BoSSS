@@ -112,13 +112,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             var DGlowSelect = new SubBlockSelector(op.Mapping);
             DGlowSelect.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D ? m_CoarseLowOrder : m_CoarseLowOrder - 1)); // dirty hack for mixed order stokes
-            lMask = new BlockMask(DGlowSelect,false);
+            lMask = new BlockMask(DGlowSelect);
             m_lowMaskLen = lMask.GetNoOfMaskedRows;
 
             if (UseHiOrderSmoothing) {
                 var DGhighSelect = new SubBlockSelector(op.Mapping);
                 DGhighSelect.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D ? m_CoarseLowOrder : m_CoarseLowOrder - 1));
-                hMask = new BlockMask(DGhighSelect,false);
+                hMask = new BlockMask(DGhighSelect);
                 m_highMaskLen = hMask.GetNoOfMaskedRows;
 
                 BlockMsrMatrix P01HiMatrix = null;
@@ -157,8 +157,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             P01SubMatrix.SaveToTextFileSparseDebug("lowM");
             P01SubMatrix.SaveToTextFileSparse("lowM_full");
             if (!UseDiagonalPmg) {
-                P01HiMatrix.SaveToTextFileSparseDebug("hiM");
-                P01HiMatrix.SaveToTextFileSparse("hiM_full");
+                //P01HiMatrix.SaveToTextFileSparseDebug("hiM");
+                //P01HiMatrix.SaveToTextFileSparse("hiM_full");
             }
             m_op.OperatorMatrix.SaveToTextFileSparseDebug("M");
             m_op.OperatorMatrix.SaveToTextFileSparse("M_full");

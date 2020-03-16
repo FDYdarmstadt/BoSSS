@@ -43,6 +43,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                     return 0;
                 }
             }
+
         }
 
         /// <summary>
@@ -77,34 +78,33 @@ namespace BoSSS.Solution.AdvancedSolvers
                 }
             }
 
-            public BlockMsrMatrix GetExternalRows(BlockMsrMatrix target) {
+            //public BlockMsrMatrix GetExternalRows(BlockMsrMatrix target) {
 
-                var ExternalRows_BlockI0 = base.GetAllSubMatrixCellOffsets();
-                var ExternalRows_BlockN = base.GetAllSubMatrixCellLength();
-                var ExternalRowsIndices = base.m_GlobalMask;
-                var Mop = target;
-                BlockPartitioning PermRow = new BlockPartitioning(ExternalRowsIndices.Count, ExternalRows_BlockI0, ExternalRows_BlockN, Mop.MPI_Comm, i0isLocal: true);
+            //    var ExternalRows_BlockI0 = base.GetAllSubMatrixCellOffsets();
+            //    var ExternalRows_BlockN = base.GetAllSubMatrixCellLength();
+            //    var ExternalRowsIndices = base.m_GlobalMask;
+            //    var Mop = target;
+            //    BlockPartitioning PermRow = new BlockPartitioning(ExternalRowsIndices.Count, ExternalRows_BlockI0, ExternalRows_BlockN, Mop.MPI_Comm, i0isLocal: true);
 
-                // Remark: we use a permutation matrix for MPI-exchange of rows
-                //  set   Perm[l,m] = I;
-                //  then  ExternalRowsTemp[l,-]  =  Mop[m,-]
+            //    // Remark: we use a permutation matrix for MPI-exchange of rows
+            //    //  set   Perm[l,m] = I;
+            //    //  then  ExternalRowsTemp[l,-]  =  Mop[m,-]
 
-                BlockMsrMatrix Perm = new BlockMsrMatrix(PermRow, Mop._RowPartitioning);
-                for (int iRow = 0; iRow < ExternalRowsIndices.Count; iRow++) {
-                    Debug.Assert(Mop._RowPartitioning.IsInLocalRange(ExternalRowsIndices[iRow]) == false);
-                    Perm[iRow + PermRow.i0, ExternalRowsIndices[iRow]] = 1;
-                }
-#if TEST
-                matlab.PutSparseMatrix(Perm, "Perm");
-                matlab.PutSparseMatrix(BlockMsrMatrix.Multiply(Perm, Mop), "ExternalRowsTemp");
-#endif
-                return BlockMsrMatrix.Multiply(Perm, Mop);
-            }
+            //    BlockMsrMatrix Perm = new BlockMsrMatrix(PermRow, Mop._RowPartitioning);
+            //    for (int iRow = 0; iRow < ExternalRowsIndices.Count; iRow++) {
+            //        Debug.Assert(Mop._RowPartitioning.IsInLocalRange(ExternalRowsIndices[iRow]) == false);
+            //        Perm[iRow + PermRow.i0, ExternalRowsIndices[iRow]] = 1;
+            //    }
+
+            //    return BlockMsrMatrix.Multiply(Perm, Mop);
+            //}
+
         }
 
-        public BlockMask(SubBlockSelector sbs, bool includeExternalCells) {
+        public BlockMask(SubBlockSelector sbs, BlockMsrMatrix ExtRows=null) {
             m_map = sbs.GetMapping;
-            m_includeExternalCells = includeExternalCells&& m_map.MpiSize > 1;
+            m_ExtRows = ExtRows;
+            m_includeExternalCells = (ExtRows != null) && m_map.MpiSize > 1;
             BMLoc = new BlockMaskLoc(sbs);
             
             if (m_includeExternalCells) {
@@ -116,27 +116,7 @@ namespace BoSSS.Solution.AdvancedSolvers
 
         }
 
-        /// <summary>
-        /// For Debugging only! Only use this in TEST mode
-        /// </summary>
-        /// <returns></returns>
-        public List<int> GetGlobalMask_Ext() {
-#if TEST
-            return BMExt.m_GlobalMask;
-#endif
-            throw new NotSupportedException("not intended for normal usage. Only available in TEST mode");
-        }
 
-        /// <summary>
-        /// For Debugging only! Only use this in TEST mode
-        /// </summary>
-        /// <returns></returns>
-        public List<int> GetGlobalMask_Loc() {
-#if TEST
-            return BMLoc.m_GlobalMask;
-#endif
-            throw new NotSupportedException("not intended for normal usage. Only available in TEST mode");
-        }
 
         private void SetThisShitUp(BlockMaskBase[] masks) {
             List<int> tmpOffsetList = new List<int>();
@@ -173,6 +153,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         bool m_includeExternalCells;
         extNi0[][][][] StructuredNi0;
         MultigridMapping m_map;
+        BlockMsrMatrix m_ExtRows;
 
         //public MultigridMapping GenerateMappingfromMask() {
 
@@ -183,22 +164,22 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// If you want nothing special. Take this one. If you want only diagonal block matrix choose one of the other methods
         /// </summary>
         /// <returns></returns>
-        public BlockMsrMatrix GetSubBlockMatrix(BlockMsrMatrix target) {
-            if (target == null)
+        public BlockMsrMatrix GetSubBlockMatrix(BlockMsrMatrix source) {
+            if (source == null)
                 throw new ArgumentNullException();
-            if (target.NoOfRows < BMLoc.LocalDOF)
+            if (source.NoOfRows < BMLoc.LocalDOF)
                 throw new ArgumentException();
 
-            BlockMsrMatrix extBlock;
+            BlockMsrMatrix target;
             if (m_includeExternalCells) {
 
-                BlockPartitioning extBlocking = new BlockPartitioning(BMLoc.LocalDOF + BMExt.LocalDOF, SubMatrixOffsets, SubMatrixLen, csMPI.Raw._COMM.SELF);
+                BlockPartitioning targetBlocking = new BlockPartitioning(BMLoc.LocalDOF + BMExt.LocalDOF, SubMatrixOffsets, SubMatrixLen, csMPI.Raw._COMM.SELF);
 
                 //make an extended block dummy to fit local and external blocks
-                extBlock = new BlockMsrMatrix(extBlocking, extBlocking);
+                target = new BlockMsrMatrix(targetBlocking, targetBlocking);
 
                 //get the external rows via MPI exchange
-                BlockMsrMatrix ExtRowsTmp = BMExt.GetExternalRows(target);
+                var ExtRowsTmp = m_ExtRows;
 
                 int offset = BMLoc.m_GlobalMask.Count;
                 var extBlockRows = BMExt.m_GlobalMask.Count.ForLoop(i => i + offset);
@@ -206,7 +187,7 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                 //ExtRowsTmp lives at the MPI-Communicator of the target, thus the global index is related to a new partitioning and has nothing to do with the partitioning of the multigrid operator ...
                 
-                var GlobalIdxExtRows = BMExt.m_SubBlockMask;
+                var GlobalIdxExtRows = BMExt.m_GlobalMask.Count.ForLoop(i => BMExt.m_LocalMask[i] - m_map.LocalLength);
                 for (int iGlob=0; iGlob< GlobalIdxExtRows.Count(); iGlob++) {
                     Debug.Assert(GlobalIdxExtRows[iGlob] < ExtRowsTmp._RowPartitioning.LocalLength);
                     GlobalIdxExtRows[iGlob] += ExtRowsTmp._RowPartitioning.i0;
@@ -214,22 +195,22 @@ namespace BoSSS.Solution.AdvancedSolvers
                 }
                
                 //add local Block ...
-                target.WriteSubMatrixTo(extBlock, BMLoc.m_GlobalMask, default(int[]), BMLoc.m_GlobalMask, default(int[]));
+                source.WriteSubMatrixTo(target, BMLoc.m_GlobalMask, default(int[]), BMLoc.m_GlobalMask, default(int[]));
 
                 //add columns related to external rows ...
-                target.AccSubMatrixTo(1.0, extBlock, BMLoc.m_GlobalMask, default(int[]), new int[0], default(int[]), BMExt.m_GlobalMask, extBlockCols);
+                source.AccSubMatrixTo(1.0, target, BMLoc.m_GlobalMask, default(int[]), new int[0], default(int[]), BMExt.m_GlobalMask, extBlockCols);
 
                 //add external rows ...
-                ExtRowsTmp.AccSubMatrixTo(1.0, extBlock, GlobalIdxExtRows, extBlockRows, BMLoc.m_GlobalMask, default(int[]), BMExt.m_GlobalMask, extBlockCols);
+                ExtRowsTmp.AccSubMatrixTo(1.0, target, GlobalIdxExtRows, extBlockRows, BMLoc.m_GlobalMask, default(int[]), BMExt.m_GlobalMask, extBlockCols);
             } else {
                 BlockPartitioning localBlocking = new BlockPartitioning(BMLoc.LocalDOF, SubMatrixOffsets, SubMatrixLen, csMPI.Raw._COMM.SELF, i0isLocal: true);
 
-                extBlock = new BlockMsrMatrix(localBlocking);
+                target = new BlockMsrMatrix(localBlocking);
 
-                target.AccSubMatrixTo(1.0, extBlock, BMLoc.m_GlobalMask, default(int[]), BMLoc.m_GlobalMask, default(int[]));
+                source.AccSubMatrixTo(1.0, target, BMLoc.m_GlobalMask, default(int[]), BMLoc.m_GlobalMask, default(int[]));
             }
-            Debug.Assert(extBlock != null);
-            return extBlock;
+            Debug.Assert(target != null);
+            return target;
         }
 
 
@@ -272,20 +253,58 @@ namespace BoSSS.Solution.AdvancedSolvers
             List<MultidimensionalArray> Sblocks = new List<MultidimensionalArray>();
             Sblocks.AddRange(GetMaskBlocks(target, BMLoc, ignoreCellCoupling, ignoreVarCoupling, ignoreSpecCoupling));
 
-            if (m_includeExternalCells) {
-                var ExtRowsTmp = BMExt.GetExternalRows(target);
-                Sblocks.AddRange(GetMaskBlocks(ExtRowsTmp, BMExt, ignoreCellCoupling, ignoreVarCoupling, ignoreSpecCoupling));
+            if (m_includeExternalCells&& BMExt!=null) {
+                //var ExtMatrix = this.GetExternalSubBlockMatrixOnly(target);
+                //int RowOffset = m_map.iE;
+                Sblocks.AddRange(GetMaskBlocks(m_ExtRows, BMExt, ignoreCellCoupling, ignoreVarCoupling, ignoreSpecCoupling));
             }
 
             Debug.Assert(Sblocks!=null);
             return Sblocks.ToArray();
         }
 
+        //private BlockMsrMatrix GetExternalSubBlockMatrixOnly(BlockMsrMatrix target) {
+        //    BlockPartitioning Blocking = new BlockPartitioning(BMExt.LocalDOF, BMExt.GetAllSubMatrixCellOffsets(), BMExt.GetAllSubMatrixCellLength(), m_map.MPI_Comm,i0isLocal:true);
 
-        private MultidimensionalArray[] GetMaskBlocks(BlockMsrMatrix target, BlockMaskBase mask, bool ignoreCellCoupling, bool ignoreVarCoupling, bool ignoreSpecCoupling) {
-            BlockMsrMatrix ExtRowsTmp = null;
-            if (BMExt != null) {
-                ExtRowsTmp = BMExt.GetExternalRows(target);
+        //    //make an extended block dummy to fit local and external blocks
+        //    var Block = new BlockMsrMatrix(Blocking, Blocking);
+
+        //    //get the external rows via MPI exchange
+        //    BlockMsrMatrix ExtRowsTmp = m_ExtRows;
+
+        //    int offset = BMLoc.m_GlobalMask.Count;
+        //    var extBlockRows = BMExt.m_GlobalMask.Count.ForLoop(i => i );
+
+        //    //ExtRowsTmp lives at the MPI-Communicator of the target, thus the global index is related to a new partitioning and has nothing to do with the partitioning of the multigrid operator ...
+
+        //    var GlobalIdxExtRows = BMExt.m_SubBlockMask;
+        //    for (int iGlob = 0; iGlob < GlobalIdxExtRows.Count(); iGlob++) {
+        //        Debug.Assert(GlobalIdxExtRows[iGlob] < ExtRowsTmp._RowPartitioning.LocalLength);
+        //        GlobalIdxExtRows[iGlob] += ExtRowsTmp._RowPartitioning.i0;
+        //        Debug.Assert(ExtRowsTmp._RowPartitioning.IsInLocalRange(GlobalIdxExtRows[iGlob]));
+        //    }
+
+        //    ExtRowsTmp.WriteSubMatrixTo(Block, GlobalIdxExtRows, default(int[]), GlobalIdxExtRows, default(int[]));
+        //    //ExtRowsTmp.AccSubMatrixTo(1.0, extBlock, GlobalIdxExtRows, extBlockRows, BMLoc.m_GlobalMask, default(int[]), BMExt.m_GlobalMask, extBlockCols);
+        //    //public void AccSubMatrixTo<V1, V2, V3, V4, V5, V6>(
+        //    //double alpha, IMutableMatrixEx Target,
+        //    //V1 RowIndicesSource, V2 RowIndicesTarget,
+        //    //V3 ColumnIndicesSource, V4 ColIndicesTarget,
+        //    //V5 ExternalColumnIndicesSource, V6 ExternalColIndicesTarget)
+        //    return Block;
+        //}
+
+
+        private MultidimensionalArray[] GetMaskBlocks(BlockMsrMatrix source, BlockMaskBase mask, bool ignoreCellCoupling, bool ignoreVarCoupling, bool ignoreSpecCoupling) {
+            //BlockMsrMatrix ExtRowsTmp = null;
+            //if (BMExt != null) {
+            //    ExtRowsTmp = BMExt.GetExternalRows(target);
+            //}
+            bool ListenToGlobalId = true;
+            // pay attention to offset of local stuff ...
+            // target is concidered to 
+            if (mask.GetType() == typeof(BlockMaskExt)) {
+                ListenToGlobalId = false;
             }
 
             int NoOfCells = mask.m_StructuredNi0.Length;
@@ -315,8 +334,10 @@ namespace BoSSS.Solution.AdvancedSolvers
                                         for (int jMode = 0; jMode < mask.m_StructuredNi0[jLoc][jVar][jSpc].Length; jMode++) {
                                             extNi0 RowNi0 = mask.m_StructuredNi0[iLoc][iVar][iSpc][iMode];
                                             extNi0 ColNi0 = mask.m_StructuredNi0[jLoc][jVar][jSpc][jMode];
-                                            int Targeti0 = RowNi0.Gi0;
+                                            int Targeti0 = ListenToGlobalId ? RowNi0.Gi0 : RowNi0.Li0 + source._RowPartitioning.i0 - m_map.LocalLength;
                                             int Targetj0 = ColNi0.Gi0;
+                                            //int Targeti0 = RowNi0.Gi0;
+                                            //int Targetj0 = ColNi0.Gi0;
                                             int Subi0 = mask.GetRelativeSubBlockOffset(iLoc, iVar, iSpc, iMode);
                                             int Subj0 = mask.GetRelativeSubBlockOffset(jLoc, jVar, jSpc, jMode);
                                             int Subie = Subi0 + RowNi0.N - 1;
@@ -328,13 +349,15 @@ namespace BoSSS.Solution.AdvancedSolvers
 
 
                                                 try {
-                                                    target.ReadBlock(Targeti0, Targetj0, tmp
+                                                    source.ReadBlock(Targeti0, Targetj0, tmp
                                                 );
                                                 } catch (Exception e) {
                                                     Console.WriteLine("row: " + Targeti0);
                                                     Console.WriteLine("col: " + Targetj0);
                                                     throw new Exception(e.Message);
                                                 }
+                                            //ilPSP.Environment.StdoutOnlyOnRank0 = false;
+                                            //if (!ListenToGlobalId) Console.WriteLine("proc_{0}: row {1}, col {2}", m_map.MpiRank, Targeti0, Targetj0);
 
                                         }
                                     }
@@ -363,9 +386,9 @@ namespace BoSSS.Solution.AdvancedSolvers
             if (m_includeExternalCells) {
                 BlockPartitioning extBlocking = new BlockPartitioning(BMLoc.LocalDOF + BMExt.LocalDOF, SubMatrixOffsets, SubMatrixLen, csMPI.Raw._COMM.SELF);
                 submatrix = new BlockMsrMatrix(extBlocking);
-                var ExtRowsTmp = BMExt.GetExternalRows(target);
+                var ExtRowsTmp = m_ExtRows;
                 GetMaskMatrix(submatrix, target, BMLoc, ignoreCellCoupling, ignoreVarCoupling, ignoreSpecCoupling);
-                GetMaskMatrix(ExtRowsTmp, target, BMExt, ignoreCellCoupling, ignoreVarCoupling, ignoreSpecCoupling);
+                GetMaskMatrix(submatrix, ExtRowsTmp, BMExt, ignoreCellCoupling, ignoreVarCoupling, ignoreSpecCoupling);
             } else {
                 int Loclength = BMLoc.LocalDOF;
                 var tmpN = BMLoc.GetAllSubMatrixCellLength();
@@ -380,12 +403,19 @@ namespace BoSSS.Solution.AdvancedSolvers
 
 
       
-        private void GetMaskMatrix(BlockMsrMatrix submatrixempty, BlockMsrMatrix target, BlockMaskBase mask, bool ignoreCellCoupling, bool ignoreVarCoupling, bool ignoreSpecCoupling) {
+        private void GetMaskMatrix(BlockMsrMatrix target, BlockMsrMatrix source, BlockMaskBase mask, bool ignoreCellCoupling, bool ignoreVarCoupling, bool ignoreSpecCoupling) {
 
-            var SubMSR = submatrixempty;
+            var SubMSR = target;
 
             int SubRowIdx = 0;
             int SubColIdx = 0;
+
+            bool ListenToGlobalId = true;
+            // pay attention to offset of local stuff ...
+            // target is concidered to 
+            if (mask.GetType() == typeof(BlockMaskExt)) {
+                ListenToGlobalId = false;
+            }
 
             int auxIdx = 0;
             for (int iLoc = 0; iLoc < mask.m_StructuredNi0.Length; iLoc++) {
@@ -410,7 +440,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                                             int[] ColIdx = new int[] { jLoc, jVar, jSpc, jMode };
                                             extNi0 RowNi0 = mask.m_StructuredNi0[iLoc][iVar][iSpc][iMode];
                                             extNi0 ColNi0 = mask.m_StructuredNi0[jLoc][jVar][jSpc][jMode];
-                                            int Targeti0 = RowNi0.Gi0;
+                                            int Targeti0 = ListenToGlobalId? RowNi0.Gi0: RowNi0.Li0 + source._RowPartitioning.i0 - m_map.LocalLength;
                                             int Targetj0 = ColNi0.Gi0;
 
                                             var tmpBlock = MultidimensionalArray.Create(RowNi0.N, ColNi0.N);
@@ -418,7 +448,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                                             Debug.Assert(m_map.IsInLocalRange(Targeti0) && m_map.IsInLocalRange(Targetj0) && mask.GetType() == typeof(BlockMaskLoc) || mask.GetType() == typeof(BlockMaskExt));
 
                                             try {
-                                                target.ReadBlock(Targeti0, Targetj0,
+                                                source.ReadBlock(Targeti0, Targetj0,
                                                 tmpBlock);
                                             } catch (Exception e) {
                                                 Console.WriteLine("row: " + Targeti0);
@@ -451,16 +481,17 @@ namespace BoSSS.Solution.AdvancedSolvers
         public void AccVecToFull<V, W>(W accVector, V targetVector)
             where V : IList<double>
             where W : IList<double> {
-            if (targetVector.Count() != m_map.LocalLength)
-                throw new ArgumentException("Length of targetVector != Length of original");
 
             if (m_includeExternalCells) {
-                if (accVector.Count() != BMLoc.LocalDOF+BMExt.LocalDOF)
+                if (targetVector.Count() != GetLocalandExternalDOF())
+                    throw new ArgumentException("Length of targetVector not equal Length of original");
+                if (accVector.Count() != BMLoc.LocalDOF + BMExt.LocalDOF)
                     throw new ArgumentException("accVector length is not equal to length of mask");
                 targetVector.AccV(1.0, accVector, BMLoc.m_LocalMask, default(int[]));
-                targetVector.AccV(1.0, accVector, BMExt.m_LocalMask, default(int[]));
+                targetVector.AccV(1.0, accVector, BMExt.m_LocalMask, default(int[]),b_index_shift: BMLoc.LocalDOF);
             } else {
-                
+                if (targetVector.Count() != m_map.LocalLength)
+                    throw new ArgumentException("Length of targetVector != Length of original");
                 if (accVector.Count() != BMLoc.LocalDOF)
                     throw new ArgumentException("accVector length is not equal to length of mask");
                 targetVector.AccV(1.0, accVector, BMLoc.m_LocalMask, default(int[]));
@@ -478,10 +509,11 @@ namespace BoSSS.Solution.AdvancedSolvers
         public void AccVecCellwiseToFull<V, W>(W accVector, int iCell, V targetVector)
             where V : IList<double>
             where W : IList<double> {
-            if (targetVector.Count() != m_map.LocalLength)
-                throw new ArgumentException("Length of targetVector not equal Length of original");
+
 
             if (m_includeExternalCells) {
+                if (targetVector.Count() != GetLocalandExternalDOF())
+                    throw new ArgumentException("Length of targetVector not equal Length of original");
                 if (iCell >= BMLoc.m_StructuredNi0.Length+ BMExt.m_StructuredNi0.Length)
                     throw new ArgumentOutOfRangeException("iCell is greater than Cellindex of mask");
                 BlockMaskBase mask;
@@ -492,11 +524,20 @@ namespace BoSSS.Solution.AdvancedSolvers
                 }
                 AuxAcc(mask, accVector, iCell, targetVector);
             } else {
+                if (targetVector.Count() != m_map.LocalLength)
+                    throw new ArgumentException("Length of targetVector != Length of original");
                 if (iCell >= BMLoc.m_StructuredNi0.Length)
                     throw new ArgumentOutOfRangeException("iCell is greater than Cellindex of mask");
                 AuxAcc(BMLoc, accVector, iCell, targetVector);
             }
 
+        }
+
+        private int GetLocalandExternalDOF() {
+            int eCell = m_map.LocalNoOfBlocks + m_map.AggBasis[0].AggGrid.iLogicalCells.NoOfExternalCells - 1;
+            int eVar = m_map.AggBasis.Length-1;
+            int eN = m_map.GetLength(eCell)-1;
+            return m_map.LocalUniqueIndex(eVar, eCell, eN)+1;
         }
 
         public double[] GetSubBlockVec( IList<double> extvector, IList<double> locvector)
@@ -529,12 +570,13 @@ namespace BoSSS.Solution.AdvancedSolvers
         private void AuxAcc<V, W>(BlockMaskBase mask, W accVector, int iCell, V targetVector)
             where V : IList<double>
             where W : IList<double> {
-            if (iCell > mask.m_StructuredNi0.Length - 1)
+            int nCell = mask.GetType() == typeof(BlockMaskExt) ? iCell - m_map.LocalNoOfBlocks : iCell;
+            if (nCell > mask.m_StructuredNi0.Length - 1)
                 throw new ArgumentOutOfRangeException("iCell is greater than Cells in mask");
-            if (accVector.Count() != mask.GetCellwiseLength(iCell))
+            if (accVector.Count() != mask.GetCellwiseLength(nCell))
                 throw new ArgumentException("accVector length is not equal to length of mask");
 
-            var Cidx = mask.GetCellwiseLocalidx(iCell);
+            var Cidx = mask.GetCellwiseLocalidx(nCell);
             Debug.Assert(accVector.Count() == Cidx.Count());
             targetVector.AccV(1.0, accVector, Cidx, default(int[]));
         }
@@ -548,9 +590,10 @@ namespace BoSSS.Solution.AdvancedSolvers
         public double[] GetVectorCellwise(IList<double> fullVector, int iCell) {
 
             double[] tmp;
-            if (fullVector.Count() != m_map.LocalLength)
-                throw new ArgumentException("Length of targetVector not equal Length of original");
+            
             if (m_includeExternalCells) {
+                if (fullVector.Count() != GetLocalandExternalDOF())
+                    throw new ArgumentException("Length of targetVector not equal Length of original");
                 if (iCell >= BMLoc.m_StructuredNi0.Length + BMExt.m_StructuredNi0.Length)
                     throw new ArgumentOutOfRangeException("iCell is greater than Cellindex of mask");
                 BlockMaskBase mask;
@@ -561,6 +604,8 @@ namespace BoSSS.Solution.AdvancedSolvers
                 }
                 tmp=GetAuxAccVec(mask, fullVector, iCell);
             } else {
+                if (fullVector.Count() != m_map.LocalLength)
+                    throw new ArgumentException("Length of targetVector not equal Length of original");
                 if (iCell >= BMLoc.m_StructuredNi0.Length)
                     throw new ArgumentOutOfRangeException("iCell is greater than Cellindex of mask");
                 tmp=GetAuxAccVec(BMLoc, fullVector, iCell);
@@ -570,8 +615,9 @@ namespace BoSSS.Solution.AdvancedSolvers
         }
 
         private double[] GetAuxAccVec(BlockMaskBase mask, IList<double> fullVector, int iCell) {
-            double[] subVector = new double[mask.GetCellwiseLength(iCell)];
-            var Cidx = mask.GetCellwiseLocalidx(iCell);
+            int nCell=mask.GetType() == typeof(BlockMaskExt)? iCell-m_map.LocalNoOfBlocks:iCell;
+            double[] subVector = new double[mask.GetCellwiseLength(nCell)];
+            var Cidx = mask.GetCellwiseLocalidx(nCell);
             Debug.Assert(subVector.Length == Cidx.Length);
             ArrayTools.GetSubVector<int[], int[], double>(fullVector, subVector, Cidx);
             return subVector;
@@ -583,15 +629,16 @@ namespace BoSSS.Solution.AdvancedSolvers
             /// </summary>
             /// <param name="fullVector"></param>
         public double[] GetSubBlockVec(IList<double> fullVector) {
-            if (fullVector.Count() != m_map.LocalLength)
-                throw new ArgumentException("Length of targetVector not equal Length of original");
-
             double[] subVector;
             if (m_includeExternalCells) {
-                subVector=new double[BMLoc.LocalDOF+BMExt.LocalDOF];
+                if (fullVector.Count() != GetLocalandExternalDOF())
+                    throw new ArgumentException("Length of targetVector not equal Length of original");
+                subVector =new double[BMLoc.LocalDOF+BMExt.LocalDOF];
                 subVector.AccV(1.0, fullVector, default(int[]), BMLoc.m_LocalMask);
-                subVector.AccV(1.0, fullVector, default(int[]), BMExt.m_LocalMask);
+                subVector.AccV(1.0, fullVector,default(int[]), BMExt.m_LocalMask, acc_index_shift: BMLoc.LocalDOF);
             } else {
+                if (fullVector.Count() != m_map.LocalLength)
+                    throw new ArgumentException("Length of targetVector not equal Length of original");
                 subVector = new double[BMLoc.LocalDOF];
                 subVector.AccV(1.0, fullVector, default(int[]), BMLoc.m_LocalMask);
             }
@@ -599,5 +646,247 @@ namespace BoSSS.Solution.AdvancedSolvers
         }
 
 
+
+
+        public static void MatlabDebugging(BlockMask[] BMs, MultigridOperator Mop) {
+
+            int NoOfSchwzBlocks = BMs.Length;
+            int myMpisize = Mop.Mapping.MpiSize;
+            int myMpiRank = Mop.Mapping.MpiRank;
+            var MopMap = Mop.Mapping;
+
+            ilPSP.Connectors.Matlab.BatchmodeConnector matlab;
+            matlab = new ilPSP.Connectors.Matlab.BatchmodeConnector();
+
+
+            List<BlockMsrMatrix> Blocks = new List<BlockMsrMatrix>();
+            var BlkIdx_gI_lR = NoOfSchwzBlocks.ForLoop(b => new List<int>());
+            var BlkIdx_gI_eR = NoOfSchwzBlocks.ForLoop(b => new List<int>());
+            int[][] BlockIndices_Local = new int[NoOfSchwzBlocks][];
+            int[][] BlockIndices_External = new int[NoOfSchwzBlocks][];
+
+            int LocalI0 = MopMap.i0;
+            for (int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) {
+                BlkIdx_gI_lR[iPart] = BMs[iPart].BMLoc.m_GlobalMask;
+                BlkIdx_gI_eR[iPart] = BMs[iPart].BMExt.m_GlobalMask;
+                var locallist = new List<int>();
+                var extlist = new List<int>();
+                foreach (int lIdx in BlkIdx_gI_lR[iPart]) {
+                    locallist.Add(lIdx - LocalI0);
+                }
+                foreach (int eIdx in BlkIdx_gI_eR[iPart]) {
+                    extlist.Add(eIdx - LocalI0);
+                }
+                BlockIndices_Local[iPart] = locallist.ToArray();
+                BlockIndices_External[iPart] = extlist.ToArray();
+                Blocks.Add(BMs[iPart].GetSubBlockMatrix(Mop.OperatorMatrix));
+            }
+
+
+            int globalBlockCounter = 0;
+            for (int rankCounter = 0; rankCounter < myMpisize; rankCounter++) {
+                int rank_NoBlks = NoOfSchwzBlocks.MPIBroadcast(rankCounter);
+                if (rankCounter == myMpiRank)
+                    Debug.Assert(rank_NoBlks == NoOfSchwzBlocks);
+
+                for (int iBlock = 0; iBlock < rank_NoBlks; iBlock++) {
+                    double[] vec;
+                    if (rankCounter == myMpiRank) {
+                        vec = ArrayTools.Cat(BlkIdx_gI_lR[iBlock], BlkIdx_gI_eR[iBlock]).Select(ii => ((double)(ii + 1))).ToArray();
+                    } else {
+                        vec = new double[0];
+                    }
+
+                    matlab.PutVector(vec, string.Format("BlockIdx{0}", globalBlockCounter));
+
+                    globalBlockCounter++;
+                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                }
+
+            }
+
+            //matlab.PutSparseMatrix(Perm, "Perm");
+            //matlab.PutSparseMatrix(ExternalRowsTemp, "ExternalRowsTemp");
+
+            globalBlockCounter = 0;
+            for (int rankCounter = 0; rankCounter < myMpisize; rankCounter++) {
+                int rank_NoBlks = NoOfSchwzBlocks.MPIBroadcast(rankCounter);
+                for (int iBlock = 0; iBlock < rank_NoBlks; iBlock++) {
+                    BlockMsrMatrix Block;
+                    if (rankCounter == myMpiRank) {
+                        Block = Blocks[iBlock];
+                    } else {
+                        Block = null;
+                    }
+
+                    matlab.PutSparseMatrix(Block, string.Format("Block{0}", globalBlockCounter));
+
+                    globalBlockCounter++;
+                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                }
+            }
+
+
+            Console.WriteLine("Matlab dir: " + matlab.WorkingDirectory);
+
+            matlab.PutSparseMatrix(Mop.OperatorMatrix, "Full");
+            int GlobalNoOfBlocks = NoOfSchwzBlocks.MPISum();
+
+
+
+            for (int iGlbBlock = 0; iGlbBlock < GlobalNoOfBlocks; iGlbBlock++) {
+                matlab.Cmd("BlockErr({0} + 1, 1) = norm( Block{0} - Full( BlockIdx{0}, BlockIdx{0} ), inf );", iGlbBlock);
+            }
+
+            Random rnd = new Random(myMpiRank);
+            double[] testRHS = new double[MopMap.LocalLength];
+            for (int i = 0; i < testRHS.Length; i++) {
+                testRHS[i] = rnd.NextDouble();
+            }
+            matlab.PutVector(testRHS, "testRHS");
+
+            MPIexchange<double[]> ResExchange = new MPIexchange<double[]>(Mop.Mapping, testRHS);
+            ResExchange.TransceiveStartImReturn();
+            ResExchange.TransceiveFinish(0.0);
+
+            int offset = MopMap.LocalLength;
+
+            int g = 0;
+            for (int rankCounter = 0; rankCounter < myMpisize; rankCounter++) {
+                int rank_NoBlks = NoOfSchwzBlocks.MPIBroadcast(rankCounter);
+                for (int iBlock = 0; iBlock < rank_NoBlks; iBlock++) {
+                    double[] SubVec;
+                    if (rankCounter == myMpiRank) {
+                        int LL = BlockIndices_Local[iBlock].Length;
+                        int LE;
+                        if (BlockIndices_External[iBlock] != null) {
+                            LE = BlockIndices_External[iBlock].Length;
+                        } else {
+                            LE = 0;
+                        }
+                        int L = LL + LE;
+
+                        SubVec = new double[L];
+                        for (int i = 0; i < LL; i++) {
+                            SubVec[i] = testRHS[BlockIndices_Local[iBlock][i]];
+                        }
+                        if (LE > 0) {
+                            for (int i = 0; i < LE; i++) {
+                                SubVec[i + LL] = ResExchange.Vector_Ext[BlockIndices_External[iBlock][i] - offset];
+                            }
+                        }
+                    } else {
+                        SubVec = new double[0];
+                    }
+
+                    matlab.PutVector(SubVec, "SubVec" + g);
+
+                    g++;
+                }
+            }
+
+            for (int iGlbBlock = 0; iGlbBlock < GlobalNoOfBlocks; iGlbBlock++) {
+                matlab.Cmd("RhsErr({0} + 1, 1) = norm( SubVec{0} - testRHS( BlockIdx{0} ), inf );", iGlbBlock);
+            }
+
+            double[] testX = new double[testRHS.Length];
+            MPIexchangeInverse<double[]> XXExchange = new MPIexchangeInverse<double[]>(MopMap, testX);
+
+            g = 0;
+            for (int rankCounter = 0; rankCounter < myMpisize; rankCounter++) {
+                int rank_NoBlks = NoOfSchwzBlocks.MPIBroadcast(rankCounter);
+                for (int iBlock = 0; iBlock < rank_NoBlks; iBlock++) {
+
+                    if (rankCounter == myMpiRank) {
+                        int LL = BlockIndices_Local[iBlock].Length;
+                        int LE;
+                        if (BlockIndices_External[iBlock] != null) {
+                            LE = BlockIndices_External[iBlock].Length;
+                        } else {
+                            LE = 0;
+                        }
+                        int L = LL + LE;
+
+
+                        for (int i = 0; i < LL; i++) {
+                            testX[BlockIndices_Local[iBlock][i]] += (g + 1);
+                        }
+                        if (LE > 0) {
+                            for (int i = 0; i < LE; i++) {
+                                XXExchange.Vector_Ext[BlockIndices_External[iBlock][i] - offset] += (g + 1);
+                            }
+                        }
+                    } else {
+                        //nop
+                    }
+
+                    g++;
+                }
+            }
+            XXExchange.TransceiveStartImReturn();
+            XXExchange.TransceiveFinish(1.0);
+
+            matlab.Cmd("testXref = zeros({0},1);", MopMap.TotalLength);
+            for (int iGlbBlock = 0; iGlbBlock < GlobalNoOfBlocks; iGlbBlock++) {
+                matlab.Cmd("testXref(BlockIdx{0},1) = testXref(BlockIdx{0},1) + ({0} + 1);", iGlbBlock);
+            }
+
+            matlab.PutVector(testX, "testX");
+            matlab.Cmd("testXErr = norm(testX - testXref, inf);");
+
+            MultidimensionalArray BlockErr = MultidimensionalArray.Create(GlobalNoOfBlocks, 1);
+            MultidimensionalArray RhsErr = MultidimensionalArray.Create(GlobalNoOfBlocks, 1);
+            MultidimensionalArray testXErr = MultidimensionalArray.Create(1, 1);
+
+            matlab.GetMatrix(BlockErr, "BlockErr");
+            matlab.GetMatrix(RhsErr, "RhsErr");
+            matlab.GetMatrix(testXErr, "testXErr");
+
+            matlab.Execute();
+
+            for (int iGlbBlock = 0; iGlbBlock < GlobalNoOfBlocks; iGlbBlock++) {
+                Console.WriteLine("Block #{0} Error (external? ) " + BlockErr[iGlbBlock, 0], iGlbBlock);
+                Console.WriteLine("RHS #{0} Error " + RhsErr[iGlbBlock, 0], iGlbBlock);
+                Debug.Assert(BlockErr[iGlbBlock, 0] == 0);
+                Debug.Assert(RhsErr[iGlbBlock, 0] == 0);
+            }
+
+            Console.WriteLine("X Error " + testXErr[0, 0]);
+            Debug.Assert(testXErr[0, 0] == 0.0);
+
+            matlab.Dispose();
+
+        }
+
+        public static BlockMsrMatrix GetAllExternalRows(MultigridOperator Mop) {
+
+            var map = Mop.Mapping;
+            var op = Mop.OperatorMatrix;
+
+            var extcells = map.AggGrid.iLogicalCells.NoOfExternalCells.ForLoop(i => i + map.LocalNoOfBlocks);
+
+            var SBS = new SubBlockSelector(map);
+            SBS.CellSelector(extcells, false);
+            var AllExtMask = new BlockMaskExt(SBS);
+
+            var ExternalRows_BlockI0 = AllExtMask.GetAllSubMatrixCellOffsets();
+            var ExternalRows_BlockN = AllExtMask.GetAllSubMatrixCellLength();
+            var ExternalRowsIndices = AllExtMask.m_GlobalMask;
+
+            BlockPartitioning PermRow = new BlockPartitioning(ExternalRowsIndices.Count, ExternalRows_BlockI0, ExternalRows_BlockN, op.MPI_Comm, i0isLocal: true);
+
+            BlockMsrMatrix Perm = new BlockMsrMatrix(PermRow, op._RowPartitioning);
+            for (int iRow = 0; iRow < ExternalRowsIndices.Count; iRow++) {
+                Debug.Assert(op._RowPartitioning.IsInLocalRange(ExternalRowsIndices[iRow]) == false);
+                Perm[iRow + PermRow.i0, ExternalRowsIndices[iRow]] = 1;
+            }
+
+            Perm.SaveToTextFileSparseDebug("Perm");
+
+            return BlockMsrMatrix.Multiply(Perm, op);
+        }
     }
+
 }

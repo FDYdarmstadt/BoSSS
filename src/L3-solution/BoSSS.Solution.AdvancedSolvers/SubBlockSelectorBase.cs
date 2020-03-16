@@ -119,7 +119,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="ListOfCellIdx"></param>
         /// <param name="global"></param>
         /// <returns></returns>
-        public SubBlockSelectorBase CellSelector(List<int> ListOfCellIdx, bool global = true) {
+        public SubBlockSelectorBase CellSelector<V>(V ListOfCellIdx, bool global = true)
+            where V : IList<int>{
             int LocNoOfBlocks = m_NoLocalCells;
             int GlobNoOfBlocks = m_NoTotalCells;
 
@@ -149,7 +150,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         tmpList.Add(tmpIdx);
                 }
             } else {
-                tmpList = ListOfCellIdx;
+                tmpList = ListOfCellIdx.ToList();
             }
             this.m_CellFilter = GetListInstruction(tmpList);
             return this;
@@ -584,6 +585,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int SubOffset = 0;
             int Ni0Length = 0;
             int MaskLen = 0;
+            int prevLocie = m_map.LocalNoOfBlocks; 
             var tmpCell = new List<extNi0[][][]>();
 
             // local caching of filter functions 
@@ -595,7 +597,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             // loop over cells...
             for (int iLoc=0; iLoc < NoOfCells; iLoc++) {
-                int jLoc = m_CellOffset + iLoc; //sic:to address external cells offset has to be concidered, you know ...
+                int jLoc = m_CellOffset + iLoc; //sic:to address correctly, external cells offset has to be concidered, you know ...
                 if (!m_sbs.CellFilter(jLoc))
                     continue;
                 var tmpVar = new List<extNi0[][]>();
@@ -621,7 +623,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 int LocalModeOffset = m_Ni0[degree].i0 + LocalOffset;
                                 int ModeLength = m_Ni0[degree].N;
                                 var newNi0 = new extNi0(LocalModeOffset, GlobalModeOffset, SubOffset, ModeLength);
-                                SubOffset += ModeLength;
+                                    SubOffset += ModeLength;
                                     // Fill int lists
                                     for (int i = 0; i < newNi0.N; i++) {
                                         Globalint.Add(newNi0.Gi0 + i);
