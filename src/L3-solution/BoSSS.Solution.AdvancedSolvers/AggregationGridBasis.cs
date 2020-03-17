@@ -398,7 +398,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     Stopwatch stop = new Stopwatch();
                     stop.Start();
                     int maxMGlevel = agSeq.Length - 1;
-                    InjectorCoarse = AggregationGridCurvedInjector.AggregateCurvedCells(agSeq.Last(), maxDgBasis);
+                    AggregationGridCurvedInjector.AggregateCurvedCells(agSeq.Last(), maxDgBasis, InjectorCoarse);
 
                     // extract the hierarchical level to level injectors, recursive function
                     AggregationGridCurvedInjector.ExtractInjectorCurved(agSeq, maxDgBasis, Injectors, InjectorCoarse, maxMGlevel);
@@ -460,7 +460,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
             // plot aggregation basis
-            PlotAggregationBasis(agSeq, maxDgBasis, Injectors);
+            //PlotAggregationBasis(agSeq, maxDgBasis, Injectors);
 
             // create basis sequence
             // ---------------------

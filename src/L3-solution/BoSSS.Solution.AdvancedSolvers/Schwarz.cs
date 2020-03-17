@@ -431,13 +431,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if (!this.MtxFull._ColPartitioning.EqualsPartition(op.OperatorMatrix._ColPartitioning))
                         throw new ArgumentException("Matrix has changed, unable to re-use");
 #if DEBUG
-                    if (!object.ReferenceEquals(this.MtxFull, op.OperatorMatrix)) {
-                        BlockMsrMatrix Check = this.MtxFull.CloneAs();
-                        Check.Acc(-1.0, op.OperatorMatrix);
-                        if (Check.InfNorm() != 0.0) {
-                            throw new ArgumentException("Matrix has changed, unable to re-use");
-                        }
-                    }
+                    //if (!object.ReferenceEquals(this.MtxFull, op.OperatorMatrix)) {
+                    //    BlockMsrMatrix Check = this.MtxFull.CloneAs();
+                    //    Check.Acc(-1.0, op.OperatorMatrix);
+                    //    if (Check.InfNorm() != 0.0) {
+                    //        throw new ArgumentException("Matrix has changed, unable to re-use");
+                    //    }
+                    //}
 #endif
                     if (this.m_BlockingStrategy.GetNoOfBlocks(op) != this.blockSolvers.Count()) {
                         throw new ArgumentException("Blocking, unable to re-use");
