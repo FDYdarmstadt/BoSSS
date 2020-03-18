@@ -48,7 +48,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// <param name="xkelem"></param>
         /// <param name="_DbPath"></param>
         /// <returns></returns>
-        public static XNSE_Control CW(int p = 2, int xkelem = 32, string _DbPath = null) {
+        public static XNSE_Control CW(int p = 2, int xkelem = 16, string _DbPath = null) {
 
             //int p = 2;
             //int xkelem = 32;
@@ -67,8 +67,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.DbPath = _DbPath;
             C.savetodb = C.DbPath != null;
             C.ProjectName = "XNSE/CapillaryWave";
-            C.Tags.Add("Popinet");
-            C.Tags.Add("Testcase1");
+            //C.Tags.Add("Popinet");
+            //C.Tags.Add("Testcase1");
 
             //C.LogValues = XNSE_Control.LoggingValues.Wavelike;
 
@@ -116,13 +116,18 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region physics  
 
+            double rho_l = 1e-2;
+            double rho_h = 1e-2;
+            double mu_l = 1e-3;
+            double mu_h = 1e-3;
+            double sigma = 3e-2;
 
             // Testcase1:
-            double rho_l = 1e-3;
-            double rho_h = 1e-3;
-            double mu_l = 1e-4;
-            double mu_h = 1e-4;
-            double sigma = 3e-2;
+            //double rho_l = 1e-3;
+            //double rho_h = 1e-3;
+            //double mu_l = 1e-4;
+            //double mu_h = 1e-4;
+            //double sigma = 3e-2;
 
             // for spatial convergence
             //double rho_l = 1e-2;
@@ -132,7 +137,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //double sigma = 3e-4;
 
 
-            // unstable configuration
             C.PhysicalParameters.rho_A = rho_l;
             C.PhysicalParameters.rho_B = rho_h;
             C.PhysicalParameters.mu_A = mu_l;
@@ -150,7 +154,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
 
             double lambda = 1;
-            double A0 = lambda / 100;
+            double A0 = lambda / 10;
             Func<double, double> PeriodicFunc = x => A0 * Math.Sin(x * 2 * Math.PI / lambda);
 
 
@@ -249,10 +253,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
 
-            //C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.Fourier;
+            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+            C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.JumpGradJump2;
+
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
             //C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
             //C.AdvancedDiscretizationOptions.surfTensionMode = Solution.XNSECommon.SurfaceTensionMode.Curvature_Projected;
@@ -279,20 +286,20 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF3;
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF2;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             //C.dt_increment = 20;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
             double rho = rho_l;         // Testcase1
             //double dt = Math.Sqrt(rho * Math.Pow((1 / (double)xkelem), 3) / (Math.PI * sigma));             // !!!
-            double dt = 1e-5;
+            double dt = 1e-3;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
             //double omega0 = Math.Sqrt(sigma * Math.Pow((2 * Math.PI / lambda), 3) / (2.0 * rho));
             //C.NoOfTimesteps = (int)Math.Ceiling((25 / omega0) / dt);                                        // !!!
-            C.NoOfTimesteps = 100;                                     // !!!
+            C.NoOfTimesteps = 10000;                                     // !!!
 
             C.saveperiod = 1;
 
@@ -852,6 +859,440 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
         }
 
+
+        public static XNSE_Control CW_BrokenLevelSet(int p = 2, int xkelem = 8, string _DbPath = null) {
+
+            //int p = 2;
+            //int xkelem = 32;
+
+            XNSE_Control C = new XNSE_Control();
+
+            //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+
+            // basic database options
+            // ======================
+            #region db
+
+            //_DbPath = @"\\dc1\userspace\smuda\cluster\CWp3_spatialConv";
+            //_DbPath = @"D:\local\local_Testcase_databases\Testcase_CapillaryWave";
+
+            C.DbPath = _DbPath;
+            C.savetodb = C.DbPath != null;
+            C.ProjectName = "XNSE/CapillaryWave";
+            //C.Tags.Add("Popinet");
+            //C.Tags.Add("Testcase1");
+
+            //C.LogValues = XNSE_Control.LoggingValues.Wavelike;
+
+            #endregion
+
+            // DG degrees
+            // ==========
+            #region degrees
+
+            C.FieldOptions.Add("VelocityX", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("VelocityY", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Pressure", new FieldOpts() {
+                Degree = p - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("GravityY", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("PhiDG", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Curvature", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("KineticEnergy", new FieldOpts() {
+                Degree = 2 * p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+
+            #endregion
+
+
+            // Physical Parameters
+            // ===================
+            #region physics  
+
+            double rho = 10;
+            double mu = 0.01;
+            double sigma = 0.01;
+
+            C.PhysicalParameters.rho_A = rho;
+            C.PhysicalParameters.rho_B = rho;
+            C.PhysicalParameters.mu_A = mu;
+            C.PhysicalParameters.mu_B = mu;
+            C.PhysicalParameters.Sigma = sigma;
+
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = true;
+
+            #endregion
+
+
+            // grid generation
+            // ==============
+            #region grid
+
+            double L = 1.0;
+
+            C.GridFunc = delegate () {
+                double[] Xnodes = GenericBlas.Linspace(0, L, xkelem + 1);
+                double[] Ynodes = GenericBlas.Linspace(-2.0 * L / 2.0, 2.0 * L / 2.0, (2 * xkelem));
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
+
+                grd.EdgeTagNames.Add(1, "wall_lower");
+                grd.EdgeTagNames.Add(2, "wall_upper");
+                grd.EdgeTagNames.Add(3, "freeslip_left");
+                grd.EdgeTagNames.Add(4, "freeslip_right");
+
+
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte et = 0;
+                    if (Math.Abs(X[1] + (2.0 * L / 2.0)) <= 1.0e-8)
+                        et = 1;
+                    if (Math.Abs(X[1] - (2.0 * L / 2.0)) <= 1.0e-8)
+                        et = 2;
+                    if (Math.Abs(X[0]) <= 1.0e-8)
+                        et = 3;
+                    if (Math.Abs(X[0] - L) <= 1.0e-8)
+                        et = 4;
+
+                    return et;
+                });
+
+                return grd;
+            };
+
+
+            #endregion
+
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+            C.AddBoundaryValue("wall_lower");
+            C.AddBoundaryValue("wall_upper");
+            C.AddBoundaryValue("freeslip_left");
+            C.AddBoundaryValue("freeslip_right");
+
+            #endregion
+
+
+            // Initial Values
+            // ==============
+            #region init
+
+            double A0 = L / 40;
+            C.InitialValues_Evaluators.Add("Phi", (X => X[1] - (A0 * Math.Abs(Math.Sin(X[0] * 2.0 * Math.PI / L) - (Math.Sqrt(2.0) / 2.0)) + 0.002 * Math.Sign(X[0] - L / 2))));
+            //C.InitialValues_Evaluators.Add("Phi", (X => X[1] - (A0 * Math.Sin(X[0] * 2.0 * Math.PI / L) + 0.002 * Math.Sign(X[0] - L / 2))));
+            //C.InitialValues_Evaluators.Add("Phi", (X => X[1] - (A0 * Math.Abs(Math.Sin(X[0] * 2.0 * Math.PI / L) - (Math.Sqrt(2.0) / 2.0)))));
+
+            //C.InitialValues_Evaluators.Add("VelocityX#A", X => 0.0);
+            //C.InitialValues_Evaluators.Add("VelocityX#B", X => 0.0);
+
+
+            //var database = new DatabaseInfo(_DbPath);
+            //Guid restartID = new Guid(restartSession);
+            //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, null);
+
+            #endregion
+
+            // additional parameters
+            // =====================
+
+            //double[] param = new double[3];
+            //param[0] = lambda;  // wavelength
+            //param[1] = A0;      // initial disturbance
+            //param[2] = 0.0;      // y-gravity
+            //C.AdditionalParameters = param;
+
+            // misc. solver options
+            // ====================
+            #region solver
+
+            //C.solveKineticEnergyEquation = true;
+            //C.ComputeEnergyProperties = true;
+            //C.CheckInterfaceProps = true;
+
+            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
+            //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
+
+            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
+            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.MaxSolverIterations = 100;
+            //C.Solver_MaxIterations = 100;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.LinearSolver.ConvergenceCriterion = 1e-8;
+            //C.Solver_ConvergenceCriterion = 1e-8;
+            C.LevelSet_ConvergenceCriterion = 1e-6;
+
+
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+            //C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
+
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            //C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.surfaceDivergence;
+
+            //C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
+            //C.AdvancedDiscretizationOptions.surfTensionMode = Solution.XNSECommon.SurfaceTensionMode.Curvature_Projected;
+            //C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
+
+            #endregion
+
+
+            // specialized Fourier Level-Set
+            // =============================
+
+
+            int numSp = 640;
+            //C.FourierLevSetControl = new FourierLevSetControl(FourierType.Planar, numSp, L, PeriodicFunc, 1.0 / (double)xkelem) {
+            //    FourierEvolve = Fourier_Evolution.MaterialPoints,
+            //    Timestepper = FourierLevelSet_Timestepper.ExplicitEuler,
+            //    InterpolationType = Interpolationtype.CubicSplineInterpolation,
+            //};
+
+
+            // Timestepping
+            // ============
+            #region time
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF3;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.dt_increment = 20;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+
+            double dt = Math.Sqrt(rho * Math.Pow((1 / (double)xkelem), 3) / (Math.PI * sigma))/8.0;             // !!!
+            //double dt = 1e-3;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 1000;
+            //double omega0 = Math.Sqrt(sigma * Math.Pow((2 * Math.PI / lambda), 3) / (2.0 * rho));
+            //C.NoOfTimesteps = (int)Math.Ceiling((25 / omega0) / dt);                                        // !!!
+            C.NoOfTimesteps = 10000;                                     // !!!
+
+            C.saveperiod = 1;
+
+            #endregion
+
+
+            return C;
+
+        }
+
+
+        public static XNSE_Control CW_OneCell(int p = 2) {
+
+
+            XNSE_Control C = new XNSE_Control();
+
+            //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+
+            // basic database options
+            // ======================
+            #region db
+
+            C.DbPath = null; 
+            C.savetodb = C.DbPath != null;
+            C.ProjectName = "XNSE/CapillaryWave";
+
+            #endregion
+
+
+            // DG degrees
+            // ==========
+            #region degrees
+
+            C.FieldOptions.Add("VelocityX", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("VelocityY", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Pressure", new FieldOpts() {
+                Degree = p - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("PhiDG", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Curvature", new FieldOpts() {
+                Degree = 2*p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+
+            C.RegisterUtilitiesToIOFields = true;
+
+            #endregion
+
+
+            // Physical Parameters
+            // ===================
+            #region physics  
+
+            double rho = 10;
+            double mu = 0.01;
+            double sigma = 0.01;
+
+            C.PhysicalParameters.rho_A = rho;
+            C.PhysicalParameters.rho_B = rho;
+            C.PhysicalParameters.mu_A = mu;
+            C.PhysicalParameters.mu_B = mu;
+            C.PhysicalParameters.Sigma = sigma;
+
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = true;
+
+            #endregion
+
+
+            // grid generation
+            // ==============
+            #region grid
+
+            double L = 1.0;
+            int cellFactor = 3;
+
+            C.GridFunc = delegate () {
+                double[] Xnodes = GenericBlas.Linspace(0, L * cellFactor, cellFactor + 1);
+                double[] Ynodes = GenericBlas.Linspace(-(3.0 / 2.0) * L, (3.0 / 2.0) * L, 4);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
+
+                grd.EdgeTagNames.Add(1, "wall");
+                grd.EdgeTagNames.Add(2, "pressure_outlet");
+                //grd.EdgeTagNames.Add(3, "navierslip_linear");
+
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte et = 0;
+                    if (Math.Abs(X[1] + (3.0 / 2.0) * L) <= 1.0e-8)
+                        et = 1;
+                    if (Math.Abs(X[1] - (3.0 / 2.0) * L) <= 1.0e-8)
+                        et = 1;
+                    if (Math.Abs(X[0]) <= 1.0e-8)
+                        et = 2;
+                    if (Math.Abs(X[0] - L * cellFactor) <= 1.0e-8)
+                        et = 2;
+
+                    return et;
+                });
+
+                return grd;
+            };
+
+
+            #endregion
+
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+            C.AddBoundaryValue("wall");
+            C.AddBoundaryValue("pressure_outlet");
+            //C.AddBoundaryValue("navierslip_linear");
+
+            #endregion
+
+
+            // Initial Values
+            // ==============
+            #region init
+
+            double A0 = L / 10;
+            C.InitialValues_Evaluators.Add("Phi", X => X[1] - A0 * Math.Sin(X[0] * 2.0 * Math.PI / (L * cellFactor)) );
+
+            #endregion
+
+
+            // misc. solver options
+            // ====================
+            #region solver
+
+            C.CheckJumpConditions = true;
+
+            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
+            //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
+
+            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
+            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.MaxSolverIterations = 100;
+            //C.Solver_MaxIterations = 100;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.LinearSolver.ConvergenceCriterion = 1e-8;
+            //C.Solver_ConvergenceCriterion = 1e-8;
+            C.LevelSet_ConvergenceCriterion = 1e-6;
+
+
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+            //C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
+
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            //C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.surfaceDivergence;
+
+            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
+            //C.AdvancedDiscretizationOptions.surfTensionMode = Solution.XNSECommon.SurfaceTensionMode.Curvature_Projected;
+            //C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
+
+            #endregion
+
+
+            // Timestepping
+            // ============
+            #region time
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF2;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+
+            double dt = Math.Sqrt(rho / (cellFactor * (Math.PI * sigma))) / 8.0;           
+            //double dt = 1e-3;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 20000;
+            C.NoOfTimesteps = 10000;
+
+            C.saveperiod = 1;
+
+            #endregion
+
+
+            return C;
+        }
     }
 
 

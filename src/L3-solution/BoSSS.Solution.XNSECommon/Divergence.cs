@@ -155,7 +155,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         LevelSetTracker m_lsTrk;
 
         public DivergenceAtLevelSet(int _D, LevelSetTracker lsTrk, double _rhoA, double _rhoB,
-            bool _MaterialInterface, double vorZeichen, bool RescaleConti, bool _staticInt = false,
+            bool _MaterialInterface, double vorZeichen, bool RescaleConti, 
             bool _weighted = false, double _wA = 1.0, double _wB = 1.0) {
             this.D = _D;
             this.rhoA = _rhoA;
@@ -171,8 +171,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
                 scaleB /= rhoB;
             }
 
-            this.staticInt = _staticInt;
-
             this.weighted = _weighted;
             this.wA = _wA;
             this.wB = _wB;
@@ -185,8 +183,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
 
         double scaleA;
         double scaleB;
-
-        bool staticInt;
 
         bool weighted;
         double wA;

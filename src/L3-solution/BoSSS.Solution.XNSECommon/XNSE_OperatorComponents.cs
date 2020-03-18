@@ -256,7 +256,7 @@ namespace BoSSS.Solution.XNSECommon {
             // pressure gradient
             // =================
             if (config.isPressureGradient) {
-                var presLs = new Operator.Pressure.PressureFormAtLevelSet(d, D, LsTrk);
+                var presLs = new Operator.Pressure.PressureFormAtLevelSet(d, D, LsTrk, _freeSurface: dntParams.freeSurfaceFlow, _pFree: physParams.pFree);
                 comps.Add(presLs);
             }
 
@@ -273,7 +273,8 @@ namespace BoSSS.Solution.XNSECommon {
                         comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, muA, muB, penalty * 1.0, d, false));
                         break;
                     case ViscosityMode.FullySymmetric:
-                        comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d, dntParams.UseWeightedAverages));
+                        comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d, 
+                            _freeSurface: dntParams.freeSurfaceFlow, _weighted: dntParams.UseWeightedAverages));
                         break;
                     case ViscosityMode.Viscoelastic:
                         //comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, 1 / reynoldsA, 1 / reynoldsB, penalty * 1.0, d, false));
@@ -420,9 +421,25 @@ namespace BoSSS.Solution.XNSECommon {
                 // stabilization
                 // =============
 
-                if (dntParams.UseLevelSetStabilization) {
+                switch(dntParams.STFstabilization) {
+                    case DoNotTouchParameters.SurfaceTensionForceStabilization.GradUxGradV: {
+                            XOp.EquationComponents[CodName].Add(new LevelSetStabilization(d, D, 0.1, LsTrk));
+                            break;
+                        }
+                    case DoNotTouchParameters.SurfaceTensionForceStabilization.surfaceDivergence: {
+                            XOp.SurfaceElementOperator.EquationComponents[CodName].Add(new DynamicSurfaceTension_LB_SurfaceVelocityDivergence(d, D, 0.1));
+                            break;
+                        }
+                    case DoNotTouchParameters.SurfaceTensionForceStabilization.EdgeDissipation: {
+                            XOp.SurfaceElementOperator.EquationComponents[CodName].Add(new DynamicSurfaceTension_LB_EdgeDissipation(d, D, sigma, 0.0));
+                            break;
+                        }
+                    case DoNotTouchParameters.SurfaceTensionForceStabilization.None:
+                        break;
+                    default:
+                        throw new NotImplementedException();
+                        
 
-                    XOp.EquationComponents[CodName].Add(new LevelSetStabilization(d, D, LsTrk));
                 }
 
             }

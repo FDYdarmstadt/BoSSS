@@ -53,7 +53,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
-            bool steadyInterface = true;
+            bool steadyInterface = false;
 
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
             //_DbPath = @"D:\local\local_test_db";
@@ -313,10 +313,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = true;
-            C.solveKineticEnergyEquation = true;
+            C.ComputeEnergyProperties = false;
+            C.solveKineticEnergyEquation = false;
 
-            C.CheckJumpConditions = true;
+            C.CheckJumpConditions = false;
             C.CheckInterfaceProps = true;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
@@ -350,15 +350,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.Option_LevelSetEvolution = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
             C.Option_LevelSetEvolution = (steadyInterface) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
+            C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.JumpGradJump2;
 
-
-            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.FullBoussinesqScriven;
+            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
             //C.PhysicalParameters.mu_I = 1.0 * sigma;
             //C.PhysicalParameters.lambda_I = 1.0 * sigma;
 
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
-            C.AdvancedDiscretizationOptions.UseLevelSetStabilization = false;
+            C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
             C.AdvancedDiscretizationOptions.UseWeightedAverages = false;
             //C.InterAverage = XNSE_Control.InterfaceAveraging.viscosity;
@@ -651,7 +651,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ComputeEnergyProperties = false;
 
             C.CheckJumpConditions = false;
-            C.CheckInterfaceProps = false;
+            C.CheckInterfaceProps = true;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
@@ -732,7 +732,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //        break;
 
             //}
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF3;
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF2;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
             C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;

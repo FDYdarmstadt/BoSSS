@@ -1191,7 +1191,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     if(m_BDF_Timestepper != null) {
 
                         updateSolutionParams.SetAll(true);
-                        lockUpdate = false;
+                        lockUpdate = true;
 
                         m_BDF_Timestepper.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
                         
@@ -1679,10 +1679,10 @@ namespace BoSSS.Application.XNSE_Solver {
                                 this.Curvature.GetExtremalValuesInCell(out minCurv, out maxCurv, j);
                                 double max_AbsCurv = Math.Max(Math.Abs(minCurv), Math.Abs(maxCurv));
 
-                                double curv_thrshld = mean_curv;
-                                if (curv_thrshld > curv_max && CurrentLevel == this.Control.RefinementLevel) {
+                                double curv_thrshld = max_AbsCurv; // mean_curv;
+                                if (curv_thrshld > curv_max && CurrentLevel < this.Control.RefinementLevel) {
                                     DesiredLevel_j++;
-                                } else if (curv_thrshld < (curv_max / 2) && CurrentLevel == this.Control.RefinementLevel + 1) {
+                                } else if (curv_thrshld < (curv_max / 2.0) && CurrentLevel == this.Control.RefinementLevel) {
                                     DesiredLevel_j--;
                                 }
                                 break;
@@ -1844,8 +1844,8 @@ namespace BoSSS.Application.XNSE_Solver {
                     // compute curvature for levelindicator 
                     if(this.Control.RefineStrategy == XNSE_Control.RefinementStrategy.CurvatureRefined) {
                         CurvatureAlgorithms.CurvatureDriver(
-                            SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint,
-                            CurvatureAlgorithms.FilterConfiguration.Default,
+                            SurfaceStressTensor_IsotropicMode.Curvature_Projected,
+                            CurvatureAlgorithms.FilterConfiguration.NoFilter,
                             this.Curvature, out VectorField<SinglePhaseField> LevSetGradient, this.LsTrk,
                             this.m_HMForder, this.DGLevSet.Current);
                     }

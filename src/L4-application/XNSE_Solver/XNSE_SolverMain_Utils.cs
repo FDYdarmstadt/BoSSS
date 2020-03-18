@@ -125,11 +125,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 this.SurfaceTensionForce = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(basis, d + "-SurfaceTensionForce")));
                 base.RegisterField(this.SurfaceTensionForce, register);
 
-                basis = new Basis(this.GridData, this.Control.FieldOptions[VariableNames.Pressure].Degree + this.Control.FieldOptions[VariableNames.VelocityX].Degree + (this.Control.FieldOptions[VariableNames.VelocityX].Degree - 1));
-                this.EnergyBalanceAtInterface = new SinglePhaseField(basis, "EnergyBalanceAtInterface");
-                base.RegisterField(this.EnergyBalanceAtInterface, register);
+                //basis = new Basis(this.GridData, this.Control.FieldOptions[VariableNames.Pressure].Degree + this.Control.FieldOptions[VariableNames.VelocityX].Degree + (this.Control.FieldOptions[VariableNames.VelocityX].Degree - 1));
+                //this.EnergyBalanceAtInterface = new SinglePhaseField(basis, "EnergyBalanceAtInterface");
+                //base.RegisterField(this.EnergyBalanceAtInterface, register);
 
-                basis = new Basis(this.GridData, this.Control.FieldOptions[VariableNames.VelocityX].Degree);
+                basis = new Basis(this.GridData, this.Control.FieldOptions[VariableNames.Pressure].Degree * 2);
                 this.InterfaceDivergence = new SinglePhaseField(basis, "InterfaceDivergence");
                 base.RegisterField(this.InterfaceDivergence, register);
 
@@ -156,14 +156,14 @@ namespace BoSSS.Application.XNSE_Solver {
         private void Preprocessing(int TimestepInt, double phystime, double dt, TimestepNumber TimestepNo) {
 
 
-            if (this.Control.CheckInterfaceProps) {
-                double CL_length = this.GetContactLineLength();
-                Console.WriteLine("contact line length = {0}", CL_length);
+            //if (this.Control.CheckInterfaceProps) {
+            //    double CL_length = this.GetContactLineLength();
+            //    Console.WriteLine("contact line length = {0}", CL_length);
 
-                double[] props = this.ComputeSphericalPorperties();
-                Console.WriteLine("volume = {0}", props[0]);
-                Console.WriteLine("surface = {0}", props[1]);
-            }
+            //    double[] props = this.ComputeSphericalPorperties();
+            //    Console.WriteLine("volume = {0}", props[0]);
+            //    Console.WriteLine("surface = {0}", props[1]);
+            //}
 
 
             //if (this.Control.solveKineticEnergyEquation) {
@@ -216,7 +216,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     this.MomentumBalanceAtInterface[d].Clear();
                     this.SurfaceTensionForce[d].Clear();
                 }
-                this.EnergyBalanceAtInterface.Clear();
+                //this.EnergyBalanceAtInterface.Clear();
                 this.InterfaceDivergence.Clear();
 
 
@@ -252,8 +252,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
                 // energy balance
-                EnergyUtils.ProjectEnergyBalanceAtInterface(this.EnergyBalanceAtInterface, 1.0, this.Pressure, this.XDGvelocity.Velocity, meanVelocity, this.Curvature,
-                    this.Control.PhysicalParameters);
+                //EnergyUtils.ProjectEnergyBalanceAtInterface(this.EnergyBalanceAtInterface, 1.0, this.Pressure, this.XDGvelocity.Velocity, meanVelocity, this.Curvature,
+                //    this.Control.PhysicalParameters);
 
                 //double energyBal_Norm = XNSEUtils.EnergyBalanceNormAtInterface(this.Pressure, this.XDGvelocity.Velocity, meanVelocity, this.Curvature,
                 //    this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B, this.Control.PhysicalParameters.Sigma, this.m_HMForder);
@@ -416,13 +416,38 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             // ====================================
-            // divergence of velocity
+            // divergence of velocity and curvature
             // ====================================
 
             //ilPSP.Environment.StdoutOnlyOnRank0 = false;
             this.divVelocity.Clear();
             this.divVelocity.Divergence(1.0, this.XDGvelocity.Velocity);
             //ilPSP.Environment.StdoutOnlyOnRank0 = true;
+
+
+            CurvatureAlgorithms.CurvatureDriver(
+                SurfaceStressTensor_IsotropicMode.Curvature_Projected,
+                CurvatureAlgorithms.FilterConfiguration.NoFilter,   // fromC0
+                this.Curvature, out this.LevSetGradient, this.LsTrk,
+                this.m_HMForder, this.DGLevSet.Current);
+
+
+            CurvatureAlgorithms.CurvatureDriver(
+                SurfaceStressTensor_IsotropicMode.Curvature_Projected,
+                new CurvatureAlgorithms.FilterConfiguration() {
+                    gradOpt = CurvatureAlgorithms.GradientOption.LevSet,
+                    hessOpt = CurvatureAlgorithms.HessianOption.LevSetGrad,
+                    useFiltLevSetGrad = false,
+                    useFiltLevSetHess = false,
+                    FilterCurvatureCycles = 0,
+                    LevelSetSource = CurvatureAlgorithms.LevelSetSource.fromDG,
+                    PatchRecoveryDomWidth = 0,
+                    NoOfPatchRecoverySweeps = 0,
+                    CurvatureLimiting = false
+                },
+                this.DGCurvature, out this.DGLevSetGradient, this.LsTrk,
+                this.m_HMForder, this.DGLevSet.Current);
+
 
 
             // ====================================
@@ -457,6 +482,10 @@ namespace BoSSS.Application.XNSE_Solver {
             //        Option: Control.LSContiProjectionMethod
             //        );
 
+
+            //var returnValues = this.ComputeContactLineQuantities();
+            //List<double> contactangles = returnValues.Item3;
+            //Console.WriteLine("contact angles: {0},{1}", contactangles.ToArray()[0], contactangles.ToArray()[1]);
 
             // ====================================
             // IO related to Fourier level set
@@ -706,6 +735,96 @@ namespace BoSSS.Application.XNSE_Solver {
             // interface mean angle
 
             return new double[] { length, area };
+        }
+
+
+        public Tuple<List<double[]>, List<double[]>, List<double>> ComputeContactLineQuantities() {
+
+            List<double[]> contactPoints = new List<double[]>();
+            List<double[]> contactVelocities = new List<double[]>();
+            List<double> contactAngles = new List<double>();
+
+            ConventionalDGField[] meanVelocity = GetMeanVelocityFromXDGField(this.CurrentVel);
+
+            var Phi = (LevelSet)LsTrk.LevelSets[0];
+            var LevelSetGradient = new VectorField<SinglePhaseField>(Grid.SpatialDimension, Phi.Basis, SinglePhaseField.Factory);
+            LevelSetGradient.Gradient(1.0, (SinglePhaseField)LsTrk.LevelSets[0]);
+            SinglePhaseField[] Normals = LevelSetGradient.ToArray();
+
+            XQuadSchemeHelper SchemeHelper = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadSchemeHelper;
+            EdgeQuadratureScheme SurfaceElement_Edge = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(this.LsTrk.GetSpeciesId("A"));
+
+            var QuadDom = SurfaceElement_Edge.Domain;
+            var boundaryEdge = ((GridData)this.GridData).GetBoundaryEdgeMask().GetBitMask();
+            var boundaryCutEdge = QuadDom.Intersect(new EdgeMask((GridData)this.GridData, boundaryEdge, MaskType.Geometrical));
+
+            var factory = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(0, LsTrk.GridDat.Grid.RefElements[0]);
+            SurfaceElement_Edge = new EdgeQuadratureScheme(factory, boundaryCutEdge);
+
+            EdgeQuadrature.GetQuadrature(new int[] { 5 }, LsTrk.GridDat,
+                SurfaceElement_Edge.Compile(LsTrk.GridDat, 0),
+                delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
+
+                                // contact point
+                                NodeSet Enode_l = QR.Nodes;
+                    int trf = LsTrk.GridDat.Edges.Edge2CellTrafoIndex[i0, 0];
+                    NodeSet Vnode_l = Enode_l.GetVolumeNodeSet(LsTrk.GridDat, trf);
+                    NodeSet Vnode_g = Vnode_l.CloneAs();
+                    int cell = LsTrk.GridDat.Edges.CellIndices[i0, 0];
+                    LsTrk.GridDat.TransformLocal2Global(Vnode_l, Vnode_g, cell);
+                                //Console.WriteLine("contact point: ({0},{1})", Vnode_g[0, 0], Vnode_g[0, 1]);
+
+                                int D = Grid.SpatialDimension;
+                    for (int d = 0; d < D; d++) {
+                        EvalResult[0, 0, d] = Vnode_g[0, d];
+                    }
+
+                                // contact line velocity
+                                MultidimensionalArray U_IN = MultidimensionalArray.Create(new int[] { 1, 1, D });
+                    MultidimensionalArray U_OUT = MultidimensionalArray.Create(new int[] { 1, 1, D });
+                    for (int d = 0; d < D; d++) {
+                        (meanVelocity[d] as SinglePhaseField).EvaluateEdge(i0, length, QR.Nodes, U_IN.ExtractSubArrayShallow(-1, -1, d), U_OUT.ExtractSubArrayShallow(-1, -1, d));
+                    }
+
+                    for (int d = 0; d < D; d++) {
+                        EvalResult[0, 0, 2 + d] = U_IN[0, 0, d];
+                    }
+
+                                // contact angle
+                                MultidimensionalArray normal_IN = MultidimensionalArray.Create(new int[] { 1, 1, D });
+                    MultidimensionalArray normal_OUT = MultidimensionalArray.Create(new int[] { 1, 1, D });
+                    for (int d = 0; d < D; d++) {
+                        Normals[d].EvaluateEdge(i0, length, QR.Nodes, normal_IN.ExtractSubArrayShallow(-1, -1, d), normal_OUT.ExtractSubArrayShallow(-1, -1, d));
+                    }
+
+                    double theta_surf = Math.Atan2(normal_IN[0, 0, 1], normal_IN[0, 0, 0]);
+                    double theta_edge = Math.Atan2(LsTrk.GridDat.Edges.NormalsForAffine[i0, 1], LsTrk.GridDat.Edges.NormalsForAffine[i0, 0]);
+                    double theta = (theta_surf - theta_edge) * (180 / Math.PI);
+
+                    EvalResult[0, 0, 2 * D] = (theta > 180) ? theta - 180 : theta;
+                                //Console.WriteLine("contact angle = {0}", EvalResult[0, 0, 2]);
+
+                            },
+                delegate (int i0, int length, MultidimensionalArray ResultsOfIntegration) {
+                    int D = Grid.SpatialDimension;
+                    for (int i = 0; i < length; i++) {
+                        if (ResultsOfIntegration[i, 2 * D] != 0.0) {
+                            contactAngles.Add(Math.Abs(ResultsOfIntegration[i, 2 * D]));
+                            double[] cp = new double[D];
+                            double[] cpV = new double[D];
+                            for (int d = 0; d < D; d++) {
+                                cp[d] = ResultsOfIntegration[i, d];
+                                cpV[d] = ResultsOfIntegration[i, 2 + d];
+                            }
+                            contactPoints.Add(cp);
+                            contactVelocities.Add(cpV);
+                        }
+                    }
+                }
+            ).Execute();
+
+            return new Tuple<List<double[]>, List<double[]>, List<double>>(contactPoints, contactVelocities, contactAngles);
+
         }
 
 
@@ -977,88 +1096,15 @@ namespace BoSSS.Application.XNSE_Solver {
                         List<double[]> contactVelocities = new List<double[]>();
                         List<double> contactAngles = new List<double>();
 
-                        ConventionalDGField[] meanVelocity = GetMeanVelocityFromXDGField(this.CurrentVel);
-
-                        var Phi = (LevelSet)LsTrk.LevelSets[0];
-                        var LevelSetGradient = new VectorField<SinglePhaseField>(Grid.SpatialDimension, Phi.Basis, SinglePhaseField.Factory);
-                        LevelSetGradient.Gradient(1.0, (SinglePhaseField)LsTrk.LevelSets[0]);
-                        SinglePhaseField[] Normals = LevelSetGradient.ToArray();
-
-                        XQuadSchemeHelper SchemeHelper = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadSchemeHelper;
-                        EdgeQuadratureScheme SurfaceElement_Edge = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(this.LsTrk.GetSpeciesId("A"));
-
-                        var QuadDom = SurfaceElement_Edge.Domain;
-                        var boundaryEdge = ((GridData)this.GridData).GetBoundaryEdgeMask().GetBitMask();
-                        var boundaryCutEdge = QuadDom.Intersect(new EdgeMask((GridData)this.GridData, boundaryEdge, MaskType.Geometrical));
-
-                        var factory = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(0, LsTrk.GridDat.Grid.RefElements[0]);
-                        SurfaceElement_Edge = new EdgeQuadratureScheme(factory, boundaryCutEdge);
-
-                        EdgeQuadrature.GetQuadrature(new int[] { 5 }, LsTrk.GridDat,
-                            SurfaceElement_Edge.Compile(LsTrk.GridDat, 0),
-                            delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
-
-                                // contact point
-                                NodeSet Enode_l = QR.Nodes;
-                                int trf = LsTrk.GridDat.Edges.Edge2CellTrafoIndex[i0, 0];
-                                NodeSet Vnode_l = Enode_l.GetVolumeNodeSet(LsTrk.GridDat, trf);
-                                NodeSet Vnode_g = Vnode_l.CloneAs();
-                                int cell = LsTrk.GridDat.Edges.CellIndices[i0, 0];
-                                LsTrk.GridDat.TransformLocal2Global(Vnode_l, Vnode_g, cell);
-                                //Console.WriteLine("contact point: ({0},{1})", Vnode_g[0, 0], Vnode_g[0, 1]);
-
-                                int D = Grid.SpatialDimension;
-                                for (int d = 0; d < D; d++) {
-                                    EvalResult[0, 0, d] = Vnode_g[0, d];
-                                }
-
-                                // contact line velocity
-                                MultidimensionalArray U_IN = MultidimensionalArray.Create(new int[] { 1, 1, D });
-                                MultidimensionalArray U_OUT = MultidimensionalArray.Create(new int[] { 1, 1, D });
-                                for (int d = 0; d < D; d++) {
-                                    (meanVelocity[d] as SinglePhaseField).EvaluateEdge(i0, length, QR.Nodes, U_IN.ExtractSubArrayShallow(-1, -1, d), U_OUT.ExtractSubArrayShallow(-1, -1, d));
-                                }
-
-                                for (int d = 0; d < D; d++) {
-                                    EvalResult[0, 0, 2 + d] = U_IN[0, 0, d];
-                                }
-
-                                // contact angle
-                                MultidimensionalArray normal_IN = MultidimensionalArray.Create(new int[] { 1, 1, D });
-                                MultidimensionalArray normal_OUT = MultidimensionalArray.Create(new int[] { 1, 1, D });
-                                for (int d = 0; d < D; d++) {
-                                    Normals[d].EvaluateEdge(i0, length, QR.Nodes, normal_IN.ExtractSubArrayShallow(-1, -1, d), normal_OUT.ExtractSubArrayShallow(-1, -1, d));
-                                }
-
-                                double theta_surf = Math.Atan2(normal_IN[0, 0, 1], normal_IN[0, 0, 0]);
-                                double theta_edge = Math.Atan2(LsTrk.GridDat.Edges.NormalsForAffine[i0, 1], LsTrk.GridDat.Edges.NormalsForAffine[i0, 0]);
-                                double theta = (theta_surf - theta_edge) * (180 / Math.PI);
-
-                                EvalResult[0, 0, 2 * D] = (theta > 180) ? theta - 180 : theta;
-                                //Console.WriteLine("contact angle = {0}", EvalResult[0, 0, 2]);
-
-                            },
-                            delegate (int i0, int length, MultidimensionalArray ResultsOfIntegration) {
-                                int D = Grid.SpatialDimension;
-                                for (int i = 0; i < length; i++) {
-                                    if (ResultsOfIntegration[i, 2 * D] != 0.0) {
-                                        contactAngles.Add(Math.Abs(ResultsOfIntegration[i, 2 * D]));
-                                        double[] cp = new double[D];
-                                        double[] cpV = new double[D];
-                                        for (int d = 0; d < D; d++) {
-                                            cp[d] = ResultsOfIntegration[i, d];
-                                            cpV[d] = ResultsOfIntegration[i, 2 + d];
-                                        }
-                                        contactPoints.Add(cp);
-                                        contactVelocities.Add(cpV);
-                                    }
-                                }
-                            }
-                        ).Execute();
-
+                        var returnValues = this.ComputeContactLineQuantities();
+                        contactPoints = returnValues.Item1;
+                        contactVelocities = returnValues.Item2;
+                        contactAngles = returnValues.Item3;
 
                         for (int p = 0; p < contactAngles.Count; p++) {
-                            string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", TimestepNo, phystime, contactPoints.ElementAt(p)[0], contactPoints.ElementAt(p)[1], contactVelocities.ElementAt(p)[0], contactVelocities.ElementAt(p)[1], contactAngles.ElementAt(p));
+                            string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", TimestepNo, phystime,
+                                contactPoints.ElementAt(p)[0], contactPoints.ElementAt(p)[1], 
+                                contactVelocities.ElementAt(p)[0], contactVelocities.ElementAt(p)[1], contactAngles.ElementAt(p));
                             Log.WriteLine(line);
                         }
                         Log.Flush();

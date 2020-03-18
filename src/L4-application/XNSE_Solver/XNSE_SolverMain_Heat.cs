@@ -117,7 +117,7 @@ namespace BoSSS.Application.XNSE_Solver {
             this.ResidualHeat = new XDGField(this.Temperature.Basis, "ResidualHeat");
             base.RegisterField(this.ResidualHeat);
 
-            this.HeatFlux = new VectorField<XDGField>(D.ForLoop(d => new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.HeatFluxVectorComponent(d)].Degree), VariableNames.HeatFluxVectorComponent(d))));
+            this.HeatFlux = new VectorField<XDGField>(D.ForLoop(d => new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.Temperature].Degree), VariableNames.HeatFluxVectorComponent(d))));
             base.RegisterField(this.HeatFlux);
             if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
                 this.ResidualAuxHeatFlux = new VectorField<XDGField>(D.ForLoop(d => new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.HeatFluxVectorComponent(d)].Degree), VariableNames.ResidualAuxHeatFluxVectorComponent(d))));

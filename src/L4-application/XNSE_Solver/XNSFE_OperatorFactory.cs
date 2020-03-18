@@ -459,9 +459,9 @@ namespace BoSSS.Application.XNSE_Solver {
                     HeatFluxParam = storedParams.GetSubVector(2 * D + 4, D);
                 }
             }
-            if (ExtParams != null) {
-                HeatFluxParam = ExtParams;
-            }
+            //if (ExtParams != null) {
+            //    HeatFluxParam = ExtParams;
+            //}
 
             #endregion
 

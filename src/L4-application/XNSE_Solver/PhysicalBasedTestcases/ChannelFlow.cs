@@ -50,7 +50,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            string _DbPath = @"D:\local\local_test_db";
+            string _DbPath = null; // @"D:\local\local_test_db";
 
             //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
@@ -119,7 +119,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.PhysicalParameters.rho_B = 1;
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.mu_B = 1;
-            double sigma = 0.0;
+            double sigma = 0.1;
             C.PhysicalParameters.Sigma = sigma;
 
             //C.PhysicalParameters.beta_S = 0.05;
@@ -135,11 +135,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===============
             #region grid
 
-            double L = 2;
+            double L = 4;
             double H = 1;
 
             C.GridFunc = delegate () {
-                double[] Xnodes = GenericBlas.Linspace(0, L, 2 * kelem + 1);
+                double[] Xnodes = GenericBlas.Linspace(0, L, 4 * kelem + 1);
                 double[] Ynodes = GenericBlas.Linspace(0, H, kelem + 1);
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true);
                 //var grd = Grid2D.UnstructuredTriangleGrid(Xnodes, Ynodes);
@@ -193,17 +193,17 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region init
 
 
-            Func<double[], double> PhiFunc = (X => -1.0); // X[1] - (H / 2.1)); // + (H/20)*Math.Cos(8 * Math.PI * X[0] / L));
-            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+            //Func<double[], double> PhiFunc = (X => -1.0); // X[1] - (H / 2.1)); // + (H/20)*Math.Cos(8 * Math.PI * X[0] / L));
+            //C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
 
             double[] center = new double[] { H / 2.0, H / 2.0 };
-            double radius = 0.15;
+            double radius = 0.2;
 
-            //C.InitialValues_Evaluators.Add("Phi",
-            //    //(X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2())   // quadratic form
-            //    (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius)  // signed-distance form
-            //    );
+            C.InitialValues_Evaluators.Add("Phi",
+                //(X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2())   // quadratic form
+                (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius)  // signed-distance form
+                );
 
 
             double U = 0.125;
@@ -304,7 +304,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             //C.ComputeEnergyProperties = true;
-            C.solveKineticEnergyEquation = true;
+            //C.solveKineticEnergyEquation = true;
             ////C.CheckJumpConditions = true;
             C.kinEViscousDiscretization = Solution.EnergyCommon.KineticEnergyViscousSourceTerms.laplaceKinE;
             //C.kinEPressureDiscretization = Solution.EnergyCommon.KineticEnergyPressureSourceTerms.divergence;
@@ -324,11 +324,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
-            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None;
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
             //C.Phi = (X,t) => ((X[0] - (center[0]+U*t)).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius;
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.None;
+            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+            C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.JumpGradJump2;
+
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.SkipSolveAndEvaluateResidual = true;
@@ -344,17 +346,17 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.CrankNicolson;
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF2;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-            double dt = 1e-4;
+            double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 5000;
+            C.NoOfTimesteps = 500;
             C.saveperiod = 10;
 
             #endregion

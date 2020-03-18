@@ -296,11 +296,23 @@ namespace BoSSS.Solution.XNSECommon {
         [DataMember]
         public SurfaceSressTensor SurfStressTensor = SurfaceSressTensor.Isotropic;
 
+        public enum SurfaceTensionForceStabilization {
+
+            None,
+
+            GradUxGradV,
+
+            surfaceDivergence,
+
+            EdgeDissipation
+
+        }
+
         /// <summary>
         /// 
         /// </summary>
         [DataMember]
-        public bool UseLevelSetStabilization = false;
+        public SurfaceTensionForceStabilization STFstabilization = SurfaceTensionForceStabilization.None;
 
 
         /// <summary>
@@ -308,6 +320,12 @@ namespace BoSSS.Solution.XNSECommon {
         /// </summary>
         [DataMember]
         public bool UseWeightedAverages = false;
+
+        /// <summary>
+        /// switch for free surface flows, thus slip is allowed at the interface
+        /// </summary>
+        [DataMember]
+        public bool freeSurfaceFlow = false;
 
 
         /// <summary>
@@ -326,7 +344,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// Expert options regarding the evaluation of the curvature.
         /// </summary>
         [DataMember]
-        public CurvatureAlgorithms.FilterConfiguration FilterConfiguration = new CurvatureAlgorithms.FilterConfiguration();
+        public CurvatureAlgorithms.FilterConfiguration FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter; //new CurvatureAlgorithms.FilterConfiguration();
 
 
         /// <summary>
@@ -404,8 +422,9 @@ namespace BoSSS.Solution.XNSECommon {
                 PenaltySafety = this.PenaltySafety,
                 SurfStressTensor = this.SurfStressTensor,
                 SST_isotropicMode = this.SST_isotropicMode,
-                UseLevelSetStabilization = this.UseLevelSetStabilization,
+                STFstabilization = this.STFstabilization,
                 UseWeightedAverages = this.UseWeightedAverages,
+                freeSurfaceFlow = this.freeSurfaceFlow,
                 ViscosityMode = this.ViscosityMode,
                 //ViscosityImplementation = this.ViscosityImplementation,
                 UseGhostPenalties = this.UseGhostPenalties,

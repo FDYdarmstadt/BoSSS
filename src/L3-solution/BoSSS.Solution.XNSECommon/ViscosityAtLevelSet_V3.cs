@@ -37,14 +37,14 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         LevelSetTracker m_LsTrk;
 
         public ViscosityAtLevelSet_FullySymmetric(LevelSetTracker lstrk, double _muA, double _muB, double _penalty, int _component, 
-            bool _staticInt = false, bool _weighted = false) {
+            bool _freeSurface = false, bool _weighted = false) {
             this.m_LsTrk = lstrk;
             this.muA = _muA;
             this.muB = _muB;
             this.penalty = _penalty;
             this.component = _component;
             this.m_D = lstrk.GridDat.SpatialDimension;
-            this.staticInt = _staticInt;
+            this.freeSurface = _freeSurface;
             this.weighted = _weighted;
         }
 
@@ -54,7 +54,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         int component;
         int m_D;
 
-        bool staticInt;
+        bool freeSurface;
         bool weighted;
 
 
@@ -114,7 +114,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             } 
 
             //double muMax = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
-            if(!staticInt) {
+            if(!freeSurface) {
                 Ret -= (wA * muA * Grad_uA_xN[component] + wB * muB * Grad_uB_xN[component]) * (vA - vB);                           // consistency term
                 Ret -= (wA * muA * Grad_vA_xN + wB * muB * Grad_vB_xN) * (uA[component] - uB[component]);     // symmetry term
                 Ret += (penalty / hCutCellMin) * (uA[component] - uB[component]) * (vA - vB) * wPenalty; // penalty term
@@ -125,8 +125,31 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
                 }
 
             } else {
-                ////free slip
-                //for(int d = 0; d < D; d++) {
+                //free slip
+                for (int d = 0; d < D; d++) {
+                    Ret -= N[d] * (wA * muA * Grad_uA_xN[d] + wB * muB * Grad_uB_xN[d]) * (vA - vB) * N[component];                           // consistency term
+                    Ret -= N[component] * (wA * muA * Grad_vA_xN + wB * muB * Grad_vB_xN) * (uA[d] - uB[d]) * N[d];     // symmetry term
+                    Ret += (penalty / hCutCellMin) * (uA[d] - uB[d]) * N[d] * (vA - vB) * N[component] * wPenalty; // penalty term
+                }
+                // Transpose Term
+                for (int dN = 0; dN < D; dN++) {
+                    for (int dD = 0; dD < D; dD++) {
+                        Ret -= N[dN] * (wA * muA * Grad_uA[dD, dN] + wB * muB * Grad_uB[dD, dN]) * N[dD] * (vA - vB) * N[component];  // consistency term
+                        Ret -= N[dN] * (wA * muA * Grad_vA[dN] + wB * muB * Grad_vB[dN]) * N[component] * (uA[dD] - uB[dD]) * N[dD];  // symmetry term
+                    }
+                }
+
+                //Ret -= (muA * Grad_uA_xN[component]) * (vA);                           // consistency term
+                //Ret -= (muA * Grad_vA_xN) * (uA[component]);     // symmetry term
+                //Ret += (penalty / hCutCellMin) * (uA[component]) * (vA) * muA; // penalty term
+                //// Transpose Term
+                //for (int i = 0; i < D; i++) {
+                //    Ret -= (muA * Grad_uA[i, component]) * (vA) * N[i];  // consistency term
+                //    Ret -= (muA * Grad_vA[i]) * (uA[i]) * N[component];  // symmetry term
+                //}
+                //Ret += (wB * muB * Grad_uB_xN[component]) * (vB);
+
+                //for (int d = 0; d < D; d++) {
                 //    Ret -= N[d] * (wA * muA * Grad_uA_xN[d]) * (vA) * N[component];                           // consistency term
                 //    Ret -= N[component] * (wA * muA * Grad_vA_xN) * (uA[d]) * N[d];     // symmetry term
                 //    Ret += (penalty / hCutCellMin) * (uA[d] - 0) * N[d] * (vA) * N[component] * muA; // penalty term
@@ -136,8 +159,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
                 //    Ret += (penalty / hCutCellMin) * (0 - uB[d]) * N[d] * (0 - vB) * N[component] * muB; // penalty term
                 //}
                 //// Transpose Term
-                //for(int dN = 0; dN < D; dN++) {
-                //    for(int dD = 0; dD < D; dD++) {
+                //for (int dN = 0; dN < D; dN++) {
+                //    for (int dD = 0; dD < D; dD++) {
                 //        Ret -= N[dN] * (wA * muA * Grad_uA[dD, dN]) * N[dD] * (vA) * N[component];  // consistency term
                 //        Ret -= N[dN] * (wA * muA * Grad_vA[dN]) * N[component] * (uA[dD]) * N[dD];  // symmetry term
                 //        Ret += N[dN] * (wB * muB * Grad_uB[dD, dN]) * N[dD] * (vB) * N[component];  // consistency term
@@ -145,21 +168,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
                 //    }
                 //}
 
-                //wall
-                Ret -= (wA * muA * Grad_uA_xN[component]) * (vA);                           // consistency term
-                Ret -= (wA * muA * Grad_vA_xN) * (uA[component]);     // symmetry term
-                Ret += (penalty / hCutCellMin) * (uA[component] - 0) * (vA) * muA; // penalty term
-
-                Ret += (wB * muB * Grad_uB_xN[component]) * (vB);                           // consistency term
-                Ret += (wB * muB * Grad_vB_xN) * (uB[component]);     // symmetry term
-                Ret += (penalty / hCutCellMin) * (0 - uB[component]) * (0 - vB) * muB; // penalty term
-                // Transpose Term
-                for(int d = 0; d < D; d++) {
-                    Ret -= (wA * muA * Grad_uA[d, component]) * (vA) * N[d];  // consistency term
-                    Ret -= (wA * muA * Grad_vA[d]) * (uA[d]) * N[component];  // symmetry term
-                    Ret += (wB * muB * Grad_uB[d, component]) * (vB) * N[d];  // consistency term
-                    Ret += (wB * muB * Grad_vB[d]) * (uB[d]) * N[component];  // symmetry term
-                }
             }
                         
 
