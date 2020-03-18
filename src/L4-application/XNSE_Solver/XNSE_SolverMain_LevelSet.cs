@@ -89,6 +89,8 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         VectorField<SinglePhaseField> DGLevSetGradient;
 
+        SinglePhaseField DGCurvature;
+
         /// <summary>
         /// The continuous level set field which defines the XDG space; 
         /// it is obtained from the projection of the discontinuous <see cref="DGLevSet"/> onto the 
@@ -105,7 +107,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Curvature; DG-polynomial degree should be 2 times the polynomial degree of <see cref="LevSet"/>.
         /// </summary>
-        [InstantiateFromControlFile(VariableNames.Curvature, VariableNames.Curvature, IOListOption.ControlFileDetermined)]
+        //[InstantiateFromControlFile(VariableNames.Curvature, VariableNames.Curvature, IOListOption.ControlFileDetermined)]
         SinglePhaseField Curvature;
 
 
@@ -158,7 +160,7 @@ namespace BoSSS.Application.XNSE_Solver {
             if (this.Control.FieldOptions["PhiDG"].Degree >= 0 && this.Control.FieldOptions["PhiDG"].Degree != this.DGLevSet.Current.Basis.Degree) {
                 throw new ApplicationException("Specification of polynomial degree for 'PhiDG' is not supported, since it is induced by polynomial degree of 'Phi'.");
             }
-
+            
             // ===================================================================
             // Initialize ContinuityProjection (if needed, if not , Option: None)
             // ===================================================================
@@ -172,10 +174,14 @@ namespace BoSSS.Application.XNSE_Solver {
             base.RegisterField(this.LevSet);
             this.LevSetGradient = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(this.LevSet.Basis, "dPhi_dx[" + d + "]")));
             base.RegisterField(this.LevSetGradient);
+            this.Curvature = new SinglePhaseField(new Basis(this.GridData, this.LevSet.Basis.Degree * 2), "Curvature");
+            base.RegisterField(this.Curvature);
 
             base.RegisterField(this.DGLevSet.Current);
             this.DGLevSetGradient = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(this.DGLevSet.Current.Basis, "dPhiDG_dx[" + d + "]")));
             base.RegisterField(this.DGLevSetGradient);
+            this.DGCurvature = new SinglePhaseField(new Basis(this.GridData, this.DGLevSet.Current.Basis.Degree * 2), "CurvatureDG");
+            base.RegisterField(this.DGCurvature);
 
         }
 
@@ -401,6 +407,7 @@ namespace BoSSS.Application.XNSE_Solver {
         double DelUpdateLevelSet(DGField[] CurrentState, double Phystime, double dt, double underrelax, bool incremental) {
             using (new FuncTrace()) {
 
+
                 //dt *= underrelax;
                 int D = base.Grid.SpatialDimension;
                 int iTimestep = hack_TimestepIndex;
@@ -435,6 +442,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 //SinglePhaseField LevSetSrc = new SinglePhaseField(meanVelocity[0].Basis, "LevelSetSource");
 
                 if (this.Control.solveCoupledHeatEquation && (this.Control.ThermalParameters.hVap > 0.0)) {
+
+                    //Console.WriteLine("compute evaporative velocity");
 
                     SinglePhaseField[] evapVelocity = new SinglePhaseField[D];
                     BitArray EvapMicroRegion = new BitArray(this.LsTrk.GridDat.Cells.Count);  //this.LsTrk.GridDat.GetBoundaryCells().GetBitMask();
@@ -533,10 +542,10 @@ namespace BoSSS.Application.XNSE_Solver {
                                                }
                                            }
                                        }
-
+                                       //Console.WriteLine("qEvap delUpdateLevelSet = {0}", qEvap);
                                        double[] globX = new double[] { globCoord[k, 0], globCoord[k, 1] };
                                        double mEvap = (this.XOpConfig.prescribedMassflux != null) ? this.XOpConfig.prescribedMassflux(globX, hack_Phystime) : qEvap / this.Control.ThermalParameters.hVap; // mass flux
-                                       //Console.WriteLine("mEvap = {0}", mEvap);
+                                       //Console.WriteLine("mEvap - delUpdateLevelSet = {0}", mEvap);
 
                                        double sNeg = VelA[j, k, d] + mEvap * (1 / rhoA) * Normals[j, k, d];
                                        double sPos = VelB[j, k, d] + mEvap * (1 / rhoB) * Normals[j, k, d];
@@ -583,6 +592,8 @@ namespace BoSSS.Application.XNSE_Solver {
                     //Tecplot.PlotFields(evapVelocity.ToArray(), "EvapVelocity" + hack_TimestepIndex, hack_Phystime, 2);
                     //Tecplot.PlotFields(meanVelocity.ToArray(), "meanVelocity" + hack_TimestepIndex, hack_Phystime, 2);
                 }
+
+                //Tecplot.PlotFields(meanVelocity.ToArray(), "meanVelocity" + hack_TimestepIndex, hack_Phystime, 2);
 
                 #endregion
 
@@ -632,7 +643,7 @@ namespace BoSSS.Application.XNSE_Solver {
                             NarrowMarchingBand.Evolve_Mk2(
                              dt, this.LsTrk, DGLevSet_old, this.DGLevSet.Current, this.DGLevSetGradient,
                              meanVelocity, this.ExtensionVelocity.Current.ToArray(), //new DGField[] { LevSetSrc },
-                             this.m_HMForder, iTimestep);
+                             this.m_HMForder, iTimestep, penalization: this.Control.FastMarchingPenaltyTerms);
 
                             //FastMarchReinitSolver = new FastMarchReinit(DGLevSet.Current.Basis);
                             //CellMask Accepted = LsTrk.Regions.GetCutCellMask();
@@ -823,11 +834,22 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     double currentSurfLength = XNSEUtils.GetInterfaceLength(this.LsTrk);
                     double actualSurfChangerate = (currentSurfLength - oldSurfLength) / dt;
-                    Console.WriteLine("Interface divergence = {0}", SurfChangerate);
                     Console.WriteLine("actual surface changerate = {0}", actualSurfChangerate);
+                    Console.WriteLine("Interface divergence = {0}; {1}", SurfChangerate, SurfChangerate/actualSurfChangerate);
 
+                    double[] SurfTnetForce = XNSEUtils.GetSurfaceTensionNetForce(this.LsTrk, this.Control.PhysicalParameters.Sigma);
+                    Console.WriteLine("surface tension net force = ({0},{1})", SurfTnetForce[0], SurfTnetForce[1]);
+                   
                 }
 
+                //var surfTvectors = XNSEUtils.GetSurfaceTensionForceAtEdges(this.LsTrk);
+                //for (int i = 0; i < surfTvectors.Item1.Count(); i++) {
+                //    Console.WriteLine("edge {0}", surfTvectors.Item1.ElementAt(i));
+                //    Console.WriteLine("surface tension force IN = ({0}, {1})", surfTvectors.Item2.ElementAt(i)[0], surfTvectors.Item2.ElementAt(i)[1]);
+                //    Console.WriteLine("surface tension force OUT = ({0}, {1})", surfTvectors.Item3.ElementAt(i)[0], surfTvectors.Item3.ElementAt(i)[1]);
+                //    Console.WriteLine("diff surface tension force (IN - OUT) = ({0}, {1})", surfTvectors.Item2.ElementAt(i)[0] - surfTvectors.Item3.ElementAt(i)[0], 
+                //        surfTvectors.Item2.ElementAt(i)[1] - surfTvectors.Item3.ElementAt(i)[1]);
+                //}
 
                 // =====================
                 // solve coupled system
@@ -917,17 +939,25 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
 
                     double scale = 1.0;
-                    switch (this.Control.InterAverage) {
-                        case XNSE_Control.InterfaceAveraging.mean: {
+                    switch (this.Control.InterVelocAverage) {
+                        case XNSE_Control.InterfaceVelocityAveraging.mean: {
                                 scale = 0.5;
                                 break;
                             }
-                        case XNSE_Control.InterfaceAveraging.density: {
+                        case XNSE_Control.InterfaceVelocityAveraging.density: {
                                 scale = rhoSpc / (rho_A + rho_B);
                                 break;
                             }
-                        case XNSE_Control.InterfaceAveraging.viscosity: {
+                        case XNSE_Control.InterfaceVelocityAveraging.viscosity: {
                                 scale = muSpc / (mu_A + mu_B);
+                                break;
+                            }
+                        case XNSE_Control.InterfaceVelocityAveraging.phaseA: {
+                                scale = (spc == "A") ? 1.0 : 0.0;
+                                break;
+                            }
+                        case XNSE_Control.InterfaceVelocityAveraging.phaseB: {
+                                scale = (spc == "B") ? 1.0 : 0.0;
                                 break;
                             }
                     }
@@ -935,8 +965,16 @@ namespace BoSSS.Application.XNSE_Solver {
                     meanVelocity[d].Acc(scale, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), CC);
                     switch (spc) {
                         //case "A": meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), Neg.Except(CC)); break;
-                        case "A": meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), negNear); break;
-                        case "B": meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), posNear); break;
+                        case "A": {
+                                if(this.Control.InterVelocAverage != XNSE_Control.InterfaceVelocityAveraging.phaseB)
+                                    meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), negNear);
+                                break;
+                            }
+                        case "B": {
+                                if (this.Control.InterVelocAverage != XNSE_Control.InterfaceVelocityAveraging.phaseA)
+                                    meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), posNear);
+                                break;
+                            }
                         default: throw new NotSupportedException("Unknown species name '" + spc + "'");
                     }
                 }

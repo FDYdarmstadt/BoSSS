@@ -1199,6 +1199,159 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
 
+        public static double[] GetSurfaceTensionNetForce(LevelSetTracker LsTrk, double surfTcoeff) {
+
+            int D = LsTrk.GridDat.SpatialDimension;
+            double[] SurfTnetF = new double[D];
+
+            int order = 0;
+            if (LsTrk.GetCachedOrders().Count > 0) {
+                order = LsTrk.GetCachedOrders().Max();
+            } else {
+                order = 1;
+            }
+
+            var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
+            EdgeQuadratureScheme eqs = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(LsTrk.GetSpeciesId("A")); // GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            EdgeQuadrature.GetQuadrature(new int[] { D }, LsTrk.GridDat,
+                eqs.Compile(LsTrk.GridDat, order),
+                delegate (int e0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+
+                    var EdgeNormals = LsTrk.GridDat.Edges.NormalsForAffine;
+
+                    for (int j = 0; j < Length; j++) {
+
+                        var NormalsIN = LsTrk.DataHistories[0].Current.GetLevelSetNormals(
+                            QR.Nodes.GetVolumeNodeSet(LsTrk.GridDat, LsTrk.GridDat.Edges.Edge2CellTrafoIndex[e0 + j, 0]), LsTrk.GridDat.Edges.CellIndices[e0 + j, 0], 1);
+                        var NormalsOT = LsTrk.DataHistories[0].Current.GetLevelSetNormals(
+                            QR.Nodes.GetVolumeNodeSet(LsTrk.GridDat, LsTrk.GridDat.Edges.Edge2CellTrafoIndex[e0 + j, 1]), LsTrk.GridDat.Edges.CellIndices[e0 + j, 1], 1);
+
+                        for (int k = 0; k < QR.NoOfNodes; k++) {
+
+                            double[] tauIN = new double[D];
+                            double[] tauOT = new double[D];
+                            for (int d1 = 0; d1 < D; d1++) {
+                                for (int d2 = 0; d2 < D; d2++) {
+                                    double nn = NormalsIN[0, k, d1] * NormalsIN[0, k, d2];
+                                    if (d1 == d2) {
+                                        tauIN[d1] += (1 - nn) * EdgeNormals[e0 + j, d2];
+                                    } else {
+                                        tauIN[d1] += -nn * EdgeNormals[e0 + j, d2];
+                                    }
+                                    nn = NormalsOT[0, k, d1] * NormalsOT[0, k, d2];
+                                    if (d1 == d2) {
+                                        tauOT[d1] += (1 - nn) * EdgeNormals[e0 + j, d2];
+                                    } else {
+                                        tauOT[d1] += -nn * EdgeNormals[e0 + j, d2];
+                                    }
+                                }
+                            }
+                            tauIN.Normalize();
+                            tauOT.Normalize();
+
+                            for (int d = 0; d < D; d++) {
+                                EvalResult[j, k, d] = tauOT[d] - tauIN[d];
+                            }
+            
+                        }
+                    }
+
+                },
+                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                    for (int i = 0; i < Length; i++) {
+                        for (int d = 0; d < D; d++) {
+                            SurfTnetF[d] += surfTcoeff * ResultsOfIntegration[i, d];
+                        }
+                    }
+                }
+            ).Execute();
+
+            return SurfTnetF;
+
+        }
+
+
+        public static Tuple<List<int>, List<double[]>, List<double[]>> GetSurfaceTensionForceAtEdges(LevelSetTracker LsTrk) {
+
+            int D = LsTrk.GridDat.SpatialDimension;
+
+            int order = 0;
+            if (LsTrk.GetCachedOrders().Count > 0) {
+                order = LsTrk.GetCachedOrders().Max();
+            } else {
+                order = 1;
+            }
+
+            List<int> edgeID = new List<int>();
+            List<double[]> surfTvectrosIN = new List<double[]>();
+            List<double[]> surfTvectrosOT = new List<double[]>();
+
+            var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
+            EdgeQuadratureScheme eqs = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(LsTrk.GetSpeciesId("A")); // GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            EdgeQuadrature.GetQuadrature(new int[] { D }, LsTrk.GridDat,
+                eqs.Compile(LsTrk.GridDat, order),
+                delegate (int e0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+
+                    var EdgeNormals = LsTrk.GridDat.Edges.NormalsForAffine;
+
+                    for (int j = 0; j < Length; j++) {
+
+                        if (LsTrk.GridDat.BoundaryEdges.Contains(e0 + j))
+                            continue;
+
+                        NodeSet vnds_loc = QR.Nodes.GetVolumeNodeSet(LsTrk.GridDat, LsTrk.GridDat.Edges.Edge2CellTrafoIndex[e0 + j, 0]);
+                        NodeSet vnds_glob = vnds_loc.CloneAs();
+                        LsTrk.GridDat.TransformLocal2Global(vnds_loc, vnds_glob, LsTrk.GridDat.Edges.CellIndices[e0 + j, 0]);
+                        Console.WriteLine("volume node ({0}, {1})", vnds_glob[0, 0], vnds_glob[0, 1]);
+
+                        var NormalsIN = LsTrk.DataHistories[0].Current.GetLevelSetNormals(
+                            QR.Nodes.GetVolumeNodeSet(LsTrk.GridDat, LsTrk.GridDat.Edges.Edge2CellTrafoIndex[e0 + j, 0]), LsTrk.GridDat.Edges.CellIndices[e0 + j, 0], 1);
+                        var NormalsOT = LsTrk.DataHistories[0].Current.GetLevelSetNormals(
+                            QR.Nodes.GetVolumeNodeSet(LsTrk.GridDat, LsTrk.GridDat.Edges.Edge2CellTrafoIndex[e0 + j, 1]), LsTrk.GridDat.Edges.CellIndices[e0 + j, 1], 1);
+
+                        for (int k = 0; k < QR.NoOfNodes; k++) {
+
+                            double[] tauIN = new double[D];
+                            double[] tauOT = new double[D];
+                            for (int d1 = 0; d1 < D; d1++) {
+                                for (int d2 = 0; d2 < D; d2++) {
+                                    double nn = NormalsIN[0, k, d1] * NormalsIN[0, k, d2];
+                                    if (d1 == d2) {
+                                        tauIN[d1] += (1 - nn) * EdgeNormals[e0 + j, d2];
+                                    } else {
+                                        tauIN[d1] += -nn * EdgeNormals[e0 + j, d2];
+                                    }
+                                    nn = NormalsOT[0, k, d1] * NormalsOT[0, k, d2];
+                                    if (d1 == d2) {
+                                        tauOT[d1] += (1 - nn) * EdgeNormals[e0 + j, d2];
+                                    } else {
+                                        tauOT[d1] += -nn * EdgeNormals[e0 + j, d2];
+                                    }
+                                }
+                            }
+                            tauIN.Normalize();
+                            tauOT.Normalize();
+
+                            //tauIN.ScaleV(surfTcoeff);
+                            //tauOT.ScaleV(surfTcoeff);
+
+                            edgeID.Add(e0+j);
+                            surfTvectrosIN.Add(tauIN);
+                            surfTvectrosOT.Add(tauOT);
+
+                        }
+                    }
+
+                },
+                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                    // do nothing
+                }
+            ).Execute();
+
+            return new Tuple<List<int>, List<double[]>, List<double[]>>(edgeID, surfTvectrosIN, surfTvectrosOT);
+        }
+
+
         public static MultidimensionalArray GetInterfacePoints(LevelSetTracker LsTrk, LevelSet LevSet, SubGrid sgrd = null) {
 
             int D = LsTrk.GridDat.SpatialDimension;

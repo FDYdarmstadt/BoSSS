@@ -71,6 +71,32 @@ namespace BoSSS.Application.XNSE_Solver {
             return typeof(XNSE_SolverMain);
         }
 
+        public virtual void SetDGdegree(int p) {
+            FieldOptions.Add(VariableNames.VelocityX, new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add(VariableNames.VelocityY, new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add(VariableNames.Pressure, new FieldOpts() {
+                Degree = p - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add("PhiDG", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add("Curvature", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+        }
+
         public void SetFieldOptions(int VelDegree, int LevSetDegree, FieldOpts.SaveToDBOpt SaveFilteredVelocity =  FieldOpts.SaveToDBOpt.TRUE, FieldOpts.SaveToDBOpt SaveCurvature = FieldOpts.SaveToDBOpt.TRUE) {
             FieldOptions.Add(VariableNames.VelocityX, new FieldOpts() {
                 Degree = VelDegree,
@@ -289,7 +315,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             CrankNicolson = 2,
 
-            BDF2 = 3,
+            BDF2 = 3, 
 
             BDF3 = 4,
 
@@ -356,6 +382,18 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         [DataMember]
         public LevelSetEvolution Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+
+        ///// <summary>
+        ///// switch for additional penalization terms for fast marching
+        ///// </summary>
+        //[DataMember]
+        //public bool FastMarchingPenalization = false;
+
+        /// <summary>
+        /// options for additional penalization terms for fast marching
+        /// </summary>
+        [DataMember]
+        public Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.None;
 
         /// <summary>
         /// Options for the initialization of the Fourier Level-set
@@ -501,9 +539,9 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool RegisterUtilitiesToIOFields = false;
         
         /// <summary>
-        /// average method for interface values
+        /// average method for constructing the interface velocity
         /// </summary>
-        public enum InterfaceAveraging {
+        public enum InterfaceVelocityAveraging {
 
             /// <summary>
             /// arithmetic mean
@@ -518,14 +556,24 @@ namespace BoSSS.Application.XNSE_Solver {
             /// <summary>
             /// viscosity weighted average
             /// </summary>
-            viscosity
+            viscosity,
+
+            /// <summary>
+            /// only take velocity from phase A
+            /// </summary>
+            phaseA,
+
+            /// <summary>
+            /// only take velocity from phase B
+            /// </summary>
+            phaseB
 
         }
 
         /// <summary>
         /// See <see cref="InterfaceAveraging"/>
         /// </summary>
-        public InterfaceAveraging InterAverage = InterfaceAveraging.density;
+        public InterfaceVelocityAveraging InterVelocAverage = InterfaceVelocityAveraging.density;
 
 
         /// <summary>

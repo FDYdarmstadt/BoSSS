@@ -231,7 +231,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             double dt, LevelSetTracker Tracker,
             SinglePhaseField OldLevSet, SinglePhaseField NewLevelSet, VectorField<SinglePhaseField> LevelSetGrad,
             ConventionalDGField[] Velocity, SinglePhaseField[] ExtVel, //DGField[] SourceParams,
-            int HMForder, int TimestepNo = 0, bool plotMarchingSteps = false) //
+            int HMForder, int TimestepNo = 0, bool plotMarchingSteps = false, JumpPenalization.jumpPenalizationTerms penalization = JumpPenalization.jumpPenalizationTerms.None) //
         {
             GridData gdat = Tracker.GridDat;
             int D = gdat.SpatialDimension;
@@ -422,16 +422,23 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
 
 
-
             // time evolution
             // --------------
-
             if (ComponentMode) {
                 MoveLevelSet(dt, NewLevelSet, LevelSetGrad, ExtVel, NEARgrid, marcher);
             }
             else {
                 throw new NotImplementedException("todo");
             }
+
+
+            // penalization
+            // ============
+            if (penalization != JumpPenalization.jumpPenalizationTerms.None) {
+                var jp = new JumpPenalization(penalization, 10.0);
+                jp.ImplicitEuler(dt * 0.001, NEARgrid, NewLevelSet);
+            }
+
 
 
             // finally, apply the stabilization
@@ -1153,6 +1160,10 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             // solving
             // -------
+
+            if (UsedRows.Count == 0)
+                return;
+
             MsrMatrix essExtVelMatrix;
             {
                 essExtVelMatrix = new MsrMatrix(new Partitioning(UsedRows.Count));
