@@ -1045,9 +1045,9 @@ namespace BoSSS.Solution.Gnuplot {
         public void SetXRange(double min, double max) {
             using (StringWriter stw = new StringWriter()) {
                 stw.Write("set xrange [");
-                stw.Write(min.ToString(nfoi));
+                stw.Write(min.ToString("0.######e-00", nfoi));
                 stw.Write(":");
-                stw.Write(max.ToString(nfoi));
+                stw.Write(max.ToString("0.######e-00", nfoi));
                 stw.Write("]");
                 Cmd(stw.ToString());
             }
@@ -1061,9 +1061,9 @@ namespace BoSSS.Solution.Gnuplot {
         public void SetX2Range(double min, double max) {
             using (StringWriter stw = new StringWriter()) {
                 stw.Write("set x2range [");
-                stw.Write(min.ToString(nfoi));
+                stw.Write(min.ToString("0.######e-00", nfoi));
                 stw.Write(":");
-                stw.Write(max.ToString(nfoi));
+                stw.Write(max.ToString("0.######e-00", nfoi));
                 stw.Write("]");
                 Cmd(stw.ToString());
             }
@@ -1131,9 +1131,9 @@ namespace BoSSS.Solution.Gnuplot {
         public void SetYRange(double min, double max) {
             using (StringWriter stringWriter = new StringWriter()) {
                 stringWriter.Write("set yrange [");
-                stringWriter.Write(min.ToString(nfoi));
+                stringWriter.Write(min.ToString("0.######e-00", nfoi));
                 stringWriter.Write(":");
-                stringWriter.Write(max.ToString(nfoi));
+                stringWriter.Write(max.ToString("0.######e-00", nfoi));
                 stringWriter.Write("]");
                 Cmd(stringWriter.ToString());
             }
@@ -1145,9 +1145,9 @@ namespace BoSSS.Solution.Gnuplot {
         public void SetY2Range(double min, double max) {
             using (StringWriter stringWriter = new StringWriter()) {
                 stringWriter.Write("set y2range [");
-                stringWriter.Write(min.ToString(nfoi));
+                stringWriter.Write(min.ToString("0.######e-00", nfoi));
                 stringWriter.Write(":");
-                stringWriter.Write(max.ToString(nfoi));
+                stringWriter.Write(max.ToString("0.######e-00", nfoi));
                 stringWriter.Write("]");
                 Cmd(stringWriter.ToString());
             }

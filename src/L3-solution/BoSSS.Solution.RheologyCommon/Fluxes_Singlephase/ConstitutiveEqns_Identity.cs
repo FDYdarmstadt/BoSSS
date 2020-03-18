@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using System.Collections.Generic;
+using System.Linq;
 using BoSSS.Foundation;
 using BoSSS.Solution.NSECommon;
 
@@ -23,16 +24,26 @@ namespace BoSSS.Solution.RheologyCommon {
     /// <summary>
     /// Identity part of constitutive equations for singlephase flow.
     /// </summary>
-    public class ConstitutiveEqns_Identity : IVolumeForm, IEquationComponent, ISupportsJacobianComponent {
+    public class ConstitutiveEqns_Identity : IVolumeForm, IEquationComponentCoefficient, ISupportsJacobianComponent {
 
         private int component; // equation index (0: xx, 1: xy, 2: yy)
+        private double alpha;
+        private double weissenberg;
+        private double beta;
 
         /// <summary>
         /// Initialize identity
         /// </summary>
-        public ConstitutiveEqns_Identity(int component) {
-            this.component = component;
+        public ConstitutiveEqns_Identity(int Component, double Alpha, double Weissenberg, double Beta) {
+            component = Component;
+            alpha = Alpha;
+            weissenberg = Weissenberg;
+            beta = Beta;
+
         }
+        //public ConstitutiveEqns_Identity(int component) {
+        //    this.component = component;
+        //}
 
         /// <summary>
         /// Choosing the required terms
@@ -63,10 +74,27 @@ namespace BoSSS.Solution.RheologyCommon {
         /// Calculating the integral of the volume part
         /// </summary>
         public virtual double VolumeForm(ref CommonParamsVol cpv, double[] T, double[,] Grad_T, double V, double[] GradV) {
-            return T[0] * V;
+
+            double res = 0;
+
+            if (beta != 1) {
+                res += (1 + weissenberg * alpha / (1 - beta) * T[0]) * T[0];
+            } else {
+                res += T[0];
+            }
+
+            return res * V;
         }
 
-         /// <summary>
+        /// <summary>
+        /// update the coefficient such as the current Weissenberg number
+        /// </summary>
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            if (cs.UserDefinedValues.Keys.Contains("Weissenbergnumber")) {
+                weissenberg = (double)cs.UserDefinedValues["Weissenbergnumber"];
+            }
+        }
+        /// <summary>
         /// Linear component / just the flux itself
         /// </summary>
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {

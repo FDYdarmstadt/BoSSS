@@ -56,7 +56,6 @@
     <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="OpAnalysisBase.cs" />
     <Compile Include="ScalarEquationForm.cs" />
     <Compile Include="CommandLineOptions.cs" />
     <Compile Include="Properties\Resources.Designer.cs">

@@ -31,6 +31,61 @@ namespace BoSSS.Application.BoSSSpad {
     /// A <see cref="BatchProcessorClient"/>-implementation which uses a Microsoft HPC 2012 server.
     /// </summary>
     public class MsHPC2012Client : BatchProcessorClient {
+        /*
+        /// <summary>
+        /// Configuration options specific to the <see cref="MiniBatchProcessorClient"/>
+        /// </summary>
+        [Serializable]
+        public new class Config : BatchProcessorClient.Config {
+
+            /// <summary>
+            /// %
+            /// </summary>
+            public string ServerName;
+            
+            /// <summary>
+            /// %
+            /// </summary>
+            public string Username;
+            
+            /// <summary>
+            /// %
+            /// </summary>
+            public string Password;
+            
+            /// <summary>
+            /// %
+            /// </summary>
+            public string[] ComputeNodes = null;
+
+            /// <summary>
+            /// %
+            /// </summary>
+            public override BatchProcessorClient Instance() {
+                return new MsHPC2012Client(
+                    base.DeploymentBaseDirectory,
+                    ServerName,
+                    Username,
+                    Password,
+                    ComputeNodes,
+                    base.DeployRuntime);
+            }
+        }
+        
+        /// <summary>
+        /// .
+        /// </summary>
+        public override BatchProcessorClient.Config GetConfig() {
+            return new MsHPC2012Client.Config() {
+                DeploymentBaseDirectory = this.DeploymentBaseDirectory,
+                DeployRuntime = this.DeployRuntime,
+                ComputeNodes = this.m_ComputeNodes.CloneAs(),
+                Username = this.m_Username,
+                Password = this.m_Password,
+                ServerName = this.m_ServerName
+            };
+        }
+        */
 
         /// <summary>
         /// Ctor.
@@ -62,6 +117,7 @@ namespace BoSSS.Application.BoSSSpad {
             m_Username = Username;
             m_Password = Password;
             m_ComputeNodes = ComputeNodes;
+            m_ServerName = ServerName;
 
             if (m_Username == null)
                 m_Username = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
@@ -73,6 +129,7 @@ namespace BoSSS.Application.BoSSSpad {
         IScheduler m_scheduler;
         string m_Username;
         string m_Password;
+        string m_ServerName;
         string[] m_ComputeNodes;
 
         /// <summary>
@@ -88,49 +145,36 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Job status.
         /// </summary>
-        public override void EvaluateStatus(Job myJob, out int SubmitCount, out bool isRunning, out bool wasSuccessful, out bool isFailed, out string DeployDir) {
-            string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
-            DeployDir = null;
+        public override void EvaluateStatus(string idToken, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
+
+            int id = int.Parse(idToken);
+
 
             List<SchedulerJob> allFoundJobs = new List<SchedulerJob>();
             ISchedulerCollection allJobs = m_scheduler.GetJobList(null, null);
             foreach (SchedulerJob sJob in allJobs) {
-                if (!sJob.Project.Equals(PrjName))
+                if(sJob.Id != id)
                     continue;
-                if (!sJob.Name.Equals(myJob.Name))
-                    continue;
-                if (!sJob.UserName.Equals(m_Username, StringComparison.OrdinalIgnoreCase) && !sJob.Owner.Equals(m_Username, StringComparison.OrdinalIgnoreCase))
-                    continue;
-                if (!sJob.UserName.Equals(sJob.Owner, StringComparison.OrdinalIgnoreCase))
-                    // ignore weird stuff
-                    continue;
-
                 allFoundJobs.Add(sJob);
             }
 
-            SubmitCount = allFoundJobs.Count;
-
             if (allFoundJobs.Count <= 0) {
-                
+                // some weird state
                 isRunning = false;
-                wasSuccessful = false;
-                isFailed = false;
-                
+                isTerminated = false;
+                ExitCode = int.MinValue;
                 return;
             }
 
-            //if (allFoundJobs.Count > 1) {
-            //    throw new ApplicationException(string.Format("Found {0} Microsoft-HPC-jobs with matching criteria (project is '{1}', name is '{2}', user name is '{3}'). Unable to determine which one correlates to given meta-schedule-job.",allFoundJobs.Count, PrjName, myJob.Name, m_Username));
-            //}
-
-            //allFoundJobs[0].SubmitTime 
             SchedulerJob JD = allFoundJobs.ElementAtMax(MsHpcJob => MsHpcJob.SubmitTime);
             
             ISchedulerCollection tasks = JD.GetTaskList(null, null, false);
+            ExitCode = int.MinValue;
             foreach (ISchedulerTask t in tasks) {
                 DeployDir = t.WorkDirectory;
+                ExitCode = t.ExitCode;
             }
-
+            
             switch (JD.State) {
                 case JobState.Configuring:
                 case JobState.Submitted:
@@ -138,29 +182,25 @@ namespace BoSSS.Application.BoSSSpad {
                 case JobState.ExternalValidation:
                 case JobState.Queued:
                 isRunning = false;
-                wasSuccessful = false;
-                isFailed = false;
+                isTerminated = false;
                 break;
 
                 case JobState.Running:
                 case JobState.Finishing:
                 isRunning = true;
-                wasSuccessful = false;
-                isFailed = false;
+                isTerminated = false;
                 break;
 
                 case JobState.Finished:
                 isRunning = false;
-                wasSuccessful = true;
-                isFailed = false;
+                isTerminated = true;
                 break;
 
                 case JobState.Failed:
                 case JobState.Canceled:
                 case JobState.Canceling:
-                wasSuccessful = false;
-                isFailed = true;
                 isRunning = false;
+                isTerminated = true;
                 break;
 
                 default:
@@ -190,7 +230,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Submit the job to the Microsoft HPC server.
         /// </summary>
-        public override object Submit(Job myJob) {
+        public override string Submit(Job myJob) {
             string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
             
             ISchedulerJob job = null;
@@ -242,7 +282,7 @@ namespace BoSSS.Application.BoSSSpad {
             // Start the job.
             m_scheduler.SubmitJob(job, m_Password != null ? m_Username : null, m_Password);
 
-            return job.Id;
+            return job.Id.ToString();
         }
     }
 }

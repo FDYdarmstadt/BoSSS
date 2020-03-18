@@ -91,6 +91,8 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// A circular interface in the 2D domain \f$ (3/2,3/2)^2 \f$.
         /// </summary>
         public static XdgPoisson3Control Circle(int Resolution = 16, int p = 1, string DBPath = null, LinearSolverCode solver = LinearSolverCode.classic_pardiso) {
+            //BoSSS.Application.XdgPoisson3.HardCodedControl.Circle(Resolution: 8);
+
             XdgPoisson3Control R = new XdgPoisson3Control();
 
             R.ProjectName = "XdgPoisson3/Circle";
@@ -102,22 +104,15 @@ namespace BoSSS.Application.XdgPoisson3 {
             }
 
 
-            R.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            R.FieldOptions.Add("u", new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            R.SetDGdegree(p);
 
             R.GridFunc = delegate () {
-                return Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1.5, 1.5, Resolution), GenericBlas.Linspace(-1.5, 1.5, Resolution));
+                return Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1.5, 1.5, Resolution + 1), GenericBlas.Linspace(-1.5, 1.5, Resolution + 1));
             };
 
 
             double RADIUS = 0.8;
-            R.InitialValues_Evaluators.Add("Phi", X => -X[0].Pow2() - X[1].Pow2() + (RADIUS).Pow2());
+            R.InitialValues_Evaluators.Add("Phi", X => -(X[0] - 0.0).Pow2() - (X[1] - 0.0).Pow2() + (RADIUS).Pow2());
 
             R.ExcactSolSupported = false;
             R.InitialValues_Evaluators.Add("uEx#A", X => 0.0);
@@ -134,15 +129,12 @@ namespace BoSSS.Application.XdgPoisson3 {
             R.xLaplaceBCs.IsDirichlet = (inp => true);
 
             R.LinearSolver.SolverCode = solver;
-            R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_mg;
+            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
 
-            R.dtMax = 0.1;
-            R.dtMin = 0.1;
-            R.NoOfTimesteps = 10;
-            R.Endtime = 100000.0;
+            R.TimesteppingMode = AppControl._TimesteppingMode.Steady;
 
             R.AgglomerationThreshold = 0.1;
-            R.PrePreCond = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
+            R.PrePreCond = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             R.LinearSolver.NoOfMultigridLevels = 5;
 
 
@@ -470,7 +462,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// <summary>
         /// A spherical interface in the 3D domain \f$ (-2, 2)^3 \f$.
         /// </summary>
-        public static XdgPoisson3Control Ball3D() {
+        public static XdgPoisson3Control Ball3D(int pDeg, int Res, LinearSolverCode solverCode) {
             XdgPoisson3Control R = new XdgPoisson3Control();
 
             R.ProjectName = "XdgPoisson3/Ball3D";
@@ -481,12 +473,12 @@ namespace BoSSS.Application.XdgPoisson3 {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             R.FieldOptions.Add("u", new FieldOpts() {
-                Degree = 2,
+                Degree = pDeg,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
 
             R.GridFunc = delegate () {
-                return Grid3D.Cartesian3DGrid(GenericBlas.Linspace(-2, 2, 6), GenericBlas.Linspace(-2, 2, 6), GenericBlas.Linspace(-2, 2, 6));
+                return Grid3D.Cartesian3DGrid(GenericBlas.Linspace(-2, 2, Res), GenericBlas.Linspace(-2, 2, Res), GenericBlas.Linspace(-2, 2, Res));
             };
 
 
@@ -506,7 +498,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             R.xLaplaceBCs.g_Diri = ((CommonParamsBnd inp) => 0.0);
             R.xLaplaceBCs.IsDirichlet = (inp => true);
 
-            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;//R.solverName = "direct";
+            R.LinearSolver.SolverCode = solverCode;//R.solverName = "direct";
             R.AgglomerationThreshold = 0.1;
             R.PrePreCond = MultigridOperator.Mode.DiagBlockEquilib;
             R.penalty_multiplyer = 1.1;
@@ -521,7 +513,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// </summary>
         /// <param name="myDB"></param>
         /// <returns></returns>
-        public static XdgPoisson3Control TestOrTreat(int solver = 3, int blocksize = 10000, string myDB = null)
+        public static XdgPoisson3Control TestOrTreat(int solver = 4, int blocksize = 10000, string myDB = null)
         {
             XdgPoisson3Control C = new XdgPoisson3Control();
 
@@ -542,9 +534,6 @@ namespace BoSSS.Application.XdgPoisson3 {
                 case 4:
                     C.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
                     break;
-                case 5:
-                    C.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
-                    break;
                 default:
                     throw new NotImplementedException("guess again");
             }
@@ -552,7 +541,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.savetodb = false;
             //C.DbPath = @"E:\\XdgPerformance";
 
-            int Res = 2;
+            int Res = 4;
 
             C.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
@@ -647,7 +636,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.xLaplaceBCs.IsDirichlet = (inp => Math.Abs(inp.X[0] + 1.0) <= 1.0e-8);
 
 
-            /// Exact Solution
+            // Exact Solution
             C.ExcactSolSupported = true;
             C.FieldOptions.Add("uEx", new FieldOpts() {
                 Degree = 3,
@@ -656,11 +645,11 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.InitialValues_Evaluators.Add("uEx#A", X => Math.Sin((X[0] + 1.0) * 3) * (1.0 / 9.0));
             C.InitialValues_Evaluators.Add("uEx#B", X => Math.Sin((X[0] + 1.0) * 3) * (1.0 / 9.0));
 
-            /// Solver Parameters
+            // Solver Parameters
             //C.solverName = "pcg+mg+schwarz";
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;//R.solverName = "direct";
 
-            /// Discretization Parameters
+            // Discretization Parameters
             C.ViscosityMode = XLaplace_Interface.Mode.SIP;
 
             return C;

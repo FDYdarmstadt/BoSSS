@@ -70,10 +70,11 @@ namespace BoSSS.Solution.RheologyCommon {
             DoNotTouchParameters dntParams = config.getDntParams;
 
             // set species arguments
-            double WiSpc, betaSpc;
+            double WiSpc, betaSpc, giesekusfactorSpc;
+
             switch (spcName) {
-                case "A": { WiSpc = physParams.Weissenberg_a; betaSpc = physParams.beta_a; break; }
-                case "B": { WiSpc = physParams.Weissenberg_b; betaSpc = physParams.beta_b; break; }
+                case "A": { WiSpc = physParams.Weissenberg_a; betaSpc = physParams.beta_a; giesekusfactorSpc = physParams.giesekusfactor_a; break; }
+                case "B": { WiSpc = physParams.Weissenberg_b; betaSpc = physParams.beta_b; giesekusfactorSpc = physParams.giesekusfactor_b; break; }
                 default: throw new ArgumentException("Unknown species.");
             }
 
@@ -82,7 +83,8 @@ namespace BoSSS.Solution.RheologyCommon {
 
             // identity part
             // ===================
-            var identity = new IdentityInBulk(d, spcName, spcId);
+            var identity = new IdentityInBulk(d, giesekusfactorSpc, WiSpc, betaSpc, spcName, spcId);
+            //var identity = new IdentityInBulk(d, spcName, spcId);
             comps.Add(identity);
 
 

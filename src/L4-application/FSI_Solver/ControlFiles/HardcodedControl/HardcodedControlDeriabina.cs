@@ -16,10 +16,11 @@
 
 using System;
 using BoSSS.Foundation.Grid;
-using ilPSP.Utils;
+using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.XdgTimestepping;
 using System.Collections.Generic;
+using ilPSP.Utils;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HardcodedControlDeriabina : IBM_Solver.HardcodedTestExamples {
@@ -44,7 +45,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.IncludeConvection = true;
             C.pureDryCollisions = true;
-            C.gravity = new double[] { 0, -9.81 };
+            C.gravity = new Vector( 0, -9.81 );
 
             // Particle Properties
             // =============================
@@ -169,7 +170,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.rho_A = 1.0;
             C.PhysicalParameters.mu_A = 0.1;
             C.CoefficientOfRestitution = 1.0;
-            C.gravity = new double[] { 0, -9.81 };
+            C.gravity = new Vector( 0, -9.81 );
             double particleDensity = 2.01;
 
             ParticleMotionInit motion = new ParticleMotionInit(C.gravity, particleDensity, C.pureDryCollisions);

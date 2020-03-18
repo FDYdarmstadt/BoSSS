@@ -75,8 +75,11 @@ namespace BoSSS.Foundation {
         /// <param name="RoundUp"></param>
         /// <returns></returns>
         public static Func<int[], int[], int[], int> NonLinearWithoutParameters(int NonLinDeg, bool RoundUp = false) {
-            return ((DomDegs, ParamDegs, CoDomDegs) => (QuadOrderFunc.SumOfMaxDegreesWithRounding(DomDegs, new int[0], CoDomDegs, NonLinDeg, RoundUp)));
-        }
+            return ((DomDegs, ParamDegs, CoDomDegs) => {
+                int pBase = QuadOrderFunc.SumOfMaxDegreesWithRounding(DomDegs, new int[0], CoDomDegs, NonLinDeg, RoundUp);
+                return pBase;
+            });
+            }
 
         /// <summary>
         /// Version of <see cref="NonLinear(int)"/> where rounding can be

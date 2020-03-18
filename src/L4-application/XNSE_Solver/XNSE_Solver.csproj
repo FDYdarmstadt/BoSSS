@@ -90,7 +90,6 @@
     <Compile Include="PhysicalBasedTestcases\RayleighTaylorInstability.cs" />
     <Compile Include="PhysicalBasedTestcases\RisingBubble.cs" />
     <Compile Include="PhysicalBasedTestcases\PhysicalTestProgram.cs" />
-    <Compile Include="PreCond\ApproxPredictor.cs" />
     <Compile Include="Tests\BcTest_PressureOutlet.cs" />
     <Compile Include="Tests\ChannelTest.cs" />
     <Compile Include="XBase_Solver.cs" />

@@ -48,7 +48,7 @@ using BoSSS.Solution.Gnuplot;
 using MPI.Wrappers;
 using NUnit.Framework;
 using BoSSS.Foundation.SpecFEM;
-
+using System.IO;
 
 namespace BoSSS.Application.Rheology {
 
@@ -224,7 +224,7 @@ namespace BoSSS.Application.Rheology {
         // Some initialisation of variables
         //============================================
         IncompressibleBoundaryCondMap BcMap;
-        
+
         /// <summary>
         /// Current Weissenberg number,
         /// if the solver is used in Weissenberg-increment mode
@@ -239,7 +239,7 @@ namespace BoSSS.Application.Rheology {
 
 
         bool ChangeMesh = true;
-        
+
         /// <summary>
         /// Spatial operator 
         /// </summary>
@@ -249,7 +249,7 @@ namespace BoSSS.Application.Rheology {
         /// Linearization of <see cref="XOP"/>
         /// </summary>
         SpatialOperator JacobiOp;
-        
+
         /// <summary>
         /// Timestepping object
         /// </summary>
@@ -309,7 +309,7 @@ namespace BoSSS.Application.Rheology {
         }
 
         CoordinateVector m_CurrentSolution = null;
-        
+
         /// <summary>
         /// Current solution vector
         /// </summary>
@@ -379,8 +379,8 @@ namespace BoSSS.Application.Rheology {
                 if (L != null) {
 
                     m_BDF_Timestepper.DataRestoreAfterBalancing(L,
-                        CurrentSolution.Fields,
-                        CurrentResidual.Fields,
+                        ArrayTools.Cat<DGField>(Velocity.Current, Pressure, StressXX, StressXY, StressYY),
+                        ArrayTools.Cat<DGField>(ResidualMomentum, ResidualConti, ResidualStressXX, ResidualStressXY, ResidualStressYY),
                         this.LsTrk, this.MultigridSequence);
 
                     m_CurrentSolution = null;
@@ -395,8 +395,15 @@ namespace BoSSS.Application.Rheology {
                     BcMap = new IncompressibleBoundaryCondMap(this.GridData, this.Control.BoundaryValues, PhysicsMode.Viscoelastic);
 
                     string[] CodName = new string[] { "momX", "momY", "div", "constitutiveXX", "constitutiveXY", "constitutiveYY" };
-                    //string[] Params =  ArrayTools.Cat(VariableNames.Velocity0Vector(D), VariableNames.Velocity0MeanVector(D), VariableNames.VelocityX_GradientVector(), VariableNames.VelocityY_GradientVector(), VariableNames.StressXXP, VariableNames.StressXYP, VariableNames.StressYYP, "artificialViscosity");
-                    string[] Params = this.Control.UseArtificialDiffusion ? new string[] { "artificialViscosity" } : null;
+
+                    string[] Params = new string[] { };
+
+                    if (this.Control.useFDJacobianForOperatorMatrix == true) {
+                        Params = ArrayTools.Cat(VariableNames.Velocity0Vector(D), VariableNames.Velocity0MeanVector(D), VariableNames.VelocityX_GradientVector(), VariableNames.VelocityY_GradientVector(), VariableNames.StressXXP, VariableNames.StressXYP, VariableNames.StressYYP, "artificialViscosity");
+                    } else {
+                        Params = this.Control.UseArtificialDiffusion ? new string[] { "artificialViscosity" } : null;
+                    }
+
                     string[] DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure, VariableNames.StressXX, VariableNames.StressXY, VariableNames.StressYY);
 
                     XOP = new SpatialOperator(DomName, Params, CodName, QuadOrderFunc.NonLinearWithoutParameters(2));
@@ -414,13 +421,14 @@ namespace BoSSS.Application.Rheology {
                         var comps = XOP.EquationComponents[CodName[d]];
 
                         // convective part:
-                        if (!this.Control.Stokes ) {
+                        if (!this.Control.StokesConvection || !this.Control.Stokes) {
                             comps.Add(new LocalLaxFriedrichsConvection(D, BcMap, d, 1.0));
+                            
                         } else {
                             Console.WriteLine("Using Stokes Equation - no convective term.");
                         }
 
-                        
+
                         // pressure part:
                         var pres = new PressureGradientLin_d(d, BcMap);
                         comps.Add(pres);
@@ -431,11 +439,11 @@ namespace BoSSS.Application.Rheology {
                             var pressSource = new SrcPressureGradientLin_d(this.Control.SrcPressureGrad[d]);
                             comps.Add(pressSource);
                         }
-                        
+
 
                         // viscous part:
                         //Type GridType = GridData.iGeomCells.RefElements[0].GetType();
-                        
+
                         if (this.Control.beta < 0.0) {
                             throw new ArithmeticException("Illegal setting in control object: 'beta' is out of range, must be non-negative.");
                         }
@@ -483,26 +491,30 @@ namespace BoSSS.Application.Rheology {
 
                     // Constitutive equations
                     // ===============================================================================
-                    
-                    // Identity part
-                    XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Identity(0));
-                    XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Identity(1));
-                    XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Identity(2));
 
-                    
+                    // Identity part
+                    XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Identity(0, this.Control.giesekusfactor, this.Control.Weissenberg, this.Control.beta));
+                    XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Identity(1, this.Control.giesekusfactor, this.Control.Weissenberg, this.Control.beta));
+                    XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Identity(2, this.Control.giesekusfactor, this.Control.Weissenberg, this.Control.beta));
+
+                    //XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Identity(0));
+                    //XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Identity(1));
+                    //XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Identity(2));
+
+
 
                     if (ConstitutiveEqs) {
                         Console.WriteLine($"configuring Weissenberg number: {this.Control.Weissenberg:#.##e+00}");
 
                         //Convective part
-                        XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Convective(0, BcMap, this.Control.Weissenberg, this.Control.alpha));
-                        XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Convective(1, BcMap, this.Control.Weissenberg, this.Control.alpha));
-                        XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Convective(2, BcMap, this.Control.Weissenberg, this.Control.alpha));
+                        XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Convective(0, BcMap, this.Control.Weissenberg, this.Control.useFDJacobianForOperatorMatrix, this.Control.alpha));
+                        XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Convective(1, BcMap, this.Control.Weissenberg, this.Control.useFDJacobianForOperatorMatrix, this.Control.alpha));
+                        XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Convective(2, BcMap, this.Control.Weissenberg, this.Control.useFDJacobianForOperatorMatrix, this.Control.alpha));
 
                         //Objective Part
-                        XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Objective(0, BcMap, this.Control.Weissenberg, this.Control.StressPenalty));
-                        XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Objective(1, BcMap, this.Control.Weissenberg, this.Control.StressPenalty));
-                        XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Objective(2, BcMap, this.Control.Weissenberg, this.Control.StressPenalty));
+                        XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Objective(0, BcMap, this.Control.Weissenberg, this.Control.StressPenalty, this.Control.useFDJacobianForOperatorMatrix));
+                        XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Objective(1, BcMap, this.Control.Weissenberg, this.Control.StressPenalty, this.Control.useFDJacobianForOperatorMatrix));
+                        XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Objective(2, BcMap, this.Control.Weissenberg, this.Control.StressPenalty, this.Control.useFDJacobianForOperatorMatrix));
 
                         // Viscous Part
                         XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Viscosity(0, BcMap, this.Control.beta, this.Control.Penalty1));
@@ -685,7 +697,7 @@ namespace BoSSS.Application.Rheology {
             return 0.0;
         }
 
-        
+
         // Build and solve system
         //=================================================================
         /// <summary>
@@ -693,15 +705,17 @@ namespace BoSSS.Application.Rheology {
         /// </summary>
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
             using (new FuncTrace()) {
+                /*
                 if (this.Control.OperatorMatrixAnalysis == true) {
 
                     OpAnalysisBase myAnalysis = new OpAnalysisBase(DelComputeOperatorMatrix, CurrentSolution.Mapping, CurrentSolution.Mapping.Fields.ToArray(), null, phystime);
-                    myAnalysis.VarGroup = new int[] { 0,1,2};
+                    myAnalysis.VarGroup = new int[] { 0, 1, 2 };
                     double[] cond = myAnalysis.CondNum();//Analyse();
                     Console.WriteLine("Condition number for full matrix is " + cond[0] + ". Condition number for inner matrix is " + cond[1] + ".");
                     base.QueryHandler.ValueQuery("condFull", cond[0], true);
                     base.QueryHandler.ValueQuery("condInner", cond[1], true);
                 }
+                */
 
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
                 int D = this.GridData.SpatialDimension;
@@ -722,6 +736,8 @@ namespace BoSSS.Application.Rheology {
                 bool m_SkipSolveAndEvaluateResidual = this.Control.SkipSolveAndEvaluateResidual;
 
                 if (Control.RaiseWeissenberg == true) {
+                    
+
 
                     currentWeissenberg = restartWeissenberg;
                     restartWeissenberg = 0.0; // make sure the restart value is used only once
@@ -740,16 +756,18 @@ namespace BoSSS.Application.Rheology {
                         throw new ArgumentException("Raise Weissenberg is turned on, but aim Weissenberg is 0.0 (Newtonian)!");
                     }
 
-                    for (int i = 0; i <= NoIncrementTimestep; i++) {
+                    for (int WeIncCounter = 0; WeIncCounter <= NoIncrementTimestep; WeIncCounter++) {
 
                         if (Control.UseArtificialDiffusion == true) {
-
+                            // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            // USING Weissenberg increase, USING artificial viscosity
+                            // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
                             artificialMaxViscosity = 1.0;
 
                             for (int j = 0; j < 3; j++) {
 
-                                
+
 
 
                                 if (Control.UsePerssonSensor == true) {
@@ -763,36 +781,44 @@ namespace BoSSS.Application.Rheology {
                                 //this.ResLogger.NextTimestep(false);
 
                                 // this evaluation must later out of this loop. now here for comparing resluts with  
-                                PlotCurrentState(phystime, new TimestepNumber(TimestepNo.MajorNumber, i));
-                                SaveToDatabase(new TimestepNumber(TimestepNo.MajorNumber, i), phystime);
+                                PlotCurrentState(phystime, new TimestepNumber(TimestepNo.MajorNumber, WeIncCounter));
+                                SaveToDatabase(new TimestepNumber(TimestepNo.MajorNumber, WeIncCounter), phystime);
 
                                 if (Control.Bodyforces == true) {
-
-                                    double[] force = IBMSolverUtils.GetForces_BoundaryFitted(VelocityXGradient, VelocityYGradient, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
-                                    Console.WriteLine();
-                                    Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
-                                    Console.WriteLine();
-
+                                    if (Log != null) {
+                                        WriteLogLine(TimestepNo.MajorNumber, phystime);
+                                    } else {
+                                        double[] force = IBMSolverUtils.GetForces_BoundaryFitted(Velocity.Current, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta, "Wall_cylinder");
+                                        Console.WriteLine();
+                                        Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
+                                        Console.WriteLine();
+                                    }
                                 }
 
                                 artificialMaxViscosity = artificialMaxViscosity - 0.5;
                             }
                         } else {
+                            // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            // USING Weissenberg increase, NO artificial viscosity
+                            // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
                             m_BDF_Timestepper.Solve(phystime, dt, m_SkipSolveAndEvaluateResidual);
 
                             //this.ResLogger.NextTimestep(false);
 
                             // this evaluation must later out of this loop. now here for comparing results with  
-                            PlotCurrentState(phystime, new TimestepNumber(TimestepNo.MajorNumber, i));
-                            SaveToDatabase(new TimestepNumber(TimestepNo.MajorNumber, i), phystime);
+                            //PlotCurrentState(phystime, new TimestepNumber(TimestepNo.MajorNumber, WeIncCounter));
+                            SaveToDatabase(new TimestepNumber(TimestepNo.MajorNumber, WeIncCounter), phystime);
 
                             if (Control.Bodyforces == true) {
-
-                                double[] force = IBMSolverUtils.GetForces_BoundaryFitted(VelocityXGradient, VelocityYGradient, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
-                                Console.WriteLine();
-                                Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
-                                Console.WriteLine();
-
+                                if (Log != null) {
+                                    WriteLogLine(TimestepNo.MajorNumber, phystime);
+                                } else {
+                                    double[] force = IBMSolverUtils.GetForces_BoundaryFitted(Velocity.Current, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta, "Wall_cylinder");
+                                    Console.WriteLine();
+                                    Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
+                                    Console.WriteLine();
+                                }
                             }
                         }
 
@@ -801,21 +827,28 @@ namespace BoSSS.Application.Rheology {
                             this.MpiRedistributeAndMeshAdapt(TimestepNo.MajorNumber, phystime);
                             perssonsensor.Update(StressXX);
                             PlotCurrentState(phystime, TimestepNo);
+                            SaveToDatabase(TimestepNo, phystime);
                         }
 
                         if (currentWeissenberg < Control.Weissenberg) {
                             currentWeissenberg = currentWeissenberg + Control.WeissenbergIncrement;
-                            Console.WriteLine();
-                            Console.WriteLine("Raise Weissenberg number to " + currentWeissenberg);
-                            Console.WriteLine();                            
+                        } else {
+                            WeIncCounter = int.MaxValue; // breaks the Weissenberg-increase loop.
                         }
 
+                        currentWeissenberg = Math.Min(currentWeissenberg, Control.Weissenberg); // prevents any overshoot
+                        Console.WriteLine("Raise Weissenberg number to " + currentWeissenberg);
                     }
                 } else {
 
                     currentWeissenberg = Control.Weissenberg;
 
                     if (Control.UseArtificialDiffusion == true) {
+                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        // USING artificial viscosity, but NO Weissenberg increase
+                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
                         artificialMaxViscosity = 1.0;
 
                         for (int j = 0; j < 3; j++) {
@@ -833,12 +866,14 @@ namespace BoSSS.Application.Rheology {
                             //SaveToDatabase(new TimestepNumber(TimestepNo.MajorNumber, i), phystime);
 
                             if (Control.Bodyforces == true) {
-
-                                double[] force = IBMSolverUtils.GetForces_BoundaryFitted(VelocityXGradient, VelocityYGradient, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
-                                Console.WriteLine();
-                                Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
-                                Console.WriteLine();
-
+                                if (Log != null) {
+                                    WriteLogLine(TimestepNo.MajorNumber, phystime);
+                                } else {
+                                    double[] force = IBMSolverUtils.GetForces_BoundaryFitted(Velocity.Current, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta, "Wall_cylinder");
+                                    Console.WriteLine();
+                                    Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
+                                    Console.WriteLine();
+                                }
                             }
 
                             artificialMaxViscosity = artificialMaxViscosity - 0.5;
@@ -849,6 +884,9 @@ namespace BoSSS.Application.Rheology {
                             this.MpiRedistributeAndMeshAdapt(TimestepNo.MajorNumber, phystime);
                         }
                     } else {
+                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        // Using only timestepper, NO ADDITIONAL LOOP
+                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
                         m_BDF_Timestepper.Solve(phystime, dt, m_SkipSolveAndEvaluateResidual);
 
@@ -881,12 +919,14 @@ namespace BoSSS.Application.Rheology {
                         //____________________________________________________________________________________________
 
                         if (Control.Bodyforces == true) {
-
-                            double[] force = IBMSolverUtils.GetForces_BoundaryFitted(VelocityXGradient, VelocityYGradient, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
-                            Console.WriteLine();
-                            Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
-                            Console.WriteLine();
-
+                            if (Log != null) {
+                                WriteLogLine(TimestepNo.MajorNumber, phystime);
+                            } else {
+                                double[] force = IBMSolverUtils.GetForces_BoundaryFitted(Velocity.Current, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta, "Wall_cylinder");
+                                Console.WriteLine();
+                                Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
+                                Console.WriteLine();
+                            }
                         }
                     }
                 }
@@ -962,7 +1002,7 @@ namespace BoSSS.Application.Rheology {
         internal void CheckJacobian() {
             // Parameters
             DGField[] Params;
-            if(this.Control.UseArtificialDiffusion) {
+            if (this.Control.UseArtificialDiffusion) {
                 Params = new[] { artificalViscosity };
             } else {
                 Params = null;
@@ -1034,7 +1074,7 @@ namespace BoSSS.Application.Rheology {
             if (U0.Count != D)
                 throw new ArgumentException("Spatial dimension and number of velocity parameter components does not match!");
 
-            if (Stress0.Count != (D*D + D)/2)
+            if (Stress0.Count != (D * D + D) / 2)
                 throw new ArgumentException("Spatial dimension and number of stress parameter components does not match!");
 
 
@@ -1051,12 +1091,16 @@ namespace BoSSS.Application.Rheology {
                 U0_U0mean = new SinglePhaseField[2 * D];
             }
 
-            //var Params = ArrayTools.Cat<DGField>(U0_U0mean, VelocityXGradient, VelocityYGradient, Stress0, artificalViscosity);
             DGField[] Params;
-            if(this.Control.UseArtificialDiffusion) {
-                Params = new[] { artificalViscosity };
+
+            if (this.Control.useFDJacobianForOperatorMatrix) {
+                Params = ArrayTools.Cat<DGField>(U0_U0mean, VelocityXGradient, VelocityYGradient, Stress0, artificalViscosity);
             } else {
-                Params = null;
+                if (this.Control.UseArtificialDiffusion) {
+                    Params = new[] { artificalViscosity };
+                } else {
+                    Params = null;
+                }
             }
 
 
@@ -1070,7 +1114,7 @@ namespace BoSSS.Application.Rheology {
             //===========================================================
             if (Linearization) {
 
-                bool useJacobianForOperatorMatrix = this.Control.useJacobianForOperatorMatrix;
+                bool useFDJacobianForOperatorMatrix = this.Control.useFDJacobianForOperatorMatrix;
 
                 //if (this.Control.NonLinearSolver.SolverCode == )
                 //    useJacobianForOperatorMatrix = false;
@@ -1081,7 +1125,7 @@ namespace BoSSS.Application.Rheology {
 
 
                 // 'custom' Linearization 
-                if (!useJacobianForOperatorMatrix) {
+                if (!useFDJacobianForOperatorMatrix) {
                     //var Mbuilder = XOP.GetMatrixBuilder(domMap, Params, codMap);
                     //this.ParameterUpdate(domMap.Fields, Params);
                     //Mbuilder.ComputeMatrix(OpMatrix, OpAffine);
@@ -1100,16 +1144,19 @@ namespace BoSSS.Application.Rheology {
 
                 } else {
 
-                    Console.WriteLine("Assembly: FDJac (obsolete) ...");
                     // Finite Difference Linearization
-                    var FDbuilder = XOP.GetFDJacobianBuilder(domMap, null, //Params,
-                        codMap,
-                        this.ParameterUpdate);
+
+                    if (Params != null) {
+                        goto SkipToEnd;
+                    } else {
+                        throw new ArgumentException("FD Jacobian needs the parameter list, but it was null.");
+                    }
+
+                SkipToEnd:
+                    var FDbuilder = XOP.GetFDJacobianBuilder(domMap, Params, codMap, this.ParameterUpdate);
+
                     FDbuilder.OperatorCoefficients.UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
                     FDbuilder.ComputeMatrix(OpMatrix, OpAffine);
-
-                    Console.WriteLine("done.");
-
 
                     // FDJacobian has (Mx +b) as RHS, for unsteady calc. we must subtract Mx for real affine Vector!
                     OpMatrix.SpMV(-1.0, new CoordinateVector(CurrentState), 1.0, OpAffine);
@@ -1122,7 +1169,6 @@ namespace BoSSS.Application.Rheology {
                 //OpMatrix.SaveToTextFileSparse("OpMatrix-" + counter + ".txt");
                 //OpAffine.SaveToTextFile("RHS-" + counter + ".txt");
                 //counter++;
-
 
                 // Set Pressure Reference Point
                 //======================================================
@@ -1178,7 +1224,7 @@ namespace BoSSS.Application.Rheology {
                     int pVelLv = Math.Max(1, pVel - iLevel);
                     int pPreLv = Math.Max(1, pPrs - iLevel);
                     int pStrLv = Math.Max(1, pStr - iLevel);
-                    
+
                     /*
                     configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[2];
                     configs[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig() {
@@ -1194,9 +1240,9 @@ namespace BoSSS.Application.Rheology {
                     };
                     //*/
 
-                    
-                    
-                    
+
+
+
                     configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[1];
                     configs[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig() {
                         mode = MultigridOperator.Mode.LeftInverse_DiagBlock,
@@ -1310,6 +1356,10 @@ namespace BoSSS.Application.Rheology {
 
             Console.WriteLine("Total number of cells:    {0}", Grid.NumberOfCells);
             Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Mapping.TotalLength);
+
+            if (this.CurrentSessionInfo.ID != Guid.Empty && base.MPIRank == 0) {
+                InitLogFile(this.CurrentSessionInfo.ID);
+            }
 
         }
 
@@ -1508,9 +1558,37 @@ namespace BoSSS.Application.Rheology {
 
                 double maxVal = this.perssonsensor.GetValue(j);
 
+                double[] coord = this.GridData.iGeomCells.GetCenter(j);
+
                 //bound for perssonsensor should be around 1e-7 - 1e-8 that there is refinement behind the cylinder!
                 double upperbound = this.Control.SensorLimit;
                 double lowerbound = upperbound * 0.001;
+
+                int DesiredLevel_j = CurrentLevel;
+
+                if (maxVal != 0.0) {
+                    if (maxVal > upperbound && DesiredLevel_j < this.Control.RefinementLevel) {
+
+                        DesiredLevel_j = DesiredLevel_j + 1;
+
+                    } else if (maxVal < lowerbound && DesiredLevel_j > 0) {
+                        DesiredLevel_j = DesiredLevel_j - 1;
+                    }
+                } else {
+                    if (Math.Abs(coord[0] - 10) < 2 && DesiredLevel_j < 2) // this.Control.RefinementLevel)
+                        DesiredLevel_j = DesiredLevel_j + 1;
+                }
+
+                return DesiredLevel_j;
+
+            } else {
+
+                double celllength = ((GridData)GridData).Cells.cj[j];
+                double maxVal = this.StressXX.GetMeanValue(j) / celllength;  // this.perssonsensor.GetValue(j);
+
+                //bound for perssonsensor should be around 1e-7 - 1e-8 that there is refinement behind the cylinder!
+                double upperbound = this.Control.SensorLimit / celllength;
+                double lowerbound = -1 * this.Control.SensorLimit / celllength;
 
                 int DesiredLevel_j = CurrentLevel;
 
@@ -1523,9 +1601,6 @@ namespace BoSSS.Application.Rheology {
                 }
 
                 return DesiredLevel_j;
-
-            } else {
-                throw new NotSupportedException("The Persson sensor is turned off. It is needed for adaptive mesh refinement!");
             }
 
         }
@@ -1576,7 +1651,7 @@ namespace BoSSS.Application.Rheology {
                 old2NewGrid = null;
             }
         }
-        
+
         /// <summary>
         /// Appends the <see cref="currentWeissenberg"/> number to the timestep
         /// </summary>
@@ -1602,7 +1677,31 @@ namespace BoSSS.Application.Rheology {
                 }
             }
         }
-    }
+
+
+        #region logging
+
+        TextWriter Log;
+        string header;
+
+        public void InitLogFile(Guid sessionID) {
+
+            if (this.Control.Bodyforces) {
+                Log = base.DatabaseDriver.FsDriver.GetNewLog("BodyForces", sessionID);
+                header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "#timestep", "#time","Wi", "ForceX", "ForceY");
+            }
+        }
+
+        public void WriteLogLine(TimestepNumber TimestepNo, double phystime) {
+
+            double[] force = IBMSolverUtils.GetForces_BoundaryFitted(Velocity.Current, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta, "Wall_cylinder");
+            string logline = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", TimestepNo, phystime, currentWeissenberg, force[0], force[1]);
+            Log.WriteLine(logline);
+            Log.Flush();
+        }
+
+        #endregion
+    }  
 
     class Idsource : LinearSource {
         public Idsource(string _var) {
@@ -1621,6 +1720,7 @@ namespace BoSSS.Application.Rheology {
             return U[0];
         }
     }
+
 }
 
 

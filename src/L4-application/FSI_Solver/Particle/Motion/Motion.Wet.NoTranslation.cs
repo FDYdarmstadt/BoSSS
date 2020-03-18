@@ -14,15 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.XDG;
+using ilPSP;
 
 namespace BoSSS.Application.FSI_Solver {
-    public class Motion_Dry_NoTranslation : Motion_Dry {
+    public class MotionWetNoTranslation : Motion {
 
         /// <summary>
-        /// The dry description of motion without hydrodynamics and translation.
+        /// The dry description of motion including hydrodynamics without translation.
         /// </summary>
         /// <param name="gravity">
         /// The gravity (volume forces) acting on the particle.
@@ -30,7 +29,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public Motion_Dry_NoTranslation(double[] gravity, double density) : base(gravity, density) {
+        /// /// <param name="underrelaxationParam">
+        /// The underrelaxation parameters (convergence limit, prefactor and a bool whether to use addaptive underrelaxation) defined in <see cref="ParticleUnderrelaxationParam"/>.
+        /// </param>
+        public MotionWetNoTranslation(Vector gravity, double density) : base(new Vector(gravity), density) {
             IncludeTranslation = false;
         }
 
@@ -47,11 +49,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// Calculate the new particle position
         /// </summary>
         /// <param name="dt"></param>
-        protected override double[] CalculateParticlePosition(double dt) {
-            double[] l_Position = new double[m_Dim];
-            for (int d = 0; d < m_Dim; d++) {
-                l_Position[d] = GetPosition(1)[d];
-            }
+        protected override Vector CalculateParticlePosition(double dt) {
+            Vector l_Position = GetPosition(1);
             Aux.TestArithmeticException(l_Position, "particle position");
             return l_Position;
         }
@@ -60,11 +59,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// Calculate the new particle position
         /// </summary>
         /// <param name="dt"></param>
-        protected override double[] CalculateParticlePosition(double dt, double collisionTimestep) {
-            double[] l_Position = new double[m_Dim];
-            for (int d = 0; d < m_Dim; d++) {
-                l_Position[d] = GetPosition(1)[d];
-            }
+        /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
+        protected override Vector CalculateParticlePosition(double dt, double collisionTimestep) {
+            Vector l_Position = GetPosition(1);
             Aux.TestArithmeticException(l_Position, "particle position");
             return l_Position;
         }
@@ -73,11 +70,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
-        protected override double[] CalculateTranslationalVelocity(double dt) {
-            double[] l_TranslationalVelocity = new double[m_Dim];
-            for (int d = 0; d < m_Dim; d++) {
-                l_TranslationalVelocity[d] = 0;
-            }
+        protected override Vector CalculateTranslationalVelocity(double dt) {
+            Vector l_TranslationalVelocity = new Vector(m_Dim);
             Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
             return l_TranslationalVelocity;
         }
@@ -86,41 +80,38 @@ namespace BoSSS.Application.FSI_Solver {
         /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
-        protected override double[] CalculateTranslationalVelocity(double dt, double collisionTimestep) {
-            double[] l_TranslationalVelocity = new double[m_Dim];
-            for (int d = 0; d < m_Dim; d++) {
-                l_TranslationalVelocity[d] = 0;
-            }
+        /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
+        protected override Vector CalculateTranslationalVelocity(double dt, double collisionTimestep) {
+            Vector l_TranslationalVelocity = new Vector(m_Dim);
             Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
             return l_TranslationalVelocity;
         }
 
         /// <summary>
-        /// Calculates the new translational acceleration.
+        /// Calculate the new angular velocity of the particle using explicit Euler scheme.
         /// </summary>
-        /// <param name="dt"></param>
-        protected override double[] CalculateTranslationalAcceleration(double dt) {
-            return new double[] { 0, 0 };
+        /// <param name="dt">Timestep</param>
+        /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
+        protected override double CalculateAngularVelocity(double dt) {
+            double l_RotationalVelocity = GetRotationalVelocity(0) + (GetRotationalAcceleration(0) + GetRotationalAcceleration(1)) * dt / 2;
+            Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
+            return l_RotationalVelocity;
         }
 
         /// <summary>
-        /// Calculate the new acceleration (translational and rotational)
+        /// Update Forces and Torque acting from fluid onto the particle
         /// </summary>
-        /// <param name="dt"></param>
-        protected override double CalculateRotationalAcceleration(double dt) {
-            return 0;
+        /// <param name="hydrodynamicsIntegration"></param>
+        /// <param name="fluidDensity"></param>
+        public override Vector CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, CellMask cutCells, double dt) {
+            return new Vector(m_Dim); ;
         }
 
-        /// <summary>
-        /// Overrides the calculation of hydrodynamics for fixed particles, so that nothing happens.
-        /// </summary>
-        public override void UpdateForcesAndTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration = null, double fluidDensity = 0, bool firstIteration = false, double dt = 0) {
-            double[] tempForces = new double[m_Dim];
-            for (int d = 0; d < m_Dim; d++) {
-                tempForces[d] = 0;
-            }
-            double tempTorque = 0;
-            HydrodynamicsPostprocessing(tempForces, tempTorque);
+        public override object Clone() {
+            Motion clonedMotion = new MotionWetNoTranslation(Gravity, Density);
+            clonedMotion.GetParticleArea(ParticleArea);
+            clonedMotion.GetParticleMomentOfInertia(MomentOfInertia);
+            return clonedMotion;
         }
     }
 }

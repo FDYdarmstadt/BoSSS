@@ -17,6 +17,7 @@ limitations under the License.
 using System;
 using System.Diagnostics;
 using BoSSS.Foundation;
+using BoSSS.Foundation.XDG;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using ilPSP;
@@ -83,7 +84,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
                     double pOut = (gamma - 1.0) * (energyOut - MachScaling * 0.5 * momentumSquareOut / densityOut);
                     //pIn = Math.Max(pIn, ilPSP.Utils.BLAS.MachineEps);
                     //pOut = Math.Max(pOut, ilPSP.Utils.BLAS.MachineEps);
-                    
+
                     double speedOfSoundIn = Math.Sqrt(pIn / densityIn) / Mach;
                     double speedOfSoundOut = Math.Sqrt(pOut / densityOut) / Mach;
 
@@ -115,8 +116,18 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
                     double cOut = densityOut * (waveSpeedOut - normalVelocityOut);
 
                     // cf. Toro2009, equation 10.70
+                    double speedDiff = cOut * normalVelocityOut - cIn * normalVelocityIn;
+                    //if (Math.Abs(speedDiff) < 1e-13) {
+                    //    speedDiff = 0.0;
+                    //}
+
+                    double pIn_minus_pOut = pIn - pOut;
+                    //if (Math.Abs(pIn_minus_pOut) < 1e-13) {
+                    //    pIn_minus_pOut = 0.0;
+                    //}
+
                     double intermediateWaveSpeed =
-                        (cOut * normalVelocityOut - cIn * normalVelocityIn + (pIn - pOut) / MachScaling) /
+                        (speedDiff + pIn_minus_pOut / MachScaling) /
                         (cOut - cIn);
 
                     double edgeFlux = 0.0;

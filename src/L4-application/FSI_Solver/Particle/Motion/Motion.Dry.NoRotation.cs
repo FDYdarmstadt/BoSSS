@@ -14,12 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.XDG;
+using ilPSP;
 
 namespace BoSSS.Application.FSI_Solver {
-    public class Motion_Dry_NoRotation : Motion_Dry {
+    public class Motion_Dry_NoRotation : MotionDry {
 
         /// <summary>
         /// The dry description of motion without hydrodynamics and rotation.
@@ -30,7 +28,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public Motion_Dry_NoRotation(double[] gravity, double density) : base(gravity, density) {
+        public Motion_Dry_NoRotation(Vector gravity, double density) : base(gravity, density) {
             IncludeRotation = false;
         }
 
@@ -89,16 +87,11 @@ namespace BoSSS.Application.FSI_Solver {
             return 0;
         }
 
-        /// <summary>
-        /// Overrides the calculation of hydrodynamics for fixed particles, so that nothing happens.
-        /// </summary>
-        public override void UpdateForcesAndTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration = null, double fluidDensity = 0, bool firstIteration = false, double dt = 0) {
-            double[] tempForces = new double[m_Dim];
-            for (int d = 0; d < m_Dim; d++) {
-                tempForces[d] = Gravity[d] * Density * ParticleArea;
-            }
-            double tempTorque = 0;
-            HydrodynamicsPostprocessing(tempForces, tempTorque);
+        public override object Clone() {
+            Motion clonedMotion = new Motion_Dry_NoRotation(Gravity, Density);
+            clonedMotion.GetParticleArea(ParticleArea);
+            clonedMotion.GetParticleMomentOfInertia(MomentOfInertia);
+            return clonedMotion;
         }
     }
 }

@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <VisualState xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" ShowCheckBoxes="true">
-  <TopNode>[0-1000]C:\Users\kikker\BoSSS-code\public\src\L4-application\RheologySolver2\Tests\RheologyTest.nunit</TopNode>
-  <SelectedNode>[0-1000]C:\Users\kikker\BoSSS-code\public\src\L4-application\RheologySolver2\Tests\RheologyTest.nunit</SelectedNode>
+  <TopNode>[0-1000]C:\Users\kikker\BoSSS-Fix\root\public\src\L4-application\RheologySolver2\Tests\RheologyTest.nunit</TopNode>
+  <SelectedNode>[0-1000]C:\Users\kikker\BoSSS-Fix\root\public\src\L4-application\RheologySolver2\Tests\RheologyTest.nunit</SelectedNode>
   <ExcludeCategories>false</ExcludeCategories>
   <Nodes>
-    <Node UniqueName="[0-1000]C:\Users\kikker\BoSSS-code\public\src\L4-application\RheologySolver2\Tests\RheologyTest.nunit" Expanded="true" />
-    <Node UniqueName="[0-1021]C:\Users\kikker\BoSSS-code\public\src\L4-application\RheologySolver2\Tests\..\bin\Debug\RheologySolver.exe" Expanded="true" />
+    <Node UniqueName="[0-1000]C:\Users\kikker\BoSSS-Fix\root\public\src\L4-application\RheologySolver2\Tests\RheologyTest.nunit" Expanded="true" />
+    <Node UniqueName="[0-1021]C:\Users\kikker\BoSSS-Fix\root\public\src\L4-application\RheologySolver2\Tests\..\bin\Debug\RheologySolver.exe" Expanded="true" />
     <Node UniqueName="[0-1022]BoSSS" Expanded="true" />
     <Node UniqueName="[0-1023]BoSSS.Application" Expanded="true" />
     <Node UniqueName="[0-1024]BoSSS.Application.Rheology" Expanded="true" />
@@ -16,7 +16,7 @@
     <Node UniqueName="[0-1019]BoSSS.Application.Rheology.RheologyTestProgram.ConsistencyConstitutiveTestStability" Expanded="true" />
     <Node UniqueName="[0-1013]BoSSS.Application.Rheology.RheologyTestProgram.LocalDGConvergence" Expanded="true" />
     <Node UniqueName="[0-1010]BoSSS.Application.Rheology.RheologyTestProgram.LocalDGTestStokes" Expanded="true" />
-    <Node UniqueName="[0-1045]C:\Users\kikker\BoSSS-code\public\src\L4-application\RheologySolver2\Tests\..\bin\Release\RheologySolver.exe" Expanded="true" />
+    <Node UniqueName="[0-1045]C:\Users\kikker\BoSSS-Fix\root\public\src\L4-application\RheologySolver2\Tests\..\bin\Release\RheologySolver.exe" Expanded="true" Checked="true" />
     <Node UniqueName="[0-1046]BoSSS" Expanded="true" />
     <Node UniqueName="[0-1047]BoSSS.Application" Expanded="true" />
     <Node UniqueName="[0-1048]BoSSS.Application.Rheology" Expanded="true" />
