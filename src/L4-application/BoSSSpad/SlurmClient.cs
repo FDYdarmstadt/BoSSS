@@ -346,9 +346,9 @@ namespace BoSSS.Application.BoSSSpad
 
             // extract JobID
             String SearchString = "Submitted batch job ";
-            String jobId = Regex.Match(resultString, SearchString + "[0-9]*")
-                .ToString()
-                .Replace(SearchString, "");
+            String jobId = Regex.Match(resultString, SearchString + "[0-9]*") // look for SearchString followed by a number (the Job ID)
+                .ToString() // convert to string
+                .Replace(SearchString, ""); // remove SearchString, leaving only the Job ID
             Console.WriteLine(jobId);
 
             return jobId;
