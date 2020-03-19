@@ -303,7 +303,7 @@ namespace BoSSS.Application.BoSSSpad
             
             // Convert from Windows to Unix and submit job
             Console.WriteLine();
-            String jobId;
+            String resultString;
             PlatformID CurrentSys = System.Environment.OSVersion.Platform;
             switch(CurrentSys){
                 case PlatformID.Unix:
@@ -315,17 +315,11 @@ namespace BoSSS.Application.BoSSSpad
                        cmd.StartInfo.CreateNoWindow = true;
                        cmd.StartInfo.UseShellExecute = false;
                        cmd.Start();
-                       
                        cmd.StandardInput.WriteLine("ssh " + Username + "@" + ServerName + " \"" + sbatchCmd + "\"");
                        cmd.StandardInput.Flush();
                        cmd.StandardInput.Close();
                        cmd.WaitForExit();
-                       var resultString = cmd.StandardOutput.ReadToEnd(); 
-                       // extract JobID
-                       String SearchString = "Submitted batch job ";
-                       jobId = Regex.Match(resultString, SearchString + "[0-9]*")
-                           .ToString()
-                           .Replace(SearchString, "");
+                       resultString = cmd.StandardOutput.ReadToEnd(); 
                        break;
                     }
                 case PlatformID.Win32S:
@@ -333,13 +327,7 @@ namespace BoSSS.Application.BoSSSpad
                 default:
                     {
                         var result2 = SSHConnection.RunCommand(sbatchCmd);
-
-                        // Hardcoded extract of JobID
-                       var resultString = result2.Result;
-                       String SearchString = "Submitted batch job ";
-                       jobId = Regex.Match(resultString, SearchString + "[0-9]*")
-                           .ToString()
-                           .Replace(SearchString, "");
+                        resultString = result2.Result;
                         break;
                     }
             }
@@ -355,6 +343,13 @@ namespace BoSSS.Application.BoSSSpad
             //    }
             //    Console.WriteLine();
             //}
+
+            // extract JobID
+            String SearchString = "Submitted batch job ";
+            String jobId = Regex.Match(resultString, SearchString + "[0-9]*")
+                .ToString()
+                .Replace(SearchString, "");
+            Console.WriteLine(jobId);
 
             return jobId;
         }
