@@ -15,17 +15,15 @@ limitations under the License.
 */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Renci.SshNet;
 using System.IO;
-using System.Security;
 using System.Runtime.Serialization;
 using ilPSP;
+using System.Diagnostics;
+using System.Text.RegularExpressions;
 
-namespace BoSSS.Application.BoSSSpad {
+namespace BoSSS.Application.BoSSSpad
+{
 
     /// <summary>
     /// A <see cref="BatchProcessorClient"/> implementation for slurm systems on unix based hpc platforms
@@ -305,7 +303,48 @@ namespace BoSSS.Application.BoSSSpad {
             
             // Convert from Windows to Unix and submit job
             Console.WriteLine();
-            var result2 = SSHConnection.RunCommand(sbatchCmd);
+            String jobId;
+            PlatformID CurrentSys = System.Environment.OSVersion.Platform;
+            switch(CurrentSys){
+                case PlatformID.Unix:
+                    {
+                       Process cmd = new Process();
+                       cmd.StartInfo.FileName = "/bin/bash";
+                       cmd.StartInfo.RedirectStandardInput = true;
+                       cmd.StartInfo.RedirectStandardOutput = true;
+                       cmd.StartInfo.CreateNoWindow = true;
+                       cmd.StartInfo.UseShellExecute = false;
+                       cmd.Start();
+                       
+                       cmd.StandardInput.WriteLine("ssh " + Username + "@" + ServerName + " \"" + sbatchCmd + "\"");
+                       cmd.StandardInput.Flush();
+                       cmd.StandardInput.Close();
+                       cmd.WaitForExit();
+                       var resultString = cmd.StandardOutput.ReadToEnd(); 
+                       // extract JobID
+                       String SearchString = "Submitted batch job ";
+                       jobId = Regex.Match(resultString, SearchString + "[0-9]*")
+                           .ToString()
+                           .Replace(SearchString, "");
+                       Console.WriteLine(jobId);
+                       break;
+                    }
+                case PlatformID.Win32S:
+                case PlatformID.Win32Windows:
+                default:
+                    {
+                        var result2 = SSHConnection.RunCommand(sbatchCmd);
+                        Console.WriteLine(result2.Result);
+
+                        // Hardcoded extract of JobID
+                       var resultString = result2.Result;
+                       String SearchString = "Submitted batch job ";
+                       jobId = Regex.Match(resultString, SearchString + "[0-9]*")
+                           .ToString()
+                           .Replace(SearchString, "");
+                        break;
+                    }
+            }
 
             //// Otherwise it didn't work because uploading speed at some clusters is too slow
             //if (result1.Error == "" || result2.Result == "") {
@@ -318,13 +357,6 @@ namespace BoSSS.Application.BoSSSpad {
             //    }
             //    Console.WriteLine();
             //}
-            Console.WriteLine(result2.Result);
-
-            // Hardcoded extract of JobID
-            string jobId = result2.Result.Substring(20, 7);
-            
-
-
 
             return jobId;
         }
