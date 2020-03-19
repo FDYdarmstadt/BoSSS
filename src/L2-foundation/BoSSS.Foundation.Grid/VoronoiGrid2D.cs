@@ -119,7 +119,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
         /// <summary>
         /// Creates a voronoi mesh inside a polygon.
         /// </summary>
-        /// <param name="Nodes">
+        /// <param name="nodePositions">
         /// Voronoi nodes: Center of each agglomerated cell. Will not be considered if outside of PolygonBoundary.
         /// </param>
         /// <param name="PolygonBoundary">
