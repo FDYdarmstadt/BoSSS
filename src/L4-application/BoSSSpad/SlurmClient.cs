@@ -326,7 +326,6 @@ namespace BoSSS.Application.BoSSSpad
                        jobId = Regex.Match(resultString, SearchString + "[0-9]*")
                            .ToString()
                            .Replace(SearchString, "");
-                       Console.WriteLine(jobId);
                        break;
                     }
                 case PlatformID.Win32S:
@@ -334,7 +333,6 @@ namespace BoSSS.Application.BoSSSpad
                 default:
                     {
                         var result2 = SSHConnection.RunCommand(sbatchCmd);
-                        Console.WriteLine(result2.Result);
 
                         // Hardcoded extract of JobID
                        var resultString = result2.Result;
