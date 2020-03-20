@@ -1,0 +1,258 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 3 instances of IDatabaseInfo {
+  0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
+  1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
+  2: { Session Count = 42; Grid Count = 611; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+//var myDb = OpenOrCreateDefaultDatabase();
+var myDb = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB")
+**************
+==============
+ExecutionQueues;
+**************
+List of 1 instances of BatchProcessorClient {
+  0: BoSSS.Application.BoSSSpad.MiniBatchProcessorClient
+}
+==============
+ExecutionQueues[0].AllowedDatabases;
+**************
+List of 0 instances of IDatabaseInfo {
+}
+==============
+var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\smuda\binaries", "hpccluster");
+**************
+==============
+using BoSSS.Application.XNSE_Solver;
+**************
+==============
+**************
+==============
+WorkflowMgm.Init("RisingBubble");   // set project name
+**************
+Project name is set to 'RisingBubble'.
+
+==============
+WorkflowMgm.SetEqualityBasedSessionJobControllCorrelation();
+**************
+==============
+**************
+==============
+**************
+==============
+// ========================
+// physical parameter setup
+// ========================
+**************
+==============
+int setup = 0;
+**************
+==============
+// ===========================
+// Grids for Convergence Study
+// ===========================
+**************
+==============
+var GridSeq = new IGridInfo[1];
+int[] kelemSeq = new int[]{ 20 };
+**************
+==============
+double dt = 3e-3; 
+**************
+==============
+for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
+    
+    int kelem = kelemSeq[iGrid];
+    
+    GridCommons grd;
+
+    double[] Xnodes = GenericBlas.Linspace(0, 1.0, kelem + 1);
+    double[] Ynodes = GenericBlas.Linspace(0, 2.0, 2 * kelem + 1);
+    grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
+
+    grd.EdgeTagNames.Add(1, "wall_lower");
+    grd.EdgeTagNames.Add(2, "wall_upper");
+    grd.EdgeTagNames.Add(3, "freeslip_left");
+    grd.EdgeTagNames.Add(4, "freeslip_right");
+
+    grd.DefineEdgeTags(delegate (double[] X) {   
+        byte et = 0;
+        if (Math.Abs(X[1]) <= 1.0e-8)       
+            et = 1;
+        if (Math.Abs(X[1] - 2.0) <= 1.0e-8)
+            et = 2;
+        if (Math.Abs(X[0]) <= 1.0e-8)
+            et = 3;
+        if (Math.Abs(X[0] - 1.0) <= 1.0e-8)
+            et = 4;
+        return et;
+    });
+
+    grd.Name = "RisingBubble_test";
+    myDb.SaveGrid(ref grd);
+    
+    GridSeq[iGrid] = grd;
+}
+**************
+Grid Edge Tags changed.
+An equivalent grid is already present in the database -- the grid will not be saved.
+
+==============
+**************
+==============
+// ======================
+// Create Control objects
+// ======================
+**************
+==============
+using BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases;
+**************
+==============
+int[] degS = new int[] { 2 };
+**************
+==============
+**************
+==============
+XNSE_Control[,] controls = new XNSE_Control[GridSeq.Length, degS.Length];
+**************
+==============
+for(int iDeg = 0; iDeg < degS.Length; iDeg++) {
+for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
+    
+    var C = RisingBubble.RB_forWorksheet(setup);
+    
+    int pDeg = degS[iDeg];   
+    var grd  = GridSeq[iGrd];
+
+    C.SetDGdegree(pDeg);
+    
+    C.SetGrid(grd);
+    C.AddBoundaryValue("wall_lower");
+    C.AddBoundaryValue("wall_upper");
+    C.AddBoundaryValue("freeslip_left");
+    C.AddBoundaryValue("freeslip_right");
+    
+    C.dtMin         = dt;
+    C.dtMax         = dt;
+    C.NoOfTimesteps = (int)(3.0/dt);
+    
+    C.SessionName = "RisingBubble_test2_k" + pDeg + "_mesh" + iGrd;
+    
+    controls[iDeg,iGrd] = C;
+    C.CreateJob(); // job will be permanently linked to control object
+}
+}
+**************
+Info: setting database path to: \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB
+
+==============
+//Info(controls[0,0]);
+**************
+==============
+var j00 = controls[0,0].GetJob();
+**************
+==============
+j00.Activate(myBatch);
+**************
+Job not submitted yet, or no result session is known - starting submission.
+Warning: no database is set for the job to submit; nothing ma be saved.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\RisingBubble-XNSE_Solver2020Mar19_174737
+copied 32 files.
+   writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+
+==============
+j00.Status;
+**************
+InProgress
+==============
+//j00.Stdout;
+**************
+==============
+j00.Stderr;
+**************
+   at BoSSS.Foundation.XDG.MultiphaseCellAgglomerator.FindAgglomeration(LevelSetTracker Tracker, SpeciesId spId, Double AgglomerationThreshold, MultidimensionalArray CellVolumes, MultidimensionalArray edgeArea, Boolean AgglomerateNewborn, Boolean AgglomerateDeceased, Boolean ExceptionOnFailedAgglomeration, MultidimensionalArray[] oldCellVolumes, Double[] oldTs__AgglomerationTreshold, Double NewbornAndDecasedThreshold)
+   at BoSSS.Foundation.XDG.MultiphaseCellAgglomerator..ctor(LevelSetTracker lsTrk, SpeciesId[] Spc, Int32 CutCellsQuadOrder, Double __AgglomerationTreshold, Boolean AgglomerateNewborn, Boolean AgglomerateDecased, Boolean ExceptionOnFailedAgglomeration, Double[] oldTs__AgglomerationTreshold, Double NewbornAndDecasedThreshold)
+   at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.AssembleMatrixCallback(BlockMsrMatrix& System, Double[]& Affine, BlockMsrMatrix& PrecondMassMatrix, DGField[] argCurSt, Boolean Linearization)
+   at BoSSS.Solution.AdvancedSolvers.NonlinearSolver.UpdateLinearization(IEnumerable`1 CurrentState)
+   at BoSSS.Solution.AdvancedSolvers.NonlinearSolver.Init[S](CoordinateVector X, S RHS, Double[]& Sol1, Double[]& Res1)
+   at BoSSS.Solution.AdvancedSolvers.FixpointIterator.SolverDriver[S](CoordinateVector SolutionVec, S RHS)
+   at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve_Increment(Int32 increment, Double phystime, Double dt, Boolean ComputeOnlyResidual)
+   at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve(Double phystime, Double dt, Boolean ComputeOnlyResidual)
+   at BoSSS.Application.XNSE_Solver.XNSE_SolverMain.RunSolverOneStep(Int32 TimestepInt, Double phystime, Double dt)
+   at BoSSS.Solution.Application`1.RunSolverMode()
+   at BoSSS.Solution.Application`1.AppEntry(Func`1 ApplicationFactory, CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy)
+   at BoSSS.Solution.Application`1._Main(String[] args, Boolean noControlFile, Func`1 ApplicationFactory)
+
+
+========================================
+========================================
+Exception:
+Agglomeration failed - no candidate for agglomeration found
+========================================
+========================================
+
+
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+//databases.Pick(2).Sessions.Pick(0).Delete()
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

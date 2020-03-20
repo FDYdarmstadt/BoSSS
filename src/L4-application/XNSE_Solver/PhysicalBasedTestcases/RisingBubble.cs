@@ -946,6 +946,163 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         }
 
 
+        public static XNSE_Control RB_forWorksheet(int setup) {
+
+            XNSE_Control C = new XNSE_Control();
+
+            // basic database options
+            // ======================
+            #region db
+
+            //C.DbPath = set by workflowMgm during job creation
+            C.savetodb = true;
+            C.ContinueOnIoError = false;
+
+            C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
+
+            #endregion
+
+
+            // DG degrees
+            // ==========
+            #region degrees
+
+            // need to be set by user via setDGdegree() in worksheet
+
+            #endregion
+
+
+            // Physical Parameters
+            // ===================
+            #region physics  
+
+            double rho_h = 0.0;                // heavy fluid
+            double mu_h = 0.0;
+            double rho_l = 0.0;                // light fluid
+            double mu_l = 0.0;
+            double sigma = 0.0;
+
+            switch (setup) {
+                case 0: {
+                        // testcase 1:
+                        rho_h = 1000;
+                        mu_h = 10;
+                        rho_l = 100;
+                        mu_l = 1;
+                        sigma = 24.5;
+                        break;
+                    }
+                case 1: {
+                        // testcase 2:
+                        rho_h = 1000;
+                        mu_h = 10;
+                        rho_l = 1;
+                        mu_l = 0.1;
+                        sigma = 1.96;
+                        break;
+                    }
+            }
+
+            C.PhysicalParameters.rho_A = rho_l;
+            C.PhysicalParameters.rho_B = rho_h;
+            C.PhysicalParameters.mu_A = mu_l;
+            C.PhysicalParameters.mu_B = mu_h;
+            C.PhysicalParameters.Sigma = sigma;
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = true;
+
+            #endregion
+
+
+            // grid genration
+            // ==============
+            #region grid
+
+            // need to be set by user via setGrid() in worksheet
+
+            #endregion
+
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+            // need to be set during job creation 
+
+            #endregion
+
+
+            // Initial Values
+            // ==============
+            #region init
+
+            C.AddInitialValue("Phi", "X => ((X[0] - 0.5).Pow2() + (X[1] - 0.5).Pow2()).Sqrt() - 0.25", false);
+
+            C.AddInitialValue("GravityY#A", "X => -9.81e-1", false);
+            C.AddInitialValue("GravityY#B", "X => -9.81e-1", false);
+
+            #endregion
+
+
+            // misc. solver options
+            // ====================
+            #region solver
+
+            C.NonLinearSolver.MaxSolverIterations = 80;
+            C.LinearSolver.MaxSolverIterations = 80;
+
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.LinearSolver.ConvergenceCriterion = 1e-8;
+
+            C.LevelSet_ConvergenceCriterion = 1e-6;
+
+            #endregion
+
+
+            // Level-Set options (AMR)
+            // =======================
+            #region levset
+
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+
+            //C.AdaptiveMeshRefinement = true;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefinementLevel = 1;
+
+            #endregion
+
+
+            // Timestepping
+            // ============
+            #region time
+
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF3;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+
+            //C.dtMax = dt; // need to be set according to grid and DG degree
+            //C.dtMin = dt;
+            C.Endtime = 3;
+            //C.NoOfTimesteps = 0; 
+
+            C.saveperiod = 1;
+            C.LogPeriod = 1;
+
+
+            #endregion
+
+            return C;
+
+        }
+
+
 
         /// <summary>
         /// Control for two Rising Bubble 

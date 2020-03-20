@@ -1,0 +1,381 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 3 instances of IDatabaseInfo {
+  0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
+  1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
+  2: { Session Count = 40; Grid Count = 609; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+//var myDb = OpenOrCreateDefaultDatabase();
+var myDb = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB")
+**************
+==============
+ExecutionQueues;
+**************
+List of 1 instances of BatchProcessorClient {
+  0: BoSSS.Application.BoSSSpad.MiniBatchProcessorClient
+}
+==============
+ExecutionQueues[0].AllowedDatabases;
+**************
+List of 0 instances of IDatabaseInfo {
+}
+==============
+var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\smuda\binaries", "hpccluster");
+**************
+==============
+using BoSSS.Application.XNSE_Solver;
+**************
+==============
+**************
+==============
+WorkflowMgm.Init("RayleighTaylorInstability");   // set project name
+**************
+Project name is set to 'RayleighTaylorInstability'.
+
+==============
+WorkflowMgm.SetEqualityBasedSessionJobControllCorrelation();
+**************
+==============
+**************
+==============
+// ========================
+// physical parameter setup
+// ========================
+**************
+==============
+bool stableConfig = true;    // if true light fluid above heavy fluid
+
+double rho_l;                // light fluid
+double mu_l;
+double rho_h;                // heavy fluid
+double mu_h;
+double sigma;
+double g = 9.81e2;           // y-gravity
+
+double lambda;         // wavelength
+ 
+double dt;
+double t_end;
+
+int setup = 0;
+switch(setup) {
+    case 0: {
+        // 
+        rho_l  = 1e-1;
+        mu_l   = 1e-2;
+        rho_h  = 1;
+        mu_h   = 1e-1;
+        sigma  = 100; 
+        lambda = 1.0;
+        dt     = 8e-5;
+        t_end  = 4e-4;
+        break;
+    }
+    case 1: {
+        // same kinematic viscosities: Atwood number = 0.98 
+        rho_l = 1e-5;                
+        mu_l  = 1e-8;
+        rho_h = 1e-3;
+        mu_h  = 1e-6;
+        sigma = 72.75e-3;
+        break;
+    }
+    case 2: {
+        // same kinematic viscosities: Atwood number = 0.1765 
+        rho_l = 7e-4;                
+        mu_l  = 7e-5;
+        rho_h = 1e-3;
+        mu_h  = 1e-4;
+        sigma = 72.75e-3;
+        break;
+    }
+    case 3: {
+        // Air - Water: (lambda_crit = 1.7121 ; lambda < lambda_c: stable)
+        rho_l = 1.2e-6;
+        mu_l  = 17.1e-8;
+        rho_h = 1e-3;
+        mu_h  = 1e-5;
+        sigma = 72.75e-3;
+        break;
+    }
+    case 4: {
+        // Water - Oil:
+        rho_l = 1.2e-6;
+        mu_l  = 17.1e-8;
+        rho_h = 8.63e-4;
+        mu_h  = 2e-4;
+        sigma = 72.75e-3;
+        break;
+    }
+}
+**************
+==============
+// ===========================
+// Grids for Convergence Study
+// ===========================
+**************
+==============
+var GridSeq = new IGridInfo[1];
+int[] kelemSeq = new int[]{ 8 };
+**************
+==============
+double L = lambda;    // equals lambda
+**************
+==============
+for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
+    
+    int kelem = kelemSeq[iGrid];
+    
+    GridCommons grd;
+
+    double[] xNodes = GenericBlas.Linspace(0, L, kelem + 1);
+    double[] yNodes = GenericBlas.Linspace(-(3.0/2.0)*L, (3.0/2.0)*L, (3 * kelem) * 1);    
+    grd = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: true);
+
+    grd.EdgeTagNames.Add(1, "wall");
+ 
+    grd.DefineEdgeTags(delegate (double[] X) {
+        byte et = 0;
+        if (Math.Abs(X[1] + (3.0/2.0)*L) <= 1.0e-8)
+            et = 1;
+        if (Math.Abs(X[1] - (3.0/2.0)*L) <= 1.0e-8)
+            et = 1;
+        return et;
+    });
+
+    grd.Name = "RayleighTaylor_test";
+    myDb.SaveGrid(ref grd);
+    
+    GridSeq[iGrid] = grd;
+}
+**************
+Grid Edge Tags changed.
+An equivalent grid is already present in the database -- the grid will not be saved.
+
+==============
+**************
+==============
+// ======================
+// Create Control objects
+// ======================
+**************
+==============
+using BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases;
+**************
+(1,2): warning CS0105: The using directive for `BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases' appeared previously in this namespace
+No. of errors|warnings: 0|1.
+
+==============
+int[] degS = new int[] { 2 };
+**************
+==============
+**************
+==============
+XNSE_Control[,] controls = new XNSE_Control[GridSeq.Length, degS.Length];
+**************
+==============
+for(int iDeg = 0; iDeg < degS.Length; iDeg++) {
+for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
+    
+    var C = RayleighTaylorInstability.RT_forWorksheet();
+    
+    int pDeg = degS[iDeg];   
+    var grd  = GridSeq[iGrd];
+
+    C.SetDGdegree(pDeg);
+    
+    C.SetGrid(grd);
+    C.AddBoundaryValue("wall");
+    
+    double A0 = L/100;
+    C.AddInitialValue("Phi", "X => X[1] - (1.0/100.0) * Math.Sin(X[0] * 2.0 * Math.PI / 1.0)", false);
+    
+    string g_str = g.ToString();
+    C.AddInitialValue("GravityY#A", "X => -"+g_str, false);
+    C.AddInitialValue("GravityY#B", "X => -"+g_str, false);
+    
+    double[] param = new double[4];
+    param[0] = 1;        // wavenumber;
+    param[1] = lambda;        // wavelength
+    param[2] = A0;       // initial disturbance
+    param[3] = g;      // y-gravity
+    C.AdditionalParameters = param;
+    
+    if(stableConfig){    // A lower, B upper
+        C.PhysicalParameters.rho_A = rho_h;
+        C.PhysicalParameters.rho_B = rho_l;
+        C.PhysicalParameters.mu_A  = mu_h;
+        C.PhysicalParameters.mu_B  = mu_l;
+        C.PhysicalParameters.Sigma = sigma;
+    } else {
+        C.PhysicalParameters.rho_A = rho_l;
+        C.PhysicalParameters.rho_B = rho_h;
+        C.PhysicalParameters.mu_A  = mu_l;
+        C.PhysicalParameters.mu_B  = mu_h;
+        C.PhysicalParameters.Sigma = sigma;
+    }
+    
+    C.dtMin         = dt;
+    C.dtMax         = dt;
+    C.NoOfTimesteps = (int)(t_end/dt);
+    
+    C.SessionName = "RayleighTaylor_test_k" + pDeg + "_mesh" + iGrd;
+    
+    controls[iDeg,iGrd] = C;
+    C.CreateJob(); // job will be permanently linked to control object
+}
+}
+**************
+Info: setting database path to: \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB
+
+==============
+//Info(controls[0,0]);
+**************
+==============
+var j00 = controls[0,0].GetJob();
+**************
+==============
+j00.Activate(myBatch);
+**************
+Job not submitted yet, or no result session is known - starting submission.
+Warning: no database is set for the job to submit; nothing ma be saved.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\RayleighTaylorInstability-XNSE_Solver2020Mar19_113751
+copied 32 files.
+   writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+
+==============
+j00.Status;
+**************
+InProgress
+==============
+//j00.Stdout;
+**************
+      ___           ___           ___           ___           ___     
+     /\  \         /\  \         /\  \         /\  \         /\  \    
+    /::\  \       /::\  \       /::\  \       /::\  \       /::\  \   
+   /:/\:\  \     /:/\:\  \     /:/\ \  \     /:/\ \  \     /:/\ \  \  
+  /::\~\:\__\   /:/  \:\  \   _\:\~\ \  \   _\:\~\ \  \   _\:\~\ \  \ 
+ /:/\:\ \:|__| /:/__/ \:\__\ /\ \:\ \ \__\ /\ \:\ \ \__\ /\ \:\ \ \__\
+ \:\~\:\/:/  / \:\  \ /:/  / \:\ \:\ \/__/ \:\ \:\ \/__/ \:\ \:\ \/__/
+  \:\ \::/  /   \:\  /:/  /   \:\ \:\__\    \:\ \:\__\    \:\ \:\__\  
+   \:\/:/  /     \:\/:/  /     \:\/:/  /     \:\/:/  /     \:\/:/  /  
+    \::/__/       \::/  /       \::/  /       \::/  /       \::/  /   
+     ~~            \/__/         \/__/         \/__/         \/__/    
+                                                                      
+Running with 1 MPI process(es)
+arg #0 override from environment variable 'BOSSS_ARG_0': --control
+arg #1 override from environment variable 'BOSSS_ARG_1': control.obj
+arg #2 override from environment variable 'BOSSS_ARG_2': --prjnmn
+arg #3 override from environment variable 'BOSSS_ARG_3': RayleighTaylorInstability
+arg #4 override from environment variable 'BOSSS_ARG_4': --sesnmn
+arg #5 override from environment variable 'BOSSS_ARG_5': RayleighTaylor_test_k2_mesh0
+Session ID: c44f4ae5-959c-49ad-a584-7f8f340f771f, DB path: '\\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB'.
+searching for library variants of PARDISO in following order: SEQ
+Instationary solve, timestep #1.0, dt = 8E-05 ...
+searching for library variants of PARDISO in following order: SEQ
+#Line,#Time,#Iter    L2Norm ResidualMomentumX    L2Norm ResidualMomentumY    L2Norm ResidualConti
+1,1,1    1.714902E+000   1.205777E+003   0.000000E+000
+    1  4.45322659415804E-13
+2,1,2    6.023148E-004   9.066230E-004   1.466805E-013
+    1  3.03368785072708E-19
+3,1,3    1.604038E-008   2.071572E-008   3.550623E-017
+    1  1.35330890402665E-23
+4,1,4    6.602843E-012   6.110990E-012   4.539229E-017
+    1  1.2792319829076E-27
+5,1,5    5.868765E-012   4.982335E-012   3.149366E-017
+done.
+Instationary solve, timestep #2.0, dt = 8E-05 ...
+6,2,1    5.014668E+001   5.140064E+001   4.745968E-007
+    1  4.5304148658983E-15
+7,2,2    6.978916E-004   1.122026E-003   8.986944E-017
+    1  3.03192904672008E-19
+8,2,3    3.079986E-008   4.273061E-008   4.476173E-017
+    1  2.40406199980691E-23
+9,2,4    4.654309E-012   6.024167E-012   4.166447E-017
+    1  1.43988706290007E-27
+10,2,5   4.103720E-012   3.744683E-012   3.808130E-017
+done.
+Instationary solve, timestep #3.0, dt = 8E-05 ...
+11,3,1   4.954323E+001   5.102136E+001   1.391368E-006
+    1  4.48678162545585E-15
+12,3,2   7.886848E-004   1.318640E-003   8.005503E-017
+    1  1.64175706609993E-18
+13,3,3   4.834554E-008   6.848224E-008   4.908362E-017
+    1  4.20150199245225E-23
+14,3,4   4.706746E-012   7.948996E-012   5.424578E-017
+    1  6.03793344445647E-27
+15,3,5   2.778028E-012   2.622417E-012   4.241182E-017
+done.
+Instationary solve, timestep #4.0, dt = 8E-05 ...
+16,4,1   4.926447E+001   5.078332E+001   2.719038E-006
+    1  4.62364322877119E-15
+17,4,2   1.008253E-003   1.717127E-003   8.468371E-017
+    1  8.84087454924004E-19
+18,4,3   8.650169E-008   1.216611E-007   8.487131E-017
+    1  6.56846848688097E-23
+19,4,4   8.932552E-012   1.822007E-011   6.574951E-017
+    1  7.77837896020174E-27
+20,4,5   2.837803E-012   2.724004E-012   7.097844E-017
+done.
+Instationary solve, timestep #5.0, dt = 8E-05 ...
+21,5,1   4.901768E+001   5.061184E+001   4.139935E-006
+    1  5.25553366812626E-15
+22,5,2   1.229729E-003   2.115637E-003   1.015753E-016
+    1  1.69659410473841E-18
+23,5,3   1.354633E-007   1.895487E-007   9.571928E-017
+    1  8.22540557444221E-23
+24,5,4   1.693990E-011   3.548343E-011   9.500815E-017
+    1  2.28633364044328E-26
+25,5,5   2.881163E-012   3.076110E-012   9.527703E-017
+done.
+Removing tag: NotTerminated
+
+==============
+j00.Stderr;
+**************
+System.NullReferenceException occurred: Object reference not set to an instance of an object.. Type 'LastError' for details.
+
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+//databases.Pick(2).Sessions.Pick(0).Delete()
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

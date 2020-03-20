@@ -316,6 +316,152 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             return C;
         }
 
+
+        public static XNSE_Control CouetteGNBC_forWorksheet(bool symmetric) {
+
+            XNSE_Control C = new XNSE_Control();
+
+            // basic database options
+            // ======================
+            #region db
+
+            //C.DbPath = set by workflowMgm during job creation
+            C.savetodb = true;
+            C.ContinueOnIoError = false;
+
+            C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
+
+            #endregion
+
+
+            // DG degrees
+            // ==========
+            #region degrees
+
+            // need to be set by user via setDGdegree() in worksheet
+
+            #endregion
+
+
+            // Physical Parameters
+            // ===================
+            #region physics
+
+            C.PhysicalParameters.rho_A = 0.81;
+            C.PhysicalParameters.rho_B = 0.81;
+            C.PhysicalParameters.mu_A = 1.95;
+            C.PhysicalParameters.mu_B = 1.95;
+            C.PhysicalParameters.Sigma = 5.5;
+
+            if(symmetric) {
+                C.PhysicalParameters.betaS_A = 1.5;
+                C.PhysicalParameters.betaS_B = 1.5;
+
+                C.PhysicalParameters.betaL = 0.0;
+                C.PhysicalParameters.theta_e = Math.PI / 2.0;
+
+            } else {
+                C.PhysicalParameters.betaS_A = 0.591;
+                C.PhysicalParameters.betaS_B = 1.5;
+
+                C.PhysicalParameters.betaL = 0.0;
+                C.PhysicalParameters.theta_e = Math.Acos(0.38);
+
+            }
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = true;
+
+            #endregion
+
+
+            // grid genration
+            // ==============
+            #region grid
+
+            // need to be set by user via setGrid() in worksheet
+
+            #endregion
+
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+            double U_wall = (symmetric) ? 0.25 : 0.2;
+            string uWall_str = U_wall.ToString();
+            C.AddBoundaryValue("navierslip_linear_lower", "VelocityX#A", "X => -" + uWall_str, false);
+            C.AddBoundaryValue("navierslip_linear_lower", "VelocityX#B", "X => -" + uWall_str, false);
+            C.AddBoundaryValue("navierslip_linear_upper", "VelocityX#A", "X => " + uWall_str, false);
+            C.AddBoundaryValue("navierslip_linear_upper", "VelocityX#B", "X => " + uWall_str, false);
+
+            C.AdvancedDiscretizationOptions.GNBC_Localization = NavierSlip_Localization.Bulk;
+            C.AdvancedDiscretizationOptions.GNBC_SlipLength = NavierSlip_SlipLength.Prescribed_Beta;
+
+
+            #endregion
+
+
+            // Initial Values
+            // ==============
+            #region init
+
+            C.AddInitialValue("Phi", "X => Math.Abs(X[0] - 2 * 27.2) - 27.2", false);
+
+            #endregion
+
+
+            // misc. solver options
+            // ====================
+            #region solver
+
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.MaxSolverIterations = 100;
+
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.LinearSolver.ConvergenceCriterion = 1e-8;
+
+            C.LevelSet_ConvergenceCriterion = 1e-6;
+
+            #endregion
+
+
+            // Level-Set options (AMR)
+            // =======================
+            #region levset
+
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+
+            #endregion
+
+
+            // Timestepping
+            // ============
+            #region time
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF3;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+
+            //C.dtMax = dt; // need to be set according to grid and DG degree
+            //C.dtMin = dt;
+            C.Endtime = 1000;
+            //C.NoOfTimesteps = 0; 
+
+            C.saveperiod = 1;
+            C.LogPeriod = 1;
+
+            #endregion
+
+            return C;
+        }
+
     }
 
 }

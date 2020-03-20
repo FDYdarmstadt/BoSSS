@@ -71,7 +71,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return typeof(XNSE_SolverMain);
         }
 
-        public virtual void SetDGdegree(int p) {
+        public override void SetDGdegree(int p) {
             FieldOptions.Add(VariableNames.VelocityX, new FieldOpts() {
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
@@ -88,10 +88,6 @@ namespace BoSSS.Application.XNSE_Solver {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            FieldOptions.Add("Curvature", new FieldOpts() {
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
@@ -259,6 +255,12 @@ namespace BoSSS.Application.XNSE_Solver {
             /// interface height (interface points)
             /// </summary>
             Wavelike,
+
+            /// <summary>
+            /// for droplet simulations
+            /// semi-major/minor aixs, circularity, area
+            /// </summary>
+            Dropletlike,
 
             /// <summary>
             /// for the benchmark quantities of the Rising Bubble testcase

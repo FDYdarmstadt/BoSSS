@@ -986,21 +986,28 @@ namespace BoSSS.Application.XNSE_Solver {
                         Log = base.DatabaseDriver.FsDriver.GetNewLog("Amplitude", sessionID);
                         header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "#timestep", "time", "magnitude", "real", "imaginary");
 
-                        return;
+                        break;
+                    }
+                case XNSE_Control.LoggingValues.Dropletlike: {
+
+                        Log = base.DatabaseDriver.FsDriver.GetNewLog("SemiAxis", sessionID);
+                        header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}", "#timestep", "time", "semi axis x", "semi axis y", "area", "perimeter");
+
+                        break;
                     }
                 case XNSE_Control.LoggingValues.RisingBubble: {
 
                         Log = base.DatabaseDriver.FsDriver.GetNewLog("BenchmarkQuantities_RisingBubble", sessionID);
                         header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", "#timestep", "time", "area", "center of mass - x", "center of mass - y", "circularity", "rise velocity");
 
-                        return;
+                        break;
                     }
                 case XNSE_Control.LoggingValues.MovingContactLine: {
 
                         Log = base.DatabaseDriver.FsDriver.GetNewLog("ContactAngle", sessionID);
                         header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-angle");
 
-                        return;
+                        break;
                     }
                 case XNSE_Control.LoggingValues.CapillaryHeight: {
 
@@ -1023,6 +1030,10 @@ namespace BoSSS.Application.XNSE_Solver {
                         header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "#timestep", "time", "U_max", "derivedKinEnergy_max", "KinEnergy_max");
 
                         break;
+                    }
+                case XNSE_Control.LoggingValues.LinelikeLS:
+                case XNSE_Control.LoggingValues.CirclelikeLS: {
+                        throw new ArgumentException("specified LogFormat only valid for queries");
                     }
                 default:
                     throw new ArgumentException("No specified LogFormat");
@@ -1073,6 +1084,27 @@ namespace BoSSS.Application.XNSE_Solver {
                         }
                         string logline = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", TimestepNo, phystime, 2.0 * DFT_k.Magnitude / numP, 2.0 * DFT_k.Real / numP, -2.0 * DFT_k.Imaginary / numP);
                         Log.WriteLine(logline);
+                        Log.Flush();
+
+                        return;
+                    }
+                case XNSE_Control.LoggingValues.Dropletlike: {
+
+                        MultidimensionalArray interP = XNSEUtils.GetInterfacePoints(this.LsTrk, this.LevSet);
+                        int numP = interP.Lengths[0];
+                        double[] Xcoord = new double[numP];
+                        double[] Ycoord = new double[numP];
+                        for (int i = 0; i < numP; i++) {
+                            Xcoord[i] = interP[i, 0];
+                            Ycoord[i] = interP[i, 1];
+                        }
+                        double semiAxisX = Xcoord.Max() - Xcoord.Min();
+                        double semiAxisY = Ycoord.Max() - Ycoord.Min();
+
+                        double[] sphereProps = this.ComputeSphericalPorperties();
+
+                        string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}", TimestepNo, phystime, semiAxisX, semiAxisY, sphereProps[0], sphereProps[1]);
+                        Log.WriteLine(line);
                         Log.Flush();
 
                         return;
