@@ -593,7 +593,7 @@ namespace ilPSP {
         /// <returns>
         /// a two-dimensional vector with <paramref name="d"/>-th coordinate equal to 1.0.
         /// </returns>
-        public static Vector StdBasis2D(int d, int D) {
+        public static Vector StdBasis2D(int d) {
             return StdBasis(d, 2);
         }
 
@@ -604,7 +604,7 @@ namespace ilPSP {
         /// <returns>
         /// a three-dimensional vector with <paramref name="d"/>-th coordinate equal to 1.0.
         /// </returns>
-        public static Vector StdBasis3D(int d, int D) {
+        public static Vector StdBasis3D(int d) {
             return StdBasis(d, 3);
         }
 
