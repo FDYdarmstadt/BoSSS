@@ -72,15 +72,16 @@ namespace BoSSS.Application.XNSE_Solver {
         //===========
 
         static void Main(string[] args) {
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestFixtureSetUp();
-            //DeleteOldPlotFiles();
+            Tests.UnitTest.TestFixtureSetUp();
+            DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(3, 0.0, ViscosityMode.Standard, 1.0471975511966);
             ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.MovingDropletTest(3, 0.1, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine, 0.71711, ViscosityMode.FullySymmetric, true, false);
             ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.PolynomialTestForConvectionTest(3, 0.0, false);
-            ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.ViscosityJumpTest(2, 0.1, ViscosityMode.FullySymmetric);
+            Tests.UnitTest.ViscosityJumpTest(1, 0.1, ViscosityMode.FullySymmetric);
             ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestCapillaryWave();
             //////BoSSS.Application.XNSE_Solver.Tests.ElementalTestProgramm.LineMovementTest(LevelSetEvolution.ScalarConvection, LevelSetHandling.Coupled_Once, XNSE_Control.TimesteppingScheme.ImplicitEuler, 0.5);
-            //Assert.IsFalse(true, "remove me");
+            Tests.UnitTest.TestFixtureTearDown();
+            return;
 
 
             _Main(args, false, delegate () {

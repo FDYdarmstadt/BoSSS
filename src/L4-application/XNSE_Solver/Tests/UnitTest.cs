@@ -54,7 +54,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
-
+        /// <summary>
+        /// <see cref="ViscosityJumpTest"/>
+        /// </summary>
         [Test]
         public static void ViscosityJumpTest(
 #if DEBUG
@@ -70,13 +72,39 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             var Tst = new ViscosityJumpTest();
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode);
-            //C.ImmediatePlotPeriod = 1;
-            //C.SuperSampling = 3;
-            
             C.SkipSolveAndEvaluateResidual = C.AdvancedDiscretizationOptions.CellAgglomerationThreshold <= 1e-6;
                 
             GenericTest(Tst, C);
         }
+
+        /// <summary>
+        /// <see cref="ViscosityJumpTest"/>
+        /// </summary>
+        [Test]
+        public static void ViscosityJumpTestScaling(
+#if DEBUG
+            [Values(1)] int deg,
+            [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode
+#else
+            [Values(1, 2, 3, 4)] int deg,
+            [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode
+#endif
+            ) {
+
+            double AgglomerationTreshold = 0.1;
+
+            var Tst = new ViscosityJumpTest();
+            var LaLa = new List<XNSE_Control>();
+            foreach(var Res in new[] { 1, 2, 3, 4 }) {
+                var C = TstObj2CtrlObj(, deg, AgglomerationTreshold, vmode: vmode, GridResolution: Res);
+                LaLa.Add(C);
+            }
+            
+                
+            //GenericTest(Tst, C);
+        }
+
+
 
         [Test]
         public static void BcTest_PressureOutletTest(
@@ -241,7 +269,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         static XNSE_Control TstObj2CtrlObj(ITest tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode, 
-            SurfaceStressTensor_IsotropicMode SurfTensionMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local) {
+            SurfaceStressTensor_IsotropicMode SurfTensionMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local,
+            int GridResolution = 1) {
             XNSE_Control C = new XNSE_Control();
             int D = tst.SpatialDimension;
 
@@ -262,7 +291,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             // grid
             // ====
 
-            C.GridFunc = tst.CreateGrid;
+            C.GridFunc = () => tst.CreateGrid(GridResolution);
 
             // boundary conditions
             // ===================
