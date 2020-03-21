@@ -488,7 +488,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
     }
 
     /// <summary>
-    /// The block mask, which are generated through this class, presumes that the target Multigridoperator(defined through SubBlockSelector) is a quadratic Matrix.
+    /// This abstract class is the unification of internal and external cell masking.
+    /// Therefore <see cref="m_NoOfCells"/> and <see cref="m_CellOffset"/> have to be overriden by inheriting classes.
+    /// There are two inheriting classes: <see cref="BlockMaskExt"/> and <see cref="BlockMaskLoc"/>,
+    /// which handle the masking of external cells and internal cells respectively.
+    /// The purpose of this class is to provide the index lists and structs,
+    /// which correspond to underlying selection through the <see cref="SubBlockSelector"/>.
     /// </summary>
     public abstract class BlockMaskBase {
 
@@ -516,11 +521,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         /// <summary>
         /// Generates Block Mask from Sub block selection. 
-        /// Sub matrix can be generated of the multigrid operator overgiven to Sub block selection. 
-        /// It also contains methods to translate Vectors from full matrix to sub matrix and vice versa.
+        /// Sub matrix can be generated of the multigrid operator overgiven to Sub block selection.
         /// </summary>
         /// <param name="SBS"></param>
-        public BlockMaskBase(SubBlockSelectorBase SBS, MPI_Comm MPIcomm) {
+        public BlockMaskBase(SubBlockSelector SBS, MPI_Comm MPIcomm) {
             m_map = SBS.GetMapping;
             m_sbs = SBS;
             m_AggBS = m_map.AggBasis;
@@ -687,6 +691,28 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         extNi0 block = m_StructuredNi0[iCell][i][j][k];
                         for (int m = 0; m < block.N; m++) {
                             cellidx.Add(block.Li0 + m);
+                        }
+                    }
+                }
+            }
+            int[] array = cellidx.ToArray();
+            Debug.Assert(array.GroupBy(x => x).Any(g => g.Count() == 1));
+            return array;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="iCell"></param>
+        /// <returns></returns>
+        public int[] GetCellwiseGlobalidx(int iCell) {
+            List<int> cellidx = new List<int>();
+            for (int i = 0; i < m_StructuredNi0[iCell].Length; i++) {
+                for (int j = 0; j < m_StructuredNi0[iCell][i].Length; j++) {
+                    for (int k = 0; k < m_StructuredNi0[iCell][i][j].Length; k++) {
+                        extNi0 block = m_StructuredNi0[iCell][i][j][k];
+                        for (int m = 0; m < block.N; m++) {
+                            cellidx.Add(block.Gi0 + m);
                         }
                     }
                 }

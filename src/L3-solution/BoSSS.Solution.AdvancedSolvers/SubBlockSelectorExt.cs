@@ -240,6 +240,44 @@ namespace BoSSS.Solution.AdvancedSolvers
             }
         }
 
+        #region Testing
+        // ==========
+        // Stuff dedicated to testing ...
+        // ==========
+
+        protected List<int> GlobalIList_Internal {
+            get {
+                return BMLoc.m_GlobalMask;
+            }
+        }
+
+        protected List<int> GlobalIList_External {
+            get {
+                if (BMExt == null)
+                    return null;
+                return BMExt.m_GlobalMask;
+            }
+        }
+
+        protected int[] GetGlobalIdxOfCell(int iCell) {
+            if (iCell < m_map.LocalNoOfBlocks)
+                return BMLoc.GetCellwiseGlobalidx(iCell);
+            else if (iCell < m_map.AggGrid.iLogicalCells.NoOfExternalCells)
+                return BMExt.GetCellwiseGlobalidx(iCell);
+            else
+                throw new NotSupportedException("Selected Cells are outside valid bounds. This is not supported right now");
+        }
+
+        protected int[] GetLocalIdxOfCell(int iCell) {
+            if (iCell < m_map.LocalNoOfBlocks)
+                return BMLoc.GetCellwiseLocalidx(iCell);
+            else if (iCell < m_map.AggGrid.iLogicalCells.NoOfExternalCells)
+                return BMExt.GetCellwiseLocalidx(iCell);
+            else
+                throw new NotSupportedException("Selected Cells are outside of valid bounds. This is not supported right now");
+        }
+
+        #endregion
         /// <summary>
         /// Get Array of Cellblocks
         /// </summary>
