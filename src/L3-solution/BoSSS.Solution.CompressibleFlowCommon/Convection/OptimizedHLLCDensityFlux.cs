@@ -130,6 +130,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
                         (speedDiff + pIn_minus_pOut / MachScaling) /
                         (cOut - cIn);
 
+                    //double intermediateWaveSpeed =
+                    //    (cOut * normalVelocityOut - cIn * normalVelocityIn + (pIn - pOut) / MachScaling) /
+                    //    (cOut - cIn);
+
                     double edgeFlux = 0.0;
                     // cf. Toro2009, equation 10.71
                     if (intermediateWaveSpeed > 0.0) {
