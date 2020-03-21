@@ -426,6 +426,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             MassMatrix[0] = SM;
             m_PrecondMassMatrix = PM;
 
+
+            //SM.SaveToTextFileSparse("massMatrix.txt");
+
             // initial value
             CoordinateVector u0 = new CoordinateVector(this.CurrentStateMapping.Fields.Select(f => f.CloneAs()).ToArray());
             foreach (var f in u0.Mapping.Fields) {
@@ -440,10 +443,18 @@ namespace BoSSS.Solution.XdgTimestepping {
                 RKstage(phystime, dt, k, s, MassMatrix, u0, s > 0 ? m_RKscheme.c[s - 1] : 0.0);
                 k[s] = new double[this.CurrentStateMapping.LocalLength];
                 UpdateChangeRate(phystime + dt * m_RKscheme.c[s], k[s]);
+
+
+                //k[s].SaveToTextFile(String.Format("k_CHANGERATE.txt"));
+                //Console.WriteLine("\nk_CHANGERATE = " + k[0].L2Norm());
             }
 
             // final stage
             RKstageExplicit(phystime, dt, k, m_RKscheme.Stages, MassMatrix, u0, m_RKscheme.c[m_RKscheme.Stages - 1], m_RKscheme.b, 1.0);
+
+            //k[0].SaveToTextFile(String.Format("k_FINAL_STAGE.txt"));
+            //Console.WriteLine("k_FINAL_STAGE = " + k[0].L2Norm());
+
 
             // ===========================================
             // update level-set (in the case of splitting)
@@ -786,7 +797,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         //    throw new NotImplementedException();
         //}
 
-
+        //int count = 0;
 
         private void RKstageExplicit(double PhysTime, double dt, double[][] k, int s, BlockMsrMatrix[] Mass, CoordinateVector u0, double ActualLevSetRelTime, double[] RK_as, double RelTime) {
             Debug.Assert(s <= m_RKscheme.Stages);
@@ -887,6 +898,21 @@ namespace BoSSS.Solution.XdgTimestepping {
                 } else {
                     throw new NotImplementedException();
                 }
+
+                // Inverse mass matrix * k: Zum Vergleich mit CNS IBMSplitRungeKutta
+                // BlockSolve(System bzw. mass matrix, double[], k[0])
+
+                //Console.WriteLine(String.Format("\nk[0]: L2-Norm of change rate = {0}", k[0].L2Norm()));
+                //k[0].SaveToTextFile(String.Format("k_CHANGERATE_{0}.txt", count));
+
+                //if (Mass[0] != null) {
+                //    double[] kCut = new double[k[0].Length];
+                //    BlockSol(Mass[0], kCut, k[0]);
+                //    Console.WriteLine(String.Format("kCut: L2-Norm of change rate = {0}", kCut.L2Norm()));
+                //    kCut.SaveToTextFile(String.Format("k_CUT_{0}.txt", count));
+                //}
+
+                //count++;
 
                 // solve system
                 if (System != null) {
