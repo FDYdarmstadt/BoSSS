@@ -26,6 +26,8 @@ using System.Linq;
 using ilPSP;
 using System.Collections.Generic;
 using ilPSP.Utils;
+using System;
+using ilPSP.LinSolvers;
 
 namespace CNS.IBM {
 
@@ -77,7 +79,7 @@ namespace CNS.IBM {
             }
             //double dist3 = Environment.CompareTo(CurrentState);
             dt = base.Perform(dt);  // eq. (42)
-            
+
             speciesMap.Agglomerator.Extrapolate(CurrentState.Mapping); // eq. (43)
 
             return dt;
@@ -98,6 +100,8 @@ namespace CNS.IBM {
             base.PerformStage(y0, s, k, dt);
             speciesMap.Agglomerator.Extrapolate(CurrentState.Mapping);
         }
+
+        //int count = 0;
 
         /// <summary>
         /// Computes the change rates by sequentially evaluating the standard
@@ -121,7 +125,8 @@ namespace CNS.IBM {
                     !k.Any(f => double.IsNaN(f)),
                     "Unphysical flux in standard terms");
 
-                //k.SaveToTextFile("k-rk-bulk.txt");
+                //Console.WriteLine(String.Format("\nBULK: L2-Norm of change rate = {0}", k.L2Norm()));
+                //k.SaveToTextFile(String.Format("k_BULK_{0}.txt", count));
 
                 boundaryEvaluator.Value.time = AbsTime + RelTime;
                 boundaryEvaluator.Value.Evaluate(1.0, 1.0, k);
@@ -129,7 +134,8 @@ namespace CNS.IBM {
                     !k.Any(f => double.IsNaN(f)),
                     "Unphysical flux in boundary terms");
 
-                //k.SaveToTextFile("k-rk-bndy.txt");
+                //Console.WriteLine(String.Format("BOUNDARY: L2-Norm of change rate = {0}", k.L2Norm()));
+                //k.SaveToTextFile(String.Format("k_BOUND_{0}.txt", count));
 
                 // Agglomerate fluxes
                 speciesMap.Agglomerator.ManipulateRHS(k, Mapping);
@@ -137,6 +143,13 @@ namespace CNS.IBM {
                 // Apply inverse to all cells with non-identity mass matrix
                 IBMMassMatrixFactory massMatrixFactory = speciesMap.GetMassMatrixFactory(Mapping);
                 IBMUtility.SubMatrixSpMV(massMatrixFactory.InverseMassMatrix, 1.0, k, 0.0, k, cutAndTargetCells);
+
+                //massMatrixFactory.MassMatrix.SaveToTextFileSparse("massMatrix.txt");
+
+                //Console.WriteLine(String.Format("AGGLOMERATOR: L2-Norm of change rate = {0}", k.L2Norm()));
+                //k.SaveToTextFile(String.Format("k_CUT_{0}.txt", count));
+
+                //count++;
             }
         }
     }

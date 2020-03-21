@@ -330,10 +330,10 @@ namespace CNS {
                 using (new BlockTrace("TimeStepper.Perform", ht)) {
                     //Exception e = null;
                     //try {
-                        //TimeStepper.CurrentState.SaveToTextFile("tsinp-lts.txt");
-                        //ilPSP.Environment.GlobalVec =  TimeStepper.CurrentState.ToArray();
-                        //double dist = ilPSP.Environment.CompareTo(TimeStepper.CurrentState);
-                        dt = TimeStepper.Perform(dt);
+                    //TimeStepper.CurrentState.SaveToTextFile("tsinp-lts.txt");
+                    //ilPSP.Environment.GlobalVec =  TimeStepper.CurrentState.ToArray();
+                    //double dist = ilPSP.Environment.CompareTo(TimeStepper.CurrentState);
+                    dt = TimeStepper.Perform(dt);
                     //} catch (Exception ee) {
                     //    e = ee;
                     //}
@@ -359,6 +359,14 @@ namespace CNS {
                 }
                 //if (TimestepNo == 10)
                 //    ilPSP.Tracing.Tracer.Current.ResetRecursive();
+
+
+                //WorkingSet.ConservativeVariables[0].CoordinateVector.SaveToTextFile(String.Format("DensityCoordVec_{0}.txt", TimestepNo));
+                //for (int d = 0; d < 2; d++) {
+                //    WorkingSet.ConservativeVariables[d + 1].CoordinateVector.SaveToTextFile(String.Format("Momentum[{0}]CoordVec_{1}.txt", d, TimestepNo));
+                //}
+                //WorkingSet.ConservativeVariables[3].CoordinateVector.SaveToTextFile(String.Format("EnergyCoordVec_{0}.txt", TimestepNo));
+
                 return dt;
             }
         }
@@ -463,7 +471,16 @@ namespace CNS {
                 ////}
                 ////#endregion
 
-                //#region Write DG fields to text file
+                #region Write DG fields to text file
+                // Sample points
+                //int noOfPoints = 16;
+                //double[] nodes = GenericBlas.Linspace(-1.8, -0.3, noOfPoints);
+                //MultidimensionalArray points = MultidimensionalArray.Create(noOfPoints, 2);
+                //for (int i = 0; i < noOfPoints; i++) {
+                //    points[i, 0] = nodes[i];
+                //    points[i, 1] = -0.65;
+                //}
+
                 //// FieldEvaluation
                 //MultidimensionalArray resultsFields = MultidimensionalArray.Create(noOfPoints, m_IOFields.Count());
                 //for (int i = 0; i < m_IOFields.Count(); i++) {
@@ -484,7 +501,8 @@ namespace CNS {
                 //    sw.Flush();
                 //}
                 //WorkingSet.ConservativeVariables[0].CoordinateVector.SaveToTextFile(String.Format("DensityCoordVec_{0}.txt", timestepNo));
-                //#endregion
+                //WorkingSet.ConservativeVariables[3].CoordinateVector.SaveToTextFile(String.Format("EnergyCoordVec_{0}.txt", timestepNo));
+                #endregion
             }
         }
 
@@ -579,7 +597,7 @@ namespace CNS {
         /// </summary>
         /// <returns></returns>
         protected virtual CompressibleBoundaryCondMap GetBoundaryConditionMap() {
-            return new CompressibleBoundaryCondMap( this.GridData, Control, Control.GetMaterial());
+            return new CompressibleBoundaryCondMap(this.GridData, Control, Control.GetMaterial());
         }
 
         /// <summary>
