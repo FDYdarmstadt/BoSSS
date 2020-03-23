@@ -239,18 +239,17 @@ namespace BoSSS.Application.BoSSSpad {
             PlatformID CurrentSys = System.Environment.OSVersion.Platform;
             switch(CurrentSys)
             {
+                case PlatformID.Unix:
+                    { return Path.GetFullPath(Ass.Location).StartsWith("/home/"); }
                 case PlatformID.Win32S:
                 case PlatformID.Win32Windows:
+                default:
                     {
                         return Path.GetDirectoryName(Ass.Location).Equals(MainAssemblyDir)
                             || Path.GetFileName(Ass.Location).StartsWith("BoSSS")
                             || Path.GetFileName(Ass.Location).StartsWith("ilPSP")
                             || !Ass.GlobalAssemblyCache;
                     }
-                case PlatformID.Unix:
-                    { return Path.GetFullPath(Ass.Location).StartsWith("/home/"); }
-                default:
-                    return true;
             }
         }
 
