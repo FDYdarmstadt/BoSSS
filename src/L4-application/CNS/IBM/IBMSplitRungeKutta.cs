@@ -119,6 +119,15 @@ namespace CNS.IBM {
                 //(new CoordinateVector(Evaluator.DomainFields)).SaveToTextFile("inp-rk.txt");
                 //(new CoordinateVector(Evaluator.Parameters.ToArray())).SaveToTextFile("para-rk.txt");
 
+                Debug.Assert(Evaluator.DomainFields.Fields.ListEquals(boundaryEvaluator.Value.DomainFields.Fields, (a, b) => object.ReferenceEquals(b, a)));
+
+                var cv = new CoordinateVector(Evaluator.DomainFields);
+                Random r = new Random(666);
+                for(int ir = 0; ir < cv.Length; ir++) {
+                    cv[ir] = r.NextDouble();
+                }
+                
+
                 Evaluator.time = AbsTime + RelTime;
                 Evaluator.Evaluate(1.0, 0.0, k);
                 Debug.Assert(
@@ -146,8 +155,9 @@ namespace CNS.IBM {
 
                 //massMatrixFactory.MassMatrix.SaveToTextFileSparse("massMatrix.txt");
 
-                //Console.WriteLine(String.Format("AGGLOMERATOR: L2-Norm of change rate = {0}", k.L2Norm()));
-                //k.SaveToTextFile(String.Format("k_CUT_{0}.txt", count));
+                Console.WriteLine($"AGGLOMERATOR: L2-Norm of change rate = {k.L2Norm()}");
+                k.SaveToTextFile($"k_CUT_{count}.txt");
+                k.SaveToTextFile($"c:\\tmp\\cns_k_CUT_{count}.txt");
 
                 //count++;
             }

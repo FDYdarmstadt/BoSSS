@@ -39,6 +39,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
             : base(boundaryMap, material) {
         }
 
+        static bool reminder = true;
+
         /// <summary>
         /// <see cref="INonlinearFlux.InnerEdgeFlux"/>
         /// </summary>
@@ -85,8 +87,19 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
                     //pIn = Math.Max(pIn, ilPSP.Utils.BLAS.MachineEps);
                     //pOut = Math.Max(pOut, ilPSP.Utils.BLAS.MachineEps);
 
-                    double speedOfSoundIn = Math.Sqrt(pIn / densityIn) / Mach;
-                    double speedOfSoundOut = Math.Sqrt(pOut / densityOut) / Mach;
+                    double speedOfSoundIn = Math.Sqrt(Math.Max((pIn / densityIn).Pow2(), 0.001)) / Mach;
+                    double speedOfSoundOut = Math.Sqrt(Math.Max((pOut / densityOut).Pow2(), 0.001)) / Mach;
+                    Debug.Assert(!double.IsNaN(speedOfSoundIn) || double.IsInfinity(speedOfSoundIn));
+                    Debug.Assert(!double.IsNaN(speedOfSoundOut) || double.IsInfinity(speedOfSoundOut));
+                    if(reminder) {
+                        Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                        Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                        Console.WriteLine("Reminder: remove pressure tweak");
+                        Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                        Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                        reminder = false;
+                    }
+
 
                     double densityMean = 0.5 * (densityIn + densityOut);
                     double pressureMean = 0.5 * (pIn + pOut);
@@ -100,12 +113,14 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
                     double qIn = 1.0;
                     if (pStar > pIn) {
-                        qIn = Math.Sqrt(1.0 + 0.5 * (gamma + 1.0) * (pStar / pIn - 1.0) / gamma);
+                        //qIn = Math.Sqrt(1.0 + 0.5 * (gamma + 1.0) * (pStar / pIn - 1.0) / gamma);
+                        qIn = (1.0 + 0.5 * (gamma + 1.0) * (pStar / pIn - 1.0) / gamma).Pow2();
                     }
 
                     double qOut = 1.0;
                     if (pStar > pOut) {
-                        qOut = Math.Sqrt(1.0 + 0.5 * (gamma + 1.0) * (pStar / pOut - 1.0) / gamma);
+                        //qOut = Math.Sqrt(1.0 + 0.5 * (gamma + 1.0) * (pStar / pOut - 1.0) / gamma);
+                        qOut = (1.0 + 0.5 * (gamma + 1.0) * (pStar / pOut - 1.0) / gamma).Pow2();
                     }
 
                     // Determine the wave speeds
