@@ -93,10 +93,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
                     double pIn = (gamma - 1.0) * (energyIn - MachScaling * 0.5 * momentumSquareIn / densityIn);
                     double pOut = (gamma - 1.0) * (energyOut - MachScaling * 0.5 * momentumSquareOut / densityOut);
 
-                    //double speedOfSoundIn = Math.Sqrt(pIn / densityIn) / Mach;
-                    //double speedOfSoundOut = Math.Sqrt(pOut / densityOut) / Mach;
-                    double speedOfSoundIn = (pIn / densityIn).Pow2() / Mach;
-                    double speedOfSoundOut = (pOut / densityOut).Pow2() / Mach;
+                    double speedOfSoundIn = Math.Sqrt(pIn / densityIn) / Mach;
+                    double speedOfSoundOut = Math.Sqrt(pOut / densityOut) / Mach;
+                    //double speedOfSoundIn = (pIn / densityIn).Pow2() / Mach;
+                    //double speedOfSoundOut = (pOut / densityOut).Pow2() / Mach;
 
 
                     double densityMean = 0.5 * (densityIn + densityOut);
@@ -111,14 +111,12 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
                     double qIn = 1.0;
                     if (pStar > pIn) {
-                        //qIn = Math.Sqrt(1.0 + 0.5 * (gamma + 1.0) * (pStar / pIn - 1.0) / gamma);
-                        qIn = (1.0 + 0.5 * (gamma + 1.0) * (pStar / pIn - 1.0) / gamma).Pow2();
+                        qIn = Math.Sqrt(1.0 + 0.5 * (gamma + 1.0) * (pStar / pIn - 1.0) / gamma);
                     }
 
                     double qOut = 1.0;
                     if (pStar > pOut) {
-                        //qOut = Math.Sqrt(1.0 + 0.5 * (gamma + 1.0) * (pStar / pOut - 1.0) / gamma);
-                        qOut = (1.0 + 0.5 * (gamma + 1.0) * (pStar / pOut - 1.0) / gamma).Pow2();
+                        qOut = Math.Sqrt(1.0 + 0.5 * (gamma + 1.0) * (pStar / pOut - 1.0) / gamma);
                     }
 
                     // Determine the wave speeds
