@@ -437,19 +437,19 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
             }
 
-            // test code start
-            {
-                CoordinateVector cv = new CoordinateVector(
-                    ((XDGField)u0.Fields[0]).GetSpeciesShadowField("B"),
-                    ((XDGField)u0.Fields[1]).GetSpeciesShadowField("B"),
-                    ((XDGField)u0.Fields[2]).GetSpeciesShadowField("B"),
-                    ((XDGField)u0.Fields[3]).GetSpeciesShadowField("B"));
+            //// test code start
+            //{
+            //    CoordinateVector cv = new CoordinateVector(
+            //        ((XDGField)u0.Fields[0]).GetSpeciesShadowField("B"),
+            //        ((XDGField)u0.Fields[1]).GetSpeciesShadowField("B"),
+            //        ((XDGField)u0.Fields[2]).GetSpeciesShadowField("B"),
+            //        ((XDGField)u0.Fields[3]).GetSpeciesShadowField("B"));
 
-                Random r = new Random(666);
-                for(int ir = 0; ir < cv.Length; ir++) {
-                    cv[ir] = r.NextDouble();
-                }
-            }
+            //    Random r = new Random(666);
+            //    for(int ir = 0; ir < cv.Length; ir++) {
+            //        cv[ir] = r.NextDouble();
+            //    }
+            //}
 
 
             // test code end
