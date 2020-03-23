@@ -15,17 +15,15 @@ limitations under the License.
 */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Renci.SshNet;
 using System.IO;
-using System.Security;
 using System.Runtime.Serialization;
 using ilPSP;
+using System.Diagnostics;
+using System.Text.RegularExpressions;
 
-namespace BoSSS.Application.BoSSSpad {
+namespace BoSSS.Application.BoSSSpad
+{
 
     /// <summary>
     /// A <see cref="BatchProcessorClient"/> implementation for slurm systems on unix based hpc platforms
@@ -305,7 +303,34 @@ namespace BoSSS.Application.BoSSSpad {
             
             // Convert from Windows to Unix and submit job
             Console.WriteLine();
-            var result2 = SSHConnection.RunCommand(sbatchCmd);
+            String resultString;
+            PlatformID CurrentSys = System.Environment.OSVersion.Platform;
+            switch(CurrentSys){
+                case PlatformID.Unix:
+                    {
+                       Process cmd = new Process();
+                       cmd.StartInfo.FileName = "/bin/bash";
+                       cmd.StartInfo.RedirectStandardInput = true;
+                       cmd.StartInfo.RedirectStandardOutput = true;
+                       cmd.StartInfo.CreateNoWindow = true;
+                       cmd.StartInfo.UseShellExecute = false;
+                       cmd.Start();
+                       cmd.StandardInput.WriteLine("ssh " + Username + "@" + ServerName + " \"" + sbatchCmd + "\"");
+                       cmd.StandardInput.Flush();
+                       cmd.StandardInput.Close();
+                       cmd.WaitForExit();
+                       resultString = cmd.StandardOutput.ReadToEnd(); 
+                       break;
+                    }
+                case PlatformID.Win32S:
+                case PlatformID.Win32Windows:
+                default:
+                    {
+                        var result2 = SSHConnection.RunCommand(sbatchCmd);
+                        resultString = result2.Result;
+                        break;
+                    }
+            }
 
             //// Otherwise it didn't work because uploading speed at some clusters is too slow
             //if (result1.Error == "" || result2.Result == "") {
@@ -318,13 +343,13 @@ namespace BoSSS.Application.BoSSSpad {
             //    }
             //    Console.WriteLine();
             //}
-            Console.WriteLine(result2.Result);
 
-            // Hardcoded extract of JobID
-            string jobId = result2.Result.Substring(20, 7);
-            
-
-
+            // extract JobID
+            String SearchString = "Submitted batch job ";
+            String jobId = Regex.Match(resultString, SearchString + "[0-9]*") // look for SearchString followed by a number (the Job ID)
+                .ToString() // convert to string
+                .Replace(SearchString, ""); // remove SearchString, leaving only the Job ID
+            Console.WriteLine(jobId);
 
             return jobId;
         }
