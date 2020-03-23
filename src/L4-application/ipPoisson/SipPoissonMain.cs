@@ -154,13 +154,13 @@ namespace BoSSS.Application.SipPoisson {
             Console.WriteLine ("BOSSS_INSTALL : " + si3);
 
 
-            if (System.Environment.MachineName.ToLowerInvariant().EndsWith("terminal03")
+            if (System.Environment.MachineName.ToLowerInvariant().EndsWith("stormbreaker")
                 //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
                 ) {
                 // This is Florians Laptop;
                 // he is to poor to afford MATLAB, so he uses OCTAVE
                 BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-                BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-4.4.1\bin\octave-cli.exe";
+                BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-5.1.0.0\mingw64\bin\octave-cli.exe";
             }
 
 
@@ -425,14 +425,12 @@ namespace BoSSS.Application.SipPoisson {
                 LaplaceMtx.GetMemoryInfo(out long AllocatedMem, out long UsedMem);
                 Console.WriteLine("   Used   matrix storage (MB): {0}", UsedMem /(1024.0*1024));
                 Console.WriteLine("   Alloc. matrix storage (MB): {0}", AllocatedMem/(1024.0*1024));
-
-
-                //MatrixOpPerf();
-
-
             }
         }
 
+        /// <summary>
+        /// Ad-hoc performance measurement routines for <see cref="BlockMsrMatrix"/> operations
+        /// </summary>
         void MatrixOpPerf() {
             var M = LaplaceMtx;
             var M2 = M.CloneAs();

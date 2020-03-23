@@ -19,12 +19,16 @@ using System.Collections.Generic;
 using System.IO;
 using BoSSS.Foundation;
 using BoSSS.Solution;
+using BoSSS.Solution.AdvancedSolvers.Testing;
 using BoSSS.Solution.Gnuplot;
 using MPI.Wrappers;
 using NUnit.Framework;
 using SolverCodes = BoSSS.Solution.Control.LinearSolverCode;
 
 namespace BoSSS.Application.SipPoisson.Tests {
+    
+
+
 
     /// <summary>
     /// NUnit tests
@@ -156,6 +160,78 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
         }
 
+        
+        public static void TestOperatorScaling2D(
+#if DEBUG            
+            [Values(1)]int dgDeg
+#else
+            [Values(1,2,3,4)]int dgDeg,
+#endif            
+            ) {
+
+            var tst = new ConditionNumberScalingTest();
+
+            var Controls = new List<SipControl>();
+            {
+                int[] ResS = null;
+
+                switch(dgDeg) {
+                    case 1: ResS = new int[] { 8, 16, 32, 64 }; break;
+                    case 2: ResS = new int[] { 8, 16, 32, 64 }; break;
+                    case 3: ResS = new int[] { 8, 16, 32, 64 }; break;
+                    case 4: ResS = new int[] { 8, 16, 32 }; break;
+                    default: throw new NotImplementedException();
+                }
+
+                foreach(int res in ResS) {
+                    var C = SipHardcodedControl.TestCartesian2(res, 3, solver_name: SolverCodes.classic_pardiso, deg: dgDeg);
+                    //C.TracingNamespaces = "*";
+                    C.savetodb = false;
+                    Controls.Add(C);
+                }
+
+            }
+
+            tst.SetControls(Controls);
+
+            tst.ExecuteTest();
+        }
+
+
+        public static void TestOperatorScaling3D(
+#if DEBUG            
+            [Values(1)]int dgDeg
+#else
+            [Values(1,2,3,4)]int dgDeg,
+#endif            
+            ) {
+
+            var tst = new ConditionNumberScalingTest();
+
+            var Controls = new List<SipControl>();
+            {
+                int[] ResS = null;
+
+                switch(dgDeg) {
+                    case 1: ResS = new int[] { 4, 8, 16 }; break;
+                    case 2: ResS = new int[] { 4, 8, 16 }; break;
+                    case 3: ResS = new int[] { 4, 8 }; break;
+                    case 4: ResS = new int[] { 4, 8 }; break;
+                    default: throw new NotImplementedException();
+                }
+                foreach(int res in ResS) {
+                    var C = SipHardcodedControl.TestCartesian2(res, 3, solver_name: SolverCodes.classic_pardiso, deg: dgDeg);
+                    //C.TracingNamespaces = "*";
+                    C.savetodb = false;
+                    Controls.Add(C);
+                }
+            }
+
+            tst.SetControls(Controls);
+
+            tst.ExecuteTest();
+        }
+
 
         /// <summary>
         /// operator condition number scaling
@@ -202,10 +278,10 @@ namespace BoSSS.Application.SipPoisson.Tests {
                 Controls.Add(C);
             }
             
-            
+            /*
             var Data = Solution.OpAnalysisBase.RunAndLog(Controls);
 
-            /*
+            
             using(var gp = new Gnuplot()) {
 
                 var xVals = Data[OpAnalysisBase.XAxisDesignation.Grid_1Dres.ToString()];
@@ -232,12 +308,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
             */
 
             
-            var ExpectedSlopes = new List<ValueTuple<Solution.OpAnalysisBase.XAxisDesignation, string, double>>();
 
-            ExpectedSlopes.Add((Solution.OpAnalysisBase.XAxisDesignation.Grid_1Dres, "TotCondNo-Var0", 2.2));
-            ExpectedSlopes.Add((Solution.OpAnalysisBase.XAxisDesignation.Grid_1Dres, "StencilCondNo-innerUncut-Var0", 0.5));
-
-            Solution.OpAnalysisBase.TestSlopes(Controls, ExpectedSlopes);
             //*/
         }
 
