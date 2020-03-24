@@ -3185,22 +3185,5 @@ namespace BoSSS.Solution {
         }
     }
 
-    /*
-    /// <summary>
-    /// Application mode - solving, plotting, 
-    /// </summary>
-    public enum Mode {
-
-        /// <summary>
-        /// run in solver mode
-        /// </summary>
-        Solver,
-
-        /// <summary>
-        /// Do a parameter study
-        /// </summary>
-        ParameterStudy,
-    }
-    */
 }
 

@@ -223,9 +223,10 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
 
         /// <summary>
-        /// returns the condition number of the full matrix and the inner matrix without boundary terms
+        /// returns the condition number of the full matrix using MUMPS;
+        /// Note: 
         /// </summary>
-        /// <returns>Array condestOut=[ConditionNumberFullOp, ConditionNumberInnerOp]</returns>
+        
         public double CondNumMUMPS() {
             using(new FuncTrace()) {
                 int[] DepVars = this.VarGroup;
@@ -235,10 +236,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
 
                 var Mtx = m_MultigridOp.OperatorMatrix;
-
-
-
-
+                
                 // Blocks and selectors 
                 // ====================
                 var InnerCellsMask = grd.GetBoundaryCells().Complement();
@@ -270,8 +268,10 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// <summary>
         /// returns the condition number of the full matrix and the inner matrix without boundary terms
         /// </summary>
-        /// <returns>Array condestOut=[ConditionNumberFullOp, ConditionNumberInnerOp]</returns>
-        public double[] CondNumMatlab() {
+        /// <returns>
+        /// [ConditionNumberFullOp, ConditionNumberInnerOp]
+        /// </returns>
+        public (double,double) CondNumMatlab2() {
 
             int[] DepVars = this.VarGroup;
             var grd = m_map.GridDat;
@@ -326,14 +326,75 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
                 double condestFull = output[0, 0];
                 double condestInner = output[1, 0];
+                Debug.Assert(condestFull.MPIEquals(), "value does not match on procs");
+                Debug.Assert(condestInner.MPIEquals(), "value does not match on procs");
 
-                double[] condestOut = new double[] { condestFull, condestInner };
 
                 Console.WriteLine($"MATLAB condition number: {condestFull:0.###e-00}");
 
-                Debug.Assert(condestOut[0].MPIEquals(), "value does not match on procs");
-                Debug.Assert(condestOut[1].MPIEquals(), "value does not match on procs");
-                return condestOut;
+                return (condestFull, condestInner);
+            }
+            
+        }
+
+
+        /// <summary>
+        /// returns the condition number of the full matrix
+        /// </summary>
+        public double CondNumMatlab() {
+
+            int[] DepVars = this.VarGroup;
+            var grd = m_map.GridDat;
+            int NoOfCells = grd.Grid.NumberOfCells;
+            int NoOfBdryCells = grd.GetBoundaryCells().NoOfItemsLocally_WithExternal;
+
+
+            var Mtx = m_MultigridOp.OperatorMatrix;
+
+
+
+
+            // Blocks and selectors 
+            // ====================
+            var InnerCellsMask = grd.GetBoundaryCells().Complement();
+
+            var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
+            FullSel.VariableSelector(this.VarGroup);
+
+            
+            // Matlab
+            // ======
+
+            double[] Full_0Vars = (new BlockMask(FullSel)).GlobalIndices.Select(i => i + 1.0).ToArray();
+            
+            MultidimensionalArray output = MultidimensionalArray.Create(2, 1);
+            string[] names = new string[] { "Full_0Vars", "Inner_0Vars" };
+
+            using(BatchmodeConnector bmc = new BatchmodeConnector()) {
+
+                // if Octave should be used instead of Matlab....
+                // BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
+
+                bmc.PutSparseMatrix(Mtx, "FullMatrix");
+
+                bmc.PutVector(Full_0Vars, "Full_0Vars");
+
+                bmc.Cmd("output = ones(2,1);");
+
+                bmc.Cmd("output(1) = condest(FullMatrix(Full_0Vars,Full_0Vars));");
+               
+
+                bmc.GetMatrix(output, "output");
+                bmc.Execute(false);
+
+                double condestFull = output[0, 0];
+                Debug.Assert(condestFull.MPIEquals(), "value does not match on procs");
+                
+
+                Console.WriteLine($"MATLAB condition number: {condestFull:0.###e-00}");
+
+                
+                return condestFull;
             }
             
         }
@@ -508,7 +569,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
                     MultidimensionalArray FullBlock = Blocks.Cat();
 
-                    BCN[j] = FullBlock.Cond();
+                    BCN[j] = FullBlock.Cond('I');
 
                 }
                 return BCN;
@@ -565,7 +626,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
                 // global condition numbers
                 // ========================
-                double CondNo = this.CondNumMUMPS();
+                //double CondNo = this.CondNumMUMPS();
+                double CondNo = this.CondNumMatlab(); // matlab seems to be more reliable
                 Ret.Add("TotCondNo-" + VarNames, CondNo);
 
                 // block-wise condition numbers

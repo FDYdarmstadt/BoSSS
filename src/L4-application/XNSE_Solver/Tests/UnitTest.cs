@@ -27,6 +27,7 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using ilPSP;
+using BoSSS.Solution.AdvancedSolvers.Testing;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
@@ -95,13 +96,13 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             var Tst = new ViscosityJumpTest();
             var LaLa = new List<XNSE_Control>();
-            foreach(var Res in new[] { 1, 2, 3, 4 }) {
-                var C = TstObj2CtrlObj(, deg, AgglomerationTreshold, vmode: vmode, GridResolution: Res);
+            foreach(var Res in new[] { 2, 3, 4, 8 }) {
+                var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode: vmode, GridResolution: Res);
                 LaLa.Add(C);
             }
-            
-                
-            //GenericTest(Tst, C);
+
+
+            ConditionNumberScalingTest.Perform(LaLa);
         }
 
 

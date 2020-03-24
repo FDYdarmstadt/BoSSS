@@ -459,7 +459,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// </summary>
         override public IDictionary<string,double> OperatorAnalysis() {
             
-            var ana = new BoSSS.Solution.OpAnalysisBase(this.LsTrk, 
+            var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.LsTrk, 
                 this.Op_Matrix, this.Op_Affine, 
                 this.u.Mapping, Op_Agglomeration, 
                 this.Op_mass.GetMassMatrix(this.u.Mapping, new double[] { 1.0 }, false, this.LsTrk.SpeciesIdS.ToArray()), 

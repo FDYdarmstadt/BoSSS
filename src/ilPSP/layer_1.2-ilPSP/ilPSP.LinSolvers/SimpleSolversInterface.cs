@@ -75,7 +75,7 @@ namespace ilPSP.LinSolvers {
         }
 
         /// <summary>
-        /// Condition number estimate by MUMPS; Rem.: MUMPS manual does not tell in which norm.
+        /// Condition number estimate by MUMPS; Rem.: MUMPS manual does not tell in which norm; it does not seem to be as reliable as MATLAB condest
         /// </summary>
         public static double Condest_MUMPS(this IMutableMatrixEx Mtx) {
             using(new FuncTrace()) {

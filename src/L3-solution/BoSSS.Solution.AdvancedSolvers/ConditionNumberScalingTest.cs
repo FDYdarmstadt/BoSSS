@@ -1,5 +1,7 @@
 ﻿using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.Gnuplot;
+using ilPSP;
 using NUnit.Framework;
 using System;
 using System.Collections;
@@ -17,16 +19,73 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
     /// </summary>
     public class ConditionNumberScalingTest {
 
+        /// <summary>
+        /// Easy-to-use driver routine
+        /// </summary>
+        static public void Perform(IEnumerable<AppControl> controls, bool plotAndWait = false) {
+            var t = new ConditionNumberScalingTest();
+            t.SetControls(controls);
+            t.RunAndLog();
+
+            t.PrintResults();
+            if(plotAndWait) {
+                using(var gp = t.Plot()) {
+                    gp.Execute();
+                    Console.WriteLine("plotting in interactive gnuplot session - press any key to continue...");
+                    Console.ReadKey();
+                }
+            }
+
+            t.CheckResults();
+        }
+
+        /// <summary>
+        /// Interactive plotting using gnuplot.
+        /// </summary>
+        public Gnuplot.Gnuplot Plot() {
+           
+            
+            var data = this.ResultData;
+            if(data == null)
+                throw new NotSupportedException("No data available: user must call 'RunAndLog()' first.");
+
+            var gp = new Gnuplot.Gnuplot();
+
+            var fmt = new PlotFormat("rx-");
+            int Kount = 1;
+
+            foreach (var ttt in ExpectedSlopes) {
+                double[] xVals = data[ttt.Item1.ToString()];
+                string[] allYNames = data.Keys.Where(name => ttt.Item2.WildcardMatch(name)).ToArray();
+
+                foreach(string yName in allYNames) {
+                    double[] yVals = data[yName];
+                    double Slope = LogLogRegression(xVals, yVals);
+
+                
+
+                    gp.PlotXY(xVals, yVals, logX: true, logY: true, title:yName, format:(fmt.WithLineColor(Kount).WithPointType(Kount)));
+                    gp.SetXLabel(ttt.Item1.ToString());
+
+                    Kount++;
+                }
+            }
+
+            return gp;
+        }
+
 
         /// <summary>
         /// ctor
         /// </summary>
         public ConditionNumberScalingTest() {
-            var ExpectedSlopes = new List<ValueTuple<XAxisDesignation, string, double>>();
+            this.ExpectedSlopes = new List<ValueTuple<XAxisDesignation, string, double>>();
 
             ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "TotCondNo-*", 2.2));
             ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-innerUncut-*", 0.5));
-            ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-innerUncut-*", 0.5));
+            ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-innerCut-*", 0.5));
+            ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-bndyUncut-*", 0.5));
+            ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-bndyCut-*", 0.5));
         }
 
 
@@ -124,25 +183,74 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
 
         /// <summary>
-        /// 
+        /// Phase 2, Examination: prints slope thresholds to console output. 
         /// </summary>
-        public virtual void ExecuteTest() {
-            
+        public virtual void PrintResults() {
 
-            TestSlopes(Controls, this.ExpectedSlopes);
+            var data = this.ResultData;
+            if(data == null)
+                throw new NotSupportedException("No data available: user must call 'RunAndLog()' first.");
+
+            foreach (var ttt in ExpectedSlopes) {
+                double[] xVals = data[ttt.Item1.ToString()];
+                string[] allYNames = data.Keys.Where(name => ttt.Item2.WildcardMatch(name)).ToArray();
+
+                foreach(string yName in allYNames) {
+                    double[] yVals = data[yName];
+                    double Slope = LogLogRegression(xVals, yVals);
+
+                    string tstPasses = Slope <= ttt.Item3 ? "passed" : $"FAILED (threshold is {ttt.Item3})";
+                    Console.WriteLine($"Slope for {ttt.Item2}: {Slope:0.###e-00} -- {tstPasses}");
+                }
+            }
+
+           
+        }
+
+
+        /// <summary>
+        /// Phase 2, Examination: checks slope thresholds with NUnit assertions. 
+        /// </summary>
+        public virtual void CheckResults() {
+
+            var data = this.ResultData;
+            if(data == null)
+                throw new NotSupportedException("No data available: user must call 'RunAndLog()' first.");
+
+         
+            foreach (var ttt in ExpectedSlopes) {
+                double[] xVals = data[ttt.Item1.ToString()];
+                string[] allYNames = data.Keys.Where(name => ttt.Item2.WildcardMatch(name)).ToArray();
+
+                foreach(string yName in allYNames) {
+                    double[] yVals = data[yName];
+
+                    double Slope = LogLogRegression(xVals, yVals);
+
+                    Assert.LessOrEqual(Slope, ttt.Item3, $"Condition number slope for {ttt.Item2} to high; at max. {ttt.Item3}");
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Stores the result of <see cref="RunAndLog"/>; Contains
+        /// a table, containing grid resolutions and measurements on condition number
+        /// - keys: column names
+        /// - values: measurements of each column
+        /// </summary>
+        public IDictionary<string, double[]> ResultData {
+            get;
+            private set;
         }
 
 
 
         /// <summary>
+        /// Phase 1: runs the solvers and stores results in <see cref="ResultData"/>.
         /// Utility routine, performs an operator analysis on a sequence of control objects and returns a table of results.
         /// </summary>
-        /// <returns>
-        /// A table, containing grid resolutions and measurements on condition number
-        /// - keys: column names
-        /// - values: measurements of each column
-        /// </returns>
-        public IDictionary<string, double[]> RunAndLog() {
+        public void RunAndLog() {
 
             var ret = new Dictionary<string, List<double>>();
            
@@ -228,7 +336,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     realRet.Add(kv.Key, kv.Value.ToArray());
                 }
 
-                return realRet;
+                this.ResultData = realRet;
             }
         }
 
@@ -283,40 +391,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             return a;
         }
 
-        /// <summary>
-        /// Utility, which tests the slope of operator condition number estimates over a series of meshes resp. control files
-        /// </summary>
-        /// <param name="Controls"></param>
-        /// <param name="ExpectedSlopes">
-        /// One tuple for each slope that should be tested
-        /// - 1st item: name of x-axis
-        /// - 2nd item: name of y-axis
-        /// - 3rd item expected slope in the log-log-regression
-        /// </param>
-        public static void TestSlopes<T>(T Controls, List<ValueTuple<XAxisDesignation, string, double>> ExpectedSlopes)
-           where T : IEnumerable<BoSSS.Solution.Control.AppControl> //
-        {
-            var data = RunAndLog(Controls);
-            
-
-            foreach (var ttt in ExpectedSlopes) {
-                double[] xVals = data[ttt.Item1.ToString()];
-                double[] yVals = data[ttt.Item2];
-
-                double Slope = LogLogRegression(xVals, yVals);
-
-                Console.WriteLine($"Slope for {ttt.Item2}: {Slope:0.###e-00}");
-            }
-
-            foreach (var ttt in ExpectedSlopes) {
-                double[] xVals = data[ttt.Item1.ToString()];
-                double[] yVals = data[ttt.Item2];
-
-                double Slope = LogLogRegression(xVals, yVals);
-
-                Assert.LessOrEqual(Slope, ttt.Item3, $"Condition number slope for {ttt.Item2} to high; at max. {ttt.Item3}");
-            }
-        }
+        
 
     }
 }

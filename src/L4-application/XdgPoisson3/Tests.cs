@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.AdvancedSolvers;
+using BoSSS.Solution.AdvancedSolvers.Testing;
 using MPI.Wrappers;
 using NUnit.Framework;
 using System;
@@ -107,7 +108,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
                 Controls.Add(C);
             }
-            
+
             /*
             Für p = 1:
             Slope for TotCondNo-Var0: 2.153e00
@@ -118,14 +119,19 @@ namespace BoSSS.Application.XdgPoisson3 {
             Slope for StencilCondNo-bndyCut-Var0: 0e00             
             */
 
-            var ExpectedSlopes = new List<ValueTuple<Solution.AdvancedSolvers.Testing.OpAnalysisBase.XAxisDesignation, string, double>>();
+            //var ExpectedSlopes = new List<ValueTuple<Solution.AdvancedSolvers.Testing.OpAnalysisBase.XAxisDesignation, string, double>>();
 
-            ExpectedSlopes.Add((Solution.AdvancedSolvers.Testing.OpAnalysisBase.XAxisDesignation.Grid_1Dres, "TotCondNo-Var0", 2.5));
-            ExpectedSlopes.Add((Solution.AdvancedSolvers.Testing.OpAnalysisBase.XAxisDesignation.Grid_1Dres, "StencilCondNo-innerUncut-Var0", 0.5));
-            ExpectedSlopes.Add((Solution.AdvancedSolvers.Testing.OpAnalysisBase.XAxisDesignation.Grid_1Dres, "StencilCondNo-innerCut-Var0", 0.5));
+            //ExpectedSlopes.Add((Solution.AdvancedSolvers.Testing.OpAnalysisBase.XAxisDesignation.Grid_1Dres, "TotCondNo-Var0", 2.5));
+            //ExpectedSlopes.Add((Solution.AdvancedSolvers.Testing.OpAnalysisBase.XAxisDesignation.Grid_1Dres, "StencilCondNo-innerUncut-Var0", 0.5));
+            //ExpectedSlopes.Add((Solution.AdvancedSolvers.Testing.OpAnalysisBase.XAxisDesignation.Grid_1Dres, "StencilCondNo-innerCut-Var0", 0.5));
 
-            Solution.AdvancedSolvers.Testing.OpAnalysisBase.TestSlopes(Controls, ExpectedSlopes);
-           
+            //Solution.AdvancedSolvers.Testing.OpAnalysisBase.TestSlopes(Controls, ExpectedSlopes);
+
+            var t = new ConditionNumberScalingTest();
+            t.SetControls(Controls);
+            t.CheckResults();
+
+
         }
 
        

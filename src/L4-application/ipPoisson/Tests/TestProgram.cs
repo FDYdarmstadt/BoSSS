@@ -160,16 +160,19 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
         }
 
-        
+        /// <summary>
+        /// operator condition number scaling, 2D
+        /// </summary>
+        [Test]
         public static void TestOperatorScaling2D(
 #if DEBUG            
             [Values(1)]int dgDeg
 #else
-            [Values(1,2,3,4)]int dgDeg,
+            [Values(1,2,3,4)]int dgDeg
 #endif            
             ) {
 
-            var tst = new ConditionNumberScalingTest();
+            
 
             var Controls = new List<SipControl>();
             {
@@ -184,7 +187,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
                 }
 
                 foreach(int res in ResS) {
-                    var C = SipHardcodedControl.TestCartesian2(res, 3, solver_name: SolverCodes.classic_pardiso, deg: dgDeg);
+                    var C = SipHardcodedControl.TestCartesian2(res, 2, solver_name: SolverCodes.classic_pardiso, deg: dgDeg);
                     //C.TracingNamespaces = "*";
                     C.savetodb = false;
                     Controls.Add(C);
@@ -192,74 +195,26 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
             }
 
-            tst.SetControls(Controls);
-
-            tst.ExecuteTest();
+            ConditionNumberScalingTest.Perform(Controls);
         }
-
-
-        public static void TestOperatorScaling3D(
-#if DEBUG            
-            [Values(1)]int dgDeg
-#else
-            [Values(1,2,3,4)]int dgDeg,
-#endif            
-            ) {
-
-            var tst = new ConditionNumberScalingTest();
-
-            var Controls = new List<SipControl>();
-            {
-                int[] ResS = null;
-
-                switch(dgDeg) {
-                    case 1: ResS = new int[] { 4, 8, 16 }; break;
-                    case 2: ResS = new int[] { 4, 8, 16 }; break;
-                    case 3: ResS = new int[] { 4, 8 }; break;
-                    case 4: ResS = new int[] { 4, 8 }; break;
-                    default: throw new NotImplementedException();
-                }
-                foreach(int res in ResS) {
-                    var C = SipHardcodedControl.TestCartesian2(res, 3, solver_name: SolverCodes.classic_pardiso, deg: dgDeg);
-                    //C.TracingNamespaces = "*";
-                    C.savetodb = false;
-                    Controls.Add(C);
-                }
-            }
-
-            tst.SetControls(Controls);
-
-            tst.ExecuteTest();
-        }
-
 
         /// <summary>
         /// operator condition number scaling
         /// </summary>
         [Test]
-        public static void TestOperatorScaling(
+        public static void TestOperatorScaling3D(
 #if DEBUG            
-            [Values(1)]int dgDeg,
-            [Values(2,3)]int dim
+            [Values(1)]int dgDeg
 #else
-            [Values(1,2,3,4)]int dgDeg,
-            [Values(2,3)]int dim
-
-#endif
+            [Values(1,2,3,4)]int dgDeg
+#endif            
             ) {
 
+  
             var Controls = new List<SipControl>();
+            {
+                int[] ResS = null;
 
-            int[] ResS = null;
-            if(dim == 2) {
-                switch(dgDeg) {
-                    case 1: ResS = new int[] { 8, 16, 32, 64 }; break;
-                    case 2: ResS = new int[] { 8, 16, 32, 64 }; break;
-                    case 3: ResS = new int[] { 8, 16, 32, 64 }; break;
-                    case 4: ResS = new int[] { 8, 16, 32 }; break;
-                    default: throw new NotImplementedException();
-                }
-            } else if(dim == 3) {
                 switch(dgDeg) {
                     case 1: ResS = new int[] { 4, 8, 16 }; break;
                     case 2: ResS = new int[] { 4, 8, 16 }; break;
@@ -267,51 +222,16 @@ namespace BoSSS.Application.SipPoisson.Tests {
                     case 4: ResS = new int[] { 4, 8 }; break;
                     default: throw new NotImplementedException();
                 }
-            } else {
-                throw new ArgumentOutOfRangeException("un-supported spatial dimension");
-            }
-            
-            foreach (int res in ResS) {
-                var C = SipHardcodedControl.TestCartesian2(res, dim, solver_name:SolverCodes.classic_pardiso, deg: dgDeg);
-                //C.TracingNamespaces = "*";
-                C.savetodb = false;
-                Controls.Add(C);
-            }
-            
-            /*
-            var Data = Solution.OpAnalysisBase.RunAndLog(Controls);
-
-            
-            using(var gp = new Gnuplot()) {
-
-                var xVals = Data[OpAnalysisBase.XAxisDesignation.Grid_1Dres.ToString()];
-                var yVal1 = Data["StencilCondNo-innerUncut-Var0"];
-                var yVal2 = Data["TotCondNo-Var0"];
-
-                gp.PlotLogXLogY(xVals, yVal1, "StencilCondNo", new PlotFormat("-ro"));
-                gp.PlotLogXLogY(xVals, yVal2, "TotCondNo", new PlotFormat("-ro"));
-
-
-                gp.Execute();
-
-                Console.WriteLine("Press any key to continue...");
-                Console.ReadKey();
+                foreach(int res in ResS) {
+                    var C = SipHardcodedControl.TestCartesian2(res, 3, solver_name: SolverCodes.classic_pardiso, deg: dgDeg);
+                    //C.TracingNamespaces = "*";
+                    C.savetodb = false;
+                    Controls.Add(C);
+                }
             }
 
-            /*
-            Für p = 1:
-            Regression of condition number slopes:
-              slope of TotCondNo-Var0: 1.99104373245431
-              slope of InnerCondNo-Var0: 2.10942711463848
-              slope of StencilCondNo-innerUncut-Var0: 0.00980723109676584
-            
-            */
+            ConditionNumberScalingTest.Perform(Controls);
 
-            
-
-            //*/
         }
-
-
     }
 }

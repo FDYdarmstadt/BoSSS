@@ -138,7 +138,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="args"></param>
         static void Main(string[] args) {
             //BoSSS.Application.SipPoisson.Tests.TestProgram.Init();
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorScaling(3, 3);
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorScaling2D(1);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverCode.exp_Kcycle_schwarz);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverCode.exp_softpcg_schwarz_directcoarse);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.Cleanup();
@@ -1157,7 +1157,7 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         override public IDictionary<string,double> OperatorAnalysis() {
             using(new FuncTrace()) {
-                var ana = new BoSSS.Solution.OpAnalysisBase(
+                var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(
                     this.LaplaceMtx, this.LaplaceAffine,
                     this.T.Mapping,
                     this.MgConfig);
