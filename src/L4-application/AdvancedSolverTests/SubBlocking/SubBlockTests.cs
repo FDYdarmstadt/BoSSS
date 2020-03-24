@@ -60,14 +60,17 @@ namespace AdvancedSolverTests
             }
         }
 
-        public static void GetExternalRowsTest() {
-
+        [Test]
+        public static void GetExternalRowsTest(
+            ) {
+            //Matlabaufruf --> gesamte Matrix nach Matlab schreiben
+            //Teilmatritzen gemäß Globalid extrahieren
+            //Mit ExternalRows vergleichen
+            //Die große Frage: funktioniert der batchmode connector parallel? Beim rausschreiben beachten
         }
 
-
-        public static void 
-
-        public static void IndexingTest(
+        [Test]
+        public static void LocalIndexTest(
             [Values(XDGusage.none, XDGusage.mixed1, XDGusage.mixed2, XDGusage.all)] XDGusage UseXdg,
             [Values(2)] int DGOrder) {
 
@@ -81,14 +84,52 @@ namespace AdvancedSolverTests
 
                 //Arrange --- Get global index by mapping
                 var map = solver.GetMapping;
-                int[] fields = map.NoOfVariables.ForLoop(i=>i);
+                int[] fields = map.NoOfVariables.ForLoop(i => i);
                 int[] GlobalIdxMap_loc = map.GetSubvectorIndices(fields);
+               
+                //Arrange --- Prepare stuff for mask
+                var selector = new SubBlockSelector(map);
+                var stw = new Stopwatch();
+                stw.Reset();
+
+                //Act --- do the masking to get index lists
+                stw.Start();
+                var mask = new TestMasking(selector);
+                stw.Stop();
+                int[] GlobalIdxMask_loc = mask.Global_IList_LocalCells.ToArray();
+
+                //Assert --- Idx lists are of same length
+                Assert.IsTrue(GlobalIdxMap_loc.Length == GlobalIdxMask_loc.Length);
+
+                //Assert --- Compare map and mask indices
+                for (int iLoc = 0; iLoc < GlobalIdxMask_loc.Length; iLoc++) {
+                    Assert.True(GlobalIdxMap_loc[iLoc] == GlobalIdxMask_loc[iLoc]);
+                }
+            }
+        }
+
+        [Test]
+        public static void ExternalIndexTest(
+            [Values(XDGusage.none, XDGusage.mixed1, XDGusage.mixed2, XDGusage.all)] XDGusage UseXdg,
+            [Values(2)] int DGOrder) {
+
+            TestInit((int) UseXdg, DGOrder);
+
+            Console.WriteLine("TestIndexing({0},{1})", UseXdg, DGOrder);
+
+            using (var solver = new SubBlockTestSolver() { m_UseXdg = UseXdg, m_DGorder = DGOrder }) {
+                solver.Init(null);
+                solver.RunSolverMode();
+
+                //Arrange --- Get global index by mapping
+                var map = solver.GetMapping;
+                int[] fields = map.NoOfVariables.ForLoop(i => i);
                 int[] GlobalIdxMap_ext = map.GetSubvectorIndices_Ext(fields); // maybe not sorted, so do it ...
                 Array.Sort(GlobalIdxMap_ext);
 
                 //Arrange --- Prepare stuff for mask
                 var selector = new SubBlockSelector(map);
-                var dummy = new BlockMsrMatrix(map); // we are not interested in any operational stuff
+                var dummy = new BlockMsrMatrix(map); // we do not need the external rows yet, because we are not testing any operations
                 var stw = new Stopwatch();
                 stw.Reset();
 
@@ -96,33 +137,15 @@ namespace AdvancedSolverTests
                 stw.Start();
                 var mask = new TestMasking(selector, dummy);
                 stw.Stop();
-                int[] GlobalIdxMask_loc = mask.Global_IList_LocalCells.ToArray();
                 int[] GlobalIdxMask_ext = mask.Global_IList_ExternalCells.ToArray();
 
-                //Act --- Get global
-
                 //Assert --- Idx lists are of same length
-                Assert.IsTrue(GlobalIdxMap_loc.Length == GlobalIdxMask_loc.Length);
                 Assert.IsTrue(GlobalIdxMap_ext.Length == GlobalIdxMask_ext.Length);
 
-                //Assert --- local idx list contains local idx
-                Assert.IsTrue(map.IsInLocalRange(GlobalIdxMask_loc[0]));
-                Assert.IsTrue(map.IsInLocalRange(GlobalIdxMask_loc.Last()));
-
-                //Assert --- external idx list contains external idx
-                Assert.IsTrue(!map.IsInLocalRange(GlobalIdxMask_ext[0]));
-                Assert.IsTrue(!map.IsInLocalRange(GlobalIdxMask_ext.Last()));
-
-                //Act --- Compare Idx
-                bool TestLoc = true;
-                for (int iLoc = 0; iLoc < GlobalIdxMask_loc.Length; iLoc++) {
-                    GlobalIdxMap_loc[iLoc]==
+                //Assert --- Compare map and mask indices
+                for (int iLoc = 0; iLoc< GlobalIdxMask_ext.Length; iLoc++) {
+                    Assert.IsTrue(GlobalIdxMask_ext[iLoc] == GlobalIdxMap_ext[iLoc]);
                 }
-                
-
-
-                mask.Global_IList_LocalCells
-                mask.Global_IList_ExternalCells
             }
         }
 
@@ -130,7 +153,7 @@ namespace AdvancedSolverTests
         /// Test for extracting masked diagonal cell blocks and respective vector matrix multiplication
         /// </summary>
         [Test]
-        public static void ExtractDiagonalBlocks(
+        public static void ExtractDiagonalCellBlocks(
             [Values(XDGusage.none, XDGusage.mixed1, XDGusage.mixed2, XDGusage.all)] XDGusage UseXdg,
             [Values(2)] int DGOrder,
             [Values(MatrixShape.diagonal,MatrixShape.diagonal_var,MatrixShape.diagnoal_spec,MatrixShape.diagnoal_var_spec)] MatrixShape MShape
@@ -206,13 +229,34 @@ namespace AdvancedSolverTests
                     //Assert --- Are subblock and ith diagonal block entries equal?
                     Assert.IsTrue(Mblock.InfNorm() == 0.0, String.Format("infNorm of block {0} neq 0!", i));
                 }
-                
-                
 
 
+
+                //BlockMsrMatrix all1;
+                //all1.SetAll(1);
+                //Generate broken diagonal matrix, die zur Maske passt: M
+                //M+all1=M_prep
+                //Wende Extraction auf M_prep an, Man sollte nun M bekommen
+                //Test: M_prep-extract(M_prep)=all1
+                //Test-crit: Result.SumEntries=DOF^2 oder Result.Max()==Result.Min()==1
+                //oder (besser)
+                //Test: M-extract(M_prep)=zeros
+                //Test-crit: Result.InfNorm()==0
+
+                //Der Test kann für ExtractSubMatrix mit ignore coupling wiederholt werden
+                //eventuell: Testmatrix finden mit brauchbaren Nebendiagonalen für einen Fall
+
+                //Was wird getestet: funktioniert ignorecoupling richtig?
 
             }
 
+        }
+
+        public static void AccSubVectorCellwise() {
+            //matrix Erzeugung wie in ExtractDiagonalCellBlocks...
+            //Auf der HierarchieEbene, auf der Kopplung ausgesetzt wird kann Auswahl vorgenommen werden
+            //bei var: 0 / 1, bei DG: <=1 / >1, bei spec: A / B, bei Cells: odd / even
+            //accumulierte Teilergebnisse sind dann == fullM*fullX 
         }
 
         public static void ExtractSubMatrix(
@@ -239,7 +283,35 @@ namespace AdvancedSolverTests
 
                 SubBlockSelector SBS = new SubBlockSelector(solver.GetMapping);
 
+                //Hier interessiert uns kein ignorecoupling
+                //Die Frage ist: werden blöcke abseits der Diagonalen richtig behandelt?
+                //Bauen 2er Testmatritzen durch solver:
+                //M1: enthält nur Elemente mit Var1 / SpecA / DG<=1 (Einstellen über Manipulation der Flüsse/Sourceterme)
+                //M2: keine Einschränkung aber gleiche Flüsse und Sourceterme wie M1
+                //Maskierung gemäß M1: nur Elemente mit Var1 / SpecA / DG<=1
+                //Test: extract(M2)-M1=zeros
+                //Test-crit: Result.InfNorm()==0
 
+                //Eventuell auch möglich für Zellen
             }
         }
-}
+
+        public static void AccSubVector() {
+            //matrix Erzeugung wie in ExtractSubMatrix ...
+            //Auf der HierarchieEbene, auf der Kopplung ausgesetzt wird kann Auswahl vorgenommen werden
+            //bei var: 0 / 1, bei DG: <=1 / >1, bei spec: A / B, bei Cells: odd / even
+            //accumulierte Teilergebnisse sind dann == fullM*fullX 
+        }
+
+        public static void ExtractSubMatrix_Ext() {
+            //Kombination aus GetExternalRows und SubMatrix extraction
+            //Es werden nur external Row Einträge berücksichtigt
+            //Berechnung eventuell in Matlab durchführen
+        }
+
+        public static void AccSubVec_Ext() {
+            //Kombination aus GetExternalRows und AccSubVec_Ext
+            //Es werden nur external Row Einträge berücksichtigt
+            //Berechnung eventuell in Matlab durchführen
+        }
+    }

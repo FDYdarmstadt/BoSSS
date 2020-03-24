@@ -124,10 +124,21 @@ namespace BoSSS.Solution.AdvancedSolvers
             } else {
                 SetThisShitUp(new BlockMaskBase[] { BMLoc });
             }
-
+#if Debug
+            CheckIndices();
+#endif
         }
 
-
+        private void CheckIndices() {
+            for(int i=0;i < BMLoc.m_GlobalMask.Count; i++) {
+                int GlobIdx = BMLoc.m_GlobalMask.ToArray()[i];
+                Debug.Assert(m_map.IsInLocalRange(GlobIdx));
+            }
+            for(int i = 0; i < BMExt.m_GlobalMask.Count; i++) {
+                int GlobIdx = BMExt.m_GlobalMask.ToArray()[i];
+                Debug.Assert(!m_map.IsInLocalRange(GlobIdx));
+            }
+        }
 
         private void SetThisShitUp(BlockMaskBase[] masks) {
             List<int> tmpOffsetList = new List<int>();
@@ -251,7 +262,7 @@ namespace BoSSS.Solution.AdvancedSolvers
             }
         }
 
-        #region Testing
+#region Testing
         // ==========
         // Stuff dedicated to testing ...
         // ==========
@@ -288,7 +299,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                 throw new NotSupportedException("Selected Cells are outside of valid bounds. This is not supported right now");
         }
 
-        #endregion
+#endregion
         /// <summary>
         /// Get Array of Cellblocks
         /// </summary>

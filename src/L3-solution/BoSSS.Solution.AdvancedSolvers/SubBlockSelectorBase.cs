@@ -640,6 +640,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     Ni0Length++;
                                     ListNi0.Add(newNi0);
                                 Debug.Assert(m_map.LocalUniqueIndex(iVar, jLoc, iSpc, GetNp(degree) - 1) == LocalModeOffset + ModeLength - 1);
+                                Debug.Assert(newNi0.Gi0 - m_map.Partitioning.i0 == newNi0.Li0);
                             }
                         }
                         tmpSpc.Add(tmpMod.ToArray());
