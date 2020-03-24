@@ -3663,8 +3663,8 @@ namespace CNS {
 
             // Shift grid
             double h = Math.Abs(xMax - xMin) / numOfCellsX;
-            //xMin = xMin - h / 2;
-            //xMax = xMax - h / 2;
+            xMin = xMin - h / 2;
+            xMax = xMax - h / 2;
 
             if (restart == "True") {
                 // Restart Lichtenberg
@@ -3879,8 +3879,8 @@ namespace CNS {
             // ### Fluxes ###
             c.ActiveOperators = Operators.Convection;
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
-            //c.LevelSetBoundaryTag = "AdiabaticSlipWall";
-            c.LevelSetBoundaryTag = "None";
+            c.LevelSetBoundaryTag = "AdiabaticSlipWall";
+            //c.LevelSetBoundaryTag = "None";
 
             // ### Grid ###
             double xMin = -2.0;
