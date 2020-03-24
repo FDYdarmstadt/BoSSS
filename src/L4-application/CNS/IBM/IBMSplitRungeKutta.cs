@@ -155,8 +155,8 @@ namespace CNS.IBM {
 
                 //massMatrixFactory.MassMatrix.SaveToTextFileSparse("massMatrix.txt");
 
-                Console.WriteLine($"AGGLOMERATOR: L2-Norm of change rate = {k.L2Norm()}");
-                k.SaveToTextFile($"k_CUT_{count}.txt");
+                //Console.WriteLine($"AGGLOMERATOR: L2-Norm of change rate = {k.L2Norm()}");
+                //k.SaveToTextFile($"k_CUT_{count}.txt");
                 //k.SaveToTextFile($"c:\\tmp\\cns_k_CUT_{count}.txt");
 
                 //count++;
