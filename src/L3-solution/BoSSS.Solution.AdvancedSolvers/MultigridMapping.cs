@@ -457,7 +457,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     S += n;
                     return S;
                 } else {
-                    int S = m_i0_ExtGlob[jCell - AggGrid.iLogicalCells.NoOfLocalUpdatedCells];
+                    int S = m_i0_ExtGlob[jCell - Jup];
                     for (int iF = 0; iF < ifld; iF++)
                         S += this.AggBasis[iF].GetLength(jCell, this.m_DgDegree[iF]);
                     S += n;
@@ -789,6 +789,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return R.ToArray();
         }
 
+        public int[] GetSubvectorIndices_Ext(params int[] Fields) {
+            ilPSP.MPICollectiveWatchDog.Watch();
+            long[] GlobCellIdxExt = this.AggGrid.iParallel.GlobalIndicesExternalCells;
+            int E0 = this.AggGrid.CellPartitioning.i0;
+            List<int> R = new List<int>();
+            foreach(long CIdx in GlobCellIdxExt) {
+                int jCell = (int)CIdx - E0;
+                foreach (int fld in Fields) {
+                    int i0_Block = GlobalUniqueIndex(fld, jCell, 0);
+                    int N = this.AggBasis[fld].GetLength(jCell, this.DgDegree[fld]);
+                    for(int i = 0; i < N; i++) {
+                        R.Add(i0_Block + i);
+                    }
+                }
+            }
+
+            return R.ToArray();
+        }
 
         /// <summary>
         /// Returns global unique indices which correlate to a certain species and basises.
