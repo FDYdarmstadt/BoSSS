@@ -166,7 +166,8 @@ namespace VoronoiTests.Grid
                 EdgeTagNames = tagNames
             };
 
-            VoronoiGrid grid = VoronoiGrid2D.Polygonal(gridBoundary, 0, 200);
+            VoronoiGrid grid = VoronoiGrid2D.Polygonal(gridBoundary, 100, 2000);
+            Plotter.Plot(grid);
         }
 
         [Test]
