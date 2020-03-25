@@ -1,3 +1,5 @@
+DMR_AutoRun_HHLR_CubeX-Files_ch-study
+Executes the CNS parameter study
 GenerateCubeFiles
 generates cube-files for further usage with Extra-P
 ImbalanceDetection

@@ -3858,7 +3858,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             XNSE_Control C = new XNSE_Control();
 
-            
+
             // basic database options
             // ======================
             #region db
@@ -3867,7 +3867,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.savetodb = C.DbPath != null;
             C.ProjectName = "XNSE/StokesSphere";
             C.ProjectDescription = "static droplet";
-            
+
             #endregion
 
 
@@ -3883,7 +3883,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 Degree = p - 1,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            
+
             C.FieldOptions.Add("GravityY", new FieldOpts() {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
@@ -3895,7 +3895,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("Curvature", new FieldOpts() {
-                Degree = Math.Max(4, 2*p + 2),
+                Degree = Math.Max(4, 2 * p + 2),
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
 
@@ -3906,13 +3906,14 @@ namespace BoSSS.Application.XNSE_Solver {
             // ==============
             #region grid
 
-            
+
 
             C.GridFunc = delegate () {
                 double[] Xnodes = GenericBlas.Linspace(-1, 1, kelem + 1);
                 double[] Ynodes = GenericBlas.Linspace(-1, 1, kelem + 1);
                 double[] Znodes = GenericBlas.Linspace(-1, 1, kelem + 1);
                 var grd = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
+
 
 
                 grd.DefineEdgeTags(delegate (double[] X) {
@@ -3963,7 +3964,6 @@ namespace BoSSS.Application.XNSE_Solver {
             // ==============
             #region init
 
-
             //double[] center = new double[] { 0.5, 0.5 };
             ////double a = 2.4;
             ////double b = 2.4;
@@ -3976,7 +3976,7 @@ namespace BoSSS.Application.XNSE_Solver {
             double r = 0.5;
             double nonsp = 0.5;
 
-            C.AddInitialValue("Phi", new Formula($"X => (X[0]/{r*nonsp}).Pow2() + (X[1]/{r}).Pow2() + (X[2]/{r}).Pow2()-1", false));
+            C.AddInitialValue("Phi", new Formula($"X => (X[0]/{r * nonsp}).Pow2() + (X[1]/{r}).Pow2() + (X[2]/{r}).Pow2()-1", false));
 
             C.LSContiProjectionMethod = ContinuityProjectionOption.None;
 
@@ -3997,15 +3997,11 @@ namespace BoSSS.Application.XNSE_Solver {
 
             #endregion
 
-
-
-
-
             // misc. solver options
             // ====================
             #region solver
 
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
 
             C.ComputeEnergyProperties = false;
 
@@ -4014,28 +4010,30 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
             //C.ContiField = XNSE_Control.ContinuityProjection.ContinuousDG;
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
-            C.LinearSolver.NoOfMultigridLevels = 3;
-            C.LinearSolver.MaxSolverIterations = 500;
-            C.LinearSolver.TargetBlockSize = 200;
-            C.NonLinearSolver.MaxSolverIterations = 50;
+            //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
+            C.VelocityBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
+            C.PressureBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
+            C.LinearSolver.NoOfMultigridLevels = 4;
+            C.LinearSolver.MaxSolverIterations = 200;
+            C.LinearSolver.TargetBlockSize = 1200;
+            C.NonLinearSolver.MaxSolverIterations = 100;
             //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
             C.LinearSolver.ConvergenceCriterion = 1e-8;
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+            C.Option_LevelSetEvolution = LevelSetEvolution.None;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
-            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
 
             //C.AdvancedDiscretizationOptions.surfTensionMode = Solution.XNSECommon.SurfaceTensionMode.LaplaceBeltrami_Local;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             //C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
-            C.LinearSolver.verbose=true;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver.verbose = true;
             C.NonLinearSolver.verbose = true;
             #endregion
 
