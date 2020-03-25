@@ -3928,45 +3928,45 @@ namespace CNS {
                 //    return 1;
                 //});
 
-                var gDat = new GridData(grid);
-                var em1 = gDat.GetBoundaryEdges();
-                em1.SaveToTextFile("alledges.csv", false, (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => (double)gDat.iGeomEdges.EdgeTags[GeomItemIndex]);
+                //var gDat = new GridData(grid);
+                //var em1 = gDat.GetBoundaryEdges();
+                //em1.SaveToTextFile("alledges.csv", false, (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => (double)gDat.iGeomEdges.EdgeTags[GeomItemIndex]);
 
                 return grid;
             };
 
             // ### Level set ###
             c.DomainType = DomainTypes.StaticImmersedBoundary;
-            //c.LevelSetFunction = delegate (double[] X, double t) {
-            //    // Circle 1
-            //    double x0 = 0.0;
-            //    double y0 = 0.5;
-            //    double r0 = 0.5;
+            c.LevelSetFunction = delegate (double[] X, double t) {
+                // Circle 1
+                double x0 = 0.0;
+                double y0 = 0.5;
+                double r0 = 0.5;
 
-            //    // Circle 2
-            //    double x1 = 0.0;
-            //    double y1 = -0.5;
-            //    double r1 = 0.5;
+                // Circle 2
+                double x1 = 0.0;
+                double y1 = -0.5;
+                double r1 = 0.5;
 
-            //    // Signed distance formulation
-            //    //if (X[1] >= 0.5) {
-            //    //    return Math.Sqrt((X[0] - x0) * (X[0] - x0) + (X[1] - y0) * (X[1] - y0)) - r0;
-            //    //} else if (X[1] <= -0.5) {
-            //    //    return Math.Sqrt((X[0] - x1) * (X[0] - x1) + (X[1] - y1) * (X[1] - y1)) - r1;
-            //    //} else {
-            //    //    return -(X[0] + 0.5);
-            //    //}
+                // Signed distance formulation
+                //if (X[1] >= 0.5) {
+                //    return Math.Sqrt((X[0] - x0) * (X[0] - x0) + (X[1] - y0) * (X[1] - y0)) - r0;
+                //} else if (X[1] <= -0.5) {
+                //    return Math.Sqrt((X[0] - x1) * (X[0] - x1) + (X[1] - y1) * (X[1] - y1)) - r1;
+                //} else {
+                //    return -(X[0] + 0.5);
+                //}
 
-            //    // Quadratic formulation
-            //    if (X[1] >= 0.5) {
-            //        return (X[0] - x0) * (X[0] - x0) + (X[1] - y0) * (X[1] - y0) - r0 * r0;
-            //    } else if (X[1] <= -0.5) {
-            //        return (X[0] - x1) * (X[0] - x1) + (X[1] - y1) * (X[1] - y1) - r1 * r1;
-            //    } else {
-            //        return X[0] * X[0] - 0.5 * 0.5;
-            //    }
-            //};
-            c.LevelSetFunction = (X, t) => 10;
+                // Quadratic formulation
+                if (X[1] >= 0.5) {
+                    return (X[0] - x0) * (X[0] - x0) + (X[1] - y0) * (X[1] - y0) - r0 * r0;
+                } else if (X[1] <= -0.5) {
+                    return (X[0] - x1) * (X[0] - x1) + (X[1] - y1) * (X[1] - y1) - r1 * r1;
+                } else {
+                    return X[0] * X[0] - 0.5 * 0.5;
+                }
+            };
+            //c.LevelSetFunction = (X, t) => 10;
 
             c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
             c.AgglomerationThreshold = 0.0;
@@ -3974,8 +3974,8 @@ namespace CNS {
             int levelSetDegree = 2;
             c.AddVariable(IBMVariables.LevelSet, levelSetDegree);
 
-            c.LevelSetQuadratureOrder = 1;
-            //c.LevelSetQuadratureOrder = 3 * levelSetDegree;
+            //c.LevelSetQuadratureOrder = 1;
+            c.LevelSetQuadratureOrder = 3 * levelSetDegree;
 
             c.EquationOfState = IdealGas.Air;
             c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
