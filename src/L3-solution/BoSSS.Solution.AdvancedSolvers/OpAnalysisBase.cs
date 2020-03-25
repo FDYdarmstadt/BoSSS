@@ -665,10 +665,12 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 bndyCut_MaxCondNo = bndyCut_MaxCondNo.MPIMax();
 
                 Ret.Add("StencilCondNo-innerUncut-" + VarNames, innerUncut_MaxCondNo);
-                Ret.Add("StencilCondNo-innerCut-" + VarNames, innerCut_MaxCondNo);
                 Ret.Add("StencilCondNo-bndyUncut-" + VarNames, bndyUncut_MaxCondNo);
-                Ret.Add("StencilCondNo-bndyCut-" + VarNames, bndyCut_MaxCondNo);
 
+                if(m_LsTrk != null) {
+                    Ret.Add("StencilCondNo-innerCut-" + VarNames, innerCut_MaxCondNo);
+                    Ret.Add("StencilCondNo-bndyCut-" + VarNames, bndyCut_MaxCondNo);
+                }
                 return Ret;
             }
         }

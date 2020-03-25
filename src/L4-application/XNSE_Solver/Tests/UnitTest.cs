@@ -28,6 +28,7 @@ using System;
 using System.Collections.Generic;
 using ilPSP;
 using BoSSS.Solution.AdvancedSolvers.Testing;
+using ilPSP.Connectors.Matlab;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
@@ -50,6 +51,17 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         [TestFixtureSetUp]
         static public void TestFixtureSetUp() {
+            // Tweaking to use OCTAVE instead of MATLAB
+            if(System.Environment.MachineName.ToLowerInvariant().EndsWith("terminal03")) {
+                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
+                BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-4.4.1\bin\octave-cli.exe";
+            } else if(System.Environment.MachineName.ToLowerInvariant().Contains("stormbreaker")) { 
+                // This is Florians Laptop;
+                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
+                BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-5.1.0.0\mingw64\bin\octave-cli.exe";
+            }
+
+
             BoSSS.Solution.Application.InitMPI(new string[0]);
             XQuadFactoryHelper.CheckQuadRules = true;
         }
@@ -102,7 +114,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
 
 
-            ConditionNumberScalingTest.Perform(LaLa);
+            ConditionNumberScalingTest.Perform(LaLa, plotAndWait:true);
         }
 
 

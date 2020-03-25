@@ -22,8 +22,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// <summary>
         /// Easy-to-use driver routine
         /// </summary>
-        static public void Perform(IEnumerable<AppControl> controls, bool plotAndWait = false) {
-            var t = new ConditionNumberScalingTest();
+        static public void Perform(IEnumerable<AppControl> controls, bool plotAndWait = false, string title = "") {
+            var t = new ConditionNumberScalingTest(title);
             t.SetControls(controls);
             t.RunAndLog();
 
@@ -74,11 +74,17 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             return gp;
         }
 
+        string m_title;
 
         /// <summary>
         /// ctor
         /// </summary>
-        public ConditionNumberScalingTest() {
+        /// <param name="Title">
+        /// Optional title used for plots, etc.
+        /// </param>
+        public ConditionNumberScalingTest(string Title) {
+            m_title = Title;
+
             this.ExpectedSlopes = new List<ValueTuple<XAxisDesignation, string, double>>();
 
             ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "TotCondNo-*", 2.2));
@@ -191,6 +197,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             if(data == null)
                 throw new NotSupportedException("No data available: user must call 'RunAndLog()' first.");
 
+            Console.WriteLine("Condition Number Scaling Test slopes:");
+
             foreach (var ttt in ExpectedSlopes) {
                 double[] xVals = data[ttt.Item1.ToString()];
                 string[] allYNames = data.Keys.Where(name => ttt.Item2.WildcardMatch(name)).ToArray();
@@ -200,7 +208,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     double Slope = LogLogRegression(xVals, yVals);
 
                     string tstPasses = Slope <= ttt.Item3 ? "passed" : $"FAILED (threshold is {ttt.Item3})";
-                    Console.WriteLine($"Slope for {ttt.Item2}: {Slope:0.###e-00} -- {tstPasses}");
+                    Console.WriteLine($"    Slope for {yName}: {Slope:0.###e-00} -- {tstPasses}");
                 }
             }
 
@@ -306,6 +314,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 }
             }
 
+            /*
             // write statistics
             // ================
             {
@@ -326,7 +335,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
 
             }
-
+            */
 
             // data conversion & return 
             // ========================

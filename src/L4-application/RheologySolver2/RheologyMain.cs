@@ -57,6 +57,12 @@ namespace BoSSS.Application.Rheology {
     /// </summary>
     public class Rheology : BoSSS.Solution.Application<RheologyControl> {
         static void Main(string[] args) {
+            RheologyTestProgram.Init();
+            DeleteOldPlotFiles();
+            RheologyTestProgram.ChannelTestStokesConditionScaling(2, 1.0);
+            RheologyTestProgram.Cleanup();
+            Assert.IsTrue(false, "Testcode left in main routine.");
+
             Rheology._Main(args, false, () => new Rheology());
         }
 
@@ -421,11 +427,11 @@ namespace BoSSS.Application.Rheology {
                         var comps = XOP.EquationComponents[CodName[d]];
 
                         // convective part:
-                        if (!this.Control.StokesConvection || !this.Control.Stokes) {
-                            comps.Add(new LocalLaxFriedrichsConvection(D, BcMap, d, 1.0));
+                        if (this.Control.StokesConvection || this.Control.Stokes) {
+                            Console.WriteLine("Using Stokes Equation - no convective term.");
                             
                         } else {
-                            Console.WriteLine("Using Stokes Equation - no convective term.");
+                            comps.Add(new LocalLaxFriedrichsConvection(D, BcMap, d, 1.0));
                         }
 
 
@@ -1222,7 +1228,7 @@ namespace BoSSS.Application.Rheology {
                 MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
                 for (int iLevel = 0; iLevel < configs.Length; iLevel++) {
                     int pVelLv = Math.Max(1, pVel - iLevel);
-                    int pPreLv = Math.Max(1, pPrs - iLevel);
+                    int pPreLv = Math.Max(0, pPrs - iLevel);
                     int pStrLv = Math.Max(1, pStr - iLevel);
 
                     /*
@@ -1242,7 +1248,7 @@ namespace BoSSS.Application.Rheology {
 
 
 
-
+                    /*
                     configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[1];
                     configs[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig() {
                         mode = MultigridOperator.Mode.LeftInverse_DiagBlock,
@@ -1251,7 +1257,7 @@ namespace BoSSS.Application.Rheology {
                     };
                     //*/
 
-                    /*
+                    
                     configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 4];
                     
                     // configurations for velocity
@@ -1266,7 +1272,7 @@ namespace BoSSS.Application.Rheology {
                     // configuration for pressure
                     configs[iLevel][D] = new MultigridOperator.ChangeOfBasisConfig() {
                         DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
-                        mode = this.Control.PressureBlockPrecondMode,
+                        mode = MultigridOperator.Mode.Eye,
                         VarIndex = new int[] { D }
                     };
 
@@ -1676,6 +1682,32 @@ namespace BoSSS.Application.Rheology {
                     Console.WriteLine($"No Weissenberg number contained in time-step; starting with pre-set.");
                 }
             }
+        }
+
+        /// <summary>
+        /// automatized analysis of condition number 
+        /// </summary>
+        public override IDictionary<string, double> OperatorAnalysis() {
+
+            int[] varGroup_convDiff = new int[] { 0, 1 };
+            int[] varGroup_Stokes = new int[] { 0, 1, 2 };
+            int[] varGroup_Constitutive = new int[] { 3, 4, 5 };
+            int[] varGroup_all = new int[] { 0, 1, 2, 3, 4, 5 };
+
+            var res = m_BDF_Timestepper.OperatorAnalysis(new[] {varGroup_convDiff, varGroup_Stokes, varGroup_Constitutive, varGroup_all });
+
+            // filter only those results that we want;
+            // this is a DG app, but it uses the LevelSetTracker; therefore, we want to filter analysis results for cut cells and only return uncut cells resutls
+            var ret = new Dictionary<string, double>();
+            foreach(var kv in res) {
+                if(kv.Key.ToLowerInvariant().Contains("innercut") || kv.Key.ToLowerInvariant().Contains("bndycut")) {
+                    // ignore
+                } else {
+                    ret.Add(kv.Key, kv.Value);
+                }
+            }
+
+            return ret;
         }
 
 

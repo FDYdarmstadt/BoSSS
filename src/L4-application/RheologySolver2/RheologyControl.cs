@@ -62,19 +62,21 @@ namespace BoSSS.Application.Rheology {
         // 
 
         /// <summary>
-        /// Reynoldsnumber of System (Re= rho * U * L / eta_0)
+        /// Reynolds-Number of System (Re= rho * U * L / eta_0)
         /// </summary>
         [DataMember]
         public double Reynolds = 1;
 
         /// <summary>
-        /// Weissenbergnumber of System (We= lambda_1 * U / L) 
+        /// Weissenberg-Number of System (We= lambda_1 * U / L) 
         /// </summary>
         [DataMember]
         public double Weissenberg = 0.5;
 
         /// <summary>
         /// Retardation vs Relaxation ratio (beta = lambda_2 / lambda_1 = eta_s / eta_0)
+        /// - beta = 0: no Newtonian contribution in momentum equation
+        /// - beta = 1: Newtonian fluid, all viscous effects computed in momentum equation
         /// </summary>
         [DataMember]
         public double beta = 0.11;
@@ -226,35 +228,35 @@ namespace BoSSS.Application.Rheology {
         [DataMember]
         public double StressPenalty = 1.0;
 
-        /// <summary>
-        /// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
-        /// </summary>
-        [DataMember]
-        public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.Eye;// LeftInverse_DiagBlock;// LeftInverse_DiagBlock;  // SymPart_DiagBlockEquilib_DropIndefinite;
+        ///// <summary>
+        ///// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
+        ///// </summary>
+        //[DataMember]
+        //public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.Eye;// LeftInverse_DiagBlock;// LeftInverse_DiagBlock;  // SymPart_DiagBlockEquilib_DropIndefinite;
 
-        /// <summary>
-        /// Block-Preconditiond for the velocity/momentum + pressure/conti-block of the saddle-point system
-        /// </summary>
-        [DataMember]
-        public MultigridOperator.Mode NSEBlockPrecondMode = MultigridOperator.Mode.Eye;// LeftInverse_DiagBlock; //.LeftInverse_DiagBlock; // SymPart_DiagBlockEquilib_DropIndefinite;
+        ///// <summary>
+        ///// Block-Preconditiond for the velocity/momentum + pressure/conti-block of the saddle-point system
+        ///// </summary>
+        //[DataMember]
+        //public MultigridOperator.Mode NSEBlockPrecondMode = MultigridOperator.Mode.Eye;// LeftInverse_DiagBlock; //.LeftInverse_DiagBlock; // SymPart_DiagBlockEquilib_DropIndefinite;
 
-        /// <summary>
-        /// Block-Preconditiond for the pressure/continuity-block of the saddle-point system
-        /// </summary>
-        [DataMember]
-        public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.Eye;// SymPart_DiagBlockEquilib;//LeftInverse_DiagBlock; // no SymPart_Diag-Präcon, because there may be no zero on the diagonal!!!
+        ///// <summary>
+        ///// Block-Preconditiond for the pressure/continuity-block of the saddle-point system
+        ///// </summary>
+        //[DataMember]
+        //public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.Eye;// SymPart_DiagBlockEquilib;//LeftInverse_DiagBlock; // no SymPart_Diag-Präcon, because there may be no zero on the diagonal!!!
 
-        /// <summary>
-        /// Block-Preconditiond for the stresses/constitutive-block of the system
-        /// </summary>
-        [DataMember]
-        public MultigridOperator.Mode StressBlockPrecondMode = MultigridOperator.Mode.Eye;// SymPart_DiagBlockEquilib;//LeftInverse_DiagBlock;
+        ///// <summary>
+        ///// Block-Preconditiond for the stresses/constitutive-block of the system
+        ///// </summary>
+        //[DataMember]
+        //public MultigridOperator.Mode StressBlockPrecondMode = MultigridOperator.Mode.Eye;// SymPart_DiagBlockEquilib;//LeftInverse_DiagBlock;
 
-        /// <summary>
-        /// Block-Preconditiond for the stresses/constitutive-block of the system
-        /// </summary>
-        [DataMember]
-        public MultigridOperator.Mode VelocityGradientBlockPrecondMode = MultigridOperator.Mode.Eye;
+        ///// <summary>
+        ///// Block-Preconditiond for the stresses/constitutive-block of the system
+        ///// </summary>
+        //[DataMember]
+        //public MultigridOperator.Mode VelocityGradientBlockPrecondMode = MultigridOperator.Mode.Eye;
 
         /// <summary>
         /// Refinement level for adaptive mesh refinement
@@ -319,11 +321,11 @@ namespace BoSSS.Application.Rheology {
         //DEBUGGING PARAMETERS
         //_____________________________________________________________________________________________
 
-        /// <summary>
-        /// Analysis of Operator Matrix (rank, cond...)?
-        /// </summary>
-        [DataMember]
-        public bool OperatorMatrixAnalysis = false;
+        ///// <summary>
+        ///// Analysis of Operator Matrix (rank, cond...)?
+        ///// </summary>
+        //[DataMember]
+        //public bool OperatorMatrixAnalysis = false;
 
         /// <summary>
         /// Compute L2 Error of exact solution?

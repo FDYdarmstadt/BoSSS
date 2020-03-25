@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BoSSS.Solution.AdvancedSolvers.Testing;
 using ilPSP.Connectors.Matlab;
 using ilPSP.LinSolvers;
 using MPI.Wrappers;
@@ -39,6 +40,15 @@ namespace BoSSS.Application.Rheology
                 BoSSS.Solution.Application.GetBoSSSInstallDir(),
                 out dummy);
 
+            // Tweaking to use OCTAVE instead of MATLAB
+            if(System.Environment.MachineName.ToLowerInvariant().EndsWith("terminal03")) {
+                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
+                BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-4.4.1\bin\octave-cli.exe";
+            } else if(System.Environment.MachineName.ToLowerInvariant().Contains("stormbreaker")) { 
+                // This is Florians Laptop;
+                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
+                BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-5.1.0.0\mingw64\bin\octave-cli.exe";
+            }
 
         }
 
@@ -94,6 +104,33 @@ namespace BoSSS.Application.Rheology
             bool checkPressure = true;
             GenericTest(C, AcceptableRes, AcceptableResError, checkPressure);
         }
+
+//#if !DEBUG
+        //Test 2.1: Condition number scaling test 
+        [Test]
+        public static void ChannelTestStokesConditionScaling(
+            [Values(1, 2)] int deg,
+            [Values(0.0, 0.5, 1.0)] double beta
+            )
+        {
+
+            int[] GridResS;
+
+            GridResS = new[] { 5, 6, 7, 8 };
+
+            var CC = new List<RheologyControl>();
+            foreach(int GridRes in GridResS) {
+                var C = RheologyChannelTest.ChannelStokes(GridRes, deg, beta);
+                C.ImmediatePlotPeriod = 1;
+                C.SuperSampling = 2;
+                C.Stokes = true;
+                CC.Add(C);
+            }
+
+            ConditionNumberScalingTest.Perform(CC, true);
+        }
+//#endif
+
 
      
         //TESTS_CHANNEL_END_______________________________________________________________________________________________________________

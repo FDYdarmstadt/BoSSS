@@ -390,16 +390,16 @@ namespace BoSSS.Application.XNSE_Solver {
         //[DataMember]
         //public int Solver_MinIterations = 4;
 
-        /// <summary>
-        /// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
-        /// </summary>
-        [DataMember]
-        public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
+        ///// <summary>
+        ///// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
+        ///// </summary>
+        //[DataMember]
+        //public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
 
-        /// <summary>
-        /// Block-Preconditiond for the pressure/continuity-block of the saddle-point system
-        /// </summary>
-        public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.IdMass;
+        ///// <summary>
+        ///// Block-Preconditiond for the pressure/continuity-block of the saddle-point system
+        ///// </summary>
+        //public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.IdMass;
 
         /// <summary>
         /// See <see cref="ContinuityProjection"/>
@@ -408,7 +408,7 @@ namespace BoSSS.Application.XNSE_Solver {
         public ContinuityProjectionOption LSContiProjectionMethod = ContinuityProjectionOption.SpecFEM;
 
         /// <summary>
-        /// Enforce the level-set to be globally conervativ, by adding a constant to the level-set field
+        /// Enforce the level-set to be globally conservative, by adding a constant to the level-set field
         /// </summary>
         public bool EnforceLevelSetConservation = false;
 
