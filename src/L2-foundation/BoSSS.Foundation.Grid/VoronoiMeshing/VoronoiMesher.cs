@@ -12,13 +12,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             public VoronoiBoundary Boundary;
 
             public int NumberOfLloydIterations = 10;
-
-            public int FirstCellNode_indice = 0;
         }
 
         internal IMesh<T> mesh;
 
-        MeshingAlgorithm.Settings mesherSettings;
+        MeshingAlgorithm.State mesherSettings;
 
         readonly Settings settings;
 
@@ -47,12 +45,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         void CreateSetupForMeshingAlgorithm()
         {
-            mesherSettings = new MeshingAlgorithm.Settings
+            mesherSettings = new MeshingAlgorithm.State
             {
                 Boundary = settings.Boundary.Polygon,
                 BoundingBox = settings.Boundary.BoundingBox,
                 NumberOfLloydIterations = settings.NumberOfLloydIterations,
-                FirstCellNodeIndice = settings.FirstCellNode_indice,
             };
             mesherSettings.PeriodicMap = PeriodicMapGenerator.GeneratePeriodicMap(
                 mesherSettings, 
@@ -71,14 +68,15 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             }
         }
 
-        protected void CreateMesh(List<T> nodes)
+        protected void CreateMesh(List<T> nodes, int firstCornerNodeIndice = 0)
         {
+            mesherSettings.FirstCellNodeIndice = firstCornerNodeIndice;
             mesh = MeshingAlgorithm.ComputeMesh(nodes, mesherSettings);
         }
 
-        public VoronoiGrid CreateGrid(List<T> nodes)
+        public VoronoiGrid CreateGrid(List<T> nodes, int firstCornerNodeIndice)
         {
-            CreateMesh(nodes); 
+            CreateMesh(nodes, firstCornerNodeIndice); 
             VoronoiGrid grid = gridConverter.ConvertToVoronoiGrid(mesh);
             return grid;
         }

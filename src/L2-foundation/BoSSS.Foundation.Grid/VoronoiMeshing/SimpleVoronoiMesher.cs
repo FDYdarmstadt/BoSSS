@@ -54,10 +54,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return wrappedNodes;
         }
 
-        public VoronoiGrid CreateGrid(VoronoiNodes nodes)
+        public VoronoiGrid CreateGrid(VoronoiNodes nodes, int firstCornerNodeIndice)
         {
             List<Node> mesherNodes = WrapInMesherNodes(nodes.Nodes);
-            VoronoiGrid grid = CreateGrid(mesherNodes);
+            VoronoiGrid grid = CreateGrid(mesherNodes, firstCornerNodeIndice);
             return grid;
         }
     }

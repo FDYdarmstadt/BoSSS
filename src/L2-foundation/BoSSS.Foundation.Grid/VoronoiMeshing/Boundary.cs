@@ -24,5 +24,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         public List<MeshCell<T>> Cells => Mesh.Cells;
 
         public List<T> Nodes => Mesh.Nodes;
+
+        public int CornerNodeIndice => Boundary.FirstCorner.ID;
     }
 }

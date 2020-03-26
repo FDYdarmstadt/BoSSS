@@ -58,10 +58,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             {
                 if (IsNotPeriodic(edge))
                 {
-                    SwitchBoundary(edge, pairedBoundaryNumber);
+                    SwitchBoundary(edge, pairedBoundaryNumber, boundaryEdgeNumber);
                     if (edge.Twin != null)
                     {
-                        SwitchBoundary(edge.Twin, boundaryEdgeNumber);
+                        SwitchBoundary(edge.Twin, boundaryEdgeNumber, pairedBoundaryNumber);
                     }
                 }
             }
@@ -80,17 +80,20 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             }
         }
 
-        void SwitchBoundary(Edge<T> edge, int boundaryEdgeNumber)
+        void SwitchBoundary(Edge<T> edge, int innerEdgeNumber, int pairedEdgeNumber)
         {
             if (edge.IsBoundary)
             {
-                edge.IsBoundary = false;
-                edge.BoundaryEdgeNumber = -1;
+                if(edge.BoundaryEdgeNumber == innerEdgeNumber || edge.BoundaryEdgeNumber == pairedEdgeNumber)
+                {
+                    edge.IsBoundary = false;
+                    edge.BoundaryEdgeNumber = -1;
+                }
             }
             else
             {
                 edge.IsBoundary = true;
-                edge.BoundaryEdgeNumber = boundaryEdgeNumber;
+                edge.BoundaryEdgeNumber = innerEdgeNumber;
             }
         }
     }

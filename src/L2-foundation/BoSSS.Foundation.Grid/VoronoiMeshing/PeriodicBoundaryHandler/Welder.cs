@@ -7,9 +7,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 {
     static class Welder
     {
-        public static void TargetFirstWeldEdges<T>(LinkedListNode<Edge<T>> source, LinkedListNode<Edge<T>> target)
+        public static void TryTargetFirstWeldEdges<T>(LinkedListNode<Edge<T>> source, LinkedListNode<Edge<T>> target)
         {
-            if (OnLine(source.Value.Start, source.Value.End, target.Value.Start))
+            if (OnLine(target.Value.Start, source.Value.Start, source.Value.End))
             {
                 target.Value = TargetFirstEdgeMerge(source.Value, target.Value);
                 MergeNodes(source, target);
@@ -17,12 +17,13 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             else
             {
                 Console.WriteLine("Not merging");
+                source.Value.Start = target.Value.End;
             }
         }
 
-        public static void SourceFirstWeldEdges<T>(LinkedListNode<Edge<T>> source, LinkedListNode<Edge<T>> target)
+        public static void TrySourceFirstWeldEdges<T>(LinkedListNode<Edge<T>> source, LinkedListNode<Edge<T>> target)
         {
-            if (OnLine(source.Value.Start, source.Value.End, target.Value.Start))
+            if (OnLine(source.Value.Start, source.Value.End, target.Value.End))
             {
                 target.Value = SourceFirstEdgeMerge(source.Value, target.Value);
                 MergeNodes(source, target);
@@ -30,6 +31,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             else
             {
                 Console.WriteLine("Not merging");
+                source.Value.End = target.Value.Start;
             }
         }
 
@@ -78,7 +80,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             return target;
         }
 
-        const double accuracy = 1e-12;
+        const double accuracy = 1e-11;
 
         static bool OnLine(Vertex a, Vertex b, Vertex c)
         {

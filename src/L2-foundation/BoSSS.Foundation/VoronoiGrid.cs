@@ -40,6 +40,8 @@ namespace BoSSS.Foundation.Grid.Voronoi {
             get { return boundary; }
         }
 
+        public int FirstCornerNodeIndice;
+
         VoronoiGrid() { }
 
         public VoronoiGrid(IGrid pGrid,
@@ -92,6 +94,6 @@ namespace BoSSS.Foundation.Grid.Voronoi {
             return EdgeTags[index];
         }
 
-        public VoronoiNode FirstCorner;
+        
     }
 }

@@ -7,7 +7,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
     static class MeshingAlgorithm
     {
-        public class Settings
+        public class State
         {
             public Vector[] BoundingBox;
 
@@ -20,20 +20,21 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             public int FirstCellNodeIndice = 0;
         }
 
-        static void AssertCorrectness<T>(Settings settings, IList<T> nodes)
+        static void AssertCorrectness<T>(State settings, IList<T> nodes)
         {
             Debug.Assert(settings.BoundingBox.Length == 4);
             Debug.Assert(settings.Boundary.Length > 2);
             Debug.Assert(settings.FirstCellNodeIndice > -1 && settings.FirstCellNodeIndice < nodes.Count);
         }
 
-        public static IMesh<T> ComputeMesh<T>(IList<T> nodes, Settings settings)
+        public static Domain<T> ComputeMesh<T>(IList<T> nodes, State settings)
             where T : ICloneable<T>, new()
         {
-            AssertCorrectness(settings, nodes);
-            MeshGenerator<T> voronoiMesher = new MeshGenerator<T>(settings);
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
+
+            AssertCorrectness(settings, nodes);
+            MeshGenerator<T> voronoiMesher = new MeshGenerator<T>(settings);
             Domain<T> domain = voronoiMesher.Generate(nodes, settings.FirstCellNodeIndice);
             for (int iLloyd = 0; iLloyd < settings.NumberOfLloydIterations; ++iLloyd)
             {
@@ -43,9 +44,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 }
                 domain = voronoiMesher.Generate(domain.Nodes, domain.Boundary.FirstCorner);
             }
+            
             stopwatch.Stop();
             Console.WriteLine(stopwatch.ElapsedMilliseconds);
-            Debug.Assert(EdgesAlign(domain.Mesh));
+
+            Debug.Assert(InnerEdgesAlign(domain.Mesh));
             return domain;
         }
 
@@ -73,7 +76,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return centerOfGravity;
         }
 
-        static bool EdgesAlign<T>(Mesh<T> mesh)
+        static bool InnerEdgesAlign<T>(Mesh<T> mesh)
         {
             foreach(MeshCell<T> cell in mesh.Cells)
             {

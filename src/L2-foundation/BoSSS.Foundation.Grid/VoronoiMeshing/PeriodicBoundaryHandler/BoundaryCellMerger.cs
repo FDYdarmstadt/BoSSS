@@ -93,7 +93,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             AddTargetEdge(targetEdgeEnumerator.Current);
             LinkedListNode<Edge<T>> sourceNodeAfterWeld = newEdges.First;
             LinkedListNode<Edge<T>> targetNodeAfterWeld = newEdges.Last;
-            Welder.TargetFirstWeldEdges(sourceNodeAfterWeld, targetNodeAfterWeld);
+            Welder.TryTargetFirstWeldEdges(sourceNodeAfterWeld, targetNodeAfterWeld);
         }
 
         void AddTargetEdge(Edge<T> targetEdge)
@@ -130,7 +130,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             newEdges.RemoveFirst();
             newEdges.AddLast(firstNode);
             //Weld last source Edge and last target Edge
-            Welder.SourceFirstWeldEdges(newEdges.Last, newEdges.Last.Previous);
+            Welder.TrySourceFirstWeldEdges(newEdges.Last, newEdges.Last.Previous);
         }
 
         void ReshapeCell(MeshCell<T> cell)

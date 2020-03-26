@@ -18,7 +18,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         readonly PeriodicBoundaryHandler<T> boundaryHandler;
 
-        public MeshGenerator(MeshingAlgorithm.Settings settings)
+        public MeshGenerator(MeshingAlgorithm.State settings)
         {
             cutter = new Cutter<T>();
             boundingBox = settings.BoundingBox;
@@ -40,10 +40,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             {
                 nodes = boundaryHandler.CloneNodesAlongPeriodicBoundaries(mesh);
                 mesh = CreateMeshFrom(nodes, mesh.Boundary.FirstCorner);
-                //MatlabPlotter.Plot(mesh, "WTF");
                 boundaryHandler.RecomposePeriodicEdges(mesh);
             }
-            //MatlabPlotter.Plot(mesh, "kacke2");
             return mesh;
         }
 

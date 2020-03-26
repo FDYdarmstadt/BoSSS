@@ -164,7 +164,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 
         static IEnumerable<Edge<T>> PositiveRotationOfBoundaryEdgesBeginningWith(Edge<T> first, int offset)
         {
-            IEnumerable<Edge<T>> edges = PositiveEdgeRotatationOfCellAfter(first, offset);
+            IEnumerable<Edge<T>> edges = PositiveEdgeRotationOfCellAfter(first, offset);
             while (true)
             {
                 foreach (Edge<T> edge in edges)
@@ -175,14 +175,14 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
                     }
                     else
                     {
-                        edges = PositiveEdgeRotatationOfCellAfter(edge.Twin, 1);
+                        edges = PositiveEdgeRotationOfCellAfter(edge.Twin, 1);
                         break;
                     }
                 }
             }
         }
 
-        static CyclicArray<Edge<T>> PositiveEdgeRotatationOfCellAfter(Edge<T> first, int offset)
+        static CyclicArray<Edge<T>> PositiveEdgeRotationOfCellAfter(Edge<T> first, int offset)
         {
             MeshCell<T> cell = first.Cell;
             int firstEdgeIndice = FindIndiceOfEdgeInItsCell(cell.Edges, first);

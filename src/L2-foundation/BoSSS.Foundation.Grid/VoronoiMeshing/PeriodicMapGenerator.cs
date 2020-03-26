@@ -9,7 +9,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
     static class PeriodicMapGenerator
     {
-        public static PeriodicMap GeneratePeriodicMap(MeshingAlgorithm.Settings settings, VoronoiBoundary boundary)
+        public static PeriodicMap GeneratePeriodicMap(MeshingAlgorithm.State settings, VoronoiBoundary boundary)
         {
             PeriodicMap map = null;
 

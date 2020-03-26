@@ -35,14 +35,13 @@ namespace VoronoiTests.Grid
                 Polygon = GridShapes.Rectangle(2, 2),
                 EdgeTags = tags,
                 EdgeTagNames = tagNames,
-                BoundingBox = GridShapes.Rectangle(2,2)
+                BoundingBox = GridShapes.Rectangle(2, 2),
             };
             NodeTrackingVoronoiMesher mesher = new NodeTrackingVoronoiMesher( 
                 new VoronoiMesher<TrackableNode>.Settings() 
                 { 
                     Boundary = gridBoundary,
                     NumberOfLloydIterations = 0,
-                    FirstCellNode_indice = 0,
                 });
             MultidimensionalArray array = MultidimensionalArray.Create(8, 2);
             array.SetRow(0, new double[] { -0.9, 0.7 });
@@ -55,7 +54,7 @@ namespace VoronoiTests.Grid
             array.SetRow(7, new double[] { 0.5, -0.6 });
 
             VoronoiNodes nodes = new VoronoiNodes(array);
-            MappedVoronoiGrid grid = mesher.CreateGrid(nodes);
+            MappedVoronoiGrid grid = mesher.CreateGrid(nodes, 0);
             Assert.IsTrue((
                 grid.Result.Nodes.Nodes[grid.InputNodesToResultNodes.GetMapping(0)].Position 
                 - new Vector(-0.9, 0.7)).Abs() < 1e-12);
@@ -82,7 +81,6 @@ namespace VoronoiTests.Grid
                 {
                     Boundary = gridBoundary,
                     NumberOfLloydIterations = 0,
-                    FirstCellNode_indice = 0,
                 });
             int numberOfNodes = 200;
             MultidimensionalArray array = MultidimensionalArray.Create(numberOfNodes, 2);
@@ -93,10 +91,10 @@ namespace VoronoiTests.Grid
                 array[i, 1] = 2.0 * random.NextDouble() - 1.0;
             }
             VoronoiNodes nodes = new VoronoiNodes(array);
-            MappedVoronoiGrid grid = mesher.CreateGrid(nodes);
+            MappedVoronoiGrid grid = mesher.CreateGrid(nodes, 0);
             bool mapsNodesOntoItself = IsPermutation(grid.InputNodesToResultNodes, nodes, grid.Result.Nodes);
             Assert.IsTrue(mapsNodesOntoItself);
-            MappedVoronoiGrid grid2 = mesher.CreateGrid(grid.Result.Nodes);
+            MappedVoronoiGrid grid2 = mesher.CreateGrid(grid.Result.Nodes, 0);
             mapsNodesOntoItself = IsPermutation(grid2.InputNodesToResultNodes, grid.Result.Nodes, grid2.Result.Nodes);
             Assert.IsTrue(mapsNodesOntoItself);
         }
@@ -136,7 +134,6 @@ namespace VoronoiTests.Grid
                 {
                     Boundary = gridBoundary,
                     NumberOfLloydIterations = 0,
-                    FirstCellNode_indice = 0,
                 });
             MultidimensionalArray array = MultidimensionalArray.Create(8, 2);
             array.SetRow(0, new double[] { -0.9, 0.7 });
@@ -149,7 +146,7 @@ namespace VoronoiTests.Grid
             array.SetRow(7, new double[] { 0.5, -0.6 });
 
             VoronoiNodes nodes = new VoronoiNodes(array);
-            MappedVoronoiGrid grid = mesher.CreateGrid(nodes);
+            MappedVoronoiGrid grid = mesher.CreateGrid(nodes, 0);
             Assert.IsTrue((
                 grid.Result.Nodes.Nodes[grid.InputNodesToResultNodes.GetMapping(0)].Position
                 - new Vector(-0.9, 0.7)).Abs() < 1e-12);
@@ -175,7 +172,6 @@ namespace VoronoiTests.Grid
                 {
                     Boundary = gridBoundary,
                     NumberOfLloydIterations = 0,
-                    FirstCellNode_indice = 0,
                 });
             int numberOfNodes = 200;
             MultidimensionalArray array = MultidimensionalArray.Create(numberOfNodes, 2);
@@ -186,10 +182,10 @@ namespace VoronoiTests.Grid
                 array[i, 1] = 2.0 * random.NextDouble() - 1.0;
             }
             VoronoiNodes nodes = new VoronoiNodes(array);
-            MappedVoronoiGrid grid = mesher.CreateGrid(nodes);
+            MappedVoronoiGrid grid = mesher.CreateGrid(nodes, 0);
             bool mapsNodesOntoItself = IsPermutation(grid.InputNodesToResultNodes, nodes, grid.Result.Nodes);
             Assert.IsTrue(mapsNodesOntoItself);
-            MappedVoronoiGrid grid2 = mesher.CreateGrid(grid.Result.Nodes);
+            MappedVoronoiGrid grid2 = mesher.CreateGrid(grid.Result.Nodes, grid.Result.FirstCornerNodeIndice);
             mapsNodesOntoItself = IsPermutation(grid2.InputNodesToResultNodes, grid.Result.Nodes, grid2.Result.Nodes);
             Assert.IsTrue(mapsNodesOntoItself);
         }

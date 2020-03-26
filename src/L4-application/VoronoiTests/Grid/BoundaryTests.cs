@@ -11,7 +11,7 @@ namespace VoronoiTests.Grid
     {
         public override void Run()
         {
-            PeriodicBoundaryPairLarge();
+            AllPeriodicBoundariesLarge();
         }
 
         [Test]
@@ -161,13 +161,23 @@ namespace VoronoiTests.Grid
             };
             VoronoiBoundary gridBoundary = new VoronoiBoundary
             {
-                Polygon = GridShapes.Rectangle(2, 2),
+                Polygon = GridShapes.Rectangle(8, 8),
                 EdgeTags = tags,
                 EdgeTagNames = tagNames
             };
 
-            VoronoiGrid grid = VoronoiGrid2D.Polygonal(gridBoundary, 100, 2000);
-            Plotter.Plot(grid);
+            Random random = new Random(10);
+            MultidimensionalArray nodes = default;
+            for (int i = 0; i < 1000; i += 1)
+            {
+                Console.WriteLine($"Roll number{i}");
+                nodes = RandomNodesInSquare(4.09, 4.0, 300, random);
+                nodes[0, 0] = -1 + 1e-5;
+                nodes[0, 1] = 1 - 1e-5;
+                VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
+            }
+            
+            //Plotter.Plot(grid);
         }
 
         [Test]
@@ -242,8 +252,32 @@ namespace VoronoiTests.Grid
                 EdgeTags = tags,
                 EdgeTagNames = tagNames
             };
+            Random random = new Random(1);
+            MultidimensionalArray nodes = default;
+            for (int i = 0; i < 30; ++i)
+            {
+                Console.WriteLine($"Roll number {i}");
+                nodes = RandomNodesInSquare(1.1, 1.1, 20, random);
+                nodes[0, 0] = -1 + 1e-6;
+                nodes[0, 1] = 1 - 1e-6;
+            }
+            VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
+        }
 
-            VoronoiGrid grid = VoronoiGrid2D.Polygonal(gridBoundary, 10, 10000);
+        MultidimensionalArray RandomNodesInSquare(double height, double width, int number, Random random = null)
+        {
+            if(random == null)
+            {
+                random = new Random();
+            }
+            MultidimensionalArray nodes = MultidimensionalArray.Create(number, 2);
+            
+            for (int i = 0; i < number; ++i)
+            {
+                nodes[i, 0] = width * 2 * (random.NextDouble() -0.5);  
+                nodes[i, 1] = height * 2 * (random.NextDouble() - 0.5);
+            }
+            return nodes;
         }
 
         [Test]
@@ -342,6 +376,55 @@ namespace VoronoiTests.Grid
             };
 
             VoronoiGrid grid = VoronoiGrid2D.Polygonal(gridBoundary, 40, 500);
+        }
+
+        [Test]
+        public void Remap()
+        {
+            byte[] tags = { 1, 181, 1, 181 };
+            SortedList<byte, string> tagNames = new SortedList<byte, string>(2)
+            {
+                { 181, "Periodic-X" },
+                { 1, "bondary" }
+            };
+
+            VoronoiBoundary gridBoundary = new VoronoiBoundary
+            {
+                Polygon = GridShapes.Rectangle(2,2),
+                EdgeTags = tags,
+                EdgeTagNames = tagNames
+            };
+            double[] positions = new double[] 
+            {
+                -0.64874644688322713,
+                0.83818004313993111,
+                -0.39475947428553138,
+                0.23663302374998896,
+                0.58922918492853482,
+                0.83854511946848365,
+                -0.811382461267156,
+                -0.4159610860057516,
+                -0.19666215667077264,
+                -0.24376388607043981,
+                0.3385324063754323,
+                0.086134041417832763,
+                0.80498108279434089,
+                0.22350558445791927,
+                -0.68131747598283521,
+                -0.87257764806623139,
+                0.48863086193005234,
+                -0.51183362983054159,
+                0.99309783411349173,
+                -0.10141430352239808,
+            };
+            MultidimensionalArray nodes = MultidimensionalArray.CreateWrapper(positions, 10, 2);
+            for(int i = 0; i < 10; ++i) 
+            {
+                nodes[i, 0] += 0.01;
+            }
+            
+            VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
+            Plotter.Plot(grid);
         }
     }
 }

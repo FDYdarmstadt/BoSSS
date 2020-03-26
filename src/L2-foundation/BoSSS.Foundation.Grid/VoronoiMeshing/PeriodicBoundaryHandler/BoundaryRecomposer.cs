@@ -35,18 +35,19 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             cellDetacher = new CellDetacher<T>(mesh);
             cleaner = new CornerCleaner(map.PeriodicCornerCorrelation.Count);
 
-            MatlabPlotter plotter = new MatlabPlotter();
             int i = 0;
-            //plotter.Plot(mesh, "intermediate" + i);
+            //MatlabPlotter.Plot(mesh, "Anfang");
             foreach (CellPairCollection<T>.EdgeCombo mergePair in CreateMergePairsOfEachEdge(candidates))
             {
-                ++i;
-                //plotter.Plot(mesh, "intermediate" + i);
+                //MatlabPlotter.Plot(mesh, i + "aMerge");
                 Debug.Assert(CellNodePositionsMatch(mergePair));
                 MergeAtBoundary(mergePair);
+                //MatlabPlotter.Plot(mesh, i + "bMerge");
+                ++i;
             }
+            //MatlabPlotter.Plot(mesh,"2aRemove");
             RemoveOuterCellsFromMesh(mesh);
-            //plotter.Plot(mesh, "ifinal");
+            //MatlabPlotter.Plot(mesh, "2bRemove");
         }
 
         IEnumerable<CellPairCollection<T>.EdgeCombo> CreateMergePairsOfEachEdge(

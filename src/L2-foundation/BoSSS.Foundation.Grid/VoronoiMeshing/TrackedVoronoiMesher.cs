@@ -64,10 +64,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         public NodeTrackingVoronoiMesher(VoronoiBoundary boundary) : base(boundary) { }
 
-        public MappedVoronoiGrid CreateGrid(VoronoiNodes nodes)
+        public MappedVoronoiGrid CreateGrid(VoronoiNodes nodes, int firstCornerNodeIndice)
         {
             List<TrackableNode> mesherNodes = WrapInMesherNodes(nodes.Nodes);
-            VoronoiGrid grid = CreateGrid(mesherNodes);
+            VoronoiGrid grid = CreateGrid(mesherNodes, firstCornerNodeIndice);
 
             ConnectionMap resultMap = ExtractMap(base.mesh.Nodes);
             ConnectionMap inputMap = GetInputMap(resultMap, nodes.Count);

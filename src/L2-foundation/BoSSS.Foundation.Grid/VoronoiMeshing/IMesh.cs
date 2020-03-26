@@ -10,6 +10,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
     {
         T CornerNode { get; }
 
+        int CornerNodeIndice { get; }
+
         List<MeshCell<T>> Cells { get; }
 
         List<T> Nodes { get; }
