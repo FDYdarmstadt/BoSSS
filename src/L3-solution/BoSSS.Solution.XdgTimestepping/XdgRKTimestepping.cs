@@ -928,16 +928,16 @@ namespace BoSSS.Solution.XdgTimestepping {
                 //    double[] kCut = new double[k[0].Length];
                 //    BlockSol(Mass[0], kCut, k[0]);
 
-                    //var full = (new CoordinateVector(this.CurrentStateMapping));
-                    //full.Clear();
-                    //full.SetV(kCut);
-                    //var B = new CoordinateVector(full.Fields.Select(xf => ((XDGField)xf).GetSpeciesShadowField("B")).ToArray());
-                    //var bb = B.ToArray();
-                    //var bbref = VectorIO.LoadFromTextFile("c:\\tmp\\cns_k_CUT_0.txt");
-                    //double[] SchrottFehler = bb.CloneAs();
-                    //SchrottFehler.AccV(-1.0, bbref);
-                    //B.SetV(SchrottFehler, 1.0);
-                    //Tecplot.Tecplot.PlotFields(full.Fields, "hurament", 0.0, 2);
+                //var full = (new CoordinateVector(this.CurrentStateMapping));
+                //full.Clear();
+                //full.SetV(kCut);
+                //var B = new CoordinateVector(full.Fields.Select(xf => ((XDGField)xf).GetSpeciesShadowField("B")).ToArray());
+                //var bb = B.ToArray();
+                //var bbref = VectorIO.LoadFromTextFile("c:\\tmp\\cns_k_CUT_0.txt");
+                //double[] SchrottFehler = bb.CloneAs();
+                //SchrottFehler.AccV(-1.0, bbref);
+                //B.SetV(SchrottFehler, 1.0);
+                //Tecplot.Tecplot.PlotFields(full.Fields, "hurament", 0.0, 2);
 
 
 
@@ -980,7 +980,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         {
             Debug.Assert(X.Count == M.ColPartition.LocalLength);
             Debug.Assert(B.Count == M.RowPartitioning.LocalLength);
-            
+
             var Part = M.RowPartitioning;
             Debug.Assert(Part.EqualsPartition(this.CurrentStateMapping));
 
@@ -999,11 +999,11 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             for (int j = 0; j < J; j++) { // loop over cells...
 
-                for(int iVar = 0; iVar < NoOfVars; iVar++) {
+                for (int iVar = 0; iVar < NoOfVars; iVar++) {
                     int bS = this.CurrentStateMapping.LocalUniqueCoordinateIndex(iVar, j, 0);
                     int Nj = basisS[iVar].GetLength(j);
 
-                    if(Block == null || Block.NoOfRows != Nj) {
+                    if (Block == null || Block.NoOfRows != Nj) {
                         Block = MultidimensionalArray.Create(Nj, Nj);
                         x = new double[Nj];
                         b = new double[Nj];
@@ -1012,15 +1012,15 @@ namespace BoSSS.Solution.XdgTimestepping {
                     }
 
                     // extract block
-                    M.ReadBlock(bS, bS, Block);
+                    M.ReadBlock(bS + M._RowPartitioning.i0, bS + M._ColPartitioning.i0, Block);
 
                     // extract part of RHS
-                    for(int iRow = 0; iRow < Nj; iRow++) {
+                    for (int iRow = 0; iRow < Nj; iRow++) {
                         bool ZeroRow = Block.GetRow(iRow).L2NormPow2() == 0;
                         b[iRow] = B[iRow + bS];
 
-                        if(ZeroRow) {
-                            if(b[iRow] != 0.0)
+                        if (ZeroRow) {
+                            if (b[iRow] != 0.0)
                                 throw new ArithmeticException();
                             else
                                 Block[iRow, iRow] = 1.0;
@@ -1034,7 +1034,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     Block.SolveSymmetric(x, b);
 
                     // store solution
-                    for(int iRow = 0; iRow < Nj; iRow++) {
+                    for (int iRow = 0; iRow < Nj; iRow++) {
                         X[iRow + bS] = x[iRow];
                     }
                 }
