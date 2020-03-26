@@ -119,13 +119,13 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 throw new ArgumentException();
 
             // For Resolution = 1, 2, 3, ...
+
             int NoOfXcells = (int)Math.Round(Math.Pow(2, Resolution + 3)); // 16, 32, 64, ...
             int NoOfYcells = (int)Math.Round(Math.Pow(2, Resolution + 1)); // 4, 8, 16, ...
             
-
             
 
-            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(0, 10, NoOfXcells + 1), GenericBlas.Linspace(0, 10, NoOfXcells + 1), periodicX: periodic);
+            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(0, 10, NoOfXcells + 1), GenericBlas.Linspace(-1, +1, NoOfYcells + 1), periodicX: periodic);
             if (periodic) {
                  grd.DefineEdgeTags(delegate (double[] _X) {
                     var X = _X;
@@ -159,11 +159,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                         // top wall
                         return  "wall_top";
 
-                    if(Math.Abs(x - (-2)) < 1.0e-6)
+                    if(Math.Abs(x - (0)) < 1.0e-6)
                         // inlet
                         return "Velocity_Inlet";
 
-                    if (Math.Abs(x - (2)) < 1.0e-6)
+                    if (Math.Abs(x - (10)) < 1.0e-6)
                         // outlet
                         return "Pressure_Outlet";
 

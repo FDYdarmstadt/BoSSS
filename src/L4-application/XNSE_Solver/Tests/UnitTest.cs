@@ -90,56 +90,55 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             GenericTest(Tst, C);
         }
 
+#if !DEBUG
         /// <summary>
         /// <see cref="ViscosityJumpTest"/>
         /// </summary>
         [Test]
         public static void ViscosityJumpTestScaling(
-#if DEBUG
-            [Values(1)] int deg,
-            [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode
-#else
+            
             [Values(1, 2, 3, 4)] int deg,
             [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode
-#endif
             ) {
 
             double AgglomerationTreshold = 0.1;
 
             var Tst = new ViscosityJumpTest();
             var LaLa = new List<XNSE_Control>();
-            foreach(var Res in new[] { 4, 8, 16, 32 }) {
+            foreach(var Res in new[] { 4, 8, 16 }) {
                 var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode: vmode, GridResolution: Res);
                 LaLa.Add(C);
             }
 
-
             ConditionNumberScalingTest.Perform(LaLa, plotAndWait:true);
         }
+#endif
 
-        /*
+
+#if !DEBUG        
         /// <summary>
-        /// <see cref="ViscosityJumpTest"/>
+        /// <see cref="SinglePhaseChannel"/>
         /// </summary>
         [Test]
-        public static void ChannelTestScaling(
-            [Values(1, 2, 3, 4)] int deg,
-            [ViscosityMode.FullySymmetric)] ViscosityMode vmode
-            ) {
+        public static void SinglePhaseChannelTestScaling(
+            [Values(1, 2, 3)] int deg,
+            [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode) //
+        {
 
             double AgglomerationTreshold = 0.1;
 
-            var Tst = new ChannelTest(0.0);
+            var Tst = new SinglePhaseChannel(0.0);
             var LaLa = new List<XNSE_Control>();
-            foreach(var Res in new[] { 1,2,3,4 }) {
+            foreach(var Res in new[] { 1, 2, 3, 4 }) {
                 var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode: vmode, GridResolution: Res);
+                C.ImmediatePlotPeriod = 1;
+                C.SuperSampling = 2;
                 LaLa.Add(C);
             }
-            
-            ConditionNumberScalingTest.Perform(LaLa, plotAndWait:true);
-        }
-        */
 
+            ConditionNumberScalingTest.Perform(LaLa, plotAndWait: true);
+        }
+#endif      
 
 
         [Test]

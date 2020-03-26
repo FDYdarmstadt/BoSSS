@@ -13,7 +13,6 @@ using MPI.Wrappers;
 using ilPSP.Utils;
 using System.Diagnostics;
 using BoSSS.Solution.AdvancedSolvers;
-using System.Linq;
 using NUnit.Framework;
 using ilPSP.Tracing;
 

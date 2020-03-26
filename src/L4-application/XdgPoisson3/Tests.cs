@@ -119,19 +119,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             Slope for StencilCondNo-bndyCut-Var0: 0e00             
             */
 
-            //var ExpectedSlopes = new List<ValueTuple<Solution.AdvancedSolvers.Testing.OpAnalysisBase.XAxisDesignation, string, double>>();
-
-            //ExpectedSlopes.Add((Solution.AdvancedSolvers.Testing.OpAnalysisBase.XAxisDesignation.Grid_1Dres, "TotCondNo-Var0", 2.5));
-            //ExpectedSlopes.Add((Solution.AdvancedSolvers.Testing.OpAnalysisBase.XAxisDesignation.Grid_1Dres, "StencilCondNo-innerUncut-Var0", 0.5));
-            //ExpectedSlopes.Add((Solution.AdvancedSolvers.Testing.OpAnalysisBase.XAxisDesignation.Grid_1Dres, "StencilCondNo-innerCut-Var0", 0.5));
-
-            //Solution.AdvancedSolvers.Testing.OpAnalysisBase.TestSlopes(Controls, ExpectedSlopes);
-
-            var t = new ConditionNumberScalingTest();
-            t.SetControls(Controls);
-            t.CheckResults();
-
-
+            ConditionNumberScalingTest.Perform(Controls);
         }
 
        
