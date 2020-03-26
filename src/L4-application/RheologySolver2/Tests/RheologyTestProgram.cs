@@ -107,7 +107,7 @@ namespace BoSSS.Application.Rheology
 
 //#if !DEBUG
         //Test 2.1: Condition number scaling test 
-        [Test]
+        //[Test]
         public static void ScalingChannelTestStokesCondition(
             [Values(1, 2)] int deg,
             [Values(0.0, 0.5, 1.0)] double beta
