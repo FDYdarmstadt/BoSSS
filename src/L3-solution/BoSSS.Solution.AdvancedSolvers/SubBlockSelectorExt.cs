@@ -467,8 +467,8 @@ namespace BoSSS.Solution.AdvancedSolvers
 
             var SubMSR = target;
 
-            int SubRowIdx = 0;
-            int SubColIdx = 0;
+            //int SubRowIdx = 0;
+            //int SubColIdx = 0;
 
             bool ListenToGlobalId = true;
             // pay attention to offset of local stuff ...
@@ -494,10 +494,9 @@ namespace BoSSS.Solution.AdvancedSolvers
                                         continue;
                                     }
                                     for (int iMode = 0; iMode < mask.m_StructuredNi0[iLoc][iVar][iSpc].Length; iMode++) {
+                                        int SubRowIdx = mask.m_StructuredNi0[iLoc][iVar][iSpc][iMode].Si0;
                                         for (int jMode = 0; jMode < mask.m_StructuredNi0[jLoc][jVar][jSpc].Length; jMode++) {
 
-                                            int[] RowIdx = new int[] { iLoc, iVar, iSpc, iMode };
-                                            int[] ColIdx = new int[] { jLoc, jVar, jSpc, jMode };
                                             extNi0 RowNi0 = mask.m_StructuredNi0[iLoc][iVar][iSpc][iMode];
                                             extNi0 ColNi0 = mask.m_StructuredNi0[jLoc][jVar][jSpc][jMode];
                                             int Targeti0 = ListenToGlobalId? RowNi0.Gi0: RowNi0.Li0 + source._RowPartitioning.i0 - m_map.LocalLength;
@@ -505,7 +504,14 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                                             var tmpBlock = MultidimensionalArray.Create(RowNi0.N, ColNi0.N);
 
-                                            Debug.Assert(m_map.IsInLocalRange(Targeti0) && m_map.IsInLocalRange(Targetj0) && mask.GetType() == typeof(BlockMaskLoc) || mask.GetType() == typeof(BlockMaskExt));
+                                            Debug.Assert(source.RowPartitioning.IsInLocalRange(Targeti0) && source.RowPartitioning.IsInLocalRange(Targetj0) && mask.GetType() == typeof(BlockMaskLoc) || mask.GetType() == typeof(BlockMaskExt));
+                                            int SubColIdx = mask.m_StructuredNi0[jLoc][jVar][jSpc][jMode].Si0;
+#if Debug
+                                            
+                                            SubMSR.ReadBlock(SubRowIdx, SubColIdx, tmpBlock);
+                                            Debug.Assert(tmpBlock.Sum() == 0);
+                                            Debug.Assert(tmpBlock.InfNorm() == 0);
+#endif
 
                                             try {
                                                 source.ReadBlock(Targeti0, Targetj0,
@@ -515,11 +521,18 @@ namespace BoSSS.Solution.AdvancedSolvers
                                                 Console.WriteLine("col: " + Targetj0);
                                                 throw new Exception(e.Message);
                                             }
-                                            SubMSR.AccBlock(SubRowIdx, SubColIdx, 1, tmpBlock);
-                                            SubColIdx += ColNi0.N;
+                                            Debug.Assert(SubRowIdx < SubMSR.RowPartitioning.LocalLength);
+                                            Debug.Assert(SubColIdx < SubMSR.ColPartition.LocalLength);
+
+                                            
+                                            SubMSR.AccBlock(SubRowIdx, SubColIdx, 1.0, tmpBlock);
+                                            //SubColIdx += mask.m_StructuredNi0[jLoc][jVar][jSpc][jMode].N;
                                         }
-                                        SubRowIdx += mask.m_StructuredNi0[iLoc][iVar][iSpc][iMode].N;
+                                       
+                                        //SubColIdx = 0;
+                                        //SubRowIdx += mask.m_StructuredNi0[iLoc][iVar][iSpc][iMode].N;
                                     }
+                                    //SubRowIdx = 0;
                                 }
                             }
                         }
@@ -566,7 +579,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <param name="targetVector">output</param>
         /// <param name="accVector"></param>
         /// <param name="iCell">starts with 0</param>
-        public void AccVecCellwiseToFull<V, W>(W accVector, int iCell, V targetVector)
+        public void AccVecCellwiseToFull<V,W>(W accVector, int iCell, V targetVector)
             where V : IList<double>
             where W : IList<double> {
 

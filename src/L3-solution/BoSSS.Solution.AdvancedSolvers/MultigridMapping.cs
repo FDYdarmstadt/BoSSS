@@ -791,11 +791,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public int[] GetSubvectorIndices_Ext(params int[] Fields) {
             ilPSP.MPICollectiveWatchDog.Watch();
-            long[] GlobCellIdxExt = this.AggGrid.iParallel.GlobalIndicesExternalCells;
+            //long[] GlobCellIdxExt = this.AggGrid.iParallel.GlobalIndicesExternalCells;
+            int Locoffset = this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+            int[] LocCellIdxExt = this.AggGrid.iLogicalCells.NoOfExternalCells.ForLoop(i=>i + Locoffset);
             int E0 = this.AggGrid.CellPartitioning.i0;
             List<int> R = new List<int>();
-            foreach(long CIdx in GlobCellIdxExt) {
-                int jCell = (int)CIdx - E0;
+            foreach(int jCell in LocCellIdxExt) {
                 foreach (int fld in Fields) {
                     int i0_Block = GlobalUniqueIndex(fld, jCell, 0);
                     int N = this.AggBasis[fld].GetLength(jCell, this.DgDegree[fld]);

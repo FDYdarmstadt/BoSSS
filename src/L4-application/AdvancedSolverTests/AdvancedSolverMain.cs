@@ -40,19 +40,15 @@ namespace AdvancedSolverTests {
             SetUp();
             Test();
             TestFixtureTearDown();
-
-            Console.WriteLine("TOTAL Time spend in matrix operations: " + " sec.");
-
-
         }
 
-        [Test]
         public static void Test() {
-            //SubBlockTests.ExtractDiagonalBlocks(XDGusage.all, 1,MatrixShape.diagonal);
-            //SubBlockTests.ExtractDiagonalBlocks(XDGusage.all, 1, MatrixShape.diagonal_var);
-            //SubBlockTests.ExtractDiagonalBlocks(XDGusage.none, 1, MatrixShape.diagnoal_var_spec);
-            SubBlockTests.ExtractDiagonalBlocks(XDGusage.all, 1, MatrixShape.diagnoal_spec);
+            //SubBlockTests.LocalIndexTest(XDGusage.all,2);
+            //SubBlockTests.ExternalIndexTest(XDGusage.all, 2);
+            //SubBlockTests.MapConsistencyTest(XDGusage.all, 2);
+            //SubBlockTests.WriteOutTestMatrices();
+            //SubBlockTests.SubMatrixExtractionWithCoupling(XDGusage.all, 2,MatrixShape.diagonal_var_spec);
+            SubBlockTests.SplitVectorOperation(XDGusage.all, 2, MatrixShape.diagonal);
         }
-
     }
 }

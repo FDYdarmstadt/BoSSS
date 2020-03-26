@@ -576,7 +576,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 BlockMsrMatrix ExtRows=null;
                 if (m_Overlap > 0)
-                    ExtRows=BlockMask.GetAllExternalRows(m_MgOp);
+                    ExtRows=BlockMask.GetAllExternalRows(m_MgOp.Mapping, m_MgOp.OperatorMatrix);
 
                 ExtRows.SaveToTextFileSparseDebug("ExtRows");
 

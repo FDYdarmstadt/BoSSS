@@ -40,6 +40,7 @@ namespace AdvancedSolverTests {
         }
 
         protected override double Source(double[] x, double[] parameters, double[] U) {
+            //return U[0] -(x[0] * x[0]+ x[1] * x[1]- 2 *x[0]*x[1]+3*x[0]+ 4*x[1] - 5);
             return U[0] - 5;
         }
 
