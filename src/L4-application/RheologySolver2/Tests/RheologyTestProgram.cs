@@ -108,7 +108,7 @@ namespace BoSSS.Application.Rheology
 //#if !DEBUG
         //Test 2.1: Condition number scaling test 
         [Test]
-        public static void ChannelTestStokesConditionScaling(
+        public static void ScalingChannelTestStokesCondition(
             [Values(1, 2)] int deg,
             [Values(0.0, 0.5, 1.0)] double beta
             )
@@ -127,7 +127,7 @@ namespace BoSSS.Application.Rheology
                 CC.Add(C);
             }
 
-            ConditionNumberScalingTest.Perform(CC, true);
+            ConditionNumberScalingTest.Perform(CC, true, "ScalingChannelTestStokesCondition-p" + deg);
         }
 //#endif
 

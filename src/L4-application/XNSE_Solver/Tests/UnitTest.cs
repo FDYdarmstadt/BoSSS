@@ -95,7 +95,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <see cref="ViscosityJumpTest"/>
         /// </summary>
         [Test]
-        public static void ViscosityJumpTestScaling(
+        public static void ScalingViscosityJumpTest(
             
             [Values(1, 2, 3, 4)] int deg,
             [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode
@@ -110,7 +110,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 LaLa.Add(C);
             }
 
-            ConditionNumberScalingTest.Perform(LaLa, plotAndWait:true);
+            ConditionNumberScalingTest.Perform(LaLa, plotAndWait:true, title:"ScalingViscosityJumpTest-p" + deg);
         }
 #endif
 
@@ -120,7 +120,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <see cref="SinglePhaseChannel"/>
         /// </summary>
         [Test]
-        public static void SinglePhaseChannelTestScaling(
+        public static void ScalingSinglePhaseChannelTest(
             [Values(1, 2, 3)] int deg,
             [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode) //
         {
@@ -136,7 +136,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 LaLa.Add(C);
             }
 
-            ConditionNumberScalingTest.Perform(LaLa, plotAndWait: true);
+            ConditionNumberScalingTest.Perform(LaLa, plotAndWait: true, title:"ScalingSinglePhaseChannelTest-p" + deg);
         }
 #endif      
 

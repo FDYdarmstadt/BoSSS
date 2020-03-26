@@ -30,9 +30,24 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             t.PrintResults();
             if(plotAndWait) {
                 using(var gp = t.Plot()) {
-                    gp.Execute();
-                    Console.WriteLine("plotting in interactive gnuplot session - press any key to continue...");
-                    Console.ReadKey();
+                    //gp.Execute();
+                    //Console.WriteLine("plotting in interactive gnuplot session - press any key to continue...");
+                    //Console.ReadKey();
+
+
+                    // set terminal
+                    int xRes = 1024;
+                    int yRes = 768;
+                    gp.Terminal = string.Format("pngcairo size {0},{1}", xRes, yRes);
+
+                    gp.OutputFile = title + ".png";
+
+                    // call gnuplot
+                    int exCode = gp.RunAndExit(); // run & close gnuplot
+                    if(exCode != 0) {
+                        Console.WriteLine("Gnuplot-internal error: exit code " + exCode);
+                    }
+
                 }
             }
 

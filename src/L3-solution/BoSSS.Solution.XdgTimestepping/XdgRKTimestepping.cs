@@ -957,7 +957,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     }
 
                     // extract block
-                    M.ReadBlock(bS, bS, Block);
+                    M.ReadBlock(bS + M._RowPartitioning.i0, bS + M._ColPartitioning.i0, Block);
 
                     // extract part of RHS
                     for(int iRow = 0; iRow < Nj; iRow++) {
