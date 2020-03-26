@@ -108,7 +108,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             var Tst = new ViscosityJumpTest();
             var LaLa = new List<XNSE_Control>();
-            foreach(var Res in new[] { 2, 3, 4, 8 }) {
+            foreach(var Res in new[] { 4, 8, 16, 32 }) {
                 var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode: vmode, GridResolution: Res);
                 LaLa.Add(C);
             }
@@ -116,6 +116,29 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             ConditionNumberScalingTest.Perform(LaLa, plotAndWait:true);
         }
+
+        /*
+        /// <summary>
+        /// <see cref="ViscosityJumpTest"/>
+        /// </summary>
+        [Test]
+        public static void ChannelTestScaling(
+            [Values(1, 2, 3, 4)] int deg,
+            [ViscosityMode.FullySymmetric)] ViscosityMode vmode
+            ) {
+
+            double AgglomerationTreshold = 0.1;
+
+            var Tst = new ChannelTest(0.0);
+            var LaLa = new List<XNSE_Control>();
+            foreach(var Res in new[] { 1,2,3,4 }) {
+                var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode: vmode, GridResolution: Res);
+                LaLa.Add(C);
+            }
+            
+            ConditionNumberScalingTest.Perform(LaLa, plotAndWait:true);
+        }
+        */
 
 
 
