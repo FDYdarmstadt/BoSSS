@@ -497,7 +497,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (nonlinSolver != null) {
                 nonlinSolver.IterationCallback += this.LogResis;
                 if (linearSolver != null && linearSolver is ISolverWithCallback) {
-                    ((ISolverWithCallback)linearSolver).IterationCallback = this.MiniLogResi; // this.LogResis;
+                    //((ISolverWithCallback)linearSolver).IterationCallback = this.MiniLogResi; 
                 }
             } else {
                 if (linearSolver != null && linearSolver is ISolverWithCallback) {
@@ -511,7 +511,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         void MiniLogResi(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
             double resiNorm = currentRes.MPI_L2Norm();
-            Console.WriteLine("    " + iterIndex + "  "+ resiNorm);
+            Console.WriteLine("    lin slv: " + iterIndex + "  "+ resiNorm);
         }
 
 

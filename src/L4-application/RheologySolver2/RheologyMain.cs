@@ -57,11 +57,11 @@ namespace BoSSS.Application.Rheology {
     /// </summary>
     public class Rheology : BoSSS.Solution.Application<RheologyControl> {
         static void Main(string[] args) {
-            //RheologyTestProgram.Init();
-            //DeleteOldPlotFiles();
-            //RheologyTestProgram.ChannelTestStokesConditionScaling(2, 1.0);
-            //RheologyTestProgram.Cleanup();
-            //Assert.IsTrue(false, "Testcode left in main routine.");
+            RheologyTestProgram.Init();
+            DeleteOldPlotFiles();
+            RheologyTestProgram.ScalingChannelTestStokesCondition(2, 1.0);
+            RheologyTestProgram.Cleanup();
+            Assert.IsTrue(false, "Testcode left in main routine.");
 
             Rheology._Main(args, false, () => new Rheology());
         }
@@ -417,7 +417,7 @@ namespace BoSSS.Application.Rheology {
                     // Development switches to turn specific components on or off, 
                     // for the sake of iterative solver testing:
                     bool MomContinuitycoupling = true;
-                    bool ConstitutiveEqs = true;
+                    bool ConstitutiveEqs = false;
 
 
 

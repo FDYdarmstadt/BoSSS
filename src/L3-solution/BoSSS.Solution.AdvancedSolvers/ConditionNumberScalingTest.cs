@@ -40,7 +40,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     int yRes = 768;
                     gp.Terminal = string.Format("pngcairo size {0},{1}", xRes, yRes);
 
-                    gp.OutputFile = title + ".png";
+                    string DateNtime = DateTime.Now.ToString("yyyyMMMdd_HHmmss");
+                    gp.OutputFile = title + "-" + DateNtime + ".png";
 
                     // call gnuplot
                     int exCode = gp.RunAndExit(); // run & close gnuplot
@@ -66,6 +67,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
             var gp = new Gnuplot.Gnuplot();
 
+            gp.Cmd("set key t l");
+
             var fmt = new PlotFormat("rx-");
             int Kount = 1;
 
@@ -85,6 +88,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     Kount++;
                 }
             }
+                       
 
             return gp;
         }
@@ -127,7 +131,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             AppControl BaseControl;
 
             public MyEnu(AppControl __baseControl, Func<IGrid>[] __GridFuncs) {
-
+                this.GridFuncs = __GridFuncs;
+                this.BaseControl = __baseControl;
             }
 
             public IEnumerator<AppControl> GetEnumerator() {
