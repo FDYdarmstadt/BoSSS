@@ -56,13 +56,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
         {
             foreach (Edge<T> edge in edges)
             {
-                if (IsNotPeriodic(edge))
+                SwitchBoundary(edge, pairedBoundaryNumber, boundaryEdgeNumber);
+                if (edge.Twin != null)
                 {
-                    SwitchBoundary(edge, pairedBoundaryNumber, boundaryEdgeNumber);
-                    if (edge.Twin != null)
-                    {
-                        SwitchBoundary(edge.Twin, boundaryEdgeNumber, pairedBoundaryNumber);
-                    }
+                    SwitchBoundary(edge.Twin, boundaryEdgeNumber, pairedBoundaryNumber);
                 }
             }
         }
