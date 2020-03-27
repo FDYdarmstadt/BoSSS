@@ -25,6 +25,7 @@ using ilPSP.Utils;
 using BoSSS.Platform;
 using BoSSS.Foundation;
 using BoSSS.Solution.Timestepping;
+using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
 
@@ -83,7 +84,7 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
     /// <param name="dt"></param>
     /// <param name="velocity"></param>
     /// <returns></returns>
-    public delegate double[] DelComputeChangerate(double dt, ConventionalDGField[] velocity, double[] current_FLSprop);
+    public delegate double[] DelComputeChangerate(double dt, ConventionalDGField[] velocity, double[] current_FLSprop, CellMask nearband);
 
     /// <summary>
     /// 
@@ -143,7 +144,7 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
         /// </summary>
         /// <param name="dt"></param>
         /// <param name="velocity"></param>
-        public virtual void moveLevelSet(double dt, ConventionalDGField[] velocity) {
+        public virtual void moveLevelSet(double dt, ConventionalDGField[] velocity, CellMask near = null) {
 
             int s = RKscheme.Stages;
 
@@ -156,7 +157,7 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
                         FLSpropertyAtStage.AccV(dt * RKscheme.a[j, l], (double[])stage_changerates[l]);
                 }
                 // compute the change rate at current stage
-                changerateAtStage = DelCompChange(dt, velocity, FLSpropertyAtStage);
+                changerateAtStage = DelCompChange(dt, velocity, FLSpropertyAtStage, near);
                 stage_changerates.Insert(j, changerateAtStage);
 
             }
@@ -167,6 +168,8 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
             }
 
             DelEvolveFourier(ref current_FLSproperty);
+
+            // reallocate smaple points over processors
 
             //// compute the current change rate at current state
             //current_changerate = DelCompChange(dt, velocity);

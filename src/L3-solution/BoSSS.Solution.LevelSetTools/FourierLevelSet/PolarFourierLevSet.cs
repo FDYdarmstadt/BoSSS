@@ -31,6 +31,7 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.Statistic;
+using System.Collections;
 
 namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
 
@@ -292,34 +293,76 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
         /// </summary>
         /// <param name="velocity"></param>
         /// <returns></returns>
-        public override double[] ComputeChangerate(double dt, ConventionalDGField[] velocity, double[] current_FLSprop) {
+        public override double[] ComputeChangerate(double dt, ConventionalDGField[] velocity, double[] current_FLSprop, CellMask near) {
 
             setMaterialInterfacePoints(current_FLSprop);
 
             GridData grdat = (GridData)(velocity[0].GridDat);
             FieldEvaluation fEval = new FieldEvaluation(grdat);
 
-            // Movement of the material interface points
-            MultidimensionalArray VelocityAtSamplePointsXY = MultidimensionalArray.Create(current_interfaceP.Lengths);
-
-            int outP = fEval.Evaluate(1, velocity, current_interfaceP, 0, VelocityAtSamplePointsXY);
-
-            if (outP != 0)
-                throw new Exception("points outside the grid for fieldevaluation");
-
             int numIp = current_interfaceP.Lengths[0];
+
+            if(near == null)
+                near = CellMask.GetFullMask(grdat);
+
+            // check which interface points are on the current processor
+            AllocateInterfacePointsToProcessor(grdat, out int numOnProc, near);
+
+            //Console.WriteLine("number of interface points on proc {0}: {1}", grdat.MpiRank, numOnProc);
+
+            MultidimensionalArray currentInterfaceP_onProc = MultidimensionalArray.Create(new int[] { numOnProc, 2 });
+            int pi = 0;
+            for (int i = 0; i < numIp; i++) {
+                if (intPtsOnProc[i]) {
+                    currentInterfaceP_onProc[pi, 0] = current_interfaceP[i, 0];
+                    currentInterfaceP_onProc[pi, 1] = current_interfaceP[i, 1];
+                    pi++;
+                }
+            }
+
+            // Movement of the material interface points
+            MultidimensionalArray VelocityAtSamplePointsXY_onProc = MultidimensionalArray.Create(currentInterfaceP_onProc.Lengths);
+            BitArray unlocatedPts = new BitArray(currentInterfaceP_onProc.Lengths[0]);
+            int outP = fEval.Evaluate(1, velocity, currentInterfaceP_onProc, 0, VelocityAtSamplePointsXY_onProc, UnlocatedPoints: unlocatedPts);
+
+            if (outP != 0) {    
+                string Extxt = "points outside the grid for fieldevaluation: " + outP + " on rank" + grdat.MpiRank;
+                //throw new Exception(Extxt);
+                Console.WriteLine(Extxt);
+            }
+
+            // update Velocities over all processors
+            double[] velAtP = new double[2 * numIp];
+            pi = 0;
+            for (int i = 0; i < numIp; i++) {
+                if (intPtsOnProc[i]) {
+                    velAtP[i * 2] = VelocityAtSamplePointsXY_onProc[pi, 0];
+                    velAtP[(i * 2) + 1] = VelocityAtSamplePointsXY_onProc[pi, 1];
+                    pi++;
+                }
+            }
+
+            double[] VelocityAtSamplePointsXY_AllGather = new double[velAtP.Length * grdat.MpiSize];
+            VelocityAtSamplePointsXY_AllGather = MPI.Wrappers.MPIExtensions.MPISum(velAtP);
+
+            MultidimensionalArray VelocityAtSamplePointsXY = MultidimensionalArray.Create(current_interfaceP.Lengths);
+            for (int sp = 0; sp < numIp; sp++) {
+                VelocityAtSamplePointsXY[sp, 0] = VelocityAtSamplePointsXY_AllGather[sp * 2];
+                VelocityAtSamplePointsXY[sp, 1] = VelocityAtSamplePointsXY_AllGather[(sp * 2) + 1];
+            }
 
 
             // change rate for the material points is the velocity at the points
             if (FourierEvolve == Fourier_Evolution.MaterialPoints) {
-                double[] velAtP = new double[2 * numIp];
-                for (int sp = 0; sp < numIp; sp++) {
-                    velAtP[sp * 2] = VelocityAtSamplePointsXY[sp, 0];
-                    velAtP[(sp * 2) + 1] = VelocityAtSamplePointsXY[sp, 1];
-                }
-                return velAtP;
+                //double[] velAtP = new double[2 * numIp];
+                //for (int sp = 0; sp < numIp; sp++) {
+                //    velAtP[sp * 2] = VelocityAtSamplePointsXY[sp, 0];
+                //    velAtP[(sp * 2) + 1] = VelocityAtSamplePointsXY[sp, 1];
+                //}
+                return VelocityAtSamplePointsXY_AllGather;
             }
 
+            
             // compute an infinitesimal change of sample points at the Fourier points/ change of Fourier modes
             MultidimensionalArray interfaceP_evo = current_interfaceP.CloneAs();
             double dt_infin = dt * 1e-3;

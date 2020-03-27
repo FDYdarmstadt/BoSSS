@@ -1004,7 +1004,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 else
                     InterfaceFlux = new EllipticExtension.ScalarVelocityInterfaceForm(+penaltyBase, Tracker);
 
-                XSpatialOperatorMk2 InterfaceOperator = InterfaceFlux.XOperator((int[] A, int[] B, int[] C) => HMForder);
+                XSpatialOperatorMk2 InterfaceOperator = InterfaceFlux.XOperator((int[] A, int[] B, int[] C) => HMForder, Tracker.SpeciesIdS.ToArray());
 
                 var BulkForm = new EllipticExtension.ExtVelForm_bulk(penaltyBase, 0.0 ,InterfaceFlux,Tracker, subMask.GetBitMaskWithExternal());
 

@@ -91,7 +91,7 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
         /// <param name="dt"></param>
         /// <param name="velocity"></param>
         /// <returns></returns>
-        public override double[] ComputeChangerate(double dt, ConventionalDGField[] velocity, double[] current_FLSprop) {
+        public override double[] ComputeChangerate(double dt, ConventionalDGField[] velocity, double[] current_FLSprop, CellMask near) {
 
             GridData grdat = (GridData)velocity[0].GridDat;
             FieldEvaluation fEval = new FieldEvaluation(grdat);

@@ -102,7 +102,7 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
         /// <summary>
         /// See <see cref="PolarLevSetForm"/>
         /// </summary>
-        public PolarLevSetForm PLevSetForm = PolarLevSetForm.signedDist;
+        public PolarLevSetForm PLevSetForm = PolarLevSetForm.quadratic;
 
         /// <summary>
         /// curvature on the DG field extended from interface or not 
