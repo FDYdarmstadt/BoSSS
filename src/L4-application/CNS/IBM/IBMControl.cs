@@ -70,7 +70,7 @@ namespace CNS.IBM {
         /// <summary>
         /// The edge tag associated with the zero level set
         /// </summary>
-        public string LevelSetBoundaryTag;
+        public string LevelSetBoundaryTag = "None";
 
         /// <summary>
         /// The (HMF) quadrature order to be used for the evaluation of volume
