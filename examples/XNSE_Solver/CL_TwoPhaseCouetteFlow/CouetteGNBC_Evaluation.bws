@@ -1,0 +1,100 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 4 instances of IDatabaseInfo {
+  0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
+  1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
+  2: { Session Count = 49; Grid Count = 621; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 15; Grid Count = 494; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Application.XNSE_Solver;
+**************
+==============
+WorkflowMgm.Init("TwoPhaseCouetteFlow")
+**************
+Project name is set to 'TwoPhaseCouetteFlow'.
+
+==============
+WorkflowMgm.Sessions;
+**************
+List of 3 instances of ISessionInfo {
+  0: TwoPhaseCouetteFlow	CouetteGNBC_test5_k2_mesh0	03/21/2020 15:49:11	8cb14238...
+  1: TwoPhaseCouetteFlow	CouetteGNBC_test4_k2_mesh0	03/21/2020 12:17:07	46777807...
+  2: TwoPhaseCouetteFlow	CouetteGNBC_testNewGrid_k2_mesh0	03/23/2020 21:51:58	f1865336...
+}
+==============
+var sess = WorkflowMgm.Sessions.Skip(2).Take(1);
+**************
+==============
+**************
+==============
+var data = sess.ReadLogDataForMovingContactLine();
+**************
+System.FormatException occurred: Input string was not in a correct format.. Type 'LastError' for details.
+
+==============
+//LastError
+**************
+==============
+ISessionInfoExtensions.PlotData(data[0].ElementAt(0), "time", "contact-point x")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+ISessionInfoExtensions.PlotData(data[0].ElementAt(2), "time", "contact-velocity x")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+ISessionInfoExtensions.PlotData(data[0].ElementAt(4), "time", "contact-angle")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+//sess.Pick(0).Export().WithSupersampling(2).Do()
+**************
+Starting export process... Data will be written to the following directory:
+C:\Users\smuda\AppData\Local\BoSSS\plots\sessions\TwoPhaseCouetteFlow__CouetteGNBC_testNewGrid_k2_mesh0__f1865336-96ec-4441-8351-ce09568c6e13
+==============
+**************
+==============
+sess.Pick(0).Delete()
+**************
+Session: TwoPhaseCouetteFlow	CouetteGNBC_testNewGrid_k2_mesh0	03/23/2020 21:51:58	f1865336...
+Do you really want to delete this session? [y/n]: Session f1865336-96ec-4441-8351-ce09568c6e13 deleted.
+
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

@@ -1,0 +1,106 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 3 instances of IDatabaseInfo {
+  0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
+  1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
+  2: { Session Count = 49; Grid Count = 621; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+WorkflowMgm.Init("Droplet")
+**************
+Project name is set to 'Droplet'.
+
+==============
+WorkflowMgm.Sessions;
+**************
+List of 2 instances of ISessionInfo {
+  0: Droplet	Droplet_testWithEnergy_k2_mesh0	03/20/2020 18:07:31	15f1afbc...
+  1: Droplet	Droplet_test_k2_mesh0	03/19/2020 16:58:46	08f185c3...
+}
+==============
+var sess = WorkflowMgm.Sessions;
+**************
+==============
+using BoSSS.Application.XNSE_Solver;
+**************
+==============
+sess.CheckForEnergyLogging();
+**************
+Session: 15f1afbc-f389-4c88-b5ee-7be2045bc211
+Element at 0: #Line,#Time,#Iter
+Element at 1:  L2Norm PhysicalTime
+Element at 2:  L2Norm KineticEnergy
+Element at 3:  L2Norm SurfaceEnergy
+Element at 4:  L2Norm ChangerateKineticEnergy
+Element at 5:  L2Norm ChangerateSurfaceEnergy
+Element at 6:  L2Norm SurfaceDivergence
+Element at 7:  L2Norm KineticDissipationBulk
+Session: 08f185c3-025f-4636-a483-efac71a2d3c0
+no energy file available
+
+==============
+**************
+==============
+var data = sess.Take(1).ReadLogDataForXNSE(XNSE_Control.LoggingValues.Dropletlike);
+**************
+Element at 0: time vs semi axis x
+Element at 1: time vs semi axis y
+Element at 2: time vs area
+Element at 3: time vs perimeter
+
+==============
+ISessionInfoExtensions.PlotData(data.ElementAt(0), "time", "semi axis x")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+ISessionInfoExtensions.PlotData(data.ElementAt(1), "time", "semi axis y")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+ISessionInfoExtensions.PlotData(data.ElementAt(3), "time", "perimeter")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+**************
+==============
+string[] energyEval = new string[] { "SurfaceEnergy", "KineticEnergy" };
+**************
+==============
+sess.Take(1).EvalEnergy(energyEval, false)
+**************
+Found  L2Norm SurfaceEnergy in Droplet_testWithEnergy_k2_mesh0
+Found  L2Norm KineticEnergy in Droplet_testWithEnergy_k2_mesh0
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+**************
+==============
+//sess.Pick(0).Export().WithSupersampling(2).Do()
+**************
+Starting export process... Data will be written to the following directory:
+C:\Users\smuda\AppData\Local\BoSSS\plots\sessions\Droplet__Droplet_test_k2_mesh0__08f185c3-025f-4636-a483-efac71a2d3c0
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

@@ -135,7 +135,62 @@ namespace BoSSS.Application.XNSE_Solver {
             });
         }
 
-       
+
+        [DataMember]
+        public string methodTagLS;
+
+        public void SetLevelSetMethod(int method, FourierLevSetControl _FourierControl = null) {
+
+            LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
+
+            switch (method) {
+                case 0: {
+                        goto default;
+                    }
+                case 1: {
+                        // fast marching with Curvature and default filtering 
+                        methodTagLS = "FastMarchCurv";
+                        Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+                        FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
+                        AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
+                        AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+                        break;
+                    }
+                case 2: {
+                        // Extension Velocity with Laplace Beltrami without filtering
+                        methodTagLS = "ExtVelLB";
+                        Option_LevelSetEvolution = LevelSetEvolution.ExtensionVelocity;
+                        AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+                        break;
+                    }
+                case 3: {
+                        // Extension Velocity with Curvature and default filtering 
+                        methodTagLS = "ExtVelCurv";
+                        Option_LevelSetEvolution = LevelSetEvolution.ExtensionVelocity;
+                        AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
+                        AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+                        break;
+                    }
+                case 4: {
+                        methodTagLS = "Fourier";
+                        FourierLevSetControl = _FourierControl;
+                        Option_LevelSetEvolution = LevelSetEvolution.Fourier;
+                        AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Fourier;
+                        FourierLevSetControl.Timestepper = FourierLevelSet_Timestepper.RungeKutta1901;
+                        break;
+                    }
+                default: {
+                        // (standard) fast marching with Laplace Beltrami without filtering
+                        methodTagLS = "FastMarchLB";
+                        Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+                        FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
+                        AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+                        break;
+                    }
+            }
+        }
+
+
 
         /// <summary>
         /// Width of the narrow band.

@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Application.BoSSSpad;
+using BoSSS.Application.XNSE_Solver;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Gnuplot;
 using ilPSP;
@@ -1893,82 +1894,281 @@ namespace BoSSS.Foundation.IO {
             return correctCall.Name;
         }
 
+
         /// <summary>
-        /// Plots circularity and rise velocity over time if a  "BenchmarkQuantities_RisingBubble.txt" exists.
+        /// imports the specified log file data 
         /// </summary>
-        /// <param name="sess"></param> List of sessions to be evaluated
-        public static void EvalRisingBubble(this IEnumerable<ISessionInfo> sess)
-        {
+        /// <param name="sess"> List of sessions to be evaluated </param>
+        /// <param name="logVal"> which log values to be evaluated </param>
+        /// <returns></returns>
+        public static List<Plot2Ddata> ReadLogDataForXNSE(this IEnumerable<ISessionInfo> sess, XNSE_Control.LoggingValues logVal) {
+
+            string logName;
+            string[] values;
+            switch (logVal) {
+                case XNSE_Control.LoggingValues.Wavelike: {
+                        logName = "\\Amplitude.txt";
+                        values = new string[] { "#timestep", "time", "magnitude", "real", "imaginary" };
+                        break;
+                    }
+                case XNSE_Control.LoggingValues.Dropletlike: {
+                        logName = "\\SemiAxis.txt";
+                        values = new string[] { "#timestep", "time", "semi axis x", "semi axis y", "area", "perimeter" };
+                        break;
+                    }
+                case XNSE_Control.LoggingValues.RisingBubble: {
+                        logName = "\\BenchmarkQuantities_RisingBubble.txt";
+                        values = new string[] { "#timestep", "time", "area", "center of mass - x", "center of mass - y", "circularity", "rise velocity" };
+                        break;
+                    }
+                case XNSE_Control.LoggingValues.MovingContactLine: {
+                        logName = "\\ContactAngle.txt";
+                        values = new string[] { "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-angle" };
+                        break;
+                    }
+                default:
+                    throw new ArgumentException("No specified LogFormat");
+            }
+
+            List<Plot2Ddata> plotData = new List<Plot2Ddata>();
+
             int numberSessions = sess.Count();
-            double[][] times = new double[numberSessions][];
-            double[][] circularities = new double[numberSessions][];
-            double[][] riseVelocities = new double[numberSessions][];
+            int numberValues = values.Count();      
+            for (int vIdx = 2; vIdx < numberValues; vIdx++) {       // considered are only the values over time
 
-            // Read all data
-            for (int j = 0; j < numberSessions; j++)
-            {
-                string path = @sess.Pick(j).Database.Path + "\\sessions\\" + sess.Pick(j).ID + "\\BenchmarkQuantities_RisingBubble.txt";
-                string[] lines = File.ReadAllLines(path);
-                double[] time = new double[lines.Length - 1];
-                double[] circularity = new double[lines.Length - 1];
-                double[] riseVelocity = new double[lines.Length - 1];
+                double[][] times = new double[numberSessions][];
+                double[][] valueDatas = new double[numberSessions][];
 
-                for (int i = 0; i < lines.Length - 1; i++)
-                {
-                    time[i] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
-                    circularity[i] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[4]);
-                    riseVelocity[i] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[5]);
+                // Read all data
+                for (int j = 0; j < numberSessions; j++) {
+                    string path = @sess.Pick(j).Database.Path + "\\sessions\\" + sess.Pick(j).ID + logName;
+                    string[] lines = File.ReadAllLines(path);
+                    double[] time = new double[lines.Length - 1];
+                    double[] valueData = new double[lines.Length - 1];
+
+                    for (int i = 0; i < lines.Length - 1; i++) {
+                        time[i] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                        valueData[i] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[vIdx]);
+                    }
+                    times[j] = time;
+                    valueDatas[j] = valueData;
                 }
-                times[j] = time;
-                circularities[j] = circularity;
-                riseVelocities[j] = riseVelocity;
+
+                // Build DataSet
+                KeyValuePair<string, double[][]>[] dataRowsValue = new KeyValuePair<string, double[][]>[numberSessions];
+                for (int i = 0; i < numberSessions; i++) {
+                    dataRowsValue[i] = new KeyValuePair<string, double[][]>(sess.Pick(i).Name, new double[][] { times[i], valueDatas[i] });
+                }
+                Console.WriteLine("Element at {0}: time vs {1}", vIdx - 2, values[vIdx]);
+                plotData.Add(new Plot2Ddata(dataRowsValue));
+            }
+
+            return plotData;
+
+        }
+
+
+        public static List<Plot2Ddata>[] ReadLogDataForMovingContactLine(this IEnumerable<ISessionInfo> sess) {
+
+            string[] values = new string[] { "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-angle" };
+
+            // check number of contact lines
+            string path = @sess.Pick(0).Database.Path + "\\sessions\\" + sess.Pick(0).ID + "\\ContactAngle.txt";
+            string[] lines = File.ReadAllLines(path);
+            int numCL = 0;
+            for (int i = 1; i <= 4; i++) {       // max number of contact lines should be 4
+                int ts = Convert.ToInt32(lines[i].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[0]);
+                if (ts == 0)
+                    numCL++;
+            }
+
+            Console.WriteLine("number of contact lines: {0}", numCL);
+
+            List<Plot2Ddata>[] plotDataCL = new List<Plot2Ddata>[numCL];
+
+            int numberSessions = sess.Count();
+            int numberValues = values.Count();
+            for (int c = 0; c < numCL; c++) {
+
+                List<Plot2Ddata> plotData = new List<Plot2Ddata>();
+
+                for (int vIdx = 2; vIdx < numberValues; vIdx++) {       // considered are only the values over time
+
+                    double[][] times = new double[numberSessions][];
+                    double[][] valueDatas = new double[numberSessions][];
+
+                    // Read all data
+                    for (int j = 0; j < numberSessions; j++) {
+                        path = @sess.Pick(j).Database.Path + "\\sessions\\" + sess.Pick(j).ID + "\\ContactAngle.txt";
+                        lines = File.ReadAllLines(path);
+                        double[] time = new double[(lines.Length - 1)/numCL];
+                        double[] valueData = new double[(lines.Length - 1)/numCL];
+
+                        int ind = 0;
+                        for (int i = c; i < lines.Length - 1; i+=numCL) {
+                            time[ind] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                            valueData[ind] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[vIdx]);
+                            ind++;
+                        }
+                        times[j] = time;
+                        valueDatas[j] = valueData;
+                    }
+
+                    // Build DataSet
+                    KeyValuePair<string, double[][]>[] dataRowsValue = new KeyValuePair<string, double[][]>[numberSessions];
+                    for (int i = 0; i < numberSessions; i++) {
+                        dataRowsValue[i] = new KeyValuePair<string, double[][]>(sess.Pick(i).Name, new double[][] { times[i], valueDatas[i] });
+                    }
+                    if(c == 0)
+                        Console.WriteLine("Element at {0}: time vs {1}", vIdx - 2, values[vIdx]);
+
+                    plotData.Add(new Plot2Ddata(dataRowsValue));
+                }
+
+                plotDataCL[c] = plotData;
+            }
+
+            return plotDataCL;
+
+        }
+
+
+        public static void CheckForEnergyLogging(this IEnumerable<ISessionInfo> pSessions) {
+
+            int numberSessions = pSessions.Count();
+            for (int j = 0; j < numberSessions; j++) {
+                Console.WriteLine("Session: {0}", pSessions.Pick(j).ID);
+                string path = @pSessions.Pick(j).Database.Path + "\\sessions\\" + pSessions.Pick(j).ID + "\\Energy.txt";
+
+                string header;
+                try {
+                    header = File.ReadAllLines(path)[0];
+                } catch {
+                    Console.WriteLine("no energy file available");
+                    continue;
+                }
+
+                int energycount = header.Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries).Length;
+
+                for (int i = 0; i < energycount; i++) {
+                    string energyName = header.Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[i];
+                    Console.WriteLine("Element at {0}: {1}", i, energyName);
+                }
+            }
+
+        }
+
+        /// <summary>
+        /// Plots selected energy over time if an  "Energy.txt" exists.
+        /// </summary>
+        /// <param name="pSessions">List of sessions to be evaluated</param> 
+        /// <param name="energytype"> Energytypes to be plotted, can be partial</param>
+        public static void EvalEnergy(this IEnumerable<ISessionInfo> pSessions, string[] energytype, bool singlePlot) {
+            int numberSessions = pSessions.Count();
+            //List<Gnuplot> Plots = new List<Gnuplot>();
+
+            Plot2Ddata[] Time_Energies = new Plot2Ddata[energytype.Length];
+
+            // Cycle over all given energytypes
+            for (int g = 0; g < energytype.Length; g++) {
+                // Create evaluation variables
+                int validSessions = 0;
+                int energypos = -1;
+                List<double[]> times = new List<double[]>();
+                List<double[]> energies = new List<double[]>();
+
+                // Read the data from the sessions
+                for (int j = 0; j < numberSessions; j++) {
+                    string path = @pSessions.Pick(j).Database.Path + "\\sessions\\" + pSessions.Pick(j).ID + "\\Energy.txt";
+                    string[] lines = File.ReadAllLines(path);
+
+                    int energycount = lines[0].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries).Length;
+
+                    List<string> energynames = new List<string>();
+                    for (int i = 0; i < energycount; i++) {
+                        energynames.Add(lines[0].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[i]);
+                    }
+                    energypos = energynames.FindIndex(s => s.Contains(energytype[g]));
+
+                    double[] time = new double[lines.Length - 1];
+                    double[] energy = new double[lines.Length - 1];
+
+                    if (energypos != -1) {
+                        energytype[g] = energynames[energypos];
+                        Console.WriteLine("Found " + energytype[g] + " in " + pSessions.Pick(j).Name);
+                        for (int k = 0; k < lines.Length - 1; k++) {
+                            time[k] = Convert.ToDouble(lines[k + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                            energy[k] = Convert.ToDouble(lines[k + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[energypos]);
+                        }
+                        validSessions++;
+                    } else {
+                        Console.WriteLine(pSessions.Pick(j).Name + " does not contain an Energytype with key '" + energytype[g] + "', maybe try a different spelling/capitalization");
+                    }
+                    times.Add(time);
+                    energies.Add(energy);
+                }
+
+                // Build DataSets
+                KeyValuePair<string, double[][]>[] dataRowsEnergy = new KeyValuePair<string, double[][]>[validSessions];
+                for (int i = 0; i < validSessions; i++) {
+                    dataRowsEnergy[i] = new KeyValuePair<string, double[][]>(pSessions.Pick(i).Name, new double[][] { times[i], energies[i] });
+                }
+                Time_Energies[g] = new Plot2Ddata(dataRowsEnergy);
 
             }
-            // Build DataSets
-            KeyValuePair<string, double[][]>[] dataRowsCircularity = new KeyValuePair<string, double[][]>[numberSessions];
-            KeyValuePair<string, double[][]>[] dataRowsRiseVelocity = new KeyValuePair<string, double[][]>[numberSessions];
-            for (int i = 0; i < numberSessions; i++)
-            {
-                dataRowsCircularity[i] = new KeyValuePair<string, double[][]>(sess.Pick(i).Name, new double[][] { times[i], circularities[i] });
-                dataRowsRiseVelocity[i] = new KeyValuePair<string, double[][]>(sess.Pick(i).Name, new double[][] { times[i], riseVelocities[i] });
-            }
-            Plot2Ddata Time_Circularity = new Plot2Ddata(dataRowsCircularity);
-            Plot2Ddata Time_riseVelocity = new Plot2Ddata(dataRowsRiseVelocity);
 
-            // Plot circularity
+            int numplt = (singlePlot) ? 1 : energytype.Length;
+            for (int g = 0; g < numplt; g++) {
+                // Plot energy
+                int e0 = (singlePlot) ? 0 : g;
+                int eL = (singlePlot) ? energytype.Length : g + 1;
+                for (int e = e0; e < eL; e++) {
+                    int lineColor = 0;
+                    PlotFormat format = new PlotFormat(lineColor: ((LineColors)(++lineColor)));
+                    Gnuplot gp = new Gnuplot(baseLineFormat: format);
+                    gp.SetXLabel("Time");
+                    gp.SetYLabel(energytype[g]);
+                    gp.Cmd("set grid xtics ytics");
+                    foreach (var group in Time_Energies[e].dataGroups) {
+                        gp.PlotXY(group.Abscissas, group.Values, group.Name.Split().Last(),
+                            new PlotFormat(lineColor: ((LineColors)(++lineColor))));
+                    }
+                    gp.WriteDeferredPlotCommands();
+                    gp.Execute();
+                }
+            }
+
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="pltDat"></param>
+        /// <param name="xLabel"></param>
+        /// <param name="yLabel"></param>
+        public static void PlotData(Plot2Ddata pltDat, string xLabel, string yLabel) {
+
             int lineColor = 0;
             PlotFormat format = new PlotFormat(lineColor: ((LineColors)(++lineColor)));
             Gnuplot gp = new Gnuplot(baseLineFormat: format);
-            gp.SetXLabel("Time");
-            gp.SetYLabel("Circularity");
+            gp.SetXLabel(xLabel);
+            gp.SetYLabel(yLabel);
             gp.Cmd("set grid xtics ytics");
-            foreach (var group in Time_Circularity.dataGroups)
-            {
+            foreach (var group in pltDat.dataGroups) {
                 gp.PlotXY(group.Abscissas, group.Values, group.Name.Split('.').Last(),
                     new PlotFormat(lineColor: ((LineColors)(++lineColor))));
             }
             gp.WriteDeferredPlotCommands();
             gp.Execute();
 
-            // Plot rise velocity
-            lineColor = 0;
-            Gnuplot gp2 = new Gnuplot(baseLineFormat: format);
-            gp2.SetXLabel("Time");
-            gp2.SetYLabel("Rise velocity");
-            gp2.Cmd("set grid xtics ytics");
-            foreach (var group in Time_riseVelocity.dataGroups)
-            {
-                gp2.PlotXY(group.Abscissas, group.Values, group.Name.Split('.').Last(),
-                    new PlotFormat(lineColor: ((LineColors)(++lineColor))));
-            }
-            gp2.WriteDeferredPlotCommands();
-            gp2.Execute();
         }
+
 
         /// <summary>
         /// Plots interface position/velocity and evaporative mass flux over time if a  "Evaporation.txt" exists.
         /// </summary>
-        /// <param name="pSessions"></param> List of sessions to be evaluated
+        /// <param name="pSessions"> List of sessions to be evaluated </param>
         public static void EvalEvaporationData(this IEnumerable<ISessionInfo> pSessions) {
 
             int numberSessions = pSessions.Count();
@@ -2054,6 +2254,7 @@ namespace BoSSS.Foundation.IO {
         }
 
 
+
         /// <summary>
         /// Plots the temperature profile if a  "Evaporation.txt" exists.
         /// </summary>
@@ -2075,7 +2276,7 @@ namespace BoSSS.Foundation.IO {
 
                 double[] TemperatureP = new double[len - 5];
                 for (int i = 5; i < len; i++) {
-                    TemperatureP[i-5] = Convert.ToDouble(tsData[i]);
+                    TemperatureP[i - 5] = Convert.ToDouble(tsData[i]);
                 }
                 tsTemperatureP[j] = TemperatureP;
             }
@@ -2106,76 +2307,6 @@ namespace BoSSS.Foundation.IO {
         }
 
 
-        /// <summary>
-        /// Plots selected energy over time if an  "Energy.txt" exists.
-        /// </summary>
-        /// <param name="pSessions">List of sessions to be evaluated</param> 
-        /// <param name="energytype"> Energytypes to be plotted, can be partial</param>
-        public static void EvalEnergy(this IEnumerable<ISessionInfo> pSessions, string[] energytype) {
-            int numberSessions = pSessions.Count();
-            List<Gnuplot> Plots = new List<Gnuplot>();
 
-            // Cycle over all given energytypes
-            for (int g = 0; g < energytype.Length; g++) {
-                // Create evaluation variables
-                int validSessions = 0;
-                int energypos = -1;
-                List<double[]> times = new List<double[]>();
-                List<double[]> energies = new List<double[]>();
-
-                // Read the data from the sessions
-                for (int j = 0; j < numberSessions; j++) {
-                    string path = @pSessions.Pick(j).Database.Path + "\\sessions\\" + pSessions.Pick(j).ID + "\\Energy.txt";
-                    string[] lines = File.ReadAllLines(path);
-
-                    int energycount = lines[0].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries).Length;
-
-                    List<string> energynames = new List<string>();
-                    for (int i = 0; i < energycount; i++) {
-                        energynames.Add(lines[0].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[i]);
-                    }
-                    energypos = energynames.FindIndex(s => s.Contains(energytype[g]));
-
-                    double[] time = new double[lines.Length - 1];
-                    double[] energy = new double[lines.Length - 1];
-
-                    if (energypos != -1) {
-                        energytype[g] = energynames[energypos];
-                        Console.WriteLine("Found " + energytype[g] + " in " + pSessions.Pick(j).Name);
-                        for (int k = 0; k < lines.Length - 1; k++) {
-                            time[k] = Convert.ToDouble(lines[k + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
-                            energy[k] = Convert.ToDouble(lines[k + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[energypos]);
-                        }
-                        validSessions++;
-                    } else {
-                        Console.WriteLine(pSessions.Pick(j).Name + " does not contain an Energytype with key '" + energytype[g] + "', maybe try a different spelling/capitalization");
-                    }
-                    times.Add(time);
-                    energies.Add(energy);
-                }
-
-                // Build DataSets
-                KeyValuePair<string, double[][]>[] dataRowsEnergy = new KeyValuePair<string, double[][]>[validSessions];
-                for (int i = 0; i < validSessions; i++) {
-                    dataRowsEnergy[i] = new KeyValuePair<string, double[][]>(pSessions.Pick(i).Name, new double[][] { times[i], energies[i] });
-                }
-                Plot2Ddata Time_Energy = new Plot2Ddata(dataRowsEnergy);
-
-                // Plot energy
-                int lineColor = 0;
-                PlotFormat format = new PlotFormat(lineColor: ((LineColors)(++lineColor)));
-                Gnuplot gp = new Gnuplot(baseLineFormat: format);
-                gp.SetXLabel("Time");
-                gp.SetYLabel(energytype[g]);
-                gp.Cmd("set grid xtics ytics");
-                foreach (var group in Time_Energy.dataGroups) {
-                    gp.PlotXY(group.Abscissas, group.Values, group.Name.Split().Last(),
-                        new PlotFormat(lineColor: ((LineColors)(++lineColor))));
-                }
-                gp.WriteDeferredPlotCommands();
-                Plots.Add(gp);
-                Plots[g].Execute();
-            }
-        }
     }
 }

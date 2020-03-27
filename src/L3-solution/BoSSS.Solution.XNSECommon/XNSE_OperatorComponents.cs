@@ -66,10 +66,10 @@ namespace BoSSS.Solution.XNSECommon {
             DoNotTouchParameters dntParams = config.getDntParams;
 
             // set species arguments
-            double rhoSpc, LFFSpc, muSpc;
+            double rhoSpc, LFFSpc, muSpc, betaS;
             switch (spcName) {
-                case "A": { rhoSpc = physParams.rho_A; LFFSpc = dntParams.LFFA; muSpc = physParams.mu_A; break; }
-                case "B": { rhoSpc = physParams.rho_B; LFFSpc = dntParams.LFFB; muSpc = physParams.mu_B; break; }
+                case "A": { rhoSpc = physParams.rho_A; LFFSpc = dntParams.LFFA; muSpc = physParams.mu_A; betaS = physParams.betaS_A; break; }
+                case "B": { rhoSpc = physParams.rho_B; LFFSpc = dntParams.LFFB; muSpc = physParams.mu_B; betaS = physParams.betaS_B; break; }
                 default: throw new ArgumentException("Unknown species.");
             }
 
@@ -107,13 +107,13 @@ namespace BoSSS.Solution.XNSECommon {
                             // Bulk operator:
                             var Visc1 = new Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
                                 dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                                BcMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
+                                BcMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B, _betaS: betaS);
                             comps.Add(Visc1);
 
                             if (dntParams.UseGhostPenalties) {
                                 var Visc1Penalty = new Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
                                     penalty, 0.0,
-                                    BcMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
+                                    BcMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B, _betaS: betaS);
                                 XOp.GhostEdgesOperator.EquationComponents[CodName].Add(Visc1Penalty);
                             }
 
@@ -123,22 +123,22 @@ namespace BoSSS.Solution.XNSECommon {
                             // Bulk operator
                             var Visc1 = new Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
                                 dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                                BcMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
+                                BcMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B, _betaS: betaS);
                             comps.Add(Visc1);
 
                             var Visc2 = new Operator.Viscosity.ViscosityInSpeciesBulk_GradUtranspTerm(
                                 dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                                BcMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
+                                BcMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B, _betaS: betaS);
                             comps.Add(Visc2);
 
 
                             if (dntParams.UseGhostPenalties) {
                                 var Visc1Penalty = new Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
                                     penalty, 0.0,
-                                    BcMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
+                                    BcMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B, _betaS: betaS);
                                 var Visc2Penalty = new Operator.Viscosity.ViscosityInSpeciesBulk_GradUtranspTerm(
                                     penalty, 0.0,
-                                    BcMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
+                                    BcMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B, _betaS: betaS);
 
                                 XOp.GhostEdgesOperator.EquationComponents[CodName].Add(Visc1Penalty);
                                 XOp.GhostEdgesOperator.EquationComponents[CodName].Add(Visc2Penalty);

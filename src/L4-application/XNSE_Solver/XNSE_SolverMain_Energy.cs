@@ -77,7 +77,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 #pragma warning disable 649
 
-        //XDGField[] prevVel;
+        XDGField[] prevVel;
 
         /// <summary>
         /// kinetic energy derived via \f$ \rho \frac{vec{u} \cdot \vec{u}}{ 2 } \f$
@@ -151,12 +151,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
             if (this.Control.ComputeEnergyProperties) {
 
-                //if (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) {
-                //    prevVel = new XDGField[D];
-                //    for (int d = 0; d < D; d++) {
-                //        prevVel[d] = new XDGField(this.XDGvelocity.Velocity[d].Basis);
-                //    }
-                //}
+                if (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) {
+                    prevVel = new XDGField[D];
+                    for (int d = 0; d < D; d++) {
+                        prevVel[d] = new XDGField(this.XDGvelocity.Velocity[d].Basis);
+                    }
+                }
 
                 //this.prevKineticEnergy = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions[VariableNames.KineticEnergy].Degree)), "previousKineticEnergy");
                 //base.RegisterField(this.prevKineticEnergy);
@@ -181,9 +181,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 //this.PowerOfStresses = new XDGField(new XDGBasis(this.LsTrk, (this.Control.FieldOptions[VariableNames.KineticEnergy].Degree)), "PowerOfStresses");
                 //base.RegisterField(this.PowerOfStresses, register);
 
-
             }
-
 
         }
 

@@ -1,0 +1,91 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 4 instances of IDatabaseInfo {
+  0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
+  1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
+  2: { Session Count = 49; Grid Count = 621; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 30; Grid Count = 1230; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Application.XNSE_Solver;
+**************
+==============
+WorkflowMgm.Init("CapillaryWave")
+**************
+Project name is set to 'CapillaryWave'.
+
+==============
+WorkflowMgm.Sessions;
+**************
+List of 8 instances of ISessionInfo {
+  0: CapillaryWave	CapillaryWave_test_k2_mesh0	03/18/2020 21:27:41	7126f6b4...
+  1: CapillaryWave	CapillaryWave_Setup1_k2_mesh1	03/24/2020 14:28:10	28a39008...
+  2: CapillaryWave	CapillaryWave_Setup2_k2_mesh1	03/24/2020 14:28:51	eecc50f2...
+  3: CapillaryWave	CapillaryWave_Setup3_k2_mesh1	03/24/2020 14:29:40	eed03bcf...
+  4: CapillaryWave	CapillaryWave_Setup0_k2_mesh1	03/24/2020 12:10:51	14f70fbe...
+  5: CapillaryWave	CapillaryWave_Setup3_k2_mesh0	03/23/2020 21:35:37	bdd58f86...
+  6: CapillaryWave	CapillaryWave_Setup0_k2_mesh0	03/23/2020 21:34:01	0af8a853...
+  7: CapillaryWave	CapillaryWave_Setup2_k2_mesh0	03/23/2020 21:34:58	fcfecf85...
+}
+==============
+var sess = WorkflowMgm.Sessions;
+**************
+==============
+int[] pltInd = new int[] { 0, 2, 3};
+List<ISessionInfo> pltDat = new List<ISessionInfo>();
+foreach(int pI in pltInd) {
+    pltDat.Add(sess.Pick(pI));
+}
+**************
+==============
+pltDat
+**************
+List of 3 instances of ISessionInfo {
+  0: CapillaryWave	CapillaryWave_test_k2_mesh0	03/18/2020 21:27:41	7126f6b4...
+  1: CapillaryWave	CapillaryWave_Setup2_k2_mesh1	03/24/2020 14:28:51	eecc50f2...
+  2: CapillaryWave	CapillaryWave_Setup3_k2_mesh1	03/24/2020 14:29:40	eed03bcf...
+}
+==============
+**************
+==============
+var data = pltDat.ReadLogDataForXNSE(XNSE_Control.LoggingValues.Wavelike);
+**************
+Element at 0: time vs magnitude
+Element at 1: time vs real
+Element at 2: time vs imaginary
+
+==============
+ISessionInfoExtensions.PlotData(data.ElementAt(0), "time", "amplitude")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+**************
+==============
+**************
+==============
+//sess.Pick(0).KeysAndQueries
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

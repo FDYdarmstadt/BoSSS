@@ -47,7 +47,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            _DbPath = @"D:\local\local_Testcase_databases\Testcase_ContactLine";
+            //_DbPath = @"D:\local\local_Testcase_databases\Testcase_ContactLine";
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
 
             // basic database options
@@ -61,8 +61,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.ContinueOnIoError = false;
 
-            //C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
-            //C.LogPeriod = 10;
+            C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
+            C.LogPeriod = 1;
 
             #endregion
 
@@ -213,6 +213,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region init
 
             Func<double[], double> PhiFunc = (X => Math.Abs(X[0] - 2 * L) - L);
+
             //Func<double[], double> PhiFunc = (X => Math.Abs(X[0] - 1) - 0.5);
 
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
@@ -388,12 +389,18 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region BC
 
-            double U_wall = (symmetric) ? 0.25 : 0.2;
-            string uWall_str = U_wall.ToString();
-            C.AddBoundaryValue("navierslip_linear_lower", "VelocityX#A", "X => -" + uWall_str, false);
-            C.AddBoundaryValue("navierslip_linear_lower", "VelocityX#B", "X => -" + uWall_str, false);
-            C.AddBoundaryValue("navierslip_linear_upper", "VelocityX#A", "X => " + uWall_str, false);
-            C.AddBoundaryValue("navierslip_linear_upper", "VelocityX#B", "X => " + uWall_str, false);
+            if (symmetric) {
+                C.AddBoundaryValue("navierslip_linear_lower", "VelocityX#A", "X => -0.25", false);
+                C.AddBoundaryValue("navierslip_linear_lower", "VelocityX#B", "X => -0.25", false);
+                C.AddBoundaryValue("navierslip_linear_upper", "VelocityX#A", "X => 0.25", false);
+                C.AddBoundaryValue("navierslip_linear_upper", "VelocityX#B", "X => 0.25", false);
+            } else {
+                C.AddBoundaryValue("navierslip_linear_lower", "VelocityX#A", "X => -0.2", false);
+                C.AddBoundaryValue("navierslip_linear_lower", "VelocityX#B", "X => -0.2", false);
+                C.AddBoundaryValue("navierslip_linear_upper", "VelocityX#A", "X => 0.2", false);
+                C.AddBoundaryValue("navierslip_linear_upper", "VelocityX#B", "X => 0.2", false);
+
+            }
 
             C.AdvancedDiscretizationOptions.GNBC_Localization = NavierSlip_Localization.Bulk;
             C.AdvancedDiscretizationOptions.GNBC_SlipLength = NavierSlip_SlipLength.Prescribed_Beta;
@@ -406,7 +413,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ==============
             #region init
 
-            C.AddInitialValue("Phi", "X => Math.Abs(X[0] - 2 * 27.2) - 27.2", false);
+            //double epsInit = 0.01;
+            //Func<double[], double> PhiFunc = (X => (Math.Abs(X[0] - 2 * L) - L) + (X[1] - (H / 2.0)) * (epsInit / (H / 2.0)));
+            C.AddInitialValue("Phi", "X => (Math.Abs(X[0] - 2 * 27.2) - 27.2) + (X[1] - (6.8)) * (0.01 / 6.8)", false);
 
             #endregion
 

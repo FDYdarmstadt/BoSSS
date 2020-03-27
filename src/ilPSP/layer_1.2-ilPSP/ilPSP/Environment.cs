@@ -18,6 +18,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using MPI.Wrappers;
 
 namespace ilPSP {
@@ -262,6 +263,8 @@ namespace ilPSP {
             // ===================
             m_MpiEnv = new MPIEnviroment();
             StdoutOnlyOnRank0 = true;
+            //Console.WriteLine("sleep for 10 seconds");
+            //Thread.Sleep(10000);
             return ret;
         }
 

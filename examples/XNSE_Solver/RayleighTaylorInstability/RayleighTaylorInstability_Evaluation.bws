@@ -1,0 +1,57 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 3 instances of IDatabaseInfo {
+  0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
+  1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
+  2: { Session Count = 46; Grid Count = 613; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+WorkflowMgm.Init("RayleighTaylorInstability")
+**************
+Project name is set to 'RayleighTaylorInstability'.
+
+==============
+WorkflowMgm.Sessions;
+**************
+List of 1 instances of ISessionInfo {
+  0: RayleighTaylorInstability	RayleighTaylor_test_k2_mesh0	03/19/2020 11:38:00	c44f4ae5...
+}
+==============
+var sess = WorkflowMgm.Sessions;
+**************
+==============
+using BoSSS.Application.XNSE_Solver;
+**************
+==============
+var data = sess.ReadLogDataForXNSE(XNSE_Control.LoggingValues.Wavelike);
+**************
+Element at 0: time vs magnitude
+Element at 1: time vs real
+Element at 2: time vs imaginary
+
+==============
+ISessionInfoExtensions.PlotData(data.ElementAt(0), "time", "magnitude")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

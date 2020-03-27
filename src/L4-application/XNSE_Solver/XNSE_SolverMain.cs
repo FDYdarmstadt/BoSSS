@@ -1082,18 +1082,18 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     // backup old velocity/kinetic energy for energy checks
                     // -----------------------------------------------------
-                    //if(this.Control.ComputeEnergyProperties && this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) {
-                    //    for(int d = 0; d < D; d++) {
-                    //        this.prevVel[d].Clear();
-                    //        this.prevVel[d].Acc(1.0, this.CurrentVel[d]);
-                    //    }
-                    //    if (TimestepInt > 1) {
-                    //        this.pprevKineticEnergy.Clear();
-                    //        this.pprevKineticEnergy.Acc(1.0, this.prevKineticEnergy);
-                    //    } 
-                    //    this.prevKineticEnergy.Clear();
-                    //    this.prevKineticEnergy.Acc(1.0, this.DerivedKineticEnergy);
-                    //}
+                    if (this.Control.ComputeEnergyProperties && this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) {
+                        for (int d = 0; d < D; d++) {
+                            this.prevVel[d].Clear();
+                            this.prevVel[d].Acc(1.0, this.CurrentVel[d]);
+                        }
+                        //if (TimestepInt > 1) {
+                        //    this.pprevKineticEnergy.Clear();
+                        //    this.pprevKineticEnergy.Acc(1.0, this.prevKineticEnergy);
+                        //}
+                        //this.prevKineticEnergy.Clear();
+                        //this.prevKineticEnergy.Acc(1.0, this.DerivedKineticEnergy);
+                    }
 
 
                     // fields setup

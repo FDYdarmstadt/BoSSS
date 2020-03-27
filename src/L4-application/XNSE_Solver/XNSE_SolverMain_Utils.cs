@@ -277,138 +277,138 @@ namespace BoSSS.Application.XNSE_Solver {
 
             #region integral energy computation 
 
-            //if (this.Control.ComputeEnergyProperties) {
+            if (this.Control.ComputeEnergyProperties) {
 
-            //    // compute current energies
-            //    double[] rhoS = new double[] { this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B };
-            //    double currentKinEnergy = EnergyUtils.GetKineticEnergy(this.LsTrk, this.XDGvelocity.Velocity.ToArray(), rhoS, this.m_HMForder);
-            //    double currentSurfEnergy = EnergyUtils.GetSurfaceEnergy(this.LsTrk, this.Control.PhysicalParameters.Sigma, this.m_HMForder);
-            //    EnergyUtils.ProjectKineticEnergy(this.DerivedKineticEnergy, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), rhoS, this.m_HMForder);
+                // compute current energies
+                double[] rhoS = new double[] { this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B };
+                double currentKinEnergy = EnergyUtils.GetKineticEnergy(this.LsTrk, this.XDGvelocity.Velocity.ToArray(), rhoS, this.m_HMForder);
+                double currentSurfEnergy = EnergyUtils.GetSurfaceEnergy(this.LsTrk, this.Control.PhysicalParameters.Sigma, this.m_HMForder);
+                EnergyUtils.ProjectKineticEnergy(this.DerivedKineticEnergy, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), rhoS, this.m_HMForder);
 
-            //    // compute changerates (kinetic, surface)
-            //    double CR_KinEnergy = 0.0;
-            //    double CR_SurfEnergy = 0.0;
-            //    if (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) {
-            //        double prevKinEnergy = EnergyUtils.GetKineticEnergy(this.LsTrk, this.prevVel, rhoS, this.m_HMForder, 0);
-            //        CR_KinEnergy = (currentKinEnergy - prevKinEnergy) / dt;
+                // compute changerates (kinetic, surface)
+                double CR_KinEnergy = 0.0;
+                double CR_SurfEnergy = 0.0;
+                if (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) {
+                    double prevKinEnergy = EnergyUtils.GetKineticEnergy(this.LsTrk, this.prevVel, rhoS, this.m_HMForder, 0);
+                    CR_KinEnergy = (currentKinEnergy - prevKinEnergy) / dt;
 
-            //        double prevSurfEnergy = EnergyUtils.GetSurfaceEnergy(this.LsTrk, this.Control.PhysicalParameters.Sigma, this.m_HMForder, 0);
-            //        CR_SurfEnergy = (currentSurfEnergy - prevSurfEnergy) / dt;
+                    double prevSurfEnergy = EnergyUtils.GetSurfaceEnergy(this.LsTrk, this.Control.PhysicalParameters.Sigma, this.m_HMForder, 0);
+                    CR_SurfEnergy = (currentSurfEnergy - prevSurfEnergy) / dt;
 
-            //        Console.WriteLine("current kinetic energy = {0}; actual changerate = {1}", currentKinEnergy, CR_KinEnergy);
-            //        Console.WriteLine("current surface energy = {0}; actual changerate = {1}", currentSurfEnergy, CR_SurfEnergy);
-            //    }
+                    //Console.WriteLine("current kinetic energy = {0}; actual changerate = {1}", currentKinEnergy, CR_KinEnergy);
+                    //Console.WriteLine("current surface energy = {0}; actual changerate = {1}", currentSurfEnergy, CR_SurfEnergy);
+                }
 
-            //    // changerate of kinetic energy from discretization
-            //    double[] muS = new double[] { this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B };
-            //    DGField[] extForce = new DGField[this.LsTrk.GridDat.SpatialDimension];
-            //    for (int i = 0; i < this.LsTrk.GridDat.SpatialDimension; i++) {
-            //        extForce[i] = this.XDGvelocity.Gravity[i].CloneAs();
-            //        for (int iSpc = 0; iSpc < LsTrk.SpeciesIdS.Count; iSpc++) {
-            //            SpeciesId spcId = LsTrk.SpeciesIdS[iSpc];
-            //            switch (LsTrk.GetSpeciesName(spcId)) {
-            //                case "A": {
-            //                        (extForce[i] as XDGField).GetSpeciesShadowField("A").Scale(this.Control.PhysicalParameters.rho_A);
-            //                        break;
-            //                    }
-            //                case "B": {
-            //                        (extForce[i] as XDGField).GetSpeciesShadowField("B").Scale(this.Control.PhysicalParameters.rho_B);
-            //                        break;
-            //                    }
-            //            }
-            //        }
-            //    }
-            //    double kineticDissipationBulk = EnergyUtils.GetKineticDissipation(this.LsTrk, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
-            //    //EnergyUtils.ProjectKineticDissipation(this.KineticDissipation, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
-            //    //EnergyUtils.ProjectPowerOfStresses(this.PowerOfStresses, this.LsTrk, this.Pressure, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
+                // changerate of kinetic energy from discretization
+                double[] muS = new double[] { this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B };
+                DGField[] extForce = new DGField[this.LsTrk.GridDat.SpatialDimension];
+                for (int i = 0; i < this.LsTrk.GridDat.SpatialDimension; i++) {
+                    extForce[i] = this.XDGvelocity.Gravity[i].CloneAs();
+                    for (int iSpc = 0; iSpc < LsTrk.SpeciesIdS.Count; iSpc++) {
+                        SpeciesId spcId = LsTrk.SpeciesIdS[iSpc];
+                        switch (LsTrk.GetSpeciesName(spcId)) {
+                            case "A": {
+                                    (extForce[i] as XDGField).GetSpeciesShadowField("A").Scale(this.Control.PhysicalParameters.rho_A);
+                                    break;
+                                }
+                            case "B": {
+                                    (extForce[i] as XDGField).GetSpeciesShadowField("B").Scale(this.Control.PhysicalParameters.rho_B);
+                                    break;
+                                }
+                        }
+                    }
+                }
+                double kineticDissipationBulk = EnergyUtils.GetKineticDissipation(this.LsTrk, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
+                //EnergyUtils.ProjectKineticDissipation(this.KineticDissipation, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
+                //EnergyUtils.ProjectPowerOfStresses(this.PowerOfStresses, this.LsTrk, this.Pressure, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
 
-            //    // changerate of surface energy form discretization
-            //    ConventionalDGField[] meanVelocity = XNSEUtils.GetMeanVelocity(this.XDGvelocity.Velocity, this.LsTrk,
-            //        this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B);
-            //    double SurfDivergence = EnergyUtils.GetSurfaceChangerate(this.LsTrk, meanVelocity, this.m_HMForder);
+                // changerate of surface energy form discretization
+                ConventionalDGField[] meanVelocity = XNSEUtils.GetMeanVelocity(this.XDGvelocity.Velocity, this.LsTrk,
+                    this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B);
+                double SurfDivergence = EnergyUtils.GetSurfaceChangerate(this.LsTrk, meanVelocity, this.m_HMForder);
 
-            //    //EnergyUtils.ProjectEnergyBalanceNorm(this.EnergyJumpCondition, 1.0, this.Pressure, this.XDGvelocity.Velocity, meanVelocity, this.Curvature, muS[0], muS[1], this.Control.PhysicalParameters.Sigma, this.m_HMForder);
-
-
-            //    // logging
-            //    this.EnergyLogger.TimeStep = TimestepInt;
-            //    this.EnergyLogger.CustomValue(phystime + dt, "PhysicalTime");
-            //    this.EnergyLogger.CustomValue(currentKinEnergy, "KineticEnergy");
-            //    this.EnergyLogger.CustomValue(currentSurfEnergy, "SurfaceEnergy");
-            //    this.EnergyLogger.CustomValue(CR_KinEnergy, "ChangerateKineticEnergy");
-            //    this.EnergyLogger.CustomValue(CR_SurfEnergy, "ChangerateSurfaceEnergy");
-            //    this.EnergyLogger.CustomValue(SurfDivergence, "SurfaceDivergence");
-            //    this.EnergyLogger.CustomValue(kineticDissipationBulk, "KineticDissipationBulk");
+                //EnergyUtils.ProjectEnergyBalanceNorm(this.EnergyJumpCondition, 1.0, this.Pressure, this.XDGvelocity.Velocity, meanVelocity, this.Curvature, muS[0], muS[1], this.Control.PhysicalParameters.Sigma, this.m_HMForder);
 
 
-            //    // surface viscosity parts
-            //    if (this.Control.AdvancedDiscretizationOptions.SurfStressTensor != SurfaceSressTensor.Isotropic) {
-
-            //        double shearViscEnergyCR = 0.0;
-            //        double dilViscEnergyCR = 0.0;
-
-            //        // surface shear viscosity energy
-            //        if (this.Control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.SurfaceRateOfDeformation
-            //            || this.Control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
-
-            //            shearViscEnergyCR = EnergyUtils.GetInterfaceShearViscosityEnergyCR(this.LsTrk, meanVelocity, this.Control.PhysicalParameters.mu_I, this.m_HMForder);
-            //        }
-
-            //        // surface dilatational viscosity energy
-            //        if (this.Control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.SurfaceRateOfDeformation
-            //            || this.Control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
-
-            //            dilViscEnergyCR = EnergyUtils.GetInterfaceDilatationalViscosityEnergyCR(this.LsTrk, meanVelocity, this.Control.PhysicalParameters.lambda_I, this.m_HMForder);
-            //        }
+                // logging
+                this.EnergyLogger.TimeStep = TimestepInt;
+                this.EnergyLogger.CustomValue(phystime + dt, "PhysicalTime");
+                this.EnergyLogger.CustomValue(currentKinEnergy, "KineticEnergy");
+                this.EnergyLogger.CustomValue(currentSurfEnergy, "SurfaceEnergy");
+                this.EnergyLogger.CustomValue(CR_KinEnergy, "ChangerateKineticEnergy");
+                this.EnergyLogger.CustomValue(CR_SurfEnergy, "ChangerateSurfaceEnergy");
+                this.EnergyLogger.CustomValue(SurfDivergence, "SurfaceDivergence");
+                this.EnergyLogger.CustomValue(kineticDissipationBulk, "KineticDissipationBulk");
 
 
-            //        this.EnergyLogger.CustomValue(shearViscEnergyCR, "ShearViscosityDR");
-            //        this.EnergyLogger.CustomValue(dilViscEnergyCR, "DilatationalViscosityDR");
+                // surface viscosity parts
+                if (this.Control.AdvancedDiscretizationOptions.SurfStressTensor != SurfaceSressTensor.Isotropic) {
 
-            //        Console.WriteLine("current kinetic energy dissipation from discretization = {0}", kineticDissipationBulk + shearViscEnergyCR + dilViscEnergyCR);
+                    double shearViscEnergyCR = 0.0;
+                    double dilViscEnergyCR = 0.0;
 
-            //    } else {
+                    // surface shear viscosity energy
+                    if (this.Control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.SurfaceRateOfDeformation
+                        || this.Control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
 
-            //        Console.WriteLine("current kinetic energy dissipation from discretization = {0}", kineticDissipationBulk);
-            //    }
+                        shearViscEnergyCR = EnergyUtils.GetInterfaceShearViscosityEnergyCR(this.LsTrk, meanVelocity, this.Control.PhysicalParameters.mu_I, this.m_HMForder);
+                    }
 
+                    // surface dilatational viscosity energy
+                    if (this.Control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.SurfaceRateOfDeformation
+                        || this.Control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
 
-            //    // logging
-            //    // =======
-
-            //    this.EnergyLogger.NextTimestep(true);
-
-
-            //    //double[] RhoS = new double[] { this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B };
-            //    //double newKinEnergy = XNSEUtils.GetKineticEnergy(this.LsTrk, this.CurrentVel, RhoS, this.m_HMForder);
-            //    //double oldKinEnergy;
-            //    //if (base.Control.CompMode == AppControl._CompMode.Transient) {
-            //    //    DGField[] prevVel;
-            //    //    if (this.XDGvelocity != null)
-            //    //        prevVel = this.XDGvelocity.Velocity.ToArray();//<DGField>();
-            //    //    else
-            //    //        prevVel = this.DGvelocity.Velocity.ToArray();
-            //    //    oldKinEnergy = XNSEUtils.GetKineticEnergy(this.LsTrk, prevVel, RhoS, this.m_HMForder);
-            //    //} else if (base.Control.CompMode == AppControl._CompMode.Steady) {
-            //    //    oldKinEnergy = newKinEnergy;
-            //    //} else {
-            //    //    throw new NotSupportedException();
-            //    //}
-            //    //double surfEnergy = XNSEUtils.GetSurfaceEnergy(this.LsTrk, this.Control.PhysicalParameters.Sigma.Abs(), this.m_HMForder);
+                        dilViscEnergyCR = EnergyUtils.GetInterfaceDilatationalViscosityEnergyCR(this.LsTrk, meanVelocity, this.Control.PhysicalParameters.lambda_I, this.m_HMForder);
+                    }
 
 
-            //    //// Logging and Console Output
-            //    //// ===========================
+                    this.EnergyLogger.CustomValue(shearViscEnergyCR, "ShearViscosityDR");
+                    this.EnergyLogger.CustomValue(dilViscEnergyCR, "DilatationalViscosityDR");
 
-            //    //this.EnergyLogger.TimeStep = TimestepInt;
-            //    //this.EnergyLogger.CustomValue(phystime + dt, "PhysicalTime");
-            //    //this.EnergyLogger.CustomValue(oldKinEnergy, "OldKineticEnergy");
-            //    //this.EnergyLogger.CustomValue(newKinEnergy, "NewKineticEnergy");
-            //    //this.EnergyLogger.CustomValue(surfEnergy, "SurfaceEnergy");
+                    Console.WriteLine("current kinetic energy dissipation from discretization = {0}", kineticDissipationBulk + shearViscEnergyCR + dilViscEnergyCR);
 
-            //    //this.EnergyLogger.NextTimestep(true);
+                } else {
 
-            //}
+                    Console.WriteLine("current kinetic energy dissipation from discretization = {0}", kineticDissipationBulk);
+                }
+
+
+                // logging
+                // =======
+
+                this.EnergyLogger.NextTimestep(true);
+
+
+                //double[] RhoS = new double[] { this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B };
+                //double newKinEnergy = XNSEUtils.GetKineticEnergy(this.LsTrk, this.CurrentVel, RhoS, this.m_HMForder);
+                //double oldKinEnergy;
+                //if (base.Control.CompMode == AppControl._CompMode.Transient) {
+                //    DGField[] prevVel;
+                //    if (this.XDGvelocity != null)
+                //        prevVel = this.XDGvelocity.Velocity.ToArray();//<DGField>();
+                //    else
+                //        prevVel = this.DGvelocity.Velocity.ToArray();
+                //    oldKinEnergy = XNSEUtils.GetKineticEnergy(this.LsTrk, prevVel, RhoS, this.m_HMForder);
+                //} else if (base.Control.CompMode == AppControl._CompMode.Steady) {
+                //    oldKinEnergy = newKinEnergy;
+                //} else {
+                //    throw new NotSupportedException();
+                //}
+                //double surfEnergy = XNSEUtils.GetSurfaceEnergy(this.LsTrk, this.Control.PhysicalParameters.Sigma.Abs(), this.m_HMForder);
+
+
+                //// Logging and Console Output
+                //// ===========================
+
+                //this.EnergyLogger.TimeStep = TimestepInt;
+                //this.EnergyLogger.CustomValue(phystime + dt, "PhysicalTime");
+                //this.EnergyLogger.CustomValue(oldKinEnergy, "OldKineticEnergy");
+                //this.EnergyLogger.CustomValue(newKinEnergy, "NewKineticEnergy");
+                //this.EnergyLogger.CustomValue(surfEnergy, "SurfaceEnergy");
+
+                //this.EnergyLogger.NextTimestep(true);
+
+            }
 
 
 
@@ -1043,6 +1043,10 @@ namespace BoSSS.Application.XNSE_Solver {
             Log.Flush();
         }
 
+
+        List<double[]> contactPointsRef;
+
+        
         /// <summary>
         /// writes one line to the Log File
         /// </summary>
@@ -1133,10 +1137,56 @@ namespace BoSSS.Application.XNSE_Solver {
                         contactVelocities = returnValues.Item2;
                         contactAngles = returnValues.Item3;
 
-                        for (int p = 0; p < contactAngles.Count; p++) {
+
+                        List<double[]> contactPointsSorted = new List<double[]>();
+                        List<double[]> contactVelocitiesSorted = new List<double[]>();
+                        List<double> contactAnglesSorted = new List<double>();
+
+                        if (contactPointsRef == null) {
+                            contactPointsRef = contactPoints;
+                            contactPointsSorted = contactPoints;
+                            contactVelocitiesSorted = contactVelocities; ;
+                            contactAnglesSorted = contactAngles;
+                        } else {
+                            // sort
+                            double eps = 1e-7;
+
+                            do {
+                                contactPointsSorted.Clear();
+                                contactVelocitiesSorted.Clear();
+                                contactAnglesSorted.Clear();
+
+                                eps *= 10;
+                                //Console.WriteLine("sorting contact line points");
+                                foreach (var ptR in contactPointsRef) {
+                                    //Console.WriteLine("ref point: ({0}, {1})", ptR[0], ptR[1]);
+                                    for (int i = 0; i < contactAngles.Count(); i++) {
+                                        double[] pt = contactPoints.ElementAt(i);
+                                        //Console.WriteLine("sorting point: ({0}, {1})", pt[0], pt[1]);
+                                        double xDiff = Math.Abs(pt[0] - ptR[0]);
+                                        //Console.WriteLine("x diff = {0}", xDiff);
+                                        double yDiff = Math.Abs(pt[1] - ptR[1]);
+                                        //Console.WriteLine("y diff = {0}", yDiff);
+                                        if (xDiff < eps && yDiff < eps) {
+                                            //Console.WriteLine("sorted");
+                                            contactPointsSorted.Add(pt.CloneAs());
+                                            contactVelocitiesSorted.Add(contactVelocities.ElementAt(i).CloneAs());
+                                            contactAnglesSorted.Add(contactAngles.ElementAt(i));
+                                            break;
+                                        }
+                                    }
+                                }
+
+                            } while (contactPointsSorted.Count != contactPointsRef.Count && eps < 1.0);
+
+                            contactPointsRef = contactPointsSorted;
+                        }
+
+
+                        for (int p = 0; p < contactAnglesSorted.Count; p++) {
                             string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", TimestepNo, phystime,
-                                contactPoints.ElementAt(p)[0], contactPoints.ElementAt(p)[1], 
-                                contactVelocities.ElementAt(p)[0], contactVelocities.ElementAt(p)[1], contactAngles.ElementAt(p));
+                                contactPointsSorted.ElementAt(p)[0], contactPointsSorted.ElementAt(p)[1],
+                                contactVelocitiesSorted.ElementAt(p)[0], contactVelocitiesSorted.ElementAt(p)[1], contactAnglesSorted.ElementAt(p));
                             Log.WriteLine(line);
                         }
                         Log.Flush();

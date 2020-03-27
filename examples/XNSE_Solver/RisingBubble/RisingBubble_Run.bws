@@ -5,17 +5,18 @@ restart
   _______________________
 
 Databases loaded:
-List of 3 instances of IDatabaseInfo {
+List of 4 instances of IDatabaseInfo {
   0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
   1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
-  2: { Session Count = 42; Grid Count = 611; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  2: { Session Count = 49; Grid Count = 621; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 34; Grid Count = 2114; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
 }
 
  Console ready for input. Type 'help' for help.
 
 ==============
 //var myDb = OpenOrCreateDefaultDatabase();
-var myDb = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB")
+var myDb = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB")
 **************
 ==============
 ExecutionQueues;
@@ -33,6 +34,7 @@ var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\smuda\binari
 **************
 ==============
 using BoSSS.Application.XNSE_Solver;
+using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 **************
 ==============
 **************
@@ -42,7 +44,7 @@ WorkflowMgm.Init("RisingBubble");   // set project name
 Project name is set to 'RisingBubble'.
 
 ==============
-WorkflowMgm.SetEqualityBasedSessionJobControllCorrelation();
+//WorkflowMgm.SetEqualityBasedSessionJobControllCorrelation();
 **************
 ==============
 **************
@@ -62,11 +64,12 @@ int setup = 0;
 // ===========================
 **************
 ==============
-var GridSeq = new IGridInfo[1];
-int[] kelemSeq = new int[]{ 20 };
+var GridSeq = new IGridInfo[2];
+int[] kelemSeq = new int[]{ 20, 40, 80, 160 };
+//int[] kelemSeq = new int[]{ 10, 60 };
 **************
 ==============
-double dt = 3e-3; 
+//double[] dt = 3e-3; 
 **************
 ==============
 for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
@@ -96,8 +99,32 @@ for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
             et = 4;
         return et;
     });
+    
+    grd.AddPredefinedPartitioning("ZwoProcSplit", delegate (double[] X) {
+        int rank;
+        double x = X[0];
+        if (x < 0.5)
+            rank = 0;
+        else
+            rank = 1;
+        return rank;
+    });
 
-    grd.Name = "RisingBubble_test";
+    grd.AddPredefinedPartitioning("VierProcSplit", delegate (double[] X) {
+        int rank;
+        double x = X[0];
+        if (x < 0.35)
+            rank = 0;
+        else if (x < 0.5)
+            rank = 1;
+        else if (x < 0.75)
+            rank = 2;
+        else
+            rank = 3;
+        return rank;
+    });
+
+    grd.Name = "RisingBubble_ConvergenceStudyMesh"+iGrid;
     myDb.SaveGrid(ref grd);
     
     GridSeq[iGrid] = grd;
@@ -105,8 +132,35 @@ for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
 **************
 Grid Edge Tags changed.
 An equivalent grid is already present in the database -- the grid will not be saved.
+Grid Edge Tags changed.
+An equivalent grid is already present in the database -- the grid will not be saved.
 
 ==============
+// Fourier Level Set
+// =================
+double[] center = new double[] { 0.5, 0.5 }; 
+double radius = 0.25;
+
+int numSp = 640;    // should increase for higher resolutions
+double[] FourierP = new double[numSp];
+double[] samplP = new double[numSp];
+for (int sp = 0; sp < numSp; sp++) {
+    FourierP[sp] = sp * (2 * Math.PI / (double)numSp);
+    samplP[sp] = radius;
+}
+
+var FLSCSeq = new FourierLevSetControl[GridSeq.Length];
+//double circum = 2.0 * Math.PI * radius;
+//double filter = (circum * 20.0) / ((double)numSp / 2.0);
+for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
+FLSCSeq[iGrid] = new BoSSS.Solution.LevelSetTools.FourierLevelSet.FourierLevSetControl(FourierType.Polar, 2 * Math.PI, FourierP, samplP, 1.0 / (double)kelemSeq[iGrid]) {
+    //C.FourierLevSetControl = new FourierLevSetControl(FourierType.Polar, 2.0*Math.PI, PeriodicFunc, radius, 1.0/(double)kelem) { 
+    center = center,
+    FourierEvolve = Fourier_Evolution.MaterialPoints,
+    centerMove = CenterMovement.Reconstructed
+    //curvComp_extended = false
+};
+}
 **************
 ==============
 // ======================
@@ -120,13 +174,24 @@ using BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases;
 int[] degS = new int[] { 2 };
 **************
 ==============
+double[,] dts = new double[,] {{5e-3, 1.5e-3, 6e-4, 2e-4}}; //, {3e-3, 1e-3, 4e-4, 1.5e-4}};
+//int[] timesteps = new int[,] {{600, 2000, 5000, 15000}, {1000, 3000, 7500, 20000}};
+//double[,] dts = new double[,] {{9e-3, 3e-3, 1e-3}};
+//double[,] dts = new double[,] {{1e-2, 1e-3}, {1e-2, 6e-4}};
 **************
 ==============
-XNSE_Control[,] controls = new XNSE_Control[GridSeq.Length, degS.Length];
+int[,] logPs = new int[,] {{1, 2, 5, 10}}; //, {1, 3, 5, 10}};
+//int[,] logPs = new int[,] {{1, 1, 3}};
+//int[,] logPs = new int[,] {{1, 3}, {1, 5}};
 **************
 ==============
-for(int iDeg = 0; iDeg < degS.Length; iDeg++) {
-for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
+int deg0 = 0;
+int grd0 = 1;
+XNSE_Control[,] controls = new XNSE_Control[degS.Length-deg0, GridSeq.Length-grd0];
+**************
+==============
+for(int iDeg = deg0; iDeg < degS.Length; iDeg++) {
+for(int iGrd = grd0; iGrd < GridSeq.Length; iGrd++) {
     
     var C = RisingBubble.RB_forWorksheet(setup);
     
@@ -136,74 +201,107 @@ for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
     C.SetDGdegree(pDeg);
     
     C.SetGrid(grd);
+    C.GridPartType    = GridPartType.Predefined;
+    C.GridPartOptions = "VierProcSplit";
     C.AddBoundaryValue("wall_lower");
     C.AddBoundaryValue("wall_upper");
     C.AddBoundaryValue("freeslip_left");
     C.AddBoundaryValue("freeslip_right");
     
-    C.dtMin         = dt;
-    C.dtMax         = dt;
-    C.NoOfTimesteps = (int)(3.0/dt);
+    C.dtMin         = dts[iDeg, iGrd];
+    C.dtMax         = dts[iDeg, iGrd];
+    C.NoOfTimesteps = (int)(3.0/dts[iDeg, iGrd]);
     
-    C.SessionName = "RisingBubble_test2_k" + pDeg + "_mesh" + iGrd;
+  
+    C.SetLevelSetMethod(4, FLSCSeq[iGrd]);
+    //C.AdaptiveMeshRefinement = true;
+    //C.RefineStrategy         = XNSE_Control.RefinementStrategy.constantInterface;
+    //C.BaseRefinementLevel    = 1;
     
-    controls[iDeg,iGrd] = C;
+    C.LogPeriod  = logPs[iDeg, iGrd];
+    C.saveperiod = 10*logPs[iDeg, iGrd];   
+    
+    //C.SessionName = "RisingBubble_ConvStudy_k" + pDeg + "_mesh" + iGrd;
+    C.SessionName = "RisingBubble_tc1_"+C.methodTagLS+"_k" + pDeg + "_mesh" + iGrd + "_parallelTest2";
+    
+    controls[iDeg-deg0,iGrd-grd0] = C;
     C.CreateJob(); // job will be permanently linked to control object
 }
 }
 **************
-Info: setting database path to: \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
 
 ==============
 //Info(controls[0,0]);
+controls[0,0].SessionName
+**************
+RisingBubble_tc1_Fourier_k2_mesh1_parallelTest2
+==============
+//var j00 = controls[0,0].GetJob();
 **************
 ==============
-var j00 = controls[0,0].GetJob();
+//LastError
 **************
 ==============
-j00.Activate(myBatch);
+//j00.Activate(myBatch);
 **************
+==============
+//j00.Status;
+**************
+==============
+//j00.Stdout;
+**************
+==============
+//j00.Stderr;
+**************
+==============
+foreach(var cntrl in controls) {
+    Console.WriteLine("Submitting Sessions: {0}", cntrl.SessionName);
+    var job              = cntrl.GetJob();
+    job.NumberOfMPIProcs = 4;
+    job.Activate(myBatch);
+}
+**************
+Submitting Sessions: RisingBubble_tc1_Fourier_k2_mesh1_parallelTest2
 Job not submitted yet, or no result session is known - starting submission.
 Warning: no database is set for the job to submit; nothing ma be saved.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\RisingBubble-XNSE_Solver2020Mar19_174737
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\RisingBubble-XNSE_Solver2020Mar27_125006
 copied 32 files.
    writing file: control.obj
    copied 'amd64' runtime.
 deployment finished.
 
 ==============
-j00.Status;
-**************
-InProgress
-==============
-//j00.Stdout;
 **************
 ==============
-j00.Stderr;
 **************
-   at BoSSS.Foundation.XDG.MultiphaseCellAgglomerator.FindAgglomeration(LevelSetTracker Tracker, SpeciesId spId, Double AgglomerationThreshold, MultidimensionalArray CellVolumes, MultidimensionalArray edgeArea, Boolean AgglomerateNewborn, Boolean AgglomerateDeceased, Boolean ExceptionOnFailedAgglomeration, MultidimensionalArray[] oldCellVolumes, Double[] oldTs__AgglomerationTreshold, Double NewbornAndDecasedThreshold)
-   at BoSSS.Foundation.XDG.MultiphaseCellAgglomerator..ctor(LevelSetTracker lsTrk, SpeciesId[] Spc, Int32 CutCellsQuadOrder, Double __AgglomerationTreshold, Boolean AgglomerateNewborn, Boolean AgglomerateDecased, Boolean ExceptionOnFailedAgglomeration, Double[] oldTs__AgglomerationTreshold, Double NewbornAndDecasedThreshold)
-   at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.AssembleMatrixCallback(BlockMsrMatrix& System, Double[]& Affine, BlockMsrMatrix& PrecondMassMatrix, DGField[] argCurSt, Boolean Linearization)
-   at BoSSS.Solution.AdvancedSolvers.NonlinearSolver.UpdateLinearization(IEnumerable`1 CurrentState)
-   at BoSSS.Solution.AdvancedSolvers.NonlinearSolver.Init[S](CoordinateVector X, S RHS, Double[]& Sol1, Double[]& Res1)
-   at BoSSS.Solution.AdvancedSolvers.FixpointIterator.SolverDriver[S](CoordinateVector SolutionVec, S RHS)
-   at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve_Increment(Int32 increment, Double phystime, Double dt, Boolean ComputeOnlyResidual)
-   at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve(Double phystime, Double dt, Boolean ComputeOnlyResidual)
-   at BoSSS.Application.XNSE_Solver.XNSE_SolverMain.RunSolverOneStep(Int32 TimestepInt, Double phystime, Double dt)
-   at BoSSS.Solution.Application`1.RunSolverMode()
-   at BoSSS.Solution.Application`1.AppEntry(Func`1 ApplicationFactory, CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy)
-   at BoSSS.Solution.Application`1._Main(String[] args, Boolean noControlFile, Func`1 ApplicationFactory)
-
-
-========================================
-========================================
-Exception:
-Agglomeration failed - no candidate for agglomeration found
-========================================
-========================================
-
-
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+//databases.Pick(3).Sessions.Take(4).DeleteAll()
+**************
+==============
+**************
+==============
+//databases.Pick(3).Sessions.Pick(2).Delete()
+**************
+==============
+**************
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============
@@ -231,7 +329,8 @@ Agglomeration failed - no candidate for agglomeration found
 ==============
 **************
 ==============
-//databases.Pick(2).Sessions.Pick(0).Delete()
+**************
+==============
 **************
 ==============
 **************

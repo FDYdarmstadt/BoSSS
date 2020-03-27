@@ -640,6 +640,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
+            //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+
             //_DbPath = @"D:\local\local_Testcase_databases\Testcase_RisingBubble";
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
 
@@ -885,7 +887,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.Option_LevelSetEvolution = LevelSetEvolution.Fourier;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Fourier;
-            C.FourierLevSetControl.Timestepper = FourierLevelSet_Timestepper.RungeKutta1901;
+            C.FourierLevSetControl.Timestepper = FourierLevelSet_Timestepper.TVD3;
+
+            //C.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
             #endregion
 
@@ -910,12 +914,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
-            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
 
 
-            //C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
-            //C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-            //C.AdvancedDiscretizationOptions.surfTensionMode = Solution.XNSECommon.SurfaceTensionMode.Curvature_Projected;
+            //C.Option_LevelSetEvolution = LevelSetEvolution.ExtensionVelocity;
+            //C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
+            //C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            ////C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
+            ////C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
             //C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
             #endregion
@@ -925,18 +931,18 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF3;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             //C.dt_increment = 20;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             //C.TimeStepper = XNSE_Control._Timestepper.BDF2;
-            double dt = 3e-3; // (1.0 / (double)kelem) / 16.0;
+            double dt = (1.0 / (double)kelem) / 16.0;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 3; // (int)(3 / dt);
+            C.NoOfTimesteps = (int)(3 / dt);
             C.saveperiod = 10;
 
             #endregion
@@ -946,6 +952,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         }
 
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="setup"> physical setup </param>
+        /// <param name="method"> method setup regarding the level set handling </param>
+        /// <returns></returns>
         public static XNSE_Control RB_forWorksheet(int setup) {
 
             XNSE_Control C = new XNSE_Control();
@@ -1064,15 +1076,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // =======================
             #region levset
 
-            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
-
-            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
-
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
-
-            //C.AdaptiveMeshRefinement = true;
-            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            //C.RefinementLevel = 1;
+            // need to be set by user via setGrid() in worksheet
 
             #endregion
 

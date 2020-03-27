@@ -1,0 +1,139 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 4 instances of IDatabaseInfo {
+  0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
+  1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
+  2: { Session Count = 49; Grid Count = 621; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 19; Grid Count = 1027; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Application.XNSE_Solver;
+**************
+==============
+WorkflowMgm.Init("RisingBubble")
+**************
+Project name is set to 'RisingBubble'.
+
+==============
+WorkflowMgm.Sessions;
+**************
+List of 15 instances of ISessionInfo {
+  0: RisingBubble	RisingBubble_test5_k2_mesh0	03/20/2020 17:05:24	d42334d4...
+  1: RisingBubble	RisingBubble_test3_k2_mesh0*	03/20/2020 11:32:38	93ed2247...
+  2: RisingBubble	RisingBubble_test2_k2_mesh0*	03/19/2020 20:50:14	aed2439e...
+  3: RisingBubble	RisingBubble_test_k2_mesh0*	03/19/2020 17:47:43	dc391866...
+  4: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh1	03/23/2020 22:05:22	44504bf6...
+  5: RisingBubble	RisingBubble_ConvStudy_k2_mesh1	03/23/2020 10:43:12	97e8e806...
+  6: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh0	03/23/2020 22:05:20	d3c1cfe5...
+  7: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh2*	03/23/2020 22:05:28	931391e0...
+  8: RisingBubble	RisingBubble_ConvStudy_k2_mesh0	03/23/2020 10:43:07	6106f0e5...
+  9: RisingBubble	RisingBubble_ConvStudy_k3_mesh3*	03/23/2020 11:06:25	7fe15c36...
+  10: RisingBubble	RisingBubble_ConvStudy_k3_mesh2*	03/23/2020 11:06:19	5a4ef53c...
+  11: RisingBubble	RisingBubble_ConvStudy_k2_mesh3*	03/23/2020 11:06:06	be84e68d...
+  12: RisingBubble	RisingBubble_ConvStudy_k2_mesh2*	03/23/2020 11:06:01	b74d773f...
+  13: RisingBubble	RisingBubble_ConvStudy_k3_mesh1*	03/23/2020 10:43:42	de42008a...
+  14: RisingBubble	RisingBubble_ConvStudy_k3_mesh0*	03/23/2020 10:43:43	403366e9...
+}
+==============
+var sess = WorkflowMgm.Sessions;
+**************
+==============
+int[] evalInd = new int[] { 0, 7, 13};
+List<ISessionInfo> sessEval = new List<ISessionInfo>();
+foreach(int eI in evalInd) {
+    sessEval.Add(sess.Pick(eI));
+}
+**************
+==============
+sessEval
+**************
+List of 3 instances of ISessionInfo {
+  0: RisingBubble	RisingBubble_test5_k2_mesh0	03/20/2020 17:05:24	d42334d4...
+  1: RisingBubble	RisingBubble_ConvStudy_k2_mesh0	03/23/2020 10:43:07	6106f0e5...
+  2: RisingBubble	RisingBubble_ConvStudy_k3_mesh0*	03/23/2020 10:43:43	403366e9...
+}
+==============
+**************
+==============
+var data = sessEval.ReadLogDataForXNSE(XNSE_Control.LoggingValues.RisingBubble);
+**************
+Element at 0: time vs area
+Element at 1: time vs center of mass - x
+Element at 2: time vs center of mass - y
+Element at 3: time vs circularity
+Element at 4: time vs rise velocity
+
+==============
+ISessionInfoExtensions.PlotData(data.ElementAt(3), "time", "circularity")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+ISessionInfoExtensions.PlotData(data.ElementAt(4), "time", "rise velocity")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+ISessionInfoExtensions.PlotData(data.ElementAt(0), "time", "area")
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+**************
+==============
+sess.Pick(10).Export().WithSupersampling(2).Do()
+**************
+Starting export process... Data will be written to the following directory:
+C:\Users\smuda\AppData\Local\BoSSS\plots\sessions\RisingBubble__RisingBubble_ConvStudy_k3_mesh0__403366e9-6ff9-457f-a88d-87abb5f3bac9
+==============
+**************
+==============
+**************
+==============
+sess
+**************
+List of 15 instances of ISessionInfo {
+  0: RisingBubble	RisingBubble_test5_k2_mesh0	03/20/2020 17:05:24	d42334d4...
+  1: RisingBubble	RisingBubble_test3_k2_mesh0*	03/20/2020 11:32:38	93ed2247...
+  2: RisingBubble	RisingBubble_test2_k2_mesh0*	03/19/2020 20:50:14	aed2439e...
+  3: RisingBubble	RisingBubble_test_k2_mesh0*	03/19/2020 17:47:43	dc391866...
+  4: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh1	03/23/2020 22:05:22	44504bf6...
+  5: RisingBubble	RisingBubble_ConvStudy_k2_mesh1	03/23/2020 10:43:12	97e8e806...
+  6: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh0	03/23/2020 22:05:20	d3c1cfe5...
+  7: RisingBubble	RisingBubble_tc2_ConvStudy_k2_mesh2*	03/23/2020 22:05:28	931391e0...
+  8: RisingBubble	RisingBubble_ConvStudy_k2_mesh0	03/23/2020 10:43:07	6106f0e5...
+  9: RisingBubble	RisingBubble_ConvStudy_k3_mesh3*	03/23/2020 11:06:25	7fe15c36...
+  10: RisingBubble	RisingBubble_ConvStudy_k3_mesh2*	03/23/2020 11:06:19	5a4ef53c...
+  11: RisingBubble	RisingBubble_ConvStudy_k2_mesh3*	03/23/2020 11:06:06	be84e68d...
+  12: RisingBubble	RisingBubble_ConvStudy_k2_mesh2*	03/23/2020 11:06:01	b74d773f...
+  13: RisingBubble	RisingBubble_ConvStudy_k3_mesh1*	03/23/2020 10:43:42	de42008a...
+  14: RisingBubble	RisingBubble_ConvStudy_k3_mesh0*	03/23/2020 10:43:43	403366e9...
+}
+==============
+int ind = 9;
+**************
+==============
+sess.Pick(ind).KeysAndQueries["SessionName"]
+**************
+RisingBubble_ConvStudy_k3_mesh3
+==============
+sess.Pick(ind).ID
+**************
+7fe15c36-0799-446f-933f-8f7f0f728168
+==============
+sess.Pick(ind).KeysAndQueries["NoOfTimesteps"]
+**************
+20000
+==============
+**************
+==============
+**************
+==============

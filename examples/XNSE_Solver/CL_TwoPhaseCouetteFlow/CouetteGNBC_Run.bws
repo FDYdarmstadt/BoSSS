@@ -5,17 +5,18 @@ restart
   _______________________
 
 Databases loaded:
-List of 3 instances of IDatabaseInfo {
+List of 4 instances of IDatabaseInfo {
   0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
   1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
-  2: { Session Count = 43; Grid Count = 611; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  2: { Session Count = 49; Grid Count = 621; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 14; Grid Count = 515; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
 }
 
  Console ready for input. Type 'help' for help.
 
 ==============
 //var myDb = OpenOrCreateDefaultDatabase();
-var myDb = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB")
+var myDb = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB")
 **************
 ==============
 ExecutionQueues;
@@ -39,7 +40,7 @@ using BoSSS.Application.XNSE_Solver;
 ==============
 WorkflowMgm.Init("TwoPhaseCouetteFlow");   // set project name
 **************
-Project name is set to 'RisingBubble'.
+Project name is set to 'TwoPhaseCouetteFlow'.
 
 ==============
 WorkflowMgm.SetEqualityBasedSessionJobControllCorrelation();
@@ -63,7 +64,7 @@ bool symmetric = true;
 **************
 ==============
 var GridSeq = new IGridInfo[1];
-int[] kelemSeq = new int[]{ 16 };
+int[] kelemSeq = new int[]{ 8 };
 **************
 ==============
 double dt = 0.2; 
@@ -78,12 +79,31 @@ for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
     double L = 27.2;
     double H = 13.6;
 
-    double[] Xnodes = GenericBlas.Linspace(0, 4 * L, 8 * kelem + 1);
+//    double[] Xnodes = GenericBlas.Linspace(0, 4 * L, 8 * kelem + 0);
+//    double[] Ynodes = GenericBlas.Linspace(0, H, kelem + 1);
+//    grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true);
+
+//    grd.EdgeTagNames.Add(1, "navierslip_linear_lower");
+//    grd.EdgeTagNames.Add(2, "navierslip_linear_upper");
+
+//    grd.DefineEdgeTags(delegate (double[] X) {
+//        byte et = 0;
+//        if (Math.Abs(X[1]) <= 1.0e-8)
+//            et = 1;
+//        if (Math.Abs(X[1] - H) <= 1.0e-8)
+//            et = 2;
+//        return et;
+//    });
+
+//    grd.Name = "CouetteCL_test";
+    
+    double[] Xnodes = GenericBlas.Linspace(0, 2 * L, 4 * kelem + 1);
     double[] Ynodes = GenericBlas.Linspace(0, H, kelem + 1);
-    grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true);
+    grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
 
     grd.EdgeTagNames.Add(1, "navierslip_linear_lower");
     grd.EdgeTagNames.Add(2, "navierslip_linear_upper");
+    grd.EdgeTagNames.Add(3, "pressure_outlet");
 
     grd.DefineEdgeTags(delegate (double[] X) {
         byte et = 0;
@@ -91,10 +111,15 @@ for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
             et = 1;
         if (Math.Abs(X[1] - H) <= 1.0e-8)
             et = 2;
+        if (Math.Abs(X[0]) <= 1.0e-8)
+            et = 3;
+        if (Math.Abs(X[0] - (2*L)) <= 1.0e-8)
+            et = 3;
         return et;
     });
 
-    grd.Name = "CouetteCL_test";
+    grd.Name = "CouetteCL_test2";
+    
     myDb.SaveGrid(ref grd);
     
     GridSeq[iGrid] = grd;
@@ -132,22 +157,28 @@ for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
     C.SetDGdegree(pDeg);
     
     C.SetGrid(grd);
+    C.AddBoundaryValue("pressure_outlet");
 
     C.dtMin         = dt;
     C.dtMax         = dt;
     C.NoOfTimesteps = (int)(200.0/dt);
     
-    //C.saveperiod = 1;
-    //C.LogPeriod  = 1;
+    C.saveperiod = 10;
+    C.LogPeriod  = 10;
     
-    C.SessionName = "CouetteGNBC_test_k" + pDeg + "_mesh" + iGrd;
+    C.AdaptiveMeshRefinement   = true;
+    C.RefineStrategy           = XNSE_Control.RefinementStrategy.constantInterface;
+    C.RefineNavierSlipBoundary = true;
+    C.BaseRefinementLevel      = 1;
+    
+    C.SessionName = "CouetteGNBC_testNewGrid_k" + pDeg + "_mesh" + iGrd;
     
     controls[iDeg,iGrd] = C;
     C.CreateJob(); // job will be permanently linked to control object
 }
 }
 **************
-Info: setting database path to: \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
 
 ==============
 //Info(controls[0,0]);
@@ -161,7 +192,7 @@ j00.Activate(myBatch);
 Job not submitted yet, or no result session is known - starting submission.
 Warning: no database is set for the job to submit; nothing ma be saved.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\RisingBubble-XNSE_Solver2020Mar19_205007
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\TwoPhaseCouetteFlow-XNSE_Solver2020Mar24_094118
 copied 32 files.
    writing file: control.obj
    copied 'amd64' runtime.
@@ -172,7 +203,7 @@ j00.Status;
 **************
 InProgress
 ==============
-//j00.Stdout;
+j00.Stdout;
 **************
 ==============
 j00.Stderr;
@@ -182,6 +213,7 @@ j00.Stderr;
 ==============
 **************
 ==============
+//WorkflowMgm.Sessions.DeleteAll()
 **************
 ==============
 **************
@@ -212,7 +244,27 @@ j00.Stderr;
 ==============
 **************
 ==============
-//databases.Pick(2).Sessions.Pick(0).Delete()
+//WorkflowMgm.Sessions.Pick(0).Delete()
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

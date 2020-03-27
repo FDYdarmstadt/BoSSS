@@ -362,7 +362,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 if (this.Control.Option_LevelSetEvolution != LevelSetEvolution.ExtensionVelocity)
                     ContinuityEnforcer.SetFarField(this.DGLevSet.Current, Near1, PosFF);
 
-                ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, Near, PosFF);
+                if (this.Control.Option_LevelSetEvolution == LevelSetEvolution.Fourier && this.Control.FourierLevSetControl.FType == FourierType.Polar) {
+                    Fourier_LevSet.ProjectToDGLevelSet(this.LevSet, this.LsTrk);
+                } else {
+                    ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, Near1, PosFF);
+                }
 
                 //PlotCurrentState(0.0, new TimestepNumber(new int[] { 0, 2 }), 3);
 
@@ -655,7 +659,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         }
 
                     case LevelSetEvolution.Fourier: {
-                            Fourier_Timestepper.moveLevelSet(dt, meanVelocity);
+                            Fourier_Timestepper.moveLevelSet(dt, meanVelocity, this.LsTrk.Regions.GetNearFieldMask(1));
                             if (incremental)
                                 Fourier_Timestepper.updateFourierLevSet();
                             Fourier_LevSet.ProjectToDGLevelSet(this.DGLevSet.Current, this.LsTrk);
@@ -775,7 +779,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 CellMask CC = LsTrk.Regions.GetCutCellMask4LevSet(0);
                 CellMask Near1 = LsTrk.Regions.GetNearMask4LevSet(0, 1);
                 CellMask PosFF = LsTrk.Regions.GetLevelSetWing(0, +1).VolumeMask;
-                ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, Near1, PosFF);
+                if (this.Control.Option_LevelSetEvolution == LevelSetEvolution.Fourier && this.Control.FourierLevSetControl.FType == FourierType.Polar) {
+                    Fourier_LevSet.ProjectToDGLevelSet(this.LevSet, this.LsTrk);                
+                } else {
+                    ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, Near1, PosFF);
+                }
 
                 if (this.Control.Option_LevelSetEvolution == LevelSetEvolution.FastMarching) {
                     CellMask Nearband = Near1.Union(CC);
