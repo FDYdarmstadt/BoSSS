@@ -27,28 +27,37 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             t.SetControls(controls);
             t.RunAndLog();
 
-            t.PrintResults();
+            t.PrintResults(Console.Out);
+            
             if(plotAndWait) {
                 using(var gp = t.Plot()) {
-                    //gp.Execute();
-                    //Console.WriteLine("plotting in interactive gnuplot session - press any key to continue...");
-                    //Console.ReadKey();
 
+                    if(title.IsEmptyOrWhite()) {
+                        gp.Execute();
+                        Console.WriteLine("plotting in interactive gnuplot session - press any key to continue...");
+                        Console.ReadKey();
+                    } else {
 
-                    // set terminal
-                    int xRes = 1024;
-                    int yRes = 768;
-                    gp.Terminal = string.Format("pngcairo size {0},{1}", xRes, yRes);
+                        // set terminal
+                        int xRes = 1024;
+                        int yRes = 768;
+                        gp.Terminal = string.Format("pngcairo size {0},{1}", xRes, yRes);
 
-                    string DateNtime = DateTime.Now.ToString("yyyyMMMdd_HHmmss");
-                    gp.OutputFile = title + "-" + DateNtime + ".png";
+                        string DateNtime = DateTime.Now.ToString("yyyyMMMdd_HHmmss");
+                        gp.OutputFile = title + "-" + DateNtime + ".png";
 
-                    // call gnuplot
-                    int exCode = gp.RunAndExit(); // run & close gnuplot
-                    if(exCode != 0) {
-                        Console.WriteLine("Gnuplot-internal error: exit code " + exCode);
+                        // call gnuplot
+                        int exCode = gp.RunAndExit(); // run & close gnuplot
+                        if(exCode != 0) {
+                            Console.WriteLine("Gnuplot-internal error: exit code " + exCode);
+                        }
+
+                        // ----------------------------------------
+                        using(var tw = new System.IO.StreamWriter(title + "-" + DateNtime + ".txt")) {
+                            t.PrintResults(tw);
+                        }
+
                     }
-
                 }
             }
 
@@ -211,13 +220,13 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// <summary>
         /// Phase 2, Examination: prints slope thresholds to console output. 
         /// </summary>
-        public virtual void PrintResults() {
+        public virtual void PrintResults(System.IO.TextWriter tw) {
 
             var data = this.ResultData;
             if(data == null)
                 throw new NotSupportedException("No data available: user must call 'RunAndLog()' first.");
 
-            Console.WriteLine("Condition Number Scaling Test slopes:");
+            tw.WriteLine("Condition Number Scaling Test slopes:");
 
             foreach (var ttt in ExpectedSlopes) {
                 double[] xVals = data[ttt.Item1.ToString()];
@@ -228,7 +237,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     double Slope = LogLogRegression(xVals, yVals);
 
                     string tstPasses = Slope <= ttt.Item3 ? "passed" : $"FAILED (threshold is {ttt.Item3})";
-                    Console.WriteLine($"    Slope for {yName}: {Slope:0.###e-00} -- {tstPasses}");
+                    tw.WriteLine($"    Slope for {yName}: {Slope:0.###e-00} -- {tstPasses}");
                 }
             }
 

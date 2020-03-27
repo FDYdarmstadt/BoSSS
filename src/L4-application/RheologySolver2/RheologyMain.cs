@@ -417,7 +417,7 @@ namespace BoSSS.Application.Rheology {
                     // Development switches to turn specific components on or off, 
                     // for the sake of iterative solver testing:
                     bool MomContinuitycoupling = true;
-                    bool ConstitutiveEqs = false;
+                    bool ConstitutiveEqs = true;
 
 
 
