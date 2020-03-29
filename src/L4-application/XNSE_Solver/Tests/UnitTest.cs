@@ -100,7 +100,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         [Test]
         public static void ScalingViscosityJumpTest(
 
-            [Values(1, 2, 3, 4)] int deg,
+            [Values(2, 3, 4)] int deg,
             [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode
             ) {
 
@@ -228,8 +228,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode);
 
             GenericTest(Tst, C);
+            if(deg < 3)
+                ScalingTest(Tst, new[] { 1, 2, 3 }, vmode, deg);
 
-            ScalingTest(Tst, new[] { 1, 2, 3 }, vmode, deg);
         }
 
 
