@@ -88,7 +88,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.SkipSolveAndEvaluateResidual = C.AdvancedDiscretizationOptions.CellAgglomerationThreshold <= 1e-6;
 
             GenericTest(Tst, C);
-            if(AgglomerationTreshold > 0.0) {
+            if(AgglomerationTreshold > 0.01 && deg > 1) {
                 ScalingTest(Tst, new[] { 4, 8, 16 }, vmode, deg);
             }
         }
@@ -203,9 +203,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.SkipSolveAndEvaluateResidual = !performsolve;
 
             GenericTest(Tst, C);
-            if(AgglomerationTreshold > 0.01) {
-                ScalingTest(Tst, new[] { 1, 2, 3 }, vmode, deg);
-            }
+            //if(AgglomerationTreshold > 0.01) {
+            //    ScalingTest(Tst, new[] { 1, 2, 3 }, vmode, deg);
+            //}
         }
 
         [Test]
@@ -250,9 +250,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.LinearSolver.MaxSolverIterations = 100;
             //C.Solver_MaxIterations = 100;
             GenericTest(Tst, C);
-            if(AgglomerationTreshold > 0) {
-                ScalingTest(Tst, new[] { 1, 2, 3 }, vmode, deg);
-            }
+            //if(AgglomerationTreshold > 0) {
+            //    ScalingTest(Tst, new[] { 1, 2, 3 }, vmode, deg);
+            //}
         }
 
 
