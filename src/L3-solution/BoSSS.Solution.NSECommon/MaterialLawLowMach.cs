@@ -119,7 +119,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </returns>
         public override double GetDensity(params double[] phi) {
             if(IsInitialized) {
-                Debug.Assert(phi[0] > 0);
+               Debug.Assert(phi[0] > -1* 1e-5); // a small treshold. Temperature shouldnt be negative!
 
                 double rho;
                 if(ThermodynamicPressureValue != -1) { // this is a really ugly hack to allow the SIMPLE project to use the p0 DG field. A better solution has to be found
@@ -161,6 +161,10 @@ namespace BoSSS.Solution.NSECommon {
                     }
                 case MaterialParamsMode.PowerLaw: {
                         double viscosity = Math.Pow(phi, 2.0 / 3.0);
+                    
+                        Debug.Assert(!double.IsNaN(viscosity));
+                        Debug.Assert(!double.IsInfinity(viscosity));
+                        Debug.Assert(viscosity > 0);
                         return viscosity;
                     }
                 default:
@@ -188,7 +192,12 @@ namespace BoSSS.Solution.NSECommon {
                     }
                 case MaterialParamsMode.PowerLaw: {
                         double viscosity = Math.Pow(phi, 2.0 / 3.0);
-                        double lambda = viscosity;
+                        //double S = 110.5;
+                        //double viscosity = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref)*0.71;
+                        double lambda = viscosity*0.71;
+                        Debug.Assert(!double.IsNaN(lambda));
+                        Debug.Assert(!double.IsInfinity(lambda));
+
                         return lambda; // using viscosity = lambda for Pr = cte...
                     }
                 default:

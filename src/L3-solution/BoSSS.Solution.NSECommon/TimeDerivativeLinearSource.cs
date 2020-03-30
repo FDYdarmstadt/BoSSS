@@ -62,7 +62,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="ArgumentOrdering"></param>
         /// <param name="energy"></param>
         /// <param name="conti"></param>
-        public MassMatrixComponent( double TimeStepSize, String[] ArgumentOrdering, bool energy = false, bool conti = false) {
+        public MassMatrixComponent(double TimeStepSize, String[] ArgumentOrdering, bool energy = false, bool conti = false) {
             m_ArgumentOrdering = ArgumentOrdering;
             this.EoS = null;
             dt = TimeStepSize;
@@ -101,17 +101,16 @@ namespace BoSSS.Solution.NSECommon {
             double mult = 1.0;
             rho = 1.0;
 
-            if(EoS!= null) { 
-            rho = EoS.GetDensity(parameters);
-                double T = parameters[0];
-
-                if(m_energy == true) {
-                    double gamma = EoS.GetHeatCapacityRatio(parameters[0]);
-                    Debug.Assert(gamma > 0);
-                    mult = 1; // 1/gamma;
-                }
-                if(m_conti == true)
-                    mult = -1 / T;
+            if (EoS != null) {
+                rho = EoS.GetDensity(parameters);
+                //double T = parameters[0];
+                //if(m_energy == true) {
+                //    double gamma = EoS.GetHeatCapacityRatio(parameters[0]);
+                //    Debug.Assert(gamma > 0);
+                //    mult = 1; // 1/gamma;
+                //}
+                //if(m_conti == true)
+                //    mult = -1 / T;
             }
 
             return mult * rho * U[0];
