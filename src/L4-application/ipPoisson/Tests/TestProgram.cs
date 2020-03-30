@@ -15,18 +15,30 @@ limitations under the License.
 */
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using BoSSS.Foundation;
 using BoSSS.Solution;
+using BoSSS.Solution.AdvancedSolvers.Testing;
+using BoSSS.Solution.Gnuplot;
 using MPI.Wrappers;
 using NUnit.Framework;
 using SolverCodes = BoSSS.Solution.Control.LinearSolverCode;
 
 namespace BoSSS.Application.SipPoisson.Tests {
+    
 
+
+
+    /// <summary>
+    /// NUnit tests
+    /// </summary>
     [TestFixture]
     static class TestProgram {
 
+        /// <summary>
+        /// MPI init
+        /// </summary>
         [TestFixtureSetUp]
         public static void Init() {
             bool dummy;
@@ -36,6 +48,9 @@ namespace BoSSS.Application.SipPoisson.Tests {
                 out dummy);
         }
 
+        /// <summary>
+        /// MPI teardown
+        /// </summary>
         [TestFixtureTearDown]
         public static void Cleanup() {
             //Console.Out.Dispose();
@@ -45,7 +60,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
         [Test]
         public static void TestCartesian() {
 
-            using (SipPoisson.SipPoissonMain p = new SipPoissonMain()) {
+            using(SipPoisson.SipPoissonMain p = new SipPoissonMain()) {
                 var ctrl = SipHardcodedControl.TestCartesian1();
                 p.Init(ctrl);
                 p.RunSolverMode();
@@ -76,7 +91,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
         [Test]
         public static void TestCurved() {
 
-            using (SipPoissonMain p = new SipPoissonMain()) {
+            using(SipPoissonMain p = new SipPoissonMain()) {
                 var ctrl = SipHardcodedControl.TestCurved();
                 p.Init(ctrl);
                 p.RunSolverMode();
@@ -98,10 +113,12 @@ namespace BoSSS.Application.SipPoisson.Tests {
             }
         }
 
-        
-        
+
+        /// <summary>
+        /// Cartesian problems with iterative solvers
+        /// </summary>
         [Test]
-    public static void TestIterativeSolver(
+        public static void TestIterativeSolver(
 #if DEBUG            
             [Values(2)]int dgDeg,
             [Values(40)]int res,
@@ -116,32 +133,105 @@ namespace BoSSS.Application.SipPoisson.Tests {
 #endif
             ) {
 
-        using (SipPoisson.SipPoissonMain p = new SipPoissonMain()) {
-            var ctrl = SipHardcodedControl.TestCartesian2(res, dim, solver, dgDeg);
-            p.Init(ctrl);
-            p.RunSolverMode();
+            using(SipPoisson.SipPoissonMain p = new SipPoissonMain()) {
+                var ctrl = SipHardcodedControl.TestCartesian2(res, dim, solver, dgDeg);
+                p.Init(ctrl);
+                p.RunSolverMode();
 
 
-            //Application<SipControl>._Main(new string[] {
-            //        "--control", "cs:ipPoisson.ippHardcodedControl.TestCartesian1()"
-            //    },
-            //    false,
-            //    "",
-            //    delegate() {
-            //        p = new SipPoissonMain();
-            //        return p;
-            //    });
+                //Application<SipControl>._Main(new string[] {
+                //        "--control", "cs:ipPoisson.ippHardcodedControl.TestCartesian1()"
+                //    },
+                //    false,
+                //    "",
+                //    delegate() {
+                //        p = new SipPoissonMain();
+                //        return p;
+                //    });
 
 
-            double err = (double)p.QueryHandler.QueryResults["SolL2err"];
-            double h = ((Foundation.Grid.Classic.GridData)(p.GridData)).Cells.h_maxGlobal;
-            double thres = 0.01 * Math.Pow(h, dgDeg);
+                double err = (double)p.QueryHandler.QueryResults["SolL2err"];
+                double h = ((Foundation.Grid.Classic.GridData)(p.GridData)).Cells.h_maxGlobal;
+                double thres = 0.01 * Math.Pow(h, dgDeg);
 
-            Console.WriteLine("L2 Error of solution: " + err + " (threshold is " + thres + ")");
-            Assert.LessOrEqual(err, thres);
+                Console.WriteLine("L2 Error of solution: " + err + " (threshold is " + thres + ")");
+                Assert.LessOrEqual(err, thres);
+            }
+
         }
 
-    }
+        /// <summary>
+        /// operator condition number scaling, 2D
+        /// </summary>
+        [Test]
+        public static void TestOperatorScaling2D(
+#if DEBUG            
+            [Values(1)]int dgDeg
+#else
+            [Values(1,2,3,4)]int dgDeg
+#endif            
+            ) {
 
-}
+            
+
+            var Controls = new List<SipControl>();
+            {
+                int[] ResS = null;
+
+                switch(dgDeg) {
+                    case 1: ResS = new int[] { 8, 16, 32, 64 }; break;
+                    case 2: ResS = new int[] { 8, 16, 32, 64 }; break;
+                    case 3: ResS = new int[] { 8, 16, 32, 64 }; break;
+                    case 4: ResS = new int[] { 8, 16, 32 }; break;
+                    default: throw new NotImplementedException();
+                }
+
+                foreach(int res in ResS) {
+                    var C = SipHardcodedControl.TestCartesian2(res, 2, solver_name: SolverCodes.classic_pardiso, deg: dgDeg);
+                    //C.TracingNamespaces = "*";
+                    C.savetodb = false;
+                    Controls.Add(C);
+                }
+
+            }
+
+            ConditionNumberScalingTest.Perform(Controls);
+        }
+
+        /// <summary>
+        /// operator condition number scaling
+        /// </summary>
+        [Test]
+        public static void TestOperatorScaling3D(
+#if DEBUG            
+            [Values(1)]int dgDeg
+#else
+            [Values(1,2,3,4)]int dgDeg
+#endif            
+            ) {
+
+  
+            var Controls = new List<SipControl>();
+            {
+                int[] ResS = null;
+
+                switch(dgDeg) {
+                    case 1: ResS = new int[] { 4, 8, 16 }; break;
+                    case 2: ResS = new int[] { 4, 8, 16 }; break;
+                    case 3: ResS = new int[] { 4, 8 }; break;
+                    case 4: ResS = new int[] { 4, 8 }; break;
+                    default: throw new NotImplementedException();
+                }
+                foreach(int res in ResS) {
+                    var C = SipHardcodedControl.TestCartesian2(res, 3, solver_name: SolverCodes.classic_pardiso, deg: dgDeg);
+                    //C.TracingNamespaces = "*";
+                    C.savetodb = false;
+                    Controls.Add(C);
+                }
+            }
+
+            ConditionNumberScalingTest.Perform(Controls);
+
+        }
+    }
 }

@@ -461,7 +461,6 @@ namespace ilPSP.LinSolvers {
         ///     iCol(ind) = R2(1,:);
         ///     iRow(ind) = i;
         ///     entries(ind) = R2(2,:);
-        /// 
         ///     cnt = cnt + NonZerosInRow;
         /// end
         /// fclose(fid);

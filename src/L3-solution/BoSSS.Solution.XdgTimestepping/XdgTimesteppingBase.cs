@@ -497,7 +497,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (nonlinSolver != null) {
                 nonlinSolver.IterationCallback += this.LogResis;
                 if (linearSolver != null && linearSolver is ISolverWithCallback) {
-                    ((ISolverWithCallback)linearSolver).IterationCallback = this.MiniLogResi; // this.LogResis;
+                    //((ISolverWithCallback)linearSolver).IterationCallback = this.MiniLogResi; 
                 }
             } else {
                 if (linearSolver != null && linearSolver is ISolverWithCallback) {
@@ -511,7 +511,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         void MiniLogResi(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
             double resiNorm = currentRes.MPI_L2Norm();
-            Console.WriteLine("    " + iterIndex + "  "+ resiNorm);
+            Console.WriteLine("    lin slv: " + iterIndex + "  "+ resiNorm);
         }
 
 
@@ -691,13 +691,29 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Returns a collection of local and global condition numbers in order to assess the operators stability
         /// </summary>
-        public IDictionary<string,double> OperatorAnalysis() {
+        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null) {
             AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, this.CurrentStateMapping.Fields.ToArray(), true);
 
             
-            var ana = new BoSSS.Solution.OpAnalysisBase(this.m_LsTrk, System, Affine, this.CurrentStateMapping, this.m_CurrentAgglomeration, MassMatrix, this.Config_MultigridOperator);
+            if(VarGroups == null) {
+                int NoOfVar = this.CurrentStateMapping.Fields.Count;
+                VarGroups = new int[][] { NoOfVar.ForLoop(i => i) };
+            }
 
-            return ana.GetNamedProperties();
+            var Ret = new Dictionary<string, double>();
+            foreach(int[] varGroup in VarGroups) {
+                var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.m_LsTrk, System, Affine, this.CurrentStateMapping, this.m_CurrentAgglomeration, MassMatrix, this.Config_MultigridOperator);
+                ana.VarGroup = varGroup;
+                var Table = ana.GetNamedProperties();
+                
+                foreach(var kv in Table) {
+                    if(!Ret.ContainsKey(kv.Key)) {
+                        Ret.Add(kv.Key, kv.Value);
+                    }
+                }
+            }
+
+            return Ret;
         }
     }
 }

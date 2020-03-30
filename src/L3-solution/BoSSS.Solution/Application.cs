@@ -1323,11 +1323,6 @@ namespace BoSSS.Solution {
             }
         }
 
-        private static System.Text.RegularExpressions.Regex WildcardToRegex(string pattern) {
-            return new System.Text.RegularExpressions.Regex("^" + System.Text.RegularExpressions.Regex.Escape(pattern).
-            Replace("\\*", ".*").
-            Replace("\\?", ".") + "$");
-        }
 
         /// <summary>
         /// Adds some DG field to <see cref="m_RegisteredFields"/> and, optionally, to <see cref="m_IOFields"/>.
@@ -1346,7 +1341,7 @@ namespace BoSSS.Solution {
 
             //FieldOpts fopts;
             //bool isSpec = FieldOptions.TryGetValue(f.Identification, out fopts);
-            FieldOpts fopts = FieldOptions.Where(kv => WildcardToRegex(kv.Key).IsMatch(f.Identification)).SingleOrDefault().Value;
+            FieldOpts fopts = FieldOptions.Where(kv => kv.Key.WildcardMatch(f.Identification)).SingleOrDefault().Value;
 
             if (fopts != null) {
                 if (ioOpt == IOListOption.Always && fopts.SaveToDB == FieldOpts.SaveToDBOpt.FALSE)
@@ -3190,22 +3185,5 @@ namespace BoSSS.Solution {
         }
     }
 
-    /*
-    /// <summary>
-    /// Application mode - solving, plotting, 
-    /// </summary>
-    public enum Mode {
-
-        /// <summary>
-        /// run in solver mode
-        /// </summary>
-        Solver,
-
-        /// <summary>
-        /// Do a parameter study
-        /// </summary>
-        ParameterStudy,
-    }
-    */
 }
 

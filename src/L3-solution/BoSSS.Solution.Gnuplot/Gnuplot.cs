@@ -838,11 +838,6 @@ namespace BoSSS.Solution.Gnuplot {
         /// Plots <paramref name="x"/> vs. <paramref name="y"/> using a
         /// logarithmic scaling for <paramref name="y"/>
         /// </summary>
-        /// <param name="x"></param>
-        /// <param name="y"></param>
-        /// <param name="title"></param>
-        /// <param name="format"></param>
-        /// <param name="deferred"></param>
         public void PlotXLogY(IEnumerable<double> x, IEnumerable<double> y, string title = null, PlotFormat format = null, bool deferred = true) {
             PlotXY(
                 x,
@@ -859,11 +854,6 @@ namespace BoSSS.Solution.Gnuplot {
         /// logarithmic scaling for <paramref name="x"/> and
         /// <paramref name="y"/>
         /// </summary>
-        /// <param name="x"></param>
-        /// <param name="y"></param>
-        /// <param name="title"></param>
-        /// <param name="format"></param>
-        /// <param name="deferred"></param>
         public void PlotLogXLogY(IEnumerable<double> x, IEnumerable<double> y, string title = null,
             PlotFormat format = null, bool deferred = true) {
             PlotXY(
