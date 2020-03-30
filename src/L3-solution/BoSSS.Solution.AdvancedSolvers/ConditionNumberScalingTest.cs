@@ -2,6 +2,7 @@
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Gnuplot;
 using ilPSP;
+using MPI.Wrappers;
 using NUnit.Framework;
 using System;
 using System.Collections;
@@ -30,7 +31,15 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             t.PrintResults(Console.Out);
             
             if(plotAndWait) {
-                using(var gp = t.Plot()) {
+                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int MPIrank);
+                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPIsize);
+
+                string mpiS = "";
+                if(MPIsize > 1) {
+                    mpiS = "." + MPIrank + "of" + MPIsize;
+                }
+
+                using (var gp = t.Plot()) {
 
                     if(title.IsEmptyOrWhite()) {
                         gp.Execute();
@@ -44,7 +53,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                         gp.Terminal = string.Format("pngcairo size {0},{1}", xRes, yRes);
 
                         string DateNtime = DateTime.Now.ToString("yyyyMMMdd_HHmmss");
-                        gp.OutputFile = title + "-" + DateNtime + ".png";
+                        gp.OutputFile = title + "-" + DateNtime + mpiS + ".png";
 
                         // call gnuplot
                         int exCode = gp.RunAndExit(); // run & close gnuplot
@@ -53,7 +62,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                         }
 
                         // ----------------------------------------
-                        using(var tw = new System.IO.StreamWriter(title + "-" + DateNtime + ".txt")) {
+                        using(var tw = new System.IO.StreamWriter(title + "-" + DateNtime + mpiS + ".txt")) {
                             t.PrintResults(tw);
                         }
 
