@@ -999,11 +999,12 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             for (int j = 0; j < J; j++) { // loop over cells...
 
-                for (int iVar = 0; iVar < NoOfVars; iVar++) {
+                for(int iVar = 0; iVar < NoOfVars; iVar++) {
                     int bS = this.CurrentStateMapping.LocalUniqueCoordinateIndex(iVar, j, 0);
                     int Nj = basisS[iVar].GetLength(j);
 
-                    if (Block == null || Block.NoOfRows != Nj) {
+                    if(Block == null || Block.NoOfRows != Nj) {
+
                         Block = MultidimensionalArray.Create(Nj, Nj);
                         x = new double[Nj];
                         b = new double[Nj];
@@ -1015,12 +1016,12 @@ namespace BoSSS.Solution.XdgTimestepping {
                     M.ReadBlock(bS + M._RowPartitioning.i0, bS + M._ColPartitioning.i0, Block);
 
                     // extract part of RHS
-                    for (int iRow = 0; iRow < Nj; iRow++) {
+                    for(int iRow = 0; iRow < Nj; iRow++) {
                         bool ZeroRow = Block.GetRow(iRow).L2NormPow2() == 0;
                         b[iRow] = B[iRow + bS];
 
-                        if (ZeroRow) {
-                            if (b[iRow] != 0.0)
+                        if(ZeroRow) {
+                            if(b[iRow] != 0.0)
                                 throw new ArithmeticException();
                             else
                                 Block[iRow, iRow] = 1.0;
@@ -1034,12 +1035,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                     Block.SolveSymmetric(x, b);
 
                     // store solution
-                    for (int iRow = 0; iRow < Nj; iRow++) {
+                    for(int iRow = 0; iRow < Nj; iRow++) {
                         X[iRow + bS] = x[iRow];
                     }
                 }
             }
-
 #if DEBUG
             for(int i = 0; i < unusedIndex.Length; i++)
                 if(unusedIndex[i] == false && B[i] != 0.0)
@@ -1047,6 +1047,5 @@ namespace BoSSS.Solution.XdgTimestepping {
 #endif
 
         }
-
     }
 }

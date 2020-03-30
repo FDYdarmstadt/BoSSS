@@ -67,8 +67,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         IncompressibleBcType outcond = IncompressibleBcType.Pressure_Outlet;
 
-        public GridCommons CreateGrid() {
-            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(0, 1, 4), GenericBlas.Linspace(0, 1, 4));
+        public GridCommons CreateGrid(int Resolution) {
+            if (Resolution < 1)
+                throw new ArgumentException();
+            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(0, 1, 3*Resolution + 1), GenericBlas.Linspace(0, 1, 3 * Resolution + 1));
 
             grd.EdgeTagNames.Add(1, IncompressibleBcType.Velocity_Inlet.ToString());
             grd.EdgeTagNames.Add(2, outcond.ToString());

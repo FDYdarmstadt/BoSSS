@@ -19,6 +19,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Control;
+using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -405,7 +406,7 @@ namespace BoSSS.Solution {
             IDictionary<string, FieldOpts> FieldOptions,
             ICollection<DGField> IOFields, InstantiateFromControlFileAttribute at) {
 
-            FieldOpts fopts = FieldOptions.Where(kv => WildcardToRegex(kv.Key).IsMatch(fld.Identification)).SingleOrDefault().Value;
+            FieldOpts fopts = FieldOptions.Where(kv => kv.Key.WildcardMatch(fld.Identification)).SingleOrDefault().Value;
 
             if (fopts != null) {
                 if (at.m_ioListOpt == IOListOption.Always && fopts.SaveToDB == FieldOpts.SaveToDBOpt.FALSE)
@@ -420,14 +421,9 @@ namespace BoSSS.Solution {
                 if (at.m_ioListOpt == IOListOption.Always)
                     IOFields.Add(fld);
             }
-
         }
 
-        private static Regex WildcardToRegex(string pattern) {
-            return new Regex("^" + Regex.Escape(pattern).
-            Replace("\\*", ".*").
-            Replace("\\?", ".") + "$");
-        }
+       
 
 
 
@@ -439,7 +435,7 @@ namespace BoSSS.Solution {
             IDictionary<string, FieldOpts> FieldOptions) //
         {
             
-           var ops = FieldOptions.Where(kv => WildcardToRegex(kv.Key).IsMatch(cName));
+           var ops = FieldOptions.Where(kv => kv.Key.WildcardMatch(cName));
 
             int Deg = -1;
             {

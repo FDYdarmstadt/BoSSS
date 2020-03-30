@@ -704,7 +704,7 @@ namespace BoSSS.Solution.Control {
         /// A positive value indicates that
         /// <see cref="Application{T}.PlotCurrentState(double, TimestepNumber, int)"/>"/> will be called every
         /// <see cref="ImmediatePlotPeriod"/>-th time-step.
-        /// A negative value turns immediate plotting off;
+        /// A non-positive value turns immediate plotting off;
         /// </summary>
         [DataMember]
         public int ImmediatePlotPeriod = -1;

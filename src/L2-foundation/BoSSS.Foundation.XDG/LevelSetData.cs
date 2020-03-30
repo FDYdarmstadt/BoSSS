@@ -647,7 +647,7 @@ namespace BoSSS.Foundation.XDG {
                         int newColor = ColorMap[j]; 
                         if (newColor != 0 && marker[j] == false) {
                             oldColors.Clear();
-                            FindColorsRecursive(oldColors, marker, j, newColor, ColorMap, oldColorMap, this.GridDat);
+                            FindColorsRecursive2(oldColors, marker, j, newColor, ColorMap, oldColorMap, this.GridDat);
                             Debug.Assert(oldColors.Contains(0) == false);
                             AddColorRecord(newColor);
                         }
@@ -803,6 +803,7 @@ namespace BoSSS.Foundation.XDG {
                 return ColorMap;
             }
 
+            /*
             private static void FindColorsRecursive(HashSet<int> OldColors, BitArray marker, int j, int NewColor, int[] ColorMap, int[] OldColorMap, IGridData gdat) { 
                 int J = gdat.iLogicalCells.NoOfLocalUpdatedCells;
                 int JE = gdat.iLogicalCells.NoOfExternalCells + J;
@@ -830,6 +831,67 @@ namespace BoSSS.Foundation.XDG {
                     FindColorsRecursive(OldColors, marker, jN, NewColor, ColorMap, OldColorMap, gdat);
                 }
             }
+            */
+
+            /// <summary>
+            /// 'Non-Recursive' implementation of the recursive algorithm, should be less prone to stack overflow.
+            /// </summary>
+            private static void FindColorsRecursive2(HashSet<int> OldColors, BitArray marker, int j, int NewColor, int[] ColorMap, int[] OldColorMap, IGridData gdat) { 
+                int J = gdat.iLogicalCells.NoOfLocalUpdatedCells;
+                int JE = gdat.iLogicalCells.NoOfExternalCells + J;
+                int[][] CellNeighbors = gdat.iLogicalCells.CellNeighbours;
+                Debug.Assert(ColorMap.Length == JE);
+
+                Debug.Assert(ColorMap[j] != 0);
+                Debug.Assert(ColorMap[j] == NewColor);
+                Debug.Assert(NewColor != 0);
+                Debug.Assert(marker[j] == false);
+
+
+                var cellStack = new Stack<int>();
+                var neighCounterStack = new Stack<int>();
+                int[] jNeigh = CellNeighbors[j];
+                int iNeigh = 0;
+                while(true) {
+                    Debug.Assert(cellStack.Count == neighCounterStack.Count);
+                    
+                    marker[j] = true;
+                    int OldColor = OldColorMap[j];
+                    Debug.Assert(OldColor >= 0);
+                    if(OldColor > 0)
+                        OldColors.Add(OldColorMap[j]);
+                    
+                    
+
+                    if(j >= J)
+                        return; // end of recursion
+
+                    if(iNeigh < jNeigh.Length) {
+                        int jN = jNeigh[iNeigh];
+                        iNeigh++;
+                        if(marker[jN] || ColorMap[jN] == 0 || jN >= J) {
+                            // no recursion
+                        } else {
+                            cellStack.Push(j);
+                            neighCounterStack.Push(iNeigh);
+                            j = jN;
+                            iNeigh = 0;
+                            jNeigh = CellNeighbors[j];
+
+                        }
+                    } else {
+                        if(cellStack.Count == 0) {
+                            return; // termination
+                        } else {
+                            // 
+                            j = cellStack.Pop();
+                            iNeigh = neighCounterStack.Pop();
+                            jNeigh = CellNeighbors[j];
+                        }
+                    }
+                }
+            }
+
             /*
             private static void RepaintRecursive(int NewColor, int[] ColorMap, int j, IGridData gdat) {
                 int J = gdat.iLogicalCells.NoOfLocalUpdatedCells;

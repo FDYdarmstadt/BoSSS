@@ -145,56 +145,48 @@ namespace BoSSS.Application.XRheology_Solver {
 
         public bool FixedStreamwisePeriodicBC = false;
 
-        /// <summary>
-        /// Data to be written in LogFile
-        /// </summary>
-        public enum LoggingValues {
+        ///// <summary>
+        ///// Data to be written in LogFile
+        ///// </summary>
+        //public enum LoggingValues {
 
-            /// <summary>
-            /// no data will be written
-            /// </summary>
-            None,
+        //    /// <summary>
+        //    /// no data will be written
+        //    /// </summary>
+        //    None,
 
-            /// <summary>
-            /// for elemental test programm with line like interfaces
-            /// </summary>
-            LinelikeLS,
+        //    /// <summary>
+        //    /// for elemental test programm with line like interfaces
+        //    /// </summary>
+        //    LinelikeLS,
 
-            /// <summary>
-            /// for elemental test programm with circle like interfaces
-            /// </summary>
-            CirclelikeLS,
+        //    /// <summary>
+        //    /// for elemental test programm with circle like interfaces
+        //    /// </summary>
+        //    CirclelikeLS,
 
-            /// <summary>
-            /// for wavelike simulation as CapillaryWave, RT-Instability
-            /// interface height (interface points)
-            /// </summary>
-            Wavelike,
+        //    /// <summary>
+        //    /// for wavelike simulation as CapillaryWave, RT-Instability
+        //    /// interface height (interface points)
+        //    /// </summary>
+        //    Wavelike,
 
-            /// <summary>
-            /// for the benchmark quantities of the Rising Bubble testcase
-            /// </summary>
-            RisingBubble,
+        //    /// <summary>
+        //    /// for the benchmark quantities of the Rising Bubble testcase
+        //    /// </summary>
+        //    RisingBubble,
 
-            /// <summary>
-            /// contact points and corresponding contact angle
-            /// </summary>
-            MovingContactLine,
+        //    /// <summary>
+        //    /// contact points and corresponding contact angle
+        //    /// </summary>
+        //    MovingContactLine,
 
-            /// <summary>
-            /// height of a rising capillary in a tube
-            /// </summary>
-            CapillaryHeight
-        }
+        //    /// <summary>
+        //    /// height of a rising capillary in a tube
+        //    /// </summary>
+        //    CapillaryHeight
+        //}
 
-        /// <summary>
-        /// See <see cref="LoggingValues"/>
-        /// </summary>
-        [DataMember]
-        public LoggingValues LogValues = LoggingValues.None;
-
-        [DataMember]
-        public int LogPeriod = 1;
 
         public bool WriteInterfaceP = false;
 

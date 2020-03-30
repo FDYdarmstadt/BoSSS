@@ -86,7 +86,6 @@ namespace BoSSS.Application.Rheology
             //C.WhichWall = "Wall_Cylinder";
 
             //Debugging and Solver Analysis
-            C.OperatorMatrixAnalysis = false;
             C.SkipSolveAndEvaluateResidual = false;
             C.SetInitialConditions = false;
             C.SetInitialPressure = false;
@@ -286,7 +285,6 @@ namespace BoSSS.Application.Rheology
             //C.WhichWall = "Wall_Cylinder";
 
             //Debugging and Solver Analysis
-            C.OperatorMatrixAnalysis = false;
             C.SkipSolveAndEvaluateResidual = false;
             C.SetInitialConditions = false;
             C.SetInitialPressure = false;
@@ -472,7 +470,6 @@ namespace BoSSS.Application.Rheology
             int cells2 = (int)cells;
 
             //Debugging and Solver Analysis
-            C.OperatorMatrixAnalysis = false;
             C.SkipSolveAndEvaluateResidual = false;
             C.SetInitialConditions = false;
             C.SetInitialPressure = false;
@@ -715,7 +712,6 @@ namespace BoSSS.Application.Rheology
             int cells2 = (int)cells;
 
             //Debugging and Solver Analysis
-            C.OperatorMatrixAnalysis = false;
             C.SkipSolveAndEvaluateResidual = false;
             C.SetInitialConditions = true;
             C.SetInitialPressure = false;
@@ -916,7 +912,6 @@ namespace BoSSS.Application.Rheology
             int cells2 = (int)cells;
 
             //Debugging and Solver Analysis
-            C.OperatorMatrixAnalysis = false;
             C.SkipSolveAndEvaluateResidual = true;
             C.SetInitialConditions = true;
             C.SetInitialPressure = false;
@@ -1113,7 +1108,6 @@ namespace BoSSS.Application.Rheology
             C.ProjectName = "Channel";
             C.Stokes = false;
             C.FixedStreamwisePeriodicBC = false;
-            C.OperatorMatrixAnalysis = false;
             C.SkipSolveAndEvaluateResidual = false;
             C.SetInitialConditions = true;
             C.SetInitialPressure = false;
@@ -1425,8 +1419,7 @@ namespace BoSSS.Application.Rheology
             int cells2 = (int)cells;
 
             //Debugging and Solver Analysis
-            C.OperatorMatrixAnalysis = false;
-            C.SkipSolveAndEvaluateResidual = false;
+             C.SkipSolveAndEvaluateResidual = false;
             C.SetInitialConditions = true;
             C.SetInitialPressure = false;
             C.SetParamsAnalyticalSol = false;
