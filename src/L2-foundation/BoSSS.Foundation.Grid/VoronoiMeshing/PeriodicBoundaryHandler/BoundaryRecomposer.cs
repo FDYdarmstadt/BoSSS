@@ -25,14 +25,14 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
         public void RecomposePeriodicEdges(Domain<T> mesh, IEnumerable<Edge<T>> periodicEdges)
         {
             CellPairCollection<T> candidates = CellPairCollecter<T>.FollowBoundaryAndCollectCandidates(periodicEdges);
-            cornerMapper.FindPeriodicCorners(candidates);
+            //cornerMapper.FindPeriodicCorners(candidates);
             RecomposeCutCells(mesh, candidates);
-            cornerMapper.ConnectPeriodicCorners();
+            //cornerMapper.ConnectPeriodicCorners();
         }
 
         void RecomposeCutCells(Domain<T> mesh, CellPairCollection<T> candidates)
         {
-            cellDetacher = new CellDetacher<T>(mesh);
+            cellDetacher = new CellDetacher<T>(mesh, map);
             cleaner = new CornerCleaner(map.PeriodicCornerCorrelation.Count);
 
             int i = 0;
@@ -42,10 +42,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
                 //MatlabPlotter.Plot(mesh, i + "aMerge");
                 Debug.Assert(CellNodePositionsMatch(mergePair));
                 MergeAtBoundary(mergePair);
-                //MatlabPlotter.Plot(mesh, i + "bMerge");
+                //MatlabPlotter.Plot(mesh, i + "Merge");
                 ++i;
             }
-            //MatlabPlotter.Plot(mesh,"2aRemove");
+            MatlabPlotter.Plot(mesh,"2aRemove");
             RemoveOuterCellsFromMesh(mesh);
             //MatlabPlotter.Plot(mesh, "2bRemove");
         }
@@ -176,10 +176,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
                     transformed.Add(vertex.ID);
                     cell.Vertices[i].Position = transformation.Transform(cell.Vertices[i].Position);
                 }
-                
             }
             cell.Node.Position = transformation.Transform(cell.Node.Position);
         }
+
+       
 
         static bool CellNodePositionsMatch(CellPairCollection<T> pairs)
         {

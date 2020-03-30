@@ -11,7 +11,7 @@ namespace VoronoiTests.Grid
     {
         public override void Run()
         {
-            PeriodicBoundaryPairLarge();
+            AllPeriodicBoundariesLarge();
         }
 
         [Test]
@@ -261,21 +261,23 @@ namespace VoronoiTests.Grid
             };
             Random random = new Random(1);
             MultidimensionalArray nodes = default;
-            for (int i = 0; i < 1000; ++i)
+            for (int i = 0; i < 48; ++i)
             {
                 Console.WriteLine($"Roll number {i}");
-                nodes = RandomNodesInSquare(1.1, 1.1, 300, random);
+                nodes = RandomNodesInSquare(1.0, 1.0, 300, random);
                 nodes[0, 0] = -1 + 1e-6;
                 nodes[0, 1] = 1 - 1e-6;
                 try
                 {
-                    VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
+                    //VoronoiGrid garid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
+                    //Plotter.Plot(grid);
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine(e);
                 }
             }
+            VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
         }
 
         MultidimensionalArray RandomNodesInSquare(double height, double width, int number, Random random = null)
