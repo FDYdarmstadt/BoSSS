@@ -17,6 +17,7 @@ limitations under the License.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
@@ -52,6 +53,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
         #region INonlinearFlux Members
 
+        //static int count = 0;
+        //static int quadPoints = 0;
+        //StreamWriter writer;
+
         /// <summary>
         /// <see cref="INonlinearFlux.BorderEdgeFlux"/>
         /// </summary>
@@ -82,7 +87,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
             Vector xLocal = new Vector(D);
             Vector normalLocal = new Vector(D);
 
-            //bool writeFluxes = false;
+            //bool isWall = false;
 
             // Loop over edges
             for (int e = 0; e < Lenght; e++) {
@@ -90,7 +95,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
                 // Sweep until the boundary condition changes
                 int __L = 1;
-                for (; e + __L < Lenght; __L++) {
+                for (; e + __L < Lenght; __L++) { //raus?
                     byte _EdgeTag = EdgeTags[e + __L + EdgeTagsOffset];
                     if (EdgeTag != _EdgeTag)
                         break;
@@ -109,15 +114,63 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
                 e += __L - 1;
 
                 //if (boundaryCondition is AdiabaticSlipWall) {
-                //    writeFluxes = true;
+                //    isWall = true;
                 //}
             }
 
-            InnerEdgeFlux(time, jEdge, x, normal, Uin, Uout, Offset, Lenght, Output);
+            // StreamWriter
+            //string bulkFluxName = null;
+            //if (this is OptimizedHLLCDensityFlux) {
+            //    bulkFluxName = "rho";
+            //} else if (this is OptimizedHLLCMomentumFlux tmp) {
+            //    bulkFluxName = "m";
+            //} else if (this is OptimizedHLLCEnergyFlux) {
+            //    bulkFluxName = "rhoE";
+            //}
 
-            //if (writeFluxes) {
-            //    Console.WriteLine(String.Format("Flux at ({0:0.00000000}, {1:0.00000000}) = {2:0.00000000} \t normal = ({3:0.00000000}, {4:0.00000000})", x[0, 0, 0], x[0, 0, 1], Output[0, 0], normal[0, 0, 0], normal[0, 0, 1]));
-            //    //Console.WriteLine("hallo");
+            //if (!isWall) {
+                InnerEdgeFlux(time, jEdge, x, normal, Uin, Uout, Offset, Lenght, Output);
+            //}
+
+            // Sort
+            //string bulkFluxName = null;
+            //if (this is OptimizedHLLCDensityFlux) {
+            //    bulkFluxName = "rho";
+            //} else if (this is OptimizedHLLCMomentumFlux tmp) {
+            //    bulkFluxName = "m";
+            //} else if (this is OptimizedHLLCEnergyFlux) {
+            //    bulkFluxName = "rhoE";
+            //}
+
+            //if (this is OptimizedHLLCDensityFlux) {
+            //    if (writer == null) {
+            //        writer = new StreamWriter(String.Format("BorderEdgeFlux_QuadPoints_{0}.txt", bulkFluxName));
+            //    }
+
+            //    for (int e = 0; e < Lenght; e++) {
+            //        for (int n = 0; n < NoOfNodes; n++) {
+            //            writer.WriteLine(String.Format("{0:0.0000000000}\t{1:0.0000000000}\t{2:0.0000000000}", x[e + Offset, n, 0], x[e + Offset, n, 1], Output[e + Offset, n]));
+            //            writer.Flush();
+            //        }
+            //    }
+            //    //writer.WriteLine("#####################################################################################");
+            //    //writer.Flush();
+            //}
+
+            //if (this is OptimizedHLLCDensityFlux) {
+            //    using (StreamWriter tmp = new StreamWriter(String.Format("Quadrature_Points_{0}.txt", bulkFluxName))) {
+            //        for (int ed = 0; ed < x.Lengths[0]; ed++) {
+            //            for (int n = 0; n < x.Lengths[1]; n++) {
+            //                //if (Output[ed, n] != 0) {
+            //                //tmp.WriteLine(String.Format("{0}\t{1:0.00000}\t{2:0.00000}", bulkFluxName, x[ed, n, 0], x[ed, n, 1]));
+            //                tmp.WriteLine(String.Format("{0}\t{1}\t{2}", bulkFluxName, x[ed, n, 0], x[ed, n, 1]));
+            //                tmp.Flush();
+            //                //Console.WriteLine(String.Format("QuadPoint {0}", quadPoints));
+            //                quadPoints++;
+            //                //}
+            //            }
+            //        }
+            //    }
             //}
         }
 

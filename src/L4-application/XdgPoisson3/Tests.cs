@@ -80,7 +80,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// Grid scale tests for condition numbers
         /// </summary>
         [Test]
-        public static void DiscretizationScalingTest(
+        public static void ScalingCircle2D(
 #if DEBUG
             [Values(1)] 
 #else
@@ -89,6 +89,9 @@ namespace BoSSS.Application.XdgPoisson3 {
             int dgDegree
             ) //
         {
+            int sz = ilPSP.Environment.MPIEnv.MPI_Size;
+            if (sz > 1)
+                return;// deactivate for multiple procs.
 
             var Controls = new List<XdgPoisson3Control>();
 
@@ -119,7 +122,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             Slope for StencilCondNo-bndyCut-Var0: 0e00             
             */
 
-            ConditionNumberScalingTest.Perform(Controls);
+            ConditionNumberScalingTest.Perform(Controls, plotAndWait:true, title: "ScalingCircle2D");
         }
 
        
