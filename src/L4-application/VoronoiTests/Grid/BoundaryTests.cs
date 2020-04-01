@@ -11,7 +11,7 @@ namespace VoronoiTests.Grid
     {
         public override void Run()
         {
-            AllPeriodicBoundariesLarge();
+            PeriodicBoundaryPairLarge();
         }
 
         [Test]
@@ -176,14 +176,14 @@ namespace VoronoiTests.Grid
                 nodes[0, 1] = 1 - 1e-5;
                 try
                 {
-                    VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
+                    VoronoiGrid garid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine(e);
                 }
             }
-            
+            //VoronoiGrid grid = VoronoiGrid2D.Polygonal(nodes, gridBoundary, 0, 0);
             //Plotter.Plot(grid);
         }
 
