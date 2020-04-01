@@ -79,6 +79,62 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
             List<T> AllComponentsofMyType = new List<T>();
 
             foreach (IEquationComponent eqComp in eqCompS) {
+                T optComp = (eqComp is T) ? (T)eqComp : default; //                    optimized component (user-optimized)
+                T vecComp = (vectorizer != null) ? (T)vectorizer(eqComp) : default; // default vectorization (non-optimized)
+
+                // check if component fits at all
+                if (optComp == null && vecComp == null)
+                    // component just does not fit
+                    continue;
+
+                if (vectorizer != null) {
+                    if (optComp != null && vecComp == null)
+                        throw new ArgumentException("Error in vectorizer impementation.");
+                }
+
+                // check the filter
+                if (F != null) {
+                    if (optComp != null) {
+                        if (!F(optComp))
+                            // component should be ignored
+                            continue;
+                    } else {
+                        if (!F(vecComp))
+                            // component should be ignored
+                            continue;
+                    }
+                }
+
+                // determine whether to use the optimized component
+                bool useOptComp = true;
+                if (optComp == null) {
+                    // cannot use optimized component if there is no
+                    Debug.Assert(vecComp != null);
+                    useOptComp = false;
+                }
+                if (eqComp is IEquationComponentChecking cc) {
+                    // check if user selected to ignore vectorization
+                    if (cc.IgnoreVectorizedImplementation == true && vecComp != null)
+                        useOptComp = false;
+                }
+#if DEBUG
+                // in DEBUG mode, we always use the vectorizer (if supported)
+                // because it implements a verification 
+                if (vecComp != null)
+                    useOptComp = false;
+#endif
+                // special case for INonlinearFlux, INonlinearFluxEx
+                if (vecComp == null) {
+                    Debug.Assert(optComp != null);
+                    useOptComp = true;
+                }
+
+                if (useOptComp)
+                    AllComponentsofMyType.Add(optComp);
+                else
+                    AllComponentsofMyType.Add(vecComp);
+
+                /*
                 IEquationComponentChecking cc = eqComp as IEquationComponentChecking;
 
                 if(eqComp is T && !(cc != null && cc.IgnoreVectorizedImplementation)) {
@@ -112,6 +168,7 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
                         }
                     }
                 }
+                */
             }
 
             m_AllComponentsOfMyType = AllComponentsofMyType.ToArray();
