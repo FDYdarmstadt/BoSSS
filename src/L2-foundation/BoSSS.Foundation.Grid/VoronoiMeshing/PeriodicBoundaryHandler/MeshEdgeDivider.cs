@@ -1,4 +1,5 @@
 ﻿using BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures;
+using BoSSS.Platform;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,27 +12,83 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 
         static EdgeComparer<T> edgeComparer = new EdgeComparer<T>();
 
-        public MeshEdgeDivider(IDMesh<T> mesh)
-        {
-            this.mesh = mesh;
-        }
-
-        public void DivideBoundary(IList<MeshCell<T>> cells)
-        {
-            var corners = new Convolution<IndiceEdge>(BoundaryEachCellClockwise(cells));
-            foreach (Pair<IndiceEdge> corner in corners)
-            {
-                Divide(corner);
-            }
-        }
-
         struct IndiceEdge
         {
             public Edge<T> Edge;
             public int Indice;
         }
 
-        static IEnumerable<IndiceEdge> BoundaryEachCellClockwise(IList<MeshCell<T>> cells)
+        public MeshEdgeDivider(IDMesh<T> mesh)
+        {
+            this.mesh = mesh;
+        }
+
+        public void DivideBoundary(IEnumerable<MeshCell<T>> cells)
+        {
+            var corners = new Convolution<IndiceEdge>(BoundaryOfEachCellClockwise(cells));
+            foreach (Pair<IndiceEdge> corner in corners)
+            {
+                Divide(corner);
+            }
+        }
+
+        public void DivideBoundary(MeshCell<T> first, MeshCell<T> last)
+        {
+            var corners = new Convolution<IndiceEdge>(BoundaryOfEachCellClockwise(first, last));
+            foreach (Pair<IndiceEdge> corner in corners)
+            {
+                Divide(corner);
+            }
+        }
+
+        static IEnumerable<IndiceEdge> BoundaryOfEachCellClockwise(MeshCell<T> first, MeshCell<T> last)
+        {
+            Edge<T> lastEdge = BoundaryEdgeEnumerator<T>.GetFirstEdgeOfBoundaryPositive(last);
+            foreach (IndiceEdge edge in NegativeRotationOfBoundaryEdgesBeginningWith(first))
+            {
+                yield return edge; 
+                if(edgeComparer.Equals(lastEdge, edge.Edge))
+                {
+                    break;
+                }
+            }
+        }
+
+        static IEnumerable<IndiceEdge> NegativeRotationOfBoundaryEdgesBeginningWith(MeshCell<T> cell)
+        {
+            bool boundaryEdgesLeft = true;
+            while (boundaryEdgesLeft)
+            {
+                int first = FindFirstEdgeIndiceClockwise(cell);
+                if(first != -1)
+                {
+                    for (int i = 0; i < cell.Edges.Length; ++i)
+                    {
+                        int indice = GoRound(first - i, cell.Edges.Length);
+                        Edge<T> edge = cell.Edges[GoRound(first - i, cell.Edges.Length)];
+                        if (edge.IsBoundary)
+                        {
+                            yield return new IndiceEdge
+                            {
+                                Edge = edge,
+                                Indice = indice
+                            };
+                        }
+                        else
+                        {
+                            cell = edge.Twin.Cell;
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    boundaryEdgesLeft = false;
+                }
+            }
+        }
+
+        static IEnumerable<IndiceEdge> BoundaryOfEachCellClockwise(IEnumerable<MeshCell<T>> cells)
         {
             foreach (MeshCell<T> cell in cells)
             {

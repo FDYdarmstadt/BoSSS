@@ -61,7 +61,13 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         {
             Debug.Assert( boundary.FirstCorner != null, "Initialize before calling Cells()");
             HashSet<int> visited = new HashSet<int>();//mesh.Cells.Count);
-            return IterativeYieldConnectedCells(boundary.FirstCorner, visited);
+            return GetInsideCells(boundary.FirstCorner);
+        }
+
+        public static IEnumerable<MeshCell<T>> GetInsideCells(MeshCell<T> cell)
+        {
+            HashSet<int> visited = new HashSet<int>();//mesh.Cells.Count);
+            return IterativeYieldConnectedCells(cell, visited);
         }
 
         /// <summary>

@@ -38,14 +38,24 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
         public IEnumerable<Edge<T>> CycleEdges()
         {
             MeshCell<T> firstCell = cells.GetFirstCell();
-            return IterativeYieldBoundaryEdges(firstCell);
+            return FollowBoundaryEdges(firstCell);
         }
 
-        static IEnumerable<Edge<T>> IterativeYieldBoundaryEdges(MeshCell<T> cell)
+        public static IEnumerable<Edge<T>> FollowBoundaryEdges(MeshCell<T> cell)
         {
-            Edge<T> currentEdge = FindFirstBoundaryEdge(cell);
-            yield return currentEdge;
+            Edge<T> firstEdge = FindFirstBoundaryEdge(cell);
+            yield return firstEdge;
+            foreach (Edge<T> edge in FollowBoundaryEdges(firstEdge))
+            {
+                yield return edge;
+            }
 
+           
+        }
+
+        public static IEnumerable<Edge<T>> FollowBoundaryEdges(Edge<T> edge)
+        {
+            Edge<T> currentEdge = edge;
             bool abort = false;
             int startID = currentEdge.Start.ID;
             do
@@ -56,7 +66,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
                     currentEdge = edges[i];
                     if (currentEdge.IsBoundary)
                     {
-                        if(currentEdge.Start.ID != startID)
+                        if (currentEdge.Start.ID != startID)
                         {
                             yield return currentEdge;
                         }

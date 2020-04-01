@@ -231,4 +231,112 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
             return edges;
         }
     }
+
+    static class BoundaryEdgeEnumerator<T>
+    {
+        public static Edge<T> GetFirstEdgeOfBoundaryPositive(MeshCell<T> cornerCell)
+        {
+            foreach (var edge in new Convolution<Edge<T>>(cornerCell.Edges))
+            {
+                if (edge.Current.IsBoundary && !edge.Previous.IsBoundary)
+                {
+                    return edge.Current;
+                }
+            }
+            throw new Exception("Cell does not have a boundary.");
+        }
+
+        public static Edge<T> GetFirstEdgeOfBoundaryNegative(MeshCell<T> cornerCell)
+        {
+            foreach (var edge in new Convolution<Edge<T>>(cornerCell.Edges))
+            {
+                if (!edge.Current.IsBoundary && edge.Previous.IsBoundary)
+                {
+                    return edge.Previous;
+                }
+            }
+            throw new Exception("Cell does not have a boundary.");
+        }
+
+        public static IEnumerable<Edge<T>> PositiveRotationOfBoundaryEdgesBeginningWith(Edge<T> first, int offset)
+        {
+            IList<Edge<T>> edges = PositiveEdgeRotationOfCellAfter(first, offset);
+            while (edges !=  null)
+            {
+                foreach (Edge<T> edge in edges)
+                {
+                    if (edge.IsBoundary)
+                    {
+                        yield return edge;
+                    }
+                    else
+                    {
+                        edges = PositiveEdgeRotationOfCellAfter(edge.Twin, 1);
+                        break;
+                    }
+                }
+            }
+        }
+
+        public static CyclicArray<Edge<T>> PositiveEdgeRotationOfCellAfter(Edge<T> first, int offset)
+        {
+            MeshCell<T> cell = first.Cell;
+            int firstEdgeIndice = FindIndiceOfEdgeInItsCell(cell.Edges, first);
+            if(firstEdgeIndice != -1)
+            {
+                return new CyclicArray<Edge<T>>(cell.Edges, firstEdgeIndice + offset);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        static int FindIndiceOfEdgeInItsCell(Edge<T>[] edges, Edge<T> first)
+        {
+            for (int i = 0; i < edges.Length; ++i)
+            {
+                if (first.Start.ID == edges[i].Start.ID)
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        public static IEnumerable<Edge<T>> NegativeRotationOfBoundaryEdgesBeginningWith(Edge<T> first, int offset)
+        {
+            IList<Edge<T>> edges = NegativeEdgeRotationOfCellAfter(first, offset);
+            while (edges != null)
+            {
+                foreach (Edge<T> edge in edges)
+                {
+                    if (edge.IsBoundary)
+                    {
+                        yield return edge;
+                    }
+                    else
+                    {
+                        edges = NegativeEdgeRotationOfCellAfter(edge.Twin, 1);
+                        break;
+                    }
+                }
+            }
+        }
+
+        public static CyclicArray<Edge<T>> NegativeEdgeRotationOfCellAfter(Edge<T> first, int offset)
+        {
+            Edge<T>[] edgesOfCell = first.Cell.Edges;
+            Edge<T>[] reversedEdges = ArrayMethods.GetReverseOrderArray(edgesOfCell);
+            int firstEdgeIndice = FindIndiceOfEdgeInItsCell(reversedEdges, first);
+            if(firstEdgeIndice != -1)
+            {
+                return new CyclicArray<Edge<T>>(reversedEdges, firstEdgeIndice + offset);
+            }
+            else
+            {
+                return null;
+            }
+        }
+    }
 }
