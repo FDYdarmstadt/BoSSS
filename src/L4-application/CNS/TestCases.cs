@@ -3826,9 +3826,9 @@ namespace CNS {
             c.dtMin = 0.0;
             c.dtMax = 1.0;
             c.Endtime = endTime;
-            //c.CFLFraction = CFLFraction;
-            c.NoOfTimesteps = 70;
-            c.dtFixed = 1e-3;
+            c.CFLFraction = CFLFraction;
+            c.NoOfTimesteps = int.MaxValue;
+            //c.dtFixed = 1e-3;
 
             c.ProjectName = "IBMBowShock";
 
@@ -3839,7 +3839,7 @@ namespace CNS {
                     tempSessionName = string.Format("IBMBowShock_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}_agg{5}",
                         dgDegree, numOfCellsX, numOfCellsY, CFLFraction, explicitOrder, c.AgglomerationThreshold);
                 } else {
-                    tempSessionName = string.Format("IBMBowShock_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}_s0={5:0.0E-00}_lambdaMax{6}_agg{7}_RESTART4",
+                    tempSessionName = string.Format("IBMBowShock_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}_s0={5:0.0E-00}_lambdaMax{6}_agg{7}_RESTART11",
                         dgDegree, numOfCellsX, numOfCellsY, CFLFraction, explicitOrder, sensorLimit, lambdaMax, c.AgglomerationThreshold);
                 }
             } else if (c.ExplicitScheme == ExplicitSchemes.AdamsBashforth) {
