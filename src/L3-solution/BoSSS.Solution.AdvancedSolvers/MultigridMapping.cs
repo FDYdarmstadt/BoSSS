@@ -789,12 +789,32 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return R.ToArray();
         }
 
+        /// <summary>
+        /// Gets DOF of ghost cells available on this proc
+        /// </summary>
+        /// <returns>DOF of ghost cells available on this proc</returns>
+        public int GetLocalLength_Ext() {
+            ilPSP.MPICollectiveWatchDog.Watch();
+            int Locoffset = this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+            int[] LocCellIdxExt = this.AggGrid.iLogicalCells.NoOfExternalCells.ForLoop(i => i + Locoffset);
+            int Len = 0;
+            foreach (int jCell in LocCellIdxExt) {
+                for (int fld = 0; fld < NoOfVariables; fld++) {
+                    Len += this.AggBasis[fld].GetLength(jCell, this.DgDegree[fld]);
+                }
+            }
+            return Len;
+        }
+
+        /// <summary>
+        /// Gets index vecor of all ghost cells available on this proc
+        /// </summary>
+        /// <param name="Fields"></param>
+        /// <returns></returns>
         public int[] GetSubvectorIndices_Ext(params int[] Fields) {
             ilPSP.MPICollectiveWatchDog.Watch();
-            //long[] GlobCellIdxExt = this.AggGrid.iParallel.GlobalIndicesExternalCells;
             int Locoffset = this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
             int[] LocCellIdxExt = this.AggGrid.iLogicalCells.NoOfExternalCells.ForLoop(i=>i + Locoffset);
-            int E0 = this.AggGrid.CellPartitioning.i0;
             List<int> R = new List<int>();
             foreach(int jCell in LocCellIdxExt) {
                 foreach (int fld in Fields) {
@@ -805,7 +825,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
                 }
             }
-
             return R.ToArray();
         }
 

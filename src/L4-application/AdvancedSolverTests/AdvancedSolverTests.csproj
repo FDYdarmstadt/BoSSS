@@ -78,9 +78,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AdvancedSolverMain.cs" />
-    <Compile Include="SubBlocking\SubBlockTests.cs" />
+    <Compile Include="SubBlocking\ExternalTests.cs" />
+    <Compile Include="SubBlocking\LocalTests.cs" />
     <Compile Include="SubBlocking\Fluxes.cs" />
-    <Compile Include="SubBlocking\SubBlockTestSolver.cs" />
+    <Compile Include="SubBlocking\TestSolver.cs" />
+    <Compile Include="SubBlocking\Utils.cs" />
     <Compile Include="TestBench.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

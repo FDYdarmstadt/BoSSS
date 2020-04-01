@@ -37,7 +37,11 @@ namespace AdvancedSolverTests {
 
     public enum MatrixShape
     {
-        standard,
+        laplace,
+        full,
+        full_var,
+        full_spec,
+        full_var_spec,
         diagonal,
         diagonal_var,
         diagonal_var_spec,
@@ -51,8 +55,38 @@ namespace AdvancedSolverTests {
         internal int m_DGorder = 1;
 
         protected override IGrid CreateOrLoadGrid() {
-            base.Control.GridPartType = BoSSS.Foundation.Grid.GridPartType.METIS;
+            //base.Control.GridPartType = BoSSS.Foundation.Grid.GridPartType.METIS;
+            base.Control.GridPartType = BoSSS.Foundation.Grid.GridPartType.Predefined;
+
+            base.Control.GridPartOptions = "hallo";
+            double xMax = 1.0, yMax = 1.0;
+            double xMin = -1.0, yMin = -1.0;
+            Func<double[], int> MakeMyPartioning = delegate (double[] X) {
+                double x = X[0];
+                double y = X[1];
+
+                int separation = 2;
+                double xspan = (xMax - xMin) / separation;
+                double yspan = (yMax - yMin) / separation;
+                int rank = int.MaxValue;
+                int icore = 0;
+                for (int i = 0; i < separation; i++) {
+                    for (int j = 0; j < separation; j++) {
+                        bool xtrue = x <= xspan * (i + 1) + xMin;
+                        bool ytrue = y <= yspan * (j + 1) + yMin;
+                        if (xtrue && ytrue) {
+                            rank = icore;
+                            return rank;
+                        }
+                        icore++;
+                    }
+                }
+
+                return rank;
+            };
+            
             m_grid = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1, 1, m_Res+1), GenericBlas.Linspace(-1, 1, m_Res+1));
+            ((Grid2D)m_grid).AddPredefinedPartitioning("hallo", MakeMyPartioning);
             return m_grid;
         }
 
@@ -150,19 +184,61 @@ namespace AdvancedSolverTests {
             //Op = new XSpatialOperatorMk2(1, 0, 1, (A, B, c) => m_quadOrder, LsTrk.SpeciesIdS.ToArray(), "u1","c1");
 
             switch (m_Mshape) {
-                case MatrixShape.standard:
-                    Op.EquationComponents["c1"].Add(new LevSetFlx(this.LsTrk, "u1", -1));
-                    Op.EquationComponents["c1"].Add(new LevSetFlx(this.LsTrk, "u2", 2));
+                case MatrixShape.laplace:
+                    var lengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)GridData).Cells.PenaltyLengthScales;
+                    int p = u1.Basis.Degree;
+                    int D=this.GridData.SpatialDimension;
+                    double penalty_base = (p + 1) * (p + D) / D;
+                    double MU_A = 1;
+                    double MU_B = 10;
+                    
+                    Op.EquationComponents["c1"].Add(new XLaplace_Bulk(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u1",lengthScales));      // Bulk form
+                    Op.EquationComponents["c1"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u1", lengthScales));   // coupling form
+                    Op.EquationComponents["c1"].Add(new XLaplace_Bulk(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u2", lengthScales));      // Bulk form
+                    Op.EquationComponents["c1"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u2", lengthScales));   // coupling form
+                    Op.EquationComponents["c2"].Add(new XLaplace_Bulk(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u1", lengthScales));      // Bulk form
+                    Op.EquationComponents["c2"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u1", lengthScales));   // coupling form
+                    Op.EquationComponents["c2"].Add(new XLaplace_Bulk(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u2", lengthScales));      // Bulk form
+                    Op.EquationComponents["c2"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u2", lengthScales));   // coupling form
+                    break;
+                case MatrixShape.full:
+                    //tested: shape valid for testing
+                    Op.EquationComponents["c1"].Add(new DxFlux("u1", 3)); // Flux in Bulk Phase;
+                    Op.EquationComponents["c2"].Add(new DxFlux("u2", 4)); // Flux in Bulk Phase;
+                    break;
+                case MatrixShape.full_var:
+                    //tested: shape valid for testing
                     Op.EquationComponents["c1"].Add(new SourceTest("u1", 1)); // Flux in Bulk Phase;
-                    Op.EquationComponents["c1"].Add(new SourceTest("u2", -2)); // Flux in Bulk Phase;
-                    Op.EquationComponents["c1"].Add(new DxFlux("u1", -10)); // Flux in Bulk Phase;
+                    Op.EquationComponents["c1"].Add(new SourceTest("u2", 2)); // Flux in Bulk Phase;
+                    Op.EquationComponents["c1"].Add(new DxFlux("u1", 3)); // Flux in Bulk Phase;
+                    Op.EquationComponents["c1"].Add(new DxFlux("u2", 4)); // Flux in Bulk Phase;
 
-                    Op.EquationComponents["c2"].Add(new LevSetFlx(this.LsTrk, "u1", +3));
+                    Op.EquationComponents["c2"].Add(new SourceTest("u1", -5)); // Flux in Bulk Phase;
+                    Op.EquationComponents["c2"].Add(new SourceTest("u2", -6)); // Flux in Bulk Phase;
+                    Op.EquationComponents["c2"].Add(new DxFlux("u1", -7)); // Flux in Bulk Phase;
+                    Op.EquationComponents["c2"].Add(new DxFlux("u2", -8)); // Flux in Bulk Phase;
+                    break;
+                case MatrixShape.full_spec:
+                    //tested: no spec coupling in the secondary diagonals (obviously)
+                    Op.EquationComponents["c1"].Add(new LevSetFlx(this.LsTrk, "u1", -1));
+                    Op.EquationComponents["c1"].Add(new SourceTest("u1", 1)); // Flux in Bulk Phase;
+                    Op.EquationComponents["c1"].Add(new DxFlux("u1", 10)); // Flux in Bulk Phase;
+
                     Op.EquationComponents["c2"].Add(new LevSetFlx(this.LsTrk, "u2", -4));
-                    Op.EquationComponents["c2"].Add(new SourceTest("u1", 1)); // Flux in Bulk Phase;
                     Op.EquationComponents["c2"].Add(new SourceTest("u2", -2)); // Flux in Bulk Phase;
-                    Op.EquationComponents["c2"].Add(new DxFlux("u2", -10)); // Flux in Bulk Phase;
+                    Op.EquationComponents["c2"].Add(new DxFlux("u2", -11)); // Flux in Bulk Phase;
+                    break;
+                case MatrixShape.full_var_spec:
+                    //tested: no spec coupling in the secondary diagonals (obviously)
+                    Op.EquationComponents["c1"].Add(new LevSetFlx(this.LsTrk, "u1", -1));
+                    Op.EquationComponents["c1"].Add(new LevSetFlx(this.LsTrk, "u2", -1));
+                    Op.EquationComponents["c1"].Add(new DxFlux("u1", 3)); // Flux in Bulk Phase;
+                    Op.EquationComponents["c1"].Add(new DxFlux("u2", 4)); // Flux in Bulk Phase;
 
+                    Op.EquationComponents["c2"].Add(new LevSetFlx(this.LsTrk, "u1", -1));
+                    Op.EquationComponents["c2"].Add(new LevSetFlx(this.LsTrk, "u2", -1));
+                    Op.EquationComponents["c2"].Add(new DxFlux("u1", 3)); // Flux in Bulk Phase;
+                    Op.EquationComponents["c2"].Add(new DxFlux("u2", 4)); // Flux in Bulk Phase;
                     break;
                 case MatrixShape.diagonal_var_spec:
                     // block diagonal matrix (ignore cell coupling) 
@@ -444,7 +520,7 @@ namespace AdvancedSolverTests {
             Op = new XSpatialOperatorMk2(1, 0, 1, (A, B, c) => m_quadOrder, LsTrk.SpeciesIdS.ToArray(), "u1", "c1");
 
             switch (m_Mshape) {
-                case MatrixShape.standard:
+                case MatrixShape.full:
                     Op.EquationComponents["c1"].Add(new LevSetFlx(this.LsTrk, "u1", -1));
                     Op.EquationComponents["c1"].Add(new SourceTest("u1", 1)); // Flux in Bulk Phase;
                     Op.EquationComponents["c1"].Add(new DxFlux("u1", -10)); // Flux in Bulk Phase;

@@ -109,6 +109,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     return this;
                 }
             }
+
             this.m_CellFilter = GetIntInstruction(CellIdx);
             return this;
         }
@@ -152,7 +153,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             } else {
                 tmpList = ListOfCellIdx.ToList();
             }
-            this.m_CellFilter = GetListInstruction(tmpList);
+            if (tmpList.Count <= 0)
+                this.m_CellFilter = GetDoNothingInstruction();
+            if(tmpList.Count>0)
+                this.m_CellFilter = GetListInstruction(tmpList);
             return this;
         }
 
@@ -247,32 +251,43 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// 
+        /// Selects Species by <see cref="SpeciesId"/>.
         /// </summary>
         /// <param name="Species"></param>
         /// <returns></returns>
-        public SubBlockSelectorBase SpeciesSelector(int Species) {
-            // ist position von species in matrix consistent? Species A ist immer an erster Stelle, etc.?
-            // Florian: NEIN
-            // Diese Methode ist eher sinnlos - Selektion sollte mittels SpeciesId gemacht weren
+        public SubBlockSelectorBase SpeciesSelector(SpeciesId SId) {
+            //for (int v = 0; v < m_map.NoOfVariables; v++) {
+            //    if (this.m_map.AggBasis[v].GetType() == typeof(XdgAggregationBasis))
+            //        Console.WriteLine("WARNING: Variable {0} has no XdgBasis and thus may be not selected",v);
+            //}
             this.m_SpeciesFilter = delegate (int iCell, int iVar, int iSpec) {
-                return GetIntInstruction(Species)(iSpec);
+                int SpcIdx = ((XdgAggregationBasis)this.m_map.AggBasis[iVar]).GetSpeciesIndex(iCell, SId);
+                return GetIntInstruction(SpcIdx)(iSpec);
             };
             return this;
         }
 
         /// <summary>
-        /// not implemented yet
+        /// Selects multiple species by <see cref="IEnumerable<SpeciesId>"/>.
         /// </summary>
-        /// <param name="Species"></param>
+        /// <param name="SetOfSpecies"></param>
         /// <returns></returns>
-        public SubBlockSelectorBase SpeciesSelector(string Species) {
-            int intSpecies = -1;
-            throw new NotImplementedException("to do. Use other Selector instead");
-            // how can be decided, which is species A or B?
-            // Translate char to intSpecies and ...
-            return SpeciesSelector(intSpecies); ;
+        public SubBlockSelectorBase SpeciesSelector(IEnumerable<SpeciesId> SetOfSpecies) {
+            //for (int v = 0; v < m_map.NoOfVariables; v++) {
+            //    if (this.m_map.AggBasis[v].GetType() == typeof(XdgAggregationBasis))
+            //        Console.WriteLine("WARNING: Variable {0} has no XdgBasis and thus may be not selected",v);
+            //}
+            this.m_SpeciesFilter = delegate (int iCell, int iVar, int iSpec) {
+                List<int> SpcInt = new List<int>();
+                foreach(SpeciesId spi in SetOfSpecies) {
+                    int SpcIdx = ((XdgAggregationBasis)this.m_map.AggBasis[iVar]).GetSpeciesIndex(iCell, spi);
+                    SpcInt.Add(SpcIdx);
+                }
+                return GetListInstruction(SpcInt)(iSpec);
+            };
+            return this;
         }
+
 #endregion
 
 #region ModeSelector
@@ -551,6 +566,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             get;
         }
 
+        protected abstract int m_LocalLength {
+            get;
+        }
+
         //internal get
         private SubBlockSelectorBase m_sbs;
         protected MultigridMapping m_map;
@@ -659,16 +678,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
                 }
             }
+
+            bool emptysel = true;
+            for(int iLoc = 0; iLoc < NoOfCells; iLoc++) {
+                emptysel &= !m_sbs.CellFilter(iLoc);
+            }
 #endif
-            Debug.Assert(ListNi0.GroupBy(x => x.Li0).Any(g => g.Count() == 1));
-            Debug.Assert(ListNi0.GroupBy(x => x.Gi0).Any(g => g.Count() == 1));
-            Debug.Assert(ListNi0.Count() == NumOfNi0);
-            Debug.Assert(MaskLen <= m_map.LocalLength);
-            Debug.Assert(Localint.GroupBy(x => x).Any(g => g.Count() == 1));
-            Debug.Assert(Globalint.GroupBy(x => x).Any(g => g.Count() == 1));
-            Debug.Assert(Localint.Count() == MaskLen);
-            Debug.Assert(SubBlockIdx.Count()== MaskLen);
-            Debug.Assert(SubBlockIdx.GroupBy(x => x).Any(g => g.Count() == 1));
+            if (emptysel)
+                Console.WriteLine("WARNING: no cells selceted with {0}", this.ToString());
+            if (!emptysel) {
+                Debug.Assert(ListNi0.GroupBy(x => x.Li0).Any(g => g.Count() == 1));
+                Debug.Assert(ListNi0.GroupBy(x => x.Gi0).Any(g => g.Count() == 1));
+                Debug.Assert(ListNi0.Count() == NumOfNi0);
+                Debug.Assert(MaskLen <= m_LocalLength);
+                Debug.Assert(Localint.GroupBy(x => x).Any(g => g.Count() == 1));
+                Debug.Assert(Globalint.GroupBy(x => x).Any(g => g.Count() == 1));
+                Debug.Assert(Localint.Count() == MaskLen);
+                Debug.Assert(SubBlockIdx.Count() == MaskLen);
+                Debug.Assert(SubBlockIdx.GroupBy(x => x).Any(g => g.Count() == 1));
+            }
 
             m_GlobalMask = Globalint;
             m_LocalMask = Localint;
@@ -837,214 +865,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 return m_MaskLen;
             }
         }
-
-        ///// <summary>
-        ///// Get Array of Cellblocks
-        ///// </summary>
-        ///// <param name="target"></param>
-        ///// <param name="ignoreCellCoupling"></param>
-        ///// <param name="ignoreVarCoupling"></param>
-        ///// <param name="ignoreSpecCoupling"></param>
-        ///// <returns></returns>
-        //public MultidimensionalArray[] GetSubBlocks(BlockMsrMatrix target, bool ignoreCellCoupling, bool ignoreVarCoupling, bool ignoreSpecCoupling) {
-        //    int NoOfCells = m_StructuredNi0.Length;
-        //    int size = ignoreCellCoupling ? NoOfCells : NoOfCells * NoOfCells;
-
-        //    MultidimensionalArray[] Sblocks = new MultidimensionalArray[size];
-
-        //    int auxIdx = 0;
-        //    for (int iLoc = 0; iLoc < m_StructuredNi0.Length; iLoc++) {
-        //        for (int jLoc = 0; jLoc < m_StructuredNi0.Length; jLoc++) {
-        //            if (ignoreCellCoupling && jLoc != iLoc) {
-        //                continue;
-        //            }
-        //            int CellBlockLen = GetCellwiseLength(jLoc);
-        //            Sblocks[auxIdx] = MultidimensionalArray.Create(CellBlockLen, CellBlockLen);
-        //            for (int iVar = 0; iVar < m_StructuredNi0[iLoc].Length; iVar++) {
-        //                for (int jVar = 0; jVar < m_StructuredNi0[jLoc].Length; jVar++) {
-        //                    if (ignoreVarCoupling && jVar != iVar) {
-        //                        continue;
-        //                    }
-        //                    for (int iSpc = 0; iSpc < m_StructuredNi0[iLoc][iVar].Length; iSpc++) {
-        //                        for (int jSpc = 0; jSpc < m_StructuredNi0[jLoc][jVar].Length; jSpc++) {
-        //                            if (ignoreSpecCoupling && jSpc != iSpc) {
-        //                                continue;
-        //                            }
-        //                            for (int iMode = 0; iMode < m_StructuredNi0[iLoc][iVar][iSpc].Length; iMode++) {
-        //                                for (int jMode = 0; jMode < m_StructuredNi0[jLoc][jVar][jSpc].Length; jMode++) {
-        //                                    extNi0 RowNi0 = m_StructuredNi0[iLoc][iVar][iSpc][iMode];
-        //                                    extNi0 ColNi0 = m_StructuredNi0[jLoc][jVar][jSpc][jMode];
-        //                                    int Targeti0 = RowNi0.Gi0;
-        //                                    int Targetj0 = ColNi0.Gi0;
-        //                                    int Subi0 = GetRelativeSubBlockOffset(iLoc, iVar, iSpc, iMode);
-        //                                    int Subj0 = GetRelativeSubBlockOffset(jLoc, jVar, jSpc, jMode);
-        //                                    int Subie = Subi0 + RowNi0.N - 1;
-        //                                    int Subje = Subj0 + ColNi0.N - 1;
-
-        //                                    target.ReadBlock(Targeti0, Targetj0,
-        //                                        Sblocks[auxIdx].ExtractSubArrayShallow(new int[] { Subi0, Subj0 }, new int[] { Subie, Subje }));
-        //                                }
-        //                            }
-        //                        }
-        //                    }
-        //                }
-        //            }
-        //            auxIdx++;
-        //        }
-        //    }
-        //    return Sblocks;
-        //}
-
-        ///// <summary>
-        ///// If you want nothing special. Take this one. If you want only diagonal block matrix choose one of the other methods
-        ///// </summary>
-        ///// <returns></returns>
-        //public BlockMsrMatrix GetSubBlockMatrix(BlockMsrMatrix target) {
-        //    int Loclength = m_MaskLen;
-
-        //    var tmpN = GetAllSubMatrixCellLength();
-        //    var tmpi0 = GetAllSubMatrixCellOffsets();
-
-        //    BlockPartitioning localBlocking = new BlockPartitioning(Loclength, tmpi0.ToArray(), tmpN.ToArray(), m_MPIcomm, i0isLocal: true);
-        //    var SubMSR = new BlockMsrMatrix(localBlocking);
-        //    target.AccSubMatrixTo(1.0, SubMSR, m_GlobalMask, default(int[]), m_GlobalMask, default(int[]));
-        //    return SubMSR;
-        //}
-
-        ///// <summary>
-        ///// Coupling can be ignored. If you want full output take the basic GetSubBlockMatrix() method, which will be faster.
-        ///// </summary>
-        ///// <param name="target"></param>
-        ///// <param name="ignoreCellCoupling"></param>
-        ///// <param name="ignoreVarCoupling"></param>
-        ///// <param name="ignoreSpecCoupling"></param>
-        ///// <returns></returns>
-        //public BlockMsrMatrix GetSubBlockMatrix(BlockMsrMatrix target, bool ignoreCellCoupling, bool ignoreVarCoupling, bool ignoreSpecCoupling) {
-        //    int Loclength = m_MaskLen;
-
-        //    var tmpN = GetAllSubMatrixCellLength();
-        //    var tmpi0 = GetAllSubMatrixCellOffsets();
-
-        //    BlockPartitioning localBlocking = new BlockPartitioning(Loclength, tmpi0.ToArray(), tmpN.ToArray(), m_MPIcomm, i0isLocal: true);
-        //    var SubMSR = new BlockMsrMatrix(localBlocking);
-
-        //    int SubRowIdx = 0;
-        //    int SubColIdx = 0;
-
-        //    int auxIdx = 0;
-        //    for (int iLoc = 0; iLoc < m_StructuredNi0.Length; iLoc++) {
-        //        for (int jLoc = 0; jLoc < m_StructuredNi0.Length; jLoc++) {
-        //            if (ignoreCellCoupling && jLoc != iLoc) {
-        //                continue;
-        //            }
-        //            for (int iVar = 0; iVar < m_StructuredNi0[iLoc].Length; iVar++) {
-        //                for (int jVar = 0; jVar < m_StructuredNi0[jLoc].Length; jVar++) {
-        //                    if (ignoreVarCoupling && jVar != iVar) {
-        //                        continue;
-        //                    }
-        //                    for (int iSpc = 0; iSpc < m_StructuredNi0[iLoc][iVar].Length; iSpc++) {
-        //                        for (int jSpc = 0; jSpc < m_StructuredNi0[jLoc][jVar].Length; jSpc++) {
-        //                            if (ignoreSpecCoupling && jSpc != iSpc) {
-        //                                continue;
-        //                            }
-        //                            for (int iMode = 0; iMode < m_StructuredNi0[iLoc][iVar][iSpc].Length; iMode++) {
-        //                                for (int jMode = 0; jMode < m_StructuredNi0[jLoc][jVar][jSpc].Length; jMode++) {
-
-        //                                    int[] RowIdx = new int[] { iLoc, iVar, iSpc, iMode };
-        //                                    int[] ColIdx = new int[] { jLoc, jVar, jSpc, jMode };
-        //                                    extNi0 RowNi0 = m_StructuredNi0[iLoc][iVar][iSpc][iMode];
-        //                                    extNi0 ColNi0 = m_StructuredNi0[jLoc][jVar][jSpc][jMode];
-        //                                    int Targeti0 = RowNi0.Gi0;
-        //                                    int Targetj0 = ColNi0.Gi0;
-
-        //                                    var tmpBlock = MultidimensionalArray.Create(RowNi0.N, ColNi0.N);
-        //                                    target.ReadBlock(Targeti0, Targetj0,
-        //                                        tmpBlock);
-        //                                    SubMSR.AccBlock(SubRowIdx, SubColIdx, 1, tmpBlock);
-        //                                    SubColIdx += ColNi0.N;
-        //                                }
-        //                                SubRowIdx += m_StructuredNi0[iLoc][iVar][iSpc][iMode].N;
-        //                            }
-        //                        }
-        //                    }
-        //                }
-        //            }
-        //            auxIdx++;
-        //        }
-        //        auxIdx++;
-        //    }
-        //    return SubMSR;
-        //}
-
-        ///// <summary>
-        ///// Translates back your masked vector to the full one
-        ///// </summary>
-        ///// <typeparam name="V"></typeparam>
-        ///// <typeparam name="W"></typeparam>
-        ///// <param name="targetVector">output</param>
-        ///// <param name="accVector"></param>
-        //public void AccVecToFull<V, W>(W accVector, V targetVector)
-        //    where V : IList<double>
-        //    where W : IList<double> {
-        //    if (targetVector.Count() != m_map.LocalLength)
-        //        throw new ArgumentException("Length of targetVector != Length of original");
-        //    if (accVector.Count() != m_MaskLen)
-        //        throw new ArgumentException("accVector length is not equal to length of mask");
-        //    targetVector.AccV(1.0, accVector, m_LocalMask, default(int[]));
-        //}
-
-        ///// <summary>
-        ///// Translates back your masked vector to the full one cellwise. i.e. Useful, if you solved blockwise
-        ///// </summary>
-        ///// <typeparam name="V"></typeparam>
-        ///// <typeparam name="W"></typeparam>
-        ///// <param name="targetVector">output</param>
-        ///// <param name="accVector"></param>
-        ///// <param name="iCell">starts with 0</param>
-        //public void AccVecCellwiseToFull<V, W>(W accVector, int iCell, V targetVector)
-        //    where V : IList<double>
-        //    where W : IList<double> {
-        //    if (iCell > m_StructuredNi0.Length - 1)
-        //        throw new ArgumentOutOfRangeException("iCell is greater than Cells in mask");
-        //    if (accVector.Count() != GetCellwiseLength(iCell))
-        //        throw new ArgumentException("accVector length is not equal to length of mask");
-        //    if (targetVector.Count() != m_map.LocalLength)
-        //        throw new ArgumentException("Length of targetVector not equal Length of original");
-        //    var Cidx = GetCellwiseLocalidx(iCell);
-        //    Debug.Assert(accVector.Count() == Cidx.Count());
-        //    targetVector.AccV(1.0, accVector, Cidx, default(int[]));
-        //}
-
-        ///// <summary>
-        ///// Translates a full vector to a vector corresponding to matrix mask cellwise
-        ///// </summary>
-        ///// <param name="fullVector"></param>
-        ///// <param name="iCell"></param>
-        ///// <returns></returns>
-        //public double[] GetVectorCellwise(IList<double> fullVector, int iCell) {
-        //    if (iCell > m_StructuredNi0.Length - 1)
-        //        throw new ArgumentOutOfRangeException("iCell is greater than number of cells in mask");
-        //    if (fullVector.Count() != m_map.LocalLength)
-        //        throw new ArgumentException("Length of targetVector not equal Length of original");
-        //    double[] subVector = new double[GetCellwiseLength(iCell)];
-        //    var Cidx = GetCellwiseLocalidx(iCell);
-        //    Debug.Assert(subVector.Length == Cidx.Length);
-        //    ArrayTools.GetSubVector<int[], int[], double>(fullVector, subVector, Cidx);
-        //    return subVector;
-        //}
-
-        ///// <summary>
-        ///// Translates a full vector to a vector corresponding to matrix mask
-        ///// </summary>
-        ///// <param name="fullVector"></param>
-        //public double[] GetSubBlockVec(IList<double> fullVector) {
-        //    if (fullVector.Count() != m_map.LocalLength)
-        //        throw new ArgumentException("Length of targetVector not equal Length of original");
-        //    int Len = m_MaskLen;
-        //    double[] subVector = new double[m_MaskLen];
-        //    subVector.AccV(1.0, fullVector, default(int[]), m_LocalMask);
-        //    return subVector;
-        //}
 
     }
 

@@ -44,6 +44,12 @@ namespace BoSSS.Solution.AdvancedSolvers
                 }
             }
 
+            protected override int m_LocalLength {
+                get {
+                    return m_map.LocalLength;
+                }
+            }
+
         }
 
         /// <summary>
@@ -68,13 +74,22 @@ namespace BoSSS.Solution.AdvancedSolvers
 
             protected override int m_NoOfCells {
                 get {
-                    return m_map.AggBasis[0].AggGrid.iLogicalCells.NoOfExternalCells;
+                    return m_map.AggGrid.iLogicalCells.NoOfExternalCells;
                 }
             }
 
             protected override int m_CellOffset {
                 get {
-                    return m_map.AggBasis[0].AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+                    return m_map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+                }
+            }
+
+            /// <summary>
+            /// These are the DOF of external ghost cells available on this proc
+            /// </summary>
+            protected override int m_LocalLength {
+                get {
+                    return m_map.GetLocalLength_Ext();
                 }
             }
 
@@ -275,8 +290,6 @@ namespace BoSSS.Solution.AdvancedSolvers
 
         protected List<int> GlobalIList_External {
             get {
-                if (BMExt == null)
-                    return null;
                 return BMExt.m_GlobalMask;
             }
         }

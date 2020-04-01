@@ -9,6 +9,7 @@ using BoSSS.Solution;
 using ilPSP.Connectors.Matlab;
 using MPI.Wrappers;
 using NUnit.Framework;
+using AdvancedSolverTests.SubBlocking;
 
 namespace AdvancedSolverTests {
     
@@ -43,12 +44,18 @@ namespace AdvancedSolverTests {
         }
 
         public static void Test() {
+            System.Threading.Thread.Sleep(10000);
             //SubBlockTests.LocalIndexTest(XDGusage.all,2);
             //SubBlockTests.ExternalIndexTest(XDGusage.all, 2);
             //SubBlockTests.MapConsistencyTest(XDGusage.all, 2);
             //SubBlockTests.WriteOutTestMatrices();
             //SubBlockTests.SubMatrixExtractionWithCoupling(XDGusage.all, 2,MatrixShape.diagonal_var_spec);
-            SubBlockTests.SplitVectorOperation(XDGusage.all, 2, MatrixShape.diagonal);
+            //SubBlockTests.SplitVectorOperations(XDGusage.none, 2, MatrixShape.diagonal_var);
+            //SubBlockTests.SubSelection(SelectionType.species);
+            //LocalTests.CellwiseSubSelection(SelectionType.species);
+            //ExternalTests.ExternalIndexTest(XDGusage.all,2);
+            //ExternalTests.GetExternalRowsTest(XDGusage.all, 2);
+            ExternalTests.SubMatrixExtraction(XDGusage.all, 2,MatrixShape.full_var_spec);
         }
     }
 }
