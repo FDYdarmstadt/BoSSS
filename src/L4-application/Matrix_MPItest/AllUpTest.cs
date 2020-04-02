@@ -33,7 +33,7 @@ namespace BoSSS.Application.Matrix_MPItest {
         /// <summary>
         /// MPI init
         /// </summary>
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public static void SetUp() {
             bool MpiInit;
             ilPSP.Environment.Bootstrap(
@@ -55,8 +55,8 @@ namespace BoSSS.Application.Matrix_MPItest {
         /// <summary>
         /// MPI shutdown.
         /// </summary>
-        [TestFixtureTearDown]
-        public static void TestFixtureTearDown() {
+        [OneTimeTearDown]
+        public static void OneTimeTearDown() {
             csMPI.Raw.mpiFinalize();
         }
 
@@ -88,7 +88,7 @@ namespace BoSSS.Application.Matrix_MPItest {
             //MultiplyTest(XDGusage.none, 2, false, false);
             //SpMVTest(XDGusage.none, 2, false, false);
 
-            TestFixtureTearDown();
+            OneTimeTearDown();
 
             Console.WriteLine("TOTAL Time spend in matrix operations: " + TotTime_MatrixOp.TotalSeconds + " sec.");
 

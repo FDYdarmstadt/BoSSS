@@ -23,7 +23,7 @@ namespace BoSSS.Application.TutorialTests {
     static class TutorialTestsMain {
         
         static void Main(string[] args) {
-            AllUpTest.TestFixtureSetUp();
+            AllUpTest.OneTimeSetUp();
             //AllUpTest.RunWorksheets("quickStartCNS/IsentropicVortex.tex");
             //AllUpTest.RunWorksheets("MetaJobManager/MetaJobManager.tex");
             //AllUpTest.RunWorksheets("GridGeneration/GridGeneration.tex");
@@ -41,7 +41,7 @@ namespace BoSSS.Application.TutorialTests {
             AllUpTest.RunWorksheets("CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex"); 
             AllUpTest.RunWorksheets("convergenceStudyTutorial/convStudy.tex"); 
 
-            AllUpTest.TestFixtureTearDown();
+            AllUpTest.OneTimeTearDown();
         }
 
     }

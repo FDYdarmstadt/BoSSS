@@ -778,7 +778,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             assertions.ForEach(a => a());
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public static void TearDown() {
             csMPI.Raw.mpiFinalize();
         }

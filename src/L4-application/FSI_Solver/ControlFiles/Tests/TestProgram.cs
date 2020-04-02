@@ -24,7 +24,7 @@ namespace BoSSS.Application.FSI_Solver {
     [TestFixture]
     static class TestProgram {
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public static void Init() {
             ilPSP.Environment.Bootstrap(
                 new string[0],
@@ -32,7 +32,7 @@ namespace BoSSS.Application.FSI_Solver {
                 out _);
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public static void Cleanup() {
             //Console.Out.Dispose();
             csMPI.Raw.mpiFinalize();

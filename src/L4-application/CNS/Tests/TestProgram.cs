@@ -35,7 +35,7 @@ namespace CNS.Tests {
         /// <summary>
         /// Performs bootstrapping.
         /// </summary>
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public static void SetUp() {
             bool dummy;
             ilPSP.Environment.Bootstrap(

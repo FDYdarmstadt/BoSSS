@@ -27,7 +27,7 @@ namespace CutCellQuadrature {
     [TestFixture]
     public partial class Program : Application {
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public static void SetUp() {
             bool dummy;
             ilPSP.Environment.Bootstrap(
@@ -36,7 +36,7 @@ namespace CutCellQuadrature {
                 out dummy);
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public static void TearDown() {
             csMPI.Raw.mpiFinalize();
         }

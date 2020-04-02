@@ -34,14 +34,14 @@ namespace LTSTests {
                 () => new NUnitTests());
         }
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         static public void Init() {
             bool dummy;
             ilPSP.Environment.Bootstrap(new string[0], BoSSS.Solution.Application.GetBoSSSInstallDir(), out dummy);
             Thread.CurrentThread.CurrentCulture = CultureInfo.CurrentCulture;
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         static public void Cleanup() {
             //Console.Out.Dispose();
             MPI.Wrappers.csMPI.Raw.mpiFinalize();

@@ -30,7 +30,7 @@ namespace BoSSS.Application.ElementTests {
         /// <summary>
         /// Ensures bootstrapping has been conducted correctly.
         /// </summary>
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void SetUp() {
             bool dummy;
             ilPSP.Environment.Bootstrap(

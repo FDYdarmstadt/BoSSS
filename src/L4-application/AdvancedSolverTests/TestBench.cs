@@ -6,7 +6,7 @@ using System;
 namespace AdvancedSolverTests {
     [TestFixture]
     public abstract class TestBench {
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public virtual void SetUp() {
             bool MpiInit;
             ilPSP.Environment.Bootstrap(
@@ -20,7 +20,7 @@ namespace AdvancedSolverTests {
         /// <summary>
         /// 
         /// </summary>
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public virtual void TearDown() {
             csMPI.Raw.mpiFinalize();
         }

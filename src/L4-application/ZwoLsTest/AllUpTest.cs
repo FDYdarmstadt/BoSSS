@@ -23,7 +23,7 @@ namespace BoSSS.Application.ZwoLsTest {
     [TestFixture]
     static public class AllUpTest {
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public static void SetUp() {
             bool MpiInit;
             Environment.Bootstrap(
@@ -32,7 +32,7 @@ namespace BoSSS.Application.ZwoLsTest {
                 out MpiInit);
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public static void Teardown() {
             csMPI.Raw.mpiFinalize();
         }

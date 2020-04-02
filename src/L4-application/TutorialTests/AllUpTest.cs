@@ -33,16 +33,16 @@ namespace BoSSS.Application.TutorialTests {
         /// <summary>
         /// MPI finalization.
         /// </summary>
-        [TestFixtureTearDown]
-        static public void TestFixtureTearDown() {
+        [OneTimeTearDown]
+        static public void OneTimeTearDown() {
             csMPI.Raw.mpiFinalize();
         }
 
         /// <summary>
         /// MPI init.
         /// </summary>
-        [TestFixtureSetUp]
-        static public void TestFixtureSetUp() {
+        [OneTimeSetUp]
+        static public void OneTimeSetUp() {
             BoSSS.Solution.Application.InitMPI(new string[0]);
 
              if (System.Environment.MachineName.ToLowerInvariant().EndsWith("rennmaschin")

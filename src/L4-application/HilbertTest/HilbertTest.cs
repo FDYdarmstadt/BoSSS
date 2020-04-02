@@ -52,7 +52,7 @@ namespace HilbertTest {
 
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public static void Cleanup() {
             csMPI.Raw.mpiFinalize();
         }

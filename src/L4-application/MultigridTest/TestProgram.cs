@@ -43,7 +43,7 @@ namespace BoSSS.Application.MultigridTest {
     [TestFixture]
     class TestProgram {
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public static void Init() {
             bool dummy;
             ilPSP.Environment.Bootstrap(
@@ -86,7 +86,7 @@ namespace BoSSS.Application.MultigridTest {
         /// </summary>
         static Dictionary<int, MultigridMapping[]> MultigrigMap = new Dictionary<int, MultigridMapping[]>();
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public static void Cleanup() {
             //Console.Out.Dispose();
             csMPI.Raw.mpiFinalize();

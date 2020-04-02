@@ -10,7 +10,7 @@ namespace BoSSS.Application.DatabaseTests
     [TestFixture]
     class MPITest
     {
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public static void InitOnce()
         {
             ilPSP.Environment.Bootstrap(
@@ -20,7 +20,7 @@ namespace BoSSS.Application.DatabaseTests
             Thread.CurrentThread.CurrentCulture = CultureInfo.CurrentCulture;
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public static void TearDown()
         {
             //  removed MPI shutdown, this causes the test to crash without result (for some reason, this method is called multiple times)

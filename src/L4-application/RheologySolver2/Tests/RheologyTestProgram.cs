@@ -31,7 +31,7 @@ namespace BoSSS.Application.Rheology
     static class RheologyTestProgram
     {
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public static void Init()
         {
             bool dummy;
@@ -52,7 +52,7 @@ namespace BoSSS.Application.Rheology
 
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public static void Cleanup()
         {
             //Console.Out.Dispose();

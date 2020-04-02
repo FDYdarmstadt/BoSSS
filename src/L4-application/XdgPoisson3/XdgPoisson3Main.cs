@@ -60,7 +60,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
             //BatchmodeConnector.MatlabExecuteable = "C:\\Octave\\Octave-4.4.1\\bin\\octave-cli.exe";
             BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-5.1.0.0\mingw64\bin\octave-cli.exe";
-            //Tests.TestFixtureSetUp();
+            //Tests.OneTimeSetUp();
             //Tests.ScalingCircle2D(2);
             //throw new ApplicationException("remove me");
             
