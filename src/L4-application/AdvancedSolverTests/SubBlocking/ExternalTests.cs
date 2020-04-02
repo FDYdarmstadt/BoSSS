@@ -103,9 +103,17 @@ namespace AdvancedSolverTests.SubBlocking
             MultigridMapping map = mgo.Mapping;
             BlockMsrMatrix M = mgo.OperatorMatrix;
             var sbs = new SubBlockSelector(map);
-            sbs.AllExternalCellsSelection();
+            int[] extcells = sbs.AllExternalCellsSelection();
             var M_ext=BlockMask.GetAllExternalRows(map,M);
             var mask = new BlockMask(sbs, M_ext);
+
+            //Arrange --- get index list of all external cells
+            List<int> idc = new List<int>();
+            for (int i = 0; i < extcells.Length; i++) {
+                int iCell = extcells[i];
+                idc.AddRange(map.GetIndcOfExtCell(iCell));
+            }
+            double[] GlobIdx = idc.Count().ForLoop(i => (double)idc[i]+1.0);
 
             //Arrange --- stopwatch
             var stw = new Stopwatch();
@@ -115,11 +123,30 @@ namespace AdvancedSolverTests.SubBlocking
             stw.Start();
             BlockMsrMatrix subM = mask.GetSubBlockMatrix(M);
             stw.Stop();
-            
 
+            //Arrange --- Extract Blocks in Matlab and substract
+            var infNorm = MultidimensionalArray.Create(4, 1);
+            int rank = map.MpiRank;
+            using (BatchmodeConnector matlab = new BatchmodeConnector()) {
+                matlab.PutSparseMatrix(M, "M");
+                // note: M_sub lives on Comm_Self, therefore we have to distinguish between procs ...
+                matlab.PutSparseMatrixRankExclusive(subM, "M_sub"); 
+                matlab.PutVectorRankExclusive(GlobIdx, "Idx");
+                matlab.Cmd("M_0 = M(Idx_0, Idx_0);");
+                matlab.Cmd("M_1 = M(Idx_1, Idx_1);");
+                matlab.Cmd("M_2 = M(Idx_2, Idx_2);");
+                matlab.Cmd("M_3 = M(Idx_3, Idx_3);");
+                matlab.Cmd("n=[0; 0; 0; 0];");
+                matlab.Cmd("n(1,1)=norm(M_0-M_sub_0,inf);");
+                matlab.Cmd("n(2,1)=norm(M_1-M_sub_1,inf);");
+                matlab.Cmd("n(3,1)=norm(M_2-M_sub_2,inf);");
+                matlab.Cmd("n(4,1)=norm(M_3-M_sub_3,inf);");
+                matlab.GetMatrix(infNorm, "n");
+                matlab.Execute();
+            }
 
-            //Assert ---
-            Assert.IsTrue(subM.InfNorm()==0.0);
+            //Assert --- mask blocks and extracted blocks are the same
+            Assert.IsTrue(infNorm[rank,0] == 0.0);
         }
 
 

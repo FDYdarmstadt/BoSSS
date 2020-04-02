@@ -111,7 +111,6 @@ namespace AdvancedSolverTests.SubBlocking
         }
 
 
-
         /// <summary>
         /// Test for extracting masked diagonal cell blocks and respective vector matrix multiplication
         /// </summary>

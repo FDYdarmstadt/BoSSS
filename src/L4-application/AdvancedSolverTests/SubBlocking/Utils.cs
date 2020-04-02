@@ -324,12 +324,25 @@ namespace AdvancedSolverTests.SubBlocking
             return SubIdc;
         }
 
-        public static void AllExternalCellsSelection(this SubBlockSelector sbs) {
+        public static int[] AllExternalCellsSelection(this SubBlockSelector sbs) {
             var map = sbs.GetMapping;
             int NoOfExternalCells = map.AggGrid.iLogicalCells.NoOfExternalCells;
             int offset = map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
             int[] extcells = NoOfExternalCells.ForLoop(i => i + offset);
             sbs.CellSelector(extcells,false);
+            return extcells;
         }
+
+        public static int[] GetIndcOfExtCell(this MultigridMapping map, int jCell) {
+            int Jup = map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+            int i0 = map.GlobalUniqueIndex(0, jCell, 0);
+            int fld = map.NoOfVariables;
+            int N = 0;
+            for (int iF = 0; iF < fld; iF++)
+                N+=map.AggBasis[iF].GetLength(jCell, map.DgDegree[iF]);
+            int[] ret = N.ForLoop(i => i + i0);
+            return ret;
+        }
+
     }
 }

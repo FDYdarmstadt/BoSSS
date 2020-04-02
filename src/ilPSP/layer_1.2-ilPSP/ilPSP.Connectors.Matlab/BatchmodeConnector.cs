@@ -427,6 +427,84 @@ namespace ilPSP.Connectors.Matlab {
             Cmd(MatlabName + " = dlmread('" + TranslatePath(filepath) + "');");
         }
 
+        /// <summary>
+        /// transfers multiple vectors <paramref name="vec"/> to MATLAB.
+        /// note: <paramref name="MatlabName"/>is extended with "_rank",
+        /// which is the MPIrank
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="vec"></param>
+        /// <param name="MatlabName"></param>
+        public void PutVectorRankExclusive<T>(T vec, string MatlabName) where T : IEnumerable<double> {
+            int rank;
+            var comm = csMPI.Raw._COMM.WORLD;
+            csMPI.Raw.Comm_Rank(comm, out rank);
+            ilPSP.MPICollectiveWatchDog.Watch(comm);
+            if (Executed == true)
+                throw new InvalidOperationException("No commands can be added after Execute() has been called.");
+
+            string Mname = String.Concat(MatlabName + "_" + rank);
+            string workdir;
+            if (Rank == 0)
+                workdir = WorkingDirectory.FullName;
+            else
+                workdir = null;
+            workdir = workdir.MPIBroadcast(0);
+            string filepath = Path.Combine(workdir, Mname);
+
+            if (vec != null)
+                VectorIO.SaveToTextFile(vec, filepath, csMPI.Raw._COMM.SELF);
+
+            string[] Mnames = Mname.MPIGatherO(0);
+            if (Rank == 0) {
+                foreach (string Mn in Mnames) {
+                    CreatedFiles.Add(Path.Combine(workdir, Mn));
+                }
+            }
+            Mnames = Mnames.MPIBroadcast(0);
+            foreach (string Mn in Mnames)
+                Cmd(Mn + " = dlmread('" + TranslatePath(Path.Combine(workdir, Mn)) + "');");
+        }
+
+        /// <summary>
+        /// transfers multiple matrices <paramref name="M"/> to MATLAB.
+        /// note: <paramref name="MatlabName"/>is extended with "_rank",
+        /// which is the MPIrank
+        /// </summary>
+        /// <param name="M"></param>
+        /// <param name="MatlabName"></param>
+        public void PutSparseMatrixRankExclusive(IMutableMatrixEx M, string MatlabName) {
+            int rank;
+            var comm = csMPI.Raw._COMM.WORLD;
+            csMPI.Raw.Comm_Rank(comm, out rank);
+            ilPSP.MPICollectiveWatchDog.Watch(comm);
+            if (Executed == true)
+                throw new InvalidOperationException("No Data can be put after Execute() has been called..");
+            if (comm == M.MPI_Comm || M == null)
+                throw new NotSupportedException("has to be on sub comm of world and not empty");
+
+            string Mname = String.Concat(MatlabName + "_" + rank);
+            string workdir;
+            if (Rank == 0)
+                workdir = WorkingDirectory.FullName;
+            else
+                workdir = null;
+            workdir = workdir.MPIBroadcast(0);
+            string filepath = Path.Combine(workdir, Mname);
+
+            if (M != null)
+                M.SaveToTextFileSparse(filepath);
+
+            string[] Mnames = Mname.MPIGatherO(0);
+            if (Rank == 0) {
+                foreach (string Mn in Mnames) {
+                    CreatedFiles.Add(Path.Combine(workdir, Mn));
+                }
+            }
+            Mnames = Mnames.MPIBroadcast(0);
+            foreach (string Mn in Mnames)
+                Cmd(Mn + " = ReadMsr('" + TranslatePath(Path.Combine(workdir, Mn)) + "');");
+        }
 
         /// <summary>
         /// Imports a matrix from MATLAB.
