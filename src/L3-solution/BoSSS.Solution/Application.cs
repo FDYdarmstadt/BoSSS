@@ -43,10 +43,107 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Xml;
 
 namespace BoSSS.Solution {
+
+    /// <summary>
+    /// Configuration of <see cref="ilPSP.Connectors.Matlab.BatchmodeConnector"/>
+    /// </summary>
+    [DataContract]
+    public class MatlabConnectorConfig {
+        /// <summary>
+        /// <see cref="ilPSP.Connectors.Matlab.BatchmodeConnector.MatlabExecuteable"/>
+        /// </summary>
+        [DataMember]
+        public string MatlabExecuteable;
+
+        /// <summary>
+        /// <see cref="ilPSP.Connectors.Matlab.BatchmodeConnector.Flav"/>
+        /// </summary>
+        [DataMember]
+        public string Flav = ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor.Matlab.ToString();
+
+
+        /// <summary>
+        /// Loads configuration from default location in user directory
+        /// </summary>
+        public static MatlabConnectorConfig LoadDefault(string userDir) {
+            string ConfigFile = Path.Combine(userDir, "etc", "MatlabConnectorConfig.json");
+            if(!File.Exists(ConfigFile)) {
+                var r = new MatlabConnectorConfig();
+                r.SaveDefault(userDir);
+                return r;
+            }
+            string str = File.ReadAllText(ConfigFile);
+
+            return Deserialize(str);
+        }
+
+        /// <summary>
+        /// Saves configuration in default location in user directory
+        /// </summary>
+        public void SaveDefault(string userDir) {
+            string ConfigFile = Path.Combine(userDir, "etc", "MatlabConnectorConfig.json");
+            var Str = this.Serialize();
+            File.WriteAllText(ConfigFile, Str);
+        }
+
+
+        /// <summary>
+        /// JSON deserialization
+        /// </summary>
+        public static MatlabConnectorConfig Deserialize(string Str) {
+
+
+            JsonSerializer formatter = new JsonSerializer() {
+                NullValueHandling = NullValueHandling.Ignore,
+                TypeNameHandling = TypeNameHandling.Auto,
+                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+                ReferenceLoopHandling = ReferenceLoopHandling.Error
+            };
+
+
+            using(var tr = new StringReader(Str)) {
+                //string typeName = tr.ReadLine();
+                Type ControlObjectType = typeof(MatlabConnectorConfig); //Type.GetType(typeName);
+                using(JsonReader reader = new JsonTextReader(tr)) {
+                    var obj = formatter.Deserialize(reader, ControlObjectType);
+
+                    MatlabConnectorConfig ctrl = (MatlabConnectorConfig)obj;
+                    return ctrl;
+                }
+
+            }
+        }
+
+        /// <summary>
+        /// JSON serialization
+        /// </summary>
+        public string Serialize() {
+            JsonSerializer formatter = new JsonSerializer() {
+                NullValueHandling = NullValueHandling.Ignore,
+                TypeNameHandling = TypeNameHandling.Auto,
+                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+                ReferenceLoopHandling = ReferenceLoopHandling.Error,
+                Formatting = Newtonsoft.Json.Formatting.Indented
+            };
+
+            using(var tw = new StringWriter()) {
+                //tw.WriteLine(this.GetType().AssemblyQualifiedName);
+                using(JsonWriter writer = new JsonTextWriter(tw)) {  // Alternative: binary writer: BsonWriter
+                    formatter.Serialize(writer, this);
+                }
+
+                string Ret = tw.ToString();
+                return Ret;
+            }
+        }
+
+    }
+
 
     /// <summary>
     /// Non-generic version of the <see cref="Application{T}"/>-class for
@@ -159,6 +256,29 @@ namespace BoSSS.Solution {
             return BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir(m_Logger);
         }
 
+
+        
+
+        /// <summary>
+        /// Re-loads optional user-configuration file for Matlab connector <see cref="ilPSP.Connectors.Matlab.BatchmodeConnector"/>.
+        /// </summary>
+        public static void ReadBatchModeConnectorConfig() {
+            string userDir = BoSSS.Foundation.IO.Utils.GetBoSSSUserSettingsPath();
+            if(userDir.IsEmptyOrWhite())
+                return;
+
+            try {
+                var o = MatlabConnectorConfig.LoadDefault(userDir);
+
+                ilPSP.Connectors.Matlab.BatchmodeConnector.Flav = (ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor) System.Enum.Parse(typeof(ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor), o.Flav);
+                ilPSP.Connectors.Matlab.BatchmodeConnector.MatlabExecuteable = o.MatlabExecuteable;
+
+            } catch(Exception e) {
+                Console.Error.WriteLine($"{e.GetType().Name} while reading/saving Matlab connector configuration file: {e.Message}");
+            }
+            
+        }
+
         /// <summary>
         /// Application startup. Performs bootstrapping of unmanaged resources
         /// and initializes MPI.
@@ -195,6 +315,9 @@ namespace BoSSS.Solution {
                     Console.WriteLine("Running with " + size + " MPI process(es)");
                 }
             }
+
+            ReadBatchModeConnectorConfig();
+
         }
 
         /// <summary>
