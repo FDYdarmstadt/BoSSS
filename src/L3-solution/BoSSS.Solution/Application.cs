@@ -43,10 +43,107 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Xml;
 
 namespace BoSSS.Solution {
+
+    /// <summary>
+    /// Configuration of <see cref="ilPSP.Connectors.Matlab.BatchmodeConnector"/>
+    /// </summary>
+    [DataContract]
+    public class MatlabConnectorConfig {
+        /// <summary>
+        /// <see cref="ilPSP.Connectors.Matlab.BatchmodeConnector.MatlabExecuteable"/>
+        /// </summary>
+        [DataMember]
+        public string MatlabExecuteable;
+
+        /// <summary>
+        /// <see cref="ilPSP.Connectors.Matlab.BatchmodeConnector.Flav"/>
+        /// </summary>
+        [DataMember]
+        public string Flav = ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor.Matlab.ToString();
+
+
+        /// <summary>
+        /// Loads configuration from default location in user directory
+        /// </summary>
+        public static MatlabConnectorConfig LoadDefault(string userDir) {
+            string ConfigFile = Path.Combine(userDir, "etc", "MatlabConnectorConfig.json");
+            if(!File.Exists(ConfigFile)) {
+                var r = new MatlabConnectorConfig();
+                r.SaveDefault(userDir);
+                return r;
+            }
+            string str = File.ReadAllText(ConfigFile);
+
+            return Deserialize(str);
+        }
+
+        /// <summary>
+        /// Saves configuration in default location in user directory
+        /// </summary>
+        public void SaveDefault(string userDir) {
+            string ConfigFile = Path.Combine(userDir, "etc", "MatlabConnectorConfig.json");
+            var Str = this.Serialize();
+            File.WriteAllText(ConfigFile, Str);
+        }
+
+
+        /// <summary>
+        /// JSON deserialization
+        /// </summary>
+        public static MatlabConnectorConfig Deserialize(string Str) {
+
+
+            JsonSerializer formatter = new JsonSerializer() {
+                NullValueHandling = NullValueHandling.Ignore,
+                TypeNameHandling = TypeNameHandling.Auto,
+                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+                ReferenceLoopHandling = ReferenceLoopHandling.Error
+            };
+
+
+            using(var tr = new StringReader(Str)) {
+                //string typeName = tr.ReadLine();
+                Type ControlObjectType = typeof(MatlabConnectorConfig); //Type.GetType(typeName);
+                using(JsonReader reader = new JsonTextReader(tr)) {
+                    var obj = formatter.Deserialize(reader, ControlObjectType);
+
+                    MatlabConnectorConfig ctrl = (MatlabConnectorConfig)obj;
+                    return ctrl;
+                }
+
+            }
+        }
+
+        /// <summary>
+        /// JSON serialization
+        /// </summary>
+        public string Serialize() {
+            JsonSerializer formatter = new JsonSerializer() {
+                NullValueHandling = NullValueHandling.Ignore,
+                TypeNameHandling = TypeNameHandling.Auto,
+                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+                ReferenceLoopHandling = ReferenceLoopHandling.Error,
+                Formatting = Newtonsoft.Json.Formatting.Indented
+            };
+
+            using(var tw = new StringWriter()) {
+                //tw.WriteLine(this.GetType().AssemblyQualifiedName);
+                using(JsonWriter writer = new JsonTextWriter(tw)) {  // Alternative: binary writer: BsonWriter
+                    formatter.Serialize(writer, this);
+                }
+
+                string Ret = tw.ToString();
+                return Ret;
+            }
+        }
+
+    }
+
 
     /// <summary>
     /// Non-generic version of the <see cref="Application{T}"/>-class for
@@ -159,6 +256,29 @@ namespace BoSSS.Solution {
             return BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir(m_Logger);
         }
 
+
+        
+
+        /// <summary>
+        /// Re-loads optional user-configuration file for Matlab connector <see cref="ilPSP.Connectors.Matlab.BatchmodeConnector"/>.
+        /// </summary>
+        public static void ReadBatchModeConnectorConfig() {
+            string userDir = BoSSS.Foundation.IO.Utils.GetBoSSSUserSettingsPath();
+            if(userDir.IsEmptyOrWhite())
+                return;
+
+            try {
+                var o = MatlabConnectorConfig.LoadDefault(userDir);
+
+                ilPSP.Connectors.Matlab.BatchmodeConnector.Flav = (ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor) System.Enum.Parse(typeof(ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor), o.Flav);
+                ilPSP.Connectors.Matlab.BatchmodeConnector.MatlabExecuteable = o.MatlabExecuteable;
+
+            } catch(Exception e) {
+                Console.Error.WriteLine($"{e.GetType().Name} while reading/saving Matlab connector configuration file: {e.Message}");
+            }
+            
+        }
+
         /// <summary>
         /// Application startup. Performs bootstrapping of unmanaged resources
         /// and initializes MPI.
@@ -195,6 +315,9 @@ namespace BoSSS.Solution {
                     Console.WriteLine("Running with " + size + " MPI process(es)");
                 }
             }
+
+            
+
         }
 
         /// <summary>
@@ -263,44 +386,28 @@ namespace BoSSS.Solution {
             string[] args,
             bool noControlFile,
             Func<Application<T>> ApplicationFactory) {
-#if !DEBUG
+#if DEBUG
+            {
+#else
             try {
 #endif
                 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
                 CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
                 InitMPI(args);
-        
+                ReadBatchModeConnectorConfig();
+
 
                 // lets see if we have environment variables which override command line arguments
                 // (environment variables are usually more robust w.r.t. e.g. escape characters)
-                List<string> _args = new List<string>(args);
-                int ArgCounter = 0;
-                while (true) {
-                    string ArgOverrideName = "BOSSS_ARG_" + ArgCounter;
-                    string ArgValue = System.Environment.GetEnvironmentVariable(ArgOverrideName);
-                    if (ArgValue == null)
-                        break;
-
-                    if (ArgCounter < _args.Count) {
-                        _args[ArgCounter] = ArgValue;
-                    } else {
-                        _args.Add(ArgValue);
-                    }
-
-                    Console.WriteLine("arg #{0} override from environment variable '{1}': {2}", ArgCounter, ArgOverrideName, ArgValue);
-
-                    ArgCounter++;
-                }
-
-                args = _args.ToArray();
+                args = ArgsFromEnvironmentVars(args);
 
 
                 // parse arguments
                 CommandLineOptions opt = new CommandLineOptions();
                 ICommandLineParser parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
                 bool argsParseSuccess;
-                if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+                if(ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
                     argsParseSuccess = parser.ParseArguments(args, opt);
                     argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
                 } else {
@@ -308,19 +415,19 @@ namespace BoSSS.Solution {
                     argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
                 }
 
-                if (!argsParseSuccess) {
+                if(!argsParseSuccess) {
                     MPI.Wrappers.csMPI.Raw.mpiFinalize();
                     m_MustFinalizeMPI = false;
                     System.Environment.Exit(-1);
                 }
 
-                if (opt.ControlfilePath != null) {
+                if(opt.ControlfilePath != null) {
                     opt.ControlfilePath = opt.ControlfilePath.Trim();
                 }
                 opt = opt.MPIBroadcast(0, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
 
                 // Delete old plots if requested
-                if (opt.delPlt) {
+                if(opt.delPlt) {
                     DeleteOldPlotFiles();
                 }
 
@@ -328,7 +435,7 @@ namespace BoSSS.Solution {
                 // load control file
                 T ctrlV2 = null;
                 T[] ctrlV2_ParameterStudy = null;
-                if (!noControlFile) {
+                if(!noControlFile) {
                     LoadControlFile(opt.ControlfilePath, out ctrlV2, out ctrlV2_ParameterStudy);
                 } else {
                     ctrlV2 = new T();
@@ -337,8 +444,10 @@ namespace BoSSS.Solution {
                 AppEntry(ApplicationFactory, opt, ctrlV2, ctrlV2_ParameterStudy);
 
                 FinalizeMPI();
-            
-#if !DEBUG
+
+#if DEBUG
+            }
+#else
             } catch(Exception e) {
                 Console.Error.WriteLine(e.StackTrace);
                 Console.Error.WriteLine();
@@ -354,6 +463,35 @@ namespace BoSSS.Solution {
                 System.Environment.Exit(-1);
             }
 #endif
+        }
+
+        /// <summary>
+        /// Appends specially named environment variables (BOSSS_ARG_n) as the n-th command line argument
+        /// </summary>
+        public static string[] ArgsFromEnvironmentVars(string[] args) {
+            {
+                List<string> _args = new List<string>(args);
+                int ArgCounter = 0;
+                while(true) {
+                    string ArgOverrideName = "BOSSS_ARG_" + ArgCounter;
+                    string ArgValue = System.Environment.GetEnvironmentVariable(ArgOverrideName);
+                    if(ArgValue == null)
+                        break;
+
+                    if(ArgCounter < _args.Count) {
+                        _args[ArgCounter] = ArgValue;
+                    } else {
+                        _args.Add(ArgValue);
+                    }
+
+                    Console.WriteLine("arg #{0} override from environment variable '{1}': {2}", ArgCounter, ArgOverrideName, ArgValue);
+
+                    ArgCounter++;
+                }
+                args = _args.ToArray();
+            }
+
+            return args;
         }
 
         /// <summary>
@@ -575,6 +713,7 @@ namespace BoSSS.Solution {
                 this.Control = new T();
             }
 
+            ReadBatchModeConnectorConfig();
 
             // set . as decimal separator:
             // ===========================

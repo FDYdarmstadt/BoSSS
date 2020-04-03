@@ -31,7 +31,7 @@ namespace BoSSS.Application.Rheology
     static class RheologyTestProgram
     {
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public static void Init()
         {
             bool dummy;
@@ -52,7 +52,7 @@ namespace BoSSS.Application.Rheology
 
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public static void Cleanup()
         {
             //Console.Out.Dispose();
@@ -124,6 +124,11 @@ namespace BoSSS.Application.Rheology
                 C.ImmediatePlotPeriod = 1;
                 C.SuperSampling = 2;
                 C.Stokes = true;
+                C.Penalty2 = 2.0;
+
+                C.NonLinearSolver.MinSolverIterations = 2;
+                C.NonLinearSolver.MaxSolverIterations = 3;
+
                 CC.Add(C);
             }
 

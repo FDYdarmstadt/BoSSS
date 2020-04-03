@@ -82,10 +82,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-5.1.0.0\mingw64\bin\octave-cli.exe";
             }
 
-            //Tests.UnitTest.TestFixtureSetUp();
+            //Tests.UnitTest.OneTimeSetUp();
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0, ViscosityMode.Standard, 0.0);
-            //Tests.UnitTest.TestFixtureTearDown();
+            //Tests.UnitTest.OneTimeTearDown();
             //return;
 
 

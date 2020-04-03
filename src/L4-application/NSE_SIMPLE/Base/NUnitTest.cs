@@ -26,7 +26,7 @@ namespace NSE_SIMPLE {
     [TestFixture]
     static public class NUnitTest {
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         static public void Init() {
             bool dummy;
             ilPSP.Environment.Bootstrap(
@@ -35,7 +35,7 @@ namespace NSE_SIMPLE {
                 out dummy);
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         static public void Cleanup() {
             //Console.Out.Dispose();
             MPI.Wrappers.csMPI.Raw.mpiFinalize();

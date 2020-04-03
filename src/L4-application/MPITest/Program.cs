@@ -32,7 +32,7 @@ namespace MPITest {
             Cleanup();
         }
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public static void Init() {
             bool dummy;
             ilPSP.Environment.Bootstrap(
@@ -42,7 +42,7 @@ namespace MPITest {
             Thread.CurrentThread.CurrentCulture = CultureInfo.CurrentCulture;
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public static void Cleanup() {
             //Console.Out.Dispose();
             MPI.Wrappers.csMPI.Raw.mpiFinalize();

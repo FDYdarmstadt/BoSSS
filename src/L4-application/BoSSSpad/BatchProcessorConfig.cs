@@ -3,18 +3,22 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Application.BoSSSpad {
 
     /// <summary>
-    /// 
+    /// Container for a list of <see cref="BatchProcessorClient"/> objects.
     /// </summary>
+    [DataContract]
     public class BatchProcessorConfig {
 
-        //public BatchProcessorClient.Config[] AllQueus;
-
+        /// <summary>
+        /// All items.
+        /// </summary>
+        [DataMember]
         public BatchProcessorClient[] AllQueues;
 
 
@@ -64,6 +68,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
+        /// Serializing this object into a string.
         /// </summary>
         public string Serialize() {
             JsonSerializer formatter = new JsonSerializer() {
@@ -88,7 +93,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Used for control objects in work-flow management, 
+        /// Used for control objects in work-flow management, de-serializing from a string.
         /// </summary>
         public static BatchProcessorConfig Deserialize(string Str) {
             JsonSerializer formatter = new JsonSerializer() {
@@ -111,10 +116,5 @@ namespace BoSSS.Application.BoSSSpad {
               
             }
         }
-
-
-
-
-
     }
 }

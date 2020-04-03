@@ -34,13 +34,13 @@ namespace BoSSS.Application.ipViscosity {
     [TestFixture]
     public class _Test {
 
-        [TestFixtureTearDown]
-        public void TestFixtureTearDown() {
+        [OneTimeTearDown]
+        public void OneTimeTearDown() {
             csMPI.Raw.mpiFinalize();
         }
 
-        [TestFixtureSetUp]
-        public void TestFixtureSetUp() {
+        [OneTimeSetUp]
+        public void OneTimeSetUp() {
             BoSSS.Solution.Application.InitMPI(new string[0]);
         }
 

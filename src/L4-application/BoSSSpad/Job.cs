@@ -144,8 +144,11 @@ namespace BoSSS.Application.BoSSSpad {
                     na = Assembly.Load(b);
                 } catch (FileNotFoundException) {
                     string[] AssiFiles = ArrayTools.Cat(Directory.GetFiles(SearchPath, b.Name + ".dll"), Directory.GetFiles(SearchPath, b.Name + ".exe"));
-                    if (AssiFiles.Length != 1)
-                        throw new FileNotFoundException("Unable to locate assembly '" + b.Name + "'.");
+                    if(AssiFiles.Length != 1) {
+                        //throw new FileNotFoundException("Unable to locate assembly '" + b.Name + "'.");
+                        Console.WriteLine("Skipping: " + b.Name);
+                        continue;
+                    }
                     na = Assembly.LoadFile(AssiFiles[0]);
 
                 }
@@ -190,7 +193,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// (a bit) more robust (with respect to escape-characters, etc.) than 
         /// command line arguments.
         /// </remarks>
-        public void SetCommandLineArguments(string Args) {
+        public void SetControlStatement(string Args) {
             TestActivation();
 
             string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
@@ -207,6 +210,7 @@ namespace BoSSS.Application.BoSSSpad {
                 "--sesnmn", this.Name
             };
 
+            m_EnvironmentVars.Clear();
             for (int i = 0; i < args.Length; i++) {
                 m_EnvironmentVars.Add("BOSSS_ARG_" + i, args[i]);
             }
@@ -222,7 +226,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// (a bit) more robust (with respect to escape-characters, etc.) than 
         /// command line arguments.
         /// </remarks>
-        public void MySetCommandLineArguments(string Args) {
+        public void MySetCommandLineArguments(params string[] Args) {
             TestActivation();
 
             string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
@@ -230,15 +234,10 @@ namespace BoSSS.Application.BoSSSpad {
                 throw new NotSupportedException("Project management not initialized - set project name (try e.g. 'WorkflowMgm.CurrentProject = \"BlaBla\"').");
             }
 
-            // we pass the startup-arguments through environment variables, which is 
-            // (a bit) more robust (with respect to escape-characters, etc.) than 
-            // command line arguments.
-            string[] args = new string[] {
-                Args
-            };
 
-            for (int i = 0; i < args.Length; i++) {
-                m_EnvironmentVars.Add("BOSSS_ARG_" + i, args[i]);
+            m_EnvironmentVars.Clear();
+            for (int i = 0; i < Args.Length; i++) {
+                m_EnvironmentVars.Add("BOSSS_ARG_" + i, Args[i]);
             }
         }
 
@@ -421,7 +420,7 @@ namespace BoSSS.Application.BoSSSpad {
                 ArrayTools.Cat(args, "--pstudy_case", m_ctrl_index.ToString());
             }
 
-
+            m_EnvironmentVars.Clear();
             for (int i = 0; i < args.Length; i++) {
                 m_EnvironmentVars.Add("BOSSS_ARG_" + i, args[i]);
             }
@@ -702,6 +701,16 @@ namespace BoSSS.Application.BoSSSpad {
 
             // find the deployment directory
             var directories = AssignedBatchProc.GetAllExistingDeployDirectories(this);
+            if(this.DeploymentDirectory != null) {
+                DirectoryInfo diAdd = new DirectoryInfo(this.DeploymentDirectory);
+                if(diAdd.Exists) {
+                    if(directories == null)
+                        directories = new DirectoryInfo[0];
+
+                    diAdd.AddToArray(ref directories);
+                }
+            }
+
             if(directories == null || directories.Length <= 0) {
                 return JobStatus.PreActivation;
                 //throw new IOException("Job is assigned to batch processor, but no deployment directory can be found.");

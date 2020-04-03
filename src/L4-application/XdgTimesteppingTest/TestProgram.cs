@@ -33,7 +33,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// <summary>
         /// MPI startup.
         /// </summary>
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public static void Init() {
             bool dummy;
             ilPSP.Environment.Bootstrap(
@@ -45,7 +45,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// <summary>
         /// MPI shutdown.
         /// </summary>
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public static void Cleanup() {
             //Console.Out.Dispose();
             csMPI.Raw.mpiFinalize();

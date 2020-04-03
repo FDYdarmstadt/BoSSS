@@ -29,16 +29,16 @@ namespace BoSSS.Application.SpecFEM {
         /// <summary>
         /// MPI Finalization.
         /// </summary>
-        [TestFixtureTearDown]
-        public void TestFixtureTearDown() {
+        [OneTimeTearDown]
+        public void OneTimeTearDown() {
             csMPI.Raw.mpiFinalize();
         }
 
         /// <summary>
         /// MPI init.
         /// </summary>
-        [TestFixtureSetUp]
-        public void TestFixtureSetUp() {
+        [OneTimeSetUp]
+        public void OneTimeSetUp() {
             BoSSS.Solution.Application.InitMPI(new string[0]);
         }
 

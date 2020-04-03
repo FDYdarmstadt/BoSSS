@@ -13,16 +13,16 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         /// <summary>
         /// MPI finalization
         /// </summary>
-        [TestFixtureTearDown]
-        public void TestFixtureTearDown() {
+        [OneTimeTearDown]
+        public void OneTimeTearDown() {
             csMPI.Raw.mpiFinalize();
         }
 
         /// <summary>
         /// MPI init
         /// </summary>
-        [TestFixtureSetUp]
-        public void TestFixtureSetUp() {
+        [OneTimeSetUp]
+        public void OneTimeSetUp() {
             bool MpiInit;
             Environment.Bootstrap(
                 new string[0],

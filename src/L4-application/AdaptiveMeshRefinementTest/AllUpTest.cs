@@ -14,7 +14,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         /// <summary>
         /// MPI init
         /// </summary>
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public static void SetUp() {
             bool MpiInit;
             ilPSP.Environment.Bootstrap(
@@ -49,8 +49,8 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         /// <summary>
         /// MPI shutdown.
         /// </summary>
-        [TestFixtureTearDown]
-        public static void TestFixtureTearDown() {
+        [OneTimeTearDown]
+        public static void OneTimeTearDown() {
             csMPI.Raw.mpiFinalize();
         }
     }

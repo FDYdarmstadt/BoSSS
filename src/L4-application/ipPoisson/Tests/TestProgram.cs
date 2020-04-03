@@ -39,7 +39,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
         /// <summary>
         /// MPI init
         /// </summary>
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public static void Init() {
             bool dummy;
             ilPSP.Environment.Bootstrap(
@@ -51,7 +51,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
         /// <summary>
         /// MPI teardown
         /// </summary>
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public static void Cleanup() {
             //Console.Out.Dispose();
             csMPI.Raw.mpiFinalize();

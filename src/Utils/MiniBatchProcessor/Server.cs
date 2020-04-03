@@ -311,6 +311,7 @@ namespace MiniBatchProcessor {
 
             var Running = new List<Tuple<Thread, ProcessThread>>();
             bool keepRunning = true;
+            int PrevRunning = -1, PrevQueue = -1;
             while (keepRunning) {
                 if(File.Exists(TerminationSignalPath)) {
                     // try to delete
@@ -341,23 +342,34 @@ namespace MiniBatchProcessor {
                     }
                 }
 
+                var NextJobs = ClientAndServer.Queue.ToArray();
+
+                if(NextJobs.Count() > 0 && NextJobs.Count() != PrevQueue) {
+                    LogMessage("Number of jobs in queue: " + NextJobs.Count());
+                }
+                PrevQueue = NextJobs.Count();
+
+                if(Running.Count > 0 && Running.Count != PrevRunning) {
+                    LogMessage("Currently running " + Running.Count + " jobs.");
+                }
+                PrevRunning = Running.Count;
+
                 // see if there are available processors
                 if (AvailableProcs <= 0 || ExclusiveUse) {
                     Thread.Sleep(10000);
                     continue;
                 }
 
-                var NextJobs = ClientAndServer.Queue.ToArray();
-
                 // sort out jobs which have problems
                 NextJobs = NextJobs.Where(job => CheckJob(job, true) == true).ToArray();
+
 
                 // sleep if there is nothing to do
                 if (NextJobs.Count() <= 0) {
                     LogMessage(string.Format("No more jobs in queue. Running: {0}, Avail. procs.: {1}.", Running.Count, AvailableProcs));
                     Thread.Sleep(10000);
                     continue;
-                }
+                } 
 
                 // priorize (at the moment, only by ID)
                 NextJobs = NextJobs.OrderBy(job => job.ID).ToArray();
@@ -490,7 +502,7 @@ namespace MiniBatchProcessor {
                             }
 
                             success = (p.ExitCode == 0);
-                            Server.LogMessage(string.Format("finished job #" + data.ID + ", exit code " + p.ExitCode + "."));
+                            Server.LogMessage(string.Format("finished job #" + data.ID + " (" + data.Name +"), exit code " + p.ExitCode + "."));
 
                             using (var exit = new StreamWriter(Path.Combine(
                                 ClientAndServer.config.BatchInstructionDir,

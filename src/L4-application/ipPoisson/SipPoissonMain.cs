@@ -149,19 +149,7 @@ namespace BoSSS.Application.SipPoisson {
             string pp = System.Environment.GetEnvironmentVariable ("PATH");
             si3 = si3 != null ? si3 : "NIX";
             pp = pp != null ? pp : "NIX";
-
-          
             Console.WriteLine ("BOSSS_INSTALL : " + si3);
-
-
-            if (System.Environment.MachineName.ToLowerInvariant().EndsWith("stormbreaker")
-                //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
-                ) {
-                // This is Florians Laptop;
-                // he is to poor to afford MATLAB, so he uses OCTAVE
-                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-                BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-5.1.0.0\mingw64\bin\octave-cli.exe";
-            }
 
 
 
@@ -182,10 +170,6 @@ namespace BoSSS.Application.SipPoisson {
                     Console.WriteLine("BoSSS: Running with " + size + " MPI process(es)");
                 }
             }
-
-
-            //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-            //BatchmodeConnector.MatlabExecuteable = "C:\\cygwin\\bin\\bash.exe";
 
 
             //MultidimensionalArray.MultiplyProgram mp = MultidimensionalArray.MultiplyProgram.Compile("imn", "kma", "ikna"); // original sort
@@ -256,6 +240,7 @@ namespace BoSSS.Application.SipPoisson {
 
             return;
             */
+
 
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();

@@ -53,7 +53,7 @@ namespace BoSSS.Application.DerivativeTest {
         /// <summary>
         /// MPI init.
         /// </summary>
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public static void SetUp() {
             bool MpiInit;
             CHUNK_DATA_LIMIT_bkup = Quadrature_Bulksize.CHUNK_DATA_LIMIT;
@@ -63,7 +63,7 @@ namespace BoSSS.Application.DerivativeTest {
         /// <summary>
         /// MPI finalization.
         /// </summary>
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public static void Cleanup() {
             //Console.Out.Dispose();
             MPI.Wrappers.csMPI.Raw.mpiFinalize();
@@ -170,7 +170,7 @@ namespace BoSSS.Application.DerivativeTest {
     /// <summary>
     /// Main class of the App.
     /// </summary>
-    class DerivativeTestMain : BoSSS.Solution.Application {
+    public class DerivativeTestMain : BoSSS.Solution.Application {
 
         /// <summary>
         /// Switch for the test-case, see implementation of <see cref="CreateOrLoadGrid"/>.

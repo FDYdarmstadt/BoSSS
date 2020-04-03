@@ -72,7 +72,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
         static void Main(string[] args) {
 
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestFixtureSetUp();
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.OneTimeSetUp();
             ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.PolynomialTestForConvectionTest(3, 0, false);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestCapillaryWave();
             ////BoSSS.Application.XNSE_Solver.Tests.ElementalTestProgramm.LineMovementTest(LevelSetEvolution.ScalarConvection, LevelSetHandling.Coupled_Once, XNSE_Control.TimesteppingScheme.ImplicitEuler, 0.5);

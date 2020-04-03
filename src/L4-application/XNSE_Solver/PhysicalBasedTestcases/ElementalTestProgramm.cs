@@ -32,7 +32,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     [TestFixture]
     public static class ElementalTestProgramm {
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public static void Init() {
             bool dummy;
             ilPSP.Environment.Bootstrap(
@@ -41,7 +41,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 out dummy);
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public static void Cleanup() {
 
         }
