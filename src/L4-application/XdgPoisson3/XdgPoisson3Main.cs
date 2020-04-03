@@ -57,10 +57,10 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// App entry point 
         /// </summary>
         static void Main(string[] args) {
-            BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-            BatchmodeConnector.MatlabExecuteable = "C:\\Octave\\Octave-4.4.1\\bin\\octave-cli.exe";
-            Tests.TestFixtureSetUp();
-            Tests.ScalingCircle2D(2);
+            //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
+            //BatchmodeConnector.MatlabExecuteable = "C:\\Octave\\Octave-4.4.1\\bin\\octave-cli.exe";
+            //Tests.TestFixtureSetUp();
+            //Tests.ScalingCircle2D(2);
             //throw new ApplicationException("remove me");
             
             BoSSS.Solution.Application<XdgPoisson3Control>._Main(args, false, delegate () {
