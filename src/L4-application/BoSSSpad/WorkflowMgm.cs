@@ -358,7 +358,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
-        /// Blocks until all jobs in <see cref="AllJobs"/> ale either <see cref="JobStatus.Failed"/>
+        /// Blocks until all jobs in <see cref="AllJobs"/> are either <see cref="JobStatus.Failed"/>
         /// or <see cref="JobStatus.FinishedSuccessful"/>.
         /// </summary>
         /// <param name="TimeOutSeconds">

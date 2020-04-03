@@ -170,7 +170,7 @@ namespace BoSSS.Application.DerivativeTest {
     /// <summary>
     /// Main class of the App.
     /// </summary>
-    class DerivativeTestMain : BoSSS.Solution.Application {
+    public class DerivativeTestMain : BoSSS.Solution.Application {
 
         /// <summary>
         /// Switch for the test-case, see implementation of <see cref="CreateOrLoadGrid"/>.

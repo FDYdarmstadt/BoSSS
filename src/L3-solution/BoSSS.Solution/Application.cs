@@ -316,7 +316,7 @@ namespace BoSSS.Solution {
                 }
             }
 
-            ReadBatchModeConnectorConfig();
+            
 
         }
 
@@ -386,44 +386,28 @@ namespace BoSSS.Solution {
             string[] args,
             bool noControlFile,
             Func<Application<T>> ApplicationFactory) {
-#if !DEBUG
+#if DEBUG
+            {
+#else
             try {
 #endif
                 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
                 CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
                 InitMPI(args);
-        
+                ReadBatchModeConnectorConfig();
+
 
                 // lets see if we have environment variables which override command line arguments
                 // (environment variables are usually more robust w.r.t. e.g. escape characters)
-                List<string> _args = new List<string>(args);
-                int ArgCounter = 0;
-                while (true) {
-                    string ArgOverrideName = "BOSSS_ARG_" + ArgCounter;
-                    string ArgValue = System.Environment.GetEnvironmentVariable(ArgOverrideName);
-                    if (ArgValue == null)
-                        break;
-
-                    if (ArgCounter < _args.Count) {
-                        _args[ArgCounter] = ArgValue;
-                    } else {
-                        _args.Add(ArgValue);
-                    }
-
-                    Console.WriteLine("arg #{0} override from environment variable '{1}': {2}", ArgCounter, ArgOverrideName, ArgValue);
-
-                    ArgCounter++;
-                }
-
-                args = _args.ToArray();
+                args = ArgsFromEnvironmentVars(args);
 
 
                 // parse arguments
                 CommandLineOptions opt = new CommandLineOptions();
                 ICommandLineParser parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
                 bool argsParseSuccess;
-                if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+                if(ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
                     argsParseSuccess = parser.ParseArguments(args, opt);
                     argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
                 } else {
@@ -431,19 +415,19 @@ namespace BoSSS.Solution {
                     argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
                 }
 
-                if (!argsParseSuccess) {
+                if(!argsParseSuccess) {
                     MPI.Wrappers.csMPI.Raw.mpiFinalize();
                     m_MustFinalizeMPI = false;
                     System.Environment.Exit(-1);
                 }
 
-                if (opt.ControlfilePath != null) {
+                if(opt.ControlfilePath != null) {
                     opt.ControlfilePath = opt.ControlfilePath.Trim();
                 }
                 opt = opt.MPIBroadcast(0, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
 
                 // Delete old plots if requested
-                if (opt.delPlt) {
+                if(opt.delPlt) {
                     DeleteOldPlotFiles();
                 }
 
@@ -451,7 +435,7 @@ namespace BoSSS.Solution {
                 // load control file
                 T ctrlV2 = null;
                 T[] ctrlV2_ParameterStudy = null;
-                if (!noControlFile) {
+                if(!noControlFile) {
                     LoadControlFile(opt.ControlfilePath, out ctrlV2, out ctrlV2_ParameterStudy);
                 } else {
                     ctrlV2 = new T();
@@ -460,8 +444,10 @@ namespace BoSSS.Solution {
                 AppEntry(ApplicationFactory, opt, ctrlV2, ctrlV2_ParameterStudy);
 
                 FinalizeMPI();
-            
-#if !DEBUG
+
+#if DEBUG
+            }
+#else
             } catch(Exception e) {
                 Console.Error.WriteLine(e.StackTrace);
                 Console.Error.WriteLine();
@@ -477,6 +463,35 @@ namespace BoSSS.Solution {
                 System.Environment.Exit(-1);
             }
 #endif
+        }
+
+        /// <summary>
+        /// Appends specially named environment variables (BOSSS_ARG_n) as the n-th command line argument
+        /// </summary>
+        public static string[] ArgsFromEnvironmentVars(string[] args) {
+            {
+                List<string> _args = new List<string>(args);
+                int ArgCounter = 0;
+                while(true) {
+                    string ArgOverrideName = "BOSSS_ARG_" + ArgCounter;
+                    string ArgValue = System.Environment.GetEnvironmentVariable(ArgOverrideName);
+                    if(ArgValue == null)
+                        break;
+
+                    if(ArgCounter < _args.Count) {
+                        _args[ArgCounter] = ArgValue;
+                    } else {
+                        _args.Add(ArgValue);
+                    }
+
+                    Console.WriteLine("arg #{0} override from environment variable '{1}': {2}", ArgCounter, ArgOverrideName, ArgValue);
+
+                    ArgCounter++;
+                }
+                args = _args.ToArray();
+            }
+
+            return args;
         }
 
         /// <summary>
@@ -698,6 +713,7 @@ namespace BoSSS.Solution {
                 this.Control = new T();
             }
 
+            ReadBatchModeConnectorConfig();
 
             // set . as decimal separator:
             // ===========================
