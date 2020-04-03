@@ -25,7 +25,7 @@ using BoSSS.Foundation.Grid.RefElements;
 namespace BoSSS.Application.ElementTests {
 
     [TestFixture]
-    class ElementTests {
+    public class ElementTests {
 
         /// <summary>
         /// Ensures bootstrapping has been conducted correctly.

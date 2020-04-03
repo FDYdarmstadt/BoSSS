@@ -37,14 +37,32 @@ namespace PublicTestRunner {
 
     static class PublicTestRunnerMain {
 
+        /// <summary>
+        /// List of tests that should be executed in DEBUG and RELEASE; referencing any type of the assembly will do.
+        /// </summary>
         static Type[] FullTestTypes = new Type[] {
-            //typeof(BoSSS.Application.DerivativeTest.DerivativeTestMain),
+            typeof(BoSSS.Application.DerivativeTest.DerivativeTestMain),
             typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
-            typeof(BoSSS.Application.TutorialTests.AllUpTest)
+            typeof(BoSSS.Application.Matrix_MPItest.AllUpTest),
+            typeof(BoSSS.Application.ElementTests.ElementTests),
+            typeof(BoSSS.Application.DatabaseTests.DatabaseTestsProgram),
+            typeof(CutCellQuadrature.Program),
+            typeof(BoSSS.Application.XDGTest.UnitTest),
+            typeof(BoSSS.Application.SpecFEM.AllUpTest),
+            typeof(BoSSS.Application.ipViscosity.TestSolution),
+            typeof(BoSSS.Application.MultigridTest.MultigridMain),
+            typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
+            typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
+            typeof(BoSSS.Application.EllipticReInitTest.EllipticReInitMain),
+            typeof(BoSSS.Application.LevelSetTestBench.LevelSetTestBenchMain),
+            typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main),
+            typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
+            typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
+            typeof(BoSSS.Application.ExternalBinding.Initializer)
         };
 
         static Type[] ReleaseOnlyTests = new Type[] {
-
+            typeof(BoSSS.Application.TutorialTests.AllUpTest)
         };
 
 
@@ -136,7 +154,7 @@ namespace PublicTestRunner {
             Job j = new Job($"test-{TestName}-{dor}", typeof(PublicTestRunnerMain));
 
 
-            j.MySetCommandLineArguments("--nunit3", $"--test={TestName}", $"--result=result-{TestName}-{dor}.xml");
+            j.MySetCommandLineArguments("--nunit3", Path.GetFileName(a.Location), $"--test={TestName}", $"--result=result-{TestName}-{dor}.xml");
 
             j.Activate(bpc);
         }
@@ -148,6 +166,8 @@ namespace PublicTestRunner {
         /// </summary>
         static int RunSerial(string AssemblyFilter, string[] args) {
             var assln = GetAllAssemblies();
+
+
 
             bool ret = false;
             foreach(var a in assln) {
@@ -179,11 +199,12 @@ namespace PublicTestRunner {
 
             switch(args[0]) {
                 case "--nunit3":
+                Console.WriteLine("Assembly filter: " + (args[1] != null ? args[1] : "NULL"));
                 return RunSerial(args[1], args.Skip(2).ToArray());
                                
 
                 case "--runjobmanager":
-                JobManagerRun(args[1]);
+                JobManagerRun(args.Length > 1 ? args[1] : null);
                 break;
             }
 

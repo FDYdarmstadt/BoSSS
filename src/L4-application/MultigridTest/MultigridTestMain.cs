@@ -41,7 +41,10 @@ using BoSSS.Solution.Statistic;
 
 namespace BoSSS.Application.MultigridTest {
 
-    static class MultigridMain {
+    /// <summary>
+    /// Les main class
+    /// </summary>
+    public static class MultigridMain {
 
         /// <summary>
         /// Main routine

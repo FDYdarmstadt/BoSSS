@@ -63,6 +63,14 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\internal\src\experimental\L4-application\EllipticReInitTest\EllipticReInitTest.csproj">
+      <Project>{a17155c9-d23e-4d51-8ca0-21b5af7c2f0c}</Project>
+      <Name>EllipticReInitTest</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\internal\src\experimental\L4-application\LevelSetTestBench\LevelSetTestBench.csproj">
+      <Project>{9eabe62c-bef1-40f2-8682-61944b7899da}</Project>
+      <Name>LevelSetTestBench</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
       <Project>{8e6d8f23-623f-4204-b4ab-a088c0cd83aa}</Project>
       <Name>ilPSP</Name>
@@ -71,21 +79,77 @@
       <Project>{df7f5abd-e606-41cd-beef-31a95d136dea}</Project>
       <Name>BoSSS.Solution</Name>
     </ProjectReference>
+    <ProjectReference Include="..\AdaptiveMeshRefinementTest\AdaptiveMeshRefinementTest.csproj">
+      <Project>{cf280064-130d-4c5a-9ab1-0615243b01c6}</Project>
+      <Name>AdaptiveMeshRefinementTest</Name>
+    </ProjectReference>
     <ProjectReference Include="..\BoSSSpad\BoSSSpad.csproj">
       <Project>{e1351588-3bc0-418a-bfa2-7ce3391aa167}</Project>
       <Name>BoSSSpad</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CutCellQuadrature\CutCellQuadrature.csproj">
+      <Project>{6e696838-ee09-459f-b5b0-7ee0d709c3d6}</Project>
+      <Name>CutCellQuadrature</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DatabaseTests\DatabaseTests.csproj">
+      <Project>{19ef28e0-a4f1-40c7-affc-9ac1968295a2}</Project>
+      <Name>DatabaseTests</Name>
     </ProjectReference>
     <ProjectReference Include="..\DerivativeTest\DerivativeTest.csproj">
       <Project>{614675f8-757d-4cff-ae3f-75c4519da17c}</Project>
       <Name>DerivativeTest</Name>
     </ProjectReference>
+    <ProjectReference Include="..\ElementTests\ElementTests.csproj">
+      <Project>{614675f8-757d-4cff-ae3f-abc1519da17c}</Project>
+      <Name>ElementTests</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ExternalBinding.CodeGen\ExternalBinding.CodeGen.csproj">
+      <Project>{21785b43-8c92-476c-9da2-62e449122805}</Project>
+      <Name>ExternalBinding.CodeGen</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ExternalBinding\ExternalBinding.csproj">
+      <Project>{25390d9e-5bdf-4fcc-9a70-af49f36831a4}</Project>
+      <Name>ExternalBinding</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ipPoisson\ipPoisson.csproj">
       <Project>{09cce864-9bae-4660-aff9-f3f3414b6173}</Project>
       <Name>ipPoisson</Name>
     </ProjectReference>
+    <ProjectReference Include="..\ipViscosity\ipViscosity.csproj">
+      <Project>{09cce864-9bae-4660-a123-f3f3414b6173}</Project>
+      <Name>ipViscosity</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Matrix_MPItest\Matrix_MPItest.csproj">
+      <Project>{cf28bb64-12bd-4c5a-432a-0604f0ab01c6}</Project>
+      <Name>Matrix_MPItest</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\MultigridTest\MultigridTest.csproj">
+      <Project>{09cce864-12a3-4660-aff9-f3f3434b1173}</Project>
+      <Name>MultigridTest</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SpecFEM\SpecFEM.csproj">
+      <Project>{fef0e358-58e8-41a9-98fd-0e1de0f77e12}</Project>
+      <Name>SpecFEM</Name>
+    </ProjectReference>
     <ProjectReference Include="..\TutorialTests\TutorialTests.csproj">
       <Project>{fe981ac8-58e8-41a9-98fd-0e1de0f77e12}</Project>
       <Name>TutorialTests</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\XdgPoisson3\XdgPoisson3.csproj">
+      <Project>{efbeff7a-e40d-4808-be79-536040c0fadc}</Project>
+      <Name>XdgPoisson3</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\XDGTest\XDGTest.csproj">
+      <Project>{3813bb68-2237-4cc0-b911-f8113f00a4ae}</Project>
+      <Name>XDGTest</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\XdgTimesteppingTest\XdgTimesteppingTest.csproj">
+      <Project>{efbeff7a-abc0-4007-be79-53612307fadc}</Project>
+      <Name>XdgTimesteppingTest</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ZwoLsTest\ZwoLsTest.csproj">
+      <Project>{cf28bb64-130d-4c5a-9031-0604f0ab01c6}</Project>
+      <Name>ZwoLsTest</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
