@@ -135,10 +135,11 @@ namespace PublicTestRunner {
                 JobManagerRun(t.Item1, t.Item2, bpc);
             }
 
-            InteractiveShell.WorkflowMgm.BlockUntilAllJobsTerminate(PollingIntervallSeconds: 120);
+            while(InteractiveShell.WorkflowMgm.BlockUntilAnyJobTerminate(out var job, PollingIntervallSeconds: 120) > 0) {
 
-            foreach(var job in InteractiveShell.WorkflowMgm.AllJobs) {
-                Console.WriteLine(job.Value.Name + ": " + job.Value.Status);
+                if(job != null) {
+                    Console.WriteLine(job.Name + ": " + job.Status);
+                }
             }
         }
 
@@ -155,7 +156,7 @@ namespace PublicTestRunner {
 
 
             j.MySetCommandLineArguments("--nunit3", Path.GetFileName(a.Location), $"--test={TestName}", $"--result=result-{TestName}-{dor}.xml");
-
+            
             j.Activate(bpc);
         }
 
