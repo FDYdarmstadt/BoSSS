@@ -384,9 +384,27 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public void SetControlObject(BoSSS.Solution.Control.AppControl ctrl) {
             TestActivation();
-            
+
             // serialize control object
             // ========================
+
+            // grid function hack:
+            if (ctrl.GridFunc != null) {
+                Console.WriteLine("Control object contains grid function. Trying to Serialize the grid...");
+                var dbi = ctrl.GetDatabase();
+                if (dbi == null) {
+                    throw new NotSupportedException("If a gird function is specified (instead of a grid id), a database must be specified to save the gird (when using the job manager).");
+                }
+
+                Foundation.Grid.IGrid g = ctrl.GridFunc();
+                Guid id = dbi.SaveGrid(ref g);
+
+                ctrl.GridFunc = null;
+                ctrl.GridGuid = id;
+                Console.WriteLine("Control object modified.");
+
+            }
+
 
             ctrl.VerifyEx();
             m_ctrl = ctrl;

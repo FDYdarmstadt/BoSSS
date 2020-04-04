@@ -22,7 +22,7 @@ using System.IO;
 using Microsoft.Hpc.Scheduler.Properties;
 using BoSSS.Platform;
 using ilPSP;
-
+using System.Runtime.Serialization;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -30,6 +30,8 @@ namespace BoSSS.Application.BoSSSpad {
     /// <summary>
     /// A <see cref="BatchProcessorClient"/>-implementation which uses a Microsoft HPC 2012 server.
     /// </summary>
+    [DataContract]
+    [Serializable]
     public class MsHPC2012Client : BatchProcessorClient {
         /*
         /// <summary>
@@ -111,33 +113,46 @@ namespace BoSSS.Application.BoSSSpad {
             base.DeploymentBaseDirectory = DeploymentBaseDirectory;
             base.DeployRuntime = DeployRuntime;
 
+
+            this.Username = Username;
+            this.Password = Password;
+            this.ComputeNodes = ComputeNodes;
+            this.ServerName = ServerName;
+
             if (!Directory.Exists(base.DeploymentBaseDirectory))
                 Directory.CreateDirectory(base.DeploymentBaseDirectory);
 
-            m_Username = Username;
-            m_Password = Password;
-            m_ComputeNodes = ComputeNodes;
-            m_ServerName = ServerName;
+            if (this.Username == null)
+                this.Username = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
 
-            if (m_Username == null)
-                m_Username = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
-
-            m_scheduler = new Scheduler();
-            m_scheduler.Connect(ServerName);
+           
         }
 
-        IScheduler m_scheduler;
-        string m_Username;
-        string m_Password;
-        string m_ServerName;
-        string[] m_ComputeNodes;
+        [NonSerialized]
+        IScheduler m__scheduler;
+
+        [DataMember]
+        string Username;
+
+        [DataMember]
+        string Password;
+
+        [DataMember]
+        string ServerName;
+
+        [DataMember]
+        string[] ComputeNodes;
 
         /// <summary>
         /// Access to the Microsoft HPC job scheduler interface.
         /// </summary>
         IScheduler Scheduler {
             get {
-                return m_scheduler;
+                if (m__scheduler == null) {
+                    m__scheduler = new Scheduler();
+                    m__scheduler.Connect(ServerName);
+                }
+                return m__scheduler;
             }
         }
 
@@ -151,7 +166,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
             List<SchedulerJob> allFoundJobs = new List<SchedulerJob>();
-            ISchedulerCollection allJobs = m_scheduler.GetJobList(null, null);
+            ISchedulerCollection allJobs = Scheduler.GetJobList(null, null);
             foreach (SchedulerJob sJob in allJobs) {
                 if(sJob.Id != id)
                     continue;
@@ -237,13 +252,13 @@ namespace BoSSS.Application.BoSSSpad {
             ISchedulerTask task = null;
 
             // Create a job and add a task to the job.
-            job = m_scheduler.CreateJob();
+            job = Scheduler.CreateJob();
             job.Name = myJob.Name;
             job.Project = PrjName;
             job.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
             job.MinimumNumberOfCores = myJob.NumberOfMPIProcs;
 
-            job.UserName = m_Username;
+            job.UserName = Username;
             
             task = job.CreateTask();
             task.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
@@ -270,8 +285,8 @@ namespace BoSSS.Application.BoSSSpad {
             task.StdOutFilePath = Path.Combine(myJob.DeploymentDirectory, "stdout.txt");
             task.StdErrFilePath = Path.Combine(myJob.DeploymentDirectory, "stderr.txt");
 
-            if(m_ComputeNodes != null) {
-                foreach(string node in m_ComputeNodes)
+            if(ComputeNodes != null) {
+                foreach(string node in ComputeNodes)
                     job.RequestedNodes.Add(node);
             }
 
@@ -280,7 +295,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
             // Start the job.
-            m_scheduler.SubmitJob(job, m_Password != null ? m_Username : null, m_Password);
+            Scheduler.SubmitJob(job, Username != null ? Username : null, Password);
 
             return job.Id.ToString();
         }

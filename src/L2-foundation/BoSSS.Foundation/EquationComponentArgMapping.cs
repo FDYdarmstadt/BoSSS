@@ -79,8 +79,8 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
             List<T> AllComponentsofMyType = new List<T>();
 
             foreach (IEquationComponent eqComp in eqCompS) {
-                T optComp = (eqComp is T) ? (T)eqComp : default; //                    optimized component (user-optimized)
-                T vecComp = (vectorizer != null) ? (T)vectorizer(eqComp) : default; // default vectorization (non-optimized)
+                T optComp = (eqComp is T) ? (T)eqComp : default(T); //                    optimized component (user-optimized)
+                T vecComp = (vectorizer != null) ? (T)vectorizer(eqComp) : default(T); // default vectorization (non-optimized)
 
                 // check if component fits at all
                 if(optComp == null && vecComp == null)
