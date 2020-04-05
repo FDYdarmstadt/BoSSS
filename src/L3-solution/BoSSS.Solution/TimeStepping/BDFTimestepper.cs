@@ -345,7 +345,7 @@ namespace BoSSS.Solution.TimeStepping {
             SystemAffine.AccV(-Tsc.theta0, Stack_OpAffine[0]);
 
             //Explicit parts of LHS
-            for (int i = 0;  i< Tsc.beta.Length; i++) {
+            for (int i = 0;  i < Tsc.beta.Length; i++) {
                 SystemAffine.AccV(Tsc.beta[i]*1/dt, Stack_u[i]);
             }
 
@@ -380,14 +380,15 @@ namespace BoSSS.Solution.TimeStepping {
             // Push Operator-Part
             Stack_OpMatrix[0] = Stack_OpMatrix[1].CloneAs();
             Stack_OpAffine[0] = Stack_OpAffine[1].CloneAs();
-            
+
             // Push Unknowns
-            for (int i = Stack_u.Length-1; i == 1; i--) {
+            for (int i = Stack_u.Length - 1; i >= 1; i--) {
                 Stack_u[i].Clear();
                 Stack_u[i].Acc(1.0, Stack_u[i - 1]);
             }
             Stack_u[0].Clear();
             Stack_u[0].Acc(1.0, CurrentState);
+
         }
 
         public void ResetTime(double NewTime, int timestepNumber) {

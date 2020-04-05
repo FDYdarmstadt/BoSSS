@@ -57,6 +57,7 @@ using NUnit.Framework;
 using MPI.Wrappers;
 using System.Collections;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
+using System.Threading;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -220,17 +221,21 @@ namespace BoSSS.Application.XNSE_Solver {
             }
             Fourier_LevSet.ProjectToDGLevelSet(this.DGLevSet.Current, this.LsTrk);
 
-            if (base.MPIRank == 0 && this.CurrentSessionInfo.ID != Guid.Empty) {
-                // restart information for Fourier LS
-                Log_FourierLS = base.DatabaseDriver.FsDriver.GetNewLog("Log_FourierLS", this.CurrentSessionInfo.ID);
-                Guid vecSamplP_id = this.DatabaseDriver.SaveVector<double>(Fourier_LevSet.getRestartInfo());
-                Log_FourierLS.WriteLine(vecSamplP_id);
-                Log_FourierLS.Flush();
+            //if (this.CurrentSessionInfo.ID != Guid.Empty) {
+            //    Guid vecSamplP_id = this.DatabaseDriver.SaveVector<double>(Fourier_LevSet.getRestartInfo());
+            //    if (base.MPIRank == 0) {
+            //        // restart information for Fourier LS
+            //        Log_FourierLS = base.DatabaseDriver.FsDriver.GetNewLog("Log_FourierLS", this.CurrentSessionInfo.ID);
+            //        Log_FourierLS.WriteLine(vecSamplP_id);
+            //        Log_FourierLS.Flush();
 
-                //if(this.Control.FourierLevSetControl.WriteFLSdata)
-                //    Fourier_LevSet.setUpLogFiles(base.DatabaseDriver, this.CurrentSessionInfo, TimestepNo, PhysTime);
+            //        //if(this.Control.FourierLevSetControl.WriteFLSdata)
+            //        //    Fourier_LevSet.setUpLogFiles(base.DatabaseDriver, this.CurrentSessionInfo, TimestepNo, PhysTime);
 
-            }
+            //    }
+            //}
+            //csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
             //create specialized fourier timestepper
             Fourier_Timestepper = FourierLevelSetFactory.Build_Timestepper(this.Control.FourierLevSetControl, Fourier_LevSet.GetFLSproperty(),
                                                             Fourier_LevSet.ComputeChangerate, Fourier_LevSet.EvolveFourierLS);
@@ -251,7 +256,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 if (this.LevSet.L2Norm() == 0) {
                     throw new NotSupportedException("Level set is not initialized - norm is 0.0 - ALL cells will be cut, no gradient can be defined!");
                 }
-
+              
                 // tracker needs to be updated to get access to the cut-cell mask
                 this.LsTrk.UpdateTracker();
 
@@ -342,11 +347,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
                 //PlotCurrentState(0.0, new TimestepNumber(new int[] { 0, 1 }), 3);
                 #endregion
-
+               
                 // =========================================
                 // Enforcing the continuity of the level-set
                 // =========================================
-
+       
                 ContinuityEnforcer = new ContinuityProjection(
                     ContBasis: this.LevSet.Basis,
                     DGBasis: this.DGLevSet.Current.Basis,
@@ -369,7 +374,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
                 //PlotCurrentState(0.0, new TimestepNumber(new int[] { 0, 2 }), 3);
-
+ 
                 this.LsTrk.UpdateTracker();
 
             }
@@ -719,7 +724,7 @@ namespace BoSSS.Application.XNSE_Solver {
                                 FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
 
                             } else {
-                                CellMask Accepted = LsTrk.Regions.GetNearFieldMask(1);
+                                CellMask Accepted = LsTrk.Regions.GetCutCellMask(); // .GetNearFieldMask(1);
                                 CellMask ActiveField = Accepted.Complement();
                                 CellMask NegativeField = LsTrk.Regions.GetSpeciesMask("A");
                                 FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);

@@ -524,7 +524,7 @@ namespace BoSSS.Solution.Control {
         [NonSerialized]
         [JsonIgnore]
         public Func<IGrid> GridFunc;
-
+        
         /// <summary>
         /// Sets <see cref="GridGuid"/>
         /// </summary>
@@ -545,7 +545,7 @@ namespace BoSSS.Solution.Control {
                 }
             }
         }
-
+        
 
         /// <summary>
         /// Algorithm for grid partitioning.

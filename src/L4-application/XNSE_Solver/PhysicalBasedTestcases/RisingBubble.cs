@@ -786,38 +786,38 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     return et;
                 });
 
-                grd.AddPredefinedPartitioning("ZwoProcSplit", delegate (double[] X) {
-                    int rank;
-                    double x = X[0];
-                    if (x < 0.5)
-                        rank = 0;
-                    else
-                        rank = 1;
+                //grd.AddPredefinedPartitioning("ZwoProcSplit", delegate (double[] X) {
+                //    int rank;
+                //    double x = X[0];
+                //    if (x < 0.5)
+                //        rank = 0;
+                //    else
+                //        rank = 1;
 
-                    return rank;
-                });
+                //    return rank;
+                //});
 
-                grd.AddPredefinedPartitioning("VierProcSplit", delegate (double[] X) {
-                    int rank;
-                    double x = X[0];
-                    if (x < 0.35)
-                        rank = 0;
-                    else if (x < 0.5)
-                        rank = 1;
-                    else if (x < 0.75)
-                        rank = 2;
-                    else
-                        rank = 3;
+                //grd.AddPredefinedPartitioning("VierProcSplit", delegate (double[] X) {
+                //    int rank;
+                //    double x = X[0];
+                //    if (x < 0.35)
+                //        rank = 0;
+                //    else if (x < 0.5)
+                //        rank = 1;
+                //    else if (x < 0.75)
+                //        rank = 2;
+                //    else
+                //        rank = 3;
 
-                    return rank;
-                });
+                //    return rank;
+                //});
 
 
                 return grd;
             };
 
-            C.GridPartType = GridPartType.Predefined;
-            C.GridPartOptions = "VierProcSplit";
+            //C.GridPartType = GridPartType.Predefined;
+            //C.GridPartOptions = "VierProcSplit";
 
 
             #endregion
@@ -918,10 +918,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             //C.Option_LevelSetEvolution = LevelSetEvolution.ExtensionVelocity;
-            //C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
-            //C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
-            ////C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-            ////C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+            ////C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
+            ////C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            //C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
+            //C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
             //C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
             #endregion

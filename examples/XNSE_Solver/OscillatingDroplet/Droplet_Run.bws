@@ -1,14 +1,14 @@
 restart
 **************
-
   BoSSSpad C# interpreter
   _______________________
 
 Databases loaded:
-List of 3 instances of IDatabaseInfo {
+List of 4 instances of IDatabaseInfo {
   0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
   1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
-  2: { Session Count = 48; Grid Count = 615; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  2: { Session Count = 72; Grid Count = 752; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 38; Grid Count = 3059; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -42,7 +42,7 @@ WorkflowMgm.Init("Droplet");   // set project name
 Project name is set to 'Droplet'.
 
 ==============
-WorkflowMgm.SetEqualityBasedSessionJobControllCorrelation();
+//WorkflowMgm.SetEqualityBasedSessionJobControllCorrelation();
 **************
 ==============
 **************
@@ -52,9 +52,10 @@ WorkflowMgm.SetEqualityBasedSessionJobControllCorrelation();
 bool steadyInterface = false;
 bool oscillating     = true;
 
-double radius = 0.25;  
-double a      = 1.25*radius;
-double b      = 0.8*radius;
+double radius      = 0.2;  
+double ellipsDelta = 0.1; 
+double a           = (1.0 + ellipsDelta)*radius;
+double b           = (1.0 - ellipsDelta)*radius;
 **************
 ==============
 // ========================
@@ -70,10 +71,11 @@ double rho_l;                // light fluid
 double mu_l;
 double sigma;
  
+double Lscale = 1;
 double dt;
 double t_end;
 
-int setup = 0;
+int setup = 3;
 switch(setup) {
     case 0: {
         // Hysing: La = 500
@@ -93,7 +95,7 @@ switch(setup) {
         rho_l = 1e4;
         mu_l  = 1;
         sigma = 0.5; 
-        dt    = 0.01;
+        dt    = 0.05;
         t_end = 125;
         break;
     }
@@ -104,19 +106,20 @@ switch(setup) {
         rho_l = 1;
         mu_l  = 10;
         sigma = 1; 
-        dt    = 0.0 ;
-        t_end = 125;
+        dt    = 5e-4 ;
+        t_end = 1.25;
         break;
     }
     case 3: {
         // Air - Water: 
-        rho_h = 1e-3;
-        mu_h  = 1e-5;
-        rho_l = 1.2e-6;
-        mu_l  = 17.1e-8;
-        sigma = 72.75e-3;
-        dt    = 0.0;
-        t_end = 0.0;
+        rho_h  = 1e3;
+        mu_h   = 1e-3;
+        rho_l  = 1.2;
+        mu_l   = 17.1e-6;
+        sigma  = 72.75e-3;
+        Lscale = 0.01;
+        dt     = 3e-5;
+        t_end  = 0.3;
         break;
     }
 }
@@ -131,7 +134,7 @@ var GridSeq = new IGridInfo[1];
 int[] kelemSeq = new int[]{ 8 };
 **************
 ==============
-double L = 1.0;   
+double L = 1.0 * Lscale;   
 **************
 ==============
 for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
@@ -159,7 +162,7 @@ for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
         return et;
     });
 
-    grd.Name = "Droplet_test";
+    grd.Name = "Droplet_meshStudy";
     myDb.SaveGrid(ref grd);
     
     GridSeq[iGrid] = grd;
@@ -180,15 +183,20 @@ using BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases;
 **************
 ==============
 int[] degS = new int[] { 2 };
+double[] muScale = new double[] {1e2, 1e3};   
+var setupSeq = muScale;
 **************
 ==============
+int iSet0 = 1;
 **************
 ==============
-XNSE_Control[,] controls = new XNSE_Control[GridSeq.Length, degS.Length];
+//XNSE_Control[,] controls = new XNSE_Control[GridSeq.Length, degS.Length];
+List<XNSE_Control> controls = new List<XNSE_Control>();
 **************
 ==============
 for(int iDeg = 0; iDeg < degS.Length; iDeg++) {
 for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
+for(int iSet = iSet0; iSet < setupSeq.Length; iSet++) {
     
     var C = Droplet.Droplet_forWorksheet(steadyInterface);
     
@@ -199,16 +207,15 @@ for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
     
     C.SetGrid(grd);
     C.AddBoundaryValue("wall");
-    
+
     if(oscillating){
-        string r_str = radius.ToString();
-        string a_str = a.ToString();
-        string b_str = b.ToString();
-        C.AddInitialValue("Phi", "X => ((X[0]).Pow2() / "+a_str+".Pow2() + (X[1]).Pow2() / "+b_str+".Pow2()) - "+r_str, false);  
+        string a_str = (a * Lscale).ToString();
+        string b_str = (b * Lscale).ToString();
+        C.AddInitialValue("Phi", "X => ((X[0]).Pow2() / "+a_str+".Pow2() + (X[1]).Pow2() / "+b_str+".Pow2()) - 1.0", false);  
     } else {
-        string r_str = radius.ToString();
+        string r_str = (radius * Lscale).ToString();
         C.AddInitialValue("Phi", "X => ((X[0]).Pow2() + (X[1]).Pow2()).Sqrt() - "+r_str, false);
-        double pJump     = (dropletConfig) ? (sigma/radius) : -(sigma/radius);
+        double pJump     = sigma/(radius * Lscale);
         string pJump_str = pJump.ToString();
         C.AddInitialValue("Pressure#A", "X => "+pJump_str, false);
     }
@@ -217,7 +224,7 @@ for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
         C.PhysicalParameters.rho_A = rho_h;
         C.PhysicalParameters.rho_B = rho_l;
         C.PhysicalParameters.mu_A  = mu_h;
-        C.PhysicalParameters.mu_B  = mu_l;
+        C.PhysicalParameters.mu_B  = mu_l * muScale[iSet];
         C.PhysicalParameters.Sigma = sigma;
     } else {
         C.PhysicalParameters.rho_A = rho_l;
@@ -243,13 +250,25 @@ for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
     
     C.FastMarchingPenaltyTerms = BoSSS.Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
     
+    //C.AdvancedDiscretizationOptions.FilterConfiguration = BoSSS.Solution.XNSECommon.CurvatureAlgorithms.FilterConfiguration.Default;
+    //C.AdvancedDiscretizationOptions.SST_isotropicMode   = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+    
+    C.AdvancedDiscretizationOptions.SurfStressTensor = BoSSS.Solution.XNSECommon.SurfaceSressTensor.SemiImplicit;
+    //C.PhysicalParameters.mu_I                        = 1 * sigma;
+    //C.PhysicalParameters.lambda_I                    = 2 * sigma;
+    
+    //C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+    //C.Timestepper_LevelSetHandling = BoSSS.Solution.XdgTimestepping.LevelSetHandling.Coupled_Iterative;
+    
     C.saveperiod = 10;
     C.LogPeriod  = 10;
     
-    C.SessionName = "Droplet_testWithEnergy_k" + pDeg + "_mesh" + iGrd;
+    C.SessionName = "Droplet_setupStudy"+setup+"_muScl"+muScale[iSet]+"_k" + pDeg + "_mesh" + iGrd + "_semiImplicit";
     
-    controls[iDeg,iGrd] = C;
+    //controls[iDeg,iGrd] = C;
+    controls.Add(C);
     C.CreateJob(); // job will be permanently linked to control object
+}
 }
 }
 **************
@@ -257,31 +276,49 @@ Info: setting database path to: \\hpccluster\hpccluster-scratch\smuda\XNSFE_test
 
 ==============
 //Info(controls[0,0]);
+//controls[0,0].SessionName
+controls.ElementAt(0).SessionName
+**************
+Droplet_setupStudy3_muScl1000_k2_mesh0_semiImplicit
+==============
 **************
 ==============
-var j00 = controls[0,0].GetJob();
+//var j00 = controls[0,0].GetJob();
 **************
 ==============
-j00.Activate(myBatch);
+//j00.Activate(myBatch);
 **************
+==============
+//j00.Status;
+**************
+==============
+//j00.Stdout;
+**************
+==============
+//j00.Stderr;
+**************
+==============
+foreach(var cntrl in controls) {
+    Console.WriteLine("Submitting Sessions: {0}", cntrl.SessionName);
+    var job              = cntrl.GetJob();
+    //job.NumberOfMPIProcs = 4;
+    job.Activate(myBatch);
+}
+**************
+Submitting Sessions: Droplet_setupStudy3_muScl1000_k2_mesh0_semiImplicit
+Loading session cb067bc2-4304-471e-9406-a427736405ed failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\cb067bc2-4304-471e-9406-a427736405ed\Session.info'.'
+Loading session f5875fea-ef93-457f-a350-4e0f25851584 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\f5875fea-ef93-457f-a350-4e0f25851584\Session.info'.'
 Job not submitted yet, or no result session is known - starting submission.
 Warning: no database is set for the job to submit; nothing ma be saved.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\Droplet-XNSE_Solver2020Mar20_180725
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\Droplet-XNSE_Solver2020Mar31_110440
 copied 32 files.
    writing file: control.obj
    copied 'amd64' runtime.
 deployment finished.
 
 ==============
-j00.Status;
-**************
-InProgress
-==============
-//j00.Stdout;
-**************
-==============
-j00.Stderr;
+LastError
 **************
 ==============
 **************
@@ -292,10 +329,15 @@ j00.Stderr;
 ==============
 **************
 ==============
+//WorkflowMgm.Sessions
+**************
+==============
+//WorkflowMgm.Sessions.Take(1).DeleteAll()
 **************
 ==============
 **************
 ==============
+//WorkflowMgm.Sessions.Pick(0).Export().WithSupersampling(2).Do()
 **************
 ==============
 **************
@@ -310,7 +352,10 @@ j00.Stderr;
 ==============
 **************
 ==============
-//databases.Pick(2).Sessions.Pick(0).Delete()
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

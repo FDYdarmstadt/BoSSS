@@ -93,7 +93,7 @@ namespace BoSSS.Application.XNSE_Solver {
             });
         }
 
-        public void SetFieldOptions(int VelDegree, int LevSetDegree, FieldOpts.SaveToDBOpt SaveFilteredVelocity =  FieldOpts.SaveToDBOpt.TRUE, FieldOpts.SaveToDBOpt SaveCurvature = FieldOpts.SaveToDBOpt.TRUE) {
+        public void SetFieldOptions(int VelDegree, int LevSetDegree, FieldOpts.SaveToDBOpt SaveFilteredVelocity = FieldOpts.SaveToDBOpt.TRUE, FieldOpts.SaveToDBOpt SaveCurvature = FieldOpts.SaveToDBOpt.TRUE) {
             FieldOptions.Add(VariableNames.VelocityX, new FieldOpts() {
                 Degree = VelDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
@@ -129,8 +129,31 @@ namespace BoSSS.Application.XNSE_Solver {
                 Degree = LevSetDegree*2,
                 SaveToDB = SaveCurvature
             });
-            FieldOptions.Add(VariableNames.Temperature, new FieldOpts() {
+        }
+
+
+        public void SetFieldOptions2(int VelDegree, int LevSetDegree) {
+            FieldOptions.Add(VariableNames.VelocityX, new FieldOpts() {
                 Degree = VelDegree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add(VariableNames.VelocityY, new FieldOpts() {
+                Degree = VelDegree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add(VariableNames.Pressure, new FieldOpts() {
+                Degree = VelDegree - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add("PhiDG", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = LevSetDegree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add("Curvature", new FieldOpts() {
+                Degree = LevSetDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
         }
@@ -509,7 +532,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// See <see cref="ContinuityProjection"/>
         /// </summary>
         [DataMember]
-        public ContinuityProjectionOption LSContiProjectionMethod = ContinuityProjectionOption.SpecFEM;
+        public ContinuityProjectionOption LSContiProjectionMethod = ContinuityProjectionOption.None;
 
         /// <summary>
         /// Enforce the level-set to be globally conervativ, by adding a constant to the level-set field

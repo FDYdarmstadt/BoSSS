@@ -2095,7 +2095,7 @@ namespace BoSSS.Foundation.IO {
 
                     if (energypos != -1) {
                         energytype[g] = energynames[energypos];
-                        Console.WriteLine("Found " + energytype[g] + " in " + pSessions.Pick(j).Name);
+                        //Console.WriteLine("Found " + energytype[g] + " in " + pSessions.Pick(j).Name);
                         for (int k = 0; k < lines.Length - 1; k++) {
                             time[k] = Convert.ToDouble(lines[k + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
                             energy[k] = Convert.ToDouble(lines[k + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[energypos]);

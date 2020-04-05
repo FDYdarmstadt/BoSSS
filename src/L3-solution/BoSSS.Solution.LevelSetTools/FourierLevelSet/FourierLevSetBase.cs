@@ -798,14 +798,14 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
                 // project Fourier levelSet to DGfield on near field
                 VolMask = Near;
             }
-
+ 
             LevelSet.Clear(VolMask);
             // scalar function is already vectorized for parallel execution
             // nodes in global coordinates
             LevelSet.ProjectField(1.0,
                 PhiEvaluation(mode),
                 new Foundation.Quadrature.CellQuadratureScheme(true, VolMask));
-
+    
             // check the projection error
             projErr_phiDG = LevelSet.L2Error(
                 PhiEvaluation(mode),

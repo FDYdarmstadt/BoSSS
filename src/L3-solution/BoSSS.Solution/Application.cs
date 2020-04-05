@@ -1579,7 +1579,7 @@ namespace BoSSS.Solution {
                     }
                 }
 
-
+ 
                 // pass 1: single phase fields
                 // ===========================
 
@@ -1780,7 +1780,7 @@ namespace BoSSS.Solution {
             using (var tr = new FuncTrace()) {
 
                 var rollingSavesTsi = new List<Tuple<int, ITimestepInfo>>();
-
+              
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
 
@@ -1801,7 +1801,7 @@ namespace BoSSS.Solution {
                             SetInitial();
                     }
                 }
-
+  
                 if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
                     PlotCurrentState(physTime, i0, this.Control.SuperSampling);
 
@@ -1820,7 +1820,7 @@ namespace BoSSS.Solution {
                 // resp. 'LoadRestart(..)'!!!
                 CreateEquationsAndSolvers(null);
                 tr.LogMemoryStat();
-
+              
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                 int i = i0.MajorNumber;

@@ -491,18 +491,19 @@ namespace BoSSS.Application.XNSE_Solver {
             // IO related to Fourier level set
             // ====================================
 
-            if (base.MPIRank == 0) {
-                // save restart infos for FLS
-                if (Log_FourierLS != null) {
-                    Guid vecSamplP_id = this.DatabaseDriver.SaveVector<double>(Fourier_LevSet.getRestartInfo());
-                    Log_FourierLS.WriteLine(vecSamplP_id);
-                    Log_FourierLS.Flush();
-                }
-                // Log_files for FLS
-                //if (this.Control.FourierLevSetControl.WriteFLSdata) {
-                //    Fourier_LevSet.saveToLogFiles(TimestepNo.MajorNumber, phystime + dt);
-                //}
-            }
+            //if (Log_FourierLS != null) {
+            //    // save restart infos for FLS
+            //    Guid vecSamplP_id = this.DatabaseDriver.SaveVector<double>(Fourier_LevSet.getRestartInfo());
+            //    if (base.MPIRank == 0) {
+            //        Log_FourierLS.WriteLine(vecSamplP_id);
+            //        Log_FourierLS.Flush();
+            //    }
+            //    // Log_files for FLS
+            //    //if (this.Control.FourierLevSetControl.WriteFLSdata) {
+            //    //    Fourier_LevSet.saveToLogFiles(TimestepNo.MajorNumber, phystime + dt);
+            //    //}
+            //    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+            //}
 
 
             // ====================================================================== 
@@ -518,7 +519,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     } catch (Exception e) {
                         Console.WriteLine("An error occured during WriteLogLine: '{0}'", e);
                     }
-
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             }
 
             //Console.WriteLine("Pause");

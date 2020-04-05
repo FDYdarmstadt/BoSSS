@@ -351,7 +351,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// See <see cref="NavierSlip_Localization"/>
         /// </summary>
         [DataMember]
-        public NavierSlip_Localization GNBC_Localization = NavierSlip_Localization.Nearband;
+        public NavierSlip_Localization GNBC_Localization = NavierSlip_Localization.Bulk;
 
         /// <summary>
         /// See <see cref="NavierSlip_SlipLength"/>
