@@ -41,23 +41,23 @@ namespace PublicTestRunner {
         /// List of tests that should be executed in DEBUG and RELEASE; referencing any type of the assembly will do.
         /// </summary>
         static Type[] FullTestTypes = new Type[] {
-            typeof(BoSSS.Application.DerivativeTest.DerivativeTestMain),
-            typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
-            typeof(BoSSS.Application.Matrix_MPItest.AllUpTest),
+            //typeof(BoSSS.Application.DerivativeTest.DerivativeTestMain),
+            //typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
+            //typeof(BoSSS.Application.Matrix_MPItest.AllUpTest),
             typeof(BoSSS.Application.ElementTests.ElementTests),
-            typeof(BoSSS.Application.DatabaseTests.DatabaseTestsProgram),
+            //typeof(BoSSS.Application.DatabaseTests.DatabaseTestsProgram),
             typeof(CutCellQuadrature.Program),
             typeof(BoSSS.Application.XDGTest.UnitTest),
-            typeof(BoSSS.Application.SpecFEM.AllUpTest),
-            typeof(BoSSS.Application.ipViscosity.TestSolution),
-            typeof(BoSSS.Application.MultigridTest.MultigridMain),
-            typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
-            typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
-            typeof(BoSSS.Application.EllipticReInitTest.EllipticReInitMain),
-            typeof(BoSSS.Application.LevelSetTestBench.LevelSetTestBenchMain),
-            typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main),
-            typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
-            typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
+            //typeof(BoSSS.Application.SpecFEM.AllUpTest),
+            //typeof(BoSSS.Application.ipViscosity.TestSolution),
+            //typeof(BoSSS.Application.MultigridTest.MultigridMain),
+            //typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
+            //typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
+            //typeof(BoSSS.Application.EllipticReInitTest.EllipticReInitMain),
+            //typeof(BoSSS.Application.LevelSetTestBench.LevelSetTestBenchMain),
+            //typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main),
+            //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
+            //typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
             typeof(BoSSS.Application.ExternalBinding.Initializer)
         };
 
@@ -111,7 +111,7 @@ namespace PublicTestRunner {
             InteractiveShell.ReloadExecutionQueues();
             InteractiveShell.WorkflowMgm.Init("BoSSSTesting");
 
-            BatchProcessorClient bpc = InteractiveShell.ExecutionQueues[0];
+            BatchProcessorClient bpc = InteractiveShell.ExecutionQueues[1];
 
             var allTests = new List<ValueTuple<Assembly, string>>();
             var assln = GetAllAssemblies();
