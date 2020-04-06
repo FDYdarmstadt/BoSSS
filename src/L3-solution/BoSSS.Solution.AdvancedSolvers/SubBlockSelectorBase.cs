@@ -617,9 +617,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
             var VarInstruction = m_sbs.VariableFilter;
             var SpecInstruction = m_sbs.SpeciesFilter;
             var ModeInstruction = m_sbs.ModeFilter;
+            bool emptysel = true;
 
             // loop over cells...
             for (int iLoc=0; iLoc < NoOfCells; iLoc++) {
+                emptysel &= !m_sbs.CellFilter(iLoc); //for testing if the entire selection is empty, which hopefully only can happen at the level of cells
                 int jLoc = m_CellOffset + iLoc; //sic:to address correctly, external cells offset has to be concidered, you know ...
                 if (!m_sbs.CellFilter(jLoc))
                     continue;
@@ -679,11 +681,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
 
-            bool emptysel = true;
-            for(int iLoc = 0; iLoc < NoOfCells; iLoc++) {
-                emptysel &= !m_sbs.CellFilter(iLoc);
-            }
+
 #endif
+            
             if (emptysel)
                 Console.WriteLine("WARNING: no cells selceted with {0}", this.ToString());
             if (!emptysel) {

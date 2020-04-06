@@ -55,7 +55,7 @@ namespace AdvancedSolverTests {
             //LocalTests.CellwiseSubSelection(SelectionType.species);
             //ExternalTests.ExternalIndexTest(XDGusage.all,2);
             //ExternalTests.GetExternalRowsTest(XDGusage.all, 2);
-            ExternalTests.SubMatrixExtraction(XDGusage.all, 2,MatrixShape.full_var_spec);
+            ExternalTests.FastSubMatrixExtraction(XDGusage.all, 2,MatrixShape.full_var_spec);
         }
     }
 }

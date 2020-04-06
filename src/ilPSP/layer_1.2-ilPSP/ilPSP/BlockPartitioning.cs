@@ -171,6 +171,9 @@ namespace ilPSP {
             MPICollectiveWatchDog.Watch(MpiComm);
             int LocalLength = base.LocalLength;
 
+            // If there are multiple blocktypes, but not on all proc
+            FrameBlockSize = (FrameBlockSize == -1).MPIOr() ? -1 : FrameBlockSize;
+
             // ===============
             // check arguments
             // ===============
@@ -246,15 +249,17 @@ namespace ilPSP {
                 this.m_BlockType = null;
             }
             int J = _BlockType.Length;
+
 #if DEBUG
             {
                 var fbMin = FrameBlockSize.MPIMin(MpiComm);
                 var fbMax = FrameBlockSize.MPIMax(MpiComm);
-                if(fbMin != FrameBlockSize || fbMin != FrameBlockSize) {
+                if((fbMax != FrameBlockSize) || (fbMin != FrameBlockSize)) {
                     throw new ApplicationException("MPI bug: different FrameBlockSize among processors.");
                 }
             }
 #endif
+
             if (FrameBlockSize == 0) {
                 throw new ArgumentException();
             } else if (FrameBlockSize < 0) {

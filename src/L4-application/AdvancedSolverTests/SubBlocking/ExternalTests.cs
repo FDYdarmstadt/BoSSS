@@ -89,7 +89,7 @@ namespace AdvancedSolverTests.SubBlocking
         }
 
         [Test]
-        public static void SubMatrixExtraction(
+        public static void FastSubMatrixExtraction(
             [Values(XDGusage.none, XDGusage.all)] XDGusage UseXdg,
             [Values(2)] int DGOrder,
             [Values(MatrixShape.full_var_spec)] MatrixShape MShape
@@ -99,13 +99,79 @@ namespace AdvancedSolverTests.SubBlocking
             Console.WriteLine("ExternalVecOperation({0},{1},{2})", UseXdg, DGOrder, MShape);
 
             //Arrange ---
-            MultigridOperator mgo = Utils.CreateTestMGOperator(UseXdg, DGOrder, MShape, 2);
+            MultigridOperator mgo = Utils.CreateTestMGOperator(UseXdg, DGOrder, MShape, 8);
+            MultigridMapping map = mgo.Mapping;
+            BlockMsrMatrix M = mgo.OperatorMatrix;
+            var sbs = new SubBlockSelector(map);
+            int[] extcells = sbs.AllExternalCellsSelection();
+            var M_ext = BlockMask.GetAllExternalRows(map, M);
+            var mask = new BlockMask(sbs, M_ext);
+            bool[] coup = Utils.SetCoupling(MShape);
+
+
+            //Arrange --- get index list of all external cells
+            List<int> idc = new List<int>();
+            for (int i = 0; i < extcells.Length; i++) {
+                int iCell = extcells[i];
+                idc.AddRange(map.GetIndcOfExtCell(iCell));
+            }
+            double[] GlobIdx = idc.Count().ForLoop(i => (double)idc[i] + 1.0);
+
+            //Arrange --- stopwatch
+            var stw = new Stopwatch();
+            stw.Reset();
+
+            //Act --- Extract SubMatrix
+            stw.Start();
+            BlockMsrMatrix subM = mask.GetSubBlockMatrix(M);
+            stw.Stop();
+
+            //Arrange --- Extract Blocks in Matlab and substract
+            var infNorm = MultidimensionalArray.Create(4, 1);
+            int rank = map.MpiRank;
+            using (BatchmodeConnector matlab = new BatchmodeConnector()) {
+                matlab.PutSparseMatrix(M, "M");
+                // note: M_sub lives on Comm_Self, therefore we have to distinguish between procs ...
+                matlab.PutSparseMatrixRankExclusive(subM, "M_sub");
+                matlab.PutVectorRankExclusive(GlobIdx, "Idx");
+                matlab.Cmd("M_0 = M(Idx_0, Idx_0);");
+                matlab.Cmd("M_1 = M(Idx_1, Idx_1);");
+                matlab.Cmd("M_2 = M(Idx_2, Idx_2);");
+                matlab.Cmd("M_3 = M(Idx_3, Idx_3);");
+                matlab.Cmd("n=[0; 0; 0; 0];");
+                matlab.Cmd("n(1,1)=norm(M_0-M_sub_0,inf);");
+                matlab.Cmd("n(2,1)=norm(M_1-M_sub_1,inf);");
+                matlab.Cmd("n(3,1)=norm(M_2-M_sub_2,inf);");
+                matlab.Cmd("n(4,1)=norm(M_3-M_sub_3,inf);");
+                matlab.GetMatrix(infNorm, "n");
+                matlab.Execute();
+            }
+
+            //Assert --- mask blocks and extracted blocks are the same
+            Assert.IsTrue(infNorm[rank, 0] == 0.0);
+        }
+
+
+        [Test]
+        public static void SubMatrixExtraction(
+            [Values(XDGusage.none, XDGusage.all)] XDGusage UseXdg,
+            [Values(2)] int DGOrder,
+            [Values(MatrixShape.full_var_spec, MatrixShape.full_var, MatrixShape.full_spec, MatrixShape.full)] MatrixShape MShape
+            ) {
+
+            Utils.TestInit((int)UseXdg, DGOrder, (int)MShape);
+            Console.WriteLine("ExternalVecOperation({0},{1},{2})", UseXdg, DGOrder, MShape);
+
+            //Arrange ---
+            MultigridOperator mgo = Utils.CreateTestMGOperator(UseXdg, DGOrder, MShape, 8);
             MultigridMapping map = mgo.Mapping;
             BlockMsrMatrix M = mgo.OperatorMatrix;
             var sbs = new SubBlockSelector(map);
             int[] extcells = sbs.AllExternalCellsSelection();
             var M_ext=BlockMask.GetAllExternalRows(map,M);
             var mask = new BlockMask(sbs, M_ext);
+            bool[] coup = Utils.SetCoupling(MShape);
+
 
             //Arrange --- get index list of all external cells
             List<int> idc = new List<int>();
@@ -121,7 +187,7 @@ namespace AdvancedSolverTests.SubBlocking
 
             //Act --- Extract SubMatrix
             stw.Start();
-            BlockMsrMatrix subM = mask.GetSubBlockMatrix(M);
+            BlockMsrMatrix subM = mask.GetSubBlockMatrix(M, false , coup[1], coup[2]);
             stw.Stop();
 
             //Arrange --- Extract Blocks in Matlab and substract
@@ -149,9 +215,84 @@ namespace AdvancedSolverTests.SubBlocking
             Assert.IsTrue(infNorm[rank,0] == 0.0);
         }
 
+        [Test]
+        public static void SubMatrixIgnoreCoupling(
+            [Values(XDGusage.none, XDGusage.all)] XDGusage UseXdg,
+            [Values(2)] int DGOrder,
+            [Values(MatrixShape.diagonal_var_spec, MatrixShape.diagonal_spec, MatrixShape.diagonal_var, MatrixShape.diagonal)] MatrixShape MShape
+            ) {
 
-    
+            Utils.TestInit((int) UseXdg, DGOrder, (int) MShape);
+            Console.WriteLine("ExternalVecOperation({0},{1},{2})", UseXdg, DGOrder, MShape);
 
+            //Arrange ---
+            MultigridOperator mgo = Utils.CreateTestMGOperator(UseXdg, DGOrder, MShape, 2);
+            MultigridMapping map = mgo.Mapping;
+            BlockMsrMatrix M = mgo.OperatorMatrix;
+            var sbs = new SubBlockSelector(map);
+            int[] extcells = sbs.AllExternalCellsSelection();
+            var M_ext = BlockMask.GetAllExternalRows(map, M);
+            var mask = new BlockMask(sbs, M_ext);
+            bool[] coup = Utils.SetCoupling(MShape);
+
+            //Arrange --- get index list of all external cells
+            List<int> idc = new List<int>();
+            for (int i = 0; i<extcells.Length; i++) {
+                int iCell = extcells[i];
+                idc.AddRange(map.GetIndcOfExtCell(iCell));
+            }
+            double[] GlobIdx = idc.Count().ForLoop(i => (double)idc[i] + 1.0);
+
+            //Arrange --- stopwatch
+            var stw = new Stopwatch();
+            stw.Reset();
+
+            //Act --- Extract SubMatrix
+            stw.Start();
+            BlockMsrMatrix subM = mask.GetSubBlockMatrix(M, coup[0], coup[1], coup[2]);
+            stw.Stop();
+
+            //Arrange --- Extract Blocks in Matlab and substract
+            var infNorm = MultidimensionalArray.Create(4, 1);
+            int rank = map.MpiRank;
+                using (BatchmodeConnector matlab = new BatchmodeConnector()) {
+                matlab.PutSparseMatrix(M, "M");
+                // note: M_sub lives on Comm_Self, therefore we have to distinguish between procs ...
+                matlab.PutSparseMatrixRankExclusive(subM, "M_sub"); 
+                matlab.PutVectorRankExclusive(GlobIdx, "Idx");
+                matlab.Cmd("M_0 = M(Idx_0, Idx_0);");
+                matlab.Cmd("M_1 = M(Idx_1, Idx_1);");
+                matlab.Cmd("M_2 = M(Idx_2, Idx_2);");
+                matlab.Cmd("M_3 = M(Idx_3, Idx_3);");
+                matlab.Cmd("n=[0; 0; 0; 0];");
+                matlab.Cmd("n(1,1)=norm(M_0-M_sub_0,inf);");
+                matlab.Cmd("n(2,1)=norm(M_1-M_sub_1,inf);");
+                matlab.Cmd("n(3,1)=norm(M_2-M_sub_2,inf);");
+                matlab.Cmd("n(4,1)=norm(M_3-M_sub_3,inf);");
+                matlab.GetMatrix(infNorm, "n");
+                matlab.Execute();
+            }
+
+            //Assert --- mask blocks and extracted blocks are the same
+            Assert.IsTrue(infNorm[rank, 0] == 0.0);
+        }
+
+
+        public static void CellblocksIgnoreCoupling() {
+
+        }
+
+        public static void SubSelection() { 
+        
+        }
+
+        public static void VectorCellwiseOperation() {
+        
+        }
+
+        public static void VectorSplitOperation() {
+        
+        }
 
         [Test]
         public static void ExternalIndexTest(

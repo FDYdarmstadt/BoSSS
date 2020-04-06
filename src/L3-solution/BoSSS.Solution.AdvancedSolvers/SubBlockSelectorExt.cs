@@ -70,7 +70,10 @@ namespace BoSSS.Solution.AdvancedSolvers
                     Debug.Assert(idx >= LL);
                     Debug.Assert(idx < LE);
                 }
+                m_ExtCellLen = m_map.GetLocalLength_Ext();
             }
+
+            private static int m_ExtCellLen;
 
             protected override int m_NoOfCells {
                 get {
@@ -89,7 +92,7 @@ namespace BoSSS.Solution.AdvancedSolvers
             /// </summary>
             protected override int m_LocalLength {
                 get {
-                    return m_map.GetLocalLength_Ext();
+                    return m_ExtCellLen;
                 }
             }
 
@@ -230,7 +233,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                     GlobalIdxExtRows[iGlob] += ExtRowsTmp._RowPartitioning.i0;
                     Debug.Assert(ExtRowsTmp._RowPartitioning.IsInLocalRange(GlobalIdxExtRows[iGlob]));
                 }
-               
+                
                 //add local Block ...
                 source.WriteSubMatrixTo(target, BMLoc.m_GlobalMask, default(int[]), BMLoc.m_GlobalMask, default(int[]));
 
