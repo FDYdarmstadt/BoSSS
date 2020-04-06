@@ -42,23 +42,23 @@ namespace PublicTestRunner {
         /// List of tests that should be executed in DEBUG and RELEASE; referencing any type of the assembly will do.
         /// </summary>
         static Type[] FullTestTypes = new Type[] {
-            //typeof(BoSSS.Application.DerivativeTest.DerivativeTestMain),
-            //typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
-            //typeof(BoSSS.Application.Matrix_MPItest.AllUpTest),
+            typeof(BoSSS.Application.DerivativeTest.DerivativeTestMain),
+            typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
+            typeof(BoSSS.Application.Matrix_MPItest.AllUpTest),
             typeof(BoSSS.Application.ElementTests.ElementTests),
-            //typeof(BoSSS.Application.DatabaseTests.DatabaseTestsProgram),
+            typeof(BoSSS.Application.DatabaseTests.DatabaseTestsProgram),
             typeof(CutCellQuadrature.Program),
             typeof(BoSSS.Application.XDGTest.UnitTest),
-            //typeof(BoSSS.Application.SpecFEM.AllUpTest),
-            //typeof(BoSSS.Application.ipViscosity.TestSolution),
-            //typeof(BoSSS.Application.MultigridTest.MultigridMain),
-            //typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
-            //typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
-            //typeof(BoSSS.Application.EllipticReInitTest.EllipticReInitMain),
-            //typeof(BoSSS.Application.LevelSetTestBench.LevelSetTestBenchMain),
-            //typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main),
-            //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
-            //typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
+            typeof(BoSSS.Application.SpecFEM.AllUpTest),
+            typeof(BoSSS.Application.ipViscosity.TestSolution),
+            typeof(BoSSS.Application.MultigridTest.MultigridMain),
+            typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
+            typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
+            typeof(BoSSS.Application.EllipticReInitTest.EllipticReInitMain),
+            typeof(BoSSS.Application.LevelSetTestBench.LevelSetTestBenchMain),
+            typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main),
+            typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
+            typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
             typeof(BoSSS.Application.ExternalBinding.Initializer)
         };
 
@@ -109,6 +109,10 @@ namespace PublicTestRunner {
 
 
         static public void JobManagerRun(string AssemblyFilter) {
+
+            // ===================================
+            // phase 1: submit jobs
+            // ===================================
             InteractiveShell.ReloadExecutionQueues();
             InteractiveShell.WorkflowMgm.Init("BoSSSTesting");
 
@@ -138,7 +142,11 @@ namespace PublicTestRunner {
                 allJobs.Add(j);
             }
 
-            while(InteractiveShell.WorkflowMgm.BlockUntilAnyJobTerminate(out var job, PollingIntervallSeconds: 120) > 0) {
+            // ===================================
+            // phase 2: wait until complete...
+            // ===================================
+
+            while (InteractiveShell.WorkflowMgm.BlockUntilAnyJobTerminate(out var job, PollingIntervallSeconds: 120) > 0) {
 
                 if(job != null) {
                     Console.WriteLine("just finished: " + job.Name + ": " + job.Status);
@@ -151,24 +159,46 @@ namespace PublicTestRunner {
             foreach (var j in allJobs) {
                 Console.WriteLine(j.ToString());
             }
+
+            // ===================================
+            // phase 3: collect files
+            // ===================================
+
+            string CurrentDir = Path.GetDirectoryName(typeof(PublicTestRunnerMain).Assembly.Location);
+
+            foreach (var j in allJobs) {
+                //Console.WriteLine(j.ToString());
+
+                string[] sourceFiles = Directory.GetFiles(j.DeploymentDirectory, "result-*.xml");
+
+                foreach (var orig in sourceFiles) {
+                    string n = Path.GetFileName(orig);
+                    string dest = Path.Combine(CurrentDir, n);
+                    File.Copy(orig, dest);
+                }
+
+
+            }
+
         }
 
-
+        static string DebugOrReleaseSuffix {
+            get {
+                string dor;
+#if DEBUG
+                dor = "DEBUG";
+#else
+                dor = "RELEASE";
+#endif
+                return dor;
+            }
+        }
 
         static public Job JobManagerRun(Assembly a, string TestName, BatchProcessorClient bpc) {
-            string dor;
-#if DEBUG
-            dor = "DEBUG";
-#else
-            dor = "RELEASE";
-#endif
+            string dor = DebugOrReleaseSuffix;
             Job j = new Job($"test-{TestName}-{dor}", typeof(PublicTestRunnerMain));
-
-
-            j.MySetCommandLineArguments("--nunit3", Path.GetFileName(a.Location), $"--test={TestName}", $"--result=result-{TestName}-{dor}.xml");
-            
+            j.MySetCommandLineArguments("--nunit3", Path.GetFileName(a.Location), $"--test={TestName}", $"--result=result-{TestName}-{dor}.xml");            
             j.Activate(bpc);
-
             return j;
         }
 
