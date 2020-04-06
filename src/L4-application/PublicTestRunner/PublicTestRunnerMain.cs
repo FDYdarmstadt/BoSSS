@@ -115,43 +115,47 @@ namespace PublicTestRunner {
             BatchProcessorClient bpc = InteractiveShell.ExecutionQueues[1];
 
             var allTests = new List<ValueTuple<Assembly, string>>();
-            var assln = GetAllAssemblies();
-            foreach(var a in assln) {
-                if(!AssemblyFilter.IsEmptyOrWhite()) {
-                    if(!AssemblyFilter.WildcardMatch(Path.GetFileName(a.Location)))
-                        continue;
+            {
+                var assln = GetAllAssemblies();
+                foreach (var a in assln) {
+                    if (!AssemblyFilter.IsEmptyOrWhite()) {
+                        if (!AssemblyFilter.WildcardMatch(Path.GetFileName(a.Location)))
+                            continue;
+                    }
+
+
+                    string[] allTest = GetTestsInAssembly(a);
+
+                    foreach (var t in allTest) {
+                        allTests.Add((a, t));
+                    }
                 }
-
-
-                string[] allTest = GetTestsInAssembly(a);
-
-                foreach(var t in allTest) {
-                    allTests.Add((a, t));
-                }
-
             }
 
             List<Job> allJobs = new List<Job>();
             foreach(var t in allTests) {
-                JobManagerRun(t.Item1, t.Item2, bpc);
+                var j = JobManagerRun(t.Item1, t.Item2, bpc);
+                allJobs.Add(j);
             }
 
             while(InteractiveShell.WorkflowMgm.BlockUntilAnyJobTerminate(out var job, PollingIntervallSeconds: 120) > 0) {
 
                 if(job != null) {
-                    Console.WriteLine("finished: " + job.Name + ": " + job.Status);
+                    Console.WriteLine("just finished: " + job.Name + ": " + job.Status);
                 }
             }
             Thread.Sleep(10000);
-            Console.WriteLine("All jobs finished.");
-            foreach(var j in allJobs) {
+            Console.WriteLine("----------------------------------");
+            Console.WriteLine("All jobs finished - Summary:");
+            Console.WriteLine("----------------------------------");
+            foreach (var j in allJobs) {
                 Console.WriteLine(j.ToString());
             }
         }
 
 
 
-        static public void JobManagerRun(Assembly a, string TestName, BatchProcessorClient bpc) {
+        static public Job JobManagerRun(Assembly a, string TestName, BatchProcessorClient bpc) {
             string dor;
 #if DEBUG
             dor = "DEBUG";
@@ -164,6 +168,8 @@ namespace PublicTestRunner {
             j.MySetCommandLineArguments("--nunit3", Path.GetFileName(a.Location), $"--test={TestName}", $"--result=result-{TestName}-{dor}.xml");
             
             j.Activate(bpc);
+
+            return j;
         }
 
         
