@@ -108,7 +108,7 @@ namespace PublicTestRunner {
         }
 
 
-        static public void JobManagerRun(string AssemblyFilter) {
+        static public int JobManagerRun(string AssemblyFilter) {
 
             // ===================================
             // phase 1: submit jobs
@@ -164,22 +164,59 @@ namespace PublicTestRunner {
             // phase 3: collect files
             // ===================================
 
+            int returnCode = 0;
+
             string CurrentDir = Path.GetDirectoryName(typeof(PublicTestRunnerMain).Assembly.Location);
 
             foreach (var j in allJobs) {
                 //Console.WriteLine(j.ToString());
 
-                string[] sourceFiles = Directory.GetFiles(j.DeploymentDirectory, "result-*.xml");
+                if (j.Status != JobStatus.FinishedSuccessful)
+                    returnCode--;
 
-                foreach (var orig in sourceFiles) {
-                    string n = Path.GetFileName(orig);
-                    string dest = Path.Combine(CurrentDir, n);
-                    File.Copy(orig, dest);
+                try {
+                    string[] sourceFiles = Directory.GetFiles(j.DeploymentDirectory, "result-*.xml");
+
+                    foreach (var orig in sourceFiles) {
+                        string n = Path.GetFileName(orig);
+                        string dest = Path.Combine(CurrentDir, n);
+                        File.Copy(orig, dest);
+                    }
+                } catch(IOException ioe) {
+                    Console.Error.WriteLine(ioe.GetType().Name + ": " + ioe.Message);
+                    returnCode--;
                 }
-
-
             }
 
+            using (var ot = new StreamWriter("allout.txt")) {
+                foreach (var j in allJobs) {
+                    ot.WriteLine("##fdhgjegf763748trfhe8hurdsinf598ugf498jvhsn*hbbvc#####!################");
+                    ot.WriteLine("########################################################################");
+                    ot.WriteLine("########################################################################");
+                    ot.WriteLine("####  " + j.Name);
+                    ot.WriteLine("########################################################################");
+                    ot.WriteLine("########################################################################");
+                    ot.WriteLine("########################################################################");
+
+                    ot.WriteLine("Stdout: ");
+                    ot.WriteLine(j.Stdout);
+
+                    string stderr = j.Stderr;
+                    if (stderr.IsEmptyOrWhite()) {
+                        ot.WriteLine("[[[Empty Error Stream: this is good!]]]");
+                    } else {
+                        ot.WriteLine("[[[Stderr:");
+                        ot.WriteLine(stderr);
+                        ot.WriteLine("]]]");
+                    }
+
+                    ot.WriteLine();
+                    ot.WriteLine();
+                    ot.WriteLine();
+                }
+            }
+
+            return returnCode;
         }
 
         static string DebugOrReleaseSuffix {
@@ -202,7 +239,20 @@ namespace PublicTestRunner {
             return j;
         }
 
-        
+
+        public static void DeleteResultFiles() {
+            string CurrentDir = Path.GetDirectoryName(typeof(PublicTestRunnerMain).Assembly.Location);
+            string[] FilesToDel = Directory.GetFiles(CurrentDir, "result-*.xml");
+
+
+
+            foreach (var f in FilesToDel) {
+
+                File.Delete(f);
+
+            }
+        }
+
 
         /// <summary>
         /// Runs all tests serially
@@ -247,13 +297,11 @@ namespace PublicTestRunner {
                                
 
                 case "--runjobmanager":
-                JobManagerRun(args.Length > 1 ? args[1] : null);
-                break;
+                DeleteResultFiles();
+                return JobManagerRun(args.Length > 1 ? args[1] : null);
             }
 
-
-
-            return 0;
+            throw new NotSupportedException("unknown subprogram.");
         }
     }
 }
