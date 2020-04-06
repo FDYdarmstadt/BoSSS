@@ -446,7 +446,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                 foreach(var J in QueueAndRun) {
                     var s = J.Status;
-                    if(s != JobStatus.Failed && s != JobStatus.FinishedSuccessful) {
+                    if(s == JobStatus.Failed || s == JobStatus.FinishedSuccessful) {
                         JustFinished = J;
                         return QueueAndRun.Length;
                     }

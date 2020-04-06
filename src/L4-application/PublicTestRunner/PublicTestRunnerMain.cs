@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace PublicTestRunner {
@@ -138,8 +139,13 @@ namespace PublicTestRunner {
             while(InteractiveShell.WorkflowMgm.BlockUntilAnyJobTerminate(out var job, PollingIntervallSeconds: 120) > 0) {
 
                 if(job != null) {
-                    Console.WriteLine(job.Name + ": " + job.Status);
+                    Console.WriteLine("finished: " + job.Name + ": " + job.Status);
                 }
+            }
+            Thread.Sleep(10000);
+            Console.WriteLine("All jobs finished.");
+            foreach(var j in allJobs) {
+                Console.WriteLine(j.ToString());
             }
         }
 
