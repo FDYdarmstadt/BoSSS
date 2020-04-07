@@ -54,8 +54,7 @@ namespace PublicTestRunner {
             typeof(BoSSS.Application.MultigridTest.MultigridMain),
             typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
             typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
-            typeof(BoSSS.Application.EllipticReInitTest.EllipticReInitMain),
-            typeof(BoSSS.Application.LevelSetTestBench.LevelSetTestBenchMain),
+            //typeof(BoSSS.Application.LevelSetTestBench.LevelSetTestBenchMain),
             typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main),
             typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
             typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
@@ -64,10 +63,16 @@ namespace PublicTestRunner {
 
         static Type[] ReleaseOnlyTests = new Type[] {
             typeof(BoSSS.Application.TutorialTests.AllUpTest),
-            typeof(CNS.Program)//,
-            //typeof(LowMachCombustionNSE
-            //TutorialTests.exe
-            // QuadratureAndProjectionTest.exe XdgNastyLevsetLocationTest.exe LTSTests.exe XNSE_ViscosityAgglomerationTest.exe NSE_SIMPLE/bin/*/NSE_SIMPLE.exe EllipticReInit.exe IBM_Solver/bin/*/IBM_Solver.exe FSI_Solver/bin/*/FSI_Solver.exe ALTSTests.exe XNSE_Solver/bin/*/XNSE_Solver.exe XDGShock/bin/*/XDGShock.exe
+            typeof(CNS.Program),
+            typeof(BoSSS.Application.TutorialTests.AllUpTest),
+            typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
+            typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
+            typeof(LTSTests.Program),
+            //typeof(BoSSS.Application.XNSE_ViscosityAgglomerationTest.XNSE_ViscosityAgglomerationTestMain),
+            typeof(NSE_SIMPLE.SIMPLESolver),
+            typeof(BoSSS.Application.IBM_Solver.IBM_SolverMain),
+            typeof(ALTSTests.Program),
+            typeof(BoSSS.Application.XNSE_Solver.XNSE_SolverMain)
         };
 
 
@@ -163,8 +168,10 @@ namespace PublicTestRunner {
                             var dc = m.GetCustomAttribute(typeof(NUnitFileToCopyHackAttribute)) as NUnitFileToCopyHackAttribute;
 
                             if(dc != null) {
-                                string filepath = LocateFile(dc.SomeFileName);
-                                s.Add(filepath);
+                                foreach(string someFile in dc.SomeFileNames) {
+                                    string filepath = LocateFile(someFile);
+                                    s.Add(filepath);
+                                }
                             }
                         }
                     }

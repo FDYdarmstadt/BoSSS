@@ -59,8 +59,7 @@ namespace BoSSS.Application.TutorialTests {
         /// <summary>
         /// Runs all the worksheets contained in the BoSSS handbook.
         /// </summary>
-        [Test]
-        static public void RunWorksheets([Values(
+        [NUnitFileToCopyHack(
             "quickStartCNS/IsentropicVortex.tex",
             "MetaJobManager/MetaJobManager.tex",
             "GridGeneration/GridGeneration.tex",
@@ -76,7 +75,25 @@ namespace BoSSS.Application.TutorialTests {
             "tutorial10-PoissonSystem/Poisson.tex",
             "tutorial11-Stokes/StokesEq.tex",
             "CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex",
-            "convergenceStudyTutorial/convStudy.tex"
+            "convergenceStudyTutorial/convStudy.tex")]
+        [Test]
+        static public void RunWorksheets([Values(
+            "IsentropicVortex.tex",
+            "MetaJobManager.tex",
+            "GridGeneration.tex",
+            "channel.tex",
+            "tutorialMatlab.tex",
+            // ----
+            "uebung2tutorial.tex",
+            "tutorial4.tex",
+            "uebung5tutorial.tex",
+            "tutorial6.tex",
+            "sip.tex",
+            // ---
+            "Poisson.tex",
+            "StokesEq.tex",
+            "CsharpAndBoSSSpad.tex",
+            "convStudy.tex"
             //"ParameterStudy/ParameterStudy.tex"
 
             )] string TexFileName) {

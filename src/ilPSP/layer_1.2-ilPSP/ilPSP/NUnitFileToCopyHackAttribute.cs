@@ -16,13 +16,13 @@ namespace ilPSP {
         /// <summary>
         /// Wäh
         /// </summary>
-        public NUnitFileToCopyHackAttribute(string SomeFileName) {
-            this.SomeFileName = SomeFileName;
+        public NUnitFileToCopyHackAttribute(params string[] SomeFileNames) {
+            this.SomeFileNames = SomeFileNames.CloneAs();
         }
 
         /// <summary>
         /// partial path or file name within the source repo
         /// </summary>
-        public string SomeFileName;
+        public string[] SomeFileNames;
     }
 }

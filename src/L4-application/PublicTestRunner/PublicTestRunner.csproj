@@ -65,14 +65,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\internal\src\experimental\L4-application\EllipticReInitTest\EllipticReInitTest.csproj">
-      <Project>{a17155c9-d23e-4d51-8ca0-21b5af7c2f0c}</Project>
-      <Name>EllipticReInitTest</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\..\internal\src\experimental\L4-application\LevelSetTestBench\LevelSetTestBench.csproj">
-      <Project>{9eabe62c-bef1-40f2-8682-61944b7899da}</Project>
-      <Name>LevelSetTestBench</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
       <Project>{8e6d8f23-623f-4204-b4ab-a088c0cd83aa}</Project>
       <Name>ilPSP</Name>
@@ -84,6 +76,10 @@
     <ProjectReference Include="..\AdaptiveMeshRefinementTest\AdaptiveMeshRefinementTest.csproj">
       <Project>{cf280064-130d-4c5a-9ab1-0615243b01c6}</Project>
       <Name>AdaptiveMeshRefinementTest</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ALTSTests\ALTSTests.csproj">
+      <Project>{76ef162b-6f5f-48b7-8c24-40fb80d9c8c1}</Project>
+      <Name>ALTSTests</Name>
     </ProjectReference>
     <ProjectReference Include="..\BoSSSpad\BoSSSpad.csproj">
       <Project>{e1351588-3bc0-418a-bfa2-7ce3391aa167}</Project>
@@ -117,6 +113,10 @@
       <Project>{25390d9e-5bdf-4fcc-9a70-af49f36831a4}</Project>
       <Name>ExternalBinding</Name>
     </ProjectReference>
+    <ProjectReference Include="..\IBM_Solver\IBM_Solver.csproj">
+      <Project>{12970f63-547f-4be6-9af9-2f3eeb00a877}</Project>
+      <Name>IBM_Solver</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ipPoisson\ipPoisson.csproj">
       <Project>{09cce864-9bae-4660-aff9-f3f3414b6173}</Project>
       <Name>ipPoisson</Name>
@@ -124,6 +124,10 @@
     <ProjectReference Include="..\ipViscosity\ipViscosity.csproj">
       <Project>{09cce864-9bae-4660-a123-f3f3414b6173}</Project>
       <Name>ipViscosity</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\LTSTests\LTSTests.csproj">
+      <Project>{fe748c89-3989-4742-811b-80f8b924fd35}</Project>
+      <Name>LTSTests</Name>
     </ProjectReference>
     <ProjectReference Include="..\Matrix_MPItest\Matrix_MPItest.csproj">
       <Project>{cf28bb64-12bd-4c5a-432a-0604f0ab01c6}</Project>
@@ -133,6 +137,14 @@
       <Project>{09cce864-12a3-4660-aff9-f3f3434b1173}</Project>
       <Name>MultigridTest</Name>
     </ProjectReference>
+    <ProjectReference Include="..\NSE_SIMPLE\SIMPLE.csproj">
+      <Project>{cd6004b7-f359-4ee4-af0d-123a0c2b5bdd}</Project>
+      <Name>SIMPLE</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\QuadratureTest\QuadratureAndProjectionTest.csproj">
+      <Project>{689a4771-e030-4c77-ba63-d9148f61a616}</Project>
+      <Name>QuadratureAndProjectionTest</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SpecFEM\SpecFEM.csproj">
       <Project>{fef0e358-58e8-41a9-98fd-0e1de0f77e12}</Project>
       <Name>SpecFEM</Name>
@@ -140,6 +152,10 @@
     <ProjectReference Include="..\TutorialTests\TutorialTests.csproj">
       <Project>{fe981ac8-58e8-41a9-98fd-0e1de0f77e12}</Project>
       <Name>TutorialTests</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\XdgNastyLevsetLocationTest\XdgNastyLevsetLocationTest.csproj">
+      <Project>{1abcc828-56e1-4388-9ef0-02f0c512ad75}</Project>
+      <Name>XdgNastyLevsetLocationTest</Name>
     </ProjectReference>
     <ProjectReference Include="..\XdgPoisson3\XdgPoisson3.csproj">
       <Project>{efbeff7a-e40d-4808-be79-536040c0fadc}</Project>
@@ -152,6 +168,10 @@
     <ProjectReference Include="..\XdgTimesteppingTest\XdgTimesteppingTest.csproj">
       <Project>{efbeff7a-abc0-4007-be79-53612307fadc}</Project>
       <Name>XdgTimesteppingTest</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj">
+      <Project>{3d867374-bf9a-475e-8f5c-e1c067605b9c}</Project>
+      <Name>XNSE_Solver</Name>
     </ProjectReference>
     <ProjectReference Include="..\ZwoLsTest\ZwoLsTest.csproj">
       <Project>{cf28bb64-130d-4c5a-9031-0604f0ab01c6}</Project>
