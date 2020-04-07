@@ -59,7 +59,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             {
                 MeshCell<T> cell = cells[i];
                 Vector centerOfGravity = CenterOf(cell);
-                double relaxValue = 0.1;
+                double relaxValue = 0.3;
                 centerOfGravity = centerOfGravity * relaxValue + new Vector(cell.Node.Position) * (1 - relaxValue);
                 cell.Node.Position = centerOfGravity;
             }
