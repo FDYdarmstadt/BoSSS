@@ -88,6 +88,10 @@
       <Project>{e1351588-3bc0-418a-bfa2-7ce3391aa167}</Project>
       <Name>BoSSSpad</Name>
     </ProjectReference>
+    <ProjectReference Include="..\CNS\CNS.csproj">
+      <Project>{8bd7843e-8191-40b3-b208-75ec766a99fd}</Project>
+      <Name>CNS</Name>
+    </ProjectReference>
     <ProjectReference Include="..\CutCellQuadrature\CutCellQuadrature.csproj">
       <Project>{6e696838-ee09-459f-b5b0-7ee0d709c3d6}</Project>
       <Name>CutCellQuadrature</Name>

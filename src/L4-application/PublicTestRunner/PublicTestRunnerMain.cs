@@ -62,7 +62,11 @@ namespace PublicTestRunner {
         };
 
         static Type[] ReleaseOnlyTests = new Type[] {
-            typeof(BoSSS.Application.TutorialTests.AllUpTest)
+            typeof(BoSSS.Application.TutorialTests.AllUpTest),
+            typeof(CNS.Program),
+            //typeof(LowMachCombustionNSE
+            TutorialTests.exe
+            // QuadratureAndProjectionTest.exe XdgNastyLevsetLocationTest.exe LTSTests.exe XNSE_ViscosityAgglomerationTest.exe NSE_SIMPLE/bin/*/NSE_SIMPLE.exe EllipticReInit.exe IBM_Solver/bin/*/IBM_Solver.exe FSI_Solver/bin/*/FSI_Solver.exe ALTSTests.exe XNSE_Solver/bin/*/XNSE_Solver.exe XDGShock/bin/*/XDGShock.exe
         };
 
 
