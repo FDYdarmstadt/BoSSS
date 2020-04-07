@@ -383,7 +383,7 @@ namespace BoSSS.Application.BoSSSpad {
                 bool terminate = true;
                 foreach(var J in this.AllJobs) {
                     var s = J.Value.Status;
-                    if(s!= JobStatus.Failed && s != JobStatus.FinishedSuccessful) {
+                    if(s!= JobStatus.Failed && s != JobStatus.FinishedSuccessful && s != JobStatus.PreActivation) {
                         terminate = false;
                         break;
                     }
@@ -423,7 +423,10 @@ namespace BoSSS.Application.BoSSSpad {
         public int BlockUntilAnyJobTerminate(out Job JustFinished,  double TimeOutSeconds = -1, double PollingIntervallSeconds = 10) {
             DateTime start = DateTime.Now;
 
-            var QueueAndRun = this.AllJobs.Select(kv => kv.Value).Where(delegate (Job j) { var s = j.Status; return (s != JobStatus.Failed && s != JobStatus.FinishedSuccessful); }).ToArray();
+            var QueueAndRun = this.AllJobs.Select(kv => kv.Value).Where(delegate (Job j) {
+                var s = j.Status;
+                return (s != JobStatus.Failed && s != JobStatus.FinishedSuccessful && s != JobStatus.PreActivation);
+            }).ToArray();
             if(QueueAndRun.Length == 0) {
                 JustFinished = null;
                 return 0;
@@ -443,7 +446,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                 foreach(var J in QueueAndRun) {
                     var s = J.Status;
-                    if(s != JobStatus.Failed && s != JobStatus.FinishedSuccessful) {
+                    if(s == JobStatus.Failed || s == JobStatus.FinishedSuccessful) {
                         JustFinished = J;
                         return QueueAndRun.Length;
                     }

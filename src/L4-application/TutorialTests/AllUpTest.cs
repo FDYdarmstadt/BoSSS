@@ -45,15 +45,7 @@ namespace BoSSS.Application.TutorialTests {
         static public void OneTimeSetUp() {
             BoSSS.Solution.Application.InitMPI(new string[0]);
 
-             if (System.Environment.MachineName.ToLowerInvariant().EndsWith("rennmaschin")
-                || System.Environment.MachineName.ToLowerInvariant().EndsWith("stormbreaker")
-                //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
-                ) {
-                // This is Florians Laptop;
-                // he is to poor to afford MATLAB, so he uses OCTAVE
-                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-                //BatchmodeConnector.MatlabExecuteable = "C:\\cygwin64\\bin\\bash.exe";
-            } 
+            
 
             string preExistingDb = BoSSS.Application.BoSSSpad.InteractiveShell.GetDefaultDatabaseDir();
             if (Directory.Exists(preExistingDb)) {

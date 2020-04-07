@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using BoSSS.Foundation.IO;
+using ilPSP;
 using NUnit.Framework;
 
 namespace BoSSS.Application.DatabaseTests
@@ -14,10 +15,13 @@ namespace BoSSS.Application.DatabaseTests
 
         protected IDatabaseInfo emptyDatabase;
         
+       
+        
+        [NUnitFileToCopyHack("DatabaseTests/bosss_db_test_template.zip")]
         [SetUp]
         public void Init()
         {
-            string templateDatabasePath = "..\\..\\bosss_db_test_template.zip";
+            string templateDatabasePath = "bosss_db_test_template.zip";
 
             // Temporary filesystem driver to unzip the test database.
             var tmpFsDriver = new StandardFsDriver(templateDatabasePath);

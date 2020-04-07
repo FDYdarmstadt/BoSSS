@@ -301,12 +301,12 @@ namespace BoSSS.Application.BoSSSpad {
 
         /// <summary>
         /// Creates the <see cref="IDatabaseInfo"/> for the current settings of the control file #
-        /// (<see cref="AppControl.DbPath/>, <see cref="AppControl.AlternateDbPaths"/>),
+        /// (<see cref="AppControl.DbPath"/>, <see cref="AppControl.AlternateDbPaths"/>),
         /// if accessible on the current computer.
         /// </summary>
         static public IDatabaseInfo GetDatabase(this AppControl Control) {
             List<ValueTuple<string, string>> allPaths = new List<(string, string)>();
-            if(Control.DbPath.IsNullOrEmpty())
+            if(!Control.DbPath.IsNullOrEmpty())
                 allPaths.Add((Control.DbPath, null));
             if(Control.AlternateDbPaths != null)
                 allPaths.AddRange(Control.AlternateDbPaths);
