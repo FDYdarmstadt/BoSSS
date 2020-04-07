@@ -526,6 +526,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Block-Preconditiond for the pressure/continuity-block of the saddle-point system
         /// </summary>
+        [DataMember]
         public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.IdMass;
 
         /// <summary>

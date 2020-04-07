@@ -84,17 +84,17 @@ namespace BoSSS.Application.XNSE_Solver {
                     config.isViscous = false;
                 } else {
                     if ((config.getPhysParams.mu_A <= 0) || (config.getPhysParams.mu_B <= 0))
-                        throw new ArgumentException();
+                        throw new ArgumentException("Viscosity does not fall within expected range");
                 }
 
                 if ((config.getPhysParams.rho_A <= 0) || (config.getPhysParams.rho_B <= 0))
-                    throw new ArgumentException();
+                    throw new ArgumentException("Density does not fall within expected range");
 
                 if (_LsTrk.SpeciesNames.Count != 2)
-                    throw new ArgumentException();
+                    throw new ArgumentException("Species name count does not fall within expected range");
 
                 if (!(_LsTrk.SpeciesNames.Contains("A") && _LsTrk.SpeciesNames.Contains("B")))
-                    throw new ArgumentException();
+                    throw new ArgumentException("Missing species name");
             }
 
 
@@ -180,11 +180,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // create Operator
             // ===============
+            Console.WriteLine("Creating Operator");
             m_XOp = new XSpatialOperatorMk2(DomNameSelected, Params, CodNameSelected, (A, B, C) => _HMFdegree, this.LsTrk.SpeciesIdS.ToArray());
 
             // add Navier-Stokes components
             // ============================
-
+            Console.WriteLine("Setting NSE components");
             // species bulk components
             for (int spc = 0; spc < LsTrk.TotalNoOfSpecies; spc++) {
                 // Navier Stokes equations
