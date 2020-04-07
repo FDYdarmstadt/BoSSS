@@ -71,7 +71,46 @@ namespace BoSSS.Application.XNSE_Solver {
             return typeof(XNSE_SolverMain);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public override void SetDGdegree(int p) {
+            SetFieldOptions(p, Math.Max(2, p));
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void SetFieldOptions(int VelDegree, int LevSetDegree, FieldOpts.SaveToDBOpt SaveFilteredVelocity =  FieldOpts.SaveToDBOpt.TRUE, FieldOpts.SaveToDBOpt SaveCurvature = FieldOpts.SaveToDBOpt.TRUE) {
+            FieldOptions.Add("Velocity*", new FieldOpts() {
+                Degree = VelDegree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add("FilteredVelocity*", new FieldOpts() {
+                SaveToDB = SaveFilteredVelocity
+            });
+            FieldOptions.Add("SurfaceForceDiagnostic*", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.FALSE
+            });
+            FieldOptions.Add(VariableNames.Pressure, new FieldOpts() {
+                Degree = VelDegree - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add("PhiDG", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = LevSetDegree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add("Curvature", new FieldOpts() {
+                Degree = LevSetDegree*2,
+                SaveToDB = SaveCurvature
+            });
+        }
+
+
+        public void SetDGdegree2(int p) {
             FieldOptions.Add(VariableNames.VelocityX, new FieldOpts() {
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
@@ -90,44 +129,6 @@ namespace BoSSS.Application.XNSE_Solver {
             FieldOptions.Add("Phi", new FieldOpts() {
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-        }
-
-        public void SetFieldOptions(int VelDegree, int LevSetDegree, FieldOpts.SaveToDBOpt SaveFilteredVelocity = FieldOpts.SaveToDBOpt.TRUE, FieldOpts.SaveToDBOpt SaveCurvature = FieldOpts.SaveToDBOpt.TRUE) {
-            FieldOptions.Add(VariableNames.VelocityX, new FieldOpts() {
-                Degree = VelDegree,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            FieldOptions.Add(VariableNames.VelocityY, new FieldOpts() {
-                Degree = VelDegree,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            FieldOptions.Add("FilteredVelocityX", new FieldOpts() {
-                SaveToDB = SaveFilteredVelocity
-            });
-            FieldOptions.Add("FilteredVelocityY", new FieldOpts() {
-                SaveToDB = SaveFilteredVelocity
-            });
-            FieldOptions.Add("SurfaceForceDiagnosticX", new FieldOpts() {
-                SaveToDB = FieldOpts.SaveToDBOpt.FALSE
-            });
-            FieldOptions.Add("SurfaceForceDiagnosticY", new FieldOpts() {
-                SaveToDB = FieldOpts.SaveToDBOpt.FALSE
-            });
-            FieldOptions.Add(VariableNames.Pressure, new FieldOpts() {
-                Degree = VelDegree - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            FieldOptions.Add("PhiDG", new FieldOpts() {
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = LevSetDegree,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            FieldOptions.Add("Curvature", new FieldOpts() {
-                Degree = LevSetDegree*2,
-                SaveToDB = SaveCurvature
             });
         }
 
@@ -517,17 +518,18 @@ namespace BoSSS.Application.XNSE_Solver {
         //[DataMember]
         //public int Solver_MinIterations = 4;
 
-        /// <summary>
-        /// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
-        /// </summary>
-        [DataMember]
-        public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
+        ///// <summary>
+        ///// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
+        ///// </summary>
+        //[DataMember]
+        //public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
 
         /// <summary>
         /// Block-Preconditiond for the pressure/continuity-block of the saddle-point system
         /// </summary>
-        [DataMember]
-        public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.IdMass;
+        //[DataMember]
+        //public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.IdMass;
+
 
         /// <summary>
         /// See <see cref="ContinuityProjection"/>
@@ -536,7 +538,7 @@ namespace BoSSS.Application.XNSE_Solver {
         public ContinuityProjectionOption LSContiProjectionMethod = ContinuityProjectionOption.None;
 
         /// <summary>
-        /// Enforce the level-set to be globally conervativ, by adding a constant to the level-set field
+        /// Enforce the level-set to be globally conservative, by adding a constant to the level-set field
         /// </summary>
         public bool EnforceLevelSetConservation = false;
 
@@ -657,11 +659,6 @@ namespace BoSSS.Application.XNSE_Solver {
         public InterfaceVelocityAveraging InterVelocAverage = InterfaceVelocityAveraging.density;
 
 
-        /// <summary>
-        /// Turn XDG for the velocity on/off; if off, only the pressure is approximated by XDG,
-        /// the velocity is plain DG.
-        /// </summary>
-        //public bool UseXDG4Velocity = true;
 
         /// <summary>
         /// An explicit expression of the Level-set over time.
@@ -721,7 +718,8 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Block-Precondition for the Temperature-block
         /// </summary>
-        public MultigridOperator.Mode TemperatureBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
+        //[DataMember]
+        //public MultigridOperator.Mode TemperatureBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
 
 
         /// <summary>

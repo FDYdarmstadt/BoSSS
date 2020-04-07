@@ -138,29 +138,18 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="args"></param>
         static void Main(string[] args) {
             //BoSSS.Application.SipPoisson.Tests.TestProgram.Init();
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorScaling2D(1);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverCode.exp_Kcycle_schwarz);
-            ////BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverCode.exp_softpcg_schwarz_directcoarse);
-            ////BoSSS.Application.SipPoisson.Tests.TestProgram.Cleanup();
-            ////BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(2, 40, 2, LinearSolverCode.exp_Kcycle_schwarz);
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverCode.exp_softpcg_schwarz_directcoarse);
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.Cleanup();
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(2, 40, 2, LinearSolverCode.exp_Kcycle_schwarz);
             //Assert.AreEqual(1, 2, "Remove Me!!");
 
             string si3 = System.Environment.GetEnvironmentVariable ("BOSSS_INSTALL");
             string pp = System.Environment.GetEnvironmentVariable ("PATH");
             si3 = si3 != null ? si3 : "NIX";
             pp = pp != null ? pp : "NIX";
-
-          
             Console.WriteLine ("BOSSS_INSTALL : " + si3);
-
-
-            if (System.Environment.MachineName.ToLowerInvariant().EndsWith("terminal03")
-                //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
-                ) {
-                // This is Florians Laptop;
-                // he is to poor to afford MATLAB, so he uses OCTAVE
-                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-                BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-4.4.1\bin\octave-cli.exe";
-            }
 
 
 
@@ -181,10 +170,6 @@ namespace BoSSS.Application.SipPoisson {
                     Console.WriteLine("BoSSS: Running with " + size + " MPI process(es)");
                 }
             }
-
-
-            //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-            //BatchmodeConnector.MatlabExecuteable = "C:\\cygwin\\bin\\bash.exe";
 
 
             //MultidimensionalArray.MultiplyProgram mp = MultidimensionalArray.MultiplyProgram.Compile("imn", "kma", "ikna"); // original sort
@@ -255,6 +240,7 @@ namespace BoSSS.Application.SipPoisson {
 
             return;
             */
+
 
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
@@ -424,14 +410,12 @@ namespace BoSSS.Application.SipPoisson {
                 LaplaceMtx.GetMemoryInfo(out long AllocatedMem, out long UsedMem);
                 Console.WriteLine("   Used   matrix storage (MB): {0}", UsedMem /(1024.0*1024));
                 Console.WriteLine("   Alloc. matrix storage (MB): {0}", AllocatedMem/(1024.0*1024));
-
-
-                //MatrixOpPerf();
-
-
             }
         }
 
+        /// <summary>
+        /// Ad-hoc performance measurement routines for <see cref="BlockMsrMatrix"/> operations
+        /// </summary>
         void MatrixOpPerf() {
             var M = LaplaceMtx;
             var M2 = M.CloneAs();
@@ -952,6 +936,7 @@ namespace BoSSS.Application.SipPoisson {
 
         }
 
+        /*
         private string m_AnalyseOutputpath;
 
         private string AnalyseOutputpath {
@@ -969,6 +954,7 @@ namespace BoSSS.Application.SipPoisson {
                 }
             }
         }
+        */
 
         /// <summary>
         /// Solution of the system
@@ -1027,18 +1013,18 @@ namespace BoSSS.Application.SipPoisson {
                     List<Action<int, double[], double[], MultigridOperator>> ItCallbacks_Kollekte=new List<Action<int, double[], double[], MultigridOperator>>();
                     ItCallbacks_Kollekte.Add(CustomItCallback);
 
-                    //Check if output analysis path is set, if invalid change to current directory ...
-                    if (this.Control.WriteMeSomeAnalyse != null)
-                    {
-                        Console.WriteLine("===Analysis-Setup===");
-                        AnalyseOutputpath = this.Control.WriteMeSomeAnalyse;
-                        CO = new ConvergenceObserver(MultigridOp, null, T.CoordinateVector.ToArray(), SF);
-                        CO.TecplotOut = String.Concat(AnalyseOutputpath, "Poisson");
-                        ItCallbacks_Kollekte.Add(CO.ResItCallbackAtDownstep);
-                        DeletePreviousOutput();
-                        Console.WriteLine("Analysis output will be written to: {0}", AnalyseOutputpath);
-                        Console.WriteLine("====================");
-                    }
+                    ////Check if output analysis path is set, if invalid change to current directory ...
+                    //if (this.Control.WriteMeSomeAnalyse != null)
+                    //{
+                    //    Console.WriteLine("===Analysis-Setup===");
+                    //    AnalyseOutputpath = this.Control.WriteMeSomeAnalyse;
+                    //    CO = new ConvergenceObserver(MultigridOp, null, T.CoordinateVector.ToArray(), SF);
+                    //    CO.TecplotOut = String.Concat(AnalyseOutputpath, "Poisson");
+                    //    ItCallbacks_Kollekte.Add(CO.ResItCallbackAtDownstep);
+                    //    DeletePreviousOutput();
+                    //    Console.WriteLine("Analysis output will be written to: {0}", AnalyseOutputpath);
+                    //    Console.WriteLine("====================");
+                    //}
                     
                     SF.GenerateLinear(out solver, MgSeq, MgConfig, ItCallbacks_Kollekte);
 
@@ -1089,13 +1075,11 @@ namespace BoSSS.Application.SipPoisson {
                     Converged = solver.Converged;
                     NoOfIter = solver.ThisLevelIterations;
 
-                    // Lieber Jens, zerstöre bitte nie wieder den Jenkins vor deinem Urlaub --> zwecks Sympathie für/von deinen Kollegen und so
-                    //if(this.Control.WriteMeSomeAnalyse != null)
-                    //    HierStimmtWasNichtJens(CO, condests, DOFs, Level);
                 }
             }
         }
 
+        /*
         private void DeletePreviousOutput() {
             DirectoryInfo Dinfo = new DirectoryInfo(AnalyseOutputpath);
             IEnumerable<FileInfo> Files1 = Dinfo.GetFiles("*.plt");
@@ -1153,6 +1137,19 @@ namespace BoSSS.Application.SipPoisson {
             }
         }
 
+        /// <summary>
+        /// Operator stability analysis
+        /// </summary>
+        override public IDictionary<string,double> OperatorAnalysis() {
+            using(new FuncTrace()) {
+                var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(
+                    this.LaplaceMtx, this.LaplaceAffine,
+                    this.T.Mapping,
+                    this.MgConfig);
+
+                return ana.GetNamedProperties();
+            }
+        }
 
         /// <summary>
         /// default plotting
@@ -1168,7 +1165,8 @@ namespace BoSSS.Application.SipPoisson {
 
             DGField[] Fields = new DGField[] { T, Tex, RHS, ResiualKP1, Error };
             Fields = Fields.Cat(this.MGColoring);
-            BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, AnalyseOutputpath+ "poisson_MG_coloring" + timestepNo + caseStr, phystime, superSampling);
+            BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, "poisson_MG_coloring" + timestepNo + caseStr, phystime, superSampling);
+            //BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, Path.Combine(AnalyseOutputpath, "poisson_MG_coloring" + timestepNo + caseStr), phystime, superSampling);
         }
 
     }

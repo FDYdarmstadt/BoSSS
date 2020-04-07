@@ -321,7 +321,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MaxSolverIterations = 50;
@@ -725,7 +724,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
             //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 20;
             C.LinearSolver.MaxSolverIterations = 50;
@@ -1186,7 +1184,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
             //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 20;
             C.LinearSolver.MaxSolverIterations = 50;
@@ -1487,7 +1484,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MaxSolverIterations = 50;
@@ -1959,7 +1955,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
             //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 20;
             C.LinearSolver.MaxSolverIterations = 20;
@@ -2241,7 +2236,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 40;
             C.LinearSolver.MaxSolverIterations = 40;
@@ -2519,7 +2513,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 20;
             C.LinearSolver.MaxSolverIterations = 20;
@@ -2762,7 +2755,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MaxSolverIterations = 50;
@@ -3089,7 +3081,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MaxSolverIterations = 50;
@@ -3365,7 +3356,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MaxSolverIterations = 50;
@@ -3627,7 +3617,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MaxSolverIterations = 50;
@@ -3913,7 +3902,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MaxSolverIterations = 50;
@@ -4187,7 +4175,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MaxSolverIterations = 50;
@@ -4460,7 +4447,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None;
 
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MaxSolverIterations = 50;

@@ -235,6 +235,24 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public abstract string GetStderrFile(Job myJob);
 
+        static bool IsNotSystemAssembly(Assembly Ass, string MainAssemblyDir){
+            PlatformID CurrentSys = System.Environment.OSVersion.Platform;
+            switch(CurrentSys)
+            {
+                case PlatformID.Unix:
+                    { return Path.GetFullPath(Ass.Location).StartsWith("/home/"); }
+                case PlatformID.Win32S:
+                case PlatformID.Win32Windows:
+                default:
+                    {
+                        return Path.GetDirectoryName(Ass.Location).Equals(MainAssemblyDir)
+                            || Path.GetFileName(Ass.Location).StartsWith("BoSSS")
+                            || Path.GetFileName(Ass.Location).StartsWith("ilPSP")
+                            || !Ass.GlobalAssemblyCache;
+                    }
+            }
+        }
+
         /// <summary>
         /// Copies the executable files to the <see cref="DeploymentBaseDirectory"/>, 
         /// but does not submit the job.
@@ -249,10 +267,7 @@ namespace BoSSS.Application.BoSSSpad {
                 //string SystemPath = Path.GetDirectoryName(typeof(object).Assembly.Location);
                 string MainAssemblyDir = Path.GetDirectoryName(myJob.EntryAssembly.Location);
                 foreach (var a in myJob.AllDependentAssemblies) {
-                    if (Path.GetDirectoryName(a.Location).Equals(MainAssemblyDir)
-                        || Path.GetFileName(a.Location).StartsWith("BoSSS")
-                        || Path.GetFileName(a.Location).StartsWith("ilPSP")
-                        || !a.GlobalAssemblyCache) {
+                    if (IsNotSystemAssembly(a, MainAssemblyDir)) {
                         files.Add(a.Location);
                     }
                 }

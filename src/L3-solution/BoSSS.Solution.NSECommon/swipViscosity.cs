@@ -459,13 +459,7 @@ namespace BoSSS.Solution.NSECommon {
             
         }
 
-        //public override IList<string> ArgumentOrdering
-        //{
-        //    get
-        //    {
-        //        return new string[] { VariableNames.Velocity_d(m_iComp) };
-        //    }
-        //}
+        
 
         public override double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double acc = 0;

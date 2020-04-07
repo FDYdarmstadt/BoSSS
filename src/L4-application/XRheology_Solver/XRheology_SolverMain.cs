@@ -823,7 +823,6 @@ namespace BoSSS.Application.XRheology_Solver {
             //OpMtx.SaveToTextFile("OpMatrix");
         }
 
-        int hack_TimestepIndex;
         double hack_Phystime;
 
 
@@ -2038,11 +2037,11 @@ namespace BoSSS.Application.XRheology_Solver {
         // =========
         #region level-set
 
-        /// <summary>
-        /// Information of the current Fourier Level-Set
-        /// DFT_coeff
-        /// </summary>
-        FourierLevSetBase Fourier_LevSet;
+        ///// <summary>
+        ///// Information of the current Fourier Level-Set
+        ///// DFT_coeff
+        ///// </summary>
+        //FourierLevSetBase Fourier_LevSet;
 
         FourierLevSetTimestepper Fourier_Timestepper;
 
@@ -2605,10 +2604,10 @@ namespace BoSSS.Application.XRheology_Solver {
 
         #region logging
 
-        /// <summary>
-        /// saves the vector Guid for the sample points 
-        /// </summary>
-        TextWriter Log_FourierLS;
+        ///// <summary>
+        ///// saves the vector Guid for the sample points 
+        ///// </summary>
+        //TextWriter Log_FourierLS;
 
 
         /// <summary>

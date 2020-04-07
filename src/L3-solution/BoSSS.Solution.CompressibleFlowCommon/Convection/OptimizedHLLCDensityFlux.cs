@@ -87,6 +87,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
                     double speedOfSoundIn = Math.Sqrt(pIn / densityIn) / Mach;
                     double speedOfSoundOut = Math.Sqrt(pOut / densityOut) / Mach;
+                    Debug.Assert(!double.IsNaN(speedOfSoundIn) || double.IsInfinity(speedOfSoundIn));
+                    Debug.Assert(!double.IsNaN(speedOfSoundOut) || double.IsInfinity(speedOfSoundOut));
+                    
+
 
                     double densityMean = 0.5 * (densityIn + densityOut);
                     double pressureMean = 0.5 * (pIn + pOut);
@@ -129,6 +133,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
                     double intermediateWaveSpeed =
                         (speedDiff + pIn_minus_pOut / MachScaling) /
                         (cOut - cIn);
+
+                    //double intermediateWaveSpeed =
+                    //    (cOut * normalVelocityOut - cIn * normalVelocityIn + (pIn - pOut) / MachScaling) /
+                    //    (cOut - cIn);
 
                     double edgeFlux = 0.0;
                     // cf. Toro2009, equation 10.71

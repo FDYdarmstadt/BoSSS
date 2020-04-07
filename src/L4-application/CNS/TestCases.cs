@@ -3636,7 +3636,7 @@ namespace CNS {
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
             c.saveperiod = savePeriod;
-            c.PrintInterval = 1000;
+            c.PrintInterval = 1;
 
             c.WriteLTSLog = false;
             c.WriteLTSConsoleOutput = false;
@@ -3836,11 +3836,11 @@ namespace CNS {
             string tempSessionName;
             if (c.ExplicitScheme == ExplicitSchemes.RungeKutta) {
                 if (dgDegree == 0) {
-                    tempSessionName = string.Format("IBMBowShock_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}",
-                        dgDegree, numOfCellsX, numOfCellsY, CFLFraction, explicitOrder);
+                    tempSessionName = string.Format("IBMBowShock_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}_agg{5}",
+                        dgDegree, numOfCellsX, numOfCellsY, CFLFraction, explicitOrder, c.AgglomerationThreshold);
                 } else {
-                    tempSessionName = string.Format("IBMBowShock_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}_s0={5:0.0E-00}_lambdaMax{6}_RESTART11",
-                        dgDegree, numOfCellsX, numOfCellsY, CFLFraction, explicitOrder, sensorLimit, lambdaMax);
+                    tempSessionName = string.Format("IBMBowShock_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}_s0={5:0.0E-00}_lambdaMax{6}_agg{7}_RESTART11",
+                        dgDegree, numOfCellsX, numOfCellsY, CFLFraction, explicitOrder, sensorLimit, lambdaMax, c.AgglomerationThreshold);
                 }
             } else if (c.ExplicitScheme == ExplicitSchemes.AdamsBashforth) {
                 tempSessionName = string.Format("IBMBowShock_p{0}_s0={1:0.0E-00}_CFLFrac{2}_AB{3}",
@@ -3854,7 +3854,187 @@ namespace CNS {
             return c;
         }
 
-        public static IBMControl IBMBowShockTEST(string dbPath = null, int savePeriod = 100, int dgDegree = 0, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 2, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 8.0, string restart = "False", int numOfCellsX = 4, int numOfCellsY = 16, double? lambdaMax = null) {
+        public static IBMControl IBMBowShockTEST(string dbPath = null, int savePeriod = 1, int dgDegree = 0, double endTime = 8.0) {
+            IBMControl c = new IBMControl();
+
+            //dbPath = @"/work/scratch/yp19ysog/bosss_db_dmr_video";          // Lichtenberg
+            //dbPath = @"c:\bosss_db";                                          // Local
+            //dbPath = @"E:\geisenhofer\bosss_db_paper_ibmdmr";                   // HPC cluster
+            //dbPath = @"\\dc1\userspace\geisenhofer\bosss_db_IBMShockTube";    // Network
+            //dbPath = @"H:\geisenhofer\bosss_db_bowShock";
+
+            c.DbPath = dbPath;
+            c.savetodb = dbPath != null;
+            c.saveperiod = savePeriod;
+            c.PrintInterval = 1;
+
+            // ### Dynamic load balacing ###
+            c.GridPartType = GridPartType.METIS;
+            c.DynamicLoadBalancing_On = false;
+
+            // ### Time-Stepping ###
+            c.ExplicitScheme = ExplicitSchemes.RungeKutta;
+            c.ExplicitOrder = 1;
+
+            // ### Fluxes ###
+            c.ActiveOperators = Operators.Convection;
+            c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
+            c.LevelSetBoundaryTag = "AdiabaticSlipWall";
+            //c.LevelSetBoundaryTag = "None";
+
+            // ### Grid ###
+            double xMin = -2.0;
+            double xMax = 0.0;
+            double yMin = -4.0;
+            double yMax = 4.0;
+            //double xMin = 0.0;
+            //double xMax = 2.0;
+            //double yMin = 0.0;
+            //double yMax = 2.0;
+
+            int numOfCellsX = 4;
+            int numOfCellsY = 16;
+
+            // Shift grid
+            double h = Math.Abs(xMax - xMin) / numOfCellsX;
+            xMin = xMin - h / 2;
+            xMax = xMax - h / 2;
+
+            c.GridFunc = delegate {
+                double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
+                double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
+                GridCommons grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
+
+                grid.EdgeTagNames.Add(1, "SupersonicInlet");
+                grid.EdgeTagNames.Add(2, "SupersonicOutlet");
+                grid.EdgeTagNames.Add(3, "AdiabaticSlipWall");
+
+                grid.DefineEdgeTags(delegate (double[] X) {
+                    if (Math.Abs(X[0] - xMax) < 1e-14) {    // Right boundary
+                        if (Math.Abs(X[1]) - 0.5 < 1e-14) { // Right boundary (part of void area)
+                            return 3;
+                        } else {
+                            return 2;
+                        }
+                        //return 2;
+                    } else if (Math.Abs(X[0] - xMin) < 1e-14) { // Left boundary
+                        return 1;
+                    } else {    // Top and bottom boundary
+                        return 1;
+                    }
+                });
+
+                //grid.DefineEdgeTags(delegate (double[] X) {
+                //    return 1;
+                //});
+
+                //var gDat = new GridData(grid);
+                //var em1 = gDat.GetBoundaryEdges();
+                //em1.SaveToTextFile("alledges.csv", false, (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => (double)gDat.iGeomEdges.EdgeTags[GeomItemIndex]);
+
+                return grid;
+            };
+
+            // ### Level set ###
+            c.DomainType = DomainTypes.StaticImmersedBoundary;
+            c.LevelSetFunction = delegate (double[] X, double t) {
+                // Circle 1
+                double x0 = 0.0;
+                double y0 = 0.5;
+                double r0 = 0.5;
+
+                // Circle 2
+                double x1 = 0.0;
+                double y1 = -0.5;
+                double r1 = 0.5;
+
+                // Signed distance formulation
+                //if (X[1] >= 0.5) {
+                //    return Math.Sqrt((X[0] - x0) * (X[0] - x0) + (X[1] - y0) * (X[1] - y0)) - r0;
+                //} else if (X[1] <= -0.5) {
+                //    return Math.Sqrt((X[0] - x1) * (X[0] - x1) + (X[1] - y1) * (X[1] - y1)) - r1;
+                //} else {
+                //    return -(X[0] + 0.5);
+                //}
+
+                // Quadratic formulation
+                if (X[1] >= 0.5) {
+                    return (X[0] - x0) * (X[0] - x0) + (X[1] - y0) * (X[1] - y0) - r0 * r0;
+                } else if (X[1] <= -0.5) {
+                    return (X[0] - x1) * (X[0] - x1) + (X[1] - y1) * (X[1] - y1) - r1 * r1;
+                } else {
+                    return X[0] * X[0] - 0.5 * 0.5;
+                }
+            };
+            //c.LevelSetFunction = (X, t) => 10;
+
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            c.AgglomerationThreshold = 0.0;
+            c.SaveAgglomerationPairs = false;
+            int levelSetDegree = 2;
+            c.AddVariable(IBMVariables.LevelSet, levelSetDegree);
+
+            //c.LevelSetQuadratureOrder = 1;
+            c.LevelSetQuadratureOrder = 3 * levelSetDegree;
+
+            c.EquationOfState = IdealGas.Air;
+            c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
+            c.ReynoldsNumber = 1.0;
+            c.PrandtlNumber = 0.71;
+
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
+
+            //c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            //c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
+            //c.AddVariable(CNSVariables.Pressure, dgDegree);
+            //c.AddVariable(CNSVariables.Enthalpy, dgDegree);
+
+            //c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
+            //c.AddVariable(CNSVariables.Rank, 0);
+            //c.AddVariable(CNSVariables.CFL, 0);
+
+            // ### Boundary conditions ###
+            double density = 1.0;
+            double pressure = 1.0;
+            double Mach = 4.0;
+            double velocityX = Mach * Math.Sqrt(c.EquationOfState.HeatCapacityRatio * pressure / density);
+            double velocityY = 0.0;
+
+            c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density, (X, t) => density);
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.xComponent, (X, t) => velocityX);
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.yComponent, (X, t) => velocityY);
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Pressure, (X, t) => pressure);
+
+            // In theory no outflow boundary condition has to be specified as all characteristics move downstream
+            c.AddBoundaryValue("SupersonicOutlet", CNSVariables.Pressure, (X, t) => 0.0);
+            c.AddBoundaryValue("AdiabaticSlipWall");
+
+            // ### Initial conditions ###
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => density);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => velocityX);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => velocityY);
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pressure);
+
+            // ### Time config ###
+            c.dtMin = 0.0;
+            c.dtMax = 1.0;
+            c.Endtime = endTime;
+            //c.CFLFraction = 0.1;
+            c.dtFixed = 1e-4;
+
+            c.NoOfTimesteps = 5;
+
+            /// ### Database ###
+            c.ProjectName = "IBMBowShock";
+            c.SessionName = string.Format("IBMBowShock_p{0}_xCells{1}_yCells{2}_dt{3}_RK{4}", dgDegree, numOfCellsX, numOfCellsY, c.dtFixed, c.ExplicitOrder);
+
+            return c;
+        }
+
+        public static IBMControl IBMBowShockHPC(string dbPath = null, int savePeriod = 100, int dgDegree = 2, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 2, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 16.0, string restart = "False", int numOfCellsX = 80, int numOfCellsY = 320, double? lambdaMax = 15.0) {
             IBMControl c = new IBMControl();
 
             //double? lambdaMax = 10;
@@ -3871,7 +4051,7 @@ namespace CNS {
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
             c.saveperiod = savePeriod;
-            c.PrintInterval = 1;
+            c.PrintInterval = 100;
 
             c.WriteLTSLog = false;
             c.WriteLTSConsoleOutput = false;
@@ -3903,8 +4083,8 @@ namespace CNS {
 
             if (restart == "True") {
                 // Restart Lichtenberg
-                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("890bf0d8-6a09-4809-bf3f-fb025680b460"), -1);
-                c.GridGuid = new Guid("c691d970-6e52-4dd2-9d10-e95ab99f0482");
+                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("a6b7d1f0-2ef5-4cca-8aca-b92228aad095"), -1);
+                c.GridGuid = new Guid("2febbaeb-f611-4975-aa98-3288019507c4");
             } else {
                 c.GridFunc = delegate {
                     double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
@@ -3917,12 +4097,11 @@ namespace CNS {
 
                     grid.DefineEdgeTags(delegate (double[] X) {
                         if (Math.Abs(X[0] - xMax) < 1e-14) {    // Right boundary
-                            if (Math.Abs(X[1]) - 0.7 < 1e-14) { // Right boundary (part of void area)
+                            if (Math.Abs(X[1]) - 0.1 < 1e-14) { // Right boundary (part of void area)
                                 return 3;
                             } else {
                                 return 2;
                             }
-                            //return 2;
                         } else if (Math.Abs(X[0] - xMin) < 1e-14) { // Left boundary
                             return 1;
                         } else {    // Top and bottom boundary
@@ -3930,9 +4109,9 @@ namespace CNS {
                         }
                     });
 
-                    var gDat = new GridData(grid);
-                    var em1 = gDat.GetBoundaryEdges();
-                    em1.SaveToTextFile("alledges.csv", false, (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => (double)gDat.iGeomEdges.EdgeTags[GeomItemIndex]);
+                    //var gDat = new GridData(grid);
+                    //var em1 = gDat.GetBoundaryEdges();
+                    //em1.SaveToTextFile("alledges.csv", false, (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => (double)gDat.iGeomEdges.EdgeTags[GeomItemIndex]);
 
                     return grid;
                 };
@@ -3973,7 +4152,7 @@ namespace CNS {
             c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
             int levelSetDegree = 2;
             c.LevelSetQuadratureOrder = 3 * levelSetDegree;
-            c.AgglomerationThreshold = 0.0; 
+            c.AgglomerationThreshold = 0.3;
             c.SaveAgglomerationPairs = false;
             c.AddVariable(IBMVariables.LevelSet, levelSetDegree);
 
@@ -4062,9 +4241,9 @@ namespace CNS {
             c.dtMin = 0.0;
             c.dtMax = 1.0;
             c.Endtime = endTime;
-            //c.CFLFraction = CFLFraction;
-            c.NoOfTimesteps = 1;
-            c.dtFixed = 1e-3;
+            c.CFLFraction = CFLFraction;
+            c.NoOfTimesteps = int.MaxValue;
+            //c.dtFixed = 1e-3;
 
             c.ProjectName = "IBMBowShock";
 
@@ -4072,11 +4251,11 @@ namespace CNS {
             string tempSessionName;
             if (c.ExplicitScheme == ExplicitSchemes.RungeKutta) {
                 if (dgDegree == 0) {
-                    tempSessionName = string.Format("IBMBowShock_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}",
-                        dgDegree, numOfCellsX, numOfCellsY, CFLFraction, explicitOrder);
+                    tempSessionName = string.Format("IBMBowShock_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}_agg{5}",
+                        dgDegree, numOfCellsX, numOfCellsY, CFLFraction, explicitOrder, c.AgglomerationThreshold);
                 } else {
-                    tempSessionName = string.Format("IBMBowShock_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}_s0={5:0.0E-00}_lambdaMax{6}_RESTART11",
-                        dgDegree, numOfCellsX, numOfCellsY, CFLFraction, explicitOrder, sensorLimit, lambdaMax);
+                    tempSessionName = string.Format("IBMBowShock_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}_s0={5:0.0E-00}_lambdaMax{6}_agg{7}_RESTART4",
+                        dgDegree, numOfCellsX, numOfCellsY, CFLFraction, explicitOrder, sensorLimit, lambdaMax, c.AgglomerationThreshold);
                 }
             } else if (c.ExplicitScheme == ExplicitSchemes.AdamsBashforth) {
                 tempSessionName = string.Format("IBMBowShock_p{0}_s0={1:0.0E-00}_CFLFrac{2}_AB{3}",
