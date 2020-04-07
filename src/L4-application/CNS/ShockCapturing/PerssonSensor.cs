@@ -57,27 +57,19 @@ namespace CNS.ShockCapturing {
                     sensorValues = new double[noOfCells];
                 }
 
-                IMatrix coordinatesTimesMassMatrix = fieldToTest.Coordinates;
-                IMatrix coordinatesTruncatedTimesMassMatrix = fieldToTest.Coordinates;
-
-                // This is equivalent to norm(restrictedField) / norm(originalField)
-                // Note: THIS WILL FAIL IN TRUE XDG CUT CELLS WITH TWO SPECIES
-
                 CellMask cellMask = CellMask.GetFullMask(fieldToTest.GridDat);
                 foreach (int cell in cellMask.ItemEnum)
                 {
                     double numerator = 0.0;
                     foreach (int coordinate in fieldToTest.Basis.GetPolynomialIndicesForDegree(cell, degree))
                     {
-                        //numerator += fieldToTest.Coordinates[cell, coordinate] * fieldToTest.Coordinates[cell, coordinate];
-                        numerator += fieldToTest.Coordinates[cell, coordinate] * coordinatesTruncatedTimesMassMatrix[cell, coordinate];
+                        numerator += fieldToTest.Coordinates[cell, coordinate] * fieldToTest.Coordinates[cell, coordinate];
                     }
 
                     double denominator = 0.0;
                     for (int coordinate = 0; coordinate < fieldToTest.Basis.Length; coordinate++)
                     {
-                        //denominator += fieldToTest.Coordinates[cell, coordinate] * fieldToTest.Coordinates[cell, coordinate];
-                        denominator += fieldToTest.Coordinates[cell, coordinate] * coordinatesTimesMassMatrix[cell, coordinate];
+                        denominator += fieldToTest.Coordinates[cell, coordinate] * fieldToTest.Coordinates[cell, coordinate];
                     }
 
                     double result;
@@ -89,11 +81,6 @@ namespace CNS.ShockCapturing {
                     {
                         result = numerator / denominator;
                     }
-
-                    //Debug.Assert(denominator != 0, "Persson sensor: Denominator is zero!");
-                    //Debug.Assert(!(numerator / denominator).IsNaN(), "Persson sensor: Sensor value is NaN!");
-                    //Debug.Assert(numerator / denominator >= 0, "Persson sensor: Sensor value is negative!");
-
                     sensorValues[cell] = result;
                 }
             }

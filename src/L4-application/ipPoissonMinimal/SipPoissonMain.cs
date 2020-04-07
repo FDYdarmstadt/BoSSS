@@ -314,16 +314,8 @@ namespace BoSSS.Application.SipPoisson
                 bool converged;
                 int NoOfIterations;
 
-                LinearSolverCode solvercodes = this.Control.LinearSolver.SolverCode;
-                switch (solvercodes) {
+                ClassicSolve(out mintime, out maxtime, out converged, out NoOfIterations);
 
-                    case LinearSolverCode.classic_cg:
-                    case LinearSolverCode.classic_mumps:
-                    case LinearSolverCode.classic_pardiso:
-                    default:
-                        ClassicSolve(out mintime, out maxtime, out converged, out NoOfIterations);
-                        break;
-                }
 
                 Console.WriteLine("finished; " + NoOfIterations + " iterations.");
                 Console.WriteLine("converged? " + converged);
@@ -387,7 +379,7 @@ namespace BoSSS.Application.SipPoisson
                 // create sparse solver
                 // --------------------
                 ISparseSolver ipSolver;
-                LinearSolverCode solvercodes = this.Control.LinearSolver.SolverCode;
+                LinearSolverCode solvercodes = LinearSolverCode.classic_pardiso;
 
                 switch (solvercodes) {
                     case LinearSolverCode.classic_pardiso:

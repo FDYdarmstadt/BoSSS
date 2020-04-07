@@ -42,7 +42,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Poisson Equation on a (-1,1)x(-1,1), Dirichlet everywhere
         /// </summary>
-        public static SipControl RegularSquare(int xRes = 5, int yRes = 5, int deg = 5) {
+        public static SipControl RegularSquare(int xRes = 5, int yRes = 5, int deg = 2) {
 
             Func<double[], double> exSol = 
                 X => -Math.Cos(X[0] * Math.PI * 0.5) * Math.Cos(X[1] * Math.PI * 0.5);
@@ -59,7 +59,6 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("Tex", exSol);
             R.ExactSolution_provided = true;
             R.SuppressExceptionPrompt = true;
-            R.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
             R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T", exSol);
             R.NoOfSolverRuns = 1;
 
@@ -84,7 +83,7 @@ namespace BoSSS.Application.SipPoisson {
             return R;
         }
 
-        public static SipControl VoronoiSquare(int res = 50, int deg = 5)
+        public static SipControl VoronoiSquare(int res = 50, int deg = 2)
         {
             var R = new SipControl
             {
@@ -98,14 +97,12 @@ namespace BoSSS.Application.SipPoisson {
             };
             R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg * 2 });
-            R.InitialValues_Evaluators.Add("RHS", X => 0.0);
+            R.InitialValues_Evaluators.Add("RHS", X => X[0] * X[0]);
             R.InitialValues_Evaluators.Add("Tex", X => X[0]);
-            R.LinearSolver.NoOfMultigridLevels = int.MaxValue;
-            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-            R.LinearSolver.NoOfMultigridLevels = 1;
 
             Func<double[], double> dirichletBoundary =
-                X => Math.Pow(X[0], 2) + Math.Pow(X[1], 2);
+                X => 0.0;
+            //  X => Math.Pow(X[0], 2) + Math.Pow(X[1], 2);
             R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T", dirichletBoundary);
 
             R.GridFunc = delegate (){
@@ -118,10 +115,55 @@ namespace BoSSS.Application.SipPoisson {
                 AggregationGrid grid;
                 grid = BoSSS.Foundation.Grid.Voronoi.VoronoiGrid2D.Polygonal(DomainBndyPolygon, 10, res);
                 grid.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
-                grid.DefineEdgeTags(X => (byte)1);
+                grid.DefineEdgeTags( (double[] X) => (byte)1);
                 return grid;
             };
+            return R;
+        }
 
+        public static SipControl JumpingSquare(int xRes = 3, int yRes = 3, int deg = 2)
+        {
+            var R = new SipControl();
+            R.ProjectName = "ipPoison/square";
+            R.savetodb = false;
+
+            R.FieldOptions.Add("T", new FieldOpts() { Degree = deg });
+            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = 4 });
+            R.InitialValues_Evaluators.Add("RHS", X => 1.0);
+            R.InitialValues_Evaluators.Add("Tex", X => 1.0);
+            R.ExactSolution_provided = true;
+            R.SuppressExceptionPrompt = true;
+            R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T", 
+                X => { 
+                    if (X[0] > 0.9999) 
+                    {
+                        return 1;
+                    } 
+                    else 
+                    { 
+                        return 1; 
+                    }
+                });
+            R.NoOfSolverRuns = 1;
+
+            R.AdaptiveMeshRefinement = true;
+            R.NoOfTimesteps = 1;
+
+            R.ImmediatePlotPeriod = 1;
+            R.SuperSampling = 2;
+
+            R.GridFunc = delegate () {
+                double[] xNodes = GenericBlas.Linspace(-1, 1, xRes);
+                double[] yNodes = GenericBlas.Linspace(-1, 1, yRes);
+                var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
+
+                grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte ret = 1;
+                    return ret;
+                });
+                return grd;
+            };
             return R;
         }
     }
