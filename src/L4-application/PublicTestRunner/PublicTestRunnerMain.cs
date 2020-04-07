@@ -73,12 +73,75 @@ namespace PublicTestRunner {
             foreach(var t in FullTestTypes) {
                 R.Add(t.Assembly);
             }
-
+#if !DEBUG
+            foreach (var t in FullTestTypes) {
+                R.Add(t.Assembly);
+            }
+#endif
             return R.ToArray();
         }
 
-        static string[] GetTestsInAssembly(Assembly a) {
+        static string LocateFile(string SomeFileName) {
+            DirectoryInfo repoRoot;
+            try {
+                var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
+                repoRoot = dir.Parent.Parent.Parent.Parent.Parent;
+
+                var src = repoRoot.GetDirectories("src").SingleOrDefault();
+                var libs = repoRoot.GetDirectories("libs").SingleOrDefault();
+                var doc = repoRoot.GetDirectories("doc").SingleOrDefault();
+
+                if (src == null || !src.Exists)
+                    return null;
+                if (libs == null || !libs.Exists)
+                    return null;
+                if (doc == null || !doc.Exists)
+                    return null;
+
+            } catch (Exception) {
+                return null; // unable to find file
+            }
+
+            // if we get here, we probably have access to the repository root directory.
+            string[] r = LocateFileRecursive("", repoRoot, SomeFileName);
+            if(r == null || r.Length <= 0) {
+                throw new IOException("unable to find file '" + SomeFileName  + "'"); 
+            }
+            if(r.Length > 1) {
+                throw new IOException("found multiple matches for '" + SomeFileName + "'");
+            }
+
+            return r[0];
+        }
+
+
+        static string[] LocateFileRecursive(string RelPath, DirectoryInfo absPath, string SomeFileName) {
+            List<string> ret = new List<string>();
+
+
+            foreach(var f in absPath.GetFiles()) {
+                string RelName = RelPath + f.Name;
+
+                if (RelName.EndsWith(SomeFileName))
+                    ret.Add(f.FullName);
+                else if (SomeFileName.WildcardMatch(RelName))
+                    ret.Add(f.FullName);
+
+            }
+
+            foreach(var d in absPath.GetDirectories()) {
+                ret.AddRange(LocateFileRecursive(RelPath + d.Name + "/", d, SomeFileName));
+            }
+
+
+            return ret.ToArray();
+        }
+
+
+
+        static (string[] tests, string[] RequiredFiles) GetTestsInAssembly(Assembly a) {
             var r = new List<string>();
+            var s = new HashSet<string>();
 
             var ttt = a.GetTypes();
             foreach(var t in ttt) {
@@ -89,11 +152,22 @@ namespace PublicTestRunner {
                         if(m.GetCustomAttribute(typeof(TestAttribute)) != null) {
                             r.Add(t.FullName + "." +  m.Name);
                         }
+
+                        if(m.GetCustomAttribute(typeof(TestAttribute)) != null
+                           || m.GetCustomAttribute(typeof(SetUpAttribute)) != null
+                           || m.GetCustomAttribute(typeof(OneTimeSetUpAttribute)) != null) {
+                            var dc = m.GetCustomAttribute(typeof(NUnitFileToCopyHackAttribute)) as NUnitFileToCopyHackAttribute;
+
+                            if(dc != null) {
+                                string filepath = LocateFile(dc.SomeFileName);
+                                s.Add(filepath);
+                            }
+                        }
                     }
                 }
             }
 
-            return r.ToArray();
+            return (r.ToArray(), s.ToArray());
         }
 
 
@@ -118,7 +192,7 @@ namespace PublicTestRunner {
 
             BatchProcessorClient bpc = InteractiveShell.ExecutionQueues[1];
 
-            var allTests = new List<ValueTuple<Assembly, string>>();
+            var allTests = new List<(Assembly ass, string testname, string[] depfiles)>();
             {
                 var assln = GetAllAssemblies();
                 foreach (var a in assln) {
@@ -128,17 +202,17 @@ namespace PublicTestRunner {
                     }
 
 
-                    string[] allTest = GetTestsInAssembly(a);
+                    var (allTest, depfiles) = GetTestsInAssembly(a);
 
                     foreach (var t in allTest) {
-                        allTests.Add((a, t));
+                        allTests.Add((a, t, depfiles));
                     }
                 }
             }
 
             List<Job> allJobs = new List<Job>();
             foreach(var t in allTests) {
-                var j = JobManagerRun(t.Item1, t.Item2, bpc);
+                var j = JobManagerRun(t.ass, t.testname, bpc, t.depfiles);
                 allJobs.Add(j);
             }
 
@@ -231,10 +305,14 @@ namespace PublicTestRunner {
             }
         }
 
-        static public Job JobManagerRun(Assembly a, string TestName, BatchProcessorClient bpc) {
+        static public Job JobManagerRun(Assembly a, string TestName, BatchProcessorClient bpc, string[] AdditionalFiles) {
             string dor = DebugOrReleaseSuffix;
             Job j = new Job($"test-{TestName}-{dor}", typeof(PublicTestRunnerMain));
-            j.MySetCommandLineArguments("--nunit3", Path.GetFileName(a.Location), $"--test={TestName}", $"--result=result-{TestName}-{dor}.xml");            
+            j.MySetCommandLineArguments("--nunit3", Path.GetFileName(a.Location), $"--test={TestName}", $"--result=result-{TestName}-{dor}.xml");
+
+            foreach (var f in AdditionalFiles) {
+                j.AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(File.ReadAllBytes(f), Path.GetFileName(f)));
+            }
             j.Activate(bpc);
             return j;
         }
@@ -254,6 +332,26 @@ namespace PublicTestRunner {
         }
 
 
+        static void MegaMurxPlusPlus(Assembly a) {
+            var r = GetTestsInAssembly(a);
+
+            var dir = Directory.GetCurrentDirectory();
+
+            foreach (var fOrigin in r.RequiredFiles) {
+                if(File.Exists(fOrigin)) {
+                    string fDest = Path.Combine(dir, Path.GetFileName(fOrigin));
+
+                    File.Copy(fOrigin, fDest, true);
+
+
+                }
+
+            }
+
+        }
+
+
+
         /// <summary>
         /// Runs all tests serially
         /// </summary>
@@ -269,8 +367,9 @@ namespace PublicTestRunner {
                         continue;
                 }
 
+                MegaMurxPlusPlus(a);
 
-     
+                
 
                 var tr = new TextRunner(a);
                 int r = tr.Execute(args);
