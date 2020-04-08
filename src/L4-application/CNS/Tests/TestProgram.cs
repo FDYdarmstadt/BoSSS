@@ -37,11 +37,7 @@ namespace CNS.Tests {
         /// </summary>
         [OneTimeSetUp]
         public static void SetUp() {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                Application.GetBoSSSInstallDir(),
-                out dummy);
+            BoSSS.Solution.Application.InitMPI();
             Thread.CurrentThread.CurrentCulture = CultureInfo.CurrentCulture;
         }
 

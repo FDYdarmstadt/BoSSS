@@ -41,11 +41,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
         /// </summary>
         [OneTimeSetUp]
         public static void Init() {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application<SipControl>.GetBoSSSInstallDir(),
-                out dummy);
+            BoSSS.Solution.Application.InitMPI();
         }
 
         /// <summary>

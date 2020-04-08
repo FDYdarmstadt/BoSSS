@@ -426,18 +426,16 @@ namespace PublicTestRunner {
         }
 
         static int Main(string[] args) {
+            Debugger.Launch();
             args = BoSSS.Solution.Application.ArgsFromEnvironmentVars(args);
 
             var ll = System.Diagnostics.Debug.Listeners;
             ll.Clear();
             ll.Add(new MyListener());
 
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out var initialized);
+            BoSSS.Solution.Application.InitMPI();
 
-           
+
             int ret = -1; 
             switch (args[0]) {
                 case "--nunit3":

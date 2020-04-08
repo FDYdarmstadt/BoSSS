@@ -35,20 +35,9 @@ namespace BoSSS.Application.Matrix_MPItest {
         /// </summary>
         [OneTimeSetUp]
         public static void SetUp() {
-            bool MpiInit;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out MpiInit);
+            BoSSS.Solution.Application.InitMPI();
 
-            if (System.Environment.MachineName.ToLowerInvariant().EndsWith("rennmaschin")
-                || System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
-                || System.Environment.MachineName.ToLowerInvariant().Contains("terminal03")
-                ) {
-                // This is Florians Laptop;
-                // he is to poor to afford MATLAB, so he uses OCTAVE
-                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-            }
+            
 
         }
 

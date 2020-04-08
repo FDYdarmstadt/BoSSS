@@ -45,11 +45,7 @@ namespace BoSSS.Application.MultigridTest {
 
         [OneTimeSetUp]
         public static void Init() {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out dummy);
+            BoSSS.Solution.Application.InitMPI();
 
             //GridCommons grd = Grid2D.Cartesian2DGrid(RandomSpacing(), RandomSpacing());
             //grid = new GridData(Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-7, 7, 8), GenericBlas.Linspace(-1, 1, 2)));

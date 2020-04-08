@@ -55,9 +55,8 @@ namespace BoSSS.Application.DerivativeTest {
         /// </summary>
         [OneTimeSetUp]
         public static void SetUp() {
-            bool MpiInit;
             CHUNK_DATA_LIMIT_bkup = Quadrature_Bulksize.CHUNK_DATA_LIMIT;
-            ilPSP.Environment.Bootstrap(new string[0], BoSSS.Solution.Application.GetBoSSSInstallDir(), out MpiInit);
+            BoSSS.Solution.Application.InitMPI();
         }
 
         /// <summary>
@@ -65,7 +64,6 @@ namespace BoSSS.Application.DerivativeTest {
         /// </summary>
         [OneTimeTearDown]
         public static void Cleanup() {
-            //Console.Out.Dispose();
             MPI.Wrappers.csMPI.Raw.mpiFinalize();
         }
 

@@ -31,11 +31,7 @@ namespace BoSSS.Application.IBM_Solver {
 
         [OneTimeSetUp]
         public static void Init() {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application<IBM_Control>.GetBoSSSInstallDir(),
-                out dummy);
+            BoSSS.Solution.Application.InitMPI();
         }
 
         [OneTimeTearDown]

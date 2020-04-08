@@ -286,12 +286,18 @@ namespace BoSSS.Solution {
         /// <param name="args">
         /// command line arguments
         /// </param>
-        public static void InitMPI(string[] args) {
-            // MPI Init
+        public static void InitMPI(string[] args = null) {
+            if (args == null)
+                args = new string[0];
+
+
+            System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+
             ilPSP.Environment.Bootstrap(
                 args,
                 GetBoSSSInstallDir(),
                 out m_MustFinalizeMPI);
+
             if(m_MustFinalizeMPI) {
                 int rank, size;
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
@@ -315,9 +321,9 @@ namespace BoSSS.Solution {
                     Console.WriteLine("Running with " + size + " MPI process(es)");
                 }
             }
+            ReadBatchModeConnectorConfig();
 
-            
-
+            System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
         }
 
         /// <summary>
@@ -478,7 +484,11 @@ namespace BoSSS.Solution {
                     if(ArgValue == null)
                         break;
 
-                    if(ArgCounter < _args.Count) {
+                    System.Environment.SetEnvironmentVariable(ArgOverrideName, null); // delete the envvar
+                    // many test internally call the _Main function with arguments;
+                    // this would be overridden (and thus not work properly) if we don't delete the variable here and now.
+
+                    if (ArgCounter < _args.Count) {
                         _args[ArgCounter] = ArgValue;
                     } else {
                         _args.Add(ArgValue);
@@ -3322,6 +3332,8 @@ namespace BoSSS.Solution {
         protected double[] Fake() {
             return GenericBlas.Linspace(-1, 1, 2);
         }
+
+        
     }
 
 }
