@@ -1,5 +1,6 @@
 ﻿using BoSSS.Application.BoSSSpad;
 using ilPSP;
+using MPI.Wrappers;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
 using NUnitLite;
@@ -404,18 +405,33 @@ namespace PublicTestRunner {
             ll.Clear();
             ll.Add(new MyListener());
 
-            switch(args[0]) {
+            //ilPSP.Environment.Bootstrap(
+            //    new string[0],
+            //    BoSSS.Solution.Application.GetBoSSSInstallDir(),
+            //    out var initialized);
+
+            int ret = -1; 
+            switch (args[0]) {
                 case "--nunit3":
                 Console.WriteLine("Assembly filter: " + (args[1] != null ? args[1] : "NULL"));
-                return RunSerial(args[1], args.Skip(2).ToArray());
+                ret = RunSerial(args[1], args.Skip(2).ToArray());
+                break;
                                
 
                 case "--runjobmanager":
                 DeleteResultFiles();
-                return JobManagerRun(args.Length > 1 ? args[1] : null);
+                ret = JobManagerRun(args.Length > 1 ? args[1] : null);
+                break;
+
+                default:
+                throw new NotSupportedException("unknown subprogram.");
             }
 
-            throw new NotSupportedException("unknown subprogram.");
+            //csMPI.Raw.mpiFinalize();
+            //csMPI.Raw.mpiFinalize();
+
+            return ret;
+            
         }
     }
 }
