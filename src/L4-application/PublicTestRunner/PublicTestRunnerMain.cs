@@ -201,8 +201,11 @@ namespace PublicTestRunner {
             // ===================================
             // phase 1: submit jobs
             // ===================================
+
+            string DateNtime = DateTime.Now.ToString("yyyyMMMdd_HHmmss");
+
             InteractiveShell.ReloadExecutionQueues();
-            InteractiveShell.WorkflowMgm.Init("BoSSSTesting");
+            InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime);
 
             BatchProcessorClient bpc = InteractiveShell.ExecutionQueues[1];
 
@@ -326,7 +329,7 @@ namespace PublicTestRunner {
 
         static public Job JobManagerRun(Assembly a, string TestName, BatchProcessorClient bpc, string[] AdditionalFiles) {
             string dor = DebugOrReleaseSuffix;
-            Job j = new Job($"test-{TestName}-{dor}", typeof(PublicTestRunnerMain));
+            Job j = new Job($"{TestName}-{dor}", typeof(PublicTestRunnerMain));
             j.MySetCommandLineArguments("--nunit3", Path.GetFileName(a.Location), $"--test={TestName}", $"--result=result-{TestName}-{dor}.xml");
 
             foreach (var f in AdditionalFiles) {
