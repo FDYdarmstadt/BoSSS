@@ -62,10 +62,12 @@ namespace ilPSP {
                 return ret;
             }
 
+            
             StdOut = new DuplicatingTextWriter(new StreamWriter(Console.OpenStandardOutput()), 25, false);
             Console.SetOut(StdOut);
             StdErr = new DuplicatingTextWriter(new StreamWriter(Console.OpenStandardError()), 1, false);
             Console.SetError(StdErr);
+            
 
             //Console.WriteLine("bootstrapping necessary.");
             if (System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
@@ -294,11 +296,13 @@ namespace ilPSP {
                 return m_StdoutOnlyOnRank0;
             }
             set {
-                m_StdoutOnlyOnRank0 = value;
-                if (m_StdoutOnlyOnRank0) {
-                    StdOut.surpressStream0 = (MPIEnv.MPI_Rank != 0);
-                } else {
-                    StdOut.surpressStream0 = false;
+                if(StdOut != null) {
+                    m_StdoutOnlyOnRank0 = value;
+                    if(m_StdoutOnlyOnRank0) {
+                        StdOut.surpressStream0 = (MPIEnv.MPI_Rank != 0);
+                    } else {
+                        StdOut.surpressStream0 = false;
+                    }
                 }
             }
         }
@@ -325,6 +329,8 @@ namespace ilPSP {
             }
         }
 
+
+        /*
         /// <summary>
         /// (tries to) do a recursive copy of a directory
         /// </summary>
@@ -345,7 +351,7 @@ namespace ilPSP {
                 CopyDirectoryRec(srcSubDir, dstSubDir);
             }
         }
-
+        */
         /// <summary>
         /// Utility function which tries to copy a file from
         /// <paramref name="sourceFileName"/> to

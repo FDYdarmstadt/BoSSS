@@ -137,6 +137,10 @@
       <Project>{cf28bb64-12bd-4c5a-432a-0604f0ab01c6}</Project>
       <Name>Matrix_MPItest</Name>
     </ProjectReference>
+    <ProjectReference Include="..\MPITest\MPITest.csproj">
+      <Project>{519a47ec-f7c6-4c94-b013-305145f2e81e}</Project>
+      <Name>MPITest</Name>
+    </ProjectReference>
     <ProjectReference Include="..\MultigridTest\MultigridTest.csproj">
       <Project>{09cce864-12a3-4660-aff9-f3f3434b1173}</Project>
       <Name>MultigridTest</Name>

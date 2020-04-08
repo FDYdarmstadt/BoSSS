@@ -6,6 +6,7 @@ using NUnit.Framework.Interfaces;
 using NUnitLite;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -59,7 +60,8 @@ namespace PublicTestRunner {
             typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main),
             typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
             typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
-            typeof(BoSSS.Application.ExternalBinding.Initializer)
+            typeof(BoSSS.Application.ExternalBinding.Initializer),
+            typeof(MPITest.Program)
         };
 
         static Type[] ReleaseOnlyTests = new Type[] {
@@ -383,11 +385,14 @@ namespace PublicTestRunner {
 
                 
 
-                //var tr = new TextRunner(a);
-                //int r = tr.Execute(args);
+                var tr = new TextRunner(a);
+                int r = tr.Execute(args);
 
-                var ar = new AutoRun(a);
-                int r = ar.Execute(args);
+                Console.SetOut(new StreamWriter(Console.OpenStandardOutput()));
+                Console.SetError(new StreamWriter(Console.OpenStandardError()));
+
+                //var ar = new AutoRun(a);
+                //int r = ar.Execute(args);
 
                 Console.WriteLine("Nunit returend code " + r);
 
@@ -401,15 +406,17 @@ namespace PublicTestRunner {
         static int Main(string[] args) {
             args = BoSSS.Solution.Application.ArgsFromEnvironmentVars(args);
 
+
             var ll = System.Diagnostics.Debug.Listeners;
             ll.Clear();
             ll.Add(new MyListener());
 
-            //ilPSP.Environment.Bootstrap(
-            //    new string[0],
-            //    BoSSS.Solution.Application.GetBoSSSInstallDir(),
-            //    out var initialized);
+            ilPSP.Environment.Bootstrap(
+                new string[0],
+                BoSSS.Solution.Application.GetBoSSSInstallDir(),
+                out var initialized);
 
+           
             int ret = -1; 
             switch (args[0]) {
                 case "--nunit3":
@@ -427,8 +434,8 @@ namespace PublicTestRunner {
                 throw new NotSupportedException("unknown subprogram.");
             }
 
-            //csMPI.Raw.mpiFinalize();
-            //csMPI.Raw.mpiFinalize();
+            csMPI.Raw.mpiFinalize();
+            csMPI.Raw.mpiFinalize();
 
             return ret;
             
