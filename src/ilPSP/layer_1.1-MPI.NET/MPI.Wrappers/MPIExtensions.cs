@@ -480,8 +480,8 @@ namespace MPI.Wrappers {
         /// <returns></returns>
         static public bool MPIEquals(this int i, MPI_Comm comm)
         {
-            double loc = i;
-            double glob = int.MaxValue;
+            int loc = i;
+            int glob = int.MaxValue;
             unsafe
             {
                 csMPI.Raw.Allreduce(((IntPtr)(&loc)), ((IntPtr)(&glob)), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.BXOR, comm);

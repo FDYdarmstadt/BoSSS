@@ -55,6 +55,9 @@ namespace AdvancedSolverTests {
         internal int m_DGorder = 1;
 
         protected override IGrid CreateOrLoadGrid() {
+            base.Control.ImmediatePlotPeriod = 1;
+            DeleteOldPlotFiles();
+
             //base.Control.GridPartType = BoSSS.Foundation.Grid.GridPartType.METIS;
             base.Control.GridPartType = BoSSS.Foundation.Grid.GridPartType.Predefined;
 
@@ -84,11 +87,13 @@ namespace AdvancedSolverTests {
 
                 return rank;
             };
-            
-            m_grid = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1, 1, m_Res+1), GenericBlas.Linspace(-1, 1, m_Res+1));
+
+            m_grid = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1, 1, m_Res + 1), GenericBlas.Linspace(-1, 1, m_Res + 1));
             ((Grid2D)m_grid).AddPredefinedPartitioning("hallo", MakeMyPartioning);
             return m_grid;
         }
+
+
 
         LevelSet Phi;
 
@@ -104,7 +109,7 @@ namespace AdvancedSolverTests {
 
         MultigridMapping MG_Mapping;
 
-        public MultigridMapping GetMapping{
+        public MultigridMapping GetMapping {
             get { return MG_Mapping; }
         }
 
@@ -147,11 +152,11 @@ namespace AdvancedSolverTests {
         /// Cell Agglomeration threshold
         /// </summary>
         internal double THRESHOLD = 0.01;
-
+        //internal double THRESHOLD = 0;
 
         void LsUpdate(double t) {
             double offset = t;
-            Phi.ProjectField((x, y) => -(x - offset).Pow2() - y.Pow2() + (0.7).Pow2());
+            Phi.ProjectField((x, y) => -(x - offset).Pow2() - y.Pow2() + (0.707).Pow2());
             LsTrk.UpdateTracker();
         }
 
@@ -200,6 +205,10 @@ namespace AdvancedSolverTests {
                     Op.EquationComponents["c2"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u1", lengthScales));   // coupling form
                     Op.EquationComponents["c2"].Add(new XLaplace_Bulk(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u2", lengthScales));      // Bulk form
                     Op.EquationComponents["c2"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u2", lengthScales));   // coupling form
+                    Op.EquationComponents["c1"].Add(new SourceTest("u1", 11)); // Flux in Bulk Phase;
+                    Op.EquationComponents["c1"].Add(new SourceTest("u2", 11)); // Flux in Bulk Phase;
+                    Op.EquationComponents["c2"].Add(new SourceTest("u1", 11)); // Flux in Bulk Phase;
+                    Op.EquationComponents["c2"].Add(new SourceTest("u2", 11)); // Flux in Bulk Phase;
                     break;
                 case MatrixShape.full:
                     //tested: shape valid for testing
@@ -425,231 +434,7 @@ namespace AdvancedSolverTests {
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
             string filename = "MatrixTest." + timestepNo;
             //Tecplot.PlotFields(new DGField[] { u1, u2, Phi, Amarker, Bmarker, MPIrank }, filename, 0, superSampling);
-            Tecplot.PlotFields(new DGField[] { u1, Phi, Amarker, Bmarker, MPIrank }, filename, 0, superSampling);
-        }
-    }
-
-    class SubBlockTestSolver1Var : Application
-    {
-
-        internal XDGusage m_UseXdg;
-        internal MatrixShape m_Mshape;
-        internal int m_DGorder = 1;
-
-        protected override IGrid CreateOrLoadGrid() {
-            base.Control.GridPartType = BoSSS.Foundation.Grid.GridPartType.METIS;
-            m_grid = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1, 1, m_Res + 1), GenericBlas.Linspace(-1, 1, m_Res + 1));
-            return m_grid;
-        }
-
-        LevelSet Phi;
-
-        DGField u1;
-        DGField MPIrank;
-
-        IGrid m_grid;
-
-        public int m_Res;
-
-        AggregationGridData[] MgSeq;
-
-        MultigridMapping MG_Mapping;
-
-        public MultigridMapping GetMapping {
-            get { return MG_Mapping; }
-        }
-
-        SinglePhaseField Amarker;
-        SinglePhaseField Bmarker;
-
-        protected override void CreateFields() {
-            Phi = new LevelSet(new Basis(this.GridData, 2), "Phi");
-
-            LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData)this.GridData, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, 1, new string[] { "A", "B" }, Phi);
-
-            if (m_DGorder < 1)
-                throw new ArgumentException();
-
-            switch (m_UseXdg) {
-                case XDGusage.all:
-                case XDGusage.mixed1:
-                    u1 = new XDGField(new XDGBasis(this.LsTrk, m_DGorder), "u1");
-                    break;
-                case XDGusage.none:
-                case XDGusage.mixed2:
-                    u1 = new SinglePhaseField(new Basis(this.GridData, m_DGorder), "u1");
-                    break;
-            }
-
-            Amarker = new SinglePhaseField(new Basis(this.GridData, 0), "Amarker");
-            Bmarker = new SinglePhaseField(new Basis(this.GridData, 0), "Bmarker");
-
-            MPIrank = new SinglePhaseField(new Basis(this.GridData, 0), "MPIRank");
-            MPIrank.AccConstant(this.MPIRank);
-
-        }
-
-        /// <summary>
-        /// Cell Agglomeration threshold
-        /// </summary>
-        internal double THRESHOLD = 0.01;
-
-
-        void LsUpdate(double t) {
-            double offset = t;
-            Phi.ProjectField((x, y) => -(x - offset).Pow2() - y.Pow2() + (0.7).Pow2());
-            LsTrk.UpdateTracker();
-        }
-
-
-        protected override void SetInitial() {
-            this.LsUpdate(0.0);
-
-            u1.ProjectField((x, y) => x);
-
-        }
-
-        XSpatialOperatorMk2 Op;
-        int m_quadOrder;
-
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
-            m_quadOrder = u1.Basis.Degree * 2;
-
-            Setup();
-
-            Op = new XSpatialOperatorMk2(1, 0, 1, (A, B, c) => m_quadOrder, LsTrk.SpeciesIdS.ToArray(), "u1", "c1");
-
-            switch (m_Mshape) {
-                case MatrixShape.full:
-                    Op.EquationComponents["c1"].Add(new LevSetFlx(this.LsTrk, "u1", -1));
-                    Op.EquationComponents["c1"].Add(new SourceTest("u1", 1)); // Flux in Bulk Phase;
-                    Op.EquationComponents["c1"].Add(new DxFlux("u1", -10)); // Flux in Bulk Phase;
-                    break;
-                case MatrixShape.diagonal_var_spec:
-                case MatrixShape.diagonal_spec:
-                    // block diagonal matrix (ignore cell coupling) 
-                    Op.EquationComponents["c1"].Add(new SourceTest("u1", 1)); // Flux in Bulk Phase;
-                    Op.EquationComponents["c1"].Add(new LevSetFlx(this.LsTrk, "u1", -2));
-                    break;
-                case MatrixShape.diagonal:
-                case MatrixShape.diagonal_var:
-                    // sparse matrix (ignore cell and variable coupling)
-                    Op.EquationComponents["c1"].Add(new SourceTest("u1", 1)); // Flux in Bulk Phase;
-                    break;
-            }
-
-            Op.Commit();
-
-            Basis maxB = map.BasisS.ElementAtMax(bss => bss.Degree);
-            //massFact = new MassMatrixFactory(maxB, agg);
-            massFact = LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), m_quadOrder).MassMatrixFactory;
-
-
-
-        }
-
-        MassMatrixFactory massFact;
-        AggregationGridBasis[][] XAggB;
-        UnsetteledCoordinateMapping map;
-
-        /// <summary>
-        /// Operator matrix, i.e. test data for this test.
-        /// </summary>
-        public BlockMsrMatrix OperatorMatrix;
-
-        public MultigridOperator MGOp;
-
-        MultigridOperator.ChangeOfBasisConfig[][] OpConfig {
-            get {
-                return new MultigridOperator.ChangeOfBasisConfig[][] {
-                    new MultigridOperator.ChangeOfBasisConfig[] {
-                        new MultigridOperator.ChangeOfBasisConfig() { VarIndex = new int[] { 0,1 }, mode = MultigridOperator.Mode.Eye, DegreeS = new int[] { u1.Basis.Degree} }
-                    }
-                };
-            }
-        }
-
-        private void Setup() {
-            MgSeq = CoarseningAlgorithms.CreateSequence(m_grid.iGridData);
-
-            int p = m_DGorder;
-
-            var uMapping = new UnsetteledCoordinateMapping(u1.Basis);
-            //var uMapping = new UnsetteledCoordinateMapping(u1.Basis);
-            //var uMapping = new UnsetteledCoordinateMapping(new Basis(m_grid.iGridData, p));
-
-            XAggB = AggregationGridBasis.CreateSequence(MgSeq, uMapping.BasisS);
-            var bla = LsTrk.SpeciesIdS.ToArray();
-            var agg = LsTrk.GetAgglomerator(bla, m_quadOrder, THRESHOLD, AgglomerateNewborn: false, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true);
-            XAggB.UpdateXdgAggregationBasis(agg);
-            var VarDegrees = uMapping.BasisS.Count.ForLoop(i => uMapping.BasisS[i].Degree);
-            MG_Mapping = new MultigridMapping(uMapping, XAggB[0], VarDegrees);
-            map = uMapping;
-        }
-
-        private double[] GetRHS(double[] OpAffine, BlockMsrMatrix M) {
-            List<int> Rows2Keep = new List<int>();
-            for (int iRow = 0; iRow < M.RowPartitioning.LocalLength; iRow++) {
-                int Row = iRow + M.RowPartitioning.i0;
-                Debug.Assert(M.RowPartitioning.IsInLocalRange(Row));
-                if (M.GetNoOfNonZerosPerRow(Row) != 0) {
-                    Rows2Keep.Add(iRow);
-                }
-            }
-
-            var rArr = Rows2Keep.ToArray();
-
-            List<double> RHS = new List<double>();
-
-            for (int i = 0; i < rArr.Length; i++) {
-                RHS.Add(OpAffine[rArr[i]]);
-            }
-            return RHS.ToArray();
-        }
-
-        protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-
-            LsUpdate(phystime);
-
-            // operator-matrix assemblieren
-            OperatorMatrix = new BlockMsrMatrix(MG_Mapping.ProblemMapping);
-            double[] Affine = new double[OperatorMatrix.RowPartitioning.LocalLength];
-            MultiphaseCellAgglomerator Agg;
-
-            Agg = LsTrk.GetAgglomerator(this.LsTrk.SpeciesIdS.ToArray(), m_quadOrder, __AgglomerationTreshold: this.THRESHOLD);
-
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, MG_Mapping.ProblemMapping, null, MG_Mapping.ProblemMapping, LsTrk.SpeciesIdS.ToArray());
-            mtxBuilder.time = 0.0;
-            mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);
-            Agg.ManipulateMatrixAndRHS(OperatorMatrix, Affine, MG_Mapping.ProblemMapping, MG_Mapping.ProblemMapping);
-
-            foreach (var S in this.LsTrk.SpeciesNames) {
-                Console.WriteLine("  Species {0}: no of agglomerated cells: {1}",
-                    S, Agg.GetAgglomerator(this.LsTrk.GetSpeciesId(S)).AggInfo.SourceCells.NoOfItemsLocally);
-            }
-
-            MGOp = new MultigridOperator(XAggB, map,
-                    OperatorMatrix,
-                    this.massFact.GetMassMatrix(map, false),
-                    OpConfig);
-            Debug.Assert(MGOp.OperatorMatrix != null);
-            Debug.Assert(MGOp.Mapping != null);
-
-            var b = GetRHS(Affine, OperatorMatrix);
-
-
-
-            int nnz = this.OperatorMatrix.GetTotalNoOfNonZeros();
-            Console.WriteLine("Number of non-zeros in matrix: " + nnz);
-
-            base.TerminationKey = true;
-            return 0.0;
-        }
-
-
-        protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
-            string filename = "MatrixTest." + timestepNo;
-            Tecplot.PlotFields(new DGField[] { u1, Phi, Amarker, Bmarker, MPIrank }, filename, 0, superSampling);
+            Tecplot.PlotFields(new DGField[] { u1, u2, Phi, Amarker, Bmarker, MPIrank }, filename, 0, superSampling);
         }
     }
 }

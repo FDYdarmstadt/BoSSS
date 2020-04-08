@@ -70,10 +70,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                     Debug.Assert(idx >= LL);
                     Debug.Assert(idx < LE);
                 }
-                m_ExtCellLen = m_map.GetLocalLength_Ext();
             }
-
-            private static int m_ExtCellLen;
 
             protected override int m_NoOfCells {
                 get {
@@ -89,10 +86,12 @@ namespace BoSSS.Solution.AdvancedSolvers
 
             /// <summary>
             /// These are the DOF of external ghost cells available on this proc
+            /// Note: this is method requires MPI communication
+            /// and thus must be called on ALL procs
             /// </summary>
             protected override int m_LocalLength {
                 get {
-                    return m_ExtCellLen;
+                    return m_map.GetLocalLength_Ext();
                 }
             }
 

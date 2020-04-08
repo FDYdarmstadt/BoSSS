@@ -54,8 +54,12 @@ namespace AdvancedSolverTests {
             //SubBlockTests.SubSelection(SelectionType.species);
             //LocalTests.CellwiseSubSelection(SelectionType.species);
             //ExternalTests.ExternalIndexTest(XDGusage.all,2);
-            //ExternalTests.GetExternalRowsTest(XDGusage.all, 2);
-            ExternalTests.FastSubMatrixExtraction(XDGusage.all, 2,MatrixShape.full_var_spec);
+            //ExternalTests.ExternalIndexTest(XDGusage.all, 2,4);
+            //ExternalTests.GetExternalRowsTest(XDGusage.all, 2,4);
+            //ExternalTests.FastSubMatrixExtraction(XDGusage.all, 2,MatrixShape.laplace,4);
+            //ExternalTests.SubMatrixIgnoreCoupling(XDGusage.all, 2, MatrixShape.diagonal_var_spec,4);
+            //ExternalTests.SubMatrixExtraction(XDGusage.all, 2, MatrixShape.full_var_spec,4);
+            ExternalTests.SubBlockExtraction(XDGusage.all, 2, MatrixShape.laplace, 4);
         }
     }
 }

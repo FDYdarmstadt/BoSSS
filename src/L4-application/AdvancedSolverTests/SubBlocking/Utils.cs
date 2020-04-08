@@ -33,11 +33,11 @@ namespace AdvancedSolverTests.SubBlocking
 
     internal static class Utils
     {
-        public static MultigridOperator CreateTestMGOperator(XDGusage UseXdg = XDGusage.none, int DGOrder = 2, MatrixShape MShape = MatrixShape.full, int Resolution = 2) {
+        public static MultigridOperator CreateTestMGOperator(XDGusage UseXdg = XDGusage.none, int DGOrder = 2, MatrixShape MShape = MatrixShape.full, int Resolution = 4) {
             return CreateTestMGOperator(out double[] Vec, UseXdg, DGOrder, MShape, Resolution);
         }
 
-        public static MultigridOperator CreateTestMGOperator(out double[] Vec, XDGusage UseXdg = XDGusage.none, int DGOrder = 2, MatrixShape MShape = MatrixShape.full, int Resolution = 2) {
+        public static MultigridOperator CreateTestMGOperator(out double[] Vec, XDGusage UseXdg = XDGusage.none, int DGOrder = 2, MatrixShape MShape = MatrixShape.full, int Resolution = 4) {
             MultigridOperator retMGOp;
             using (var solver = new SubBlockTestSolver2Var() { m_UseXdg = UseXdg, m_DGorder = DGOrder, m_Mshape = MShape, m_Res = Resolution }) {
                 solver.Init(null);
@@ -324,16 +324,21 @@ namespace AdvancedSolverTests.SubBlocking
             return SubIdc;
         }
 
-        public static int[] AllExternalCellsSelection(this SubBlockSelector sbs) {
-            var map = sbs.GetMapping;
+        public static int[] GetAllExternalCells(MultigridMapping map) {
             int NoOfExternalCells = map.AggGrid.iLogicalCells.NoOfExternalCells;
             int offset = map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
             int[] extcells = NoOfExternalCells.ForLoop(i => i + offset);
+            return extcells;
+        }
+
+        public static int[] AllExternalCellsSelection(this SubBlockSelector sbs) {
+            var map = sbs.GetMapping;
+            var extcells=GetAllExternalCells(map);
             sbs.CellSelector(extcells,false);
             return extcells;
         }
 
-        public static int[] GetIndcOfExtCell(this MultigridMapping map, int jCell) {
+        public static int[] GetIndcOfExtCell(MultigridMapping map, int jCell) {
             int Jup = map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
             int i0 = map.GlobalUniqueIndex(0, jCell, 0);
             int fld = map.NoOfVariables;
@@ -344,5 +349,56 @@ namespace AdvancedSolverTests.SubBlocking
             return ret;
         }
 
+        public static int[] GetAllExtCellIdc(MultigridMapping map) {
+            var extC = GetAllExternalCells(map);
+            List<int> extIdcL = new List<int>();
+            foreach (int eC in extC) {
+                Debug.Assert(eC < map.AggGrid.iLogicalCells.NoOfExternalCells + map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells);
+                Debug.Assert(eC >= map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells);
+                int[] Idc = GetIndcOfExtCell(map, eC);
+                extIdcL.AddRange(Idc);
+            }
+            int[] extIdc = extIdcL.ToArray();
+            Array.Sort(extIdc);
+#if Debug
+            int[] fields = map.NoOfVariables.ForLoop(i => i);
+            int[] GlobalIdxMap_ext = map.GetSubvectorIndices_Ext(fields);
+            Array.Sort(GlobalIdxMap_ext);
+            Debug.Assert(extIdc.Length == GlobalIdxMap_ext.Length);
+            for(int iCell=0;iCell<extIdc.Length; iCell++) {
+                Debug.Assert(extIdc[iCell] == GlobalIdxMap_ext[iCell]);
+            }
+#endif
+            return extIdc;
+        }
+
+        public static Dictionary<int,int[]> GetDictOfAllExtCellIdc(MultigridMapping map) {
+            int[] cells = GetAllExternalCells(map);
+            Dictionary<int, int[]> extDict = new Dictionary<int, int[]>();
+
+            foreach(int eC in cells) {
+                int[] idc = GetIndcOfExtCell(map, eC);
+                extDict.Add(eC,idc);
+            }
+            return extDict;
+        }
+
+        public static int[] GimmeAllBlocksWithSpec(MultigridMapping map, int DOF) {
+            int Bi0 = map.AggGrid.CellPartitioning.i0;
+            List<int> hits = new List<int>();
+            for(int i=0; i < map.LocalNoOfBlocks; i++) {
+                int iBlock = Bi0 + i;
+                int type = map.GetBlockType(iBlock);
+                int BlockDOF = map.GetSubblkLen(type)[0];
+                if (BlockDOF == DOF)
+                    hits.Add(iBlock);
+            }
+
+            int[] recvcnt = hits.Count().MPIAllGather();
+            Debug.Assert(recvcnt.Length==map.MpiSize);
+            int[] VecOfAllhits = hits.ToArray().MPIAllGatherv(recvcnt);
+            
+            return VecOfAllhits;
+        }
     }
 }

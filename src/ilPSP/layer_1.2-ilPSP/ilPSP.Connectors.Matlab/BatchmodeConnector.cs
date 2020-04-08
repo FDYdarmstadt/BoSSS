@@ -466,6 +466,39 @@ namespace ilPSP.Connectors.Matlab {
                 Cmd(Mn + " = dlmread('" + TranslatePath(Path.Combine(workdir, Mn)) + "');");
         }
 
+
+        public void PutMatrixRankExclusive(IMatrix M, string MatlabName) {
+            int rank;
+            var comm = csMPI.Raw._COMM.WORLD;
+            csMPI.Raw.Comm_Rank(comm, out rank);
+            ilPSP.MPICollectiveWatchDog.Watch(comm);
+            if (Executed == true)
+                throw new InvalidOperationException("No commands can be added after Execute() has been called.");
+
+            string Mname = String.Concat(MatlabName + "_" + rank);
+            string workdir;
+            if (Rank == 0)
+                workdir = WorkingDirectory.FullName;
+            else
+                workdir = null;
+            workdir = workdir.MPIBroadcast(0);
+            string filepath = Path.Combine(workdir, Mname);
+
+            if (M != null)
+                M.SaveToTextFile(filepath, FileMode.Create);
+
+            string[] Mnames = Mname.MPIGatherO(0);
+            if (Rank == 0) {
+                foreach (string Mn in Mnames) {
+                    CreatedFiles.Add(Path.Combine(workdir, Mn));
+                }
+            }
+            Mnames = Mnames.MPIBroadcast(0);
+            foreach (string Mn in Mnames)
+                Cmd(Mn + " = dlmread('" + TranslatePath(Path.Combine(workdir, Mn)) + "');");
+        }
+
+
         /// <summary>
         /// transfers multiple matrices <paramref name="M"/> to MATLAB.
         /// note: <paramref name="MatlabName"/>is extended with "_rank",

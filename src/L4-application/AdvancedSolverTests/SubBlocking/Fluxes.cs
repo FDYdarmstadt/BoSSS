@@ -126,27 +126,6 @@ namespace AdvancedSolverTests {
             double Flx = 0.5 * (U_Pos[0] + U_Neg[0]) * inp.Normal[0];
             return Flx * vA - Flx * vB * m_factor;
         }
-        //public double LevelSetForm(ref CommonParams inp,
-        //    double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
-        //    double vA, double vB, double[] Grad_vA, double[] Grad_vB) { 
-        //    double[] N = inp.Normal;
-        //    int D = N.Length;
-        //    double Grad_uA_xN = 0, Grad_uB_xN = 0, Grad_vA_xN = 0, Grad_vB_xN = 0;
-        //    for (int d = 0; d < D; d++) {
-        //        Grad_uA_xN += Grad_uA[0, d] * N[d];
-        //        Grad_uB_xN += Grad_uB[0, d] * N[d];
-        //        Grad_vA_xN += Grad_vA[d] * N[d];
-        //        Grad_vB_xN += Grad_vB[d] * N[d];
-        //    }
-        //    double Ret = 0.0;
-        //    Ret += (m_factor * Grad_uA_xN + m_factor * Grad_uB_xN) * (vA - vB);
-        //    Ret += (m_factor * Grad_vA_xN + m_factor * Grad_vB_xN) * (uA[0] - uB[0]);
-
-        //    return Ret;
-
-        //}
-
-
 
         public int LevelSetIndex {
             get { return 0; }
@@ -436,17 +415,6 @@ namespace AdvancedSolverTests {
                         scaleOT = 0.5;
                         return;
                     }
-                /*
-      case Mode.VolumeScaled: {
-          double volIN = this.m_LsTrk._Regions.GetSpeciesVolume(inp.jCell, this.NegativeSpecies);
-          double volOT = this.m_LsTrk._Regions.GetSpeciesVolume(inp.jCell, this.PositiveSpecies);
-
-          scaleIN = volIN / (volIN + volOT);
-          scaleOT = volOT / (volIN + volOT);
-          Debug.Assert(Math.Abs(scaleIN + scaleOT - 1.0) <= 1.0e-8);
-          return;
-      }
-      */
 
                 default:
                     throw new NotImplementedException();

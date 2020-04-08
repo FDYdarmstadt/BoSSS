@@ -551,7 +551,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             for (int iCell = 0; iCell < m_NoOfCells; iCell++) {
                 m_NoOfSpecies[iCell] = new int[m_NoOfVariables];
                 for (int iVar = 0; iVar < m_NoOfVariables; iVar++) {
-                    m_NoOfSpecies[iCell][iVar] = m_AggBS[iVar].GetNoOfSpecies(iCell);
+                    m_NoOfSpecies[iCell][iVar] = m_AggBS[iVar].GetNoOfSpecies(iCell+ m_CellOffset);
                 }
             }
             //TestForQuadraticMatrix();   
@@ -683,14 +683,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
 #endif
-            
+            int LocLen = m_LocalLength; // this method uses MPI-communication in case of BMExt and should not be called from inside if statement!
+
             if (emptysel)
                 Console.WriteLine("WARNING: no cells selceted with {0}", this.ToString());
             if (!emptysel) {
                 Debug.Assert(ListNi0.GroupBy(x => x.Li0).Any(g => g.Count() == 1));
                 Debug.Assert(ListNi0.GroupBy(x => x.Gi0).Any(g => g.Count() == 1));
                 Debug.Assert(ListNi0.Count() == NumOfNi0);
-                Debug.Assert(MaskLen <= m_LocalLength);
+                Debug.Assert(MaskLen <= LocLen);
                 Debug.Assert(Localint.GroupBy(x => x).Any(g => g.Count() == 1));
                 Debug.Assert(Globalint.GroupBy(x => x).Any(g => g.Count() == 1));
                 Debug.Assert(Localint.Count() == MaskLen);
@@ -757,6 +758,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <returns></returns>
         public int GetCellwiseLength(int iCell) {
             int len = 0;
+            Debug.Assert(iCell< m_StructuredNi0.Length);
             for (int i = 0; i < m_StructuredNi0[iCell].Length; i++) {
                 for (int j = 0; j < m_StructuredNi0[iCell][i].Length; j++) {
                     for (int k = 0; k < m_StructuredNi0[iCell][i][j].Length; k++) {
