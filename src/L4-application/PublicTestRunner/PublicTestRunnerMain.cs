@@ -227,9 +227,9 @@ namespace PublicTestRunner {
                 }
             }
 
-            List<Job> allJobs = new List<Job>();
+            var allJobs = new List<(Job job, string ResFile)>();
             foreach(var t in allTests) {
-                var j = JobManagerRun(t.ass, t.testname, bpc, t.depfiles);
+                var j = JobManagerRun(t.ass, t.testname, bpc, t.depfiles, DateNtime);
                 allJobs.Add(j);
             }
 
@@ -248,7 +248,7 @@ namespace PublicTestRunner {
             Console.WriteLine("All jobs finished - Summary:");
             Console.WriteLine("----------------------------------");
             foreach (var j in allJobs) {
-                Console.WriteLine(j.ToString());
+                Console.WriteLine(j.job.ToString());
             }
 
             // ===================================
@@ -262,11 +262,11 @@ namespace PublicTestRunner {
             foreach (var j in allJobs) {
                 //Console.WriteLine(j.ToString());
 
-                if (j.Status != JobStatus.FinishedSuccessful)
+                if (j.job.Status != JobStatus.FinishedSuccessful)
                     returnCode--;
 
                 try {
-                    string[] sourceFiles = Directory.GetFiles(j.DeploymentDirectory, "result-*.xml");
+                    string[] sourceFiles = Directory.GetFiles(j.job.DeploymentDirectory, "result-*.xml");
 
                     foreach (var orig in sourceFiles) {
                         string n = Path.GetFileName(orig);
@@ -280,7 +280,9 @@ namespace PublicTestRunner {
             }
 
             using (var ot = new StreamWriter("allout.txt")) {
-                foreach (var j in allJobs) {
+                foreach (var jj in allJobs) {
+                    var j = jj.job;
+                    var FullResultFile = Path.Combine(j.DeploymentDirectory, jj.ResFile);
                     ot.WriteLine("##fdhgjegf763748trfhe8hurdsinf598ugf498jvhsn*hbbvc#####!################");
                     ot.WriteLine("########################################################################");
                     ot.WriteLine("########################################################################");
@@ -291,6 +293,8 @@ namespace PublicTestRunner {
                     ot.WriteLine("#### Deploy directory: " + j.DeploymentDirectory);
                     ot.WriteLine("#### Status:           " + j.Status);
                     ot.WriteLine("#### ID:               " + j.BatchProcessorIdentifierToken);
+                    ot.WriteLine("#### Result File:      " + jj.ResFile);
+                    ot.WriteLine("####    exists?        " + File.Exists(FullResultFile));
                     ot.WriteLine("########################################################################");
                     ot.WriteLine("########################################################################");
                     ot.WriteLine("########################################################################");
@@ -327,16 +331,17 @@ namespace PublicTestRunner {
             }
         }
 
-        static public Job JobManagerRun(Assembly a, string TestName, BatchProcessorClient bpc, string[] AdditionalFiles) {
+        static public (Job j, string resFileName) JobManagerRun(Assembly a, string TestName, BatchProcessorClient bpc, string[] AdditionalFiles, string prefix) {
             string dor = DebugOrReleaseSuffix;
-            Job j = new Job($"{TestName}-{dor}", typeof(PublicTestRunnerMain));
-            j.MySetCommandLineArguments("--nunit3", Path.GetFileName(a.Location), $"--test={TestName}", $"--result=result-{TestName}-{dor}.xml");
+            Job j = new Job($"{prefix}-{TestName}-{dor}", typeof(PublicTestRunnerMain));
+            string resultFile = $"result-{TestName}-{dor}.xml";
+            j.MySetCommandLineArguments("--nunit3", Path.GetFileName(a.Location), $"--test={TestName}", $"--result={resultFile}");
 
             foreach (var f in AdditionalFiles) {
                 j.AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(File.ReadAllBytes(f), Path.GetFileName(f)));
             }
             j.Activate(bpc);
-            return j;
+            return (j, resultFile);
         }
 
 
