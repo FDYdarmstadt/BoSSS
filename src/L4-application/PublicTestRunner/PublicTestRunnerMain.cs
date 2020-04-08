@@ -86,7 +86,7 @@ namespace PublicTestRunner {
                 R.Add(t.Assembly);
             }
 #if !DEBUG
-            foreach (var t in FullTestTypes) {
+            foreach (var t in ReleaseOnlyTests) {
                 R.Add(t.Assembly);
             }
 #endif
@@ -373,13 +373,16 @@ namespace PublicTestRunner {
             var assln = GetAllAssemblies();
 
 
-
+            int count = 0;
             bool ret = false;
             foreach(var a in assln) {
                 if(!AssemblyFilter.IsEmptyOrWhite()) {
                     if(!AssemblyFilter.WildcardMatch(Path.GetFileName(a.Location)))
                         continue;
+
+                    Console.WriteLine("Matching assembly: " + a.Location);
                 }
+                count++;
 
                 MegaMurxPlusPlus(a);
 
@@ -399,13 +402,18 @@ namespace PublicTestRunner {
                 ret = ret | (r != 0);
             }
 
-            
+            if (!AssemblyFilter.IsEmptyOrWhite()) {
+                if(count <= 0) {
+                    Console.WriteLine("Found no assembly matching: " + AssemblyFilter);
+                }
+            }
+
+
             return ret ? -1 : 0;
         }
 
         static int Main(string[] args) {
             args = BoSSS.Solution.Application.ArgsFromEnvironmentVars(args);
-
 
             var ll = System.Diagnostics.Debug.Listeners;
             ll.Clear();

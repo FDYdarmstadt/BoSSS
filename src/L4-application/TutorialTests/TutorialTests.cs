@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using System;
+using System.IO;
 using ilPSP;
 using ilPSP.Connectors.Matlab;
 
@@ -24,6 +25,9 @@ namespace BoSSS.Application.TutorialTests {
         
         static void Main(string[] args) {
             AllUpTest.OneTimeSetUp();
+
+            AllUpTest.DirectoryOffset = Path.Combine("..", "..", "..", "..", "..", "doc", "handbook");
+
             //AllUpTest.RunWorksheets("quickStartCNS/IsentropicVortex.tex");
             //AllUpTest.RunWorksheets("MetaJobManager/MetaJobManager.tex");
             //AllUpTest.RunWorksheets("GridGeneration/GridGeneration.tex");

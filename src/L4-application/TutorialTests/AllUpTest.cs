@@ -35,7 +35,7 @@ namespace BoSSS.Application.TutorialTests {
         /// </summary>
         [OneTimeTearDown]
         static public void OneTimeTearDown() {
-            csMPI.Raw.mpiFinalize();
+            //csMPI.Raw.mpiFinalize();
         }
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace BoSSS.Application.TutorialTests {
         /// </summary>
         [OneTimeSetUp]
         static public void OneTimeSetUp() {
-            BoSSS.Solution.Application.InitMPI(new string[0]);
+            //BoSSS.Solution.Application.InitMPI(new string[0]);
 
             
 
@@ -54,7 +54,8 @@ namespace BoSSS.Application.TutorialTests {
             }
         }
 
-        static string DirectoryOffset = Path.Combine("..", "..", "..", "..", "..", "doc", "handbook");
+        //static string DirectoryOffset = Path.Combine("..", "..", "..", "..", "..", "doc", "handbook");
+        internal static string DirectoryOffset = "";
 
         /// <summary>
         /// Runs all the worksheets contained in the BoSSS handbook.
