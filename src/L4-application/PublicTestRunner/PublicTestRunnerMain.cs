@@ -426,7 +426,6 @@ namespace PublicTestRunner {
         }
 
         static int Main(string[] args) {
-            Debugger.Launch();
             args = BoSSS.Solution.Application.ArgsFromEnvironmentVars(args);
 
             var ll = System.Diagnostics.Debug.Listeners;
