@@ -279,7 +279,7 @@ namespace PublicTestRunner {
                 }
             }
 
-            using (var ot = new StreamWriter("allout.txt")) {
+            using (var ot = new StreamWriter("allout-" + DateNtime + ".txt")) {
                 foreach (var jj in allJobs) {
                     var j = jj.job;
                     var FullResultFile = Path.Combine(j.DeploymentDirectory, jj.ResFile);
