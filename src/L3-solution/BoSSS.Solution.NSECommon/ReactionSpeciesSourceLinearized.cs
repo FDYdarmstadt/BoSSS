@@ -216,20 +216,21 @@ namespace BoSSS.Solution.NSECommon {
             double Temperature = U[0];
             double Y0 = U[1];
             double Y1 = U[2];
-
+            //double PM_CH4 = MolarMasses[0];
+            //double PM_O2 = MolarMasses[1];
 
 
             double ReactionRate = 0.0;
             double ExponentialPart = m_Da * Math.Exp(-ReactionRateConstants[1] / Temperature); // Da*exp(-Ta/T)
             rho = EoS.GetDensity(U);
 
-           ReactionRate = ExponentialPart *OneOverMolarMass0MolarMass1 * Math.Pow(rho * Y0, ReactionRateConstants[2]) * Math.Pow(rho * Y1, ReactionRateConstants[3]);
-            //if(ReactionRate < 0) {
-            //    ReactionRate = 0.0;
-            //}
-
+           ReactionRate = ExponentialPart * Math.Pow(rho * Y0, ReactionRateConstants[2]) * Math.Pow(rho * Y1, ReactionRateConstants[3]);
             Debug.Assert(!double.IsNaN(ReactionRate));
             Debug.Assert(!double.IsInfinity(ReactionRate));
+            if (ReactionRate < 0)
+                ReactionRate = 0;
+
+
 
             return -MolarMasses[SpeciesIndex] * StoichiometricCoefficients[SpeciesIndex] * ReactionRate;
         }

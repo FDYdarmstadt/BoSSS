@@ -427,7 +427,7 @@ namespace BoSSS.Solution.NSECommon {
 
         bool IEquationComponentChecking.IgnoreVectorizedImplementation {
             get {
-                return m_ignoreVectorized;
+                return false;
             }
         }
 

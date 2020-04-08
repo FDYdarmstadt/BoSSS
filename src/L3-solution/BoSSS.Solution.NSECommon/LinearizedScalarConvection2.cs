@@ -622,8 +622,6 @@ namespace BoSSS.Solution.NSECommon {
         /// flux at the boundary
         /// </summary>
         double BorderEdgeFlux(ref Foundation.CommonParamsBnd inp, double[] Uin) {
-
-
             IncompressibleBcType edgeType = m_bcmap.EdgeTag2Type[inp.EdgeTag];
             switch(edgeType) {
                 case IncompressibleBcType.Wall: {

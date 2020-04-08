@@ -35,7 +35,7 @@ namespace BoSSS.Solution.NSECommon {
     [Serializable]
     public class MaterialLawLowMach : MaterialLaw {
 
-        double T_ref;
+       public double T_ref;
         MaterialParamsMode MatParamsMode;
         bool rhoOne;
         /// <summary>
@@ -152,8 +152,8 @@ namespace BoSSS.Solution.NSECommon {
                 case MaterialParamsMode.Constant:
                     return 1.0;
                 case MaterialParamsMode.Sutherland: {
-                        double S = 110.5;
-                        double viscosity = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
+                        double S = 110.56;
+                        double viscosity = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);                     
                         Debug.Assert(!double.IsNaN(viscosity));
                         Debug.Assert(!double.IsInfinity(viscosity));
                         Debug.Assert(viscosity > 0);
@@ -186,8 +186,8 @@ namespace BoSSS.Solution.NSECommon {
                         double viscosity = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
                         Debug.Assert(!double.IsNaN(viscosity));
                         Debug.Assert(!double.IsInfinity(viscosity));
-
-                        double lambda = viscosity; //// using viscosity = lambda for Pr = 1...
+                        double cp = 1; // It has always 1 as adimensional value, because is a constant, cp/cpref = 1 
+                        double lambda = viscosity * cp / 1.0;//  0.71; // Using the fact that Pr = cp*mu/lambda
                         return lambda;
                     }
                 case MaterialParamsMode.PowerLaw: {
@@ -205,7 +205,7 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
         /// <summary>
-        /// The mass diffusivity. 
+        /// The mass diffusivity,D  multiplied by rho. 
         /// </summary>
         /// <param name="phi"></param>
         /// <returns></returns>
@@ -215,12 +215,13 @@ namespace BoSSS.Solution.NSECommon {
                 case MaterialParamsMode.Constant:
                     return 1.0;
                 case MaterialParamsMode.Sutherland: {
+                        //GetHeatConductivity(phi);
                         double S = 110.5;
                         double viscosity = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
                         Debug.Assert(!double.IsNaN(viscosity));
                         Debug.Assert(!double.IsInfinity(viscosity));
-                        double diff = viscosity; //// using viscosity = lambda for Sc = 1...
-                        return diff; // Using a constant value! 
+                        double diff = viscosity /1.0; // Sc = mu / rho*D, and for Lewis = 1, Pr = Sc
+                        return diff;  
                     }
                 case MaterialParamsMode.PowerLaw: {
                         throw new NotImplementedException();
@@ -309,6 +310,21 @@ namespace BoSSS.Solution.NSECommon {
         /// <returns></returns>
         public override double DiffRho_Temp(double phi) {
             throw new NotImplementedException();
+        }
+        /// <summary>
+        /// Sutherlands law for air. 
+        /// </summary>
+        /// <param name="T"></param>
+        /// <returns>
+        /// The viscosity of air at a given temperature in Kg/(m.s)
+        /// <see</returns>
+        public double SutherlandViscosityDimensional(double T) {
+             
+            double S = 110.56;
+            double T0 = 273.15; // 
+            double viscosity0 = 1.716e-5; //kg/( m s) ==> viscosity at T = 273.15 for air
+            double viscosity = viscosity0 * Math.Pow(T / T0, 1.5) * (T0 + S) / (T + S);            
+            return viscosity;
         }
     }
 }
