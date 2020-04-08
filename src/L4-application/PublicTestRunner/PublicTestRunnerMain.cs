@@ -285,7 +285,12 @@ namespace PublicTestRunner {
                     ot.WriteLine("########################################################################");
                     ot.WriteLine("########################################################################");
                     ot.WriteLine("########################################################################");
-
+                    ot.WriteLine("#### Deploy directory: " + j.DeploymentDirectory);
+                    ot.WriteLine("#### Status:           " + j.Status);
+                    ot.WriteLine("#### ID:               " + j.BatchProcessorIdentifierToken);
+                    ot.WriteLine("########################################################################");
+                    ot.WriteLine("########################################################################");
+                    ot.WriteLine("########################################################################");
                     ot.WriteLine("Stdout: ");
                     ot.WriteLine(j.Stdout);
 
