@@ -151,8 +151,9 @@ namespace PublicTestRunner {
 
 
 
-        static (string[] tests, string[] RequiredFiles) GetTestsInAssembly(Assembly a) {
-            var r = new List<string>();
+        static (int NoOfTests, string[] tests, string[] shortnames, string[] RequiredFiles) GetTestsInAssembly(Assembly a) {
+            var r = new List<string>(); // full test names
+            var l = new List<string>(); // short names 
             var s = new HashSet<string>();
 
             var ttt = a.GetTypes();
@@ -163,6 +164,7 @@ namespace PublicTestRunner {
                     foreach(var m in mmm) {
                         if(m.GetCustomAttribute(typeof(TestAttribute)) != null) {
                             r.Add(t.FullName + "." +  m.Name);
+                            l.Add(Path.GetFileNameWithoutExtension(a.ManifestModule.Name) + "#" + m.Name);
                         }
 
                         if(m.GetCustomAttribute(typeof(TestAttribute)) != null
@@ -181,7 +183,7 @@ namespace PublicTestRunner {
                 }
             }
 
-            return (r.ToArray(), s.ToArray());
+            return (r.Count, r.ToArray(), l.ToArray(), s.ToArray());
         }
 
 
@@ -202,14 +204,14 @@ namespace PublicTestRunner {
             // phase 1: submit jobs
             // ===================================
 
-            string DateNtime = DateTime.Now.ToString("yyyyMMMdd_HHmmss");
+            string DateNtime = DateTime.Now.ToString("MMMdd_HHmm");
 
             InteractiveShell.ReloadExecutionQueues();
             InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime);
 
             BatchProcessorClient bpc = InteractiveShell.ExecutionQueues[1];
 
-            var allTests = new List<(Assembly ass, string testname, string[] depfiles)>();
+            var allTests = new List<(Assembly ass, string testname, string shortname, string[] depfiles)>();
             {
                 var assln = GetAllAssemblies();
                 foreach (var a in assln) {
@@ -219,10 +221,10 @@ namespace PublicTestRunner {
                     }
 
 
-                    var (allTest, depfiles) = GetTestsInAssembly(a);
+                    var allTst4Assi = GetTestsInAssembly(a);
 
-                    foreach (var t in allTest) {
-                        allTests.Add((a, t, depfiles));
+                    for (int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) { 
+                        allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles));
                     }
                 }
             }
@@ -292,7 +294,7 @@ namespace PublicTestRunner {
                     ot.WriteLine("########################################################################");
                     ot.WriteLine("#### Deploy directory: " + j.DeploymentDirectory);
                     ot.WriteLine("#### Status:           " + j.Status);
-                    ot.WriteLine("#### ID:               " + j.BatchProcessorIdentifierToken);
+                    ot.WriteLine("#### Job ID:           " + j.BatchProcessorIdentifierToken);
                     ot.WriteLine("#### Result File:      " + jj.ResFile);
                     ot.WriteLine("####    exists?        " + File.Exists(FullResultFile));
                     ot.WriteLine("########################################################################");
@@ -323,9 +325,9 @@ namespace PublicTestRunner {
             get {
                 string dor;
 #if DEBUG
-                dor = "DEBUG";
+                dor = "DBG";
 #else
-                dor = "RELEASE";
+                dor = "REL";
 #endif
                 return dor;
             }
