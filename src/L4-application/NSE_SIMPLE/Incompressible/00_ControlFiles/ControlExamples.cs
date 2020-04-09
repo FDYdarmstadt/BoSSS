@@ -29,7 +29,7 @@ namespace NSE_SIMPLE.Incompressible {
         public static SIMPLEControl PoiseuilleFlow() {
             SIMPLEControl c = new SIMPLEControl();
 
-            c.DbPath = @"..\..\Base\06_ZipDatabases\NUnitTests.zip";
+            c.DbPath = @"NUnitTests.zip";
             c.savetodb = false;
 
             c.GridGuid = new Guid("0062a338-a8a4-4d52-9b16-bc79379dd4d5");

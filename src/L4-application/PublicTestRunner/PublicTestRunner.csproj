@@ -93,6 +93,10 @@
       <Project>{8bd7843e-8191-40b3-b208-75ec766a99fd}</Project>
       <Name>CNS</Name>
     </ProjectReference>
+    <ProjectReference Include="..\CNS_MPITests\CNS_MPITests.csproj">
+      <Project>{86d751a8-b58c-491d-9f63-986d61fcbff5}</Project>
+      <Name>CNS_MPITests</Name>
+    </ProjectReference>
     <ProjectReference Include="..\CutCellQuadrature\CutCellQuadrature.csproj">
       <Project>{6e696838-ee09-459f-b5b0-7ee0d709c3d6}</Project>
       <Name>CutCellQuadrature</Name>
@@ -117,6 +121,10 @@
       <Project>{25390d9e-5bdf-4fcc-9a70-af49f36831a4}</Project>
       <Name>ExternalBinding</Name>
     </ProjectReference>
+    <ProjectReference Include="..\HilbertTest\HilbertTest.csproj">
+      <Project>{ee2730da-2c52-459c-b6b8-5b4093b229a0}</Project>
+      <Name>HilbertTest</Name>
+    </ProjectReference>
     <ProjectReference Include="..\IBM_Solver\IBM_Solver.csproj">
       <Project>{12970f63-547f-4be6-9af9-2f3eeb00a877}</Project>
       <Name>IBM_Solver</Name>
@@ -128,6 +136,10 @@
     <ProjectReference Include="..\ipViscosity\ipViscosity.csproj">
       <Project>{09cce864-9bae-4660-a123-f3f3414b6173}</Project>
       <Name>ipViscosity</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\LoadBalancingTest\LoadBalancingTest.csproj">
+      <Project>{cf280064-130d-4c5a-9ab1-0604f0ab01c6}</Project>
+      <Name>LoadBalancingTest</Name>
     </ProjectReference>
     <ProjectReference Include="..\LTSTests\LTSTests.csproj">
       <Project>{fe748c89-3989-4742-811b-80f8b924fd35}</Project>
@@ -180,6 +192,10 @@
     <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj">
       <Project>{3d867374-bf9a-475e-8f5c-e1c067605b9c}</Project>
       <Name>XNSE_Solver</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\XNSE_Solver_MPItest\XNSE_Solver_MPItest.csproj">
+      <Project>{2f74aa60-6324-4fb4-8960-7da1bbdb8c15}</Project>
+      <Name>XNSE_Solver_MPItest</Name>
     </ProjectReference>
     <ProjectReference Include="..\ZwoLsTest\ZwoLsTest.csproj">
       <Project>{cf28bb64-130d-4c5a-9031-0604f0ab01c6}</Project>

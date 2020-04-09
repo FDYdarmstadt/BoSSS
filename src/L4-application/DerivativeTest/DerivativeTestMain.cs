@@ -113,20 +113,20 @@ namespace BoSSS.Application.DerivativeTest {
 #endif
 
         /// <summary>
-        /// Filenames of test grids.
+        /// Filenames of test grids, see <see cref="DerivativeTest_GridImport"/>
         /// </summary>
         static string[] m_testFiles {
             get {
                 List<string> R = new List<string>();
-                R.AddRange(Directory.GetFiles("../../TestGrids/", "*.msh").Select(f => Path.GetFileName(f)));
-                R.AddRange(Directory.GetFiles("../../TestGrids/", "*.cgns").Select(f => Path.GetFileName(f)));
+                R.AddRange(Directory.GetFiles(Directory.GetCurrentDirectory(), "*.msh").Select(f => Path.GetFileName(f)));
+                R.AddRange(Directory.GetFiles(Directory.GetCurrentDirectory(), "*.cgns").Select(f => Path.GetFileName(f)));
 
                 // blacklist that isn't working
                 R.Remove("Ringleb6th.msh");
                 R.Remove("Ringleb5th.msh");
                 R.Remove("Ringleb4th.msh");
 
-                // Too much for DEBUG-configration.
+                // Too much for DEBUG-configuration.
 #if DEBUG
                 R.Remove("kubus.cgns");
                 R.Remove("WallMountedCube.cgns");
@@ -144,10 +144,11 @@ namespace BoSSS.Application.DerivativeTest {
         /// <summary>
         /// Test using grids imported from gmsh/cgns
         /// </summary>
+        [NUnitFileToCopyHack("DerivativeTest/TestGrids/*.msh", "DerivativeTest/TestGrids/*.msh")]
         [Test]
-        public static void DerivativeTest_GridImport([ValueSource("m_testFiles")]string File) {
+        public static void DerivativeTest_GridImport([ValueSource("m_testFiles")] string File) {
             DerivativeTestMain.GRID_CASE = 50;
-            DerivativeTestMain.GRID_FILE = Path.Combine("../../TestGrids/", File);
+            DerivativeTestMain.GRID_FILE = File;
             DerivativeTestMain p = null;
             Quadrature_Bulksize.CHUNK_DATA_LIMIT = CHUNK_DATA_LIMIT_bkup; // might have been changed by other test, needs re-set
             DerivativeTestMain.TestFDJacobian = false;

@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Solution;
+using ilPSP;
 using NUnit.Framework;
 using System;
 
@@ -40,6 +41,7 @@ namespace NSE_SIMPLE {
         /// <summary>
         /// Tests the steady 2D-Channel flow using the 'Steady_SIMPLE' algorithm.
         /// </summary>
+        [NUnitFileToCopyHack("Base/06_ZipDatabases/NUnitTests.zip")]
         [Test]
         public static void IncompressibleSteadyPoiseuilleFlowTest() {
             var C = NSE_SIMPLE.Incompressible.ControlExamples.PoiseuilleFlow();
