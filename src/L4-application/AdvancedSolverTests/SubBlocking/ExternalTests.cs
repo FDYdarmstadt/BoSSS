@@ -274,10 +274,12 @@ namespace AdvancedSolverTests.SubBlocking
                 using (BatchmodeConnector matlab = new BatchmodeConnector()) {
 
                     double[] GlobIdx = idc.Count().ForLoop(i => (double)idc[i] + 1.0);
+                    Assert.IsTrue(GlobIdx.Length==eblocks[iBlock].Lengths[0]);
+                    MsrMatrix M_sub=eblocks[iBlock].ConvertToMsr();
 
                     matlab.PutSparseMatrix(M, "M");
                     // note: M_sub lives on Comm_Self, therefore we have to distinguish between procs ...
-                    matlab.PutMatrixRankExclusive(eblocks[iBlock], "M_sub");
+                    matlab.PutSparseMatrixRankExclusive(M_sub, "M_sub");
                     matlab.PutVectorRankExclusive(GlobIdx, "Idx");
                     matlab.Cmd("M_0 = full(M(Idx_0, Idx_0));");
                     matlab.Cmd("M_1 = full(M(Idx_1, Idx_1));");
@@ -291,25 +293,93 @@ namespace AdvancedSolverTests.SubBlocking
                     matlab.GetMatrix(infNorm, "n");
                     matlab.Execute();
                 }
-                Assert.IsTrue(infNorm[rank, 0] < 1e-13);
+                Assert.IsTrue(infNorm[rank, 0] == 0.0); //
             }
         }
 
 
-        public static void CellblocksIgnoreCoupling() {
 
+        public static void VectorCellwiseOperation(
+            [Values(XDGusage.none, XDGusage.all)] XDGusage UseXdg,
+            [Values(2)] int DGOrder,
+            [Values(MatrixShape.diagonal_var_spec, MatrixShape.diagonal_spec, MatrixShape.diagonal_var, MatrixShape.diagonal)] MatrixShape MShape,
+            [Values(4)] int Res
+            ) {
+
+            Utils.TestInit((int) UseXdg, DGOrder, (int) MShape);
+            Console.WriteLine("SubMatrixIgnoreCoupling({0},{1},{2})", UseXdg, DGOrder, MShape);
+
+            //Arrange --- create test matrix, MG mapping
+            MultigridOperator mgo = Utils.CreateTestMGOperator(UseXdg, DGOrder, MShape, Res);
+            MultigridMapping map = mgo.Mapping;
+            BlockMsrMatrix M = mgo.OperatorMatrix;
+            
+
+            //Arrange --- masking and subblock extraction of external cells
+            var sbs = new SubBlockSelector(map);
+            sbs.AllExternalCellsSelection();
+            var M_ext = BlockMask.GetAllExternalRows(map, M);
+            var mask = new TestMask(sbs, M_ext);
+            var eblocks = mask.GetSubBlocks(M, true, false, false);
+            Dictionary<int, int[]> Didc = Utils.GetDictOfAllExtCellIdc(map);
+
+            //Arrange --- generate rnd vector and distribute it
+            double[] vec = new double[map.LocalLength];
+            vec = Utils.GetRandomVector(map.LocalLength);
+            var vec_ex = new MPIexchange<double[]>(map, vec);
+            vec_ex.TransceiveStartImReturn();
+            vec_ex.TransceiveFinish(0.0);
+            Debug.Assert(vec_ex.Vector_Ext.L2Norm() != 0);
+
+            //Arrange --- stopwatch
+            var stw = new Stopwatch();
+            stw.Reset();
+
+            //Arrange --- get extended (loc+external cells) vector
+            double[] Vec_ext = new double[vec.Length + vec_ex.Vector_Ext.Length];
+            mask.AccVecToFull(vec_ex.Vector_Ext, Vec_ext);
+
+            bool test = eblocks.Length.MPIEquals();
+            Debug.Assert(test);
+            //Act --- calculate blockwise result: M_i*vec_i=Res_i
+            double[] Res_ext = new double[Vec_ext.Length];
+            stw.Start();
+            for (int i=0; i < eblocks.Length; i++) {
+                int iBlock = i + map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+                double[] vec_i = mask.GetVectorCellwise(Vec_ext, iBlock);
+                double[] Res_i = new double[vec_i.Length];
+                eblocks[i].MatVecMul(1.0, vec_i, 0.0, Res_i);
+                mask.AccVecCellwiseToFull(Res_i, iBlock, Res_ext);
+                if (map.MpiRank == 0) {
+                    eblocks[i].ConvertToMsr().SaveToTextFileSparseDebug(String.Format("block_{0}_{1}", i, map.MpiRank));
+                    vec_i.SaveToTextFileDebug(String.Format("vec_{0}_{1}", i, map.MpiRank));
+                    Res_i.SaveToTextFileDebug(String.Format("Res_{0}_{1}", i, map.MpiRank));
+                }
+            }
+            stw.Stop();
+
+            //Act --- project Res_i onto Res_g and Res_g=M_ext*vec_ext-Res_g
+            double[] Res_g = mask.GetSubBlockVec(Res_ext);
+            var qM_ext=M_ext.ConvertToQuadraticBMsr(mask.Global_IList_ExternalCells);
+            qM_ext.SpMV(1.0, vec_ex.Vector_Ext, -1.0, Res_g);
+
+            if (map.MpiRank == 0) {
+                vec_ex.Vector_Ext.SaveToTextFileDebug("vec_g");
+                Res_g.SaveToTextFileDebug("Res_g");
+                M_ext.SaveToTextFileSparseDebug("M_ext");
+                qM_ext.SaveToTextFileSparseDebug("qM_ext");
+            }
+
+            //Assert --- |Res_g| should be at least near to zero
+            Assert.IsTrue(Res_g.L2Norm()==0.0);
         }
 
-        public static void SubSelection() { 
-        
-        }
-
-        public static void VectorCellwiseOperation() {
-        
+        public static void SubSelection() {
+            throw new NotImplementedException();
         }
 
         public static void VectorSplitOperation() {
-        
+            throw new NotImplementedException();
         }
 
         [Test]

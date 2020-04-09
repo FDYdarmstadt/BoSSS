@@ -602,10 +602,10 @@ namespace BoSSS.Solution.AdvancedSolvers
             if (m_includeExternalCells) {
                 if (targetVector.Count() != GetLocalandExternalDOF())
                     throw new ArgumentException("Length of targetVector not equal Length of original");
-                if (iCell >= BMLoc.m_StructuredNi0.Length+ BMExt.m_StructuredNi0.Length)
+                if (iCell >= BMLoc.m_StructuredNi0.Length + BMExt.m_StructuredNi0.Length)
                     throw new ArgumentOutOfRangeException("iCell is greater than Cellindex of mask");
                 BlockMaskBase mask;
-                if(iCell < m_map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells) {
+                if(iCell < BMLoc.m_StructuredNi0.Length) {
                     mask = BMLoc;
                 } else {
                     mask = BMExt;
@@ -622,9 +622,9 @@ namespace BoSSS.Solution.AdvancedSolvers
         }
 
         private int GetLocalandExternalDOF() {
-            int eCell = m_map.LocalNoOfBlocks + m_map.AggBasis[0].AggGrid.iLogicalCells.NoOfExternalCells - 1;
+            int eCell = m_map.LocalNoOfBlocks + m_map.AggGrid.iLogicalCells.NoOfExternalCells - 1;
             int eVar = m_map.AggBasis.Length-1;
-            int eN = m_map.GetLength(eCell)-1;
+            int eN = m_map.AggBasis[eVar].GetLength(eCell, m_map.DgDegree[eVar]) -1;
             return m_map.LocalUniqueIndex(eVar, eCell, eN)+1;
         }
 
@@ -658,8 +658,8 @@ namespace BoSSS.Solution.AdvancedSolvers
         private void AuxAcc<V, W>(BlockMaskBase mask, W accVector, int iCell, V targetVector)
             where V : IList<double>
             where W : IList<double> {
-            int nCell = mask.GetType() == typeof(BlockMaskExt) ? iCell - m_map.LocalNoOfBlocks : iCell;
-            if (nCell > mask.m_StructuredNi0.Length - 1)
+            int nCell = mask.GetType() == typeof(BlockMaskExt) ? iCell - BMLoc.m_StructuredNi0.Length : iCell;
+            if (nCell >= mask.m_StructuredNi0.Length)
                 throw new ArgumentOutOfRangeException("iCell is greater than Cells in mask");
             if (accVector.Count() != mask.GetCellwiseLength(nCell))
                 throw new ArgumentException("accVector length is not equal to length of mask");
@@ -685,7 +685,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                 if (iCell >= BMLoc.m_StructuredNi0.Length + BMExt.m_StructuredNi0.Length)
                     throw new ArgumentOutOfRangeException("iCell is greater than Cellindex of mask");
                 BlockMaskBase mask;
-                if (iCell < m_map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells) {
+                if (iCell < BMLoc.m_StructuredNi0.Length) {
                     mask = BMLoc;
                 } else {
                     mask = BMExt;
@@ -703,7 +703,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         }
 
         private double[] GetAuxAccVec(BlockMaskBase mask, IList<double> fullVector, int iCell) {
-            int nCell=mask.GetType() == typeof(BlockMaskExt)? iCell-m_map.LocalNoOfBlocks:iCell;
+            int nCell=mask.GetType() == typeof(BlockMaskExt)? iCell-BMLoc.m_StructuredNi0.Length:iCell;
             double[] subVector = new double[mask.GetCellwiseLength(nCell)];
             var Cidx = mask.GetCellwiseLocalidx(nCell);
             Debug.Assert(subVector.Length == Cidx.Length);

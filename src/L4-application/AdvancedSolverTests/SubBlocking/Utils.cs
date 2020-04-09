@@ -183,10 +183,15 @@ namespace AdvancedSolverTests.SubBlocking
 
 
         public static double[] GetRandomVector(int Length) {
+            int rank;
+            var comm = csMPI.Raw._COMM.WORLD;
+            csMPI.Raw.Comm_Rank(comm, out rank);
             double[] vec = new double[Length];
             var rndgen = new Random();
             for (int i = 0; i < Length; i++) {
-                vec[i] = rndgen.NextDouble();
+                //vec[i] = rndgen.NextDouble() * (rank+1);
+                vec[i] = (rank + 1);
+                Debug.Assert(vec[i]!=0);
             }
             return vec;
         }
@@ -399,6 +404,42 @@ namespace AdvancedSolverTests.SubBlocking
             int[] VecOfAllhits = hits.ToArray().MPIAllGatherv(recvcnt);
             
             return VecOfAllhits;
+        }
+
+        public static MsrMatrix ConvertToMsr(this MultidimensionalArray M) {
+            Partitioning rowpart = new Partitioning(M.Lengths[0], MPI.Wrappers.csMPI.Raw._COMM.SELF);
+            Partitioning colpart = new Partitioning(M.Lengths[1], MPI.Wrappers.csMPI.Raw._COMM.SELF);
+            var bla = new MsrMatrix(rowpart, colpart);
+            bla.AccBlock(0, 0, 1.0, M);
+            return bla;
+        }
+
+        public static BlockMsrMatrix ConvertToQuadraticBMsr(this BlockMsrMatrix M, int[] Colidx) {
+
+            Debug.Assert(M._RowPartitioning.LocalLength == Colidx.Length);
+            
+            int NoOfBlocks = M._RowPartitioning.LocalNoOfBlocks;
+            int[] Offsets = new int[NoOfBlocks];
+            int[] Lengths = new int[NoOfBlocks];
+            int IdxOffset = M._RowPartitioning.i0;
+            int ColIdxOffset = M._ColPartitioning.i0;
+            for (int i=0;i < NoOfBlocks; i++) {
+                int iBlock = i + M._RowPartitioning.FirstBlock;
+                Offsets[i]=M._RowPartitioning.GetBlockI0(iBlock) - IdxOffset;
+                Lengths[i]=M._RowPartitioning.GetBlockLen(iBlock);
+            }
+            BlockPartitioning part = new BlockPartitioning(M._RowPartitioning.LocalLength,Offsets,Lengths,csMPI.Raw._COMM.SELF,true);
+            BlockMsrMatrix ret = new BlockMsrMatrix(part);
+
+            int[] RowISrc = M._RowPartitioning.LocalLength.ForLoop(i=> i + IdxOffset);
+            //int[] ColISrc = M._ColPartitioning.LocalLength.ForLoop(i => Colidx[i]);
+            //if (ColISrc.Length < RowISrc.Length)
+            //    ExtISrc = (RowISrc.Length - ColISrc.Length).ForLoop(i => Colidx[i+ ColISrc.Length]);
+            int[] ExtISrc = M._RowPartitioning.LocalLength.ForLoop(i => Colidx[i]);
+            int[] ExtITrg = M._RowPartitioning.LocalLength.ForLoop(i => i);
+
+            M.AccSubMatrixTo(1.0,ret, RowISrc, default(int[]), new int[0], default(int[]), ExtISrc, ExtITrg);
+            return ret;
         }
     }
 }

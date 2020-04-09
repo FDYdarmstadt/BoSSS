@@ -59,7 +59,8 @@ namespace AdvancedSolverTests {
             //ExternalTests.FastSubMatrixExtraction(XDGusage.all, 2,MatrixShape.laplace,4);
             //ExternalTests.SubMatrixIgnoreCoupling(XDGusage.all, 2, MatrixShape.diagonal_var_spec,4);
             //ExternalTests.SubMatrixExtraction(XDGusage.all, 2, MatrixShape.full_var_spec,4);
-            ExternalTests.SubBlockExtraction(XDGusage.all, 2, MatrixShape.laplace, 4);
+            //ExternalTests.SubBlockExtraction(XDGusage.all, 2, MatrixShape.laplace, 4);
+            ExternalTests.VectorCellwiseOperation(XDGusage.all, 2, MatrixShape.diagonal_var_spec, 4);
         }
     }
 }
