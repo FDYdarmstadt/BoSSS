@@ -325,7 +325,7 @@ namespace PublicTestRunner {
             foreach(var t in allTests) {
                 cnt++;
                 Console.WriteLine($"Submitting {cnt} of {allTests.Count}...");
-                var j = JobManagerRun(t.ass, t.testname, bpc, t.depfiles, DateNtime, t.NoOfProcs);
+                var j = JobManagerRun(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs);
                 Console.WriteLine($"Successfully submitted {j.j.Name}.");
                 allJobs.Add(j);
             }
@@ -356,7 +356,7 @@ namespace PublicTestRunner {
             Console.WriteLine("All jobs finished - Summary:");
             Console.WriteLine("----------------------------------");
             foreach (var j in allJobs) {
-                Console.WriteLine(j.job.ToString());
+                Console.WriteLine(j.testname + ": " + j.job.ToString());
             }
 
             // ===================================
@@ -394,12 +394,12 @@ namespace PublicTestRunner {
                     ot.WriteLine("##fdhgjegf763748trfhe8hurdsinf598ugf498jvhsn*hbbvc#####!################");
                     ot.WriteLine("########################################################################");
                     ot.WriteLine("########################################################################");
-                    ot.WriteLine("####  " + j.Name);
+                    ot.WriteLine("####  " + jj.testname);
                     ot.WriteLine("########################################################################");
                     ot.WriteLine("########################################################################");
                     ot.WriteLine("########################################################################");
                     ot.WriteLine("#### Deploy directory: " + j.DeploymentDirectory);
-                    ot.WriteLine("#### Full test name:   " + jj.testname);
+                    ot.WriteLine("#### Full test name:   " + j.Name);
                     ot.WriteLine("#### Number of procs:  " + j.NumberOfMPIProcs);
                     ot.WriteLine("#### Status:           " + j.Status);
                     ot.WriteLine("#### Job ID:           " + j.BatchProcessorIdentifierToken);
@@ -459,14 +459,22 @@ namespace PublicTestRunner {
             }
         }
 
-        static public (Job j, string resFileName, string Testname) JobManagerRun(Assembly a, string TestName, BatchProcessorClient bpc, string[] AdditionalFiles, string prefix, int NoOfMpiProcs) {
+        static public (Job j, string resultFile, string name) JobManagerRun(
+            Assembly a,
+            string TestName, string Shortname, 
+            BatchProcessorClient bpc, 
+            string[] AdditionalFiles, 
+            string prefix, 
+            int NoOfMpiProcs) {
+
             string dor = DebugOrReleaseSuffix;
             string jName;
             if(NoOfMpiProcs <= 1)
-                jName = $"{prefix}-{TestName}-{dor}";
+                jName = $"{prefix}-{Shortname}-{dor}";
             else
-                jName = $"{prefix}p{NoOfMpiProcs}-{TestName}-{dor}";
+                jName = $"{prefix}p{NoOfMpiProcs}-{Shortname}-{dor}";
             Job j = new Job(jName, typeof(PublicTestRunnerMain));
+
             string resultFile = $"result-{TestName}-{dor}.xml";
             j.MySetCommandLineArguments("nunit3", Path.GetFileName(a.Location), $"--test={TestName}", $"--result={resultFile}");
 
