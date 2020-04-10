@@ -155,14 +155,18 @@ namespace PublicTestRunner {
                 var doc = repoRoot.GetDirectories("doc").SingleOrDefault();
 
                 if (src == null || !src.Exists)
-                    throw new Exception();
+                    return null;
+                    //throw new Exception();
                 if (libs == null || !libs.Exists)
-                    throw new Exception();
+                    return null;
+                    //throw new Exception();
                 if (doc == null || !doc.Exists)
-                    throw new Exception();
+                    return null;
+                    //throw new Exception();
 
             } catch (Exception) {
-                throw new IOException("Unable to find repository root. 'runjobmanger' must be invoked from its default location within the BoSSS git repository.");
+                return null;
+                //throw new IOException("Unable to find repository root. 'runjobmanger' must be invoked from its default location within the BoSSS git repository.");
             }
 
             // if we get here, we probably have access to the repository root directory.
@@ -331,6 +335,15 @@ namespace PublicTestRunner {
             // ===================================
             // phase 2: wait until complete...
             // ===================================
+
+            var alreadyFinished = InteractiveShell.WorkflowMgm.AllJobs.Select(kv => kv.Value).Where(delegate (Job j) {
+                var s = j.Status;
+                return (s != JobStatus.Failed || s != JobStatus.FinishedSuccessful);
+            }).ToArray();
+
+            foreach ( var t in alreadyFinished) {
+                Console.WriteLine("already finished: " + t.Name + ": " + t.Status);
+            }
 
             while (InteractiveShell.WorkflowMgm.BlockUntilAnyJobTerminate(out var job, PollingIntervallSeconds: 120) > 0) {
 
