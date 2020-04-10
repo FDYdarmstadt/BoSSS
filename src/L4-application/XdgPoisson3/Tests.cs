@@ -76,16 +76,14 @@ namespace BoSSS.Application.XdgPoisson3 {
         
 
 
+#if !DEBUG
         /// <summary>
         /// Grid scale tests for condition numbers
         /// </summary>
         [Test]
         public static void ScalingCircle2D(
-#if DEBUG
-            [Values(1)] 
-#else
+            //[Values(1)] 
             [Values(1,2,3,4)] 
-#endif
             int dgDegree
             ) //
         {
@@ -97,14 +95,14 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             int[] ResS = null;
             switch(dgDegree) {
-#if DEBUG
-                case 1: ResS = new int[] { 8, 16, 32, 64 }; break;
-#else
+//#if DEBUG
+//                case 1: ResS = new int[] { 8, 16, 32, 64 }; break;
+//#else
                 case 1: ResS = new int[] { 8, 9, 16, 17, 32, 33, 64, 65, 128 }; break;
                 case 2: ResS = new int[] { 8, 9, 16, 17, 32, 33, 64, 65 }; break;
                 case 3: ResS = new int[] { 8, 9, 16, 17, 32, 33, 64 }; break;
                 case 4: ResS = new int[] { 8, 9, 16, 17, 32, 33 }; break;
-#endif
+//#endif
                 default: throw new NotImplementedException();
             }
             
@@ -128,7 +126,6 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             ConditionNumberScalingTest.Perform(Controls, plotAndWait:true, title: "ScalingCircle2D");
         }
-
-       
+#endif       
     }
 }
