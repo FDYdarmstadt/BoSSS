@@ -448,7 +448,12 @@ namespace PublicTestRunner {
 
         static public (Job j, string resFileName, string Testname) JobManagerRun(Assembly a, string TestName, BatchProcessorClient bpc, string[] AdditionalFiles, string prefix, int NoOfMpiProcs) {
             string dor = DebugOrReleaseSuffix;
-            Job j = new Job($"{prefix}-{TestName}-{dor}", typeof(PublicTestRunnerMain));
+            string jName;
+            if(NoOfMpiProcs <= 1)
+                jName = $"{prefix}-{TestName}-{dor}";
+            else
+                jName = $"{prefix}p{NoOfMpiProcs}-{TestName}-{dor}";
+            Job j = new Job(jName, typeof(PublicTestRunnerMain));
             string resultFile = $"result-{TestName}-{dor}.xml";
             j.MySetCommandLineArguments("nunit3", Path.GetFileName(a.Location), $"--test={TestName}", $"--result={resultFile}");
 
