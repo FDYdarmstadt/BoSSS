@@ -118,17 +118,24 @@ namespace PublicTestRunner {
             var R = new List<(Assembly Asbly, int NoOfProcs)>();
 
             foreach (var t in MpiFullTests) {
-                bool conains = R.Contains(t, (itm1, itm2) => ((itm1.NoOfProcs == itm2.NoOfProcs) && itm1.Asbly.Equals(itm2.type.Assembly)));
+                bool contains = R.Contains(t, (itm1, itm2) => ((itm1.NoOfProcs == itm2.NoOfProcs) && itm1.Asbly.Equals(itm2.type.Assembly)));
+                if(!contains) {
+                    R.Add((t.type.Assembly, t.NoOfProcs));
+                }
+
             }
 #if !DEBUG
             foreach (var t in MpiReleaseOnlyTests) {
-                bool conains = R.Contains(t, (itm1, itm2) => ((itm1.NoOfProcs == itm2.NoOfProcs) && itm1.Asbly.Equals(itm2.type.Assembly)));
+                bool contains = R.Contains(t, (itm1, itm2) => ((itm1.NoOfProcs == itm2.NoOfProcs) && itm1.Asbly.Equals(itm2.type.Assembly)));
+                if (!contains) {
+                    R.Add((t.type.Assembly, t.NoOfProcs));
+                }
             }
 #endif
             return R.ToArray();
         }
 
-        static string LocateFile(string SomeFileName) {
+        static string[] LocateFile(string PartialPath) {
             DirectoryInfo repoRoot;
             try {
                 var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
@@ -139,39 +146,39 @@ namespace PublicTestRunner {
                 var doc = repoRoot.GetDirectories("doc").SingleOrDefault();
 
                 if (src == null || !src.Exists)
-                    return null;
+                    throw new Exception();
                 if (libs == null || !libs.Exists)
-                    return null;
+                    throw new Exception();
                 if (doc == null || !doc.Exists)
-                    return null;
+                    throw new Exception();
 
             } catch (Exception) {
-                return null; // unable to find file
+                throw new IOException("Unable to find repository root. 'runjobmanger' must be invoked from its default location within the BoSSS git repository.");
             }
 
             // if we get here, we probably have access to the repository root directory.
-            string[] r = LocateFileRecursive("", repoRoot, SomeFileName);
+            string[] r = LocateFileRecursive("", repoRoot, PartialPath);
             if(r == null || r.Length <= 0) {
-                throw new IOException("unable to find file '" + SomeFileName  + "'"); 
+                throw new IOException("unable to find file '" + PartialPath  + "'"); 
             }
-            if(r.Length > 1) {
-                throw new IOException("found multiple matches for '" + SomeFileName + "'");
-            }
-
-            return r[0];
+            
+            return r;
         }
 
 
         static string[] LocateFileRecursive(string RelPath, DirectoryInfo absPath, string SomeFileName) {
             List<string> ret = new List<string>();
 
+            string _SomeFileName = "*" + SomeFileName;
 
-            foreach(var f in absPath.GetFiles()) {
+            foreach (var f in absPath.GetFiles()) {
                 string RelName = RelPath + f.Name;
 
                 if (RelName.EndsWith(SomeFileName))
                     ret.Add(f.FullName);
                 else if (SomeFileName.WildcardMatch(RelName))
+                    ret.Add(f.FullName);
+                else if (_SomeFileName.WildcardMatch(RelName))
                     ret.Add(f.FullName);
 
             }
@@ -209,8 +216,7 @@ namespace PublicTestRunner {
 
                             if(dc != null) {
                                 foreach(string someFile in dc.SomeFileNames) {
-                                    string filepath = LocateFile(someFile);
-                                    s.Add(filepath);
+                                    s.AddRange(LocateFile(someFile));
                                 }
                             }
                         }
@@ -245,6 +251,7 @@ namespace PublicTestRunner {
             // ===================================
 
             string DateNtime = DateTime.Now.ToString("MMMdd_HHmm");
+            Console.WriteLine($"Using prefix'{DateNtime}' for all jobs.");
 
             InteractiveShell.ReloadExecutionQueues();
             InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime);
@@ -288,12 +295,28 @@ namespace PublicTestRunner {
                 }
             }
 
+            Console.WriteLine($"Found {allTests} individual tests ({DebugOrReleaseSuffix}):");
+            int cnt = 0;
+            foreach (var t in allTests) {
+                cnt++;
+                Console.WriteLine($"  #{cnt}: {t.testname}");
+                Console.WriteLine($"     {t.shortname}");
+                Console.WriteLine($"     {t.NoOfProcs} MPI processors.");
+            }
 
+            Console.WriteLine("******* Starting job deployment *******");
+
+
+            cnt = 0;
             var allJobs = new List<(Job job, string ResFile, string testname)>();
             foreach(var t in allTests) {
+                cnt++;
+                Console.WriteLine($"Deploying {cnt} of {allTests.Count}...");
                 var j = JobManagerRun(t.ass, t.testname, bpc, t.depfiles, DateNtime, t.NoOfProcs);
                 allJobs.Add(j);
             }
+
+            Console.WriteLine("******* All jobs deployed *******");
 
             // ===================================
             // phase 2: wait until complete...
