@@ -302,7 +302,11 @@ namespace BoSSS.Application.Matrix_MPItest {
         [Test]
         public static void SubMatrixTest(
             [Values(XDGusage.none, XDGusage.mixed1, XDGusage.mixed2, XDGusage.all)] XDGusage UseXdg,
+#if DEBUG
+            [Values(1)] int DGOrder,
+#else
             [Values(1, 3)] int DGOrder,
+#endif
             [Values(false, true)] bool compressL1,
             [Values(false, true)] bool compressL2) { 
 
@@ -506,7 +510,11 @@ namespace BoSSS.Application.Matrix_MPItest {
         [Test]
         public static void SpMVTest(
             [Values(XDGusage.none, XDGusage.mixed1, XDGusage.mixed2, XDGusage.all)] XDGusage UseXdg,
+#if DEBUG
+            [Values(1)] int DGOrder,
+#else
             [Values(1, 3)] int DGOrder,
+#endif
             [Values(false, true)] bool compressL1,
             [Values(false, true)] bool compressL2) {
 
