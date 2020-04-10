@@ -104,13 +104,20 @@ namespace PublicTestRunner {
             var R = new HashSet<Assembly>();
 
             foreach(var t in FullTest) {
-                R.Add(t.Assembly);
+                //Console.WriteLine("test type: " + t.FullName);
+                var a = t.Assembly;
+                //Console.WriteLine("  assembly: " + a.FullName + " @ " + a.Location);
+                bool added = R.Add(a);
+                //Console.WriteLine("  added? " + added);
             }
 #if !DEBUG
             foreach (var t in ReleaseOnlyTests) {
                 R.Add(t.Assembly);
             }
 #endif
+
+            
+
             return R.ToArray();
         }
 
@@ -118,11 +125,13 @@ namespace PublicTestRunner {
             var R = new List<(Assembly Asbly, int NoOfProcs)>();
 
             foreach (var t in MpiFullTests) {
+                //Console.WriteLine("test type: " + t.type.FullName + " (" + t.NoOfProcs + " procs).");
+                //Console.WriteLine("  assembly: " + t.type.Assembly.FullName + " @ " + t.type.Assembly.Location);
                 bool contains = R.Contains(t, (itm1, itm2) => ((itm1.NoOfProcs == itm2.NoOfProcs) && itm1.Asbly.Equals(itm2.type.Assembly)));
                 if(!contains) {
                     R.Add((t.type.Assembly, t.NoOfProcs));
                 }
-
+                //Console.WriteLine("  added? " + (!contains));
             }
 #if !DEBUG
             foreach (var t in MpiReleaseOnlyTests) {
@@ -295,7 +304,7 @@ namespace PublicTestRunner {
                 }
             }
 
-            Console.WriteLine($"Found {allTests} individual tests ({DebugOrReleaseSuffix}):");
+            Console.WriteLine($"Found {allTests.Count} individual tests ({DebugOrReleaseSuffix}):");
             int cnt = 0;
             foreach (var t in allTests) {
                 cnt++;
@@ -304,15 +313,16 @@ namespace PublicTestRunner {
                 Console.WriteLine($"     {t.NoOfProcs} MPI processors.");
             }
 
-            Console.WriteLine("******* Starting job deployment *******");
+            Console.WriteLine("******* Starting job deployment/submission *******");
 
 
             cnt = 0;
             var allJobs = new List<(Job job, string ResFile, string testname)>();
             foreach(var t in allTests) {
                 cnt++;
-                Console.WriteLine($"Deploying {cnt} of {allTests.Count}...");
+                Console.WriteLine($"Submitting {cnt} of {allTests.Count}...");
                 var j = JobManagerRun(t.ass, t.testname, bpc, t.depfiles, DateNtime, t.NoOfProcs);
+                Console.WriteLine($"Successfully submitted {j.j.Name}.");
                 allJobs.Add(j);
             }
 
