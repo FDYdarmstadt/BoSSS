@@ -89,8 +89,13 @@ namespace BoSSS.Application.Matrix_MPItest {
         /// </summary>
         [Test]
         public static void MultiplyTest(
-            [Values(XDGusage.none, XDGusage.mixed2, XDGusage.all)] XDGusage UseXdg,
+#if DEBUG
+            [Values(XDGusage.none, XDGusage.mixed1)] XDGusage UseXdg,
+            [Values(1)] int DGOrder,
+#else
+            [Values(XDGusage.none, XDGusage.mixed1, XDGusage.mixed2, XDGusage.all)] XDGusage UseXdg,
             [Values(2)] int DGOrder,
+#endif
             [Values(false)] bool compressL1,
             [Values(false, true)] bool compressL2) { 
 
@@ -301,10 +306,11 @@ namespace BoSSS.Application.Matrix_MPItest {
         /// </summary>
         [Test]
         public static void SubMatrixTest(
-            [Values(XDGusage.none, XDGusage.mixed1, XDGusage.mixed2, XDGusage.all)] XDGusage UseXdg,
 #if DEBUG
+            [Values(XDGusage.none, XDGusage.mixed1)] XDGusage UseXdg,
             [Values(1)] int DGOrder,
 #else
+            [Values(XDGusage.none, XDGusage.mixed1, XDGusage.mixed2, XDGusage.all)] XDGusage UseXdg,
             [Values(1, 3)] int DGOrder,
 #endif
             [Values(false, true)] bool compressL1,
@@ -509,10 +515,11 @@ namespace BoSSS.Application.Matrix_MPItest {
         /// </summary>
         [Test]
         public static void SpMVTest(
-            [Values(XDGusage.none, XDGusage.mixed1, XDGusage.mixed2, XDGusage.all)] XDGusage UseXdg,
 #if DEBUG
+            [Values(XDGusage.none, XDGusage.mixed1)] XDGusage UseXdg,
             [Values(1)] int DGOrder,
 #else
+            [Values(XDGusage.none, XDGusage.mixed1, XDGusage.mixed2, XDGusage.all)] XDGusage UseXdg,
             [Values(1, 3)] int DGOrder,
 #endif
             [Values(false, true)] bool compressL1,
