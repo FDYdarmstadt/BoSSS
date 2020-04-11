@@ -61,13 +61,13 @@ namespace PublicTestRunner {
             typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
             typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
             typeof(BoSSS.Application.ExternalBinding.Initializer),
+            typeof(BoSSS.Application.TutorialTests.AllUpTest),
             typeof(MPITest.Program)
         };
 
         static Type[] ReleaseOnlyTests = new Type[] {
             typeof(BoSSS.Application.TutorialTests.AllUpTest),
             typeof(CNS.Program),
-            typeof(BoSSS.Application.TutorialTests.AllUpTest),
             typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
             typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
             typeof(LTSTests.Program),
@@ -467,18 +467,37 @@ namespace PublicTestRunner {
             string prefix, 
             int NoOfMpiProcs) {
 
+            // define unique name (not to long) for the job
             string dor = DebugOrReleaseSuffix;
-            string jName;
-            if(NoOfMpiProcs <= 1)
-                jName = $"{prefix}-{Shortname}-{dor}";
-            else
-                jName = $"{prefix}p{NoOfMpiProcs}-{Shortname}-{dor}";
-            Job j = new Job(jName, typeof(PublicTestRunnerMain));
+            string final_jName;
+            {
+                string jName;
+                if (NoOfMpiProcs <= 1)
+                    jName = $"{prefix}-{dor}-{Shortname}";
+                else
+                    jName = $"{prefix}p{NoOfMpiProcs}-{dor}-{Shortname}";
 
-            string resultFile = $"result-{TestName}-{dor}.xml";
+                if (jName.Length > 127) {
+                    // Name length limit set by MS HPC cluster
+                    jName = jName.Substring(0, 127);
+                }
+                int counter = 2;
+                final_jName = jName;
+                while (InteractiveShell.WorkflowMgm.AllJobs.ContainsKey(final_jName)) {
+                    string suffix = "_" + counter;
+                    if (jName.Length + suffix.Length > 127) {
+                        final_jName = jName.Substring(0, 127 - suffix.Length);
+                    } else {
+                        final_jName = jName;
+                    }
+                    final_jName = final_jName + suffix;
+                }
+            }
+
+            // create job
+            Job j = new Job(final_jName, typeof(PublicTestRunnerMain));
+            string resultFile = $"result-{dor}-{TestName}.xml";
             j.MySetCommandLineArguments("nunit3", Path.GetFileName(a.Location), $"--test={TestName}", $"--result={resultFile}");
-
-
             foreach (var f in AdditionalFiles) {
                 j.AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(File.ReadAllBytes(f), Path.GetFileName(f)));
             }
@@ -613,6 +632,7 @@ namespace PublicTestRunner {
 
 
         static int Main(string[] args) {
+            //Debugger.Launch();
             Console.WriteLine("BoSSS NUnit test runner.");
 
             args = BoSSS.Solution.Application.ArgsFromEnvironmentVars(args);

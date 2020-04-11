@@ -126,7 +126,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             // launch the app
             // ==============
-            BoSSS.Solution.Application.InitMPI();
+            bool IinitializedMPI = BoSSS.Solution.Application.InitMPI();
 
             switch (mode) {
                 case Modes.Worksheet:
@@ -223,8 +223,8 @@ namespace BoSSS.Application.BoSSSpad {
                 throw new NotImplementedException();
             }
 
-            if (csMPI.Raw.Initialized())
-                csMPI.Raw.mpiFinalize();
+            if (IinitializedMPI)
+                BoSSS.Solution.Application.FinalizeMPI();
 
             return errCount;
         }

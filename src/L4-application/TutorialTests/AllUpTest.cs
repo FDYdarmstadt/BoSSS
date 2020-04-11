@@ -47,11 +47,11 @@ namespace BoSSS.Application.TutorialTests {
 
             
 
-            string preExistingDb = BoSSS.Application.BoSSSpad.InteractiveShell.GetDefaultDatabaseDir();
-            if (Directory.Exists(preExistingDb)) {
-                //preExistingDb.Delete(true);
-                Directory.Delete(preExistingDb, true);
-            }
+            //string preExistingDb = BoSSS.Application.BoSSSpad.InteractiveShell.GetDefaultDatabaseDir();
+            //if (Directory.Exists(preExistingDb)) {
+            //    //preExistingDb.Delete(true);
+            //    Directory.Delete(preExistingDb, true);
+            //}
         }
 
         //static string DirectoryOffset = Path.Combine("..", "..", "..", "..", "..", "doc", "handbook");
@@ -98,15 +98,6 @@ namespace BoSSS.Application.TutorialTests {
             //"ParameterStudy/ParameterStudy.tex"
 
             )] string TexFileName) {
-
-
-            // remove - if present - any pre-existing default database
-
-            string preExistingDb = BoSSS.Application.BoSSSpad.InteractiveShell.GetDefaultDatabaseDir();
-            if (Directory.Exists(preExistingDb)) {
-                Directory.Delete(preExistingDb, true);
-            }
-            
 
             // run test:
             string FullTexName = Path.Combine(DirectoryOffset, TexFileName);
