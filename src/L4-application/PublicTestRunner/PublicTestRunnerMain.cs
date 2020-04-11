@@ -61,7 +61,7 @@ namespace PublicTestRunner {
             typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
             typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
             typeof(BoSSS.Application.ExternalBinding.Initializer),
-            typeof(BoSSS.Application.TutorialTests.AllUpTest),
+            //typeof(BoSSS.Application.TutorialTests.AllUpTest),
             typeof(MPITest.Program)
         };
 
