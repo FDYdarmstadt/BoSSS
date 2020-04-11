@@ -149,12 +149,8 @@ namespace BoSSS.Application.BoSSSpad {
         IScheduler Scheduler {
             get {
                 if (m__scheduler == null) {
-                    Console.WriteLine("MSHPC2012Clinet: connecting to server...");
-                    Console.Out.Flush();
                     m__scheduler = new Scheduler();
                     m__scheduler.Connect(ServerName);
-                    Console.WriteLine("done.");
-                    Console.Out.Flush();
                 }
                 return m__scheduler;
             }
@@ -168,8 +164,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             int id = int.Parse(idToken);
 
-            Console.WriteLine("MSHPC2012Clinet: status eval...");
-            Console.Out.Flush();
+            
 
             List<SchedulerJob> allFoundJobs = new List<SchedulerJob>();
 
@@ -229,8 +224,7 @@ namespace BoSSS.Application.BoSSSpad {
                 throw new NotImplementedException("Unknown job state: " + JD.State);
             }
 
-            Console.WriteLine("done.");
-            Console.Out.Flush();
+            
         }
 
 
@@ -256,8 +250,8 @@ namespace BoSSS.Application.BoSSSpad {
         public override string Submit(Job myJob) {
             string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
             
-            Console.WriteLine("MsHPC2012Client: submitting job...");
-            Console.Out.Flush();
+            //Console.WriteLine("MsHPC2012Client: submitting job...");
+            //Console.Out.Flush();
 
 
             ISchedulerJob job = null;
@@ -265,9 +259,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             // Create a job and add a task to the job.
             job = Scheduler.CreateJob();
-            Console.WriteLine("MsHPC2012Client: job created...");
-            Console.Out.Flush();
-
+            
             job.Name = myJob.Name;
             job.Project = PrjName;
             job.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
@@ -276,8 +268,6 @@ namespace BoSSS.Application.BoSSSpad {
             job.UserName = Username;
             
             task = job.CreateTask();
-            Console.WriteLine("MsHPC2012Client: task job...");
-            Console.Out.Flush();
             task.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
             task.MinimumNumberOfCores = myJob.NumberOfMPIProcs;
 
@@ -309,13 +299,9 @@ namespace BoSSS.Application.BoSSSpad {
 
 
             job.AddTask(task);
-            Console.WriteLine("MsHPC2012Client: task added...");
-            Console.Out.Flush();
 
             // Start the job.
             Scheduler.SubmitJob(job, Username != null ? Username : null, Password);
-            Console.WriteLine("MsHPC2012Client: done.");
-            Console.Out.Flush();
 
             return job.Id.ToString();
         }

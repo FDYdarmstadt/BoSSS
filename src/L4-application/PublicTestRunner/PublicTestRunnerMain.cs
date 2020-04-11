@@ -327,7 +327,7 @@ namespace PublicTestRunner {
             var allJobs = new List<(Job job, string ResFile, string testname)>();
             foreach(var t in allTests) {
                 cnt++;
-                Console.WriteLine($"Submitting {cnt} of {allTests.Count}...");
+                Console.WriteLine($"Submitting {cnt} of {allTests.Count} ({t.shortname})...");
                 var j = JobManagerRun(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs);
                 Console.WriteLine($"Successfully submitted {j.j.Name}.");
                 allJobs.Add(j);
@@ -488,6 +488,7 @@ namespace PublicTestRunner {
                 final_jName = jName;
                 while (InteractiveShell.WorkflowMgm.AllJobs.ContainsKey(final_jName)) {
                     string suffix = "_" + counter;
+                    counter++;
                     if (jName.Length + suffix.Length > 127) {
                         final_jName = jName.Substring(0, 127 - suffix.Length);
                     } else {
