@@ -217,6 +217,9 @@ namespace PublicTestRunner {
                     var mmm = t.GetMethods();
 
                     foreach(var m in mmm) {
+                        if (t.IsAbstract && !m.IsStatic)
+                            continue;
+                        
                         if(m.GetCustomAttribute(typeof(TestAttribute)) != null) {
                             r.Add(t.FullName + "." +  m.Name);
                             l.Add(Path.GetFileNameWithoutExtension(a.ManifestModule.Name) + "#" + m.Name);
