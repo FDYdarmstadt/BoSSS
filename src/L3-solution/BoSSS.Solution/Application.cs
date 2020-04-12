@@ -248,12 +248,10 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// searches for the User- or Machine-environment variable 'BOSSS_INSTALL'
-        /// and verifies the existence of this directory.
+        /// respective location of native libraries
         /// </summary>
-        /// <returns></returns>
-        public static string GetBoSSSInstallDir() {
-            return BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir(m_Logger);
+        public static string GetNativeLibraryDir() {
+            return BoSSS.Foundation.IO.Utils.GetNativeLibraryDir(m_Logger);
         }
 
 
@@ -301,7 +299,7 @@ namespace BoSSS.Solution {
 
             ilPSP.Environment.Bootstrap(
                 args,
-                GetBoSSSInstallDir(),
+                GetNativeLibraryDir(),
                 out bool _MustFinalizeMPI);
 
             if(_MustFinalizeMPI) {

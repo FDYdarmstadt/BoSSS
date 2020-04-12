@@ -31,7 +31,7 @@ namespace ilPSP {
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
         private static extern void SetDllDirectory(string lpPathName);
-                     
+
 
         /// <summary>
         /// checks for the native library perquisites, inits MPI
@@ -48,13 +48,13 @@ namespace ilPSP {
         /// this function; (i.e. this is the first call to this method in the
         /// whole application).
         /// </param>
-        /// <param name="ilPSP_Directory">
-        /// optional directory to search for native libraries. 
+        /// <param name="__nativeDir">
+        /// primary directory to search for native libraries. 
         /// </param>
         /// <returns>
         /// File directory for native files.
         /// </returns>
-        public static string Bootstrap(string[] CommandLineArgs, string ilPSP_Directory, out bool mpiInitialized) {
+        public static string Bootstrap(string[] CommandLineArgs, string __nativeDir, out bool mpiInitialized) {
             //be forgiving on multiple calls
             mpiInitialized = false;
             string ret = "";
@@ -62,7 +62,9 @@ namespace ilPSP {
                 return ret;
             }
 
-            
+
+            var nativeDir = __nativeDir == null ? default(DirectoryInfo) : new DirectoryInfo(__nativeDir);
+
             StdOut = new DuplicatingTextWriter(new StreamWriter(Console.OpenStandardOutput()), 25, false);
             Console.SetOut(StdOut);
             StdErr = new DuplicatingTextWriter(new StreamWriter(Console.OpenStandardError()), 1, false);
@@ -75,71 +77,7 @@ namespace ilPSP {
                 // MS windows 
                 // ++++++++++
 
-                // search for "amd64"  subdirectories locally (in application directory)
-                // =====================================================================
-                DirectoryInfo nativeDir = null; // directory where we search for native lib's
-                {
-                    DirectoryInfo di = null;
-
-                    System.Reflection.Assembly a = System.Reflection.Assembly.GetEntryAssembly();
-                    if (a == null) {
-                        // Entry assembly might be null if called from
-                        // unmanaged code; fall back to executing assembly in
-                        // this case
-                        a = System.Reflection.Assembly.GetExecutingAssembly();
-                    }
-
-                    di = new DirectoryInfo(Path.GetDirectoryName(a.Location));
-
-                    if (IntPtr.Size == 8) {
-                        // seem to run on 64-Bit windows
-                        //Console.WriteLine("running 64 bit");
-                        nativeDir = di.GetDirectories("amd64").FirstOrDefault();
-                    } else if (IntPtr.Size == 4) {
-                        // seem to run on 32-Bit windows
-                        nativeDir = di.GetDirectories("x86").FirstOrDefault();
-                        
-                    } else {
-                        throw new ApplicationException("something very strange: IntPtr.Size == " + IntPtr.Size + ".");
-                    }
-                }
-
-
-                // if not found, search for a BoSSS-Installation globally
-                // ======================================================
-
-                if (nativeDir == null || !nativeDir.Exists) {
-
-                    DirectoryInfo _di = null;
-
-                    if (ilPSP_Directory != null && ilPSP_Directory.Length > 0) {
-                        // search in the path of the optional ilPSP directory
-                        // ++++++++++++++++++++++++++++++++++++++++++++++++++
-
-                        DirectoryInfo d = new DirectoryInfo(ilPSP_Directory);
-                        _di = new DirectoryInfo(Path.Combine(d.FullName, "bin", "native", "win"));
-                        if (!_di.Exists) {
-                            Console.Error.WriteLine("WARNING: illegal BoSSS installation; missing directory '" + _di.FullName + "';");
-                        }
-                    } else {
-                        Console.Error.WriteLine ("WARNING: Native libraries: local search failed, missing BOSSS_INSTALL - depending on system setings.");
-                        _di = new DirectoryInfo (".");
-                    }
-
-                    if (IntPtr.Size == 8) {
-                        // seem to run on 64-Bit windows
-                        //Console.WriteLine("running 64 bit");
-                        nativeDir = _di.GetDirectories("amd64").FirstOrDefault();
-                    } else if (IntPtr.Size == 4) {
-                        // seem to run on 32-Bit windows
-                        Console.Error.WriteLine ("Warning: seem to run on 32 bit - unless you build native libraries yourself, this is not supported; expecting libraries in directory 'x86'.");
-                        nativeDir = _di.GetDirectories("x86").FirstOrDefault();
-                    } else {
-                        throw new ApplicationException("something very strange: IntPtr.Size == " + IntPtr.Size + ".");
-                    }
-
-                }
-
+                
                 // error
                 // =====
 
@@ -152,82 +90,13 @@ namespace ilPSP {
                 
                 // search for the right Dll's (either 64 or 32 Bit)
                 SetDllDirectory(nativeDir.FullName);
-                MPI.Wrappers.Utils.DynLibLoader.AdditionalLibrarySearchPath = nativeDir.FullName;
+                MPI.Wrappers.Utils.DynLibLoader.PrimaryLibrarySearchPath = nativeDir.FullName;
                 ret = nativeDir.FullName;
 
                 m_BootStrapDone = true;
 
             } else if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX) {
-                // ++++
-                // Unix
-                // ++++
-
-                // search for "amd64"  subdirectories locally (in application directory)
-                // =====================================================================
-                DirectoryInfo nativeDir = null; // directory where we search for native lib's
-                {
-                    DirectoryInfo di = null;
-
-                    System.Reflection.Assembly a = System.Reflection.Assembly.GetEntryAssembly ();
-                    if (a == null) {
-                        // Entry assembly might be null if called from
-                        // unmanaged code; fall back to executing assembly in
-                        // this case
-                        a = System.Reflection.Assembly.GetExecutingAssembly ();
-                    }
-
-                    di = new DirectoryInfo (Path.GetDirectoryName (a.Location));
-
-                    if (IntPtr.Size == 8) {
-                        // seem to run on 64-Bit windows
-                        //Console.WriteLine("running 64 bit");
-                        nativeDir = di.GetDirectories ("amd64-openmpi").FirstOrDefault ();
-                    } else if (IntPtr.Size == 4) {
-                        // seem to run on 32-Bit windows
-                        Console.Error.WriteLine ("Warning: seem to run on 32 bit - unless you build native libraries yourself, this is not supported.");
-
-                    } else {
-                        throw new ApplicationException ("something very strange: IntPtr.Size == " + IntPtr.Size + ".");
-                    }
-                }
-
-
-                // if not found, search for a BoSSS-Installation globally
-                // ======================================================
-
-                if (nativeDir == null || !nativeDir.Exists) {
-
-                    DirectoryInfo _di = null;
-
-                    if (ilPSP_Directory != null && ilPSP_Directory.Length > 0) {
-                        // search in the path of the optional ilPSP directory
-                        // ++++++++++++++++++++++++++++++++++++++++++++++++++
-
-                        DirectoryInfo d = new DirectoryInfo (ilPSP_Directory);
-                        _di = new DirectoryInfo (Path.Combine (d.FullName, "bin", "native", "linux"));
-                        if (!_di.Exists) {
-                            Console.Error.WriteLine ("WARNING: illegal BoSSS installation; missing directory '" + _di.FullName + "';");
-                        }
-                    } else {
-                        Console.Error.WriteLine ("WARNING: Native libraries: local search failed, missing BOSSS_INSTALL - depending on system setings.");
-                        _di = new DirectoryInfo (".");
-                    }
-
-                    if (IntPtr.Size == 8) {
-                        // seem to run on 64-Bit windows
-                        //Console.WriteLine("running 64 bit");
-                        nativeDir = _di.GetDirectories ("amd64-openmpi").FirstOrDefault ();
-                    } else if (IntPtr.Size == 4) {
-                        // seem to run on 32-Bit linux
-                        nativeDir = _di.GetDirectories ("x86").FirstOrDefault ();
-                    } else {
-                        throw new ApplicationException ("something very strange: IntPtr.Size == " + IntPtr.Size + ".");
-                    }
-
-                }
-
-                // error
-                // =====
+               
 
                 if (nativeDir == null || !nativeDir.Exists)
                     throw new ApplicationException ("unable to do native library bootstrapping: missing directory 'x86' or 'amd64-openmpi'");
@@ -241,14 +110,14 @@ namespace ilPSP {
                     ld_library_path = "";
                 ld_library_path = nativeDir.FullName + ":" + ld_library_path;
                 System.Environment.SetEnvironmentVariable ("LD_LIBRARY_PATH", ld_library_path);
-                MPI.Wrappers.Utils.DynLibLoader.AdditionalLibrarySearchPath = nativeDir.FullName;
+                MPI.Wrappers.Utils.DynLibLoader.PrimaryLibrarySearchPath = nativeDir.FullName;
 
 
                 ret = nativeDir.FullName;
 
                 m_BootStrapDone = true;
             } else {
-                Console.WriteLine("WARNING: Unable to determine os type (MS Windows od Unix?).");
+                Console.WriteLine("WARNING: Unable to determine os type (MS Windows or Unix?).");
                 Console.WriteLine("WARNING: No bootstrapping performed");
             }
 
@@ -264,7 +133,16 @@ namespace ilPSP {
             // ===================
             m_MpiEnv = new MPIEnviroment();
             StdoutOnlyOnRank0 = true;
+            NativeLibraryDir = ret;
             return ret;
+        }
+
+        /// <summary>
+        /// Directory where native libraries are located
+        /// </summary>
+        public static string NativeLibraryDir {
+            get;
+            private set;
         }
 
         /// <summary>

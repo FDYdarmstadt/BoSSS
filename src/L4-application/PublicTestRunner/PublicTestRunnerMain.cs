@@ -46,57 +46,57 @@ namespace PublicTestRunner {
         /// </summary>
         static Type[] FullTest = new Type[] {
             typeof(BoSSS.Application.DerivativeTest.DerivativeTestMain),
-            typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
-            typeof(BoSSS.Application.Matrix_MPItest.AllUpTest),
-            typeof(BoSSS.Application.ElementTests.ElementTests),
-            typeof(BoSSS.Application.DatabaseTests.DatabaseTestsProgram),
-            typeof(CutCellQuadrature.Program),
-            typeof(BoSSS.Application.XDGTest.UnitTest),
-            typeof(BoSSS.Application.SpecFEM.AllUpTest),
-            typeof(BoSSS.Application.ipViscosity.TestSolution),
-            typeof(BoSSS.Application.MultigridTest.MultigridMain),
-            typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
-            typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
-            //typeof(BoSSS.Application.LevelSetTestBench.LevelSetTestBenchMain),
-            typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main),
-            typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
-            typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
-            typeof(BoSSS.Application.ExternalBinding.Initializer),
-            //typeof(BoSSS.Application.TutorialTests.AllUpTest),
+            //typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
+            //typeof(BoSSS.Application.Matrix_MPItest.AllUpTest),
+            //typeof(BoSSS.Application.ElementTests.ElementTests),
+            //typeof(BoSSS.Application.DatabaseTests.DatabaseTestsProgram),
+            //typeof(CutCellQuadrature.Program),
+            //typeof(BoSSS.Application.XDGTest.UnitTest),
+            //typeof(BoSSS.Application.SpecFEM.AllUpTest),
+            //typeof(BoSSS.Application.ipViscosity.TestSolution),
+            //typeof(BoSSS.Application.MultigridTest.MultigridMain),
+            //typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
+            //typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
+            ////typeof(BoSSS.Application.LevelSetTestBench.LevelSetTestBenchMain),
+            //typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main),
+            //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
+            //typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
+            //typeof(BoSSS.Application.ExternalBinding.Initializer),
+            ////typeof(BoSSS.Application.TutorialTests.AllUpTest),
             typeof(MPITest.Program)
         };
 
         static Type[] ReleaseOnlyTests = new Type[] {
-            typeof(BoSSS.Application.TutorialTests.AllUpTest),
-            typeof(CNS.Program),
+            //typeof(BoSSS.Application.TutorialTests.AllUpTest),
+            //typeof(CNS.Program),
             typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
-            typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
-            typeof(LTSTests.Program),
-            //typeof(BoSSS.Application.XNSE_ViscosityAgglomerationTest.XNSE_ViscosityAgglomerationTestMain),
-            typeof(NSE_SIMPLE.SIMPLESolver),
-            typeof(BoSSS.Application.IBM_Solver.IBM_SolverMain),
-            typeof(ALTSTests.Program),
-            typeof(BoSSS.Application.XNSE_Solver.XNSE_SolverMain)
+            //typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
+            //typeof(LTSTests.Program),
+            ////typeof(BoSSS.Application.XNSE_ViscosityAgglomerationTest.XNSE_ViscosityAgglomerationTestMain),
+            typeof(NSE_SIMPLE.SIMPLESolver)
+            //typeof(BoSSS.Application.IBM_Solver.IBM_SolverMain),
+            //typeof(ALTSTests.Program),
+            //typeof(BoSSS.Application.XNSE_Solver.XNSE_SolverMain)
         };
 
         static (Type type, int NoOfProcs)[] MpiFullTests = new (Type type, int NoOfProcs)[] {
             (typeof(MPITest.Program), 4),
             (typeof(MPITest.Program), 3),
             (typeof(MPITest.Program), 2),
-            (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4),
-            (typeof(BoSSS.Application.Matrix_MPItest.AllUpTest), 4)
+            (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4)
+            //(typeof(BoSSS.Application.Matrix_MPItest.AllUpTest), 4)
         };
 
         static (Type type, int NoOfProcs)[] MpiReleaseOnlyTests = new (Type type, int NoOfProcs)[] {
             (typeof(MPITest.Program), 4),
-            (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4),
-            (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 4),
-            (typeof(BoSSS.Application.Matrix_MPItest.AllUpTest), 4),
-            (typeof(BoSSS.Application.LoadBalancingTest.LoadBalancingTestMain), 4),
-            (typeof(ALTSTests.Program), 4),
-            (typeof(CNS_MPITests.Tests.LoadBalancing.ShockTubeLoadBalancingTests), 4),
-            (typeof(HilbertTest.HilbertTest), 4),
-            (typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main), 4)
+            (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4)
+            //(typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 4),
+            //(typeof(BoSSS.Application.Matrix_MPItest.AllUpTest), 4),
+            //(typeof(BoSSS.Application.LoadBalancingTest.LoadBalancingTestMain), 4),
+            //(typeof(ALTSTests.Program), 4),
+            //(typeof(CNS_MPITests.Tests.LoadBalancing.ShockTubeLoadBalancingTests), 4),
+            //(typeof(HilbertTest.HilbertTest), 4),
+            //(typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main), 4)
         };
 
 
@@ -255,6 +255,36 @@ namespace PublicTestRunner {
             }
         }
 
+        /// <summary>
+        /// (tries to) do a recursive copy of a directory
+        /// </summary>
+        static void CopyDirectoryRec(string srcDir, string dstDir) {
+
+            void TryCopy(string sourceFileName, string destFileName) {
+                try {
+                    File.Copy(sourceFileName, destFileName, true);
+                } catch (Exception e) {
+                    Console.WriteLine("WARNING: Unable to copy to: '"
+                        + destFileName + "': " + e.GetType().Name + " says:'" + e.Message + "'");
+                }
+            }
+
+            string[] srcFiles = Directory.GetFiles(srcDir);
+
+            foreach (string srcFile in srcFiles) {
+                TryCopy(srcFile, Path.Combine(dstDir, Path.GetFileName(srcFile)));
+            }
+
+            string[] subDirs = Directory.GetDirectories(srcDir);
+            foreach (string srcAbsDir in subDirs) {
+                string srcRelDir = Path.GetFileName(srcAbsDir);
+                string dstSubDir = Path.Combine(dstDir, srcRelDir);
+                if (!Directory.Exists(dstSubDir))
+                    Directory.CreateDirectory(dstSubDir);
+                CopyDirectoryRec(srcAbsDir, dstSubDir);
+            }
+        }
+
 
         static public int JobManagerRun(string AssemblyFilter) {
 
@@ -275,8 +305,13 @@ namespace PublicTestRunner {
 
             BatchProcessorClient bpc = InteractiveShell.ExecutionQueues[1];
 
-            if(!bpc.DeployRuntime) {
-
+            DirectoryInfo NativeOverride;
+            if (!bpc.DeployRuntime) {
+                NativeOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, DateNtime + "_amd64"));
+                NativeOverride.Create();
+                CopyDirectoryRec(ilPSP.Environment.NativeLibraryDir, NativeOverride.FullName);
+            } else {
+                NativeOverride = null;
             }
 
             var allTests = new List<(Assembly ass, string testname, string shortname, string[] depfiles, int NoOfProcs)>();
@@ -329,7 +364,7 @@ namespace PublicTestRunner {
             foreach(var t in allTests) {
                 cnt++;
                 Console.WriteLine($"Submitting {cnt} of {allTests.Count} ({t.shortname})...");
-                var j = JobManagerRun(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs);
+                var j = JobManagerRun(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, NativeOverride);
                 Console.WriteLine($"Successfully submitted {j.j.Name}.");
                 allJobs.Add(j);
             }
@@ -498,7 +533,8 @@ namespace PublicTestRunner {
             BatchProcessorClient bpc, 
             string[] AdditionalFiles, 
             string prefix, 
-            int NoOfMpiProcs) {
+            int NoOfMpiProcs,
+            DirectoryInfo nativeOverride) {
 
             // define unique name (not to long) for the job
             string dor = DebugOrReleaseSuffix;
@@ -534,6 +570,9 @@ namespace PublicTestRunner {
             j.MySetCommandLineArguments("nunit3", Path.GetFileName(a.Location), $"--test={TestName}", $"--result={resultFile}");
             foreach (var f in AdditionalFiles) {
                 j.AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(File.ReadAllBytes(f), Path.GetFileName(f)));
+            }
+            if(nativeOverride != null) {
+                j.EnvironmentVars.Add(BoSSS.Foundation.IO.Utils.BOSSS_NATIVE_OVERRIDE, nativeOverride.FullName);
             }
             j.NumberOfMPIProcs = NoOfMpiProcs;
             j.Activate(bpc);

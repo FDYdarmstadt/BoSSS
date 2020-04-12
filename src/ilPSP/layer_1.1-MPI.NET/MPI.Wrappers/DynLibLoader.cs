@@ -394,7 +394,7 @@ namespace MPI.Wrappers.Utils {
         /// <summary>
         /// typically, this should initialized to the BoSSS installation directory.
         /// </summary>
-        public static string AdditionalLibrarySearchPath = null;
+        public static string PrimaryLibrarySearchPath = null;
 
         private DirectoryInfo[] GetLibrarySearchDirs(PlatformID CurrentSys) {
             List<DirectoryInfo> LibrarySearchPath = new List<DirectoryInfo>();
@@ -402,17 +402,17 @@ namespace MPI.Wrappers.Utils {
 
             // add application-defined search path
             // -----------------------------------
-            if (AdditionalLibrarySearchPath != null) {
+            if (PrimaryLibrarySearchPath != null) {
                 try {
-                    var di = new DirectoryInfo(AdditionalLibrarySearchPath);
+                    var di = new DirectoryInfo(PrimaryLibrarySearchPath);
                     if (di.Exists) {
                         LibrarySearchPath.Add(di);
-                        Info("Adding search directory: " + AdditionalLibrarySearchPath);
+                        Info("Adding search directory: " + PrimaryLibrarySearchPath);
                     } else {
-                        Warn("Explicity set installation directory " + AdditionalLibrarySearchPath + " seems non-existent.");
+                        Warn("Explicitly set installation directory " + PrimaryLibrarySearchPath + " seems non-existent.");
                     }
                 } catch (Exception exc) {
-                    Warn("Error accessing explicity set installation directory " + AdditionalLibrarySearchPath + " : " + exc.Message + " (" + exc.GetType().FullName + ")");
+                    Warn("Error accessing explicitly set installation directory " + PrimaryLibrarySearchPath + " : " + exc.Message + " (" + exc.GetType().FullName + ")");
                 }
             }
 

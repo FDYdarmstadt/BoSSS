@@ -17,11 +17,7 @@ namespace BoSSS.Application.LoadBalancingTest {
         /// </summary>
         [OneTimeSetUp]
         public static void SetUp() {
-            bool MpiInit;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out MpiInit);
+            BoSSS.Solution.Application.InitMPI();
         }
         /*
         /// <summary>
@@ -97,12 +93,6 @@ namespace BoSSS.Application.LoadBalancingTest {
                 });
         }
         */
-        /// <summary>
-        /// MPI shutdown.
-        /// </summary>
-        [OneTimeTearDown]
-        public static void OneTimeTearDown() {
-            csMPI.Raw.mpiFinalize();
-        }
+       
     }
 }
