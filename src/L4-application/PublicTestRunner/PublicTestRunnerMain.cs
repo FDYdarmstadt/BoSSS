@@ -46,37 +46,37 @@ namespace PublicTestRunner {
         /// </summary>
         static Type[] FullTest = new Type[] {
             typeof(BoSSS.Application.DerivativeTest.DerivativeTestMain),
-            //typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
-            //typeof(BoSSS.Application.Matrix_MPItest.AllUpTest),
-            //typeof(BoSSS.Application.ElementTests.ElementTests),
-            //typeof(BoSSS.Application.DatabaseTests.DatabaseTestsProgram),
-            //typeof(CutCellQuadrature.Program),
-            //typeof(BoSSS.Application.XDGTest.UnitTest),
-            //typeof(BoSSS.Application.SpecFEM.AllUpTest),
-            //typeof(BoSSS.Application.ipViscosity.TestSolution),
-            //typeof(BoSSS.Application.MultigridTest.MultigridMain),
-            //typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
-            //typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
-            ////typeof(BoSSS.Application.LevelSetTestBench.LevelSetTestBenchMain),
-            //typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main),
-            //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
-            //typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
-            //typeof(BoSSS.Application.ExternalBinding.Initializer),
-            ////typeof(BoSSS.Application.TutorialTests.AllUpTest),
+            typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
+            typeof(BoSSS.Application.Matrix_MPItest.AllUpTest),
+            typeof(BoSSS.Application.ElementTests.ElementTests),
+            typeof(BoSSS.Application.DatabaseTests.DatabaseTestsProgram),
+            typeof(CutCellQuadrature.Program),
+            typeof(BoSSS.Application.XDGTest.UnitTest),
+            typeof(BoSSS.Application.SpecFEM.AllUpTest),
+            typeof(BoSSS.Application.ipViscosity.TestSolution),
+            typeof(BoSSS.Application.MultigridTest.MultigridMain),
+            typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
+            typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
+            //typeof(BoSSS.Application.LevelSetTestBench.LevelSetTestBenchMain),
+            typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main),
+            typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
+            typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
+            typeof(BoSSS.Application.ExternalBinding.Initializer),
+            //typeof(BoSSS.Application.TutorialTests.AllUpTest),
             typeof(MPITest.Program)
         };
 
         static Type[] ReleaseOnlyTests = new Type[] {
-            //typeof(BoSSS.Application.TutorialTests.AllUpTest),
-            //typeof(CNS.Program),
+            typeof(BoSSS.Application.TutorialTests.AllUpTest),
+            typeof(CNS.Program),
             typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
-            //typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
-            //typeof(LTSTests.Program),
-            ////typeof(BoSSS.Application.XNSE_ViscosityAgglomerationTest.XNSE_ViscosityAgglomerationTestMain),
-            typeof(NSE_SIMPLE.SIMPLESolver)
-            //typeof(BoSSS.Application.IBM_Solver.IBM_SolverMain),
-            //typeof(ALTSTests.Program),
-            //typeof(BoSSS.Application.XNSE_Solver.XNSE_SolverMain)
+            typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
+            typeof(LTSTests.Program),
+            //typeof(BoSSS.Application.XNSE_ViscosityAgglomerationTest.XNSE_ViscosityAgglomerationTestMain),
+            typeof(NSE_SIMPLE.SIMPLESolver),
+            typeof(BoSSS.Application.IBM_Solver.IBM_SolverMain),
+            typeof(ALTSTests.Program),
+            typeof(BoSSS.Application.XNSE_Solver.XNSE_SolverMain)
         };
 
         static (Type type, int NoOfProcs)[] MpiFullTests = new (Type type, int NoOfProcs)[] {
@@ -84,7 +84,6 @@ namespace PublicTestRunner {
             (typeof(MPITest.Program), 3),
             (typeof(MPITest.Program), 2),
             (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4)
-            //(typeof(BoSSS.Application.Matrix_MPItest.AllUpTest), 4)
         };
 
         static (Type type, int NoOfProcs)[] MpiReleaseOnlyTests = new (Type type, int NoOfProcs)[] {
